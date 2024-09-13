@@ -11,7 +11,6 @@ import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.fileEditor.TextEditor
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectManager
-import com.intellij.util.io.readText
 import com.sourcegraph.cody.agent.CodyAgentCodebase
 import com.sourcegraph.cody.agent.protocol_generated.ExtensionConfiguration
 import com.sourcegraph.cody.config.CodyApplicationSettings
@@ -21,6 +20,7 @@ import com.sourcegraph.cody.config.SourcegraphServerPath
 import com.sourcegraph.cody.config.SourcegraphServerPath.Companion.from
 import java.nio.file.Path
 import java.nio.file.Paths
+import kotlin.io.path.readText
 import org.jetbrains.annotations.Contract
 import org.jetbrains.annotations.VisibleForTesting
 

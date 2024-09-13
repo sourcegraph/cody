@@ -8,7 +8,6 @@ import com.intellij.openapi.ide.CopyPasteManager
 import com.intellij.ui.jcef.JBCefBrowserBase
 import com.intellij.ui.jcef.JBCefBrowserBuilder
 import com.intellij.ui.jcef.JBCefJSQuery
-import com.intellij.util.io.isAncestor
 import com.sourcegraph.cody.agent.CodyAgent
 import com.sourcegraph.cody.agent.protocol.WebviewOptions
 import com.sourcegraph.cody.config.CodyApplicationSettings
@@ -537,7 +536,7 @@ class ExtensionResourceHandler : CefResourceHandler {
 
       // Find the specific file being requested.
       val filePath = resourcesPath.resolve(requestPath)
-      if (!resourcesPath.isAncestor(filePath)) {
+      if (!filePath.startsWith(resourcesPath)) {
         logger.warn("Aborting WebView request for ${requestPath}, attempted directory traversal?")
         status = 400
         callback?.Continue()

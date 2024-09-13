@@ -118,7 +118,7 @@ open class CodyIntegrationTextFixture : BasePlatformTestCase(), LensListener {
     // Setting this property invokes the tests from an executor pool thread, which lets us
     // block/wait on potentially long-running operations during the integration test.
     val policy = System.getProperty("idea.test.execution.policy")
-    assertTrue(policy == "com.sourcegraph.cody.test.NonEdtIdeaTestExecutionPolicy")
+    assertTrue(policy == "com.sourcegraph.cody.NonEdtIdeaTestExecutionPolicy")
 
     val project = myFixture.project
 

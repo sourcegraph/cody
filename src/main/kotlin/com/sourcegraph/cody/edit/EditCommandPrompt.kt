@@ -8,10 +8,10 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.editor.Editor
+import com.intellij.openapi.editor.EditorFactory
 import com.intellij.openapi.editor.event.BulkAwareDocumentListener
 import com.intellij.openapi.editor.event.EditorFactoryEvent
 import com.intellij.openapi.editor.event.EditorFactoryListener
-import com.intellij.openapi.editor.impl.EditorFactoryImpl
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.fileEditor.FileEditorManagerEvent
 import com.intellij.openapi.fileEditor.FileEditorManagerListener
@@ -325,7 +325,7 @@ class EditCommandPrompt(
     connection?.subscribe(FileEditorManagerListener.FILE_EDITOR_MANAGER, tabFocusListener)
 
     // Close dialog when user closes the document. This call makes the listener auto-release.
-    EditorFactoryImpl.getInstance().addEditorFactoryListener(editorFactoryListener, this)
+    EditorFactory.getInstance().addEditorFactoryListener(editorFactoryListener, this)
 
     // Close dialog if window loses focus.
     addWindowFocusListener(windowFocusListener)

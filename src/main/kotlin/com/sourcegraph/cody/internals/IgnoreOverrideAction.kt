@@ -48,7 +48,7 @@ class IgnoreOverrideDialog(val project: Project) : DialogWrapper(project) {
             .columns(40)
             .rows(15)
             .bindText(IgnoreOverrideModel::policy)
-            .validation { textArea ->
+            .validationInfo { textArea ->
               try {
                 Gson().fromJson(textArea.text, IgnorePolicySpec::class.java)
                 null

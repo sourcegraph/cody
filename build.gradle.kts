@@ -12,11 +12,14 @@ import java.util.EnumSet
 import java.util.jar.JarFile
 import java.util.zip.ZipFile
 import org.jetbrains.changelog.markdownToHTML
-import org.jetbrains.intellij.or
-import org.jetbrains.intellij.tasks.RunPluginVerifierTask.FailureLevel
+import org.jetbrains.intellij.platform.gradle.IntelliJPlatformType
+import org.jetbrains.intellij.platform.gradle.TestFrameworkType
+import org.jetbrains.intellij.platform.gradle.tasks.VerifyPluginTask.FailureLevel
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile
 
-fun properties(key: String) = project.findProperty(key).toString()
+fun properties(key: String) = project.findProperty(key)?.toString()
 
 val isForceBuild = properties("forceBuild") == "true"
 val isForceAgentBuild =
@@ -53,42 +56,84 @@ plugins {
   id("java")
   id("jvm-test-suite")
   id("org.jetbrains.kotlin.jvm") version "2.0.20"
-  id("org.jetbrains.intellij") version "1.17.4"
+  id("org.jetbrains.intellij.platform") version "2.0.1"
   id("org.jetbrains.changelog") version "2.2.1"
   id("com.diffplug.spotless") version "6.25.0"
 }
 
 val platformVersion: String by project
+val platformType: String by project
 val javaVersion: String by project
 
-group = properties("pluginGroup")
+group = properties("pluginGroup")!!
 
-version = properties("pluginVersion")
+version = properties("pluginVersion")!!
 
 repositories {
   maven { url = uri("https://www.jetbrains.com/intellij-repository/releases") }
   mavenCentral()
+  gradlePluginPortal()
+  intellijPlatform {
+    defaultRepositories()
+    jetbrainsRuntime()
+  }
 }
 
-intellij {
-  pluginName.set(properties("pluginName"))
-  version.set(platformVersion)
-  type.set(properties("platformType"))
+intellijPlatform {
+  pluginConfiguration {
+    name = properties("pluginName")
+    version = properties("pluginVersion")
+    ideaVersion {
+      sinceBuild = properties("pluginSinceBuild")
+      untilBuild = properties("pluginUntilBuild")
+    }
+    // Extract the <!-- Plugin description --> section from README.md and provide for the plugin's
+    // manifest
+    description =
+        projectDir
+            .resolve("README.md")
+            .readText()
+            .lines()
+            .run {
+              val start = "<!-- Plugin description -->"
+              val end = "<!-- Plugin description end -->"
 
-  // Plugin Dependencies. Uses `platformPlugins` property from the gradle.properties file.
-  plugins.set(properties("platformPlugins").split(',').map(String::trim).filter(String::isNotEmpty))
+              if (!containsAll(listOf(start, end))) {
+                throw GradleException(
+                    "Plugin description section not found in README.md:\n$start ... $end")
+              }
+              subList(indexOf(start) + 1, indexOf(end))
+            }
+            .joinToString("\n")
+            .run { markdownToHTML(this) }
+  }
 
-  updateSinceUntilBuild.set(false)
+  pluginVerification {
+    ides { ides(versionsToValidate) }
+    failureLevel = EnumSet.complementOf(skippedFailureLevels)
+  }
 }
 
 dependencies {
-  // ActionUpdateThread.jar contains copy of the
-  // com.intellij.openapi.actionSystem.ActionUpdateThread class
-  compileOnly(files("libs/ActionUpdateThread.jar"))
+  intellijPlatform {
+    jetbrainsRuntime()
+    create(platformType, platformVersion)
+    bundledPlugins(
+        properties("platformPlugins")
+            .orEmpty()
+            .split(',')
+            .map(String::trim)
+            .filter(String::isNotEmpty))
+    instrumentationTools()
+    pluginVerifier()
+    testFramework(TestFrameworkType.Platform)
+  }
+
   implementation("org.commonmark:commonmark:0.22.0")
   implementation("org.commonmark:commonmark-ext-gfm-tables:0.22.0")
   implementation("org.eclipse.lsp4j:org.eclipse.lsp4j.jsonrpc:0.23.1")
   implementation("io.github.java-diff-utils:java-diff-utils:4.12")
+  testImplementation("net.java.dev.jna:jna:5.10.0")
   testImplementation("org.awaitility:awaitility-kotlin:4.2.1")
   testImplementation("org.mockito:mockito-core:5.12.0")
   testImplementation("org.junit.jupiter:junit-jupiter:5.10.2")
@@ -118,10 +163,18 @@ spotless {
 }
 
 java {
-  toolchain { languageVersion.set(JavaLanguageVersion.of(properties("javaVersion").toInt())) }
+  toolchain {
+    languageVersion.set(JavaLanguageVersion.of(javaVersion.toInt()))
+    vendor = JvmVendorSpec.JETBRAINS
+  }
 }
 
-tasks.named("classpathIndexCleanup") { dependsOn("compileIntegrationTestKotlin") }
+kotlin {
+  jvmToolchain {
+    languageVersion.set(JavaLanguageVersion.of(javaVersion.toInt()))
+    vendor = JvmVendorSpec.JETBRAINS
+  }
+}
 
 fun download(url: String, output: File) {
   if (output.exists()) {
@@ -205,6 +258,22 @@ fun Test.sharedIntegrationTestConfig(buildCodyDir: File, mode: String) {
 
   include("**/AllSuites.class")
 
+  jvmArgs(
+      "-Djava.system.class.loader=com.intellij.util.lang.PathClassLoader",
+      "--add-opens=java.desktop/java.awt.event=ALL-UNNAMED",
+      "--add-opens=java.desktop/sun.font=ALL-UNNAMED",
+      "--add-opens=java.desktop/java.awt=ALL-UNNAMED",
+      "--add-opens=java.desktop/sun.awt=ALL-UNNAMED",
+      "--add-opens=java.base/java.lang=ALL-UNNAMED",
+      "--add-opens=java.base/java.util=ALL-UNNAMED",
+      "--add-opens=java.desktop/javax.swing=ALL-UNNAMED",
+      "--add-opens=java.desktop/sun.swing=ALL-UNNAMED",
+      "--add-opens=java.desktop/javax.swing.plaf.basic=ALL-UNNAMED",
+      "--add-opens=java.desktop/java.awt.peer=ALL-UNNAMED",
+      "--add-opens=java.desktop/javax.swing.text.html=ALL-UNNAMED",
+      "--add-exports=java.base/jdk.internal.vm=ALL-UNNAMED",
+      "--add-exports=java.desktop/sun.font=ALL-UNNAMED")
+
   val resourcesDir = project.file("src/integrationTest/resources")
   systemProperties(
       "cody-agent.trace-path" to
@@ -215,7 +284,7 @@ fun Test.sharedIntegrationTestConfig(buildCodyDir: File, mode: String) {
           (project.property("cody.autocomplete.enableFormatting") as String? ?: "true"),
       "cody.integration.testing" to "true",
       "cody.ignore.policy.timeout" to 1500, // Increased to 1500ms as CI tends to be slower
-      "idea.test.execution.policy" to "com.sourcegraph.cody.test.NonEdtIdeaTestExecutionPolicy",
+      "idea.test.execution.policy" to "com.sourcegraph.cody.NonEdtIdeaTestExecutionPolicy",
       "test.resources.dir" to resourcesDir.absolutePath)
 
   environment(
@@ -287,8 +356,8 @@ tasks {
   }
 
   fun downloadNodeBinaries(): File {
-    val nodeCommit = properties("nodeBinaries.commit")
-    val nodeVersion = properties("nodeBinaries.version")
+    val nodeCommit = properties("nodeBinaries.commit")!!
+    val nodeVersion = properties("nodeBinaries.version")!!
     val url = "https://github.com/sourcegraph/node-binaries/archive/$nodeCommit.zip"
     val zipFile = githubArchiveCache.resolve("$nodeCommit.zip")
     download(url, zipFile)
@@ -425,37 +494,12 @@ tasks {
   processResources { dependsOn(":buildCodeSearch") }
 
   // Set the JVM compatibility versions
-  properties("javaVersion").let {
+  javaVersion.let {
     withType<JavaCompile> {
       sourceCompatibility = it
       targetCompatibility = it
     }
-    withType<KotlinCompile> { kotlinOptions.jvmTarget = it }
-  }
-
-  patchPluginXml {
-    version.set(properties("pluginVersion"))
-
-    // Extract the <!-- Plugin description --> section from README.md and provide for the plugin's
-    // manifest
-    pluginDescription.set(
-        projectDir
-            .resolve("README.md")
-            .readText()
-            .lines()
-            .run {
-              val start = "<!-- Plugin description -->"
-              val end = "<!-- Plugin description end -->"
-
-              if (!containsAll(listOf(start, end))) {
-                throw GradleException(
-                    "Plugin description section not found in README.md:\n$start ... $end")
-              }
-              subList(indexOf(start) + 1, indexOf(end))
-            }
-            .joinToString("\n")
-            .run { markdownToHTML(this) },
-    )
+    withType<KotlinJvmCompile> { compilerOptions.jvmTarget.set(JvmTarget.JVM_17) }
   }
 
   buildPlugin {
@@ -488,46 +532,19 @@ tasks {
     }
   }
 
-  patchPluginXml {
-    sinceBuild = properties("pluginSinceBuild")
-    untilBuild = properties("pluginUntilBuild")
-  }
+  val customRunIde by
+      intellijPlatformTesting.runIde.registering {
+        version.set(properties("platformRuntimeVersion"))
+        val myType = IntelliJPlatformType.fromCode(properties("platformRuntimeType") ?: "IC")
+        type.set(myType)
+        plugins { plugins(properties("platformRuntimePlugins").orEmpty()) }
+      }
 
   runIde {
     dependsOn(project.tasks.getByPath("buildCody"))
     jvmArgs("-Djdk.module.illegalAccess.silent=true")
 
     agentProperties.forEach { (key, value) -> systemProperty(key, value) }
-
-    val platformRuntimeVersion = project.findProperty("platformRuntimeVersion")
-    val platformRuntimeType = project.findProperty("platformRuntimeType")
-    if (platformRuntimeVersion != null || platformRuntimeType != null) {
-      val ideaInstallDir =
-          getIdeaInstallDir(
-              platformRuntimeVersion.or(project.property("platformVersion")).toString(),
-              platformRuntimeType.or(project.property("platformType")).toString())
-              ?: throw GradleException(
-                  "Could not find IntelliJ install for version: $platformRuntimeVersion")
-      ideDir.set(ideaInstallDir)
-    }
-    // TODO: we need to wait to switch to Platform Gradle Plugin 2.0.0 to be able to have separate
-    // runtime plugins
-    // https://github.com/JetBrains/intellij-platform-gradle-plugin/issues/1489
-    // val platformRuntimePlugins = project.findProperty("platformRuntimePlugins")
-  }
-
-  runPluginVerifier {
-    ideVersions.set(versionsToValidate)
-    failureLevel.set(EnumSet.complementOf(skippedFailureLevels))
-  }
-
-  // Configure UI tests plugin
-  // Read more: https://github.com/JetBrains/intellij-ui-test-robot
-  runIdeForUiTests {
-    systemProperty("robot-server.port", "8082")
-    systemProperty("ide.mac.message.dialogs.as.sheets", "false")
-    systemProperty("jb.privacy.policy.text", "<!--999.999-->")
-    systemProperty("jb.consents.confirmation.enabled", "false")
   }
 
   signPlugin {
@@ -544,7 +561,7 @@ tasks {
     // Specify pre-release label to publish the plugin in a custom Release Channel automatically.
     // Read more:
     // https://plugins.jetbrains.com/docs/intellij/deployment.html#specifying-a-release-channel
-    val channel = properties("pluginVersion").split('-').getOrElse(1) { "default" }
+    val channel = properties("pluginVersion")!!.split('-').getOrElse(1) { "default" }
     channels.set(listOf(channel))
 
     if (channel == "default") {
@@ -565,8 +582,8 @@ tasks {
   sourceSets {
     create("integrationTest") {
       kotlin.srcDir("src/integrationTest/kotlin")
-      compileClasspath += main.get().output
-      runtimeClasspath += main.get().output
+      compileClasspath += main.get().output + configurations.testCompileClasspath.get()
+      runtimeClasspath += compileClasspath + configurations.testRuntimeClasspath.get()
     }
   }
 
@@ -600,11 +617,10 @@ tasks {
   withType<Test> {
     systemProperty(
         "idea.test.src.dir", "${layout.buildDirectory.asFile.get()}/resources/integrationTest")
+    systemProperty("idea.force.use.core.classloader", "true")
   }
 
   withType<KotlinCompile> { dependsOn("copyProtocol") }
-
-  named("classpathIndexCleanup") { dependsOn("processIntegrationTestResources") }
 
   named("check") { dependsOn("integrationTest") }
 

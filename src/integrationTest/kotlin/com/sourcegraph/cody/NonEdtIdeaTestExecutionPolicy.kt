@@ -1,4 +1,4 @@
-package com.sourcegraph.cody.test
+package com.sourcegraph.cody
 
 import com.intellij.testFramework.fixtures.IdeaTestExecutionPolicy
 

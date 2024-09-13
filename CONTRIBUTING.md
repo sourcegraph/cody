@@ -72,7 +72,7 @@ run `sdk use java 17-zulu`. Confirm that you have Java 17 installed with `java -
 | Run the plugin locally with fresh build of Cody                                                                                     | `./gradlew -PforceAgentBuild=true :runIde`                               |
 | Run the plugin locally with fresh build of a local clone of Cody (CODY_DIR needs to be an absolute path)                            | `CODY_DIR=<path_to_cody> ./gradlew -PforceAgentBuild=true :runIde`       |
 | Run the plugin locally with fresh build of Code Search assets                                                                       | `./gradlew -PforceCodeSearchBuild=true :runIde`                          |
-| Run the plugin locally with different IntelliJ version                                                                              | `./gradlew -PplatformVersion=2023.1 :runIde`                             |
+| Run the plugin locally with different IntelliJ version                                                                              | `./gradlew -PplatformRuntimeVersion=2024.2.0.2 :customRunIde`            |
 | Build Code Search assets (separate terminal)                                                                                        | `pnpm build`                                                             |
 | Continuously re-build Code Search assets (separate terminal)                                                                        | `pnpm watch`                                                             |
 | Code Search "Find with Sourcegraph" window                                                                                          | `pnpm standalone && open http://localhost:3000/`                         |
@@ -97,9 +97,6 @@ Few tips and tricks regarding versioning of the tooling:
 - Use `node` version `18` (newer versions causes hard to diagnose errors with `ERR_INVALID_THIS`).
 - If you changed `pnpm` or `node` version after running gradle you need to kill gradle daemon with `./gradlew --stop`.
   Otherwise you won't see effects of your changes.
-- Running `./gradlew -PplatformRuntimeVersion=X.Y :runIde` for the first time might fail due to missing IntelliJ
-  installation. You
-  can fix it by running `./gradlew -PplatformVersion=X.Y :runIde` once - even if compilation fails it fixes your caches.
 - IF you get error 134 while building different things with jetbrains its because java process doesn't have enough
   memory to build so you might need to get into your activity monitor to close other processes.
 

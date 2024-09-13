@@ -16,7 +16,6 @@ import com.intellij.openapi.vfs.VirtualFile
 import java.beans.PropertyChangeListener
 import javax.swing.JComponent
 import javax.swing.JLabel
-import org.jetbrains.annotations.NonNls
 
 /// A FileEditor which presents a WebUIProxy. This editor implements Webview panels for JetBrains.
 internal class WebPanelEditor(private val file: VirtualFile) : FileEditor {
@@ -105,7 +104,7 @@ class WebPanelProvider : FileEditorProvider, DumbAware {
     }
   */
 
-  override fun getEditorTypeId(): @NonNls String {
+  override fun getEditorTypeId(): String {
     return "CODY_WEB_PANEL"
   }
 
