@@ -45,6 +45,7 @@ import {
     SINGLE_LINE_STOP_SEQUENCES,
     createProvider as createAnthropicProvider,
 } from '../providers/anthropic'
+import type { AutocompleteProviderID } from '../providers/create-provider'
 import { createProvider as createFireworksProvider } from '../providers/fireworks'
 import { pressEnterAndGetIndentString } from '../providers/hot-streak'
 import { RequestManager } from '../request-manager'
@@ -175,7 +176,8 @@ export function params(
         legacyModel: configuration?.autocompleteAdvancedModel!,
         config: configWithAccessToken,
         anonymousUserID: 'anonymousUserID',
-        provider: configuration?.autocompleteAdvancedModel || 'anthropic',
+        provider: (configuration?.autocompleteAdvancedModel as AutocompleteProviderID) || 'anthropic',
+        source: 'local-editor-settings',
     })
 
     provider.client = client

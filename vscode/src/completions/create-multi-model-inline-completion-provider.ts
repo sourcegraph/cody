@@ -136,6 +136,7 @@ export async function createInlineCompletionItemFromMultipleProviders({
             legacyModel: currentProviderConfig.model,
             provider: currentProviderConfig.provider,
             config: newConfig,
+            source: 'local-editor-settings',
         })
 
         const triggerDelay = vscode.workspace

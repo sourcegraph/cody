@@ -1,4 +1,4 @@
-import type { Model } from '.'
+import type { Model, ModelRef, ModelRefStr } from '.'
 import { ModelTag } from '..'
 
 export function getProviderName(name: string): string {
@@ -48,4 +48,9 @@ export function isCustomModel(model: Model): boolean {
 
 function modelHasTag(model: Model, modelTag: ModelTag): boolean {
     return model.tags.includes(modelTag)
+}
+
+export function toModelRefStr(modelRef: ModelRef): ModelRefStr {
+    const { providerId, apiVersionId, modelId } = modelRef
+    return `${providerId}::${apiVersionId}::${modelId}`
 }

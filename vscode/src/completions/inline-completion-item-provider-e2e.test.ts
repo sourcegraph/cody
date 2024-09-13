@@ -155,6 +155,7 @@ function createNetworkProvider(params: RequestParams): MockRequestProvider {
             id: 'mock-provider',
             anonymousUserID: 'anonymousUserID',
             legacyModel: 'test-model',
+            source: 'local-editor-settings',
         },
         providerOptions
     )

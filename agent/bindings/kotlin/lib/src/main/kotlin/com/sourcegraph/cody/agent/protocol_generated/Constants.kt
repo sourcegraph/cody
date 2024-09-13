@@ -84,6 +84,7 @@ object Constants {
   const val tree = "tree"
   const val `tree-sitter` = "tree-sitter"
   const val unified = "unified"
+  const val unknown = "unknown"
   const val use = "use"
   const val user = "user"
   const val waitlist = "waitlist"

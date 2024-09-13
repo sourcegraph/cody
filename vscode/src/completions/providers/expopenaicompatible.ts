@@ -355,7 +355,7 @@ function getClientModel(model?: string): OpenAICompatibleModel {
 }
 
 export function createProvider(params: ProviderFactoryParams): Provider {
-    const { legacyModel, anonymousUserID } = params
+    const { legacyModel, anonymousUserID, source } = params
 
     const clientModel = getClientModel(legacyModel)
 
@@ -364,5 +364,6 @@ export function createProvider(params: ProviderFactoryParams): Provider {
         legacyModel: clientModel,
         maxContextTokens: getMaxContextTokens(clientModel),
         anonymousUserID,
+        source,
     })
 }

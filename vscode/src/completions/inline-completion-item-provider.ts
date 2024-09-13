@@ -191,9 +191,12 @@ export class InlineCompletionItemProvider
         this.smartThrottleService = new SmartThrottleService()
         this.disposables.push(this.smartThrottleService)
 
+        // TODO(valery): replace `model_configured_by_site_config` with the actual model ID received from backend.
         logDebug(
-            'CodyCompletionProvider:initialized',
-            [this.config.provider.id, this.config.provider.legacyModel].join('/')
+            'AutocompleteProvider:initialized',
+            `using "${this.config.provider.configSource}": "${this.config.provider.id}::${
+                this.config.provider.legacyModel || 'model_configured_by_site_config'
+            }"`
         )
 
         if (!this.config.noInlineAccept) {
@@ -1132,7 +1135,7 @@ function logIgnored(uri: vscode.Uri, reason: CodyIgnoreType, isManualCompletion:
     }
     lastIgnoredUriLogged = string
     logDebug(
-        'CodyCompletionProvider:ignored',
+        'AutocompleteProvider:ignored',
         'Cody is disabled in file ' + uri.toString() + ' (' + reason + ')'
     )
 }

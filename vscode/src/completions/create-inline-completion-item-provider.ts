@@ -50,7 +50,7 @@ export function createInlineCompletionItemProvider({
 }: InlineCompletionItemProviderArgs): Observable<void> {
     const authStatus = currentAuthStatus()
     if (!authStatus.authenticated) {
-        logDebug('CodyCompletionProvider:notSignedIn', 'You are not signed in.')
+        logDebug('AutocompleteProvider:notSignedIn', 'You are not signed in.')
 
         if (config.isRunningInsideAgent) {
             // Register an empty completion provider when running inside the

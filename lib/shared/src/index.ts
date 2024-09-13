@@ -1,6 +1,12 @@
 // Add anything else here that needs to be used outside of this library.
 
-export { Model, modelsService, type ServerModel, type ServerModelConfiguration } from './models'
+export {
+    Model,
+    modelsService,
+    mockModelsService,
+    type ServerModel,
+    type ServerModelConfiguration,
+} from './models'
 export {
     type EditModel,
     type EditProvider,
@@ -16,6 +22,7 @@ export {
     getModelInfo,
     isCodyProModel,
     isCustomModel,
+    toModelRefStr,
 } from './models/utils'
 export { BotResponseMultiplexer } from './chat/bot-response-multiplexer'
 export { ChatClient } from './chat/chat'

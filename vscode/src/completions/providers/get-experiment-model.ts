@@ -23,7 +23,7 @@ interface ProviderConfigFromFeatureFlags {
     model?: string
 }
 
-export function getExperimentModel(): Observable<ProviderConfigFromFeatureFlags | null> {
+export function getDotComExperimentModel(): Observable<ProviderConfigFromFeatureFlags | null> {
     // We run model experiments only on DotCom.
     if (!isDotComAuthed()) {
         return Observable.of(null)
@@ -74,7 +74,7 @@ export function getExperimentModel(): Observable<ProviderConfigFromFeatureFlags 
  * The traffic allocated to the fine-tuned-base feature flag is further split between multiple
  * feature flag in this function.
  */
-function resolveFIMModelExperimentFromFeatureFlags(): ReturnType<typeof getExperimentModel> {
+function resolveFIMModelExperimentFromFeatureFlags(): ReturnType<typeof getDotComExperimentModel> {
     return combineLatest([
         featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyAutocompleteFIMModelExperimentControl),
         featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyAutocompleteFIMModelExperimentVariant1),

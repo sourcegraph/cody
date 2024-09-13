@@ -18,6 +18,7 @@ import type { InlineCompletionItemWithAnalytics } from '../text-processing/proce
 
 import { defaultCodeCompletionsClient } from '../default-client'
 import { type DefaultModel, getModelHelpers } from '../model-helpers'
+import type { AutocompleteProviderConfigSource, AutocompleteProviderID } from './create-provider'
 import type { FetchCompletionResult } from './fetch-and-process-completions'
 import { MAX_RESPONSE_TOKENS } from './get-completion-params'
 
@@ -83,15 +84,31 @@ export type ProviderOptions = (ProviderModelOptions | ProviderLegacyModelOptions
      */
     maxContextTokens?: number
     mayUseOnDeviceInference?: boolean
+    source: AutocompleteProviderConfigSource
 }
 
 export type ProviderFactoryParams = {
+    /**
+     * Model instance created from the server-side model config API response.
+     */
     model?: Model
+    /**
+     * Model string ID kept here for backward compatibility. Should be replaced fully by `model`.
+     */
     legacyModel?: string
-    config: ClientConfigurationWithAccessToken
+    /**
+     * Client provider ID.
+     */
+    provider: AutocompleteProviderID
+    /**
+     * How the provider/model combination was resolved.
+     * Used for debugging purposes.
+     */
+    source: AutocompleteProviderConfigSource
+
     anonymousUserID: string
+    config: ClientConfigurationWithAccessToken
     mayUseOnDeviceInference?: boolean
-    provider: string
 }
 
 export type ProviderFactory = (params: ProviderFactoryParams) => Provider
@@ -112,6 +129,7 @@ export abstract class Provider {
     public legacyModel: string
     public contextSizeHints: ProviderContextSizeHints
     public client: CodeCompletionsClient = defaultCodeCompletionsClient.instance!
+    public configSource: AutocompleteProviderConfigSource
 
     protected maxContextTokens: number
     protected anonymousUserID: string
@@ -127,6 +145,7 @@ export abstract class Provider {
             maxContextTokens = DEFAULT_MAX_CONTEXT_TOKENS,
             anonymousUserID,
             mayUseOnDeviceInference = false,
+            source,
         } = options
 
         if ('model' in options) {
@@ -140,6 +159,7 @@ export abstract class Provider {
         this.maxContextTokens = maxContextTokens
         this.anonymousUserID = anonymousUserID
         this.mayUseOnDeviceInference = mayUseOnDeviceInference
+        this.configSource = source
 
         this.modelHelper = getModelHelpers(this.legacyModel)
         this.promptChars = tokensToChars(maxContextTokens - MAX_RESPONSE_TOKENS)

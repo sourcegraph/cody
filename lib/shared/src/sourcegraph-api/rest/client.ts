@@ -66,7 +66,7 @@ export class RestClient {
         // TODO(PRIME-322): Export the type information via NPM. For now, we just blindly
         // walk the returned object model.
         //
-        // NOTE: This API endpoint hasn't shippeted yet, and probably won't work for you.
+        // NOTE: This API endpoint hasn't shipped yet, and probably won't work for you.
         // Also, the URL definitely will change.
         const serverSideConfig = await this.getRequest<ServerModelConfiguration>(
             'getAvailableModels',

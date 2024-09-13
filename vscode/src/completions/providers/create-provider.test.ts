@@ -1,16 +1,21 @@
 import {
+    AUTH_STATUS_FIXTURE_AUTHED,
     AUTH_STATUS_FIXTURE_AUTHED_DOTCOM,
     type ClientConfiguration,
     type CodyLLMSiteConfiguration,
     type GraphQLAPIClientConfig,
+    ModelUsage,
     graphqlClient,
     mockAuthStatus,
     toFirstValueGetter,
+    toModelRefStr,
 } from '@sourcegraph/cody-shared'
 import { beforeAll, describe, expect, it } from 'vitest'
 import { mockLocalStorage } from '../../services/LocalStorageProvider'
 import { getVSCodeConfigurationWithAccessToken } from '../../testutils/mocks'
 
+import { mockModelsService, modelsService } from '@sourcegraph/cody-shared'
+import { getServerSentModelsMock } from './__mocks__/create-provider-mocks'
 import { createProvider } from './create-provider'
 
 graphqlClient.setConfig({} as unknown as GraphQLAPIClientConfig)
@@ -126,134 +131,185 @@ describe('createProvider', () => {
         })
     })
 
-    describe('completions provider and model are defined in the site config and not set in VSCode settings', () => {
-        describe('if provider is "sourcegraph"', () => {
-            const testCases: {
-                configOverwrites: CodyLLMSiteConfiguration
-                expected: { provider: string; legacyModel?: string } | null
-            }[] = [
-                // sourcegraph
-                {
-                    configOverwrites: { provider: 'sourcegraph', completionModel: 'hello-world' },
-                    expected: null,
+    describe('legacy site-config Cody LLM configuration', () => {
+        const testCases: {
+            configOverwrites: CodyLLMSiteConfiguration
+            expected: { provider: string; legacyModel?: string } | null
+        }[] = [
+            // sourcegraph
+            {
+                configOverwrites: { provider: 'sourcegraph', completionModel: 'hello-world' },
+                expected: null,
+            },
+            {
+                configOverwrites: {
+                    provider: 'sourcegraph',
+                    completionModel: 'anthropic/claude-instant-1.2',
                 },
-                {
-                    configOverwrites: {
-                        provider: 'sourcegraph',
-                        completionModel: 'anthropic/claude-instant-1.2',
-                    },
-                    expected: { provider: 'anthropic', legacyModel: 'anthropic/claude-instant-1.2' },
+                expected: { provider: 'anthropic', legacyModel: 'anthropic/claude-instant-1.2' },
+            },
+            {
+                configOverwrites: { provider: 'sourcegraph', completionModel: 'anthropic/' },
+                expected: null,
+            },
+            {
+                configOverwrites: {
+                    provider: 'sourcegraph',
+                    completionModel: '/claude-instant-1.2',
                 },
-                {
-                    configOverwrites: { provider: 'sourcegraph', completionModel: 'anthropic/' },
-                    expected: null,
+                expected: null,
+            },
+            {
+                configOverwrites: {
+                    provider: 'sourcegraph',
+                    completionModel: 'fireworks/starcoder',
                 },
-                {
-                    configOverwrites: {
-                        provider: 'sourcegraph',
-                        completionModel: '/claude-instant-1.2',
-                    },
-                    expected: null,
-                },
-                {
-                    configOverwrites: {
-                        provider: 'sourcegraph',
-                        completionModel: 'fireworks/starcoder',
-                    },
-                    expected: { provider: 'fireworks', legacyModel: 'starcoder' },
-                },
+                expected: { provider: 'fireworks', legacyModel: 'starcoder' },
+            },
 
-                // aws-bedrock
-                {
-                    configOverwrites: { provider: 'aws-bedrock', completionModel: 'hello-world' },
-                    expected: null,
+            // aws-bedrock
+            {
+                configOverwrites: { provider: 'aws-bedrock', completionModel: 'hello-world' },
+                expected: null,
+            },
+            {
+                configOverwrites: {
+                    provider: 'aws-bedrock',
+                    completionModel: 'anthropic.claude-instant-1.2',
                 },
-                {
-                    configOverwrites: {
-                        provider: 'aws-bedrock',
-                        completionModel: 'anthropic.claude-instant-1.2',
-                    },
-                    expected: { provider: 'anthropic', legacyModel: 'anthropic/claude-instant-1.2' },
+                expected: { provider: 'anthropic', legacyModel: 'anthropic/claude-instant-1.2' },
+            },
+            {
+                configOverwrites: { provider: 'aws-bedrock', completionModel: 'anthropic.' },
+                expected: null,
+            },
+            {
+                configOverwrites: {
+                    provider: 'aws-bedrock',
+                    completionModel: 'anthropic/claude-instant-1.2',
                 },
-                {
-                    configOverwrites: { provider: 'aws-bedrock', completionModel: 'anthropic.' },
-                    expected: null,
-                },
-                {
-                    configOverwrites: {
-                        provider: 'aws-bedrock',
-                        completionModel: 'anthropic/claude-instant-1.2',
-                    },
-                    expected: null,
-                },
+                expected: null,
+            },
 
-                // open-ai
-                {
-                    configOverwrites: { provider: 'openai', completionModel: 'gpt-35-turbo-test' },
-                    expected: { provider: 'unstable-openai', legacyModel: 'gpt-35-turbo-test' },
-                },
-                {
-                    configOverwrites: { provider: 'openai' },
-                    expected: { provider: 'unstable-openai', legacyModel: 'gpt-35-turbo' },
-                },
+            // open-ai
+            {
+                configOverwrites: { provider: 'openai', completionModel: 'gpt-35-turbo-test' },
+                expected: { provider: 'unstable-openai', legacyModel: 'gpt-35-turbo-test' },
+            },
+            {
+                configOverwrites: { provider: 'openai' },
+                expected: { provider: 'unstable-openai', legacyModel: 'gpt-35-turbo' },
+            },
 
-                // azure-openai
-                {
-                    configOverwrites: { provider: 'azure-openai', completionModel: 'gpt-35-turbo-test' },
-                    expected: { provider: 'unstable-openai', legacyModel: '' },
-                },
-                {
-                    configOverwrites: { provider: 'azure-openai' },
-                    expected: { provider: 'unstable-openai', legacyModel: 'gpt-35-turbo' },
-                },
+            // azure-openai
+            {
+                configOverwrites: { provider: 'azure-openai', completionModel: 'gpt-35-turbo-test' },
+                expected: { provider: 'unstable-openai', legacyModel: '' },
+            },
+            {
+                configOverwrites: { provider: 'azure-openai' },
+                expected: { provider: 'unstable-openai', legacyModel: 'gpt-35-turbo' },
+            },
 
-                // fireworks
-                {
-                    configOverwrites: { provider: 'fireworks', completionModel: 'starcoder-7b' },
-                    expected: { provider: 'fireworks', legacyModel: 'starcoder-7b' },
+            // fireworks
+            {
+                configOverwrites: { provider: 'fireworks', completionModel: 'starcoder-7b' },
+                expected: { provider: 'fireworks', legacyModel: 'starcoder-7b' },
+            },
+            {
+                configOverwrites: { provider: 'fireworks' },
+                expected: { provider: 'fireworks', legacyModel: 'deepseek-coder-v2-lite-base' },
+            },
+
+            // unknown-provider
+            {
+                configOverwrites: {
+                    provider: 'unknown-provider',
+                    completionModel: 'superdupercoder-7b',
                 },
-                {
-                    configOverwrites: { provider: 'fireworks' },
-                    expected: { provider: 'fireworks', legacyModel: 'deepseek-coder-v2-lite-base' },
-                },
+                expected: null,
+            },
 
-                // unknown-provider
-                {
-                    configOverwrites: {
-                        provider: 'unknown-provider',
-                        completionModel: 'superdupercoder-7b',
-                    },
-                    expected: null,
-                },
+            // provider not defined (backward compat)
+            {
+                configOverwrites: { provider: undefined, completionModel: 'superdupercoder-7b' },
+                expected: null,
+            },
+        ]
 
-                // provider not defined (backward compat)
-                {
-                    configOverwrites: { provider: undefined, completionModel: 'superdupercoder-7b' },
-                    expected: null,
-                },
-            ]
-
-            for (const { configOverwrites, expected } of testCases) {
-                it(`returns ${JSON.stringify(expected)} when cody LLM config is ${JSON.stringify(
-                    configOverwrites
-                )}`, async () => {
-                    mockAuthStatus({
-                        ...AUTH_STATUS_FIXTURE_AUTHED_DOTCOM,
-                        configOverwrites,
-                    })
-
-                    const provider = await createProviderFirstValue(
-                        getVSCodeConfigurationWithAccessToken()
-                    )
-
-                    if (expected === null) {
-                        expect(provider).toBeNull()
-                    } else {
-                        expect(provider?.id).toBe(expected.provider)
-                        expect(provider?.legacyModel).toBe(expected.legacyModel)
-                    }
+        for (const { configOverwrites, expected } of testCases) {
+            it(`returns ${JSON.stringify(expected)} when cody LLM config is ${JSON.stringify(
+                configOverwrites
+            )}`, async () => {
+                mockAuthStatus({
+                    ...AUTH_STATUS_FIXTURE_AUTHED_DOTCOM,
+                    configOverwrites,
                 })
-            }
+
+                const provider = await createProviderFirstValue(getVSCodeConfigurationWithAccessToken())
+
+                if (expected === null) {
+                    expect(provider).toBeNull()
+                } else {
+                    expect(provider?.id).toBe(expected.provider)
+                    expect(provider?.legacyModel).toBe(expected.legacyModel)
+                }
+            })
+        }
+    })
+
+    describe('server-side model configuration', () => {
+        beforeAll(async () => {
+            await mockModelsService({
+                modelsService: modelsService.instance!,
+                config: getServerSentModelsMock(),
+                authStatus: AUTH_STATUS_FIXTURE_AUTHED,
+            })
+        })
+
+        it('uses all available autocomplete models', async () => {
+            const mockedConfig = getServerSentModelsMock()
+            const autocompleteModelsInServerConfig = mockedConfig.models.filter(model =>
+                model.capabilities.includes('autocomplete')
+            )
+
+            const autocompleteModels = modelsService.instance!.getModels(ModelUsage.Autocomplete)
+            expect(autocompleteModels.length).toBe(autocompleteModelsInServerConfig.length)
+        })
+
+        it('uses the `fireworks` model from the config', async () => {
+            const provider = await createProviderFirstValue(getVSCodeConfigurationWithAccessToken())
+            const currentModel = modelsService.instance!.getDefaultModel(ModelUsage.Autocomplete)
+
+            expect(currentModel?.provider).toBe('fireworks')
+            expect(currentModel?.id).toBe('deepseek-coder-v2-lite-base')
+
+            expect(provider?.id).toBe(currentModel?.provider)
+            expect(provider?.legacyModel).toBe(currentModel?.id)
+        })
+
+        it('uses the `anthropic` model from the config', async () => {
+            const mockedConfig = getServerSentModelsMock()
+
+            const autocompleteModels = modelsService.instance!.getModels(ModelUsage.Autocomplete)
+            const anthropicModel = autocompleteModels.find(model => model.id === 'claude-3-sonnet')!
+
+            // Change the default autocomplete model to anthropic
+            mockedConfig.defaultModels.codeCompletion = toModelRefStr(anthropicModel.modelRef!)
+
+            await mockModelsService({
+                modelsService: modelsService.instance!,
+                config: mockedConfig,
+                authStatus: AUTH_STATUS_FIXTURE_AUTHED,
+            })
+
+            const provider = await createProviderFirstValue(getVSCodeConfigurationWithAccessToken())
+
+            expect(anthropicModel.provider).toBe('anthropic')
+            expect(anthropicModel.id).toBe('claude-3-sonnet')
+            expect(provider?.id).toBe(anthropicModel.provider)
+            // TODO(valery): use a readable identifier for BYOK providers to communicate that the model ID from the server is used.
+            expect(provider?.legacyModel).toBe('')
         })
     })
 })

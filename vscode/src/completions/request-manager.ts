@@ -301,7 +301,7 @@ export class RequestManager {
             }
 
             if (shouldAbort) {
-                logDebug('CodyCompletionProvider', 'Irrelevant request aborted')
+                logDebug('AutocompleteProvider', 'Irrelevant request aborted')
                 request.abortController.abort()
                 this.inflightRequests.delete(request)
             }
