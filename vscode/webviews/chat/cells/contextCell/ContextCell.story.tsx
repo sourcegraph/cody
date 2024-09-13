@@ -95,3 +95,38 @@ export const Loading: Story = {
         isForFirstMessage: false,
     },
 }
+
+export const ExcludedContext: Story = {
+    args: {
+        contextItems: [
+            { type: 'file', uri: URI.file('/foo/bar.go') },
+            { type: 'file', uri: URI.file('/foo/qux.go') },
+            {
+                type: 'file',
+                uri: URI.file('/internal/large.go'),
+                isTooLarge: true,
+                source: ContextItemSource.User,
+            },
+            {
+                type: 'file',
+                uri: URI.file('/internal/ignored1.go'),
+                isIgnored: true,
+                source: ContextItemSource.User,
+            },
+            {
+                type: 'file',
+                uri: URI.file('/internal/ignored2.go'),
+                isIgnored: true,
+                source: ContextItemSource.User,
+            },
+            {
+                type: 'file',
+                uri: URI.file('/internal/large2.go'),
+                isTooLarge: true,
+                source: ContextItemSource.User,
+            },
+        ],
+        isForFirstMessage: true,
+        __storybook__initialOpen: true,
+    },
+}
