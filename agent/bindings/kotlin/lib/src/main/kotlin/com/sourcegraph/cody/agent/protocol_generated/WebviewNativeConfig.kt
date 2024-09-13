@@ -3,11 +3,11 @@ package com.sourcegraph.cody.agent.protocol_generated;
 
 import com.google.gson.annotations.SerializedName;
 
-data class WebviewNativeConfigParams(
+data class WebviewNativeConfig(
   val view: ViewEnum, // Oneof: multiple, single
   val cspSource: String,
-  val webviewBundleServingPrefix: String,
-  val rootDir: String? = null,
+  val webviewBundleServingPrefix: String? = null,
+  val skipResourceRelativization: Boolean? = null,
   val injectScript: String? = null,
   val injectStyle: String? = null,
 ) {

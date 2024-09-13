@@ -608,21 +608,22 @@ export interface ClientCapabilities {
     // Defaults to 'agentic'.
     webview?: 'agentic' | 'native' | undefined | null
     // If webview === 'native', describes how the client has configured webview resources.
+    webviewNativeConfig?: WebviewNativeConfig | undefined | null
+}
+
+export interface WebviewNativeConfig {
+    // Set the view to 'single' when client only support single chat view, e.g. sidebar chat.
+    view: 'multiple' | 'single'
     // cspSource is passed to the extension as the Webview cspSource property.
+    cspSource: string
     // webviewBundleServingPrefix is prepended to resource paths under 'dist' in
     // asWebviewUri (note, multiple prefixes are not yet implemented.)
-    // Set the view to 'single' when client only support single chat view, e.g. sidebar chat.
-    webviewNativeConfig?:
-        | {
-              view: 'multiple' | 'single'
-              cspSource: string
-              webviewBundleServingPrefix: string
-              rootDir?: string | undefined | null
-              injectScript?: string | undefined | null
-              injectStyle?: string | undefined | null
-          }
-        | undefined
-        | null
+    webviewBundleServingPrefix?: string | undefined | null
+    // when true, resource paths are not relativized, and the client must
+    // handle serving the resources relative to the webview.
+    skipResourceRelativization?: boolean | undefined | null
+    injectScript?: string | undefined | null
+    injectStyle?: string | undefined | null
 }
 
 export interface ServerInfo {

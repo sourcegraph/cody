@@ -146,6 +146,12 @@ export class Formatter {
             const nonNullableTypes = parameterOrResultType.union_type.types.filter(
                 tpe => !this.isNullable(tpe)
             )
+            if (nonNullableTypes.length === 0) {
+                if (this.language === TargetLanguage.Kotlin) {
+                    return 'Null'
+                }
+                return 'Void'
+            }
             if (nonNullableTypes.length === 1) {
                 return this.nonNullableJsonrpcTypeName(jsonrpcMethod, nonNullableTypes[0], kind)
             }

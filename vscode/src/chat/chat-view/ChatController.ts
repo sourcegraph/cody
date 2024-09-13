@@ -1890,32 +1890,47 @@ async function addWebviewViewHTML(
         return
     }
     const config = extensionClient.capabilities?.webviewNativeConfig
-    const webviewPath = config?.rootDir
-        ? vscode.Uri.parse(config?.rootDir, true)
-        : vscode.Uri.joinPath(extensionUri, 'dist', 'webviews')
-    // Create Webview using vscode/index.html
+    const webviewPath = vscode.Uri.joinPath(extensionUri, 'dist', 'webviews')
     const root = vscode.Uri.joinPath(webviewPath, 'index.html')
     const bytes = await vscode.workspace.fs.readFile(root)
-    const decoded = new TextDecoder('utf-8').decode(bytes)
-    const resources = view.webview.asWebviewUri(webviewPath)
+    const html = new TextDecoder('utf-8').decode(bytes)
 
-    // This replace variables from the vscode/dist/index.html with webview info
-    // 1. Update URIs to load styles and scripts into webview (eg. path that starts with ./)
-    // 2. Update URIs for content security policy to only allow specific scripts to be run
-    view.webview.html = decoded
-        .replaceAll('./', `${resources.toString()}/`)
-        .replaceAll("'self'", view.webview.cspSource)
-        .replaceAll('{cspSource}', view.webview.cspSource)
+    view.webview.html = manipulateWebviewHTML(html, {
+        cspSource: view.webview.cspSource,
+        resources: config?.skipResourceRelativization
+            ? undefined
+            : view.webview.asWebviewUri(webviewPath),
+        injectScript: config?.injectScript ?? undefined,
+        injectStyle: config?.injectStyle ?? undefined,
+    })
+}
+
+interface TransformHTMLOptions {
+    cspSource: string
+    resources?: vscode.Uri
+    injectScript?: string
+    injectStyle?: string
+}
+
+// Exported for testing purposes
+export function manipulateWebviewHTML(html: string, options: TransformHTMLOptions): string {
+    if (options.resources) {
+        html = html.replaceAll('./', `${options.resources}/`)
+    }
 
     // If a script or style is injected, replace the placeholder with the script or style
     // and drop the content-security-policy meta tag which prevents inline scripts and styles
-    if (config?.injectScript || config?.injectStyle) {
-        // drop all text betweeb <-- START CSP --> and <-- END CSP -->
-        view.webview.html = decoded
-            .replace(/<-- START CSP -->.*<!-- END CSP -->/s, '')
-            .replaceAll('/*injectedScript*/', config?.injectScript ?? '')
-            .replaceAll('/*injectedStyle*/', config?.injectStyle ?? '')
+    if (options.injectScript || options.injectStyle) {
+        html = html
+            .replace(/<!-- START CSP -->.*<!-- END CSP -->/s, '')
+            .replaceAll('/*injectedScript*/', options.injectScript ?? '')
+            .replaceAll('/*injectedStyle*/', options.injectStyle ?? '')
+    } else {
+        // Update URIs for content security policy to only allow specific scripts to be run
+        html = html.replaceAll("'self'", options.cspSource).replaceAll('{cspSource}', options.cspSource)
     }
+
+    return html
 }
 
 // This is the manual ordering of the different retrieved and explicit context sources
