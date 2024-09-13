@@ -119,7 +119,7 @@ export const AssistantMessageCell: FunctionComponent<{
                                 <div>
                                     {hasLongerResponseTime && (
                                         <p className="tw-m-4 tw-mt-0 tw-text-muted-foreground">
-                                            This model may take longer to response.
+                                            This model may take longer to respond.
                                         </p>
                                     )}
                                     <LoadingDots />
