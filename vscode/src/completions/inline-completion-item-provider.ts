@@ -128,6 +128,7 @@ export class InlineCompletionItemProvider
     private get config(): InlineCompletionItemProviderConfig {
         return InlineCompletionItemProviderConfigSingleton.configuration
     }
+    private disableLowPerfLangDelay = false
 
     constructor({
         completeSuggestWidgetSelection = true,
@@ -193,6 +194,16 @@ export class InlineCompletionItemProvider
 
         void completionProviderConfig.prefetch()
 
+        // Subscribe to changes in disableLowPerfLangDelay and update the value accordingly
+        this.disposables.push(
+            subscriptionDisposable(
+                completionProviderConfig.completionDisableLowPerfLangDelay.subscribe(
+                    disableLowPerfLangDelay => {
+                        this.disableLowPerfLangDelay = disableLowPerfLangDelay
+                    }
+                )
+            )
+        )
         const strategyFactory = new DefaultContextStrategyFactory(
             completionProviderConfig.contextStrategy,
             createBfgRetriever
@@ -448,13 +459,13 @@ export class InlineCompletionItemProvider
                     FeatureFlag.CodyAutocompleteUserLatency
                 ),
             }
-
-            const artificialDelay = getArtificialDelay(
-                latencyFeatureFlags,
-                document.uri.toString(),
-                document.languageId,
-                completionIntent
-            )
+            const artificialDelay = getArtificialDelay({
+                featureFlags: latencyFeatureFlags,
+                uri: document.uri.toString(),
+                languageId: document.languageId,
+                codyAutocompleteDisableLowPerfLangDelay: this.disableLowPerfLangDelay,
+                completionIntent,
+            })
 
             const debounceInterval = this.config.provider.mayUseOnDeviceInference ? 125 : 75
             stageRecorder.record('preGetInlineCompletions')
