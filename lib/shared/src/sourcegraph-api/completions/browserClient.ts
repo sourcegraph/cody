@@ -115,6 +115,67 @@ export class SourcegraphBrowserCompletionsClient extends SourcegraphCompletionsC
             console.error(error)
         })
     }
+
+    protected async _fetchWithCallbacks(
+        params: CompletionParameters,
+        requestParams: CompletionRequestParameters,
+        cb: CompletionCallbacks,
+        signal?: AbortSignal
+    ): Promise<void> {
+        const { apiVersion } = requestParams
+        const serializedParams = await getSerializedParams(params)
+
+        const url = new URL(this.completionsEndpoint)
+        if (apiVersion >= 1) {
+            url.searchParams.append('api-version', '' + apiVersion)
+        }
+        addClientInfoParams(url.searchParams)
+
+        const headersInstance = new Headers({
+            ...this.config.customHeaders,
+            ...requestParams.customHeaders,
+        } as HeadersInit)
+        addCustomUserAgent(headersInstance)
+        headersInstance.set('Content-Type', 'application/json; charset=utf-8')
+        if (this.config.accessToken) {
+            headersInstance.set('Authorization', `token ${this.config.accessToken}`)
+        }
+
+        const parameters = new URLSearchParams(globalThis.location.search)
+        const trace = parameters.get('trace')
+        if (trace) {
+            headersInstance.set('X-Sourcegraph-Should-Trace', 'true')
+        }
+
+        try {
+            const response = await fetch(url.toString(), {
+                method: 'POST',
+                headers: headersInstance,
+                body: JSON.stringify(serializedParams),
+                signal,
+            })
+
+            if (!response.ok) {
+                const errorMessage = await response.text()
+                throw new Error(
+                    errorMessage.length === 0
+                        ? `Request failed with status code ${response.status}`
+                        : errorMessage
+                )
+            }
+
+            const data = await response.json()
+            if (data?.completion) {
+                cb.onChange(data.completion)
+                cb.onComplete()
+            } else {
+                throw new Error('Unexpected response format')
+            }
+        } catch (error: any) {
+            cb.onError(error.message)
+            console.error(error)
+        }
+    }
 }
 
 if (isRunningInWebWorker) {

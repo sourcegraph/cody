@@ -29,8 +29,6 @@ import {
 } from '@sourcegraph/cody-shared'
 import { CompletionsResponseBuilder } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/CompletionsResponseBuilder'
 
-const isTemperatureZero = process.env.CODY_TEMPERATURE_ZERO === 'true'
-
 export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClient {
     protected _streamWithCallbacks(
         params: CompletionParameters,
@@ -56,7 +54,7 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                 model: params.model,
             })
 
-            if (isTemperatureZero) {
+            if (this.isTemperatureZero) {
                 params = {
                     ...params,
                     temperature: 0,
@@ -203,17 +201,6 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                         bufferText += str
                         bufferBin = buf
 
-                        // HACK: Handles non-stream request.
-                        // TODO: Implement a function to make and process non-stream requests.
-                        if (params.stream === false) {
-                            const json = JSON.parse(bufferText)
-                            if (json?.completion) {
-                                cb.onChange(json.completion)
-                                cb.onComplete()
-                                return
-                            }
-                        }
-
                         const parseResult = parseEvents(builder, bufferText)
                         if (isError(parseResult)) {
                             logError(
@@ -284,6 +271,82 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
             request.end()
 
             onAbort(signal, () => request.destroy())
+        })
+    }
+
+    protected async _fetchWithCallbacks(
+        params: CompletionParameters,
+        requestParams: CompletionRequestParameters,
+        cb: CompletionCallbacks,
+        signal?: AbortSignal
+    ): Promise<void> {
+        const { apiVersion } = requestParams
+
+        const url = new URL(this.completionsEndpoint)
+        if (apiVersion >= 1) {
+            url.searchParams.append('api-version', '' + apiVersion)
+        }
+        addClientInfoParams(url.searchParams)
+
+        return tracer.startActiveSpan(`POST ${url.toString()}`, async span => {
+            span.setAttributes({
+                fast: params.fast,
+                maxTokensToSample: params.maxTokensToSample,
+                temperature: this.isTemperatureZero ? 0 : params.temperature,
+                topK: params.topK,
+                topP: params.topP,
+                model: params.model,
+            })
+
+            const serializedParams = await getSerializedParams(params)
+
+            const log = this.logger?.startCompletion(params, url.toString())
+
+            try {
+                const response = await fetch(url.toString(), {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept-Encoding': 'gzip;q=0',
+                        ...(this.config.accessToken
+                            ? { Authorization: `token ${this.config.accessToken}` }
+                            : null),
+                        ...(customUserAgent ? { 'User-Agent': customUserAgent } : null),
+                        ...this.config.customHeaders,
+                        ...requestParams.customHeaders,
+                        ...getTraceparentHeaders(),
+                    },
+                    body: JSON.stringify(serializedParams),
+                    signal,
+                })
+
+                if (!response.ok) {
+                    const errorMessage = await response.text()
+                    throw new NetworkError(
+                        {
+                            url: url.toString(),
+                            status: response.status,
+                            statusText: response.statusText,
+                        },
+                        errorMessage,
+                        getActiveTraceAndSpanId()?.traceId
+                    )
+                }
+
+                const json = await response.json()
+                if (typeof json?.completion === 'string') {
+                    cb.onChange(json.completion)
+                    cb.onComplete()
+                    return
+                }
+
+                throw new Error('Unexpected response format')
+            } catch (error) {
+                const errorObject = error instanceof Error ? error : new Error(`${error}`)
+                log?.onError(errorObject.message, error)
+                recordErrorToSpan(span, errorObject)
+                cb.onError(errorObject)
+            }
         })
     }
 }

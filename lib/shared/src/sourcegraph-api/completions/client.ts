@@ -1,6 +1,5 @@
 import type { Span } from '@opentelemetry/api'
 import type { ClientConfigurationWithAccessToken } from '../../configuration'
-
 import { useCustomChatClient } from '../../llm-providers'
 import { recordErrorToSpan } from '../../tracing'
 import type {
@@ -45,6 +44,8 @@ export type CompletionsClientConfig = Pick<
 export abstract class SourcegraphCompletionsClient {
     private errorEncountered = false
 
+    protected readonly isTemperatureZero = process.env.CODY_TEMPERATURE_ZERO === 'true'
+
     constructor(
         protected config: CompletionsClientConfig,
         protected logger?: CompletionLogger
@@ -87,6 +88,13 @@ export abstract class SourcegraphCompletionsClient {
             }
         }
     }
+
+    protected abstract _fetchWithCallbacks(
+        params: CompletionParameters,
+        requestParams: CompletionRequestParameters,
+        cb: CompletionCallbacks,
+        signal?: AbortSignal
+    ): Promise<void>
 
     protected abstract _streamWithCallbacks(
         params: CompletionParameters,
@@ -144,7 +152,11 @@ export abstract class SourcegraphCompletionsClient {
         })
 
         if (!isNonSourcegraphProvider) {
-            await this._streamWithCallbacks(params, requestParams, callbacks, signal)
+            if (params.stream === false) {
+                await this._fetchWithCallbacks(params, requestParams, callbacks, signal)
+            } else {
+                await this._streamWithCallbacks(params, requestParams, callbacks, signal)
+            }
         }
 
         for (let i = 0; ; i++) {
