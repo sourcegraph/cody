@@ -1,8 +1,6 @@
 import { PromptString, contextFiltersProvider } from '@sourcegraph/cody-shared'
-import { ps, psDedent } from '@sourcegraph/cody-shared'
 import type { AutocompleteContextSnippet } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
-import { getLanguageConfig } from '../../../../tree-sitter/language'
 import type { ContextRetriever, ContextRetrieverOptions } from '../../../types'
 import { RetrieverIdentifier, type ShouldUseContextParams, shouldBeUsedAsContext } from '../../utils'
 
@@ -47,11 +45,7 @@ export class RecentEditsRetriever implements vscode.Disposable, ContextRetriever
 
         const autocompleteContextSnippets = []
         for (const diff of diffs) {
-            const content = this.getCommentedPromptForCompletions(
-                diff.languageId,
-                diff.uri,
-                diff.diff
-            ).toString()
+            const content = diff.diff.toString()
             const autocompleteSnippet = {
                 uri: diff.uri,
                 identifier: RetrieverIdentifier.RecentEditsRetriever,
@@ -87,18 +81,6 @@ export class RecentEditsRetriever implements vscode.Disposable, ContextRetriever
         const results = await Promise.all(diffPromises)
         diffs.push(...results.filter((result): result is DiffAcrossDocuments => result !== null))
         return diffs
-    }
-
-    public getCommentedPromptForCompletions(
-        languageId: string,
-        filename: vscode.Uri,
-        diff: PromptString
-    ): PromptString {
-        const filePath = PromptString.fromDisplayPath(filename)
-        const languageConfig = getLanguageConfig(languageId)
-        const commentStart = languageConfig ? languageConfig.commentStart : ps`// `
-        const prompt = ps`${commentStart} Here is git diff of the recent change made to the file ${filePath} which is used to provide context for the completion:\n${diff}`
-        return prompt
     }
 
     public filterCandidateDiffs(
