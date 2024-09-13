@@ -1,5 +1,8 @@
+## 0.8.2
+- Adds wait-list for OpenAI-o1 & OpenAI-o1 mini [#5508](https://github.com/sourcegraph/cody/pull/5508)
+
 ## 0.8.1
-- Fix leaking highlighted code matches styles 
+- Fix leaking highlighted code matches styles
 
 ## 0.8.0
 - Add support for Cody one-box search results
