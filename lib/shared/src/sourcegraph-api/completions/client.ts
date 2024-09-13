@@ -9,6 +9,7 @@ import type {
     CompletionParameters,
     CompletionResponse,
     Event,
+    SerializedCompletionParameters,
 } from './types'
 
 export interface CompletionLogger {

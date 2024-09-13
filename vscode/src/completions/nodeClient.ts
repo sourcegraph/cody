@@ -10,6 +10,7 @@ import {
     type CompletionCallbacks,
     type CompletionParameters,
     type CompletionRequestParameters,
+    type CompletionResponse,
     NetworkError,
     RateLimitError,
     SourcegraphCompletionsClient,
@@ -320,7 +321,7 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                         getActiveTraceAndSpanId()?.traceId
                     )
                 }
-                const json = await response.json()
+                const json = (await response.json()) as CompletionResponse
                 if (typeof json?.completion === 'string') {
                     cb.onChange(json.completion)
                     cb.onComplete()

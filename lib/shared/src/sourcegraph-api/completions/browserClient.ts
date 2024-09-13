@@ -8,7 +8,7 @@ import { addClientInfoParams } from '../client-name-version'
 import { CompletionsResponseBuilder } from './CompletionsResponseBuilder'
 import { type CompletionRequestParameters, SourcegraphCompletionsClient } from './client'
 import { parseCompletionJSON } from './parse'
-import type { CompletionCallbacks, CompletionParameters, Event } from './types'
+import type { CompletionCallbacks, CompletionParameters, CompletionResponse, Event } from './types'
 import { getSerializedParams } from './utils'
 
 declare const WorkerGlobalScope: never
@@ -150,16 +150,16 @@ export class SourcegraphBrowserCompletionsClient extends SourcegraphCompletionsC
                         : errorMessage
                 )
             }
-            const data = await response.json()
+            const data = (await response.json()) as CompletionResponse
             if (data?.completion) {
                 cb.onChange(data.completion)
                 cb.onComplete()
             } else {
                 throw new Error('Unexpected response format')
             }
-        } catch (error: any) {
-            cb.onError(error.message)
+        } catch (error) {
             console.error(error)
+            cb.onError(error instanceof Error ? error : new Error(`${error}`))
         }
     }
 }
