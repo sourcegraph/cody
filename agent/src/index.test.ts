@@ -542,8 +542,9 @@ describe('Agent', () => {
             ]
             const id = await client.request('chat/new', null)
             {
-                await client.request('chat/setModel', { id, model: 'openai/gpt-3.5-turbo' })
+                await client.request('chat/setModel', { id, model: 'google/gemini-1.5-flash' })
                 const lastMessage = await client.sendMessage(id, 'what color is the sky?')
+                console.log(lastMessage, 'lastMessage')
                 expect(lastMessage?.text?.toLocaleLowerCase().includes('blue')).toBeTruthy()
             }
         }, 30_000)
