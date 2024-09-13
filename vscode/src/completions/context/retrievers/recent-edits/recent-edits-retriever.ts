@@ -97,7 +97,7 @@ export class RecentEditsRetriever implements vscode.Disposable, ContextRetriever
         const filePath = PromptString.fromDisplayPath(filename)
         const languageConfig = getLanguageConfig(languageId)
         const commentStart = languageConfig ? languageConfig.commentStart : ps`// `
-        const prompt = psDedent`${commentStart} Here is git diff of the recent change made to the file ${filePath} which is used to provide context for the completion:\n${diff}`
+        const prompt = ps`${commentStart} Here is git diff of the recent change made to the file ${filePath} which is used to provide context for the completion:\n${diff}`
         return prompt
     }
 
