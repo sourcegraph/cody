@@ -1835,9 +1835,9 @@ async function addWebviewViewHTML(
     const webviewPath = vscode.Uri.joinPath(extensionUri, 'dist', 'webviews')
     const root = vscode.Uri.joinPath(webviewPath, 'index.html')
     const bytes = await vscode.workspace.fs.readFile(root)
-    let html = new TextDecoder('utf-8').decode(bytes)
+    const html = new TextDecoder('utf-8').decode(bytes)
 
-    html = manipulateWebviewHTML(html, {
+    view.webview.html = manipulateWebviewHTML(html, {
         cspSource: view.webview.cspSource,
         resources: config?.skipResourceRelativization
             ? undefined
@@ -1845,8 +1845,6 @@ async function addWebviewViewHTML(
         injectScript: config?.injectScript ?? undefined,
         injectStyle: config?.injectStyle ?? undefined,
     })
-
-    view.webview.html = html
 }
 
 interface TransformHTMLOptions {
