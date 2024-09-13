@@ -93,7 +93,7 @@ export abstract class SourcegraphCompletionsClient {
     protected async prepareRequest(
         params: CompletionParameters,
         requestParams: CompletionRequestParameters
-    ): Promise<{ url: URL; serializedParams: any }> {
+    ): Promise<{ url: URL; serializedParams: SerializedCompletionParameters }> {
         const { apiVersion } = requestParams
         const serializedParams = await getSerializedParams(params)
         const url = new URL(this.completionsEndpoint)
