@@ -1,4 +1,5 @@
 import type { Span } from '@opentelemetry/api'
+import { addClientInfoParams, getSerializedParams } from '../..'
 import type { ClientConfigurationWithAccessToken } from '../../configuration'
 import { useCustomChatClient } from '../../llm-providers'
 import { recordErrorToSpan } from '../../tracing'
@@ -87,6 +88,20 @@ export abstract class SourcegraphCompletionsClient {
                 }
             }
         }
+    }
+
+    protected async prepareRequest(
+        params: CompletionParameters,
+        requestParams: CompletionRequestParameters
+    ): Promise<{ url: URL; serializedParams: any }> {
+        const { apiVersion } = requestParams
+        const serializedParams = await getSerializedParams(params)
+        const url = new URL(this.completionsEndpoint)
+        if (apiVersion >= 1) {
+            url.searchParams.append('api-version', '' + apiVersion)
+        }
+        addClientInfoParams(url.searchParams)
+        return { url, serializedParams }
     }
 
     protected abstract _fetchWithCallbacks(

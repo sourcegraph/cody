@@ -122,31 +122,19 @@ export class SourcegraphBrowserCompletionsClient extends SourcegraphCompletionsC
         cb: CompletionCallbacks,
         signal?: AbortSignal
     ): Promise<void> {
-        const { apiVersion } = requestParams
-        const serializedParams = await getSerializedParams(params)
-
-        const url = new URL(this.completionsEndpoint)
-        if (apiVersion >= 1) {
-            url.searchParams.append('api-version', '' + apiVersion)
-        }
-        addClientInfoParams(url.searchParams)
-
+        const { url, serializedParams } = await this.prepareRequest(params, requestParams)
         const headersInstance = new Headers({
+            'Content-Type': 'application/json; charset=utf-8',
             ...this.config.customHeaders,
             ...requestParams.customHeaders,
-        } as HeadersInit)
+        })
         addCustomUserAgent(headersInstance)
-        headersInstance.set('Content-Type', 'application/json; charset=utf-8')
         if (this.config.accessToken) {
             headersInstance.set('Authorization', `token ${this.config.accessToken}`)
         }
-
-        const parameters = new URLSearchParams(globalThis.location.search)
-        const trace = parameters.get('trace')
-        if (trace) {
+        if (new URLSearchParams(globalThis.location.search).get('trace')) {
             headersInstance.set('X-Sourcegraph-Should-Trace', 'true')
         }
-
         try {
             const response = await fetch(url.toString(), {
                 method: 'POST',
@@ -154,7 +142,6 @@ export class SourcegraphBrowserCompletionsClient extends SourcegraphCompletionsC
                 body: JSON.stringify(serializedParams),
                 signal,
             })
-
             if (!response.ok) {
                 const errorMessage = await response.text()
                 throw new Error(
@@ -163,7 +150,6 @@ export class SourcegraphBrowserCompletionsClient extends SourcegraphCompletionsC
                         : errorMessage
                 )
             }
-
             const data = await response.json()
             if (data?.completion) {
                 cb.onChange(data.completion)

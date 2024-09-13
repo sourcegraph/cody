@@ -280,14 +280,8 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
         cb: CompletionCallbacks,
         signal?: AbortSignal
     ): Promise<void> {
-        const { apiVersion } = requestParams
-
-        const url = new URL(this.completionsEndpoint)
-        if (apiVersion >= 1) {
-            url.searchParams.append('api-version', '' + apiVersion)
-        }
-        addClientInfoParams(url.searchParams)
-
+        const { url, serializedParams } = await this.prepareRequest(params, requestParams)
+        const log = this.logger?.startCompletion(params, url.toString())
         return tracer.startActiveSpan(`POST ${url.toString()}`, async span => {
             span.setAttributes({
                 fast: params.fast,
@@ -297,11 +291,6 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                 topP: params.topP,
                 model: params.model,
             })
-
-            const serializedParams = await getSerializedParams(params)
-
-            const log = this.logger?.startCompletion(params, url.toString())
-
             try {
                 const response = await fetch(url.toString(), {
                     method: 'POST',
@@ -319,7 +308,6 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                     body: JSON.stringify(serializedParams),
                     signal,
                 })
-
                 if (!response.ok) {
                     const errorMessage = await response.text()
                     throw new NetworkError(
@@ -332,14 +320,12 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                         getActiveTraceAndSpanId()?.traceId
                     )
                 }
-
                 const json = await response.json()
                 if (typeof json?.completion === 'string') {
                     cb.onChange(json.completion)
                     cb.onComplete()
                     return
                 }
-
                 throw new Error('Unexpected response format')
             } catch (error) {
                 const errorObject = error instanceof Error ? error : new Error(`${error}`)
