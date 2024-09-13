@@ -911,7 +911,8 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 // V2 telemetry exports privateMetadata only for DotCom users
                 // the condition below is an additional safeguard measure
                 promptText:
-                    isDotCom(authStatus) && truncatePromptString(inputText, CHAT_INPUT_TOKEN_BUDGET),
+                    isDotCom(authStatus) &&
+                    (await truncatePromptString(inputText, CHAT_INPUT_TOKEN_BUDGET)),
             },
             billingMetadata: {
                 product: 'cody',
@@ -1423,7 +1424,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
     /**
      * Finalizes adding a bot message to the chat model and triggers an update to the view.
      */
-    private addBotMessage(requestID: string, rawResponse: PromptString): void {
+    private async addBotMessage(requestID: string, rawResponse: PromptString): Promise<void> {
         const messageText = reformatBotMessageForChat(rawResponse)
         this.chatModel.addBotMessage({ text: messageText })
         void this.saveSession()
@@ -1448,7 +1449,8 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 // V2 telemetry exports privateMetadata only for DotCom users
                 // the condition below is an aditional safegaurd measure
                 responseText:
-                    isDotCom(authStatus) && truncatePromptString(messageText, CHAT_OUTPUT_TOKEN_BUDGET),
+                    isDotCom(authStatus) &&
+                    (await truncatePromptString(messageText, CHAT_OUTPUT_TOKEN_BUDGET)),
                 chatModel: this.chatModel.modelID,
             },
             billingMetadata: {
@@ -1798,7 +1800,8 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 // V2 telemetry exports privateMetadata only for DotCom users
                 // the condition below is an additional safeguard measure
                 promptText:
-                    isDotCom(authStatus) && truncatePromptString(inputText, CHAT_INPUT_TOKEN_BUDGET),
+                    isDotCom(authStatus) &&
+                    (await truncatePromptString(inputText, CHAT_INPUT_TOKEN_BUDGET)),
                 gitMetadata,
             },
             billingMetadata: {
