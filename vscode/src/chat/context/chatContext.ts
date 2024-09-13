@@ -22,7 +22,7 @@ import {
     skipPendingOperation,
     startWith,
     switchMapReplayOperation,
-    telemetryRecorder,
+    telemetryEvents,
 } from '@sourcegraph/cody-shared'
 import { Observable, map } from 'observable-fns'
 import * as vscode from 'vscode'
@@ -46,35 +46,12 @@ export function getMentionMenuData(options: {
     query: MentionQuery
     chatBuilder: ChatBuilder
 }): Observable<MentionMenuData> {
-    const source = 'chat'
-
-    // Use numerical mapping to send source values to metadata, making this data available on all instances.
-    const atMentionSourceTelemetryMetadataMapping: Record<typeof source, number> = {
-        chat: 1,
-    } as const
-
     const scopedTelemetryRecorder: GetContextItemsTelemetry = {
         empty: () => {
-            telemetryRecorder.recordEvent('cody.at-mention', 'executed', {
-                metadata: {
-                    source: atMentionSourceTelemetryMetadataMapping[source],
-                },
-                privateMetadata: { source },
-                billingMetadata: {
-                    product: 'cody',
-                    category: 'core',
-                },
-            })
+            telemetryEvents['cody.at-mention/selected'].record('chat')
         },
         withProvider: (provider, providerMetadata) => {
-            telemetryRecorder.recordEvent(`cody.at-mention.${provider}`, 'executed', {
-                metadata: { source: atMentionSourceTelemetryMetadataMapping[source] },
-                privateMetadata: { source, providerMetadata },
-                billingMetadata: {
-                    product: 'cody',
-                    category: 'core',
-                },
-            })
+            telemetryEvents['cody.at-mention/selected'].record('chat', provider)
         },
     }
 
