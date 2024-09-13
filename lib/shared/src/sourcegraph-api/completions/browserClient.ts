@@ -8,7 +8,7 @@ import { addClientInfoParams } from '../client-name-version'
 import { CompletionsResponseBuilder } from './CompletionsResponseBuilder'
 import { type CompletionRequestParameters, SourcegraphCompletionsClient } from './client'
 import { parseCompletionJSON } from './parse'
-import type { CompletionCallbacks, CompletionParameters, Event } from './types'
+import type { CompletionCallbacks, CompletionParameters, CompletionResponse, Event } from './types'
 import { getSerializedParams } from './utils'
 
 declare const WorkerGlobalScope: never
@@ -114,6 +114,53 @@ export class SourcegraphBrowserCompletionsClient extends SourcegraphCompletionsC
             abort.abort()
             console.error(error)
         })
+    }
+
+    protected async _fetchWithCallbacks(
+        params: CompletionParameters,
+        requestParams: CompletionRequestParameters,
+        cb: CompletionCallbacks,
+        signal?: AbortSignal
+    ): Promise<void> {
+        const { url, serializedParams } = await this.prepareRequest(params, requestParams)
+        const headersInstance = new Headers({
+            'Content-Type': 'application/json; charset=utf-8',
+            ...this.config.customHeaders,
+            ...requestParams.customHeaders,
+        })
+        addCustomUserAgent(headersInstance)
+        if (this.config.accessToken) {
+            headersInstance.set('Authorization', `token ${this.config.accessToken}`)
+        }
+        if (new URLSearchParams(globalThis.location.search).get('trace')) {
+            headersInstance.set('X-Sourcegraph-Should-Trace', 'true')
+        }
+        try {
+            const response = await fetch(url.toString(), {
+                method: 'POST',
+                headers: headersInstance,
+                body: JSON.stringify(serializedParams),
+                signal,
+            })
+            if (!response.ok) {
+                const errorMessage = await response.text()
+                throw new Error(
+                    errorMessage.length === 0
+                        ? `Request failed with status code ${response.status}`
+                        : errorMessage
+                )
+            }
+            const data = (await response.json()) as CompletionResponse
+            if (data?.completion) {
+                cb.onChange(data.completion)
+                cb.onComplete()
+            } else {
+                throw new Error('Unexpected response format')
+            }
+        } catch (error) {
+            console.error(error)
+            cb.onError(error instanceof Error ? error : new Error(`${error}`))
+        }
     }
 }
 
