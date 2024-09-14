@@ -234,10 +234,10 @@ export const ContextCell: FunctionComponent<{
                     </Accordion>
                 )}
                 {contextItemsToDisplay && excludedContextInfo.length && (
-                    <div className="tw-m-2 tw-text-muted-foreground">
+                    <div className="tw-mt-2 tw-text-muted-foreground">
                         {excludedContextInfo.map(message => (
-                            <div key={message} className="tw-flex tw-gap-2 tw-my-2">
-                                <i className="codicon codicon-warning tw-items-center" />
+                            <div key={message} className="tw-flex tw-gap-2 tw-my-2 tw-items-center">
+                                <i className="codicon codicon-warning" />
                                 <span>{message}</span>
                             </div>
                         ))}
