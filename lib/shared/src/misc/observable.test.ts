@@ -6,6 +6,7 @@ import {
     type ObservableValue,
     allValuesFrom,
     combineLatest,
+    concat,
     createDisposables,
     distinctUntilChanged,
     firstValueFrom,
@@ -527,5 +528,55 @@ describe('storeLastValue', () => {
         expect(value.last).toBe('b')
 
         subscription.unsubscribe()
+    })
+})
+
+describe('concat', () => {
+    afterEach(() => {
+        vi.useRealTimers()
+    })
+
+    test('concatenates observables in order', async () => {
+        const observable = concat(
+            observableOfSequence(1, 2),
+            observableOfSequence(3, 4),
+            observableOfSequence(5, 6)
+        )
+        expect(await allValuesFrom(observable)).toStrictEqual<number[]>([1, 2, 3, 4, 5, 6])
+    })
+
+    test('handles empty observables', async () => {
+        const observable = concat(
+            observableOfSequence(),
+            observableOfSequence(1, 2),
+            observableOfSequence(),
+            observableOfSequence(3, 4)
+        )
+        expect(await allValuesFrom(observable)).toStrictEqual<number[]>([1, 2, 3, 4])
+    })
+
+    test('propagates errors', async () => {
+        const error = new Error('Test error')
+        const observable = concat(
+            observableOfSequence(1, 2),
+            new Observable(observer => observer.error(error)),
+            observableOfSequence(3, 4)
+        )
+        await expect(allValuesFrom(observable)).rejects.toThrow('Test error')
+    })
+
+    test('unsubscribes correctly', async () => {
+        vi.useFakeTimers()
+        const observable = concat(
+            observableOfTimedSequence(10, 'a', 10, 'b'),
+            observableOfTimedSequence(10, 'c', 10, 'd')
+        )
+        const { values, done, unsubscribe } = readValuesFrom(observable)
+
+        await vi.advanceTimersByTimeAsync(15)
+        unsubscribe()
+        await done
+
+        expect(values).toStrictEqual<typeof values>(['a'])
     })
 })

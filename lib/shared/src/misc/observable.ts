@@ -590,13 +590,52 @@ export function distinctUntilChanged<T>(
     }
 }
 
-export function tap<T>(fn: (value: T) => void): (input: ObservableLike<T>) => Observable<T> {
-    return map(value => {
-        fn(value)
-        return value
-    })
-}
+export function tap<T>(
+    observerOrNext: Partial<SubscriptionObserver<T>> | ((value: T) => void)
+): (input: ObservableLike<T>) => Observable<T> {
+    return (input: ObservableLike<T>) =>
+        new Observable<T>(observer => {
+            const tapObserver: Partial<SubscriptionObserver<T>> =
+                typeof observerOrNext === 'function' ? { next: observerOrNext } : observerOrNext
 
+            const subscription = input.subscribe({
+                next(value) {
+                    if (tapObserver.next) {
+                        try {
+                            tapObserver.next(value)
+                        } catch (err) {
+                            observer.error(err)
+                            return
+                        }
+                    }
+                    observer.next(value)
+                },
+                error(err) {
+                    if (tapObserver.error) {
+                        try {
+                            tapObserver.error(err)
+                        } catch (err) {
+                            observer.error(err)
+                            return
+                        }
+                    }
+                    observer.error(err)
+                },
+                complete() {
+                    if (tapObserver.complete) {
+                        try {
+                            tapObserver.complete()
+                        } catch (err) {
+                            observer.error(err)
+                            return
+                        }
+                    }
+                    observer.complete()
+                },
+            })
+            return () => unsubscribe(subscription)
+        })
+}
 export function printDiff<T extends object>(): (input: ObservableLike<T>) => Observable<T> {
     let lastValue: T | typeof NO_VALUES_YET = NO_VALUES_YET
     return map(value => {
@@ -749,4 +788,155 @@ export function storeLastValue<T>(observable: Observable<T>): StoredLastValue<T>
         Object.assign(value, { last: v, isSet: true })
     })
     return { value, subscription }
+}
+
+export function debounceTime<T>(duration: number): (source: ObservableLike<T>) => Observable<T> {
+    return (source: ObservableLike<T>) =>
+        new Observable<T>(observer => {
+            let timeoutId: ReturnType<typeof setTimeout> | null = null
+            let latestValue: T | null = null
+            let hasValue = false
+
+            const subscription = source.subscribe({
+                next: value => {
+                    latestValue = value
+                    hasValue = true
+
+                    if (timeoutId === null) {
+                        timeoutId = setTimeout(() => {
+                            if (hasValue) {
+                                observer.next(latestValue!)
+                                hasValue = false
+                            }
+                            timeoutId = null
+                        }, duration)
+                    }
+                },
+                error: err => observer.error(err),
+                complete: () => {
+                    if (timeoutId !== null) {
+                        clearTimeout(timeoutId)
+                    }
+                    if (hasValue) {
+                        observer.next(latestValue!)
+                    }
+                    observer.complete()
+                },
+            })
+
+            return () => {
+                unsubscribe(subscription)
+                if (timeoutId !== null) {
+                    clearTimeout(timeoutId)
+                }
+            }
+        })
+}
+
+export type ObservableInputTuple<T> = {
+    [K in keyof T]: ObservableLike<T[K]>
+}
+
+export function concat<T extends readonly unknown[]>(
+    ...inputs: [...ObservableInputTuple<T>]
+): Observable<T[number]> {
+    return new Observable<T[number]>(observer => {
+        let currentIndex = 0
+        let currentSubscription: UnsubscribableLike = null
+
+        function subscribeToNext() {
+            if (currentIndex >= inputs.length) {
+                observer.complete()
+                return
+            }
+
+            const input = inputs[currentIndex]
+            currentSubscription = input.subscribe({
+                next: value => observer.next(value),
+                error: err => observer.error(err),
+                complete: () => {
+                    currentIndex++
+                    subscribeToNext()
+                },
+            })
+        }
+
+        subscribeToNext()
+
+        return () => {
+            if (currentSubscription) {
+                unsubscribe(currentSubscription)
+            }
+        }
+    })
+}
+
+export function concatMap<T, R>(
+    project: (value: T, index: number) => ObservableLike<R>
+): (source: ObservableLike<T>) => Observable<R> {
+    return (source: ObservableLike<T>) =>
+        new Observable<R>(observer => {
+            let index = 0
+            let isOuterCompleted = false
+            let innerSubscription: UnsubscribableLike | null = null
+            const outerSubscription = source.subscribe({
+                next(value) {
+                    try {
+                        const innerObservable = project(value, index++)
+                        if (innerSubscription) {
+                            unsubscribe(innerSubscription)
+                        }
+                        innerSubscription = innerObservable.subscribe({
+                            next(innerValue) {
+                                observer.next(innerValue)
+                            },
+                            error(err) {
+                                observer.error(err)
+                            },
+                            complete() {
+                                innerSubscription = null
+                                if (isOuterCompleted && !innerSubscription) {
+                                    observer.complete()
+                                }
+                            },
+                        })
+                    } catch (err) {
+                        observer.error(err)
+                    }
+                },
+                error(err) {
+                    observer.error(err)
+                },
+                complete() {
+                    isOuterCompleted = true
+                    if (!innerSubscription) {
+                        observer.complete()
+                    }
+                },
+            })
+
+            return () => {
+                unsubscribe(outerSubscription)
+                if (innerSubscription) {
+                    unsubscribe(innerSubscription)
+                }
+            }
+        })
+}
+
+export function lifecycle<T>({
+    onSubscribe,
+    onUnsubscribe,
+}: { onSubscribe?: () => void; onUnsubscribe?: () => void }): (
+    source: ObservableLike<T>
+) => Observable<T> {
+    return (source: ObservableLike<T>) =>
+        new Observable<T>(observer => {
+            onSubscribe?.()
+            const subscription = source.subscribe(observer)
+            return () => {
+                unsubscribe(subscription)
+                onUnsubscribe?.()
+            }
+        })
 }

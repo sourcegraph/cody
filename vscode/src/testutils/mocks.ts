@@ -12,8 +12,6 @@ import type {
 import {
     type ClientConfiguration,
     type ClientConfigurationWithAccessToken,
-    type FeatureFlag,
-    FeatureFlagProvider,
     OLLAMA_DEFAULT_URL,
     ps,
 } from '@sourcegraph/cody-shared'
@@ -872,22 +870,6 @@ export const vsCodeMocks = {
     TextDocumentChangeReason,
     ProgressLocation,
 } as const
-
-export class MockFeatureFlagProvider extends FeatureFlagProvider {
-    constructor(private readonly enabledFlags: Set<FeatureFlag>) {
-        super()
-    }
-
-    public evaluateFeatureFlag(flag: FeatureFlag): Promise<boolean> {
-        return Promise.resolve(this.enabledFlags.has(flag))
-    }
-
-    public refresh(): Promise<void> {
-        return Promise.resolve()
-    }
-}
-
-export const emptyMockFeatureFlagProvider = new MockFeatureFlagProvider(new Set<FeatureFlag>())
 
 export const DEFAULT_VSCODE_SETTINGS = {
     proxy: undefined,

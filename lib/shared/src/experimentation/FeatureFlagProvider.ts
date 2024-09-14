@@ -1,8 +1,18 @@
-import { Observable } from 'observable-fns'
-import type { Event } from 'vscode'
-import { currentResolvedConfig, resolvedConfig } from '../configuration/resolver'
-import { logDebug } from '../logger'
-import { type Unsubscribable, distinctUntilChanged, fromVSCodeEvent, pluck } from '../misc/observable'
+import { Observable, Subject, interval, map } from 'observable-fns'
+import { authStatus } from '../auth/authStatus'
+import type { AuthStatus, AuthenticatedAuthStatus } from '../auth/types'
+import { logError } from '../logger'
+import {
+    combineLatest,
+    concat,
+    debounceTime,
+    distinctUntilChanged,
+    firstValueFrom,
+    mergeMap,
+    promiseFactoryToObservable,
+    shareReplay,
+    startWith,
+} from '../misc/observable'
 import { graphqlClient } from '../sourcegraph-api/graphql'
 import { wrapInActiveSpan } from '../tracing'
 import { isError } from '../utils'
@@ -82,260 +92,129 @@ export enum FeatureFlag {
 
 const ONE_HOUR = 60 * 60 * 1000
 
-export class FeatureFlagProvider {
-    // The exposed feature flags are one where the backend returns a non-null value and thus we know
-    // the user is in either the test or control group.
-    //
-    // The first key maps to the endpoint so that we do never cache the wrong flag for different
-    // endpoints
-    private exposedFeatureFlags: Record<string, Record<string, boolean>> = {}
-    private lastRefreshTimestamp = 0
-    // Unexposed feature flags are cached differently since they don't usually mean that the backend
-    // won't have access to this feature flag. Those will not automatically update when feature
-    // flags are updated in the background.
-    private unexposedFeatureFlags: Record<string, Set<string>> = {}
+export interface FeatureFlagProvider {
+    evaluateFeatureFlag(flag: FeatureFlag): Promise<boolean>
+    evaluatedFeatureFlag(flag: FeatureFlag): Observable<boolean>
+    getExposedExperiments(serverEndpoint: string): Record<string, boolean>
+    refresh(): void
+}
 
-    private subscriptionsForEndpoint: Map<
-        string, // ${endpoint}#${prefix filter}
-        { lastSnapshot: Record<string, boolean>; callbacks: Set<() => void> }
-    > = new Map()
-    // When we have at least one subscription, ensure that we also periodically refresh the flags
-    private nextRefreshTimeout: NodeJS.Timeout | number | undefined = undefined
-
-    private cachedServerEndpoint: string | null = null
-
-    private configSubscription: Unsubscribable
-
-    constructor() {
-        // Refresh when auth (endpoint or token) changes.
-        this.configSubscription = resolvedConfig
-            .pipe(pluck('auth'), distinctUntilChanged())
-            .subscribe(auth => {
-                this.cachedServerEndpoint = auth.serverEndpoint
-                this.refresh()
-            })
-    }
-
+export class FeatureFlagProviderImpl implements FeatureFlagProvider {
     /**
-     * Get a flag's value from the cache. The returned value could be stale. You must have
-     * previously called {@link FeatureFlagProvider.evaluateFeatureFlag} or
-     * {@link FeatureFlagProvider.evaluatedFeatureFlag} to ensure that this feature flag's value is
-     * present in the cache. For that reason, this method is private because it is easy for external
-     * callers to mess that up when calling it.
+     * The cached exposed feature flags are ones where the backend returns a non-null value and thus
+     * we know the user is in either the test or control group.
+     *
+     * The first key maps to the endpoint so that we never cache the wrong flag for different
+     * endpoints.
      */
-    private getFromCache(flagName: FeatureFlag): boolean | undefined {
-        void this.refreshIfStale()
+    private cache: Record<string, Record<string, boolean>> = {}
 
-        if (!this.cachedServerEndpoint) {
-            return undefined
-        }
+    private refreshRequests = new Subject<void>()
+    private refreshes: Observable<void> = combineLatest([
+        this.refreshRequests.pipe(startWith(undefined)),
+        interval(ONE_HOUR).pipe(startWith(undefined)),
+    ]).pipe(map(() => undefined))
 
-        const exposedValue = this.exposedFeatureFlags[this.cachedServerEndpoint]?.[flagName]
-        if (exposedValue !== undefined) {
-            return exposedValue
-        }
+    private relevantAuthStatusChanges: Observable<
+        Pick<AuthStatus, 'authenticated' | 'endpoint'> &
+            Partial<Pick<AuthenticatedAuthStatus, 'username'>>
+    > = authStatus.pipe(
+        map(authStatus => ({
+            authenticated: authStatus.authenticated,
+            endpoint: authStatus.endpoint,
+            username: authStatus.authenticated ? authStatus.username : undefined,
+        })),
+        distinctUntilChanged()
+    )
 
-        if (this.unexposedFeatureFlags[this.cachedServerEndpoint]?.has(flagName)) {
-            return false
-        }
+    private evaluatedFeatureFlags: Observable<Record<string, boolean>> = combineLatest([
+        this.relevantAuthStatusChanges,
+        this.refreshes,
+    ]).pipe(
+        debounceTime(0),
+        mergeMap(([authStatus]) =>
+            promiseFactoryToObservable(signal =>
+                process.env.DISABLE_FEATURE_FLAGS
+                    ? Promise.resolve({})
+                    : graphqlClient.getEvaluatedFeatureFlags(signal)
+            ).pipe(
+                map(resultOrError => {
+                    if (isError(resultOrError)) {
+                        logError(
+                            'FeatureFlagProvider',
+                            'Failed to get all evaluated feature flags',
+                            resultOrError
+                        )
+                    }
 
-        return undefined
-    }
+                    // Cache so that FeatureFlagProvider.getExposedExperiments can return these synchronously.
+                    const result = isError(resultOrError) ? {} : resultOrError
+                    this.cache[authStatus.endpoint] = result
+                    return result
+                })
+            )
+        ),
+        distinctUntilChanged(),
+        shareReplay()
+    )
 
-    public getExposedExperiments(): Record<string, boolean> {
-        if (!this.cachedServerEndpoint) {
-            return {}
-        }
-        return this.exposedFeatureFlags[this.cachedServerEndpoint] || {}
+    public getExposedExperiments(serverEndpoint: string): Record<string, boolean> {
+        return this.cache[serverEndpoint] || {}
     }
 
     public async evaluateFeatureFlag(flagName: FeatureFlag): Promise<boolean> {
-        return wrapInActiveSpan(`FeatureFlagProvider.evaluateFeatureFlag.${flagName}`, async () => {
-            if (process.env.DISABLE_FEATURE_FLAGS) {
-                return false
-            }
-
-            const {
-                auth: { serverEndpoint: endpoint },
-            } = await currentResolvedConfig()
-
-            const cachedValue = this.getFromCache(flagName)
-            if (cachedValue !== undefined) {
-                return cachedValue
-            }
-
-            const value = await graphqlClient.evaluateFeatureFlag(flagName)
-
-            if (value === null || typeof value === 'undefined' || isError(value)) {
-                // The backend does not know about this feature flag, so we can't know if the user
-                // is in the test or control group.
-                if (!this.unexposedFeatureFlags[endpoint]) {
-                    this.unexposedFeatureFlags[endpoint] = new Set()
-                }
-                this.unexposedFeatureFlags[endpoint].add(flagName)
-                return false
-            }
-
-            if (!this.exposedFeatureFlags[endpoint]) {
-                this.exposedFeatureFlags[endpoint] = {}
-            }
-            this.exposedFeatureFlags[endpoint][flagName] = value
-            return value
-        })
+        return wrapInActiveSpan(`FeatureFlagProvider.evaluateFeatureFlag.${flagName}`, () =>
+            firstValueFrom(this.evaluatedFeatureFlag(flagName))
+        )
     }
 
     /**
      * Observe the evaluated value of a feature flag.
      */
-    public evaluatedFeatureFlag(flagName: FeatureFlag): Observable<boolean | undefined> {
-        if (process.env.DISABLE_FEATURE_FLAGS) {
-            return Observable.of(undefined)
-        }
+    public evaluatedFeatureFlag(flagName: FeatureFlag): Observable<boolean> {
+        // Whenever the auth status changes, we need to call `evaluateFeatureFlag` on the GraphQL
+        // endpoint, because our endpoint or authentication may have changed, and
+        // `getEvaluatedFeatureFlags` only returns the set of recently evaluated feature flags.
+        return combineLatest([this.relevantAuthStatusChanges, this.refreshes])
+            .pipe(
+                mergeMap(([authStatus]) =>
+                    concat(
+                        promiseFactoryToObservable(async signal => {
+                            if (process.env.DISABLE_FEATURE_FLAGS) {
+                                return false
+                            }
 
-        const onChangeEvent: Event<boolean | undefined> = (
-            listener: (value: boolean | undefined) => void
-        ) => {
-            const dispose = this.onFeatureFlagChanged(() => listener(this.getFromCache(flagName)))
-            return { dispose }
-        }
-        return fromVSCodeEvent(onChangeEvent, () => this.evaluateFeatureFlag(flagName)).pipe(
-            distinctUntilChanged()
-        )
-    }
+                            const cachedValue = this.cache[authStatus.endpoint]?.[flagName.toString()]
+                            if (cachedValue !== undefined) {
+                                // We'll immediately return the cached value and then start observing
+                                // for updates.
+                                return cachedValue
+                            }
 
-    public async refresh(): Promise<void> {
-        this.exposedFeatureFlags = {}
-        this.unexposedFeatureFlags = {}
-        await this.refreshFeatureFlags()
-    }
-
-    private async refreshIfStale(): Promise<void> {
-        const now = Date.now()
-        if (now - this.lastRefreshTimestamp > ONE_HOUR) {
-            // Cache expired, refresh
-            await this.refreshFeatureFlags()
-        }
-    }
-
-    private async refreshFeatureFlags(): Promise<void> {
-        return wrapInActiveSpan('FeatureFlagProvider.refreshFeatureFlags', async () => {
-            const {
-                auth: { serverEndpoint: endpoint },
-            } = await currentResolvedConfig()
-            const data = process.env.DISABLE_FEATURE_FLAGS
-                ? {}
-                : await graphqlClient.getEvaluatedFeatureFlags()
-
-            this.exposedFeatureFlags[endpoint] = isError(data) ? {} : data
-
-            this.lastRefreshTimestamp = Date.now()
-            this.notifyFeatureFlagChanged()
-
-            if (this.nextRefreshTimeout) {
-                clearTimeout(this.nextRefreshTimeout)
-                this.nextRefreshTimeout = undefined
-            }
-            if (this.subscriptionsForEndpoint.size > 0) {
-                this.nextRefreshTimeout = setTimeout(() => this.refreshFeatureFlags(), ONE_HOUR)
-            }
-        })
-    }
-
-    /**
-     * Allows you to subscribe to a change event that is triggered when feature flags change that
-     * the user is currently exposed to.
-     *
-     * Note this will only update feature flags that a user is currently exposed to. For feature
-     * flags not defined upstream, the changes will require a new call to
-     * {@link FeatureFlagProvider.evaluateFeatureFlag} or
-     * {@link FeatureFlagProvider.evaluatedFeatureFlag} to be picked up.
-     */
-    private onFeatureFlagChanged(callback: () => void): () => void {
-        const endpoint = this.cachedServerEndpoint
-        if (!endpoint) {
-            throw new Error(
-                'FeatureFlagProvider.onFeatureFlagChanged called before server endpoint is set'
+                            const result = await graphqlClient.evaluateFeatureFlag(flagName, signal)
+                            return isError(result) ? false : result ?? false
+                        }),
+                        this.evaluatedFeatureFlags.pipe(
+                            map(featureFlags => Boolean(featureFlags[flagName.toString()]))
+                        )
+                    )
+                )
             )
-        }
-
-        const subscription = this.subscriptionsForEndpoint.get(endpoint)
-        if (subscription) {
-            subscription.callbacks.add(callback)
-            return () => subscription.callbacks.delete(callback)
-        }
-        this.subscriptionsForEndpoint.set(endpoint, {
-            lastSnapshot: this.computeFeatureFlagSnapshot(endpoint),
-            callbacks: new Set([callback]),
-        })
-
-        if (!this.nextRefreshTimeout) {
-            this.nextRefreshTimeout = setTimeout(() => {
-                this.nextRefreshTimeout = undefined
-                void this.refreshFeatureFlags()
-            }, ONE_HOUR)
-        }
-
-        return () => {
-            const subscription = this.subscriptionsForEndpoint.get(endpoint)
-            if (subscription) {
-                subscription.callbacks.delete(callback)
-                if (subscription.callbacks.size === 0) {
-                    this.subscriptionsForEndpoint.delete(endpoint)
-                }
-
-                if (this.subscriptionsForEndpoint.size === 0 && this.nextRefreshTimeout) {
-                    clearTimeout(this.nextRefreshTimeout)
-                    this.nextRefreshTimeout = undefined
-                }
-            }
-        }
+            .pipe(distinctUntilChanged())
     }
 
-    private notifyFeatureFlagChanged(): void {
-        const callbacksToTrigger: (() => void)[] = []
-        for (const [endpoint, subs] of this.subscriptionsForEndpoint) {
-            const currentSnapshot = this.computeFeatureFlagSnapshot(endpoint)
-            // We only care about flags being changed that we previously already captured. A new
-            // evaluation should not trigger a change event unless that new value is later changed.
-            if (
-                subs.lastSnapshot === NO_FLAGS ||
-                computeIfExistingFlagChanged(subs.lastSnapshot, currentSnapshot)
-            ) {
-                for (const callback of subs.callbacks) {
-                    callbacksToTrigger.push(callback)
-                }
-            }
-            subs.lastSnapshot = currentSnapshot
-        }
-        // Disable on CI to unclutter the output.
-        if (!process.env.VITEST) {
-            logDebug('featureflag', 'refreshed')
-        }
-        for (const callback of callbacksToTrigger) {
-            callback()
-        }
-    }
-
-    private computeFeatureFlagSnapshot(endpoint: string): Record<string, boolean> {
-        return this.exposedFeatureFlags[endpoint] ?? NO_FLAGS
-    }
-
-    public dispose(): void {
-        if (this.nextRefreshTimeout) {
-            clearTimeout(this.nextRefreshTimeout)
-            this.nextRefreshTimeout = undefined
-        }
-        this.configSubscription.unsubscribe()
+    public refresh(): void {
+        this.refreshRequests.next()
     }
 }
 
-const NO_FLAGS: Record<string, never> = {}
-
-export const featureFlagProvider = new FeatureFlagProvider()
-
-function computeIfExistingFlagChanged(
-    oldFlags: Record<string, boolean>,
-    newFlags: Record<string, boolean>
-): boolean {
-    return Object.keys(oldFlags).some(key => oldFlags[key] !== newFlags[key])
+const noopFeatureFlagProvider: FeatureFlagProvider = {
+    evaluateFeatureFlag: async () => false,
+    evaluatedFeatureFlag: () => Observable.of(false),
+    getExposedExperiments: () => ({}),
+    refresh: () => {},
 }
+
+export const featureFlagProvider = process.env.DISABLE_FEATURE_FLAGS
+    ? noopFeatureFlagProvider
+    : new FeatureFlagProviderImpl()

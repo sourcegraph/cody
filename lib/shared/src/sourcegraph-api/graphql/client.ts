@@ -1394,10 +1394,13 @@ export class SourcegraphGraphQLAPIClient {
         ).then(response => extractDataOrError(response, data => data.snippetAttribution))
     }
 
-    public async getEvaluatedFeatureFlags(): Promise<Record<string, boolean> | Error> {
+    public async getEvaluatedFeatureFlags(
+        signal?: AbortSignal
+    ): Promise<Record<string, boolean> | Error> {
         return this.fetchSourcegraphAPI<APIResponse<EvaluatedFeatureFlagsResponse>>(
             GET_FEATURE_FLAGS_QUERY,
-            {}
+            {},
+            signal
         ).then(response => {
             return extractDataOrError(response, data =>
                 data.evaluatedFeatureFlags.reduce((acc: Record<string, boolean>, { name, value }) => {
@@ -1408,12 +1411,16 @@ export class SourcegraphGraphQLAPIClient {
         })
     }
 
-    public async evaluateFeatureFlag(flagName: string): Promise<boolean | null | Error> {
+    public async evaluateFeatureFlag(
+        flagName: string,
+        signal?: AbortSignal
+    ): Promise<boolean | null | Error> {
         return this.fetchSourcegraphAPI<APIResponse<EvaluateFeatureFlagResponse>>(
             EVALUATE_FEATURE_FLAG_QUERY,
             {
                 flagName,
-            }
+            },
+            signal
         ).then(response => extractDataOrError(response, data => data.evaluateFeatureFlag))
     }
 
