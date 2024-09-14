@@ -1,5 +1,6 @@
 import * as vscode from 'vscode'
 
+import { appendFileSync } from 'node:fs'
 import type {
     CompletionLogger,
     CompletionParameters,
@@ -42,6 +43,14 @@ export function logError(filterLabel: string, text: string, ...args: unknown[]):
     log('error', filterLabel, text, ...args)
 }
 
+function printLog(text: string): void {
+    outputChannel?.appendLine(text)
+    const path = process.env.CODY_LOG_FILE
+    if (path) {
+        appendFileSync(path, text + '\n')
+    }
+}
+
 /**
  *
  * There are three config settings that alter the behavior of this function.
@@ -57,10 +66,6 @@ function log(level: 'debug' | 'error', filterLabel: string, text: string, ...arg
     const workspaceConfig = vscode.workspace.getConfiguration()
     const config = getConfiguration(workspaceConfig)
 
-    if (!outputChannel) {
-        return
-    }
-
     if (level === 'debug' && config.debugFilter && !config.debugFilter.test(filterLabel)) {
         return
     }
@@ -68,14 +73,14 @@ function log(level: 'debug' | 'error', filterLabel: string, text: string, ...arg
     const PREFIX = '█ '
 
     if (args.length === 0) {
-        outputChannel.appendLine(`${PREFIX}${filterLabel}: ${text}`)
+        printLog(`${PREFIX}${filterLabel}: ${text}`)
         return
     }
 
     const lastArg = args.at(-1)
     if (lastArg && typeof lastArg === 'object' && 'verbose' in lastArg) {
         if (config.debugVerbose) {
-            outputChannel.appendLine(
+            printLog(
                 `${PREFIX}${filterLabel}: ${text} ${args.slice(0, -1).join(' ')} ${JSON.stringify(
                     lastArg.verbose,
                     null,
@@ -83,12 +88,12 @@ function log(level: 'debug' | 'error', filterLabel: string, text: string, ...arg
                 )}`
             )
         } else {
-            outputChannel.appendLine(`${PREFIX}${filterLabel}: ${text} ${args.slice(0, -1).join(' ')}`)
+            printLog(`${PREFIX}${filterLabel}: ${text} ${args.slice(0, -1).join(' ')}`)
         }
         return
     }
 
-    outputChannel.appendLine(`${PREFIX}${filterLabel}: ${text} ${args.join(' ')}`)
+    printLog(`${PREFIX}${filterLabel}: ${text} ${args.join(' ')}`)
 }
 
 export const logger: CompletionLogger = {
