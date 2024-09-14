@@ -95,148 +95,146 @@ export const ContextCell: FunctionComponent<{
 
         return (
             <div>
-                {contextItemsToDisplay === undefined ||
-                    (contextItemsToDisplay.length !== 0 && (
-                        <Accordion
-                            type="single"
-                            collapsible
-                            defaultValue={
-                                ((__storybook__initialOpen || defaultOpen) && 'item-1') || undefined
-                            }
-                            asChild={true}
-                        >
-                            <AccordionItem value="item-1" asChild>
-                                <Cell
-                                    header={
-                                        <AccordionTrigger
-                                            onClick={logContextOpening}
-                                            onKeyUp={logContextOpening}
-                                            title={itemCountLabel}
-                                            className="tw-flex tw-items-center tw-gap-4"
-                                        >
-                                            <SourcegraphLogo
-                                                width={NON_HUMAN_CELL_AVATAR_SIZE}
-                                                height={NON_HUMAN_CELL_AVATAR_SIZE}
-                                            />
-                                            <span className="tw-flex tw-items-baseline">
-                                                Context
-                                                <span className="tw-opacity-60 tw-text-sm tw-ml-2">
-                                                    &mdash; {itemCountLabel}
-                                                </span>
+                {(contextItemsToDisplay === undefined || contextItemsToDisplay.length !== 0) && (
+                    <Accordion
+                        type="single"
+                        collapsible
+                        defaultValue={
+                            ((__storybook__initialOpen || defaultOpen) && 'item-1') || undefined
+                        }
+                        asChild={true}
+                    >
+                        <AccordionItem value="item-1" asChild>
+                            <Cell
+                                header={
+                                    <AccordionTrigger
+                                        onClick={logContextOpening}
+                                        onKeyUp={logContextOpening}
+                                        title={itemCountLabel}
+                                        className="tw-flex tw-items-center tw-gap-4"
+                                    >
+                                        <SourcegraphLogo
+                                            width={NON_HUMAN_CELL_AVATAR_SIZE}
+                                            height={NON_HUMAN_CELL_AVATAR_SIZE}
+                                        />
+                                        <span className="tw-flex tw-items-baseline">
+                                            Context
+                                            <span className="tw-opacity-60 tw-text-sm tw-ml-2">
+                                                &mdash; {itemCountLabel}
                                             </span>
-                                        </AccordionTrigger>
-                                    }
-                                    containerClassName={className}
-                                    contentClassName="tw-flex tw-flex-col tw-gap-4 tw-max-w-full"
-                                    data-testid="context"
-                                >
-                                    {contextItems === undefined ? (
-                                        <LoadingDots />
-                                    ) : (
-                                        <>
-                                            <AccordionContent>
-                                                {internalDebugContext && contextAlternatives && (
-                                                    <div>
-                                                        <button
-                                                            onClick={prevSelectedAlternative}
-                                                            type="button"
-                                                        >
-                                                            &larr;
-                                                        </button>
-                                                        <button
-                                                            onClick={nextSelectedAlternative}
-                                                            type="button"
-                                                        >
-                                                            &rarr;
-                                                        </button>{' '}
-                                                        Ranking mechanism:{' '}
-                                                        {selectedAlternative === undefined
-                                                            ? 'actual'
-                                                            : `${
-                                                                  contextAlternatives[
-                                                                      selectedAlternative
-                                                                  ].strategy
-                                                              }: (${
-                                                                  (selectedAlternative ?? -1) + 1
-                                                              } of ${contextAlternatives.length})`}
-                                                    </div>
-                                                )}
-                                                <ul className="tw-list-none tw-flex tw-flex-col tw-gap-2 tw-pt-2">
-                                                    {contextItemsToDisplay?.map((item, i) => (
-                                                        <li
-                                                            // biome-ignore lint/suspicious/noArrayIndexKey: stable order
-                                                            key={i}
-                                                            data-testid="context-item"
-                                                        >
-                                                            <FileContextItem
-                                                                item={item}
-                                                                showSnippets={showSnippets}
-                                                            />
-                                                            {internalDebugContext &&
-                                                                item.metadata &&
-                                                                item.metadata.length > 0 && (
-                                                                    <span
-                                                                        className={
-                                                                            styles.contextItemMetadata
-                                                                        }
-                                                                    >
-                                                                        {item.metadata.join(', ')}
-                                                                    </span>
-                                                                )}
-                                                        </li>
-                                                    ))}
-                                                    {!isForFirstMessage && (
-                                                        <span
-                                                            className={clsx(
-                                                                styles.contextItem,
-                                                                'tw-flex tw-items-center tw-gap-2'
-                                                            )}
-                                                        >
-                                                            <MessagesSquareIcon
-                                                                size={14}
-                                                                className="tw-ml-1"
-                                                            />
-                                                            <span>
-                                                                Prior messages and context in this
-                                                                conversation
-                                                            </span>
-                                                        </span>
-                                                    )}
-                                                    <li>
-                                                        <Tooltip>
-                                                            <TooltipTrigger asChild>
+                                        </span>
+                                    </AccordionTrigger>
+                                }
+                                containerClassName={className}
+                                contentClassName="tw-flex tw-flex-col tw-gap-4 tw-max-w-full"
+                                data-testid="context"
+                            >
+                                {contextItems === undefined ? (
+                                    <LoadingDots />
+                                ) : (
+                                    <>
+                                        <AccordionContent>
+                                            {internalDebugContext && contextAlternatives && (
+                                                <div>
+                                                    <button
+                                                        onClick={prevSelectedAlternative}
+                                                        type="button"
+                                                    >
+                                                        &larr;
+                                                    </button>
+                                                    <button
+                                                        onClick={nextSelectedAlternative}
+                                                        type="button"
+                                                    >
+                                                        &rarr;
+                                                    </button>{' '}
+                                                    Ranking mechanism:{' '}
+                                                    {selectedAlternative === undefined
+                                                        ? 'actual'
+                                                        : `${
+                                                              contextAlternatives[selectedAlternative]
+                                                                  .strategy
+                                                          }: (${(selectedAlternative ?? -1) + 1} of ${
+                                                              contextAlternatives.length
+                                                          })`}
+                                                </div>
+                                            )}
+                                            <ul className="tw-list-none tw-flex tw-flex-col tw-gap-2 tw-pt-2">
+                                                {contextItemsToDisplay?.map((item, i) => (
+                                                    <li
+                                                        // biome-ignore lint/suspicious/noArrayIndexKey: stable order
+                                                        key={i}
+                                                        data-testid="context-item"
+                                                    >
+                                                        <FileContextItem
+                                                            item={item}
+                                                            showSnippets={showSnippets}
+                                                        />
+                                                        {internalDebugContext &&
+                                                            item.metadata &&
+                                                            item.metadata.length > 0 && (
                                                                 <span
-                                                                    className={clsx(
-                                                                        styles.contextItem,
-                                                                        'tw-flex tw-items-center tw-gap-2'
-                                                                    )}
+                                                                    className={
+                                                                        styles.contextItemMetadata
+                                                                    }
                                                                 >
-                                                                    <BrainIcon
-                                                                        size={14}
-                                                                        className="tw-ml-1"
-                                                                    />
-                                                                    <span>Public knowledge</span>
+                                                                    {item.metadata.join(', ')}
                                                                 </span>
-                                                            </TooltipTrigger>
-                                                            <TooltipContent side="bottom">
-                                                                <span>
-                                                                    Information and general reasoning
-                                                                    capabilities trained into the model{' '}
-                                                                    {model && <code>{model}</code>}
-                                                                </span>
-                                                            </TooltipContent>
-                                                        </Tooltip>
+                                                            )}
                                                     </li>
-                                                </ul>
-                                            </AccordionContent>
-                                        </>
-                                    )}
-                                </Cell>
-                            </AccordionItem>
-                        </Accordion>
-                    ))}
-                {excludedContextInfo && (
-                    <div className="tw-m-2 tw-text-sm tw-text-muted-foreground">
+                                                ))}
+                                                {!isForFirstMessage && (
+                                                    <span
+                                                        className={clsx(
+                                                            styles.contextItem,
+                                                            'tw-flex tw-items-center tw-gap-2'
+                                                        )}
+                                                    >
+                                                        <MessagesSquareIcon
+                                                            size={14}
+                                                            className="tw-ml-1"
+                                                        />
+                                                        <span>
+                                                            Prior messages and context in this
+                                                            conversation
+                                                        </span>
+                                                    </span>
+                                                )}
+                                                <li>
+                                                    <Tooltip>
+                                                        <TooltipTrigger asChild>
+                                                            <span
+                                                                className={clsx(
+                                                                    styles.contextItem,
+                                                                    'tw-flex tw-items-center tw-gap-2'
+                                                                )}
+                                                            >
+                                                                <BrainIcon
+                                                                    size={14}
+                                                                    className="tw-ml-1"
+                                                                />
+                                                                <span>Public knowledge</span>
+                                                            </span>
+                                                        </TooltipTrigger>
+                                                        <TooltipContent side="bottom">
+                                                            <span>
+                                                                Information and general reasoning
+                                                                capabilities trained into the model{' '}
+                                                                {model && <code>{model}</code>}
+                                                            </span>
+                                                        </TooltipContent>
+                                                    </Tooltip>
+                                                </li>
+                                            </ul>
+                                        </AccordionContent>
+                                    </>
+                                )}
+                            </Cell>
+                        </AccordionItem>
+                    </Accordion>
+                )}
+                {contextItemsToDisplay && excludedContextInfo.length && (
+                    <div className="tw-m-2 tw-text-muted-foreground">
                         {excludedContextInfo.map(message => (
                             <div key={message} className="tw-flex tw-gap-2 tw-my-2">
                                 <i className="codicon codicon-warning tw-items-center" />
@@ -251,7 +249,7 @@ export const ContextCell: FunctionComponent<{
     isEqual
 )
 
-const getContextInfo = (items?: ContextItem[], isNew?: boolean) => {
+const getContextInfo = (items?: ContextItem[], isFirst?: boolean) => {
     const { usedContext, excludedContext, count } = (items ?? []).reduce(
         (acc, item) => {
             if (item.isTooLarge || item.isIgnored) {
@@ -270,7 +268,7 @@ const getContextInfo = (items?: ContextItem[], isNew?: boolean) => {
         }
     )
 
-    const itemCountLabel = `${count.used} ${isNew ? 'new ' : ''}${pluralize('item', count.used)}`
+    const itemCountLabel = `${count.used} ${isFirst ? '' : 'new '}${pluralize('item', count.used)}`
 
     return {
         usedContext,
