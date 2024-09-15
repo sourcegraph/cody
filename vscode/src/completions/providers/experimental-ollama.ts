@@ -198,17 +198,14 @@ class ExperimentalOllamaProvider extends Provider {
     }
 }
 
-export function createProvider(params: ProviderFactoryParams): Provider {
-    const { config, anonymousUserID, source } = params
-
+export function createProvider({ config, source }: ProviderFactoryParams): Provider {
     return new ExperimentalOllamaProvider(
         {
             id: 'experimental-ollama',
-            legacyModel: config.autocompleteExperimentalOllamaOptions.model,
-            anonymousUserID,
+            legacyModel: config.configuration.autocompleteExperimentalOllamaOptions.model,
             mayUseOnDeviceInference: true,
             source,
         },
-        config.autocompleteExperimentalOllamaOptions
+        config.configuration.autocompleteExperimentalOllamaOptions
     )
 }

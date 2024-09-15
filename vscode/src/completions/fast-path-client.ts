@@ -10,6 +10,7 @@ import {
     addTraceparent,
     contextFiltersProvider,
     createSSEIterator,
+    currentResolvedConfig,
     getActiveTraceAndSpanId,
     isAbortError,
     isNodeResponse,
@@ -33,7 +34,6 @@ interface FastPathParams extends Pick<GenerateCompletionsOptions, 'authStatus'> 
     providerOptions: GenerateCompletionsOptions
     fastPathAccessToken: string | undefined
     customHeaders: Record<string, string>
-    anonymousUserID: string | undefined
 }
 
 // When using the fast path, the Cody client talks directly to Cody Gateway. Since CG only
@@ -46,19 +46,16 @@ interface FastPathParams extends Pick<GenerateCompletionsOptions, 'authStatus'> 
 export function createFastPathClient(
     requestParams: CodeCompletionsParams,
     abortController: AbortController,
-    params: FastPathParams
-): CompletionResponseGenerator {
-    const {
+    {
         isLocalInstance,
         fireworksConfig,
         logger,
         providerOptions,
-        anonymousUserID,
         authStatus,
         fastPathAccessToken,
         customHeaders,
-    } = params
-
+    }: FastPathParams
+): CompletionResponseGenerator {
     const gatewayUrl = isLocalInstance ? 'http://localhost:9992' : 'https://cody-gateway.sourcegraph.com'
     const url = fireworksConfig ? fireworksConfig.url : `${gatewayUrl}/v1/completions/fireworks`
     const log = logger?.startCompletion(requestParams, url)
@@ -89,7 +86,7 @@ export function createFastPathClient(
             stop: [...(requestParams.stopSequences || []), ...(fireworksConfig?.parameters?.stop || [])],
             stream: true,
             languageId: providerOptions.document.languageId,
-            user: anonymousUserID,
+            user: (await currentResolvedConfig()).clientState.anonymousUserID,
         }
         const headers = new Headers(customHeaders)
         // Force HTTP connection reuse to reduce latency.

@@ -167,8 +167,7 @@ Your response should contains only the code required to connect the gap, and the
 
 const SUPPORTED_GEMINI_MODELS = ['gemini-1.5-flash', 'gemini-pro', 'gemini-1.0-pro'] as const
 
-export function createProvider(params: ProviderFactoryParams): Provider {
-    const { legacyModel, anonymousUserID, source } = params
+export function createProvider({ legacyModel, source }: ProviderFactoryParams): Provider {
     const clientModel = legacyModel ?? 'google/gemini-1.5-flash'
 
     if (!SUPPORTED_GEMINI_MODELS.some(m => clientModel.includes(m))) {
@@ -178,7 +177,6 @@ export function createProvider(params: ProviderFactoryParams): Provider {
     return new GoogleGeminiProvider({
         id: 'google',
         legacyModel: clientModel,
-        anonymousUserID,
         source,
     })
 }

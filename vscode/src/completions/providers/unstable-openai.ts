@@ -173,9 +173,7 @@ ${OPENING_CODE_TAG}${infillBlock}`
         }
 }
 
-export function createProvider(params: ProviderFactoryParams): Provider {
-    const { legacyModel, provider, anonymousUserID, source } = params
-
+export function createProvider({ legacyModel, provider, source }: ProviderFactoryParams): Provider {
     let clientModel = legacyModel
 
     if (provider === 'azure-openai' && legacyModel) {
@@ -191,7 +189,6 @@ export function createProvider(params: ProviderFactoryParams): Provider {
     return new UnstableOpenAIProvider({
         id: 'unstable-openai',
         legacyModel: clientModel ?? 'gpt-35-turbo',
-        anonymousUserID,
         source,
     })
 }

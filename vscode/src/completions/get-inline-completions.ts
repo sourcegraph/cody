@@ -3,8 +3,8 @@ import type { URI } from 'vscode-uri'
 
 import {
     type AutocompleteContextSnippet,
-    type ClientConfigurationWithAccessToken,
     type DocumentContext,
+    type ResolvedConfiguration,
     currentAuthStatus,
     getActiveTraceAndSpanId,
     isAbortError,
@@ -48,7 +48,7 @@ export interface InlineCompletionsParams {
     completionIntent?: CompletionIntent
     lastAcceptedCompletionItem?: Pick<AutocompleteItem, 'requestParams' | 'analyticsItem'>
     provider: Provider
-    configuration: ClientConfigurationWithAccessToken
+    configuration: ResolvedConfiguration
 
     // Shared
     requestManager: RequestManager

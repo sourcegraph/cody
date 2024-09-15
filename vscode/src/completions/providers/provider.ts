@@ -3,12 +3,12 @@ import type { Position, TextDocument } from 'vscode'
 import {
     type AuthenticatedAuthStatus,
     type AutocompleteContextSnippet,
-    type ClientConfigurationWithAccessToken,
     type CodeCompletionsClient,
     type CompletionParameters,
     type DocumentContext,
     type GitContext,
     type Model,
+    type ResolvedConfiguration,
     tokensToChars,
 } from '@sourcegraph/cody-shared'
 
@@ -61,7 +61,7 @@ export interface GenerateCompletionsOptions {
     >
 
     // TODO: eliminate by using config watcher
-    config: ClientConfigurationWithAccessToken
+    config: ResolvedConfiguration
 }
 
 const DEFAULT_MAX_CONTEXT_TOKENS = 2048
@@ -78,7 +78,6 @@ type ProviderLegacyModelOptions = {
 
 export type ProviderOptions = (ProviderModelOptions | ProviderLegacyModelOptions) & {
     id: string
-    anonymousUserID: string
     /**
      * Defaults to `DEFAULT_MAX_CONTEXT_TOKENS`
      */
@@ -106,8 +105,7 @@ export type ProviderFactoryParams = {
      */
     source: AutocompleteProviderConfigSource
 
-    anonymousUserID: string
-    config: ClientConfigurationWithAccessToken
+    config: ResolvedConfiguration
     mayUseOnDeviceInference?: boolean
 }
 
@@ -132,7 +130,6 @@ export abstract class Provider {
     public configSource: AutocompleteProviderConfigSource
 
     protected maxContextTokens: number
-    protected anonymousUserID: string
 
     protected promptChars: number
     protected modelHelper: DefaultModel
@@ -143,7 +140,6 @@ export abstract class Provider {
         const {
             id,
             maxContextTokens = DEFAULT_MAX_CONTEXT_TOKENS,
-            anonymousUserID,
             mayUseOnDeviceInference = false,
             source,
         } = options
@@ -157,7 +153,6 @@ export abstract class Provider {
 
         this.id = id
         this.maxContextTokens = maxContextTokens
-        this.anonymousUserID = anonymousUserID
         this.mayUseOnDeviceInference = mayUseOnDeviceInference
         this.configSource = source
 

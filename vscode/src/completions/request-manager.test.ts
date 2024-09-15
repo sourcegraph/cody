@@ -74,7 +74,6 @@ class MockProvider extends Provider {
 function createProvider() {
     return new MockProvider({
         id: 'mock-provider',
-        anonymousUserID: 'anonymousUserID',
         legacyModel: 'test-model',
         source: 'local-editor-settings',
     })
@@ -102,8 +101,8 @@ describe('RequestManager', () => {
         suffix?: string
     ) => Promise<RequestManagerResult>
     let checkCache: (prefix: string, suffix?: string) => RequestManagerResult | null
-    beforeEach(async () => {
-        await initCompletionProviderConfig({})
+    beforeEach(() => {
+        initCompletionProviderConfig({})
         const requestManager = new RequestManager()
 
         createRequest = (prefix: string, provider: Provider, suffix?: string) => {

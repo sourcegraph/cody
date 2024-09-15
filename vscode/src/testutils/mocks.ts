@@ -11,8 +11,9 @@ import type {
 
 import {
     type ClientConfiguration,
-    type ClientConfigurationWithAccessToken,
+    type ClientState,
     OLLAMA_DEFAULT_URL,
+    type ResolvedConfiguration,
     ps,
 } from '@sourcegraph/cody-shared'
 
@@ -917,11 +918,10 @@ export const DEFAULT_VSCODE_SETTINGS = {
 
 export function getVSCodeConfigurationWithAccessToken(
     config: Partial<ClientConfiguration> = {}
-): ClientConfigurationWithAccessToken {
+): ResolvedConfiguration {
     return {
-        ...DEFAULT_VSCODE_SETTINGS,
-        serverEndpoint: 'https://sourcegraph.com',
-        accessToken: 'test_access_token',
-        ...config,
+        configuration: { ...DEFAULT_VSCODE_SETTINGS, ...config },
+        auth: { serverEndpoint: 'https://sourcegraph.com', accessToken: 'test_access_token' },
+        clientState: {} satisfies Partial<ClientState> as ClientState,
     }
 }

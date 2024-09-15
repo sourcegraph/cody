@@ -12,6 +12,7 @@ import {
     contextFiltersProvider,
     currentAuthStatus,
     currentAuthStatusOrNotReadyYet,
+    currentResolvedConfig,
     distinctUntilChanged,
     firstValueFrom,
     fromVSCodeEvent,
@@ -303,9 +304,15 @@ async function initializeSingletons(
         subscriptionDisposable(
             resolvedConfigWithAccessToken.subscribe({
                 next: config => {
-                    void localStorage.setConfig(config)
                     graphqlClient.setConfig(config)
                     defaultCodeCompletionsClient.instance!.onConfigurationChange(config)
+                },
+            })
+        ),
+        subscriptionDisposable(
+            resolvedConfig.subscribe({
+                next: config => {
+                    void localStorage.setConfig(config)
                 },
             })
         )
@@ -635,11 +642,11 @@ function registerAutocomplete(
     const setupAutocomplete = (): Promise<void> => {
         setupAutocompleteQueue = setupAutocompleteQueue
             .then(async () => {
-                const config = await getFullConfig()
-                if (!config.autocomplete) {
+                const config = await currentResolvedConfig()
+                if (!config.configuration.autocomplete) {
                     disposeAutocomplete()
                     if (
-                        config.isRunningInsideAgent &&
+                        config.configuration.isRunningInsideAgent &&
                         platform.extensionClient.capabilities?.completions !== 'none'
                     ) {
                         throw new Error(

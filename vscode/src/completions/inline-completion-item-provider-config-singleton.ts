@@ -1,4 +1,4 @@
-import type { ClientConfigurationWithAccessToken } from '@sourcegraph/cody-shared'
+import type { ResolvedConfiguration } from '@sourcegraph/cody-shared'
 import type { CodyStatusBar } from '../services/StatusBar'
 import type { BfgRetriever } from './context/retrievers/bfg/bfg-retriever'
 import type { Provider } from './providers/provider'
@@ -10,7 +10,7 @@ export interface CodyCompletionItemProviderConfig {
     statusBar: CodyStatusBar
     tracer?: ProvideInlineCompletionItemsTracer | null
     isRunningInsideAgent?: boolean
-    config: ClientConfigurationWithAccessToken
+    config: ResolvedConfiguration
 
     isDotComUser?: boolean
 

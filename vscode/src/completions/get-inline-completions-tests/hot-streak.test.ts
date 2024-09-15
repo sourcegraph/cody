@@ -36,13 +36,15 @@ describe('[getInlineCompletions] hot streak', () => {
                 `,
             {
                 configuration: {
-                    autocompleteAdvancedProvider: 'fireworks',
+                    configuration: {
+                        autocompleteAdvancedProvider: 'fireworks',
+                    },
                 },
                 delayBetweenChunks: 50,
             }
         )
 
-        await vi.runAllTimersAsync()
+        await vi.runOnlyPendingTimersAsync()
 
         // No completion is resolved here because the suggested text is the suffix duplicate.
         expect(request.items).toEqual([])
@@ -70,7 +72,9 @@ describe('[getInlineCompletions] hot streak', () => {
                 }`,
                 {
                     configuration: {
-                        autocompleteAdvancedProvider: 'fireworks',
+                        configuration: {
+                            autocompleteAdvancedProvider: 'fireworks',
+                        },
                     },
                     delayBetweenChunks: 50,
                 }
@@ -80,7 +84,7 @@ describe('[getInlineCompletions] hot streak', () => {
             // to test the hot streak behavior in long documents.
             expect(request.docContext.prefix.includes('shouldNotBeInTheDocumentPrefix')).toBeFalsy()
 
-            await vi.runAllTimersAsync()
+            await vi.runOnlyPendingTimersAsync()
             // Wait for hot streak completions be yielded and cached.
             await request.completionResponseGeneratorPromise
             expect(request.items[0].insertText).toEqual('console.log(2)')
@@ -192,7 +196,9 @@ describe('[getInlineCompletions] hot streak', () => {
                 {
                     delayBetweenChunks: 20,
                     configuration: {
-                        autocompleteFirstCompletionTimeout: 10,
+                        configuration: {
+                            autocompleteFirstCompletionTimeout: 10,
+                        },
                     },
                     abortSignal: new AbortController().signal,
                     onNetworkRequest(_, requestManagerAbortController) {
@@ -213,7 +219,7 @@ describe('[getInlineCompletions] hot streak', () => {
             expect(abortController?.signal.aborted).toBe(true)
 
             // Release the `completionsPromise`
-            await vi.runAllTimersAsync()
+            await vi.runOnlyPendingTimersAsync()
 
             let request = await completionsPromise
             await request.completionResponseGeneratorPromise

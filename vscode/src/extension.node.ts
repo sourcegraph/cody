@@ -1,13 +1,12 @@
 // Sentry should be imported first
 import { NodeSentryService } from './services/sentry/sentry.node'
 
-import { currentAuthStatus } from '@sourcegraph/cody-shared'
+import { currentAuthStatus, currentResolvedConfig } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 import { startTokenReceiver } from './auth/token-receiver'
 import { CommandsProvider } from './commands/services/provider'
 import { BfgRetriever } from './completions/context/retrievers/bfg/bfg-retriever'
 import { SourcegraphNodeCompletionsClient } from './completions/nodeClient'
-import { getFullConfig } from './configuration'
 import type { ExtensionApi } from './extension-api'
 import { type ExtensionClient, defaultVSCodeExtensionClient } from './extension-client'
 import { activate as activateCommon } from './extension.common'
@@ -78,13 +77,11 @@ export function activate(
 // so that it can be sent with Telemetry when the post-uninstall script runs.
 // The vscode API is not available in the post-uninstall script.
 export async function deactivate(): Promise<void> {
-    const config = localStorage.getConfig() ?? (await getFullConfig())
+    const config = localStorage.getConfig() ?? (await currentResolvedConfig())
     const authStatus = currentAuthStatus()
-    const anonymousUserID = localStorage.anonymousUserID()
     serializeConfigSnapshot({
         config,
         authStatus,
-        anonymousUserID,
-        extensionDetails: getExtensionDetails(config),
+        extensionDetails: getExtensionDetails(config.configuration),
     })
 }
