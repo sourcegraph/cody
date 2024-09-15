@@ -148,12 +148,11 @@ interface ChatModelProviderConfig {
  *
  * NOTE: DotCom Connections only as model options are not available for Enterprise
  * BUG: This does NOT make any model changes based on the "cody.dev.useServerDefinedModels".
- *
- * @returns An array of `Model` instances for the configured chat models.
  */
-export function registerModelsFromVSCodeConfiguration() {
-    const codyConfig = vscode.workspace.getConfiguration('cody')
-    const modelsConfig = codyConfig?.get<ChatModelProviderConfig[]>('dev.models')
+function registerModelsFromVSCodeConfiguration(): void {
+    const modelsConfig = vscode.workspace
+        .getConfiguration('cody')
+        .get<ChatModelProviderConfig[]>('dev.models')
     if (!modelsConfig?.length) {
         return
     }

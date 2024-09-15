@@ -74,7 +74,6 @@ import type { SymfRunner } from './local-context/symf'
 import { logDebug, logError } from './log'
 import { MinionOrchestrator } from './minion/MinionOrchestrator'
 import { PoorMansBash } from './minion/environment'
-import { registerModelsFromVSCodeConfiguration } from './models/sync'
 import { CodyProExpirationNotifications } from './notifications/cody-pro-expiration'
 import { showSetupNotification } from './notifications/setup-notification'
 import { initVSCodeGitApi } from './repository/git-extension-api'
@@ -159,7 +158,6 @@ export async function start(
             resolvedConfig.subscribe({
                 next: config => {
                     platform.onConfigurationChange?.(config.configuration)
-                    registerModelsFromVSCodeConfiguration()
                 },
             })
         )
