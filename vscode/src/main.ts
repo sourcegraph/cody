@@ -254,7 +254,6 @@ const register = async (
         subscriptionDisposable(
             authStatus.subscribe({
                 next: authStatus => {
-                    sourceControl.setAuthStatus(authStatus)
                     statusBar.setAuthStatus(authStatus)
                 },
             })
@@ -315,7 +314,6 @@ async function initializeSingletons(
                     void localStorage.setConfig(config)
                     graphqlClient.setConfig(config)
                     void featureFlagProvider.refresh()
-                    void modelsService.instance!.onConfigChange(config)
                     upstreamHealthProvider.instance!.onConfigurationChange(config)
                     defaultCodeCompletionsClient.instance!.onConfigurationChange(config)
                 },

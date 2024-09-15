@@ -270,6 +270,35 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                         )
                     )
                     .subscribe({})
+            ),
+            subscriptionDisposable(
+                authStatus.subscribe(() => {
+                    // Run this async because this method may be called during initialization
+                    // and awaiting on this.postMessage may result in a deadlock
+                    void this.sendConfig()
+                })
+            ),
+            subscriptionDisposable(
+                combineLatest([
+                    modelsService.instance!.changes.pipe(startWith(undefined)),
+                    authStatus,
+                ]).subscribe(([, authStatus]) => {
+                    // Get the latest model list available to the current user to update the ChatModel.
+                    logError(
+                        'ChatController',
+                        'updated authStatus',
+                        JSON.stringify({
+                            authStatus,
+                            defaultModelID: getDefaultModelID(),
+                            currentModelID: this.chatModel.modelID,
+                        })
+                    )
+                    // TODO!(sqs): here, we need to make sure syncModels has already run after *it*
+                    // reacted to the authStatus change
+                    if (authStatus.authenticated) {
+                        this.chatModel.updateModel(getDefaultModelID())
+                    }
+                })
             )
         )
 
@@ -589,17 +618,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
     // =======================================================================
     // #region top-level view action handlers
     // =======================================================================
-
-    public setAuthStatus(status: AuthStatus): void {
-        // Run this async because this method may be called during initialization
-        // and awaiting on this.postMessage may result in a deadlock
-        void this.sendConfig()
-
-        // Get the latest model list available to the current user to update the ChatModel.
-        if (status.authenticated) {
-            this.chatModel.updateModel(getDefaultModelID())
-        }
-    }
 
     // When the webview sends the 'ready' message, respond by posting the view config
     private async handleReady(): Promise<void> {
@@ -1668,9 +1686,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     models: () =>
                         combineLatest([
                             resolvedConfig,
-                            modelsService.instance!.selectedOrDefaultModelChanges.pipe(
-                                startWith(undefined)
-                            ),
+                            modelsService.instance!.changes.pipe(startWith(undefined)),
                         ]).pipe(map(() => modelsService.instance!.getModels(ModelUsage.Chat))),
                     highlights: parameters =>
                         promiseFactoryToObservable(() =>
