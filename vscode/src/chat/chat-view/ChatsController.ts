@@ -2,7 +2,6 @@ import * as uuid from 'uuid'
 import * as vscode from 'vscode'
 
 import {
-    type AuthStatus,
     type AuthenticatedAuthStatus,
     CODY_PASSTHROUGH_VSCODE_OPEN_COMMAND_ID,
     type ChatClient,
@@ -83,20 +82,20 @@ export class ChatsController implements vscode.Disposable {
         this.panel = this.createChatController()
 
         this.disposables.push(
-            subscriptionDisposable(authStatus.subscribe(authStatus => this.setAuthStatus(authStatus)))
+            subscriptionDisposable(
+                authStatus.subscribe(authStatus => {
+                    const hasLoggedOut = !authStatus.authenticated
+                    const hasSwitchedAccount =
+                        this.currentAuthAccount &&
+                        this.currentAuthAccount.endpoint !== authStatus.endpoint
+                    if (hasLoggedOut || hasSwitchedAccount) {
+                        this.disposeAllChats()
+                    }
+
+                    this.currentAuthAccount = authStatus.authenticated ? { ...authStatus } : undefined
+                })
+            )
         )
-    }
-
-    private async setAuthStatus(authStatus: AuthStatus): Promise<void> {
-        const hasLoggedOut = !authStatus.authenticated
-        const hasSwitchedAccount =
-            this.currentAuthAccount && this.currentAuthAccount.endpoint !== authStatus.endpoint
-        if (hasLoggedOut || hasSwitchedAccount) {
-            this.disposeAllChats()
-        }
-
-        this.currentAuthAccount = authStatus.authenticated ? { ...authStatus } : undefined
-        this.panel.setAuthStatus(authStatus)
     }
 
     public async restoreToPanel(panel: vscode.WebviewPanel, chatID: string): Promise<void> {

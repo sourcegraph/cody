@@ -13,6 +13,7 @@ import {
     type ServerModelConfiguration,
     getDotComDefaultModels,
     graphqlClient,
+    mockAuthStatus,
     modelsService,
 } from '@sourcegraph/cody-shared'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -29,6 +30,7 @@ describe('syncModels', () => {
 
     beforeEach(() => {
         setModelsSpy.mockClear()
+        mockAuthStatus(AUTH_STATUS_FIXTURE_AUTHED)
 
         // Mock the /.api/client-config for these tests so that modelsAPIEnabled == false
         vi.spyOn(ClientConfigSingleton.prototype, 'getConfig').mockResolvedValue({

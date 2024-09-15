@@ -1,8 +1,11 @@
 import { type Observable, Subject } from 'observable-fns'
+import { authStatus, currentAuthStatus } from '../auth/authStatus'
 import { type AuthStatus, isCodyProUser, isEnterpriseUser } from '../auth/types'
-import { type ClientConfiguration, CodyIDE } from '../configuration'
+import { CodyIDE } from '../configuration'
+import { resolvedConfig } from '../configuration/resolver'
 import { fetchLocalOllamaModels } from '../llm-providers/ollama/utils'
 import { logDebug, logError } from '../logger'
+import { type Unsubscribable, combineLatest } from '../misc/observable'
 import { setSingleton, singletonNotYetSet } from '../singletons'
 import { CHAT_INPUT_TOKEN_BUDGET, CHAT_OUTPUT_TOKEN_BUDGET } from '../token/constants'
 import { ModelTag } from './tags'
@@ -341,13 +344,56 @@ export class ModelsService {
     /** persistent storage to save user preferences and server defaults */
     private storage: Storage | undefined
 
-    /** current system auth status */
-    private authStatus: AuthStatus | undefined
-
     /** Cache of users preferences and defaults across each endpoint they have used */
     private _preferences: PerSitePreferences | undefined
 
     private static STORAGE_KEY = 'model-preferences'
+
+    /**
+     * Needs to be set at static initialization time by the `vscode/` codebase.
+     */
+    public static syncModels: ((authStatus: AuthStatus) => Promise<void>) | undefined
+
+    private configSubscription: Unsubscribable
+
+    constructor() {
+        this.configSubscription = combineLatest([resolvedConfig, authStatus]).subscribe(
+            async ([{ configuration }, authStatus]) => {
+                try {
+                    if (!ModelsService.syncModels) {
+                        throw new Error(
+                            'ModelsService.syncModels must be set at static initialization time'
+                        )
+                    }
+                    await ModelsService.syncModels(authStatus)
+                } catch (error) {
+                    logError('ModelsService', 'Failed to sync models', error)
+                }
+
+                try {
+                    const isCodyWeb = configuration.agentIDE === CodyIDE.Web
+
+                    // Disable Ollama local models for cody web
+                    this.localModels = !isCodyWeb ? await fetchLocalOllamaModels() : []
+                } catch {
+                    this.localModels = []
+                } finally {
+                    this.changeNotifications.next()
+                }
+            }
+        )
+    }
+
+    public dispose(): void {
+        this.configSubscription.unsubscribe()
+    }
+
+    private changeNotifications = new Subject<void>()
+
+    /**
+     * An observable that emits whenever the list of models or any model in the list changes.
+     */
+    public readonly changes: Observable<void> = this.changeNotifications
 
     // Get all the providers currently available to the user
     private get models(): Model[] {
@@ -361,7 +407,7 @@ export class ModelsService {
             defaults: {},
             selected: {},
         }
-        const endpoint = this.authStatus?.endpoint
+        const endpoint = currentAuthStatus().endpoint
         if (!endpoint) {
             if (!process.env.VITEST) {
                 logError('ModelsService::preferences', 'No auth status set')
@@ -385,21 +431,6 @@ export class ModelsService {
         return empty
     }
 
-    public async onConfigChange(config: ClientConfiguration): Promise<void> {
-        try {
-            const isCodyWeb = config.agentIDE === CodyIDE.Web
-
-            // Disable Ollama local models for cody web
-            this.localModels = !isCodyWeb ? await fetchLocalOllamaModels() : []
-        } catch {
-            this.localModels = []
-        }
-    }
-
-    public async setAuthStatus(authStatus: AuthStatus) {
-        this.authStatus = authStatus
-    }
-
     public setStorage(storage: Storage): void {
         this.storage = storage
     }
@@ -410,6 +441,7 @@ export class ModelsService {
     public setModels(models: Model[]): void {
         logDebug('ModelsService', `Setting primary models: ${JSON.stringify(models.map(m => m.id))}`)
         this.primaryModels = models
+        this.changeNotifications.next()
     }
 
     /**
@@ -440,14 +472,9 @@ export class ModelsService {
         await this.flush()
     }
 
-    private readonly _selectedOrDefaultModelChanges = new Subject<void>()
-    public get selectedOrDefaultModelChanges(): Observable<void> {
-        return this._selectedOrDefaultModelChanges
-    }
-
     private async flush(): Promise<void> {
         await this.storage?.set(ModelsService.STORAGE_KEY, JSON.stringify(this._preferences))
-        this._selectedOrDefaultModelChanges.next()
+        this.changeNotifications.next()
     }
 
     /**
@@ -463,6 +490,7 @@ export class ModelsService {
             ...this.primaryModels,
             ...models.filter(model => !existingIds.has(model.id)),
         ]
+        this.changeNotifications.next()
     }
 
     private getModelsByType(usage: ModelUsage): Model[] {
@@ -524,7 +552,7 @@ export class ModelsService {
     }
 
     public isModelAvailable(model: string | Model): boolean {
-        const status = this.authStatus
+        const status = currentAuthStatus()
         if (!status) {
             return false
         }

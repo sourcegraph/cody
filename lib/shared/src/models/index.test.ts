@@ -1,4 +1,5 @@
-import { beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { mockAuthStatus } from '../auth/authStatus'
 import { AUTH_STATUS_FIXTURE_AUTHED, type AuthenticatedAuthStatus } from '../auth/types'
 import {
     Model,
@@ -38,6 +39,9 @@ describe('Model Provider', () => {
     let modelsService = new ModelsService()
     beforeEach(() => {
         modelsService = new ModelsService()
+    })
+    afterEach(() => {
+        modelsService.dispose()
     })
 
     describe('getContextWindowByID', () => {
@@ -135,7 +139,7 @@ describe('Model Provider', () => {
         })
 
         beforeEach(() => {
-            modelsService.setAuthStatus(codyProAuthStatus)
+            mockAuthStatus(codyProAuthStatus)
             modelsService.setModels([model1chat, model2chat, model3all, model4edit])
         })
 
@@ -254,7 +258,7 @@ describe('Model Provider', () => {
         beforeEach(async () => {
             storage = new TestStorage()
             modelsService.setStorage(storage)
-            modelsService.setAuthStatus(enterpriseAuthStatus)
+            mockAuthStatus(enterpriseAuthStatus)
             await modelsService.setServerSentModels(SERVER_MODELS)
         })
 
@@ -348,37 +352,37 @@ describe('Model Provider', () => {
         })
 
         it('returns false for unknown model', () => {
-            modelsService.setAuthStatus(codyProAuthStatus)
+            mockAuthStatus(codyProAuthStatus)
             expect(modelsService.isModelAvailable('unknown-model')).toBe(false)
         })
 
         it('allows enterprise user to use any model', () => {
-            modelsService.setAuthStatus(enterpriseAuthStatus)
+            mockAuthStatus(enterpriseAuthStatus)
             expect(modelsService.isModelAvailable(enterpriseModel)).toBe(true)
             expect(modelsService.isModelAvailable(proModel)).toBe(true)
             expect(modelsService.isModelAvailable(freeModel)).toBe(true)
         })
 
         it('allows Cody Pro user to use Pro and Free models', () => {
-            modelsService.setAuthStatus(codyProAuthStatus)
+            mockAuthStatus(codyProAuthStatus)
             expect(modelsService.isModelAvailable(enterpriseModel)).toBe(false)
             expect(modelsService.isModelAvailable(proModel)).toBe(true)
             expect(modelsService.isModelAvailable(freeModel)).toBe(true)
         })
 
         it('allows free user to use only Free models', () => {
-            modelsService.setAuthStatus(freeUserAuthStatus)
+            mockAuthStatus(freeUserAuthStatus)
             expect(modelsService.isModelAvailable(enterpriseModel)).toBe(false)
             expect(modelsService.isModelAvailable(proModel)).toBe(false)
             expect(modelsService.isModelAvailable(freeModel)).toBe(true)
         })
 
         it('handles model passed as string', () => {
-            modelsService.setAuthStatus(freeUserAuthStatus)
+            mockAuthStatus(freeUserAuthStatus)
             expect(modelsService.isModelAvailable(freeModel.id)).toBe(true)
             expect(modelsService.isModelAvailable(proModel.id)).toBe(false)
 
-            modelsService.setAuthStatus(codyProAuthStatus)
+            mockAuthStatus(codyProAuthStatus)
             expect(modelsService.isModelAvailable(proModel.id)).toBe(true)
         })
     })

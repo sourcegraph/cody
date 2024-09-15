@@ -13,7 +13,11 @@ import {
     modelsService,
     telemetryRecorder,
 } from '@sourcegraph/cody-shared'
-import type { ServerModel, ServerModelConfiguration } from '@sourcegraph/cody-shared/src/models'
+import {
+    ModelsService,
+    type ServerModel,
+    type ServerModelConfiguration,
+} from '@sourcegraph/cody-shared/src/models'
 import { ModelTag } from '@sourcegraph/cody-shared/src/models/tags'
 import * as vscode from 'vscode'
 import { getConfiguration } from '../configuration'
@@ -31,7 +35,6 @@ import { getEnterpriseContextWindow } from './utils'
  */
 export async function syncModels(authStatus: AuthStatus): Promise<void> {
     // Offline mode only support Ollama models, which would be synced seperately.
-    modelsService.instance!.setAuthStatus(authStatus)
     if (authStatus.authenticated && authStatus.isOfflineMode) {
         modelsService.instance!.setModels([])
         return
@@ -52,7 +55,7 @@ export async function syncModels(authStatus: AuthStatus): Promise<void> {
         const serverSideModels = await fetchServerSideModels(authStatus.endpoint || '')
         // If the request failed, fall back to using the default models
         if (serverSideModels) {
-            modelsService.instance!.setServerSentModels({
+            await modelsService.instance!.setServerSentModels({
                 ...serverSideModels,
                 models: maybeAdjustContextWindows(serverSideModels.models),
             })
@@ -120,6 +123,8 @@ export async function syncModels(authStatus: AuthStatus): Promise<void> {
         modelsService.instance!.setModels([])
     }
 }
+
+ModelsService.syncModels = syncModels
 
 export async function joinModelWaitlist(authStatus: AuthStatus): Promise<void> {
     localStorage.set(localStorage.keys.waitlist_o1, true)

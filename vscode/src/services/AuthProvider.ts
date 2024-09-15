@@ -20,7 +20,6 @@ import { formatURL } from '../auth/auth'
 import { newAuthStatus } from '../chat/utils'
 import { getFullConfig } from '../configuration'
 import { logDebug } from '../log'
-import { syncModels } from '../models/sync'
 import { maybeStartInteractiveTutorial } from '../tutorial/helpers'
 import { localStorage } from './LocalStorageProvider'
 import { secretStorage } from './SecretStorageProvider'
@@ -232,7 +231,6 @@ export class AuthProvider implements vscode.Disposable {
             // because many listeners rely on these
             graphqlClient.setConfig(await getFullConfig())
             await ClientConfigSingleton.getInstance().setAuthStatus(authStatus)
-            await syncModels(authStatus)
         } catch (error) {
             logDebug('AuthProvider', 'updateAuthStatus error', error)
         } finally {
