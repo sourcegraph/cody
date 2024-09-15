@@ -10,13 +10,9 @@ import { newAgentClient } from '../../agent'
 import { exec } from 'node:child_process'
 import fs from 'node:fs'
 import { promisify } from 'node:util'
-import {
-    type ConfigurationUseContext,
-    graphqlClient,
-    isDefined,
-    modelsService,
-} from '@sourcegraph/cody-shared'
+import { type ConfigurationUseContext, isDefined, modelsService } from '@sourcegraph/cody-shared'
 import { sleep } from '../../../../vscode/src/completions/utils'
+import { setStaticResolvedConfigurationWithAuthCredentials } from '../../../../vscode/src/configuration'
 import { startPollyRecording } from '../../../../vscode/src/testutils/polly'
 import { dotcomCredentials } from '../../../../vscode/src/testutils/testing-credentials'
 import { allClientCapabilitiesEnabled } from '../../allClientCapabilitiesEnabled'
@@ -325,10 +321,12 @@ export const benchCommand = new commander.Command('bench')
         )
 
         // Required to use `PromptString`.
-        graphqlClient.setConfig({
-            accessToken: options.srcAccessToken,
-            serverEndpoint: options.srcEndpoint,
-            customHeaders: {},
+        setStaticResolvedConfigurationWithAuthCredentials({
+            configuration: { customHeaders: {} },
+            auth: {
+                accessToken: options.srcAccessToken,
+                serverEndpoint: options.srcEndpoint,
+            },
         })
 
         const recordingDirectory = path.join(path.dirname(options.evaluationConfig), 'recordings')

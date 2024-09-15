@@ -12,10 +12,8 @@ import {
     type CompletionParameters,
     type CompletionResponse,
     CompletionStopReason,
-    type GraphQLAPIClientConfig,
     type ResolvedConfiguration,
     featureFlagProvider,
-    graphqlClient,
     mockAuthStatus,
     mockResolvedConfig,
     testFileUri,
@@ -424,7 +422,6 @@ export function initCompletionProviderConfig({
     configuration,
     authStatus,
 }: Partial<Pick<ParamsResult, 'configuration' | 'authStatus'>>): void {
-    graphqlClient.setConfig({} as unknown as GraphQLAPIClientConfig)
     vi.spyOn(featureFlagProvider, 'evaluateFeatureFlag').mockResolvedValue(false)
     vi.spyOn(featureFlagProvider, 'evaluatedFeatureFlag').mockReturnValue(Observable.of(false))
     mockAuthStatus(authStatus ?? AUTH_STATUS_FIXTURE_AUTHED)

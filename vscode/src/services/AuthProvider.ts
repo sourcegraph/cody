@@ -3,11 +3,11 @@ import * as vscode from 'vscode'
 import {
     type AuthStatus,
     ClientConfigSingleton,
-    type ClientConfigurationWithAccessToken,
     CodyIDE,
+    type PickResolvedConfiguration,
     SourcegraphGraphQLAPIClient,
     currentResolvedConfig,
-    graphqlClient,
+    isAbortError,
     isDotCom,
     isError,
     isNetworkLikeError,
@@ -18,7 +18,7 @@ import {
 import { Subject } from 'observable-fns'
 import { formatURL } from '../auth/auth'
 import { newAuthStatus } from '../chat/utils'
-import { getFullConfig } from '../configuration'
+import { getConfiguration } from '../configuration'
 import { logDebug } from '../log'
 import { maybeStartInteractiveTutorial } from '../tutorial/helpers'
 import { localStorage } from './LocalStorageProvider'
@@ -56,14 +56,11 @@ export class AuthProvider implements vscode.Disposable {
 
     // Create Auth Status
     private async makeAuthStatus(
-        config: Pick<
-            ClientConfigurationWithAccessToken,
-            'serverEndpoint' | 'accessToken' | 'customHeaders'
-        >,
+        config: PickResolvedConfiguration<{ configuration: 'customHeaders'; auth: true }>,
         isOfflineMode?: boolean
     ): Promise<AuthStatus> {
-        const endpoint = config.serverEndpoint
-        const token = config.accessToken
+        const endpoint = config.auth.serverEndpoint
+        const token = config.auth.accessToken
         const isCodyWeb =
             vscode.workspace.getConfiguration().get<string>('cody.advanced.agent.ide') === CodyIDE.Web
 
@@ -91,7 +88,14 @@ export class AuthProvider implements vscode.Disposable {
             }
         }
 
-        this.client = new SourcegraphGraphQLAPIClient(config)
+        this.client = SourcegraphGraphQLAPIClient.withStaticConfig({
+            ...config,
+            configuration: {
+                ...config.configuration,
+                telemetryLevel: getConfiguration().telemetryLevel,
+            },
+            clientState: (await currentResolvedConfig()).clientState,
+        })
 
         // Version is for frontend to check if Cody is not enabled due to unsupported version when siteHasCodyEnabled is false
         const [{ enabled: siteHasCodyEnabled, version: siteVersion }, codyLLMConfiguration, userInfo] =
@@ -152,36 +156,38 @@ export class AuthProvider implements vscode.Disposable {
     }
 
     // It processes the authentication steps and stores the login info before sharing the auth status with chatview
-    public async auth({
-        endpoint,
-        token,
-        customHeaders,
-        isExtensionStartup = false,
-        isOfflineMode = false,
-    }: {
-        endpoint: string
-        token: string | null
-        customHeaders?: Record<string, string> | null
-        isExtensionStartup?: boolean
-        isOfflineMode?: boolean
-    }): Promise<AuthStatus> {
+    public async auth(
+        {
+            endpoint,
+            token,
+            customHeaders,
+            isExtensionStartup = false,
+            isOfflineMode = false,
+        }: {
+            endpoint: string
+            token: string | null
+            customHeaders?: Record<string, string> | null
+            isExtensionStartup?: boolean
+            isOfflineMode?: boolean
+        },
+        signal?: AbortSignal
+    ): Promise<AuthStatus> {
         const formattedEndpoint = formatURL(endpoint)
         if (!formattedEndpoint) {
             throw new Error(`invalid endpoint URL: ${JSON.stringify(endpoint)}`)
         }
 
         const { configuration } = await currentResolvedConfig()
-        const config = {
-            serverEndpoint: formattedEndpoint,
-            accessToken: token,
-            customHeaders: customHeaders || configuration.customHeaders,
+        const config: PickResolvedConfiguration<{ configuration: 'customHeaders'; auth: true }> = {
+            configuration: { customHeaders: customHeaders || configuration.customHeaders },
+            auth: { serverEndpoint: formattedEndpoint, accessToken: token },
         }
 
         try {
             const authStatus = await this.makeAuthStatus(config, isOfflineMode)
 
             if (!isOfflineMode) {
-                await this.storeAuthInfo(config.serverEndpoint, config.accessToken)
+                await this.storeAuthInfo(config.auth.serverEndpoint, config.auth.accessToken)
             }
 
             await vscode.commands.executeCommand(
@@ -190,7 +196,7 @@ export class AuthProvider implements vscode.Disposable {
                 authStatus.authenticated
             )
 
-            await this.updateAuthStatus(authStatus)
+            await this.updateAuthStatus(authStatus, signal)
 
             // If the extension is authenticated on startup, it can't be a user's first
             // ever authentication. We store this to prevent logging first-ever events
@@ -208,7 +214,7 @@ export class AuthProvider implements vscode.Disposable {
             // Try to reload auth status in case of network error, else return default auth status
             return await this.reloadAuthStatus().catch(() => ({
                 authenticated: false,
-                endpoint: config.serverEndpoint,
+                endpoint: config.auth.serverEndpoint,
             }))
         }
     }
@@ -225,16 +231,14 @@ export class AuthProvider implements vscode.Disposable {
         })
     }
 
-    private async updateAuthStatus(authStatus: AuthStatus): Promise<void> {
+    private async updateAuthStatus(authStatus: AuthStatus, signal?: AbortSignal): Promise<void> {
         try {
             this.status.next(authStatus)
-
-            // We update the graphqlClient and ModelsService first
-            // because many listeners rely on these
-            graphqlClient.setConfig(await getFullConfig())
-            await ClientConfigSingleton.getInstance().setAuthStatus(authStatus)
+            await ClientConfigSingleton.getInstance().setAuthStatus(authStatus, signal)
         } catch (error) {
-            logDebug('AuthProvider', 'updateAuthStatus error', error)
+            if (!isAbortError(error)) {
+                logDebug('AuthProvider', 'updateAuthStatus error', error)
+            }
         } finally {
             let eventValue: 'disconnected' | 'connected' | 'failed'
             if (authStatus.authenticated) {

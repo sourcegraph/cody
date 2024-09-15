@@ -301,13 +301,6 @@ async function initializeSingletons(
     commandControllerInit(platform.createCommandsProvider?.(), platform.extensionClient.capabilities)
     disposables.push(
         subscriptionDisposable(
-            resolvedConfigWithAccessToken.subscribe({
-                next: config => {
-                    graphqlClient.setConfig(config)
-                },
-            })
-        ),
-        subscriptionDisposable(
             resolvedConfig.subscribe({
                 next: config => {
                     void localStorage.setConfig(config)
