@@ -97,7 +97,7 @@ export const getInput = async (
 
     const authStatus = currentAuthStatusAuthed()
     const isCodyPro = !authStatus.userCanUpgrade
-    const modelOptions = modelsService.instance!.getModels(ModelUsage.Edit)
+    const modelOptions = modelsService.getModels(ModelUsage.Edit)
     const modelItems = getModelOptionItems(modelOptions, isCodyPro)
     const showModelSelector = modelOptions.length > 1
 
@@ -105,7 +105,7 @@ export const getInput = async (
     let activeModelItem = modelItems.find(item => item.model === initialValues.initialModel)
 
     const getContextWindowOnModelChange = (model: EditModel) => {
-        const latestContextWindow = modelsService.instance!.getContextWindowByID(model)
+        const latestContextWindow = modelsService.getContextWindowByID(model)
         return latestContextWindow.input + (latestContextWindow.context?.user ?? 0)
     }
     let activeModelContextWindow = getContextWindowOnModelChange(activeModel)
@@ -214,7 +214,7 @@ export const getInput = async (
                     return
                 }
 
-                modelsService.instance!.setSelectedModel(ModelUsage.Edit, acceptedItem.model)
+                modelsService.setSelectedModel(ModelUsage.Edit, acceptedItem.model)
                 activeModelItem = acceptedItem
                 activeModel = acceptedItem.model
                 activeModelContextWindow = getContextWindowOnModelChange(acceptedItem.model)

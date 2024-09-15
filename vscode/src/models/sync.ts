@@ -42,7 +42,7 @@ export async function syncModels(authStatus: AuthStatus): Promise<void> {
 
     // If you are not authenticated, you cannot use Cody. Sorry.
     if (!authStatus.authenticated) {
-        modelsService.instance!.setModels([])
+        modelsService.setModels([])
         return
     }
 
@@ -55,7 +55,7 @@ export async function syncModels(authStatus: AuthStatus): Promise<void> {
         const serverSideModels = await fetchServerSideModels(authStatus.endpoint || '')
         // If the request failed, fall back to using the default models
         if (serverSideModels) {
-            await modelsService.instance!.setServerSentModels({
+            await modelsService.setServerSentModels({
                 ...serverSideModels,
                 models: maybeAdjustContextWindows(serverSideModels.models),
             })
@@ -89,7 +89,7 @@ export async function syncModels(authStatus: AuthStatus): Promise<void> {
                 localStorage.delete(localStorage.keys.waitlist_o1)
             }
         }
-        modelsService.instance!.setModels(defaultModels)
+        modelsService.setModels(defaultModels)
         registerModelsFromVSCodeConfiguration()
         return
     }
@@ -104,7 +104,7 @@ export async function syncModels(authStatus: AuthStatus): Promise<void> {
     // NOTE: If authStatus?.configOverwrites?.chatModel is empty,
     // automatically fallback to use the default model configured on the instance.
     if (authStatus?.configOverwrites?.chatModel) {
-        modelsService.instance!.setModels([
+        modelsService.setModels([
             new Model({
                 id: authStatus.configOverwrites.chatModel,
                 // TODO (umpox) Add configOverwrites.editModel for separate edit support
@@ -120,7 +120,7 @@ export async function syncModels(authStatus: AuthStatus): Promise<void> {
         // If the enterprise instance didn't have any configuration data for Cody,
         // clear the models available in the modelsService. Otherwise there will be
         // stale, defunct models available.
-        modelsService.instance!.setModels([])
+        modelsService.setModels([])
     }
 }
 
@@ -158,7 +158,7 @@ export function registerModelsFromVSCodeConfiguration() {
         return
     }
 
-    modelsService.instance!.addModels(
+    modelsService.addModels(
         modelsConfig.map(
             m =>
                 new Model({

@@ -55,7 +55,7 @@ export class EditProvider {
         return wrapInActiveSpan('command.edit.start', async span => {
             this.config.controller.startTask(this.config.task)
             const model = this.config.task.model
-            const contextWindow = modelsService.instance!.getContextWindowByID(model)
+            const contextWindow = modelsService.getContextWindowByID(model)
             const authStatus = currentAuthStatusAuthed()
             const {
                 messages,
@@ -130,7 +130,7 @@ export class EditProvider {
                 maxTokensToSample: contextWindow.output,
             } as CompletionParameters
             // Set stream param only when the model is disabled for streaming.
-            if (modelsService.instance!.isStreamDisabled(model)) {
+            if (modelsService.isStreamDisabled(model)) {
                 params.stream = false
             }
             const stream = this.config.chat.chat(messages, { ...params }, this.abortController.signal)

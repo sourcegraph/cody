@@ -264,7 +264,7 @@ describe('createProvider', () => {
     describe('server-side model configuration', () => {
         beforeAll(async () => {
             await mockModelsService({
-                modelsService: modelsService.instance!,
+                modelsService: modelsService,
                 config: getServerSentModelsMock(),
                 authStatus: AUTH_STATUS_FIXTURE_AUTHED,
             })
@@ -276,13 +276,13 @@ describe('createProvider', () => {
                 model.capabilities.includes('autocomplete')
             )
 
-            const autocompleteModels = modelsService.instance!.getModels(ModelUsage.Autocomplete)
+            const autocompleteModels = modelsService.getModels(ModelUsage.Autocomplete)
             expect(autocompleteModels.length).toBe(autocompleteModelsInServerConfig.length)
         })
 
         it('uses the `fireworks` model from the config', async () => {
             const provider = await createProviderFirstValue(getVSCodeConfigurationWithAccessToken())
-            const currentModel = modelsService.instance!.getDefaultModel(ModelUsage.Autocomplete)
+            const currentModel = modelsService.getDefaultModel(ModelUsage.Autocomplete)
 
             expect(currentModel?.provider).toBe('fireworks')
             expect(currentModel?.id).toBe('deepseek-coder-v2-lite-base')
@@ -294,14 +294,14 @@ describe('createProvider', () => {
         it('uses the `anthropic` model from the config', async () => {
             const mockedConfig = getServerSentModelsMock()
 
-            const autocompleteModels = modelsService.instance!.getModels(ModelUsage.Autocomplete)
+            const autocompleteModels = modelsService.getModels(ModelUsage.Autocomplete)
             const anthropicModel = autocompleteModels.find(model => model.id === 'claude-3-sonnet')!
 
             // Change the default autocomplete model to anthropic
             mockedConfig.defaultModels.codeCompletion = toModelRefStr(anthropicModel.modelRef!)
 
             await mockModelsService({
-                modelsService: modelsService.instance!,
+                modelsService: modelsService,
                 config: mockedConfig,
                 authStatus: AUTH_STATUS_FIXTURE_AUTHED,
             })

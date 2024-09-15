@@ -44,7 +44,7 @@ export function createProvider(config: ResolvedConfiguration): Observable<Provid
         }
 
         // Check if server-side model configuration is available.
-        const model = modelsService.instance!.getDefaultModel(ModelUsage.Autocomplete)
+        const model = modelsService.getDefaultModel(ModelUsage.Autocomplete)
 
         if (model) {
             const provider = model.clientSideConfig?.openAICompatible

@@ -36,8 +36,8 @@ export class CodySourceControl implements vscode.Disposable {
             vscode.commands.registerCommand('cody.command.generate-commit', scm => this.generate(scm)),
             vscode.commands.registerCommand('cody.command.abort-commit', () => this.statusUpdate()),
             subscriptionDisposable(
-                modelsService.instance!.changes.pipe(startWith(undefined)).subscribe(() => {
-                    const models = modelsService.instance!.getModels(ModelUsage.Chat)
+                modelsService.changes.pipe(startWith(undefined)).subscribe(() => {
+                    const models = modelsService.getModels(ModelUsage.Chat)
                     const preferredModel = models.find(p => p.id.includes('claude-3-haiku'))
                     this.model = preferredModel ?? models[0]
                 })

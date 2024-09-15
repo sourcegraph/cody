@@ -27,7 +27,7 @@ vi.mock('graphqlClient')
 vi.mock('../services/LocalStorageProvider')
 
 describe('syncModels', () => {
-    const setModelsSpy = vi.spyOn(modelsService.instance!, 'setModels')
+    const setModelsSpy = vi.spyOn(modelsService, 'setModels')
 
     beforeEach(() => {
         setModelsSpy.mockClear()
@@ -115,10 +115,10 @@ describe('syncModels from the server', () => {
     // Unlike the other mocks, we define setModelsSpy here so that it can
     // be referenced by individual tests. (But like the other spys, it needs
     // to be reset/restored after each test.)
-    let setModelsSpy = vi.spyOn(modelsService.instance!, 'setModels')
+    let setModelsSpy = vi.spyOn(modelsService, 'setModels')
 
     beforeEach(() => {
-        setModelsSpy = vi.spyOn(modelsService.instance!, 'setModels')
+        setModelsSpy = vi.spyOn(modelsService, 'setModels')
 
         // Mock the /.api/client-config for these tests so that modelsAPIEnabled == true
         const mockClientConfig = {

@@ -360,7 +360,7 @@ async function evaluateWorkspace(options: CodyBenchOptions, recordingDirectory: 
         // There is no VSC setting yet to configure the base edit model. Users
         // can only modify this setting by changing it through the quickpick
         // menu in VSC.
-        const provider = modelsService.instance!.getModelByIDSubstringOrError(editModel)
+        const provider = modelsService.getModelByIDSubstringOrError(editModel)
         baseGlobalState.editModel = provider.id
     }
 
