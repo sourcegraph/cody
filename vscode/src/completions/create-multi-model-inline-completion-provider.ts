@@ -134,7 +134,7 @@ export async function createInlineCompletionItemFromMultipleProviders({
         }
 
         // Use the experimental config to get the context provider
-        const provider = createProviderHelper({
+        const providerOrError = createProviderHelper({
             legacyModel: currentProviderConfig.model,
             provider: currentProviderConfig.provider,
             config: newConfig,
@@ -145,9 +145,9 @@ export async function createInlineCompletionItemFromMultipleProviders({
             .getConfiguration()
             .get<number>('cody.autocomplete.triggerDelay')
 
-        if (provider) {
+        if (!(providerOrError instanceof Error)) {
             const completionsProvider = new InlineCompletionItemProvider({
-                provider,
+                provider: providerOrError,
                 config: newConfig,
                 triggerDelay: triggerDelay ?? 0,
                 firstCompletionTimeout: config.configuration.autocompleteFirstCompletionTimeout,

@@ -6,6 +6,7 @@ import type { URI } from 'vscode-uri'
 import {
     AUTH_STATUS_FIXTURE_AUTHED,
     AUTH_STATUS_FIXTURE_AUTHED_DOTCOM,
+    type AutocompleteProviderID,
     type ClientConfiguration,
     type ClientState,
     type CodeCompletionsClient,
@@ -46,7 +47,6 @@ import {
     SINGLE_LINE_STOP_SEQUENCES,
     createProvider as createAnthropicProvider,
 } from '../providers/anthropic'
-import type { AutocompleteProviderID } from '../providers/create-provider'
 import { createProvider as createFireworksProvider } from '../providers/fireworks'
 import { pressEnterAndGetIndentString } from '../providers/hot-streak'
 import { RequestManager } from '../request-manager'

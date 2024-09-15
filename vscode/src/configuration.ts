@@ -12,12 +12,7 @@ import {
 } from '@sourcegraph/cody-shared'
 
 import { URI } from 'vscode-uri'
-import {
-    CONFIG_KEY,
-    type ConfigKeys,
-    type ConfigurationKeysMap,
-    getConfigEnumValues,
-} from './configuration-keys'
+import { CONFIG_KEY, type ConfigKeys } from './configuration-keys'
 import { localStorage } from './services/LocalStorageProvider'
 import { getAccessToken } from './services/SecretStorageProvider'
 
@@ -55,40 +50,6 @@ export function getConfiguration(
         debugRegex = /.*/
     }
 
-    let autocompleteAdvancedProvider = config.get<
-        | ClientConfiguration['autocompleteAdvancedProvider']
-        | 'unstable-ollama'
-        | 'unstable-fireworks'
-        | 'experimental-openaicompatible'
-    >(CONFIG_KEY.autocompleteAdvancedProvider, null)
-
-    // Handle deprecated provider identifiers
-    switch (autocompleteAdvancedProvider) {
-        case 'unstable-fireworks':
-            autocompleteAdvancedProvider = 'fireworks'
-            break
-        case 'unstable-ollama':
-            autocompleteAdvancedProvider = 'experimental-ollama'
-            break
-    }
-
-    // check if the configured enum values are valid
-    const configKeys = [
-        'autocompleteAdvancedProvider',
-        'autocompleteAdvancedModel',
-    ] as (keyof ConfigurationKeysMap)[]
-
-    for (const configVal of configKeys) {
-        const key = configVal.replaceAll(/([A-Z])/g, '.$1').toLowerCase()
-        const value: string | null = config.get(CONFIG_KEY[configVal])
-        checkValidEnumValues(key, value)
-    }
-
-    const autocompleteExperimentalGraphContext: 'lsp-light' | 'bfg' | null = getHiddenSetting(
-        'autocomplete.experimental.graphContext',
-        null
-    )
-
     function hasValidLocalEmbeddingsConfig(): boolean {
         return (
             [
@@ -116,8 +77,10 @@ export function getConfiguration(
         chatPreInstruction: PromptString.fromConfig(config, CONFIG_KEY.chatPreInstruction, ps``),
         editPreInstruction: PromptString.fromConfig(config, CONFIG_KEY.editPreInstruction, ps``),
         commandCodeLenses: config.get(CONFIG_KEY.commandCodeLenses, false),
-        autocompleteAdvancedProvider,
-        autocompleteAdvancedModel: config.get<string | null>(CONFIG_KEY.autocompleteAdvancedModel, null),
+        autocompleteAdvancedProvider: config.get<ClientConfiguration['autocompleteAdvancedProvider']>(
+            CONFIG_KEY.autocompleteAdvancedProvider,
+            'default'
+        ),
         autocompleteCompleteSuggestWidgetSelection: config.get(
             CONFIG_KEY.autocompleteCompleteSuggestWidgetSelection,
             true
@@ -137,7 +100,10 @@ export function getConfiguration(
         internalUnstable: getHiddenSetting('internal.unstable', isTesting),
         internalDebugContext: getHiddenSetting('internal.debug.context', false),
 
-        autocompleteExperimentalGraphContext,
+        autocompleteAdvancedModel: getHiddenSetting('autocomplete.advanced.model', null),
+        autocompleteExperimentalGraphContext: getHiddenSetting<
+            ClientConfiguration['autocompleteExperimentalGraphContext']
+        >('autocomplete.experimental.graphContext', null),
         experimentalCommitMessage: getHiddenSetting('experimental.commitMessage', true),
         experimentalNoodle: getHiddenSetting('experimental.noodle', false),
 
@@ -223,18 +189,5 @@ export const getFullConfig = async (): Promise<ClientConfigurationWithAccessToke
             vscode.workspace.getConfiguration().get<string>('cody.accessToken') ||
             (await getAccessToken()) ||
             null,
-    }
-}
-
-function checkValidEnumValues(configName: string, value: string | null): void {
-    const validEnumValues = getConfigEnumValues(`cody.${configName}`)
-    if (value) {
-        if (!validEnumValues.includes(value)) {
-            void vscode.window.showErrorMessage(
-                `Invalid value for ${configName}: ${value}. Valid values are: ${validEnumValues.join(
-                    ', '
-                )}`
-            )
-        }
     }
 }

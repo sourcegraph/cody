@@ -71,52 +71,53 @@ export function createInlineCompletionItemProvider({
     }).pipe(
         mergeMap(documentFilters =>
             createProvider(config).pipe(
-                createDisposables(provider => {
-                    if (provider) {
-                        const authStatus = currentAuthStatusAuthed()
-                        const triggerDelay =
-                            vscode.workspace
-                                .getConfiguration()
-                                .get<number>('cody.autocomplete.triggerDelay') ?? 0
-                        const completionsProvider = new InlineCompletionItemProvider({
-                            triggerDelay,
-                            provider,
-                            config,
-                            firstCompletionTimeout:
-                                config.configuration.autocompleteFirstCompletionTimeout,
-                            statusBar,
-                            completeSuggestWidgetSelection:
-                                config.configuration.autocompleteCompleteSuggestWidgetSelection,
-                            formatOnAccept: config.configuration.autocompleteFormatOnAccept,
-                            disableInsideComments:
-                                config.configuration.autocompleteDisableInsideComments,
-                            isRunningInsideAgent: config.configuration.isRunningInsideAgent,
-                            createBfgRetriever,
-                            isDotComUser: isDotCom(authStatus),
-                        })
+                createDisposables(providerOrError => {
+                    if (providerOrError instanceof Error) {
+                        logDebug('AutocompleteProvider', providerOrError.message)
 
-                        return [
-                            vscode.commands.registerCommand('cody.autocomplete.manual-trigger', () =>
-                                completionsProvider.manuallyTriggerCompletion()
-                            ),
-                            vscode.languages.registerInlineCompletionItemProvider(
-                                [{ notebookType: '*' }, ...documentFilters],
-                                completionsProvider
-                            ),
-                            registerAutocompleteTraceView(completionsProvider),
-                            completionsProvider,
-                        ]
+                        if (config.configuration.isRunningInsideAgent) {
+                            const configString = JSON.stringify(config, null, 2)
+                            throw new Error(
+                                `Can't register completion provider because \`createProvider\` evaluated to \`null\`. To fix this problem, debug why createProvider returned null instead of Provider. To further debug this problem, here is the configuration:\n${configString}`
+                            )
+                        }
+
+                        vscode.window.showErrorMessage(providerOrError.message)
+                        return []
                     }
-                    if (config.configuration.isRunningInsideAgent) {
-                        throw new Error(
-                            `Can't register completion provider because \`providerConfig\` evaluated to \`null\`. To fix this problem, debug why createProvider returned null instead of ProviderConfig. To further debug this problem, here is the configuration:\n${JSON.stringify(
-                                config,
-                                null,
-                                2
-                            )}`
-                        )
-                    }
-                    return []
+
+                    const authStatus = currentAuthStatusAuthed()
+                    const triggerDelay =
+                        vscode.workspace
+                            .getConfiguration()
+                            .get<number>('cody.autocomplete.triggerDelay') ?? 0
+
+                    const completionsProvider = new InlineCompletionItemProvider({
+                        triggerDelay,
+                        provider: providerOrError,
+                        config,
+                        firstCompletionTimeout: config.configuration.autocompleteFirstCompletionTimeout,
+                        statusBar,
+                        completeSuggestWidgetSelection:
+                            config.configuration.autocompleteCompleteSuggestWidgetSelection,
+                        formatOnAccept: config.configuration.autocompleteFormatOnAccept,
+                        disableInsideComments: config.configuration.autocompleteDisableInsideComments,
+                        isRunningInsideAgent: config.configuration.isRunningInsideAgent,
+                        createBfgRetriever,
+                        isDotComUser: isDotCom(authStatus),
+                    })
+
+                    return [
+                        vscode.commands.registerCommand('cody.autocomplete.manual-trigger', () =>
+                            completionsProvider.manuallyTriggerCompletion()
+                        ),
+                        vscode.languages.registerInlineCompletionItemProvider(
+                            [{ notebookType: '*' }, ...documentFilters],
+                            completionsProvider
+                        ),
+                        registerAutocompleteTraceView(completionsProvider),
+                        completionsProvider,
+                    ]
                 })
             )
         ),

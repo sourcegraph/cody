@@ -56,7 +56,7 @@ describe('getConfiguration', () => {
                     case 'cody.edit.preInstruction':
                         return 'My name is not Jeff.'
                     case 'cody.autocomplete.advanced.provider':
-                        return 'unstable-openai'
+                        return 'default'
                     case 'cody.autocomplete.advanced.model':
                         return 'starcoder-16b'
                     case 'cody.autocomplete.advanced.timeout.multiline':
@@ -144,7 +144,7 @@ describe('getConfiguration', () => {
             debugFilter: /.*/,
             telemetryLevel: 'off',
             agentHasPersistentStorage: false,
-            autocompleteAdvancedProvider: 'unstable-openai',
+            autocompleteAdvancedProvider: 'default',
             autocompleteAdvancedModel: 'starcoder-16b',
             autocompleteCompleteSuggestWidgetSelection: false,
             autocompleteFormatOnAccept: true,

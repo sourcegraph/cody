@@ -4,14 +4,13 @@ import { beforeAll, describe, expect, it, vi } from 'vitest'
 import {
     AUTH_STATUS_FIXTURE_AUTHED,
     AUTH_STATUS_FIXTURE_AUTHED_DOTCOM,
-    type ClientConfiguration,
     type CodyLLMSiteConfiguration,
     ModelUsage,
     featureFlagProvider,
+    firstValueFrom,
     mockAuthStatus,
     mockModelsService,
     modelsService,
-    toFirstValueGetter,
     toModelRefStr,
 } from '@sourcegraph/cody-shared'
 
@@ -20,8 +19,17 @@ import { getVSCodeConfigurationWithAccessToken } from '../../testutils/mocks'
 
 import { getServerSentModelsMock } from './__mocks__/create-provider-mocks'
 import { createProvider } from './create-provider'
+import type { Provider } from './provider'
 
-const createProviderFirstValue = toFirstValueGetter(createProvider)
+async function createProviderForTest(...args: Parameters<typeof createProvider>): Promise<Provider> {
+    const providerOrError = await firstValueFrom(createProvider(...args))
+
+    if (providerOrError instanceof Error) {
+        throw providerOrError
+    }
+
+    return providerOrError
+}
 
 describe('createProvider', () => {
     beforeAll(async () => {
@@ -31,88 +39,88 @@ describe('createProvider', () => {
     })
 
     describe('local settings', () => {
-        it('returns `null` if completions provider is not supported', async () => {
-            const provider = await createProviderFirstValue(
+        it('throws an error message if the configuration completions provider is not supported', async () => {
+            const createCall = createProviderForTest(
                 getVSCodeConfigurationWithAccessToken({
-                    autocompleteAdvancedProvider:
-                        'nasa-ai' as ClientConfiguration['autocompleteAdvancedProvider'],
+                    autocompleteAdvancedProvider: 'nasa-ai',
                 })
             )
 
-            expect(provider).toBeNull()
+            await expect(createCall).rejects.toThrowErrorMatchingInlineSnapshot(
+                `[Error: Failed to create "nasa-ai" autocomplete provider derived from "local-editor-settings". Please check your local "cody.autocomplete.advanced.provider" setting.]`
+            )
         })
 
         it('uses configOverwrites if completions provider is not configured', async () => {
-            const provider = await createProviderFirstValue(
+            const provider = await createProviderForTest(
                 getVSCodeConfigurationWithAccessToken({
-                    autocompleteAdvancedProvider:
-                        null as ClientConfiguration['autocompleteAdvancedProvider'],
+                    autocompleteAdvancedProvider: 'default',
                 })
             )
 
-            expect(provider?.id).toBe('fireworks')
-            expect(provider?.legacyModel).toBe('starcoder-hybrid')
+            expect(provider.id).toBe('fireworks')
+            expect(provider.legacyModel).toBe('starcoder-hybrid')
         })
 
         it('returns "fireworks" provider config and corresponding model if specified', async () => {
-            const provider = await createProviderFirstValue(
+            const provider = await createProviderForTest(
                 getVSCodeConfigurationWithAccessToken({
                     autocompleteAdvancedProvider: 'fireworks',
                     autocompleteAdvancedModel: 'starcoder-7b',
                 })
             )
-            expect(provider?.id).toBe('fireworks')
-            expect(provider?.legacyModel).toBe('starcoder-7b')
+            expect(provider.id).toBe('fireworks')
+            expect(provider.legacyModel).toBe('starcoder-7b')
         })
 
         it('returns "fireworks" provider config if specified in settings and default model', async () => {
-            const provider = await createProviderFirstValue(
+            const provider = await createProviderForTest(
                 getVSCodeConfigurationWithAccessToken({ autocompleteAdvancedProvider: 'fireworks' })
             )
-            expect(provider?.id).toBe('fireworks')
-            expect(provider?.legacyModel).toBe('deepseek-coder-v2-lite-base')
+            expect(provider.id).toBe('fireworks')
+            expect(provider.legacyModel).toBe('deepseek-coder-v2-lite-base')
         })
 
         it('returns "experimental-openaicompatible" provider config and corresponding model if specified', async () => {
-            const provider = await createProviderFirstValue(
+            const provider = await createProviderForTest(
                 getVSCodeConfigurationWithAccessToken({
                     autocompleteAdvancedProvider: 'experimental-openaicompatible',
                     autocompleteAdvancedModel: 'starchat-16b-beta',
                 })
             )
-            expect(provider?.id).toBe('experimental-openaicompatible')
-            expect(provider?.legacyModel).toBe('starchat-16b-beta')
+            expect(provider.id).toBe('experimental-openaicompatible')
+            expect(provider.legacyModel).toBe('starchat-16b-beta')
         })
 
         it('returns "experimental-openaicompatible" provider config if specified in settings and default model', async () => {
-            const provider = await createProviderFirstValue(
+            const provider = await createProviderForTest(
                 getVSCodeConfigurationWithAccessToken({
                     autocompleteAdvancedProvider: 'experimental-openaicompatible',
                 })
             )
-            expect(provider?.id).toBe('experimental-openaicompatible')
-            expect(provider?.legacyModel).toBe('starcoder-hybrid')
+            expect(provider.id).toBe('experimental-openaicompatible')
+            expect(provider.legacyModel).toBe('starcoder-hybrid')
         })
 
         it('returns "unstable-openai" provider config if specified in VSCode settings; model is ignored', async () => {
-            const provider = await createProviderFirstValue(
+            const provider = await createProviderForTest(
                 getVSCodeConfigurationWithAccessToken({
                     autocompleteAdvancedProvider: 'unstable-openai',
                     autocompleteAdvancedModel: 'hello-world',
                 })
             )
-            expect(provider?.id).toBe('unstable-openai')
-            expect(provider?.legacyModel).toBe('gpt-35-turbo')
+            expect(provider.id).toBe('unstable-openai')
+            expect(provider.legacyModel).toBe('gpt-35-turbo')
         })
 
         it('returns "anthropic" provider config if specified in VSCode settings', async () => {
-            const provider = await createProviderFirstValue(
+            const provider = await createProviderForTest(
                 getVSCodeConfigurationWithAccessToken({
                     autocompleteAdvancedProvider: 'anthropic',
                 })
             )
-            expect(provider?.id).toBe('anthropic')
-            expect(provider?.legacyModel).toBe('anthropic/claude-instant-1.2')
+            expect(provider.id).toBe('anthropic')
+            expect(provider.legacyModel).toBe('anthropic/claude-instant-1.2')
         })
 
         it('provider specified in VSCode settings takes precedence over the one defined in the site config', async () => {
@@ -124,13 +132,13 @@ describe('createProvider', () => {
                 },
             })
 
-            const provider = await createProviderFirstValue(
+            const provider = await createProviderForTest(
                 getVSCodeConfigurationWithAccessToken({
                     autocompleteAdvancedProvider: 'unstable-openai',
                 })
             )
-            expect(provider?.id).toBe('unstable-openai')
-            expect(provider?.legacyModel).toBe('gpt-35-turbo')
+            expect(provider.id).toBe('unstable-openai')
+            expect(provider.legacyModel).toBe('gpt-35-turbo')
         })
     })
 
@@ -249,13 +257,14 @@ describe('createProvider', () => {
                     configOverwrites,
                 })
 
-                const provider = await createProviderFirstValue(getVSCodeConfigurationWithAccessToken())
+                const createCall = createProviderForTest(getVSCodeConfigurationWithAccessToken())
 
                 if (expected === null) {
-                    expect(provider).toBeNull()
+                    await expect(createCall).rejects.toThrow()
                 } else {
-                    expect(provider?.id).toBe(expected.provider)
-                    expect(provider?.legacyModel).toBe(expected.legacyModel)
+                    const provider = await createCall
+                    expect(provider.id).toBe(expected.provider)
+                    expect(provider.legacyModel).toBe(expected.legacyModel)
                 }
             })
         }
@@ -281,14 +290,14 @@ describe('createProvider', () => {
         })
 
         it('uses the `fireworks` model from the config', async () => {
-            const provider = await createProviderFirstValue(getVSCodeConfigurationWithAccessToken())
+            const provider = await createProviderForTest(getVSCodeConfigurationWithAccessToken())
             const currentModel = modelsService.getDefaultModel(ModelUsage.Autocomplete)
 
             expect(currentModel?.provider).toBe('fireworks')
             expect(currentModel?.id).toBe('deepseek-coder-v2-lite-base')
 
-            expect(provider?.id).toBe(currentModel?.provider)
-            expect(provider?.legacyModel).toBe(currentModel?.id)
+            expect(provider.id).toBe(currentModel?.provider)
+            expect(provider.legacyModel).toBe(currentModel?.id)
         })
 
         it('uses the `anthropic` model from the config', async () => {
@@ -306,13 +315,13 @@ describe('createProvider', () => {
                 authStatus: AUTH_STATUS_FIXTURE_AUTHED,
             })
 
-            const provider = await createProviderFirstValue(getVSCodeConfigurationWithAccessToken())
+            const provider = await createProviderForTest(getVSCodeConfigurationWithAccessToken())
 
             expect(anthropicModel.provider).toBe('anthropic')
             expect(anthropicModel.id).toBe('claude-3-sonnet')
-            expect(provider?.id).toBe(anthropicModel.provider)
+            expect(provider.id).toBe(anthropicModel.provider)
             // TODO(valery): use a readable identifier for BYOK providers to communicate that the model ID from the server is used.
-            expect(provider?.legacyModel).toBe('')
+            expect(provider.legacyModel).toBe('')
         })
     })
 })
