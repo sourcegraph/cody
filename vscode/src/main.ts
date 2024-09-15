@@ -250,13 +250,15 @@ const register = async (
                     statusBar.setAuthStatus(authStatus)
                 },
             })
+        ),
+        subscriptionDisposable(
+            exposeOpenCtxClient(context, platform.createOpenCtxController).subscribe({})
         )
     )
 
     await Promise.all([
         registerAutocomplete(platform, statusBar, disposables),
         tryRegisterTutorial(context, disposables),
-        exposeOpenCtxClient(context, platform.createOpenCtxController),
         registerMinion(context, symfRunner, disposables),
     ])
 
