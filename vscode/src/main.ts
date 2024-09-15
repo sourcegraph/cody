@@ -300,7 +300,7 @@ async function initializeSingletons(
     // Allow the VS Code app's instance of ModelsService to use local storage to persist
     // user's model choices
     modelsService.setStorage(localStorage)
-    disposables.push(upstreamHealthProvider.instance!, contextFiltersProvider)
+    disposables.push(upstreamHealthProvider, contextFiltersProvider)
     commandControllerInit(platform.createCommandsProvider?.(), platform.extensionClient.capabilities)
     disposables.push(
         subscriptionDisposable(
