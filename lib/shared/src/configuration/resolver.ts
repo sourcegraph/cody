@@ -24,7 +24,7 @@ export interface ClientSecrets {
 
 export interface ClientState {
     lastUsedEndpoint: string | null
-    anonymousUserID: string
+    anonymousUserID: string | null
     lastUsedChatModality: 'sidebar' | 'editor'
 }
 

@@ -6,6 +6,6 @@ data class TestingTelemetryEvent(
   val action: String,
   val source: SourceParams,
   val timestamp: String,
-  val testOnlyAnonymousUserID: String,
+  val testOnlyAnonymousUserID: String? = null,
 )
 
