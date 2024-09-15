@@ -10,7 +10,7 @@ import {
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
 import { fetch } from '@sourcegraph/cody-shared'
-import type * as vscode from 'vscode'
+import * as vscode from 'vscode'
 
 // We choose an interval that gives us a reasonable aggregate without causing
 // too many requests
@@ -27,11 +27,24 @@ class UpstreamHealthProvider implements vscode.Disposable {
     private lastUpstreamLatency?: number
     private lastGatewayLatency?: number
 
+    private disposables: vscode.Disposable[] = []
+
     private config: Pick<
         ClientConfigurationWithAccessToken,
         'serverEndpoint' | 'customHeaders' | 'accessToken'
     > | null = null
     private nextTimeoutId: NodeJS.Timeout | null = null
+
+    constructor() {
+        this.disposables.push(
+            vscode.window.onDidChangeWindowState(state => {
+                if (state.focused && this.lastMeasurementSkippedBecauseNotFocused) {
+                    this.lastMeasurementSkippedBecauseNotFocused = false
+                    this.enqueue(INITIAL_PING_DELAY_MS)
+                }
+            })
+        )
+    }
 
     public getUpstreamLatency(): number | undefined {
         if (!this.config) {
@@ -60,11 +73,17 @@ class UpstreamHealthProvider implements vscode.Disposable {
         // Enqueue the initial ping after a config change in 10 seconds. This
         // avoids running the test while the extension is still initializing and
         // competing with many other network requests.
+        this.enqueue(INITIAL_PING_DELAY_MS)
+    }
+
+    private enqueue(delay: number): void {
         if (this.nextTimeoutId) {
             clearTimeout(this.nextTimeoutId)
         }
-        this.nextTimeoutId = setTimeout(this.measure.bind(this), INITIAL_PING_DELAY_MS)
+        this.nextTimeoutId = setTimeout(this.measure.bind(this), delay)
     }
+
+    private lastMeasurementSkippedBecauseNotFocused = false
 
     private async measure() {
         if (this.nextTimeoutId) {
@@ -73,6 +92,15 @@ class UpstreamHealthProvider implements vscode.Disposable {
 
         try {
             if (process.env.DISABLE_UPSTREAM_HEALTH_PINGS === 'true') {
+                return
+            }
+
+            if (!vscode.window.state.focused) {
+                // Skip if the window is not focused, and try again when the window becomes focused
+                // again. Some users have OS firewalls that make periodic background network access
+                // annoying for users, and this eliminates that annoyance. See
+                // https://linear.app/sourcegraph/issue/CODY-3745/codys-background-periodic-network-access-causes-2fa.
+                this.lastMeasurementSkippedBecauseNotFocused = true
                 return
             }
 
@@ -140,16 +168,16 @@ class UpstreamHealthProvider implements vscode.Disposable {
             // We don't care about errors here, we just want to measure the latency
         } finally {
             // Enqueue a new ping
-            if (this.nextTimeoutId) {
-                clearTimeout(this.nextTimeoutId)
-            }
-            this.nextTimeoutId = setTimeout(this.measure.bind(this), PING_INTERVAL_MS)
+            this.enqueue(PING_INTERVAL_MS)
         }
     }
 
     public dispose(): void {
         if (this.nextTimeoutId) {
             clearTimeout(this.nextTimeoutId)
+        }
+        for (const disposable of this.disposables) {
+            disposable.dispose()
         }
     }
 }

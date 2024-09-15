@@ -803,6 +803,8 @@ export const vsCodeMocks = {
         },
         onDidChangeActiveTextEditor() {},
         onDidChangeTextEditorSelection() {},
+        onDidChangeWindowState() {},
+        state: { focused: false },
         createTextEditorDecorationType: () => ({
             key: 'foo',
             dispose: () => {},
