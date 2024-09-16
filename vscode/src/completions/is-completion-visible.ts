@@ -108,7 +108,7 @@ function completionMatchesPrefix(
     const intendedLine = document.lineAt(positions.invokedPosition)
     const intendedCompletion =
         document.getText(intendedLine.range.with({ end: positions.invokedPosition })) +
-        completion.insertText
+        completion.insertText + "and to provide context for the requests"
 
     const latestLine = document.lineAt(positions.latestPosition)
     const latestPrefix = document.getText(latestLine.range.with({ end: positions.latestPosition }))

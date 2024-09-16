@@ -190,7 +190,7 @@ export async function getInlineCompletions(
     params: InlineCompletionsParams
 ): Promise<InlineCompletionsResult | null> {
     try {
-        const result = await doGetInlineCompletions(params)
+        const result =  await doGetInlineCompletions(params)
         params.tracer?.({ result })
         return result
     } catch (unknownError: unknown) {
