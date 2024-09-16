@@ -949,3 +949,45 @@ export function abortableOperation<T, R>(
             mergeMap(input => promiseFactoryToObservable(signal => operation(input, signal)))
         )
 }
+
+export function catchError<T, R>(
+    handler: (error: any) => ObservableLike<R>
+): (source: ObservableLike<T>) => Observable<T | R> {
+    return (source: ObservableLike<T>) =>
+        new Observable<T | R>(observer => {
+            let handlerSubscription: UnsubscribableLike | undefined
+            const sourceSubscription = source.subscribe({
+                next(value) {
+                    observer.next(value)
+                },
+                error(err) {
+                    try {
+                        const fallback = handler(err)
+                        handlerSubscription = fallback.subscribe({
+                            next(value) {
+                                observer.next(value)
+                            },
+                            error(innerErr) {
+                                observer.error(innerErr)
+                            },
+                            complete() {
+                                observer.complete()
+                            },
+                        })
+                    } catch (handlerError) {
+                        observer.error(handlerError)
+                    }
+                },
+                complete() {
+                    observer.complete()
+                },
+            })
+
+            return () => {
+                unsubscribe(sourceSubscription)
+                if (handlerSubscription) {
+                    unsubscribe(handlerSubscription)
+                }
+            }
+        })
+}

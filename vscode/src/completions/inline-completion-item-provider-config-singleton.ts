@@ -1,4 +1,3 @@
-import type { ResolvedConfiguration } from '@sourcegraph/cody-shared'
 import type { CodyStatusBar } from '../services/StatusBar'
 import type { BfgRetriever } from './context/retrievers/bfg/bfg-retriever'
 import type { Provider } from './providers/shared/provider'
@@ -10,9 +9,6 @@ export interface CodyCompletionItemProviderConfig {
     statusBar: CodyStatusBar
     tracer?: ProvideInlineCompletionItemsTracer | null
     isRunningInsideAgent?: boolean
-    config: ResolvedConfiguration
-
-    isDotComUser?: boolean
 
     createBfgRetriever?: () => BfgRetriever
 
@@ -28,8 +24,7 @@ export interface CodyCompletionItemProviderConfig {
 export type InlineCompletionItemProviderConfig = Omit<
     CodyCompletionItemProviderConfig,
     'createBfgRetriever'
-> &
-    Required<Pick<CodyCompletionItemProviderConfig, 'isDotComUser'>>
+>
 
 /**
  * A singleton that manages the configuration for the inline completion item provider.

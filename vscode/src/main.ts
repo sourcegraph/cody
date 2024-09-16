@@ -6,9 +6,11 @@ import {
     type ConfigurationInput,
     type DefaultCodyCommands,
     type Guardrails,
+    NEVER,
     PromptString,
     type ResolvedConfiguration,
     authStatus,
+    catchError,
     combineLatest,
     contextFiltersProvider,
     currentAuthStatus,
@@ -18,6 +20,7 @@ import {
     fromVSCodeEvent,
     graphqlClient,
     isDotCom,
+    mergeMap,
     resolvedConfig,
     setClientNameVersion,
     setLogger,
@@ -234,7 +237,7 @@ const register = async (
         )
     )
 
-    await registerAutocomplete(platform, statusBar, disposables)
+    registerAutocomplete(platform, statusBar, disposables)
     const tutorialSetup = tryRegisterTutorial(context, disposables)
 
     registerCodyCommands(statusBar, sourceControl, chatClient, disposables)
@@ -607,72 +610,34 @@ async function tryRegisterTutorial(
 }
 
 /**
- * Registers autocomplete functionality. This can be long-running, so it's recommended
- * the returned promise is awaited in parallel with other tasks.
+ * Registers autocomplete functionality.
  */
 function registerAutocomplete(
     platform: PlatformContext,
     statusBar: CodyStatusBar,
     disposables: vscode.Disposable[]
-): Promise<void> {
-    let setupAutocompleteQueue = Promise.resolve() // Create a promise chain to avoid parallel execution
-
-    let autocompleteDisposables: vscode.Disposable[] = []
-    function disposeAutocomplete(): void {
-        if (autocompleteDisposables) {
-            for (const d of autocompleteDisposables) {
-                d.dispose()
-            }
-            autocompleteDisposables = []
-        }
-    }
-    disposables.push({
-        dispose: disposeAutocomplete,
-    })
-
-    const setupAutocomplete = (): Promise<void> => {
-        setupAutocompleteQueue = setupAutocompleteQueue
-            .then(async () => {
-                const config = await currentResolvedConfig()
-                if (!config.configuration.autocomplete) {
-                    disposeAutocomplete()
-                    if (
-                        config.configuration.isRunningInsideAgent &&
-                        platform.extensionClient.capabilities?.completions !== 'none'
-                    ) {
-                        throw new Error(
-                            'The setting `config.autocomplete` evaluated to `false`. It must be true when running inside the agent. ' +
-                                'To fix this problem, make sure that the setting cody.autocomplete.enabled has the value true.'
-                        )
-                    }
-                    return
-                }
-
-                // If completions are already initialized and still enabled, we need to reset the
-                // completion provider.
-                disposeAutocomplete()
-
-                autocompleteDisposables.push(
-                    subscriptionDisposable(
-                        createInlineCompletionItemProvider({
-                            config,
-                            statusBar,
-                            createBfgRetriever: platform.createBfgRetriever,
-                        }).subscribe({})
-                    )
-                )
-            })
-            .catch(error => {
-                logError('registerAutocomplete', 'Error creating inline completion item provider', error)
-            })
-        return setupAutocompleteQueue
-    }
+): void {
     disposables.push(
         subscriptionDisposable(
-            combineLatest([resolvedConfig, authStatus]).subscribe({ next: setupAutocomplete })
+            combineLatest([resolvedConfig, authStatus])
+                .pipe(
+                    mergeMap(([config, authStatus]) =>
+                        createInlineCompletionItemProvider({
+                            config,
+                            authStatus,
+                            platform,
+                            statusBar,
+                            createBfgRetriever: platform.createBfgRetriever,
+                        })
+                    ),
+                    catchError(error => {
+                        logError('registerAutocomplete', 'Error', error)
+                        return NEVER
+                    })
+                )
+                .subscribe({})
         )
     )
-    return setupAutocomplete().catch(() => {})
 }
 
 function registerMinion(
