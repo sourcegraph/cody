@@ -1,4 +1,5 @@
 import { type PromptString, ps } from '@sourcegraph/cody-shared'
+
 import { CLOSING_CODE_TAG, OPENING_CODE_TAG, getHeadAndTail } from '../text-processing'
 import { DefaultModel, type FormatPromptParams, type GetOllamaPromptParams } from './default'
 
