@@ -7,9 +7,9 @@ import { getCurrentDocContext } from './get-current-doc-context'
 import { InlineCompletionsResultSource, TriggerKind } from './get-inline-completions'
 import { initCompletionProviderConfig } from './get-inline-completions-tests/helpers'
 import type { CompletionLogID } from './logger'
-import type { FetchCompletionResult } from './providers/fetch-and-process-completions'
-import { STOP_REASON_HOT_STREAK } from './providers/hot-streak'
-import { type GenerateCompletionsOptions, Provider } from './providers/provider'
+import type { FetchCompletionResult } from './providers/shared/fetch-and-process-completions'
+import { STOP_REASON_HOT_STREAK } from './providers/shared/hot-streak'
+import { type GenerateCompletionsOptions, Provider } from './providers/shared/provider'
 import {
     RequestManager,
     type RequestManagerResult,

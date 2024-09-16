@@ -21,13 +21,13 @@ import { forkSignal, generatorWithTimeout, zipGenerators } from '../utils'
 import {
     type FetchCompletionResult,
     fetchAndProcessDynamicMultilineCompletions,
-} from './fetch-and-process-completions'
+} from './shared/fetch-and-process-completions'
 import {
     type CompletionProviderTracer,
     type GenerateCompletionsOptions,
     Provider,
     type ProviderFactoryParams,
-} from './provider'
+} from './shared/provider'
 
 const EOT_STARCHAT = '<|end|>'
 const EOT_STARCODER = '<|endoftext|>'

@@ -18,12 +18,12 @@ import {
     type LastInlineCompletionCandidate,
 } from './get-inline-completions'
 import { type CompletionLogID, logCompletionBookkeepingEvent } from './logger'
-import { STOP_REASON_HOT_STREAK } from './providers/hot-streak'
+import { STOP_REASON_HOT_STREAK } from './providers/shared/hot-streak'
 import type {
     CompletionProviderTracer,
     GenerateCompletionsOptions,
     Provider,
-} from './providers/provider'
+} from './providers/shared/provider'
 import { reuseLastCandidate } from './reuse-last-candidate'
 import { getPrevNonEmptyLineIndex, lines, removeIndentation } from './text-processing'
 import {

@@ -14,14 +14,14 @@ import { TriggerKind } from '../get-inline-completions'
 import {
     type FetchCompletionResult,
     fetchAndProcessDynamicMultilineCompletions,
-} from './fetch-and-process-completions'
+} from './shared/fetch-and-process-completions'
 import {
     type CompletionProviderTracer,
     type GenerateCompletionsOptions,
     MAX_RESPONSE_TOKENS,
     Provider,
     type ProviderFactoryParams,
-} from './provider'
+} from './shared/provider'
 
 export const FIREWORKS_DEEPSEEK_7B_LANG_SPECIFIC_V0 = 'deepseek-finetuned-lang-specific-v0'
 export const FIREWORKS_DEEPSEEK_7B_LANG_SPECIFIC_V1 = 'deepseek-finetuned-lang-specific-v1'

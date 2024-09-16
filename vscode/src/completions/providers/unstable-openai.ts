@@ -20,13 +20,13 @@ import { forkSignal, generatorWithTimeout, zipGenerators } from '../utils'
 import {
     type FetchCompletionResult,
     fetchAndProcessDynamicMultilineCompletions,
-} from './fetch-and-process-completions'
+} from './shared/fetch-and-process-completions'
 import {
     type CompletionProviderTracer,
     type GenerateCompletionsOptions,
     Provider,
     type ProviderFactoryParams,
-} from './provider'
+} from './shared/provider'
 
 class UnstableOpenAIProvider extends Provider {
     public stopSequences = [CLOSING_CODE_TAG.toString(), MULTILINE_STOP_SEQUENCE]

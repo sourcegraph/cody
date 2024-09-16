@@ -18,8 +18,12 @@ import { initCompletionProviderConfig, params } from './get-inline-completions-t
 import { InlineCompletionItemProvider } from './inline-completion-item-provider'
 import * as CompletionLogger from './logger'
 import { createProvider } from './providers/anthropic'
-import type { FetchCompletionResult } from './providers/fetch-and-process-completions'
-import { type GenerateCompletionsOptions, Provider, type ProviderOptions } from './providers/provider'
+import type { FetchCompletionResult } from './providers/shared/fetch-and-process-completions'
+import {
+    type GenerateCompletionsOptions,
+    Provider,
+    type ProviderOptions,
+} from './providers/shared/provider'
 import type { RequestParams } from './request-manager'
 import { documentAndPosition } from './test-helpers'
 import type { InlineCompletionItemWithAnalytics } from './text-processing/process-inline-completions'

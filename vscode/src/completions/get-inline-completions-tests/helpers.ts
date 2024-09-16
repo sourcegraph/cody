@@ -41,7 +41,7 @@ import {
 import { AutocompleteStageRecorder } from '../logger'
 import { createProvider as createAnthropicProvider } from '../providers/anthropic'
 import { createProvider as createFireworksProvider } from '../providers/fireworks'
-import { pressEnterAndGetIndentString } from '../providers/hot-streak'
+import { pressEnterAndGetIndentString } from '../providers/shared/hot-streak'
 import { RequestManager } from '../request-manager'
 import { documentAndPosition } from '../test-helpers'
 import { sleep } from '../utils'
@@ -159,7 +159,7 @@ export function params(
         logger: undefined,
     }
 
-    // TODO: add support for `createProvider` from `vscode/src/completions/providers/create-provider.ts`
+    // TODO: add support for `createProvider` from `vscode/src/completions/providers/shared/create-provider.ts`
     const createProvider =
         configuration?.configuration?.autocompleteAdvancedProvider === 'fireworks' &&
         configuration.configuration.autocompleteAdvancedModel
