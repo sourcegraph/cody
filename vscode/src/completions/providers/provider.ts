@@ -170,7 +170,7 @@ export abstract class Provider {
         abortSignal: AbortSignal,
         snippets: AutocompleteContextSnippet[],
         tracer?: CompletionProviderTracer
-    ): AsyncGenerator<FetchCompletionResult[]>
+    ): AsyncGenerator<FetchCompletionResult[]> | Promise<AsyncGenerator<FetchCompletionResult[]>>
 }
 
 /**

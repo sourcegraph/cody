@@ -163,7 +163,6 @@ export function params(
                 },
             }
         },
-        onConfigurationChange() {},
         logger: undefined,
     }
 

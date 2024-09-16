@@ -7,8 +7,10 @@ import {
     type ConfigurationUseContext,
     DOTCOM_URL,
     OLLAMA_DEFAULT_URL,
+    type PickResolvedConfiguration,
     PromptString,
     ps,
+    setStaticResolvedConfigurationValue,
 } from '@sourcegraph/cody-shared'
 
 import { URI } from 'vscode-uri'
@@ -237,4 +239,22 @@ function checkValidEnumValues(configName: string, value: string | null): void {
             )
         }
     }
+}
+
+/**
+ * Set the global {@link resolvedConfig} value with the given {@link AuthCredentials} and otherwise
+ * use global config and client state.
+ *
+ * Call this only when this value is guaranteed not to change during execution (such as in CLI
+ * programs).
+ */
+export function setStaticResolvedConfigurationWithAuthCredentials({
+    configuration,
+    auth,
+}: PickResolvedConfiguration<{ configuration: 'customHeaders'; auth: true }>): void {
+    setStaticResolvedConfigurationValue({
+        configuration: { ...getConfiguration(), customHeaders: configuration.customHeaders },
+        auth,
+        clientState: localStorage.getClientState(),
+    })
 }

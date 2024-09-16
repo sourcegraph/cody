@@ -105,12 +105,12 @@ Your response should contains only the code required to connect the gap, and the
         return { messages, prefix: { head, tail, overlap } }
     }
 
-    public generateCompletions(
+    public async generateCompletions(
         options: GenerateCompletionsOptions,
         abortSignal: AbortSignal,
         snippets: AutocompleteContextSnippet[],
         tracer?: CompletionProviderTracer
-    ): AsyncGenerator<FetchCompletionResult[]> {
+    ): Promise<AsyncGenerator<FetchCompletionResult[]>> {
         const partialRequestParams = getCompletionParams({
             providerOptions: options,
             lineNumberDependentCompletionParams,
@@ -127,11 +127,11 @@ Your response should contains only the code required to connect the gap, and the
         tracer?.params(requestParams)
 
         const completionsGenerators = Array.from({ length: options.numberOfCompletionsToGenerate }).map(
-            () => {
+            async () => {
                 const abortController = forkSignal(abortSignal)
 
                 const completionResponseGenerator = generatorWithTimeout(
-                    this.client.complete(requestParams, abortController),
+                    await this.client.complete(requestParams, abortController),
                     requestParams.timeoutMs,
                     abortController
                 )
@@ -145,7 +145,7 @@ Your response should contains only the code required to connect the gap, and the
             }
         )
 
-        return zipGenerators(completionsGenerators)
+        return zipGenerators(await Promise.all(completionsGenerators))
     }
 
     private postProcess = (rawResponse: string): string => {

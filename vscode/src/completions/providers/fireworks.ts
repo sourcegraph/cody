@@ -110,12 +110,12 @@ const lineNumberDependentCompletionParams = getLineNumberDependentCompletionPara
 })
 
 class FireworksProvider extends Provider {
-    public generateCompletions(
+    public async generateCompletions(
         options: GenerateCompletionsOptions,
         abortSignal: AbortSignal,
         snippets: AutocompleteContextSnippet[],
         tracer?: CompletionProviderTracer
-    ): AsyncGenerator<FetchCompletionResult[]> {
+    ): Promise<AsyncGenerator<FetchCompletionResult[]>> {
         const partialRequestParams = getCompletionParams({
             providerOptions: options,
             lineNumberDependentCompletionParams,
@@ -147,11 +147,11 @@ class FireworksProvider extends Provider {
         tracer?.params(requestParams)
 
         const completionsGenerators = Array.from({ length: options.numberOfCompletionsToGenerate }).map(
-            () => {
+            async () => {
                 const abortController = forkSignal(abortSignal)
 
                 const completionResponseGenerator = generatorWithTimeout(
-                    this.createClient(options, requestParams, abortController),
+                    await this.createClient(options, requestParams, abortController),
                     requestParams.timeoutMs,
                     abortController
                 )
@@ -180,7 +180,7 @@ class FireworksProvider extends Provider {
          * available, and the switch to async generators maintains the same behavior
          * as with promises.
          */
-        return zipGenerators(completionsGenerators)
+        return zipGenerators(await Promise.all(completionsGenerators))
     }
 
     private getCustomHeaders = (isFireworksTracingEnabled?: boolean): Record<string, string> => {
@@ -209,11 +209,11 @@ class FireworksProvider extends Provider {
         ].includes(this.legacyModel)
     }
 
-    private createClient(
+    private async createClient(
         options: GenerateCompletionsOptions,
         requestParams: CodeCompletionsParams,
         abortController: AbortController
-    ): CompletionResponseGenerator {
+    ): Promise<CompletionResponseGenerator> {
         const { authStatus, config } = options
 
         const isLocalInstance = Boolean(
@@ -255,7 +255,7 @@ class FireworksProvider extends Provider {
             })
         }
 
-        return this.client.complete(requestParams, abortController, {
+        return await this.client.complete(requestParams, abortController, {
             customHeaders: this.getCustomHeaders(authStatus.isFireworksTracingEnabled),
         })
     }
