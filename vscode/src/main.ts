@@ -60,6 +60,7 @@ import { newCodyCommandArgs } from './commands/utils/get-commands'
 import { createInlineCompletionItemProvider } from './completions/create-inline-completion-item-provider'
 import { getConfiguration, getFullConfig } from './configuration'
 import { exposeOpenCtxClient } from './context/openctx'
+import { logGlobalStateEmissions } from './dev/helpers'
 import { EditManager } from './edit/manager'
 import { manageDisplayPathEnvInfoForExtension } from './editor/displayPathEnvInfo'
 import { VSCodeEditor } from './editor/vscode-editor'
@@ -144,6 +145,10 @@ export async function start(
             )
         )
     )
+
+    if (process.env.LOG_GLOBAL_STATE_EMISSIONS) {
+        disposables.push(logGlobalStateEmissions())
+    }
 
     disposables.push(createOrUpdateTelemetryRecorderProvider(isExtensionModeDevOrTest))
     disposables.push(await register(context, platform, isExtensionModeDevOrTest))
