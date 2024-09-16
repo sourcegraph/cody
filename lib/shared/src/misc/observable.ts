@@ -940,3 +940,12 @@ export function lifecycle<T>({
             }
         })
 }
+
+export function abortableOperation<T, R>(
+    operation: (input: T, signal: AbortSignal) => Promise<R>
+): (source: ObservableLike<T>) => Observable<R> {
+    return (source: ObservableLike<T>): Observable<R> =>
+        Observable.from(source).pipe(
+            mergeMap(input => promiseFactoryToObservable(signal => operation(input, signal)))
+        )
+}

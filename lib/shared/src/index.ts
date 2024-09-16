@@ -199,7 +199,6 @@ export { SourcegraphBrowserCompletionsClient } from './sourcegraph-api/completio
 export { SourcegraphCompletionsClient } from './sourcegraph-api/completions/client'
 export type {
     CompletionLogger,
-    CompletionsClientConfig,
     CompletionRequestParameters,
 } from './sourcegraph-api/completions/client'
 export * from './sourcegraph-api/completions/types'

@@ -34,6 +34,7 @@ import {
     currentAuthStatus,
     currentAuthStatusAuthed,
     currentAuthStatusOrNotReadyYet,
+    currentResolvedConfig,
     featureFlagProvider,
     getContextForChatMessage,
     graphqlClient,
@@ -81,7 +82,6 @@ import {
 import type { startTokenReceiver } from '../../auth/token-receiver'
 import { getContextFileFromUri } from '../../commands/context/file-path'
 import { getContextFileFromCursor, getContextFileFromSelection } from '../../commands/context/selection'
-import { getConfigWithEndpoint } from '../../configuration'
 import { resolveContextItems } from '../../editor/utils/editor-context'
 import type { VSCodeEditor } from '../../editor/vscode-editor'
 import type { ExtensionClient } from '../../extension-client'
@@ -462,7 +462,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 )
                 break
             case 'auth': {
-                const config = getConfigWithEndpoint()
+                const { configuration: config } = await currentResolvedConfig()
                 if (message.authKind === 'callback' && message.endpoint) {
                     redirectToEndpointLogin(message.endpoint, config.agentIDE)
                     break
@@ -582,25 +582,25 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
     }
 
     private async getConfigForWebview(): Promise<ConfigurationSubsetForWebview & LocalEnv> {
-        const config = getConfigWithEndpoint()
+        const { configuration, auth } = await currentResolvedConfig()
         const sidebarViewOnly = this.extensionClient.capabilities?.webviewNativeConfig?.view === 'single'
         const isEditorViewType = this.webviewPanelOrView?.viewType === 'cody.editorPanel'
         const webviewType = isEditorViewType && !sidebarViewOnly ? 'editor' : 'sidebar'
         const experimentalOneBox = await this.isOneBoxEnabled()
 
         return {
-            agentIDE: config.agentIDE ?? CodyIDE.VSCode,
-            agentExtensionVersion: config.isRunningInsideAgent
-                ? config.agentExtensionVersion
+            agentIDE: configuration.agentIDE ?? CodyIDE.VSCode,
+            agentExtensionVersion: configuration.isRunningInsideAgent
+                ? configuration.agentExtensionVersion
                 : VSCEVersion,
             uiKindIsWeb: vscode.env.uiKind === vscode.UIKind.Web,
-            serverEndpoint: config.serverEndpoint,
-            experimentalNoodle: config.experimentalNoodle,
+            serverEndpoint: auth.serverEndpoint,
+            experimentalNoodle: configuration.experimentalNoodle,
             smartApply: this.isSmartApplyEnabled(),
             experimentalOneBox,
             webviewType,
             multipleWebviewsEnabled: !sidebarViewOnly,
-            internalDebugContext: config.internalDebugContext,
+            internalDebugContext: configuration.internalDebugContext,
         }
     }
 

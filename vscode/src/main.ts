@@ -58,7 +58,7 @@ import { CodySourceControl } from './commands/scm/source-control'
 import type { CodyCommandArgs } from './commands/types'
 import { newCodyCommandArgs } from './commands/utils/get-commands'
 import { createInlineCompletionItemProvider } from './completions/create-inline-completion-item-provider'
-import { getConfiguration, getFullConfig } from './configuration'
+import { getConfiguration } from './configuration'
 import { exposeOpenCtxClient } from './context/openctx'
 import { logGlobalStateEmissions } from './dev/helpers'
 import { EditManager } from './edit/manager'
@@ -66,6 +66,7 @@ import { manageDisplayPathEnvInfoForExtension } from './editor/displayPathEnvInf
 import { VSCodeEditor } from './editor/vscode-editor'
 import type { PlatformContext } from './extension.common'
 import { configureExternalServices } from './external-services'
+import type { ExtensionConfiguration } from './jsonrpc/agent-protocol'
 import { isRunningInsideAgent } from './jsonrpc/isRunningInsideAgent'
 import type { SymfRunner } from './local-context/symf'
 import { logDebug, logError } from './log'
@@ -126,7 +127,7 @@ export async function start(
                     event => event.affectsConfiguration('cody') || event.affectsConfiguration('openctx')
                 ),
                 startWith(undefined),
-                map(() => getFullConfig()),
+                map(() => getConfiguration()),
                 distinctUntilChanged()
             ),
             fromVSCodeEvent(secretStorage.onDidChange.bind(secretStorage)).pipe(
@@ -488,7 +489,7 @@ function registerAuthCommands(disposables: vscode.Disposable[]): void {
         ), // Used by the agent
         vscode.commands.registerCommand(
             'cody.agent.auth.authenticate',
-            async ({ serverEndpoint, accessToken, customHeaders }) => {
+            async ({ serverEndpoint, accessToken, customHeaders }: ExtensionConfiguration) => {
                 if (typeof serverEndpoint !== 'string') {
                     throw new TypeError('serverEndpoint is required')
                 }
@@ -515,7 +516,8 @@ function registerUpgradeHandlers(disposables: vscode.Disposable[]): void {
                 if (uri.path === '/app-done') {
                     // This is an old re-entrypoint from App that is a no-op now.
                 } else {
-                    tokenCallbackHandler(uri, getConfiguration().customHeaders)
+                    const { configuration } = await currentResolvedConfig()
+                    tokenCallbackHandler(uri, configuration.customHeaders)
                 }
             },
         }),

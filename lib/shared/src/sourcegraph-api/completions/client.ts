@@ -1,5 +1,5 @@
 import type { Span } from '@opentelemetry/api'
-import { type ClientConfigurationWithAccessToken, addClientInfoParams, getSerializedParams } from '../..'
+import { addClientInfoParams, getSerializedParams } from '../..'
 import { currentResolvedConfig } from '../../configuration/resolver'
 import { useCustomChatClient } from '../../llm-providers'
 import { recordErrorToSpan } from '../../tracing'
@@ -31,11 +31,6 @@ export interface CompletionRequestParameters {
     apiVersion: number
     customHeaders?: Record<string, string>
 }
-
-export type CompletionsClientConfig = Pick<
-    ClientConfigurationWithAccessToken,
-    'serverEndpoint' | 'accessToken' | 'customHeaders'
->
 
 /**
  * Access the chat based LLM APIs via a Sourcegraph server instance.

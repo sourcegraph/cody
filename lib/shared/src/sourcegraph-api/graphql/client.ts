@@ -7,11 +7,11 @@ import type { TelemetryEventInput } from '@sourcegraph/telemetry'
 import { escapeRegExp } from 'lodash'
 import { Observable } from 'observable-fns'
 import semver from 'semver'
-import type { AuthStatus } from '../../auth/types'
+import { authStatus, currentAuthStatusOrNotReadyYet } from '../../auth/authStatus'
 import { dependentAbortController, onAbort } from '../../common/abortController'
 import { type PickResolvedConfiguration, resolvedConfig } from '../../configuration/resolver'
 import { logDebug, logError } from '../../logger'
-import { firstValueFrom } from '../../misc/observable'
+import { type Unsubscribable, abortableOperation, firstValueFrom } from '../../misc/observable'
 import { addTraceparent, wrapInActiveSpan } from '../../tracing'
 import { isError } from '../../utils'
 import { DOTCOM_URL, isDotCom } from '../environments'
@@ -1607,8 +1607,28 @@ export class ClientConfigSingleton {
         attribution: false,
     }
 
+    private configSubscription: Unsubscribable
+
     // Constructor is private to prevent creating new instances outside of the class
-    private constructor() {}
+    private constructor() {
+        this.configSubscription = authStatus
+            .pipe(
+                abortableOperation(async (authStatus, signal) => {
+                    this.isSignedIn = !!authStatus.authenticated
+                    if (this.isSignedIn) {
+                        this.refreshConfig(signal).catch(() => {})
+                    } else {
+                        this.cachedClientConfig = undefined
+                        this.cachedAt = 0
+                    }
+                })
+            )
+            .subscribe({})
+    }
+
+    public dispose(): void {
+        this.configSubscription.unsubscribe()
+    }
 
     // Static method to get the singleton instance
     public static getInstance(): ClientConfigSingleton {
@@ -1618,17 +1638,11 @@ export class ClientConfigSingleton {
         return ClientConfigSingleton.instance
     }
 
-    public async setAuthStatus(authStatus: AuthStatus, signal?: AbortSignal): Promise<void> {
-        this.isSignedIn = !!authStatus.authenticated
-        if (this.isSignedIn) {
-            await this.refreshConfig(signal)
-        } else {
-            this.cachedClientConfig = undefined
-            this.cachedAt = 0
-        }
-    }
-
     public async getConfig(signal?: AbortSignal): Promise<CodyClientConfig | undefined> {
+        // TODO(sqs)#observe: make this reactive
+        if (!currentAuthStatusOrNotReadyYet()?.authenticated) {
+            return undefined
+        }
         try {
             switch (this.shouldFetch()) {
                 case 'sync':
