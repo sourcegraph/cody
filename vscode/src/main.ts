@@ -191,11 +191,16 @@ const register = async (
     registerChatListeners(disposables)
 
     // Initialize external services
-    const { chatClient, completionsClient, guardrails, localEmbeddings, symfRunner, contextAPIClient } =
-        await configureExternalServices(context, platform)
-    if (symfRunner) {
-        disposables.push(symfRunner)
-    }
+    const {
+        chatClient,
+        completionsClient,
+        guardrails,
+        localEmbeddings,
+        symfRunner,
+        contextAPIClient,
+        dispose: disposeExternalServices,
+    } = await configureExternalServices(context, platform)
+    disposables.push({ dispose: disposeExternalServices })
 
     const editor = new VSCodeEditor()
     const contextRetriever = new ContextRetriever(

@@ -7,17 +7,14 @@ import {
     SourcegraphGuardrailsClient,
     type StoredLastValue,
     currentAuthStatusAuthed,
-    firstValueFrom,
     graphqlClient,
-    isError,
-    resolvedConfigWithAccessToken,
+    subscriptionDisposable,
 } from '@sourcegraph/cody-shared'
-
 import { ContextAPIClient } from './chat/context/contextAPIClient'
 import type { PlatformContext } from './extension.common'
 import type { LocalEmbeddingsController } from './local-context/local-embeddings'
 import type { SymfRunner } from './local-context/symf'
-import { logDebug, logger } from './log'
+import { logger } from './log'
 
 interface ExternalServices {
     chatClient: ChatClient
@@ -26,6 +23,7 @@ interface ExternalServices {
     localEmbeddings: StoredLastValue<LocalEmbeddingsController | undefined> | undefined
     symfRunner: SymfRunner | undefined
     contextAPIClient: ContextAPIClient | undefined
+    dispose(): void
 }
 
 export async function configureExternalServices(
@@ -39,21 +37,21 @@ export async function configureExternalServices(
         | 'createSymfRunner'
     >
 ): Promise<ExternalServices> {
-    const initialConfig = await firstValueFrom(resolvedConfigWithAccessToken)
-    platform.createSentryService?.()
-    platform.createOpenTelemetryService?.()
+    const disposables: (vscode.Disposable | undefined)[] = []
+
+    const sentryService = platform.createSentryService?.()
+    if (sentryService) disposables.push(sentryService)
+
+    const openTelemetryService = platform.createOpenTelemetryService?.()
+    if (openTelemetryService) disposables.push(openTelemetryService)
+
     const completionsClient = platform.createCompletionsClient(logger)
 
     const symfRunner = platform.createSymfRunner?.(context, completionsClient)
-
-    if (initialConfig.codebase && isError(await graphqlClient.getRepoId(initialConfig.codebase))) {
-        logDebug(
-            'external-services:configureExternalServices',
-            `Cody could not find the '${initialConfig.codebase}' repository on your Sourcegraph instance.\nPlease check that the repository exists. You can override the repository with the "cody.codebase" setting.`
-        )
-    }
+    if (symfRunner) disposables.push(symfRunner)
 
     const localEmbeddings = platform.createLocalEmbeddingsController?.()
+    if (localEmbeddings) disposables.push(subscriptionDisposable(localEmbeddings.subscription))
 
     const chatClient = new ChatClient(completionsClient, () => currentAuthStatusAuthed())
 
@@ -68,5 +66,10 @@ export async function configureExternalServices(
         localEmbeddings,
         symfRunner,
         contextAPIClient,
+        dispose(): void {
+            for (const d of disposables) {
+                d?.dispose()
+            }
+        },
     }
 }
