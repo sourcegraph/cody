@@ -9,6 +9,7 @@ import {
     fetchAndProcessDynamicMultilineCompletions,
 } from './shared/fetch-and-process-completions'
 import {
+    BYOK_MODEL_ID_FOR_LOGS,
     type CompletionProviderTracer,
     type GenerateCompletionsOptions,
     Provider,
@@ -66,22 +67,10 @@ class UnstableOpenAIProvider extends Provider {
     }
 }
 
-export function createProvider({ legacyModel, provider, source }: ProviderFactoryParams): Provider {
-    let clientModel = legacyModel
-
-    if (provider === 'azure-openai' && legacyModel) {
-        // Model name for azure openai provider is a deployment name. It shouldn't appear in logs.
-        clientModel = ''
-    }
-
-    if (provider === 'unstable-openai') {
-        // Model is ignored for `unstable-openai` provider
-        clientModel = undefined
-    }
-
+export function createProvider({ legacyModel, source }: ProviderFactoryParams): Provider {
     return new UnstableOpenAIProvider({
         id: 'unstable-openai',
-        legacyModel: clientModel ?? 'gpt-35-turbo',
+        legacyModel: legacyModel || BYOK_MODEL_ID_FOR_LOGS,
         source,
     })
 }
