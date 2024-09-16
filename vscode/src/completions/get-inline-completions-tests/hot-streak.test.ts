@@ -109,6 +109,7 @@ describe('[getInlineCompletions] hot streak', () => {
                 }`
             )
 
+            await nextTick()
             expect(request.items[0].insertText).toEqual('console.log(2)')
 
             request = await request.acceptFirstCompletionAndPressEnter()
@@ -171,6 +172,7 @@ describe('[getInlineCompletions] hot streak', () => {
 
             expect(request.items[0].insertText).toEqual('if(i > 1) {\n        console.log(2)\n    }')
 
+            await nextTick()
             request = await request.acceptFirstCompletionAndPressEnter()
             expect(request.items[0].insertText).toEqual('if(i > 2) {\n        console.log(3)\n    }')
             expect(request.source).toBe(InlineCompletionsResultSource.HotStreak)
