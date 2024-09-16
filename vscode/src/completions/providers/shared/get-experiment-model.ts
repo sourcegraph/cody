@@ -16,7 +16,7 @@ import {
     FIREWORKS_DEEPSEEK_7B_LANG_ALL,
     FIREWORKS_DEEPSEEK_7B_LANG_SPECIFIC_V0,
     FIREWORKS_DEEPSEEK_7B_LANG_SPECIFIC_V1,
-} from './fireworks'
+} from '../fireworks'
 
 interface ProviderConfigFromFeatureFlags {
     provider: string

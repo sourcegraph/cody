@@ -18,7 +18,7 @@ import { getSuffixAfterFirstNewline } from '../text-processing'
 import {
     type FetchCompletionResult,
     fetchAndProcessDynamicMultilineCompletions,
-} from './fetch-and-process-completions'
+} from './shared/fetch-and-process-completions'
 import {
     type CompletionProviderTracer,
     type GenerateCompletionsOptions,
@@ -26,7 +26,7 @@ import {
     type ProviderContextSizeHints,
     type ProviderFactoryParams,
     type ProviderOptions,
-} from './provider'
+} from './shared/provider'
 
 interface OllamaPromptContext {
     snippets: AutocompleteContextSnippet[]

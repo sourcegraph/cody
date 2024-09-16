@@ -14,12 +14,12 @@ import {
     tokensToChars,
 } from '@sourcegraph/cody-shared'
 
-import type { TriggerKind } from '../get-inline-completions'
-import type * as CompletionLogger from '../logger'
-import type { InlineCompletionItemWithAnalytics } from '../text-processing/process-inline-completions'
+import { defaultCodeCompletionsClient } from '../../default-client'
+import type { TriggerKind } from '../../get-inline-completions'
+import type * as CompletionLogger from '../../logger'
+import { type DefaultModel, getModelHelpers } from '../../model-helpers'
+import type { InlineCompletionItemWithAnalytics } from '../../text-processing/process-inline-completions'
 
-import { defaultCodeCompletionsClient } from '../default-client'
-import { type DefaultModel, getModelHelpers } from '../model-helpers'
 import type { AutocompleteProviderConfigSource } from './create-provider'
 import type { FetchCompletionResult } from './fetch-and-process-completions'
 

@@ -4,15 +4,15 @@ import {
     type DocumentContext,
 } from '@sourcegraph/cody-shared'
 
-import { addAutocompleteDebugEvent } from '../../services/open-telemetry/debug-utils'
-import { canUsePartialCompletion } from '../can-use-partial-completion'
-import { getFirstLine, removeLeadingEmptyLines } from '../text-processing'
-import { parseAndTruncateCompletion } from '../text-processing/parse-and-truncate-completion'
+import { addAutocompleteDebugEvent } from '../../../services/open-telemetry/debug-utils'
+import { canUsePartialCompletion } from '../../can-use-partial-completion'
+import { getFirstLine, removeLeadingEmptyLines } from '../../text-processing'
+import { parseAndTruncateCompletion } from '../../text-processing/parse-and-truncate-completion'
 import {
     type InlineCompletionItemWithAnalytics,
     type ProcessItemParams,
     processCompletion,
-} from '../text-processing/process-inline-completions'
+} from '../../text-processing/process-inline-completions'
 
 import { trace } from '@opentelemetry/api'
 import { getDynamicMultilineDocContext } from './dynamic-multiline'

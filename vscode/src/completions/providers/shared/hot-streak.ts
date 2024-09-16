@@ -2,16 +2,16 @@ import detectIndent from 'detect-indent'
 import type { TextDocument } from 'vscode'
 import * as vscode from 'vscode'
 
-import { addAutocompleteDebugEvent } from '../../services/open-telemetry/debug-utils'
-import { canUsePartialCompletion } from '../can-use-partial-completion'
-import { endsWithBlockStart } from '../detect-multiline'
-import { insertIntoDocContext } from '../get-current-doc-context'
-import { getLastLine, lines } from '../text-processing'
-import { parseAndTruncateCompletion } from '../text-processing/parse-and-truncate-completion'
+import { addAutocompleteDebugEvent } from '../../../services/open-telemetry/debug-utils'
+import { canUsePartialCompletion } from '../../can-use-partial-completion'
+import { endsWithBlockStart } from '../../detect-multiline'
+import { insertIntoDocContext } from '../../get-current-doc-context'
+import { getLastLine, lines } from '../../text-processing'
+import { parseAndTruncateCompletion } from '../../text-processing/parse-and-truncate-completion'
 import {
     type InlineCompletionItemWithAnalytics,
     processCompletion,
-} from '../text-processing/process-inline-completions'
+} from '../../text-processing/process-inline-completions'
 
 import { type DocumentContext, getEditorIndentString } from '@sourcegraph/cody-shared'
 import { getDynamicMultilineDocContext } from './dynamic-multiline'

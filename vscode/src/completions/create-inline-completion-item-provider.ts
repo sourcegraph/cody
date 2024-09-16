@@ -17,7 +17,7 @@ import type { CodyStatusBar } from '../services/StatusBar'
 import { type Observable, map } from 'observable-fns'
 import type { BfgRetriever } from './context/retrievers/bfg/bfg-retriever'
 import { InlineCompletionItemProvider } from './inline-completion-item-provider'
-import { createProvider } from './providers/create-provider'
+import { createProvider } from './providers/shared/create-provider'
 import { registerAutocompleteTraceView } from './tracer/traceView'
 
 interface InlineCompletionItemProviderArgs {

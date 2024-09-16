@@ -14,8 +14,8 @@ import {
     toModelRefStr,
 } from '@sourcegraph/cody-shared'
 
-import { mockLocalStorage } from '../../services/LocalStorageProvider'
-import { getVSCodeConfigurationWithAccessToken } from '../../testutils/mocks'
+import { mockLocalStorage } from '../../../services/LocalStorageProvider'
+import { getVSCodeConfigurationWithAccessToken } from '../../../testutils/mocks'
 
 import { getServerSentModelsMock } from './__mocks__/create-provider-mocks'
 import { createProvider } from './create-provider'

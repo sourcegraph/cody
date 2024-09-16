@@ -1,7 +1,7 @@
 import type { ResolvedConfiguration } from '@sourcegraph/cody-shared'
 import type { CodyStatusBar } from '../services/StatusBar'
 import type { BfgRetriever } from './context/retrievers/bfg/bfg-retriever'
-import type { Provider } from './providers/provider'
+import type { Provider } from './providers/shared/provider'
 import type { ProvideInlineCompletionItemsTracer } from './tracer'
 
 export interface CodyCompletionItemProviderConfig {

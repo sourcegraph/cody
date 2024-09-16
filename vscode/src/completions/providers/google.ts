@@ -12,13 +12,13 @@ import { forkSignal, generatorWithTimeout, messagesToText, zipGenerators } from 
 import {
     type FetchCompletionResult,
     fetchAndProcessDynamicMultilineCompletions,
-} from './fetch-and-process-completions'
+} from './shared/fetch-and-process-completions'
 import {
     type CompletionProviderTracer,
     type GenerateCompletionsOptions,
     Provider,
     type ProviderFactoryParams,
-} from './provider'
+} from './shared/provider'
 
 const MARKERS = {
     Prefix: ps`<|prefix|>`,

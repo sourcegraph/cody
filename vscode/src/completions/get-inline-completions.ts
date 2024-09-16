@@ -29,7 +29,7 @@ import type {
     CompletionProviderTracer,
     GenerateCompletionsOptions,
     Provider,
-} from './providers/provider'
+} from './providers/shared/provider'
 import type { RequestManager, RequestManagerResult, RequestParams } from './request-manager'
 import { reuseLastCandidate } from './reuse-last-candidate'
 import type { SmartThrottleService } from './smart-throttle'

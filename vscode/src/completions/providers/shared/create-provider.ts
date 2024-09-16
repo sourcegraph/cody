@@ -11,16 +11,17 @@ import {
     modelsService,
 } from '@sourcegraph/cody-shared'
 
-import { createProvider as createAnthropicProvider } from './anthropic'
-import { createProvider as createExperimentalOllamaProvider } from './experimental-ollama'
-import { createProvider as createExperimentalOpenAICompatibleProvider } from './expopenaicompatible'
-import { createProvider as createFireworksProvider } from './fireworks'
+import { createProvider as createAnthropicProvider } from '../anthropic'
+import { createProvider as createExperimentalOllamaProvider } from '../experimental-ollama'
+import { createProvider as createExperimentalOpenAICompatibleProvider } from '../expopenaicompatible'
+import { createProvider as createFireworksProvider } from '../fireworks'
+import { createProvider as createGeminiProviderConfig } from '../google'
+import { createProvider as createOpenAICompatibleProviderConfig } from '../openaicompatible'
+import { createProvider as createUnstableOpenAIProviderConfig } from '../unstable-openai'
+
 import { getDotComExperimentModel } from './get-experiment-model'
-import { createProvider as createGeminiProviderConfig } from './google'
-import { createProvider as createOpenAICompatibleProviderConfig } from './openaicompatible'
 import { parseProviderAndModel } from './parse-provider-and-model'
 import type { Provider, ProviderFactory } from './provider'
-import { createProvider as createUnstableOpenAIProviderConfig } from './unstable-openai'
 
 export function createProvider(config: ResolvedConfiguration): Observable<Provider | Error> {
     // Resolve the provider config from the VS Code config.
