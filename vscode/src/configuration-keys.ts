@@ -28,15 +28,6 @@ function getConfigFromPackageJson(): ConfigurationKeysMap {
     }, {} as ConfigurationKeysMap)
 }
 
-export function getConfigEnumValues(key: string): string[] {
-    const configKeys = properties[key as keyof typeof properties]
-    let enumValues: string[] = []
-    if ('enum' in configKeys) {
-        enumValues = configKeys.enum as string[]
-    }
-    return enumValues
-}
-
 // Use template literal type for string manipulation. See examples here:
 // https://www.typescriptlang.org/docs/handbook/2/template-literal-types.html
 type RemoveCodyPrefixAndCamelCase<T extends string> = T extends `cody.${infer A}`

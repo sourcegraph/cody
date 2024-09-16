@@ -1,13 +1,16 @@
+import { Observable } from 'observable-fns'
+
 import {
+    AUTOCOMPLETE_PROVIDER_ID,
+    type AutocompleteProviderID,
     type Model,
     ModelUsage,
     type ResolvedConfiguration,
     currentAuthStatusAuthed,
+    isDotComAuthed,
     modelsService,
 } from '@sourcegraph/cody-shared'
 
-import { Observable } from 'observable-fns'
-import { logError } from '../../log'
 import { createProvider as createAnthropicProvider } from './anthropic'
 import { createProvider as createExperimentalOllamaProvider } from './experimental-ollama'
 import { createProvider as createExperimentalOpenAICompatibleProvider } from './expopenaicompatible'
@@ -19,9 +22,10 @@ import { parseProviderAndModel } from './parse-provider-and-model'
 import type { Provider, ProviderFactory } from './provider'
 import { createProvider as createUnstableOpenAIProviderConfig } from './unstable-openai'
 
-export function createProvider(config: ResolvedConfiguration): Observable<Provider | null> {
+export function createProvider(config: ResolvedConfiguration): Observable<Provider | Error> {
     // Resolve the provider config from the VS Code config.
-    if (config.configuration.autocompleteAdvancedProvider) {
+    const { autocompleteAdvancedProvider } = config.configuration
+    if (autocompleteAdvancedProvider && autocompleteAdvancedProvider !== 'default') {
         return Observable.of(
             createProviderHelper({
                 legacyModel: config.configuration.autocompleteAdvancedModel || undefined,
@@ -70,8 +74,7 @@ export function createProvider(config: ResolvedConfiguration): Observable<Provid
             })
 
             if (parsedProviderAndModel instanceof Error) {
-                logError('createProvider', parsedProviderAndModel.message)
-                return null
+                return parsedProviderAndModel
             }
 
             return createProviderHelper({
@@ -81,15 +84,13 @@ export function createProvider(config: ResolvedConfiguration): Observable<Provid
             })
         }
 
-        logError(
-            'createProvider',
-            'Failed to get autocomplete provider. Please configure the `completionModel` using site configuration.'
+        return new Error(
+            'Failed to create autocomplete provider. Please configure the `completionModel` using site configuration.'
         )
-        return null
     })
 }
 
-interface CreateConfigHelperParams {
+interface CreateProviderHelperParams {
     legacyModel: string | undefined
     provider: string
     config: ResolvedConfiguration
@@ -97,13 +98,9 @@ interface CreateConfigHelperParams {
     source: AutocompleteProviderConfigSource
 }
 
-export function createProviderHelper({
-    legacyModel,
-    model,
-    provider,
-    config,
-    source,
-}: CreateConfigHelperParams): Provider | null {
+export function createProviderHelper(params: CreateProviderHelperParams): Provider | Error {
+    const { legacyModel, model, provider, config, source } = params
+
     const providerCreator = getProviderCreator({
         provider: provider as AutocompleteProviderID,
     })
@@ -118,7 +115,16 @@ export function createProviderHelper({
         })
     }
 
-    return null
+    const sourceDependentMessage =
+        source === 'local-editor-settings'
+            ? 'Please check your local "cody.autocomplete.advanced.provider" setting.'
+            : isDotComAuthed()
+              ? 'Please report the issue using the "Cody Debug: Report Issue" VS Code command.'
+              : 'Please check your site configuration for autocomplete: https://sourcegraph.com/docs/cody/capabilities/autocomplete.'
+
+    return new Error(
+        `Failed to create "${provider}" autocomplete provider derived from "${source}". ${sourceDependentMessage}`
+    )
 }
 
 interface GetProviderCreatorParams {
@@ -128,7 +134,10 @@ interface GetProviderCreatorParams {
 function getProviderCreator(params: GetProviderCreatorParams): ProviderFactory | null {
     const { provider } = params
 
-    if (provider === AUTOCOMPLETE_PROVIDER_ID.fireworks) {
+    if (
+        provider === AUTOCOMPLETE_PROVIDER_ID.default ||
+        provider === AUTOCOMPLETE_PROVIDER_ID.fireworks
+    ) {
         return createFireworksProvider
     }
 
@@ -175,109 +184,8 @@ function getProviderCreator(params: GetProviderCreatorParams): ProviderFactory |
         return createExperimentalOllamaProvider
     }
 
-    logError('createProvider', `Unrecognized provider '${provider}' configured.`)
     return null
 }
-
-export type AutocompleteProviderID = keyof typeof AUTOCOMPLETE_PROVIDER_ID
-
-export const AUTOCOMPLETE_PROVIDER_ID = {
-    /**
-     * Cody talking to Fireworks official API.
-     * https://docs.fireworks.ai/api-reference/introduction
-     */
-    fireworks: 'fireworks',
-
-    /**
-     * Cody talking to openai compatible API.
-     * We plan to use this provider instead of all the existing openai-related providers.
-     */
-    openaicompatible: 'openaicompatible',
-
-    /**
-     * Cody talking to OpenAI's official public API.
-     * https://platform.openai.com/docs/api-reference/introduction
-     */
-    openai: 'openai',
-
-    /**
-     * Cody talking to OpenAI's official public API.
-     * https://platform.openai.com/docs/api-reference/introduction
-     *
-     * @deprecated use `openai` instead
-     */
-    'unstable-openai': 'unstable-openai',
-
-    /**
-     * Cody talking to OpenAI through Microsoft Azure's API (they re-sell the OpenAI API, but slightly modified).
-     *
-     * @deprecated use `openai` instead
-     */
-    'azure-openai': 'azure-openai',
-
-    /**
-     * Cody talking to customer's custom proxy service.
-     *
-     * TODO(slimsag): self-hosted models: deprecate and remove this
-     * once customers are upgraded to non-experimental version.
-     *
-     * @deprecated use `openaicompatible` instead
-     */
-    'experimental-openaicompatible': 'experimental-openaicompatible',
-
-    /**
-     * This refers to either Anthropic models re-sold by AWS,
-     * or to other models hosted by AWS' Bedrock inference API service
-     */
-    'aws-bedrock': 'aws-bedrock',
-
-    /**
-     * Cody talking to Anthropic's official public API.
-     * https://docs.anthropic.com/en/api/getting-started
-     */
-    anthropic: 'anthropic',
-
-    /**
-     * Cody talking to Google's APIs for models created by Google, which include:
-     * - their public Gemini API
-     * - their GCP Gemini API
-     * - GCP Vertex API
-     * - Anthropic-reselling APIs
-     */
-    google: 'google',
-
-    /**
-     * Cody talking to Google's APIs for models created by Google, which include:
-     * - their public Gemini API
-     * - their GCP Gemini API
-     * - GCP Vertex API
-     */
-    gemini: 'gemini',
-
-    /**
-     * Cody talking to Google's APIs for models created by Google, which include:
-     * - their public Gemini API
-     * - their GCP Gemini API
-     * - GCP Vertex API
-     *
-     * @deprecated use `gemini` instead.
-     */
-    'unstable-gemini': 'unstable-gemini',
-
-    /**
-     * Cody talking to Ollama's official public API.
-     * https://ollama.ai/docs/api
-     */
-    'experimental-ollama': 'experimental-ollama',
-
-    /**
-     * Cody talking to Ollama's official public API.
-     * https://ollama.ai/docs/api
-     *
-     * @deprecated use `experimental-ollama` instead.
-     */
-    'unstable-ollama': 'unstable-ollama',
-} as const
 
 /**
  * Config sources are listed in the order of precedence.

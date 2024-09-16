@@ -3,6 +3,7 @@ import type { Position, TextDocument } from 'vscode'
 import {
     type AuthenticatedAuthStatus,
     type AutocompleteContextSnippet,
+    type AutocompleteProviderID,
     type CodeCompletionsClient,
     type CompletionParameters,
     type DocumentContext,
@@ -18,7 +19,7 @@ import type { InlineCompletionItemWithAnalytics } from '../text-processing/proce
 
 import { defaultCodeCompletionsClient } from '../default-client'
 import { type DefaultModel, getModelHelpers } from '../model-helpers'
-import type { AutocompleteProviderConfigSource, AutocompleteProviderID } from './create-provider'
+import type { AutocompleteProviderConfigSource } from './create-provider'
 import type { FetchCompletionResult } from './fetch-and-process-completions'
 import { MAX_RESPONSE_TOKENS } from './get-completion-params'
 
