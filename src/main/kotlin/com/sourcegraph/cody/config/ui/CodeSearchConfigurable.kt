@@ -5,10 +5,10 @@ import com.intellij.openapi.options.BoundConfigurable
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogPanel
 import com.intellij.openapi.ui.setEmptyState
+import com.intellij.ui.dsl.builder.AlignX
 import com.intellij.ui.dsl.builder.MAX_LINE_LENGTH_NO_WRAP
 import com.intellij.ui.dsl.builder.bindText
 import com.intellij.ui.dsl.builder.panel
-import com.intellij.ui.dsl.gridLayout.HorizontalAlign
 import com.sourcegraph.cody.config.CodyProjectSettings
 import com.sourcegraph.cody.config.SettingsModel
 import com.sourcegraph.config.ConfigUtil
@@ -26,7 +26,7 @@ class CodeSearchConfigurable(val project: Project) :
           textField()
               .label("Default branch name:")
               .comment("The branch to use if the current branch is not yet pushed")
-              .horizontalAlign(HorizontalAlign.FILL)
+              .align(AlignX.FILL)
               .bindText(settingsModel::defaultBranchName)
               .applyToComponent {
                 this.setEmptyState("main")
@@ -43,7 +43,7 @@ class CodeSearchConfigurable(val project: Project) :
                   """
                       .trimMargin(),
                   MAX_LINE_LENGTH_NO_WRAP)
-              .horizontalAlign(HorizontalAlign.FILL)
+              .align(AlignX.FILL)
               .bindText(settingsModel::remoteUrlReplacements)
               .applyToComponent {
                 this.setEmptyState("search1, replacement1, search2, replacement2, ...")

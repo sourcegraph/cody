@@ -5,9 +5,9 @@ import com.intellij.openapi.ui.ValidationInfo
 import com.intellij.openapi.ui.setEmptyState
 import com.intellij.ui.components.JBTextField
 import com.intellij.ui.components.fields.ExtendableTextField
+import com.intellij.ui.dsl.builder.AlignX
 import com.intellij.ui.dsl.builder.MAX_LINE_LENGTH_NO_WRAP
 import com.intellij.ui.dsl.builder.Panel
-import com.intellij.ui.dsl.gridLayout.HorizontalAlign
 import com.sourcegraph.cody.api.SourcegraphApiRequestExecutor
 import com.sourcegraph.cody.api.SourcegraphApiRequests
 import com.sourcegraph.cody.api.SourcegraphAuthenticationException
@@ -36,16 +36,16 @@ internal class CodyTokenCredentialsUi(
 
   override fun Panel.centerPanel() {
     row(CodyBundle.getString("login.dialog.instance-url.label")) {
-      cell(serverTextField).horizontalAlign(HorizontalAlign.FILL)
+      cell(serverTextField).align(AlignX.FILL)
     }
     row(CodyBundle.getString("login.dialog.token.label")) {
-      cell(tokenTextField).horizontalAlign(HorizontalAlign.FILL)
+      cell(tokenTextField).align(AlignX.FILL)
     }
     group(CodyBundle.getString("login.dialog.optional.group"), indent = false) {
       row(CodyBundle.getString("login.dialog.custom-headers.label")) {
         customRequestHeadersField = ExtendableTextField("", 0)
         cell(customRequestHeadersField)
-            .horizontalAlign(HorizontalAlign.FILL)
+            .align(AlignX.FILL)
             .comment(
                 CodyBundle.getString("login.dialog.custom-headers.comment").trimMargin(),
                 MAX_LINE_LENGTH_NO_WRAP)

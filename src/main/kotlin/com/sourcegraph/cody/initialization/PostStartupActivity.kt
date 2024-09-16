@@ -5,7 +5,7 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.editor.EditorFactory
 import com.intellij.openapi.editor.ex.EditorEventMulticasterEx
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.startup.StartupActivity
+import com.intellij.openapi.startup.ProjectActivity
 import com.sourcegraph.cody.agent.CodyAgentService
 import com.sourcegraph.cody.config.CodyAuthenticationManager
 import com.sourcegraph.cody.config.CodySettingsChangeListener
@@ -21,18 +21,12 @@ import com.sourcegraph.config.CodyAuthNotificationActivity
 import com.sourcegraph.config.ConfigUtil
 import com.sourcegraph.telemetry.TelemetryInitializerActivity
 
-/**
- * StartupActivity is obsolete in recent platform versions.
- *
- * TODO: We should migrate to com.intellij.openapi.startup.ProjectActivity when we bump
- *   compatibility.
- */
-class PostStartupActivity : StartupActivity.DumbAware {
+class PostStartupActivity : ProjectActivity {
 
   // TODO(olafurpg): this activity is taking ~2.5s to run during tests, which indicates that we're
   // doing something wrong, which may be slowing down agent startup. Not fixing it now but this
   // deserves more investigation.
-  override fun runActivity(project: Project) {
+  override suspend fun execute(project: Project) {
     TelemetryInitializerActivity().runActivity(project)
     SettingsMigration().runActivity(project)
     CodyAuthNotificationActivity().runActivity(project)

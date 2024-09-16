@@ -6,6 +6,7 @@ import com.intellij.openapi.ui.DialogPanel
 import com.intellij.ui.ColorPanel
 import com.intellij.ui.JBColor
 import com.intellij.ui.components.JBCheckBox
+import com.intellij.ui.dsl.builder.AlignX
 import com.intellij.ui.dsl.builder.Cell
 import com.intellij.ui.dsl.builder.MAX_LINE_LENGTH_NO_WRAP
 import com.intellij.ui.dsl.builder.Row
@@ -13,7 +14,6 @@ import com.intellij.ui.dsl.builder.bindSelected
 import com.intellij.ui.dsl.builder.panel
 import com.intellij.ui.dsl.builder.selected
 import com.intellij.ui.dsl.builder.toMutableProperty
-import com.intellij.ui.dsl.gridLayout.HorizontalAlign
 import com.intellij.ui.layout.and
 import com.sourcegraph.cody.config.CodyApplicationSettings
 import com.sourcegraph.cody.config.SettingsModel
@@ -97,7 +97,7 @@ class CodyConfigurable(val project: Project) : BoundConfigurable(ConfigUtil.CODY
         row {
           autocompleteLanguageTable()
               .enabledIf(enableAutocompleteCheckbox.selected)
-              .horizontalAlign(HorizontalAlign.FILL)
+              .align(AlignX.FILL)
               .bind(
                   AutocompleteLanguageTableWrapper::getBlacklistedLanguageIds,
                   AutocompleteLanguageTableWrapper::setBlacklistedLanguageIds,

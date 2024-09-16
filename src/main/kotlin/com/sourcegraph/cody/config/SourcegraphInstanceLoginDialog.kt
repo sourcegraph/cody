@@ -22,9 +22,9 @@ import com.intellij.ui.AnimatedIcon
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBTextField
 import com.intellij.ui.components.fields.ExtendableTextField
+import com.intellij.ui.dsl.builder.AlignX
 import com.intellij.ui.dsl.builder.MAX_LINE_LENGTH_NO_WRAP
 import com.intellij.ui.dsl.builder.panel
-import com.intellij.ui.dsl.gridLayout.HorizontalAlign
 import com.intellij.ui.layout.not
 import com.intellij.ui.layout.selected
 import com.intellij.util.ui.UIUtil.getInactiveTextColor
@@ -98,7 +98,7 @@ class SourcegraphInstanceLoginDialog(
                 instanceUrlField = this
                 text = defaultInstanceUrl
               }
-              .horizontalAlign(HorizontalAlign.FILL)
+              .align(AlignX.FILL)
         }
         .rowComment(
             CodyBundle.getString("login.dialog.instance-url.comment"),
@@ -110,13 +110,13 @@ class SourcegraphInstanceLoginDialog(
                 tokenField = this
                 tokenField.document.whenTextChanged { tokenAcquisitionError = null }
               }
-              .horizontalAlign(HorizontalAlign.FILL)
+              .align(AlignX.FILL)
         }
         .visibleIf(advancedSettings.selected)
     group(CodyBundle.getString("login.dialog.optional.group"), indent = false) {
           row(CodyBundle.getString("login.dialog.custom-headers.label")) {
             cell(ExtendableTextField(/*columns =*/ 0))
-                .horizontalAlign(HorizontalAlign.FILL)
+                .align(AlignX.FILL)
                 .comment(
                     CodyBundle.getString("login.dialog.custom-headers.comment"),
                     maxLineLength = MAX_LINE_LENGTH_NO_WRAP)

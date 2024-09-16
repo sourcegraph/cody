@@ -9,11 +9,10 @@ import com.intellij.openapi.ui.DialogPanel
 import com.intellij.openapi.updateSettings.impl.UpdateSettings
 import com.intellij.openapi.util.Disposer
 import com.intellij.ui.SimpleListCellRenderer
+import com.intellij.ui.dsl.builder.Align
 import com.intellij.ui.dsl.builder.bindItem
 import com.intellij.ui.dsl.builder.bindSelected
 import com.intellij.ui.dsl.builder.panel
-import com.intellij.ui.dsl.gridLayout.HorizontalAlign
-import com.intellij.ui.dsl.gridLayout.VerticalAlign
 import com.intellij.util.ui.EmptyIcon
 import com.sourcegraph.cody.auth.Account
 import com.sourcegraph.cody.auth.ui.customAccountsPanel
@@ -65,8 +64,7 @@ class AccountConfigurable(val project: Project) :
                   EmptyIcon.ICON_16) {
                     it.copy(server = it.server.copy())
                   }
-              .horizontalAlign(HorizontalAlign.FILL)
-              .verticalAlign(VerticalAlign.FILL)
+              .align(Align.FILL)
               .applyToComponent { this.preferredSize = Dimension(Int.MAX_VALUE, 200) }
               .also {
                 DataManager.registerDataProvider(it.component) { key ->
