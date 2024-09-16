@@ -200,9 +200,11 @@ export function updateInsertRangeForVSCode(items: AutocompleteItem[]): Autocompl
         const start = currentLine.range.start
         // If the completion does not have a range set it will always exclude the same line suffix,
         // so it has to overwrite the current same line suffix and reach to the end of the line.
-        const end = range?.end || currentLine.range.end
+        // const end = range?.end || currentLine.range.end
+        // add the number of characters of insert text to position as the end 
+        const theEnd = new vscode.Position(position.line, position.character + (insertText as string).length)
 
-        const vscodeInsertRange = new vscode.Range(start, end)
+        const vscodeInsertRange = new vscode.Range(start, theEnd)
 
         item.range = vscodeInsertRange
         item.insertText = currentLinePrefix + (insertText as string)

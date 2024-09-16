@@ -117,7 +117,7 @@ export class DefaultModel {
 
         // We want to remove the same line suffix from a completion request since both StarCoder and Llama
         // code can't handle this correctly.
-        const suffixAfterFirstNewline = getSuffixAfterFirstNewline(suffix)
+        const suffixAfterFirstNewline = suffix
 
         for (let snippetsToInclude = 0; snippetsToInclude < snippets.length + 1; snippetsToInclude++) {
             if (snippetsToInclude > 0) {

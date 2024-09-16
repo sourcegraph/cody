@@ -41,9 +41,9 @@ export function isCompletionVisible(
     const isMatchingPopupItem = completeSuggestWidgetSelection
         ? true
         : completionMatchesPopupItem(completion, document, context)
-    const isMatchingSuffix = completionMatchesSuffix(completion, docContext.currentLineSuffix)
+    // const isMatchingSuffix = completionMatchesSuffix(completion, docContext.currentLineSuffix)
     const isMatchingPrefix = completionMatchesPrefix(completion, document, positions)
-    const isVisible = !isAborted && isMatchingPopupItem && isMatchingSuffix && isMatchingPrefix
+    const isVisible = !isAborted && isMatchingPopupItem  && isMatchingPrefix
 
     return isVisible
 }

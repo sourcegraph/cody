@@ -6,12 +6,13 @@ import {
     type ClientConfigurationWithAccessToken,
     type DocumentContext,
     currentAuthStatus,
+    FeatureFlag,
+    featureFlagProvider,
     getActiveTraceAndSpanId,
     isAbortError,
     isDotComAuthed,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
-
 import { logError } from '../log'
 import type { CompletionIntent } from '../tree-sitter/query-sdk'
 
@@ -258,10 +259,16 @@ async function doGetInlineCompletions(
         // Calling this so that it precomputes the `gitRepoUrl` and store in its cache for query later.
         repoMetadataInstance.getRepoMetadataUsingGitUrl(gitIdentifiersForFile.gitUrl)
     }
-
+    const codyInLineSuffixAutocomplete = true
     if (
         triggerKind !== TriggerKind.Manual &&
-        shouldCancelBasedOnCurrentLine({ position, document, currentLinePrefix, currentLineSuffix })
+        shouldCancelBasedOnCurrentLine({
+            position,
+            document,
+            currentLinePrefix,
+            currentLineSuffix,
+            codyInLineSuffixAutocomplete,
+        })
     ) {
         return null
     }
@@ -290,7 +297,6 @@ async function doGetInlineCompletions(
     stageRecorder.record('preLastCandidate')
 
     // Check if the user is typing as suggested by the last candidate completion (that is shown as
-    // ghost text in the editor), and reuse it if it is still valid.
     const resultToReuse =
         triggerKind !== TriggerKind.Manual && lastCandidate
             ? reuseLastCandidate({
@@ -517,7 +523,12 @@ async function doGetInlineCompletions(
         isPreloadRequest: triggerKind === TriggerKind.Preload,
         tracer: tracer ? createCompletionProviderTracer(tracer) : undefined,
     })
-
+    // console llog if result.completions has something
+    if (result.completions.length > 0) {
+        console.log(
+            `[autocomplete] result.completions: ${JSON.stringify(result.completions, null, 2)}`
+        )
+    }
     return processRequestManagerResult({
         result,
         logId,
@@ -602,11 +613,34 @@ interface ShouldCancelBasedOnCurrentLineParams {
     currentLineSuffix: string
     position: vscode.Position
     document: vscode.TextDocument
+    codyInLineSuffixAutocomplete: boolean
 }
 
+/**
+ * Determines whether autocomplete should be canceled based on the current line's context.
+ *
+ * This function is used to decide whether Cody should provide autocomplete suggestions
+ * based on the current line's prefix, suffix, cursor position, and whether in-line suffix
+ * autocomplete is enabled.
+ *
+ * Conditions:
+ * 1. If `codyInLineSuffixAutocomplete` is disabled and the current line suffix contains word characters,
+ *    cancel autocomplete to avoid confusing behavior when typing within a line.
+ * 2. If the current line prefix ends with a closing symbol (e.g., `)`, `;`, `]`, `}`), cancel autocomplete
+ *    to prevent unwanted completions after finishing a block or expression.
+ * 3. If the cursor is at the start of the last line and the line above is empty, cancel autocomplete
+ *    to avoid triggering completions at the end of the document.
+ *
+ * @param params - Parameters containing the current line prefix, suffix, cursor position, document, and autocomplete settings.
+ * @returns {boolean} - `true` if autocomplete should be canceled; otherwise, `false`.
+ */
 export function shouldCancelBasedOnCurrentLine(params: ShouldCancelBasedOnCurrentLineParams): boolean {
-    const { currentLinePrefix, currentLineSuffix, position, document } = params
+    const { currentLinePrefix, currentLineSuffix, position, document, codyInLineSuffixAutocomplete } =
+        params
 
+    if (codyInLineSuffixAutocomplete || 1) {
+        return false
+    }
     // If we have a suffix in the same line as the cursor and the suffix contains any word
     // characters, do not attempt to make a completion. This means we only make completions if
     // we have a suffix in the same line for special characters like `)]}` etc.
