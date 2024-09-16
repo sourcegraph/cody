@@ -945,6 +945,26 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         span: Span,
         signal?: AbortSignal
     ): Promise<RankedContext[]> {
+        try {
+            return await this._computeContext({ text, mentions }, requestID, editorState, span, signal)
+        } catch (e) {
+            this.postError(new Error(`Unexpected error computing context, no context was used: ${e}`))
+            return [
+                {
+                    strategy: 'none',
+                    items: [],
+                },
+            ]
+        }
+    }
+
+    private async _computeContext(
+        { text, mentions }: HumanInput,
+        requestID: string,
+        editorState: SerializedPromptEditorState | null,
+        span: Span,
+        signal?: AbortSignal
+    ): Promise<RankedContext[]> {
         // Remove context chips (repo, @-mentions) from the input text for context retrieval.
         const inputTextWithoutContextChips = editorState
             ? PromptString.unsafe_fromUserQuery(
@@ -958,13 +978,16 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             span,
             signal
         )
-        const priorityContextPromise = retrievedContextPromise.then(p =>
-            getPriorityContext(text, this.editor, p)
-        )
+        const priorityContextPromise = retrievedContextPromise
+            .then(p => getPriorityContext(text, this.editor, p))
+            .catch(() => getPriorityContext(text, this.editor, []))
         const openCtxContextPromise = getContextForChatMessage(text.toString(), signal)
         const [priorityContext, retrievedContext, openCtxContext] = await Promise.all([
             priorityContextPromise,
-            retrievedContextPromise,
+            retrievedContextPromise.catch(e => {
+                this.postError(new Error(`Error retrieving context, no search context was used: ${e}`))
+                return []
+            }),
             openCtxContextPromise,
         ])
 
