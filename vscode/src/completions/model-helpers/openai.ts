@@ -1,6 +1,13 @@
-import { type PromptString, ps } from '@sourcegraph/cody-shared'
+import { type DocumentContext, type PromptString, ps } from '@sourcegraph/cody-shared'
 
-import { CLOSING_CODE_TAG, OPENING_CODE_TAG, getHeadAndTail } from '../text-processing'
+import {
+    CLOSING_CODE_TAG,
+    OPENING_CODE_TAG,
+    extractFromCodeBlock,
+    fixBadCompletionStart,
+    getHeadAndTail,
+    trimLeadingWhitespaceUntilNewline,
+} from '../text-processing'
 import {
     DefaultModel,
     type FormatPromptParams,
@@ -33,5 +40,25 @@ export class OpenAI extends DefaultModel {
         return ps`Below is the code from file path ${fileName}. Review the code outside the XML tags to detect the functionality, formats, style, patterns, and logics in use. Then, use what you detect and reuse methods/libraries to complete and enclose completed code only inside XML tags precisely without duplicating existing implementations. Here is the code:\n\`\`\`\n${intro}${infillPrefix}${OPENING_CODE_TAG}${CLOSING_CODE_TAG}${suffix}\n\`\`\`
 
 ${OPENING_CODE_TAG}${infillBlock}`
+    }
+
+    public postProcess(content: string, docContext: DocumentContext): string {
+        let completion = extractFromCodeBlock(content)
+
+        const trimmedPrefixContainNewline = docContext.prefix
+            .slice(docContext.prefix.trimEnd().length)
+            .includes('\n')
+        if (trimmedPrefixContainNewline) {
+            // The prefix already contains a `\n` that LLM was not aware of, so we remove any
+            // leading `\n` followed by whitespace that might be add.
+            completion = completion.replace(/^\s*\n\s*/, '')
+        } else {
+            completion = trimLeadingWhitespaceUntilNewline(completion)
+        }
+
+        // Remove bad symbols from the start of the completion string.
+        completion = fixBadCompletionStart(completion)
+
+        return completion
     }
 }

@@ -151,7 +151,7 @@ export class DefaultModel {
         return currentPrompt
     }
 
-    public postProcess(content: string): string {
+    public postProcess(content: string, docContext: DocumentContext): string {
         return content.replace(' <EOT>', '')
     }
 

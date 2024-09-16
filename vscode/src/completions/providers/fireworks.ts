@@ -102,13 +102,14 @@ function getMaxContextTokens(model: FireworksModel): number {
 
 class FireworksProvider extends Provider {
     public async generateCompletions(
-        options: GenerateCompletionsOptions,
+        generateOptions: GenerateCompletionsOptions,
         abortSignal: AbortSignal,
         snippets: AutocompleteContextSnippet[],
         tracer?: CompletionProviderTracer
     ): Promise<AsyncGenerator<FetchCompletionResult[]>> {
-        const { multiline, docContext, document } = options
-        const useMultilineModel = multiline || options.triggerKind !== TriggerKind.Automatic
+        const { multiline, docContext, document, triggerKind, numberOfCompletionsToGenerate } =
+            generateOptions
+        const useMultilineModel = multiline || triggerKind !== TriggerKind.Automatic
 
         const model: string =
             this.legacyModel === 'starcoder-hybrid'
@@ -130,12 +131,12 @@ class FireworksProvider extends Provider {
 
         tracer?.params(requestParams)
 
-        const completionsGenerators = Array.from({ length: options.numberOfCompletionsToGenerate }).map(
+        const completionsGenerators = Array.from({ length: numberOfCompletionsToGenerate }).map(
             async () => {
                 const abortController = forkSignal(abortSignal)
 
                 const completionResponseGenerator = generatorWithTimeout(
-                    await this.createClient(options, requestParams, abortController),
+                    await this.createClient(generateOptions, requestParams, abortController),
                     requestParams.timeoutMs,
                     abortController
                 )
@@ -143,8 +144,9 @@ class FireworksProvider extends Provider {
                 return fetchAndProcessDynamicMultilineCompletions({
                     completionResponseGenerator,
                     abortController,
-                    providerSpecificPostProcess: this.modelHelper.postProcess,
-                    generateOptions: options,
+                    generateOptions,
+                    providerSpecificPostProcess: content =>
+                        this.modelHelper.postProcess(content, docContext),
                 })
             }
         )

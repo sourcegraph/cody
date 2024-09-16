@@ -1,17 +1,7 @@
-import type {
-    AutocompleteContextSnippet,
-    CodeCompletionsParams,
-    DocumentContext,
-} from '@sourcegraph/cody-shared'
+import type { AutocompleteContextSnippet, CodeCompletionsParams } from '@sourcegraph/cody-shared'
 
 import { OpenAI } from '../model-helpers/openai'
-import {
-    CLOSING_CODE_TAG,
-    MULTILINE_STOP_SEQUENCE,
-    extractFromCodeBlock,
-    fixBadCompletionStart,
-    trimLeadingWhitespaceUntilNewline,
-} from '../text-processing'
+import { CLOSING_CODE_TAG, MULTILINE_STOP_SEQUENCE } from '../text-processing'
 import { forkSignal, generatorWithTimeout, zipGenerators } from '../utils'
 
 import {
@@ -30,12 +20,12 @@ class UnstableOpenAIProvider extends Provider {
     protected modelHelper = new OpenAI()
 
     public async generateCompletions(
-        options: GenerateCompletionsOptions,
+        generateOptions: GenerateCompletionsOptions,
         abortSignal: AbortSignal,
         snippets: AutocompleteContextSnippet[],
         tracer?: CompletionProviderTracer
     ): Promise<AsyncGenerator<FetchCompletionResult[]>> {
-        const { document, docContext } = options
+        const { document, docContext, numberOfCompletionsToGenerate } = generateOptions
 
         const prompt = this.modelHelper.getPrompt({
             snippets,
@@ -52,7 +42,7 @@ class UnstableOpenAIProvider extends Provider {
 
         tracer?.params(requestParams)
 
-        const completionsGenerators = Array.from({ length: options.numberOfCompletionsToGenerate }).map(
+        const completionsGenerators = Array.from({ length: numberOfCompletionsToGenerate }).map(
             async () => {
                 const abortController = forkSignal(abortSignal)
 
@@ -65,36 +55,15 @@ class UnstableOpenAIProvider extends Provider {
                 return fetchAndProcessDynamicMultilineCompletions({
                     completionResponseGenerator,
                     abortController,
-                    providerSpecificPostProcess: this.postProcess(docContext),
-                    generateOptions: options,
+                    generateOptions,
+                    providerSpecificPostProcess: content =>
+                        this.modelHelper.postProcess(content, docContext),
                 })
             }
         )
 
         return zipGenerators(await Promise.all(completionsGenerators))
     }
-
-    private postProcess =
-        (docContext: DocumentContext) =>
-        (rawResponse: string): string => {
-            let completion = extractFromCodeBlock(rawResponse)
-
-            const trimmedPrefixContainNewline = docContext.prefix
-                .slice(docContext.prefix.trimEnd().length)
-                .includes('\n')
-            if (trimmedPrefixContainNewline) {
-                // The prefix already contains a `\n` that LLM was not aware of, so we remove any
-                // leading `\n` followed by whitespace that might be add.
-                completion = completion.replace(/^\s*\n\s*/, '')
-            } else {
-                completion = trimLeadingWhitespaceUntilNewline(completion)
-            }
-
-            // Remove bad symbols from the start of the completion string.
-            completion = fixBadCompletionStart(completion)
-
-            return completion
-        }
 }
 
 export function createProvider({ legacyModel, provider, source }: ProviderFactoryParams): Provider {
