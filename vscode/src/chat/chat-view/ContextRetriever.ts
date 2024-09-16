@@ -175,13 +175,8 @@ export class ContextRetriever implements vscode.Disposable {
         span: Span,
         signal?: AbortSignal
     ): Promise<ContextItem[]> {
-        try {
-            const roots = await codebaseRootsFromMentions(mentions, signal)
-            return await this._retrieveContext(roots, inputTextWithoutContextChips, span, signal)
-        } catch (error) {
-            logError('ContextRetriever', 'Unhandled error retrieving context', error)
-            return []
-        }
+        const roots = await codebaseRootsFromMentions(mentions, signal)
+        return await this._retrieveContext(roots, inputTextWithoutContextChips, span, signal)
     }
 
     private async _retrieveContext(
