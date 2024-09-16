@@ -14,7 +14,6 @@ import {
     subscriptionDisposable,
     telemetryRecorder,
 } from '@sourcegraph/cody-shared'
-import type { LocalEmbeddingsController } from '../../local-context/local-embeddings'
 import type { SymfRunner } from '../../local-context/symf'
 import { logDebug, logError } from '../../log'
 import type { MessageProviderOptions } from '../MessageProvider'
@@ -69,7 +68,6 @@ export class ChatsController implements vscode.Disposable {
         private options: Options,
         private chatClient: ChatClient,
 
-        private readonly localEmbeddings: LocalEmbeddingsController | null,
         private readonly symf: SymfRunner | null,
 
         private readonly contextRetriever: ContextRetriever,
@@ -480,7 +478,7 @@ export class ChatsController implements vscode.Disposable {
         return new ChatController({
             ...this.options,
             chatClient: this.chatClient,
-            retrievers: new AuthDependentRetrievers(this.localEmbeddings, this.symf),
+            retrievers: new AuthDependentRetrievers(this.symf),
             guardrails: this.guardrails,
             startTokenReceiver: this.options.startTokenReceiver,
             contextAPIClient: this.contextAPIClient,

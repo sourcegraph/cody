@@ -67,7 +67,6 @@ import { VSCodeEditor } from './editor/vscode-editor'
 import type { PlatformContext } from './extension.common'
 import { configureExternalServices } from './external-services'
 import { isRunningInsideAgent } from './jsonrpc/isRunningInsideAgent'
-import type { LocalEmbeddingsController } from './local-context/local-embeddings'
 import type { SymfRunner } from './local-context/symf'
 import { logDebug, logError } from './log'
 import { MinionOrchestrator } from './minion/MinionOrchestrator'
@@ -192,31 +191,19 @@ const register = async (
     registerChatListeners(disposables)
 
     // Initialize external services
-    const {
-        chatClient,
-        completionsClient,
-        guardrails,
-        localEmbeddings,
-        onConfigurationChange: externalServicesOnDidConfigurationChange,
-        symfRunner,
-        contextAPIClient,
-    } = await configureExternalServices(context, platform)
-    disposables.push(
-        subscriptionDisposable(
-            resolvedConfigWithAccessToken.subscribe({
-                next: config => {
-                    externalServicesOnDidConfigurationChange(config)
-                    localEmbeddings?.setAccessToken(config.serverEndpoint, config.accessToken)
-                },
-            })
-        )
-    )
+    const { chatClient, completionsClient, guardrails, localEmbeddings, symfRunner, contextAPIClient } =
+        await configureExternalServices(context, platform)
     if (symfRunner) {
         disposables.push(symfRunner)
     }
 
     const editor = new VSCodeEditor()
-    const contextRetriever = new ContextRetriever(editor, symfRunner, localEmbeddings, completionsClient)
+    const contextRetriever = new ContextRetriever(
+        editor,
+        symfRunner,
+        localEmbeddings?.value,
+        completionsClient
+    )
 
     const { chatsController } = registerChat(
         {
@@ -225,7 +212,6 @@ const register = async (
             chatClient,
             guardrails,
             editor,
-            localEmbeddings,
             symfRunner,
             contextAPIClient,
             contextRetriever,
@@ -700,7 +686,6 @@ interface RegisterChatOptions {
     chatClient: ChatClient
     guardrails: Guardrails
     editor: VSCodeEditor
-    localEmbeddings?: LocalEmbeddingsController
     symfRunner?: SymfRunner
     contextAPIClient?: ContextAPIClient
     contextRetriever: ContextRetriever
@@ -713,7 +698,6 @@ function registerChat(
         chatClient,
         guardrails,
         editor,
-        localEmbeddings,
         symfRunner,
         contextAPIClient,
         contextRetriever,
@@ -735,7 +719,6 @@ function registerChat(
             startTokenReceiver: platform.startTokenReceiver,
         },
         chatClient,
-        localEmbeddings || null,
         symfRunner || null,
         contextRetriever,
         guardrails,
@@ -752,11 +735,6 @@ function registerChat(
         extensionClient: platform.extensionClient,
     })
     disposables.push(ghostHintDecorator, editorManager, new CodeActionProvider())
-
-    if (localEmbeddings) {
-        // kick-off embeddings initialization
-        localEmbeddings.start()
-    }
 
     // Register a serializer for reviving the chat panel on reload
     if (vscode.window.registerWebviewPanelSerializer) {

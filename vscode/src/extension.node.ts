@@ -11,12 +11,7 @@ import type { ExtensionApi } from './extension-api'
 import { type ExtensionClient, defaultVSCodeExtensionClient } from './extension-client'
 import { activate as activateCommon } from './extension.common'
 import { initializeNetworkAgent, setCustomAgent } from './fetch.node'
-import { isRunningInsideAgent } from './jsonrpc/isRunningInsideAgent'
-import {
-    type LocalEmbeddingsConfig,
-    type LocalEmbeddingsController,
-    createLocalEmbeddingsController,
-} from './local-context/local-embeddings'
+import { createLocalEmbeddingsController } from './local-context/local-embeddings'
 import { SymfRunner } from './local-context/symf'
 import { localStorage } from './services/LocalStorageProvider'
 import { OpenTelemetryService } from './services/open-telemetry/OpenTelemetryService.node'
@@ -37,15 +32,6 @@ export function activate(
     // Create the default client for VSCode.
     extensionClient ||= defaultVSCodeExtensionClient()
 
-    // NOTE: local embeddings are only going to be supported in VSC for now.
-    // Until we revisit this decision, we disable local embeddings in the agent.
-    let isLocalEmbeddingsEnabled = !isRunningInsideAgent()
-
-    // Optional override for local testing.
-    isLocalEmbeddingsEnabled = vscode.workspace
-        .getConfiguration()
-        .get<boolean>('cody.experimental.localEmbeddings.enabled', isLocalEmbeddingsEnabled)
-
     const isSymfEnabled = vscode.workspace
         .getConfiguration()
         .get<boolean>('cody.experimental.symf.enabled', true)
@@ -55,10 +41,7 @@ export function activate(
         .get<boolean>('cody.experimental.telemetry.enabled', true)
 
     return activateCommon(context, {
-        createLocalEmbeddingsController: isLocalEmbeddingsEnabled
-            ? (config: LocalEmbeddingsConfig): Promise<LocalEmbeddingsController> =>
-                  createLocalEmbeddingsController(context, config)
-            : undefined,
+        createLocalEmbeddingsController: () => createLocalEmbeddingsController(context),
         createCompletionsClient: (...args) => new SourcegraphNodeCompletionsClient(...args),
         createCommandsProvider: () => new CommandsProvider(),
         createSymfRunner: isSymfEnabled ? (...args) => new SymfRunner(...args) : undefined,

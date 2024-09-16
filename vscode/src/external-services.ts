@@ -2,23 +2,20 @@ import type * as vscode from 'vscode'
 
 import {
     ChatClient,
-    type ClientConfigurationWithAccessToken,
     type Guardrails,
-    type GuardrailsClientConfig,
     type SourcegraphCompletionsClient,
     SourcegraphGuardrailsClient,
-    currentAuthStatus,
+    type StoredLastValue,
     currentAuthStatusAuthed,
     firstValueFrom,
     graphqlClient,
-    isDotCom,
     isError,
     resolvedConfigWithAccessToken,
 } from '@sourcegraph/cody-shared'
 
 import { ContextAPIClient } from './chat/context/contextAPIClient'
 import type { PlatformContext } from './extension.common'
-import type { LocalEmbeddingsConfig, LocalEmbeddingsController } from './local-context/local-embeddings'
+import type { LocalEmbeddingsController } from './local-context/local-embeddings'
 import type { SymfRunner } from './local-context/symf'
 import { logDebug, logger } from './log'
 
@@ -26,26 +23,10 @@ interface ExternalServices {
     chatClient: ChatClient
     completionsClient: SourcegraphCompletionsClient
     guardrails: Guardrails
-    localEmbeddings: LocalEmbeddingsController | undefined
+    localEmbeddings: StoredLastValue<LocalEmbeddingsController | undefined> | undefined
     symfRunner: SymfRunner | undefined
     contextAPIClient: ContextAPIClient | undefined
-
-    /** Update configuration for all of the services in this interface. */
-    onConfigurationChange: (newConfig: ExternalServicesConfiguration) => void
 }
-
-type ExternalServicesConfiguration = Pick<
-    ClientConfigurationWithAccessToken,
-    | 'serverEndpoint'
-    | 'codebase'
-    | 'useContext'
-    | 'customHeaders'
-    | 'accessToken'
-    | 'debugVerbose'
-    | 'experimentalTracing'
-> &
-    LocalEmbeddingsConfig &
-    GuardrailsClientConfig
 
 export async function configureExternalServices(
     context: vscode.ExtensionContext,
@@ -72,11 +53,7 @@ export async function configureExternalServices(
         )
     }
 
-    // Disable local embeddings for enterprise users.
-    const localEmbeddings =
-        currentAuthStatus().authenticated && isDotCom(currentAuthStatus())
-            ? await platform.createLocalEmbeddingsController?.(initialConfig)
-            : undefined
+    const localEmbeddings = platform.createLocalEmbeddingsController?.()
 
     const chatClient = new ChatClient(completionsClient, () => currentAuthStatusAuthed())
 
@@ -91,8 +68,5 @@ export async function configureExternalServices(
         localEmbeddings,
         symfRunner,
         contextAPIClient,
-        onConfigurationChange: newConfig => {
-            void localEmbeddings?.setAccessToken(newConfig.serverEndpoint, newConfig.accessToken)
-        },
     }
 }

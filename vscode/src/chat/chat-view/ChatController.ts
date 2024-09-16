@@ -84,7 +84,6 @@ import { getConfigWithEndpoint } from '../../configuration'
 import { resolveContextItems } from '../../editor/utils/editor-context'
 import type { VSCodeEditor } from '../../editor/vscode-editor'
 import type { ExtensionClient } from '../../extension-client'
-import type { LocalEmbeddingsController } from '../../local-context/local-embeddings'
 import type { SymfRunner } from '../../local-context/symf'
 import { logDebug } from '../../log'
 import { migrateAndNotifyForOutdatedModels } from '../../models/modelMigrator'
@@ -150,10 +149,7 @@ export interface ChatSession {
 }
 
 export class AuthDependentRetrievers {
-    constructor(
-        private _localEmbeddings: LocalEmbeddingsController | null,
-        private _symf: SymfRunner | null
-    ) {}
+    constructor(private _symf: SymfRunner | null) {}
 
     private isCodyWeb(): boolean {
         return vscode.workspace.getConfiguration().get<string>('cody.advanced.agent.ide') === CodyIDE.Web
@@ -165,10 +161,6 @@ export class AuthDependentRetrievers {
 
     public get allowRemoteContext(): boolean {
         return this.isCodyWeb() || !this.isConsumer()
-    }
-
-    get localEmbeddings(): LocalEmbeddingsController | null {
-        return this.isConsumer() ? this._localEmbeddings : null
     }
 
     get symf(): SymfRunner | null {
@@ -253,9 +245,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         if (TestSupport.instance) {
             TestSupport.instance.chatPanelProvider.set(this)
         }
-
-        // Advise local embeddings to start up if necessary.
-        void this.retrievers.localEmbeddings?.start()
 
         this.disposables.push(
             subscriptionDisposable(
@@ -423,7 +412,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 await handleCodeFromSaveToNewFile(message.text, this.editor)
                 break
             case 'embeddings/index':
-                void this.retrievers.localEmbeddings?.index()
+                await vscode.commands.executeCommand('cody.embeddings.index')
                 break
             case 'show-page':
                 await vscode.commands.executeCommand('cody.show-page', message.page)
