@@ -108,12 +108,12 @@ ${OPENING_CODE_TAG}${infillBlock}`
         return PromptString.join(messages, ps`\n\n`)
     }
 
-    public generateCompletions(
+    public async generateCompletions(
         options: GenerateCompletionsOptions,
         abortSignal: AbortSignal,
         snippets: AutocompleteContextSnippet[],
         tracer?: CompletionProviderTracer
-    ): AsyncGenerator<FetchCompletionResult[]> {
+    ): Promise<AsyncGenerator<FetchCompletionResult[]>> {
         const partialRequestParams = getCompletionParams({
             providerOptions: options,
             lineNumberDependentCompletionParams,
@@ -130,11 +130,11 @@ ${OPENING_CODE_TAG}${infillBlock}`
 
         const completionsGenerators = Array.from({
             length: options.numberOfCompletionsToGenerate,
-        }).map(() => {
+        }).map(async () => {
             const abortController = forkSignal(abortSignal)
 
             const completionResponseGenerator = generatorWithTimeout(
-                this.client.complete(requestParams, abortController),
+                await this.client.complete(requestParams, abortController),
                 requestParams.timeoutMs,
                 abortController
             )
@@ -147,7 +147,7 @@ ${OPENING_CODE_TAG}${infillBlock}`
             })
         })
 
-        return zipGenerators(completionsGenerators)
+        return zipGenerators(await Promise.all(completionsGenerators))
     }
 
     private postProcess =

@@ -160,12 +160,12 @@ class AnthropicProvider extends Provider {
         return { messages: [...referenceSnippetMessages, ...prefixMessages], prefix }
     }
 
-    public generateCompletions(
+    public async generateCompletions(
         options: GenerateCompletionsOptions,
         abortSignal: AbortSignal,
         snippets: AutocompleteContextSnippet[],
         tracer?: CompletionProviderTracer
-    ): AsyncGenerator<FetchCompletionResult[]> {
+    ): Promise<AsyncGenerator<FetchCompletionResult[]>> {
         const partialRequestParams = getCompletionParams({
             providerOptions: options,
             lineNumberDependentCompletionParams,
@@ -195,12 +195,12 @@ class AnthropicProvider extends Provider {
         tracer?.params(requestParams)
 
         const completionsGenerators = Array.from({ length: options.numberOfCompletionsToGenerate }).map(
-            () => {
+            async () => {
                 const abortController = forkSignal(abortSignal)
 
                 const completionResponseGenerator = generatorWithErrorObserver(
                     generatorWithTimeout(
-                        this.client.complete(requestParams, abortController),
+                        await this.client.complete(requestParams, abortController),
                         requestParams.timeoutMs,
                         abortController
                     ),
@@ -236,7 +236,7 @@ class AnthropicProvider extends Provider {
             }
         )
 
-        return zipGenerators(completionsGenerators)
+        return zipGenerators(await Promise.all(completionsGenerators))
     }
 
     private postProcess =

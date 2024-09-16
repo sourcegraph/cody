@@ -61,7 +61,7 @@ export async function configureExternalServices(
     const initialConfig = await firstValueFrom(resolvedConfigWithAccessToken)
     platform.createSentryService?.()
     platform.createOpenTelemetryService?.()
-    const completionsClient = platform.createCompletionsClient(initialConfig, logger)
+    const completionsClient = platform.createCompletionsClient(logger)
 
     const symfRunner = platform.createSymfRunner?.(context, completionsClient)
 
@@ -92,7 +92,6 @@ export async function configureExternalServices(
         symfRunner,
         contextAPIClient,
         onConfigurationChange: newConfig => {
-            completionsClient.onConfigurationChange(newConfig)
             void localEmbeddings?.setAccessToken(newConfig.serverEndpoint, newConfig.accessToken)
         },
     }

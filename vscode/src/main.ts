@@ -60,7 +60,6 @@ import type { CodyCommandArgs } from './commands/types'
 import { newCodyCommandArgs } from './commands/utils/get-commands'
 import { createInlineCompletionItemProvider } from './completions/create-inline-completion-item-provider'
 import { createInlineCompletionItemFromMultipleProviders } from './completions/create-multi-model-inline-completion-provider'
-import { defaultCodeCompletionsClient } from './completions/default-client'
 import { getConfiguration, getFullConfig } from './configuration'
 import { exposeOpenCtxClient } from './context/openctx'
 import { EditManager } from './edit/manager'
@@ -305,7 +304,6 @@ async function initializeSingletons(
             resolvedConfigWithAccessToken.subscribe({
                 next: config => {
                     graphqlClient.setConfig(config)
-                    defaultCodeCompletionsClient.instance!.onConfigurationChange(config)
                 },
             })
         ),

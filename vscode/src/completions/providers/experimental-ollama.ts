@@ -141,12 +141,12 @@ class ExperimentalOllamaProvider extends Provider {
         return prompt
     }
 
-    public generateCompletions(
+    public async generateCompletions(
         options: GenerateCompletionsOptions,
         abortSignal: AbortSignal,
         snippets: AutocompleteContextSnippet[],
         tracer?: CompletionProviderTracer
-    ): AsyncGenerator<FetchCompletionResult[]> {
+    ): Promise<AsyncGenerator<FetchCompletionResult[]>> {
         const { docContext, multiline: isMultiline } = options
 
         // Only use infill if the suffix is not empty
@@ -172,11 +172,11 @@ class ExperimentalOllamaProvider extends Provider {
         const ollamaClient = createOllamaClient(this.ollamaOptions, logger)
 
         const completionsGenerators = Array.from({ length: options.numberOfCompletionsToGenerate }).map(
-            () => {
+            async () => {
                 const abortController = forkSignal(abortSignal)
 
                 const completionResponseGenerator = generatorWithTimeout(
-                    ollamaClient.complete(requestParams, abortController),
+                    await ollamaClient.complete(requestParams, abortController),
                     timeoutMs,
                     abortController
                 )
@@ -194,7 +194,7 @@ class ExperimentalOllamaProvider extends Provider {
             }
         )
 
-        return zipGenerators(completionsGenerators)
+        return zipGenerators(await Promise.all(completionsGenerators))
     }
 }
 

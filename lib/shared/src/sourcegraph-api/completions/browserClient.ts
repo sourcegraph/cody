@@ -1,10 +1,10 @@
 import { fetchEventSource } from '@microsoft/fetch-event-source'
 
 import { dependentAbortController } from '../../common/abortController'
-import { addCustomUserAgent } from '../graphql/client'
-
+import { currentResolvedConfig } from '../../configuration/resolver'
 import { isError } from '../../utils'
 import { addClientInfoParams } from '../client-name-version'
+import { addCustomUserAgent } from '../graphql/client'
 import { CompletionsResponseBuilder } from './CompletionsResponseBuilder'
 import { type CompletionRequestParameters, SourcegraphCompletionsClient } from './client'
 import { parseCompletionJSON } from './parse'
@@ -25,21 +25,23 @@ export class SourcegraphBrowserCompletionsClient extends SourcegraphCompletionsC
         const { apiVersion } = requestParams
         const serializedParams = await getSerializedParams(params)
 
-        const url = new URL(this.completionsEndpoint)
+        const url = new URL(await this.completionsEndpoint())
         if (apiVersion >= 1) {
             url.searchParams.append('api-version', '' + apiVersion)
         }
         addClientInfoParams(url.searchParams)
 
+        const config = await currentResolvedConfig()
+
         const abort = dependentAbortController(signal)
         const headersInstance = new Headers({
-            ...this.config.customHeaders,
+            ...config.configuration?.customHeaders,
             ...requestParams.customHeaders,
         } as HeadersInit)
         addCustomUserAgent(headersInstance)
         headersInstance.set('Content-Type', 'application/json; charset=utf-8')
-        if (this.config.accessToken) {
-            headersInstance.set('Authorization', `token ${this.config.accessToken}`)
+        if (config.auth.accessToken) {
+            headersInstance.set('Authorization', `token ${config.auth.accessToken}`)
         }
         const parameters = new URLSearchParams(globalThis.location.search)
         const trace = parameters.get('trace')
@@ -122,15 +124,16 @@ export class SourcegraphBrowserCompletionsClient extends SourcegraphCompletionsC
         cb: CompletionCallbacks,
         signal?: AbortSignal
     ): Promise<void> {
+        const { auth, configuration } = await currentResolvedConfig()
         const { url, serializedParams } = await this.prepareRequest(params, requestParams)
         const headersInstance = new Headers({
             'Content-Type': 'application/json; charset=utf-8',
-            ...this.config.customHeaders,
+            ...configuration.customHeaders,
             ...requestParams.customHeaders,
         })
         addCustomUserAgent(headersInstance)
-        if (this.config.accessToken) {
-            headersInstance.set('Authorization', `token ${this.config.accessToken}`)
+        if (auth.accessToken) {
+            headersInstance.set('Authorization', `token ${auth.accessToken}`)
         }
         if (new URLSearchParams(globalThis.location.search).get('trace')) {
             headersInstance.set('X-Sourcegraph-Should-Trace', 'true')

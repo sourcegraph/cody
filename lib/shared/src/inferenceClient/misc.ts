@@ -1,4 +1,4 @@
-import type { CompletionLogger, CompletionsClientConfig } from '../sourcegraph-api/completions/client'
+import type { CompletionLogger } from '../sourcegraph-api/completions/client'
 import type {
     CompletionParameters,
     CompletionResponse,
@@ -58,6 +58,5 @@ export interface CodeCompletionsClient<
         params: T,
         abortController: AbortController,
         providerOptions?: ProviderSpecificOptions
-    ): CompletionResponseGenerator
-    onConfigurationChange(newConfig: CompletionsClientConfig): void
+    ): CompletionResponseGenerator | Promise<CompletionResponseGenerator>
 }

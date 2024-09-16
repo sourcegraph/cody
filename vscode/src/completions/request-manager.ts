@@ -140,7 +140,7 @@ export class RequestManager {
 
         const generateCompletions = async (): Promise<void> => {
             try {
-                for await (const fetchCompletionResults of provider.generateCompletions(
+                for await (const fetchCompletionResults of await provider.generateCompletions(
                     providerOptions,
                     request.abortController.signal,
                     context,

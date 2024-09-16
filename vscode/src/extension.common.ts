@@ -3,7 +3,6 @@ import * as vscode from 'vscode'
 import type {
     ClientConfiguration,
     CompletionLogger,
-    CompletionsClientConfig,
     SourcegraphCompletionsClient,
 } from '@sourcegraph/cody-shared'
 import type { startTokenReceiver } from './auth/token-receiver'
@@ -38,10 +37,7 @@ export interface PlatformContext {
     ) => Promise<LocalEmbeddingsController>
     createSymfRunner?: Constructor<typeof SymfRunner>
     createBfgRetriever?: () => BfgRetriever
-    createCompletionsClient: (
-        config: CompletionsClientConfig,
-        logger?: CompletionLogger
-    ) => SourcegraphCompletionsClient
+    createCompletionsClient: (logger?: CompletionLogger) => SourcegraphCompletionsClient
     createSentryService?: () => SentryService
     createOpenTelemetryService?: () => OpenTelemetryService
     startTokenReceiver?: typeof startTokenReceiver

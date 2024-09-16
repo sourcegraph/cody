@@ -52,8 +52,8 @@ class LocalStorage {
         return this._storage
     }
 
-    public setStorage(storage: Memento): void {
-        this._storage = storage
+    public setStorage(storage: Memento | 'noop'): void {
+        this._storage = storage === 'noop' ? noopLocalStorage : storage
     }
 
     public getClientState(): ClientState {

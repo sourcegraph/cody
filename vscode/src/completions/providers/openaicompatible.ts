@@ -31,12 +31,12 @@ const lineNumberDependentCompletionParams = getLineNumberDependentCompletionPara
 })
 
 class OpenAICompatibleProvider extends Provider {
-    public generateCompletions(
+    public async generateCompletions(
         options: GenerateCompletionsOptions,
         abortSignal: AbortSignal,
         snippets: AutocompleteContextSnippet[],
         tracer?: CompletionProviderTracer
-    ): AsyncGenerator<FetchCompletionResult[]> {
+    ): Promise<AsyncGenerator<FetchCompletionResult[]>> {
         const partialRequestParams = getCompletionParams({
             providerOptions: options,
             lineNumberDependentCompletionParams,
@@ -64,11 +64,11 @@ class OpenAICompatibleProvider extends Provider {
         tracer?.params(requestParams)
 
         const completionsGenerators = Array.from({ length: options.numberOfCompletionsToGenerate }).map(
-            () => {
+            async () => {
                 const abortController = forkSignal(abortSignal)
 
                 const completionResponseGenerator = generatorWithTimeout(
-                    this.client.complete(requestParams, abortController),
+                    await this.client.complete(requestParams, abortController),
                     requestParams.timeoutMs,
                     abortController
                 )
@@ -97,7 +97,7 @@ class OpenAICompatibleProvider extends Provider {
          * available, and the switch to async generators maintains the same behavior
          * as with promises.
          */
-        return zipGenerators(completionsGenerators)
+        return zipGenerators(await Promise.all(completionsGenerators))
     }
 }
 

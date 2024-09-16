@@ -174,6 +174,7 @@ describe('RequestManager', () => {
         expect(provider1.didFinishNetworkRequest).toBe(false)
         expect(provider2.didFinishNetworkRequest).toBe(false)
 
+        await nextTick()
         provider2.yield(["'hello')"])
 
         expect((await promise2).completions[0].insertText).toBe("'hello')")
@@ -198,6 +199,7 @@ describe('RequestManager', () => {
         const provider2 = createProvider()
         const promise2 = createRequest(prefix2, provider2)
 
+        await nextTick()
         provider1.yield(["log('hello')"])
 
         const firstResult = await promise1
@@ -327,6 +329,7 @@ describe('RequestManager', () => {
             const provider2 = createProvider()
             const promise2 = createRequest(prefix2, provider2)
 
+            await nextTick()
             provider1.yield(["log('hello')"])
 
             expect((await promise1).completions[0].insertText).toBe("log('hello')")
@@ -344,6 +347,7 @@ describe('RequestManager', () => {
             const prefix1 = 'console.'
             const provider1 = createProvider()
             createRequest(prefix1, provider1)
+            await nextTick()
 
             const prefix2 = 'table.'
             const provider2 = createProvider()
@@ -356,6 +360,7 @@ describe('RequestManager', () => {
             const prefix1 = 'console.'
             const provider1 = createProvider()
             createRequest(prefix1, provider1)
+            await nextTick()
 
             const prefix2 = 'console.tabletop'
             const provider2 = createProvider()
