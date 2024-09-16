@@ -44,10 +44,7 @@ export function createRemoteDirectoryProvider(customTitle?: string): OpenCtxProv
     }
 }
 
-export async function getDirectoryMentions(
-    repoName: string,
-    directoryPath?: string
-): Promise<Mention[]> {
+async function getDirectoryMentions(repoName: string, directoryPath?: string): Promise<Mention[]> {
     const repoRe = `^${escapeRegExp(repoName)}$`
     const directoryRe = directoryPath ? escapeRegExp(directoryPath) : ''
     const query = `repo:${repoRe} file:${directoryRe}.*\/.* select:file.directory count:10`
@@ -84,11 +81,7 @@ export async function getDirectoryMentions(
         .filter(isDefined)
 }
 
-export async function getDirectoryItem(
-    query: string,
-    repoID: string,
-    directoryPath: string
-): Promise<Item[]> {
+async function getDirectoryItem(query: string, repoID: string, directoryPath: string): Promise<Item[]> {
     const dataOrError = await graphqlClient.contextSearch({
         repoIDs: [repoID],
         query,

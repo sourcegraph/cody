@@ -20,7 +20,7 @@ import { InlineCompletionItemProvider } from './inline-completion-item-provider'
 import { createProvider } from './providers/create-provider'
 import { registerAutocompleteTraceView } from './tracer/traceView'
 
-export interface InlineCompletionItemProviderArgs {
+interface InlineCompletionItemProviderArgs {
     config: ResolvedConfiguration
     statusBar: CodyStatusBar
     createBfgRetriever?: () => BfgRetriever

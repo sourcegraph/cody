@@ -758,7 +758,7 @@ export function loaded(params: LoadedParams): void {
         }
     }
 }
-export function suggestionDocumentDiffTracker(
+function suggestionDocumentDiffTracker(
     interactionId: CompletionAnalyticsID,
     document: vscode.TextDocument,
     position: vscode.Position
@@ -797,7 +797,7 @@ export function suggestionDocumentDiffTracker(
     })
 }
 
-export type SuggestionMarkReadParam = {
+type SuggestionMarkReadParam = {
     document: vscode.TextDocument
     position: vscode.Position
 }

@@ -131,7 +131,7 @@ async function showAuthMenu(type: AuthMenuType): Promise<LoginMenuItem | null> {
 /**
  * Show a VS Code input box to ask the user to enter a Sourcegraph instance URL.
  */
-export async function showInstanceURLInputBox(title: string): Promise<string | undefined> {
+async function showInstanceURLInputBox(title: string): Promise<string | undefined> {
     const result = await vscode.window.showInputBox({
         title,
         prompt: 'Enter the URL of the Sourcegraph instance. For example, https://sourcegraph.example.com.',
@@ -167,7 +167,7 @@ export async function showInstanceURLInputBox(title: string): Promise<string | u
 /**
  * Show a VS Code input box to ask the user to enter an access token.
  */
-export async function showAccessTokenInputBox(endpoint: string): Promise<string | undefined> {
+async function showAccessTokenInputBox(endpoint: string): Promise<string | undefined> {
     const result = await vscode.window.showInputBox({
         title: endpoint,
         prompt: 'Paste your access token. To create an access token, go to "Settings" and then "Access tokens" on the Sourcegraph instance.',

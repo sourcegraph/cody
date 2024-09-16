@@ -61,7 +61,7 @@ const MODEL_MAP = {
         'accounts/sourcegraph/models/deepseek-coder-v2-lite-base',
 }
 
-export type FireworksModel =
+type FireworksModel =
     | keyof typeof MODEL_MAP
     // `starcoder-hybrid` uses the 16b model for multiline requests and the 7b model for single line
     | 'starcoder-hybrid'

@@ -98,7 +98,7 @@ interface CreateProviderHelperParams {
     source: AutocompleteProviderConfigSource
 }
 
-export function createProviderHelper(params: CreateProviderHelperParams): Provider | Error {
+function createProviderHelper(params: CreateProviderHelperParams): Provider | Error {
     const { legacyModel, model, provider, config, source } = params
 
     const providerCreator = getProviderCreator({
@@ -190,7 +190,7 @@ function getProviderCreator(params: GetProviderCreatorParams): ProviderFactory |
 /**
  * Config sources are listed in the order of precedence.
  */
-export const AUTOCOMPLETE_PROVIDER_CONFIG_SOURCE = {
+const AUTOCOMPLETE_PROVIDER_CONFIG_SOURCE = {
     /**
      * Local user configuration. Used to switch from the remote default to ollama and potentially other local providers.
      */
