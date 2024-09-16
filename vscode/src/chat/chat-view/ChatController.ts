@@ -33,6 +33,7 @@ import {
     createMessageAPIForExtension,
     currentAuthStatus,
     currentAuthStatusAuthed,
+    currentAuthStatusOrNotReadyYet,
     featureFlagProvider,
     getContextForChatMessage,
     graphqlClient,
@@ -613,7 +614,11 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
     }
 
     private async sendConfig(): Promise<void> {
-        const authStatus = currentAuthStatus()
+        const authStatus = currentAuthStatusOrNotReadyYet()
+        if (!authStatus) {
+            return
+        }
+
         const configForWebview = await this.getConfigForWebview()
         const workspaceFolderUris =
             vscode.workspace.workspaceFolders?.map(folder => folder.uri.toString()) ?? []

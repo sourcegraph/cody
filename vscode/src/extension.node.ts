@@ -1,7 +1,12 @@
 // Sentry should be imported first
 import { NodeSentryService } from './services/sentry/sentry.node'
 
-import { currentAuthStatus, currentResolvedConfig } from '@sourcegraph/cody-shared'
+import {
+    currentAuthStatus,
+    currentResolvedConfig,
+    resolvedConfig,
+    subscriptionDisposable,
+} from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 import { startTokenReceiver } from './auth/token-receiver'
 import { CommandsProvider } from './commands/services/provider'
@@ -51,7 +56,11 @@ export function activate(
             ? (...args) => new OpenTelemetryService(...args)
             : undefined,
         startTokenReceiver: (...args) => startTokenReceiver(...args),
-        onConfigurationChange: setCustomAgent,
+        otherInitialization: () => {
+            return subscriptionDisposable(
+                resolvedConfig.subscribe(config => setCustomAgent(config.configuration))
+            )
+        },
         extensionClient,
     })
 }

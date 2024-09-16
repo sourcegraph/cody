@@ -1,7 +1,6 @@
 import * as vscode from 'vscode'
 
 import type {
-    ClientConfiguration,
     CompletionLogger,
     SourcegraphCompletionsClient,
     StoredLastValue,
@@ -40,7 +39,7 @@ export interface PlatformContext {
     createSentryService?: () => SentryService
     createOpenTelemetryService?: () => OpenTelemetryService
     startTokenReceiver?: typeof startTokenReceiver
-    onConfigurationChange?: (configuration: ClientConfiguration) => void
+    otherInitialization?: () => vscode.Disposable
     extensionClient: ExtensionClient
 }
 

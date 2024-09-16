@@ -7,6 +7,7 @@ import {
     type DefaultCodyCommands,
     type Guardrails,
     PromptString,
+    type ResolvedConfiguration,
     authStatus,
     combineLatest,
     contextFiltersProvider,
@@ -14,18 +15,16 @@ import {
     currentAuthStatusOrNotReadyYet,
     currentResolvedConfig,
     distinctUntilChanged,
-    firstValueFrom,
     fromVSCodeEvent,
     graphqlClient,
     isDotCom,
-    modelsService,
     resolvedConfig,
-    resolvedConfigWithAccessToken,
     setClientNameVersion,
     setLogger,
     setResolvedConfigurationObservable,
     startWith,
     subscriptionDisposable,
+    take,
     telemetryRecorder,
 } from '@sourcegraph/cody-shared'
 import { filter, map } from 'observable-fns'
@@ -83,7 +82,6 @@ import { localStorage } from './services/LocalStorageProvider'
 import { VSCodeSecretStorage, secretStorage } from './services/SecretStorageProvider'
 import { registerSidebarCommands } from './services/SidebarCommands'
 import { type CodyStatusBar, createStatusBar } from './services/StatusBar'
-import { upstreamHealthProvider } from './services/UpstreamHealthProvider'
 import { createOrUpdateTelemetryRecorderProvider } from './services/telemetry-v2'
 import { onTextDocumentChange } from './services/utils/codeblock-action-tracker'
 import {
@@ -148,19 +146,7 @@ export async function start(
     )
 
     disposables.push(createOrUpdateTelemetryRecorderProvider(isExtensionModeDevOrTest))
-
-    disposables.push(
-        subscriptionDisposable(
-            resolvedConfig.subscribe({
-                next: config => {
-                    platform.onConfigurationChange?.(config.configuration)
-                },
-            })
-        )
-    )
-
     disposables.push(await register(context, platform, isExtensionModeDevOrTest))
-
     return vscode.Disposable.from(...disposables)
 }
 
@@ -181,7 +167,7 @@ const register = async (
     disposables.push(manageDisplayPathEnvInfoForExtension())
 
     // Initialize singletons
-    await initializeSingletons(platform, isExtensionModeDevOrTest, disposables)
+    await initializeSingletons(platform, disposables)
 
     // Ensure Git API is available
     disposables.push(await initVSCodeGitApi())
@@ -242,17 +228,13 @@ const register = async (
         )
     )
 
-    await Promise.all([
-        registerAutocomplete(platform, statusBar, disposables),
-        tryRegisterTutorial(context, disposables),
-        registerMinion(context, symfRunner, disposables),
-    ])
+    await registerAutocomplete(platform, statusBar, disposables)
+    const tutorialSetup = tryRegisterTutorial(context, disposables)
 
     registerCodyCommands(statusBar, sourceControl, chatClient, disposables)
     registerAuthCommands(disposables)
     registerChatCommands(disposables)
     disposables.push(...registerSidebarCommands())
-    const config = await firstValueFrom(resolvedConfigWithAccessToken)
     registerOtherCommands(disposables)
     if (isExtensionModeDevOrTest) {
         await registerTestCommands(context, disposables)
@@ -265,38 +247,35 @@ const register = async (
     // `vscode.window.showInformationMessage()`, which only resolves after the
     // user has clicked on "Setup". Awaiting on this promise will make the Cody
     // extension timeout during activation.
-    void showSetupNotification(config)
+    resolvedConfig.pipe(take(1)).subscribe(({ auth }) => showSetupNotification(auth))
+
+    // Save config for `deactivate` handler.
+    disposables.push(
+        subscriptionDisposable(
+            resolvedConfig.subscribe(config => {
+                localStorage.setConfig(config)
+            })
+        )
+    )
+
+    disposables.push(registerMinion(context, symfRunner))
+
+    await tutorialSetup
 
     return vscode.Disposable.from(...disposables)
 }
 
 async function initializeSingletons(
     platform: PlatformContext,
-    isExtensionModeDevOrTest: boolean,
     disposables: vscode.Disposable[]
 ): Promise<void> {
-    // The split between AuthProvider construction and initialization is
-    // awkward, but exists so we can initialize the telemetry recorder
-    // first, as it is used in AuthProvider before AuthProvider initialization
-    // is complete. It is also important that AuthProvider inintialization
-    // completes before initializeSingletons is called, because many of
-    // those assume an initialized AuthProvider
     await authProvider.init()
 
-    // Allow the VS Code app's instance of ModelsService to use local storage to persist
-    // user's model choices
-    modelsService.setStorage(localStorage)
-    disposables.push(upstreamHealthProvider, contextFiltersProvider)
     commandControllerInit(platform.createCommandsProvider?.(), platform.extensionClient.capabilities)
-    disposables.push(
-        subscriptionDisposable(
-            resolvedConfig.subscribe({
-                next: config => {
-                    void localStorage.setConfig(config)
-                },
-            })
-        )
-    )
+
+    if (platform.otherInitialization) {
+        disposables.push(platform.otherInitialization())
+    }
 }
 
 // Registers listeners to trigger parsing of visible documents
@@ -423,9 +402,12 @@ function registerCodyCommands(
     }
 
     // Initialize supercompletion provider if experimental feature is enabled
-    if (getConfiguration().experimentalSupercompletions) {
-        disposables.push(new SupercompletionProvider({ statusBar, chat: chatClient }))
-    }
+    disposables.push(
+        enableFeature(
+            ({ configuration }) => configuration.experimentalSupercompletions,
+            () => new SupercompletionProvider({ statusBar, chat: chatClient })
+        )
+    )
 
     // Register Cody Commands
     disposables.push(
@@ -440,6 +422,28 @@ function registerCodyCommands(
         vscode.commands.registerCommand('cody.command.auto-edit', a => executeAutoEditCommand(a)),
         sourceControl // Generate Commit Message command
     )
+}
+
+function enableFeature(
+    shouldEnable: (config: ResolvedConfiguration) => boolean,
+    enable: () => vscode.Disposable
+): vscode.Disposable {
+    let featureDisposable: vscode.Disposable | null
+    const sub = resolvedConfig
+        .pipe(
+            map(config => shouldEnable(config)),
+            distinctUntilChanged()
+        )
+        .subscribe(isEnabled => {
+            if (featureDisposable) {
+                featureDisposable.dispose()
+                featureDisposable = null
+            }
+            if (isEnabled) {
+                featureDisposable = enable()
+            }
+        })
+    return { dispose: () => sub.unsubscribe() }
 }
 
 function registerChatCommands(disposables: vscode.Disposable[]): void {
@@ -664,25 +668,29 @@ function registerAutocomplete(
     return setupAutocomplete().catch(() => {})
 }
 
-async function registerMinion(
+function registerMinion(
     context: vscode.ExtensionContext,
 
-    symfRunner: SymfRunner | undefined,
-    disposables: vscode.Disposable[]
-): Promise<void> {
-    if (getConfiguration().experimentalMinionAnthropicKey) {
-        const minionOrchestrator = new MinionOrchestrator(context.extensionUri, symfRunner)
-        disposables.push(minionOrchestrator)
-        disposables.push(
-            vscode.commands.registerCommand('cody.minion.panel.new', () =>
-                minionOrchestrator.createNewMinionPanel()
-            ),
-            vscode.commands.registerCommand('cody.minion.new-terminal', async () => {
-                const t = new PoorMansBash()
-                await t.run('hello world')
-            })
-        )
-    }
+    symfRunner: SymfRunner | undefined
+): vscode.Disposable {
+    return enableFeature(
+        config => !!config.configuration.experimentalMinionAnthropicKey,
+        () => {
+            const disposables: vscode.Disposable[] = []
+            const minionOrchestrator = new MinionOrchestrator(context.extensionUri, symfRunner)
+            disposables.push(
+                minionOrchestrator,
+                vscode.commands.registerCommand('cody.minion.panel.new', () =>
+                    minionOrchestrator.createNewMinionPanel()
+                ),
+                vscode.commands.registerCommand('cody.minion.new-terminal', async () => {
+                    const t = new PoorMansBash()
+                    await t.run('hello world')
+                })
+            )
+            return vscode.Disposable.from(...disposables)
+        }
+    )
 }
 
 interface RegisterChatOptions {
