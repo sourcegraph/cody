@@ -647,10 +647,11 @@ export class SourcegraphGraphQLAPIClient {
         return this.config.serverEndpoint
     }
 
-    public async getSiteVersion(): Promise<string | Error> {
+    public async getSiteVersion(signal?: AbortSignal): Promise<string | Error> {
         return this.fetchSourcegraphAPI<APIResponse<SiteVersionResponse>>(
             CURRENT_SITE_VERSION_QUERY,
-            {}
+            {},
+            signal
         ).then(response =>
             extractDataOrError(
                 response,
@@ -1036,11 +1037,11 @@ export class SourcegraphGraphQLAPIClient {
      * @param options.insider - Whether to consider insider builds as valid. Defaults to true.
      * @returns A promise that resolves to a boolean indicating if the version is valid.
      */
-    public async isValidSiteVersion({
-        minimumVersion,
-        insider = true,
-    }: { minimumVersion: string; insider?: boolean }): Promise<boolean> {
-        const version = await this.getSiteVersion()
+    public async isValidSiteVersion(
+        { minimumVersion, insider = true }: { minimumVersion: string; insider?: boolean },
+        signal?: AbortSignal
+    ): Promise<boolean> {
+        const version = await this.getSiteVersion(signal)
         if (isError(version)) {
             return false
         }

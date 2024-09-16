@@ -4,18 +4,20 @@ import { expect, vi } from 'vitest'
 import type { URI } from 'vscode-uri'
 
 import {
+    AUTH_STATUS_FIXTURE_AUTHED,
     AUTH_STATUS_FIXTURE_AUTHED_DOTCOM,
-    type AuthenticatedAuthStatus,
     type ClientConfiguration,
-    type ClientConfigurationWithAccessToken,
+    type ClientState,
     type CodeCompletionsClient,
     type CompletionParameters,
     type CompletionResponse,
     CompletionStopReason,
     type GraphQLAPIClientConfig,
+    type ResolvedConfiguration,
     featureFlagProvider,
     graphqlClient,
     mockAuthStatus,
+    mockResolvedConfig,
     testFileUri,
 } from '@sourcegraph/cody-shared'
 
@@ -28,7 +30,6 @@ import { DEFAULT_VSCODE_SETTINGS } from '../../testutils/mocks'
 import type { SupportedLanguage } from '../../tree-sitter/grammars'
 import { updateParseTreeCache } from '../../tree-sitter/parse-tree-cache'
 import { getParser } from '../../tree-sitter/parser'
-import { completionProviderConfig } from '../completion-provider-config'
 import { ContextMixer } from '../context/context-mixer'
 import { DefaultContextStrategyFactory } from '../context/context-strategy'
 import { getCompletionIntent } from '../doc-context-getters'
@@ -59,11 +60,13 @@ export const T = '\t'
 
 const getVSCodeConfigurationWithAccessToken = (
     config: Partial<ClientConfiguration> = {}
-): ClientConfigurationWithAccessToken => ({
-    ...DEFAULT_VSCODE_SETTINGS,
-    ...config,
-    serverEndpoint: 'https://example.com',
-    accessToken: 'foobar',
+): ResolvedConfiguration => ({
+    configuration: { ...DEFAULT_VSCODE_SETTINGS, ...config },
+    auth: {
+        serverEndpoint: 'https://example.com',
+        accessToken: 'foobar',
+    },
+    clientState: { anonymousUserID: 'anonymousUserID' } as Partial<ClientState> as ClientState,
 })
 
 type Params = Partial<
@@ -78,8 +81,8 @@ type Params = Partial<
     completionResponseGenerator?: (
         params: CompletionParameters
     ) => Generator<CompletionResponse> | AsyncGenerator<CompletionResponse>
-    configuration?: Partial<ClientConfiguration>
-    authStatus?: AuthenticatedAuthStatus
+    configuration?: Parameters<typeof mockResolvedConfig>[0]
+    authStatus?: Parameters<typeof mockAuthStatus>[0]
     documentUri?: URI
 }
 
@@ -90,8 +93,8 @@ export interface ParamsResult extends Omit<InlineCompletionsParams, 'configurati
      * request manager in autocomplete tests.
      */
     completionResponseGeneratorPromise: Promise<unknown>
-    configuration?: Partial<ClientConfigurationWithAccessToken>
-    authStatus: AuthenticatedAuthStatus
+    configuration?: Parameters<typeof mockResolvedConfig>[0]
+    authStatus: Parameters<typeof mockAuthStatus>[0]
 }
 
 /**
@@ -166,17 +169,20 @@ export function params(
 
     // TODO: add support for `createProvider` from `vscode/src/completions/providers/create-provider.ts`
     const createProvider =
-        configuration?.autocompleteAdvancedProvider === 'fireworks' &&
-        configuration.autocompleteAdvancedModel
+        configuration?.configuration?.autocompleteAdvancedProvider === 'fireworks' &&
+        configuration.configuration.autocompleteAdvancedModel
             ? createFireworksProvider
             : createAnthropicProvider
 
-    const configWithAccessToken = getVSCodeConfigurationWithAccessToken(configuration)
+    const configWithAccessToken = getVSCodeConfigurationWithAccessToken(
+        configuration?.configuration as Partial<ClientConfiguration>
+    )
     const provider = createProvider({
-        legacyModel: configuration?.autocompleteAdvancedModel!,
+        legacyModel: configuration?.configuration?.autocompleteAdvancedModel!,
         config: configWithAccessToken,
-        anonymousUserID: 'anonymousUserID',
-        provider: (configuration?.autocompleteAdvancedModel as AutocompleteProviderID) || 'anthropic',
+        provider:
+            (configuration?.configuration?.autocompleteAdvancedModel as AutocompleteProviderID) ||
+            'anthropic',
         source: 'local-editor-settings',
     })
 
@@ -216,7 +222,7 @@ export function params(
         selectedCompletionInfo,
         provider,
         firstCompletionTimeout:
-            configuration?.autocompleteFirstCompletionTimeout ??
+            configuration?.configuration?.autocompleteFirstCompletionTimeout ??
             DEFAULT_VSCODE_SETTINGS.autocompleteFirstCompletionTimeout,
         requestManager: new RequestManager(),
         contextMixer: new ContextMixer(new DefaultContextStrategyFactory(Observable.of('none'))),
@@ -380,17 +386,11 @@ export async function getInlineCompletionsWithInlinedChunks(
 export async function getInlineCompletionsFullResponse(
     params: ParamsResult
 ): Promise<InlineCompletionsResult | null> {
-    await initCompletionProviderConfig(params)
-
-    const result = await _getInlineCompletions({
+    initCompletionProviderConfig(params)
+    return await _getInlineCompletions({
         ...params,
-        configuration: params.configuration as ClientConfigurationWithAccessToken,
+        configuration: params.configuration as ResolvedConfiguration,
     })
-    if (!result) {
-        completionProviderConfig.setConfig({} as ClientConfiguration)
-    }
-
-    return result
 }
 
 /**
@@ -424,12 +424,12 @@ export type V = Awaited<ReturnType<typeof getInlineCompletions>>
 export function initCompletionProviderConfig({
     configuration,
     authStatus,
-}: Partial<Pick<ParamsResult, 'configuration' | 'authStatus'>>): Promise<void> {
+}: Partial<Pick<ParamsResult, 'configuration' | 'authStatus'>>): void {
     graphqlClient.setConfig({} as unknown as GraphQLAPIClientConfig)
     vi.spyOn(featureFlagProvider, 'evaluateFeatureFlag').mockResolvedValue(false)
     vi.spyOn(featureFlagProvider, 'evaluatedFeatureFlag').mockReturnValue(Observable.of(false))
-    mockAuthStatus(authStatus)
-    return completionProviderConfig.init((configuration ?? {}) as ClientConfiguration)
+    mockAuthStatus(authStatus ?? AUTH_STATUS_FIXTURE_AUTHED)
+    mockResolvedConfig({ configuration: {}, auth: {}, ...configuration })
 }
 
 expect.extend({

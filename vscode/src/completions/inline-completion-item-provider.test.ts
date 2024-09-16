@@ -58,8 +58,8 @@ class MockableInlineCompletionItemProvider extends InlineCompletionItemProvider 
 }
 
 describe('InlineCompletionItemProvider', async () => {
-    beforeEach(async () => {
-        await initCompletionProviderConfig({})
+    beforeEach(() => {
+        initCompletionProviderConfig({})
         mockLocalStorage()
         vi.spyOn(contextFiltersProvider, 'isUriIgnored').mockResolvedValue(false)
         CompletionLogger.reset_testOnly()

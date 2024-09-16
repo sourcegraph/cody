@@ -1,14 +1,13 @@
 import {
-    type ClientConfigurationWithAccessToken,
     type Model,
     ModelUsage,
+    type ResolvedConfiguration,
     currentAuthStatusAuthed,
     modelsService,
 } from '@sourcegraph/cody-shared'
 
 import { Observable } from 'observable-fns'
 import { logError } from '../../log'
-import { localStorage } from '../../services/LocalStorageProvider'
 import { createProvider as createAnthropicProvider } from './anthropic'
 import { createProvider as createExperimentalOllamaProvider } from './experimental-ollama'
 import { createProvider as createExperimentalOpenAICompatibleProvider } from './expopenaicompatible'
@@ -20,13 +19,13 @@ import { parseProviderAndModel } from './parse-provider-and-model'
 import type { Provider, ProviderFactory } from './provider'
 import { createProvider as createUnstableOpenAIProviderConfig } from './unstable-openai'
 
-export function createProvider(config: ClientConfigurationWithAccessToken): Observable<Provider | null> {
+export function createProvider(config: ResolvedConfiguration): Observable<Provider | null> {
     // Resolve the provider config from the VS Code config.
-    if (config.autocompleteAdvancedProvider) {
+    if (config.configuration.autocompleteAdvancedProvider) {
         return Observable.of(
             createProviderHelper({
-                legacyModel: config.autocompleteAdvancedModel || undefined,
-                provider: config.autocompleteAdvancedProvider,
+                legacyModel: config.configuration.autocompleteAdvancedModel || undefined,
+                provider: config.configuration.autocompleteAdvancedProvider,
                 config,
                 source: 'local-editor-settings',
             })
@@ -45,7 +44,7 @@ export function createProvider(config: ClientConfigurationWithAccessToken): Obse
         }
 
         // Check if server-side model configuration is available.
-        const model = modelsService.instance!.getDefaultModel(ModelUsage.Autocomplete)
+        const model = modelsService.getDefaultModel(ModelUsage.Autocomplete)
 
         if (model) {
             const provider = model.clientSideConfig?.openAICompatible
@@ -93,15 +92,18 @@ export function createProvider(config: ClientConfigurationWithAccessToken): Obse
 interface CreateConfigHelperParams {
     legacyModel: string | undefined
     provider: string
-    config: ClientConfigurationWithAccessToken
+    config: ResolvedConfiguration
     model?: Model
     source: AutocompleteProviderConfigSource
 }
 
-export function createProviderHelper(params: CreateConfigHelperParams): Provider | null {
-    const { legacyModel, model, provider, config, source } = params
-    const anonymousUserID = localStorage.anonymousUserID()
-
+export function createProviderHelper({
+    legacyModel,
+    model,
+    provider,
+    config,
+    source,
+}: CreateConfigHelperParams): Provider | null {
     const providerCreator = getProviderCreator({
         provider: provider as AutocompleteProviderID,
     })
@@ -111,7 +113,6 @@ export function createProviderHelper(params: CreateConfigHelperParams): Provider
             model,
             legacyModel: legacyModel,
             config,
-            anonymousUserID,
             provider: provider as AutocompleteProviderID,
             source,
         })

@@ -1109,7 +1109,6 @@ const _languages: Partial<typeof vscode.languages> = {
     registerHoverProvider: (_selector, _provider) => {
         return {
             dispose: () => {
-                console.log(new Error().stack)
                 throw new Error('Not implemented: vscode.languages.registerHoverProvider')
             },
         }

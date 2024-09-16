@@ -960,7 +960,7 @@ export interface TestingTelemetryEvent {
         clientVersion: string
     }
     timestamp: string
-    testOnlyAnonymousUserID: string
+    testOnlyAnonymousUserID?: string | null | undefined
 }
 export interface NetworkRequest {
     url: string

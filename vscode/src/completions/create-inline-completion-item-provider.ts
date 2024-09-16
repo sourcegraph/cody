@@ -1,6 +1,6 @@
 import {
-    type ClientConfigurationWithAccessToken,
     NEVER,
+    type ResolvedConfiguration,
     createDisposables,
     currentAuthStatus,
     currentAuthStatusAuthed,
@@ -15,14 +15,13 @@ import { logDebug } from '../log'
 import type { CodyStatusBar } from '../services/StatusBar'
 
 import { type Observable, map } from 'observable-fns'
-import { completionProviderConfig } from './completion-provider-config'
 import type { BfgRetriever } from './context/retrievers/bfg/bfg-retriever'
 import { InlineCompletionItemProvider } from './inline-completion-item-provider'
 import { createProvider } from './providers/create-provider'
 import { registerAutocompleteTraceView } from './tracer/traceView'
 
 export interface InlineCompletionItemProviderArgs {
-    config: ClientConfigurationWithAccessToken
+    config: ResolvedConfiguration
     statusBar: CodyStatusBar
     createBfgRetriever?: () => BfgRetriever
 }
@@ -52,7 +51,7 @@ export function createInlineCompletionItemProvider({
     if (!authStatus.authenticated) {
         logDebug('AutocompleteProvider:notSignedIn', 'You are not signed in.')
 
-        if (config.isRunningInsideAgent) {
+        if (config.configuration.isRunningInsideAgent) {
             // Register an empty completion provider when running inside the
             // agent to avoid timeouts because it awaits for an
             // `InlineCompletionItemProvider` to be registered.
@@ -68,8 +67,7 @@ export function createInlineCompletionItemProvider({
     }
 
     return promiseFactoryToObservable(async () => {
-        await completionProviderConfig.init(config)
-        return await getInlineCompletionItemProviderFilters(config.autocompleteLanguages)
+        return await getInlineCompletionItemProviderFilters(config.configuration.autocompleteLanguages)
     }).pipe(
         mergeMap(documentFilters =>
             createProvider(config).pipe(
@@ -84,13 +82,15 @@ export function createInlineCompletionItemProvider({
                             triggerDelay,
                             provider,
                             config,
-                            firstCompletionTimeout: config.autocompleteFirstCompletionTimeout,
+                            firstCompletionTimeout:
+                                config.configuration.autocompleteFirstCompletionTimeout,
                             statusBar,
                             completeSuggestWidgetSelection:
-                                config.autocompleteCompleteSuggestWidgetSelection,
-                            formatOnAccept: config.autocompleteFormatOnAccept,
-                            disableInsideComments: config.autocompleteDisableInsideComments,
-                            isRunningInsideAgent: config.isRunningInsideAgent,
+                                config.configuration.autocompleteCompleteSuggestWidgetSelection,
+                            formatOnAccept: config.configuration.autocompleteFormatOnAccept,
+                            disableInsideComments:
+                                config.configuration.autocompleteDisableInsideComments,
+                            isRunningInsideAgent: config.configuration.isRunningInsideAgent,
                             createBfgRetriever,
                             isDotComUser: isDotCom(authStatus),
                         })
@@ -107,7 +107,7 @@ export function createInlineCompletionItemProvider({
                             completionsProvider,
                         ]
                     }
-                    if (config.isRunningInsideAgent) {
+                    if (config.configuration.isRunningInsideAgent) {
                         throw new Error(
                             `Can't register completion provider because \`providerConfig\` evaluated to \`null\`. To fix this problem, debug why createProvider returned null instead of ProviderConfig. To further debug this problem, here is the configuration:\n${JSON.stringify(
                                 config,

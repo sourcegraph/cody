@@ -223,35 +223,35 @@ class FireworksProvider extends Provider {
 
         const isNode = typeof process !== 'undefined'
         let fastPathAccessToken =
-            config.accessToken &&
+            config.auth.accessToken &&
             // Require the upstream to be dotcom
             (isDotComAuthed() || isLocalInstance) &&
             process.env.CODY_DISABLE_FASTPATH !== 'true' && // Used for testing
             // The fast path client only supports Node.js style response streams
             isNode
-                ? dotcomTokenToGatewayToken(config.accessToken)
+                ? dotcomTokenToGatewayToken(config.auth.accessToken)
                 : undefined
 
         if (fastPathAccessToken) {
             const useExperimentalFireworksConfig =
                 process.env.NODE_ENV === 'development' &&
-                config.autocompleteExperimentalFireworksOptions?.token
+                config.configuration.autocompleteExperimentalFireworksOptions?.token
 
             if (useExperimentalFireworksConfig) {
-                fastPathAccessToken = config.autocompleteExperimentalFireworksOptions?.token
+                fastPathAccessToken =
+                    config.configuration.autocompleteExperimentalFireworksOptions?.token
             }
 
             return createFastPathClient(requestParams, abortController, {
                 isLocalInstance,
                 fireworksConfig: useExperimentalFireworksConfig
-                    ? config.autocompleteExperimentalFireworksOptions
+                    ? config.configuration.autocompleteExperimentalFireworksOptions
                     : undefined,
                 logger: defaultCodeCompletionsClient.instance!.logger,
                 providerOptions: options,
                 fastPathAccessToken,
                 customHeaders: this.getCustomHeaders(authStatus.isFireworksTracingEnabled),
                 authStatus: authStatus,
-                anonymousUserID: this.anonymousUserID,
             })
         }
 
@@ -273,16 +273,13 @@ function getClientModel(model?: string): FireworksModel {
     throw new Error(`Unknown model: \`${model}\``)
 }
 
-export function createProvider(params: ProviderFactoryParams): Provider {
-    const { legacyModel, anonymousUserID, source } = params
-
+export function createProvider({ legacyModel, source }: ProviderFactoryParams): Provider {
     const clientModel = getClientModel(legacyModel)
 
     return new FireworksProvider({
         id: 'fireworks',
         legacyModel: clientModel,
         maxContextTokens: getMaxContextTokens(clientModel),
-        anonymousUserID,
         source,
     })
 }

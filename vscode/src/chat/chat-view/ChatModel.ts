@@ -26,14 +26,14 @@ export class ChatModel {
         private customChatTitle?: string,
         private selectedRepos?: Repo[]
     ) {
-        this.contextWindow = modelsService.instance!.getContextWindowByID(this.modelID)
+        this.contextWindow = modelsService.getContextWindowByID(this.modelID)
     }
 
     public updateModel(newModelID: string) {
         // Only update the model if it is available to the user.
-        if (modelsService.instance!.isModelAvailable(newModelID)) {
+        if (modelsService.isModelAvailable(newModelID)) {
             this.modelID = newModelID
-            this.contextWindow = modelsService.instance!.getContextWindowByID(this.modelID)
+            this.contextWindow = modelsService.getContextWindowByID(this.modelID)
         }
     }
 

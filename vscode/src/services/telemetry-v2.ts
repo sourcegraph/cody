@@ -84,11 +84,10 @@ export function createOrUpdateTelemetryRecorderProvider(
             if (process.env.CODY_TESTING === 'true') {
                 logDebug(debugLogLabel, 'using mock exporter')
                 updateGlobalTelemetryInstances(
-                    new MockServerTelemetryRecorderProvider(
-                        extensionDetails,
+                    new MockServerTelemetryRecorderProvider(extensionDetails, {
                         configuration,
-                        clientState.anonymousUserID
-                    )
+                        clientState,
+                    })
                 )
             } else if (isExtensionModeDevOrTest) {
                 logDebug(debugLogLabel, 'using no-op exports')
@@ -97,8 +96,7 @@ export function createOrUpdateTelemetryRecorderProvider(
                 updateGlobalTelemetryInstances(
                     new TelemetryRecorderProvider(
                         extensionDetails,
-                        { ...configuration, ...auth },
-                        clientState.anonymousUserID,
+                        { configuration, auth, clientState },
                         legacyBackcompatLogEventMode
                     )
                 )

@@ -279,26 +279,25 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 })
             ),
             subscriptionDisposable(
-                combineLatest([
-                    modelsService.instance!.changes.pipe(startWith(undefined)),
-                    authStatus,
-                ]).subscribe(([, authStatus]) => {
-                    // Get the latest model list available to the current user to update the ChatModel.
-                    logError(
-                        'ChatController',
-                        'updated authStatus',
-                        JSON.stringify({
-                            authStatus,
-                            defaultModelID: getDefaultModelID(),
-                            currentModelID: this.chatModel.modelID,
-                        })
-                    )
-                    // TODO!(sqs): here, we need to make sure syncModels has already run after *it*
-                    // reacted to the authStatus change
-                    if (authStatus.authenticated) {
-                        this.chatModel.updateModel(getDefaultModelID())
+                combineLatest([modelsService.changes.pipe(startWith(undefined)), authStatus]).subscribe(
+                    ([, authStatus]) => {
+                        // Get the latest model list available to the current user to update the ChatModel.
+                        logError(
+                            'ChatController',
+                            'updated authStatus',
+                            JSON.stringify({
+                                authStatus,
+                                defaultModelID: getDefaultModelID(),
+                                currentModelID: this.chatModel.modelID,
+                            })
+                        )
+                        // TODO!(sqs): here, we need to make sure syncModels has already run after *it*
+                        // reacted to the authStatus change
+                        if (authStatus.authenticated) {
+                            this.chatModel.updateModel(getDefaultModelID())
+                        }
                     }
-                })
+                )
             )
         )
 
@@ -1412,7 +1411,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 maxTokensToSample: this.chatModel.contextWindow.output,
             } as CompletionParameters
             // Set stream param only when the model is disabled for streaming.
-            if (modelsService.instance!.isStreamDisabled(this.chatModel.modelID)) {
+            if (modelsService.isStreamDisabled(this.chatModel.modelID)) {
                 params.stream = false
             }
             const stream = this.chatClient.chat(prompt, params, abortSignal)
@@ -1686,8 +1685,8 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     models: () =>
                         combineLatest([
                             resolvedConfig,
-                            modelsService.instance!.changes.pipe(startWith(undefined)),
-                        ]).pipe(map(() => modelsService.instance!.getModels(ModelUsage.Chat))),
+                            modelsService.changes.pipe(startWith(undefined)),
+                        ]).pipe(map(() => modelsService.getModels(ModelUsage.Chat))),
                     highlights: parameters =>
                         promiseFactoryToObservable(() =>
                             graphqlClient.getHighlightedFileChunk(parameters)
@@ -1706,7 +1705,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                         // Because this was a user action to change the model we will set that
                         // as a global default for chat
                         return promiseToObservable(
-                            modelsService.instance!.setSelectedModel(ModelUsage.Chat, model)
+                            modelsService.setSelectedModel(ModelUsage.Chat, model)
                         )
                     },
                     detectIntent: text =>
@@ -1888,7 +1887,7 @@ export function revealWebviewViewOrPanel(viewOrPanel: vscode.WebviewView | vscod
 function getDefaultModelID(): string {
     const pending = ''
     try {
-        return modelsService.instance!.getDefaultChatModel() || pending
+        return modelsService.getDefaultChatModel() || pending
     } catch {
         return pending
     }

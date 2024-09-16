@@ -33,16 +33,16 @@ import { getEnterpriseContextWindow } from './utils'
  * The token limit for the provider will use the configured limit,
  * or fallback to the limit from the authentication status if not configured.
  */
-export async function syncModels(authStatus: AuthStatus): Promise<void> {
+export async function syncModels(authStatus: AuthStatus, signal?: AbortSignal): Promise<void> {
     // Offline mode only support Ollama models, which would be synced separately.
     if (authStatus.authenticated && authStatus.isOfflineMode) {
-        modelsService.instance!.setModels([])
+        modelsService.setModels([])
         return
     }
 
     // If you are not authenticated, you cannot use Cody. Sorry.
     if (!authStatus.authenticated) {
-        modelsService.instance!.setModels([])
+        modelsService.setModels([])
         return
     }
 
@@ -55,7 +55,7 @@ export async function syncModels(authStatus: AuthStatus): Promise<void> {
         const serverSideModels = await fetchServerSideModels(authStatus.endpoint || '')
         // If the request failed, fall back to using the default models
         if (serverSideModels) {
-            await modelsService.instance!.setServerSentModels({
+            await modelsService.setServerSentModels({
                 ...serverSideModels,
                 models: maybeAdjustContextWindows(serverSideModels.models),
             })
@@ -89,7 +89,7 @@ export async function syncModels(authStatus: AuthStatus): Promise<void> {
                 localStorage.delete(localStorage.keys.waitlist_o1)
             }
         }
-        modelsService.instance!.setModels(defaultModels)
+        modelsService.setModels(defaultModels)
         registerModelsFromVSCodeConfiguration()
         return
     }
@@ -104,7 +104,7 @@ export async function syncModels(authStatus: AuthStatus): Promise<void> {
     // NOTE: If authStatus?.configOverwrites?.chatModel is empty,
     // automatically fallback to use the default model configured on the instance.
     if (authStatus?.configOverwrites?.chatModel) {
-        modelsService.instance!.setModels([
+        modelsService.setModels([
             new Model({
                 id: authStatus.configOverwrites.chatModel,
                 // TODO (umpox) Add configOverwrites.editModel for separate edit support
@@ -120,7 +120,7 @@ export async function syncModels(authStatus: AuthStatus): Promise<void> {
         // If the enterprise instance didn't have any configuration data for Cody,
         // clear the models available in the modelsService. Otherwise there will be
         // stale, defunct models available.
-        modelsService.instance!.setModels([])
+        modelsService.setModels([])
     }
 }
 
@@ -148,17 +148,16 @@ interface ChatModelProviderConfig {
  *
  * NOTE: DotCom Connections only as model options are not available for Enterprise
  * BUG: This does NOT make any model changes based on the "cody.dev.useServerDefinedModels".
- *
- * @returns An array of `Model` instances for the configured chat models.
  */
-export function registerModelsFromVSCodeConfiguration() {
-    const codyConfig = vscode.workspace.getConfiguration('cody')
-    const modelsConfig = codyConfig?.get<ChatModelProviderConfig[]>('dev.models')
+function registerModelsFromVSCodeConfiguration(): void {
+    const modelsConfig = vscode.workspace
+        .getConfiguration('cody')
+        .get<ChatModelProviderConfig[]>('dev.models')
     if (!modelsConfig?.length) {
         return
     }
 
-    modelsService.instance!.addModels(
+    modelsService.addModels(
         modelsConfig.map(
             m =>
                 new Model({

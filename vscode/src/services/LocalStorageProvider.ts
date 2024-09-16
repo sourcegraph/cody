@@ -7,8 +7,8 @@ import {
     type AuthStatus,
     type AuthenticatedAuthStatus,
     type ChatHistoryKey,
-    type ClientConfigurationWithAccessToken,
     type ClientState,
+    type ResolvedConfiguration,
     type UserLocalHistory,
     distinctUntilChanged,
     fromVSCodeEvent,
@@ -250,11 +250,11 @@ class LocalStorage {
         return false
     }
 
-    public async setConfig(config: ClientConfigurationWithAccessToken): Promise<void> {
+    public async setConfig(config: ResolvedConfiguration): Promise<void> {
         return this.set(this.KEY_CONFIG, config)
     }
 
-    public getConfig(): ClientConfigurationWithAccessToken | null {
+    public getConfig(): ResolvedConfiguration | null {
         return this.get(this.KEY_CONFIG)
     }
 

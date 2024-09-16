@@ -7,8 +7,13 @@ import { CodyIDE } from '../configuration'
 import { resolvedConfig } from '../configuration/resolver'
 import { fetchLocalOllamaModels } from '../llm-providers/ollama/utils'
 import { logDebug, logError } from '../logger'
-import { type Unsubscribable, combineLatest } from '../misc/observable'
-import { setSingleton, singletonNotYetSet } from '../singletons'
+import {
+    type Unsubscribable,
+    combineLatest,
+    mergeMap,
+    promiseFactoryToObservable,
+} from '../misc/observable'
+import { isAbortError } from '../sourcegraph-api/errors'
 import { CHAT_INPUT_TOKEN_BUDGET, CHAT_OUTPUT_TOKEN_BUDGET } from '../token/constants'
 import { ModelTag } from './tags'
 import { type ChatModel, type EditModel, type ModelContextWindow, ModelUsage } from './types'
@@ -354,36 +359,44 @@ export class ModelsService {
     /**
      * Needs to be set at static initialization time by the `vscode/` codebase.
      */
-    public static syncModels: ((authStatus: AuthStatus) => Promise<void>) | undefined
+    public static syncModels:
+        | ((authStatus: AuthStatus, signal?: AbortSignal) => Promise<void>)
+        | undefined
 
     private configSubscription: Unsubscribable
 
     constructor() {
-        this.configSubscription = combineLatest([resolvedConfig, authStatus]).subscribe(
-            async ([{ configuration }, authStatus]) => {
-                try {
-                    if (!ModelsService.syncModels) {
-                        throw new Error(
-                            'ModelsService.syncModels must be set at static initialization time'
-                        )
-                    }
-                    await ModelsService.syncModels(authStatus)
-                } catch (error) {
-                    logError('ModelsService', 'Failed to sync models', error)
-                }
+        this.configSubscription = combineLatest([resolvedConfig, authStatus])
+            .pipe(
+                mergeMap(([{ configuration }, authStatus]) =>
+                    promiseFactoryToObservable(async signal => {
+                        try {
+                            if (!ModelsService.syncModels) {
+                                throw new Error(
+                                    'ModelsService.syncModels must be set at static initialization time'
+                                )
+                            }
+                            await ModelsService.syncModels(authStatus, signal)
+                        } catch (error) {
+                            if (!isAbortError(error)) {
+                                logError('ModelsService', 'Failed to sync models', error)
+                            }
+                        }
 
-                try {
-                    const isCodyWeb = configuration.agentIDE === CodyIDE.Web
+                        try {
+                            const isCodyWeb = configuration.agentIDE === CodyIDE.Web
 
-                    // Disable Ollama local models for cody web
-                    this.localModels = !isCodyWeb ? await fetchLocalOllamaModels() : []
-                } catch {
-                    this.localModels = []
-                } finally {
-                    this.changeNotifications.next()
-                }
-            }
-        )
+                            // Disable Ollama local models for cody web
+                            this.localModels = !isCodyWeb ? await fetchLocalOllamaModels() : []
+                        } catch {
+                            this.localModels = []
+                        } finally {
+                            this.changeNotifications.next()
+                        }
+                    })
+                )
+            )
+            .subscribe({})
     }
 
     public dispose(): void {
@@ -631,8 +644,7 @@ export class ModelsService {
     }
 }
 
-export const modelsService = singletonNotYetSet<ModelsService>()
-setSingleton(modelsService, new ModelsService())
+export const modelsService = new ModelsService()
 
 interface Storage {
     get(key: string): string | null

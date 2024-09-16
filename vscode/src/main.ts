@@ -12,6 +12,7 @@ import {
     contextFiltersProvider,
     currentAuthStatus,
     currentAuthStatusOrNotReadyYet,
+    currentResolvedConfig,
     distinctUntilChanged,
     firstValueFrom,
     fromVSCodeEvent,
@@ -73,7 +74,6 @@ import type { SymfRunner } from './local-context/symf'
 import { logDebug, logError } from './log'
 import { MinionOrchestrator } from './minion/MinionOrchestrator'
 import { PoorMansBash } from './minion/environment'
-import { registerModelsFromVSCodeConfiguration } from './models/sync'
 import { CodyProExpirationNotifications } from './notifications/cody-pro-expiration'
 import { showSetupNotification } from './notifications/setup-notification'
 import { initVSCodeGitApi } from './repository/git-extension-api'
@@ -158,7 +158,6 @@ export async function start(
             resolvedConfig.subscribe({
                 next: config => {
                     platform.onConfigurationChange?.(config.configuration)
-                    registerModelsFromVSCodeConfiguration()
                 },
             })
         )
@@ -249,13 +248,15 @@ const register = async (
                     statusBar.setAuthStatus(authStatus)
                 },
             })
+        ),
+        subscriptionDisposable(
+            exposeOpenCtxClient(context, platform.createOpenCtxController).subscribe({})
         )
     )
 
     await Promise.all([
         registerAutocomplete(platform, statusBar, disposables),
         tryRegisterTutorial(context, disposables),
-        exposeOpenCtxClient(context, platform.createOpenCtxController),
         registerMinion(context, symfRunner, disposables),
     ])
 
@@ -296,16 +297,22 @@ async function initializeSingletons(
 
     // Allow the VS Code app's instance of ModelsService to use local storage to persist
     // user's model choices
-    modelsService.instance!.setStorage(localStorage)
-    disposables.push(upstreamHealthProvider.instance!, contextFiltersProvider)
+    modelsService.setStorage(localStorage)
+    disposables.push(upstreamHealthProvider, contextFiltersProvider)
     commandControllerInit(platform.createCommandsProvider?.(), platform.extensionClient.capabilities)
     disposables.push(
         subscriptionDisposable(
             resolvedConfigWithAccessToken.subscribe({
                 next: config => {
-                    void localStorage.setConfig(config)
                     graphqlClient.setConfig(config)
                     defaultCodeCompletionsClient.instance!.onConfigurationChange(config)
+                },
+            })
+        ),
+        subscriptionDisposable(
+            resolvedConfig.subscribe({
+                next: config => {
+                    void localStorage.setConfig(config)
                 },
             })
         )
@@ -635,11 +642,11 @@ function registerAutocomplete(
     const setupAutocomplete = (): Promise<void> => {
         setupAutocompleteQueue = setupAutocompleteQueue
             .then(async () => {
-                const config = await getFullConfig()
-                if (!config.autocomplete) {
+                const config = await currentResolvedConfig()
+                if (!config.configuration.autocomplete) {
                     disposeAutocomplete()
                     if (
-                        config.isRunningInsideAgent &&
+                        config.configuration.isRunningInsideAgent &&
                         platform.extensionClient.capabilities?.completions !== 'none'
                     ) {
                         throw new Error(

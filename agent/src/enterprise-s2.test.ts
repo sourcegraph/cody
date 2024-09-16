@@ -1,6 +1,7 @@
 import path from 'node:path'
 
 import { spawnSync } from 'node:child_process'
+import { nextTick } from '@sourcegraph/cody-shared'
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 import { TESTING_CREDENTIALS } from '../../vscode/src/testutils/testing-credentials'
 import { TestClient } from './TestClient'
@@ -84,6 +85,7 @@ describe('Enterprise - S2 (close main branch)', () => {
             })
 
             expect(onChangeCallback).toBeCalledTimes(2)
+            await nextTick()
             expect(await ignoreTest()).toStrictEqual({ policy: 'ignore' })
 
             await s2EnterpriseClient.request('testing/ignore/overridePolicy', {

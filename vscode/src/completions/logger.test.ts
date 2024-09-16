@@ -48,8 +48,8 @@ const completionItemId = 'completion-item-id' as CompletionLogger.CompletionItem
 
 describe('logger', () => {
     let recordSpy: MockInstance
-    beforeEach(async () => {
-        await initCompletionProviderConfig({})
+    beforeEach(() => {
+        initCompletionProviderConfig({})
         recordSpy = vi.spyOn(telemetryRecorder, 'recordEvent')
     })
     afterEach(() => {

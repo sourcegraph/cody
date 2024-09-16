@@ -1,4 +1,9 @@
-import { TelemetryRecorderProvider, nextTick, setAuthStatusObservable } from '@sourcegraph/cody-shared'
+import {
+    TelemetryRecorderProvider,
+    nextTick,
+    setAuthStatusObservable,
+    setStaticResolvedConfigurationValue,
+} from '@sourcegraph/cody-shared'
 import { Observable } from 'observable-fns'
 import { deleteUninstallerDirectory, readConfig } from './serializeConfig'
 
@@ -10,8 +15,11 @@ async function main() {
 
     const uninstaller = readConfig()
     if (uninstaller) {
-        const { config, extensionDetails, authStatus, anonymousUserID } = uninstaller
+        const { config, extensionDetails, authStatus } = uninstaller
         if (config && authStatus) {
+            try {
+                setStaticResolvedConfigurationValue(config)
+            } catch {}
             try {
                 setAuthStatusObservable(Observable.of(authStatus))
             } catch {}
@@ -21,7 +29,6 @@ async function main() {
             const provider = new TelemetryRecorderProvider(
                 extensionDetails,
                 config,
-                anonymousUserID,
                 'connected-instance-only'
             )
             const recorder = provider.getRecorder()
