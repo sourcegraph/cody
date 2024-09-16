@@ -20,6 +20,12 @@ Command: Removed duplicated default commands from the Cody Commands menu that we
 Enterprise: Remote Repository items in the mention menu now display only the org/repo part of the title, omitting the code host name to prevent repository names from being truncated in the UI. [pull/5518](https://github.com/sourcegraph/cody/pull/5518)
 Cody Ignore: This internal experimental feature is now deprecated and the use of `.cody/ignore` file is no longer supported. [pull/5537](https://github.com/sourcegraph/cody/pull/5537)
 
+## 1.34.3
+
+### Fixed
+- Autocomplete Logging: Fix the diff for recent edits by replacing psDedent with ps to preserve the indentation. [pull/5574](https://github.com/sourcegraph/cody/pull/5574)
+
+
 ## 1.34.2
 
 ### Fixed
