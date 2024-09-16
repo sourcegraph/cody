@@ -76,6 +76,7 @@ function createProvider() {
         id: 'mock-provider',
         anonymousUserID: 'anonymousUserID',
         legacyModel: 'test-model',
+        source: 'local-editor-settings',
     })
 }
 

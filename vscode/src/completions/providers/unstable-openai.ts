@@ -174,7 +174,7 @@ ${OPENING_CODE_TAG}${infillBlock}`
 }
 
 export function createProvider(params: ProviderFactoryParams): Provider {
-    const { legacyModel, provider, anonymousUserID } = params
+    const { legacyModel, provider, anonymousUserID, source } = params
 
     let clientModel = legacyModel
 
@@ -192,5 +192,6 @@ export function createProvider(params: ProviderFactoryParams): Provider {
         id: 'unstable-openai',
         legacyModel: clientModel ?? 'gpt-35-turbo',
         anonymousUserID,
+        source,
     })
 }

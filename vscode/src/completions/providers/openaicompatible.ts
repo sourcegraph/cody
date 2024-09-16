@@ -102,7 +102,7 @@ class OpenAICompatibleProvider extends Provider {
 }
 
 export function createProvider(params: ProviderFactoryParams): Provider {
-    const { model, anonymousUserID } = params
+    const { model, anonymousUserID, source } = params
 
     if (model) {
         logDebug('OpenAICompatible', 'autocomplete provider using model', JSON.stringify(model))
@@ -120,6 +120,7 @@ export function createProvider(params: ProviderFactoryParams): Provider {
             model,
             maxContextTokens,
             anonymousUserID,
+            source,
         })
     }
 

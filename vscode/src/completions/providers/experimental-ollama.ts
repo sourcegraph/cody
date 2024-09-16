@@ -199,7 +199,7 @@ class ExperimentalOllamaProvider extends Provider {
 }
 
 export function createProvider(params: ProviderFactoryParams): Provider {
-    const { config, anonymousUserID } = params
+    const { config, anonymousUserID, source } = params
 
     return new ExperimentalOllamaProvider(
         {
@@ -207,6 +207,7 @@ export function createProvider(params: ProviderFactoryParams): Provider {
             legacyModel: config.autocompleteExperimentalOllamaOptions.model,
             anonymousUserID,
             mayUseOnDeviceInference: true,
+            source,
         },
         config.autocompleteExperimentalOllamaOptions
     )

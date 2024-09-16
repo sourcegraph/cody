@@ -284,12 +284,13 @@ function getClientModel(provider: string): string {
 }
 
 export function createProvider(params: ProviderFactoryParams): Provider {
-    const { provider, anonymousUserID } = params
+    const { provider, anonymousUserID, source } = params
 
     return new AnthropicProvider({
         id: 'anthropic',
         legacyModel: getClientModel(provider),
         anonymousUserID,
+        source,
     })
 }
 

@@ -82,7 +82,7 @@ export function getArtificialDelay(
     }
 
     if (total > 0) {
-        logDebug('CodyCompletionProvider:getLatency', `Delay added: ${total}`)
+        logDebug('AutocompleteProvider:getLatency', `Delay added: ${total}`)
     }
 
     return total

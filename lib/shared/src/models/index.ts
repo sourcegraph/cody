@@ -1,6 +1,8 @@
 import { type Observable, Subject } from 'observable-fns'
 import { authStatus, currentAuthStatus } from '../auth/authStatus'
+import { mockAuthStatus } from '../auth/authStatus'
 import { type AuthStatus, isCodyProUser, isEnterpriseUser } from '../auth/types'
+import { AUTH_STATUS_FIXTURE_AUTHED_DOTCOM } from '../auth/types'
 import { CodyIDE } from '../configuration'
 import { resolvedConfig } from '../configuration/resolver'
 import { fetchLocalOllamaModels } from '../llm-providers/ollama/utils'
@@ -16,8 +18,8 @@ type ModelId = string
 type ApiVersionId = string
 type ProviderId = string
 
-type ModelRefStr = `${ProviderId}::${ApiVersionId}::${ModelId}`
-interface ModelRef {
+export type ModelRefStr = `${ProviderId}::${ApiVersionId}::${ModelId}`
+export interface ModelRef {
     providerId: ProviderId
     apiVersionId: ApiVersionId
     modelId: ModelId
@@ -501,7 +503,6 @@ export class ModelsService {
      * Gets the available models of the specified usage type, with the default model first.
      *
      * @param type - The usage type of the models to retrieve.
-     * @param authStatus - The authentication status of the user.
      * @returns An array of models, with the default model first.
      */
     public getModels(type: ModelUsage): Model[] {
@@ -646,4 +647,57 @@ function capabilityToUsage(capability: ModelCapability): ModelUsage[] {
         case 'chat':
             return [ModelUsage.Chat, ModelUsage.Edit]
     }
+}
+
+interface MockModelsServiceResult {
+    storage: TestStorage
+    modelsService: ModelsService
+}
+
+export class TestStorage {
+    constructor(public data: Map<string, string> = new Map()) {}
+    get(key: string): string | null {
+        return this.data.get(key) ?? null
+    }
+
+    async set(key: string, value: string) {
+        await this.data.set(key, value)
+    }
+
+    async delete(key: string) {
+        this.data.delete(key)
+    }
+
+    parse(): PerSitePreferences | undefined {
+        const dumped = this.data.get('model-preferences')
+        if (dumped) {
+            return JSON.parse(dumped)
+        }
+        return undefined
+    }
+}
+
+interface MockModelsServiceParams {
+    config: ServerModelConfiguration
+    authStatus?: AuthStatus
+    modelsService?: ModelsService
+    storage?: TestStorage
+}
+
+export async function mockModelsService(
+    params: MockModelsServiceParams
+): Promise<MockModelsServiceResult> {
+    const {
+        storage = new TestStorage(),
+        modelsService = new ModelsService(),
+        authStatus = AUTH_STATUS_FIXTURE_AUTHED_DOTCOM,
+        config,
+    } = params
+
+    modelsService.setStorage(storage)
+    mockAuthStatus(authStatus)
+
+    await modelsService.setServerSentModels(config)
+
+    return { storage, modelsService }
 }

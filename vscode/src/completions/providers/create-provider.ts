@@ -1,20 +1,22 @@
 import {
     type ClientConfigurationWithAccessToken,
     type Model,
+    ModelUsage,
     currentAuthStatusAuthed,
+    modelsService,
 } from '@sourcegraph/cody-shared'
 
-import { Observable, map } from 'observable-fns'
+import { Observable } from 'observable-fns'
 import { logError } from '../../log'
 import { localStorage } from '../../services/LocalStorageProvider'
 import { createProvider as createAnthropicProvider } from './anthropic'
 import { createProvider as createExperimentalOllamaProvider } from './experimental-ollama'
 import { createProvider as createExperimentalOpenAICompatibleProvider } from './expopenaicompatible'
 import { createProvider as createFireworksProvider } from './fireworks'
-import { getExperimentModel } from './get-experiment-model'
-import { getModelInfo } from './get-model-info'
+import { getDotComExperimentModel } from './get-experiment-model'
 import { createProvider as createGeminiProviderConfig } from './google'
 import { createProvider as createOpenAICompatibleProviderConfig } from './openaicompatible'
+import { parseProviderAndModel } from './parse-provider-and-model'
 import type { Provider, ProviderFactory } from './provider'
 import { createProvider as createUnstableOpenAIProviderConfig } from './unstable-openai'
 
@@ -26,39 +28,66 @@ export function createProvider(config: ClientConfigurationWithAccessToken): Obse
                 legacyModel: config.autocompleteAdvancedModel || undefined,
                 provider: config.autocompleteAdvancedProvider,
                 config,
+                source: 'local-editor-settings',
             })
         )
     }
 
-    return getExperimentModel().pipe(
-        map(configFromFeatureFlags => {
-            // Check if a user participates in autocomplete model experiments, and use the
-            // experiment model if available.
-            if (configFromFeatureFlags) {
-                return createProviderHelper({
-                    legacyModel: configFromFeatureFlags.model,
-                    provider: configFromFeatureFlags.provider,
-                    config,
-                })
-            }
+    return getDotComExperimentModel().map(dotComExperiment => {
+        // Check if a user participates in autocomplete experiments.
+        if (dotComExperiment) {
+            return createProviderHelper({
+                legacyModel: dotComExperiment.model,
+                provider: dotComExperiment.provider,
+                config,
+                source: 'dotcom-feature-flags',
+            })
+        }
 
-            const modelInfoOrError = getModelInfo()
+        // Check if server-side model configuration is available.
+        const model = modelsService.instance!.getDefaultModel(ModelUsage.Autocomplete)
 
-            if (modelInfoOrError instanceof Error) {
-                logError('createProvider', modelInfoOrError.message)
-                return null
-            }
-
-            const { provider, legacyModel, model } = modelInfoOrError
+        if (model) {
+            const provider = model.clientSideConfig?.openAICompatible
+                ? 'openaicompatible'
+                : model.provider
 
             return createProviderHelper({
-                legacyModel,
+                legacyModel: model.id,
                 model,
                 provider,
                 config,
+                source: 'server-side-model-config',
             })
-        })
-    )
+        }
+
+        // Fallback to site-config Cody LLM configuration.
+        const { configOverwrites } = currentAuthStatusAuthed()
+
+        if (configOverwrites?.provider) {
+            const parsedProviderAndModel = parseProviderAndModel({
+                provider: configOverwrites.provider,
+                legacyModel: configOverwrites.completionModel,
+            })
+
+            if (parsedProviderAndModel instanceof Error) {
+                logError('createProvider', parsedProviderAndModel.message)
+                return null
+            }
+
+            return createProviderHelper({
+                ...parsedProviderAndModel,
+                config,
+                source: 'site-config-cody-llm-configuration',
+            })
+        }
+
+        logError(
+            'createProvider',
+            'Failed to get autocomplete provider. Please configure the `completionModel` using site configuration.'
+        )
+        return null
+    })
 }
 
 interface CreateConfigHelperParams {
@@ -66,10 +95,11 @@ interface CreateConfigHelperParams {
     provider: string
     config: ClientConfigurationWithAccessToken
     model?: Model
+    source: AutocompleteProviderConfigSource
 }
 
 export function createProviderHelper(params: CreateConfigHelperParams): Provider | null {
-    const { legacyModel, model, provider, config } = params
+    const { legacyModel, model, provider, config, source } = params
     const anonymousUserID = localStorage.anonymousUserID()
 
     const providerCreator = getProviderCreator({
@@ -82,7 +112,8 @@ export function createProviderHelper(params: CreateConfigHelperParams): Provider
             legacyModel: legacyModel,
             config,
             anonymousUserID,
-            provider,
+            provider: provider as AutocompleteProviderID,
+            source,
         })
     }
 
@@ -246,3 +277,32 @@ export const AUTOCOMPLETE_PROVIDER_ID = {
      */
     'unstable-ollama': 'unstable-ollama',
 } as const
+
+/**
+ * Config sources are listed in the order of precedence.
+ */
+export const AUTOCOMPLETE_PROVIDER_CONFIG_SOURCE = {
+    /**
+     * Local user configuration. Used to switch from the remote default to ollama and potentially other local providers.
+     */
+    'local-editor-settings': 'local-editor-settings',
+
+    /**
+     * Used only on DotCom for A/B testing new models.
+     */
+    'dotcom-feature-flags': 'dotcom-feature-flags',
+
+    /**
+     * The server-side models configuration API we intend to migrate to. Currently used only by a handful of enterprise customers.
+     * See {@link RestClient.getAvailableModels} for more details.
+     */
+    'server-side-model-config': 'server-side-model-config',
+
+    /**
+     * The old way of configuring models.
+     * See {@link SourcegraphGraphQLAPIClient.getCodyLLMConfiguration} for more details.
+     */
+    'site-config-cody-llm-configuration': 'site-config-cody-llm-configuration',
+} as const
+
+export type AutocompleteProviderConfigSource = keyof typeof AUTOCOMPLETE_PROVIDER_CONFIG_SOURCE

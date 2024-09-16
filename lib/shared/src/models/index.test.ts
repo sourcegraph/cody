@@ -6,9 +6,10 @@ import {
     type ModelCategory,
     type ModelTier,
     ModelsService,
-    type PerSitePreferences,
     type ServerModel,
     type ServerModelConfiguration,
+    type TestStorage,
+    mockModelsService,
 } from '../models/index'
 import { DOTCOM_URL } from '../sourcegraph-api/environments'
 import { CHAT_INPUT_TOKEN_BUDGET, CHAT_OUTPUT_TOKEN_BUDGET } from '../token/constants'
@@ -231,35 +232,13 @@ describe('Model Provider', () => {
 
         let storage: TestStorage
 
-        class TestStorage {
-            constructor(public data: Map<string, string> = new Map()) {}
-            get(key: string): string | null {
-                return this.data.get(key) ?? null
-            }
-
-            async set(key: string, value: string) {
-                await this.data.set(key, value)
-            }
-
-            async delete(key: string) {
-                this.data.delete(key)
-            }
-
-            parse(): PerSitePreferences | undefined {
-                const dumped = this.data.get('model-preferences')
-                console.log(dumped)
-                if (dumped) {
-                    return JSON.parse(dumped)
-                }
-                return undefined
-            }
-        }
-
         beforeEach(async () => {
-            storage = new TestStorage()
-            modelsService.setStorage(storage)
-            mockAuthStatus(enterpriseAuthStatus)
-            await modelsService.setServerSentModels(SERVER_MODELS)
+            const result = await mockModelsService({
+                config: SERVER_MODELS,
+                authStatus: enterpriseAuthStatus,
+            })
+            storage = result.storage
+            modelsService = result.modelsService
         })
 
         it('constructs from server models', () => {
