@@ -1,13 +1,11 @@
 import dedent from 'dedent'
-import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import * as vscode from 'vscode'
 
 import {
     AUTH_STATUS_FIXTURE_AUTHED,
-    type GraphQLAPIClientConfig,
     RateLimitError,
     contextFiltersProvider,
-    graphqlClient,
 } from '@sourcegraph/cody-shared'
 
 import { telemetryRecorder } from '@sourcegraph/cody-shared'
@@ -32,8 +30,6 @@ const DUMMY_CONTEXT: vscode.InlineCompletionContext = {
     selectedCompletionInfo: undefined,
     triggerKind: vscode.InlineCompletionTriggerKind.Automatic,
 }
-
-graphqlClient.setConfig({} as unknown as GraphQLAPIClientConfig)
 
 class MockableInlineCompletionItemProvider extends InlineCompletionItemProvider {
     constructor(
@@ -61,13 +57,10 @@ class MockableInlineCompletionItemProvider extends InlineCompletionItemProvider 
     public declare lastCandidate
 }
 
-describe('InlineCompletionItemProvider', () => {
-    beforeAll(async () => {
+describe('InlineCompletionItemProvider', async () => {
+    beforeEach(async () => {
         await initCompletionProviderConfig({})
         mockLocalStorage()
-    })
-
-    beforeEach(() => {
         vi.spyOn(contextFiltersProvider, 'isUriIgnored').mockResolvedValue(false)
         CompletionLogger.reset_testOnly()
     })

@@ -427,6 +427,7 @@ export function initCompletionProviderConfig({
 }: Partial<Pick<ParamsResult, 'configuration' | 'authStatus'>>): Promise<void> {
     graphqlClient.setConfig({} as unknown as GraphQLAPIClientConfig)
     vi.spyOn(featureFlagProvider, 'evaluateFeatureFlag').mockResolvedValue(false)
+    vi.spyOn(featureFlagProvider, 'evaluatedFeatureFlag').mockReturnValue(Observable.of(false))
     mockAuthStatus(authStatus)
     return completionProviderConfig.init((configuration ?? {}) as ClientConfiguration)
 }

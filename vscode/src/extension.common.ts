@@ -2,7 +2,6 @@ import * as vscode from 'vscode'
 
 import type {
     ClientConfiguration,
-    ClientConfigurationWithEndpoint,
     CompletionLogger,
     CompletionsClientConfig,
     SourcegraphCompletionsClient,
@@ -21,10 +20,7 @@ import type { ExtensionClient } from './extension-client'
 import type { LocalEmbeddingsConfig, LocalEmbeddingsController } from './local-context/local-embeddings'
 import type { SymfRunner } from './local-context/symf'
 import { start } from './main'
-import type {
-    OpenTelemetryService,
-    OpenTelemetryServiceConfig,
-} from './services/open-telemetry/OpenTelemetryService.node'
+import type { OpenTelemetryService } from './services/open-telemetry/OpenTelemetryService.node'
 import { type SentryService, captureException } from './services/sentry/sentry'
 
 type Constructor<T extends new (...args: any) => any> = T extends new (
@@ -46,10 +42,8 @@ export interface PlatformContext {
         config: CompletionsClientConfig,
         logger?: CompletionLogger
     ) => SourcegraphCompletionsClient
-    createSentryService?: (
-        config: Pick<ClientConfigurationWithEndpoint, 'serverEndpoint'>
-    ) => SentryService
-    createOpenTelemetryService?: (config: OpenTelemetryServiceConfig) => OpenTelemetryService
+    createSentryService?: () => SentryService
+    createOpenTelemetryService?: () => OpenTelemetryService
     startTokenReceiver?: typeof startTokenReceiver
     onConfigurationChange?: (configuration: ClientConfiguration) => void
     extensionClient: ExtensionClient

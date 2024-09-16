@@ -227,6 +227,8 @@ export class AuthProvider implements vscode.Disposable {
 
     private async updateAuthStatus(authStatus: AuthStatus): Promise<void> {
         try {
+            this.status.next(authStatus)
+
             // We update the graphqlClient and ModelsService first
             // because many listeners rely on these
             graphqlClient.setConfig(await getFullConfig())
@@ -234,7 +236,6 @@ export class AuthProvider implements vscode.Disposable {
         } catch (error) {
             logDebug('AuthProvider', 'updateAuthStatus error', error)
         } finally {
-            this.status.next(authStatus)
             let eventValue: 'disconnected' | 'connected' | 'failed'
             if (authStatus.authenticated) {
                 eventValue = 'connected'

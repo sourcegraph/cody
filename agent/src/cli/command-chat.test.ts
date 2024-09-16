@@ -30,7 +30,6 @@ describe('cody chat', () => {
         args: string[]
         expectedExitCode?: number
     }): Promise<ChatCommandResult> {
-        process.env.DISABLE_FEATURE_FLAGS = 'true'
         process.env.CODY_TELEMETRY_EXPORTER = 'testing'
         const args = [
             ...params.args,

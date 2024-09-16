@@ -1,6 +1,7 @@
 import type { Item, Mention } from '@openctx/client'
 import {
     REMOTE_FILE_PROVIDER_URI,
+    currentResolvedConfig,
     displayPathBasename,
     graphqlClient,
     isDefined,
@@ -53,6 +54,7 @@ async function getFileMentions(repoName: string, filePath?: string): Promise<Men
     const fileRe = filePath ? escapeRegExp(filePath) : '^.*$'
     const query = `repo:${repoRe} file:${fileRe} type:file count:10`
 
+    const { auth } = await currentResolvedConfig()
     const dataOrError = await graphqlClient.searchFileMatches(query)
 
     if (isError(dataOrError) || dataOrError === null) {
@@ -65,7 +67,7 @@ async function getFileMentions(repoName: string, filePath?: string): Promise<Men
                 return null
             }
 
-            const url = `${graphqlClient.endpoint.replace(/\/$/, '')}${result.file.url}`
+            const url = `${auth.serverEndpoint.replace(/\/$/, '')}${result.file.url}`
 
             const basename = displayPathBasename(URI.parse(result.file.path))
 
@@ -84,6 +86,7 @@ async function getFileMentions(repoName: string, filePath?: string): Promise<Men
 }
 
 async function getFileItem(repoName: string, filePath: string, rev = 'HEAD'): Promise<Item[]> {
+    const { auth } = await currentResolvedConfig()
     const dataOrError = await graphqlClient.getFileContents(repoName, filePath, rev)
 
     if (isError(dataOrError)) {
@@ -95,7 +98,7 @@ async function getFileItem(repoName: string, filePath: string, rev = 'HEAD'): Pr
         return []
     }
 
-    const url = `${graphqlClient.endpoint.replace(/\/$/, '')}${file.url}`
+    const url = `${auth.serverEndpoint.replace(/\/$/, '')}${file.url}`
 
     return [
         {

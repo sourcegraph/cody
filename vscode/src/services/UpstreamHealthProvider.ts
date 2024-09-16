@@ -1,16 +1,19 @@
 import {
     type BrowserOrNodeResponse,
-    type ClientConfigurationWithAccessToken,
     addCustomUserAgent,
     addTraceparent,
+    currentResolvedConfig,
+    distinctUntilChanged,
     isDotCom,
     logDebug,
+    resolvedConfig,
     setSingleton,
     singletonNotYetSet,
+    subscriptionDisposable,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
 import { fetch } from '@sourcegraph/cody-shared'
-import type * as vscode from 'vscode'
+import * as vscode from 'vscode'
 
 // We choose an interval that gives us a reasonable aggregate without causing
 // too many requests
@@ -23,52 +26,63 @@ const INITIAL_PING_DELAY_MS = 10 * 1000 // 10 seconds
  *
  * You can query it to get aggregates of the most recent pings.
  */
-class UpstreamHealthProvider implements vscode.Disposable {
+export class UpstreamHealthProvider implements vscode.Disposable {
     private lastUpstreamLatency?: number
     private lastGatewayLatency?: number
 
-    private config: Pick<
-        ClientConfigurationWithAccessToken,
-        'serverEndpoint' | 'customHeaders' | 'accessToken'
-    > | null = null
+    private disposables: vscode.Disposable[] = []
+
     private nextTimeoutId: NodeJS.Timeout | null = null
 
+    constructor() {
+        // Refresh when auth (endpoint or token) changes.
+        this.disposables.push(
+            subscriptionDisposable(
+                resolvedConfig.pipe(distinctUntilChanged()).subscribe(() => {
+                    this.lastUpstreamLatency = undefined
+                    this.lastGatewayLatency = undefined
+
+                    this.enqueue(INITIAL_PING_DELAY_MS)
+                })
+            ),
+            vscode.window.onDidChangeWindowState(state => {
+                if (state.focused && this.lastMeasurementSkippedBecauseNotFocused) {
+                    this.lastMeasurementSkippedBecauseNotFocused = false
+                    this.enqueue(INITIAL_PING_DELAY_MS)
+                }
+            })
+        )
+    }
+
     public getUpstreamLatency(): number | undefined {
-        if (!this.config) {
-            return undefined
-        }
         return this.lastUpstreamLatency
     }
 
     public getGatewayLatency(): number | undefined {
-        if (!this.config) {
-            return undefined
-        }
         return this.lastGatewayLatency
     }
 
-    public onConfigurationChange(
-        newConfig: Pick<
-            ClientConfigurationWithAccessToken,
-            'serverEndpoint' | 'customHeaders' | 'accessToken'
-        >
-    ) {
-        this.config = newConfig
-        this.lastUpstreamLatency = undefined
-        this.lastGatewayLatency = undefined
-
-        // Enqueue the initial ping after a config change in 10 seconds. This
-        // avoids running the test while the extension is still initializing and
-        // competing with many other network requests.
+    private enqueue(delay: number): void {
         if (this.nextTimeoutId) {
             clearTimeout(this.nextTimeoutId)
         }
-        this.nextTimeoutId = setTimeout(this.measure.bind(this), INITIAL_PING_DELAY_MS)
+        this.nextTimeoutId = setTimeout(this.measure.bind(this), delay)
     }
+
+    private lastMeasurementSkippedBecauseNotFocused = false
 
     private async measure() {
         if (this.nextTimeoutId) {
             clearTimeout(this.nextTimeoutId)
+        }
+
+        if (!vscode.window.state.focused) {
+            // Skip if the window is not focused, and try again when the window becomes focused
+            // again. Some users have OS firewalls that make periodic background network access
+            // annoying for users, and this eliminates that annoyance. See
+            // https://linear.app/sourcegraph/issue/CODY-3745/codys-background-periodic-network-access-causes-2fa.
+            this.lastMeasurementSkippedBecauseNotFocused = true
+            return
         }
 
         try {
@@ -76,27 +90,24 @@ class UpstreamHealthProvider implements vscode.Disposable {
                 return
             }
 
-            if (!this.config) {
-                throw new Error('UpstreamHealthProvider not initialized')
-            }
-
-            const sharedHeaders = new Headers(this.config.customHeaders as HeadersInit)
+            const { auth, configuration } = await currentResolvedConfig()
+            const sharedHeaders = new Headers(configuration.customHeaders as HeadersInit | undefined)
             sharedHeaders.set('Content-Type', 'application/json; charset=utf-8')
             addTraceparent(sharedHeaders)
             addCustomUserAgent(sharedHeaders)
 
             const upstreamHeaders = new Headers(sharedHeaders)
-            if (this.config.accessToken) {
-                upstreamHeaders.set('Authorization', `token ${this.config.accessToken}`)
+            if (auth.accessToken) {
+                upstreamHeaders.set('Authorization', `token ${auth.accessToken}`)
             }
-            const url = new URL('/healthz', this.config.serverEndpoint)
+            const url = new URL('/healthz', auth.serverEndpoint)
             const upstreamResult = await wrapInActiveSpan('upstream-latency.upstream', span => {
                 span.setAttribute('sampled', true)
                 return measureLatencyToUri(upstreamHeaders, url.toString())
             })
 
             // We don't want to congest the network so we run the test serially
-            if (isDotCom(this.config.serverEndpoint)) {
+            if (isDotCom(auth.serverEndpoint)) {
                 const gatewayHeaders = new Headers(sharedHeaders)
                 const uri = 'https://cody-gateway.sourcegraph.com/-/__version'
                 const gatewayResult = await wrapInActiveSpan('upstream-latency.gateway', span => {
@@ -140,16 +151,16 @@ class UpstreamHealthProvider implements vscode.Disposable {
             // We don't care about errors here, we just want to measure the latency
         } finally {
             // Enqueue a new ping
-            if (this.nextTimeoutId) {
-                clearTimeout(this.nextTimeoutId)
-            }
-            this.nextTimeoutId = setTimeout(this.measure.bind(this), PING_INTERVAL_MS)
+            this.enqueue(PING_INTERVAL_MS)
         }
     }
 
     public dispose(): void {
         if (this.nextTimeoutId) {
             clearTimeout(this.nextTimeoutId)
+        }
+        for (const disposable of this.disposables) {
+            disposable.dispose()
         }
     }
 }
