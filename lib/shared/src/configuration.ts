@@ -73,7 +73,6 @@ interface RawClientConfiguration {
     autocompleteExperimentalGraphContext: 'lsp-light' | 'bfg' | 'bfg-mixed' | 'tsc' | 'tsc-mixed' | null
     autocompleteExperimentalOllamaOptions: OllamaOptions
     autocompleteExperimentalFireworksOptions?: ExperimentalFireworksConfig
-    autocompleteExperimentalMultiModelCompletions?: MultimodelSingleModelConfig[]
     autocompleteExperimentalPreloadDebounceInterval?: number
 
     /**
@@ -353,15 +352,6 @@ export interface ExperimentalFireworksConfig {
         top_p?: number
         stop?: string[]
     }
-}
-
-export interface MultimodelSingleModelConfig {
-    provider: string
-    model: string
-    // This flag decides if to enable "cody.autocomplete.experimental.fireworksOptions" settings when creating a custom provider
-    enableExperimentalFireworksOverrides: boolean
-    // Context strategy to use
-    context: string
 }
 
 export interface EmbeddingsModelConfig {
