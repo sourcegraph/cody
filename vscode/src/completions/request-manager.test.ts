@@ -1,8 +1,9 @@
 import dedent from 'dedent'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { nextTick } from '@sourcegraph/cody-shared'
-
+import type { PartialDeep } from '@sourcegraph/cody-shared/src/utils'
+import { mockLocalStorage } from '../services/LocalStorageProvider'
 import { getCurrentDocContext } from './get-current-doc-context'
 import { InlineCompletionsResultSource, TriggerKind } from './get-inline-completions'
 import { initCompletionProviderConfig } from './get-inline-completions-tests/helpers'
@@ -94,6 +95,17 @@ function docState(prefix: string, suffix = ';', uriString?: string): RequestPara
     }
 }
 
+vi.mock(
+    '../services/SecretStorageProvider',
+    () =>
+        ({
+            secretStorage: {
+                get: async () => undefined,
+                store: async () => {},
+            },
+        }) satisfies PartialDeep<typeof import('../services/SecretStorageProvider')>
+)
+
 describe('RequestManager', () => {
     let createRequest: (
         prefix: string,
@@ -103,6 +115,7 @@ describe('RequestManager', () => {
     let checkCache: (prefix: string, suffix?: string) => RequestManagerResult | null
     beforeEach(() => {
         initCompletionProviderConfig({})
+        mockLocalStorage()
         const requestManager = new RequestManager()
 
         createRequest = (prefix: string, provider: Provider, suffix?: string) => {
@@ -111,8 +124,6 @@ describe('RequestManager', () => {
             return requestManager.request({
                 requestParams: docState(prefix, suffix),
                 providerOptions: {
-                    authStatus: {} as any,
-                    config: {} as any,
                     docContext,
                     document,
                     position,
@@ -367,6 +378,7 @@ describe('RequestManager', () => {
             createRequest(prefix2, provider2)
 
             // we're still looking relevant
+            await nextTick()
             provider1.yield(['ta'], true)
             expect(provider1.didAbort).toBe(false)
 

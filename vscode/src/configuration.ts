@@ -2,10 +2,8 @@ import * as vscode from 'vscode'
 
 import {
     type ClientConfiguration,
-    type ClientConfigurationWithAccessToken,
     type CodyIDE,
     type ConfigurationUseContext,
-    DOTCOM_URL,
     OLLAMA_DEFAULT_URL,
     type PickResolvedConfiguration,
     PromptString,
@@ -16,7 +14,6 @@ import {
 import { URI } from 'vscode-uri'
 import { CONFIG_KEY, type ConfigKeys } from './configuration-keys'
 import { localStorage } from './services/LocalStorageProvider'
-import { getAccessToken } from './services/SecretStorageProvider'
 
 interface ConfigGetter {
     get<T>(section: (typeof CONFIG_KEY)[ConfigKeys], defaultValue?: T): T
@@ -170,24 +167,6 @@ function sanitizeCodebase(codebase: string | undefined): string {
     const protocolRegexp = /^(https?):\/\//
     const trailingSlashRegexp = /\/$/
     return codebase.replace(protocolRegexp, '').trim().replace(trailingSlashRegexp, '')
-}
-
-export function getConfigWithEndpoint(): Omit<ClientConfigurationWithAccessToken, 'accessToken'> {
-    const config = getConfiguration()
-    const isTesting = process.env.CODY_TESTING === 'true'
-    const serverEndpoint =
-        localStorage?.getEndpoint() || (isTesting ? 'http://localhost:49300/' : DOTCOM_URL.href)
-    return { ...config, serverEndpoint }
-}
-
-export const getFullConfig = async (): Promise<ClientConfigurationWithAccessToken> => {
-    return {
-        ...getConfigWithEndpoint(),
-        accessToken:
-            vscode.workspace.getConfiguration().get<string>('cody.accessToken') ||
-            (await getAccessToken()) ||
-            null,
-    }
 }
 
 /**

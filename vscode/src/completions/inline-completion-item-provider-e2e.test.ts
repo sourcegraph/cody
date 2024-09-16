@@ -1,8 +1,7 @@
 import {
-    AUTH_STATUS_FIXTURE_AUTHED,
     type ClientConfiguration,
-    type ResolvedConfiguration,
     contextFiltersProvider,
+    currentAuthStatus,
     featureFlagProvider,
     nextTick,
     telemetryRecorder,
@@ -132,9 +131,10 @@ function getInlineCompletionProvider(
         triggerDelay: 0,
         statusBar: { addError: () => {}, hasError: () => {}, startLoading: () => {} } as any,
         provider: createProvider({
-            config: args.config ?? ({ configuration: {} } as ResolvedConfiguration),
-        } as any),
-        config: args.config ?? ({ configuration: {} } as ResolvedConfiguration),
+            authStatus: currentAuthStatus(),
+            provider: 'default',
+            source: 'local-editor-settings',
+        }),
         firstCompletionTimeout:
             args?.firstCompletionTimeout ?? DEFAULT_VSCODE_SETTINGS.autocompleteFirstCompletionTimeout,
         ...args,
@@ -151,8 +151,6 @@ function createNetworkProvider(params: RequestParams): MockRequestProvider {
         firstCompletionTimeout: 1500,
         triggerKind: TriggerKind.Automatic,
         completionLogId: 'mock-log-id' as CompletionLogger.CompletionLogID,
-        authStatus: AUTH_STATUS_FIXTURE_AUTHED,
-        config: { configuration: {} } as ResolvedConfiguration,
     }
 
     return new MockRequestProvider(
@@ -406,7 +404,7 @@ describe('InlineCompletionItemProvider preloading', () => {
 
     it('triggers preload request on cursor movement if cursor is at the end of a line', async () => {
         const autocompleteParams = params('console.log(█', [], {
-            configuration: { configuration: autocompleteConfig },
+            configuration: { configuration: autocompleteConfig, auth: {} },
         })
 
         const { document, position } = autocompleteParams
@@ -440,7 +438,7 @@ describe('InlineCompletionItemProvider preloading', () => {
 
     it('does not trigger preload request if current line has non-empty suffix', async () => {
         const autocompleteParams = params('console.log(█);', [], {
-            configuration: { configuration: autocompleteConfig },
+            configuration: { configuration: autocompleteConfig, auth: {} },
         })
 
         const { document, position } = autocompleteParams

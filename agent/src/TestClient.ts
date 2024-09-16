@@ -983,7 +983,12 @@ ${patch}`
             version: 'v1',
             workspaceRootUri: this.params.workspaceRootUri.toString(),
             workspaceRootPath: this.params.workspaceRootUri.fsPath,
-            capabilities: allClientCapabilitiesEnabled,
+            capabilities: {
+                ...allClientCapabilitiesEnabled,
+                // The test client doesn't implement secrets/didChange, so we need to use the
+                // stateless secrets store.
+                secrets: 'stateless',
+            },
             extensionConfiguration: {
                 anonymousUserID: `${this.name}abcde1234`,
                 accessToken: this.params.credentials.token ?? this.params.credentials.redactedToken,

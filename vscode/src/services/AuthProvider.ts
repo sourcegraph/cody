@@ -2,7 +2,6 @@ import * as vscode from 'vscode'
 
 import {
     type AuthStatus,
-    ClientConfigSingleton,
     CodyIDE,
     type PickResolvedConfiguration,
     SourcegraphGraphQLAPIClient,
@@ -234,7 +233,6 @@ class AuthProvider implements vscode.Disposable {
     private async updateAuthStatus(authStatus: AuthStatus, signal?: AbortSignal): Promise<void> {
         try {
             this.status.next(authStatus)
-            await ClientConfigSingleton.getInstance().setAuthStatus(authStatus, signal)
         } catch (error) {
             if (!isAbortError(error)) {
                 logDebug('AuthProvider', 'updateAuthStatus error', error)

@@ -6,14 +6,12 @@ import type { URI } from 'vscode-uri'
 import {
     AUTH_STATUS_FIXTURE_AUTHED,
     AUTH_STATUS_FIXTURE_AUTHED_DOTCOM,
+    type AuthenticatedAuthStatus,
     type AutocompleteProviderID,
-    type ClientConfiguration,
-    type ClientState,
     type CodeCompletionsClient,
     type CompletionParameters,
     type CompletionResponse,
     CompletionStopReason,
-    type ResolvedConfiguration,
     featureFlagProvider,
     mockAuthStatus,
     mockResolvedConfig,
@@ -51,23 +49,7 @@ import { sleep } from '../utils'
 // mimicking the default indentation of four spaces
 export const T = '\t'
 
-const getVSCodeConfigurationWithAccessToken = (
-    config: Partial<ClientConfiguration> = {}
-): ResolvedConfiguration => ({
-    configuration: { ...DEFAULT_VSCODE_SETTINGS, ...config },
-    auth: {
-        serverEndpoint: 'https://example.com',
-        accessToken: 'foobar',
-    },
-    clientState: { anonymousUserID: 'anonymousUserID' } as Partial<ClientState> as ClientState,
-})
-
-export type Params = Partial<
-    Omit<
-        InlineCompletionsParams,
-        'document' | 'position' | 'docContext' | 'configuration' | 'authStatus'
-    >
-> & {
+export type Params = Partial<Omit<InlineCompletionsParams, 'document' | 'position' | 'docContext'>> & {
     languageId?: string
     takeSuggestWidgetSelectionIntoAccount?: boolean
     onNetworkRequest?: (params: CodeCompletionsParams, abortController: AbortController) => void
@@ -75,7 +57,7 @@ export type Params = Partial<
         params: CompletionParameters
     ) => Generator<CompletionResponse> | AsyncGenerator<CompletionResponse>
     configuration?: Parameters<typeof mockResolvedConfig>[0]
-    authStatus?: Parameters<typeof mockAuthStatus>[0]
+    authStatus?: AuthenticatedAuthStatus
     documentUri?: URI
 }
 
@@ -87,7 +69,7 @@ export interface ParamsResult extends Omit<InlineCompletionsParams, 'configurati
      */
     completionResponseGeneratorPromise: Promise<unknown>
     configuration?: Parameters<typeof mockResolvedConfig>[0]
-    authStatus: Parameters<typeof mockAuthStatus>[0]
+    authStatus?: AuthenticatedAuthStatus
 }
 
 /**
@@ -98,21 +80,19 @@ export interface ParamsResult extends Omit<InlineCompletionsParams, 'configurati
 export function params(
     code: string,
     responses: CompletionResponse[] | CompletionResponseWithMetaData[] | 'never-resolve',
-    params: Params = {}
-): ParamsResult {
-    const {
+    {
         languageId = 'typescript',
         onNetworkRequest,
         completionResponseGenerator,
         triggerKind = TriggerKind.Automatic,
         selectedCompletionInfo,
         takeSuggestWidgetSelectionIntoAccount,
-        configuration,
+        configuration: config,
         documentUri = testFileUri('test.ts'),
         authStatus = AUTH_STATUS_FIXTURE_AUTHED_DOTCOM,
         ...restParams
-    } = params
-
+    }: Params = {}
+): ParamsResult {
     mockAuthStatus(authStatus)
 
     let requestCounter = 0
@@ -161,21 +141,17 @@ export function params(
 
     // TODO: add support for `createProvider` from `vscode/src/completions/providers/shared/create-provider.ts`
     const createProvider =
-        configuration?.configuration?.autocompleteAdvancedProvider === 'fireworks' &&
-        configuration.configuration.autocompleteAdvancedModel
+        config?.configuration?.autocompleteAdvancedProvider === 'fireworks' &&
+        config?.configuration?.autocompleteAdvancedModel
             ? createFireworksProvider
             : createAnthropicProvider
 
-    const configWithAccessToken = getVSCodeConfigurationWithAccessToken(
-        configuration?.configuration as Partial<ClientConfiguration>
-    )
     const provider = createProvider({
-        legacyModel: configuration?.configuration?.autocompleteAdvancedModel!,
-        config: configWithAccessToken,
+        legacyModel: config?.configuration?.autocompleteAdvancedModel!,
         provider:
-            (configuration?.configuration?.autocompleteAdvancedModel as AutocompleteProviderID) ||
-            'anthropic',
+            (config?.configuration?.autocompleteAdvancedModel as AutocompleteProviderID) || 'anthropic',
         source: 'local-editor-settings',
+        authStatus,
     })
 
     provider.client = client
@@ -206,7 +182,7 @@ export function params(
 
     return {
         authStatus,
-        configuration,
+        configuration: config ?? { configuration: {}, auth: {} },
         document,
         position,
         docContext,
@@ -214,7 +190,7 @@ export function params(
         selectedCompletionInfo,
         provider,
         firstCompletionTimeout:
-            configuration?.configuration?.autocompleteFirstCompletionTimeout ??
+            config?.configuration?.autocompleteFirstCompletionTimeout ??
             DEFAULT_VSCODE_SETTINGS.autocompleteFirstCompletionTimeout,
         requestManager: new RequestManager(),
         contextMixer: new ContextMixer(new DefaultContextStrategyFactory(Observable.of('none'))),
@@ -379,10 +355,7 @@ export async function getInlineCompletionsFullResponse(
     params: ParamsResult
 ): Promise<InlineCompletionsResult | null> {
     initCompletionProviderConfig(params)
-    return await _getInlineCompletions({
-        ...params,
-        configuration: params.configuration as ResolvedConfiguration,
-    })
+    return await _getInlineCompletions(params)
 }
 
 /**

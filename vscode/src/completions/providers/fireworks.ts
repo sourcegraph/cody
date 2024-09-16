@@ -1,16 +1,19 @@
 import {
+    type AuthenticatedAuthStatus,
     type AutocompleteContextSnippet,
     type CodeCompletionsParams,
     type CompletionResponseGenerator,
+    currentAuthStatusAuthed,
+    currentResolvedConfig,
     dotcomTokenToGatewayToken,
+    isDotCom,
     isDotComAuthed,
     tokensToChars,
 } from '@sourcegraph/cody-shared'
-import { forkSignal, generatorWithTimeout, zipGenerators } from '../utils'
-
 import { defaultCodeCompletionsClient } from '../default-client'
 import { createFastPathClient } from '../fast-path-client'
 import { TriggerKind } from '../get-inline-completions'
+import { forkSignal, generatorWithTimeout, zipGenerators } from '../utils'
 import {
     type FetchCompletionResult,
     fetchAndProcessDynamicMultilineCompletions,
@@ -169,7 +172,7 @@ class FireworksProvider extends Provider {
         return zipGenerators(await Promise.all(completionsGenerators))
     }
 
-    private getCustomHeaders = (isFireworksTracingEnabled?: boolean): Record<string, string> => {
+    private getCustomHeaders(isFireworksTracingEnabled?: boolean): Record<string, string> {
         // Enabled Fireworks tracing for Sourcegraph teammates.
         // https://readme.fireworks.ai/docs/enabling-tracing
         const customHeaders: Record<string, string> = {}
@@ -200,7 +203,8 @@ class FireworksProvider extends Provider {
         requestParams: CodeCompletionsParams,
         abortController: AbortController
     ): Promise<CompletionResponseGenerator> {
-        const { authStatus, config } = options
+        const authStatus = currentAuthStatusAuthed()
+        const config = await currentResolvedConfig()
 
         const isLocalInstance = Boolean(
             authStatus.endpoint?.includes('sourcegraph.test') ||
@@ -236,8 +240,7 @@ class FireworksProvider extends Provider {
                 logger: defaultCodeCompletionsClient.instance!.logger,
                 providerOptions: options,
                 fastPathAccessToken,
-                customHeaders: this.getCustomHeaders(authStatus.isFireworksTracingEnabled),
-                authStatus: authStatus,
+                fireworksCustomHeaders: this.getCustomHeaders(authStatus.isFireworksTracingEnabled),
             })
         }
 
@@ -247,9 +250,12 @@ class FireworksProvider extends Provider {
     }
 }
 
-function getClientModel(model?: string): FireworksModel {
+function getClientModel(
+    model: string | undefined,
+    authStatus: Pick<AuthenticatedAuthStatus, 'endpoint'>
+): FireworksModel {
     if (model === undefined || model === '') {
-        return isDotComAuthed() ? DEEPSEEK_CODER_V2_LITE_BASE : 'starcoder-hybrid'
+        return isDotCom(authStatus) ? DEEPSEEK_CODER_V2_LITE_BASE : 'starcoder-hybrid'
     }
 
     if (model === 'starcoder-hybrid' || Object.prototype.hasOwnProperty.call(MODEL_MAP, model)) {
@@ -259,8 +265,8 @@ function getClientModel(model?: string): FireworksModel {
     throw new Error(`Unknown model: \`${model}\``)
 }
 
-export function createProvider({ legacyModel, source }: ProviderFactoryParams): Provider {
-    const clientModel = getClientModel(legacyModel)
+export function createProvider({ legacyModel, source, authStatus }: ProviderFactoryParams): Provider {
+    const clientModel = getClientModel(legacyModel, authStatus)
 
     return new FireworksProvider({
         id: 'fireworks',

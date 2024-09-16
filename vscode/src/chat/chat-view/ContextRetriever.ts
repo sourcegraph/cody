@@ -12,6 +12,7 @@ import {
     type FileURI,
     type PromptString,
     type SourcegraphCompletionsClient,
+    type StoredLastValue,
     graphqlClient,
     isFileURI,
 } from '@sourcegraph/cody-shared'
@@ -161,7 +162,9 @@ export class ContextRetriever implements vscode.Disposable {
     constructor(
         private editor: VSCodeEditor,
         private symf: SymfRunner | undefined,
-        private localEmbeddings: LocalEmbeddingsController | undefined,
+        private localEmbeddings:
+            | StoredLastValue<LocalEmbeddingsController | undefined>['value']
+            | undefined,
         private llms: SourcegraphCompletionsClient
     ) {}
 
@@ -397,7 +400,7 @@ export class ContextRetriever implements vscode.Disposable {
             ).then(r => r.flat())
         }
 
-        const localEmbeddings = this.localEmbeddings
+        const localEmbeddings = this.localEmbeddings?.last
         let localEmbeddingsResults: Promise<ContextItem[]> = Promise.resolve([])
         if (localEmbeddings && contextStrategy !== 'keyword' && localRootURIs.length > 0) {
             // TODO(beyang): retire this

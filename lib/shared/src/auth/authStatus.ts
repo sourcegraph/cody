@@ -71,10 +71,11 @@ export function currentAuthStatusOrNotReadyYet(): AuthStatus | undefined {
 }
 
 /**
- * Uses {@link currentAuthStatusAuthed} to determine if a user is authenticated on DotCom.
+ * Whether a user is authenticated on DotCom.
  */
 export function isDotComAuthed(): boolean {
-    return isDotCom(currentAuthStatusAuthed())
+    const authStatus = currentAuthStatusOrNotReadyYet()
+    return Boolean(authStatus?.authenticated && isDotCom(authStatus))
 }
 
 /**

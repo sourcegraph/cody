@@ -1,9 +1,10 @@
 import type { URI } from 'vscode-uri'
 
 import type {
+    AuthCredentials,
     AuthStatus,
     ChatMessage,
-    ClientConfigurationWithEndpoint,
+    ClientConfiguration,
     ClientStateForWebview,
     CodyIDE,
     ContextItem,
@@ -273,13 +274,10 @@ export interface ExtensionTranscriptMessage {
  */
 export interface ConfigurationSubsetForWebview
     extends Pick<
-        ClientConfigurationWithEndpoint,
-        | 'experimentalNoodle'
-        | 'serverEndpoint'
-        | 'agentIDE'
-        | 'agentExtensionVersion'
-        | 'internalDebugContext'
-    > {
+            ClientConfiguration,
+            'experimentalNoodle' | 'agentIDE' | 'agentExtensionVersion' | 'internalDebugContext'
+        >,
+        Pick<AuthCredentials, 'serverEndpoint'> {
     smartApply: boolean
     experimentalOneBox: boolean
     // Type/location of the current webview.

@@ -4,8 +4,6 @@ import type { URI } from 'vscode-uri'
 import {
     type AutocompleteContextSnippet,
     type DocumentContext,
-    type ResolvedConfiguration,
-    currentAuthStatus,
     getActiveTraceAndSpanId,
     isAbortError,
     isDotComAuthed,
@@ -48,7 +46,6 @@ export interface InlineCompletionsParams {
     completionIntent?: CompletionIntent
     lastAcceptedCompletionItem?: Pick<AutocompleteItem, 'requestParams' | 'analyticsItem'>
     provider: Provider
-    configuration: ResolvedConfiguration
 
     // Shared
     requestManager: RequestManager
@@ -243,7 +240,6 @@ async function doGetInlineCompletions(
         completionIntent,
         lastAcceptedCompletionItem,
         stageRecorder,
-        configuration: config,
         numberOfCompletionsToGenerate,
     } = params
 
@@ -487,8 +483,6 @@ async function doGetInlineCompletions(
         firstCompletionTimeout,
         completionLogId: logId,
         gitContext,
-        authStatus: currentAuthStatus(),
-        config,
         numberOfCompletionsToGenerate: numberOfCompletionsToGenerate ?? n,
         multiline: !!docContext.multilineTrigger,
     }
