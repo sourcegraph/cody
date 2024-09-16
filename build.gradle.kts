@@ -464,7 +464,7 @@ tasks {
   }
 
   // System properties that are used for testing purposes. These properties
-  // should be consistently set in different local dev environments, like `./gradlew :runIde`,
+  // should be consistently set in different local dev environments, like `./gradlew :customRunIde`,
   // `./gradlew test` or when testing inside IntelliJ
   val agentProperties =
       mapOf<String, Any>(
@@ -534,17 +534,28 @@ tasks {
 
   val customRunIde by
       intellijPlatformTesting.runIde.registering {
+        task.get().dependsOn(project.tasks.getByPath("buildCody"))
+        task.get().jvmArgs("-Djdk.module.illegalAccess.silent=true")
+
         version.set(properties("platformRuntimeVersion"))
         val myType = IntelliJPlatformType.fromCode(properties("platformRuntimeType") ?: "IC")
         type.set(myType)
         plugins { plugins(properties("platformRuntimePlugins").orEmpty()) }
+        splitMode.set(properties("splitMode")?.toBoolean() ?: false)
+
+        agentProperties.forEach { (key, value) -> task.get().systemProperty(key, value) }
       }
 
   runIde {
-    dependsOn(project.tasks.getByPath("buildCody"))
-    jvmArgs("-Djdk.module.illegalAccess.silent=true")
-
-    agentProperties.forEach { (key, value) -> systemProperty(key, value) }
+    doLast {
+      project.logger.error(
+          """
+          ==========================================
+          The :runIde task is no longer supported.
+          Please use the :customRunIde task instead.
+          ==========================================
+        """)
+    }
   }
 
   signPlugin {

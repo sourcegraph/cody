@@ -66,19 +66,20 @@ run `sdk use java 17-zulu`. Confirm that you have Java 17 installed with `java -
 
 ### Running
 
-| What                                                                                                                                | Command                                                                  |
-|-------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------|
-| Run the plugin locally                                                                                                              | `./gradlew :runIde`                                                      |
-| Run the plugin locally with fresh build of Cody                                                                                     | `./gradlew -PforceAgentBuild=true :runIde`                               |
-| Run the plugin locally with fresh build of a local clone of Cody (CODY_DIR needs to be an absolute path)                            | `CODY_DIR=<path_to_cody> ./gradlew -PforceAgentBuild=true :runIde`       |
-| Run the plugin locally with fresh build of Code Search assets                                                                       | `./gradlew -PforceCodeSearchBuild=true :runIde`                          |
-| Run the plugin locally with different IntelliJ version                                                                              | `./gradlew -PplatformRuntimeVersion=2024.2.0.2 :customRunIde`            |
-| Build Code Search assets (separate terminal)                                                                                        | `pnpm build`                                                             |
-| Continuously re-build Code Search assets (separate terminal)                                                                        | `pnpm watch`                                                             |
-| Code Search "Find with Sourcegraph" window                                                                                          | `pnpm standalone && open http://localhost:3000/`                         |
-| Build deployable plugin                                                                                                             | `./gradlew buildPlugin` (artifact is generated in `build/distributions`) |
-| Reformat Java and Kotlin sources                                                                                                    | `./gradlew spotlessApply`                                                |
-| Debug agent JSON-RPC communication                                                                                                  | `tail -f build/sourcegraph/cody-agent-trace.json`                        |
+| What                                                                                                     | Command                                                                  |
+|----------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------|
+| Run the plugin locally                                                                                   | `./gradlew :customRunIde`                                                |
+| Run the plugin locally with fresh build of Cody                                                          | `./gradlew -PforceAgentBuild=true :customRunIde`                         |
+| Run the plugin locally with fresh build of a local clone of Cody (CODY_DIR needs to be an absolute path) | `CODY_DIR=<path_to_cody> ./gradlew -PforceAgentBuild=true :customRunIde` |
+| Run the plugin locally with fresh build of Code Search assets                                            | `./gradlew -PforceCodeSearchBuild=true :customRunIde`                    |
+| Run the plugin locally with different IntelliJ version                                                   | `./gradlew -PplatformRuntimeVersion=2024.2.0.2 :customRunIde`            |
+| Run the plugin locally in split mode (useful for Gateway testing)                                        | `./gradlew -PsplitMode=true :customRunIde`                               |
+| Build Code Search assets (separate terminal)                                                             | `pnpm build`                                                             |
+| Continuously re-build Code Search assets (separate terminal)                                             | `pnpm watch`                                                             |
+| Code Search "Find with Sourcegraph" window                                                               | `pnpm standalone && open http://localhost:3000/`                         |
+| Build deployable plugin                                                                                  | `./gradlew buildPlugin` (artifact is generated in `build/distributions`) |
+| Reformat Java and Kotlin sources                                                                         | `./gradlew spotlessApply`                                                |
+| Debug agent JSON-RPC communication                                                                       | `tail -f build/sourcegraph/cody-agent-trace.json`                        |
 
 ### Editor config
 
@@ -353,7 +354,7 @@ Choose Edit Configurations and `+` to add a new one:
 - Type: Gradle
 - Name: whatever, e.g. `Cody-spawned debug agent`
 - Run on: local machine _(the default)_
-- Run: `runIde` _(the default)_
+- Run: `customRunIde` _(the default)_
 - Modify options → Add Before Launch Task
     - choose Run External Tool
     - choose the pnpm builder tool
@@ -389,7 +390,7 @@ Create this configuration in the `sourcegraph/jetbrains` project window:
 - Type: Gradle
 - Name: whatever, e.g., `Connect to IDEA-spawned Agent`
 - Run on: local machine _(the default)_
-- Run: `runIde` _(the default)_
+- Run: `customRunIde` _(the default)_
 - env vars:
     - `CODY_AGENT_DEBUG_REMOTE=true`
     - `CODY_AGENT_DEBUG_PORT=3113`
