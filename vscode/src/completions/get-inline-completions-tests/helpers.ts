@@ -1,6 +1,6 @@
 import dedent from 'dedent'
-import { isEqual } from 'lodash'
-import { expect, vi } from 'vitest'
+import { Observable } from 'observable-fns'
+import { vi } from 'vitest'
 import type { URI } from 'vscode-uri'
 
 import {
@@ -21,12 +21,11 @@ import {
     mockResolvedConfig,
     testFileUri,
 } from '@sourcegraph/cody-shared'
-
 import type {
     CodeCompletionsParams,
     CompletionResponseWithMetaData,
 } from '@sourcegraph/cody-shared/src/inferenceClient/misc'
-import { Observable } from 'observable-fns'
+
 import { DEFAULT_VSCODE_SETTINGS } from '../../testutils/mocks'
 import type { SupportedLanguage } from '../../tree-sitter/grammars'
 import { updateParseTreeCache } from '../../tree-sitter/parse-tree-cache'
@@ -42,11 +41,7 @@ import {
     getInlineCompletions as _getInlineCompletions,
 } from '../get-inline-completions'
 import { AutocompleteStageRecorder } from '../logger'
-import {
-    MULTI_LINE_STOP_SEQUENCES,
-    SINGLE_LINE_STOP_SEQUENCES,
-    createProvider as createAnthropicProvider,
-} from '../providers/anthropic'
+import { createProvider as createAnthropicProvider } from '../providers/anthropic'
 import { createProvider as createFireworksProvider } from '../providers/fireworks'
 import { pressEnterAndGetIndentString } from '../providers/hot-streak'
 import { RequestManager } from '../request-manager'
@@ -69,7 +64,7 @@ const getVSCodeConfigurationWithAccessToken = (
     clientState: { anonymousUserID: 'anonymousUserID' } as Partial<ClientState> as ClientState,
 })
 
-type Params = Partial<
+export type Params = Partial<
     Omit<
         InlineCompletionsParams,
         'document' | 'position' | 'docContext' | 'configuration' | 'authStatus'
@@ -430,37 +425,3 @@ export function initCompletionProviderConfig({
     mockAuthStatus(authStatus ?? AUTH_STATUS_FIXTURE_AUTHED)
     mockResolvedConfig({ configuration: {}, auth: {}, ...configuration })
 }
-
-expect.extend({
-    /**
-     * Checks if `CompletionParameters[]` contains one item with single-line stop sequences.
-     */
-    toBeSingleLine(requests: CompletionParameters[], _) {
-        const { isNot } = this
-
-        return {
-            pass:
-                requests.length === 1 && isEqual(requests[0]?.stopSequences, SINGLE_LINE_STOP_SEQUENCES),
-            message: () => `Completion requests are${isNot ? ' not' : ''} single-line`,
-            actual: requests.map(r => ({ stopSequences: r.stopSequences })),
-            expected: [{ stopSequences: SINGLE_LINE_STOP_SEQUENCES }],
-        }
-    },
-    /**
-     * Checks if `CompletionParameters[]` contains one item with multi-line stop sequences.
-     */
-    toBeMultiLine(requests: CompletionParameters[], _) {
-        const { isNot } = this
-
-        return {
-            pass: isEqual(requests[0]?.stopSequences, MULTI_LINE_STOP_SEQUENCES),
-            message: () => `Completion requests are${isNot ? ' not' : ''} multi-line`,
-            actual: requests.map(r => ({ stopSequences: r.stopSequences })),
-            expected: [
-                {
-                    stopSequences: MULTI_LINE_STOP_SEQUENCES,
-                },
-            ],
-        }
-    },
-})

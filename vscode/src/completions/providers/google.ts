@@ -13,7 +13,6 @@ import {
     type FetchCompletionResult,
     fetchAndProcessDynamicMultilineCompletions,
 } from './fetch-and-process-completions'
-import { getCompletionParams, getLineNumberDependentCompletionParams } from './get-completion-params'
 import {
     type CompletionProviderTracer,
     type GenerateCompletionsOptions,
@@ -27,12 +26,9 @@ const MARKERS = {
     Response: ps`<|fim|>`,
 }
 
-const lineNumberDependentCompletionParams = getLineNumberDependentCompletionParams({
-    singlelineStopSequences: [`${MARKERS.Response}`],
-    multilineStopSequences: [`${MARKERS.Response}`],
-})
-
 class GoogleGeminiProvider extends Provider {
+    public stopSequences = [`${MARKERS.Response}`]
+
     public emptyPromptLength(options: GenerateCompletionsOptions): number {
         const { messages } = this.createPrompt(options, [])
         const promptNoSnippets = messagesToText(messages)
@@ -111,14 +107,11 @@ Your response should contains only the code required to connect the gap, and the
         snippets: AutocompleteContextSnippet[],
         tracer?: CompletionProviderTracer
     ): Promise<AsyncGenerator<FetchCompletionResult[]>> {
-        const partialRequestParams = getCompletionParams({
-            providerOptions: options,
-            lineNumberDependentCompletionParams,
-        })
+        const { messages } = this.createPrompt(options, snippets)
 
         const requestParams: CodeCompletionsParams = {
-            ...partialRequestParams,
-            messages: this.createPrompt(options, snippets).messages,
+            ...this.defaultRequestParams,
+            messages,
             topP: 0.95,
             temperature: 0,
             model: this.legacyModel,

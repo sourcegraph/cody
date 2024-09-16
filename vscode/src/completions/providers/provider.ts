@@ -5,6 +5,7 @@ import {
     type AutocompleteContextSnippet,
     type AutocompleteProviderID,
     type CodeCompletionsClient,
+    type CodeCompletionsParams,
     type CompletionParameters,
     type DocumentContext,
     type GitContext,
@@ -21,7 +22,8 @@ import { defaultCodeCompletionsClient } from '../default-client'
 import { type DefaultModel, getModelHelpers } from '../model-helpers'
 import type { AutocompleteProviderConfigSource } from './create-provider'
 import type { FetchCompletionResult } from './fetch-and-process-completions'
-import { MAX_RESPONSE_TOKENS } from './get-completion-params'
+
+export const MAX_RESPONSE_TOKENS = 256
 
 export interface ProviderContextSizeHints {
     /** Total max length of all context (prefix + suffix + snippets). */
@@ -117,10 +119,12 @@ export abstract class Provider {
      * A unique and descriptive identifier for the provider.
      */
     public id: string
+
     /**
      * The Model info constructed from the server-side model configuration payload.
      */
     public model?: Model
+
     /**
      * Either `provider/model-name` or `model-name` depending on the provider implementation.
      * TODO: migrate to one syntax.
@@ -136,6 +140,16 @@ export abstract class Provider {
     protected modelHelper: DefaultModel
 
     public mayUseOnDeviceInference: boolean
+
+    public stopSequences: string[] = ['\n\n', '\n\r\n']
+
+    protected defaultRequestParams = {
+        timeoutMs: 7_000,
+        stopSequences: this.stopSequences,
+        maxTokensToSample: MAX_RESPONSE_TOKENS,
+        temperature: 0.2,
+        topK: 0,
+    } as const satisfies Omit<CodeCompletionsParams, 'messages'>
 
     constructor(public readonly options: Readonly<ProviderOptions>) {
         const {

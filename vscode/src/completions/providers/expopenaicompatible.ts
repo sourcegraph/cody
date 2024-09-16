@@ -22,7 +22,6 @@ import {
     type FetchCompletionResult,
     fetchAndProcessDynamicMultilineCompletions,
 } from './fetch-and-process-completions'
-import { getCompletionParams, getLineNumberDependentCompletionParams } from './get-completion-params'
 import {
     type CompletionProviderTracer,
     type GenerateCompletionsOptions,
@@ -75,11 +74,6 @@ function getMaxContextTokens(model: OpenAICompatibleModel): number {
             return 1200
     }
 }
-
-const lineNumberDependentCompletionParams = getLineNumberDependentCompletionParams({
-    singlelineStopSequences: ['\n'],
-    multilineStopSequences: ['\n\n', '\n\r\n'],
-})
 
 class ExpOpenAICompatibleProvider extends Provider {
     private createPrompt(
@@ -153,24 +147,17 @@ class ExpOpenAICompatibleProvider extends Provider {
         snippets: AutocompleteContextSnippet[],
         tracer?: CompletionProviderTracer
     ): Promise<AsyncGenerator<FetchCompletionResult[]>> {
-        const partialRequestParams = getCompletionParams({
-            providerOptions: options,
-            lineNumberDependentCompletionParams,
-        })
-
-        const { prefix, suffix } = PromptString.fromAutocompleteDocumentContext(
-            options.docContext,
-            options.document.uri
-        )
+        const { docContext, document, numberOfCompletionsToGenerate } = options
+        const { prefix, suffix } = PromptString.fromAutocompleteDocumentContext(docContext, document.uri)
 
         // starchat: Only use infill if the suffix is not empty
-        const useInfill = options.docContext.suffix.trim().length > 0
+        const useInfill = docContext.suffix.trim().length > 0
         const promptProps: Prompt = {
             snippets: [],
-            uri: options.document.uri,
+            uri: document.uri,
             prefix,
             suffix,
-            languageId: options.document.languageId,
+            languageId: document.languageId,
         }
 
         const prompt = this.legacyModel.startsWith('starchat')
@@ -179,10 +166,8 @@ class ExpOpenAICompatibleProvider extends Provider {
 
         const { multiline } = options
         const requestParams: CodeCompletionsParams = {
-            ...partialRequestParams,
+            ...this.defaultRequestParams,
             messages: [{ speaker: 'human', text: prompt }],
-            temperature: 0.2,
-            topK: 0,
             model:
                 this.legacyModel === 'starcoder-hybrid'
                     ? MODEL_MAP[multiline ? 'starcoder-16b' : 'starcoder-7b']
@@ -193,7 +178,7 @@ class ExpOpenAICompatibleProvider extends Provider {
 
         tracer?.params(requestParams)
 
-        const completionsGenerators = Array.from({ length: options.numberOfCompletionsToGenerate }).map(
+        const completionsGenerators = Array.from({ length: numberOfCompletionsToGenerate }).map(
             async () => {
                 const abortController = forkSignal(abortSignal)
 

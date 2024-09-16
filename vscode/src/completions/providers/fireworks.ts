@@ -16,13 +16,9 @@ import {
     fetchAndProcessDynamicMultilineCompletions,
 } from './fetch-and-process-completions'
 import {
-    MAX_RESPONSE_TOKENS,
-    getCompletionParams,
-    getLineNumberDependentCompletionParams,
-} from './get-completion-params'
-import {
     type CompletionProviderTracer,
     type GenerateCompletionsOptions,
+    MAX_RESPONSE_TOKENS,
     Provider,
     type ProviderFactoryParams,
 } from './provider'
@@ -104,11 +100,6 @@ function getMaxContextTokens(model: FireworksModel): number {
     }
 }
 
-const lineNumberDependentCompletionParams = getLineNumberDependentCompletionParams({
-    singlelineStopSequences: ['\n\n', '\n\r\n'],
-    multilineStopSequences: ['\n\n', '\n\r\n'],
-})
-
 class FireworksProvider extends Provider {
     public async generateCompletions(
         options: GenerateCompletionsOptions,
@@ -116,11 +107,6 @@ class FireworksProvider extends Provider {
         snippets: AutocompleteContextSnippet[],
         tracer?: CompletionProviderTracer
     ): Promise<AsyncGenerator<FetchCompletionResult[]>> {
-        const partialRequestParams = getCompletionParams({
-            providerOptions: options,
-            lineNumberDependentCompletionParams,
-        })
-
         const { multiline, docContext, document } = options
         const useMultilineModel = multiline || options.triggerKind !== TriggerKind.Automatic
 
@@ -137,10 +123,8 @@ class FireworksProvider extends Provider {
         })
 
         const requestParams = this.modelHelper.getRequestParams({
-            ...partialRequestParams,
+            ...this.defaultRequestParams,
             messages: [{ speaker: 'human', text: prompt }],
-            temperature: 0.2,
-            topK: 0,
             model,
         } satisfies CodeCompletionsParams)
 
