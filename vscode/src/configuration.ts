@@ -127,10 +127,6 @@ export function getConfiguration(
             'autocomplete.experimental.fireworksOptions',
             undefined
         ),
-        autocompleteExperimentalMultiModelCompletions: getHiddenSetting(
-            'autocomplete.experimental.multiModelCompletions',
-            undefined
-        ),
         autocompleteExperimentalPreloadDebounceInterval: getHiddenSetting(
             'autocomplete.experimental.preloadDebounceInterval',
             0

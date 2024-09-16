@@ -9,7 +9,7 @@ export function defaultConfigurationValue(key: string): any {
     return value
 }
 
-export type ConfigurationKeysMap = {
+type ConfigurationKeysMap = {
     // Use key remapping to get a nice typescript interface with the correct keys.
     // https://www.typescriptlang.org/docs/handbook/2/mapped-types.html#key-remapping-via-as
     [key in keyof typeof properties as RemoveCodyPrefixAndCamelCase<key>]: key

@@ -22,7 +22,7 @@ interface HistoryItem {
     kind?: vscode.QuickPickItemKind
 }
 
-export function groupCodyChats(authStatus: AuthStatus | undefined): GroupedChats | null {
+function groupCodyChats(authStatus: AuthStatus | undefined): GroupedChats | null {
     const chatHistoryGroups = new Map<string, CodySidebarTreeItem[]>()
 
     if (!authStatus || !authStatus.authenticated) {

@@ -270,7 +270,7 @@ export function createProvider({ provider, source }: ProviderFactoryParams): Pro
     })
 }
 
-export const DEFAULT_PLG_ANTHROPIC_MODEL = 'anthropic/claude-instant-1.2'
+const DEFAULT_PLG_ANTHROPIC_MODEL = 'anthropic/claude-instant-1.2'
 
 // All the Anthropic version identifiers that are allowlisted as being able to be passed as the
 // model identifier on a Sourcegraph Server

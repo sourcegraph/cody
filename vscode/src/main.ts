@@ -59,7 +59,6 @@ import { CodySourceControl } from './commands/scm/source-control'
 import type { CodyCommandArgs } from './commands/types'
 import { newCodyCommandArgs } from './commands/utils/get-commands'
 import { createInlineCompletionItemProvider } from './completions/create-inline-completion-item-provider'
-import { createInlineCompletionItemFromMultipleProviders } from './completions/create-multi-model-inline-completion-provider'
 import { getConfiguration, getFullConfig } from './configuration'
 import { exposeOpenCtxClient } from './context/openctx'
 import { EditManager } from './edit/manager'
@@ -86,7 +85,6 @@ import { VSCodeSecretStorage, secretStorage } from './services/SecretStorageProv
 import { registerSidebarCommands } from './services/SidebarCommands'
 import { type CodyStatusBar, createStatusBar } from './services/StatusBar'
 import { upstreamHealthProvider } from './services/UpstreamHealthProvider'
-import { autocompleteStageCounterLogger } from './services/autocomplete-stage-counter-logger'
 import { createOrUpdateTelemetryRecorderProvider } from './services/telemetry-v2'
 import { onTextDocumentChange } from './services/utils/codeblock-action-tracker'
 import {
@@ -660,14 +658,6 @@ function registerAutocomplete(
                             createBfgRetriever: platform.createBfgRetriever,
                         }).subscribe({})
                     )
-                )
-                autocompleteDisposables.push(
-                    await createInlineCompletionItemFromMultipleProviders({
-                        config,
-                        statusBar,
-                        createBfgRetriever: platform.createBfgRetriever,
-                    }),
-                    autocompleteStageCounterLogger
                 )
             })
             .catch(error => {

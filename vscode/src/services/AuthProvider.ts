@@ -26,7 +26,7 @@ import { secretStorage } from './SecretStorageProvider'
 
 const HAS_AUTHENTICATED_BEFORE_KEY = 'has-authenticated-before'
 
-export class AuthProvider implements vscode.Disposable {
+class AuthProvider implements vscode.Disposable {
     private client: SourcegraphGraphQLAPIClient | null = null
     private status = new Subject<AuthStatus>()
 

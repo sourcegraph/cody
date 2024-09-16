@@ -71,8 +71,6 @@ describe('getConfiguration', () => {
                         return false
                     case 'cody.autocomplete.experimental.fireworksOptions':
                         return undefined
-                    case 'cody.autocomplete.experimental.multiModelCompletions':
-                        return undefined
                     case 'cody.autocomplete.experimental.ollamaOptions':
                         return {
                             model: 'codellama:7b-code',

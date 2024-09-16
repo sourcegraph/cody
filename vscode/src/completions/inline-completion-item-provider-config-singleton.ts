@@ -23,11 +23,6 @@ export interface CodyCompletionItemProviderConfig {
 
     // Feature flags
     completeSuggestWidgetSelection?: boolean
-
-    // Flag to check if the current request is also triggered for multiple providers.
-    // When true it means the inlineCompletion are triggered for multiple model for comparison purpose.
-    // Check `createInlineCompletionItemFromMultipleProviders` method in create-inline-completion-item-provider for more detail.
-    noInlineAccept?: boolean
 }
 
 export type InlineCompletionItemProviderConfig = Omit<

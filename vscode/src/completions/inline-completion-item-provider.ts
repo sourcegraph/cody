@@ -144,7 +144,6 @@ export class InlineCompletionItemProvider
             tracer,
             isRunningInsideAgent: config.isRunningInsideAgent ?? false,
             isDotComUser: config.isDotComUser ?? false,
-            noInlineAccept: config.noInlineAccept ?? false,
         })
 
         autocompleteStageCounterLogger.setProviderModel(config.provider.legacyModel)
@@ -199,17 +198,14 @@ export class InlineCompletionItemProvider
             }"`
         )
 
-        if (!this.config.noInlineAccept) {
-            // We don't want to accept and log items when we are doing completion comparison from different models.
-            this.disposables.push(
-                vscode.commands.registerCommand(
-                    'cody.autocomplete.inline.accepted',
-                    ({ codyCompletion }: AutocompleteInlineAcceptedCommandArgs) => {
-                        void this.handleDidAcceptCompletionItem(codyCompletion)
-                    }
-                )
+        this.disposables.push(
+            vscode.commands.registerCommand(
+                'cody.autocomplete.inline.accepted',
+                ({ codyCompletion }: AutocompleteInlineAcceptedCommandArgs) => {
+                    void this.handleDidAcceptCompletionItem(codyCompletion)
+                }
             )
-        }
+        )
 
         this.disposables.push(
             subscriptionDisposable(
