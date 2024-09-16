@@ -33,7 +33,11 @@ interface FastPathParams extends Pick<GenerateCompletionsOptions, 'authStatus'> 
     logger: CompletionLogger | undefined
     providerOptions: GenerateCompletionsOptions
     fastPathAccessToken: string | undefined
-    customHeaders: Record<string, string>
+
+    /**
+     * Custom headers for the HTTP request to Fireworks.
+     */
+    fireworksCustomHeaders: Record<string, string>
 }
 
 // When using the fast path, the Cody client talks directly to Cody Gateway. Since CG only
@@ -53,7 +57,7 @@ export function createFastPathClient(
         providerOptions,
         authStatus,
         fastPathAccessToken,
-        customHeaders,
+        fireworksCustomHeaders,
     }: FastPathParams
 ): CompletionResponseGenerator {
     const gatewayUrl = isLocalInstance ? 'http://localhost:9992' : 'https://cody-gateway.sourcegraph.com'
@@ -88,7 +92,7 @@ export function createFastPathClient(
             languageId: providerOptions.document.languageId,
             user: (await currentResolvedConfig()).clientState.anonymousUserID,
         }
-        const headers = new Headers(customHeaders)
+        const headers = new Headers(fireworksCustomHeaders)
         // Force HTTP connection reuse to reduce latency.
         // c.f. https://github.com/microsoft/vscode/issues/173861
         headers.set('Connection', 'keep-alive')

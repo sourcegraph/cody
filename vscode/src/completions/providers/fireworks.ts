@@ -169,7 +169,7 @@ class FireworksProvider extends Provider {
         return zipGenerators(await Promise.all(completionsGenerators))
     }
 
-    private getCustomHeaders = (isFireworksTracingEnabled?: boolean): Record<string, string> => {
+    private getCustomHeaders(isFireworksTracingEnabled?: boolean): Record<string, string> {
         // Enabled Fireworks tracing for Sourcegraph teammates.
         // https://readme.fireworks.ai/docs/enabling-tracing
         const customHeaders: Record<string, string> = {}
@@ -236,8 +236,8 @@ class FireworksProvider extends Provider {
                 logger: defaultCodeCompletionsClient.instance!.logger,
                 providerOptions: options,
                 fastPathAccessToken,
-                customHeaders: this.getCustomHeaders(authStatus.isFireworksTracingEnabled),
                 authStatus: authStatus,
+                fireworksCustomHeaders: this.getCustomHeaders(authStatus.isFireworksTracingEnabled),
             })
         }
 
