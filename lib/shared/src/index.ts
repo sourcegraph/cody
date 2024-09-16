@@ -234,7 +234,6 @@ export {
     INCLUDE_EVERYTHING_CONTEXT_FILTERS,
     EXCLUDE_EVERYTHING_CONTEXT_FILTERS,
     type BrowserOrNodeResponse,
-    type GraphQLAPIClientConfig,
     type LogEventMode,
     type ContextFilters,
     type CodyContextFilterItem,

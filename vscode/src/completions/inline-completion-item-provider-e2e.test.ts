@@ -1,11 +1,9 @@
 import {
     AUTH_STATUS_FIXTURE_AUTHED,
     type ClientConfiguration,
-    type GraphQLAPIClientConfig,
     type ResolvedConfiguration,
     contextFiltersProvider,
     featureFlagProvider,
-    graphqlClient,
     nextTick,
     telemetryRecorder,
 } from '@sourcegraph/cody-shared'
@@ -45,8 +43,6 @@ const DUMMY_CONTEXT: vscode.InlineCompletionContext = {
     selectedCompletionInfo: undefined,
     triggerKind: vsCodeMocks.InlineCompletionTriggerKind.Automatic,
 }
-
-graphqlClient.setConfig({} as unknown as GraphQLAPIClientConfig)
 
 const getAnalyticEventCalls = (mockInstance: MockInstance) => {
     return mockInstance.mock.calls.map(args => {

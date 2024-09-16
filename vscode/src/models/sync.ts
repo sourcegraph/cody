@@ -48,7 +48,8 @@ export async function syncModels(authStatus: AuthStatus, signal?: AbortSignal): 
 
     // Fetch the LLM models and configuration server-side. See:
     // https://linear.app/sourcegraph/project/server-side-cody-model-selection-cca47c48da6d
-    const clientConfig = await ClientConfigSingleton.getInstance().getConfig()
+    const clientConfig = await ClientConfigSingleton.getInstance().getConfig(signal)
+    signal?.throwIfAborted()
 
     if (clientConfig?.modelsAPIEnabled) {
         logDebug('ModelsService', 'new models API enabled')

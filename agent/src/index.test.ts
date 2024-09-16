@@ -73,7 +73,7 @@ describe('Agent', () => {
             serverEndpoint: client.info.extensionConfiguration?.serverEndpoint ?? DOTCOM_URL.toString(),
             customHeaders: {},
         })
-        expect(valid?.authenticated).toBeTruthy()
+        expect(valid?.authenticated).toBe(true)
 
         for (const name of [
             'src/animal.ts',
