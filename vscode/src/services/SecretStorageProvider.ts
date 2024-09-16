@@ -1,5 +1,6 @@
 import * as vscode from 'vscode'
 
+import type { ClientSecrets } from '@sourcegraph/cody-shared'
 import { logDebug, logError } from '../log'
 
 const CODY_ACCESS_TOKEN_SECRET = 'cody.access-token'
@@ -19,7 +20,7 @@ export async function getAccessToken(): Promise<string | null> {
     }
 }
 
-interface SecretStorage extends vscode.SecretStorage {
+interface SecretStorage extends vscode.SecretStorage, ClientSecrets {
     get(key: string): Promise<string | undefined>
     store(key: string, value: string): Promise<void>
     delete(key: string): Promise<void>

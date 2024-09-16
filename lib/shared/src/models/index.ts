@@ -1,5 +1,5 @@
 import { type Observable, Subject } from 'observable-fns'
-import { authStatus, currentAuthStatus } from '../auth/authStatus'
+import { authStatus, currentAuthStatus, currentAuthStatusOrNotReadyYet } from '../auth/authStatus'
 import { mockAuthStatus } from '../auth/authStatus'
 import { type AuthStatus, isCodyProUser, isEnterpriseUser } from '../auth/types'
 import { AUTH_STATUS_FIXTURE_AUTHED_DOTCOM } from '../auth/types'
@@ -422,8 +422,8 @@ export class ModelsService {
             defaults: {},
             selected: {},
         }
-        const endpoint = currentAuthStatus().endpoint
-        if (!endpoint) {
+        const authStatus = currentAuthStatusOrNotReadyYet()
+        if (!authStatus) {
             if (!process.env.VITEST) {
                 logError('ModelsService::preferences', 'No auth status set')
             }
@@ -435,14 +435,14 @@ export class ModelsService {
             this._preferences = (serialized ? JSON.parse(serialized) : {}) as PerSitePreferences
         }
 
-        const current = this._preferences[endpoint]
+        const current = this._preferences[authStatus.endpoint]
         if (current) {
             // cache hit!
             return current
         }
 
         // Else the endpoint cache is missing, so initialize it
-        this._preferences[endpoint] = empty
+        this._preferences[authStatus.endpoint] = empty
         return empty
     }
 
