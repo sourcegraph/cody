@@ -1,8 +1,11 @@
 import {
     authStatus,
+    combineLatest,
+    debounceTime,
     graphqlClient,
     isError,
     logDebug,
+    resolvedConfig,
     startWith,
     subscriptionDisposable,
 } from '@sourcegraph/cody-shared'
@@ -106,6 +109,15 @@ export class WorkspaceRepoMapper implements vscode.Disposable, CodebaseRepoIdMap
                 this.started = undefined
                 throw error
             }
+            this.disposables.push(
+                subscriptionDisposable(
+                    combineLatest([authStatus, resolvedConfig])
+                        .pipe(debounceTime(0))
+                        .subscribe(() => {
+                            this.updateRepos()
+                        })
+                )
+            )
             vscode.workspace.onDidChangeWorkspaceFolders(
                 async () => {
                     logDebug('WorkspaceRepoMapper', 'Workspace folders changed, updating repos')
@@ -154,13 +166,20 @@ export class WorkspaceRepoMapper implements vscode.Disposable, CodebaseRepoIdMap
     // Given a set of workspace folders, looks up their git remotes and finds the related repo IDs,
     // if any.
     private async findRepos(folders: readonly vscode.WorkspaceFolder[]): Promise<Repo[]> {
-        const repoNames = await Promise.all(
-            folders.map(folder => {
-                return repoNameResolver.getRepoNamesFromWorkspaceUri(folder.uri)
-            })
+        repoNameResolver.clearCache()
+        const repoNames = (
+            await Promise.all(
+                folders.map(folder => {
+                    return repoNameResolver.getRepoNamesFromWorkspaceUri(folder.uri)
+                })
+            )
+        ).flat()
+        logDebug(
+            'WorkspaceRepoMapper',
+            `Found ${repoNames.length} repo names: ${JSON.stringify(repoNames)}`
         )
 
-        const uniqueRepoNames = new Set(repoNames.flat())
+        const uniqueRepoNames = new Set(repoNames)
         if (uniqueRepoNames.size === 0) {
             // Otherwise we fetch the first 10 repos from the Sourcegraph instance
             return []

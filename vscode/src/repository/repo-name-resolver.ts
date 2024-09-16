@@ -5,12 +5,15 @@ import {
     ContextFiltersProvider,
     type Unsubscribable,
     authStatus,
+    combineLatest,
     convertGitCloneURLToCodebaseName,
     currentAuthStatus,
+    debounceTime,
     graphqlClient,
     isDefined,
     isDotCom,
     isFileURI,
+    resolvedConfig,
 } from '@sourcegraph/cody-shared'
 
 import { logDebug } from '../log'
@@ -30,10 +33,16 @@ export class RepoNameResolver {
     private authStatusSubscription: Unsubscribable
 
     public constructor() {
-        this.authStatusSubscription = authStatus.subscribe(() => {
-            this.fsPathToRepoNameCache.clear()
-            this.remoteUrlToRepoNameCache.clear()
-        })
+        this.authStatusSubscription = combineLatest([authStatus, resolvedConfig])
+            .pipe(debounceTime(0))
+            .subscribe(() => {
+                this.clearCache()
+            })
+    }
+
+    public clearCache(): void {
+        this.fsPathToRepoNameCache.clear()
+        this.remoteUrlToRepoNameCache.clear()
     }
 
     /**
@@ -117,7 +126,8 @@ export class RepoNameResolver {
 
     private async resolveRepoNameForRemoteUrl(remoteUrl: string): Promise<string | null> {
         if (this.remoteUrlToRepoNameCache.has(remoteUrl)) {
-            return this.remoteUrlToRepoNameCache.get(remoteUrl)!
+            const value = this.remoteUrlToRepoNameCache.get(remoteUrl)!
+            return value
         }
 
         const repoNameRequest = graphqlClient.getRepoName(remoteUrl)

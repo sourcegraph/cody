@@ -65,10 +65,12 @@ export async function showSignInMenu(
             // Auto log user if token for the selected instance was found in secret
             const selectedEndpoint = item.uri
             const token = await secretStorage.get(selectedEndpoint)
-            let authStatus = await authProvider.auth({
-                endpoint: selectedEndpoint,
-                token: token || null,
-            })
+            let authStatus = token
+                ? await authProvider.auth({
+                      endpoint: selectedEndpoint,
+                      token,
+                  })
+                : undefined
             if (!authStatus?.authenticated) {
                 const newToken = await showAccessTokenInputBox(item.uri)
                 if (!newToken) {
@@ -76,7 +78,7 @@ export async function showSignInMenu(
                 }
                 authStatus = await authProvider.auth({
                     endpoint: selectedEndpoint,
-                    token: newToken || null,
+                    token: newToken,
                 })
             }
             await showAuthResultMessage(selectedEndpoint, authStatus)
