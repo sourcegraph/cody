@@ -5,16 +5,12 @@ import { startPollyRecording } from '../testutils/polly'
 
 import { rewriteKeywordQuery } from './rewrite-keyword-query'
 
-import { type PromptString, ps } from '@sourcegraph/cody-shared'
+import { type PromptString, mockResolvedConfig, ps } from '@sourcegraph/cody-shared'
 import { SourcegraphNodeCompletionsClient } from '../completions/nodeClient'
 import { TESTING_CREDENTIALS } from '../testutils/testing-credentials'
 
 describe('rewrite-query', () => {
-    const client = new SourcegraphNodeCompletionsClient({
-        accessToken: TESTING_CREDENTIALS.dotcom.token ?? TESTING_CREDENTIALS.dotcom.redactedToken,
-        serverEndpoint: TESTING_CREDENTIALS.dotcom.serverEndpoint,
-        customHeaders: {},
-    })
+    const client = new SourcegraphNodeCompletionsClient()
 
     let polly: Polly
     beforeAll(() => {
@@ -23,6 +19,15 @@ describe('rewrite-query', () => {
             // Run the command below to update recordings:
             // source agent/scripts/export-cody-http-recording-tokens.sh
             // CODY_RECORDING_MODE=record pnpm -C vscode test:unit
+        })
+
+        mockResolvedConfig({
+            configuration: { customHeaders: {} },
+            auth: {
+                accessToken:
+                    TESTING_CREDENTIALS.dotcom.token ?? TESTING_CREDENTIALS.dotcom.redactedToken,
+                serverEndpoint: TESTING_CREDENTIALS.dotcom.serverEndpoint,
+            },
         })
     })
 

@@ -88,7 +88,6 @@ export function createOllamaClient(
     return {
         complete,
         logger,
-        onConfigurationChange: () => undefined,
     }
 }
 

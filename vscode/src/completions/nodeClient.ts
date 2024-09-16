@@ -16,6 +16,7 @@ import {
     SourcegraphCompletionsClient,
     addClientInfoParams,
     agent,
+    currentResolvedConfig,
     customUserAgent,
     getActiveTraceAndSpanId,
     getSerializedParams,
@@ -31,7 +32,7 @@ import {
 import { CompletionsResponseBuilder } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/CompletionsResponseBuilder'
 
 export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClient {
-    protected _streamWithCallbacks(
+    protected async _streamWithCallbacks(
         params: CompletionParameters,
         requestParams: CompletionRequestParameters,
         cb: CompletionCallbacks,
@@ -39,7 +40,7 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
     ): Promise<void> {
         const { apiVersion } = requestParams
 
-        const url = new URL(this.completionsEndpoint)
+        const url = new URL(await this.completionsEndpoint())
         if (apiVersion >= 1) {
             url.searchParams.append('api-version', '' + apiVersion)
         }
@@ -88,6 +89,8 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
 
             const builder = new CompletionsResponseBuilder(apiVersion)
 
+            const { auth, configuration } = await currentResolvedConfig()
+
             const request = requestFn(
                 url,
                 {
@@ -97,11 +100,9 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                         // Disable gzip compression since the sg instance will start to batch
                         // responses afterwards.
                         'Accept-Encoding': 'gzip;q=0',
-                        ...(this.config.accessToken
-                            ? { Authorization: `token ${this.config.accessToken}` }
-                            : null),
+                        ...(auth.accessToken ? { Authorization: `token ${auth.accessToken}` } : null),
                         ...(customUserAgent ? { 'User-Agent': customUserAgent } : null),
-                        ...this.config.customHeaders,
+                        ...configuration?.customHeaders,
                         ...requestParams.customHeaders,
                         ...getTraceparentHeaders(),
                         Connection: 'keep-alive',
@@ -293,16 +294,15 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                 model: params.model,
             })
             try {
+                const { auth, configuration } = await currentResolvedConfig()
                 const response = await fetch(url.toString(), {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                         'Accept-Encoding': 'gzip;q=0',
-                        ...(this.config.accessToken
-                            ? { Authorization: `token ${this.config.accessToken}` }
-                            : null),
+                        ...(auth.accessToken ? { Authorization: `token ${auth.accessToken}` } : null),
                         ...(customUserAgent ? { 'User-Agent': customUserAgent } : null),
-                        ...this.config.customHeaders,
+                        ...configuration.customHeaders,
                         ...requestParams.customHeaders,
                         ...getTraceparentHeaders(),
                     },
