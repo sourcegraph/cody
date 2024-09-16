@@ -2,24 +2,24 @@ import {
     AUTH_STATUS_FIXTURE_AUTHED_DOTCOM,
     type ClientConfiguration,
     type CodyLLMSiteConfiguration,
-    type GraphQLAPIClientConfig,
-    graphqlClient,
+    featureFlagProvider,
     mockAuthStatus,
     toFirstValueGetter,
 } from '@sourcegraph/cody-shared'
-import { beforeAll, describe, expect, it } from 'vitest'
+import { beforeAll, describe, expect, it, vi } from 'vitest'
 import { mockLocalStorage } from '../../services/LocalStorageProvider'
 import { getVSCodeConfigurationWithAccessToken } from '../../testutils/mocks'
 
+import { Observable } from 'observable-fns'
 import { createProvider } from './create-provider'
 
-graphqlClient.setConfig({} as unknown as GraphQLAPIClientConfig)
 const createProviderFirstValue = toFirstValueGetter(createProvider)
 
 describe('createProvider', () => {
     beforeAll(async () => {
         mockAuthStatus()
         mockLocalStorage()
+        vi.spyOn(featureFlagProvider, 'evaluatedFeatureFlag').mockReturnValue(Observable.of(false))
     })
 
     describe('local settings', () => {

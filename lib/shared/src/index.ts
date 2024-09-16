@@ -141,7 +141,7 @@ export { hydrateAfterPostMessage } from './editor/hydrateAfterPostMessage'
 export * from './editor/utils'
 export {
     FeatureFlag,
-    FeatureFlagProvider,
+    type FeatureFlagProvider,
     featureFlagProvider,
 } from './experimentation/FeatureFlagProvider'
 export { GuardrailsPost } from './guardrails'

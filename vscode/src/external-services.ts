@@ -59,8 +59,8 @@ export async function configureExternalServices(
     >
 ): Promise<ExternalServices> {
     const initialConfig = await firstValueFrom(resolvedConfigWithAccessToken)
-    const sentryService = platform.createSentryService?.(initialConfig)
-    const openTelemetryService = platform.createOpenTelemetryService?.(initialConfig)
+    platform.createSentryService?.()
+    platform.createOpenTelemetryService?.()
     const completionsClient = platform.createCompletionsClient(initialConfig, logger)
 
     const symfRunner = platform.createSymfRunner?.(context, completionsClient)
@@ -80,7 +80,7 @@ export async function configureExternalServices(
 
     const chatClient = new ChatClient(completionsClient, () => currentAuthStatusAuthed())
 
-    const guardrails = new SourcegraphGuardrailsClient(graphqlClient, initialConfig)
+    const guardrails = new SourcegraphGuardrailsClient()
 
     const contextAPIClient = new ContextAPIClient(graphqlClient)
 
@@ -92,10 +92,7 @@ export async function configureExternalServices(
         symfRunner,
         contextAPIClient,
         onConfigurationChange: newConfig => {
-            sentryService?.onConfigurationChange(newConfig)
-            openTelemetryService?.onConfigurationChange(newConfig)
             completionsClient.onConfigurationChange(newConfig)
-            guardrails.onConfigurationChange(newConfig)
             void localEmbeddings?.setAccessToken(newConfig.serverEndpoint, newConfig.accessToken)
         },
     }
