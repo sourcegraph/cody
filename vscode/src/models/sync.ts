@@ -33,10 +33,10 @@ import { getEnterpriseContextWindow } from './utils'
  * The token limit for the provider will use the configured limit,
  * or fallback to the limit from the authentication status if not configured.
  */
-export async function syncModels(authStatus: AuthStatus): Promise<void> {
+export async function syncModels(authStatus: AuthStatus, signal?: AbortSignal): Promise<void> {
     // Offline mode only support Ollama models, which would be synced separately.
     if (authStatus.authenticated && authStatus.isOfflineMode) {
-        modelsService.instance!.setModels([])
+        modelsService.setModels([])
         return
     }
 
