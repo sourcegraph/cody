@@ -13,7 +13,6 @@ import {
 
 import {
     CLOSING_CODE_TAG,
-    MULTILINE_STOP_SEQUENCE,
     OPENING_CODE_TAG,
     type PrefixComponents,
     extractFromCodeBlock,
@@ -33,7 +32,6 @@ import {
     type FetchCompletionResult,
     fetchAndProcessDynamicMultilineCompletions,
 } from './fetch-and-process-completions'
-import { getCompletionParams, getLineNumberDependentCompletionParams } from './get-completion-params'
 import {
     type CompletionProviderTracer,
     type GenerateCompletionsOptions,
@@ -41,26 +39,11 @@ import {
     type ProviderFactoryParams,
 } from './provider'
 
-export const SINGLE_LINE_STOP_SEQUENCES = [
-    anthropic.HUMAN_PROMPT,
-    CLOSING_CODE_TAG.toString(),
-    MULTILINE_STOP_SEQUENCE,
-]
-
-export const MULTI_LINE_STOP_SEQUENCES = [
-    anthropic.HUMAN_PROMPT,
-    CLOSING_CODE_TAG.toString(),
-    MULTILINE_STOP_SEQUENCE,
-]
-
-const lineNumberDependentCompletionParams = getLineNumberDependentCompletionParams({
-    singlelineStopSequences: SINGLE_LINE_STOP_SEQUENCES,
-    multilineStopSequences: MULTI_LINE_STOP_SEQUENCES,
-})
-
 let isOutdatedSourcegraphInstanceWithoutAnthropicAllowlist = false
 
 class AnthropicProvider extends Provider {
+    public stopSequences = [anthropic.HUMAN_PROMPT, CLOSING_CODE_TAG.toString(), '\n\n', '\n\r\n']
+
     public emptyPromptLength(options: GenerateCompletionsOptions): number {
         const { messages } = this.createPromptPrefix(options)
         const promptNoSnippets = messagesToText(messages)
@@ -166,16 +149,12 @@ class AnthropicProvider extends Provider {
         snippets: AutocompleteContextSnippet[],
         tracer?: CompletionProviderTracer
     ): Promise<AsyncGenerator<FetchCompletionResult[]>> {
-        const partialRequestParams = getCompletionParams({
-            providerOptions: options,
-            lineNumberDependentCompletionParams,
-        })
-
         const { docContext } = options
+        const { messages } = this.createPrompt(options, snippets)
 
         const requestParams: CodeCompletionsParams = {
-            ...partialRequestParams,
-            messages: this.createPrompt(options, snippets).messages,
+            ...this.defaultRequestParams,
+            messages,
             temperature: 0.5,
 
             // Pass forward the unmodified model identifier that is set in the server's site

@@ -3,7 +3,6 @@ import {
     type CodeCompletionsParams,
     charsToTokens,
     logError,
-    tokensToChars,
 } from '@sourcegraph/cody-shared'
 
 import { forkSignal, generatorWithTimeout, zipGenerators } from '../utils'
@@ -14,21 +13,11 @@ import {
     fetchAndProcessDynamicMultilineCompletions,
 } from './fetch-and-process-completions'
 import {
-    MAX_RESPONSE_TOKENS,
-    getCompletionParams,
-    getLineNumberDependentCompletionParams,
-} from './get-completion-params'
-import {
     type CompletionProviderTracer,
     type GenerateCompletionsOptions,
     Provider,
     type ProviderFactoryParams,
 } from './provider'
-
-const lineNumberDependentCompletionParams = getLineNumberDependentCompletionParams({
-    singlelineStopSequences: ['\n\n', '\n\r\n'],
-    multilineStopSequences: ['\n\n', '\n\r\n'],
-})
 
 class OpenAICompatibleProvider extends Provider {
     public async generateCompletions(
@@ -37,27 +26,20 @@ class OpenAICompatibleProvider extends Provider {
         snippets: AutocompleteContextSnippet[],
         tracer?: CompletionProviderTracer
     ): Promise<AsyncGenerator<FetchCompletionResult[]>> {
-        const partialRequestParams = getCompletionParams({
-            providerOptions: options,
-            lineNumberDependentCompletionParams,
-        })
-
         const { docContext, document } = options
 
         const prompt = this.modelHelper.getPrompt({
             snippets,
             docContext,
             document,
-            promptChars: tokensToChars(this.maxContextTokens - MAX_RESPONSE_TOKENS),
+            promptChars: this.promptChars,
             // StarChat: only use infill if the suffix is not empty
             isInfill: docContext.suffix.trim().length > 0,
         })
 
         const requestParams: CodeCompletionsParams = {
-            ...partialRequestParams,
+            ...this.defaultRequestParams,
             messages: [{ speaker: 'human', text: prompt }],
-            temperature: 0.2,
-            topK: 0,
             model: this.legacyModel,
         }
 

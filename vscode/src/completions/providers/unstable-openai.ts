@@ -21,7 +21,6 @@ import {
     type FetchCompletionResult,
     fetchAndProcessDynamicMultilineCompletions,
 } from './fetch-and-process-completions'
-import { getCompletionParams, getLineNumberDependentCompletionParams } from './get-completion-params'
 import {
     type CompletionProviderTracer,
     type GenerateCompletionsOptions,
@@ -29,12 +28,9 @@ import {
     type ProviderFactoryParams,
 } from './provider'
 
-const lineNumberDependentCompletionParams = getLineNumberDependentCompletionParams({
-    singlelineStopSequences: [CLOSING_CODE_TAG.toString(), MULTILINE_STOP_SEQUENCE],
-    multilineStopSequences: [CLOSING_CODE_TAG.toString(), MULTILINE_STOP_SEQUENCE],
-})
-
 class UnstableOpenAIProvider extends Provider {
+    public stopSequences = [CLOSING_CODE_TAG.toString(), MULTILINE_STOP_SEQUENCE]
+
     private instructions =
         ps`You are a code completion AI designed to take the surrounding code and shared context into account in order to predict and suggest high-quality code to complete the code enclosed in ${OPENING_CODE_TAG} tags.  You only respond with code that works and fits seamlessly with surrounding code. Do not include anything else beyond the code.`
 
@@ -114,14 +110,10 @@ ${OPENING_CODE_TAG}${infillBlock}`
         snippets: AutocompleteContextSnippet[],
         tracer?: CompletionProviderTracer
     ): Promise<AsyncGenerator<FetchCompletionResult[]>> {
-        const partialRequestParams = getCompletionParams({
-            providerOptions: options,
-            lineNumberDependentCompletionParams,
-        })
-
         const { docContext } = options
+
         const requestParams: CodeCompletionsParams = {
-            ...partialRequestParams,
+            ...this.defaultRequestParams,
             messages: [{ speaker: 'human', text: this.createPrompt(options, snippets) }],
             topP: 0.5,
         }
