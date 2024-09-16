@@ -21,12 +21,12 @@ import {
 
 class OpenAICompatibleProvider extends Provider {
     public async generateCompletions(
-        options: GenerateCompletionsOptions,
+        generateOptions: GenerateCompletionsOptions,
         abortSignal: AbortSignal,
         snippets: AutocompleteContextSnippet[],
         tracer?: CompletionProviderTracer
     ): Promise<AsyncGenerator<FetchCompletionResult[]>> {
-        const { docContext, document } = options
+        const { docContext, document, numberOfCompletionsToGenerate } = generateOptions
 
         const prompt = this.modelHelper.getPrompt({
             snippets,
@@ -45,7 +45,7 @@ class OpenAICompatibleProvider extends Provider {
 
         tracer?.params(requestParams)
 
-        const completionsGenerators = Array.from({ length: options.numberOfCompletionsToGenerate }).map(
+        const completionsGenerators = Array.from({ length: numberOfCompletionsToGenerate }).map(
             async () => {
                 const abortController = forkSignal(abortSignal)
 
@@ -58,8 +58,9 @@ class OpenAICompatibleProvider extends Provider {
                 return fetchAndProcessDynamicMultilineCompletions({
                     completionResponseGenerator,
                     abortController,
-                    providerSpecificPostProcess: this.modelHelper.postProcess,
-                    generateOptions: options,
+                    generateOptions,
+                    providerSpecificPostProcess: content =>
+                        this.modelHelper.postProcess(content, docContext),
                 })
             }
         )
@@ -87,8 +88,8 @@ export function createProvider({ model, source }: ProviderFactoryParams): Provid
     if (model) {
         logDebug('OpenAICompatible', 'autocomplete provider using model', JSON.stringify(model))
 
-        // TODO(slimsag): self-hosted-models: properly respect ClientSideConfig options in the future
-        logDebug('OpenAICompatible', 'note: not all clientSideConfig options are respected yet.')
+        // TODO(slimsag): self-hosted-models: properly respect ClientSideConfig generateOptions in the future
+        logDebug('OpenAICompatible', 'note: not all clientSideConfig generateOptions are respected yet.')
 
         // TODO(slimsag): self-hosted-models: lift ClientSideConfig defaults to a standard centralized location
         const maxContextTokens = charsToTokens(
