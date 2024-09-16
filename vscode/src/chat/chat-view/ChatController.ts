@@ -272,17 +272,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 combineLatest([modelsService.changes.pipe(startWith(undefined)), authStatus]).subscribe(
                     ([, authStatus]) => {
                         // Get the latest model list available to the current user to update the ChatModel.
-                        logError(
-                            'ChatController',
-                            'updated authStatus',
-                            JSON.stringify({
-                                authStatus,
-                                defaultModelID: getDefaultModelID(),
-                                currentModelID: this.chatModel.modelID,
-                            })
-                        )
-                        // TODO!(sqs): here, we need to make sure syncModels has already run after *it*
-                        // reacted to the authStatus change
                         if (authStatus.authenticated) {
                             this.chatModel.updateModel(getDefaultModelID())
                         }

@@ -59,7 +59,7 @@ export type PickResolvedConfiguration<Keys extends KeysSpec> = {
 }
 
 async function resolveConfiguration(input: ConfigurationInput): Promise<ResolvedConfiguration> {
-    const serverEndpoint = input.clientState.lastUsedEndpoint ?? DOTCOM_URL.toString()
+    const serverEndpoint = normalizeURL(input.clientState.lastUsedEndpoint ?? DOTCOM_URL.toString())
 
     // We must not throw here, because that would result in the `resolvedConfig` observable
     // terminating and all callers receiving no further config updates.
@@ -76,6 +76,10 @@ async function resolveConfiguration(input: ConfigurationInput): Promise<Resolved
         clientState: input.clientState,
         auth: { accessToken, serverEndpoint },
     }
+}
+
+function normalizeURL(url: string): string {
+    return url.endsWith('/') ? url : `${url}/`
 }
 
 const _resolvedConfig = fromLateSetSource<ResolvedConfiguration>()
