@@ -17,8 +17,8 @@ class EditCodeAction :
 
   override fun update(event: AnActionEvent) {
     super.update(event)
-    val commandPrompt = EditCommandPrompt.EDIT_COMMAND_PROMPT_KEY.get(event.project)
-    event.presentation.isEnabledAndVisible = commandPrompt?.isVisible != true
+    event.presentation.isEnabledAndVisible =
+        event.project?.let { !EditCommandPrompt.isVisible(it) } ?: true
   }
 
   companion object {
