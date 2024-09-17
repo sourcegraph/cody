@@ -468,7 +468,12 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     break
                 }
                 if (message.authKind === 'offline') {
-                    authProvider.auth({ endpoint: '', token: '', isOfflineMode: true })
+                    authProvider.auth({
+                        endpoint: '',
+                        token: '',
+                        isOfflineMode: true,
+                        tokenSource: undefined,
+                    })
                     break
                 }
                 if (message.authKind === 'simplified-onboarding') {
@@ -481,7 +486,11 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                         endpoint,
                         async (token, endpoint) => {
                             closeAuthProgressIndicator()
-                            const authStatus = await authProvider.auth({ endpoint, token })
+                            const authStatus = await authProvider.auth({
+                                endpoint,
+                                token,
+                                tokenSource: undefined,
+                            })
                             telemetryRecorder.recordEvent(
                                 'cody.auth.fromTokenReceiver.web',
                                 'succeeded',
@@ -519,6 +528,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     await authProvider.auth({
                         endpoint: message.endpoint,
                         token: message.value,
+                        tokenSource: undefined,
                     })
                     break
                 }
@@ -541,6 +551,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                             const authStatus = await authProvider.auth({
                                 endpoint: DOTCOM_URL.href,
                                 token,
+                                tokenSource: undefined,
                             })
                             if (!authStatus?.authenticated) {
                                 void vscode.window.showErrorMessage(

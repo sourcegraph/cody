@@ -1,9 +1,15 @@
 import type { EmbeddingsProvider } from './codebase-context/context-status'
 import type { FileURI } from './common/uri'
 
+/**
+ * Represents the source of an authentication token generation, either a redirect or non-redirect flow.
+ * A redirect flow is initiated by the user clicking a link in the browser, while a non-redirect flow is initiated by the user
+ * manually entering the access from into the VsCode App.
+ */
+export type TokenSource = 'redirect' | 'nonredirect'
+
 import type { PromptString } from './prompt/prompt-string'
 import type { ReadonlyDeep } from './utils'
-
 /**
  * The user's authentication credentials, which are stored separately from the rest of the
  * configuration.
@@ -11,6 +17,7 @@ import type { ReadonlyDeep } from './utils'
 export interface AuthCredentials {
     serverEndpoint: string
     accessToken: string | null
+    tokenSource?: TokenSource | undefined
 }
 
 export type ConfigurationUseContext = 'embeddings' | 'keyword' | 'none' | 'blended' | 'unified'

@@ -366,6 +366,14 @@ mutation RecordTelemetryEvents($events: [TelemetryEventInput!]!) {
 }
 `
 
+export const DELETE_ACCESS_TOKEN_MUTATION = `
+mutation DeleteAccessToken($token: String!) {
+    deleteAccessToken(byToken: $token) {
+        alwaysNil
+    }
+}
+`
+
 export const CURRENT_SITE_IDENTIFICATION = `
 query SiteIdentification {
 	site {

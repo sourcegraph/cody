@@ -500,10 +500,11 @@ function registerAuthCommands(disposables: vscode.Disposable[]): void {
                     throw new TypeError('accessToken is required')
                 }
                 await localStorage.saveEndpoint(serverEndpoint)
-                await secretStorage.storeToken(serverEndpoint, accessToken)
+                await secretStorage.storeToken(serverEndpoint, accessToken, 'nonredirect')
                 return await authProvider.auth({
                     endpoint: serverEndpoint,
                     token: accessToken,
+                    tokenSource: undefined,
                     customHeaders,
                 })
             }
@@ -575,7 +576,7 @@ async function registerTestCommands(
         }),
         // Access token - this is only used in configuration tests
         vscode.commands.registerCommand('cody.test.token', async (endpoint, token) =>
-            authProvider.auth({ endpoint, token })
+            authProvider.auth({ endpoint, token, tokenSource: undefined })
         )
     )
 }

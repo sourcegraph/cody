@@ -6,6 +6,7 @@ import {
     DOTCOM_URL,
     currentAuthStatus,
     getCodyAuthReferralCode,
+    graphqlClient,
     isDotCom,
     telemetryRecorder,
 } from '@sourcegraph/cody-shared'
@@ -65,9 +66,11 @@ export async function showSignInMenu(
             // Auto log user if token for the selected instance was found in secret
             const selectedEndpoint = item.uri
             const token = await secretStorage.get(selectedEndpoint)
+            const tokenSource = await secretStorage.getTokenSource(selectedEndpoint)
             let authStatus = await authProvider.auth({
                 endpoint: selectedEndpoint,
                 token: token || null,
+                tokenSource: tokenSource || undefined,
             })
             if (!authStatus?.authenticated) {
                 const newToken = await showAccessTokenInputBox(item.uri)
@@ -77,6 +80,7 @@ export async function showSignInMenu(
                 authStatus = await authProvider.auth({
                     endpoint: selectedEndpoint,
                     token: newToken || null,
+                    tokenSource: tokenSource,
                 })
             }
             await showAuthResultMessage(selectedEndpoint, authStatus)
@@ -222,6 +226,7 @@ async function signinMenuForInstanceUrl(instanceUrl: string): Promise<void> {
     const authState = await authProvider.auth({
         endpoint: instanceUrl,
         token: accessToken,
+        tokenSource: 'nonredirect',
     })
     telemetryRecorder.recordEvent('cody.auth.signin.token', 'clicked', {
         metadata: {
@@ -292,11 +297,12 @@ export async function tokenCallbackHandler(
 
     const params = new URLSearchParams(uri.query)
     const token = params.get('code') || params.get('token')
+    const tokenSource = 'redirect'
     const endpoint = currentAuthStatus().endpoint
     if (!token || !endpoint) {
         return
     }
-    const authState = await authProvider.auth({ endpoint, token, customHeaders })
+    const authState = await authProvider.auth({ endpoint, token, tokenSource, customHeaders })
     telemetryRecorder.recordEvent('cody.auth.fromCallback.web', 'succeeded', {
         metadata: {
             success: authState?.authenticated ? 1 : 0,
@@ -357,8 +363,16 @@ export async function showSignOutMenu(): Promise<void> {
  * Log user out of the selected endpoint (remove token from secret).
  */
 async function signOut(endpoint: string): Promise<void> {
+    const token = await secretStorage.getToken(endpoint)
+    const tokenSource = await secretStorage.getTokenSource(endpoint)
+    // Delete the access token from the Sourcegraph instance on signout if it was created
+    // through automated redirect. We don't delete manually entered tokens as they may be
+    // used for other purposes, such as the Cody CLI etc.
+    if (token && tokenSource === 'redirect') {
+        await graphqlClient.DeleteAccessToken(token)
+    }
     await secretStorage.deleteToken(endpoint)
     await localStorage.deleteEndpoint()
-    await authProvider.auth({ endpoint, token: null })
+    await authProvider.auth({ endpoint, token: null, tokenSource: undefined })
     await vscode.commands.executeCommand('setContext', 'cody.activated', false)
 }
