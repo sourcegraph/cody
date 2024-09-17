@@ -6,6 +6,8 @@ import {
     AUTH_STATUS_FIXTURE_AUTHED,
     RateLimitError,
     contextFiltersProvider,
+    currentAuthStatusAuthed,
+    mockAuthStatus,
 } from '@sourcegraph/cody-shared'
 
 import { telemetryRecorder } from '@sourcegraph/cody-shared'
@@ -43,9 +45,10 @@ class MockableInlineCompletionItemProvider extends InlineCompletionItemProvider 
             // we can just make them `null`.
             statusBar: null as any,
             provider: createProvider({
-                authStatus: AUTH_STATUS_FIXTURE_AUTHED,
-            } as any),
-            config: {} as any,
+                provider: 'anthropic',
+                source: 'local-editor-settings',
+                authStatus: currentAuthStatusAuthed(),
+            }),
             firstCompletionTimeout:
                 superArgs?.firstCompletionTimeout ??
                 DEFAULT_VSCODE_SETTINGS.autocompleteFirstCompletionTimeout,
@@ -57,8 +60,9 @@ class MockableInlineCompletionItemProvider extends InlineCompletionItemProvider 
     public declare lastCandidate
 }
 
-describe('InlineCompletionItemProvider', async () => {
+describe('InlineCompletionItemProvider', () => {
     beforeEach(() => {
+        mockAuthStatus(AUTH_STATUS_FIXTURE_AUTHED)
         initCompletionProviderConfig({})
         mockLocalStorage()
         vi.spyOn(contextFiltersProvider, 'isUriIgnored').mockResolvedValue(false)

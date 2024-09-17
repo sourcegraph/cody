@@ -46,6 +46,10 @@ export type CompletionResponseGenerator = AsyncGenerator<
 >
 
 export interface CodeCompletionProviderOptions {
+    /**
+     * Custom headers to send with the HTTP request, in addition to the globally configured headers
+     * on {@link ClientConfiguration.customHeaders}.
+     */
     customHeaders?: Record<string, string>
 }
 

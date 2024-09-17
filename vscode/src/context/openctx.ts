@@ -50,18 +50,19 @@ export function exposeOpenCtxClient(
             })),
             distinctUntilChanged()
         ),
-        resolvedConfig.pipe(
-            pluck('auth'),
+        authStatus.pipe(
             distinctUntilChanged(),
-            mergeMap(() =>
-                promiseFactoryToObservable(signal =>
-                    graphqlClient.isValidSiteVersion(
-                        {
-                            minimumVersion: '5.7.0',
-                        },
-                        signal
-                    )
-                )
+            mergeMap(auth =>
+                auth.authenticated
+                    ? promiseFactoryToObservable(signal =>
+                          graphqlClient.isValidSiteVersion(
+                              {
+                                  minimumVersion: '5.7.0',
+                              },
+                              signal
+                          )
+                      )
+                    : Observable.of(false)
             )
         ),
         promiseFactoryToObservable(

@@ -10,7 +10,6 @@ import {
     type DocumentContext,
     type GitContext,
     type Model,
-    type ResolvedConfiguration,
     tokensToChars,
 } from '@sourcegraph/cody-shared'
 
@@ -57,14 +56,6 @@ export interface GenerateCompletionsOptions {
      */
     gitContext?: GitContext
     maxContextTokens?: number
-
-    authStatus: Pick<
-        AuthenticatedAuthStatus,
-        'userCanUpgrade' | 'endpoint' | 'isFireworksTracingEnabled'
-    >
-
-    // TODO: eliminate by using config watcher
-    config: ResolvedConfiguration
 }
 
 const DEFAULT_MAX_CONTEXT_TOKENS = 2048
@@ -116,8 +107,9 @@ export type ProviderFactoryParams = {
      */
     source: AutocompleteProviderConfigSource
 
-    config: ResolvedConfiguration
     mayUseOnDeviceInference?: boolean
+
+    authStatus: Pick<AuthenticatedAuthStatus, 'endpoint' | 'configOverwrites'>
 }
 
 export type ProviderFactory = (params: ProviderFactoryParams) => Provider

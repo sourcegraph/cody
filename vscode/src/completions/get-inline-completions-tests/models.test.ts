@@ -18,7 +18,6 @@ describe('[getInlineCompletions] models', () => {
                         autocompleteAdvancedProvider: 'fireworks',
                         autocompleteAdvancedModel: 'starcoder-hybrid',
                     },
-                    auth: { accessToken: 'asdf' },
                 },
             })
         }

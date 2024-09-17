@@ -6,9 +6,11 @@ import {
     type DocumentContext,
     FeatureFlag,
     RateLimitError,
+    authStatus,
     contextFiltersProvider,
     createDisposables,
     featureFlagProvider,
+    isDotCom,
     subscriptionDisposable,
     telemetryRecorder,
     wrapInActiveSpan,
@@ -120,6 +122,9 @@ export class InlineCompletionItemProvider
      */
     private shouldSample = false
 
+    /** Value derived from the {@link authStatus}, available synchronously. */
+    private isDotComUser = false
+
     private get config(): InlineCompletionItemProviderConfig {
         return InlineCompletionItemProviderConfigSingleton.configuration
     }
@@ -143,7 +148,6 @@ export class InlineCompletionItemProvider
             disableInsideComments,
             tracer,
             isRunningInsideAgent: config.isRunningInsideAgent ?? false,
-            isDotComUser: config.isDotComUser ?? false,
         })
 
         autocompleteStageCounterLogger.setProviderModel(config.provider.legacyModel)
@@ -155,6 +159,14 @@ export class InlineCompletionItemProvider
                     .subscribe(shouldSample => {
                         this.shouldSample = Boolean(shouldSample)
                     })
+            )
+        )
+
+        this.disposables.push(
+            subscriptionDisposable(
+                authStatus.subscribe(({ endpoint }) => {
+                    this.isDotComUser = isDotCom(endpoint)
+                })
             )
         )
 
@@ -178,6 +190,8 @@ export class InlineCompletionItemProvider
         }
 
         this.requestManager = new RequestManager()
+
+        void completionProviderConfig.prefetch()
 
         const strategyFactory = new DefaultContextStrategyFactory(
             completionProviderConfig.contextStrategy,
@@ -456,7 +470,6 @@ export class InlineCompletionItemProvider
                     triggerKind,
                     selectedCompletionInfo: context.selectedCompletionInfo,
                     docContext,
-                    configuration: this.config.config,
                     provider: this.config.provider,
                     contextMixer: this.contextMixer,
                     smartThrottleService: this.smartThrottleService,
@@ -690,7 +703,7 @@ export class InlineCompletionItemProvider
             completion.requestParams.document,
             completion.analyticsItem,
             completion.trackedRange,
-            this.config.isDotComUser
+            this.isDotComUser
         )
     }
 
@@ -865,7 +878,7 @@ export class InlineCompletionItemProvider
             completion.logId,
             completion.analyticsItem,
             acceptedLength,
-            this.config.isDotComUser
+            this.isDotComUser
         )
     }
 
@@ -914,7 +927,7 @@ export class InlineCompletionItemProvider
                 return
             }
 
-            const isEnterpriseUser = this.config.isDotComUser !== true
+            const isEnterpriseUser = this.isDotComUser !== true
             const canUpgrade = error.upgradeIsAvailable
             const tier = isEnterpriseUser ? 'enterprise' : canUpgrade ? 'free' : 'pro'
 

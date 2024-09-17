@@ -1,9 +1,10 @@
 import {
+    type AuthenticatedAuthStatus,
     FeatureFlag,
     combineLatest,
     distinctUntilChanged,
     featureFlagProvider,
-    isDotComAuthed,
+    isDotCom,
     mergeMap,
 } from '@sourcegraph/cody-shared'
 
@@ -23,9 +24,13 @@ interface ProviderConfigFromFeatureFlags {
     model?: string
 }
 
-export function getDotComExperimentModel(): Observable<ProviderConfigFromFeatureFlags | null> {
-    // We run model experiments only on DotCom.
-    if (!isDotComAuthed()) {
+export function getDotComExperimentModel({
+    authStatus,
+}: {
+    authStatus: Pick<AuthenticatedAuthStatus, 'endpoint'>
+}): Observable<ProviderConfigFromFeatureFlags | null> {
+    if (!isDotCom(authStatus)) {
+        // We run model experiments only on DotCom.
         return Observable.of(null)
     }
 
@@ -50,11 +55,17 @@ export function getDotComExperimentModel(): Observable<ProviderConfigFromFeature
             }
 
             if (deepseekV2LiteBase) {
-                return Observable.of({ provider: 'fireworks', model: DEEPSEEK_CODER_V2_LITE_BASE })
+                return Observable.of({
+                    provider: 'fireworks',
+                    model: DEEPSEEK_CODER_V2_LITE_BASE,
+                })
             }
 
             if (starCoderHybrid) {
-                return Observable.of({ provider: 'fireworks', model: 'starcoder-hybrid' })
+                return Observable.of({
+                    provider: 'fireworks',
+                    model: 'starcoder-hybrid',
+                })
             }
 
             if (claude3) {

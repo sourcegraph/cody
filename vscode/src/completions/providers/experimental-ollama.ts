@@ -3,16 +3,19 @@ import type * as vscode from 'vscode'
 import {
     type AutocompleteContextSnippet,
     type OllamaGenerateParams,
-    type OllamaOptions,
     PromptString,
     createOllamaClient,
+    distinctUntilChanged,
+    firstValueFrom,
     ps,
+    resolvedConfig,
 } from '@sourcegraph/cody-shared'
 
 import { logger } from '../../log'
 import { getLanguageConfig } from '../../tree-sitter/language'
 import { forkSignal, generatorWithTimeout, zipGenerators } from '../utils'
 
+import { map } from 'observable-fns'
 import { type DefaultModel, getModelHelpers } from '../model-helpers'
 import { getSuffixAfterFirstNewline } from '../text-processing'
 import {
@@ -25,7 +28,6 @@ import {
     Provider,
     type ProviderContextSizeHints,
     type ProviderFactoryParams,
-    type ProviderOptions,
 } from './shared/provider'
 
 interface OllamaPromptContext {
@@ -71,12 +73,10 @@ class ExperimentalOllamaProvider extends Provider {
         suffixChars: 100,
     }
 
-    constructor(
-        options: ProviderOptions,
-        private readonly ollamaOptions: OllamaOptions
-    ) {
-        super(options)
-    }
+    private ollamaOptions = resolvedConfig.pipe(
+        map(config => config.configuration.autocompleteExperimentalOllamaOptions),
+        distinctUntilChanged()
+    )
 
     protected createPromptContext(
         options: GenerateCompletionsOptions,
@@ -152,24 +152,26 @@ class ExperimentalOllamaProvider extends Provider {
         // Only use infill if the suffix is not empty
         const useInfill = docContext.suffix.trim().length > 0
 
+        const ollamaOptions = await firstValueFrom(this.ollamaOptions)
+
         const timeoutMs = 5_0000
-        const modelHelpers = getModelHelpers(this.ollamaOptions.model)
+        const modelHelpers = getModelHelpers(ollamaOptions.model)
         const promptContext = this.createPromptContext(options, snippets, useInfill, modelHelpers)
 
         const requestParams = {
             prompt: modelHelpers.getOllamaPrompt(promptContext),
             template: '{{ .Prompt }}',
-            model: this.ollamaOptions.model,
+            model: ollamaOptions.model,
             options: modelHelpers.getOllamaRequestOptions(isMultiline),
         } satisfies OllamaGenerateParams
 
-        if (this.ollamaOptions.parameters) {
-            Object.assign(requestParams.options, this.ollamaOptions.parameters)
+        if (ollamaOptions.parameters) {
+            Object.assign(requestParams.options, ollamaOptions.parameters)
         }
 
         // TODO(valery): remove `any` casts
         tracer?.params(requestParams as any)
-        const ollamaClient = createOllamaClient(this.ollamaOptions, logger)
+        const ollamaClient = createOllamaClient(ollamaOptions, logger)
 
         const completionsGenerators = Array.from({ length: options.numberOfCompletionsToGenerate }).map(
             async () => {
@@ -198,14 +200,11 @@ class ExperimentalOllamaProvider extends Provider {
     }
 }
 
-export function createProvider({ config, source }: ProviderFactoryParams): Provider {
-    return new ExperimentalOllamaProvider(
-        {
-            id: 'experimental-ollama',
-            legacyModel: config.configuration.autocompleteExperimentalOllamaOptions.model,
-            mayUseOnDeviceInference: true,
-            source,
-        },
-        config.configuration.autocompleteExperimentalOllamaOptions
-    )
+export function createProvider({ source }: ProviderFactoryParams): Provider {
+    return new ExperimentalOllamaProvider({
+        id: 'experimental-ollama',
+        legacyModel: '',
+        mayUseOnDeviceInference: true,
+        source,
+    })
 }

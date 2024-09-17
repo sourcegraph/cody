@@ -105,12 +105,6 @@ export enum CodyIDE {
     Eclipse = 'Eclipse',
 }
 
-export type ClientConfigurationWithEndpoint = Omit<ClientConfigurationWithAccessToken, 'accessToken'>
-
-export interface ClientConfigurationWithAccessToken
-    extends ReadonlyDeep<RawClientConfiguration>,
-        AuthCredentials {}
-
 export type AutocompleteProviderID = keyof typeof AUTOCOMPLETE_PROVIDER_ID
 
 export const AUTOCOMPLETE_PROVIDER_ID = {

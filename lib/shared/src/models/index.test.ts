@@ -33,11 +33,10 @@ describe('Model Provider', () => {
     const enterpriseAuthStatus: AuthenticatedAuthStatus = {
         ...AUTH_STATUS_FIXTURE_AUTHED,
         endpoint: 'https://sourcegraph.example.com',
-        authenticated: true,
     }
 
     // Reset service
-    let modelsService = new ModelsService()
+    let modelsService: ModelsService
     beforeEach(() => {
         modelsService = new ModelsService()
     })

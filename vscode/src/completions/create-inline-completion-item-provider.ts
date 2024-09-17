@@ -1,10 +1,9 @@
 import {
+    type AuthenticatedAuthStatus,
     NEVER,
-    type ResolvedConfiguration,
+    type PickResolvedConfiguration,
+    type UnauthenticatedAuthStatus,
     createDisposables,
-    currentAuthStatus,
-    currentAuthStatusAuthed,
-    isDotCom,
     mergeMap,
     promiseFactoryToObservable,
     vscodeResource,
@@ -15,13 +14,18 @@ import { logDebug } from '../log'
 import type { CodyStatusBar } from '../services/StatusBar'
 
 import { type Observable, map } from 'observable-fns'
+import type { PlatformContext } from '../extension.common'
 import type { BfgRetriever } from './context/retrievers/bfg/bfg-retriever'
 import { InlineCompletionItemProvider } from './inline-completion-item-provider'
 import { createProvider } from './providers/shared/create-provider'
 import { registerAutocompleteTraceView } from './tracer/traceView'
 
 interface InlineCompletionItemProviderArgs {
-    config: ResolvedConfiguration
+    config: PickResolvedConfiguration<{ configuration: true }>
+    authStatus:
+        | UnauthenticatedAuthStatus
+        | Pick<AuthenticatedAuthStatus, 'authenticated' | 'endpoint' | 'configOverwrites'>
+    platform: Pick<PlatformContext, 'extensionClient'>
     statusBar: CodyStatusBar
     createBfgRetriever?: () => BfgRetriever
 }
@@ -43,15 +47,29 @@ class NoopCompletionItemProvider implements vscode.InlineCompletionItemProvider 
 }
 
 export function createInlineCompletionItemProvider({
-    config,
+    config: { configuration },
+    authStatus,
+    platform,
     statusBar,
     createBfgRetriever,
 }: InlineCompletionItemProviderArgs): Observable<void> {
-    const authStatus = currentAuthStatus()
+    if (!configuration.autocomplete) {
+        if (
+            configuration.isRunningInsideAgent &&
+            platform.extensionClient.capabilities?.completions !== 'none'
+        ) {
+            throw new Error(
+                'The setting `config.autocomplete` evaluated to `false`. It must be true when running inside the agent. ' +
+                    'To fix this problem, make sure that the setting cody.autocomplete.enabled has the value true.'
+            )
+        }
+        return NEVER
+    }
+
     if (!authStatus.authenticated) {
         logDebug('AutocompleteProvider:notSignedIn', 'You are not signed in.')
 
-        if (config.configuration.isRunningInsideAgent) {
+        if (configuration.isRunningInsideAgent) {
             // Register an empty completion provider when running inside the
             // agent to avoid timeouts because it awaits for an
             // `InlineCompletionItemProvider` to be registered.
@@ -67,18 +85,19 @@ export function createInlineCompletionItemProvider({
     }
 
     return promiseFactoryToObservable(async () => {
-        return await getInlineCompletionItemProviderFilters(config.configuration.autocompleteLanguages)
+        // TODO(sqs)#observe: make the list of vscode languages reactive
+        return await getInlineCompletionItemProviderFilters(configuration.autocompleteLanguages)
     }).pipe(
         mergeMap(documentFilters =>
-            createProvider(config).pipe(
+            createProvider({ config: { configuration }, authStatus }).pipe(
                 createDisposables(providerOrError => {
                     if (providerOrError instanceof Error) {
                         logDebug('AutocompleteProvider', providerOrError.message)
 
-                        if (config.configuration.isRunningInsideAgent) {
-                            const configString = JSON.stringify(config, null, 2)
+                        if (configuration.isRunningInsideAgent) {
+                            const configString = JSON.stringify({ configuration }, null, 2)
                             throw new Error(
-                                `Can't register completion provider because \`createProvider\` evaluated to \`null\`. To fix this problem, debug why createProvider returned null instead of Provider. To further debug this problem, here is the configuration:\n${configString}`
+                                `Can't register completion provider because \`createProvider\` returned an error (${providerOrError.message}). To fix this problem, debug why createProvider returned an error. To further debug this problem, here is the configuration:\n${configString}`
                             )
                         }
 
@@ -86,7 +105,6 @@ export function createInlineCompletionItemProvider({
                         return []
                     }
 
-                    const authStatus = currentAuthStatusAuthed()
                     const triggerDelay =
                         vscode.workspace
                             .getConfiguration()
@@ -95,16 +113,14 @@ export function createInlineCompletionItemProvider({
                     const completionsProvider = new InlineCompletionItemProvider({
                         triggerDelay,
                         provider: providerOrError,
-                        config,
-                        firstCompletionTimeout: config.configuration.autocompleteFirstCompletionTimeout,
+                        firstCompletionTimeout: configuration.autocompleteFirstCompletionTimeout,
                         statusBar,
                         completeSuggestWidgetSelection:
-                            config.configuration.autocompleteCompleteSuggestWidgetSelection,
-                        formatOnAccept: config.configuration.autocompleteFormatOnAccept,
-                        disableInsideComments: config.configuration.autocompleteDisableInsideComments,
-                        isRunningInsideAgent: config.configuration.isRunningInsideAgent,
+                            configuration.autocompleteCompleteSuggestWidgetSelection,
+                        formatOnAccept: configuration.autocompleteFormatOnAccept,
+                        disableInsideComments: configuration.autocompleteDisableInsideComments,
+                        isRunningInsideAgent: configuration.isRunningInsideAgent,
                         createBfgRetriever,
-                        isDotComUser: isDotCom(authStatus),
                     })
 
                     return [

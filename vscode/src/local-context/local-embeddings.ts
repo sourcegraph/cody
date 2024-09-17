@@ -3,7 +3,6 @@ import * as vscode from 'vscode'
 import { URI } from 'vscode-uri'
 
 import {
-    type ClientConfigurationWithAccessToken,
     type EmbeddingsModelConfig,
     type EmbeddingsSearchResult,
     FeatureFlag,
@@ -11,40 +10,61 @@ import {
     type LocalEmbeddingsFetcher,
     type LocalEmbeddingsProvider,
     type PromptString,
+    type StoredLastValue,
+    type Unsubscribable,
+    combineLatest,
+    createDisposables,
+    currentResolvedConfig,
+    distinctUntilChanged,
     featureFlagProvider,
     isDefined,
     isDotCom,
     isFileURI,
+    pluck,
     recordErrorToSpan,
+    resolvedConfig,
+    storeLastValue,
     telemetryRecorder,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
-
+import { map } from 'observable-fns'
 import type { IndexHealthResultFound, IndexRequest } from '../jsonrpc/embeddings-protocol'
+import { isRunningInsideAgent } from '../jsonrpc/isRunningInsideAgent'
 import type { MessageHandler } from '../jsonrpc/jsonrpc'
 import { logDebug } from '../log'
 import { vscodeGitAPI } from '../repository/git-extension-api'
 import { captureException } from '../services/sentry/sentry'
 import { CodyEngineService } from './cody-engine'
 
-export async function createLocalEmbeddingsController(
-    context: vscode.ExtensionContext,
-    config: LocalEmbeddingsConfig
-): Promise<LocalEmbeddingsController> {
-    const modelConfig =
-        config.testingModelConfig ||
-        (await featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyEmbeddingsGenerateMetadata))
-            ? sourcegraphMetadataModelConfig
-            : sourcegraphModelConfig
+export function createLocalEmbeddingsController(
+    context: vscode.ExtensionContext
+): StoredLastValue<LocalEmbeddingsController | undefined> {
+    return storeLastValue(
+        combineLatest([
+            resolvedConfig,
+            featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyEmbeddingsGenerateMetadata),
+        ]).pipe(
+            map(([config, ffCodyEmbeddingsGenerateMetadata]) => {
+                // NOTE: local embeddings are only going to be supported in VSC for now.
+                // Until we revisit this decision, we disable local embeddings in the agent.
+                let isLocalEmbeddingsEnabled = !isRunningInsideAgent()
+                isLocalEmbeddingsEnabled = vscode.workspace
+                    .getConfiguration()
+                    .get<boolean>('cody.experimental.localEmbeddings.enabled', isLocalEmbeddingsEnabled)
 
-    return new LocalEmbeddingsController(context, config, modelConfig)
-}
+                if (!isLocalEmbeddingsEnabled) {
+                    return undefined
+                }
 
-export type LocalEmbeddingsConfig = Pick<
-    ClientConfigurationWithAccessToken,
-    'serverEndpoint' | 'accessToken'
-> & {
-    testingModelConfig: EmbeddingsModelConfig | undefined
+                const modelConfig =
+                    config.configuration.testingModelConfig || ffCodyEmbeddingsGenerateMetadata
+                        ? sourcegraphMetadataModelConfig
+                        : sourcegraphModelConfig
+                return new LocalEmbeddingsController(context, modelConfig)
+            }),
+            createDisposables(localEmbeddingsController => localEmbeddingsController)
+        )
+    )
 }
 
 const CODY_GATEWAY_PROD_ENDPOINT = 'https://cody-gateway.sourcegraph.com/v1/embeddings'
@@ -100,10 +120,6 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, vscode
     private service: Promise<MessageHandler> | undefined
     // True if the service has finished starting and been initialized.
     private serviceStarted = false
-    // The access token for Cody Gateway.
-    private accessToken: string | undefined
-    // Whether the account is a consumer account.
-    private endpointIsDotcom = false
     // The last index we loaded, or attempted to load, if any.
     private lastRepo: { dir: FileURI; repoName: string | false } | undefined
     // The last health report, if any.
@@ -120,21 +136,36 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, vscode
     // The status bar item local embeddings is displaying, if any.
     private statusBar: vscode.StatusBarItem | undefined
 
+    private configSubscription: Unsubscribable
+
     constructor(
         private readonly context: vscode.ExtensionContext,
-        config: LocalEmbeddingsConfig,
         private readonly modelConfig: EmbeddingsModelConfig
     ) {
         logDebug('LocalEmbeddingsController', 'constructor')
         this.disposables.push(
             vscode.commands.registerCommand('cody.embeddings.resolveIssue', () =>
                 this.resolveIssueCommand()
-            )
+            ),
+            vscode.commands.registerCommand('cody.embeddings.index', () => this.index())
         )
 
-        // Pick up the initial access token, and whether the account is dotcom.
-        this.accessToken = config.accessToken || undefined
-        this.endpointIsDotcom = isDotCom(config.serverEndpoint)
+        // Keep token updated.
+        this.configSubscription = resolvedConfig
+            .pipe(pluck('auth'), distinctUntilChanged())
+            .subscribe(async auth => {
+                if (isDotCom(auth.serverEndpoint)) {
+                    // TODO: Add a "drop token" for sign out
+                    if (this.serviceStarted) {
+                        await (await this.getService()).request(
+                            'embeddings/set-token',
+                            auth.accessToken ?? ''
+                        )
+                    }
+                }
+            })
+
+        void this.start()
     }
 
     public dispose(): void {
@@ -142,6 +173,7 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, vscode
             disposable.dispose()
         }
         this.statusBar?.dispose()
+        this.configSubscription.unsubscribe()
     }
 
     // Hint that local embeddings should start cody-engine, if necessary.
@@ -167,29 +199,17 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, vscode
         })
     }
 
-    public async setAccessToken(serverEndpoint: string, token: string | null): Promise<void> {
-        const endpointIsDotcom = isDotCom(serverEndpoint)
-        logDebug(
-            'LocalEmbeddingsController',
-            'setAccessToken',
-            endpointIsDotcom ? 'is dotcom' : 'not dotcom'
-        )
-        this.endpointIsDotcom = endpointIsDotcom
-        if (token === this.accessToken) {
-            return Promise.resolve()
-        }
-        this.accessToken = token || undefined
-        // TODO: Add a "drop token" for sign out
-        if (token && this.serviceStarted) {
-            await (await this.getService()).request('embeddings/set-token', token)
-        }
-    }
-
-    private getService(): Promise<MessageHandler> {
+    private async getService(): Promise<MessageHandler> {
         if (!this.service) {
             const instance = CodyEngineService.getInstance(this.context)
             this.service = instance.getService(this.setupLocalEmbeddingsService)
         }
+
+        const { auth } = await currentResolvedConfig()
+        if (!isDotCom(auth.serverEndpoint)) {
+            throw new Error('local embeddings are only available on Sourcegraph.com')
+        }
+
         return this.service
     }
 
@@ -230,17 +250,18 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, vscode
             codyGatewayEndpoint: this.modelConfig.endpoint,
             indexPath: this.modelConfig.indexPath.fsPath,
         })
+
+        const { auth } = await currentResolvedConfig()
         logDebug('LocalEmbeddingsController', 'spawnAndBindService', 'initialized', {
             verbose: {
                 initResult,
-                tokenAvailable: !!this.accessToken,
+                tokenAvailable: Boolean(auth.accessToken),
             },
         })
 
-        if (this.accessToken) {
-            // Set the initial access token
-            await service.request('embeddings/set-token', this.accessToken)
-        }
+        // Set the initial access token
+        await service.request('embeddings/set-token', auth.accessToken ?? '')
+
         this.serviceStarted = true
     }
 
@@ -272,7 +293,9 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, vscode
     // Interactions with cody-engine
 
     public async index(): Promise<void> {
-        if (!(this.endpointIsDotcom && this.lastRepo?.dir && !this.lastRepo?.repoName)) {
+        const { auth } = await currentResolvedConfig()
+        const endpointIsDotCom = isDotCom(auth.serverEndpoint)
+        if (!(endpointIsDotCom && this.lastRepo?.dir && !this.lastRepo?.repoName)) {
             // TODO: Support index updates.
             logDebug('LocalEmbeddingsController', 'index', 'no repository to index/already indexed')
             return
@@ -286,7 +309,9 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, vscode
     }
 
     public async indexRetry(): Promise<void> {
-        if (!(this.endpointIsDotcom && this.lastRepo?.dir)) {
+        const { auth } = await currentResolvedConfig()
+        const endpointIsDotCom = isDotCom(auth.serverEndpoint)
+        if (!(endpointIsDotCom && this.lastRepo?.dir)) {
             logDebug('LocalEmbeddingsController', 'indexRetry', 'no repository to retry')
             return
         }
@@ -586,7 +611,9 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, vscode
 
     /** {@link LocalEmbeddingsFetcher.getContext} */
     public async getContext(query: PromptString, numResults: number): Promise<EmbeddingsSearchResult[]> {
-        if (!this.endpointIsDotcom) {
+        const { auth } = await currentResolvedConfig()
+        const endpointIsDotCom = isDotCom(auth.serverEndpoint)
+        if (!endpointIsDotCom) {
             return []
         }
         return wrapInActiveSpan('LocalEmbeddingsController.query', async span => {
