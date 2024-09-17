@@ -2,6 +2,8 @@ import {
     type ContextItem,
     type SerializedPromptEditorState,
     type SerializedPromptEditorValue,
+    areSerializedContextItemsEqual,
+    serializeContextItem,
     toSerializedPromptEditorValue,
 } from '@sourcegraph/cody-shared'
 import { clsx } from 'clsx'
@@ -20,7 +22,7 @@ import { BaseEditor } from './BaseEditor'
 import styles from './PromptEditor.module.css'
 import { useSetGlobalPromptEditorConfig } from './config'
 import { isEditorContentOnlyInitialContext, lexicalNodesForContextItems } from './initialContext'
-import { $selectAfter, $selectEnd } from './lexicalUtils'
+import { $selectAfter, $selectEnd, getContextItemMentionNodes } from './lexicalUtils'
 import type { KeyboardEventPluginProps } from './plugins/keyboardEvent'
 
 interface Props extends KeyboardEventPluginProps {
@@ -136,8 +138,26 @@ export const PromptEditor: FunctionComponent<Props> = ({
                 })
             },
             addMentions(items: ContextItem[]) {
+                const editor = editorRef.current
+                if (!editor) {
+                    return
+                }
+                const existingMentions = getContextItemMentionNodes(editor)
+                const newContextItems = items
+                    .map(serializeContextItem)
+                    .filter(
+                        item =>
+                            !existingMentions.some(mention =>
+                                areSerializedContextItemsEqual(mention, item)
+                            )
+                    )
+
+                if (newContextItems.length === 0) {
+                    return
+                }
+
                 editorRef.current?.update(() => {
-                    const nodesToInsert = lexicalNodesForContextItems(items, {
+                    const nodesToInsert = lexicalNodesForContextItems(newContextItems, {
                         isFromInitialContext: false,
                     })
                     $insertNodes([$createTextNode(' '), ...nodesToInsert])
@@ -197,7 +217,6 @@ export const PromptEditor: FunctionComponent<Props> = ({
             }
         }
     }, [initialEditorState])
-
     return (
         <BaseEditor
             className={clsx(styles.editor, editorClassName, {

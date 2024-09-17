@@ -1,4 +1,5 @@
 import type { SerializedLexicalNode, Spread } from 'lexical'
+import _ from 'lodash'
 import { URI } from 'vscode-uri'
 import type {
     ContextItem,
@@ -84,6 +85,17 @@ export function isSerializedTemplateInputNode(
     node: SerializedLexicalNode | null | undefined
 ): node is SerializedTemplateInputNode {
     return Boolean(node && node.type === TEMPLATE_INPUT_NODE_TYPE)
+}
+
+export function areSerializedContextItemsEqual(
+    a: SerializedContextItem,
+    b: SerializedContextItem
+): boolean {
+    // Short circuit for obvious differences to avoid doing deep traversal
+    if (a.type !== b.type || a.uri !== b.uri) {
+        return false
+    }
+    return _.isEqual(a, b)
 }
 
 export function contextItemMentionNodeDisplayText(contextItem: SerializedContextItem): string {
