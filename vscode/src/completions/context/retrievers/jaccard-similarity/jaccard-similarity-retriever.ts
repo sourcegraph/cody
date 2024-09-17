@@ -126,7 +126,6 @@ export class JaccardSimilarityRetriever extends CachedRetriever implements Conte
 
         const curLang = currentDocument.languageId
         const { enableExtendedLanguagePool } = this.history
-        console.log({ enableExtendedLanguagePool })
 
         function addDocument(document: vscode.TextDocument): void {
             // Only add files and VSCode user settings.
