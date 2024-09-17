@@ -32,6 +32,7 @@ import {
     CURRENT_USER_CODY_SUBSCRIPTION_QUERY,
     CURRENT_USER_ID_QUERY,
     CURRENT_USER_INFO_QUERY,
+    DELETE_ACCESS_TOKEN_MUTATION,
     EVALUATE_FEATURE_FLAG_QUERY,
     FILE_CONTENTS_QUERY,
     FILE_MATCH_SEARCH_QUERY,
@@ -1227,6 +1228,15 @@ export class SourcegraphGraphQLAPIClient {
         return extractDataOrError(initialResponse, data => data)
     }
 
+    public async DeleteAccessToken(tokenID: string): Promise<unknown | Error> {
+        const initialResponse = await this.fetchSourcegraphAPI<APIResponse<unknown>>(
+            DELETE_ACCESS_TOKEN_MUTATION,
+            {
+                tokenID,
+            }
+        )
+        return extractDataOrError(initialResponse, data => data)
+    }
     /**
      * logEvent is the legacy event-logging mechanism.
      * @deprecated use an implementation of implementation TelemetryRecorder

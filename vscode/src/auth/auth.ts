@@ -6,6 +6,7 @@ import {
     DOTCOM_URL,
     currentAuthStatus,
     getCodyAuthReferralCode,
+    graphqlClient,
     isDotCom,
     telemetryRecorder,
 } from '@sourcegraph/cody-shared'
@@ -357,6 +358,11 @@ export async function showSignOutMenu(): Promise<void> {
  * Log user out of the selected endpoint (remove token from secret).
  */
 async function signOut(endpoint: string): Promise<void> {
+    const theToken = await secretStorage.getToken(endpoint)
+    if (theToken) {
+        const response= await graphqlClient.DeleteAccessToken(theToken)
+        console.log("the response", response)
+    }
     await secretStorage.deleteToken(endpoint)
     await localStorage.deleteEndpoint()
     await authProvider.auth({ endpoint, token: null })
