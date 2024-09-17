@@ -122,20 +122,6 @@ describe('createProvider', () => {
             expect(provider.legacyModel).toBe('starcoder-hybrid')
         })
 
-        it('returns "unstable-openai" provider config if specified in VSCode settings; model is ignored', async () => {
-            const provider = await createProviderForTest({
-                config: {
-                    configuration: {
-                        autocompleteAdvancedProvider: 'unstable-openai',
-                        autocompleteAdvancedModel: 'hello-world',
-                    },
-                },
-                authStatus: AUTH_STATUS_FIXTURE_AUTHED,
-            })
-            expect(provider.id).toBe('unstable-openai')
-            expect(provider.legacyModel).toBe('gpt-35-turbo')
-        })
-
         it('returns "anthropic" provider config if specified in VSCode settings', async () => {
             const provider = await createProviderForTest({
                 config: {
@@ -161,7 +147,9 @@ describe('createProvider', () => {
                 authStatus: AUTH_STATUS_FIXTURE_AUTHED,
             })
             expect(provider.id).toBe('unstable-openai')
-            expect(provider.legacyModel).toBe('gpt-35-turbo')
+            expect(provider.legacyModel).toBe(
+                'model-will-be-picked-by-sourcegraph-backend-based-on-site-config'
+            )
         })
     })
 
@@ -232,17 +220,23 @@ describe('createProvider', () => {
             },
             {
                 configOverwrites: { provider: 'openai' },
-                expected: { provider: 'unstable-openai', legacyModel: 'gpt-35-turbo' },
+                expected: {
+                    provider: 'unstable-openai',
+                    legacyModel: 'model-will-be-picked-by-sourcegraph-backend-based-on-site-config',
+                },
             },
 
             // azure-openai
             {
                 configOverwrites: { provider: 'azure-openai', completionModel: 'gpt-35-turbo-test' },
-                expected: { provider: 'unstable-openai', legacyModel: '' },
+                expected: { provider: 'unstable-openai', legacyModel: 'gpt-35-turbo-test' },
             },
             {
                 configOverwrites: { provider: 'azure-openai' },
-                expected: { provider: 'unstable-openai', legacyModel: 'gpt-35-turbo' },
+                expected: {
+                    provider: 'unstable-openai',
+                    legacyModel: 'model-will-be-picked-by-sourcegraph-backend-based-on-site-config',
+                },
             },
 
             // fireworks

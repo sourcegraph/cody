@@ -59,6 +59,14 @@ export interface GenerateCompletionsOptions {
 }
 
 const DEFAULT_MAX_CONTEXT_TOKENS = 2048
+/**
+ * Used as `ProviderOptions.legacyModel` fallback value when model ID is unknown otherwise.
+ *
+ * This most likely indicates that this autocomplete provider is used exclusively by BYOK customers,
+ * and clients do not send a model ID in such cases. The model is selected by the Sourcegraph backend
+ * based on the current site configuration.
+ */
+export const BYOK_MODEL_ID_FOR_LOGS = 'model-will-be-picked-by-sourcegraph-backend-based-on-site-config'
 
 type ProviderModelOptions = {
     model: Model
