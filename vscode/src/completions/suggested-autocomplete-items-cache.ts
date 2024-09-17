@@ -162,8 +162,9 @@ export function analyticsItemToAutocompleteItem(
             position,
         } satisfies RequestParams
 
+        const actualInsetText = insertText + docContext.currentLineSuffix
         const autocompleteItem = new AutocompleteItem({
-            insertText,
+            insertText: actualInsetText,
             logId,
             range: vscodeInsertRange,
             trackedRange,
