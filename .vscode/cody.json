@@ -1,20 +1,11 @@
 {
   "commands": {
-    "commit-message": {
-      "description": "Commit Message Suggestion",
-      "prompt": "Suggest a informative commit message by summarizing code changes from the shared command output. The commit message should follow the conventional commit format and provide meaningful context for future readers.",
+    "cody": {
+      "description": "Cody the Judge",
+      "prompt": "Analyze the following git diff output for a feature implementation that aims to make file paths clickable. Provide a comprehensive evaluation of the code changes, focusing on how well they achieve this specific goal. Rate the modifications on a scale of Excellent, Great, Good, Bad, or Trash for each of these aspects: 1) Code quality, considering factors like efficiency, maintainability, and proper use of language features in implementing the clickable file paths. 2) Readability of the fix, assessing how easy it is for other developers to understand the changes related to making file paths clickable. 3) Adherence to best practices, including proper naming conventions, code organization, and following established coding standards while implementing this feature. 4) Clarity of the problem and solution, evaluating how well the changes address the requirement of making file paths clickable and if the purpose of the modifications is evident. For each aspect, provide a brief explanation supporting your rating. Additionally, offer any suggestions for improvement if applicable, particularly in relation to the clickable file paths feature. Finally, give an overall assessment of the code changes, summarizing their strengths and weaknesses in implementing this specific functionality. Conclude with an overall rating for the entire set of changes, using the same scale (Excellent, Great, Good, Bad, or Trash), and provide a concise justification for this final rating.",
       "context": {
         "selection": false,
         "command": "git diff"
-      },
-      "note": "You must have git installed and authenticated to use this command. Runs this command before staging."
-    },
-    "summarize-latest-release": {
-      "description": "Summarize the latest Cody Release",
-      "prompt": "What is the latest stable version of Cody? Can you briefly summarize the changes that were included in that release based on this CHANGELOG excerpt?",
-      "context": {
-        "selection": false,
-        "command": "curl https://raw.githubusercontent.com/sourcegraph/cody/main/vscode/CHANGELOG.md | head -n 50"
       }
     }
   }
