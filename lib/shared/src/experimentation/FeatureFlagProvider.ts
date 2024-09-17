@@ -31,6 +31,8 @@ export enum FeatureFlag {
     CodyAutocompleteFIMFineTunedModelHybrid = 'cody-autocomplete-fim-fine-tuned-model-hybrid',
     // Enable the deepseek-v2 as the default model via Fireworks
     CodyAutocompleteDeepseekV2LiteBase = 'cody-autocomplete-deepseek-v2-lite-base',
+    // Enable the deepseek-v2 with direct routing as the default model via Fireworks
+    CodyAutocompleteDeepseekV2LiteBaseDirectRoute = 'cody-autocomplete-deepseek-v2-lite-base-direct-route',
 
     // Enable various feature flags to experiment with FIM trained fine-tuned models via Fireworks
     CodyAutocompleteFIMModelExperimentBaseFeatureFlag = 'cody-autocomplete-fim-model-experiment-flag-v2',

@@ -255,7 +255,7 @@ function getClientModel(
     authStatus: Pick<AuthenticatedAuthStatus, 'endpoint'>
 ): FireworksModel {
     if (model === undefined || model === '') {
-        return isDotCom(authStatus) ? DEEPSEEK_CODER_V2_LITE_BASE : 'starcoder-hybrid'
+        return isDotCom(authStatus) ? DEEPSEEK_CODER_V2_LITE_BASE_DIRECT_ROUTE : 'starcoder-hybrid'
     }
 
     if (model === 'starcoder-hybrid' || Object.prototype.hasOwnProperty.call(MODEL_MAP, model)) {
