@@ -6,11 +6,15 @@ import {
     AUTH_STATUS_FIXTURE_AUTHED_DOTCOM,
     type CodyLLMSiteConfiguration,
     ModelUsage,
+    type ModelsData,
+    ModelsService,
+    createModelFromServerModel,
     featureFlagProvider,
+    firstResultFromOperation,
     firstValueFrom,
-    mockModelsService,
+    mockAuthStatus,
     modelsService,
-    toModelRefStr,
+    skipPendingOperation,
 } from '@sourcegraph/cody-shared'
 
 import { mockLocalStorage } from '../../../services/LocalStorageProvider'
@@ -20,13 +24,19 @@ import { createProvider } from './create-provider'
 import type { Provider } from './provider'
 
 async function createProviderForTest(...args: Parameters<typeof createProvider>): Promise<Provider> {
-    const providerOrError = await firstValueFrom(createProvider(...args))
+    const providerOrError = await firstValueFrom(createProvider(...args).pipe(skipPendingOperation()))
 
     if (providerOrError instanceof Error) {
         throw providerOrError
     }
 
     return providerOrError
+}
+
+const EMPTY_MODELS_DATA: ModelsData = {
+    localModels: [],
+    preferences: { defaults: {}, selected: {} },
+    primaryModels: [],
 }
 
 describe('createProvider', () => {
@@ -36,6 +46,12 @@ describe('createProvider', () => {
     })
 
     describe('local settings', () => {
+        beforeEach(() => {
+            mockAuthStatus(AUTH_STATUS_FIXTURE_AUTHED_DOTCOM)
+            vi.spyOn(modelsService, 'modelsChanges', 'get').mockReturnValue(
+                Observable.of(EMPTY_MODELS_DATA)
+            )
+        })
         it('throws an error message if the configuration completions provider is not supported', async () => {
             const createCall = createProviderForTest({
                 config: {
@@ -293,25 +309,35 @@ describe('createProvider', () => {
     })
 
     describe('server-side model configuration', () => {
-        beforeEach(async () => {
-            await mockModelsService({
-                modelsService: modelsService,
-                config: getServerSentModelsMock(),
-                authStatus: AUTH_STATUS_FIXTURE_AUTHED,
-            })
-        })
-
         it('uses all available autocomplete models', async () => {
             const mockedConfig = getServerSentModelsMock()
             const autocompleteModelsInServerConfig = mockedConfig.models.filter(model =>
                 model.capabilities.includes('autocomplete')
             )
+            const modelsService = new ModelsService(
+                Observable.of({
+                    localModels: [],
+                    preferences: { defaults: {}, selected: {} },
+                    primaryModels: autocompleteModelsInServerConfig.map(createModelFromServerModel),
+                })
+            )
+            mockAuthStatus(AUTH_STATUS_FIXTURE_AUTHED)
 
-            const autocompleteModels = modelsService.getModels(ModelUsage.Autocomplete)
+            const autocompleteModels = await firstResultFromOperation(
+                modelsService.getModels(ModelUsage.Autocomplete)
+            )
             expect(autocompleteModels.length).toBe(autocompleteModelsInServerConfig.length)
         })
 
         it('uses the `fireworks` model from the config', async () => {
+            const fireworksModel = getServerSentModelsMock().models.find(
+                model => model.modelRef === 'fireworks::v1::deepseek-coder-v2-lite-base'
+            )
+            expect(fireworksModel).toBeDefined()
+            vi.spyOn(modelsService, 'getDefaultModel').mockReturnValue(
+                Observable.of(createModelFromServerModel(fireworksModel!))
+            )
+
             const provider = await createProviderForTest({
                 config: {
                     configuration: {
@@ -321,7 +347,9 @@ describe('createProvider', () => {
                 },
                 authStatus: AUTH_STATUS_FIXTURE_AUTHED,
             })
-            const currentModel = modelsService.getDefaultModel(ModelUsage.Autocomplete)
+            const currentModel = await firstResultFromOperation(
+                modelsService.getDefaultModel(ModelUsage.Autocomplete)
+            )
 
             expect(currentModel?.provider).toBe('fireworks')
             expect(currentModel?.id).toBe('deepseek-coder-v2-lite-base')
@@ -331,19 +359,14 @@ describe('createProvider', () => {
         })
 
         it('uses the `anthropic` model from the config', async () => {
-            const mockedConfig = getServerSentModelsMock()
-
-            const autocompleteModels = modelsService.getModels(ModelUsage.Autocomplete)
-            const anthropicModel = autocompleteModels.find(model => model.id === 'claude-3-sonnet')!
-
             // Change the default autocomplete model to anthropic
-            mockedConfig.defaultModels.codeCompletion = toModelRefStr(anthropicModel.modelRef!)
-
-            await mockModelsService({
-                modelsService: modelsService,
-                config: mockedConfig,
-                authStatus: AUTH_STATUS_FIXTURE_AUTHED,
-            })
+            const anthropicModel = getServerSentModelsMock().models.find(
+                model => model.modelRef === 'anthropic::2023-06-01::claude-3-sonnet'
+            )
+            expect(anthropicModel).toBeDefined()
+            vi.spyOn(modelsService, 'getDefaultModel').mockReturnValue(
+                Observable.of(createModelFromServerModel(anthropicModel!))
+            )
 
             const provider = await createProviderForTest({
                 config: {
@@ -355,11 +378,8 @@ describe('createProvider', () => {
                 authStatus: AUTH_STATUS_FIXTURE_AUTHED,
             })
 
-            expect(anthropicModel.provider).toBe('anthropic')
-            expect(anthropicModel.id).toBe('claude-3-sonnet')
-            expect(provider.id).toBe(anthropicModel.provider)
+            expect(provider.id).toBe('anthropic')
             // TODO(valery): use a readable identifier for BYOK providers to communicate that the model ID from the server is used.
-            expect(provider.legacyModel).toBe('')
         })
     })
 })

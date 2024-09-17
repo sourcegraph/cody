@@ -1,7 +1,7 @@
 import { Observable } from 'observable-fns'
-import { afterEach, beforeEach, describe, vi } from 'vitest'
+import { beforeEach, describe, vi } from 'vitest'
 
-import { featureFlagProvider, modelsService } from '@sourcegraph/cody-shared'
+import { featureFlagProvider } from '@sourcegraph/cody-shared'
 
 import { mockLocalStorage } from '../../services/LocalStorageProvider'
 
@@ -17,10 +17,6 @@ describe('unstable-openai', () => {
     beforeEach(async () => {
         mockLocalStorage()
         vi.spyOn(featureFlagProvider, 'evaluatedFeatureFlag').mockReturnValue(Observable.of(false))
-    })
-
-    afterEach(() => {
-        modelsService.reset()
     })
 
     const valuesToAssert = {

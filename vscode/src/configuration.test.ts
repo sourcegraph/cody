@@ -3,6 +3,7 @@ import type * as vscode from 'vscode'
 
 import { type ClientConfiguration, OLLAMA_DEFAULT_URL, ps } from '@sourcegraph/cody-shared'
 
+import type { ChatModelProviderConfig } from '@sourcegraph/cody-shared/src/models/sync'
 import { getConfiguration } from './configuration'
 import { DEFAULT_VSCODE_SETTINGS } from './testutils/mocks'
 
@@ -106,6 +107,10 @@ describe('getConfiguration', () => {
                         return undefined
                     case 'cody.advanced.agent.capabilities.storage':
                         return false
+                    case 'cody.provider.limit.prompt':
+                        return 123
+                    case 'cody.dev.models':
+                        return [{ model: 'm', provider: 'p' }] satisfies ChatModelProviderConfig[]
                     default:
                         throw new Error(`unexpected key: ${key}`)
                 }
@@ -156,6 +161,8 @@ describe('getConfiguration', () => {
             },
             autocompleteFirstCompletionTimeout: 1500,
             autocompleteExperimentalPreloadDebounceInterval: 0,
+            providerLimitPrompt: 123,
+            devModels: [{ model: 'm', provider: 'p' }],
             testingModelConfig: undefined,
             experimentalGuardrailsTimeoutSeconds: undefined,
         } satisfies ClientConfiguration)

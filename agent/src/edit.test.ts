@@ -1,6 +1,6 @@
 import path from 'node:path'
 import { getDotComDefaultModels, modelsService } from '@sourcegraph/cody-shared'
-import { afterAll, beforeAll, describe, expect, it } from 'vitest'
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 import { TESTING_CREDENTIALS } from '../../vscode/src/testutils/testing-credentials'
 import { TestClient } from './TestClient'
 import { TestWorkspace } from './TestWorkspace'
@@ -16,7 +16,7 @@ describe('Edit', () => {
     })
 
     beforeAll(async () => {
-        modelsService.setModels(getDotComDefaultModels())
+        vi.spyOn(modelsService, 'models', 'get').mockReturnValue(getDotComDefaultModels())
         await workspace.beforeAll()
         await client.beforeAll()
         await client.request('command/execute', { command: 'cody.search.index-update' })

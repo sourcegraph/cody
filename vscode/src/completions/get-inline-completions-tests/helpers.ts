@@ -8,7 +8,9 @@ import {
     AUTH_STATUS_FIXTURE_AUTHED_DOTCOM,
     type AuthenticatedAuthStatus,
     type AutocompleteProviderID,
+    ClientConfigSingleton,
     type CodeCompletionsClient,
+    type CodyClientConfig,
     type CompletionParameters,
     type CompletionResponse,
     CompletionStopReason,
@@ -393,11 +395,15 @@ export function initCompletionProviderConfig({
 }: Partial<Pick<ParamsResult, 'configuration' | 'authStatus'>>): void {
     vi.spyOn(featureFlagProvider, 'evaluateFeatureFlag').mockResolvedValue(false)
     vi.spyOn(featureFlagProvider, 'evaluatedFeatureFlag').mockReturnValue(Observable.of(false))
+    vi.spyOn(ClientConfigSingleton.getInstance(), 'getConfig').mockResolvedValue({
+        autoCompleteEnabled: true,
+        modelsAPIEnabled: false,
+    } satisfies Partial<CodyClientConfig> as CodyClientConfig)
     mockAuthStatus(authStatus ?? AUTH_STATUS_FIXTURE_AUTHED)
     mockResolvedConfig({
         configuration: { ...configuration?.configuration },
         auth: { serverEndpoint: 'https://example.com', ...configuration?.auth },
-        clientState: { ...configuration?.clientState },
+        clientState: { modelPreferences: {}, ...configuration?.clientState },
     })
 }
 

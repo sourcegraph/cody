@@ -1,5 +1,6 @@
 import type { EmbeddingsProvider } from './codebase-context/context-status'
 import type { FileURI } from './common/uri'
+import type { ChatModelProviderConfig } from './models/sync'
 
 import type { PromptString } from './prompt/prompt-string'
 import type { ReadonlyDeep } from './utils'
@@ -87,6 +88,8 @@ interface RawClientConfiguration {
     agentHasPersistentStorage?: boolean
     autocompleteFirstCompletionTimeout: number
     autocompleteAdvancedModel: string | null
+    providerLimitPrompt?: number
+    devModels?: ChatModelProviderConfig[]
 
     testingModelConfig: EmbeddingsModelConfig | undefined
 }

@@ -10,6 +10,7 @@ import {
     SYMBOL_CONTEXT_MENTION_PROVIDER,
     currentAuthStatusAuthed,
     displayLineRange,
+    firstResultFromOperation,
     modelsService,
     parseMentionQuery,
     scanForMentionTriggerInUserTextInput,
@@ -97,7 +98,7 @@ export const getInput = async (
 
     const authStatus = currentAuthStatusAuthed()
     const isCodyPro = !authStatus.userCanUpgrade
-    const modelOptions = modelsService.getModels(ModelUsage.Edit)
+    const modelOptions = await firstResultFromOperation(modelsService.getModels(ModelUsage.Edit))
     const modelItems = getModelOptionItems(modelOptions, isCodyPro)
     const showModelSelector = modelOptions.length > 1
 

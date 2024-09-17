@@ -1,4 +1,12 @@
-import { ps } from '@sourcegraph/cody-shared'
+import {
+    createDisposables,
+    firstResultFromOperation,
+    firstValueFrom,
+    pendingOperation,
+    promiseFactoryToObservable,
+    ps,
+    skipPendingOperation,
+} from '@sourcegraph/cody-shared'
 import * as uuid from 'uuid'
 import * as vscode from 'vscode'
 
@@ -51,13 +59,12 @@ import {
     logError,
     modelsService,
     parseMentionQuery,
-    promiseToObservable,
     recordErrorToSpan,
     reformatBotMessageForChat,
-    resolvedConfig,
     serializeChatMessage,
     startWith,
     storeLastValue,
+    subscriptionDisposable,
     telemetryRecorder,
     tracer,
     truncatePromptString,
@@ -65,13 +72,6 @@ import {
 
 import type { Span } from '@opentelemetry/api'
 import { captureException } from '@sentry/core'
-import {
-    combineLatest,
-    createDisposables,
-    firstValueFrom,
-    promiseFactoryToObservable,
-    subscriptionDisposable,
-} from '@sourcegraph/cody-shared/src/misc/observable'
 import { TokenCounterUtils } from '@sourcegraph/cody-shared/src/token/counter'
 import type { TelemetryEventParameters } from '@sourcegraph/telemetry'
 import { map } from 'observable-fns'
@@ -92,7 +92,6 @@ import type { ExtensionClient } from '../../extension-client'
 import type { SymfRunner } from '../../local-context/symf'
 import { logDebug } from '../../log'
 import { migrateAndNotifyForOutdatedModels } from '../../models/modelMigrator'
-import { joinModelWaitlist } from '../../models/sync'
 import { mergedPromptsAndLegacyCommands } from '../../prompts/prompts'
 import { workspaceReposMonitor } from '../../repository/repo-metadata-from-git-api'
 import { authProvider } from '../../services/AuthProvider'
@@ -243,7 +242,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         this.extensionClient = extensionClient
         this.contextRetriever = contextRetriever
 
-        this.chatModel = new ChatModel(getDefaultModelID())
+        this.chatModel = new ChatModel('')
 
         this.guardrails = guardrails
         this.startTokenReceiver = startTokenReceiver
@@ -275,14 +274,15 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 })
             ),
             subscriptionDisposable(
-                combineLatest([modelsService.changes.pipe(startWith(undefined)), authStatus]).subscribe(
-                    ([, authStatus]) => {
+                modelsService
+                    .getDefaultChatModel()
+                    .pipe(skipPendingOperation())
+                    .subscribe(async defaultChatModel => {
                         // Get the latest model list available to the current user to update the ChatModel.
-                        if (authStatus.authenticated) {
-                            this.chatModel.updateModel(getDefaultModelID())
+                        if (defaultChatModel && this.chatModel.modelID === '') {
+                            await this.chatModel.updateModel(defaultChatModel)
                         }
-                    }
-                )
+                    })
             )
         )
 
@@ -378,7 +378,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     const waitlistURI = CODY_BLOG_URL_o1_WAITLIST
                     waitlistURI.searchParams.append('userId', authStatus?.username)
                     link = waitlistURI.toString()
-                    void joinModelWaitlist(authStatus)
+                    void joinModelWaitlist()
                 }
                 void openExternalLinks(link)
                 break
@@ -648,7 +648,9 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         })
 
         // Update the chat model providers to ensure the correct token limit is set
-        this.chatModel.updateModel(this.chatModel.modelID)
+        if (this.chatModel.modelID) {
+            await this.chatModel.updateModel(this.chatModel.modelID)
+        }
 
         await this.saveSession()
         this.initDoer.signalInitialized()
@@ -683,6 +685,15 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         return tracer.startActiveSpan('chat.submit', async (span): Promise<void> => {
             span.setAttribute('sampled', true)
             const authStatus = currentAuthStatusAuthed()
+
+            // Fill in default model if not available yet.
+            if (!this.chatModel.modelID) {
+                const model = await firstResultFromOperation(modelsService.getDefaultChatModel())
+                if (model) {
+                    await this.chatModel.updateModel(model)
+                }
+            }
+
             const sharedProperties = {
                 requestID,
                 chatModel: this.chatModel.modelID,
@@ -1495,7 +1506,11 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
     // current in-progress completion. If the chat does not exist, then this
     // is a no-op.
     public async restoreSession(sessionID: string): Promise<void> {
-        const oldTranscript = chatHistory.getChat(currentAuthStatusAuthed(), sessionID)
+        const authStatus = currentAuthStatus()
+        if (!authStatus.authenticated) {
+            return
+        }
+        const oldTranscript = chatHistory.getChat(authStatus, sessionID)
         if (!oldTranscript) {
             return
         }
@@ -1685,10 +1700,10 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                             mergedPromptsAndLegacyCommands(query, signal)
                         ),
                     models: () =>
-                        combineLatest([
-                            resolvedConfig,
-                            modelsService.changes.pipe(startWith(undefined)),
-                        ]).pipe(map(() => modelsService.getModels(ModelUsage.Chat))),
+                        modelsService.getModels(ModelUsage.Chat).pipe(
+                            startWith([]),
+                            map(models => (models === pendingOperation ? [] : models))
+                        ),
                     highlights: parameters =>
                         promiseFactoryToObservable(() =>
                             graphqlClient.getHighlightedFileChunk(parameters)
@@ -1702,13 +1717,14 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                             })
                         ),
                     setChatModel: model => {
-                        this.chatModel.updateModel(model)
-
                         // Because this was a user action to change the model we will set that
                         // as a global default for chat
-                        return promiseToObservable(
-                            modelsService.setSelectedModel(ModelUsage.Chat, model)
-                        )
+                        return promiseFactoryToObservable(async () => {
+                            await Promise.all([
+                                modelsService.setSelectedModel(ModelUsage.Chat, model),
+                                this.chatModel.updateModel(model),
+                            ])
+                        })
                     },
                     detectIntent: text =>
                         promiseFactoryToObservable<ChatMessage['intent']>(() =>
@@ -1886,15 +1902,6 @@ export function revealWebviewViewOrPanel(viewOrPanel: vscode.WebviewView | vscod
     }
 }
 
-function getDefaultModelID(): string {
-    const pending = ''
-    try {
-        return modelsService.getDefaultChatModel() || pending
-    } catch {
-        return pending
-    }
-}
-
 /**
  * Set HTML for webview (panel) & webview view (sidebar)
  */
@@ -1960,4 +1967,9 @@ function combineContext(
     retrievedContext: ContextItem[]
 ): ContextItem[] {
     return [explicitMentions, openCtxContext, priorityContext, retrievedContext].flat()
+}
+
+async function joinModelWaitlist(): Promise<void> {
+    await localStorage.setOrDeleteWaitlistO1(true)
+    telemetryRecorder.recordEvent('cody.joinLlmWaitlist', 'clicked')
 }

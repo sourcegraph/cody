@@ -11,6 +11,7 @@ import {
     setStaticResolvedConfigurationValue,
 } from '@sourcegraph/cody-shared'
 
+import type { ChatModelProviderConfig } from '@sourcegraph/cody-shared/src/models/sync'
 import { URI } from 'vscode-uri'
 import { CONFIG_KEY, type ConfigKeys } from './configuration-keys'
 import { localStorage } from './services/LocalStorageProvider'
@@ -144,6 +145,8 @@ export function getConfiguration(
             'autocomplete.advanced.timeout.firstCompletion',
             3_500
         ),
+        providerLimitPrompt: getHiddenSetting<number | undefined>('provider.limit.prompt', undefined),
+        devModels: getHiddenSetting<ChatModelProviderConfig[] | undefined>('dev.models', undefined),
 
         telemetryClientName: getHiddenSetting<string | undefined>('telemetry.clientName'),
         testingModelConfig:

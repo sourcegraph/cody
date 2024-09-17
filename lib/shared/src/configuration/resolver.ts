@@ -2,6 +2,7 @@ import { Observable, map } from 'observable-fns'
 import type { AuthCredentials, ClientConfiguration } from '../configuration'
 import { logError } from '../logger'
 import { distinctUntilChanged, firstValueFrom, fromLateSetSource, shareReplay } from '../misc/observable'
+import type { PerSitePreferences } from '../models/modelsService'
 import { DOTCOM_URL } from '../sourcegraph-api/environments'
 import type { PartialDeep, ReadonlyDeep } from '../utils'
 
@@ -22,6 +23,8 @@ export interface ClientState {
     lastUsedEndpoint: string | null
     anonymousUserID: string | null
     lastUsedChatModality: 'sidebar' | 'editor'
+    modelPreferences: PerSitePreferences
+    waitlist_o1: boolean | null
 }
 
 /**
@@ -150,7 +153,7 @@ export function mockResolvedConfig(value: PartialDeep<ResolvedConfiguration>): v
         Observable.of({
             configuration: {},
             auth: {},
-            clientState: {},
+            clientState: { modelPreferences: {} },
             ...value,
         } as ResolvedConfiguration),
         false
