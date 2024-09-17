@@ -70,17 +70,7 @@ export const MentionsPlugin: FunctionComponent<{ contextWindowSizeInTokens?: num
          */
         const [tokenAdded, setTokenAdded] = useState<number>(0)
 
-        const remainingTokenBudget =
-            contextWindowSizeInTokens === undefined
-                ? Number.MAX_SAFE_INTEGER
-                : contextWindowSizeInTokens - tokenAdded
-
         const { params, updateQuery, updateMentionMenuParams } = useMentionMenuParams()
-
-        const data = useMentionMenuData(params, {
-            remainingTokenBudget,
-            limit: SUGGESTION_LIST_LENGTH_LIMIT,
-        })
 
         const setEditorQuery = useCallback<setEditorQuery>(
             getNewQuery => {
@@ -212,6 +202,15 @@ export const MentionsPlugin: FunctionComponent<{ contextWindowSizeInTokens?: num
                     COMMAND_PRIORITY_NORMAL /* so Enter keypress selects option and doesn't submit form */
                 }
                 menuRenderFn={(anchorElementRef, itemProps) => {
+                    const remainingTokenBudget =
+                        contextWindowSizeInTokens === undefined
+                            ? Number.MAX_SAFE_INTEGER
+                            : contextWindowSizeInTokens - tokenAdded
+                    const data = useMentionMenuData(params, {
+                        remainingTokenBudget,
+                        limit: SUGGESTION_LIST_LENGTH_LIMIT,
+                    })
+
                     const { selectOptionAndCleanUp } = itemProps
                     anchorElementRef2.current = anchorElementRef.current ?? undefined
                     return (
