@@ -126,11 +126,12 @@ export class JaccardSimilarityRetriever extends CachedRetriever implements Conte
 
         const curLang = currentDocument.languageId
 
-        const enableExtendedLanguagePool = Boolean(
-            await featureFlagProvider.evaluateFeatureFlag(
-                FeatureFlag.CodyAutocompleteContextExtendLanguagePool
-            )
-        )
+        let enableExtendedLanguagePool = false
+        featureFlagProvider
+            .evaluatedFeatureFlag(FeatureFlag.CodyAutocompleteContextExtendLanguagePool)
+            .subscribe(resolvedFlag => {
+                enableExtendedLanguagePool = resolvedFlag
+            })
 
         function addDocument(document: vscode.TextDocument): void {
             // Only add files and VSCode user settings.
