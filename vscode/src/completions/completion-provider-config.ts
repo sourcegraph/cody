@@ -26,6 +26,7 @@ class CompletionProviderConfig {
             FeatureFlag.CodyAutocompletePreloadingExperimentVariant1,
             FeatureFlag.CodyAutocompletePreloadingExperimentVariant2,
             FeatureFlag.CodyAutocompletePreloadingExperimentVariant3,
+            FeatureFlag.CodyAutocompleteDisableLowPerfLangDelay,
         ]
         await Promise.all(featureFlagsUsed.map(flag => featureFlagProvider.evaluateFeatureFlag(flag)))
     }
@@ -182,6 +183,12 @@ class CompletionProviderConfig {
                 )
             })
         )
+    }
+
+    public get completionDisableLowPerfLangDelay(): Observable<boolean> {
+        return featureFlagProvider
+            .evaluatedFeatureFlag(FeatureFlag.CodyAutocompleteDisableLowPerfLangDelay)
+            .pipe(distinctUntilChanged())
     }
 }
 
