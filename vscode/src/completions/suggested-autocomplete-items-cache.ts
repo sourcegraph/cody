@@ -162,7 +162,13 @@ export function analyticsItemToAutocompleteItem(
             position,
         } satisfies RequestParams
 
-        const actualInsetText = insertText + docContext.currentLineSuffix
+        // if inserxt text doesn't contain current line suffix,  then 
+        let actualInsetText = insertText
+        if (!insertText.endsWith(docContext.currentLineSuffix)) {
+
+            actualInsetText = insertText + docContext.currentLineSuffix
+        }
+
         const autocompleteItem = new AutocompleteItem({
             insertText: actualInsetText,
             logId,
