@@ -3,6 +3,9 @@
 import type { Command } from 'commander'
 import { registerLocalCertificates } from './certs'
 
+import * as sourceMapSupport from 'source-map-support'
+sourceMapSupport.install()
+
 console.log = console.error
 
 // IMPORTANT: use require(...) instead of `import` so that we can redirect

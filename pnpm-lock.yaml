@@ -172,6 +172,9 @@ importers:
       '@types/open':
         specifier: ^6.2.1
         version: 6.2.1
+      '@types/source-map-support':
+        specifier: ^0.5.10
+        version: 0.5.10
       '@types/uuid':
         specifier: ^9.0.2
         version: 9.0.2
@@ -250,6 +253,9 @@ importers:
       rimraf:
         specifier: ^5.0.5
         version: 5.0.5
+      source-map-support:
+        specifier: ^0.5.21
+        version: 0.5.21
       uuid:
         specifier: ^9.0.0
         version: 9.0.0
@@ -6678,6 +6684,12 @@ packages:
 
   /@types/signal-exit@3.0.4:
     resolution: {integrity: sha512-e7EUPfU9afHyWc5CXtlqbvVHEshrb05uPlDCenWIbMgtWoFrTuTDVYNLKk6o4X2/4oHTfNqrJX/vaJ3uBhtXTg==}
+    dev: true
+
+  /@types/source-map-support@0.5.10:
+    resolution: {integrity: sha512-tgVP2H469x9zq34Z0m/fgPewGhg/MLClalNOiPIzQlXrSS2YrKu/xCdSCKnEDwkFha51VKEKB6A9wW26/ZNwzA==}
+    dependencies:
+      source-map: 0.6.1
     dev: true
 
   /@types/svg2ttf@5.0.3:

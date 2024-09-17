@@ -5,6 +5,7 @@
     "rootDir": ".",
     "outDir": "dist",
     "target": "es2019",
+    "sourceMap": true,
     "allowJs": true,
   },
   "include": ["**/*", ".*", "package.json", "src/language-file-extensions.json"],
