@@ -95,6 +95,13 @@ export const events = [
                     repoIsPublic: boolean
                     repoMetadata?: { commit?: string; remoteID?: string }[]
                     detectedIntent: ChatMessage['intent']
+                    detectedIntentScores:
+                        | {
+                              intent: string
+                              score: number
+                          }[]
+                        | null
+                        | undefined
                     userSpecifiedIntent: ChatMessage['intent'] | 'auto'
                 } & SharedProperties,
                 spans: {
@@ -130,6 +137,15 @@ export const events = [
                         ...metadata,
                     }),
                     privateMetadata: {
+                        detectedIntentScores: params.detectedIntentScores?.length
+                            ? params.detectedIntentScores.reduce(
+                                  (scores, value) => {
+                                      scores[value.intent] = value.score
+                                      return scores
+                                  },
+                                  {} as Record<string, number>
+                              )
+                            : undefined,
                         detectedIntent: params.detectedIntent,
                         userSpecifiedIntent: params.userSpecifiedIntent,
                         traceId: spans.current.spanContext().traceId,
