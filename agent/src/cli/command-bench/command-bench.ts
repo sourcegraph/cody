@@ -13,6 +13,7 @@ import { promisify } from 'node:util'
 import { type ConfigurationUseContext, isDefined, modelsService } from '@sourcegraph/cody-shared'
 import { sleep } from '../../../../vscode/src/completions/utils'
 import { setStaticResolvedConfigurationWithAuthCredentials } from '../../../../vscode/src/configuration'
+import { localStorage } from '../../../../vscode/src/services/LocalStorageProvider'
 import { startPollyRecording } from '../../../../vscode/src/testutils/polly'
 import { dotcomCredentials } from '../../../../vscode/src/testutils/testing-credentials'
 import { allClientCapabilitiesEnabled } from '../../allClientCapabilitiesEnabled'
@@ -321,6 +322,7 @@ export const benchCommand = new commander.Command('bench')
         )
 
         // Required to use `PromptString`.
+        localStorage.setStorage('inMemory')
         setStaticResolvedConfigurationWithAuthCredentials({
             configuration: { customHeaders: {} },
             auth: {
@@ -388,7 +390,10 @@ async function evaluateWorkspace(options: CodyBenchOptions, recordingDirectory: 
             baseGlobalState,
         },
         codyAgentPath: options.codyAgentBinary,
-        capabilities: allClientCapabilitiesEnabled,
+        capabilities: {
+            ...allClientCapabilitiesEnabled,
+            secrets: 'stateless',
+        },
         inheritStderr: true,
         extraEnvVariables: {
             CODY_RECORDING_NAME: `${options.fixture.name}-${path.basename(options.workspace)}`,
