@@ -5,13 +5,19 @@ import { fetch } from '../../fetch'
 import type { TelemetryEventInput } from '@sourcegraph/telemetry'
 
 import { escapeRegExp } from 'lodash'
-import { Observable } from 'observable-fns'
+import { Observable, map } from 'observable-fns'
 import semver from 'semver'
-import { authStatus, currentAuthStatusOrNotReadyYet } from '../../auth/authStatus'
+import { authStatus } from '../../auth/authStatus'
+import type { AuthStatus } from '../../auth/types'
 import { dependentAbortController, onAbort } from '../../common/abortController'
 import { type PickResolvedConfiguration, resolvedConfig } from '../../configuration/resolver'
 import { logDebug, logError } from '../../logger'
-import { type Unsubscribable, abortableOperation, firstValueFrom } from '../../misc/observable'
+import {
+    type Unsubscribable,
+    abortableOperation,
+    distinctUntilChanged,
+    firstValueFrom,
+} from '../../misc/observable'
 import { addTraceparent, wrapInActiveSpan } from '../../tracing'
 import { isError } from '../../utils'
 import { DOTCOM_URL, isDotCom } from '../environments'
@@ -1036,6 +1042,7 @@ export class SourcegraphGraphQLAPIClient {
         if (isError(version)) {
             return false
         }
+        signal?.throwIfAborted()
 
         const isInsiderBuild = version.length > 12 || version.includes('dev')
 
@@ -1055,6 +1062,7 @@ export class SourcegraphGraphQLAPIClient {
     }): Promise<ContextSearchResult[] | null | Error> {
         const isValidVersion = await this.isValidSiteVersion({ minimumVersion: '5.7.0' })
         const config = await firstValueFrom(this.config!)
+        signal?.throwIfAborted()
 
         return this.fetchSourcegraphAPI<APIResponse<ContextSearchResponse>>(
             isValidVersion ? CONTEXT_SEARCH_QUERY : LEGACY_CONTEXT_SEARCH_QUERY,
@@ -1182,6 +1190,7 @@ export class SourcegraphGraphQLAPIClient {
         if (isError(siteVersion)) {
             return { enabled: false, version: 'unknown' }
         }
+        signal?.throwIfAborted()
         const insiderBuild = siteVersion.length > 12 || siteVersion.includes('dev')
         if (insiderBuild) {
             return { enabled: true, version: siteVersion }
@@ -1194,9 +1203,11 @@ export class SourcegraphGraphQLAPIClient {
         // Beta version is betwewen 5.0.0 - 5.1.0 and does not have isCodyEnabled field
         const betaVersion = semver.gte(siteVersion, '5.0.0') && semver.lt(siteVersion, '5.1.0')
         const hasIsCodyEnabledField = await this.getSiteHasIsCodyEnabledField(signal)
+        signal?.throwIfAborted()
         // The isCodyEnabled field does not exist before version 5.1.0
         if (!betaVersion && !isError(hasIsCodyEnabledField) && hasIsCodyEnabledField) {
             const siteHasCodyEnabled = await this.getSiteHasCodyEnabled(signal)
+            signal?.throwIfAborted()
             return {
                 enabled: !isError(siteHasCodyEnabled) && siteHasCodyEnabled,
                 version: siteVersion,
@@ -1435,6 +1446,9 @@ export class SourcegraphGraphQLAPIClient {
             throw new Error('SourcegraphGraphQLAPIClient config not set')
         }
         const config = await firstValueFrom(this.config)
+        if (signalOrTimeout instanceof AbortSignal) {
+            signalOrTimeout.throwIfAborted()
+        }
 
         const headers = new Headers(config.configuration?.customHeaders as HeadersInit | undefined)
         headers.set('Content-Type', 'application/json; charset=utf-8')
@@ -1543,6 +1557,7 @@ export class SourcegraphGraphQLAPIClient {
             throw new Error('SourcegraphGraphQLAPIClient config not set')
         }
         const config = await firstValueFrom(this.config)
+        signal?.throwIfAborted()
 
         const headers = new Headers(config.configuration?.customHeaders as HeadersInit | undefined)
         headers.set('Content-Type', 'application/json; charset=utf-8')
@@ -1613,6 +1628,14 @@ export class ClientConfigSingleton {
     private constructor() {
         this.configSubscription = authStatus
             .pipe(
+                map(
+                    authStatus =>
+                        ({
+                            authenticated: authStatus.authenticated,
+                            endpoint: authStatus.endpoint,
+                        }) satisfies Pick<AuthStatus, 'authenticated' | 'endpoint'>
+                ),
+                distinctUntilChanged(),
                 abortableOperation(async (authStatus, signal) => {
                     this.isSignedIn = !!authStatus.authenticated
                     if (this.isSignedIn) {
@@ -1639,10 +1662,6 @@ export class ClientConfigSingleton {
     }
 
     public async getConfig(signal?: AbortSignal): Promise<CodyClientConfig | undefined> {
-        // TODO(sqs)#observe: make this reactive
-        if (!currentAuthStatusOrNotReadyYet()?.authenticated) {
-            return undefined
-        }
         try {
             switch (this.shouldFetch()) {
                 case 'sync':
@@ -1695,11 +1714,13 @@ export class ClientConfigSingleton {
             .then(siteVersion => {
                 signal?.throwIfAborted()
                 if (isError(siteVersion)) {
-                    logError(
-                        'ClientConfigSingleton',
-                        'Failed to determine site version, GraphQL error',
-                        siteVersion
-                    )
+                    if (!isAbortError(siteVersion)) {
+                        logError(
+                            'ClientConfigSingleton',
+                            'Failed to determine site version, GraphQL error',
+                            siteVersion
+                        )
+                    }
                     return false // assume /.api/client-config is not supported
                 }
 
@@ -1734,13 +1755,17 @@ export class ClientConfigSingleton {
                     )
                     .then(clientConfig => {
                         if (isError(clientConfig)) {
-                            logError('ClientConfigSingleton', 'refresh client config', clientConfig)
+                            if (!isAbortError(clientConfig)) {
+                                logError('ClientConfigSingleton', 'refresh client config', clientConfig)
+                            }
                             throw clientConfig
                         }
                         return clientConfig
                     })
                     .catch(e => {
-                        logError('ClientConfigSingleton', 'refresh client config', e)
+                        if (!isAbortError(e)) {
+                            logError('ClientConfigSingleton', 'refresh client config', e)
+                        }
                         throw e
                     })
             })
@@ -1751,7 +1776,9 @@ export class ClientConfigSingleton {
                 return clientConfig
             })
             .catch(e => {
-                logError('ClientConfigSingleton', 'failed to refresh client config', e)
+                if (!isAbortError(e)) {
+                    logError('ClientConfigSingleton', 'failed to refresh client config', e)
+                }
                 throw e
             })
     }

@@ -4,6 +4,7 @@ import type { Memento } from 'vscode'
 
 import {
     type AccountKeyedChatHistory,
+    type AuthCredentials,
     type AuthStatus,
     type AuthenticatedAuthStatus,
     type ChatHistoryKey,
@@ -17,6 +18,7 @@ import {
 import { type Observable, map } from 'observable-fns'
 import { isSourcegraphToken } from '../chat/protocol'
 import { EventEmitter } from '../testutils/mocks'
+import { secretStorage } from './SecretStorageProvider'
 
 export type ChatLocation = 'editor' | 'sidebar'
 
@@ -88,22 +90,32 @@ class LocalStorage {
         return endpoint
     }
 
-    public async saveEndpoint(endpoint: string): Promise<void> {
-        if (!endpoint) {
+    /**
+     * Save the server endpoint to local storage *and* the access token to secret storage, but wait
+     * until both are stored to emit a change even from either. This prevents the rest of the
+     * application from reacting to one of the "store" events before the other is completed, which
+     * would give an inconsistent view of the state.
+     */
+    public async saveEndpointAndToken(
+        credentials: Pick<AuthCredentials, 'serverEndpoint' | 'accessToken'>
+    ): Promise<void> {
+        if (!credentials.serverEndpoint) {
             return
         }
-        try {
-            // Do not save sourcegraph tokens as the last used endpoint
-            if (isSourcegraphToken(endpoint)) {
-                return
-            }
-
-            const uri = new URL(endpoint).href
-            await this.set(this.LAST_USED_ENDPOINT, uri)
-            await this.addEndpointHistory(uri)
-        } catch (error) {
-            console.error(error)
+        // Do not save an access token as the last-used endpoint, to prevent user mistakes.
+        if (isSourcegraphToken(credentials.serverEndpoint)) {
+            return
         }
+
+        const serverEndpoint = new URL(credentials.serverEndpoint).href
+
+        // Pass `false` to avoid firing the change event until we've stored all of the values.
+        await this.set(this.LAST_USED_ENDPOINT, serverEndpoint, false)
+        await this.addEndpointHistory(serverEndpoint, false)
+        if (credentials.accessToken) {
+            await secretStorage.storeToken(serverEndpoint, credentials.accessToken)
+        }
+        this.onChange.fire()
     }
 
     public async deleteEndpoint(): Promise<void> {
@@ -114,7 +126,7 @@ class LocalStorage {
         return this.get<string[] | null>(this.CODY_ENDPOINT_HISTORY)
     }
 
-    private async addEndpointHistory(endpoint: string): Promise<void> {
+    private async addEndpointHistory(endpoint: string, fire = true): Promise<void> {
         // Do not save sourcegraph tokens as endpoint
         if (isSourcegraphToken(endpoint)) {
             return
@@ -124,7 +136,7 @@ class LocalStorage {
         const historySet = new Set(history)
         historySet.delete(endpoint)
         historySet.add(endpoint)
-        await this.set(this.CODY_ENDPOINT_HISTORY, [...historySet])
+        await this.set(this.CODY_ENDPOINT_HISTORY, [...historySet], fire)
     }
 
     public getChatHistory(authStatus: AuthenticatedAuthStatus): UserLocalHistory {
@@ -265,10 +277,12 @@ class LocalStorage {
         return this.storage.get(key, null)
     }
 
-    public async set<T>(key: string, value: T): Promise<void> {
+    public async set<T>(key: string, value: T, fire = true): Promise<void> {
         try {
             await this.storage.update(key, value)
-            this.onChange.fire()
+            if (fire) {
+                this.onChange.fire()
+            }
         } catch (error) {
             console.error(error)
         }

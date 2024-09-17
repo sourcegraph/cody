@@ -59,7 +59,9 @@ export type PickResolvedConfiguration<Keys extends KeysSpec> = {
 }
 
 async function resolveConfiguration(input: ConfigurationInput): Promise<ResolvedConfiguration> {
-    const serverEndpoint = normalizeURL(input.clientState.lastUsedEndpoint ?? DOTCOM_URL.toString())
+    const serverEndpoint = normalizeServerEndpointURL(
+        input.clientState.lastUsedEndpoint ?? DOTCOM_URL.toString()
+    )
 
     // We must not throw here, because that would result in the `resolvedConfig` observable
     // terminating and all callers receiving no further config updates.
@@ -78,7 +80,7 @@ async function resolveConfiguration(input: ConfigurationInput): Promise<Resolved
     }
 }
 
-function normalizeURL(url: string): string {
+export function normalizeServerEndpointURL(url: string): string {
     return url.endsWith('/') ? url : `${url}/`
 }
 
@@ -97,8 +99,10 @@ export function setResolvedConfigurationObservable(input: Observable<Configurati
  * only from clients that can guarantee the configuration will not change during execution (such as
  * simple CLI commands).
  */
-export function setStaticResolvedConfigurationValue(input: ResolvedConfiguration): void {
-    _resolvedConfig.setSource(Observable.of(input), false)
+export function setStaticResolvedConfigurationValue(
+    input: ResolvedConfiguration | Observable<ResolvedConfiguration>
+): void {
+    _resolvedConfig.setSource(input instanceof Observable ? input : Observable.of(input), false)
 }
 
 /**

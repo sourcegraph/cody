@@ -198,7 +198,9 @@ export function promiseFactoryToObservable<T>(
 
         const run = async () => {
             try {
+                signal?.throwIfAborted()
                 const value = await factory(signal)
+                signal?.throwIfAborted()
                 if (!unsubscribed) {
                     observer.next(value)
                     observer.complete()
@@ -985,6 +987,47 @@ export function catchError<T, R>(
                 if (handlerSubscription) {
                     unsubscribe(handlerSubscription)
                 }
+            }
+        })
+}
+
+export function withLatestFrom<T, R>(
+    other: ObservableLike<R>
+): (source: ObservableLike<T>) => Observable<[T, R]> {
+    return (source: ObservableLike<T>): Observable<[T, R]> =>
+        new Observable<[T, R]>(observer => {
+            let latest: R | undefined
+            let hasLatest = false
+            const otherSubscription = other.subscribe({
+                next(value) {
+                    latest = value
+                    hasLatest = true
+                },
+                error(err) {
+                    observer.error(err)
+                },
+            })
+
+            const scheduler = new AsyncSerialScheduler(observer)
+            const sourceSubscription = source.subscribe({
+                next(value) {
+                    scheduler.schedule(async next => {
+                        if (hasLatest) {
+                            next([value, latest!])
+                        }
+                    })
+                },
+                error(err) {
+                    scheduler.error(err)
+                },
+                complete() {
+                    scheduler.complete()
+                },
+            })
+
+            return () => {
+                unsubscribe(sourceSubscription)
+                unsubscribe(otherSubscription)
             }
         })
 }

@@ -8,6 +8,7 @@ import {
     authStatus,
     combineLatest,
     createDisposables,
+    debounceTime,
     distinctUntilChanged,
     featureFlagProvider,
     graphqlClient,
@@ -52,6 +53,7 @@ export function exposeOpenCtxClient(
         ),
         authStatus.pipe(
             distinctUntilChanged(),
+            debounceTime(0),
             mergeMap(auth =>
                 auth.authenticated
                     ? promiseFactoryToObservable(signal =>

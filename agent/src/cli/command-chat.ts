@@ -10,6 +10,7 @@ import Table from 'easy-table'
 import { isError } from 'lodash'
 import * as vscode from 'vscode'
 import type { ExtensionTranscriptMessage } from '../../../vscode/src/chat/protocol'
+import { sleep } from '../../../vscode/src/completions/utils'
 import { activate } from '../../../vscode/src/extension.node'
 import { startPollyRecording } from '../../../vscode/src/testutils/polly'
 import packageJson from '../../package.json'
@@ -147,6 +148,9 @@ export async function chatAction(options: ChatOptions): Promise<number> {
         notAuthenticated(spinner)
         return 1
     }
+
+    // TODO(sqs)#observe: fix this so it doesn't need to sleep
+    await sleep(250)
 
     const { models } = await client.request('chat/models', { modelUsage: ModelUsage.Chat })
 

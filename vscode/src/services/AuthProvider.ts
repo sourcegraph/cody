@@ -1,278 +1,167 @@
 import * as vscode from 'vscode'
 
 import {
+    type AuthCredentials,
     type AuthStatus,
-    CodyIDE,
-    type PickResolvedConfiguration,
-    SourcegraphGraphQLAPIClient,
+    NEVER,
+    type ResolvedConfiguration,
     type Unsubscribable,
+    abortableOperation,
+    authStatus,
+    combineLatest,
     currentResolvedConfig,
-    dependentAbortController,
-    isAbortError,
-    isDotCom,
-    isError,
-    isNetworkLikeError,
-    logError,
-    resolvedConfig,
-    setAuthStatusObservable,
-    take,
+    distinctUntilChanged,
+    mergeMap,
+    normalizeServerEndpointURL,
+    pluck,
+    resolvedConfig as resolvedConfig_,
+    setAuthStatusObservable as setAuthStatusObservable_,
+    startWith,
     telemetryRecorder,
+    withLatestFrom,
 } from '@sourcegraph/cody-shared'
-import { Subject } from 'observable-fns'
-import { formatURL } from '../auth/auth'
-import { newAuthStatus } from '../chat/utils'
-import { logDebug } from '../log'
+import { isEqual } from 'lodash' // TODO!(sqs)
+import { Observable, Subject } from 'observable-fns'
+import { type ResolvedConfigurationCredentialsOnly, validateCredentials } from '../auth/auth'
 import { maybeStartInteractiveTutorial } from '../tutorial/helpers'
 import { localStorage } from './LocalStorageProvider'
-import { secretStorage } from './SecretStorageProvider'
 
 const HAS_AUTHENTICATED_BEFORE_KEY = 'has-authenticated-before'
 
 class AuthProvider implements vscode.Disposable {
     private status = new Subject<AuthStatus>()
-    private configSubscription: Unsubscribable
+    private refreshRequests = new Subject<void>()
 
-    constructor() {
-        setAuthStatusObservable(this.status)
+    /**
+     * Credentials that were already validated with
+     * {@link AuthProvider.validateAndStoreCredentials}.
+     */
+    private lastValidatedAndStoredCredentials =
+        new Subject<ResolvedConfigurationCredentialsOnly | null>()
+
+    private hasAuthed = false
+
+    private subscriptions: Unsubscribable[] = []
+
+    constructor(setAuthStatusObservable = setAuthStatusObservable_, resolvedConfig = resolvedConfig_) {
+        setAuthStatusObservable(this.status.pipe(distinctUntilChanged()))
+
+        const credentialsChangesNeedingValidation = resolvedConfig.pipe(
+            withLatestFrom(this.lastValidatedAndStoredCredentials.pipe(startWith(null))),
+            mergeMap(([config, lastValidatedCredentials]) => {
+                const credentials: ResolvedConfigurationCredentialsOnly =
+                    toCredentialsOnlyNormalized(config)
+                return isEqual(credentials, lastValidatedCredentials)
+                    ? NEVER
+                    : Observable.of(credentials)
+            }),
+            distinctUntilChanged()
+        )
 
         // Perform auth as config changes.
-        this.configSubscription = resolvedConfig.pipe(take(1)).subscribe(async ({ auth }) => {
-            // Immediately emit the current status so the endpoint is known. Emitting
-            // `authenticated: false` for a brief period is both true and a way to ensure that
-            // subscribers are robust to changes in authentication status.
-            this.status.next({ authenticated: false, endpoint: auth.serverEndpoint })
+        this.subscriptions.push(
+            combineLatest([
+                credentialsChangesNeedingValidation,
+                this.refreshRequests.pipe(startWith(undefined)),
+            ])
+                .pipe(
+                    abortableOperation(async ([config], signal) => {
+                        // Immediately emit the unauthenticated status while we are authenticating.
+                        // Emitting `authenticated: false` for a brief period is both true and a
+                        // way to ensure that subscribers are robust to changes in
+                        // authentication status.
+                        this.status.next({
+                            authenticated: false,
+                            endpoint: config.auth.serverEndpoint,
+                        })
 
-            if (this.inflightAuth) {
-                // Don't cancel an explicitly invoked in-flight auth request.
-                return
-            }
-            await this.auth({
-                endpoint: auth.serverEndpoint,
-                token: auth.accessToken,
-                isExtensionStartup: true,
-            }).catch(error =>
-                logError('AuthProvider:init:failed', auth.serverEndpoint, { verbose: error })
-            )
-        })
+                        const authStatus = await validateCredentials(config, signal)
+                        signal?.throwIfAborted()
+                        this.status.next(authStatus)
+                        await this.handleAuthTelemetry(authStatus, signal)
+                    })
+                )
+                .subscribe({})
+        )
+
+        // Keep context updated with auth status.
+        this.subscriptions.push(
+            authStatus.pipe(pluck('authenticated')).subscribe(authenticated => {
+                try {
+                    vscode.commands.executeCommand('setContext', 'cody.activated', authenticated)
+                } catch {}
+            })
+        )
+
+        // Report auth changes.
+        this.subscriptions.push(startAuthTelemetryReporter())
+    }
+
+    private async handleAuthTelemetry(authStatus: AuthStatus, signal?: AbortSignal): Promise<void> {
+        // If the extension is authenticated on startup, it can't be a user's first
+        // ever authentication. We store this to prevent logging first-ever events
+        // for already existing users.
+        const hasAuthed = this.hasAuthed
+        this.hasAuthed = true
+        if (!hasAuthed && authStatus.authenticated) {
+            await this.setHasAuthenticatedBefore()
+            signal?.throwIfAborted()
+        } else if (authStatus.authenticated) {
+            this.handleFirstEverAuthentication()
+        }
     }
 
     public dispose(): void {
-        this.configSubscription.unsubscribe()
+        for (const subscription of this.subscriptions) {
+            subscription.unsubscribe()
+        }
     }
 
-    // Create Auth Status
-    private async makeAuthStatus(
-        config: PickResolvedConfiguration<{ configuration: 'customHeaders'; auth: true }>,
-        signal: AbortSignal
-    ): Promise<AuthStatus> {
-        const endpoint = config.auth.serverEndpoint
-        const token = config.auth.accessToken
+    /**
+     * Refresh the auth status.
+     */
+    public refresh(): void {
+        this.lastValidatedAndStoredCredentials.next(null)
+        this.refreshRequests.next()
+    }
 
-        const prevConfig = await currentResolvedConfig()
-        const isCodyWeb = prevConfig.configuration.agentIDE === CodyIDE.Web
-
-        // Cody Web can work without access token since authorization flow
-        // relies on cookie authentication
-        if (isCodyWeb) {
-            if (!endpoint) {
-                return { authenticated: false, endpoint }
-            }
+    public async validateAndStoreCredentials(
+        config: ResolvedConfigurationCredentialsOnly | AuthCredentials,
+        mode: 'store-if-valid' | 'always-store',
+        signal?: AbortSignal
+    ): Promise<{ isStored: boolean; authStatus: AuthStatus }> {
+        let credentials: ResolvedConfigurationCredentialsOnly
+        if ('auth' in config) {
+            credentials = toCredentialsOnlyNormalized(config)
         } else {
-            if (!token || !endpoint) {
-                return { authenticated: false, endpoint }
-            }
-        }
-
-        // Check if credentials are valid and if Cody is enabled for the credentials and endpoint.
-        const client = SourcegraphGraphQLAPIClient.withStaticConfig({
-            configuration: {
-                ...prevConfig.configuration,
-                customHeaders: config.configuration.customHeaders,
-            },
-            auth: config.auth,
-            clientState: prevConfig.clientState,
-        })
-
-        // Version is for frontend to check if Cody is not enabled due to unsupported version when siteHasCodyEnabled is false
-        const [{ enabled: siteHasCodyEnabled, version: siteVersion }, codyLLMConfiguration, userInfo] =
-            await Promise.all([
-                client.isCodyEnabled(signal),
-                client.getCodyLLMConfiguration(signal),
-                client.getCurrentUserInfo(signal),
-            ])
-        signal.throwIfAborted()
-
-        logDebug('CodyLLMConfiguration', JSON.stringify(codyLLMConfiguration))
-        // check first if it's a network error
-        if (isError(userInfo) && isNetworkLikeError(userInfo)) {
-            return { authenticated: false, showNetworkError: true, endpoint }
-        }
-        if (!userInfo || isError(userInfo)) {
-            return { authenticated: false, endpoint, showInvalidAccessTokenError: true }
-        }
-        if (!siteHasCodyEnabled) {
-            vscode.window.showErrorMessage(
-                `Cody is not enabled on this Sourcegraph instance (${endpoint}). Ask a site administrator to enable it.`
-            )
-            return { authenticated: false, endpoint }
-        }
-
-        const configOverwrites = isError(codyLLMConfiguration) ? undefined : codyLLMConfiguration
-
-        if (!isDotCom(endpoint)) {
-            return newAuthStatus({
-                ...userInfo,
-                endpoint,
-                siteVersion,
-                configOverwrites,
-                authenticated: true,
-                hasVerifiedEmail: false,
-                userCanUpgrade: false,
+            const prevConfig = await currentResolvedConfig()
+            signal?.throwIfAborted()
+            credentials = toCredentialsOnlyNormalized({
+                configuration: prevConfig.configuration,
+                auth: config,
+                clientState: prevConfig.clientState,
             })
         }
 
-        // Configure AuthStatus for DotCom users
-
-        const proStatus = await client.getCurrentUserCodySubscription()
-        // Pro user without the pending status is the valid pro users
-        const isActiveProUser =
-            proStatus !== null &&
-            'plan' in proStatus &&
-            proStatus.plan === 'PRO' &&
-            proStatus.status !== 'PENDING'
-
-        return newAuthStatus({
-            ...userInfo,
-            authenticated: true,
-            endpoint,
-            siteVersion,
-            configOverwrites,
-            userCanUpgrade: !isActiveProUser,
-        })
-    }
-
-    private inflightAuth: AbortController | null = null
-
-    // It processes the authentication steps and stores the login info before sharing the auth status with chatview
-    public async auth({
-        endpoint,
-        token,
-        customHeaders,
-        isExtensionStartup = false,
-        signal,
-    }: {
-        endpoint: string
-        token: string | null
-        customHeaders?: Record<string, string> | null
-        isExtensionStartup?: boolean
-        signal?: AbortSignal
-    }): Promise<AuthStatus> {
-        if (this.inflightAuth) {
-            this.inflightAuth.abort()
-        }
-        const abortController = dependentAbortController(signal)
-        this.inflightAuth = abortController
-
-        const formattedEndpoint = formatURL(endpoint)
-        if (!formattedEndpoint) {
-            throw new Error(`invalid endpoint URL: ${JSON.stringify(endpoint)}`)
-        }
-
-        const { configuration } = await currentResolvedConfig()
-        const config: PickResolvedConfiguration<{ configuration: 'customHeaders'; auth: true }> = {
-            configuration: { customHeaders: customHeaders || configuration.customHeaders },
-            auth: { serverEndpoint: formattedEndpoint, accessToken: token },
-        }
-
-        try {
-            const authStatus = await this.makeAuthStatus(config, abortController.signal)
-            abortController.signal.throwIfAborted()
-
-            await vscode.commands.executeCommand(
-                'setContext',
-                'cody.activated',
-                authStatus.authenticated
-            )
-            abortController.signal.throwIfAborted()
-
-            await localStorage.saveEndpoint(config.auth.serverEndpoint)
-            if (config.auth.accessToken) {
-                await secretStorage.storeToken(config.auth.serverEndpoint, config.auth.accessToken)
-            }
-            await this.updateAuthStatus(authStatus, abortController.signal)
-            abortController.signal.throwIfAborted()
-
-            // If the extension is authenticated on startup, it can't be a user's first
-            // ever authentication. We store this to prevent logging first-ever events
-            // for already existing users.
-            if (isExtensionStartup && authStatus.authenticated) {
-                await this.setHasAuthenticatedBefore()
-                abortController.signal.throwIfAborted()
-            } else if (authStatus.authenticated) {
-                this.handleFirstEverAuthentication()
-            }
-
-            return authStatus
-        } catch (error) {
-            if (isAbortError(error)) {
-                throw error
-            }
-            logDebug('AuthProvider:auth', 'failed', error)
-            return {
-                endpoint,
-                authenticated: false,
-                showInvalidAccessTokenError: true,
-            }
-        } finally {
-            if (this.inflightAuth === abortController) {
-                this.inflightAuth = null
-            }
-        }
-    }
-
-    // Set auth status in case of reload
-    public async reloadAuthStatus(): Promise<AuthStatus> {
-        await vscode.commands.executeCommand('setContext', 'cody.activated', false)
-
-        const { configuration, auth } = await currentResolvedConfig()
-        return await this.auth({
-            endpoint: auth.serverEndpoint,
-            token: auth.accessToken,
-            customHeaders: configuration.customHeaders,
-        })
-    }
-
-    private async updateAuthStatus(authStatus: AuthStatus, signal: AbortSignal): Promise<void> {
-        try {
+        const authStatus = await validateCredentials(credentials, signal)
+        signal?.throwIfAborted()
+        const shouldStore = mode === 'always-store' || authStatus.authenticated
+        if (shouldStore) {
+            this.lastValidatedAndStoredCredentials.next(credentials)
+            await localStorage.saveEndpointAndToken(credentials.auth)
             this.status.next(authStatus)
-        } catch (error) {
-            if (!isAbortError(error)) {
-                logDebug('AuthProvider', 'updateAuthStatus error', error)
-            }
-        } finally {
-            if (!signal.aborted) {
-                let eventValue: 'disconnected' | 'connected' | 'failed'
-                if (
-                    !authStatus.authenticated &&
-                    (authStatus.showNetworkError || authStatus.showInvalidAccessTokenError)
-                ) {
-                    eventValue = 'failed'
-                } else if (authStatus.authenticated) {
-                    eventValue = 'connected'
-                } else {
-                    eventValue = 'disconnected'
-                }
-                telemetryRecorder.recordEvent('cody.auth', eventValue, {
-                    billingMetadata: {
-                        product: 'cody',
-                        category: 'billable',
-                    },
-                })
-            }
+            signal?.throwIfAborted()
         }
+        if (!shouldStore) {
+            // Always report telemetry even if we don't store it.
+            reportAuthTelemetryEvent(authStatus)
+        }
+        await this.handleAuthTelemetry(authStatus, signal)
+        return { isStored: shouldStore, authStatus }
     }
 
     public setAuthPendingToEndpoint(endpoint: string): void {
+        // TODO(sqs)#observe: store this pending endpoint in clientState instead of authStatus
         this.status.next({ authenticated: false, endpoint })
     }
 
@@ -298,3 +187,51 @@ class AuthProvider implements vscode.Disposable {
 }
 
 export const authProvider = new AuthProvider()
+
+/**
+ * @internal For testing only.
+ */
+export function newAuthProviderForTest(
+    ...args: ConstructorParameters<typeof AuthProvider>
+): AuthProvider {
+    return new AuthProvider(...args)
+}
+
+function startAuthTelemetryReporter(): Unsubscribable {
+    return authStatus.subscribe(authStatus => {
+        reportAuthTelemetryEvent(authStatus)
+    })
+}
+
+function reportAuthTelemetryEvent(authStatus: AuthStatus): void {
+    let eventValue: 'disconnected' | 'connected' | 'failed'
+    if (
+        !authStatus.authenticated &&
+        (authStatus.showNetworkError || authStatus.showInvalidAccessTokenError)
+    ) {
+        eventValue = 'failed'
+    } else if (authStatus.authenticated) {
+        eventValue = 'connected'
+    } else {
+        eventValue = 'disconnected'
+    }
+    telemetryRecorder.recordEvent('cody.auth', eventValue, {
+        billingMetadata: {
+            product: 'cody',
+            category: 'billable',
+        },
+    })
+}
+
+function toCredentialsOnlyNormalized(
+    config: ResolvedConfiguration | ResolvedConfigurationCredentialsOnly
+): ResolvedConfigurationCredentialsOnly {
+    return {
+        configuration: {
+            agentIDE: config.configuration.agentIDE,
+            customHeaders: config.configuration.customHeaders,
+        },
+        auth: { ...config.auth, serverEndpoint: normalizeServerEndpointURL(config.auth.serverEndpoint) },
+        clientState: { anonymousUserID: config.clientState.anonymousUserID },
+    }
+}

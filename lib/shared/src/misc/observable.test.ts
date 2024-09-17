@@ -18,8 +18,10 @@ import {
     promiseFactoryToObservable,
     readValuesFrom,
     shareReplay,
+    startWith,
     storeLastValue,
     take,
+    withLatestFrom,
 } from './observable'
 
 describe('firstValueFrom', () => {
@@ -578,5 +580,93 @@ describe('concat', () => {
         await done
 
         expect(values).toStrictEqual<typeof values>(['a'])
+    })
+})
+
+describe('withLatestFrom', () => {
+    afterEach(() => {
+        vi.useRealTimers()
+    })
+
+    test('combines latest values from two observables', async () => {
+        vi.useFakeTimers()
+        const source = observableOfTimedSequence(10, 'a', 20, 'b', 30, 'c')
+        const other = observableOfTimedSequence(15, 'x', 25, 'y')
+
+        const { values, done } = readValuesFrom(source.pipe(withLatestFrom(other)))
+
+        await vi.advanceTimersByTimeAsync(29)
+        expect(values).toStrictEqual<typeof values>([])
+
+        await vi.advanceTimersByTimeAsync(1)
+        expect(values).toStrictEqual<typeof values>([['b', 'x']])
+        values.length = 0
+
+        await vi.advanceTimersByTimeAsync(30)
+        expect(values).toStrictEqual<typeof values>([['c', 'y']])
+        values.length = 0
+
+        await vi.runAllTimersAsync()
+        await done
+        expect(values).toStrictEqual<typeof values>([])
+    })
+
+    test('does not emit until other observable emits', async () => {
+        vi.useFakeTimers()
+        const source = observableOfTimedSequence(10, 'a', 20, 'b')
+        const other = observableOfTimedSequence(25, 'x')
+
+        const { values, done } = readValuesFrom(source.pipe(withLatestFrom(other)))
+        await vi.runAllTimersAsync()
+        await done
+
+        expect(values).toStrictEqual<typeof values>([['b', 'x']])
+    })
+
+    test('propagates errors from source observable', async () => {
+        const source = new Observable<string>(observer => {
+            observer.next('a')
+            observer.error(new Error('Source error'))
+        })
+        const other = observableOfSequence(1)
+        await expect(allValuesFrom(source.pipe(withLatestFrom(other)))).rejects.toThrow('Source error')
+    })
+
+    test('propagates errors from other observable', async () => {
+        const source = observableOfSequence('a', 'b')
+        const other = new Observable<number>(observer => {
+            observer.next(1)
+            observer.error(new Error('Other error'))
+        })
+        await expect(allValuesFrom(source.pipe(withLatestFrom(other)))).rejects.toThrow('Other error')
+    })
+
+    test('unsubscribes correctly', async () => {
+        vi.useFakeTimers()
+        const source = observableOfTimedSequence(10, 'a', 20, 'b', 30, 'c')
+        const other = observableOfTimedSequence(15, 'x', 25, 'y')
+
+        const { values, done, unsubscribe } = readValuesFrom(source.pipe(withLatestFrom(other)))
+        await vi.advanceTimersByTimeAsync(35)
+        unsubscribe()
+        await done
+
+        expect(values).toStrictEqual<typeof values>([['b', 'x']])
+    })
+
+    test('works with startWith', async () => {
+        vi.useFakeTimers()
+        const source = new Subject<string>()
+        const other = NEVER.pipe(startWith('x'))
+
+        const { values, unsubscribe, done } = readValuesFrom(source.pipe(withLatestFrom(other)))
+        expect(values).toStrictEqual<typeof values>([])
+
+        source.next('a')
+        await vi.runOnlyPendingTimersAsync()
+        expect(values).toStrictEqual<typeof values>([['a', 'x']])
+
+        unsubscribe()
+        await done
     })
 })

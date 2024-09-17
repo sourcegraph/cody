@@ -11,7 +11,7 @@ import { Observable } from 'observable-fns'
 import { type MockInstance, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import type * as vscode from 'vscode'
 import { mockLocalStorage } from '../services/LocalStorageProvider'
-import { DEFAULT_VSCODE_SETTINGS, Disposable, vsCodeMocks } from '../testutils/mocks'
+import { DEFAULT_VSCODE_SETTINGS, vsCodeMocks } from '../testutils/mocks'
 import { getCurrentDocContext } from './get-current-doc-context'
 import { TriggerKind } from './get-inline-completions'
 import { initCompletionProviderConfig, params } from './get-inline-completions-tests/helpers'
@@ -30,10 +30,10 @@ import type { InlineCompletionItemWithAnalytics } from './text-processing/proces
 import { sleep } from './utils'
 
 vi.mock('vscode', async () => {
-    const vscodeMocks = (await import('../testutils/mocks')).vsCodeMocks
+    const { vsCodeMocks, Disposable } = await import('../testutils/mocks')
     return {
-        ...vscodeMocks,
-        Disposable: Disposable,
+        ...vsCodeMocks,
+        Disposable,
         workspace: {
             ...vsCodeMocks.workspace,
             onDidChangeTextDocument() {
