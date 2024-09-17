@@ -1,17 +1,16 @@
 import { CHAT_INPUT_TOKEN_BUDGET, CHAT_OUTPUT_TOKEN_BUDGET } from '../token/constants'
-import {
-    type ClientSideConfig,
-    type ContextWindow,
-    type ModelCapability,
-    type ModelCategory,
-    type ModelRef,
-    type ModelRefStr,
-    type ModelStatus,
-    type ModelTier,
-    capabilityToUsage,
+import type {
+    ClientSideConfig,
+    ContextWindow,
+    ModelCapability,
+    ModelCategory,
+    ModelRef,
+    ModelRefStr,
+    ModelStatus,
+    ModelTier,
 } from './modelsService'
 import { ModelTag } from './tags'
-import type { ModelContextWindow, ModelUsage } from './types'
+import { type ModelContextWindow, ModelUsage } from './types'
 import { getModelInfo } from './utils'
 
 /**
@@ -146,6 +145,15 @@ export function createModelFromServerModel({
         provider: ref.providerId,
         title: displayName,
     })
+}
+
+function capabilityToUsage(capability: ModelCapability): ModelUsage[] {
+    switch (capability) {
+        case 'autocomplete':
+            return [ModelUsage.Autocomplete]
+        case 'chat':
+            return [ModelUsage.Chat, ModelUsage.Edit]
+    }
 }
 
 export function modelTier(model: Model): ModelTier {

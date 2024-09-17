@@ -29,6 +29,9 @@ export const sidebarSignin = async (
     }
 
     await expectAuthenticated(page)
+
+    // Wait very briefly to let the authStatus changes propagate.
+    await page.waitForTimeout(500)
 }
 
 export async function closeSidebar(page: Page): Promise<void> {

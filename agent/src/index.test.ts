@@ -130,6 +130,19 @@ describe('Agent', () => {
     // Context files ends with 'Ignored.ts' will be excluded by .cody/ignore
     const ignoredUri = workspace.file('src', 'isIgnored.ts')
 
+    async function setChatModel(
+        model = 'fireworks/accounts/fireworks/models/mixtral-8x7b-instruct'
+    ): Promise<string> {
+        // Use the same chat model regardless of the server response (in case it changes on the
+        // remote endpoint so we don't need to regenerate all the recordings).
+        const freshChatID = await client.request('chat/new', null)
+        await client.request('chat/setModel', {
+            id: freshChatID,
+            model,
+        })
+        return freshChatID
+    }
+
     it('extensionConfiguration/change & chat/models (handle errors)', async () => {
         // list of v2 events we expect to fire during the test run (feature:action). Add to this list as needed.
         client.expectedEvents = [
@@ -144,10 +157,8 @@ describe('Agent', () => {
         // fine as long as we didn't send the second unauthenticated config
         // change.
         const initModelName = 'anthropic/claude-3-5-sonnet-20240620'
-        const {
-            models: [initModel],
-        } = await client.request('chat/models', { modelUsage: ModelUsage.Chat })
-        expect(initModel.id).toStrictEqual(initModelName)
+        const { models } = await client.request('chat/models', { modelUsage: ModelUsage.Chat })
+        expect(models[0].id).toStrictEqual(initModelName)
 
         const invalid = await client.request('extensionConfiguration/change', {
             ...client.info.extensionConfiguration,
@@ -217,6 +228,7 @@ describe('Agent', () => {
                 'cody.chat-question:executed',
                 'cody.chatResponse:noCode',
             ]
+            await setChatModel('anthropic/claude-3-5-sonnet-20240620')
             const lastMessage = await client.sendSingleMessageToNewChat('Hello!')
             expect(lastMessage).toMatchInlineSnapshot(
                 `
@@ -865,7 +877,7 @@ describe('Agent', () => {
                 'cody.chatResponse:noCode',
             ]
             await client.openFile(animalUri)
-            const freshChatID = await client.request('chat/new', null)
+            const freshChatID = await setChatModel()
             const id = await client.request('commands/explain', null)
 
             // Assert that the server is not using IDs between `chat/new` and
@@ -889,6 +901,7 @@ describe('Agent', () => {
                     'cody.chatResponse:hasCode',
                 ]
                 await client.openFile(animalUri)
+                await setChatModel()
                 const id = await client.request('commands/test', null)
                 const lastMessage = await client.firstNonEmptyTranscript(id)
                 expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchSnapshot()
@@ -905,6 +918,7 @@ describe('Agent', () => {
                 'cody.chatResponse:hasCode',
             ]
             await client.openFile(animalUri)
+            await setChatModel()
             const id = await client.request('commands/smell', null)
             const lastMessage = await client.firstNonEmptyTranscript(id)
 

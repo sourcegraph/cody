@@ -1,15 +1,20 @@
-import { expect, it } from 'vitest'
+import { expect, it, vi } from 'vitest'
 
 import {
     AUTH_STATUS_FIXTURE_AUTHED,
     AUTH_STATUS_FIXTURE_AUTHED_DOTCOM,
     type AutocompleteProviderID,
     type CodeCompletionsParams,
+    type ModelsData,
+    createModelFromServerModel,
     firstValueFrom,
-    mockModelsService,
+    mockAuthStatus,
     modelsService,
+    skipPendingOperation,
 } from '@sourcegraph/cody-shared'
 
+import { defaultModelPreferencesFromServerModelsConfig } from '@sourcegraph/cody-shared/src/models/sync'
+import { Observable } from 'observable-fns'
 import { getMockedGenerateCompletionsOptions } from '../../get-inline-completions-tests/helpers'
 import { type ServerSentModelsMock, getServerSentModelsMock } from './__mocks__/create-provider-mocks'
 import { createProvider } from './create-provider'
@@ -22,7 +27,7 @@ import type { Provider } from './provider'
 export async function createProviderForTest(
     ...args: Parameters<typeof createProvider>
 ): Promise<Provider> {
-    const providerOrError = await firstValueFrom(createProvider(...args))
+    const providerOrError = await firstValueFrom(createProvider(...args).pipe(skipPendingOperation()))
 
     if (providerOrError instanceof Error) {
         throw providerOrError
@@ -66,16 +71,22 @@ export async function getAutocompleteProviderFromServerSideModelConfig({
     isDotCom: boolean
 }): Promise<Provider> {
     const authStatus = isDotCom ? AUTH_STATUS_FIXTURE_AUTHED_DOTCOM : AUTH_STATUS_FIXTURE_AUTHED
+    mockAuthStatus(authStatus)
 
     const mockedConfig = getServerSentModelsMock()
     const newDefaultModel = mockedConfig.models.find(model => model.modelRef === modelRef)!
     mockedConfig.defaultModels.codeCompletion = newDefaultModel.modelRef
 
-    await mockModelsService({
-        modelsService,
-        config: mockedConfig,
-        authStatus,
-    })
+    vi.spyOn(modelsService, 'modelsChanges', 'get').mockReturnValue(
+        Observable.of({
+            primaryModels: mockedConfig.models.map(createModelFromServerModel),
+            localModels: [],
+            preferences: {
+                defaults: defaultModelPreferencesFromServerModelsConfig(mockedConfig),
+                selected: {},
+            },
+        } satisfies Partial<ModelsData> as ModelsData)
+    )
 
     return createProviderForTest({
         config: {
@@ -97,6 +108,14 @@ export function getAutocompleteProviderFromSiteConfigCodyLLMConfiguration({
     isDotCom,
 }: { providerId: AutocompleteProviderID; legacyModel: string; isDotCom: boolean }): Promise<Provider> {
     const authStatus = isDotCom ? AUTH_STATUS_FIXTURE_AUTHED_DOTCOM : AUTH_STATUS_FIXTURE_AUTHED
+
+    vi.spyOn(modelsService, 'modelsChanges', 'get').mockReturnValue(
+        Observable.of({
+            primaryModels: [],
+            localModels: [],
+            preferences: { defaults: {}, selected: {} },
+        } satisfies Partial<ModelsData> as ModelsData)
+    )
 
     return createProviderForTest({
         config: {

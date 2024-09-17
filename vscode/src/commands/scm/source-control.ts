@@ -12,7 +12,7 @@ import {
     getSimplePreamble,
     modelsService,
     pluralize,
-    startWith,
+    skipPendingOperation,
     subscriptionDisposable,
     telemetryRecorder,
 } from '@sourcegraph/cody-shared'
@@ -36,11 +36,13 @@ export class CodySourceControl implements vscode.Disposable {
             vscode.commands.registerCommand('cody.command.generate-commit', scm => this.generate(scm)),
             vscode.commands.registerCommand('cody.command.abort-commit', () => this.statusUpdate()),
             subscriptionDisposable(
-                modelsService.changes.pipe(startWith(undefined)).subscribe(() => {
-                    const models = modelsService.getModels(ModelUsage.Chat)
-                    const preferredModel = models.find(p => p.id.includes('claude-3-haiku'))
-                    this.model = preferredModel ?? models[0]
-                })
+                modelsService
+                    .getModels(ModelUsage.Chat)
+                    .pipe(skipPendingOperation())
+                    .subscribe(models => {
+                        const preferredModel = models.find(p => p.id.includes('claude-3-haiku'))
+                        this.model = preferredModel ?? models.at(0)
+                    })
             )
         )
         this.initializeGitAPI()

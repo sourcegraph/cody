@@ -3,6 +3,7 @@ import type { ServerModelConfiguration } from '../../models/modelsService'
 import { fetch } from '../../fetch'
 import { logError } from '../../logger'
 import { addTraceparent, wrapInActiveSpan } from '../../tracing'
+import { isAbortError } from '../errors'
 import { addCustomUserAgent, verifyResponseCode } from '../graphql/client'
 
 /**
@@ -31,7 +32,7 @@ export class RestClient {
 
     // Make an authenticated HTTP request to the Sourcegraph instance.
     // "name" is a developer-friendly term to label the request's trace span.
-    private getRequest<T>(name: string, urlSuffix: string): Promise<T | Error> {
+    private getRequest<T>(name: string, urlSuffix: string, signal?: AbortSignal): Promise<T | Error> {
         const headers = new Headers(this.customHeaders)
         if (this.accessToken) {
             headers.set('Authorization', `token ${this.accessToken}`)
@@ -46,10 +47,15 @@ export class RestClient {
             fetch(url, {
                 method: 'GET',
                 headers,
+                signal,
             })
                 .then(verifyResponseCode)
                 .then(response => response.json() as T)
-                .catch(error => new Error(`error calling Sourcegraph REST API: ${error} (${url})`))
+                .catch(error =>
+                    isAbortError(error)
+                        ? error
+                        : new Error(`error calling Sourcegraph REST API: ${error} (${url})`)
+                )
         )
     }
 
@@ -59,7 +65,9 @@ export class RestClient {
      * IMPORTANT: The list may include models that the current Cody client does not know
      * how to operate.
      */
-    public async getAvailableModels(): Promise<ServerModelConfiguration | undefined> {
+    public async getAvailableModels(
+        signal?: AbortSignal
+    ): Promise<ServerModelConfiguration | undefined> {
         // Fetch the server-side configuration data. This will be in the form of a JSON blob
         // matching the schema defined in the `sourcegraph/llm-model' repo
         //
@@ -70,9 +78,13 @@ export class RestClient {
         // Also, the URL definitely will change.
         const serverSideConfig = await this.getRequest<ServerModelConfiguration>(
             'getAvailableModels',
-            '/.api/modelconfig/supported-models.json'
+            '/.api/modelconfig/supported-models.json',
+            signal
         )
         if (serverSideConfig instanceof Error) {
+            if (isAbortError(serverSideConfig)) {
+                throw serverSideConfig
+            }
             logError('RestClient::getAvailableModels', 'failed to fetch available models', {
                 verbose: serverSideConfig,
             })

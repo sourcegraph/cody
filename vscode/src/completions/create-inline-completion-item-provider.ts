@@ -6,6 +6,7 @@ import {
     createDisposables,
     mergeMap,
     promiseFactoryToObservable,
+    skipPendingOperation,
     vscodeResource,
 } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
@@ -90,6 +91,7 @@ export function createInlineCompletionItemProvider({
     }).pipe(
         mergeMap(documentFilters =>
             createProvider({ config: { configuration }, authStatus }).pipe(
+                skipPendingOperation(),
                 createDisposables(providerOrError => {
                     if (providerOrError instanceof Error) {
                         logDebug('AutocompleteProvider', providerOrError.message)

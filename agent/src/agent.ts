@@ -9,6 +9,7 @@ import {
     ModelUsage,
     currentAuthStatus,
     currentAuthStatusAuthed,
+    firstResultFromOperation,
     telemetryRecorder,
     waitUntilComplete,
 } from '@sourcegraph/cody-shared'
@@ -61,7 +62,6 @@ import { getModelOptionItems } from '../../vscode/src/edit/input/get-items/model
 import { getEditSmartSelection } from '../../vscode/src/edit/utils/edit-selection'
 import type { ExtensionClient } from '../../vscode/src/extension-client'
 import { IndentationBasedFoldingRangeProvider } from '../../vscode/src/lsp/foldingRanges'
-import { syncModels } from '../../vscode/src/models/sync'
 import type { FixupActor, FixupFileCollection } from '../../vscode/src/non-stop/roles'
 import type { FixupControlApplicator } from '../../vscode/src/non-stop/strategies'
 import { authProvider } from '../../vscode/src/services/AuthProvider'
@@ -1113,9 +1113,12 @@ export class Agent extends MessageHandler implements ExtensionClient {
             return Promise.reject(`No task with id ${id}`)
         })
 
-        this.registerAuthenticatedRequest('editTask/retry', params => {
+        this.registerAuthenticatedRequest('editTask/retry', async params => {
             const instruction = PromptString.unsafe_fromUserQuery(params.instruction)
-            const models = getModelOptionItems(modelsService.getModels(ModelUsage.Edit), true)
+            const models = getModelOptionItems(
+                await firstResultFromOperation(modelsService.getModels(ModelUsage.Edit)),
+                true
+            )
             const previousInput: QuickPickInput = {
                 instruction: instruction,
                 userContextFiles: [],
@@ -1226,7 +1229,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
         // TODO: JetBrains no longer uses this, consider deleting it.
         this.registerAuthenticatedRequest('chat/restore', async ({ modelID, messages, chatID }) => {
             const authStatus = currentAuthStatusAuthed()
-            modelID ??= modelsService.getDefaultChatModel() ?? ''
+            modelID ??= (await firstResultFromOperation(modelsService.getDefaultChatModel())) ?? ''
             const chatMessages = messages?.map(PromptString.unsafe_deserializeChatMessage) ?? []
             const chatModel = new ChatModel(modelID, chatID, chatMessages)
             await chatHistory.saveChat(authStatus, chatModel.toSerializedChatTranscript())
@@ -1239,9 +1242,9 @@ export class Agent extends MessageHandler implements ExtensionClient {
         })
 
         this.registerAuthenticatedRequest('chat/models', async ({ modelUsage }) => {
-            await syncModels(currentAuthStatus())
-            const models = modelsService.getModels(modelUsage)
-            return { models }
+            return {
+                models: await firstResultFromOperation(modelsService.getModels(modelUsage)),
+            }
         })
 
         this.registerAuthenticatedRequest('chat/export', async input => {

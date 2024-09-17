@@ -2,10 +2,13 @@ import {
     type ContextItem,
     ContextItemSource,
     type Message,
+    type Model,
     ModelUsage,
+    ModelsService,
+    TestLocalStorageForModelPreferences,
     contextFiltersProvider,
     createModel,
-    modelsService,
+    mockModelsService,
     ps,
 } from '@sourcegraph/cody-shared'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -13,6 +16,13 @@ import * as vscode from 'vscode'
 import { PromptBuilder } from '../../prompt-builder'
 import { ChatModel } from './ChatModel'
 import { DefaultPrompter } from './prompt'
+
+function modelsServiceWithModels(models: Model[]): ModelsService {
+    const modelsService = new ModelsService()
+    modelsService.storage = new TestLocalStorageForModelPreferences()
+    vi.spyOn(modelsService, 'models', 'get').mockReturnValue(models)
+    return modelsService
+}
 
 describe('DefaultPrompter', () => {
     beforeEach(() => {
@@ -23,13 +33,14 @@ describe('DefaultPrompter', () => {
     })
 
     it('constructs a prompt with no context', async () => {
-        modelsService.setModels([
+        const modelsService = modelsServiceWithModels([
             createModel({
                 id: 'a-model-id',
                 usage: [ModelUsage.Chat],
                 contextWindow: { input: 100000, output: 100 },
             }),
         ])
+        mockModelsService({ modelsService })
         const chat = new ChatModel('a-model-id')
         chat.addHumanMessage({ text: ps`Hello` })
 
@@ -98,13 +109,15 @@ describe('DefaultPrompter', () => {
             update: vi.fn(() => Promise.resolve()),
         }))
 
-        modelsService.setModels([
+        const modelsService = modelsServiceWithModels([
             createModel({
                 id: 'a-model-id',
                 usage: [ModelUsage.Chat],
                 contextWindow: { input: 100000, output: 100 },
             }),
         ])
+        mockModelsService({ modelsService })
+
         const chat = new ChatModel('a-model-id')
         chat.addHumanMessage({ text: ps`Hello` })
 
@@ -134,13 +147,15 @@ describe('DefaultPrompter', () => {
     })
 
     it('prefers latest enhanced context', async () => {
-        modelsService.setModels([
+        const modelsService = modelsServiceWithModels([
             createModel({
                 id: 'a-model-id',
                 usage: [ModelUsage.Chat],
                 contextWindow: { input: 100000, output: 100 },
             }),
         ])
+        mockModelsService({ modelsService })
+
         const chat = new ChatModel('a-model-id')
         chat.addHumanMessage({ text: ps`Hello, world!` })
 

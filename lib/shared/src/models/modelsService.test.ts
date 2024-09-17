@@ -1,23 +1,32 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { mockAuthStatus } from '../auth/authStatus'
+import { Observable } from 'observable-fns'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { currentAuthStatus, mockAuthStatus } from '../auth/authStatus'
 import { AUTH_STATUS_FIXTURE_AUTHED, type AuthenticatedAuthStatus } from '../auth/types'
+import { firstValueFrom } from '../misc/observable'
 import { DOTCOM_URL } from '../sourcegraph-api/environments'
 import { CHAT_INPUT_TOKEN_BUDGET, CHAT_OUTPUT_TOKEN_BUDGET } from '../token/constants'
 import { getDotComDefaultModels } from './dotcom'
-import type { ServerModel } from './model'
-import { createModel, createModelFromServerModel, modelTier } from './model'
-import {
-    type ModelCategory,
-    type ModelTier,
-    ModelsService,
-    type ServerModelConfiguration,
-    type TestStorage,
-    mockModelsService,
-} from './modelsService'
+import type { Model } from './model'
+import { createModel } from './model'
+import { type ModelsData, ModelsService, TestLocalStorageForModelPreferences } from './modelsService'
 import { ModelTag } from './tags'
 import { ModelUsage } from './types'
 
-describe('Model Provider', () => {
+const EMPTY_MODELS_DATA: ModelsData = {
+    localModels: [],
+    preferences: { defaults: {}, selected: {} },
+    primaryModels: [],
+}
+
+describe('modelsService', () => {
+    function modelsServiceWithModels(models: Model[]): ModelsService {
+        const modelsService = new ModelsService()
+        modelsService.storage = new TestLocalStorageForModelPreferences()
+        // TODO(sqs)#observe: this only mocks tests that don't use modelsService.modelsChanges
+        vi.spyOn(modelsService, 'models', 'get').mockReturnValue(models)
+        return modelsService
+    }
+
     const freeUserAuthStatus: AuthenticatedAuthStatus = {
         ...AUTH_STATUS_FIXTURE_AUTHED,
         endpoint: DOTCOM_URL.toString(),
@@ -52,7 +61,7 @@ describe('Model Provider', () => {
 
         it('returns max token limit for known DotCom chat model ', () => {
             const models = getDotComDefaultModels()
-            modelsService.setModels(models)
+            const modelsService = modelsServiceWithModels(models)
             expect(models[0].id).toBeDefined()
             const cw = modelsService.getContextWindowByID(models[0].id)
             expect(cw).toStrictEqual(models[0].contextWindow)
@@ -60,7 +69,7 @@ describe('Model Provider', () => {
 
         it('returns max token limit for known DotCom chat model with higher context window (claude 3)', () => {
             const models = getDotComDefaultModels()
-            modelsService.setModels(models)
+            const modelsService = modelsServiceWithModels(models)
             const claude3SonnetModelID = 'anthropic/claude-3-5-sonnet-20240620'
             const claude3SonnetModel = modelsService.getModelByID(claude3SonnetModelID)
             expect(claude3SonnetModel?.contextWindow?.context?.user).greaterThan(0)
@@ -75,7 +84,7 @@ describe('Model Provider', () => {
         })
 
         it('returns max token limit for known model - Enterprise user', () => {
-            modelsService.setModels([
+            const modelsService = modelsServiceWithModels([
                 createModel({
                     id: 'enterprise-model',
                     usage: [ModelUsage.Chat],
@@ -94,7 +103,9 @@ describe('Model Provider', () => {
         })
 
         it('returns max token limit for known chat model', () => {
-            const knownModel = getDotComDefaultModels()[0]
+            const models = getDotComDefaultModels()
+            const modelsService = modelsServiceWithModels(models)
+            const knownModel = models[0]
             const { output } = modelsService.getContextWindowByID(knownModel.id)
             expect(output).toEqual(knownModel.contextWindow.output)
         })
@@ -105,7 +116,7 @@ describe('Model Provider', () => {
         })
 
         it('returns max token limit for known model - Enterprise user', () => {
-            modelsService.setModels([
+            const modelsService = modelsServiceWithModels([
                 createModel({
                     id: 'model-with-limit',
                     usage: [ModelUsage.Chat],
@@ -138,172 +149,68 @@ describe('Model Provider', () => {
             usage: [ModelUsage.Edit],
         })
 
+        function modelsServiceWithModels(models: Model[]): ModelsService {
+            const modelsService = new ModelsService()
+            modelsService.storage = new TestLocalStorageForModelPreferences()
+            return modelsService
+        }
+
+        let modelsService: ModelsService
         beforeEach(() => {
             mockAuthStatus(codyProAuthStatus)
-            modelsService.setModels([model1chat, model2chat, model3all, model4edit])
+            modelsService = modelsServiceWithModels([model1chat, model2chat, model3all, model4edit])
         })
 
-        it('allows setting default models per type', () => {
-            modelsService.setSelectedModel(ModelUsage.Chat, model2chat)
-            modelsService.setSelectedModel(ModelUsage.Edit, model4edit)
-            expect(modelsService.getDefaultEditModel()).toBe(model4edit.id)
-            expect(modelsService.getDefaultChatModel()).toBe(model2chat.id)
+        it('allows setting default models per type', async () => {
+            vi.spyOn(modelsService, 'modelsChanges', 'get').mockReturnValue(
+                Observable.of(EMPTY_MODELS_DATA)
+            )
+            await modelsService.setSelectedModel(ModelUsage.Chat, model2chat)
+            await modelsService.setSelectedModel(ModelUsage.Edit, model4edit)
+
+            vi.spyOn(modelsService, 'modelsChanges', 'get').mockReturnValue(
+                Observable.of({
+                    localModels: [],
+                    primaryModels: [model2chat, model4edit],
+                    preferences:
+                        modelsService.storage?.getModelPreferences()[currentAuthStatus().endpoint]!,
+                })
+            )
+            expect(await firstValueFrom(modelsService.getDefaultEditModel())).toBe(model4edit.id)
+            expect(await firstValueFrom(modelsService.getDefaultChatModel())).toBe(model2chat.id)
         })
 
         it('only allows setting known models as default', async () => {
             // Set default before settings models is a no-op
-            modelsService.setModels([])
+            vi.spyOn(modelsService, 'modelsChanges', 'get').mockReturnValue(
+                Observable.of(EMPTY_MODELS_DATA)
+            )
             await modelsService.setSelectedModel(ModelUsage.Chat, model2chat.id)
-            modelsService.setModels([model1chat, model2chat])
-            expect(modelsService.getDefaultChatModel()).toBe(model1chat.id)
+            vi.spyOn(modelsService, 'modelsChanges', 'get').mockReturnValue(
+                Observable.of({
+                    ...EMPTY_MODELS_DATA,
+                    primaryModels: [model1chat],
+                    preferences:
+                        modelsService.storage?.getModelPreferences()[currentAuthStatus().endpoint]!,
+                })
+            )
+            vi.spyOn(modelsService, 'models', 'get').mockReturnValue([model1chat])
+            expect(await firstValueFrom(modelsService.getDefaultChatModel())).toBe(model1chat.id)
         })
 
         it('only allows setting appropriate model types', () => {
-            modelsService.setModels([model1chat, model2chat, model3all, model4edit])
+            vi.spyOn(modelsService, 'modelsChanges', 'get').mockReturnValue(
+                Observable.of({
+                    ...EMPTY_MODELS_DATA,
+                    primaryModels: [model1chat, model2chat, model3all, model4edit],
+                })
+            )
             expect(async () =>
                 modelsService.setSelectedModel(ModelUsage.Chat, model4edit)
             ).rejects.toThrow('Model "model-4" is not compatible with usage type "chat".')
             expect(async () =>
                 modelsService.setSelectedModel(ModelUsage.Edit, model1chat)
             ).rejects.toThrow('Model "model-1" is not compatible with usage type "edit"')
-        })
-    })
-
-    describe('server sent models', () => {
-        const serverOpus: ServerModel = {
-            modelRef: 'anthropic::unknown::anthropic.claude-3-opus-20240229-v1_0',
-            displayName: 'Opus',
-            modelName: 'anthropic.claude-3-opus-20240229-v1_0',
-            capabilities: ['chat'],
-            category: 'balanced' as ModelCategory,
-            status: 'stable',
-            tier: 'enterprise' as ModelTier,
-            contextWindow: {
-                maxInputTokens: 9000,
-                maxOutputTokens: 4000,
-            },
-        }
-
-        const opus = createModelFromServerModel(serverOpus)
-
-        const serverClaude: ServerModel = {
-            modelRef: 'anthropic::unknown::anthropic.claude-instant-v1',
-            displayName: 'Instant',
-            modelName: 'anthropic.claude-instant-v1',
-            capabilities: ['autocomplete'],
-            category: 'balanced' as ModelCategory,
-            status: 'stable',
-            tier: 'enterprise' as ModelTier,
-            contextWindow: {
-                maxInputTokens: 9000,
-                maxOutputTokens: 4000,
-            },
-        }
-        const claude = createModelFromServerModel(serverClaude)
-
-        const serverTitan: ServerModel = {
-            modelRef: 'anthropic::unknown::amazon.titan-text-lite-v1',
-            displayName: 'Titan',
-            modelName: 'amazon.titan-text-lite-v1',
-            capabilities: ['autocomplete', 'chat'],
-            category: 'balanced' as ModelCategory,
-            status: 'stable',
-            tier: 'enterprise' as ModelTier,
-            contextWindow: {
-                maxInputTokens: 9000,
-                maxOutputTokens: 4000,
-            },
-        }
-
-        const titan = createModelFromServerModel(serverTitan)
-
-        const SERVER_MODELS: ServerModelConfiguration = {
-            schemaVersion: '1.0',
-            revision: '-',
-            providers: [],
-            models: [serverOpus, serverClaude, serverTitan],
-            defaultModels: {
-                chat: serverOpus.modelRef,
-                fastChat: serverTitan.modelRef,
-                codeCompletion: serverClaude.modelRef,
-            },
-        }
-
-        let storage: TestStorage
-
-        beforeEach(async () => {
-            const result = await mockModelsService({
-                config: SERVER_MODELS,
-                authStatus: enterpriseAuthStatus,
-            })
-            storage = result.storage
-            modelsService = result.modelsService
-        })
-
-        it('constructs from server models', () => {
-            expect(opus.id).toBe(serverOpus.modelName)
-            expect(opus.title).toBe(serverOpus.displayName)
-            expect(opus.provider).toBe('anthropic')
-            expect(opus.contextWindow).toEqual({ input: 9000, output: 4000 })
-            expect(modelTier(opus)).toBe(ModelTag.Enterprise)
-        })
-
-        it("sets server models and default models if they're not already set", () => {
-            // expect all defaults to be set
-            expect(modelsService.getDefaultChatModel()).toBe(opus.id)
-            expect(modelsService.getDefaultEditModel()).toBe(opus.id)
-            expect(modelsService.getDefaultModel(ModelUsage.Autocomplete)).toStrictEqual(claude)
-
-            // expect storage to be updated
-
-            const parsed = storage.parse()?.[enterpriseAuthStatus.endpoint].defaults
-            expect(parsed?.chat).toBe(opus.id)
-            expect(parsed?.edit).toBe(opus.id)
-            expect(parsed?.autocomplete).toBe(claude.id)
-        })
-
-        it('allows updating the selected model', async () => {
-            await modelsService.setSelectedModel(ModelUsage.Chat, titan)
-            expect(modelsService.getDefaultChatModel()).toBe(titan.id)
-
-            //  however, the defaults are still as the server set
-            expect(storage.parse()?.[enterpriseAuthStatus.endpoint].defaults.chat).toBe(opus.id)
-        })
-
-        it('uses new server defaults when provided', async () => {
-            await modelsService.setSelectedModel(ModelUsage.Chat, titan)
-            expect(modelsService.getDefaultChatModel()).toBe(titan.id)
-
-            // New server config updates the defaults for everything to titan
-            await modelsService.setServerSentModels({
-                ...SERVER_MODELS,
-                defaultModels: {
-                    // Chat is not updated, while other models are
-                    chat: SERVER_MODELS.defaultModels.chat,
-                    fastChat: serverTitan.modelRef,
-                    codeCompletion: serverTitan.modelRef,
-                },
-            })
-
-            // User selection is preserved
-            expect(modelsService.getDefaultChatModel()).toBe(titan.id)
-        })
-
-        it("doesn't drop the selected model if it's updated", async () => {
-            await modelsService.setSelectedModel(ModelUsage.Chat, titan)
-            expect(modelsService.getDefaultChatModel()).toBe(titan.id)
-
-            // New server config updates the defaults for everything to titan
-            await modelsService.setServerSentModels({
-                ...SERVER_MODELS,
-                defaultModels: {
-                    chat: serverTitan.modelRef,
-                    fastChat: serverTitan.modelRef,
-                    codeCompletion: serverTitan.modelRef,
-                },
-            })
-
-            expect(modelsService.getDefaultChatModel()).toBe(titan.id)
         })
     })
 
@@ -326,42 +233,47 @@ describe('Model Provider', () => {
         })
 
         beforeEach(() => {
-            modelsService.setModels([enterpriseModel, proModel, freeModel])
+            vi.spyOn(modelsService, 'modelsChanges', 'get').mockReturnValue(
+                Observable.of({
+                    ...EMPTY_MODELS_DATA,
+                    primaryModels: [enterpriseModel, proModel, freeModel],
+                })
+            )
         })
 
-        it('returns false for unknown model', () => {
+        it('returns false for unknown model', async () => {
             mockAuthStatus(codyProAuthStatus)
-            expect(modelsService.isModelAvailable('unknown-model')).toBe(false)
+            expect(await firstValueFrom(modelsService.isModelAvailable('unknown-model'))).toBe(false)
         })
 
-        it('allows enterprise user to use any model', () => {
+        it('allows enterprise user to use any model', async () => {
             mockAuthStatus(enterpriseAuthStatus)
-            expect(modelsService.isModelAvailable(enterpriseModel)).toBe(true)
-            expect(modelsService.isModelAvailable(proModel)).toBe(true)
-            expect(modelsService.isModelAvailable(freeModel)).toBe(true)
+            expect(await firstValueFrom(modelsService.isModelAvailable(enterpriseModel))).toBe(true)
+            expect(await firstValueFrom(modelsService.isModelAvailable(proModel))).toBe(true)
+            expect(await firstValueFrom(modelsService.isModelAvailable(freeModel))).toBe(true)
         })
 
-        it('allows Cody Pro user to use Pro and Free models', () => {
+        it('allows Cody Pro user to use Pro and Free models', async () => {
             mockAuthStatus(codyProAuthStatus)
-            expect(modelsService.isModelAvailable(enterpriseModel)).toBe(false)
-            expect(modelsService.isModelAvailable(proModel)).toBe(true)
-            expect(modelsService.isModelAvailable(freeModel)).toBe(true)
+            expect(await firstValueFrom(modelsService.isModelAvailable(enterpriseModel))).toBe(false)
+            expect(await firstValueFrom(modelsService.isModelAvailable(proModel))).toBe(true)
+            expect(await firstValueFrom(modelsService.isModelAvailable(freeModel))).toBe(true)
         })
 
-        it('allows free user to use only Free models', () => {
+        it('allows free user to use only Free models', async () => {
             mockAuthStatus(freeUserAuthStatus)
-            expect(modelsService.isModelAvailable(enterpriseModel)).toBe(false)
-            expect(modelsService.isModelAvailable(proModel)).toBe(false)
-            expect(modelsService.isModelAvailable(freeModel)).toBe(true)
+            expect(await firstValueFrom(modelsService.isModelAvailable(enterpriseModel))).toBe(false)
+            expect(await firstValueFrom(modelsService.isModelAvailable(proModel))).toBe(false)
+            expect(await firstValueFrom(modelsService.isModelAvailable(freeModel))).toBe(true)
         })
 
-        it('handles model passed as string', () => {
+        it('handles model passed as string', async () => {
             mockAuthStatus(freeUserAuthStatus)
-            expect(modelsService.isModelAvailable(freeModel.id)).toBe(true)
-            expect(modelsService.isModelAvailable(proModel.id)).toBe(false)
+            expect(await firstValueFrom(modelsService.isModelAvailable(freeModel.id))).toBe(true)
+            expect(await firstValueFrom(modelsService.isModelAvailable(proModel.id))).toBe(false)
 
             mockAuthStatus(codyProAuthStatus)
-            expect(modelsService.isModelAvailable(proModel.id)).toBe(true)
+            expect(await firstValueFrom(modelsService.isModelAvailable(proModel.id))).toBe(true)
         })
     })
 })

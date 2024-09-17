@@ -22,6 +22,7 @@ import {
     graphqlClient,
     isDotCom,
     mergeMap,
+    modelsService,
     resolvedConfig,
     setClientNameVersion,
     setLogger,
@@ -280,6 +281,8 @@ async function initializeSingletons(
     disposables: vscode.Disposable[]
 ): Promise<void> {
     commandControllerInit(platform.createCommandsProvider?.(), platform.extensionClient.capabilities)
+
+    modelsService.storage = localStorage
 
     if (platform.otherInitialization) {
         disposables.push(platform.otherInitialization())
