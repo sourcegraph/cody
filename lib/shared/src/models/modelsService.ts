@@ -11,6 +11,7 @@ import {
     type Unsubscribable,
     combineLatest,
     debounceTime,
+    distinctUntilChanged,
     mergeMap,
     promiseFactoryToObservable,
 } from '../misc/observable'
@@ -218,10 +219,13 @@ export class ModelsService {
     private configSubscription: Unsubscribable
 
     constructor() {
-        this.configSubscription = combineLatest([resolvedConfig, authStatus])
+        this.configSubscription = combineLatest([
+            resolvedConfig.map(config => config.configuration.agentIDE).pipe(distinctUntilChanged()),
+            authStatus,
+        ])
             .pipe(
                 debounceTime(0), // wait for sync accessors to update
-                mergeMap(([{ configuration }, authStatus]) =>
+                mergeMap(([agentIDE, authStatus]) =>
                     promiseFactoryToObservable(async signal => {
                         try {
                             if (!ModelsService.syncModels) {
@@ -237,9 +241,9 @@ export class ModelsService {
                         }
 
                         try {
-                            const isCodyWeb = configuration.agentIDE === CodyIDE.Web
+                            const isCodyWeb = agentIDE === CodyIDE.Web
 
-                            // Disable Ollama local models for cody web
+                            // Disable Ollama local models for Cody Web.
                             this.localModels = !isCodyWeb ? await fetchLocalOllamaModels() : []
                         } catch {
                             this.localModels = []

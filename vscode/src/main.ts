@@ -16,8 +16,6 @@ import {
     combineLatest,
     contextFiltersProvider,
     currentAuthStatus,
-    currentAuthStatusOrNotReadyYet,
-    currentResolvedConfig,
     distinctUntilChanged,
     featureFlagProvider,
     fromVSCodeEvent,
@@ -73,7 +71,6 @@ import { manageDisplayPathEnvInfoForExtension } from './editor/displayPathEnvInf
 import { VSCodeEditor } from './editor/vscode-editor'
 import type { PlatformContext } from './extension.common'
 import { configureExternalServices } from './external-services'
-import type { ExtensionConfiguration } from './jsonrpc/agent-protocol'
 import { isRunningInsideAgent } from './jsonrpc/isRunningInsideAgent'
 import type { SymfRunner } from './local-context/symf'
 import { logDebug, logError } from './log'
@@ -510,29 +507,7 @@ function registerAuthCommands(disposables: vscode.Disposable[]): void {
         vscode.commands.registerCommand('cody.auth.signin', () => showSignInMenu()),
         vscode.commands.registerCommand('cody.auth.signout', () => showSignOutMenu()),
         vscode.commands.registerCommand('cody.auth.account', () => showAccountMenu()),
-        vscode.commands.registerCommand('cody.auth.support', () => showFeedbackSupportQuickPick()),
-        vscode.commands.registerCommand(
-            'cody.auth.status',
-            () => currentAuthStatusOrNotReadyYet() ?? null
-        ), // Used by the agent
-        vscode.commands.registerCommand(
-            'cody.agent.auth.authenticate',
-            async ({ serverEndpoint, accessToken, customHeaders }: ExtensionConfiguration) => {
-                if (typeof serverEndpoint !== 'string') {
-                    throw new TypeError('serverEndpoint is required')
-                }
-                if (typeof accessToken !== 'string') {
-                    throw new TypeError('accessToken is required')
-                }
-                await localStorage.saveEndpoint(serverEndpoint)
-                await secretStorage.storeToken(serverEndpoint, accessToken)
-                return await authProvider.auth({
-                    endpoint: serverEndpoint,
-                    token: accessToken,
-                    customHeaders,
-                })
-            }
-        )
+        vscode.commands.registerCommand('cody.auth.support', () => showFeedbackSupportQuickPick())
     )
 }
 
@@ -544,8 +519,7 @@ function registerUpgradeHandlers(disposables: vscode.Disposable[]): void {
                 if (uri.path === '/app-done') {
                     // This is an old re-entrypoint from App that is a no-op now.
                 } else {
-                    const { configuration } = await currentResolvedConfig()
-                    tokenCallbackHandler(uri, configuration.customHeaders)
+                    tokenCallbackHandler(uri)
                 }
             },
         }),
@@ -562,7 +536,7 @@ function registerUpgradeHandlers(disposables: vscode.Disposable[]): void {
                 // Re-auth if user's cody pro status has changed
                 const isCurrentCodyProUser = !authStatus.userCanUpgrade
                 if (res && res.codyProEnabled !== isCurrentCodyProUser) {
-                    authProvider.reloadAuthStatus()
+                    authProvider.refresh()
                 }
             }
         }),
@@ -599,8 +573,8 @@ async function registerTestCommands(
             }
         }),
         // Access token - this is only used in configuration tests
-        vscode.commands.registerCommand('cody.test.token', async (endpoint, token) =>
-            authProvider.auth({ endpoint, token })
+        vscode.commands.registerCommand('cody.test.token', async (serverEndpoint, accessToken) =>
+            authProvider.validateAndStoreCredentials({ serverEndpoint, accessToken }, 'always-store')
         )
     )
 }

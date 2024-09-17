@@ -97,6 +97,7 @@ import { mergedPromptsAndLegacyCommands } from '../../prompts/prompts'
 import { workspaceReposMonitor } from '../../repository/repo-metadata-from-git-api'
 import { authProvider } from '../../services/AuthProvider'
 import { AuthProviderSimplified } from '../../services/AuthProviderSimplified'
+import { localStorage } from '../../services/LocalStorageProvider'
 import { recordExposedExperimentsToSpan } from '../../services/open-telemetry/utils'
 import {
     handleCodeFromInsertAtCursor,
@@ -467,31 +468,26 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     let tokenReceiverUrl: string | undefined = undefined
                     closeAuthProgressIndicator()
                     startAuthProgressIndicator()
-                    tokenReceiverUrl = await this.startTokenReceiver?.(
-                        endpoint,
-                        async (token, endpoint) => {
-                            closeAuthProgressIndicator()
-                            const authStatus = await authProvider.auth({ endpoint, token })
-                            telemetryRecorder.recordEvent(
-                                'cody.auth.fromTokenReceiver.web',
-                                'succeeded',
-                                {
-                                    metadata: {
-                                        success: authStatus?.authenticated ? 1 : 0,
-                                    },
-                                    billingMetadata: {
-                                        product: 'cody',
-                                        category: 'billable',
-                                    },
-                                }
+                    tokenReceiverUrl = await this.startTokenReceiver?.(endpoint, async credentials => {
+                        closeAuthProgressIndicator()
+                        const {
+                            authStatus: { authenticated },
+                        } = await authProvider.validateAndStoreCredentials(credentials, 'store-if-valid')
+                        telemetryRecorder.recordEvent('cody.auth.fromTokenReceiver.web', 'succeeded', {
+                            metadata: {
+                                success: authenticated ? 1 : 0,
+                            },
+                            billingMetadata: {
+                                product: 'cody',
+                                category: 'billable',
+                            },
+                        })
+                        if (!authenticated) {
+                            void vscode.window.showErrorMessage(
+                                'Authentication failed. Please check your token and try again.'
                             )
-                            if (!authStatus?.authenticated) {
-                                void vscode.window.showErrorMessage(
-                                    'Authentication failed. Please check your token and try again.'
-                                )
-                            }
                         }
-                    )
+                    })
 
                     const authProviderSimplified = new AuthProviderSimplified()
                     const authMethod = message.authMethod || 'dotcom'
@@ -506,9 +502,9 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     break
                 }
                 if (message.authKind === 'signin' && message.endpoint && message.value) {
-                    await authProvider.auth({
-                        endpoint: message.endpoint,
-                        token: message.value,
+                    await localStorage.saveEndpointAndToken({
+                        serverEndpoint: message.endpoint,
+                        accessToken: message.value,
                     })
                     break
                 }
@@ -528,11 +524,16 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                             if (!token) {
                                 return
                             }
-                            const authStatus = await authProvider.auth({
-                                endpoint: DOTCOM_URL.href,
-                                token,
-                            })
-                            if (!authStatus?.authenticated) {
+                            const {
+                                authStatus: { authenticated },
+                            } = await authProvider.validateAndStoreCredentials(
+                                {
+                                    serverEndpoint: DOTCOM_URL.href,
+                                    accessToken: token,
+                                },
+                                'store-if-valid'
+                            )
+                            if (!authenticated) {
                                 void vscode.window.showErrorMessage(
                                     'Authentication failed. Please check your token and try again.'
                                 )
@@ -655,7 +656,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
 
         await this.saveSession()
         this.initDoer.signalInitialized()
-        await this.sendConfig()
     }
 
     /**
