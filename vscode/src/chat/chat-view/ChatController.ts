@@ -1,3 +1,4 @@
+import { ps } from '@sourcegraph/cody-shared'
 import * as uuid from 'uuid'
 import * as vscode from 'vscode'
 
@@ -868,9 +869,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
 
         this.chatModel.setLastMessageContext(context, contextAlternatives)
         this.chatModel.addBotMessage({
-            text: PromptString.unsafe_fromLLMResponse(
-                'You have set `"cody.internal.onebox": true` in your vscode settings.'
-            ),
+            text: ps`You have set \`"cody.internal.onebox": true\` in your settings.`,
         })
 
         void this.saveSession()
