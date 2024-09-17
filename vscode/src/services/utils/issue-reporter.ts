@@ -1,31 +1,27 @@
 import * as vscode from 'vscode'
 
-import packageJson from '../../../package.json'
-import { version } from '../../version'
+// import packageJson from '../../../package.json'
+// import { version } from '../../version'
 
 export function openCodyIssueReporter() {
-    void vscode.commands.executeCommand('workbench.action.openIssueReporter', {
-        extensionId: `${packageJson.publisher}.${packageJson.name}`,
-        issueBody,
-        issueTitle: 'bug: ',
-    })
+    // void vscode.commands.executeCommand('workbench.action.openIssueReporter', {
+    //     extensionId: `${packageJson.publisher}.${packageJson.name}`,
+    const baseUrl = "https://help.sourcegraph.com/hc/en-us/requests/new";
+    const subject = "Cody Feedback";
+    const description = "I'd like to provide feedback about Cody";
+
+    const params = new URLSearchParams({
+        ticket_form_id: "7300762080909",
+        tf_subject: encodeURIComponent(subject),
+        tf_description: encodeURIComponent(description),
+        tf_360041500552: "defect_report"
+    });
+
+    const url = `${baseUrl}?${params.toString()}`;
+    vscode.env.openExternal(vscode.Uri.parse(url));
 }
 
-const issueBody = `## Extension Information
-<!-- Do not remove the pre-filled information below -->
-- Cody Version: ${version}
-- VS Code Version: ${vscode.version}
-- Extension Host: ${vscode.env.appHost}
-
-##  Steps to Reproduce
-<!-- A detailed description of the issue -->
-1.
-2.
-3.
-
-## Expected Behaviour
-<!-- A detailed description of what you expected to happen -->
-
-## Logs
-<!-- Attach logs from the 'Cody Debug: Export Logs' command -->
-`
+// const issueBody = `## Extension Information
+// <!-- Do not remove the pre-filled information below -->
+// - lfjsdkljsdflkjsdlfjsdfljsd
+// `
