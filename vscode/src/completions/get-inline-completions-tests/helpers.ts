@@ -394,7 +394,11 @@ export function initCompletionProviderConfig({
     vi.spyOn(featureFlagProvider, 'evaluateFeatureFlag').mockResolvedValue(false)
     vi.spyOn(featureFlagProvider, 'evaluatedFeatureFlag').mockReturnValue(Observable.of(false))
     mockAuthStatus(authStatus ?? AUTH_STATUS_FIXTURE_AUTHED)
-    mockResolvedConfig({ configuration: {}, auth: {}, ...configuration })
+    mockResolvedConfig({
+        configuration: { ...configuration?.configuration },
+        auth: { serverEndpoint: 'https://example.com', ...configuration?.auth },
+        clientState: { ...configuration?.clientState },
+    })
 }
 
 export function getMockedGenerateCompletionsOptions(): GenerateCompletionsOptions {
