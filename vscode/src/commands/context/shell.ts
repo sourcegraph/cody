@@ -41,10 +41,8 @@ export async function getContextFileFromShell(command: string): Promise<ContextI
             if (!output) {
                 throw new Error('Empty output')
             }
-
             const content = outputWrapper.replace('{command}', command).replace('{output}', output)
             const size = await TokenCounterUtils.countTokens(content)
-
             return [
                 {
                     type: 'file',
@@ -58,8 +56,7 @@ export async function getContextFileFromShell(command: string): Promise<ContextI
         } catch (error) {
             // Handles errors and empty output
             logError('getContextFileFromShell', 'failed', { verbose: error })
-            void vscode.window.showErrorMessage((error as Error).message)
-            throw new Error('Failed to get shell output for Custom Command.')
+            throw new Error(`Failed to get output for ${command}.`)
         }
     })
 }

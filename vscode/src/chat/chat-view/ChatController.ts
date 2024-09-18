@@ -109,6 +109,7 @@ import {
 } from '../clientStateBroadcaster'
 import { getChatContextItemsForMention, getMentionMenuData } from '../context/chatContext'
 import type { ContextAPIClient } from '../context/contextAPIClient'
+import { ContextReviewer } from '../context/reviewer'
 import {
     CODY_BLOG_URL_o1_WAITLIST,
     type ChatSubmitType,
@@ -801,6 +802,17 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     implicitMentions,
                     command !== undefined
                 )
+
+                // TODO: Move this to prompter
+                const smartContext = await new ContextReviewer(
+                    this.chatModel,
+                    authStatus.codyApiVersion,
+                    prompter,
+                    this.chatClient,
+                    this.contextRetriever,
+                    span
+                ).tryAddSmartContext(signal)
+                prompter.addSmartContextItem(smartContext)
 
                 try {
                     const { prompt, context } = await this.buildPrompt(

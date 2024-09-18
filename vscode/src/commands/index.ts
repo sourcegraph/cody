@@ -36,6 +36,15 @@ export const CodyCommandMenuItems: MenuCommandAccessor[] = [
         isBuiltin: true,
     },
     {
+        key: 'shell',
+        description: 'Cody Command Line',
+        icon: 'terminal',
+        command: { command: 'cody.command.cody-cli' },
+        keybinding: '',
+        mode: 'ask',
+        isBuiltin: true,
+    },
+    {
         key: 'doc',
         description: 'Document Code',
         icon: 'book',

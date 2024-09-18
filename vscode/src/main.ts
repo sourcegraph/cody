@@ -58,6 +58,7 @@ import {
 } from './commands/execute'
 import { executeAutoEditCommand } from './commands/execute/auto-edit'
 import { CodySourceControl } from './commands/scm/source-control'
+import { registerCodyCommandLine } from './commands/services/command-line'
 import type { CodyCommandArgs } from './commands/types'
 import { newCodyCommandArgs } from './commands/utils/get-commands'
 import { createInlineCompletionItemProvider } from './completions/create-inline-completion-item-provider'
@@ -428,8 +429,13 @@ function registerCodyCommands(
         vscode.commands.registerCommand('cody.command.unit-tests', a => executeTestEditCommand(a)),
         vscode.commands.registerCommand('cody.command.tests-cases', a => executeTestCaseEditCommand(a)),
         vscode.commands.registerCommand('cody.command.explain-output', a => executeExplainOutput(a)),
-        vscode.commands.registerCommand('cody.command.auto-edit', a => executeAutoEditCommand(a)),
-        sourceControl // Generate Commit Message command
+        vscode.commands.registerCommand('cody.command.auto-edit', a => executeAutoEditCommand(a))
+    )
+
+    // Experimental Commands
+    disposables.push(
+        sourceControl, // Generate Commit Message command
+        registerCodyCommandLine(chatClient)
     )
 }
 

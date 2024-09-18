@@ -36,12 +36,21 @@ export class DefaultPrompter {
          */
         private isCommand = false
     ) {}
+
+    public addSmartContextItem(contextItems: ContextItem[]): void {
+        this.explicitContext.push(...contextItems)
+    }
+
     // Constructs the raw prompt to send to the LLM, with message order reversed, so we can construct
     // an array with the most important messages (which appear most important first in the reverse-prompt.
     //
     // Returns the reverse prompt and the new context that was used in the prompt for the current message.
     // If user-context added at the last message is ignored, returns the items in the newContextIgnored array.
-    public async makePrompt(chat: ChatModel, codyApiVersion: number): Promise<PromptInfo> {
+    public async makePrompt(
+        chat: ChatModel,
+        codyApiVersion: number,
+        enableTools = false
+    ): Promise<PromptInfo> {
         return wrapInActiveSpan('chat.prompter', async () => {
             const promptBuilder = await PromptBuilder.create(chat.contextWindow)
             const preInstruction: PromptString | undefined = PromptString.fromConfig(
@@ -78,6 +87,11 @@ export class DefaultPrompter {
                 Boolean(this.explicitContext.length || historyItems.length || this.corpusContext.length)
             ) {
                 reverseTranscript[0] = PromptMixin.mixInto(reverseTranscript[0], chat.modelID)
+            }
+
+            // add the tool preamble to the last human message
+            if (enableTools) {
+                reverseTranscript[0] = PromptMixin.toolMixin(reverseTranscript[0])
             }
 
             const messagesIgnored = promptBuilder.tryAddMessages(reverseTranscript)

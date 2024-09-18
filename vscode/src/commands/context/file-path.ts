@@ -61,3 +61,33 @@ export async function getContextFileFromUri(
         }
     })
 }
+
+export async function getContextFileFromWorkspaceFsPath(fsPath: string): Promise<ContextItem | null> {
+    try {
+        const currentWorkspaceURI = vscode.workspace.workspaceFolders?.[0]?.uri
+        if (!currentWorkspaceURI) {
+            return null
+        }
+        // Combine the workspace URI with the fsPath to get the URI of the file
+        const file = vscode.Uri.joinPath(currentWorkspaceURI, fsPath)
+        if (await contextFiltersProvider.isUriIgnored(file)) {
+            return null
+        }
+        const doc = await vscode.workspace.openTextDocument(file)
+        const content = doc.getText()
+        if (!content.trim()) {
+            throw new Error('No file content')
+        }
+        const size = await TokenCounterUtils.countTokens(content)
+        return {
+            type: 'file',
+            content,
+            uri: file,
+            source: ContextItemSource.User,
+            size,
+        }
+    } catch (error) {
+        logError('getContextFileFromUri', 'failed', { verbose: error })
+        return null
+    }
+}

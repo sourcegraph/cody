@@ -8,7 +8,7 @@ const DEFAULT_PREAMBLE = ps`You are Cody, an AI coding assistant from Sourcegrap
  * produce code blocks that we can associate with existing file paths.
  * We want to read these file paths to support applying code directly to files from chat.
  */
-const SMART_APPLY_PREAMBLE = ps`If your answer contains fenced code blocks in Markdown, include the relevant full file path in the code block tag using this structure: \`\`\`$LANGUAGE:$FILEPATH\`\`\`.`
+const SMART_APPLY_PREAMBLE = ps`If your answer contains fenced code blocks in Markdown, include the relevant full file path in the code block tag using this structure: \`\`\`$LANGUAGE:$FILEPATH\`\`\`. Use 'shell' as the LANGUAGE for shell commands.`
 
 const CHAT_PREAMBLE = DEFAULT_PREAMBLE.concat(SMART_APPLY_PREAMBLE)
 
@@ -18,7 +18,7 @@ export function getSimplePreamble(
     type: 'Chat' | 'Default',
     preInstruction?: PromptString
 ): Message[] {
-    const preamble = type === 'Chat' ? CHAT_PREAMBLE : DEFAULT_PREAMBLE
+    const preamble = type === 'Chat' ? CHAT_PREAMBLE : CHAT_PREAMBLE
     const intro = ps`${preamble}\n\n${preInstruction ?? ''}`.trim()
 
     // API Version 1 onward support system prompts, however only enable it for

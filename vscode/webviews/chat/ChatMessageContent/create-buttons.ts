@@ -1,3 +1,7 @@
+import { CodyIDE } from '@sourcegraph/cody-shared'
+import type { FixupTaskID } from '../../../src/non-stop/FixupTask'
+import { CodyTaskState } from '../../../src/non-stop/state'
+import type { UserAccountInfo } from '../../Chat'
 import {
     CheckCodeBlockIcon,
     CloseIcon,
@@ -9,11 +13,7 @@ import {
     SyncSpinIcon,
     TickIcon,
 } from '../../icons/CodeBlockActionIcons'
-
-import { CodyIDE } from '@sourcegraph/cody-shared'
-import type { FixupTaskID } from '../../../src/non-stop/FixupTask'
-import { CodyTaskState } from '../../../src/non-stop/state'
-import type { UserAccountInfo } from '../../Chat'
+import { getVSCodeAPI } from '../../utils/VSCodeApi'
 import type { PriorHumanMessageInfo } from '../cells/messageCell/assistant/AssistantMessageCell'
 import type { CodeBlockActionsProps } from './ChatMessageContent'
 import styles from './ChatMessageContent.module.css'
@@ -268,9 +268,12 @@ function createApplyButton(
 ): HTMLElement {
     const button = document.createElement('button')
     button.className = styles.button
-
+    const isShellCommand = fileName === 'command'
     switch (smartApplyState) {
         case 'Working': {
+            if (isShellCommand) {
+                break
+            }
             button.innerHTML = 'Applying'
             button.disabled = true
 
@@ -283,15 +286,21 @@ function createApplyButton(
             break
         }
         default: {
-            button.innerHTML = 'Apply'
+            button.innerHTML = isShellCommand ? 'Execute' : 'Apply'
 
-            // Add Sparkle Icon
             const iconContainer = document.createElement('div')
             iconContainer.className = styles.iconContainer
             iconContainer.innerHTML = SparkleIcon
             button.prepend(iconContainer)
 
             button.addEventListener('click', () => {
+                if (isShellCommand) {
+                    return getVSCodeAPI().postMessage({
+                        command: 'command',
+                        id: 'cody.command.cody-cli-run',
+                        arg: preText.trim(),
+                    })
+                }
                 smartApply.onSubmit(smartApplyId, preText, humanMessage?.text, fileName)
             })
         }

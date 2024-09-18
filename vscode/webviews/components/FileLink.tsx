@@ -77,7 +77,12 @@ export const FileLink: React.FunctionComponent<
             }
         }
 
-        const pathToDisplay = displayPath(uri)
+        let pathToDisplay = displayPath(uri)
+        // Remove all the starting slashes from the path
+        if (source === 'terminal') {
+            pathToDisplay = pathToDisplay.replace(/^\/+/g, '')
+        }
+
         const pathWithRange = range ? `${pathToDisplay}:${displayLineRange(range)}` : pathToDisplay
         const openURI = webviewOpenURIForContextItem({ uri, range })
         return {
@@ -98,7 +103,6 @@ export const FileLink: React.FunctionComponent<
 
     const iconTitle =
         source && hoverSourceLabels[source] ? `Included ${hoverSourceLabels[source]}` : undefined
-
     return (
         <div className={clsx('tw-inline-flex tw-items-center tw-max-w-full', className)}>
             {(isIgnored || isTooLarge) && (
@@ -126,7 +130,16 @@ export const FileLink: React.FunctionComponent<
                     className="tw-truncate hover:tw-no-underline !tw-p-0"
                 >
                     <i
-                        className={clsx('codicon', `codicon-${source === 'user' ? 'mention' : 'file'}`)}
+                        className={clsx(
+                            'codicon',
+                            `codicon-${
+                                source === 'terminal'
+                                    ? 'terminal'
+                                    : source === 'user'
+                                      ? 'mention'
+                                      : 'file'
+                            }`
+                        )}
                         title={iconTitle}
                     />
                     <div
