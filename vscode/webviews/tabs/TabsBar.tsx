@@ -285,10 +285,10 @@ export const TabButton = forwardRef<HTMLButtonElement, TabButtonProps>((props, r
                     onClick={onClick}
                     ref={ref}
                     className={clsx(
-                        'tw-flex tw-gap-3 tw-items-center tw-leading-none tw-py-3 tw-px-2 tw-opacity-80 hover:tw-opacity-100 tw-border-b-[1px] tw-border-transparent tw-transition tw-translate-y-[1px]',
+                        'tw-flex tw-gap-1.5 tw-items-center tw-leading-none tw-py-3 tw-opacity-80 hover:tw-opacity-100 tw-border-b-[1px] tw-border-transparent tw-transition tw-translate-y-[1px]',
                         {
-                            '!tw-opacity-100 !tw-border-[var(--vscode-tab-activeBorderTop)]': isActive,
-                            '!tw-opacity-100': prominent,
+                            '!tw-opacity-100': isActive,
+                            '!tw-opacity-50': prominent,
                         }
                     )}
                     data-testid={dataTestId}

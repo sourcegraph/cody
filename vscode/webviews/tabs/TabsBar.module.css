@@ -22,17 +22,18 @@
     flex-direction: column;
     justify-content: space-between;
     position: sticky;
-    border-bottom: 1px solid var(--vscode-dropdown-border);
-    background-color: var(--vscode-sideBar-background);
+    opacity: 0.6;
+    /* border-bottom: 1px solid var(--vscode-dropdown-border); */
+    /* background-color: var(--vscode-sideBar-background); */
 }
 
 .tabs {
     display: flex;
     flex-shrink: 0;
-    gap: 2px;
+    gap: 15px;
     width: 100%;
     padding: 0 8px;
-    border-bottom: 1px solid var(--vscode-dropdown-border);
+    /* border-bottom: 1px solid var(--vscode-dropdown-border); */
 
     & > * {
         flex-shrink: 0;

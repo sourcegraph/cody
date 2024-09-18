@@ -18,6 +18,7 @@ export const CodyPanel: FunctionComponent<
         errorMessages: string[]
         setErrorMessages: (errors: string[]) => void
         attributionEnabled: boolean
+        showTabsBar: boolean
     } & Pick<
         ComponentProps<typeof Chat>,
         | 'chatEnabled'
@@ -47,6 +48,7 @@ export const CodyPanel: FunctionComponent<
     guardrails,
     showIDESnippetActions,
     showWelcomeMessage,
+    showTabsBar = true,
     userHistory,
     smartApplyEnabled,
     experimentalOneBoxEnabled,
@@ -74,13 +76,15 @@ export const CodyPanel: FunctionComponent<
             className={styles.outerContainer}
         >
             {/* Hide tab bar in editor chat panels. */}
-            {(config.agentIDE === CodyIDE.Web || config.webviewType !== 'editor') && (
-                <TabsBar
-                    currentView={view}
-                    setView={setView}
-                    IDE={config.agentIDE || CodyIDE.VSCode}
-                    onDownloadChatClick={onDownloadChatClick}
-                />
+            {showTabsBar && (config.agentIDE === CodyIDE.Web || config.webviewType !== 'editor') && (
+                <div className="tw-mb-1">
+                    <TabsBar
+                        currentView={view}
+                        setView={setView}
+                        IDE={config.agentIDE || CodyIDE.VSCode}
+                        onDownloadChatClick={onDownloadChatClick}
+                    />
+                </div>
             )}
             {errorMessages && <ErrorBanner errors={errorMessages} setErrors={setErrorMessages} />}
             <TabContainer value={view} ref={tabContainerRef}>

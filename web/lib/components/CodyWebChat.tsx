@@ -24,10 +24,10 @@ import { getAppWrappers } from 'cody-ai/webviews/App'
 import { CodyPanel } from 'cody-ai/webviews/CodyPanel'
 import { ChatEnvironmentContext } from 'cody-ai/webviews/chat/ChatEnvironmentContext'
 import { useClientActionDispatcher } from 'cody-ai/webviews/client/clientState'
-import type { View } from 'cody-ai/webviews/tabs'
+import { HistoryTab, PromptsTab, type View } from 'cody-ai/webviews/tabs'
 import { ComposedWrappers, type Wrapper } from 'cody-ai/webviews/utils/composeWrappers'
 import { createWebviewTelemetryRecorder } from 'cody-ai/webviews/utils/telemetry'
-import type { Config } from 'cody-ai/webviews/utils/useConfig'
+import { type Config } from 'cody-ai/webviews/utils/useConfig'
 
 import type { InitialContext } from '../types'
 
@@ -254,23 +254,42 @@ const CodyWebPanel: FC<CodyWebPanelProps> = props => {
                 <ChatEnvironmentContext.Provider value={envVars}>
                     <ChatMentionContext.Provider value={CONTEXT_MENTIONS_SETTINGS}>
                         <ComposedWrappers wrappers={wrappers}>
-                            <CodyPanel
-                                view={view}
-                                setView={setView}
-                                errorMessages={errorMessages}
-                                setErrorMessages={setErrorMessages}
-                                attributionEnabled={false}
-                                config={config.config}
-                                userHistory={userHistory}
-                                chatEnabled={true}
-                                showWelcomeMessage={true}
-                                showIDESnippetActions={false}
-                                messageInProgress={messageInProgress}
-                                transcript={transcript}
-                                vscodeAPI={vscodeAPI}
-                                isTranscriptError={isTranscriptError}
-                                experimentalOneBoxEnabled={config.config.experimentalOneBox}
-                            />
+                            <div className="tw-relative tw-min-h-screen">
+                                <div className="tw-absolute tw-opacity-0 hover:tw-opacity-100 tw-transition-opacity tw-duration-300 tw-bg-neutral-800 tw-h-full tw-py-20">
+                                    <HistoryTab
+                                        IDE={config.config.agentIDE || CodyIDE.VSCode}
+                                        setView={setView}
+                                        userHistory={userHistory}
+                                    />
+                                    {/* <PromptsTab setView={setView} /> */}
+                                </div>
+
+                                <div className={`tw-w-[700px] tw-mx-auto tw-pb-20 ${transcript.length === 0 ? 'tw-pt-56' : 'tw-pt-20'}`}>
+
+                                    <div className="tw-mx-auto tw-w-[40px] tw-aspect-square tw-mb-20">
+                                        <svg version="1.0" xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 128 128" className="mdi-icon Breadcrumb-module__icon" role="img" aria-hidden="true"><g transform="translate(0,128) scale(0.100000,-0.100000)" stroke="none"><path d="M832 1126 c-52 -28 -62 -61 -62 -199 0 -150 11 -186 67 -212 48 -23 99 -14 138 25 l30 30 3 135 c4 151 -8 194 -59 220 -34 18 -86 19 -117 1z" fill="#FF5543"></path><path d="M219 967 c-45 -30 -63 -83 -46 -134 7 -23 25 -46 46 -60 31 -21 45 -23 163 -23 175 0 218 24 218 120 0 96 -43 120 -218 120 -118 0 -132 -2 -163 -23z" fill="#A112FF"></path><path d="M977 503 c-40 -38 -96 -80 -123 -95 -185 -100 -409 -68 -569 83 -56 52 -82 63 -124 54 -50 -11 -81 -51 -81 -104 0 -44 3 -49 73 -116 137 -132 305 -192 511 -182 186 9 308 62 446 193 83 80 85 83 85 129 0 40 -5 51 -33 76 -24 22 -42 29 -72 29 -36 0 -48 -8 -113 -67z" fill="#00CBEC"></path></g></svg>
+                                    </div>
+
+                                    <CodyPanel
+                                        view={view}
+                                        setView={setView}
+                                        errorMessages={errorMessages}
+                                        setErrorMessages={setErrorMessages}
+                                        attributionEnabled={false}
+                                        config={config.config}
+                                        userHistory={userHistory}
+                                        chatEnabled={true}
+                                        showWelcomeMessage={false}
+                                        showTabsBar={true}
+                                        showIDESnippetActions={false}
+                                        messageInProgress={messageInProgress}
+                                        transcript={transcript}
+                                        vscodeAPI={vscodeAPI}
+                                        isTranscriptError={isTranscriptError}
+                                        experimentalOneBoxEnabled={config.config.experimentalOneBox}
+                                    />
+                                </div>
+                            </div>
                         </ComposedWrappers>
                     </ChatMentionContext.Provider>
                 </ChatEnvironmentContext.Provider>

@@ -77,14 +77,14 @@ export const HumanMessageCell: FunctionComponent<{
 
         return (
             <BaseMessageCell
-                speakerIcon={
-                    <UserAvatar
-                        user={userInfo.user}
-                        size={MESSAGE_CELL_AVATAR_SIZE}
-                        sourcegraphGradientBorder={true}
-                    />
-                }
-                speakerTitle={userInfo.user.displayName ?? userInfo.user.username}
+                // speakerIcon={
+                //     <UserAvatar
+                //         user={userInfo.user}
+                //         size={MESSAGE_CELL_AVATAR_SIZE}
+                //         sourcegraphGradientBorder={true}
+                //     />
+                // }
+                // speakerTitle={userInfo.user.displayName ?? userInfo.user.username}
                 cellAction={isFirstMessage && <OpenInNewEditorAction />}
                 content={
                     <HumanMessageEditor
