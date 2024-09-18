@@ -34,4 +34,34 @@ test.describe('Auth', () => {
             await expect(page.getByText('Plan: Cody Pro')).toBeVisible()
         })
     })
+
+    test('logout', async ({ page, vscodeUI, mitmProxy, workspaceDir }, testInfo) => {
+        const session = uix.vscode.Session.pending({ page, vscodeUI, workspaceDir })
+        const cody = uix.cody.Extension.with({ page, workspaceDir })
+
+        await test.step('setup', async () => {
+            await modifySettings(
+                s => ({
+                    ...s,
+                    'cody.accessToken': MITM_AUTH_TOKEN_PLACEHOLDER,
+                    'cody.serverEndpoint': mitmProxy.sourcegraph.dotcom.endpoint,
+                }),
+                { workspaceDir }
+            )
+            await session.start()
+            await cody.waitUntilReady()
+        })
+
+        await session.runCommand('workbench.view.extension.cody')
+        const [sidebar] = await uix.cody.WebView.all({ page }, { atLeast: 1 })
+        await sidebar.content.getByTestId('tab-account').click()
+
+        await expect(page.getByText('Signed in as SourcegraphBot')).toBeVisible()
+        await expect(page.getByText('Plan: Cody Pro')).toBeVisible()
+        await page.getByText('Sign Out').click()
+
+        //TODO: Intercept network call to verify logout happened
+        //TODO :verify telemetry events
+        await expect(sidebar.content.getByText('Sign In To Your Enterprise Instance')).toBeVisible()
+    })
 })
