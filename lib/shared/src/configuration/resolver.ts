@@ -84,11 +84,8 @@ const _resolvedConfig = fromLateSetSource<ResolvedConfiguration>()
  * Set the observable that will be used to provide the global {@link resolvedConfig}. This should be
  * set exactly once (except in tests).
  */
-export function setResolvedConfigurationObservable(input: Observable<ConfigurationInput>): Promise<void> {
-    return new Promise(resolve => {
-        _resolvedConfig.setSource(input.pipe(map(resolveConfiguration), distinctUntilChanged()), false)
-        _resolvedConfig.observable.subscribe(() => resolve())
-    })
+export function setResolvedConfigurationObservable(input: Observable<ConfigurationInput>): void {
+    _resolvedConfig.setSource(input.pipe(map(resolveConfiguration), distinctUntilChanged()), false)
 }
 
 /**

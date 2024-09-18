@@ -49,6 +49,7 @@ import levenshtein from 'js-levenshtein'
 import * as uuid from 'uuid'
 import type { MessageConnection } from 'vscode-jsonrpc'
 import type { CommandResult } from '../../vscode/src/CommandResult'
+import { formatURL } from '../../vscode/src/auth/auth'
 import { loadTscRetriever } from '../../vscode/src/completions/context/retrievers/tsc/load-tsc-retriever'
 import { supportedTscLanguages } from '../../vscode/src/completions/context/retrievers/tsc/supportedTscLanguages'
 import type { CompletionItemID } from '../../vscode/src/completions/logger'
@@ -140,7 +141,8 @@ export async function initializeVscodeExtension(
     extensionActivate: ExtensionActivate,
     extensionClient: ExtensionClient,
     globalState: AgentGlobalState,
-    secrets: vscode.SecretStorage
+    secrets: vscode.SecretStorage,
+    extensionConfiguration?: ExtensionConfiguration
 ): Promise<void> {
     const paths = codyPaths()
     const extensionPath = paths.config
@@ -424,7 +426,10 @@ export class Agent extends MessageHandler implements ExtensionClient {
                 const secrets =
                     clientInfo.capabilities?.secrets === 'client-managed'
                         ? new AgentClientManagedSecretStorage(this, this.secretsDidChange.event)
-                        : new AgentStatelessSecretStorage()
+                        : new AgentStatelessSecretStorage({
+                              [formatURL(clientInfo.extensionConfiguration?.serverEndpoint ?? '') ?? '']:
+                                  clientInfo.extensionConfiguration?.accessToken,
+                          })
 
                 await initializeVscodeExtension(
                     this.workspace.workspaceRootUri,

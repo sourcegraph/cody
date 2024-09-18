@@ -67,6 +67,8 @@ export class AgentWorkspaceConfiguration implements vscode.WorkspaceConfiguratio
         switch (section) {
             case 'cody.serverEndpoint':
                 return extensionConfig?.serverEndpoint
+            case 'cody.accessToken':
+                return extensionConfig?.accessToken
             case 'cody.customHeaders':
                 return extensionConfig?.customHeaders
             case 'cody.telemetry.level':

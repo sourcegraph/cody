@@ -34,6 +34,7 @@ interface RawClientConfiguration {
     telemetryLevel: 'all' | 'off' | 'agent'
     telemetryClientName?: string
     useContext: ConfigurationUseContext
+    serverEndpoint: string
     customHeaders?: Record<string, string>
     chatPreInstruction: PromptString
     editPreInstruction: PromptString

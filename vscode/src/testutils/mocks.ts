@@ -875,6 +875,7 @@ export const vsCodeMocks = {
 export const DEFAULT_VSCODE_SETTINGS = {
     proxy: undefined,
     codebase: '',
+    serverEndpoint: 'https://sourcegraph.com',
     customHeaders: undefined,
     chatPreInstruction: ps``,
     editPreInstruction: ps``,
