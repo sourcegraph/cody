@@ -475,7 +475,7 @@ async function doGetInlineCompletions(
           ? 1
           : 3
 
-    const providerOptions: GenerateCompletionsOptions = {
+    const generateOptions: GenerateCompletionsOptions = {
         triggerKind,
         docContext,
         document,
@@ -485,13 +485,14 @@ async function doGetInlineCompletions(
         gitContext,
         numberOfCompletionsToGenerate: numberOfCompletionsToGenerate ?? n,
         multiline: !!docContext.multilineTrigger,
+        snippets: contextResult?.context ?? [],
     }
 
     tracer?.({
         completers: [
             {
                 ...provider.options,
-                ...providerOptions,
+                ...generateOptions,
                 completionIntent,
             },
         ],
@@ -504,9 +505,8 @@ async function doGetInlineCompletions(
     const result = await requestManager.request({
         logId,
         requestParams,
-        providerOptions,
+        generateOptions,
         provider,
-        context: contextResult?.context ?? [],
         isCacheEnabled: triggerKind !== TriggerKind.Manual,
         isPreloadRequest: triggerKind === TriggerKind.Preload,
         tracer: tracer ? createCompletionProviderTracer(tracer) : undefined,

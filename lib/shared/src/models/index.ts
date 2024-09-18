@@ -642,6 +642,13 @@ export class ModelsService {
         const model = this.getModelByID(modelID)
         return model?.tags.includes(ModelTag.StreamDisabled) ?? false
     }
+
+    public reset(): void {
+        this.primaryModels = []
+        this.localModels = []
+        this.storage = undefined
+        this._preferences = undefined
+    }
 }
 
 export const modelsService = new ModelsService()
