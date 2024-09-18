@@ -242,19 +242,21 @@ export const PromptList: React.FunctionComponent<{
                         )}
                     </CommandGroup>
                 )}
-                {!showOnlyPromptInsertableCommands && result?.standardPrompts && result.standardPrompts.length > 0 && (
-                    <CommandGroup heading={<span>Standard Prompts</span>}>
-                        {result.standardPrompts.map(command => (
-                            <CodyCommandItem
-                                key={command.key}
-                                command={command}
-                                onSelect={onSelect}
-                                selectActionLabel={onSelectActionLabels?.prompt}
-                                showCommandOrigins={false}
-                            />
-                        ))}
-                    </CommandGroup>
-                )}
+                {!showOnlyPromptInsertableCommands &&
+                    result?.standardPrompts &&
+                    result.standardPrompts.length > 0 && (
+                        <CommandGroup heading={<span>Standard Prompts</span>}>
+                            {result.standardPrompts.map(command => (
+                                <CodyCommandItem
+                                    key={command.key}
+                                    command={command}
+                                    onSelect={onSelect}
+                                    selectActionLabel={onSelectActionLabels?.prompt}
+                                    showCommandOrigins={false}
+                                />
+                            ))}
+                        </CommandGroup>
+                    )}
                 {result && filteredCommands && filteredCommands.length > 0 && (
                     <CommandGroup
                         heading={
