@@ -1,6 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { mockAuthStatus } from '../auth/authStatus'
 import { AUTH_STATUS_FIXTURE_AUTHED, type AuthenticatedAuthStatus } from '../auth/types'
+import { DOTCOM_URL } from '../sourcegraph-api/environments'
+import { CHAT_INPUT_TOKEN_BUDGET, CHAT_OUTPUT_TOKEN_BUDGET } from '../token/constants'
+import { getDotComDefaultModels } from './dotcom'
+import type { ServerModel } from './model'
+import { createModel, createModelFromServerModel, modelTier } from './model'
 import {
     type ModelCategory,
     type ModelTier,
@@ -8,12 +13,7 @@ import {
     type ServerModelConfiguration,
     type TestStorage,
     mockModelsService,
-} from '../models/index'
-import { DOTCOM_URL } from '../sourcegraph-api/environments'
-import { CHAT_INPUT_TOKEN_BUDGET, CHAT_OUTPUT_TOKEN_BUDGET } from '../token/constants'
-import { getDotComDefaultModels } from './dotcom'
-import type { ServerModel } from './model'
-import { createModel, createModelFromServerModel, modelTier } from './model'
+} from './modelsService'
 import { ModelTag } from './tags'
 import { ModelUsage } from './types'
 

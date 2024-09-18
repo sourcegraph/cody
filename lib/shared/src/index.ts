@@ -4,8 +4,10 @@ export {
     modelsService,
     mockModelsService,
     ModelsService,
+    ModelCategory,
+    ModelTier,
     type ServerModelConfiguration,
-} from './models'
+} from './models/modelsService'
 export {
     type Model,
     type ServerModel,
@@ -30,6 +32,7 @@ export {
     isCodyProModel,
     isCustomModel,
     toModelRefStr,
+    isWaitlistModel,
 } from './models/utils'
 export { BotResponseMultiplexer } from './chat/bot-response-multiplexer'
 export { ChatClient } from './chat/chat'

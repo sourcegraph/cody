@@ -1,4 +1,4 @@
-import type { ServerModelConfiguration } from '../../models/index'
+import type { ServerModelConfiguration } from '../../models/modelsService'
 
 import { fetch } from '../../fetch'
 import { logError } from '../../logger'

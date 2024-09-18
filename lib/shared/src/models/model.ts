@@ -1,3 +1,4 @@
+import { CHAT_INPUT_TOKEN_BUDGET, CHAT_OUTPUT_TOKEN_BUDGET } from '../token/constants'
 import {
     type ClientSideConfig,
     type ContextWindow,
@@ -8,8 +9,7 @@ import {
     type ModelStatus,
     type ModelTier,
     capabilityToUsage,
-} from '.'
-import { CHAT_INPUT_TOKEN_BUDGET, CHAT_OUTPUT_TOKEN_BUDGET } from '../token/constants'
+} from './modelsService'
 import { ModelTag } from './tags'
 import type { ModelContextWindow, ModelUsage } from './types'
 import { getModelInfo } from './utils'
