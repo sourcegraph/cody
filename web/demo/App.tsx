@@ -1,5 +1,4 @@
 import type { FC } from 'react'
-
 import { CodyWebChat, type InitialContext } from '../lib'
 
 // @ts-ignore
@@ -12,7 +11,7 @@ const CREATE_AGENT_WORKER = (): Worker => new AgentWorker() as Worker
 import '../../vscode/webviews/utils/highlight.css'
 import styles from './App.module.css'
 
-const DOTCOM_SERVER_ENDPOINT = 'https://sourcegraph.com'
+const DOTCOM_SERVER_ENDPOINT = 'https://sourcegraph.sourcegraph.com'
 
 // To set:
 //
@@ -22,12 +21,12 @@ const serverEndpoint = localStorage.getItem('serverEndpoint') || DOTCOM_SERVER_E
 const accessTokenStorageKey = `accessToken:${serverEndpoint}`
 let accessToken = localStorage.getItem(accessTokenStorageKey)
 
-const MOCK_INITIAL_DOT_COM_CONTEXT: InitialContext = {
+const MOCK_INITIAL_CONTEXT: InitialContext = {
     fileURL: 'web/demo',
     fileRange: null,
     isDirectory: true,
     repository: {
-        id: 'UmVwb3NpdG9yeTo2MTMyNTMyOA==',
+        id: 'UmVwb3NpdG9yeToyNzU5OQ==',
         name: 'github.com/sourcegraph/cody',
     },
 }
@@ -48,7 +47,7 @@ export const App: FC = () => {
                 serverEndpoint={serverEndpoint}
                 createAgentWorker={CREATE_AGENT_WORKER}
                 telemetryClientName="codydemo.testing"
-                initialContext={MOCK_INITIAL_DOT_COM_CONTEXT}
+                initialContext={MOCK_INITIAL_CONTEXT}
             />
         </div>
     )

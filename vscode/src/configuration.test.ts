@@ -115,6 +115,7 @@ describe('getConfiguration', () => {
             proxy: undefined,
             codebase: 'my/codebase',
             useContext: 'keyword',
+            serverEndpoint: 'http://example.com',
             customHeaders: {
                 'Cache-Control': 'no-cache',
                 'Proxy-Authenticate': 'Basic',
