@@ -22,6 +22,7 @@ import { arrayOption, booleanOption, intOption } from './cli-parsers'
 import { matchesGlobPatterns } from './matchesGlobPatterns'
 import { evaluateAutocompleteStrategy } from './strategy-autocomplete'
 import { evaluateChatStrategy } from './strategy-chat'
+import { evaluateChatContextStrategy } from './strategy-chat-context'
 import { evaluateFixStrategy } from './strategy-fix'
 import { evaluateGitLogStrategy } from './strategy-git-log'
 import { evaluateUnitTestStrategy } from './strategy-unit-test'
@@ -67,6 +68,7 @@ export interface CodyBenchOptions {
     context: { sourcesDir: string; strategy: ConfigurationUseContext }
 
     verbose: boolean
+    insecureTls?: boolean
 }
 
 interface EvaluationConfig extends Partial<CodyBenchOptions> {
@@ -77,6 +79,7 @@ interface EvaluationConfig extends Partial<CodyBenchOptions> {
 export enum BenchStrategy {
     Autocomplete = 'autocomplete',
     Chat = 'chat',
+    ChatContext = 'chat-context',
     Fix = 'fix',
     GitLog = 'git-log',
     UnitTest = 'unit-test',
@@ -140,7 +143,7 @@ async function loadEvaluationConfig(options: CodyBenchOptions): Promise<CodyBenc
 
 export const benchCommand = new commander.Command('bench')
     .description(
-        'Evaluate Cody autocomplete by running the Agent in headless mode. ' +
+        'Evaluate Cody by running the Agent in headless mode. ' +
             'See the repo https://github.com/sourcegraph/cody-bench-data for ' +
             'more details about running cody-bench and how to evaluate the data.'
     )
@@ -292,6 +295,7 @@ export const benchCommand = new commander.Command('bench')
         booleanOption,
         true
     )
+    .option('--insecure-tls', 'Allow insecure server connections when using SSL', false)
     .action(async (options: CodyBenchOptions) => {
         if (!options.srcAccessToken) {
             const { token } = dotcomCredentials()
@@ -425,6 +429,9 @@ async function evaluateWorkspace(options: CodyBenchOptions, recordingDirectory: 
                 break
             case BenchStrategy.Chat:
                 await evaluateChatStrategy(client, options)
+                break
+            case BenchStrategy.ChatContext:
+                await evaluateChatContextStrategy(client, options)
                 break
             case BenchStrategy.UnitTest:
                 await evaluateUnitTestStrategy(client, options)
