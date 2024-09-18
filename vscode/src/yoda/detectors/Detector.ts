@@ -54,6 +54,7 @@ export type CanidateFileContent<T> = CandidateFile<T> & {
 export interface Ctx {
     chatClient: ChatClient
     model: Model
+    apiVersion: number
 }
 
 export interface Detector<T> {

@@ -57,7 +57,7 @@ export class TestOpportunityDetector implements Detector<Data> {
         const promptBuilder = await PromptBuilder.create(ctx.model.contextWindow)
         if (
             !promptBuilder.tryAddToPrefix(
-                getSimplePreamble(ctx.model.id, 1, 'Default', PRE_INSTRUCTIONS)
+                getSimplePreamble(ctx.model.id, ctx.apiVersion, 'Default', PRE_INSTRUCTIONS)
             )
         ) {
             return
@@ -101,6 +101,7 @@ export class TestOpportunityDetector implements Detector<Data> {
             ctx.chatClient.chat(
                 messages,
                 {
+                    model: ctx.model.id,
                     maxTokensToSample: ctx.model.contextWindow.output,
                 },
                 abort

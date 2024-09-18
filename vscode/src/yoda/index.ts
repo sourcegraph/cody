@@ -1,6 +1,7 @@
 import {
     type ChatClient,
     abortableOperation,
+    authStatus,
     combineLatest,
     fromVSCodeEvent,
     logError,
@@ -59,8 +60,15 @@ export class YodaController implements vscode.Disposable {
         })
     )
 
-    private _lessons = combineLatest([this.sampledFiles.pipe(o.flatMap(uri => uri)), this.model]).pipe(
-        o.scan(async (acc, [uri, model]) => {
+    private _lessons = combineLatest([
+        this.sampledFiles.pipe(o.flatMap(uri => uri)),
+        this.model,
+        authStatus,
+    ]).pipe(
+        o.scan(async (acc, [uri, model, authStatus]) => {
+            if (!authStatus.authenticated) {
+                return acc
+            }
             if (!model) {
                 return acc
             }
@@ -70,6 +78,7 @@ export class YodaController implements vscode.Disposable {
             const ctx = {
                 chatClient: this.chatClient,
                 model: model,
+                apiVersion: authStatus.codyApiVersion,
             }
             try {
                 const bytes = await await vscode.workspace.fs.readFile(uri)
