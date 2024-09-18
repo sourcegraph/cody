@@ -1,10 +1,10 @@
-import type { Model } from '.'
 import {
     CHAT_INPUT_TOKEN_BUDGET,
     CHAT_OUTPUT_TOKEN_BUDGET,
     EXTENDED_CHAT_INPUT_TOKEN_BUDGET,
     EXTENDED_USER_CONTEXT_TOKEN_BUDGET,
 } from '../token/constants'
+import type { Model } from './model'
 import { ModelTag } from './tags'
 
 import { type ModelContextWindow, ModelUsage } from './types'

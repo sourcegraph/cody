@@ -1,12 +1,12 @@
 // Add anything else here that needs to be used outside of this library.
 
 export {
-    Model,
     modelsService,
     mockModelsService,
     type ServerModel,
     type ServerModelConfiguration,
 } from './models'
+export { Model } from './models/model'
 export {
     type EditModel,
     type EditProvider,

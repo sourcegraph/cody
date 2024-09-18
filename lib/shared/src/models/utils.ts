@@ -1,5 +1,6 @@
-import type { Model, ModelRef, ModelRefStr } from '.'
+import type { ModelRef, ModelRefStr } from '.'
 import { ModelTag } from '..'
+import type { Model } from './model'
 
 export function getProviderName(name: string): string {
     const providerName = name.toLowerCase()
