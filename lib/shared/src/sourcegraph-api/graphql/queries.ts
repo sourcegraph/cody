@@ -367,8 +367,8 @@ mutation RecordTelemetryEvents($events: [TelemetryEventInput!]!) {
 `
 
 export const DELETE_ACCESS_TOKEN_MUTATION = `
-mutation DeleteAccessToken($tokenID: ID!) {
-    deleteAccessToken(byID: $tokenID) {
+mutation DeleteAccessToken($token: String!) {
+    deleteAccessToken(byToken: $token) {
         alwaysNil
     }
 }

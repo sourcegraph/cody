@@ -358,10 +358,10 @@ export async function showSignOutMenu(): Promise<void> {
  * Log user out of the selected endpoint (remove token from secret).
  */
 async function signOut(endpoint: string): Promise<void> {
-    const theToken = await secretStorage.getToken(endpoint)
-    if (theToken) {
-        const response= await graphqlClient.DeleteAccessToken(theToken)
-        console.log("the response", response)
+    const token = await secretStorage.getToken(endpoint)
+    // Delete the access token from the Sourcegraph instance
+    if (token) {
+        await graphqlClient.DeleteAccessToken(token)
     }
     await secretStorage.deleteToken(endpoint)
     await localStorage.deleteEndpoint()

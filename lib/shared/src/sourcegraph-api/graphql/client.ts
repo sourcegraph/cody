@@ -1228,11 +1228,11 @@ export class SourcegraphGraphQLAPIClient {
         return extractDataOrError(initialResponse, data => data)
     }
 
-    public async DeleteAccessToken(tokenID: string): Promise<unknown | Error> {
+    public async DeleteAccessToken(token: string): Promise<unknown | Error> {
         const initialResponse = await this.fetchSourcegraphAPI<APIResponse<unknown>>(
             DELETE_ACCESS_TOKEN_MUTATION,
             {
-                tokenID,
+                token,
             }
         )
         return extractDataOrError(initialResponse, data => data)
