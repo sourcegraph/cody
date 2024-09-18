@@ -869,7 +869,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         this.chatModel.setLastMessageContext(context, contextAlternatives)
         this.chatModel.addBotMessage({
             text: PromptString.unsafe_fromLLMResponse(
-                'You have set `"cody.internal.onebox": true` in your vscode settings.'
+                'You have set `"cody.internal.onebox": true` in your settings.'
             ),
         })
 
