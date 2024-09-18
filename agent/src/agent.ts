@@ -141,8 +141,7 @@ export async function initializeVscodeExtension(
     extensionActivate: ExtensionActivate,
     extensionClient: ExtensionClient,
     globalState: AgentGlobalState,
-    secrets: vscode.SecretStorage,
-    extensionConfiguration?: ExtensionConfiguration
+    secrets: vscode.SecretStorage
 ): Promise<void> {
     const paths = codyPaths()
     const extensionPath = paths.config
