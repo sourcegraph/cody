@@ -123,7 +123,7 @@ export async function start(
 
     const disposables: vscode.Disposable[] = []
 
-    setResolvedConfigurationObservable(
+    await setResolvedConfigurationObservable(
         combineLatest([
             fromVSCodeEvent(vscode.workspace.onDidChangeConfiguration).pipe(
                 filter(
@@ -137,7 +137,7 @@ export async function start(
                 startWith(undefined),
                 map(() => secretStorage)
             ),
-            localStorage.clientStateChanges.pipe(distinctUntilChanged()),
+            localStorage.clientStateChanges,
         ]).pipe(
             map(
                 ([clientConfiguration, clientSecrets, clientState]) =>
