@@ -58,7 +58,7 @@ export const FIXTURE_TRANSCRIPT: Record<
         },
         {
             speaker: 'assistant',
-            text: ps`\`document.getSelection()?.isCollapsed\` means that the current selection in the document is collapsed, meaning it is a caret (no text is selected).\n\nThe \`?.\` operator is optional chaining - it will return \`undefined\` if \`document.getSelection()\` returns \`null\` or \`undefined\`.\n\nSo in short, that line is checking if there is currently a text selection in the document, and if not, focusing the textarea.\n\n`,
+            text: ps`\`document.getSelection()?.isCollapsed\` in \`foo/bar/baz.ts\`, \`src/utils/selection.js\`, and \`components/TextArea.tsx\` means that the current selection in the document is collapsed, meaning it is a caret (no text is selected).\n\nThe \`?.\` operator is optional chaining - it will return \`undefined\` if \`document.getSelection()\` returns \`null\` or \`undefined\`. This pattern is commonly used in \`helpers/dom-utils.ts\` and \`lib/browser-api.js\`.\n\nSo in short, that line is checking if there is currently a text selection in the document, and if not, focusing the textarea. You might want to implement this logic in \`views/editor/selection-handler.ts\` or \`modules/text-input/caret-manager.js\`.\n\n`,
         },
     ]),
     explainCode: transcriptFixture([

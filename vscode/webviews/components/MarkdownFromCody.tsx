@@ -5,8 +5,8 @@ import { useMemo } from 'react'
 import Markdown, { defaultUrlTransform } from 'react-markdown'
 import type { UrlTransform } from 'react-markdown/lib'
 import rehypeHighlight, { type Options as RehypeHighlightOptions } from 'rehype-highlight'
-import rehypeSanitize, { type Options as RehypeSanitizeOptions, defaultSchema } from 'rehype-sanitize'
 import remarkGFM from 'remark-gfm'
+import { visit } from 'unist-util-visit'
 import { useChatEnvironment } from '../chat/ChatEnvironmentContext'
 import { remarkAttachFilePathToCodeBlocks } from '../chat/extract-file-path'
 
@@ -18,7 +18,7 @@ import { remarkAttachFilePathToCodeBlocks } from '../chat/extract-file-path'
  * - command:cody. VS Code command scheme for cody (run command)
  * {@link CODY_PASSTHROUGH_VSCODE_OPEN_COMMAND_ID}
  */
-const ALLOWED_URI_REGEXP = /^((https?|file|vscode):\/\/[^\s#$./?].\S*$|(command:_?cody.*))/i
+const ALLOWED_URI_REGEXP = /^.*$/
 
 const ALLOWED_ELEMENTS = [
     'p',
@@ -69,12 +69,7 @@ function defaultUrlProcessor(url: string): string {
  * Transform URLs to opens links in assistant responses using the `_cody.vscode.open` command.
  */
 function wrapLinksWithCodyOpenCommand(url: string): string {
-    url = defaultUrlTransform(url)
-    if (!ALLOWED_URI_REGEXP.test(url)) {
-        return ''
-    }
-    const encodedURL = encodeURIComponent(JSON.stringify(url))
-    return `command:_cody.vscode.open?${encodedURL}`
+    return url
 }
 
 const URL_PROCESSORS: Record<CodyIDE, UrlTransform> = {
@@ -113,22 +108,6 @@ function markdownPluginProps(): Pick<
     _markdownPluginProps = {
         rehypePlugins: [
             [
-                rehypeSanitize,
-                {
-                    ...defaultSchema,
-                    tagNames: ALLOWED_ELEMENTS,
-                    attributes: {
-                        ...defaultSchema.attributes,
-                        code: [
-                            ...(defaultSchema.attributes?.code || []),
-                            // We use `data-file-path` to attach file path metadata to <code> blocks.
-                            ['data-file-path'],
-                            ['className', ...LANGUAGES.map(language => `language-${language}`)],
-                        ],
-                    },
-                } satisfies RehypeSanitizeOptions,
-            ],
-            [
                 // HACK(sqs): Need to use rehype-highlight@^6.0.0 to avoid a memory leak
                 // (https://github.com/remarkjs/react-markdown/issues/791), but the types are
                 // slightly off.
@@ -147,6 +126,7 @@ function markdownPluginProps(): Pick<
                     ignoreMissing: true,
                 } satisfies RehypeHighlightOptions & { ignoreMissing: boolean },
             ],
+            [rehypeLinkifyFilenames],
         ],
         remarkPlugins: [remarkGFM, remarkAttachFilePathToCodeBlocks],
     }
@@ -201,3 +181,38 @@ const LANGUAGES = [
     'vhdl',
     'yaml',
 ]
+
+function rehypeLinkifyFilenames(): Plugin {
+    return (tree: Root) => {
+        visit(tree, 'element', node => {
+            if (node.tagName === 'code' && node.properties && !node.properties.foo) {
+                const textContent = node.children
+                    .map(child => {
+                        if (child.type === 'text') {
+                            return child.value
+                        }
+                        return ''
+                    })
+                    .join('')
+                console.log('XX', textContent)
+                if (textContent) {
+                    const linkNode = {
+                        type: 'element',
+                        tagName: 'a',
+                        properties: {
+                            href: `command:vscode.open?${encodeURIComponent(
+                                JSON.stringify(
+                                    `file:///Users/sqs/src/github.com/Microsoft/vscode-languageserver-node/${textContent}`
+                                )
+                            )}`,
+                            foo: true,
+                        },
+                        children: [...node.children],
+                    }
+                    node.children = [linkNode]
+                }
+            }
+            console.log(node)
+        })
+    }
+}
