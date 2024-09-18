@@ -13,7 +13,7 @@ import {
     testAutocompleteProvider,
 } from './shared/helpers'
 
-describe('unstable-openai', () => {
+describe('unstable-openai autocomplete provider', () => {
     beforeEach(async () => {
         mockLocalStorage()
         vi.spyOn(featureFlagProvider, 'evaluatedFeatureFlag').mockReturnValue(Observable.of(false))
