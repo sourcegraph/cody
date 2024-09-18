@@ -125,15 +125,7 @@ export class RepoNameResolver {
     }
 
     private async resolveRepoNameForRemoteUrl(remoteUrl: string): Promise<string | null> {
-        if (this.remoteUrlToRepoNameCache.has(remoteUrl)) {
-            const value = this.remoteUrlToRepoNameCache.get(remoteUrl)!
-            return value
-        }
-
-        const repoNameRequest = graphqlClient.getRepoName(remoteUrl)
-        this.remoteUrlToRepoNameCache.set(remoteUrl, repoNameRequest)
-
-        return repoNameRequest
+        return graphqlClient.getRepoName(remoteUrl)
     }
 
     public dispose(): void {
