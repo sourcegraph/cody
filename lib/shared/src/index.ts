@@ -3,10 +3,17 @@
 export {
     modelsService,
     mockModelsService,
-    type ServerModel,
+    ModelsService,
     type ServerModelConfiguration,
 } from './models'
-export { Model } from './models/model'
+export {
+    type Model,
+    type ServerModel,
+    createModel,
+    createModelFromServerModel,
+    modelTier,
+    parseModelRef,
+} from './models/model'
 export {
     type EditModel,
     type EditProvider,

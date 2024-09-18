@@ -5,7 +5,6 @@ import {
     type ModelCategory,
     type ModelTier,
     ModelsService,
-    type ServerModel,
     type ServerModelConfiguration,
     type TestStorage,
     mockModelsService,
@@ -13,7 +12,8 @@ import {
 import { DOTCOM_URL } from '../sourcegraph-api/environments'
 import { CHAT_INPUT_TOKEN_BUDGET, CHAT_OUTPUT_TOKEN_BUDGET } from '../token/constants'
 import { getDotComDefaultModels } from './dotcom'
-import { Model } from './model'
+import type { ServerModel } from './model'
+import { createModel, createModelFromServerModel, modelTier } from './model'
 import { ModelTag } from './tags'
 import { ModelUsage } from './types'
 
@@ -76,7 +76,7 @@ describe('Model Provider', () => {
 
         it('returns max token limit for known model - Enterprise user', () => {
             modelsService.setModels([
-                new Model({
+                createModel({
                     id: 'enterprise-model',
                     usage: [ModelUsage.Chat],
                     contextWindow: { input: 200, output: 100 },
@@ -106,7 +106,7 @@ describe('Model Provider', () => {
 
         it('returns max token limit for known model - Enterprise user', () => {
             modelsService.setModels([
-                new Model({
+                createModel({
                     id: 'model-with-limit',
                     usage: [ModelUsage.Chat],
                     contextWindow: { input: 8000, output: 2000 },
@@ -118,22 +118,22 @@ describe('Model Provider', () => {
     })
 
     describe('Selected models', () => {
-        const model1chat = new Model({
+        const model1chat = createModel({
             id: 'model-1',
             usage: [ModelUsage.Chat],
         })
 
-        const model2chat = new Model({
+        const model2chat = createModel({
             id: 'model-2',
             usage: [ModelUsage.Chat],
         })
 
-        const model3all = new Model({
+        const model3all = createModel({
             id: 'model-3',
             usage: [ModelUsage.Chat, ModelUsage.Edit],
         })
 
-        const model4edit = new Model({
+        const model4edit = createModel({
             id: 'model-4',
             usage: [ModelUsage.Edit],
         })
@@ -184,7 +184,7 @@ describe('Model Provider', () => {
             },
         }
 
-        const opus = Model.fromApi(serverOpus)
+        const opus = createModelFromServerModel(serverOpus)
 
         const serverClaude: ServerModel = {
             modelRef: 'anthropic::unknown::anthropic.claude-instant-v1',
@@ -199,7 +199,7 @@ describe('Model Provider', () => {
                 maxOutputTokens: 4000,
             },
         }
-        const claude = Model.fromApi(serverClaude)
+        const claude = createModelFromServerModel(serverClaude)
 
         const serverTitan: ServerModel = {
             modelRef: 'anthropic::unknown::amazon.titan-text-lite-v1',
@@ -215,7 +215,7 @@ describe('Model Provider', () => {
             },
         }
 
-        const titan = Model.fromApi(serverTitan)
+        const titan = createModelFromServerModel(serverTitan)
 
         const SERVER_MODELS: ServerModelConfiguration = {
             schemaVersion: '1.0',
@@ -245,7 +245,7 @@ describe('Model Provider', () => {
             expect(opus.title).toBe(serverOpus.displayName)
             expect(opus.provider).toBe('anthropic')
             expect(opus.contextWindow).toEqual({ input: 9000, output: 4000 })
-            expect(Model.tier(opus)).toBe(ModelTag.Enterprise)
+            expect(modelTier(opus)).toBe(ModelTag.Enterprise)
         })
 
         it("sets server models and default models if they're not already set", () => {
@@ -308,17 +308,17 @@ describe('Model Provider', () => {
     })
 
     describe('isModelAvailable', () => {
-        const enterpriseModel = new Model({
+        const enterpriseModel = createModel({
             id: 'enterprise-model',
             usage: [ModelUsage.Chat],
             tags: [ModelTag.Enterprise],
         })
-        const proModel = new Model({
+        const proModel = createModel({
             id: 'pro-model',
             usage: [ModelUsage.Chat],
             tags: [ModelTag.Pro],
         })
-        const freeModel = new Model({
+        const freeModel = createModel({
             id: 'free-model',
             usage: [ModelUsage.Chat],
             // We don't include ModelTag.Free here to test that it's not required.

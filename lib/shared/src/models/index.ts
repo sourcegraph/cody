@@ -16,7 +16,13 @@ import {
 } from '../misc/observable'
 import { isAbortError } from '../sourcegraph-api/errors'
 import { CHAT_INPUT_TOKEN_BUDGET, CHAT_OUTPUT_TOKEN_BUDGET } from '../token/constants'
-import { Model } from './model'
+import {
+    type Model,
+    type ServerModel,
+    createModelFromServerModel,
+    modelTier,
+    parseModelRef,
+} from './model'
 import { ModelTag } from './tags'
 import { type ChatModel, type EditModel, type ModelContextWindow, ModelUsage } from './types'
 
@@ -32,7 +38,7 @@ export interface ModelRef {
 }
 
 export type ModelCategory = ModelTag.Power | ModelTag.Balanced | ModelTag.Speed
-type ModelStatus =
+export type ModelStatus =
     | ModelTag.Experimental
     | ModelTag.EarlyAccess
     | ModelTag.OnWaitlist
@@ -40,9 +46,9 @@ type ModelStatus =
     | 'stable'
     | ModelTag.Deprecated
 export type ModelTier = ModelTag.Free | ModelTag.Pro | ModelTag.Enterprise
-type ModelCapability = 'chat' | 'autocomplete'
+export type ModelCapability = 'chat' | 'autocomplete'
 
-interface ContextWindow {
+export interface ContextWindow {
     maxInputTokens: number
     maxOutputTokens: number
 }
@@ -140,20 +146,6 @@ interface OpenAICompatible {
     editMaxTokens?: number
 }
 
-export interface ServerModel {
-    modelRef: ModelRefStr
-    displayName: string
-    modelName: string
-    capabilities: ModelCapability[]
-    category: ModelCategory
-    status: ModelStatus
-    tier: ModelTier
-
-    contextWindow: ContextWindow
-
-    clientSideConfig?: ClientSideConfig
-}
-
 interface Provider {
     id: string
     displayName: string
@@ -175,17 +167,6 @@ export interface ServerModelConfiguration {
     providers: Provider[]
     models: ServerModel[]
     defaultModels: DefaultModels
-}
-
-export interface ModelParams {
-    id: string
-    modelRef?: ModelRefStr | ModelRef
-    usage: ModelUsage[]
-    contextWindow?: ModelContextWindow
-    clientSideConfig?: ClientSideConfig
-    tags?: ModelTag[]
-    provider?: string
-    title?: string
 }
 
 export interface PerSitePreferences {
@@ -335,7 +316,7 @@ export class ModelsService {
      * Sets the primary and default models from the server sent config
      */
     public async setServerSentModels(config: ServerModelConfiguration): Promise<void> {
-        const models = config.models.map(Model.fromApi)
+        const models = config.models.map(createModelFromServerModel)
         this.setModels(models)
         await this.setServerDefaultModel(ModelUsage.Chat, config.defaultModels.chat)
         await this.setServerDefaultModel(ModelUsage.Edit, config.defaultModels.chat)
@@ -343,7 +324,7 @@ export class ModelsService {
     }
 
     private async setServerDefaultModel(usage: ModelUsage, newDefaultModelRef: ModelRefStr) {
-        const ref = Model.parseModelRef(newDefaultModelRef)
+        const ref = parseModelRef(newDefaultModelRef)
         const { preferences } = this
 
         // If our cached default model matches, nothing needed
@@ -446,7 +427,7 @@ export class ModelsService {
         if (!resolved) {
             return false
         }
-        const tier = Model.tier(resolved)
+        const tier = modelTier(resolved)
         // Cody Enterprise users are able to use any models that the backend says is supported.
         if (isEnterpriseUser(status)) {
             return true

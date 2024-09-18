@@ -4,21 +4,19 @@ import {
     CHAT_INPUT_TOKEN_BUDGET,
     ClientConfigSingleton,
     FeatureFlag,
-    Model,
+    ModelTag,
     ModelUsage,
+    ModelsService,
     RestClient,
+    type ServerModel,
+    type ServerModelConfiguration,
+    createModel,
     featureFlagProvider,
     getDotComDefaultModels,
     isDotCom,
     modelsService,
     telemetryRecorder,
 } from '@sourcegraph/cody-shared'
-import {
-    ModelsService,
-    type ServerModel,
-    type ServerModelConfiguration,
-} from '@sourcegraph/cody-shared/src/models'
-import { ModelTag } from '@sourcegraph/cody-shared/src/models/tags'
 import * as vscode from 'vscode'
 import { getConfiguration } from '../configuration'
 import { logDebug } from '../log'
@@ -106,7 +104,7 @@ export async function syncModels(authStatus: AuthStatus, signal?: AbortSignal): 
     // automatically fallback to use the default model configured on the instance.
     if (authStatus?.configOverwrites?.chatModel) {
         modelsService.setModels([
-            new Model({
+            createModel({
                 id: authStatus.configOverwrites.chatModel,
                 // TODO (umpox) Add configOverwrites.editModel for separate edit support
                 usage: [ModelUsage.Chat, ModelUsage.Edit],
@@ -159,22 +157,21 @@ function registerModelsFromVSCodeConfiguration(): void {
     }
 
     modelsService.addModels(
-        modelsConfig.map(
-            m =>
-                new Model({
-                    id: `${m.provider}/${m.model}`,
-                    usage: [ModelUsage.Chat, ModelUsage.Edit],
-                    contextWindow: {
-                        input: m.inputTokens ?? CHAT_INPUT_TOKEN_BUDGET,
-                        output: m.outputTokens ?? ANSWER_TOKENS,
-                    },
-                    clientSideConfig: {
-                        apiKey: m.apiKey,
-                        apiEndpoint: m.apiEndpoint,
-                        options: m.options,
-                    },
-                    tags: [ModelTag.Local, ModelTag.BYOK, ModelTag.Experimental],
-                })
+        modelsConfig.map(m =>
+            createModel({
+                id: `${m.provider}/${m.model}`,
+                usage: [ModelUsage.Chat, ModelUsage.Edit],
+                contextWindow: {
+                    input: m.inputTokens ?? CHAT_INPUT_TOKEN_BUDGET,
+                    output: m.outputTokens ?? ANSWER_TOKENS,
+                },
+                clientSideConfig: {
+                    apiKey: m.apiKey,
+                    apiEndpoint: m.apiEndpoint,
+                    options: m.options,
+                },
+                tags: [ModelTag.Local, ModelTag.BYOK, ModelTag.Experimental],
+            })
         )
     )
 }
