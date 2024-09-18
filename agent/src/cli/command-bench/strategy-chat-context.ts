@@ -16,8 +16,20 @@ export async function evaluateChatContextStrategy(
     client: RpcMessageHandler,
     options: CodyBenchOptions
 ): Promise<void> {
-    const inputFile = path.join(options.workspace, 'input-small.csv')
-    const outputFile = path.join(options.snapshotDirectory, 'output.csv')
+    const inputFilename = options.fixture.customConfiguration?.['cody-bench.chatContext.inputFile']
+    if (!inputFilename) {
+        throw new Error(
+            'Missing cody-bench.chatContext.inputFile. To fix this problem, add "customConfiguration": { "cody-bench.chatContext.inputFile": "examples.csv" } to the cody-bench JSON config.'
+        )
+    }
+    const outputFilename = options.fixture.customConfiguration?.['cody-bench.chatContext.outputFile']
+    if (!outputFilename) {
+        throw new Error(
+            'Missing cody-bench.chatContext.outputFile. To fix this problem, add "customConfiguration": { "cody-bench.chatContext.outputFile": "output.csv" } to the cody-bench JSON config.'
+        )
+    }
+    const inputFile = path.join(options.workspace, inputFilename)
+    const outputFile = path.join(options.snapshotDirectory, outputFilename)
 
     if (options.insecureTls) {
         process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'
