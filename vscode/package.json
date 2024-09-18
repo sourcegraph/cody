@@ -851,7 +851,7 @@
         },
         {
           "command": "cody.menu.custom-commands",
-          "when": "cody.activated",
+          "when": "cody.activated && cody.menu.custom-commands.enable",
           "group": "custom-commands"
         },
         {

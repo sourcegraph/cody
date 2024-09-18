@@ -6,6 +6,7 @@ import {
     CodyIDE,
     type ConfigurationInput,
     type DefaultCodyCommands,
+    FeatureFlag,
     type Guardrails,
     NEVER,
     PromptString,
@@ -18,6 +19,7 @@ import {
     currentAuthStatusOrNotReadyYet,
     currentResolvedConfig,
     distinctUntilChanged,
+    featureFlagProvider,
     fromVSCodeEvent,
     graphqlClient,
     isDotCom,
@@ -58,6 +60,7 @@ import {
     executeTestEditCommand,
 } from './commands/execute'
 import { executeAutoEditCommand } from './commands/execute/auto-edit'
+import { executeDocChatCommand } from './commands/execute/doc'
 import { CodySourceControl } from './commands/scm/source-control'
 import type { CodyCommandArgs } from './commands/types'
 import { newCodyCommandArgs } from './commands/utils/get-commands'
@@ -388,12 +391,12 @@ async function registerOtherCommands(disposables: vscode.Disposable[]) {
     )
 }
 
-function registerCodyCommands(
+async function registerCodyCommands(
     statusBar: CodyStatusBar,
     sourceControl: CodySourceControl,
     chatClient: ChatClient,
     disposables: vscode.Disposable[]
-): void {
+): Promise<void> {
     // Execute Cody Commands and Cody Custom Commands
     const executeCommand = (
         commandKey: DefaultCodyCommands | string,
@@ -431,6 +434,30 @@ function registerCodyCommands(
             () => new SupercompletionProvider({ statusBar, chat: chatClient })
         )
     )
+
+    const isUntiedPromptsEnabled = await featureFlagProvider.evaluateFeatureFlag(
+        FeatureFlag.CodyUnifiedPrompts
+    )
+
+    // Register prompt-like command if unified prompts feature is available
+    if (isUntiedPromptsEnabled && getConfiguration().agentIDE !== CodyIDE.Web) {
+        // Hide all commands from sub menus and quick menus
+        await vscode.commands.executeCommand('setContext', 'cody.menu.custom-commands.enable', false)
+
+        disposables.push(
+            vscode.commands.registerCommand('cody.action.command', (id, a) => executeCommand(id, a)),
+            vscode.commands.registerCommand('cody.command.explain-code', a => executeExplainCommand(a)),
+            vscode.commands.registerCommand('cody.command.smell-code', a => executeSmellCommand(a)),
+            vscode.commands.registerCommand('cody.command.document-code', a => executeDocChatCommand(a)),
+            vscode.commands.registerCommand('cody.command.unit-tests', a => executeTestChatCommand(a)),
+            sourceControl // Generate Commit Message command
+        )
+
+        return
+    }
+
+    // Show all commands from sub menus and quick menus
+    await vscode.commands.executeCommand('setContext', 'cody.menu.custom-commands.enable', true)
 
     // Register Cody Commands
     disposables.push(

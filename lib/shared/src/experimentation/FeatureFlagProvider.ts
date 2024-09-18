@@ -88,6 +88,12 @@ export enum FeatureFlag {
 
     /** Whether user has access to early-acess models. */
     CodyEarlyAccess = 'cody-early-access',
+
+    /**
+     * Enables experimental unified prompts (show no commands and include
+     * some standard out of box prompts like documentation and explain code prompts
+     */
+    CodyUnifiedPrompts = 'cody-unified-prompts',
 }
 
 const ONE_HOUR = 60 * 60 * 1000

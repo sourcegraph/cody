@@ -131,6 +131,7 @@ function convertDefaultCommandsToPromptString(input: DefaultCodyCommands | Promp
             return ps`unit`
         case DefaultEditCommands.Test:
             return ps`test`
+        case DefaultChatCommands.Doc:
         case DefaultEditCommands.Doc:
             return ps`doc`
         case DefaultEditCommands.Edit:
