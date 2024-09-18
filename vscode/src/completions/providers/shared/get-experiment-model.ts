@@ -12,7 +12,6 @@ import { Observable, map } from 'observable-fns'
 import * as vscode from 'vscode'
 import {
     DEEPSEEK_CODER_V2_LITE_BASE,
-    DEEPSEEK_CODER_V2_LITE_BASE_DIRECT_ROUTE,
     DEEPSEEK_CODER_V2_LITE_BASE_WINDOW_4096,
     FIREWORKS_DEEPSEEK_7B_LANG_ALL,
     FIREWORKS_DEEPSEEK_7B_LANG_SPECIFIC_V0,
@@ -41,9 +40,8 @@ export function getDotComExperimentModel({
             FeatureFlag.CodyAutocompleteFIMModelExperimentBaseFeatureFlag
         ),
         featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyAutocompleteDeepseekV2LiteBase),
-        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyAutocompleteDeepseekV2LiteBaseDirectRoute),
     ]).pipe(
-        mergeMap(([starCoderHybrid, claude3, fimModelExperimentFlag, deepseekV2LiteBase, deepseekV2LiteBaseDirectRoute]) => {
+        mergeMap(([starCoderHybrid, claude3, fimModelExperimentFlag, deepseekV2LiteBase]) => {
             // We run fine tuning experiment for VSC client only.
             // We disable for all agent clients like the JetBrains plugin.
             const isFinetuningExperimentDisabled = vscode.workspace
@@ -53,13 +51,6 @@ export function getDotComExperimentModel({
             if (!isFinetuningExperimentDisabled && fimModelExperimentFlag) {
                 // The traffic in this feature flag is interpreted as a traffic allocated to the fine-tuned experiment.
                 return resolveFIMModelExperimentFromFeatureFlags()
-            }
-
-            if (deepseekV2LiteBaseDirectRoute) {
-                return Observable.of({
-                    provider: 'fireworks',
-                    model: DEEPSEEK_CODER_V2_LITE_BASE_DIRECT_ROUTE,
-                })
             }
 
             if (deepseekV2LiteBase) {
@@ -114,7 +105,7 @@ function resolveFIMModelExperimentFromFeatureFlags(): ReturnType<typeof getDotCo
                 fimModelCurrentBest,
             ]) => {
                 if (fimModelVariant1) {
-                    return { provider: 'fireworks', model: DEEPSEEK_CODER_V2_LITE_BASE_DIRECT_ROUTE }
+                    return { provider: 'fireworks', model: DEEPSEEK_CODER_V2_LITE_BASE }
                 }
                 if (fimModelVariant2) {
                     return { provider: 'fireworks', model: FIREWORKS_DEEPSEEK_7B_LANG_SPECIFIC_V0 }
