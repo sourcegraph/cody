@@ -137,43 +137,75 @@ Overall, the code has a good structure and generally follows sound design princi
 `;
 
 exports[`Agent > Commands > commands/test 1`] = `
-"Based on the provided code context, the test framework in use is \`vitest\`.
+"Based on the provided code context, the codebase is written in TypeScript and uses the Vitest test framework. I will generate a set of unit tests for the \`Animal\` interface in \`src/animal.ts\`.
 
-The selected code is an \`Animal\` interface, which does not have any implementations or functions to test. However, I'll assume that a function implementing the \`Animal\` interface exists somewhere. Here's an example of how you could write unit tests for such a function in \`src/animal.test.ts\`:
-
+Importing the necessary modules:
 \`\`\`typescript
-// src/animal.test.ts
-import { expect, test } from 'vitest'
+import { expect, describe, it } from 'vitest'
 import { Animal } from './animal'
+\`\`\`
+Unit tests for \`src/animal.ts\`:
+\`\`\`typescript
+describe('Animal', () => {
+  let animal: Animal
 
-const myAnimal: Animal = {
-    name: 'Dog',
-    makeAnimalSound: () => 'Woof',
-    isMammal: true
-}
-
-test('should test Animal interface implementation', () => {
-    expect(myAnimal.name).toBe('Dog')
-    expect(myAnimal.makeAnimalSound()).toBe('Woof')
-    expect(myAnimal.isMammal).toBe(true)
-})
-
-test('should test makeAnimalSound implementation', () => {
-    const animal = {
-        name: 'Cat',
-        makeAnimalSound: () => 'Meow',
-        isMammal: true
+  // Define a base animal with required properties
+  beforeEach(() => {
+    animal = {
+      name: 'Cat',
+      makeAnimalSound: () => 'Meow',
+      isMammal: true,
     }
+  })
 
-    expect(animal.makeAnimalSound()).toBe('Meow')
+  it('should have a name property of string type', () => {
+    expect(animal.name).toBeTypeOf('string')
+  })
+
+Here is a suite of unit tests for the functions in \`@src/animal.ts:1-6\` using vitest:
+\`\`\`typescript
+import { expect } from 'vitest'
+import { TestClass } from './TestClass'
+import { Animal, isMammal, makeAnimalSound } from './animal'
+
+describe('Animal tests', () => {
+  const testAnimal: Animal = {
+    name: 'Test Animal',
+    makeAnimalSound: () => 'Test Sound',
+    isMammal: true,
+  }
+
+  it('Should have a name property', () => {
+    expect(testAnimal).toHaveProperty('name')
+  })
+
+  it('Should have a makeAnimalSound function', () => {
+    expect(testAnimal).toHaveProperty('makeAnimalSound')
+    expect(typeof testAnimal.makeAnimalSound).toBe('function')
+  })
+
+  it('Should have an isMammal property', () => {
+    expect(testAnimal).toHaveProperty('isMammal')
+    expect(typeof testAnimal.isMammal).toBe('boolean')
+  })
+
+  it('makeAnimalSound should return a string', () => {
+    expect(makeAnimalSound(testAnimal)).toBe('Test Sound')
+  })
+
+  it('isMammal should return true if the animal is a mammal', () => {
+    expect(isMammal(testAnimal)).toBe(true)
+  })
 })
 \`\`\`
+Test coverage:
 
-Here's the explanation of the test coverage and limitations:
+* Validates that the \`Animal\` interface has the expected properties.
+* Validates that the \`makeAnimalSound\` function returns a string.
+* Validates that the \`isMammal\` function returns the expected boolean value.
 
-* The tests cover the properties \`name\`, \`makeAnimalSound\`, and \`isMammal\` of the \`Animal\` interface.
-* The \`makeAnimalSound\` method is tested with a \`Dog\` sound and a \`Cat\` sound.
-* The tests do not cover any possible error conditions or edge cases, such as when the \`name\` property is null or the \`makeAnimalSound\` method throws an exception.
+Limitations:
 
-Note that the above test code is written on the assumption that an implementation of the \`Animal\` interface exists. If this is not the case, please provide the implementation code for unit testing."
+* This test suite assumes that the \`makeAnimalSound\` function and \`isMammal\` function are properly implemented in the source code.
+* Additional tests could be added to check for proper error handling, boundary cases, etc."
 `;
