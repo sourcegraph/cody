@@ -29,7 +29,6 @@ export const FIREWORKS_DEEPSEEK_7B_LANG_SPECIFIC_V0 = 'deepseek-finetuned-lang-s
 export const FIREWORKS_DEEPSEEK_7B_LANG_SPECIFIC_V1 = 'deepseek-finetuned-lang-specific-v1'
 export const FIREWORKS_DEEPSEEK_7B_LANG_ALL = 'deepseek-finetuned-lang-all-v0'
 
-export const DEEPSEEK_CODER_V2_LITE_BASE_DIRECT_ROUTE = 'deepseek-coder-v2-lite-base-direct-route'
 export const DEEPSEEK_CODER_V2_LITE_BASE = 'deepseek-coder-v2-lite-base'
 
 // Context window experiments with DeepSeek Model
@@ -53,8 +52,6 @@ const MODEL_MAP = {
     [FIREWORKS_DEEPSEEK_7B_LANG_SPECIFIC_V1]: 'finetuned-fim-lang-specific-model-ds2-v1',
     [FIREWORKS_DEEPSEEK_7B_LANG_ALL]: 'accounts/sourcegraph/models/finetuned-fim-lang-all-model-ds2-v0',
     [DEEPSEEK_CODER_V2_LITE_BASE]: 'fireworks/deepseek-coder-v2-lite-base',
-    [DEEPSEEK_CODER_V2_LITE_BASE_DIRECT_ROUTE]:
-        'accounts/sourcegraph/models/deepseek-coder-v2-lite-base',
     [DEEPSEEK_CODER_V2_LITE_BASE_WINDOW_4096]: 'accounts/sourcegraph/models/deepseek-coder-v2-lite-base',
     [DEEPSEEK_CODER_V2_LITE_BASE_WINDOW_8192]: 'accounts/sourcegraph/models/deepseek-coder-v2-lite-base',
     [DEEPSEEK_CODER_V2_LITE_BASE_WINDOW_16384]:
@@ -85,8 +82,7 @@ function getMaxContextTokens(model: FireworksModel): number {
         case FIREWORKS_DEEPSEEK_7B_LANG_SPECIFIC_V0:
         case FIREWORKS_DEEPSEEK_7B_LANG_SPECIFIC_V1:
         case FIREWORKS_DEEPSEEK_7B_LANG_ALL:
-        case DEEPSEEK_CODER_V2_LITE_BASE:
-        case DEEPSEEK_CODER_V2_LITE_BASE_DIRECT_ROUTE: {
+        case DEEPSEEK_CODER_V2_LITE_BASE: {
             return 2048
         }
         case DEEPSEEK_CODER_V2_LITE_BASE_WINDOW_4096:
@@ -182,21 +178,7 @@ class FireworksProvider extends Provider {
             customHeaders['X-Fireworks-Genie'] = 'true'
         }
 
-        if (this.checkIfDirectRouteShouldBeEnabled()) {
-            customHeaders['X-Sourcegraph-Use-Direct-Route'] = 'true'
-        }
-
         return customHeaders
-    }
-
-    private checkIfDirectRouteShouldBeEnabled(): boolean {
-        return [
-            DEEPSEEK_CODER_V2_LITE_BASE_DIRECT_ROUTE,
-            DEEPSEEK_CODER_V2_LITE_BASE_WINDOW_4096,
-            FIREWORKS_DEEPSEEK_7B_LANG_ALL,
-            FIREWORKS_DEEPSEEK_7B_LANG_SPECIFIC_V0,
-            FIREWORKS_DEEPSEEK_7B_LANG_SPECIFIC_V1,
-        ].includes(this.legacyModel)
     }
 
     private async createClient(
