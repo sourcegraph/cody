@@ -29,7 +29,7 @@ async function verifyShim() {
         write: false,
         outfile: path.join('dist', 'shim.js'),
         plugins: shimPlugins,
-        external: ['typescript'],
+        external: ['typescript', 'punycode'],
         alias: {
             // Build from TypeScript sources so we don't need to run `tsc -b` in the background
             // during dev.
