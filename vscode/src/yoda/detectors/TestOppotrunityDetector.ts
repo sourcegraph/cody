@@ -1,4 +1,4 @@
-import { PromptString, ps } from '@sourcegraph/cody-shared'
+import { PromptString, getSimplePreamble, ps } from '@sourcegraph/cody-shared'
 import type * as vscode from 'vscode'
 import { getContextFilesForUnitTestCommand } from '../../commands/context/unit-test-file'
 import { isTestFileForOriginal } from '../../commands/utils/test-commands'
@@ -32,7 +32,7 @@ export class TestOpportunityDetector implements Detector<Data> {
                     const testFile = contextFiles.find(testFile =>
                         isTestFileForOriginal(file.uri, testFile.uri)
                     )?.uri
-                    if (testFile) {
+                    if (testFile && testFile.path !== file.uri.path) {
                         return [
                             {
                                 ...file,
@@ -55,7 +55,14 @@ export class TestOpportunityDetector implements Detector<Data> {
         // Loop through current context to see if the file has an exisiting test file
         // const destinationFile = contextFiles.find(testFile => isTestFileForOriginal(uri, testFile.uri))?.uri
         const promptBuilder = await PromptBuilder.create(ctx.model.contextWindow)
-        await promptBuilder.tryAddMessages(
+        if (
+            !promptBuilder.tryAddToPrefix(
+                getSimplePreamble(ctx.model.id, 1, 'Default', PRE_INSTRUCTIONS)
+            )
+        ) {
+            return
+        }
+        promptBuilder.tryAddMessages(
             reversedTuple([
                 // Important, messages are added in reverse order
                 {
@@ -85,7 +92,7 @@ export class TestOpportunityDetector implements Detector<Data> {
             { uri: candidate.data.testFile, type: 'file' },
             { uri: candidate.uri, type: 'file', content: candidate.content },
         ])
-        if (ignored || limitReached) {
+        if (ignored.length > 0 || limitReached) {
             return
         }
         const messages = await promptBuilder.build()
@@ -105,33 +112,19 @@ export class TestOpportunityDetector implements Detector<Data> {
         }
         const json = JSON.parse(response)
         const top: { feature: string; symbolName: string } = json.top3[0]
-        const outputPrompt = await PromptBuilder.create(ctx.model.contextWindow)
+        const outputPrompt = ps`Help me test ${PromptString.unsafe_fromLLMResponse(
+            top.feature
+        )} in ${PromptString.fromDisplayPath(candidate.uri)}`
         // We can only have a single output message
-        outputPrompt.tryAddMessages([
-            {
-                speaker: 'human',
-                text: ps`Help me test ${PromptString.unsafe_fromLLMResponse(
-                    top.feature
-                )} in ${PromptString.fromDisplayPath(candidate.uri)}`,
-                contextFiles: [
-                    {
-                        uri: candidate.uri,
-                        content: candidate.content,
-                        type: 'file',
-                    },
-                ],
-            },
-        ])
-        const [message, ...otherMessages] = outputPrompt.build()
-        console.log(otherMessages)
-        if (!message || !message.text) {
-            return
-        }
         return {
             cta: `Try fixing ${top.feature} in ${top.symbolName}`,
-            prompt: message.text,
+            prompt: outputPrompt,
             hiddenInstructions: ps`TO BE DONE`,
             score: candidate.score,
         }
     }
 }
+
+//Nothing right now
+const PRE_INSTRUCTIONS = ps`
+`

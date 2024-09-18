@@ -54,7 +54,7 @@ export class YodaController implements vscode.Disposable {
             )
             const cancel = cancellationToken(abort)
             const forcedFiles = await vscode.workspace.findFiles('**/workspace.ts')
-            const files = [] ?? (await vscode.workspace.findFiles(include, exclude, 100, cancel))
+            const files = await vscode.workspace.findFiles(include, exclude, 100, cancel)
             return [...forcedFiles, ...files]
         })
     )
@@ -82,14 +82,19 @@ export class YodaController implements vscode.Disposable {
                     const resultPromises = __temporary_candidates__
                         .map(v => ({ ...v, content: decoded }))
                         .map(async v => {
-                            const result = await detector.detect(v, ctx).catch(_ => [])
-                            if (result === null || result === undefined) {
+                            try {
+                                const result = await detector.detect(v, ctx)
+                                if (result === null || result === undefined) {
+                                    return []
+                                }
+                                if (isArray(result)) {
+                                    return result
+                                }
+                                return [result]
+                            } catch (e) {
+                                logError('Yoda', 'failed detection', e)
                                 return []
                             }
-                            if (isArray(result)) {
-                                return result
-                            }
-                            return [result]
                         })
                     const results = (await Promise.all(resultPromises)).flat()
                     return results

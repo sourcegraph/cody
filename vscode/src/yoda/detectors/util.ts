@@ -18,7 +18,7 @@ export async function combineStream(
                 response = message.text
                 break
             case 'error':
-                return null
+                throw message.error
         }
     }
     if (!response) {
