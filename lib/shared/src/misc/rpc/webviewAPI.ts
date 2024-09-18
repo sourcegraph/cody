@@ -11,6 +11,11 @@ import { type createMessageAPIForWebview, proxyExtensionAPI } from './rpc'
 
 export interface WebviewToExtensionAPI {
     /**
+     * Get a example query (if it exists)
+     */
+    exampleQuery(): Observable<ExampleQuery[] | null>
+
+    /**
      * Get the data to display in the @-mention menu for the given query.
      */
     mentionMenuData(query: MentionQuery): Observable<MentionMenuData>
@@ -47,6 +52,7 @@ export function createExtensionAPI(
     messageAPI: ReturnType<typeof createMessageAPIForWebview>
 ): WebviewToExtensionAPI {
     return {
+        exampleQuery: proxyExtensionAPI(messageAPI, 'exampleQuery'),
         mentionMenuData: proxyExtensionAPI(messageAPI, 'mentionMenuData'),
         evaluatedFeatureFlag: proxyExtensionAPI(messageAPI, 'evaluatedFeatureFlag'),
         prompts: proxyExtensionAPI(messageAPI, 'prompts'),
@@ -55,6 +61,10 @@ export function createExtensionAPI(
         setChatModel: proxyExtensionAPI(messageAPI, 'setChatModel'),
         detectIntent: proxyExtensionAPI(messageAPI, 'detectIntent'),
     }
+}
+
+export interface ExampleQuery {
+    cta: string
 }
 
 export interface MentionMenuData {

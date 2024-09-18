@@ -30,6 +30,7 @@ export const CodyPanel: FunctionComponent<
         | 'showIDESnippetActions'
         | 'smartApplyEnabled'
         | 'experimentalOneBoxEnabled'
+        | 'experimentalYodaEnabled'
     > &
         Pick<ComponentProps<typeof HistoryTab>, 'userHistory'>
 > = ({
@@ -50,6 +51,7 @@ export const CodyPanel: FunctionComponent<
     userHistory,
     smartApplyEnabled,
     experimentalOneBoxEnabled,
+    experimentalYodaEnabled,
 }) => {
     const tabContainerRef = useRef<HTMLDivElement>(null)
 
@@ -97,6 +99,7 @@ export const CodyPanel: FunctionComponent<
                         scrollableParent={tabContainerRef.current}
                         smartApplyEnabled={smartApplyEnabled}
                         experimentalOneBoxEnabled={experimentalOneBoxEnabled}
+                        experimentalYodaEnabled={experimentalYodaEnabled}
                         setView={setView}
                     />
                 )}

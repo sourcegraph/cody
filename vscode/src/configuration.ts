@@ -107,6 +107,7 @@ export function getConfiguration(
         experimentalNoodle: getHiddenSetting('experimental.noodle', false),
 
         experimentalTracing: getHiddenSetting('experimental.tracing', false),
+        experimentalYoda: getHiddenSetting('experimental.yoda', true),
 
         experimentalSupercompletions: getHiddenSetting('experimental.supercompletions', false),
         experimentalMinionAnthropicKey: getHiddenSetting('experimental.minion.anthropicKey', undefined),

@@ -13,6 +13,7 @@ import type { VSCodeWrapper } from './utils/VSCodeApi'
 
 import { truncateTextStart } from '@sourcegraph/cody-shared/src/prompt/truncation'
 import { CHAT_INPUT_TOKEN_BUDGET } from '@sourcegraph/cody-shared/src/token/constants'
+import { useExtensionAPI, useObservable } from '@sourcegraph/prompt-editor'
 import styles from './Chat.module.css'
 import { WelcomeMessage } from './chat/components/WelcomeMessage'
 import { ScrollDown } from './components/ScrollDown'
@@ -33,6 +34,7 @@ interface ChatboxProps {
     setView: (view: View) => void
     smartApplyEnabled?: boolean
     experimentalOneBoxEnabled?: boolean
+    experimentalYodaEnabled?: boolean
 }
 
 export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>> = ({
@@ -48,6 +50,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     setView,
     smartApplyEnabled,
     experimentalOneBoxEnabled,
+    experimentalYodaEnabled,
 }) => {
     const telemetryRecorder = useTelemetryRecorder()
 
@@ -235,6 +238,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                 smartApplyEnabled={smartApplyEnabled}
                 experimentalOneBoxEnabled={experimentalOneBoxEnabled}
             />
+            {experimentalYodaEnabled && <ExampleQuery />}
             {transcript.length === 0 && showWelcomeMessage && (
                 <WelcomeMessage IDE={userInfo.ide} setView={setView} />
             )}
@@ -242,6 +246,17 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                 <ScrollDown scrollableParent={scrollableParent} onClick={handleScrollDownClick} />
             )}
         </>
+    )
+}
+
+const ExampleQuery: React.FunctionComponent = () => {
+    const api = useExtensionAPI().exampleQuery
+    const { value: example, error, done } = useObservable(useMemo(() => api(), [api]))
+    return (
+        <div>
+            YODA GOES HERE {JSON.stringify(done)} -- {JSON.stringify(example)} || {JSON.stringify(error)}{' '}
+            --
+        </div>
     )
 }
 

@@ -142,6 +142,9 @@ export type WebviewMessage =
           id: FixupTaskID
       }
     | {
+          command: 'exampleQuery/run'
+      }
+    | {
           command: 'smartApplyReject'
           id: FixupTaskID
       }
@@ -280,6 +283,7 @@ export interface ConfigurationSubsetForWebview
         Pick<AuthCredentials, 'serverEndpoint'> {
     smartApply: boolean
     experimentalOneBox: boolean
+    experimentalYoda: boolean
     // Type/location of the current webview.
     webviewType?: WebviewType | undefined | null
     // Whether support running multiple webviews (e.g. sidebar w/ multiple editor panels).

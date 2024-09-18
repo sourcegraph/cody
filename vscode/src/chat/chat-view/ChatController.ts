@@ -1,6 +1,3 @@
-import * as uuid from 'uuid'
-import * as vscode from 'vscode'
-
 import {
     type AuthStatus,
     type BillingCategory,
@@ -58,19 +55,23 @@ import {
     tracer,
     truncatePromptString,
 } from '@sourcegraph/cody-shared'
+import * as uuid from 'uuid'
+import * as vscode from 'vscode'
+import { yoda } from '../../yoda'
 
 import type { Span } from '@opentelemetry/api'
 import { captureException } from '@sentry/core'
 import {
     combineLatest,
     createDisposables,
+    firstValueFrom,
     promiseFactoryToObservable,
     promiseToObservable,
     subscriptionDisposable,
 } from '@sourcegraph/cody-shared/src/misc/observable'
 import { TokenCounterUtils } from '@sourcegraph/cody-shared/src/token/counter'
 import type { TelemetryEventParameters } from '@sourcegraph/telemetry'
-import { map } from 'observable-fns'
+import { Observable, map } from 'observable-fns'
 import type { URI } from 'vscode-uri'
 import { version as VSCEVersion } from '../../../package.json'
 import { View } from '../../../webviews/tabs/types'
@@ -367,6 +368,9 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     message.fileName
                 )
                 break
+            case 'exampleQuery/run':
+                await this.handleExampleQueryRun()
+                break
             case 'smartApplyAccept':
                 await vscode.commands.executeCommand('cody.fixup.codelens.accept', message.id)
                 break
@@ -598,6 +602,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             experimentalNoodle: configuration.experimentalNoodle,
             smartApply: this.isSmartApplyEnabled(),
             experimentalOneBox,
+            experimentalYoda: configuration.experimentalYoda,
             webviewType,
             multipleWebviewsEnabled: !sidebarViewOnly,
             internalDebugContext: configuration.internalDebugContext,
@@ -1159,6 +1164,22 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         }
     }
 
+    public async handleExampleQueryRun(): Promise<void> {
+        if (!yoda) {
+            return
+        }
+        const prompt = await firstValueFrom(yoda.lessons).catch(() => null)
+        if (!prompt) {
+            return
+        }
+        await this.clearAndRestartSession()
+        // await this.postMessage({
+        //     type: 'clientAction',
+        //     appendTextToLastPromptEditor: prompt.prompt.toString(),
+        // })
+        await yoda
+    }
+
     public async handleResubmitLastUserInput(): Promise<void> {
         const lastHumanMessage = this.chatModel.getLastHumanMessage()
         const getLastHumanMessageText = lastHumanMessage?.text?.toString()
@@ -1687,6 +1708,16 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     },
                 }),
                 {
+                    exampleQuery: () => {
+                        if (!yoda) {
+                            return Observable.of(null)
+                        }
+                        return yoda.lessons
+                        // return yoda.lesson.map(lesson => {
+                        //     console.log(lesson)
+                        //     return lesson
+                        // })
+                    },
                     mentionMenuData: query =>
                         getMentionMenuData({
                             disableProviders:

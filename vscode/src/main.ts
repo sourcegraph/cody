@@ -98,6 +98,7 @@ import { openCodyIssueReporter } from './services/utils/issue-reporter'
 import { SupercompletionProvider } from './supercompletions/supercompletion-provider'
 import { parseAllVisibleDocuments, updateParseTreeOnEdit } from './tree-sitter/parse-tree-cache'
 import { version } from './version'
+import { YodaController } from './yoda'
 
 /**
  * Start the extension, watching all relevant configuration and secrets for changes.
@@ -218,6 +219,7 @@ const register = async (
         },
         disposables
     )
+    registerYoda(disposables, { chatClient })
     disposables.push(chatsController)
 
     const sourceControl = new CodySourceControl(chatClient)
@@ -662,6 +664,15 @@ function registerMinion(
             )
             return vscode.Disposable.from(...disposables)
         }
+    )
+}
+
+function registerYoda(disposables: vscode.Disposable[], ctx: { chatClient: ChatClient }) {
+    disposables.push(
+        enableFeature(
+            config => config.configuration.experimentalYoda,
+            () => new YodaController(ctx.chatClient)
+        )
     )
 }
 

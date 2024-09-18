@@ -889,6 +889,7 @@ export const DEFAULT_VSCODE_SETTINGS = {
     experimentalTracing: false,
     experimentalCommitMessage: true,
     experimentalNoodle: false,
+    experimentalYoda: false,
     codeActions: true,
     commandHints: false,
     isRunningInsideAgent: false,

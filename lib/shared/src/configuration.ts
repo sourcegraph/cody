@@ -55,6 +55,7 @@ interface RawClientConfiguration {
      * Experimental
      */
     experimentalTracing: boolean
+    experimentalYoda: boolean
     experimentalSupercompletions: boolean
     experimentalCommitMessage: boolean
     experimentalNoodle: boolean

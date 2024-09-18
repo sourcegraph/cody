@@ -129,6 +129,7 @@ describe('getConfiguration', () => {
             experimentalSupercompletions: false,
             experimentalMinionAnthropicKey: undefined,
             experimentalTracing: true,
+            experimentalYoda: false,
             experimentalCommitMessage: true,
             experimentalNoodle: false,
             codeActions: true,
