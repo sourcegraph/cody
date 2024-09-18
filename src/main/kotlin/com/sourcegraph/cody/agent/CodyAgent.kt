@@ -12,7 +12,7 @@ import com.sourcegraph.cody.agent.protocol.*
 import com.sourcegraph.cody.agent.protocol_generated.ClientCapabilities
 import com.sourcegraph.cody.agent.protocol_generated.ClientInfo
 import com.sourcegraph.cody.agent.protocol_generated.ProtocolTypeAdapters
-import com.sourcegraph.cody.agent.protocol_generated.WebviewNativeConfigParams
+import com.sourcegraph.cody.agent.protocol_generated.WebviewNativeConfig
 import com.sourcegraph.cody.ui.web.WebUIServiceWebviewProvider
 import com.sourcegraph.cody.vscode.CancellationToken
 import com.sourcegraph.config.ConfigUtil
@@ -65,7 +65,7 @@ private constructor(
 
     abstract fun getOutputStream(): OutputStream
 
-    class ProcessConnection(val process: Process) : AgentConnection() {
+    class ProcessConnection(private val process: Process) : AgentConnection() {
       override fun isConnected(): Boolean = process.isAlive
 
       override fun close() {
@@ -77,7 +77,7 @@ private constructor(
       override fun getOutputStream(): OutputStream = process.outputStream
     }
 
-    class SocketConnection(val socket: Socket) : AgentConnection() {
+    class SocketConnection(private val socket: Socket) : AgentConnection() {
       override fun isConnected(): Boolean = socket.isConnected && !socket.isClosed
 
       override fun close() {
@@ -130,8 +130,8 @@ private constructor(
                               globalState = ClientCapabilities.GlobalStateEnum.`Server-managed`,
                               webview = ClientCapabilities.WebviewEnum.Native,
                               webviewNativeConfig =
-                                  WebviewNativeConfigParams(
-                                      view = WebviewNativeConfigParams.ViewEnum.Multiple,
+                                  WebviewNativeConfig(
+                                      view = WebviewNativeConfig.ViewEnum.Multiple,
                                       cspSource = "'self' https://*.sourcegraphstatic.com",
                                       webviewBundleServingPrefix =
                                           "https://file+.sourcegraphstatic.com",
