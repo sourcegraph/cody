@@ -1,6 +1,5 @@
 import {
     type AuthenticatedAuthStatus,
-    type AutocompleteContextSnippet,
     type CodeCompletionsParams,
     type CompletionResponseGenerator,
     currentAuthStatusAuthed,
@@ -104,14 +103,8 @@ function getMaxContextTokens(model: FireworksModel): number {
 }
 
 class FireworksProvider extends Provider {
-    public async generateCompletions(
-        generateOptions: GenerateCompletionsOptions,
-        abortSignal: AbortSignal,
-        snippets: AutocompleteContextSnippet[],
-        tracer?: CompletionProviderTracer
-    ): Promise<AsyncGenerator<FetchCompletionResult[]>> {
-        const { multiline, docContext, document, triggerKind, numberOfCompletionsToGenerate } =
-            generateOptions
+    public getRequestParams(options: GenerateCompletionsOptions): CodeCompletionsParams {
+        const { multiline, docContext, document, triggerKind, snippets } = options
         const useMultilineModel = multiline || triggerKind !== TriggerKind.Automatic
 
         const model: string =
@@ -126,12 +119,20 @@ class FireworksProvider extends Provider {
             promptChars: tokensToChars(this.maxContextTokens - MAX_RESPONSE_TOKENS),
         })
 
-        const requestParams = this.modelHelper.getRequestParams({
+        return this.modelHelper.getRequestParams({
             ...this.defaultRequestParams,
             messages: [{ speaker: 'human', text: prompt }],
             model,
-        } satisfies CodeCompletionsParams)
+        })
+    }
+    public async generateCompletions(
+        generateOptions: GenerateCompletionsOptions,
+        abortSignal: AbortSignal,
+        tracer?: CompletionProviderTracer
+    ): Promise<AsyncGenerator<FetchCompletionResult[]>> {
+        const { docContext, numberOfCompletionsToGenerate } = generateOptions
 
+        const requestParams = this.getRequestParams(generateOptions)
         tracer?.params(requestParams)
 
         const completionsGenerators = Array.from({ length: numberOfCompletionsToGenerate }).map(

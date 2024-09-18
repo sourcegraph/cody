@@ -1,9 +1,4 @@
-import {
-    type AutocompleteContextSnippet,
-    type CodeCompletionsParams,
-    charsToTokens,
-    logError,
-} from '@sourcegraph/cody-shared'
+import { type CodeCompletionsParams, charsToTokens, logError } from '@sourcegraph/cody-shared'
 
 import { forkSignal, generatorWithTimeout, zipGenerators } from '../utils'
 
@@ -20,13 +15,8 @@ import {
 } from './shared/provider'
 
 class OpenAICompatibleProvider extends Provider {
-    public async generateCompletions(
-        generateOptions: GenerateCompletionsOptions,
-        abortSignal: AbortSignal,
-        snippets: AutocompleteContextSnippet[],
-        tracer?: CompletionProviderTracer
-    ): Promise<AsyncGenerator<FetchCompletionResult[]>> {
-        const { docContext, document, numberOfCompletionsToGenerate } = generateOptions
+    public getRequestParams(options: GenerateCompletionsOptions): CodeCompletionsParams {
+        const { docContext, document, snippets } = options
 
         const prompt = this.modelHelper.getPrompt({
             snippets,
@@ -37,12 +27,21 @@ class OpenAICompatibleProvider extends Provider {
             isInfill: docContext.suffix.trim().length > 0,
         })
 
-        const requestParams: CodeCompletionsParams = {
+        return {
             ...this.defaultRequestParams,
             messages: [{ speaker: 'human', text: prompt }],
             model: this.legacyModel,
         }
+    }
 
+    public async generateCompletions(
+        generateOptions: GenerateCompletionsOptions,
+        abortSignal: AbortSignal,
+        tracer?: CompletionProviderTracer
+    ): Promise<AsyncGenerator<FetchCompletionResult[]>> {
+        const { docContext, numberOfCompletionsToGenerate } = generateOptions
+
+        const requestParams = this.getRequestParams(generateOptions)
         tracer?.params(requestParams)
 
         const completionsGenerators = Array.from({ length: numberOfCompletionsToGenerate }).map(

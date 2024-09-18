@@ -141,13 +141,8 @@ class ExpOpenAICompatibleProvider extends Provider {
         return prompt
     }
 
-    public async generateCompletions(
-        options: GenerateCompletionsOptions,
-        abortSignal: AbortSignal,
-        snippets: AutocompleteContextSnippet[],
-        tracer?: CompletionProviderTracer
-    ): Promise<AsyncGenerator<FetchCompletionResult[]>> {
-        const { docContext, document, numberOfCompletionsToGenerate } = options
+    public getRequestParams(options: GenerateCompletionsOptions): CodeCompletionsParams {
+        const { multiline, docContext, document, snippets } = options
         const { prefix, suffix } = PromptString.fromAutocompleteDocumentContext(docContext, document.uri)
 
         // starchat: Only use infill if the suffix is not empty
@@ -164,8 +159,7 @@ class ExpOpenAICompatibleProvider extends Provider {
             ? promptString(promptProps, useInfill, this.legacyModel)
             : this.createPrompt(options, snippets)
 
-        const { multiline } = options
-        const requestParams: CodeCompletionsParams = {
+        return {
             ...this.defaultRequestParams,
             messages: [{ speaker: 'human', text: prompt }],
             model:
@@ -175,7 +169,16 @@ class ExpOpenAICompatibleProvider extends Provider {
                       ? '' // starchat is not a supported backend model yet, use the default server-chosen model.
                       : MODEL_MAP[this.legacyModel as keyof typeof MODEL_MAP],
         }
+    }
 
+    public async generateCompletions(
+        generateOptions: GenerateCompletionsOptions,
+        abortSignal: AbortSignal,
+        tracer?: CompletionProviderTracer
+    ): Promise<AsyncGenerator<FetchCompletionResult[]>> {
+        const { numberOfCompletionsToGenerate } = generateOptions
+
+        const requestParams = this.getRequestParams(generateOptions)
         tracer?.params(requestParams)
 
         const completionsGenerators = Array.from({ length: numberOfCompletionsToGenerate }).map(
@@ -191,8 +194,8 @@ class ExpOpenAICompatibleProvider extends Provider {
                 return fetchAndProcessDynamicMultilineCompletions({
                     completionResponseGenerator,
                     abortController,
+                    generateOptions,
                     providerSpecificPostProcess: this.postProcess,
-                    generateOptions: options,
                 })
             }
         )
