@@ -7,6 +7,7 @@ import {
     type ChatHistoryKey,
     type CodyCommand,
     ModelUsage,
+    currentAuthStatus,
     telemetryRecorder,
     waitUntilComplete,
 } from '@sourcegraph/cody-shared'
@@ -59,6 +60,7 @@ import { getModelOptionItems } from '../../vscode/src/edit/input/get-items/model
 import { getEditSmartSelection } from '../../vscode/src/edit/utils/edit-selection'
 import type { ExtensionClient } from '../../vscode/src/extension-client'
 import { IndentationBasedFoldingRangeProvider } from '../../vscode/src/lsp/foldingRanges'
+import { syncModels } from '../../vscode/src/models/sync'
 import type { FixupActor, FixupFileCollection } from '../../vscode/src/non-stop/roles'
 import type { FixupControlApplicator } from '../../vscode/src/non-stop/strategies'
 import { AgentWorkspaceEdit } from '../../vscode/src/testutils/AgentWorkspaceEdit'
@@ -1237,6 +1239,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
         })
 
         this.registerAuthenticatedRequest('chat/models', async ({ modelUsage }) => {
+            await syncModels(currentAuthStatus())
             const models = modelsService.getModels(modelUsage)
             return { models }
         })
