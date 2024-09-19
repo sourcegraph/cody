@@ -36,10 +36,11 @@ import {
     TriggerKind,
     getInlineCompletions as _getInlineCompletions,
 } from '../get-inline-completions'
-import { AutocompleteStageRecorder } from '../logger'
+import { AutocompleteStageRecorder, type CompletionLogID } from '../logger'
 import { createProvider as createAnthropicProvider } from '../providers/anthropic'
 import { createProvider as createFireworksProvider } from '../providers/fireworks'
 import { pressEnterAndGetIndentString } from '../providers/shared/hot-streak'
+import type { GenerateCompletionsOptions } from '../providers/shared/provider'
 import { RequestManager } from '../request-manager'
 import { documentAndPosition } from '../test-helpers'
 import { sleep } from '../utils'
@@ -394,4 +395,19 @@ export function initCompletionProviderConfig({
     vi.spyOn(featureFlagProvider, 'evaluatedFeatureFlag').mockReturnValue(Observable.of(false))
     mockAuthStatus(authStatus ?? AUTH_STATUS_FIXTURE_AUTHED)
     mockResolvedConfig({ configuration: {}, auth: {}, ...configuration })
+}
+
+export function getMockedGenerateCompletionsOptions(): GenerateCompletionsOptions {
+    const { position, document, docContext, triggerKind } = params('const value = █', [])
+    return {
+        position,
+        document,
+        docContext,
+        multiline: false,
+        triggerKind,
+        snippets: [],
+        numberOfCompletionsToGenerate: 1,
+        firstCompletionTimeout: 5_000,
+        completionLogId: 'test-log-id' as CompletionLogID,
+    }
 }

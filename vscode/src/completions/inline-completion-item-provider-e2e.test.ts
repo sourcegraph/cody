@@ -1,5 +1,6 @@
 import {
     type ClientConfiguration,
+    type CodeCompletionsParams,
     contextFiltersProvider,
     currentAuthStatus,
     featureFlagProvider,
@@ -98,6 +99,10 @@ class MockRequestProvider extends Provider {
         this.next()
     }
 
+    public getRequestParams(options: GenerateCompletionsOptions): CodeCompletionsParams {
+        return {} as any as CodeCompletionsParams
+    }
+
     public async *generateCompletions(
         options: GenerateCompletionsOptions,
         abortSignal: AbortSignal
@@ -151,6 +156,7 @@ function createNetworkProvider(params: RequestParams): MockRequestProvider {
         firstCompletionTimeout: 1500,
         triggerKind: TriggerKind.Automatic,
         completionLogId: 'mock-log-id' as CompletionLogger.CompletionLogID,
+        snippets: [],
     }
 
     return new MockRequestProvider(

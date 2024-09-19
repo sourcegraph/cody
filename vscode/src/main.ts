@@ -3,6 +3,7 @@ import * as vscode from 'vscode'
 import {
     type ChatClient,
     ClientConfigSingleton,
+    CodyIDE,
     type ConfigurationInput,
     type DefaultCodyCommands,
     type Guardrails,
@@ -118,6 +119,19 @@ export async function start(
 
     if (secretStorage instanceof VSCodeSecretStorage) {
         secretStorage.setStorage(context.secrets)
+    }
+
+    const config = getConfiguration()
+
+    // Special override for Cody Web client, to avoid problem with incorrect server endpoint
+    // and hence CORS problem in Sourcegraph Web App. // Set server endpoint directly to make
+    // sure it has correct value before we run auth.
+    // The problem is that we try to run auth flow before we actually propagate all vital settings
+    // from Cody Agent. It's okay for clients like VSCode to run auth optimistically but in
+    // web app it crashes client entirely.
+    // See https://linear.app/sourcegraph/issue/CODY-3782/cody-web-chat-fails-on-s2-with-not-authenticated-error
+    if (config.agentIDE === CodyIDE.Web) {
+        await localStorage.saveEndpoint(config.serverEndpoint)
     }
 
     setLogger({ logDebug, logError })

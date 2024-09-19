@@ -64,6 +64,7 @@ export function getConfiguration(
     return {
         proxy: vsCodeConfig.get<string>('http.proxy'),
         codebase: sanitizeCodebase(config.get(CONFIG_KEY.codebase)),
+        serverEndpoint: config.get<string>(CONFIG_KEY.serverEndpoint, 'https://sourcegraph.com'),
         customHeaders: config.get<Record<string, string>>(CONFIG_KEY.customHeaders),
         useContext: config.get<ConfigurationUseContext>(CONFIG_KEY.useContext) || 'embeddings',
         debugVerbose: config.get<boolean>(CONFIG_KEY.debugVerbose, false),

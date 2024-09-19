@@ -3,6 +3,7 @@ import type * as vscode from 'vscode'
 import {
     type AutocompleteContextSnippet,
     type OllamaGenerateParams,
+    type OllamaOptions,
     PromptString,
     createOllamaClient,
     distinctUntilChanged,
@@ -73,6 +74,7 @@ class ExperimentalOllamaProvider extends Provider {
         suffixChars: 100,
     }
 
+    private ollamaOptionsValue?: OllamaOptions
     private ollamaOptions = resolvedConfig.pipe(
         map(config => config.configuration.autocompleteExperimentalOllamaOptions),
         distinctUntilChanged()
@@ -141,31 +143,39 @@ class ExperimentalOllamaProvider extends Provider {
         return prompt
     }
 
-    public async generateCompletions(
-        options: GenerateCompletionsOptions,
-        abortSignal: AbortSignal,
-        snippets: AutocompleteContextSnippet[],
-        tracer?: CompletionProviderTracer
-    ): Promise<AsyncGenerator<FetchCompletionResult[]>> {
-        const { docContext, multiline: isMultiline } = options
+    public getRequestParams(options: GenerateCompletionsOptions): OllamaGenerateParams {
+        const { docContext, multiline: isMultiline, snippets } = options
+        const { model } = this.ollamaOptionsValue!
 
         // Only use infill if the suffix is not empty
         const useInfill = docContext.suffix.trim().length > 0
 
-        const ollamaOptions = await firstValueFrom(this.ollamaOptions)
-
-        const timeoutMs = 5_0000
-        const modelHelpers = getModelHelpers(ollamaOptions.model)
+        const modelHelpers = getModelHelpers(model)
         const promptContext = this.createPromptContext(options, snippets, useInfill, modelHelpers)
 
-        const requestParams = {
+        return {
             prompt: modelHelpers.getOllamaPrompt(promptContext),
             template: '{{ .Prompt }}',
-            model: ollamaOptions.model,
+            model,
             options: modelHelpers.getOllamaRequestOptions(isMultiline),
-        } satisfies OllamaGenerateParams
+        } as OllamaGenerateParams
+    }
 
-        if (ollamaOptions.parameters) {
+    public async generateCompletions(
+        options: GenerateCompletionsOptions,
+        abortSignal: AbortSignal,
+        tracer?: CompletionProviderTracer
+    ): Promise<AsyncGenerator<FetchCompletionResult[]>> {
+        const { numberOfCompletionsToGenerate } = options
+
+        const timeoutMs = 5_000
+        const ollamaOptions = await firstValueFrom(this.ollamaOptions)
+        // TODO: hack make `ollamaOptions` available to `this.getRequestParams()`
+        this.ollamaOptionsValue = ollamaOptions
+
+        const requestParams = this.getRequestParams(options)
+
+        if (ollamaOptions.parameters && requestParams.options) {
             Object.assign(requestParams.options, ollamaOptions.parameters)
         }
 
@@ -173,7 +183,7 @@ class ExperimentalOllamaProvider extends Provider {
         tracer?.params(requestParams as any)
         const ollamaClient = createOllamaClient(ollamaOptions, logger)
 
-        const completionsGenerators = Array.from({ length: options.numberOfCompletionsToGenerate }).map(
+        const completionsGenerators = Array.from({ length: numberOfCompletionsToGenerate }).map(
             async () => {
                 const abortController = forkSignal(abortSignal)
 

@@ -1,4 +1,4 @@
-import type { AutocompleteContextSnippet, CodeCompletionsParams } from '@sourcegraph/cody-shared'
+import type { CodeCompletionsParams } from '@sourcegraph/cody-shared'
 
 import { OpenAI } from '../model-helpers/openai'
 import { CLOSING_CODE_TAG, MULTILINE_STOP_SEQUENCE } from '../text-processing'
@@ -20,13 +20,8 @@ class UnstableOpenAIProvider extends Provider {
     public stopSequences = [CLOSING_CODE_TAG.toString(), MULTILINE_STOP_SEQUENCE]
     protected modelHelper = new OpenAI()
 
-    public async generateCompletions(
-        generateOptions: GenerateCompletionsOptions,
-        abortSignal: AbortSignal,
-        snippets: AutocompleteContextSnippet[],
-        tracer?: CompletionProviderTracer
-    ): Promise<AsyncGenerator<FetchCompletionResult[]>> {
-        const { document, docContext, numberOfCompletionsToGenerate } = generateOptions
+    public getRequestParams(generateOptions: GenerateCompletionsOptions): CodeCompletionsParams {
+        const { document, docContext, snippets } = generateOptions
 
         const prompt = this.modelHelper.getPrompt({
             snippets,
@@ -35,12 +30,21 @@ class UnstableOpenAIProvider extends Provider {
             promptChars: this.promptChars,
         })
 
-        const requestParams: CodeCompletionsParams = {
+        return {
             ...this.defaultRequestParams,
             messages: [{ speaker: 'human', text: prompt }],
             topP: 0.5,
         }
+    }
 
+    public async generateCompletions(
+        generateOptions: GenerateCompletionsOptions,
+        abortSignal: AbortSignal,
+        tracer?: CompletionProviderTracer
+    ): Promise<AsyncGenerator<FetchCompletionResult[]>> {
+        const { docContext, numberOfCompletionsToGenerate } = generateOptions
+
+        const requestParams = this.getRequestParams(generateOptions)
         tracer?.params(requestParams)
 
         const completionsGenerators = Array.from({ length: numberOfCompletionsToGenerate }).map(
