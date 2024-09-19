@@ -54,14 +54,14 @@ log:
         queryString: []
         url: https://sourcegraph.com/.api/completions/stream
       response:
-        bodySize: 31715
+        bodySize: 19295
         content:
           mimeType: text/event-stream
-          size: 31715
+          size: 19295
           text: >+
             event: completion
 
-            data: {"completion":"<keywords>\n<keyword><value>zoekt</value><variants>zoekt zoektserver zoektservice zoektquery zoektresult</variants><weight>1.0</weight></keyword>\n<keyword><value>struct</value><variants>structure definition type</variants><weight>0.8</weight></keyword>\n<keyword><value>search</value><variants>find lookup query</variants><weight>0.6</weight></keyword>\n<keyword><value>index</value><variants>indices indexes indexing</variants><weight>0.5</weight></keyword>\n<keyword><value>code</value><variants>sourcecode codebase</variants><weight>0.4</weight></keyword>\n</keywords>","stopReason":"end_turn"}
+            data: {"completion":"<keywords>\n<keyword><value>zoekt</value><variants>zoekt zoektserver zoektstructure zoekttype</variants><weight>1.0</weight></keyword>\n<keyword><value>struct</value><variants>structure definition type</variants><weight>0.9</weight></keyword>\n<keyword><value>type</value><variants>typedef datatype</variants><weight>0.8</weight></keyword>\n<keyword><value>definition</value><variants>def typedef</variants><weight>0.7</weight></keyword>\n</keywords>","stopReason":"end_turn"}
 
 
             event: done
@@ -71,7 +71,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 19 Sep 2024 14:14:50 GMT
+            value: Thu, 19 Sep 2024 14:45:26 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -79,7 +79,7 @@ log:
           - name: connection
             value: keep-alive
           - name: retry-after
-            value: "108"
+            value: "135"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -102,7 +102,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-19T14:14:49.090Z
+      startedDateTime: 2024-09-19T14:45:24.736Z
       time: 0
       timings:
         blocked: -1
@@ -170,10 +170,10 @@ log:
         queryString: []
         url: https://sourcegraph.com/.api/completions/stream
       response:
-        bodySize: 33400
+        bodySize: 32800
         content:
           mimeType: text/event-stream
-          size: 33400
+          size: 32800
           text: >+
             event: completion
 
@@ -187,7 +187,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 19 Sep 2024 14:14:56 GMT
+            value: Thu, 19 Sep 2024 14:45:29 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -195,7 +195,7 @@ log:
           - name: connection
             value: keep-alive
           - name: retry-after
-            value: "104"
+            value: "132"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -218,7 +218,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-19T14:14:53.254Z
+      startedDateTime: 2024-09-19T14:45:28.281Z
       time: 0
       timings:
         blocked: -1
@@ -278,10 +278,10 @@ log:
         queryString: []
         url: https://sourcegraph.com/.api/completions/stream
       response:
-        bodySize: 19280
+        bodySize: 20786
         content:
           mimeType: text/event-stream
-          size: 19280
+          size: 20786
           text: >+
             event: completion
 
@@ -295,7 +295,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 19 Sep 2024 14:15:03 GMT
+            value: Thu, 19 Sep 2024 14:45:32 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -303,7 +303,7 @@ log:
           - name: connection
             value: keep-alive
           - name: retry-after
-            value: "99"
+            value: "129"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -321,12 +321,12 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1390
+        headersSize: 1391
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-19T14:14:58.258Z
+      startedDateTime: 2024-09-19T14:45:31.537Z
       time: 0
       timings:
         blocked: -1
@@ -386,10 +386,10 @@ log:
         queryString: []
         url: https://sourcegraph.com/.api/completions/stream
       response:
-        bodySize: 10364
+        bodySize: 11890
         content:
           mimeType: text/event-stream
-          size: 10364
+          size: 11890
           text: >+
             event: completion
 
@@ -403,7 +403,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 19 Sep 2024 14:15:04 GMT
+            value: Thu, 19 Sep 2024 14:45:35 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -411,7 +411,7 @@ log:
           - name: connection
             value: keep-alive
           - name: retry-after
-            value: "94"
+            value: "126"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -429,12 +429,12 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1390
+        headersSize: 1391
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-19T14:15:03.257Z
+      startedDateTime: 2024-09-19T14:45:34.612Z
       time: 0
       timings:
         blocked: -1
@@ -495,14 +495,14 @@ log:
         queryString: []
         url: https://sourcegraph.com/.api/completions/stream
       response:
-        bodySize: 41837
+        bodySize: 40190
         content:
           mimeType: text/event-stream
-          size: 41837
+          size: 40190
           text: >+
             event: completion
 
-            data: {"completion":"<keywords>\n<keyword><value>context</value><variants>ctx window limit budget scope</variants><weight>0.9</weight></keyword>\n<keyword><value>mention</value><variants>@-mention at-mention notification</variants><weight>0.7</weight></keyword>\n<keyword><value>search</value><variants>query lookup find</variants><weight>0.6</weight></keyword>\n<keyword><value>calculate</value><variants>compute determine evaluate</variants><weight>0.8</weight></keyword>\n<keyword><value>limit</value><variants>bound threshold max maximum</variants><weight>0.7</weight></keyword>\n<keyword><value>budget</value><variants>allocation resource quota</variants><weight>0.6</weight></keyword>\n</keywords>","stopReason":"end_turn"}
+            data: {"completion":"<keywords>\n<keyword><value>context</value><variants>ctx window limit budget scope</variants><weight>0.9</weight></keyword>\n<keyword><value>mention</value><variants>@-mention at-mention notification</variants><weight>0.7</weight></keyword>\n<keyword><value>search</value><variants>query lookup find</variants><weight>0.6</weight></keyword>\n<keyword><value>calculate</value><variants>compute determine evaluate</variants><weight>0.8</weight></keyword>\n<keyword><value>limit</value><variants>bound threshold cap</variants><weight>0.7</weight></keyword>\n<keyword><value>budget</value><variants>allocation resource quota</variants><weight>0.6</weight></keyword>\n</keywords>","stopReason":"end_turn"}
 
 
             event: done
@@ -512,7 +512,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 19 Sep 2024 14:15:06 GMT
+            value: Thu, 19 Sep 2024 14:45:38 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -520,7 +520,7 @@ log:
           - name: connection
             value: keep-alive
           - name: retry-after
-            value: "92"
+            value: "123"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -538,12 +538,12 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1390
+        headersSize: 1391
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-19T14:15:05.577Z
+      startedDateTime: 2024-09-19T14:45:36.955Z
       time: 0
       timings:
         blocked: -1
@@ -608,10 +608,10 @@ log:
         queryString: []
         url: https://sourcegraph.com/.api/completions/stream
       response:
-        bodySize: 48770
+        bodySize: 48707
         content:
           mimeType: text/event-stream
-          size: 48770
+          size: 48707
           text: >+
             event: completion
 
@@ -625,7 +625,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 19 Sep 2024 14:15:10 GMT
+            value: Thu, 19 Sep 2024 14:45:41 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -633,7 +633,7 @@ log:
           - name: connection
             value: keep-alive
           - name: retry-after
-            value: "88"
+            value: "120"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -651,12 +651,12 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1390
+        headersSize: 1391
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-19T14:15:09.411Z
+      startedDateTime: 2024-09-19T14:45:40.431Z
       time: 0
       timings:
         blocked: -1

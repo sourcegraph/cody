@@ -49,7 +49,7 @@ describe('rewrite-query', () => {
         expect(expanded).toMatchInlineSnapshot(`"parse file with tree-sitter"`)
     )
 
-    check(ps`type Zoekt struct {`, expanded => expect(expanded).toMatchInlineSnapshot(`"code index search struct zoekt"`))
+    check(ps`type Zoekt struct {`, expanded => expect(expanded).toMatchInlineSnapshot(`"definition struct type zoekt"`))
 
     check(
         ps`type Zoekt struct {
