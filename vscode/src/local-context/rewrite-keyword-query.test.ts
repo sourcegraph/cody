@@ -49,7 +49,9 @@ describe('rewrite-query', () => {
         expect(expanded).toMatchInlineSnapshot(`"parse file with tree-sitter"`)
     )
 
-    check(ps`type Zoekt struct {`, expanded => expect(expanded).toMatchInlineSnapshot(`"definition struct type zoekt"`))
+    check(ps`type Zoekt struct {`, expanded =>
+        expect(expanded).toMatchInlineSnapshot(`"definition struct type zoekt"`)
+    )
 
     check(
         ps`type Zoekt struct {
@@ -74,7 +76,8 @@ describe('rewrite-query', () => {
 
     check(
         ps`Explain how the context window limit is calculated. how much budget is given to @-mentions vs. search context?`,
-        expanded => expect(expanded).toMatchInlineSnapshot(`"budget calculate context limit mention search"`)
+        expanded =>
+            expect(expanded).toMatchInlineSnapshot(`"budget calculate context limit mention search"`)
     )
 
     check(
