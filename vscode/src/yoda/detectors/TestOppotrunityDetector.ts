@@ -5,7 +5,7 @@ import { isTestFileForOriginal } from '../../commands/utils/test-commands'
 import { PromptBuilder } from '../../prompt-builder'
 import {
     type CandidateFile,
-    type CanidateFileContent,
+    type CandidateFileContent,
     type Ctx,
     type Detector,
     Score,
@@ -19,7 +19,7 @@ interface Data {
 
 export class TestOpportunityDetector implements Detector<Data> {
     async candidates(
-        randomSample: CanidateFileContent<any>[],
+        randomSample: CandidateFileContent<any>[],
         ctx: Ctx,
         abort?: AbortSignal
     ): Promise<CandidateFile<Data>[]> {
@@ -48,7 +48,7 @@ export class TestOpportunityDetector implements Detector<Data> {
         return candidates.flat()
     }
     async detect(
-        candidate: CanidateFileContent<Data>,
+        candidate: CandidateFileContent<Data>,
         ctx: Ctx,
         abort?: AbortSignal
     ): Promise<SuggestedPrompt | undefined> {
