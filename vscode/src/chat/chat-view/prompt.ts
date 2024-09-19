@@ -49,7 +49,7 @@ export class DefaultPrompter {
     public async makePrompt(
         chat: ChatModel,
         codyApiVersion: number,
-        enableTools = false
+        isReflectionPrompt = false
     ): Promise<PromptInfo> {
         return wrapInActiveSpan('chat.prompter', async () => {
             const promptBuilder = await PromptBuilder.create(chat.contextWindow)
@@ -90,8 +90,9 @@ export class DefaultPrompter {
             }
 
             // add the tool preamble to the last human message
-            if (enableTools) {
-                reverseTranscript[0] = PromptMixin.toolMixin(reverseTranscript[0])
+            const isReflectionModel = chat.modelID === 'sourcegraph/cody-reflection'
+            if (isReflectionModel || isReflectionPrompt) {
+                reverseTranscript[0] = PromptMixin.reflect(reverseTranscript[0], isReflectionPrompt)
             }
 
             const messagesIgnored = promptBuilder.tryAddMessages(reverseTranscript)

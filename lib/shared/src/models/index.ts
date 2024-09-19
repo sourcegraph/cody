@@ -32,6 +32,7 @@ export interface ModelRef {
 
 export type ModelCategory = ModelTag.Power | ModelTag.Balanced | ModelTag.Speed
 type ModelStatus =
+    | ModelTag.Internal
     | ModelTag.Experimental
     | ModelTag.EarlyAccess
     | ModelTag.OnWaitlist

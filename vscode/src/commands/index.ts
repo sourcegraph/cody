@@ -43,6 +43,7 @@ export const CodyCommandMenuItems: MenuCommandAccessor[] = [
         keybinding: '',
         mode: 'ask',
         isBuiltin: true,
+        requires: { setting: 'cody.internal.unstable' },
     },
     {
         key: 'doc',

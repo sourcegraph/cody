@@ -88,6 +88,9 @@ export enum FeatureFlag {
 
     /** Whether user has access to early-acess models. */
     CodyEarlyAccess = 'cody-early-access',
+
+    /** Whether user has access to the experimental Cody Reflection feature. */
+    CodyReflection = 'cody-deep-reflection',
 }
 
 const ONE_HOUR = 60 * 60 * 1000

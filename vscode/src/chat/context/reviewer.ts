@@ -4,8 +4,10 @@ import {
     type ChatClient,
     type CompletionParameters,
     type ContextItem,
+    FeatureFlag,
     PromptString,
     currentAuthStatusAuthed,
+    featureFlagProvider,
     isDotCom,
     logDebug,
     modelsService,
@@ -18,13 +20,17 @@ import { type ContextRetriever, toStructuredMentions } from '../chat-view/Contex
 import { DefaultPrompter } from '../chat-view/prompt'
 import { getCodebaseContextItemsForEditorState } from '../clientStateBroadcaster'
 
+// TODO (bee) Cody Reflection
+// - Update prompt to let user know about the current editor env
+// - Display error to LLM when command is not found or failed
 export class ContextReviewer {
+    private isEnabled = true
     private responses: Record<string, string> = {
         CODYTOOLCLI: '',
         CODYTOOLFILE: '',
         CODYTOOLSEARCH: '',
     }
-    private multiplexer: BotResponseMultiplexer
+    private multiplexer = new BotResponseMultiplexer()
     private authStatus = currentAuthStatusAuthed()
 
     constructor(
@@ -34,18 +40,25 @@ export class ContextReviewer {
         private span: Span,
         public currentContext: ContextItem[]
     ) {
-        this.multiplexer = new BotResponseMultiplexer()
-        this.initializeMultiplexer()
+        // Only enable Cody Reflection for the known model ID for Sourcegraph.com users
+        if (isDotCom(this.authStatus)) {
+            this.isEnabled = this.chatModel.modelID === 'sourcegraph/cody-reflection'
+        }
+        this.init()
     }
 
-    private initializeMultiplexer(): void {
-        for (const key of Object.keys(this.responses)) {
-            this.multiplexer.sub(key, {
-                onResponse: async (c: string) => {
-                    this.responses[key] += c
-                },
-                onTurnComplete: async () => Promise.resolve(),
-            })
+    private async init(): Promise<void> {
+        this.isEnabled = await featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyReflection)
+        if (this.isEnabled) {
+            this.multiplexer = new BotResponseMultiplexer()
+            for (const key of Object.keys(this.responses)) {
+                this.multiplexer.sub(key, {
+                    onResponse: async (c: string) => {
+                        this.responses[key] += c
+                    },
+                    onTurnComplete: async () => Promise.resolve(),
+                })
+            }
         }
     }
 
@@ -54,6 +67,9 @@ export class ContextReviewer {
     }
 
     public async getSmartContext(abortSignal: AbortSignal): Promise<ContextItem[]> {
+        if (!this.isEnabled) {
+            return []
+        }
         await this.review(abortSignal)
         if (!this.hasContextRequest) {
             return []

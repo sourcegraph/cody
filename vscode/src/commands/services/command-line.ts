@@ -1,6 +1,7 @@
 import {
     type ChatClient,
     type ChatMessage,
+    ModelUsage,
     PromptString,
     getSimplePreamble,
     modelsService,
@@ -14,8 +15,8 @@ interface CodyCommandLineQuickPickItem extends vscode.QuickPickItem {
     onSelect: () => Promise<void>
 }
 
-const models = { clade: 'anthropic/claude-3-haiku-20240307', gemini: 'google/gemini-1.5-flash' }
-let model = models.clade
+const models = modelsService.getModels(ModelUsage.Chat)
+const model = models.find(model => model.id === 'haiku')?.id ?? models[0]?.id ?? ''
 
 const CODY_ACTION_CLI_PROMPT = ps`Generate a shell command for the following use case:
     <usecase>
@@ -71,10 +72,7 @@ class CodyCommandLine implements vscode.Disposable {
             prompt: 'Tell Cody your task, and Cody will generate the necessary shell command to execute it.',
             valueSelection: [0, 1],
         })
-        if (!input || input === 'llm') {
-            if (input === 'llm') {
-                modelsQuickPick()
-            }
+        if (!input || !model) {
             return
         }
         const inputPromptString = PromptString.unsafe_fromUserQuery(input)
@@ -218,29 +216,4 @@ export let codyCommandLine: CodyCommandLine | undefined = undefined
 export function registerCodyCommandLine(chatClient: ChatClient): CodyCommandLine {
     codyCommandLine = new CodyCommandLine(chatClient)
     return codyCommandLine
-}
-
-function modelsQuickPick() {
-    const quickPick = vscode.window.createQuickPick()
-    quickPick.placeholder = 'Choose a model'
-    quickPick.title = 'LLM'
-    quickPick.items = [
-        {
-            label: 'Gemini',
-            description: 'Google Gemini 1.5 Flash',
-            onSelect: async () => {
-                model = models.gemini
-                quickPick.hide()
-            },
-        },
-        {
-            label: 'Claude',
-            description: 'Anthropic Claude 3',
-            onSelect: async () => {
-                model = models.clade
-                quickPick.hide()
-            },
-        },
-    ] as CodyCommandLineQuickPickItem[]
-    quickPick.show()
 }

@@ -1,48 +1,47 @@
 import { exec } from 'node:child_process'
 import os from 'node:os'
-import { promisify } from 'node:util'
-
-import * as vscode from 'vscode'
-
-import { logError } from '../../log'
-
 import path from 'node:path/posix'
+import { promisify } from 'node:util'
 import {
     type ContextItem,
     ContextItemSource,
     TokenCounterUtils,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
+import * as vscode from 'vscode'
+import { logError } from '../../log'
 
-const _exec = promisify(exec)
+const execAsync = promisify(exec)
 
-/**
- * Creates a context file from executing a shell command. Used by CommandsController.
- *
- * Executes the given shell command, captures the output, wraps it in a context format,
- * and returns it as a ContextFile.
- */
+const OUTPUT_WRAPPER = `
+Terminal output from the \`{command}\` command enclosed between <OUTPUT0412> tags:
+<OUTPUT0412>
+{output}
+</OUTPUT0412>`
+
 export async function getContextFileFromShell(command: string): Promise<ContextItem[]> {
-    return wrapInActiveSpan('commands.context.command', async span => {
-        const rootDir = os.homedir() || process.env.HOME || process.env.USERPROFILE || ''
-
+    return wrapInActiveSpan('commands.context.command', async () => {
         if (!vscode.env.shell) {
-            void vscode.window.showErrorMessage('Shell command is not supported your current workspace.')
+            void vscode.window.showErrorMessage(
+                'Shell command is not supported in your current workspace.'
+            )
             return []
         }
 
-        // Expand the ~/ in command with the home directory if any of the substring starts with ~/ with a space before it
-        const filteredCommand = command.replaceAll(/(\s~\/)/g, ` ${rootDir}${path.sep}`)
-        // NOTE: Use fsPath to get path with platform specific path separator
+        const homeDir = os.homedir()
+        const filteredCommand = command.replace(/(\s~\/)/g, ` ${homeDir}${path.sep}`)
         const cwd = vscode.workspace.workspaceFolders?.[0]?.uri?.fsPath
+
         try {
-            const { stdout, stderr } = await _exec(filteredCommand, { cwd, encoding: 'utf8' })
-            const output = JSON.stringify(stdout ?? stderr).trim()
+            const { stdout, stderr } = await execAsync(filteredCommand, { cwd, encoding: 'utf8' })
+            const output = JSON.stringify(stdout || stderr).trim()
             if (!output) {
                 throw new Error('Empty output')
             }
-            const content = outputWrapper.replace('{command}', command).replace('{output}', output)
+
+            const content = OUTPUT_WRAPPER.replace('{command}', command).replace('{output}', output)
             const size = await TokenCounterUtils.countTokens(content)
+
             return [
                 {
                     type: 'file',
@@ -54,15 +53,20 @@ export async function getContextFileFromShell(command: string): Promise<ContextI
                 },
             ]
         } catch (error) {
-            // Handles errors and empty output
             logError('getContextFileFromShell', 'failed', { verbose: error })
-            throw new Error(`Failed to get output for ${command}.`)
+            const errorContent = `${error}`
+            const size = await TokenCounterUtils.countTokens(errorContent)
+
+            return [
+                {
+                    type: 'file',
+                    content: errorContent,
+                    title: 'Terminal Output',
+                    uri: vscode.Uri.file(command),
+                    source: ContextItemSource.Terminal,
+                    size,
+                },
+            ]
         }
     })
 }
-
-const outputWrapper = `
-Terminal output from the \`{command}\` command enclosed between <OUTPUT0412> tags:
-<OUTPUT0412>
-{output}
-</OUTPUT0412>`

@@ -75,6 +75,7 @@ export async function syncModels(authStatus: AuthStatus, signal?: AbortSignal): 
         let defaultModels = getDotComDefaultModels()
         // For users with early access or on the waitlist, replace the waitlist tag with the appropriate tags.
         const hasEarlyAccess = await featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyEarlyAccess)
+        const reflectionFlag = await featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyReflection)
         const isOnWaitlist = localStorage.get(localStorage.keys.waitlist_o1)
         if (hasEarlyAccess || isOnWaitlist) {
             defaultModels = defaultModels.map(model => {
@@ -89,6 +90,10 @@ export async function syncModels(authStatus: AuthStatus, signal?: AbortSignal): 
             if (hasEarlyAccess && isOnWaitlist) {
                 localStorage.delete(localStorage.keys.waitlist_o1)
             }
+        }
+        // Remove the reflection model if the feature flag is disabled.
+        if (!reflectionFlag) {
+            defaultModels = defaultModels.filter(model => model.title !== 'Cody Reflection')
         }
         modelsService.setModels(defaultModels)
         registerModelsFromVSCodeConfiguration()
