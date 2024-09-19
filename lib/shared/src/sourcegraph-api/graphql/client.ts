@@ -7,7 +7,7 @@ import type { TelemetryEventInput } from '@sourcegraph/telemetry'
 import { escapeRegExp } from 'lodash'
 import { Observable } from 'observable-fns'
 import semver from 'semver'
-import { authStatus, currentAuthStatusOrNotReadyYet } from '../../auth/authStatus'
+import { authStatus } from '../../auth/authStatus'
 import { dependentAbortController, onAbort } from '../../common/abortController'
 import { type PickResolvedConfiguration, resolvedConfig } from '../../configuration/resolver'
 import { logDebug, logError } from '../../logger'
@@ -1639,8 +1639,8 @@ export class ClientConfigSingleton {
     }
 
     public async getConfig(signal?: AbortSignal): Promise<CodyClientConfig | undefined> {
-        // TODO(sqs)#observe: make this reactive
-        if (!currentAuthStatusOrNotReadyYet()?.authenticated) {
+        const currentAuthStatus = await firstValueFrom(authStatus)
+        if (!currentAuthStatus.authenticated) {
             return undefined
         }
         try {
