@@ -2,7 +2,7 @@ import type { Observable } from 'observable-fns'
 import type { ChatMessage } from '../../chat/transcript/messages'
 import type { ContextItem } from '../../codebase-context/messages'
 import type { CodyCommand } from '../../commands/types'
-import type { FeatureFlag } from '../../experimentation/FeatureFlagProvider'
+import { FeatureFlag } from '../../experimentation/FeatureFlagProvider'
 import type { ContextMentionProviderMetadata } from '../../mentions/api'
 import type { MentionQuery } from '../../mentions/query'
 import type { Model } from '../../models/model'
@@ -93,5 +93,7 @@ export interface PromptsResult {
  * explicitly requested feature flags are evaluated immediately. If you don't add one here, its old
  * value will be cached on the server and returned until it is explicitly evaluated.
  */
-const FEATURE_FLAGS_USED_IN_WEBVIEW = [] as const satisfies FeatureFlag[]
+const FEATURE_FLAGS_USED_IN_WEBVIEW = [
+    FeatureFlag.CodyExperimentalOneBox,
+] as const satisfies FeatureFlag[]
 export type FeatureFlagUsedInWebview = (typeof FEATURE_FLAGS_USED_IN_WEBVIEW)[number]

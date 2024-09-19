@@ -580,19 +580,11 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyExperimentalOneBox)
     )
 
-    private isOneBoxEnabled(): boolean {
-        return (
-            vscode.workspace.getConfiguration().get<boolean>('cody.internal.onebox') ||
-            !!this.featureCodyExperimentalOneBox.value.last
-        )
-    }
-
     private async getConfigForWebview(): Promise<ConfigurationSubsetForWebview & LocalEnv> {
         const { configuration, auth } = await currentResolvedConfig()
         const sidebarViewOnly = this.extensionClient.capabilities?.webviewNativeConfig?.view === 'single'
         const isEditorViewType = this.webviewPanelOrView?.viewType === 'cody.editorPanel'
         const webviewType = isEditorViewType && !sidebarViewOnly ? 'editor' : 'sidebar'
-        const experimentalOneBox = this.isOneBoxEnabled()
 
         return {
             agentIDE: configuration.agentIDE ?? CodyIDE.VSCode,
@@ -603,7 +595,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             serverEndpoint: auth.serverEndpoint,
             experimentalNoodle: configuration.experimentalNoodle,
             smartApply: this.isSmartApplyEnabled(),
-            experimentalOneBox,
             webviewType,
             multipleWebviewsEnabled: !sidebarViewOnly,
             internalDebugContext: configuration.internalDebugContext,
@@ -736,8 +727,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
 
                 this.postEmptyMessageInProgress()
 
-                const oneBoxEnabled = this.isOneBoxEnabled()
-
                 // All mentions we receive are either source=initial or source=user. If the caller
                 // forgot to set the source, assume it's from the user.
                 mentions = mentions.map(m => (m.source ? m : { ...m, source: ContextItemSource.User }))
@@ -769,7 +758,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     ['repository', 'tree'].includes(contextItem.type)
                 )
 
-                if ((await oneBoxEnabled) && repositoryMentioned) {
+                if (this.featureCodyExperimentalOneBox && repositoryMentioned) {
                     const inputTextWithoutContextChips = editorState
                         ? PromptString.unsafe_fromUserQuery(
                               inputTextWithoutContextChipsFromPromptEditorState(editorState)
@@ -875,7 +864,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         this.chatModel.setLastMessageContext(context, contextAlternatives)
         this.chatModel.addBotMessage({
             text: PromptString.unsafe_fromLLMResponse(
-                'You have set `"cody.internal.onebox": true` in your vscode settings.'
+                '`cody-experimental-one-box` feature flag is turned on.'
             ),
         })
 
