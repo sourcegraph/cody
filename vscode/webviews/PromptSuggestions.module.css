@@ -11,14 +11,14 @@
     margin-top: 1rem;
 }
 
-
 .prompt-suggestions-list li {
     border-radius: 16px;
-    background: var(--vscode-editor-background);
+    background: var(--vscode-input-background);
+    border-color: var(--vscode-dropdown-border);
     padding: 4px 12px;
     margin-bottom: 8px;
 }
 
 .prompt-suggestions-list li:hover {
-    background: linear-gradient(292deg, rgba(0, 203, 236, 0.2) 20%, var(--vscode-editor-background) 31.53%);
+    background: linear-gradient(292deg, var(--vscode-button-hoverBackground) 0%, var(--vscode-input-background) 20.53%);
 }
