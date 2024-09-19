@@ -252,6 +252,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
 const ExampleQuery: React.FunctionComponent = () => {
     const api = useExtensionAPI().exampleQuery
     const { value: example, error, done } = useObservable(useMemo(() => api(), [api]))
+
     return (
         <div>
             YODA GOES HERE {JSON.stringify(done)} -- {JSON.stringify(example)} || {JSON.stringify(error)}{' '}
