@@ -9,6 +9,7 @@ import {
     ModelUsage,
     currentAuthStatus,
     currentAuthStatusAuthed,
+    firstValueFrom,
     telemetryRecorder,
     waitUntilComplete,
 } from '@sourcegraph/cody-shared'
@@ -1237,6 +1238,8 @@ export class Agent extends MessageHandler implements ExtensionClient {
         })
 
         this.registerAuthenticatedRequest('chat/models', async ({ modelUsage }) => {
+            // Wait for a refresh of our available models.
+            await firstValueFrom(modelsService.changesWaitForPending)
             const models = modelsService.getModels(modelUsage)
             return { models }
         })

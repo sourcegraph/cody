@@ -1,4 +1,4 @@
-import { type Observable, Subject } from 'observable-fns'
+import { type Observable, Subject, filter, map } from 'observable-fns'
 import { authStatus, currentAuthStatus, currentAuthStatusOrNotReadyYet } from '../auth/authStatus'
 import { mockAuthStatus } from '../auth/authStatus'
 import { type AuthStatus, isCodyProUser, isEnterpriseUser } from '../auth/types'
@@ -14,6 +14,7 @@ import {
     distinctUntilChanged,
     mergeMap,
     promiseFactoryToObservable,
+    startWith,
 } from '../misc/observable'
 import { isAbortError } from '../sourcegraph-api/errors'
 import { CHAT_INPUT_TOKEN_BUDGET, CHAT_OUTPUT_TOKEN_BUDGET } from '../token/constants'
@@ -332,6 +333,8 @@ interface SitePreferences {
     }
 }
 
+const PENDING = 'pending' as const
+
 /**
  * ModelsService is the component responsible for keeping track of which models
  * are supported on the backend, which ones are available based on the user's
@@ -368,47 +371,47 @@ export class ModelsService {
     private configSubscription: Unsubscribable
 
     constructor() {
-        this.configSubscription = combineLatest([
-            resolvedConfig.map(config => config.configuration.agentIDE),
-            authStatus,
-        ])
-            .pipe(
-                debounceTime(0), // wait for sync accessors to update
-                distinctUntilChanged(),
-                mergeMap(([agentIDE, authStatus]) =>
-                    promiseFactoryToObservable(async signal => {
-                        try {
-                            if (!ModelsService.syncModels) {
-                                throw new Error(
-                                    'ModelsService.syncModels must be set at static initialization time'
-                                )
-                            }
-                            await ModelsService.syncModels(authStatus, signal)
-                        } catch (error) {
-                            if (!isAbortError(error)) {
-                                logError('ModelsService', 'Failed to sync models', error)
-                            }
-                        }
-
-                        try {
-                            const isCodyWeb = agentIDE === CodyIDE.Web
-
-                            // Disable Ollama local models for Cody Web.
-                            this.localModels = !isCodyWeb ? await fetchLocalOllamaModels() : []
-                        } catch {
-                            this.localModels = []
-                        } finally {
-                            this.changeNotifications.next()
-                        }
-                    })
-                )
-            )
-            .subscribe({})
+        this.configSubscription = this.modelsObservable.subscribe({})
     }
 
     public dispose(): void {
         this.configSubscription.unsubscribe()
     }
+
+    private modelsObservable = combineLatest([
+        resolvedConfig.map(config => config.configuration.agentIDE).pipe(distinctUntilChanged()),
+        authStatus,
+    ]).pipe(
+        debounceTime(0), // wait for sync accessors to update
+        mergeMap(([agentIDE, authStatus]) =>
+            promiseFactoryToObservable(async signal => {
+                try {
+                    if (!ModelsService.syncModels) {
+                        throw new Error(
+                            'ModelsService.syncModels must be set at static initialization time'
+                        )
+                    }
+                    await ModelsService.syncModels(authStatus, signal)
+                } catch (error) {
+                    if (!isAbortError(error)) {
+                        logError('ModelsService', 'Failed to sync models', error)
+                    }
+                }
+
+                try {
+                    const isCodyWeb = agentIDE === CodyIDE.Web
+
+                    // Disable Ollama local models for Cody Web.
+                    this.localModels = !isCodyWeb ? await fetchLocalOllamaModels() : []
+                } catch {
+                    this.localModels = []
+                } finally {
+                    this.changeNotifications.next()
+                }
+                return true
+            }).pipe(startWith(PENDING))
+        )
+    )
 
     private changeNotifications = new Subject<void>()
 
@@ -416,6 +419,11 @@ export class ModelsService {
      * An observable that emits whenever the list of models or any model in the list changes.
      */
     public readonly changes: Observable<void> = this.changeNotifications
+
+    public readonly changesWaitForPending: Observable<void> = this.modelsObservable.pipe(
+        filter((data: boolean | typeof PENDING): data is boolean => data !== PENDING),
+        map(() => undefined)
+    )
 
     // Get all the providers currently available to the user
     private get models(): Model[] {
