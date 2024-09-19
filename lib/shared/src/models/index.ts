@@ -10,6 +10,7 @@ import { logDebug, logError } from '../logger'
 import {
     type Unsubscribable,
     combineLatest,
+    debounceTime,
     mergeMap,
     promiseFactoryToObservable,
 } from '../misc/observable'
@@ -369,6 +370,7 @@ export class ModelsService {
     constructor() {
         this.configSubscription = combineLatest([resolvedConfig, authStatus])
             .pipe(
+                debounceTime(0), // wait for sync accessors to update
                 mergeMap(([{ configuration }, authStatus]) =>
                     promiseFactoryToObservable(async signal => {
                         try {

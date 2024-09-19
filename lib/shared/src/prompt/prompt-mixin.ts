@@ -58,7 +58,8 @@ export class PromptMixin {
             ps`\n\n`
         )
 
-        if (modelID.includes('claude-3-5-sonnet')) {
+        // Add prompt that prevents Claude 3.5 Sonnet from apologizing constantly.
+        if (modelID.includes('3-5-sonnet') || modelID.includes('3.5-sonnet')) {
             mixins = mixins.concat(HEDGES_PREVENTION)
         }
 

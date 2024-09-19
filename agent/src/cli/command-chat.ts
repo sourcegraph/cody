@@ -188,7 +188,7 @@ export async function chatAction(options: ChatOptions): Promise<number> {
     const id = await client.request('chat/new', null)
 
     if (options.model) {
-        client.request('chat/setModel', { id, model: options.model })
+        await client.request('chat/setModel', { id, model: options.model })
     }
 
     const contextItems: ContextItem[] = []
