@@ -1,0 +1,6 @@
+.prompt-suggestions-list {
+    padding: .25rem;
+    margin: .25rem;
+    list-style:disc;
+    gap: 10px;
+}
