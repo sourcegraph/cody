@@ -144,7 +144,7 @@ export const PromptList: React.FunctionComponent<{
         <Command
             loop={true}
             tabIndex={0}
-            className={clsx('focus:tw-outline-none', className)}
+            className={clsx('focus:tw-outline-none !tw-p-0', className)}
             shouldFilter={false}
             defaultValue={showInitialSelectedItem ? undefined : 'xxx-no-item'}
         >
@@ -164,38 +164,38 @@ export const PromptList: React.FunctionComponent<{
                 )}
                 {result && result.prompts.type !== 'unsupported' && (
                     <CommandGroup
-                        heading={
-                            <>
-                                <span>Prompt Library</span>
-                                <div className="tw-flex-grow" />
-                                <Button variant="ghost" size="sm" asChild>
-                                    <a
-                                        href={new URL('/prompts', endpointURL).toString()}
-                                        target="_blank"
-                                        rel="noreferrer"
-                                        className="!tw-text-[unset]"
-                                    >
-                                        Manage
-                                    </a>
-                                </Button>
-                                <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="tw-flex tw-items-center tw-gap-0.5"
-                                    asChild
-                                >
-                                    <a
-                                        href={new URL('/prompts/new', endpointURL).toString()}
-                                        target="_blank"
-                                        rel="noreferrer"
-                                        className="!tw-text-[unset]"
-                                    >
-                                        <PlusIcon size={12} strokeWidth={1.25} />
-                                        New
-                                    </a>
-                                </Button>
-                            </>
-                        }
+                        // heading={
+                        //     <>
+                        //         <span>Prompt Library</span>
+                        //         <div className="tw-flex-grow" />
+                        //         <Button variant="ghost" size="sm" asChild>
+                        //             <a
+                        //                 href={new URL('/prompts', endpointURL).toString()}
+                        //                 target="_blank"
+                        //                 rel="noreferrer"
+                        //                 className="!tw-text-[unset]"
+                        //             >
+                        //                 Manage
+                        //             </a>
+                        //         </Button>
+                        //         <Button
+                        //             variant="ghost"
+                        //             size="sm"
+                        //             className="tw-flex tw-items-center tw-gap-0.5"
+                        //             asChild
+                        //         >
+                        //             <a
+                        //                 href={new URL('/prompts/new', endpointURL).toString()}
+                        //                 target="_blank"
+                        //                 rel="noreferrer"
+                        //                 className="!tw-text-[unset]"
+                        //             >
+                        //                 <PlusIcon size={12} strokeWidth={1.25} />
+                        //                 New
+                        //             </a>
+                        //         </Button>
+                        //     </>
+                        // }
                     >
                         {result.prompts.type === 'results' ? (
                             <>
@@ -221,14 +221,17 @@ export const PromptList: React.FunctionComponent<{
                                         )}
                                     </CommandLoading>
                                 )}
-                                {result.prompts.results.map(prompt => (
-                                    <PromptCommandItem
-                                        key={prompt.id}
-                                        prompt={prompt}
-                                        onSelect={onSelect}
-                                        selectActionLabel={onSelectActionLabels?.prompt}
-                                    />
-                                ))}
+
+                                <div className="tw-grid tw-grid-cols-2 tw-gap-5">
+                                    {result.prompts.results.map(prompt => (
+                                        <PromptCommandItem
+                                            key={prompt.id}
+                                            prompt={prompt}
+                                            onSelect={onSelect}
+                                            selectActionLabel={onSelectActionLabels?.prompt}
+                                        />
+                                    ))}
+                                </div>
                             </>
                         ) : null}
                         {result.prompts.type === 'error' && (
@@ -307,13 +310,13 @@ const PromptCommandItem: FunctionComponent<{
     <CommandItem
         value={commandRowValue({ type: 'prompt', value: prompt })}
         onSelect={onSelect}
-        className="!tw-items-start tw-group/[cmdk-item]"
+        className="!tw-items-start tw-group/[cmdk-item] tw-border tw-border-neutral-700 !tw-rounded-lg !tw-p-6"
     >
         <div>
             <div className="tw-flex tw-gap-3 tw-w-full tw-items-start">
                 <span>
-                    <span className="tw-text-muted-foreground">{prompt.owner.namespaceName} / </span>
-                    <strong>{prompt.name}</strong>
+                    <span className="tw-block tw-mb-2"><span className="tw-inline-block tw-py-px tw-px-3 tw-bg-neutral-800 tw-rounded-md tw-text-[9px] tw-text-muted-foreground ">{prompt.owner.namespaceName}</span></span>
+                    <strong className="tw-text-lg tw-text-neutral-400">{prompt.name}</strong>
                 </span>
                 {prompt.draft && (
                     <Badge variant="secondary" className="tw-text-xxs tw-mt-0.5">
@@ -328,7 +331,7 @@ const PromptCommandItem: FunctionComponent<{
             )}
         </div>
         <div className="tw-flex-grow" />
-        {selectActionLabel && <CommandItemAction label={selectActionLabel} />}
+        {/* {selectActionLabel && <CommandItemAction label={selectActionLabel} />} */}
     </CommandItem>
 )
 

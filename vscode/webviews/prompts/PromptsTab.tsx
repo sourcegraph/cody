@@ -13,7 +13,7 @@ export const PromptsTab: React.FC<{
 }> = ({ setView }) => {
     const dispatchClientAction = useClientActionDispatcher()
     return (
-        <div className="tw-overflow-auto tw-p-8">
+        <div className="tw-overflow-auto">
             <PromptListSuitedForNonPopover
                 onSelect={item => onPromptSelectInPanel(item, setView, dispatchClientAction)}
                 onSelectActionLabels={onPromptSelectInPanelActionLabels}
@@ -21,7 +21,6 @@ export const PromptsTab: React.FC<{
                 showPromptLibraryUnsupportedMessage={true}
                 showOnlyPromptInsertableCommands={false}
                 telemetryLocation="PromptsTab"
-                className="tw-border tw-border-border"
             />
         </div>
     )

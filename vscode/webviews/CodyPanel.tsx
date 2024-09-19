@@ -104,6 +104,7 @@ export const CodyPanel: FunctionComponent<
                         setView={setView}
                     />
                 )}
+
                 {view === View.History && (
                     <HistoryTab
                         IDE={config.agentIDE || CodyIDE.VSCode}
@@ -113,8 +114,14 @@ export const CodyPanel: FunctionComponent<
                         userHistory={userHistory}
                     />
                 )}
-                {view === View.Prompts && <PromptsTab setView={setView} />}
+
+                {transcript.length === 0 && <div className="tw-mt-20">
+                    <h2 className="tw-text-neutral-500 tw-text-sm tw-mb-4 tw-px-2">Prompts and Commands</h2>
+                    <PromptsTab setView={setView} />
+                </div>}
+
                 {view === View.Account && <AccountTab setView={setView} />}
+
                 {view === View.Settings && <SettingsTab />}
             </TabContainer>
         </TabRoot>

@@ -89,6 +89,7 @@ export const HumanMessageCell: FunctionComponent<{
                 content={
                     <HumanMessageEditor
                         userInfo={userInfo}
+                        className="tw-mt-auto"
                         initialEditorState={initialEditorState}
                         placeholder={isFirstMessage ? 'Ask...' : 'Ask a followup...'}
                         isFirstMessage={isFirstMessage}

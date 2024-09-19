@@ -65,7 +65,7 @@ export const BaseEditor: FunctionComponent<Props> = ({
                     <RichTextPlugin
                         contentEditable={
                             <ContentEditable
-                                className={clsx(styles.contentEditable, contentEditableClassName)}
+                                className={clsx(styles.contentEditable, contentEditableClassName, 'tw-min-h-28')}
                                 ariaLabel={ariaLabel}
                             />
                         }

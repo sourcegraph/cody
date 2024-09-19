@@ -344,8 +344,9 @@ export const HumanMessageEditor: FunctionComponent<{
                 {
                     [styles.sent]: isSent,
                     [styles.focused]: focused,
+                    '!tw-mt-auto': isLastInteraction,
                 },
-                'tw-transition',
+                'tw-transition !tw-rounded-lg',
                 className
             )}
             data-keep-toolbar-open={isLastInteraction || undefined}
