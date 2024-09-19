@@ -29,7 +29,7 @@ async function verifyShim() {
         write: false,
         outfile: path.join('dist', 'shim.js'),
         plugins: shimPlugins,
-        external: ['typescript', 'punycode'],
+        external: ['typescript', '@anthropic-ai/sdk'],
         alias: {
             // Build from TypeScript sources so we don't need to run `tsc -b` in the background
             // during dev.

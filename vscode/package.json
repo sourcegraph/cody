@@ -1319,7 +1319,7 @@
     }
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.20.8",
+    "@anthropic-ai/sdk": "^0.27.3",
     "@openctx/provider-linear-issues": "^0.0.9",
     "@openctx/vscode-lib": "^0.0.24",
     "@opentelemetry/api": "^1.7.0",

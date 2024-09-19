@@ -20,7 +20,7 @@ function extractXML(text: string, tag: string): string | null {
 }
 
 function anthropicMessageToText(message: Message): string {
-    if (message.content.length === 0 || message.content.length > 1) {
+    if (message.content.length === 0 || message.content.length > 1 || message.content[0].type !== 'text') {
         throw new Error(
             `expected exactly one text block in claude response, got ${message.content.length})`
         )
