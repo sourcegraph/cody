@@ -13,12 +13,12 @@
 
 .prompt-suggestions-list li {
     border-radius: 16px;
-    background: var(--vscode-input-background);
+    background: var(--vscode-sideBar-background);
     border-color: var(--vscode-dropdown-border);
     padding: 4px 12px;
     margin-bottom: 8px;
 }
 
 .prompt-suggestions-list li:hover {
-    background: linear-gradient(292deg, var(--vscode-button-hoverBackground) 0%, var(--vscode-input-background) 20.53%);
+    background: linear-gradient(292deg, var(--vscode-button-hoverBackground) -20%, var(--vscode-sideBar-background) 20%);
 }

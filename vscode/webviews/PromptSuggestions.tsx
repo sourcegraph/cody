@@ -42,9 +42,7 @@ export const PromptSuggestions: React.FunctionComponent<PromptSuggestionsProps &
                     <AlertTitle>Reviewing code for suggestions</AlertTitle>
                 </>
             ) : (
-                <>
-                    <AlertTitle className="tw-text-lg mb-12">Prompt suggestions</AlertTitle>
-                </>
+                <AlertTitle className="tw-text-lg tw-ml-8 tw-mt-6">Suggestions from your code</AlertTitle>
             )}
             <AlertDescription>
                 {psuggestions && psuggestions.length !== 0 && (
@@ -60,16 +58,16 @@ export default PromptSuggestions
 
 const getIconForSuggestion = (label: string): React.ReactElement => {
 
-    let icon: React.ReactElement = <HelpCircle className="tw-mr-2 tw-h-[1rem] tw-w-[1rem]" />;
+    let icon: React.ReactElement = <HelpCircle className="tw-mr-4 tw-h-[1rem] tw-w-[1rem]" />;
 
     if (label.toLowerCase().includes('error')) {
-        icon = <BadgeAlert className="tw-mr-2 tw-h-[1rem] tw-w-[1rem]" />;
+        icon = <BadgeAlert className="tw-mr-4 tw-h-[1rem] tw-w-[1rem]" />;
     } else if(label.toLowerCase().includes('file')) {
-        icon = <FileText className="tw-mr-2 tw-h-[1rem] tw-w-[1rem]" />
+        icon = <FileText className="tw-mr-4 tw-h-[1rem] tw-w-[1rem]" />
     } else if(label.toLowerCase().includes('test')) {
-        icon = <TestTubeDiagonal className="tw-mr-2 tw-h-[1rem] tw-w-[1rem]" />
+        icon = <TestTubeDiagonal className="tw-mr-4 tw-h-[1rem] tw-w-[1rem]" />
     } else if(label.toLowerCase().includes('refactor')) {
-        icon = <Code className="tw-mr-2 tw-h-[1rem] tw-w-[1rem]" />;
+        icon = <Code className="tw-mr-4 tw-h-[1rem] tw-w-[1rem]" />;
     }
 
     return icon;
