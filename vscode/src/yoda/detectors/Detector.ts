@@ -1,6 +1,7 @@
 import type { ChatClient, PromptString } from '@sourcegraph/cody-shared'
 import type { Model } from '@sourcegraph/cody-shared/dist/models'
 import type * as vscode from 'vscode'
+import type { ContextRetriever } from '../../chat/chat-view/ContextRetriever'
 
 export enum Score {
     WOW = 4,
@@ -53,20 +54,21 @@ export type CanidateFileContent<T> = CandidateFile<T> & {
 
 export interface Ctx {
     chatClient: ChatClient
+    contextRetriever: ContextRetriever
     model: Model
     apiVersion: number
 }
 
 export interface Detector<T> {
     candidates(
-        randomSample: CanidateFileContent<never>[],
+        randomSample: CanidateFileContent<any>[],
         ctx: Ctx,
         abort?: AbortSignal
-    ): Promise<CandidateFile<T> | Array<CandidateFile<T> & CustomData<T>> | undefined | null>
+    ): Promise<Array<CandidateFile<T> & CustomData<T>> | undefined | null>
 
     detect(
         candidate: CanidateFileContent<T>,
         ctx: Ctx,
         abort?: AbortSignal
-    ): Promise<SuggestedPrompt[] | SuggestedPrompt | undefined | null>
+    ): Promise<SuggestedPrompt[] | undefined | null>
 }

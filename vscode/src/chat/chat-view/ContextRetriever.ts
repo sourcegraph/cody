@@ -210,7 +210,9 @@ export class ContextRetriever implements vscode.Disposable {
         let changedFiles: string[] = []
         try {
             changedFilesByRoot = await Promise.all(
-                localRoots.map(root => gitLocallyModifiedFiles(root, signal))
+                localRoots.map(root =>
+                    gitLocallyModifiedFiles(root, signal).then(files => files.map(f => f.path))
+                )
             )
             changedFiles = changedFilesByRoot.flat()
         } catch (error) {

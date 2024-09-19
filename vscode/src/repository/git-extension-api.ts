@@ -79,7 +79,10 @@ export function gitRemoteUrlsFromGitExtension(uri: vscode.Uri): string[] | undef
  *
  * If the uri is not part of a Git repository, this method returns an empty array.
  */
-export async function gitLocallyModifiedFiles(uri: vscode.Uri, signal?: AbortSignal): Promise<string[]> {
+export async function gitLocallyModifiedFiles(
+    uri: vscode.Uri,
+    signal?: AbortSignal
+): Promise<vscode.Uri[]> {
     const repo = vscodeGitAPI?.getRepository(uri)
     if (!repo) {
         logDebug('gitLocallyModifiedFiles', 'no git repository found at', uri.toString())
@@ -102,8 +105,7 @@ export async function gitLocallyModifiedFiles(uri: vscode.Uri, signal?: AbortSig
     const changes = await repo?.diffWith(diffBase)
     signal?.throwIfAborted()
     const modifiedFileURIs = changes.map(change => change.renameUri ?? change.uri)
-
-    return modifiedFileURIs.map(u => u.fsPath)
+    return modifiedFileURIs
 }
 
 /**

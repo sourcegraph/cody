@@ -219,7 +219,7 @@ const register = async (
         },
         disposables
     )
-    registerYoda(disposables, { chatClient })
+    registerYoda(disposables, { chatClient, contextRetriever })
     disposables.push(chatsController)
 
     const sourceControl = new CodySourceControl(chatClient)
@@ -667,11 +667,14 @@ function registerMinion(
     )
 }
 
-function registerYoda(disposables: vscode.Disposable[], ctx: { chatClient: ChatClient }) {
+function registerYoda(
+    disposables: vscode.Disposable[],
+    ctx: { chatClient: ChatClient; contextRetriever: ContextRetriever }
+) {
     disposables.push(
         enableFeature(
             config => config.configuration.experimentalYoda,
-            () => new YodaController(ctx.chatClient)
+            () => new YodaController(ctx.chatClient, ctx.contextRetriever)
         )
     )
 }

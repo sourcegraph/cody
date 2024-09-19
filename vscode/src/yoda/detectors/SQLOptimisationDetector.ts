@@ -131,4 +131,4 @@ const PRE_INSTRUCTIONS = ps`
 `
 
 // find all files with complex SQL queries. Reply as json array full file names with paths
-// Show code how to optimise the complex query from internal/database/repo_paths.go file?
+// Show code how to optimise the complex query from internal/database/repo_paths.go file? Also return proposed promt to ask for fixing SQL query in cmd/symbols/internal/rockskip/postgres.go

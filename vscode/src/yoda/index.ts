@@ -12,6 +12,7 @@ import {
 import { isArray } from 'lodash'
 import * as o from 'observable-fns'
 import * as vscode from 'vscode'
+import type { ContextRetriever } from '../chat/chat-view/ContextRetriever'
 import { detectors } from './detectors'
 import { Score, type SuggestedPrompt } from './detectors/Detector'
 //TODO: This is a terrible way to create a singleton. @sqs guide me :-)
@@ -24,7 +25,10 @@ export let yoda: YodaController | undefined = undefined
 export class YodaController implements vscode.Disposable {
     private disposables: vscode.Disposable[] = []
     public lessons
-    constructor(private chatClient: ChatClient) {
+    constructor(
+        private chatClient: ChatClient,
+        private contextRetriever: ContextRetriever
+    ) {
         this.lessons = o.multicast(this._lessons)
         this.disposables.push(subscriptionDisposable(this.lessons.subscribe({})))
 
@@ -79,40 +83,34 @@ export class YodaController implements vscode.Disposable {
                 chatClient: this.chatClient,
                 model: model,
                 apiVersion: authStatus.codyApiVersion,
+                contextRetriever: this.contextRetriever,
             }
+            const bytes = await vscode.workspace.fs.readFile(uri)
+            const decoded = new TextDecoder('utf-8').decode(bytes)
             try {
-                const bytes = await await vscode.workspace.fs.readFile(uri)
-                const decoded = new TextDecoder('utf-8').decode(bytes)
                 const lessonPromises = detectors.map(async detector => {
-                    const __temporary_candidates__ = await detector.candidates(
-                        [{ content: decoded, score: Score.BASIC, uri: uri }],
-                        ctx
-                    )
-                    const resultPromises = __temporary_candidates__
-                        .map(v => ({ ...v, content: decoded }))
-                        .map(async v => {
-                            try {
-                                const result = await detector.detect(v, ctx)
-                                if (result === null || result === undefined) {
-                                    return []
-                                }
-                                if (isArray(result)) {
-                                    return result
-                                }
-                                return [result]
-                            } catch (e) {
-                                logError('Yoda', 'failed detection', e)
-                                return []
+                    const __temporary_candidates__ =
+                        (await detector.candidates(
+                            [{ content: decoded, score: Score.BASIC, uri: uri }],
+                            ctx
+                        )) ?? []
+                    const allResults = []
+                    for (const candidate of __temporary_candidates__) {
+                        try {
+                            const bytes = await vscode.workspace.fs.readFile(candidate.uri)
+                            const decoded = new TextDecoder('utf-8').decode(bytes)
+                            const result = await detector.detect({ ...candidate, content: decoded }, ctx)
+                            if (result === null || result === undefined) {
+                                continue
                             }
-                        })
-                    const results = (await Promise.all(resultPromises)).flat()
-                    return results
-                })
-                //     detector.detect(
-                //         { uri, content: decoded },
+                            allResults.push(...result)
+                        } catch (err) {
+                            logError('Yoda', 'failed detection', err)
+                        }
+                    }
 
-                //     )
-                // )
+                    return allResults
+                })
                 const lessons = (await Promise.allSettled(lessonPromises)).flatMap(v => {
                     if (v.status !== 'fulfilled') {
                         logError('Yoda', `Failed to apply detector ${v.reason}`)
