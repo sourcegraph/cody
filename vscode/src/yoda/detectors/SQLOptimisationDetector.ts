@@ -1,7 +1,5 @@
-import { PromptString, getSimplePreamble, ps } from '@sourcegraph/cody-shared'
-import type * as vscode from 'vscode'
-import { getContextFilesForUnitTestCommand } from '../../commands/context/unit-test-file'
-import { isTestFileForOriginal } from '../../commands/utils/test-commands'
+import { PromptString, getSimplePreamble, ps, uriBasename } from '@sourcegraph/cody-shared'
+import * as vscode from 'vscode'
 import { PromptBuilder } from '../../prompt-builder'
 import {
     type CandidateFile,
@@ -11,124 +9,114 @@ import {
     Score,
     type SuggestedPrompt,
 } from './Detector'
-import { combineStream, reversedTuple } from './util'
+import { combineStream } from './util'
 
-interface Data {
-    testFile: vscode.Uri
-}
-
+type Data = null
 export class SQLOptimisationDetector implements Detector<Data> {
     async candidates(
         randomSample: CanidateFileContent<any>[],
         ctx: Ctx,
         abort?: AbortSignal
     ): Promise<CandidateFile<Data>[]> {
-        const candidates = await Promise.all(
-            randomSample.map(async file => {
-                try {
-                    const contextFiles = await getContextFilesForUnitTestCommand(file.uri).catch(
-                        () => []
-                    )
-                    const testFile = contextFiles.find(testFile =>
-                        isTestFileForOriginal(file.uri, testFile.uri)
-                    )?.uri
-                    if (testFile && testFile.path !== file.uri.path) {
-                        return [
-                            {
-                                ...file,
-                                score: Score.join(file.score, Score.COOL),
-                                data: { testFile },
-                            } satisfies CandidateFile<Data>,
-                        ]
-                    }
-                } catch {}
-                return []
-            })
-        )
-        return candidates.flat()
+        return [
+            {
+                uri: vscode.Uri.joinPath(
+                    vscode.workspace.workspaceFolders![0].uri,
+                    'internal/database/repo_paths.go'
+                ),
+                score: Score.AWESOME,
+                data: null,
+            },
+            {
+                uri: vscode.Uri.joinPath(
+                    vscode.workspace.workspaceFolders![0].uri,
+                    'cmd/symbols/internal/rockskip/postgres.go'
+                ),
+                score: Score.AWESOME,
+                data: null,
+            },
+        ]
     }
     async detect(
         candidate: CanidateFileContent<Data>,
         ctx: Ctx,
         abort?: AbortSignal
-    ): Promise<SuggestedPrompt | undefined> {
-        // Loop through current context to see if the file has an exisiting test file
-        // const destinationFile = contextFiles.find(testFile => isTestFileForOriginal(uri, testFile.uri))?.uri
+    ): Promise<SuggestedPrompt[] | undefined> {
         const promptBuilder = await PromptBuilder.create(ctx.model.contextWindow)
+
         if (
             !promptBuilder.tryAddToPrefix(
-                getSimplePreamble(ctx.model.id, ctx.apiVersion, 'Default', PRE_INSTRUCTIONS)
+                getSimplePreamble(
+                    ctx.model.id,
+                    ctx.apiVersion,
+                    'Default',
+                    ps`
+            You are an expert in SQL. You are given a complex SQL query.
+            You only return proposals if you are confident that it is performance improvement based on the context. When asked to reply ValidationJSON you must reply only with a JSON object that follows the schema below and you must not include any additional text.
+            {
+                optimisations: [
+                    {
+                        originalQuery: string,
+                        // The optimised query. Null if there is no optimisation or if the optimisation is not within a symbol.
+                        optimisedQuery: string | null,
+                    },
+                ]
+            }
+        `
+                )
             )
         ) {
             return
         }
-        promptBuilder.tryAddMessages(
-            reversedTuple([
-                // Important, messages are added in reverse order
-                {
-                    speaker: 'human',
-                    text: ps`Are there any important untested features or code-paths in ${PromptString.fromDisplayPath(
-                        candidate.data?.testFile
-                    )} for ${PromptString.fromDisplayPath(candidate.uri)}? Reply in the following JSON output format:
-                        {
-                            top3: [
-                                {
-                                    feature: string,
-                                    symbolName: string,
-                                    importance: 'high' | 'medium' | 'low'
-                                    }
-                                ]
-                            }
-                                    `,
-                },
-                {
-                    speaker: 'assistant',
-                    text: ps`Understood. I will perform your instructions and only reply with JSON once you give me the 'json-output' keyword.`,
-                },
-                { speaker: 'human', text: ps`json-output` },
-            ])
-        )
+        promptBuilder.tryAddMessages([
+            {
+                speaker: 'human',
+                text: ps`Show code how to optimise the complex SQL query in ${
+                    PromptString.fromContextItem({
+                        uri: candidate.uri,
+                        type: 'file',
+                    }).title ?? ''
+                } file. Also return proposed promt to ask for fixing SQL query in other files in this repositor. Output only ValidationJSON`,
+            },
+        ])
+
         const { ignored, limitReached } = await promptBuilder.tryAddContext('user', [
-            { uri: candidate.data.testFile, type: 'file' },
             { uri: candidate.uri, type: 'file', content: candidate.content },
         ])
         if (ignored.length > 0 || limitReached) {
             return
         }
-        const messages = await promptBuilder.build()
-        //TODO: we could use the BotResponseMultiplexer for parsing out components and ending early
-        const response = await combineStream(
-            ctx.chatClient.chat(
-                messages,
-                {
-                    model: ctx.model.id,
-                    maxTokensToSample: ctx.model.contextWindow.output,
-                },
-                abort
-            ),
+
+        const messages = promptBuilder.build()
+        const responseStream = ctx.chatClient.chat(
+            messages,
+            {
+                model: ctx.model.id,
+                maxTokensToSample: ctx.model.contextWindow.output,
+            },
             abort
         )
-        if (!response) {
+        const response = await combineStream(responseStream, abort)
+        const parsedResponse: {
+            optimisations: any
+        } = JSON.parse(response ?? '')
+        if (
+            parsedResponse.optimisations === null ||
+            parsedResponse.optimisations.length === 0 ||
+            parsedResponse.optimisations[0].optimisedQuery === null
+        ) {
             return
         }
-        const json = JSON.parse(response)
-        const top: { feature: string; symbolName: string } = json.top3[0]
-        const outputPrompt = ps`Help me test ${PromptString.unsafe_fromLLMResponse(
-            top.feature
-        )} in ${PromptString.fromDisplayPath(candidate.uri)}`
-        // We can only have a single output message
-        return {
-            cta: `Try fixing ${top.feature} in ${top.symbolName}`,
-            prompt: outputPrompt,
-            hiddenInstructions: ps`TO BE DONE`,
-            score: candidate.score,
-        }
+
+        return [
+            {
+                cta: `Improve SQL query in ${uriBasename(candidate.uri)}`,
+                prompt: ps`Show code how to optimise the complex SQL query in  ${PromptString.fromDisplayPath(
+                    candidate.uri
+                )})}`,
+                score: Score.WOW,
+                hiddenInstructions: ps`Also return proposed promt to ask for fixing SQL query in other files in this repository`,
+            },
+        ]
     }
 }
-
-//Nothing right now
-const PRE_INSTRUCTIONS = ps`
-`
-
-// find all files with complex SQL queries. Reply as json array full file names with paths
-// Show code how to optimise the complex query from internal/database/repo_paths.go file? Also return proposed promt to ask for fixing SQL query in cmd/symbols/internal/rockskip/postgres.go
