@@ -36,7 +36,7 @@ function generateIssueBody(config: ReturnType<typeof getConfiguration>): string 
 - Operating System: ${getOSName()}
 - Cody Free/Pro: ${isDotComAuthed()}
 
-## Cody Configuration
+Cody Configuration
 - Server Endpoint: ${config.serverEndpoint}
 - Use Context: ${config.useContext}
 - Autocomplete Enabled: ${config.autocomplete}
@@ -50,7 +50,7 @@ Steps to Reproduce
 2.
 3.
 
-Expected Behaviour
+Summary of Issue:
 
 `
 }
