@@ -971,20 +971,7 @@
           "examples": "https://example.sourcegraph.com",
           "markdownDeprecationMessage": "**Deprecated**: Please sign in via the UI instead. If you are already signed in, you can empty this field to remove this warning.",
           "deprecationMessage": "Deprecated: Please sign in via the UI instead."
-        },
-        "cody.codebase": {
-          "order": 2,
-          "type": "string",
-          "markdownDescription": "A Git repository URL to use instead of allowing Cody to infer the Git repository from the workspace.",
-          "examples": ["https://github.com/sourcegraph/cody", "ssh://git@github.com/sourcegraph/cody"]
-        },
-        "cody.useContext": {
-          "order": 99,
-          "type": "string",
-          "enum": ["embeddings", "keyword", "blended", "none"],
-          "default": "blended",
-          "markdownDescription": "Controls which context providers Cody uses for chat, commands and inline edits. Use 'blended' for best results. For debugging other context sources, 'embeddings' will use an embeddings-based index if available. 'keyword' will use a search-based index. 'none' will not use embeddings or search-based indexes."
-        },
+        },           
         "cody.customHeaders": {
           "order": 4,
           "type": "object",

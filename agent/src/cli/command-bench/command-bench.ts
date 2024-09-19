@@ -387,7 +387,6 @@ async function evaluateWorkspace(options: CodyBenchOptions, recordingDirectory: 
                 'cody.experimental.localEmbeddings.enabled': ['embeddings', 'blended'].includes(
                     options.context?.strategy
                 ),
-                'cody.useContext': options.context?.strategy,
                 'cody.experimental.telemetry.enabled': false,
                 ...options.fixture.customConfiguration,
             },
