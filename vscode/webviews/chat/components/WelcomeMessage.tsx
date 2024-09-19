@@ -43,8 +43,15 @@ const FeatureRow: FunctionComponent<{
 
 const localStorageKey = 'chat.welcome-message-dismissed'
 
-export const WelcomeMessage: FunctionComponent<{ IDE: CodyIDE; setView: (view: View) => void }> = ({
+interface WelcomeMessageProps {
+    IDE: CodyIDE
+    isUnifiedPromptsAvailable?: boolean
+    setView: (view: View) => void
+}
+
+export const WelcomeMessage: FunctionComponent<WelcomeMessageProps> = ({
     IDE,
+    isUnifiedPromptsAvailable,
     setView,
 }) => {
     // Remove the old welcome message dismissal key that is no longer used.
@@ -56,7 +63,7 @@ export const WelcomeMessage: FunctionComponent<{ IDE: CodyIDE; setView: (view: V
         <div className="tw-flex-1 tw-flex tw-flex-col tw-items-start tw-w-full tw-px-6 tw-gap-6 tw-transition-all">
             <CollapsiblePanel
                 storageKey="prompts"
-                title="Prompts"
+                title={isUnifiedPromptsAvailable ? 'Prompts' : 'Prompts & Commands'}
                 className="tw-mb-6"
                 contentClassName="!tw-p-0 tw-overflow-clip"
                 initialOpen={true}

@@ -91,7 +91,7 @@ export enum FeatureFlag {
 
     /**
      * Enables experimental unified prompts (show no commands and include
-     * some standard out of box prompts like documentation and explain code prompts
+     * some standard out-of-the-box prompts like documentation and explain code prompts)
      */
     CodyUnifiedPrompts = 'cody-unified-prompts',
 }

@@ -449,8 +449,7 @@ async function registerCodyCommands(
             vscode.commands.registerCommand('cody.command.explain-code', a => executeExplainCommand(a)),
             vscode.commands.registerCommand('cody.command.smell-code', a => executeSmellCommand(a)),
             vscode.commands.registerCommand('cody.command.document-code', a => executeDocChatCommand(a)),
-            vscode.commands.registerCommand('cody.command.unit-tests', a => executeTestChatCommand(a)),
-            sourceControl // Generate Commit Message command
+            vscode.commands.registerCommand('cody.command.unit-tests', a => executeTestChatCommand(a))
         )
 
         return

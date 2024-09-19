@@ -586,6 +586,10 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         const sidebarViewOnly = this.extensionClient.capabilities?.webviewNativeConfig?.view === 'single'
         const isEditorViewType = this.webviewPanelOrView?.viewType === 'cody.editorPanel'
         const webviewType = isEditorViewType && !sidebarViewOnly ? 'editor' : 'sidebar'
+        const experimentalOneBox = this.isOneBoxEnabled()
+        const unifiedPromptsAvailable = await featureFlagProvider.evaluateFeatureFlag(
+            FeatureFlag.CodyUnifiedPrompts
+        )
 
         return {
             agentIDE: configuration.agentIDE ?? CodyIDE.VSCode,
@@ -596,6 +600,8 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             serverEndpoint: auth.serverEndpoint,
             experimentalNoodle: configuration.experimentalNoodle,
             smartApply: this.isSmartApplyEnabled(),
+            experimentalOneBox,
+            unifiedPromptsAvailable,
             webviewType,
             multipleWebviewsEnabled: !sidebarViewOnly,
             internalDebugContext: configuration.internalDebugContext,
