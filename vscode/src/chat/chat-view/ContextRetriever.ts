@@ -186,12 +186,15 @@ export class ContextRetriever implements vscode.Disposable {
         roots: Root[],
         query: PromptString,
         span: Span,
-        signal?: AbortSignal
+        signal?: AbortSignal,
+        rewriteDisabled?: boolean
     ): Promise<ContextItem[]> {
         if (roots.length === 0) {
             return []
         }
-        const rewritten = await rewriteKeywordQuery(this.llms, query, signal)
+        const rewritten = rewriteDisabled
+            ? query.toString()
+            : await rewriteKeywordQuery(this.llms, query, signal)
         const rewrittenQuery = {
             ...query,
             rewritten,

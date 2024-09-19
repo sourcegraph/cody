@@ -7,6 +7,7 @@ import {
     PromptString,
     currentAuthStatusAuthed,
     isDotCom,
+    logDebug,
     modelsService,
 } from '@sourcegraph/cody-shared'
 import { getContextFileFromWorkspaceFsPath } from '../../commands/context/file-path'
@@ -48,21 +49,24 @@ export class ContextReviewer {
         }
     }
 
-    private hasContextRequest(): boolean {
-        return Object.values(this.responses).some(response => response !== '')
+    private get hasContextRequest(): boolean {
+        return Object.values(this.responses).some(res => res !== '')
     }
 
     public async getSmartContext(abortSignal: AbortSignal): Promise<ContextItem[]> {
         await this.review(abortSignal)
-        if (!this.hasContextRequest()) {
+        if (!this.hasContextRequest) {
             return []
         }
         const smartContext = await this.getContext()
         // TODO: Run this in a loop to review the context?
+        // If we have retrieved more context from the search query response,
+        // run review again to review the new context and get smarter context if available.
         if (smartContext.length && this.responses.CODYTOOLSEARCH) {
             this.currentContext.push(...smartContext)
             await this.review(abortSignal)
-            if (this.hasContextRequest()) {
+            // Only get additional context if there's a new request
+            if (this.hasContextRequest) {
                 const secondRound = await this.getContext()
                 smartContext.push(...secondRound)
             }
@@ -85,41 +89,48 @@ export class ContextReviewer {
 
     private async getCommandContext(): Promise<ContextItem[]> {
         const commands = this.getItems('CODYTOOLCLI', 'cmd')
+        if (!commands.length) {
+            return []
+        }
         return (await Promise.all(commands.map(cmd => getContextFileFromShell(cmd.trim())))).flat()
     }
 
     private async getFileContext(): Promise<ContextItem[]> {
         const fsPaths = this.getItems('CODYTOOLFILE', 'file')
+        if (!fsPaths.length) {
+            return []
+        }
+        logDebug('ContextReviewer', 'getFileContext', { verbose: { fsPaths } })
         return (
             await Promise.all(fsPaths.map(path => getContextFileFromWorkspaceFsPath(path.trim())))
         ).filter((item): item is ContextItem => item !== null)
     }
 
+    private performedSearch = new Set<string>()
     private async getSearchContext(): Promise<ContextItem[]> {
         if (!this.contextRetriever || !this.responses.CODYTOOLSEARCH) {
             return []
         }
-        const queries = this.getItems('CODYTOOLSEARCH', 'query')
+        const query = this.getItems('CODYTOOLSEARCH', 'query')?.[0]?.trim()
+        if (!query || this.performedSearch.has(query)) {
+            return []
+        }
+        this.performedSearch.add(query)
         const useRemote = !isDotCom(this.authStatus)
         const codebase = await getCorpusContextItemsForEditorState(useRemote)
-        const structuredMentions = toStructuredMentions(codebase)
-        return (
-            await Promise.all(
-                queries.map(query =>
-                    this.contextRetriever.retrieveContext(
-                        structuredMentions,
-                        PromptString.unsafe_fromLLMResponse(query),
-                        this.span
-                    )
-                )
-            )
-        ).flat()
+        const context = await this.contextRetriever.retrieveContext(
+            toStructuredMentions(codebase),
+            PromptString.unsafe_fromLLMResponse(query),
+            this.span
+        )
+        // Returns the first 20 items from the search context
+        return context.slice(0, 20)
     }
 
     private async review(abortSignal: AbortSignal): Promise<void> {
         this.reset()
         const { explicitMentions, implicitMentions } = getCategorizedMentions(this.currentContext)
-        const prompter = new DefaultPrompter(explicitMentions, implicitMentions)
+        const prompter = new DefaultPrompter(explicitMentions, implicitMentions.slice(-20))
         const { prompt } = await prompter.makePrompt(
             this.chatModel,
             this.authStatus.codyApiVersion,
@@ -132,27 +143,31 @@ export class ContextReviewer {
             stream: !modelsService.isStreamDisabled(this.chatModel.modelID),
         } as CompletionParameters
 
-        let streamed = 0
+        let streamed = ''
         const stream = this.chatClient.chat(prompt, params, abortSignal)
 
         try {
             for await (const message of stream) {
                 if (message.type === 'change') {
-                    const text = message.text.slice(streamed)
-                    streamed += text.length
+                    const text = message.text.slice(streamed.length)
+                    streamed += text
                     this.publish(text)
                 } else if (message.type === 'complete' || message.type === 'error') {
                     await this.notifyTurnComplete()
+                    logDebug('ContextReviewer', 'Context review turn complete', {
+                        verbose: { prompt, streamed },
+                    })
                     break
                 }
             }
         } catch (error: unknown) {
             await this.notifyTurnComplete()
+            logDebug('ContextReviewer failed', `${error}`, { verbose: { prompt, streamed } })
         }
     }
 
-    private publish(text: string): void {
-        this.multiplexer.publish(text)
+    private async publish(text: string): Promise<void> {
+        await this.multiplexer.publish(text)
     }
 
     private async notifyTurnComplete(): Promise<void> {
