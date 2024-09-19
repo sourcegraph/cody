@@ -53,7 +53,7 @@ async function runContextCommand(examples: Example[], outputFile: string): Promi
         const repoNames = targetRepoRevs.map(repoRev => repoRev.repoName)
         const repoIDNames = await graphqlClient.getRepoIds(repoNames, repoNames.length + 10)
         if (isError(repoIDNames)) {
-            throw repoIDNames
+            throw new Error(`getRepoIds failed for [${repoNames.join(',')}]: ${repoIDNames}`)
         }
         if (repoIDNames.length !== repoNames.length) {
             throw new Error(
@@ -69,10 +69,10 @@ async function runContextCommand(examples: Example[], outputFile: string): Promi
             filePatterns: [],
         })
         if (isError(resultsResp)) {
-            throw resultsResp
+            throw new Error(`contextSearch failed for [${repoNames.join(',')}]: ${resultsResp}`)
         }
         if (resultsResp === null) {
-            throw new Error('!!! null results')
+            throw new Error(`contextSearch failed for [${repoNames.join(',')}]: null results`)
         }
         const results = resultsResp ?? []
         const actualContext: EvalContextItem[] = results.map(result => ({
