@@ -282,7 +282,7 @@ internal class WebUIProxy(private val host: WebUIHost, private val browser: JBCe
       """
             .trimIndent()
 
-    browser.cefBrowser.mainFrame?.executeJavaScript(code, "cody://postMessage", 0)
+    browser.cefBrowser.executeJavaScript(code, "cody://postMessage", 0)
   }
 
   private fun onDOMContentLoaded() {
@@ -312,7 +312,7 @@ internal class WebUIProxy(private val host: WebUIHost, private val browser: JBCe
     """
             .trimIndent()
 
-    browser.cefBrowser.mainFrame?.executeJavaScript(code, "cody://updateTheme", 0)
+    browser.cefBrowser.executeJavaScript(code, "cody://updateTheme", 0)
   }
 
   fun dispose() {

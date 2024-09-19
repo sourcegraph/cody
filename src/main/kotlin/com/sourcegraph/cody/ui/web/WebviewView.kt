@@ -1,17 +1,11 @@
 package com.sourcegraph.cody.ui.web
 
 import com.intellij.openapi.application.runInEdt
+import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.project.Project
-import com.intellij.ui.components.JBLabel
 import com.sourcegraph.cody.CodyToolWindowContent
-import com.sourcegraph.cody.CodyToolWindowContent.Companion.MAIN_PANEL
-import com.sourcegraph.cody.Icons
 import com.sourcegraph.cody.agent.CodyAgentService
 import com.sourcegraph.cody.agent.WebviewResolveWebviewViewParams
-import java.awt.GridBagConstraints
-import java.awt.GridBagLayout
-import javax.swing.JComponent
-import javax.swing.JPanel
 
 /// A view that can host a browser component.
 private interface WebviewHost {
@@ -26,10 +20,8 @@ private interface WebviewHost {
   fun reset()
 }
 
-private class CodyToolWindowContentWebviewHost(
-    private val owner: CodyToolWindowContent,
-    val placeholder: JComponent
-) : WebviewHost {
+private class CodyToolWindowContentWebviewHost(private val owner: CodyToolWindowContent) :
+    WebviewHost {
   override val id = "cody.chat"
 
   var proxy: WebUIProxy? = null
@@ -45,18 +37,16 @@ private class CodyToolWindowContentWebviewHost(
     runInEdt {
       assert(this.proxy == null)
       this.proxy = proxy
-      owner.allContentPanel.remove(placeholder)
-      proxy.component?.let {
-        owner.allContentPanel.add(it, MAIN_PANEL, CodyToolWindowContent.MAIN_PANEL_INDEX)
+      val component = proxy.component
+      if (component == null) {
+        thisLogger().warn("expected browser component to be created, but was null")
       }
-      owner.refreshPanelsVisibility()
+      owner.setWebviewComponent(component)
     }
   }
 
   override fun reset() {
-    // TODO: Flip the tool window back to showing the placeholder, when we can remove the browser
-    // component without causing an exception that the component is already disposed as it is
-    // resized during remove.
+    owner.setWebviewComponent(null)
     this.proxy = null
   }
 }
@@ -111,14 +101,7 @@ internal class WebviewViewManager(private val project: Project) {
   }
 
   fun provideCodyToolWindowContent(codyContent: CodyToolWindowContent) {
-    // Because the webview may be created lazily, populate a placeholder control.
-    val placeholder = JPanel(GridBagLayout())
-    val spinnerLabel =
-        JBLabel("Starting Cody...", Icons.StatusBar.CompletionInProgress, JBLabel.CENTER)
-    placeholder.add(spinnerLabel, GridBagConstraints())
-
-    codyContent.allContentPanel.add(placeholder, MAIN_PANEL, CodyToolWindowContent.MAIN_PANEL_INDEX)
-    provideHost(CodyToolWindowContentWebviewHost(codyContent, placeholder))
+    provideHost(CodyToolWindowContentWebviewHost(codyContent))
   }
 
   private fun provideView(viewHost: WebviewHost, provider: Provider) {
