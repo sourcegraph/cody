@@ -1,6 +1,6 @@
 import React from 'react'
 import styles from './PromptSuggestions.module.css'
-import { BadgeAlert } from "lucide-react"
+import { BadgeAlert, Loader } from "lucide-react"
 import {Alert, AlertDescription, AlertTitle} from './components/shadcn/ui/alert.tsx'
 
 interface SuggestedPrompt {
@@ -9,23 +9,42 @@ interface SuggestedPrompt {
 }
 
 export interface PromptSuggestionsProps {
-    examples?: SuggestedPrompt[]
+    suggestions?: SuggestedPrompt[]
 }
 
-export const PromptSuggestions: React.FunctionComponent<PromptSuggestionsProps> = ({examples}) => {
+type PromptSuggestionStatus = 'processing' | 'completed';
 
-    const suggestions = examples?.map((example) => (
+export const PromptSuggestions: React.FunctionComponent<PromptSuggestionsProps & { status: PromptSuggestionStatus }> = ({suggestions, status}) => {
+
+    const psuggestions = suggestions?.map((example) => (
         <li className={styles.promptSuggestion}>{example.label}</li>
     ))
 
+
+    //todo: this is a hack, refactor
+    if (!psuggestions || psuggestions.length === 0) {
+        return <div/>
+    }
+
     return (
         <Alert>
-            <BadgeAlert className="h-4 w-4" />
-            <AlertTitle>Prompt suggestions</AlertTitle>
+            {status === 'processing' ? (
+                <>
+                    <Loader className="tw-h-[1rem] tw-w-[1rem] tw-animate-pulse" />
+                    <AlertTitle>Reviewing code for suggestions</AlertTitle>
+                </>
+            ) : (
+                <>
+                    <BadgeAlert className="tw-h-[1rem] tw-w-[1rem]" />
+                    <AlertTitle>Prompt suggestions</AlertTitle>
+                </>
+            )}
             <AlertDescription>
-                <ul className={styles.promptSuggestionsList}>
-                    {suggestions}
-                </ul>
+                {psuggestions && psuggestions.length !== 0 && (
+                    <ul className={styles.promptSuggestionsList}>
+                        {psuggestions}
+                    </ul>
+                )}
             </AlertDescription>
         </Alert>
     )

@@ -8,8 +8,15 @@ const meta: Meta<typeof PromptSuggestions> = {
     tags: ['autodocs'],
 }
 
-const exampleProps: PromptSuggestionsProps = {
-    examples: [
+
+
+export default meta
+
+
+type Story = StoryObj<typeof PromptSuggestions>
+
+let suggestionProps: PromptSuggestionsProps = {
+    suggestions: [
         { label: 'Document the detect_chat_intent function in intent_detection.py', id: 1 },
         { label: 'Add unit tests for PromptSuggestions component', id: 2 },
         { label: 'Refactor the UserAuthentication module for better performance', id: 3 },
@@ -17,21 +24,24 @@ const exampleProps: PromptSuggestionsProps = {
     ],
 }
 
-export default meta
-
-
-type Story = StoryObj<typeof PromptSuggestions>
-
 export const Default: Story = {
-    args: exampleProps,
+    args: suggestionProps,
 }
 
 export const NoExamples: Story = {
     args: {
-        examples: [],
+        suggestions: [],
     },
 }
+let singleSuggestion: PromptSuggestionsProps = {
+    suggestions: [
+        { label: 'Document the detect_chat_intent function in intent_detection.py', id: 1 }
+    ],
+}
 
-export const SingleExample: Story = {
-    args: exampleProps,
+export const Processing: Story = {
+    args: {
+        ...singleSuggestion,
+        status: 'processing',
+    },
 }
