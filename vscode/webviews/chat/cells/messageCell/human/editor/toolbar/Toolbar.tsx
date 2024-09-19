@@ -31,7 +31,6 @@ export const Toolbar: FunctionComponent<{
 
     hidden?: boolean
     className?: string
-    experimentalOneBoxEnabled?: boolean
 }> = ({
     userInfo,
     isEditorFocused,
@@ -43,7 +42,6 @@ export const Toolbar: FunctionComponent<{
     appendTextToEditor,
     hidden,
     className,
-    experimentalOneBoxEnabled,
 }) => {
     /**
      * If the user clicks in a gap or on the toolbar outside of any of its buttons, report back to
@@ -98,7 +96,6 @@ export const Toolbar: FunctionComponent<{
                     onClick={onSubmitClick}
                     isEditorFocused={isEditorFocused}
                     state={submitState}
-                    experimentalOneBoxEnabled={experimentalOneBoxEnabled}
                 />
             </div>
         </menu>
