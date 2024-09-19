@@ -97,7 +97,11 @@ async function runContextCommand(examples: Example[], outputFile: string): Promi
     await writeExamplesToCSV(outputFile, exampleOutputs)
 }
 
-function contextOverlaps(parentStr: string, childStr: string, threshold = 0.2): boolean {
+function contextOverlaps(
+    parentStr: string,
+    childStr: string,
+    threshold = { lines: 3, fraction: 0.2 }
+): boolean {
     const parent = contextItemFromString(parentStr)
     const child = contextItemFromString(childStr)
     if (!parent || !child) {
@@ -123,7 +127,7 @@ function contextOverlaps(parentStr: string, childStr: string, threshold = 0.2): 
     const overlapLength = overlapEnd - overlapStart + 1
     const parentLength = parent.endLine - parent.startLine + 1
 
-    return overlapLength / parentLength >= threshold
+    return overlapLength / parentLength >= threshold.fraction || overlapLength >= threshold.lines
 }
 
 function computeRecall(
