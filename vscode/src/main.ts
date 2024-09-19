@@ -257,7 +257,7 @@ const register = async (
     registerAutocomplete(platform, statusBar, disposables)
     const tutorialSetup = tryRegisterTutorial(context, disposables)
 
-    registerCodyCommands(statusBar, sourceControl, chatClient, disposables)
+    await registerCodyCommands(statusBar, sourceControl, chatClient, disposables)
     registerAuthCommands(disposables)
     registerChatCommands(disposables)
     disposables.push(...registerSidebarCommands())
