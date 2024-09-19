@@ -20,8 +20,6 @@ describe('getConfiguration', () => {
                 switch (key) {
                     case 'cody.serverEndpoint':
                         return 'http://example.com'
-                    case 'cody.codebase':
-                        return 'my/codebase'
                     case 'cody.useContext':
                         return 'keyword'
                     case 'cody.customHeaders':
