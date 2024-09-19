@@ -1,6 +1,7 @@
 import type { ChatClient, PromptString } from '@sourcegraph/cody-shared'
 import type { Model } from '@sourcegraph/cody-shared/dist/models'
 import type * as vscode from 'vscode'
+import type { ContextRetriever } from '../../chat/chat-view/ContextRetriever'
 
 export enum Score {
     WOW = 4,
@@ -53,6 +54,7 @@ export type CanidateFileContent<T> = CandidateFile<T> & {
 
 export interface Ctx {
     chatClient: ChatClient
+    contextRetriever: ContextRetriever
     model: Model
     apiVersion: number
 }
