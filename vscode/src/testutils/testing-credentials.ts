@@ -17,7 +17,7 @@ function loadSecret(name: string): string {
 
 export function dotcomCredentials(): TestingCredentials {
     return {
-        redactedToken: 'REDACTED_d5e0f0a37c9821e856b923fe14e67a605e3f6c0a517d5a4f46a4e35943ee0f6d',
+        redactedToken: 'REDACTED_3dd704711f82a44ff6aba261b53b61a03fb8edba658774639148630d838c2d1d',
         serverEndpoint: 'https://sourcegraph.com/',
         token: loadSecret('CODY_PRO_ACCESS_TOKEN'),
     }
@@ -28,7 +28,7 @@ export function dotcomCredentials(): TestingCredentials {
 export const DOTCOM_TESTING_CREDENTIALS = {
     dotcom: {
         token: process.env.SRC_DOTCOM_PRO_ACCESS_TOKEN,
-        redactedToken: 'REDACTED_d5e0f0a37c9821e856b923fe14e67a605e3f6c0a517d5a4f46a4e35943ee0f6d',
+        redactedToken: 'REDACTED_3dd704711f82a44ff6aba261b53b61a03fb8edba658774639148630d838c2d1d',
         serverEndpoint: DOTCOM_URL.toString(),
     } satisfies TestingCredentials,
     dotcomProUserRateLimited: {
