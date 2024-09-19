@@ -51,7 +51,7 @@ export class TestOpportunityDetector implements Detector<Data> {
         candidate: CanidateFileContent<Data>,
         ctx: Ctx,
         abort?: AbortSignal
-    ): Promise<SuggestedPrompt | undefined> {
+    ): Promise<SuggestedPrompt[] | undefined> {
         // Loop through current context to see if the file has an exisiting test file
         // const destinationFile = contextFiles.find(testFile => isTestFileForOriginal(uri, testFile.uri))?.uri
         const promptBuilder = await PromptBuilder.create(ctx.model.contextWindow)
@@ -117,12 +117,14 @@ export class TestOpportunityDetector implements Detector<Data> {
             top.feature
         )} in ${PromptString.fromDisplayPath(candidate.uri)}`
         // We can only have a single output message
-        return {
-            cta: `Try fixing ${top.feature} in ${top.symbolName}`,
-            prompt: outputPrompt,
-            hiddenInstructions: ps`TO BE DONE`,
-            score: candidate.score,
-        }
+        return [
+            {
+                cta: `See how Cody can expand test coverage of \`${top.symbolName}\` by testing ${top.feature} in \`${top.symbolName}\``,
+                prompt: outputPrompt,
+                hiddenInstructions: ps`TO BE DONE`,
+                score: candidate.score,
+            },
+        ]
     }
 }
 
