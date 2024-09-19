@@ -49,11 +49,13 @@ import {
     logError,
     modelsService,
     parseMentionQuery,
+    promiseToObservable,
     recordErrorToSpan,
     reformatBotMessageForChat,
     resolvedConfig,
     serializeChatMessage,
     startWith,
+    storeLastValue,
     telemetryRecorder,
     tracer,
     truncatePromptString,
@@ -65,7 +67,6 @@ import {
     combineLatest,
     createDisposables,
     promiseFactoryToObservable,
-    promiseToObservable,
     subscriptionDisposable,
 } from '@sourcegraph/cody-shared/src/misc/observable'
 import { TokenCounterUtils } from '@sourcegraph/cody-shared/src/token/counter'
@@ -216,6 +217,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
 
     public dispose(): void {
         vscode.Disposable.from(...this.disposables).dispose()
+        this.featureCodyExperimentalOneBox.subscription.unsubscribe()
         this.disposables = []
     }
 
@@ -574,10 +576,14 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         return this.extensionClient.capabilities?.edit !== 'none'
     }
 
-    private async isOneBoxEnabled(): Promise<boolean> {
+    private featureCodyExperimentalOneBox = storeLastValue(
+        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyExperimentalOneBox)
+    )
+
+    private isOneBoxEnabled(): boolean {
         return (
             vscode.workspace.getConfiguration().get<boolean>('cody.internal.onebox') ||
-            (await featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyExperimentalOneBox))
+            !!this.featureCodyExperimentalOneBox.value.last
         )
     }
 
@@ -586,7 +592,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         const sidebarViewOnly = this.extensionClient.capabilities?.webviewNativeConfig?.view === 'single'
         const isEditorViewType = this.webviewPanelOrView?.viewType === 'cody.editorPanel'
         const webviewType = isEditorViewType && !sidebarViewOnly ? 'editor' : 'sidebar'
-        const experimentalOneBox = await this.isOneBoxEnabled()
+        const experimentalOneBox = this.isOneBoxEnabled()
 
         return {
             agentIDE: configuration.agentIDE ?? CodyIDE.VSCode,
