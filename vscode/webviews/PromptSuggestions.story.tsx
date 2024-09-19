@@ -17,10 +17,26 @@ type Story = StoryObj<typeof PromptSuggestions>
 
 let suggestionProps: PromptSuggestionsProps = {
     suggestions: [
-        { label: 'Document the detect_chat_intent function in intent_detection.py', id: 1 },
-        { label: 'Add unit tests for PromptSuggestions component', id: 2 },
-        { label: 'Refactor the UserAuthentication module for better performance', id: 3 },
-        { label: 'Implement error handling for PromptSuggestions component', id: 4 },
+        {
+            label: 'Document the detect_chat_intent function in intent_detection.py',
+             id: 1,
+            prompt:"A prompt text"
+        },
+        {
+            label: 'Add unit tests for PromptSuggestions component',
+            id: 2,
+            prompt:"A prompt text"
+        },
+        {
+            label: 'Refactor the UserAuthentication module for better performance',
+            id: 3 ,
+            prompt:"A prompt text"
+        },
+        {
+            label: 'Implement error handling for PromptSuggestions component',
+            id: 4,
+            prompt:"A prompt text"
+        }
     ],
 }
 
@@ -35,7 +51,11 @@ export const NoExamples: Story = {
 }
 let singleSuggestion: PromptSuggestionsProps = {
     suggestions: [
-        { label: 'Document the detect_chat_intent function in intent_detection.py', id: 1 }
+        {
+            label: 'Document the detect_chat_intent function in intent_detection.py',
+            id: 1,
+            prompt:"A prompt text"
+        }
     ],
 }
 

@@ -1,6 +1,24 @@
+.suggestion-alert-style {
+    border-radius: 6px;
+    border: spacing-100 solid #00CBEC;
+    background: var(--vscode-editor-background);
+}
+
 .prompt-suggestions-list {
     padding: .25rem;
-    margin: .25rem;
-    list-style:disc;
-    gap: 10px;
+    margin: 0;
+    list-style:none;
+    margin-top: 1rem;
+}
+
+
+.prompt-suggestions-list li {
+    border-radius: 16px;
+    background: var(--vscode-editor-background);
+    padding: 4px 12px;
+    margin-bottom: 8px;
+}
+
+.prompt-suggestions-list li:hover {
+    background: linear-gradient(292deg, rgba(0, 203, 236, 0.2) 20%, var(--vscode-editor-background) 31.53%);
 }

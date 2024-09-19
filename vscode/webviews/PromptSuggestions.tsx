@@ -1,11 +1,12 @@
 import React from 'react'
 import styles from './PromptSuggestions.module.css'
-import { BadgeAlert, Loader } from "lucide-react"
+import { BadgeAlert, FileText, Code, HelpCircle, Loader, TestTubeDiagonal } from "lucide-react"
 import {Alert, AlertDescription, AlertTitle} from './components/shadcn/ui/alert.tsx'
 
 interface SuggestedPrompt {
         label: string
         id: number
+        prompt:"A prompt text"
 }
 
 export interface PromptSuggestionsProps {
@@ -17,9 +18,16 @@ type PromptSuggestionStatus = 'processing' | 'completed';
 export const PromptSuggestions: React.FunctionComponent<PromptSuggestionsProps & { status: PromptSuggestionStatus }> = ({suggestions, status}) => {
 
     const psuggestions = suggestions?.map((example) => (
-        <li className={styles.promptSuggestion}>{example.label}</li>
+        <li key={example.id} className={styles.promptSuggestion} >
+            <a href="#" onClick={(e) => {
+                    e.preventDefault();
+                    console.log(example.prompt);
+                }} className="tw-flex tw-items-center">
+                    {getIconForSuggestion(example.label)}
+                    <span>{example.label}</span>
+            </a>
+        </li>
     ))
-
 
     //todo: this is a hack, refactor
     if (!psuggestions || psuggestions.length === 0) {
@@ -27,7 +35,7 @@ export const PromptSuggestions: React.FunctionComponent<PromptSuggestionsProps &
     }
 
     return (
-        <Alert>
+        <Alert className="suggestionAlertStyle" >
             {status === 'processing' ? (
                 <>
                     <Loader className="tw-h-[1rem] tw-w-[1rem] tw-animate-pulse" />
@@ -35,8 +43,7 @@ export const PromptSuggestions: React.FunctionComponent<PromptSuggestionsProps &
                 </>
             ) : (
                 <>
-                    <BadgeAlert className="tw-h-[1rem] tw-w-[1rem]" />
-                    <AlertTitle>Prompt suggestions</AlertTitle>
+                    <AlertTitle className="tw-text-lg mb-12">Prompt suggestions</AlertTitle>
                 </>
             )}
             <AlertDescription>
@@ -50,3 +57,20 @@ export const PromptSuggestions: React.FunctionComponent<PromptSuggestionsProps &
     )
 }
 export default PromptSuggestions
+
+const getIconForSuggestion = (label: string): React.ReactElement => {
+
+    let icon: React.ReactElement = <HelpCircle className="tw-mr-2 tw-h-[1rem] tw-w-[1rem]" />;
+
+    if (label.toLowerCase().includes('error')) {
+        icon = <BadgeAlert className="tw-mr-2 tw-h-[1rem] tw-w-[1rem]" />;
+    } else if(label.toLowerCase().includes('file')) {
+        icon = <FileText className="tw-mr-2 tw-h-[1rem] tw-w-[1rem]" />
+    } else if(label.toLowerCase().includes('test')) {
+        icon = <TestTubeDiagonal className="tw-mr-2 tw-h-[1rem] tw-w-[1rem]" />
+    } else if(label.toLowerCase().includes('refactor')) {
+        icon = <Code className="tw-mr-2 tw-h-[1rem] tw-w-[1rem]" />;
+    }
+
+    return icon;
+}
