@@ -16,7 +16,7 @@ import { getCategorizedMentions } from '../../prompt-builder/unique-context'
 import type { ChatModel } from '../chat-view/ChatModel'
 import { type ContextRetriever, toStructuredMentions } from '../chat-view/ContextRetriever'
 import { DefaultPrompter } from '../chat-view/prompt'
-import { getCorpusContextItemsForEditorState } from '../clientStateBroadcaster'
+import { getCodebaseContextItemsForEditorState } from '../clientStateBroadcaster'
 
 export class ContextReviewer {
     private responses: Record<string, string> = {
@@ -117,14 +117,18 @@ export class ContextReviewer {
         }
         this.performedSearch.add(query)
         const useRemote = !isDotCom(this.authStatus)
-        const codebase = await getCorpusContextItemsForEditorState(useRemote)
-        const context = await this.contextRetriever.retrieveContext(
-            toStructuredMentions(codebase),
-            PromptString.unsafe_fromLLMResponse(query),
-            this.span
-        )
-        // Returns the first 20 items from the search context
-        return context.slice(0, 20)
+        const codebase = await getCodebaseContextItemsForEditorState(useRemote)
+        if (codebase) {
+            const context = await this.contextRetriever.retrieveContext(
+                toStructuredMentions([codebase]),
+                PromptString.unsafe_fromLLMResponse(query),
+                this.span,
+                undefined,
+                'disabled'
+            )
+            return context.slice(-20)
+        }
+        return []
     }
 
     private async review(abortSignal: AbortSignal): Promise<void> {

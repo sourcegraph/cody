@@ -176,10 +176,11 @@ export class ContextRetriever implements vscode.Disposable {
         mentions: StructuredMentions,
         inputTextWithoutContextChips: PromptString,
         span: Span,
-        signal?: AbortSignal
+        signal?: AbortSignal,
+        rewrite: 'enabled' | 'disabled' = 'enabled'
     ): Promise<ContextItem[]> {
         const roots = await codebaseRootsFromMentions(mentions, signal)
-        return await this._retrieveContext(roots, inputTextWithoutContextChips, span, signal)
+        return await this._retrieveContext(roots, inputTextWithoutContextChips, span, signal, rewrite)
     }
 
     private async _retrieveContext(
@@ -187,14 +188,15 @@ export class ContextRetriever implements vscode.Disposable {
         query: PromptString,
         span: Span,
         signal?: AbortSignal,
-        rewriteDisabled?: boolean
+        rewrite: 'enabled' | 'disabled' = 'enabled'
     ): Promise<ContextItem[]> {
         if (roots.length === 0) {
             return []
         }
-        const rewritten = rewriteDisabled
-            ? query.toString()
-            : await rewriteKeywordQuery(this.llms, query, signal)
+        const rewritten =
+            rewrite === 'enabled'
+                ? await rewriteKeywordQuery(this.llms, query, signal)
+                : query.toString()
         const rewrittenQuery = {
             ...query,
             rewritten,
