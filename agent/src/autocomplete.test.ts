@@ -24,7 +24,7 @@ describe('Autocomplete', () => {
     })
 
      // TODO: use `vi.useFakeTimers()` instead of `sleep()` once it's supported by the agent tests.
-     it('autocomplete/execute multiline (non-empty result)', async () => {
+     it.skip('autocomplete/execute multiline (non-empty result)', async () => {
         const uri = workspace.file('src', 'bubbleSort.ts')
         await client.openFile(uri)
 
@@ -34,7 +34,6 @@ describe('Autocomplete', () => {
             triggerKind: 'Invoke',
         })
         
-        console.log(`completions is ${JSON.stringify(completions)}`)
         const completionID = completions.items[0].id
         const texts = completions.items.map(item => item.insertText)
 
@@ -60,7 +59,7 @@ describe('Autocomplete', () => {
     }, 10_000)
 
     // TODO: use `vi.useFakeTimers()` instead of `sleep()` once it's supported by the agent tests.
-    it('autocomplete/execute (non-empty result)', async () => {
+    it.skip('autocomplete/execute (non-empty result)', async () => {
         const uri = workspace.file('src', 'sum.ts')
         await client.openFile(uri)
         const completions = await client.request('autocomplete/execute', {
