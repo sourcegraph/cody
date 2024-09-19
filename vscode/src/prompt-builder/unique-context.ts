@@ -122,3 +122,21 @@ function isUserAddedItem(item: ContextItem): boolean {
 function equalTrimmedContent(item1: ContextItem, item2: ContextItem): boolean {
     return !!item1.content && !!item2.content && item1.content.trim() === item2.content.trim()
 }
+
+export function getCategorizedMentions(mentions: ContextItem[]): {
+    explicitMentions: ContextItem[]
+    implicitMentions: ContextItem[]
+} {
+    const explicitMentions: ContextItem[] = []
+    const implicitMentions: ContextItem[] = []
+
+    for (const m of mentions) {
+        if (isUserAddedItem(m)) {
+            explicitMentions.push(m)
+        } else {
+            implicitMentions.push(m)
+        }
+    }
+
+    return { explicitMentions, implicitMentions }
+}

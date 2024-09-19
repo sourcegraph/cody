@@ -2,7 +2,7 @@ import type { ChatMessage } from '../chat/transcript/messages'
 import { PromptString, ps } from './prompt-string'
 
 const TOOL_PREAMBLE = ps`When answering a question, think step-by-step and provide detailed explanations. If you need more information to answer the question, only response with the following action tags instead of writing template answer or use placeholder to retrieve the required information:
-- if you need get context from the codebase: <CODYTOOLSEARCH><query>$SEARCH_QUERY<query></CODYTOOLSEARCH>
+- if you need additional context from the codebase: <CODYTOOLSEARCH><query>$SEARCH_QUERY<query></CODYTOOLSEARCH>
 - if you need to see the output of different shell commands: <CODYTOOLCLI><cmd>$SHELL_COMMAND<cmd></CODYTOOLCLI>
 - if you need full content from a file: <CODYTOOLFILE><file>$FILEPATH<file></CODYTOOLFILE>
 NOTE: only use the above action tags if you need to see the output of different shell commands, full content from a file, or search for context.
@@ -15,7 +15,7 @@ const CONTEXT_PREAMBLE = ps`You have access to the provided codebase context. `
 /**
  * The preamble for preventing known models from hedging.
  */
-const HEDGES_PREVENTION = ps`Answer positively without apologizing. `
+const HEDGES_PREVENTION = ps`Answer positively without apologizing. Give step-by-step instruction for how-to questions. `
 
 /**
  * Prompt mixins elaborate every prompt presented to the LLM.

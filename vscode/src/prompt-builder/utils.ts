@@ -68,6 +68,7 @@ export function getContextItemTokenUsageType(item: ContextItem): ContextTokenUsa
     switch (item.source) {
         case 'user':
         case 'initial':
+        case 'editor':
         case 'selection':
             return 'user'
         default:

@@ -11,9 +11,10 @@ import {
 } from '@sourcegraph/cody-shared'
 import { getContextFileFromWorkspaceFsPath } from '../../commands/context/file-path'
 import { getContextFileFromShell } from '../../commands/context/shell'
+import { getCategorizedMentions } from '../../prompt-builder/unique-context'
 import type { ChatModel } from '../chat-view/ChatModel'
 import { type ContextRetriever, toStructuredMentions } from '../chat-view/ContextRetriever'
-import type { DefaultPrompter } from '../chat-view/prompt'
+import { DefaultPrompter } from '../chat-view/prompt'
 import { getCorpusContextItemsForEditorState } from '../clientStateBroadcaster'
 
 export class ContextReviewer {
@@ -23,14 +24,14 @@ export class ContextReviewer {
         CODYTOOLSEARCH: '',
     }
     private multiplexer: BotResponseMultiplexer
+    private authStatus = currentAuthStatusAuthed()
 
     constructor(
         private readonly chatModel: ChatModel,
-        private readonly apiVersion: number,
-        private readonly prompter: DefaultPrompter,
         private readonly chatClient: ChatClient,
         private readonly contextRetriever: ContextRetriever,
-        private span: Span
+        private span: Span,
+        public currentContext: ContextItem[]
     ) {
         this.multiplexer = new BotResponseMultiplexer()
         this.initializeMultiplexer()
@@ -51,23 +52,19 @@ export class ContextReviewer {
         return Object.values(this.responses).some(response => response !== '')
     }
 
-    public async tryAddSmartContext(abortSignal: AbortSignal): Promise<ContextItem[]> {
-        const lastHumanMsg = this.chatModel.getLastHumanMessage()
-        const currentContext = lastHumanMsg?.contextFiles ?? []
-
-        await this.stream(abortSignal)
-        const smartContext = await this.getContext()
+    public async getSmartContext(abortSignal: AbortSignal): Promise<ContextItem[]> {
+        await this.review(abortSignal)
         if (!this.hasContextRequest()) {
-            return smartContext
+            return []
         }
-        // TODO: Run this in a loop to review the context
+        const smartContext = await this.getContext()
+        // TODO: Run this in a loop to review the context?
         if (smartContext.length && this.responses.CODYTOOLSEARCH) {
-            currentContext.push(...smartContext)
-            this.chatModel.setLastMessageContext(currentContext, lastHumanMsg?.contextAlternatives)
-            await this.stream(abortSignal)
+            this.currentContext.push(...smartContext)
+            await this.review(abortSignal)
             if (this.hasContextRequest()) {
                 const secondRound = await this.getContext()
-                this.prompter.addSmartContextItem(secondRound)
+                smartContext.push(...secondRound)
             }
         }
         return smartContext
@@ -103,7 +100,7 @@ export class ContextReviewer {
             return []
         }
         const queries = this.getItems('CODYTOOLSEARCH', 'query')
-        const useRemote = !isDotCom(currentAuthStatusAuthed().endpoint)
+        const useRemote = !isDotCom(this.authStatus)
         const codebase = await getCorpusContextItemsForEditorState(useRemote)
         const structuredMentions = toStructuredMentions(codebase)
         return (
@@ -119,10 +116,15 @@ export class ContextReviewer {
         ).flat()
     }
 
-    private async stream(abortSignal: AbortSignal): Promise<void> {
+    private async review(abortSignal: AbortSignal): Promise<void> {
         this.reset()
-
-        const { prompt } = await this.prompter.makePrompt(this.chatModel, this.apiVersion, true)
+        const { explicitMentions, implicitMentions } = getCategorizedMentions(this.currentContext)
+        const prompter = new DefaultPrompter(explicitMentions, implicitMentions)
+        const { prompt } = await prompter.makePrompt(
+            this.chatModel,
+            this.authStatus.codyApiVersion,
+            true
+        )
 
         const params = {
             model: this.chatModel.modelID,
@@ -130,8 +132,8 @@ export class ContextReviewer {
             stream: !modelsService.isStreamDisabled(this.chatModel.modelID),
         } as CompletionParameters
 
-        const stream = this.chatClient.chat(prompt, params, abortSignal)
         let streamed = 0
+        const stream = this.chatClient.chat(prompt, params, abortSignal)
 
         try {
             for await (const message of stream) {

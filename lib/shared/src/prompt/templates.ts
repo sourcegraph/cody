@@ -14,7 +14,7 @@ export function populateCodeContextTemplate(
     const template =
         type === 'edit'
             ? ps`Codebase context from file {filePath}{inRepo}:\n{text}`
-            : ps`Codebase context from file {filePath}{inRepo}:\n\`\`\`{languageID}{filePathToParse}\n{text}\`\`\``
+            : ps`Codebase context:\n\`\`\`{languageID}{filePathToParse}\n{text}\`\`\``
 
     const filePath = PromptString.fromDisplayPath(fileUri)
     return template
@@ -51,17 +51,19 @@ export function populateTerminalOutputContextTemplate(output: string): string {
     return COMMAND_OUTPUT_TEMPLATE + output
 }
 
-const SELECTED_CODE_CONTEXT_TEMPLATE = ps`My selected code from codebase file {filePath}:\n\`\`\`\n{code}\`\`\``
+const SELECTED_CODE_CONTEXT_TEMPLATE = ps`My selected code in the codebase:\n\`\`\`{languageID}{filePathToParse}\n{code}\`\`\``
 
 export function populateCurrentSelectedCodeContextTemplate(
     code: PromptString,
     fileUri: URI,
     range?: RangeData
 ): PromptString {
-    return SELECTED_CODE_CONTEXT_TEMPLATE.replace('{code}', code).replaceAll(
-        '{filePath}',
-        PromptString.fromDisplayPathLineRange(fileUri, range)
+    return SELECTED_CODE_CONTEXT_TEMPLATE.replaceAll(
+        '{languageID}',
+        PromptString.fromMarkdownCodeBlockLanguageIDForFilename(fileUri)
     )
+        .replace('{code}', code)
+        .replaceAll('{filePathToParse}', ps`:${PromptString.fromDisplayPathLineRange(fileUri, range)}`)
 }
 
 const DIRECTORY_FILE_LIST_TEMPLATE =

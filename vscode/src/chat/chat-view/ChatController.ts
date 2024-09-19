@@ -89,6 +89,7 @@ import type { SymfRunner } from '../../local-context/symf'
 import { logDebug } from '../../log'
 import { migrateAndNotifyForOutdatedModels } from '../../models/modelMigrator'
 import { joinModelWaitlist } from '../../models/sync'
+import { getCategorizedMentions } from '../../prompt-builder/unique-context'
 import { mergedPromptsAndLegacyCommands } from '../../prompts/prompts'
 import { workspaceReposMonitor } from '../../repository/repo-metadata-from-git-api'
 import { authProvider } from '../../services/AuthProvider'
@@ -794,25 +795,23 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     }
                 }
 
-                const explicitMentions = corpusContext.filter(c => c.source === ContextItemSource.User)
-                const implicitMentions = corpusContext.filter(c => c.source !== ContextItemSource.User)
+                // NOTE: Experimental
+                const smartContext = await new ContextReviewer(
+                    this.chatModel,
+                    this.chatClient,
+                    this.contextRetriever,
+                    span,
+                    corpusContext
+                ).getSmartContext(signal)
+                corpusContext.push(...smartContext)
+
+                const { explicitMentions, implicitMentions } = getCategorizedMentions(corpusContext)
 
                 const prompter = new DefaultPrompter(
                     explicitMentions,
                     implicitMentions,
                     command !== undefined
                 )
-
-                // TODO: Move this to prompter
-                const smartContext = await new ContextReviewer(
-                    this.chatModel,
-                    authStatus.codyApiVersion,
-                    prompter,
-                    this.chatClient,
-                    this.contextRetriever,
-                    span
-                ).tryAddSmartContext(signal)
-                prompter.addSmartContextItem(smartContext)
 
                 try {
                     const { prompt, context } = await this.buildPrompt(
