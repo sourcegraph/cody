@@ -5,8 +5,9 @@ import { agent } from '@sourcegraph/cody-shared'
 import type { ClientConfiguration } from '@sourcegraph/cody-shared'
 import { HttpProxyAgent } from 'http-proxy-agent'
 import { HttpsProxyAgent } from 'https-proxy-agent'
+import { ProxyAgent } from 'proxy-agent'
 import { SocksProxyAgent } from 'socks-proxy-agent'
-import type * as vscode from 'vscode'
+import * as vscode from 'vscode'
 // @ts-ignore
 import { registerLocalCertificates } from './certs'
 import { getConfiguration } from './configuration'
@@ -31,47 +32,93 @@ function getCustomAgent({
 }: ClientConfiguration): ({ protocol }: Pick<URL, 'protocol'>) => http.Agent {
     return ({ protocol }) => {
         const proxyURL = proxy || getSystemProxyURI(protocol, process.env)
-        if (!proxyURL) {
+        if (proxyURL) {
+            if (proxyURL?.startsWith('socks')) {
+                if (!socksProxyAgent) {
+                    socksProxyAgent = new SocksProxyAgent(proxyURL, {
+                        keepAlive: true,
+                        keepAliveMsecs: 60000,
+                    })
+                }
+                return socksProxyAgent
+            }
+            const proxyEndpoint = parseUrl(proxyURL)
+
+            const opts = {
+                host: proxyEndpoint.hostname || '',
+                port:
+                    (proxyEndpoint.port ? +proxyEndpoint.port : 0) ||
+                    (proxyEndpoint.protocol === 'https' ? 443 : 80),
+                auth: proxyEndpoint.auth,
+                rejectUnauthorized: true,
+                keepAlive: true,
+                keepAliveMsecs: 60000,
+                ...https.globalAgent.options,
+            }
             if (protocol === 'http:') {
-                return httpAgent
+                if (!httpProxyAgent) {
+                    httpProxyAgent = new HttpProxyAgent(proxyURL, opts)
+                }
+                return httpProxyAgent
             }
-            return httpsAgent
+
+            if (!httpsProxyAgent) {
+                httpsProxyAgent = new HttpsProxyAgent(proxyURL, opts)
+            }
+            return httpsProxyAgent
         }
 
-        if (proxyURL?.startsWith('socks')) {
-            if (!socksProxyAgent) {
-                socksProxyAgent = new SocksProxyAgent(proxyURL, {
-                    keepAlive: true,
-                    keepAliveMsecs: 60000,
-                })
+        const proxyHost = vscode.workspace.getConfiguration('sourcegraph').get<string>('proxyHost')
+        const proxyPort = vscode.workspace.getConfiguration('sourcegraph').get<number>('proxyPort')
+        const proxyPath = (() => {
+            const path = vscode.workspace.getConfiguration('sourcegraph').get<string>('proxyPath')
+            if (path?.startsWith('~/')) {
+                const homeDir = process.env.HOME || process.env.USERPROFILE
+                if (homeDir) {
+                    return path.replace('~/', `${homeDir}/`)
+                }
             }
-            return socksProxyAgent
-        }
-        const proxyEndpoint = parseUrl(proxyURL)
+            return path
+        })()
 
-        const opts = {
-            host: proxyEndpoint.hostname || '',
-            port:
-                (proxyEndpoint.port ? +proxyEndpoint.port : 0) ||
-                (proxyEndpoint.protocol === 'https' ? 443 : 80),
-            auth: proxyEndpoint.auth,
-            rejectUnauthorized: true,
-            keepAlive: true,
-            keepAliveMsecs: 60000,
-            ...https.globalAgent.options,
-        }
-        if (protocol === 'http:') {
-            if (!httpProxyAgent) {
-                httpProxyAgent = new HttpProxyAgent(proxyURL, opts)
-            }
-            return httpProxyAgent
+        if (proxyHost && !proxyPort) {
+            console.error(
+                'proxyHost is set but proxyPort is not. These two settings must be set together.'
+            )
+            return protocol === 'http:' ? httpAgent : httpsAgent
         }
 
-        if (!httpsProxyAgent) {
-            httpsProxyAgent = new HttpsProxyAgent(proxyURL, opts)
+        if (proxyPort && !proxyHost) {
+            console.error(
+                'proxyPort is set but proxyHost is not. These two settings must be set together.'
+            )
+            return protocol === 'http:' ? httpAgent : httpsAgent
         }
-        return httpsProxyAgent
+
+        if (proxyHost || proxyPort || proxyPath) {
+            const agent = new ProxyAgent({
+                protocol: protocol || 'https:',
+                ...(proxyHost ? { host: proxyHost } : null),
+                ...(proxyPort ? { port: proxyPort } : null),
+                ...(proxyPath ? { socketPath: proxyPath } : null),
+            })
+            return agent
+        }
+
+        return protocol === 'http:' ? httpAgent : httpsAgent
     }
+}
+
+function getProtocol(url: URL | string): string | undefined {
+    if (typeof url === 'string') {
+        return url.startsWith('http:') ? 'http' : 'https'
+    }
+
+    if (url.protocol) {
+        return url.protocol === 'http:' ? 'http' : 'https'
+    }
+
+    return undefined
 }
 
 export function setCustomAgent(

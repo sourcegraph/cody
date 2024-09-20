@@ -1232,6 +1232,30 @@
           "type": "boolean",
           "markdownDescription": "[INTERNAL ONLY] Enable all unstable experimental features.",
           "default": false
+        },
+        "sourcegraph.proxyProtocol": {
+          "description": "The protocol to use when proxying requests to the Sourcegraph instance.",
+          "type": "string",
+          "default": "",
+          "examples": ["http", "https"]
+        },
+        "sourcegraph.proxyHost": {
+          "description": "The host to use when proxying requests to the Sourcegraph instance. It shouldn't include a protocol (like \"http://\") or a port (like \":7080\"). When this is set, port must be set as well.",
+          "type": "string",
+          "default": "",
+          "examples": ["localhost", "1.2.3.4"]
+        },
+        "sourcegraph.proxyPort": {
+          "description": "The port to use when proxying requests to the Sourcegraph instance. When this is set, host must be set as well.",
+          "type": "number",
+          "default": 0,
+          "examples": [80, 443, 7080, 9090]
+        },
+        "sourcegraph.proxyPath": {
+          "description": "The full path to a file when proxying requests to the Sourcegraph instance via a UNIX domain socket.",
+          "type": "string",
+          "default": "",
+          "examples": ["/home/user/path/unix.socket"]
         }
       }
     },
@@ -1376,6 +1400,7 @@
     "os-browserify": "^0.3.0",
     "postcss-scss": "^4.0.9",
     "react-intersection-observer": "^9.13.1",
+    "proxy-agent": "^6.4.0",
     "react-markdown": "^9.0.1",
     "rehype-highlight": "^6.0.0",
     "rehype-sanitize": "^6.0.0",
