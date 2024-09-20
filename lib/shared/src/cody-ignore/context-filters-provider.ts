@@ -1,12 +1,12 @@
 import { isEqual } from 'lodash'
 import { LRUCache } from 'lru-cache'
-import { type Observable, map } from 'observable-fns'
+import type { Observable } from 'observable-fns'
 import { RE2JS as RE2 } from 're2js'
 import type * as vscode from 'vscode'
+import { currentAuthStatus } from '../auth/authStatus'
 import { isFileURI } from '../common/uri'
-import { resolvedConfig } from '../configuration/resolver'
 import { logDebug, logError } from '../logger'
-import { type Unsubscribable, fromVSCodeEvent } from '../misc/observable'
+import { fromVSCodeEvent } from '../misc/observable'
 import { isDotCom } from '../sourcegraph-api/environments'
 import { graphqlClient } from '../sourcegraph-api/graphql'
 import {
@@ -105,17 +105,6 @@ export class ContextFiltersProvider implements vscode.Disposable {
     private readonly contextFiltersSubscriber = createSubscriber<ContextFilters>()
     public readonly onContextFiltersChanged = this.contextFiltersSubscriber.subscribe
 
-    private isDotCom = false
-    private configSubscription: Unsubscribable
-
-    constructor() {
-        this.configSubscription = resolvedConfig
-            .pipe(map(config => isDotCom(config.auth.serverEndpoint)))
-            .subscribe(isDotCom => {
-                this.isDotCom = isDotCom
-            })
-    }
-
     // Fetches context filters and updates the cached filter results. Returns
     // 'ephemeral' if the results should be re-queried sooner because they
     // are transient results arising from, say, a network error; or 'durable'
@@ -198,7 +187,7 @@ export class ContextFiltersProvider implements vscode.Disposable {
     }
 
     public async isRepoNameIgnored(repoName: string): Promise<boolean> {
-        if (this.isDotCom) {
+        if (isDotCom(currentAuthStatus())) {
             return false
         }
 
@@ -234,7 +223,7 @@ export class ContextFiltersProvider implements vscode.Disposable {
     }
 
     public async isUriIgnored(uri: vscode.Uri): Promise<IsIgnored> {
-        if (this.isDotCom) {
+        if (isDotCom(currentAuthStatus())) {
             return false
         }
         await this.fetchIfNeeded()
@@ -291,11 +280,13 @@ export class ContextFiltersProvider implements vscode.Disposable {
 
     public dispose(): void {
         this.reset()
-        this.configSubscription.unsubscribe()
     }
 
     private hasAllowEverythingFilters(): boolean {
-        return this.isDotCom || this.lastContextFiltersResponse === INCLUDE_EVERYTHING_CONTEXT_FILTERS
+        return (
+            isDotCom(currentAuthStatus()) ||
+            this.lastContextFiltersResponse === INCLUDE_EVERYTHING_CONTEXT_FILTERS
+        )
     }
 
     private hasIgnoreEverythingFilters() {
