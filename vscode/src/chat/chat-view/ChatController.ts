@@ -33,7 +33,6 @@ import {
     createMessageAPIForExtension,
     currentAuthStatus,
     currentAuthStatusAuthed,
-    currentAuthStatusOrNotReadyYet,
     currentResolvedConfig,
     featureFlagProvider,
     getContextForChatMessage,
@@ -66,6 +65,7 @@ import { captureException } from '@sentry/core'
 import {
     combineLatest,
     createDisposables,
+    firstValueFrom,
     promiseFactoryToObservable,
     subscriptionDisposable,
 } from '@sourcegraph/cody-shared/src/misc/observable'
@@ -620,8 +620,8 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
     }
 
     private async sendConfig(): Promise<void> {
-        const authStatus = currentAuthStatusOrNotReadyYet()
-        if (!authStatus) {
+        const currentAuthStatus = await firstValueFrom(authStatus)
+        if (!currentAuthStatus) {
             return
         }
 
@@ -632,7 +632,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         await this.postMessage({
             type: 'config',
             config: configForWebview,
-            authStatus,
+            authStatus: currentAuthStatus,
             workspaceFolderUris,
             configFeatures: {
                 // If clientConfig is undefined means we were unable to fetch the client configuration -
@@ -643,7 +643,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 attribution: clientConfig?.attributionEnabled ?? false,
                 serverSentModels: clientConfig?.modelsAPIEnabled ?? false,
             },
-            isDotComUser: isDotCom(authStatus),
+            isDotComUser: isDotCom(currentAuthStatus),
         })
         logDebug('ChatController', 'updateViewConfig', {
             verbose: configForWebview,
