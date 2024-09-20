@@ -137,75 +137,89 @@ Overall, the code has a good structure and generally follows sound design princi
 `;
 
 exports[`Agent > Commands > commands/test 1`] = `
-"Based on the provided code context, the codebase is written in TypeScript and uses the Vitest test framework. I will generate a set of unit tests for the \`Animal\` interface in \`src/animal.ts\`.
+"Based on the context provided in \`@src/example.test.ts\` and \`@src/TestClass.ts\`, the test framework in use is \`vitest\`. Here is a suite of multiple unit tests for the functions in \`@src/animal.ts\` using the detected test framework.
 
-Importing the necessary modules:
-\`\`\`typescript
-import { expect, describe, it } from 'vitest'
-import { Animal } from './animal'
-\`\`\`
-Unit tests for \`src/animal.ts\`:
-\`\`\`typescript
-describe('Animal', () => {
-  let animal: Animal
-
-  // Define a base animal with required properties
-  beforeEach(() => {
-    animal = {
-      name: 'Cat',
-      makeAnimalSound: () => 'Meow',
-      isMammal: true,
-    }
-  })
-
-  it('should have a name property of string type', () => {
-    expect(animal.name).toBeTypeOf('string')
-  })
-
-Here is a suite of unit tests for the functions in \`@src/animal.ts:1-6\` using vitest:
-\`\`\`typescript
-import { expect } from 'vitest'
-import { TestClass } from './TestClass'
-import { Animal, isMammal, makeAnimalSound } from './animal'
-
-describe('Animal tests', () => {
-  const testAnimal: Animal = {
-    name: 'Test Animal',
-    makeAnimalSound: () => 'Test Sound',
-    isMammal: true,
-  }
-
-  it('Should have a name property', () => {
-    expect(testAnimal).toHaveProperty('name')
-  })
-
-  it('Should have a makeAnimalSound function', () => {
-    expect(testAnimal).toHaveProperty('makeAnimalSound')
-    expect(typeof testAnimal.makeAnimalSound).toBe('function')
-  })
-
-  it('Should have an isMammal property', () => {
-    expect(testAnimal).toHaveProperty('isMammal')
-    expect(typeof testAnimal.isMammal).toBe('boolean')
-  })
-
-  it('makeAnimalSound should return a string', () => {
-    expect(makeAnimalSound(testAnimal)).toBe('Test Sound')
-  })
-
-  it('isMammal should return true if the animal is a mammal', () => {
-    expect(isMammal(testAnimal)).toBe(true)
-  })
-})
-\`\`\`
 Test coverage:
 
-* Validates that the \`Animal\` interface has the expected properties.
-* Validates that the \`makeAnimalSound\` function returns a string.
-* Validates that the \`isMammal\` function returns the expected boolean value.
+* The \`Animal\` interface has been tested to ensure that all its properties have been properly defined and initialized.
+* The \`makeAnimalSound()\` function has been tested for different animal sounds.
+* The tests cover positive and negative cases, and edge cases for the \`isMammal\` property.
 
 Limitations:
 
-* This test suite assumes that the \`makeAnimalSound\` function and \`isMammal\` function are properly implemented in the source code.
-* Additional tests could be added to check for proper error handling, boundary cases, etc."
+* This is a basic test suite, and additional tests should be added to cover more complex functionality if necessary.
+* It assumes that the implementation of \`isMammal\` property is correct and consistent.
+
+Here's the completed code for the new unit tests:
+\`\`\`typescript
+// @src/animal.test.ts
+import { describe, expect, test } from 'vitest'
+import { Animal } from './animal'
+
+describe('Animal', () => {
+  test('should correctly define name property', () => {
+    const animal: Animal = {
+      name: 'Dog',
+      makeAnimalSound: () => 'Woof woof!',
+      isMammal: true,
+    }
+
+    expect(animal).toHaveProperty('name', 'Dog')
+    expect(animal.name).toBe('Dog')
+  })
+
+  test('should correctly define makeAnimalSound() function', () => {
+    const animal: Animal = {
+      name: 'Dog',
+      makeAnimalSound: () => 'Woof woof!',
+      isMammal: true,
+    }
+
+    expect(animal.makeAnimalSound()).toBe('Woof woof!')
+  })
+
+  test('should correctly define isMammal property', () => {
+    const animal: Animal = {
+      name: 'Dog',
+      makeAnimalSound: () => 'Woof woof!',
+      isMammal: true,
+    }
+
+    expect(animal).toHaveProperty('isMammal', true)
+    expect(animal.isMammal).toBe(true)
+  })
+
+  test('should return false for non-mammals', () => {
+    const animal: Animal = {
+      name: 'Snake',
+      makeAnimalSound: () => 'Hiss',
+      isMammal: false,
+    }
+
+    expect(animal).toHaveProperty('isMammal', false)
+    expect(animal.isMammal).toBe(false)
+  })
+
+  test('should handle undefined or null isMammal property', () => {
+    const animal: Animal = {
+      name: 'Unknown',
+      makeAnimalSound: () => '',
+      isMammal: undefined,
+    }
+
+    const animal2: Animal = {
+      name: 'Unknown',
+      makeAnimalSound: () => '',
+      isMammal: null,
+    }
+
+    expect(animal).toHaveProperty('isMammal', false)
+    expect(animal.isMammal).toBeFalsy()
+
+    expect(animal2).toHaveProperty('isMammal', false)
+    expect(animal2.isMammal).toBeFalsy()
+  })
+})
+\`\`\`
+This code includes imports for testing libraries, uses the \`vitest\` functions \`describe()\` and \`test()\` to organize the tests, and uses \`expect()\` to make assertions about the \`Animal\` interface and its properties. The tests include both positive and negative cases, edge cases, and coverage of the required functionality."
 `;
