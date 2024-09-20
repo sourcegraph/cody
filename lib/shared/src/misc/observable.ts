@@ -132,12 +132,13 @@ function promiseWithResolvers<T>(): {
 /**
  * @internal For testing only.
  */
-export function readValuesFrom<T>(observable: Observable<T>): {
-    values: T[]
+export function readValuesFrom<T>(observable: Observable<T>): Readonly<{
+    values: ReadonlyArray<T>
+    clearValues(): void
     done: Promise<void>
     unsubscribe(): void
     status: () => 'pending' | 'complete' | 'error' | 'unsubscribed'
-} {
+}> {
     const values: T[] = []
     const { promise, resolve, reject } = promiseWithResolvers<void>()
     let status: ReturnType<ReturnType<typeof readValuesFrom<T>>['status']> = 'pending'
@@ -154,6 +155,9 @@ export function readValuesFrom<T>(observable: Observable<T>): {
     })
     const result: ReturnType<typeof readValuesFrom<T>> = {
         values,
+        clearValues: () => {
+            values.length = 0
+        },
         done: promise,
         unsubscribe: () => {
             subscription.unsubscribe()

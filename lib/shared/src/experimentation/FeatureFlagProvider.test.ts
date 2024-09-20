@@ -79,7 +79,7 @@ describe('FeatureFlagProvider', () => {
         }): Promise<void> {
             vitest.useFakeTimers()
 
-            const { values, done, unsubscribe } = readValuesFrom(
+            const { values, clearValues, done, unsubscribe } = readValuesFrom(
                 featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.TestFlagDoNotUse)
             )
             unsubscribeAfter = unsubscribe
@@ -87,7 +87,7 @@ describe('FeatureFlagProvider', () => {
             // Test the initial emissions.
             await vi.runOnlyPendingTimersAsync()
             expect(values).toEqual<typeof values>(expectInitialValues)
-            values.length = 0
+            clearValues()
 
             if (!updateMocks) {
                 return
@@ -98,7 +98,7 @@ describe('FeatureFlagProvider', () => {
             featureFlagProvider.refresh()
             await vi.runOnlyPendingTimersAsync()
             expect(values).toEqual<typeof values>(expectFinalValues!)
-            values.length = 0
+            clearValues()
 
             // Ensure there are no emissions after unsubscribing.
             unsubscribe()
@@ -198,14 +198,14 @@ describe('FeatureFlagProvider', () => {
                 .spyOn(graphqlClient, 'evaluateFeatureFlag')
                 .mockResolvedValue(true)
 
-            const { values, unsubscribe } = readValuesFrom(
+            const { values, clearValues, unsubscribe } = readValuesFrom(
                 featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.TestFlagDoNotUse)
             )
             unsubscribeAfter = unsubscribe
 
             await vi.runOnlyPendingTimersAsync()
             expect(values).toStrictEqual<typeof values>([true])
-            values.length = 0
+            clearValues()
             expect(getEvaluatedFeatureFlagsMock).toHaveBeenCalledTimes(1)
             expect(evaluateFeatureFlagMock).toHaveBeenCalledTimes(1)
 
