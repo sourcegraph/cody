@@ -205,11 +205,11 @@ log:
         send: 0
         ssl: -1
         wait: 1029
-    - _id: 820c56d277c7b94198495dbccdf71edd
+    - _id: 7298139ac793ab47dfffec58bfb59ee0
       _order: 0
       cache: {}
       request:
-        bodySize: 913
+        bodySize: 946
         cookies: []
         headers:
           - name: accept-encoding
@@ -222,7 +222,7 @@ log:
           - name: content-type
             value: application/json
           - name: user-agent
-            value: cody-cli/6.0.0-SNAPSHOT (Node.js v20.4.0)
+            value: cody-cli/6.0.0-SNAPSHOT (Node.js v23.7.0)
           - name: x-requested-with
             value: cody-cli 6.0.0-SNAPSHOT
           - name: host
@@ -244,7 +244,9 @@ log:
                   structure: ```$LANGUAGE:$FILEPATH```
 
                   For executable terminal commands: enclose each command in individual "bash" language code block without comments and new lines inside.
-              - speaker: human
+              - cacheEnabled: true
+                content: ""
+                speaker: human
                 text: |-
                   Codebase context from file animal.ts:
                   ```typescript:animal.ts
@@ -276,36 +278,30 @@ log:
             value: 6.0.0-SNAPSHOT
         url: https://sourcegraph.sourcegraph.com/.api/completions/stream?api-version=2&client-name=jetbrains&client-version=6.0.0-SNAPSHOT
       response:
-        bodySize: 458
+        bodySize: 30
         content:
-          mimeType: text/event-stream
-          size: 458
-          text: >+
-            event: completion
-
-            data: {"deltaText":"```typescript:animal.ts\nclass Cow implements StrangeAnimal {\n    makesSound(): 'coo' | 'moo' {\n        return 'moo'\n    }\n}\n```","stopReason":"end_turn"}
-
-
-            event: done
-
-            data: {}
-
+          mimeType: text/plain; charset=utf-8
+          size: 30
+          text: |
+            could not decode request body
         cookies: []
         headers:
           - name: date
-            value: Tue, 24 Dec 2024 01:23:12 GMT
+            value: Fri, 21 Feb 2025 20:48:30 GMT
           - name: content-type
-            value: text/event-stream
-          - name: transfer-encoding
-            value: chunked
+            value: text/plain; charset=utf-8
+          - name: content-length
+            value: "30"
           - name: connection
             value: keep-alive
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
             value: ""
           - name: cache-control
-            value: no-cache
+            value: no-cache, max-age=0
           - name: vary
             value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
               Cookie
@@ -315,15 +311,13 @@ log:
             value: DENY
           - name: x-xss-protection
             value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1215
+        headersSize: 1400
         httpVersion: HTTP/1.1
         redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2024-12-24T01:23:11.527Z
-      time: 1087
+        status: 400
+        statusText: Bad Request
+      startedDateTime: 2025-02-21T20:48:29.453Z
+      time: 515
       timings:
         blocked: -1
         connect: -1
@@ -331,7 +325,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 1087
+        wait: 515
     - _id: 41376641b9273b25289527160cfac275
       _order: 0
       cache: {}
@@ -349,7 +343,7 @@ log:
           - name: content-type
             value: application/json
           - name: user-agent
-            value: cody-cli/6.0.0-SNAPSHOT (Node.js v20.4.0)
+            value: cody-cli/6.0.0-SNAPSHOT (Node.js v23.7.0)
           - name: x-requested-with
             value: cody-cli 6.0.0-SNAPSHOT
           - name: host
@@ -404,14 +398,14 @@ log:
             value: 6.0.0-SNAPSHOT
         url: https://sourcegraph.sourcegraph.com/.api/completions/stream?api-version=2&client-name=jetbrains&client-version=6.0.0-SNAPSHOT
       response:
-        bodySize: 584
+        bodySize: 455
         content:
           mimeType: text/event-stream
-          size: 584
+          size: 455
           text: >+
             event: completion
 
-            data: {"deltaText":"```typescript:animal.ts\nclass Cow implements StrangeAnimal {\n    makesSound(): 'coo' | 'moo' {\n        return 'moo'\n    }\n}\n```","stopReason":"end_turn"}
+            data: {"deltaText":"```typescript:cow.ts\nclass Cow implements StrangeAnimal {\n    makesSound(): 'coo' | 'moo' {\n        return 'moo'\n    }\n}\n```","stopReason":"end_turn"}
 
 
             event: done
@@ -421,7 +415,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 10 Feb 2025 19:57:13 GMT
+            value: Fri, 21 Feb 2025 20:48:31 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -450,8 +444,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-02-10T19:57:12.335Z
-      time: 1562
+      startedDateTime: 2025-02-21T20:48:29.981Z
+      time: 1841
       timings:
         blocked: -1
         connect: -1
@@ -459,12 +453,12 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 1562
-    - _id: 6741338783b12102515ff194583b6c5a
+        wait: 1841
+    - _id: 4e18273d8ae5cff5662ebe8b0c813b4e
       _order: 0
       cache: {}
       request:
-        bodySize: 455
+        bodySize: 463
         cookies: []
         headers:
           - name: accept-encoding
@@ -477,12 +471,12 @@ log:
           - name: content-type
             value: application/json
           - name: user-agent
-            value: cody-cli/6.0.0-SNAPSHOT (Node.js v20.4.0)
+            value: cody-cli/6.0.0-SNAPSHOT (Node.js v23.7.0)
           - name: x-requested-with
             value: cody-cli 6.0.0-SNAPSHOT
           - name: host
             value: sourcegraph.sourcegraph.com
-        headersSize: 497
+        headersSize: 509
         httpVersion: HTTP/1.1
         method: POST
         postData:
@@ -494,7 +488,7 @@ log:
               - speaker: human
                 text: >-
                   You are Cody, an AI coding assistant from Sourcegraph. Your
-                  task is to generate a concise title (<10 words without
+                  task is to generate a concise title (in about 10 words without
                   quotation) for <codyUserInput>respond with "hello" and nothing
                   else</codyUserInput>.
                           RULE: Your response should only contain the concise title and nothing else.
@@ -510,28 +504,20 @@ log:
             value: 6.0.0-SNAPSHOT
         url: https://sourcegraph.sourcegraph.com/.api/completions/stream?client-name=jetbrains&client-version=6.0.0-SNAPSHOT
       response:
-        bodySize: 162
+        bodySize: 22
         content:
-          mimeType: text/event-stream
-          size: 162
-          text: >+
-            event: completion
-
-            data: {"completion":"Simple Hello World Program\n","stopReason":"STOP"}
-
-
-            event: done
-
-            data: {}
-
+          mimeType: text/plain; charset=utf-8
+          size: 22
+          text: |
+            Invalid access token.
         cookies: []
         headers:
           - name: date
-            value: Fri, 14 Feb 2025 18:08:09 GMT
+            value: Fri, 21 Feb 2025 18:59:04 GMT
           - name: content-type
-            value: text/event-stream
-          - name: transfer-encoding
-            value: chunked
+            value: text/plain; charset=utf-8
+          - name: content-length
+            value: "22"
           - name: connection
             value: keep-alive
           - name: access-control-allow-credentials
@@ -539,10 +525,9 @@ log:
           - name: access-control-allow-origin
             value: ""
           - name: cache-control
-            value: no-cache
+            value: no-cache, max-age=0
           - name: vary
-            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
-              Cookie
+            value: Accept-Encoding, Authorization
           - name: x-content-type-options
             value: nosniff
           - name: x-frame-options
@@ -551,13 +536,13 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1390
+        headersSize: 1352
         httpVersion: HTTP/1.1
         redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2025-02-14T18:08:08.574Z
-      time: 581
+        status: 401
+        statusText: Unauthorized
+      startedDateTime: 2025-02-21T18:59:04.072Z
+      time: 275
       timings:
         blocked: -1
         connect: -1
@@ -565,12 +550,12 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 581
-    - _id: 409083f334c421e1c05d1b22bdf9ef37
+        wait: 275
+    - _id: 1a932680a38d2702c78d0d744e3cc0a6
       _order: 0
       cache: {}
       request:
-        bodySize: 477
+        bodySize: 485
         cookies: []
         headers:
           - name: accept-encoding
@@ -583,12 +568,12 @@ log:
           - name: content-type
             value: application/json
           - name: user-agent
-            value: cody-cli/6.0.0-SNAPSHOT (Node.js v20.4.0)
+            value: cody-cli/6.0.0-SNAPSHOT (Node.js v23.7.0)
           - name: x-requested-with
             value: cody-cli 6.0.0-SNAPSHOT
           - name: host
             value: sourcegraph.sourcegraph.com
-        headersSize: 497
+        headersSize: 509
         httpVersion: HTTP/1.1
         method: POST
         postData:
@@ -600,7 +585,7 @@ log:
               - speaker: human
                 text: >-
                   You are Cody, an AI coding assistant from Sourcegraph. Your
-                  task is to generate a concise title (<10 words without
+                  task is to generate a concise title (in about 10 words without
                   quotation) for <codyUserInput>implement a cow. Only print the
                   code without any explanation.</codyUserInput>.
                           RULE: Your response should only contain the concise title and nothing else.
@@ -616,28 +601,20 @@ log:
             value: 6.0.0-SNAPSHOT
         url: https://sourcegraph.sourcegraph.com/.api/completions/stream?client-name=jetbrains&client-version=6.0.0-SNAPSHOT
       response:
-        bodySize: 157
+        bodySize: 22
         content:
-          mimeType: text/event-stream
-          size: 157
-          text: >+
-            event: completion
-
-            data: {"completion":"Cow Class Implementation\n","stopReason":"STOP"}
-
-
-            event: done
-
-            data: {}
-
+          mimeType: text/plain; charset=utf-8
+          size: 22
+          text: |
+            Invalid access token.
         cookies: []
         headers:
           - name: date
-            value: Fri, 14 Feb 2025 18:08:09 GMT
+            value: Fri, 21 Feb 2025 18:59:04 GMT
           - name: content-type
-            value: text/event-stream
-          - name: transfer-encoding
-            value: chunked
+            value: text/plain; charset=utf-8
+          - name: content-length
+            value: "22"
           - name: connection
             value: keep-alive
           - name: access-control-allow-credentials
@@ -645,10 +622,9 @@ log:
           - name: access-control-allow-origin
             value: ""
           - name: cache-control
-            value: no-cache
+            value: no-cache, max-age=0
           - name: vary
-            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
-              Cookie
+            value: Accept-Encoding, Authorization
           - name: x-content-type-options
             value: nosniff
           - name: x-frame-options
@@ -657,13 +633,13 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1390
+        headersSize: 1352
         httpVersion: HTTP/1.1
         redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2025-02-14T18:08:08.634Z
-      time: 523
+        status: 401
+        statusText: Unauthorized
+      startedDateTime: 2025-02-21T18:59:04.108Z
+      time: 367
       timings:
         blocked: -1
         connect: -1
@@ -671,7 +647,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 523
+        wait: 367
     - _id: 5d0e29776bf0857beffb22b778ce488b
       _order: 0
       cache: {}

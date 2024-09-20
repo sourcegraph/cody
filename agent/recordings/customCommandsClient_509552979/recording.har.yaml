@@ -92,151 +92,6 @@ log:
         send: 0
         ssl: -1
         wait: 140
-    - _id: 4bfefedb3f90faa353028c264eb49431
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 1369
-        cookies: []
-        headers:
-          - name: accept-encoding
-            value: gzip;q=0
-          - name: authorization
-            value: token
-              REDACTED_fc324d3667e841181b0779375f26dedc911d26b303d23b29b1a2d7ee63dc77eb
-          - name: connection
-            value: keep-alive
-          - name: content-type
-            value: application/json
-          - name: traceparent
-            value: 00-30b84f0ffd899933d4bb803353355cf4-39ba1f290aa65d5f-01
-          - name: user-agent
-            value: customcommandsclient/v1 (Node.js v20.4.0)
-          - name: x-requested-with
-            value: customcommandsclient v1
-          - name: host
-            value: sourcegraph.com
-        headersSize: 556
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json
-          params: []
-          textJSON:
-            maxTokensToSample: 4000
-            messages:
-              - speaker: system
-                text: >-
-                  You are Cody, an AI coding assistant from Sourcegraph.If your
-                  answer contains fenced code blocks in Markdown, include the
-                  relevant full file path in the code block tag using this
-                  structure: ```$LANGUAGE:$FILEPATH```
-
-                  For executable terminal commands: enclose each command in individual "bash" language code block without comments and new lines inside.
-              - speaker: human
-                text: >
-                  Codebase context from file path src/example3.ts: export
-                  function example(): string {
-                      return 'example'
-                  }
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: >
-                  Codebase context from file path src/example2.ts: export
-                  function example(): string {
-                      return 'example'
-                  }
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: |-
-                  My selected code from codebase file src/example1.ts:1-3:
-                  ```
-                  export function example(): string {
-                      return 'example'
-                  }
-                  ```
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: >-
-                  Answer positively without apologizing. 
-
-
-                  You have access to the provided codebase context.
-
-
-                  Question: Give me the names of the files I have shared with you so far. Format the response as a bulleted list. Only include the raw filename, no extra formatting like quotes.
-            model: anthropic::2024-10-22::claude-3-5-sonnet-latest
-            temperature: 0
-            topK: -1
-            topP: -1
-        queryString:
-          - name: api-version
-            value: "2"
-          - name: client-name
-            value: customcommandsclient
-          - name: client-version
-            value: v1
-        url: https://sourcegraph.com/.api/completions/stream?api-version=2&client-name=customcommandsclient&client-version=v1
-      response:
-        bodySize: 385
-        content:
-          mimeType: text/event-stream
-          size: 385
-          text: >+
-            event: completion
-
-            data: {"deltaText":"Here are all the files you've shared:\n• src/example1.ts  \n• src/example2.ts\n• src/example3.ts","stopReason":"end_turn"}
-
-
-            event: done
-
-            data: {}
-
-        cookies: []
-        headers:
-          - name: date
-            value: Fri, 27 Dec 2024 20:37:45 GMT
-          - name: content-type
-            value: text/event-stream
-          - name: transfer-encoding
-            value: chunked
-          - name: connection
-            value: keep-alive
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache
-          - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
-              X-Requested-With,Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1299
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2024-12-27T20:37:42.816Z
-      time: 2505
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 2505
     - _id: a7ca6c95372e671983c6e55fea1c3f54
       _order: 0
       cache: {}
@@ -350,6 +205,149 @@ log:
         send: 0
         ssl: -1
         wait: 808
+    - _id: 3aa4acc79d9007abb621198768524716
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 1468
+        cookies: []
+        headers:
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_fc324d3667e841181b0779375f26dedc911d26b303d23b29b1a2d7ee63dc77eb
+          - name: connection
+            value: keep-alive
+          - name: content-type
+            value: application/json
+          - name: traceparent
+            value: 00-3105dffa6e279e5f83b167b9df9cc664-c46e9cc7a401f12e-01
+          - name: user-agent
+            value: customcommandsclient/v1 (Node.js v23.7.0)
+          - name: x-requested-with
+            value: customcommandsclient v1
+          - name: host
+            value: sourcegraph.com
+        headersSize: 556
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 4000
+            messages:
+              - speaker: system
+                text: >-
+                  You are Cody, an AI coding assistant from Sourcegraph.If your
+                  answer contains fenced code blocks in Markdown, include the
+                  relevant full file path in the code block tag using this
+                  structure: ```$LANGUAGE:$FILEPATH```
+
+                  For executable terminal commands: enclose each command in individual "bash" language code block without comments and new lines inside.
+              - cacheEnabled: true
+                content: ""
+                speaker: human
+                text: >
+                  Codebase context from file path src/example3.ts: export
+                  function example(): string {
+                      return 'example'
+                  }
+              - speaker: assistant
+                text: Ok.
+              - cacheEnabled: true
+                content: ""
+                speaker: human
+                text: >
+                  Codebase context from file path src/example2.ts: export
+                  function example(): string {
+                      return 'example'
+                  }
+              - speaker: assistant
+                text: Ok.
+              - cacheEnabled: true
+                content: ""
+                speaker: human
+                text: |-
+                  My selected code from codebase file src/example1.ts:1-3:
+                  ```
+                  export function example(): string {
+                      return 'example'
+                  }
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >-
+                  Answer positively without apologizing. 
+
+
+                  You have access to the provided codebase context.
+
+
+                  Question: Give me the names of the files I have shared with you so far. Format the response as a bulleted list. Only include the raw filename, no extra formatting like quotes.
+            model: anthropic::2024-10-22::claude-3-5-sonnet-latest
+            temperature: 0
+            topK: -1
+            topP: -1
+        queryString:
+          - name: api-version
+            value: "2"
+          - name: client-name
+            value: customcommandsclient
+          - name: client-version
+            value: v1
+        url: https://sourcegraph.com/.api/completions/stream?api-version=2&client-name=customcommandsclient&client-version=v1
+      response:
+        bodySize: 30
+        content:
+          mimeType: text/plain; charset=utf-8
+          size: 30
+          text: |
+            could not decode request body
+        cookies: []
+        headers:
+          - name: date
+            value: Fri, 21 Feb 2025 20:49:18 GMT
+          - name: content-type
+            value: text/plain; charset=utf-8
+          - name: content-length
+            value: "30"
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache, max-age=0
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1310
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 400
+        statusText: Bad Request
+      startedDateTime: 2025-02-21T20:49:18.094Z
+      time: 271
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 271
     - _id: 7f72c116f78d7588d22fe948c059381b
       _order: 0
       cache: {}
@@ -367,9 +365,9 @@ log:
           - name: content-type
             value: application/json
           - name: traceparent
-            value: 00-aeba78fadea4c98c4a53e0743172074b-b59daec458ea02cb-01
+            value: 00-008a3ddb44fa2572452ca602c62efb8f-3182ff18c57b1566-01
           - name: user-agent
-            value: customcommandsclient/v1 (Node.js v20.4.0)
+            value: customcommandsclient/v1 (Node.js v23.7.0)
           - name: x-requested-with
             value: customcommandsclient v1
           - name: host
@@ -485,7 +483,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 10 Feb 2025 19:57:13 GMT
+            value: Fri, 21 Feb 2025 20:49:20 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -514,8 +512,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-02-10T19:57:11.529Z
-      time: 1766
+      startedDateTime: 2025-02-21T20:49:18.408Z
+      time: 1749
       timings:
         blocked: -1
         connect: -1
@@ -523,7 +521,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 1766
+        wait: 1749
     - _id: c9c5b45f95029b259a84cd726de59a01
       _order: 0
       cache: {}
@@ -541,9 +539,9 @@ log:
           - name: content-type
             value: application/json
           - name: traceparent
-            value: 00-89c8a378d827e06424ac34ea658fe332-ae5725fefad9db64-01
+            value: 00-c29880baeb29cef2e3c15194bcb7bd68-8fabf66120573755-01
           - name: user-agent
-            value: customcommandsclient/v1 (Node.js v20.4.0)
+            value: customcommandsclient/v1 (Node.js v23.7.0)
           - name: x-requested-with
             value: customcommandsclient v1
           - name: host
@@ -644,15 +642,13 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Tue, 11 Feb 2025 18:54:44 GMT
+            value: Fri, 21 Feb 2025 20:49:22 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
             value: chunked
           - name: connection
             value: keep-alive
-          - name: retry-after
-            value: "67"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -670,13 +666,13 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1405
+        headersSize: 1299
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-02-11T18:54:42.446Z
-      time: 1894
+      startedDateTime: 2025-02-21T20:49:20.172Z
+      time: 2466
       timings:
         blocked: -1
         connect: -1
@@ -684,7 +680,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 1894
+        wait: 2466
     - _id: 82aefa70a5ee53eee9a9b81eefc59c60
       _order: 0
       cache: {}
@@ -702,9 +698,9 @@ log:
           - name: content-type
             value: application/json
           - name: traceparent
-            value: 00-00ff2202f4b178a0c3ada66f2d21ba34-48a16ab077ec4be1-01
+            value: 00-cabdedc0089482d1f9ec7e773453a58a-a0fc44d5f965e09c-01
           - name: user-agent
-            value: customcommandsclient/v1 (Node.js v20.4.0)
+            value: customcommandsclient/v1 (Node.js v23.7.0)
           - name: x-requested-with
             value: customcommandsclient v1
           - name: host
@@ -801,14 +797,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=2&client-name=customcommandsclient&client-version=v1
       response:
-        bodySize: 451
+        bodySize: 501
         content:
           mimeType: text/event-stream
-          size: 451
+          size: 501
           text: >+
             event: completion
 
-            data: {"deltaText":"export interface Animal {\n    name: string\n    makeAnimalSound(): string\n    isMammal: boolean\n    logName(): void\n}","stopReason":"stop_sequence"}
+            data: {"deltaText":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string\n    isMammal: boolean\n    logAnimalName(): void\n}\n/* SELECTION_END */","stopReason":"stop_sequence"}
 
 
             event: done
@@ -818,15 +814,13 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Tue, 11 Feb 2025 18:54:46 GMT
+            value: Fri, 21 Feb 2025 20:49:25 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
             value: chunked
           - name: connection
             value: keep-alive
-          - name: retry-after
-            value: "65"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -844,13 +838,13 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1405
+        headersSize: 1299
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2025-02-11T18:54:44.359Z
-      time: 1762
+      startedDateTime: 2025-02-21T20:49:22.659Z
+      time: 2518
       timings:
         blocked: -1
         connect: -1
@@ -858,7 +852,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 1762
+        wait: 2518
     - _id: f1b1cde4cd57488b7f0137954f0302f5
       _order: 0
       cache: {}

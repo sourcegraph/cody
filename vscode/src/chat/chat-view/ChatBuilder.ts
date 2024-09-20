@@ -157,7 +157,7 @@ export class ChatBuilder {
         if (this.messages.at(-1)?.speaker === 'human') {
             throw new Error('Cannot add a user message after a user message')
         }
-        this.messages.push({ ...message, speaker: 'human' })
+        this.messages.push({ ...message, speaker: 'human', base64Image: this.getAndResetImage() })
         this.changeNotifications.next()
     }
 
@@ -329,6 +329,31 @@ export class ChatBuilder {
             interactions,
         }
         return result
+    }
+
+    /**
+     * Store the base64-encoded image uploaded by user to a multi-modal model.
+     * Requires vision support in the model, added in the PR
+     * https://github.com/sourcegraph/sourcegraph/pull/546
+     */
+    private image: string | undefined = undefined
+
+    /**
+     * Sets the base64-encoded image for the chat model.
+     * @param base64Image - The base64-encoded image data to set.
+     */
+    public setImage(base64Image: string): void {
+        this.image = base64Image
+    }
+
+    /**
+     * Gets the base64-encoded image for the chat model and resets the internal image property to undefined.
+     * @returns The base64-encoded image, or undefined if no image has been set.
+     */
+    public getAndResetImage(): string | undefined {
+        const image = this.image
+        this.image = undefined
+        return image
     }
 }
 

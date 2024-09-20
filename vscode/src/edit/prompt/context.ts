@@ -71,12 +71,15 @@ const getContextFromIntent = async ({
                         uri,
                         PROMPT_TOPICS.OUTPUT
                     ),
+                    content: '',
+                    base64Image: '',
                     file: {
                         type: 'file',
                         uri,
                         source: ContextItemSource.Editor,
                         range: new vscode.Range(prefix.range.start, suffix.range.end),
                     },
+                    cacheEnabled: true,
                 },
             ]
         }
@@ -96,6 +99,9 @@ const getContextFromIntent = async ({
                     speaker: 'human',
                     text: populateCodeContextTemplate(truncatedPrecedingText, uri, undefined, 'edit'),
                     file: { type: 'file', uri, source: ContextItemSource.Editor, range: prefix.range },
+                    content: '',
+                    base64Image: '',
+                    cacheEnabled: true,
                 })
             }
             if (truncatedFollowingText.trim().length > 0) {
@@ -103,6 +109,9 @@ const getContextFromIntent = async ({
                     speaker: 'human',
                     text: populateCodeContextTemplate(truncatedFollowingText, uri, undefined, 'edit'),
                     file: { type: 'file', uri, source: ContextItemSource.Editor, range: suffix.range },
+                    content: '',
+                    base64Image: '',
+                    cacheEnabled: true,
                 })
             }
             return contextMessages
@@ -125,6 +134,9 @@ const getContextFromIntent = async ({
                             speaker: 'human' as const,
                             text: populateCurrentEditorDiagnosticsTemplate(diagnostic, uri),
                             file: { type: 'file', uri, source: ContextItemSource.Editor },
+                            content: '',
+                            base64Image: '',
+                            cacheEnabled: true,
                         }) satisfies ContextMessage
                 ),
                 ...[truncatedPrecedingText, truncatedFollowingText]
@@ -135,6 +147,9 @@ const getContextFromIntent = async ({
                                 speaker: 'human' as const,
                                 text: populateCodeContextTemplate(text, uri, undefined, 'edit'),
                                 file: { type: 'file', uri, source: ContextItemSource.Editor },
+                                content: '',
+                                base64Image: '',
+                                cacheEnabled: true,
                             }) satisfies ContextMessage
                     ),
             ]

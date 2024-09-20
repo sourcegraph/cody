@@ -141,6 +141,7 @@ describe('getConfiguration', () => {
                     case 'cody.auth.externalProviders':
                         return []
                     case 'cody.rules.enabled':
+                    case 'cody.experimental.imageUpload':
                         return false
                     default:
                         assert(false, `unexpected key: ${key}`)
@@ -212,6 +213,7 @@ describe('getConfiguration', () => {
             overrideServerEndpoint: undefined,
             authExternalProviders: [],
             rulesEnabled: false,
+            experimentalImageUpload: false,
         } satisfies ClientConfiguration)
     })
 })

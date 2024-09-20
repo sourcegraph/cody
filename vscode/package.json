@@ -1067,6 +1067,12 @@
           "markdownDescription": "Enable OpenTelemetry tracing",
           "default": false
         },
+        "cody.experimental.imageUpload": {
+          "order": 99,
+          "type": "boolean",
+          "markdownDescription": "Enable image support",
+          "default": false
+        },
         "cody.experimental.commitMessage": {
           "order": 99,
           "type": "boolean",

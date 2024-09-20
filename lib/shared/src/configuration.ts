@@ -135,6 +135,7 @@ interface RawClientConfiguration {
     experimentalMinionAnthropicKey: string | undefined
     experimentalNoxideEnabled: boolean
     experimentalGuardrailsTimeoutSeconds: number | undefined
+    experimentalImageUpload: boolean
 
     rulesEnabled?: boolean | undefined
 

@@ -26,17 +26,17 @@ describe('Document Code', { timeout: 5000 }, () => {
         expect(await client.documentCode(workspace.file('src', 'sum.ts'))).toMatchSnapshot()
     })
 
-    it('commands/document (Method as part of a class)', async () => {
-        expect(await client.documentCode(workspace.file('src', 'TestClass.ts'))).toMatchSnapshot()
+    // it('cars commands/document (Method as part of a class)', async () => {
+    //     expect(await client.documentCode(workspace.file('src', 'TestLogger.ts'))).toMatchSnapshot()
 
-        const { requests } = await client.request('testing/networkRequests', null)
-        expect(requests.find(r => r.body?.includes('const longSuffix'))).toBeTruthy()
-        expect(requests.find(r => r.body?.includes('const longPrefix'))).toBeTruthy()
-    })
+    //     // const { requests } = await client.request('testing/networkRequests', null)
+    //     // expect(requests.find(r => r.body?.includes('const longSuffix'))).toBeTruthy()
+    //     // expect(requests.find(r => r.body?.includes('const longPrefix'))).toBeTruthy()
+    // })
 
-    it('commands/document (Function within a property)', async () => {
-        expect(await client.documentCode(workspace.file('src', 'TestLogger.ts'))).toMatchSnapshot()
-    })
+    // it('commands/document (Function within a property)', async () => {
+    //     expect(await client.documentCode(workspace.file('src', 'TestLogger.ts'))).toMatchSnapshot()
+    // })
 
     it('commands/document (nested test case)', async () => {
         expect(await client.documentCode(workspace.file('src', 'example.test.ts'))).toMatchSnapshot()

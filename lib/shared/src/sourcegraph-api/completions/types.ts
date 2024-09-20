@@ -24,6 +24,8 @@ export interface Message {
     // mirrors what OpenAI and Anthropic expect
     text?: PromptString
     cacheEnabled?: boolean | null
+    content?: string | MessagePart[]
+    base64Image?: string
 }
 
 export interface CompletionUsage {
@@ -43,6 +45,10 @@ export interface CompletionResponse {
     thinking?: string
     stopReason?: string
 }
+
+type MessagePart =
+    | { type: 'text'; text: string } // a normal text message
+    | { type: 'image_url'; image_url: { url: string } } // image message, per https://platform.openai.com/docs/guides/vision
 
 export interface CompletionParameters {
     fast?: boolean

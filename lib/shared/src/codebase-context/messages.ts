@@ -272,7 +272,7 @@ export interface ContextMessage extends Required<Omit<Message, 'cacheEnabled'>> 
      * The context item that this message introduces into the conversation.
      */
     file: ContextItem
-    cacheEnabled?: boolean | null
+    cacheEnabled: boolean
 }
 
 export const GENERAL_HELP_LABEL = 'Search for a file to include, or type # for symbols...'

@@ -952,4 +952,5 @@ export const DEFAULT_VSCODE_SETTINGS = {
     overrideServerEndpoint: undefined,
     authExternalProviders: [],
     rulesEnabled: false,
+    experimentalImageUpload: false,
 } satisfies ClientConfiguration

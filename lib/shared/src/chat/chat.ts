@@ -62,13 +62,14 @@ export class ChatClient {
 
         // We only want to send up the speaker and prompt text, regardless of whatever other fields
         // might be on the messages objects (`file`, `displayText`, `contextFiles`, etc.).
-        const messagesToSend = augmentedMessages.map(({ speaker, text, cacheEnabled }) => ({
+        const messagesToSend = augmentedMessages.map(({ speaker, text, cacheEnabled, content }) => ({
             text,
             speaker,
             cacheEnabled,
+            content,
         }))
 
-        const completionParams = {
+        const completionParams: CompletionParameters = {
             ...DEFAULT_CHAT_COMPLETION_PARAMETERS,
             ...params,
             messages: messagesToSend,
@@ -113,8 +114,8 @@ export function sanitizeMessages(messages: Message[]): Message[] {
         // the next one
         const nextMessage = sanitizedMessages[index + 1]
         if (
-            (nextMessage.speaker === 'assistant' && !nextMessage.text?.length) ||
-            (message.speaker === 'assistant' && !message.text?.length)
+            (nextMessage.speaker === 'assistant' && !nextMessage.text?.length && !nextMessage.content) ||
+            (message.speaker === 'assistant' && !message.text?.length && !message.content)
         ) {
             return false
         }

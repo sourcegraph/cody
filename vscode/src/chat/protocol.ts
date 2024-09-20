@@ -157,6 +157,7 @@ export type WebviewMessage =
       }
     | { command: 'action/confirmation'; id: string; response: boolean }
     | { command: 'devicePixelRatio'; devicePixelRatio: number }
+    | { command: 'chat/upload-file'; base64: string }
 
 export interface SmartApplyResult {
     taskId: FixupTaskID

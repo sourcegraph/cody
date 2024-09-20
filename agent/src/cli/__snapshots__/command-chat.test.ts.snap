@@ -11,7 +11,7 @@ stdout: |+
 
 
 
-  \`\`\`typescript:animal.ts
+  \`\`\`typescript:cow.ts
   class Cow implements StrangeAnimal {
       makesSound(): 'coo' | 'moo' {
           return 'moo'
@@ -34,30 +34,7 @@ stdout: |+
 
 
 
-  \`\`\`typescript:animal.ts
-  class Cow implements StrangeAnimal {
-      makesSound(): 'coo' | 'moo' {
-          return 'moo'
-      }
-  }
-  \`\`\`
-
-stderr: ""
-"
-`;
-
-exports[`--context-file (animal test) 3`] = `
-"command: cody chat chat --context-file animal.ts --show-context -m implement a
-  cow. Only print the code without any explanation.
-exitCode: 0
-stdout: |+
-  > Context items:
-
-  > 1. WORKING_DIRECTORY/animal.ts
-
-
-
-  \`\`\`typescript:animal.ts
+  \`\`\`typescript:cow.ts
   class Cow implements StrangeAnimal {
       makesSound(): 'coo' | 'moo' {
           return 'moo'
