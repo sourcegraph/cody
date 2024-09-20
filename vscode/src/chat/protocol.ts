@@ -156,6 +156,7 @@ export type WebviewMessage =
           selectedFilters: NLSSearchDynamicFilter[]
       }
     | { command: 'action/confirmation'; id: string; response: boolean }
+    | { command: 'chat/upload-file'; base64: string }
 
 export interface SmartApplyResult {
     taskId: FixupTaskID

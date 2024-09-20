@@ -33,6 +33,7 @@ export class PromptBuilder {
      * A list of context items that are used to build context messages.
      */
     public contextItems: ContextItem[] = []
+    public images: string[] = []
 
     /**
      * Convenience constructor because loading the tokenizer is async due to its large size.
@@ -47,8 +48,27 @@ export class PromptBuilder {
         if (this.contextItems.length > 0) {
             this.buildContextMessages()
         }
-
+        this.buildImageMessages()
         return this.prefixMessages.concat([...this.reverseMessages].reverse())
+    }
+
+    private buildImageMessages(): void {
+        for (const image of this.images) {
+            // Detect image type from the base64 header
+            const imageType = detectImageType(image)
+            const imageMessage: Message = {
+                speaker: 'human',
+                content: [
+                    {
+                        type: 'image_url',
+                        image_url: {
+                            url: `data:${imageType};base64,${image}`,
+                        },
+                    },
+                ],
+            }
+            this.reverseMessages.push(...[ASSISTANT_MESSAGE, imageMessage])
+        }
     }
 
     private buildContextMessages(): void {
@@ -106,6 +126,12 @@ export class PromptBuilder {
         }
         // All messages were added successfully.
         return undefined
+    }
+
+    public tryAddImage(base64Image: string | undefined): void {
+        if (base64Image) {
+            this.images.push(base64Image)
+        }
     }
 
     public async tryAddContext(
@@ -188,4 +214,19 @@ export class PromptBuilder {
         )
         return result
     }
+}
+
+function detectImageType(base64String: string): string {
+    // Check the first few bytes of the base64 string to determine image type
+    const header = base64String.substring(0, 8)
+
+    // Common image signatures in base64
+    if (header.startsWith('/9j/')) return 'image/jpeg'
+    if (header.startsWith('iVBORw0')) return 'image/png'
+    if (header.startsWith('R0lGOD')) return 'image/gif'
+    if (header.startsWith('UklGR')) return 'image/webp'
+    if (header.startsWith('PHN2Z')) return 'image/svg+xml'
+
+    // Default to jpeg if unknown
+    return 'image/jpeg'
 }
