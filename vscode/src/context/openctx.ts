@@ -8,6 +8,7 @@ import {
     authStatus,
     combineLatest,
     createDisposables,
+    debounceTime,
     distinctUntilChanged,
     featureFlagProvider,
     graphqlClient,
@@ -28,7 +29,7 @@ import type {
 } from '@openctx/client'
 import type { createController } from '@openctx/vscode-lib'
 import { Observable, map } from 'observable-fns'
-import { logDebug, outputChannel } from '../log'
+import { logDebug } from '../log'
 import { gitMentionsProvider } from './openctx/git'
 import LinearIssuesProvider from './openctx/linear-issues'
 import RemoteDirectoryProvider, { createRemoteDirectoryProvider } from './openctx/remoteDirectorySearch'
@@ -52,6 +53,7 @@ export function exposeOpenCtxClient(
         ),
         authStatus.pipe(
             distinctUntilChanged(),
+            debounceTime(0),
             mergeMap(auth =>
                 auth.authenticated
                     ? promiseFactoryToObservable(signal =>
@@ -78,10 +80,16 @@ export function exposeOpenCtxClient(
                     ? getMergeConfigurationFunction()
                     : undefined
 
+                if (!openctxOutputChannel) {
+                    // Don't dispose this, so that it stays around for easier debugging even if the
+                    // controller (or the whole extension) is disposed.
+                    openctxOutputChannel = vscode.window.createOutputChannel('OpenCtx')
+                }
+
                 const controller = createController({
                     extensionId: context.extension.id,
                     secrets: context.secrets,
-                    outputChannel,
+                    outputChannel: openctxOutputChannel!,
                     features: isCodyWeb ? {} : { annotations: true, statusBar: true },
                     providers: isCodyWeb
                         ? Observable.of(getCodyWebOpenCtxProviders())
@@ -101,6 +109,8 @@ export function exposeOpenCtxClient(
         map(() => undefined)
     )
 }
+
+let openctxOutputChannel: vscode.OutputChannel | undefined
 
 export function getOpenCtxProviders(
     authStatusChanges: Observable<Pick<AuthStatus, 'endpoint'>>,
