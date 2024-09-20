@@ -4,12 +4,13 @@ import {
     type AuthenticatedAuthStatus,
     ClientConfigSingleton,
     DOTCOM_URL,
-    Model,
     ModelTag,
     ModelUsage,
     RestClient,
     type ServerModel,
     type ServerModelConfiguration,
+    createModel,
+    createModelFromServerModel,
     featureFlagProvider,
     getDotComDefaultModels,
     mockAuthStatus,
@@ -83,7 +84,7 @@ describe('syncModels', () => {
         // i.e. this gets the one and only chat model from the Sourcegraph instance.
         expect(setModelsSpy).not.toHaveBeenCalledWith(getDotComDefaultModels())
         expect(setModelsSpy).toHaveBeenCalledWith([
-            new Model({
+            createModel({
                 id: authStatus.configOverwrites!.chatModel!,
                 usage: [ModelUsage.Chat, ModelUsage.Edit],
                 contextWindow: getEnterpriseContextWindow(chatModel, authStatus.configOverwrites!),
@@ -177,7 +178,7 @@ describe('syncModels from the server', () => {
             authenticated: true,
             endpoint: testEndpoint,
         })
-        expect(setModelsSpy).toHaveBeenCalledWith(testServerSideModels.map(Model.fromApi))
+        expect(setModelsSpy).toHaveBeenCalledWith(testServerSideModels.map(createModelFromServerModel))
     })
 })
 

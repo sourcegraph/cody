@@ -1,5 +1,4 @@
-import { type Model, ModelTag, isCodyProModel } from '@sourcegraph/cody-shared'
-import { isWaitlistModel } from '@sourcegraph/cody-shared/src/models/utils'
+import { type Model, ModelTag, isCodyProModel, isWaitlistModel } from '@sourcegraph/cody-shared'
 import { clsx } from 'clsx'
 import { BookOpenIcon, BuildingIcon, ExternalLinkIcon } from 'lucide-react'
 import { type FunctionComponent, type ReactNode, useCallback, useMemo } from 'react'

@@ -16,9 +16,15 @@ import {
 } from '../misc/observable'
 import { isAbortError } from '../sourcegraph-api/errors'
 import { CHAT_INPUT_TOKEN_BUDGET, CHAT_OUTPUT_TOKEN_BUDGET } from '../token/constants'
+import {
+    type Model,
+    type ServerModel,
+    createModelFromServerModel,
+    modelTier,
+    parseModelRef,
+} from './model'
 import { ModelTag } from './tags'
 import { type ChatModel, type EditModel, type ModelContextWindow, ModelUsage } from './types'
-import { getModelInfo } from './utils'
 
 type ModelId = string
 type ApiVersionId = string
@@ -32,7 +38,7 @@ export interface ModelRef {
 }
 
 export type ModelCategory = ModelTag.Power | ModelTag.Balanced | ModelTag.Speed
-type ModelStatus =
+export type ModelStatus =
     | ModelTag.Experimental
     | ModelTag.EarlyAccess
     | ModelTag.OnWaitlist
@@ -40,14 +46,14 @@ type ModelStatus =
     | 'stable'
     | ModelTag.Deprecated
 export type ModelTier = ModelTag.Free | ModelTag.Pro | ModelTag.Enterprise
-type ModelCapability = 'chat' | 'autocomplete'
+export type ModelCapability = 'chat' | 'autocomplete'
 
-interface ContextWindow {
+export interface ContextWindow {
     maxInputTokens: number
     maxOutputTokens: number
 }
 
-interface ClientSideConfig {
+export interface ClientSideConfig {
     /**
      * The API key for the model
      */
@@ -140,20 +146,6 @@ interface OpenAICompatible {
     editMaxTokens?: number
 }
 
-export interface ServerModel {
-    modelRef: ModelRefStr
-    displayName: string
-    modelName: string
-    capabilities: ModelCapability[]
-    category: ModelCategory
-    status: ModelStatus
-    tier: ModelTier
-
-    contextWindow: ContextWindow
-
-    clientSideConfig?: ClientSideConfig
-}
-
 interface Provider {
     id: string
     displayName: string
@@ -175,147 +167,6 @@ export interface ServerModelConfiguration {
     providers: Provider[]
     models: ServerModel[]
     defaultModels: DefaultModels
-}
-
-/**
- * Model describes an LLM model and its capabilities.
- */
-export class Model {
-    /**
-     * The model id that includes the provider name & the model name,
-     * e.g. "anthropic/claude-3-sonnet-20240229"
-     *
-     * TODO(PRIME-282): Replace this with a `ModelRefStr` instance and introduce a separate
-     * "modelId" that is distinct from the "modelName". (e.g. "claude-3-sonnet" vs. "claude-3-sonnet-20240229")
-     */
-    public readonly id: string
-    /**
-     * The usage of the model, e.g. chat or edit.
-     */
-    public readonly usage: ModelUsage[]
-    /**
-     * The default context window of the model reserved for Chat and Context.
-     * {@see TokenCounter on how the token usage is calculated.}
-     */
-    public readonly contextWindow: ModelContextWindow
-
-    /**
-     * The client-specific configuration for the model.
-     */
-    public readonly clientSideConfig?: ClientSideConfig
-
-    // The name of the provider of the model, e.g. "Anthropic"
-    public provider: string
-    // The title of the model, e.g. "Claude 3 Sonnet"
-    public readonly title: string
-    /**
-     * The tags assigned for categorizing the model.
-     */
-    public readonly tags: ModelTag[] = []
-
-    public readonly modelRef?: ModelRef
-
-    constructor({
-        id,
-        modelRef,
-        usage,
-        contextWindow = {
-            input: CHAT_INPUT_TOKEN_BUDGET,
-            output: CHAT_OUTPUT_TOKEN_BUDGET,
-        },
-        clientSideConfig,
-        tags = [],
-        provider,
-        title,
-    }: ModelParams) {
-        // Start by setting the model ref, by default using a new form but falling
-        // back to using the old-style of parsing the modelId or using provided fields
-        if (typeof modelRef === 'object') {
-            this.modelRef = modelRef
-        } else if (typeof modelRef === 'string') {
-            this.modelRef = Model.parseModelRef(modelRef)
-        } else {
-            const info = getModelInfo(id)
-            this.modelRef = {
-                providerId: provider ?? info.provider,
-                apiVersionId: 'unknown',
-                modelId: title ?? info.title,
-            }
-        }
-        this.id = id
-        this.usage = usage
-        this.contextWindow = contextWindow
-        this.clientSideConfig = clientSideConfig
-        this.tags = tags
-
-        this.provider = this.modelRef.providerId
-        this.title = title ?? this.modelRef.modelId
-    }
-
-    static fromApi({
-        modelRef,
-        displayName,
-        capabilities,
-        category,
-        tier,
-        clientSideConfig,
-        contextWindow,
-    }: ServerModel) {
-        const ref = Model.parseModelRef(modelRef)
-        return new Model({
-            id: ref.modelId,
-            modelRef: ref,
-            usage: capabilities.flatMap(capabilityToUsage),
-            contextWindow: {
-                input: contextWindow.maxInputTokens,
-                output: contextWindow.maxOutputTokens,
-            },
-            clientSideConfig: clientSideConfig,
-            tags: [category, tier],
-            provider: ref.providerId,
-            title: displayName,
-        })
-    }
-
-    static tier(model: Model): ModelTier {
-        const tierSet = new Set<ModelTag>([ModelTag.Pro, ModelTag.Enterprise])
-        return (model.tags.find(tag => tierSet.has(tag)) ?? ModelTag.Free) as ModelTier
-    }
-
-    static isCodyPro(model?: Model): boolean {
-        return Boolean(model?.tags.includes(ModelTag.Pro))
-    }
-
-    static parseModelRef(ref: ModelRefStr): ModelRef {
-        // BUG: There is data loss here and the potential for ambiguity.
-        // BUG: We are assuming the modelRef is valid, but it might not be.
-        try {
-            const [providerId, apiVersionId, modelId] = ref.split('::', 3)
-            return {
-                providerId,
-                apiVersionId,
-                modelId,
-            }
-        } catch {
-            const [providerId, modelId] = ref.split('/', 2)
-            return {
-                providerId,
-                modelId,
-                apiVersionId: 'unknown',
-            }
-        }
-    }
-}
-
-interface ModelParams {
-    id: string
-    modelRef?: ModelRefStr | ModelRef
-    usage: ModelUsage[]
-    contextWindow?: ModelContextWindow
-    clientSideConfig?: ClientSideConfig
-    tags?: ModelTag[]
-    provider?: string
-    title?: string
 }
 
 export interface PerSitePreferences {
@@ -465,7 +316,7 @@ export class ModelsService {
      * Sets the primary and default models from the server sent config
      */
     public async setServerSentModels(config: ServerModelConfiguration): Promise<void> {
-        const models = config.models.map(Model.fromApi)
+        const models = config.models.map(createModelFromServerModel)
         this.setModels(models)
         await this.setServerDefaultModel(ModelUsage.Chat, config.defaultModels.chat)
         await this.setServerDefaultModel(ModelUsage.Edit, config.defaultModels.chat)
@@ -473,7 +324,7 @@ export class ModelsService {
     }
 
     private async setServerDefaultModel(usage: ModelUsage, newDefaultModelRef: ModelRefStr) {
-        const ref = Model.parseModelRef(newDefaultModelRef)
+        const ref = parseModelRef(newDefaultModelRef)
         const { preferences } = this
 
         // If our cached default model matches, nothing needed
@@ -576,7 +427,7 @@ export class ModelsService {
         if (!resolved) {
             return false
         }
-        const tier = Model.tier(resolved)
+        const tier = modelTier(resolved)
         // Cody Enterprise users are able to use any models that the backend says is supported.
         if (isEnterpriseUser(status)) {
             return true
@@ -661,7 +512,7 @@ interface Storage {
     delete(key: string): Promise<void>
 }
 
-function capabilityToUsage(capability: ModelCapability): ModelUsage[] {
+export function capabilityToUsage(capability: ModelCapability): ModelUsage[] {
     switch (capability) {
         case 'autocomplete':
             return [ModelUsage.Autocomplete]

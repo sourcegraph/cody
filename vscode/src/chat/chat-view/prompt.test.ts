@@ -2,9 +2,9 @@ import {
     type ContextItem,
     ContextItemSource,
     type Message,
-    Model,
     ModelUsage,
     contextFiltersProvider,
+    createModel,
     modelsService,
     ps,
 } from '@sourcegraph/cody-shared'
@@ -24,7 +24,7 @@ describe('DefaultPrompter', () => {
 
     it('constructs a prompt with no context', async () => {
         modelsService.setModels([
-            new Model({
+            createModel({
                 id: 'a-model-id',
                 usage: [ModelUsage.Chat],
                 contextWindow: { input: 100000, output: 100 },
@@ -99,7 +99,7 @@ describe('DefaultPrompter', () => {
         }))
 
         modelsService.setModels([
-            new Model({
+            createModel({
                 id: 'a-model-id',
                 usage: [ModelUsage.Chat],
                 contextWindow: { input: 100000, output: 100 },
@@ -135,7 +135,7 @@ describe('DefaultPrompter', () => {
 
     it('prefers latest enhanced context', async () => {
         modelsService.setModels([
-            new Model({
+            createModel({
                 id: 'a-model-id',
                 usage: [ModelUsage.Chat],
                 contextWindow: { input: 100000, output: 100 },
