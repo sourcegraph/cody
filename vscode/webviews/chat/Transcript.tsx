@@ -8,7 +8,7 @@ import {
 } from '@sourcegraph/cody-shared'
 import { type PromptEditorRefAPI, useExtensionAPI } from '@sourcegraph/prompt-editor'
 import { clsx } from 'clsx'
-import { debounce } from 'lodash'
+import debounce from 'lodash/debounce'
 import isEqual from 'lodash/isEqual'
 import { Search } from 'lucide-react'
 import { type FC, memo, useCallback, useMemo, useRef, useState } from 'react'

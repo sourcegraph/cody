@@ -12,7 +12,7 @@ import {
     memoizeLastValue,
     parseMentionQuery,
 } from '@sourcegraph/cody-shared'
-import { debounce } from 'lodash'
+import debounce from 'lodash/debounce'
 import { useCallback, useContext, useMemo, useState } from 'react'
 import { useClientState } from '../../clientState'
 import { ChatMentionContext } from '../../plugins/atMentions/useChatContextItems'

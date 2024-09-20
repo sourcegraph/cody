@@ -7,7 +7,7 @@ import { type ContextItem, ModelUsage, TokenCounterUtils, isDotCom } from '@sour
 import { Command } from 'commander'
 
 import Table from 'easy-table'
-import { isError } from 'lodash'
+import isError from 'lodash/isError'
 import * as vscode from 'vscode'
 import type { ExtensionTranscriptMessage } from '../../../vscode/src/chat/protocol'
 import { activate } from '../../../vscode/src/extension.node'

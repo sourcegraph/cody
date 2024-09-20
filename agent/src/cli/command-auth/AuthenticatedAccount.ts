@@ -3,7 +3,7 @@ import type { Ora } from 'ora'
 import { readCodySecret } from './secrets'
 
 import type { CurrentUserInfo } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
-import { isError } from 'lodash'
+import isError from 'lodash/isError'
 import type { AuthenticationOptions } from './command-login'
 import { type Account, loadUserSettings } from './settings'
 
