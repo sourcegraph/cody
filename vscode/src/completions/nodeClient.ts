@@ -22,6 +22,7 @@ import {
     getSerializedParams,
     getTraceparentHeaders,
     isError,
+    logDebug,
     logError,
     onAbort,
     parseEvents,
@@ -39,6 +40,10 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
         signal?: AbortSignal
     ): Promise<void> {
         const { apiVersion } = requestParams
+        for (const message of params.messages) {
+            logDebug('apiVersion', JSON.stringify(apiVersion, null, 2))
+            logDebug('base64Image', JSON.stringify(message, null, 2))
+        }
 
         const url = new URL(await this.completionsEndpoint())
         if (apiVersion >= 1) {

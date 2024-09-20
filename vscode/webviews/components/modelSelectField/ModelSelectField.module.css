@@ -32,6 +32,10 @@
     margin-left: auto;
 }
 
+.supports-image-upload-icon {
+    margin-left: auto;
+}
+
 .badge {
     margin-left: auto;
     line-height: 16px;
@@ -47,12 +51,17 @@
     opacity: 0.75;
 }
 
+.supports-image-upload-icon + .badge {
+    margin-left: 0;
+}
+
 button > .model-title-with-icon .model-name {
     font-weight: normal;
 }
 
 button > .model-title-with-icon .model-icon,
 button > .model-title-with-icon .model-provider,
-button > .model-title-with-icon .badge {
+button > .model-title-with-icon .badge,
+.supports-image-upload-icon {
     display: none;
 }

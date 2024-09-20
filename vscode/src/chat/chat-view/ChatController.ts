@@ -564,6 +564,11 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 })
                 break
             }
+
+            case 'chat/upload-file': {
+                this.chatModel.setImage(message.base64)
+                break
+            }
             case 'log': {
                 const logger = message.level === 'debug' ? logDebug : logError
                 logger(message.filterLabel, message.message)

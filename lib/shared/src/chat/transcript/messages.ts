@@ -15,6 +15,7 @@ export type RankedContext = {
 
 export interface ChatMessage extends Message {
     contextFiles?: ContextItem[]
+    base64Image?: string
 
     contextAlternatives?: RankedContext[]
 

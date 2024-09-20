@@ -87,6 +87,9 @@ export class DefaultPrompter {
                     `Ignored ${messagesIgnored} chat messages due to context limit`
                 )
             }
+            for (const message of reverseTranscript) {
+                promptBuilder.tryAddImage(message.base64Image)
+            }
             // Counter for context items categorized by source
             const ignoredContext = { user: 0, corpus: 0, transcript: 0 }
 

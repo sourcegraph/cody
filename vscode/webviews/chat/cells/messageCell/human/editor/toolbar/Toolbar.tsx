@@ -9,6 +9,7 @@ import { PromptSelectField } from '../../../../../../components/promptSelectFiel
 import { useConfig } from '../../../../../../utils/useConfig'
 import { AddContextButton } from './AddContextButton'
 import { SubmitButton, type SubmitButtonState } from './SubmitButton'
+import { UploadImageButton } from './UploadImageButton'
 
 /**
  * The toolbar for the human message editor.
@@ -32,6 +33,9 @@ export const Toolbar: FunctionComponent<{
     hidden?: boolean
     className?: string
     experimentalOneBoxEnabled?: boolean
+
+    imageFile?: File
+    setImageFile: (file: File | undefined) => void
 }> = ({
     userInfo,
     isEditorFocused,
@@ -44,6 +48,8 @@ export const Toolbar: FunctionComponent<{
     hidden,
     className,
     experimentalOneBoxEnabled,
+    imageFile,
+    setImageFile,
 }) => {
     /**
      * If the user clicks in a gap or on the toolbar outside of any of its buttons, report back to
@@ -82,6 +88,13 @@ export const Toolbar: FunctionComponent<{
                         className="tw-opacity-60 focus-visible:tw-opacity-100 hover:tw-opacity-100 tw-mr-2"
                     />
                 )}
+                {
+                    <UploadImageButton
+                        className="tw-opacity-60"
+                        imageFile={imageFile}
+                        onClick={setImageFile}
+                    />
+                }
                 <PromptSelectFieldToolbarItem
                     focusEditor={focusEditor}
                     appendTextToEditor={appendTextToEditor}

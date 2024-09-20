@@ -176,6 +176,7 @@ export type WebviewMessage =
     | { command: 'rpc/request'; message: RequestMessage }
     | { command: 'chatSession'; action: 'duplicate' | 'new'; sessionID?: string | undefined | null }
     | { command: 'log'; level: 'debug' | 'error'; filterLabel: string; message: string }
+    | { command: 'chat/upload-file'; base64: string }
 
 export interface SmartApplyResult {
     taskId: FixupTaskID

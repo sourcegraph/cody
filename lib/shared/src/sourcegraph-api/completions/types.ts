@@ -20,12 +20,13 @@ export interface Message {
     // Note: The unified API only supports one system message passed as the first message
     speaker: 'human' | 'assistant' | 'system'
     text?: PromptString
+    content?: string | MessagePart[]
+    base64Image?: string
 }
 
-export interface CompletionResponse {
-    completion: string
-    stopReason?: string
-}
+type MessagePart =
+    | { type: 'text'; text: string } // a normal text message
+    | { type: 'image_url'; image_url: { url: string } } // image message, per https://platform.openai.com/docs/guides/vision
 
 export interface CompletionParameters {
     fast?: boolean
@@ -37,6 +38,7 @@ export interface CompletionParameters {
     topP?: number
     model?: string
     stream?: boolean
+    base64Image?: string
 }
 
 export interface SerializedCompletionParameters extends Omit<CompletionParameters, 'messages'> {
