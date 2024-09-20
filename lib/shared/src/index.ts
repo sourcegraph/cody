@@ -345,6 +345,7 @@ export {
     createMessageAPIForExtension,
 } from './misc/rpc/rpc'
 export * from './misc/observable'
+export * from './misc/observableOperation'
 export * from './configuration/resolver'
 export * from './singletons'
 export * from './auth/authStatus'
