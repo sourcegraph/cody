@@ -280,6 +280,7 @@ async function showAuthFailureMessage(endpoint: string): Promise<void> {
     )
 }
 
+const { AuthorizationCode } = require('simple-oauth2')
 /**
  * Register URI Handler (vscode://sourcegraph.cody-ai) for resolving token sending back from
  * sourcegraph.com.
@@ -289,28 +290,52 @@ export async function tokenCallbackHandler(
     customHeaders: Record<string, string> | undefined
 ): Promise<void> {
     closeAuthProgressIndicator()
-
+    console.log(uri, 'token uri')
     const params = new URLSearchParams(uri.query)
     const token = params.get('code') || params.get('token')
     const endpoint = currentAuthStatus().endpoint
-    if (!token || !endpoint) {
-        return
-    }
-    const authState = await authProvider.auth({ endpoint, token, customHeaders })
-    telemetryRecorder.recordEvent('cody.auth.fromCallback.web', 'succeeded', {
-        metadata: {
-            success: authState?.authenticated ? 1 : 0,
+    // if (!token || !endpoint) {
+    //     return
+    // }
+    const config = {
+        client: {
+            id: 'sams_cid_01920da2-1256-70c3-9712-2bc0f0046da6',
+            secret: '',
         },
-        billingMetadata: {
-            product: 'cody',
-            category: 'billable',
+        auth: {
+            tokenHost: 'https://1860-216-46-3-166.ngrok-free.app/oauth/token',
         },
-    })
-    if (authState?.authenticated) {
-        await vscode.window.showInformationMessage(`Signed in to ${endpoint}`)
-    } else {
-        await showAuthFailureMessage(endpoint)
     }
+    console.log(token, 'token token')
+    const client = new AuthorizationCode(config)
+    const tokenParams = {
+        code: token,
+        redirect_uri: 'vscode://sourcegraph.cody-ai',
+        scope: 'email',
+    }
+
+    try {
+        const accessToken = await client.getToken(tokenParams)
+        console.log('The resulting token: ', accessToken.token)
+    } catch (error) {
+        console.log('Access Token Error', `${error}`)
+    }
+
+    // const authState = await authProvider.auth({ endpoint, token, customHeaders })
+    // telemetryRecorder.recordEvent('cody.auth.fromCallback.web', 'succeeded', {
+    //     metadata: {
+    //         success: authState?.authenticated ? 1 : 0,
+    //     },
+    //     billingMetadata: {
+    //         product: 'cody',
+    //         category: 'billable',
+    //     },
+    // })
+    // if (authState?.authenticated) {
+    //     await vscode.window.showInformationMessage(`Signed in to ${endpoint}`)
+    // } else {
+    //     await showAuthFailureMessage(endpoint)
+    // }
 }
 
 export function formatURL(uri: string): string | null {

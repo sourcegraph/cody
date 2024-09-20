@@ -1,11 +1,8 @@
 import * as vscode from 'vscode'
 
-import { CodyIDE, DOTCOM_URL, getCodyAuthReferralCode } from '@sourcegraph/cody-shared'
-
+import { CodyIDE, DOTCOM_URL } from '@sourcegraph/cody-shared'
 import type { AuthMethod } from '../chat/protocol'
-
 import { authProvider } from './AuthProvider'
-
 // An auth provider for simplified onboarding. This is a sidecar to AuthProvider
 // so we can deprecate the experiment later. AuthProviderSimplified only works
 // for dotcom, and doesn't work on VScode web. See LoginSimplified.
@@ -24,6 +21,18 @@ export class AuthProviderSimplified {
     }
 }
 
+const config = {
+    client: {
+        id: 'sams_cid_01920da2-1256-70c3-9712-2bc0f0046da6',
+        secret: '',
+    },
+    auth: {
+        tokenHost: 'https://1860-216-46-3-166.ngrok-free.app',
+    },
+}
+
+const { AuthorizationCode } = require('simple-oauth2')
+
 // Opens authentication URLs for simplified onboarding.
 function openExternalAuthUrl(
     provider: AuthMethod,
@@ -33,15 +42,23 @@ function openExternalAuthUrl(
     // Create the chain of redirects:
     // 1. Specific login page (GitHub, etc.) redirects to the new token page
     // 2. New token page redirects back to the extension with the new token
-    const referralCode = getCodyAuthReferralCode(agentIDE, vscode.env.uriScheme)
-    const tokenReceiver = tokenReceiverUrl
-        ? `&tokenReceiverUrl=${encodeURIComponent(tokenReceiverUrl)}`
-        : ''
+    // const referralCode = getCodyAuthReferralCode(agentIDE, vscode.env.uriScheme)
+    // const tokenReceiver = tokenReceiverUrl
+    //     ? `&tokenReceiverUrl=${encodeURIComponent(tokenReceiverUrl)}`
+    //     : ''
+    const client = new AuthorizationCode(config)
 
-    const newTokenUrl = `/user/settings/tokens/new/callback?requestFrom=${referralCode}${tokenReceiver}`
-    const site = new URL(newTokenUrl, DOTCOM_URL)
+    const authorizationUri = client.authorizeURL({
+        redirect_uri: 'vscode://sourcegraph.cody-ai',
+        scope: 'email',
+        state: 'e324d2fe-fa70-48f7-8765-b44ab650fbea',
+        customParam: 'sg', // non-standard oauth params may be passed as well
+    })
+
+    const newTokenUrl = 'sign-in'
+    const site = new URL(newTokenUrl, 'https://1860-216-46-3-166.ngrok-free.app')
     const genericLoginUrl = `${site}sign-in?returnTo=${newTokenUrl}`
-    const gitHubLoginUrl = `${site}.auth/openidconnect/login?prompt_auth=github&pc=sams&redirect=${newTokenUrl}`
+    const gitHubLoginUrl = `${site}?prompt_auth=github`
     const gitLabLoginUrl = `${site}.auth/openidconnect/login?prompt_auth=gitlab&pc=sams&redirect=${newTokenUrl}`
     const googleLoginUrl = `${site}.auth/openidconnect/login?prompt_auth=google&pc=sams&redirect=${newTokenUrl}`
 
@@ -72,5 +89,5 @@ function openExternalAuthUrl(
     // FIXME: Pass a Uri here when dotcom redirectTo handling applies one level
     // of unescaping to the parameter, or we special case the routing for
     // /post-sign-up%3F...
-    return vscode.env.openExternal(uriSpec as unknown as vscode.Uri)
+    return vscode.env.openExternal(authorizationUri as unknown as vscode.Uri)
 }
