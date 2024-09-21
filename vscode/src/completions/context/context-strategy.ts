@@ -85,7 +85,10 @@ export class DefaultContextStrategyFactory implements ContextStrategyFactory {
                             this.graphRetriever = new LspLightRetriever()
                             break
                         case 'recent-copy':
-                            this.localRetriever = new RecentCopyRetriever(60 * 1000, 100)
+                            this.localRetriever = new RecentCopyRetriever({
+                                maxAgeMs: 60 * 1000,
+                                maxSelections: 100,
+                            })
                             break
                         case 'jaccard-similarity':
                             this.localRetriever = new JaccardSimilarityRetriever()
