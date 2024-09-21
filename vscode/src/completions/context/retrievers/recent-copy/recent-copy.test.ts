@@ -1,15 +1,26 @@
 import dedent from 'dedent'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { Position } from '../../../../testutils/mocks'
+import { Position, Selection } from '../../../../testutils/mocks'
 import { document } from '../../../test-helpers'
 import { RecentCopyRetriever } from './recent-copy'
 
 const FIVE_MINUTES = 5 * 60 * 1000
+const MAX_SELECTIONS = 2
 
 describe('RecentCopyRetriever', () => {
     let retriever: RecentCopyRetriever
     let onDidChangeTextEditorSelection: any
     let mockClipboardContent: string
+
+    const createMockSelection = (startLine: number, startChar: number, endLine: number, endChar: number) =>
+        new Selection(new Position(startLine, startChar), new Position(endLine, endChar))
+
+    const simulateSelectionChange = async (testDocument: any, selection: Selection) => {
+        await onDidChangeTextEditorSelection({
+            textEditor: { document: testDocument },
+            selections: [selection],
+        })
+    }
 
     beforeEach(() => {
         vi.useFakeTimers()
@@ -17,7 +28,7 @@ describe('RecentCopyRetriever', () => {
         retriever = new RecentCopyRetriever(
             {
                 maxAgeMs: FIVE_MINUTES,
-                maxSelections: 10,
+                maxSelections: MAX_SELECTIONS,
             },
             {
                 onDidChangeTextEditorSelection: (_onDidChangeTextEditorSelection: any) => {
@@ -26,8 +37,7 @@ describe('RecentCopyRetriever', () => {
                 },
             }
         )
-
-        // Mock the getClipboardContent method
+        // Mock the getClipboardContent method to get the vscode clipboard content
         vi.spyOn(retriever, 'getClipboardContent').mockImplementation(() =>
             Promise.resolve(mockClipboardContent)
         )
@@ -35,8 +45,6 @@ describe('RecentCopyRetriever', () => {
 
     afterEach(() => {
         retriever.dispose()
-        vi.useRealTimers()
-        vi.restoreAllMocks()
     })
 
     it('should retrieve the copied text if it exists in tracked selections', async () => {
@@ -46,23 +54,45 @@ describe('RecentCopyRetriever', () => {
             }
         `
         const testDocument = document(mockClipboardContent)
+        const selection = createMockSelection(0, 0, 2, 1)
 
-        await onDidChangeTextEditorSelection({
-            textEditor: { document: testDocument },
-            selections: [
-                {
-                    active: new Position(0, 0),
-                    anchor: new Position(2, 1),
-                    start: new Position(0, 0),
-                    end: new Position(2, 1),
-                },
-            ],
-        })
+        await simulateSelectionChange(testDocument, selection)
         const snippets = await retriever.retrieve()
+
         expect(snippets).toHaveLength(1)
-        expect(snippets[0].content).toBe(mockClipboardContent)
-        expect(snippets[0].uri).toBe(testDocument.uri)
-        expect(snippets[0].startLine).toBe(0)
-        expect(snippets[0].endLine).toBe(2)
+        expect(snippets[0]).toEqual({
+            content: mockClipboardContent,
+            uri: testDocument.uri,
+            startLine: selection.start.line,
+            endLine: selection.end.line,
+            identifier: retriever.identifier,
+        })
+    })
+
+    it('should return null when copied content is not in tracked selections', async () => {
+        const doc1 = document('document 1 content', 'doc1.ts')
+        const doc2 = document('document 2 content', 'doc2.ts')
+        const doc3 = document('document 3 content', 'doc3.ts')
+
+        await simulateSelectionChange(doc1, createMockSelection(0, 0, 0, 5))
+        await simulateSelectionChange(doc2, createMockSelection(0, 0, 0, 5))
+        await simulateSelectionChange(doc3, createMockSelection(0, 0, 0, 5))
+
+        mockClipboardContent = doc1.getText()
+        const snippets = await retriever.retrieve()
+
+        expect(snippets).toHaveLength(0)
+    })
+
+    it('should respect maxAgeMs and remove old selections', async () => {
+        const doc = document('old content')
+        await simulateSelectionChange(doc, createMockSelection(0, 0, 0, 5))
+
+        vi.advanceTimersByTime(FIVE_MINUTES + 1000) // Advance time beyond maxAgeMs
+
+        mockClipboardContent = 'old content'
+        const snippets = await retriever.retrieve()
+
+        expect(snippets).toHaveLength(0)
     })
 })

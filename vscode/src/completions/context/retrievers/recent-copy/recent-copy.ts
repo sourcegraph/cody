@@ -53,8 +53,13 @@ export class RecentCopyRetriever implements vscode.Disposable, ContextRetriever 
         return []
     }
 
+    // Separate test method also used in recent-copy.test.ts to get the vscode clipboard content
     public async getClipboardContent(): Promise<string> {
         return vscode.env.clipboard.readText()
+    }
+
+    public getTrackedSelections(): TrackedSelection[] {
+        return this.trackedSelections
     }
 
     public isSupportedForLanguageId(): boolean {
@@ -98,7 +103,7 @@ export class RecentCopyRetriever implements vscode.Disposable, ContextRetriever 
             selection => now - selection.timestamp < this.maxAgeMs
         )
         if (this.trackedSelections.length > this.maxSelections) {
-            this.trackedSelections = this.trackedSelections.slice(-this.maxSelections)
+            this.trackedSelections.splice(0, this.trackedSelections.length - this.maxSelections)
         }
     }
 
