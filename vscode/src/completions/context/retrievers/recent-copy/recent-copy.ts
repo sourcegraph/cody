@@ -9,8 +9,8 @@ interface TrackedSelection {
     content: string
     languageId: string
     uri: vscode.Uri
-    startLine: number
-    endLine: number
+    startPosition: vscode.Position
+    endPosition: vscode.Position
 }
 
 interface RecentCopyRetrieverOptions {
@@ -20,30 +20,21 @@ interface RecentCopyRetrieverOptions {
 
 export class RecentCopyRetriever implements vscode.Disposable, ContextRetriever {
     public identifier = RetrieverIdentifier.RecentCopyRetriever
-    private trackedSelections: Map<string, TrackedSelection[]> = new Map()
     private disposables: vscode.Disposable[] = []
+    private trackedSelections: TrackedSelection[] = []
 
     private readonly maxAgeMs: number
     private readonly maxSelections: number
 
     constructor(
         options: RecentCopyRetrieverOptions,
-        private window: Pick<typeof vscode.window, 'onDidChangeTextEditorSelection'> = vscode.window,
-        private workspace: Pick<
-            typeof vscode.workspace,
-            'onDidRenameFiles' | 'onDidDeleteFiles'
-        > = vscode.workspace
+        private window: Pick<typeof vscode.window, 'onDidChangeTextEditorSelection'> = vscode.window
     ) {
         this.maxAgeMs = options.maxAgeMs
         this.maxSelections = options.maxSelections
 
-        const onSelectionChange = debounce(this.onDidChangeTextEditorSelection.bind(this), 100)
-
-        this.disposables.push(
-            this.window.onDidChangeTextEditorSelection(onSelectionChange),
-            this.workspace.onDidRenameFiles(this.onDidRenameFiles.bind(this)),
-            this.workspace.onDidDeleteFiles(this.onDidDeleteFiles.bind(this))
-        )
+        const onSelectionChange = debounce(this.onDidChangeTextEditorSelection.bind(this), 500)
+        this.disposables.push(this.window.onDidChangeTextEditorSelection(onSelectionChange))
     }
 
     public async retrieve(): Promise<AutocompleteContextSnippet[]> {
@@ -54,21 +45,20 @@ export class RecentCopyRetriever implements vscode.Disposable, ContextRetriever 
                 identifier: RetrieverIdentifier.RecentCopyRetriever,
                 content: selectionItem.content,
                 uri: selectionItem.uri,
-                startLine: selectionItem.startLine,
-                endLine: selectionItem.endLine,
+                startLine: selectionItem.startPosition.line,
+                endLine: selectionItem.endPosition.line,
             }
             return [autocompleteItem]
         }
         return []
     }
 
-    // Separate test method also used in recent-copy.test.ts to get the vscode clipboard content
     public async getClipboardContent(): Promise<string> {
         return vscode.env.clipboard.readText()
     }
 
     public getTrackedSelections(): TrackedSelection[] {
-        return Array.from(this.trackedSelections.values()).flat()
+        return this.trackedSelections
     }
 
     public isSupportedForLanguageId(): boolean {
@@ -76,13 +66,7 @@ export class RecentCopyRetriever implements vscode.Disposable, ContextRetriever 
     }
 
     private getSelectionItemIfExist(text: string): TrackedSelection | undefined {
-        for (const selections of this.trackedSelections.values()) {
-            const found = selections.find(ts => ts.content === text)
-            if (found) {
-                return found
-            }
-        }
-        return undefined
+        return this.trackedSelections.find(ts => ts.content === text)
     }
 
     private addSelectionForTracking(document: vscode.TextDocument, selection: vscode.Selection): void {
@@ -90,67 +74,49 @@ export class RecentCopyRetriever implements vscode.Disposable, ContextRetriever 
             return
         }
         const selectedText = document.getText(selection)
-        const uriString = document.uri.toString()
 
-        if (!this.trackedSelections.has(uriString)) {
-            this.trackedSelections.set(uriString, [])
-        }
-
-        const selections = this.trackedSelections.get(uriString)!
-        const existingSelectionIndex = selections.findIndex(ts => ts.content === selectedText)
-
-        if (existingSelectionIndex !== -1) {
-            selections.splice(existingSelectionIndex, 1)
-        }
-
-        selections.push({
+        const newSelection: TrackedSelection = {
             timestamp: Date.now(),
             content: selectedText,
             languageId: document.languageId,
             uri: document.uri,
-            startLine: selection.start.line,
-            endLine: selection.end.line,
-        })
+            startPosition: selection.start,
+            endPosition: selection.end,
+        }
 
-        this.reconcileOutdatedChanges()
+        this.updateTrackedSelections(newSelection)
     }
 
-    private reconcileOutdatedChanges(): void {
+    private updateTrackedSelections(newSelection: TrackedSelection): void {
         const now = Date.now()
-        for (const [uri, selections] of this.trackedSelections) {
-            const updatedSelections = selections.filter(
-                selection => now - selection.timestamp < this.maxAgeMs
-            )
-            if (updatedSelections.length > this.maxSelections) {
-                updatedSelections.splice(0, updatedSelections.length - this.maxSelections)
-            }
-            this.trackedSelections.set(uri, updatedSelections)
-        }
+        this.trackedSelections = this.trackedSelections
+            .filter(selection => now - selection.timestamp < this.maxAgeMs)
+            .filter(selection => !this.isOverlapping(selection, newSelection))
+
+        this.trackedSelections.unshift(newSelection)
+        this.trackedSelections = this.trackedSelections.slice(0, this.maxSelections)
     }
 
-    private onDidRenameFiles(event: vscode.FileRenameEvent): void {
-        for (const file of event.files) {
-            const trackedSelections = this.trackedSelections.get(file.oldUri.toString())
-            if (trackedSelections) {
-                this.trackedSelections.set(file.newUri.toString(), trackedSelections)
-                this.trackedSelections.delete(file.oldUri.toString())
-            }
+    // Even with debounce, there is a chance that the same selection is added multiple times if user is slowly selecting
+    // In that case, we should remove the older selections
+    private isOverlapping(selection: TrackedSelection, newSelection: TrackedSelection): boolean {
+        if (selection.uri.toString() !== newSelection.uri.toString()) {
+            return false
         }
-    }
-
-    private onDidDeleteFiles(event: vscode.FileDeleteEvent): void {
-        for (const uri of event.files) {
-            this.trackedSelections.delete(uri.toString())
-        }
+        return (
+            newSelection.startPosition.isBeforeOrEqual(selection.startPosition) &&
+            newSelection.endPosition.isAfterOrEqual(selection.endPosition)
+        )
     }
 
     private onDidChangeTextEditorSelection(event: vscode.TextEditorSelectionChangeEvent): void {
         const editor = event.textEditor
-        this.addSelectionForTracking(editor.document, event.selections[0])
+        const selection = event.selections[0]
+        this.addSelectionForTracking(editor.document, selection)
     }
 
     public dispose(): void {
-        this.trackedSelections.clear()
+        this.trackedSelections = []
         for (const disposable of this.disposables) {
             disposable.dispose()
         }
