@@ -4,7 +4,7 @@ import { fetch } from '../../fetch'
 
 import type { TelemetryEventInput } from '@sourcegraph/telemetry'
 
-import { escapeRegExp } from 'lodash'
+import escapeRegExp from 'lodash/escapeRegExp'
 import { Observable } from 'observable-fns'
 import semver from 'semver'
 import { authStatus } from '../../auth/authStatus'

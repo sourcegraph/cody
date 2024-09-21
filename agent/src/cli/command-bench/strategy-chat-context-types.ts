@@ -3,7 +3,7 @@ import path from 'node:path'
 import { parse } from 'csv-parse/sync'
 import { createObjectCsvWriter } from 'csv-writer'
 import { mkdirp } from 'fs-extra'
-import { isError } from 'lodash'
+import isError from 'lodash/isError'
 
 export interface EvalContextItem {
     repoName: string

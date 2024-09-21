@@ -1,4 +1,4 @@
-import { isEqual } from 'lodash'
+import isEqual from 'lodash/isEqual'
 import { LRUCache } from 'lru-cache'
 import { type Observable, map } from 'observable-fns'
 import { RE2JS as RE2 } from 're2js'

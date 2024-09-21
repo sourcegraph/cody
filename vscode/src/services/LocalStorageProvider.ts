@@ -1,4 +1,4 @@
-import _ from 'lodash'
+import merge from 'lodash/merge'
 import * as uuid from 'uuid'
 import type { Memento } from 'vscode'
 
@@ -169,14 +169,17 @@ class LocalStorage {
         }
     }
 
-    public async importChatHistory(history: AccountKeyedChatHistory, merge: boolean): Promise<void> {
-        if (merge) {
+    public async importChatHistory(
+        history: AccountKeyedChatHistory,
+        shouldMerge: boolean
+    ): Promise<void> {
+        if (shouldMerge) {
             const fullHistory = this.storage.get<AccountKeyedChatHistory | null>(
                 this.KEY_LOCAL_HISTORY,
                 null
             )
 
-            _.merge(history, fullHistory)
+            merge(history, fullHistory)
         }
 
         await this.storage.update(this.KEY_LOCAL_HISTORY, history)

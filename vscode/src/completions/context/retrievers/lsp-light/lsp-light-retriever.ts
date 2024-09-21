@@ -1,4 +1,4 @@
-import { debounce } from 'lodash'
+import debounce from 'lodash/debounce'
 import * as vscode from 'vscode'
 
 import type { AutocompleteContextSnippet } from '@sourcegraph/cody-shared'

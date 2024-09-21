@@ -1,4 +1,4 @@
-import { findLast } from 'lodash'
+import findLast from 'lodash/findLast'
 import * as vscode from 'vscode'
 
 import { getLanguageConfig } from '../../tree-sitter/language'
