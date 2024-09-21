@@ -12,8 +12,12 @@ describe('RecentCopyRetriever', () => {
     let onDidChangeTextEditorSelection: any
     let mockClipboardContent: string
 
-    const createMockSelection = (startLine: number, startChar: number, endLine: number, endChar: number) =>
-        new Selection(new Position(startLine, startChar), new Position(endLine, endChar))
+    const createMockSelection = (
+        startLine: number,
+        startChar: number,
+        endLine: number,
+        endChar: number
+    ) => new Selection(new Position(startLine, startChar), new Position(endLine, endChar))
 
     const simulateSelectionChange = async (testDocument: any, selection: Selection) => {
         await onDidChangeTextEditorSelection({
