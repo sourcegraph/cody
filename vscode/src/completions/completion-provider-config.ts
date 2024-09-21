@@ -3,8 +3,8 @@ import {
     combineLatest,
     distinctUntilChanged,
     featureFlagProvider,
-    mergeMap,
     resolvedConfig,
+    switchMap,
 } from '@sourcegraph/cody-shared'
 import { Observable, map } from 'observable-fns'
 import { isRunningInsideAgent } from '../jsonrpc/isRunningInsideAgent'
@@ -46,7 +46,7 @@ class CompletionProviderConfig {
             'recent-edits-mixed',
         ]
         return resolvedConfig.pipe(
-            mergeMap(({ configuration }) => {
+            switchMap(({ configuration }) => {
                 if (knownValues.includes(configuration.autocompleteExperimentalGraphContext as string)) {
                     return Observable.of(
                         configuration.autocompleteExperimentalGraphContext as ContextStrategy
@@ -63,7 +63,7 @@ class CompletionProviderConfig {
         return featureFlagProvider
             .evaluatedFeatureFlag(FeatureFlag.CodyAutocompleteContextExperimentBaseFeatureFlag)
             .pipe(
-                mergeMap(isContextExperimentFlagEnabled => {
+                switchMap(isContextExperimentFlagEnabled => {
                     if (isRunningInsideAgent() || !isContextExperimentFlagEnabled) {
                         return Observable.of(defaultContextStrategy)
                     }
@@ -159,7 +159,7 @@ class CompletionProviderConfig {
 
     public get autocompletePreloadDebounceInterval(): Observable<number> {
         return resolvedConfig.pipe(
-            mergeMap(({ configuration }) => {
+            switchMap(({ configuration }) => {
                 const localInterval = configuration.autocompleteExperimentalPreloadDebounceInterval
 
                 if (localInterval !== undefined && localInterval > 0) {

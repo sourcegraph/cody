@@ -15,11 +15,11 @@ import {
     isDotCom,
     isError,
     logError,
-    mergeMap,
     pluck,
     promiseFactoryToObservable,
     resolvedConfig,
     setOpenCtx,
+    switchMap,
 } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 
@@ -54,7 +54,7 @@ export function exposeOpenCtxClient(
         authStatus.pipe(
             distinctUntilChanged(),
             debounceTime(0),
-            mergeMap(auth =>
+            switchMap(auth =>
                 auth.authenticated
                     ? promiseFactoryToObservable(signal =>
                           graphqlClient.isValidSiteVersion(

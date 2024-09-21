@@ -8,10 +8,10 @@ import {
     debounceTime,
     distinctUntilChanged,
     firstValueFrom,
-    mergeMap,
     promiseFactoryToObservable,
     shareReplay,
     startWith,
+    switchMap,
 } from '../misc/observable'
 import { graphqlClient } from '../sourcegraph-api/graphql'
 import { wrapInActiveSpan } from '../tracing'
@@ -132,7 +132,7 @@ export class FeatureFlagProviderImpl implements FeatureFlagProvider {
         this.refreshes,
     ]).pipe(
         debounceTime(0),
-        mergeMap(([authStatus]) =>
+        switchMap(([authStatus]) =>
             promiseFactoryToObservable(signal =>
                 process.env.DISABLE_FEATURE_FLAGS
                     ? Promise.resolve({})
@@ -177,7 +177,7 @@ export class FeatureFlagProviderImpl implements FeatureFlagProvider {
         // `getEvaluatedFeatureFlags` only returns the set of recently evaluated feature flags.
         return combineLatest([this.relevantAuthStatusChanges, this.refreshes])
             .pipe(
-                mergeMap(([authStatus]) =>
+                switchMap(([authStatus]) =>
                     concat(
                         promiseFactoryToObservable(async signal => {
                             if (process.env.DISABLE_FEATURE_FLAGS) {
