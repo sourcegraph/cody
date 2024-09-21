@@ -10,8 +10,8 @@ import type { ContextRetriever } from '../types'
 import type { BfgRetriever } from './retrievers/bfg/bfg-retriever'
 import { JaccardSimilarityRetriever } from './retrievers/jaccard-similarity/jaccard-similarity-retriever'
 import { LspLightRetriever } from './retrievers/lsp-light/lsp-light-retriever'
-import { RecentCopyRetriever } from './retrievers/recent-copy/recent-copy'
-import { RecentEditsRetriever } from './retrievers/recent-edits/recent-edits-retriever'
+import { RecentCopyRetriever } from './retrievers/recent-user-actions/recent-copy'
+import { RecentEditsRetriever } from './retrievers/recent-user-actions/recent-edits-retriever'
 import { loadTscRetriever } from './retrievers/tsc/load-tsc-retriever'
 
 export type ContextStrategy =
