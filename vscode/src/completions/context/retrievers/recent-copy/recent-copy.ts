@@ -1,4 +1,5 @@
 import type { AutocompleteContextSnippet } from '@sourcegraph/cody-shared'
+import { debounce } from 'lodash'
 import * as vscode from 'vscode'
 import type { ContextRetriever } from '../../../types'
 import { RetrieverIdentifier } from '../../utils'
@@ -19,7 +20,7 @@ interface RecentCopyRetrieverOptions {
 
 export class RecentCopyRetriever implements vscode.Disposable, ContextRetriever {
     public identifier = RetrieverIdentifier.RecentCopyRetriever
-    private trackedSelections: TrackedSelection[] = []
+    private trackedSelections: Map<string, TrackedSelection[]> = new Map()
     private disposables: vscode.Disposable[] = []
 
     private readonly maxAgeMs: number
@@ -27,13 +28,21 @@ export class RecentCopyRetriever implements vscode.Disposable, ContextRetriever 
 
     constructor(
         options: RecentCopyRetrieverOptions,
-        private window: Pick<typeof vscode.window, 'onDidChangeTextEditorSelection'> = vscode.window
+        private window: Pick<typeof vscode.window, 'onDidChangeTextEditorSelection'> = vscode.window,
+        private workspace: Pick<
+            typeof vscode.workspace,
+            'onDidRenameFiles' | 'onDidDeleteFiles'
+        > = vscode.workspace
     ) {
         this.maxAgeMs = options.maxAgeMs
         this.maxSelections = options.maxSelections
 
+        const onSelectionChange = debounce(this.onDidChangeTextEditorSelection.bind(this), 100)
+
         this.disposables.push(
-            this.window.onDidChangeTextEditorSelection(this.onDidChangeTextEditorSelection.bind(this))
+            this.window.onDidChangeTextEditorSelection(onSelectionChange),
+            this.workspace.onDidRenameFiles(this.onDidRenameFiles.bind(this)),
+            this.workspace.onDidDeleteFiles(this.onDidDeleteFiles.bind(this))
         )
     }
 
@@ -59,7 +68,7 @@ export class RecentCopyRetriever implements vscode.Disposable, ContextRetriever 
     }
 
     public getTrackedSelections(): TrackedSelection[] {
-        return this.trackedSelections
+        return Array.from(this.trackedSelections.values()).flat()
     }
 
     public isSupportedForLanguageId(): boolean {
@@ -67,12 +76,13 @@ export class RecentCopyRetriever implements vscode.Disposable, ContextRetriever 
     }
 
     private getSelectionItemIfExist(text: string): TrackedSelection | undefined {
-        return this.trackedSelections.find(ts => ts.content === text)
-    }
-
-    private onDidChangeTextEditorSelection(event: vscode.TextEditorSelectionChangeEvent): void {
-        const editor = event.textEditor
-        this.addSelectionForTracking(editor.document, event.selections[0])
+        for (const selections of this.trackedSelections.values()) {
+            const found = selections.find(ts => ts.content === text)
+            if (found) {
+                return found
+            }
+        }
+        return undefined
     }
 
     private addSelectionForTracking(document: vscode.TextDocument, selection: vscode.Selection): void {
@@ -80,13 +90,20 @@ export class RecentCopyRetriever implements vscode.Disposable, ContextRetriever 
             return
         }
         const selectedText = document.getText(selection)
-        const existingSelectionIndex = this.trackedSelections.findIndex(
-            ts => ts.content === selectedText
-        )
-        if (existingSelectionIndex !== -1) {
-            this.trackedSelections.splice(existingSelectionIndex, 1)
+        const uriString = document.uri.toString()
+
+        if (!this.trackedSelections.has(uriString)) {
+            this.trackedSelections.set(uriString, [])
         }
-        this.trackedSelections.push({
+
+        const selections = this.trackedSelections.get(uriString)!
+        const existingSelectionIndex = selections.findIndex(ts => ts.content === selectedText)
+
+        if (existingSelectionIndex !== -1) {
+            selections.splice(existingSelectionIndex, 1)
+        }
+
+        selections.push({
             timestamp: Date.now(),
             content: selectedText,
             languageId: document.languageId,
@@ -94,23 +111,49 @@ export class RecentCopyRetriever implements vscode.Disposable, ContextRetriever 
             startLine: selection.start.line,
             endLine: selection.end.line,
         })
+
         this.reconcileOutdatedChanges()
     }
 
     private reconcileOutdatedChanges(): void {
         const now = Date.now()
-        this.trackedSelections = this.trackedSelections.filter(
-            selection => now - selection.timestamp < this.maxAgeMs
-        )
-        if (this.trackedSelections.length > this.maxSelections) {
-            this.trackedSelections.splice(0, this.trackedSelections.length - this.maxSelections)
+        for (const [uri, selections] of this.trackedSelections) {
+            const updatedSelections = selections.filter(
+                selection => now - selection.timestamp < this.maxAgeMs
+            )
+            if (updatedSelections.length > this.maxSelections) {
+                updatedSelections.splice(0, updatedSelections.length - this.maxSelections)
+            }
+            this.trackedSelections.set(uri, updatedSelections)
         }
     }
 
+    private onDidRenameFiles(event: vscode.FileRenameEvent): void {
+        for (const file of event.files) {
+            const trackedSelections = this.trackedSelections.get(file.oldUri.toString())
+            if (trackedSelections) {
+                this.trackedSelections.set(file.newUri.toString(), trackedSelections)
+                this.trackedSelections.delete(file.oldUri.toString())
+            }
+        }
+    }
+
+    private onDidDeleteFiles(event: vscode.FileDeleteEvent): void {
+        for (const uri of event.files) {
+            this.trackedSelections.delete(uri.toString())
+        }
+    }
+
+    private onDidChangeTextEditorSelection(event: vscode.TextEditorSelectionChangeEvent): void {
+        const editor = event.textEditor
+        this.addSelectionForTracking(editor.document, event.selections[0])
+    }
+
     public dispose(): void {
-        this.trackedSelections = []
+        this.trackedSelections.clear()
         for (const disposable of this.disposables) {
             disposable.dispose()
         }
+        this.disposables = []
     }
 }

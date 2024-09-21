@@ -1,5 +1,6 @@
 import dedent from 'dedent'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import type * as vscode from 'vscode'
 import { Position, Selection } from '../../../../testutils/mocks'
 import { document } from '../../../test-helpers'
 import { RecentCopyRetriever } from './recent-copy'
@@ -11,6 +12,8 @@ describe('RecentCopyRetriever', () => {
     let retriever: RecentCopyRetriever
     let onDidChangeTextEditorSelection: any
     let mockClipboardContent: string
+    let onDidRenameFiles: (event: vscode.FileRenameEvent) => void
+    let onDidDeleteFiles: (event: vscode.FileDeleteEvent) => void
 
     const createMockSelection = (
         startLine: number,
@@ -38,6 +41,16 @@ describe('RecentCopyRetriever', () => {
                 onDidChangeTextEditorSelection: (_onDidChangeTextEditorSelection: any) => {
                     onDidChangeTextEditorSelection = _onDidChangeTextEditorSelection
                     return { dispose: vi.fn() }
+                },
+            },
+            {
+                onDidRenameFiles(listener) {
+                    onDidRenameFiles = listener
+                    return { dispose: () => {} }
+                },
+                onDidDeleteFiles(listener) {
+                    onDidDeleteFiles = listener
+                    return { dispose: () => {} }
                 },
             }
         )
