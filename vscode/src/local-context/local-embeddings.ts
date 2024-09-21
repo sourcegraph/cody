@@ -12,6 +12,7 @@ import {
     type PromptString,
     type StoredLastValue,
     type Unsubscribable,
+    authStatus,
     combineLatest,
     createDisposables,
     currentResolvedConfig,
@@ -42,9 +43,10 @@ export function createLocalEmbeddingsController(
     return storeLastValue(
         combineLatest([
             resolvedConfig,
+            authStatus,
             featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyEmbeddingsGenerateMetadata),
         ]).pipe(
-            map(([config, ffCodyEmbeddingsGenerateMetadata]) => {
+            map(([config, authStatus, ffCodyEmbeddingsGenerateMetadata]) => {
                 // NOTE: local embeddings are only going to be supported in VSC for now.
                 // Until we revisit this decision, we disable local embeddings in the agent.
                 let isLocalEmbeddingsEnabled = !isRunningInsideAgent()
@@ -56,13 +58,17 @@ export function createLocalEmbeddingsController(
                     return undefined
                 }
 
+                if (!isDotCom(authStatus)) {
+                    return undefined
+                }
+
                 const modelConfig =
                     config.configuration.testingModelConfig || ffCodyEmbeddingsGenerateMetadata
                         ? sourcegraphMetadataModelConfig
                         : sourcegraphModelConfig
                 return new LocalEmbeddingsController(context, modelConfig)
             }),
-            createDisposables(localEmbeddingsController => localEmbeddingsController)
+            createDisposables(localEmbeddings => localEmbeddings)
         )
     )
 }
@@ -200,14 +206,17 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, vscode
     }
 
     private async getService(): Promise<MessageHandler> {
+        const { auth } = await currentResolvedConfig()
+        if (!isDotCom(auth.serverEndpoint)) {
+            // This should never be reached because of the check in
+            // `createLocalEmbeddingsController`, but check again here just in case (of code
+            // changes, bugs, etc.).
+            throw new Error('local embeddings are only available on Sourcegraph.com')
+        }
+
         if (!this.service) {
             const instance = CodyEngineService.getInstance(this.context)
             this.service = instance.getService(this.setupLocalEmbeddingsService)
-        }
-
-        const { auth } = await currentResolvedConfig()
-        if (!isDotCom(auth.serverEndpoint)) {
-            throw new Error('local embeddings are only available on Sourcegraph.com')
         }
 
         return this.service
