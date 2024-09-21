@@ -5,7 +5,7 @@ import {
     distinctUntilChanged,
     featureFlagProvider,
     isDotCom,
-    mergeMap,
+    switchMap,
 } from '@sourcegraph/cody-shared'
 
 import { Observable, map } from 'observable-fns'
@@ -41,7 +41,7 @@ export function getDotComExperimentModel({
         ),
         featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyAutocompleteDeepseekV2LiteBase),
     ]).pipe(
-        mergeMap(([starCoderHybrid, claude3, fimModelExperimentFlag, deepseekV2LiteBase]) => {
+        switchMap(([starCoderHybrid, claude3, fimModelExperimentFlag, deepseekV2LiteBase]) => {
             // We run fine tuning experiment for VSC client only.
             // We disable for all agent clients like the JetBrains plugin.
             const isFinetuningExperimentDisabled = vscode.workspace

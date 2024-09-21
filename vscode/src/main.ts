@@ -21,7 +21,6 @@ import {
     fromVSCodeEvent,
     graphqlClient,
     isDotCom,
-    mergeMap,
     modelsService,
     resolvedConfig,
     setClientNameVersion,
@@ -29,6 +28,7 @@ import {
     setResolvedConfigurationObservable,
     startWith,
     subscriptionDisposable,
+    switchMap,
     take,
     telemetryRecorder,
 } from '@sourcegraph/cody-shared'
@@ -623,7 +623,7 @@ function registerAutocomplete(
         subscriptionDisposable(
             combineLatest([resolvedConfig, authStatus])
                 .pipe(
-                    mergeMap(([config, authStatus]) =>
+                    switchMap(([config, authStatus]) =>
                         createInlineCompletionItemProvider({
                             config,
                             authStatus,
