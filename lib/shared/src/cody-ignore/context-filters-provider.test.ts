@@ -3,6 +3,8 @@ import { RE2JS as RE2 } from 're2js'
 import { type Mock, afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { URI } from 'vscode-uri'
 
+import { mockAuthStatus } from '../auth/authStatus'
+import { AUTH_STATUS_FIXTURE_AUTHED, AUTH_STATUS_FIXTURE_AUTHED_DOTCOM } from '../auth/types'
 import { isDefined } from '../common'
 import { mockResolvedConfig } from '../configuration/resolver'
 import { DOTCOM_URL } from '../sourcegraph-api/environments'
@@ -20,6 +22,7 @@ describe('ContextFiltersProvider', () => {
 
     beforeEach(() => {
         mockResolvedConfig({ configuration: {}, auth: { serverEndpoint: 'https://example.com' } })
+        mockAuthStatus(AUTH_STATUS_FIXTURE_AUTHED)
         getRepoNamesFromWorkspaceUri = vi.fn()
         ContextFiltersProvider.repoNameResolver = { getRepoNamesFromWorkspaceUri }
 
@@ -383,8 +386,8 @@ describe('ContextFiltersProvider', () => {
                     configuration: {},
                     auth: { serverEndpoint: DOTCOM_URL.toString() },
                 })
+                mockAuthStatus(AUTH_STATUS_FIXTURE_AUTHED_DOTCOM)
                 provider = new ContextFiltersProvider()
-                ;(provider as any).isDotCom = true
                 await vi.runOnlyPendingTimersAsync()
                 await provider.isRepoNameIgnored('anything')
 

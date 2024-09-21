@@ -1,8 +1,8 @@
 import path from 'node:path'
 
 import { spawnSync } from 'node:child_process'
-import { nextTick } from '@sourcegraph/cody-shared'
-import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
+import { INCLUDE_EVERYTHING_CONTEXT_FILTERS } from '@sourcegraph/cody-shared'
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 import { TESTING_CREDENTIALS } from '../../vscode/src/testutils/testing-credentials'
 import { TestClient } from './TestClient'
 import { TestWorkspace } from './TestWorkspace'
@@ -66,7 +66,20 @@ describe('Enterprise - S2 (close main branch)', () => {
 
     // Use S2 instance for Cody Context Filters enterprise tests
     describe('Cody Context Filters for enterprise', () => {
-        it('testing/ignore/overridePolicy', async () => {
+        beforeAll(async () => {
+            // Reset the ignore policy at the start so that we don't try to fetch in the background.
+            await s2EnterpriseClient.request(
+                'testing/ignore/overridePolicy',
+                INCLUDE_EVERYTHING_CONTEXT_FILTERS
+            )
+        })
+        afterEach(() => {
+            s2EnterpriseClient.unregisterNotification('ignore/didChange')
+        })
+
+        // NOTE(sqs): Run many times to find flakes better. This test has been often flaky but was
+        // fixed on 2024-09-20.
+        it.each(Array.from({ length: 25 }))('testing/ignore/overridePolicy', async () => {
             await s2EnterpriseClient.openFile(sumUri)
 
             const onChangeCallback = vi.fn()
@@ -77,15 +90,14 @@ describe('Enterprise - S2 (close main branch)', () => {
             s2EnterpriseClient.registerNotification('ignore/didChange', onChangeCallback)
 
             expect(await ignoreTest()).toStrictEqual({ policy: 'use' })
-            expect(onChangeCallback).toBeCalledTimes(1)
+            expect(onChangeCallback).toBeCalledTimes(0)
 
             await s2EnterpriseClient.request('testing/ignore/overridePolicy', {
                 include: [{ repoNamePattern: '' }],
                 exclude: [{ repoNamePattern: '.*sourcegraph/cody.*' }],
             })
 
-            expect(onChangeCallback).toBeCalledTimes(2)
-            await nextTick()
+            expect(onChangeCallback).toBeCalledTimes(1)
             expect(await ignoreTest()).toStrictEqual({ policy: 'ignore' })
 
             await s2EnterpriseClient.request('testing/ignore/overridePolicy', {
@@ -93,7 +105,7 @@ describe('Enterprise - S2 (close main branch)', () => {
                 exclude: [{ repoNamePattern: '.*sourcegraph/sourcegraph.*' }],
             })
 
-            expect(onChangeCallback).toBeCalledTimes(3)
+            expect(onChangeCallback).toBeCalledTimes(2)
             expect(await ignoreTest()).toStrictEqual({ policy: 'use' })
 
             await s2EnterpriseClient.request('testing/ignore/overridePolicy', {
@@ -102,7 +114,7 @@ describe('Enterprise - S2 (close main branch)', () => {
             })
 
             // onChangeCallback is not called again because filters are the same
-            expect(onChangeCallback).toBeCalledTimes(3)
+            expect(onChangeCallback).toBeCalledTimes(2)
         })
 
         // The site config `cody.contextFilters` value on sourcegraph.sourcegraph.com instance
