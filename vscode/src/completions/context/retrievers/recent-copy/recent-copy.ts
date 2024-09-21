@@ -89,9 +89,10 @@ export class RecentCopyRetriever implements vscode.Disposable, ContextRetriever 
 
     private updateTrackedSelections(newSelection: TrackedSelection): void {
         const now = Date.now()
-        this.trackedSelections = this.trackedSelections
-            .filter(selection => now - selection.timestamp < this.maxAgeMs)
-            .filter(selection => !this.isOverlapping(selection, newSelection))
+        this.trackedSelections = this.trackedSelections.filter(
+            selection =>
+                now - selection.timestamp < this.maxAgeMs && !this.isOverlapping(selection, newSelection)
+        )
 
         this.trackedSelections.unshift(newSelection)
         this.trackedSelections = this.trackedSelections.slice(0, this.maxSelections)
