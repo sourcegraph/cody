@@ -1,6 +1,7 @@
 import type { AutocompleteContextSnippet } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 import type { ContextRetriever } from '../../../types'
+import { RetrieverIdentifier } from '../../utils'
 
 interface TrackedSelections {
     timestamp: number
@@ -32,6 +33,7 @@ export class RecentCopyRetriever implements vscode.Disposable, ContextRetriever 
         const selectionItem = this.getSelectionItemIfExist(clipboardContent)
         if (selectionItem) {
             const autocompleteItem = {
+                identifier: RetrieverIdentifier.RecentCopyRetriever,
                 uri: selectionItem.uri,
                 startLine: selectionItem.startLine,
                 endLine: selectionItem.endLine,
