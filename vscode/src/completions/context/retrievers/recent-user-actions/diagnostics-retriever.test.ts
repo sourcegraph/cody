@@ -45,7 +45,7 @@ describe('DiagnosticsRetriever', () => {
         severity: vscode.DiagnosticSeverity,
         range: vscode.Range,
         message: string,
-        source: string = 'ts',
+        source = 'ts',
         relatedInformation?: vscode.DiagnosticRelatedInformation[]
     ): vscode.Diagnostic => ({
         severity,
@@ -73,12 +73,18 @@ describe('DiagnosticsRetriever', () => {
         ]
         const position = new vscode.Position(1, 16)
 
-        await testDiagnostics(testDocument, diagnostic, position, 1, `
+        await testDiagnostics(
+            testDocument,
+            diagnostic,
+            position,
+            1,
+            `
             "function foo() {
                 console.log('foo')
                            ^^^^^ Type 'string' is not assignable to type 'number'.
             }"
-        `)
+        `
+        )
     })
 
     it('should retrieve diagnostics on multiple lines', async () => {
@@ -111,14 +117,20 @@ describe('DiagnosticsRetriever', () => {
         ]
         const position = new vscode.Position(2, 0)
 
-        const { snippets } = await testDiagnostics(testDocument, diagnostics, position, 3, `
+        const { snippets } = await testDiagnostics(
+            testDocument,
+            diagnostics,
+            position,
+            3,
+            `
             "function multiLineErrors() {
                 const x: number = "string";
                                    ^^^^^^^^ Type 'string' is not assignable to type 'number'.
                 const y: string = 42;
                 const z = x + y;
             }"
-        `)
+        `
+        )
 
         expect(parser.parse(snippets[1].content).diagnostic.message).toMatchInlineSnapshot(`
             "function multiLineErrors() {
@@ -161,13 +173,19 @@ describe('DiagnosticsRetriever', () => {
         ]
         const position = new vscode.Position(1, 11)
 
-        await testDiagnostics(testDocument, diagnostics, position, 1, `
+        await testDiagnostics(
+            testDocument,
+            diagnostics,
+            position,
+            1,
+            `
             "function bar(x: number, y: string) {
                 return x + y;
                       ^ The '+' operator cannot be applied to types 'number' and 'string'.
                          ^ Implicit conversion of 'string' to 'number' may cause unexpected behavior.
             }"
-        `)
+        `
+        )
     })
 
     it('should filter out warning diagnostics', async () => {
@@ -193,15 +211,21 @@ describe('DiagnosticsRetriever', () => {
         ]
         const position = new vscode.Position(1, 11)
 
-        await testDiagnostics(testDocument, diagnostics, position, 1, `
+        await testDiagnostics(
+            testDocument,
+            diagnostics,
+            position,
+            1,
+            `
             "function bar(x: number, y: string) {
                 return x + y;
                       ^ The '+' operator cannot be applied to types 'number' and 'string'.
             }"
-        `)
+        `
+        )
     })
 
-    it('should handle errors at the end of the file', async () => {
+    it('should handle diagnostics at the end of the file', async () => {
         const testDocument = document(
             dedent`
             function baz() {
@@ -212,17 +236,23 @@ describe('DiagnosticsRetriever', () => {
         const diagnostic = [
             createDiagnostic(
                 vscode.DiagnosticSeverity.Error,
-                new vscode.Range(1, 22, 1, 23),
+                new vscode.Range(1, 21, 1, 22),
                 "'}' expected."
             ),
         ]
-        const position = new vscode.Position(1, 23)
+        const position = new vscode.Position(1, 22)
 
-        await testDiagnostics(testDocument, diagnostic, position, 1, `
+        await testDiagnostics(
+            testDocument,
+            diagnostic,
+            position,
+            1,
+            `
             "function baz() {
                 console.log('baz')
-                                 ^ '}' expected."
-        `)
+                                ^ '}' expected."
+        `
+        )
     })
 
     it('should only display context within the context lines window for a big file', async () => {
@@ -249,7 +279,12 @@ describe('DiagnosticsRetriever', () => {
         ]
         const position = new vscode.Position(101, 8)
 
-        const { message } = await testDiagnostics(testDocument, diagnostic, position, 1, `
+        const { message } = await testDiagnostics(
+            testDocument,
+            diagnostic,
+            position,
+            1,
+            `
             "function largeFunction() {
                 let x: number = 5;
                 let y: string = 'hello';
@@ -257,7 +292,8 @@ describe('DiagnosticsRetriever', () => {
                            ^^^ The '+' operator cannot be applied to types 'number' and 'string'.
                 console.log(x);
             }"
-        `)
+        `
+        )
         // Ensure that only the relevant context is shown
         expect(message.diagnostic.message).not.toContain('// Some code here')
     })
@@ -306,7 +342,12 @@ describe('DiagnosticsRetriever', () => {
         ]
         const position = new vscode.Position(4, 12)
 
-        const { message } = await testDiagnostics(testDocument, diagnostics, position, 1, `
+        const { message } = await testDiagnostics(
+            testDocument,
+            diagnostics,
+            position,
+            1,
+            `
             "return x.toString();
             }
 
@@ -314,7 +355,8 @@ describe('DiagnosticsRetriever', () => {
                        ^^^ Argument of type 'string' is not assignable to parameter of type 'number'.
                        ^^^^ Argument of type 'boolean' is not assignable to parameter of type 'number'.
             let z = foo(true);"
-        `)
+        `
+        )
         const relatedErrorList = parser.parse(message.diagnostic.related_information_list)
         expect(relatedErrorList[0].message).toContain(
             "The expected type comes from parameter 'x' which is declared here"
