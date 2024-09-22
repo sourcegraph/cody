@@ -21,6 +21,7 @@ export enum RetrieverIdentifier {
     TscRetriever = 'tsc',
     LspLightRetriever = 'lsp-light',
     RecentCopyRetriever = 'recent-copy',
+    DiagnosticsRetriever = 'diagnostics',
 }
 
 export interface ShouldUseContextParams {
