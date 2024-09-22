@@ -8,6 +8,13 @@ import { CHAT_OUTPUT_TOKEN_BUDGET } from '../../token/constants'
  * Fetches available Ollama models from the Ollama server.
  */
 export async function fetchLocalOllamaModels(): Promise<Model[]> {
+    if (process.env.VITEST) {
+        // We currently never intend to fetch local Ollama models during tests, but it's easy to
+        // accidentally invoke this and introduce test nondeterminism or local vs. remote
+        // divergence.
+        return []
+    }
+    // TODO(sqs)#observe: make ollama models observable
     return (await ollama.list()).models?.map(m =>
         createModel({
             id: `ollama/${m.name}`,
