@@ -32,11 +32,7 @@ describe('DiagnosticsRetriever', () => {
             },
         ]
 
-        const snippets = await retriever.getDiagnosticsPromptFromInformation(
-            testDocument,
-            new vscode.Position(1, 18),
-            diagnostic
-        )
+        const snippets = await retriever.getDiagnosticsPromptFromInformation(testDocument, diagnostic)
         expect(snippets).toHaveLength(1)
         // const content = snippets[0].content
         // expect(content).toMatchInlineSnapshot(`

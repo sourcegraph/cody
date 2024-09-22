@@ -20,26 +20,33 @@ export class DiagnosticsRetriever implements vscode.Disposable, ContextRetriever
     public identifier = RetrieverIdentifier.DiagnosticsRetriever
     private disposables: vscode.Disposable[] = []
 
-    public async retrieve({
-        document,
-        position,
-    }: ContextRetrieverOptions): Promise<AutocompleteContextSnippet[]> {
+    public async retrieve({ document }: ContextRetrieverOptions): Promise<AutocompleteContextSnippet[]> {
         const diagnostics = this.getDiagnosticsForFile(document)
-        return this.getDiagnosticsPromptFromInformation(document, position, diagnostics)
+        return this.getDiagnosticsPromptFromInformation(document, diagnostics)
     }
 
     public async getDiagnosticsPromptFromInformation(
         document: vscode.TextDocument,
-        position: vscode.Position,
         diagnostics: vscode.Diagnostic[]
     ): Promise<AutocompleteContextSnippet[]> {
-        const filteredDiagnostics = diagnostics.filter(this.isRelevantDiagnostic)
-        const diagnosticInfo = this.getDiagnosticsForPosition(document, position, filteredDiagnostics)
-        if (diagnosticInfo.length === 0) {
+        const relevantDiagnostics = diagnostics
+            .filter(diagnostic => this.isRelevantDiagnostic(diagnostic))
+            .map(diagnostic => ({
+                severity: this.getSeverityString(diagnostic.severity),
+                text: this.getDiagnosticsText(document, diagnostic),
+                source: diagnostic.source,
+                message: diagnostic.message,
+                startLine: diagnostic.range.start.line,
+                endLine: diagnostic.range.end.line,
+                relatedInformation: diagnostic.relatedInformation,
+            }))
+
+        if (relevantDiagnostics.length === 0) {
             return []
         }
+
         return Promise.all(
-            diagnosticInfo.map(async info => ({
+            relevantDiagnostics.map(async info => ({
                 identifier: RetrieverIdentifier.DiagnosticsRetriever,
                 content: await this.getDiagnosticPromptMessage(info),
                 uri: document.uri,
@@ -54,15 +61,6 @@ export class DiagnosticsRetriever implements vscode.Disposable, ContextRetriever
             diagnostic.severity === vscode.DiagnosticSeverity.Error ||
             diagnostic.severity === vscode.DiagnosticSeverity.Warning
         )
-    }
-
-    private getDiagnosticsForPosition(
-        document: vscode.TextDocument,
-        position: vscode.Position,
-        diagnostics: vscode.Diagnostic[]
-    ): DiagnosticInfo[] {
-        const range = this.getRangeAroundPosition(document, position)
-        return this.getDiagnosticInfoFromRange(document, diagnostics, range)
     }
 
     private getDiagnosticsForFile(document: vscode.TextDocument): vscode.Diagnostic[] {
@@ -102,35 +100,44 @@ export class DiagnosticsRetriever implements vscode.Disposable, ContextRetriever
         })
     }
 
-    private getDiagnosticInfoFromRange(
-        document: vscode.TextDocument,
-        diagnostics: vscode.Diagnostic[],
-        range: vscode.Range
-    ): DiagnosticInfo[] {
-        return diagnostics
-            .filter(diagnostic => diagnostic.range.intersection(range))
-            .map(diagnostic => ({
-                severity: this.getSeverityString(diagnostic.severity),
-                text: document.getText(range),
-                source: diagnostic.source,
-                message: diagnostic.message,
-                startLine: range.start.line,
-                endLine: range.end.line,
-                relatedInformation: diagnostic.relatedInformation,
-            }))
-    }
-
     private getSeverityString(severity: vscode.DiagnosticSeverity): 'warning' | 'error' {
         return severity === vscode.DiagnosticSeverity.Warning ? 'warning' : 'error'
     }
 
-    private getRangeAroundPosition(
-        document: vscode.TextDocument,
-        position: vscode.Position
-    ): vscode.Range {
-        const startLine = Math.max(0, position.line - 3)
-        const endLine = Math.min(document.lineCount - 1, position.line + 3)
-        return new vscode.Range(new vscode.Position(startLine, 0), document.lineAt(endLine).range.end)
+    private getDiagnosticsText(document: vscode.TextDocument, diagnostic: vscode.Diagnostic): string {
+        const CONTEXT_LINES = 3
+        const line = document.lineAt(diagnostic.range.start.line)
+        const column = diagnostic.range.start.character - 1
+        const diagnosticLength = Math.min(
+            document.offsetAt(diagnostic.range.end) - document.offsetAt(diagnostic.range.start),
+            // Take into account the \n char at the end of the line
+            line.text.length + 1 - column
+        )
+        const diagnosticText = `${' '.repeat(column)}${'^'.repeat(diagnosticLength)} ${
+            diagnostic.message
+        }`
+        const errorLine = line.text
+
+        // Add surrounding context to the diagnostic message
+        const contextStartLine = Math.max(0, diagnostic.range.start.line - CONTEXT_LINES)
+        const contextEndLine = Math.min(
+            document.lineCount - 1,
+            diagnostic.range.start.line + CONTEXT_LINES
+        )
+        const prevLines = document.getText(
+            new vscode.Range(contextStartLine, 0, line.lineNumber - 1, line.range.end.character)
+        )
+        const nextLines = document.getText(
+            new vscode.Range(
+                line.lineNumber + 1,
+                0,
+                contextEndLine,
+                document.lineAt(contextEndLine).range.end.character
+            )
+        )
+
+        const context = [prevLines, errorLine, diagnosticText, nextLines].join('\n')
+        return context
     }
 
     public isSupportedForLanguageId(): boolean {
