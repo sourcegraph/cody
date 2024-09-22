@@ -58,7 +58,10 @@ test.extend<ExpectedV2Events>({
     await page.getByText("fizzbuzz.push('Buzz')").click()
 
     // Submit a new chat question from the command menu.
-    await page.getByLabel(/Commands \(/).click()
+    await page
+        .locator('[id="workbench\\.parts\\.editor"]')
+        .getByLabel(/Commands \(/)
+        .click()
     await page.waitForTimeout(100)
 
     // HACK: The 'delay' command is used to make sure the response is streamed 400ms after
