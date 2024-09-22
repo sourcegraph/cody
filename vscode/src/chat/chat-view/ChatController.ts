@@ -11,6 +11,7 @@ import {
     type ChatClient,
     type ChatMessage,
     ClientConfigSingleton,
+    type CodyClientConfig,
     CodyIDE,
     type CompletionParameters,
     type ContextItem,
@@ -40,6 +41,7 @@ import {
     graphqlClient,
     hydrateAfterPostMessage,
     inputTextWithoutContextChipsFromPromptEditorState,
+    isAbortError,
     isAbortErrorOrSocketHangUp,
     isContextWindowLimitError,
     isDefined,
@@ -620,7 +622,21 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         const configForWebview = await this.getConfigForWebview()
         const workspaceFolderUris =
             vscode.workspace.workspaceFolders?.map(folder => folder.uri.toString()) ?? []
-        const clientConfig = await ClientConfigSingleton.getInstance().getConfig()
+
+        const abortController = new AbortController()
+        let clientConfig: CodyClientConfig | undefined
+        try {
+            clientConfig = await ClientConfigSingleton.getInstance().getConfig(abortController.signal)
+            if (abortController.signal.aborted) {
+                return
+            }
+        } catch (error) {
+            if (isAbortError(error) || abortController.signal.aborted) {
+                return
+            }
+            throw error
+        }
+
         await this.postMessage({
             type: 'config',
             config: configForWebview,

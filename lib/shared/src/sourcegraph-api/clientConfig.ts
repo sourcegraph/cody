@@ -1,15 +1,19 @@
-import { map } from 'observable-fns'
+import { Observable, interval, map } from 'observable-fns'
 import semver from 'semver'
-import { authStatus, currentAuthStatusOrNotReadyYet } from '../auth/authStatus'
-import type { AuthStatus } from '../auth/types'
-import { dependentAbortController } from '../common/abortController'
+import { authStatus } from '../auth/authStatus'
 import { logDebug, logError } from '../logger'
 import {
-    type Unsubscribable,
-    abortableOperation,
-    debounceTime,
     distinctUntilChanged,
+    firstValueFrom,
+    promiseFactoryToObservable,
+    startWith,
+    switchMap,
 } from '../misc/observable'
+import {
+    type pendingOperation,
+    skipPendingOperation,
+    switchMapReplayOperation,
+} from '../misc/observableOperation'
 import { isError } from '../utils'
 import { isAbortError } from './errors'
 import { type CodyConfigFeatures, graphqlClient } from './graphql/client'
@@ -41,8 +45,6 @@ export interface CodyClientConfig {
     modelsAPIEnabled: boolean
 }
 
-class AuthStatusChangedError extends Error {}
-
 /**
  * ClientConfigSingleton is a class that manages the retrieval
  * and caching of configuration features from GraphQL endpoints.
@@ -50,55 +52,36 @@ class AuthStatusChangedError extends Error {}
 export class ClientConfigSingleton {
     private static instance: ClientConfigSingleton
 
-    public static readonly CACHE_TTL = 60 * 1000
-    private cachedValue: {
-        value: CodyClientConfig
-        stale: boolean
-        timeoutHandle: ReturnType<typeof setTimeout> | null
-    } | null = null
+    public static readonly REFETCH_INTERVAL = 60 * 1000
 
     // Default values for the legacy GraphQL features API, used when a Sourcegraph instance
     // does not support even the legacy GraphQL API.
-    private featuresLegacy: CodyConfigFeatures = {
+    private readonly featuresLegacy: Readonly<CodyConfigFeatures> = {
         chat: true,
         autoComplete: true,
         commands: true,
         attribution: false,
     }
 
-    private configSubscription: Unsubscribable
+    /**
+     * An observable that immediately emits the last-cached value (or fetches it if needed) and then
+     * emits changes.
+     */
+    public readonly changes: Observable<CodyClientConfig | undefined | typeof pendingOperation> =
+        authStatus.pipe(
+            switchMapReplayOperation(authStatus =>
+                authStatus.authenticated
+                    ? interval(ClientConfigSingleton.REFETCH_INTERVAL).pipe(
+                          startWith(undefined),
+                          switchMap(() => promiseFactoryToObservable(signal => this.fetchConfig(signal)))
+                      )
+                    : Observable.of(undefined)
+            ),
+            map(value => (isError(value) ? undefined : value)),
+            distinctUntilChanged()
+        )
 
-    // Constructor is private to prevent creating new instances outside of the class
-    private constructor() {
-        this.configSubscription = authStatus
-            .pipe(
-                map(
-                    authStatus =>
-                        ({
-                            authenticated: authStatus.authenticated,
-                            endpoint: authStatus.endpoint,
-                        }) satisfies Pick<AuthStatus, 'authenticated' | 'endpoint'>
-                ),
-                debounceTime(0),
-                distinctUntilChanged(),
-                abortableOperation(async (authStatus, signal) => {
-                    this.inflightRefreshConfig?.abort(
-                        new AuthStatusChangedError('invalidate due to authStatus change')
-                    )
-                    this.inflightRefreshConfigPromise = null
-                    this.setCachedValue(null)
-
-                    if (authStatus.authenticated) {
-                        await this.refreshConfig(signal).catch(() => {})
-                    }
-                })
-            )
-            .subscribe({})
-    }
-
-    public dispose(): void {
-        this.configSubscription.unsubscribe()
-    }
+    private constructor() {}
 
     // Static method to get the singleton instance
     public static getInstance(): ClientConfigSingleton {
@@ -116,77 +99,14 @@ export class ClientConfigSingleton {
     }
 
     public async getConfig(signal?: AbortSignal): Promise<CodyClientConfig | undefined> {
-        try {
-            switch (await this.shouldFetch()) {
-                case 'sync':
-                    try {
-                        return await this.refreshConfig(signal)
-                    } catch (error) {
-                        // HACK(sqs): Try again in case of an authStatus change.
-                        if (error instanceof AuthStatusChangedError) {
-                            return await this.refreshConfig(signal)
-                        }
-                        throw error
-                    }
-                // biome-ignore lint/suspicious/noFallthroughSwitchClause: This is intentional
-                case 'async':
-                    this.refreshConfig(signal).catch(() => {})
-                case false:
-                    return this.cachedValue?.value ?? undefined
-            }
-        } catch {
-            return
-        }
+        return await firstValueFrom(this.changes.pipe(skipPendingOperation()), signal)
     }
 
-    // Refetch the config if the user is signed in and it's not cached or it's older than 60 seconds
-    // If the cached config is >60s old, then we will refresh it async now. In the meantime, we will
-    // continue using the old version.
-    //
-    // Note that this means the time allowance between 'site admin disabled <chat,autocomplete,commands,etc.>
-    // functionality but users can still make use of it' is double this (120s.)
-    private async shouldFetch(): Promise<'sync' | 'async' | false> {
-        // If the user is not logged in, we will not fetch as it will fail
-        if (!currentAuthStatusOrNotReadyYet()?.authenticated) {
-            return false
-        }
-
-        // If they are logged in but not cached, fetch the config synchronously
-        if (!this.cachedValue) {
-            return 'sync'
-        }
-
-        // If the config is cached and stale, we can use the cached version
-        // but should asyncronously fetch the new config
-        if (this.cachedValue.stale) {
-            return 'async'
-        }
-
-        // Otherwise, we have a cache hit!
-        return false
-    }
-
-    private inflightRefreshConfig: AbortController | null = null
-    private inflightRefreshConfigPromise: Promise<CodyClientConfig> | null = null
-
-    // Refreshes the config features by fetching them from the server and caching the result
-    private async refreshConfig(signal?: AbortSignal): Promise<CodyClientConfig> {
-        if (this.inflightRefreshConfigPromise) {
-            return this.inflightRefreshConfigPromise
-        }
-
-        if (this.inflightRefreshConfig) {
-            this.inflightRefreshConfig.abort()
-        }
-        const abortController = dependentAbortController(signal)
-        this.inflightRefreshConfig = abortController
-
-        signal = abortController.signal
-
+    private async fetchConfig(signal?: AbortSignal): Promise<CodyClientConfig> {
         logDebug('ClientConfigSingleton', 'refreshing configuration')
 
         // Determine based on the site version if /.api/client-config is available.
-        const promise = graphqlClient
+        return graphqlClient
             .getSiteVersion(signal)
             .then(siteVersion => {
                 signal?.throwIfAborted()
@@ -241,7 +161,6 @@ export class ClientConfigSingleton {
             .then(clientConfig => {
                 signal?.throwIfAborted()
                 logDebug('ClientConfigSingleton', 'refreshed', JSON.stringify(clientConfig))
-                this.setCachedValue(clientConfig)
                 return clientConfig
             })
             .catch(e => {
@@ -250,37 +169,6 @@ export class ClientConfigSingleton {
                 }
                 throw e
             })
-            .finally(() => {
-                if (this.inflightRefreshConfigPromise === promise) {
-                    this.inflightRefreshConfigPromise = null
-                }
-                if (this.inflightRefreshConfig === abortController) {
-                    this.inflightRefreshConfig = null
-                }
-            })
-        this.inflightRefreshConfigPromise = promise
-        return this.inflightRefreshConfigPromise
-    }
-
-    public setCachedValue(value: CodyClientConfig | null): void {
-        // Clear prior value and its eviction timer.
-        if (this.cachedValue) {
-            if (this.cachedValue.timeoutHandle) {
-                clearTimeout(this.cachedValue.timeoutHandle)
-            }
-        }
-
-        this.cachedValue = null
-        if (value) {
-            const cacheEntry: NonNullable<ClientConfigSingleton['cachedValue']> = {
-                value,
-                stale: false,
-                timeoutHandle: setTimeout(() => {
-                    cacheEntry.stale = true
-                }, ClientConfigSingleton.CACHE_TTL),
-            }
-            this.cachedValue = cacheEntry
-        }
     }
 
     private async fetchClientConfigLegacy(signal?: AbortSignal): Promise<CodyClientConfig> {
