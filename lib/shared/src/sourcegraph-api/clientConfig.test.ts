@@ -1,10 +1,9 @@
 import { Subject } from 'observable-fns'
 import { afterEach, describe, expect, test, vi } from 'vitest'
-import { mockAuthStatus } from '../../auth/authStatus'
-import { AUTH_STATUS_FIXTURE_AUTHED, type AuthStatus } from '../../auth/types'
-import { ClientConfigSingleton } from './client'
-import { graphqlClient } from './client'
-import type { CodyClientConfig } from './client'
+import { mockAuthStatus } from '../auth/authStatus'
+import { AUTH_STATUS_FIXTURE_AUTHED, type AuthStatus } from '../auth/types'
+import { ClientConfigSingleton, type CodyClientConfig } from './clientConfig'
+import { graphqlClient } from './graphql/client'
 
 const CLIENT_CONFIG_FIXTURE: CodyClientConfig = {
     chatEnabled: true,
