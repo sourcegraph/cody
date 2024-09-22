@@ -2,6 +2,8 @@ import { Subject } from 'observable-fns'
 import { afterEach, describe, expect, test, vi } from 'vitest'
 import { mockAuthStatus } from '../auth/authStatus'
 import { AUTH_STATUS_FIXTURE_AUTHED, type AuthStatus } from '../auth/types'
+import { testing__firstValueFromWithinTime } from '../misc/observable'
+import { skipPendingOperation } from '../misc/observableOperation'
 import { ClientConfigSingleton, type CodyClientConfig } from './clientConfig'
 import { graphqlClient } from './graphql/client'
 
@@ -17,11 +19,10 @@ const CLIENT_CONFIG_FIXTURE: CodyClientConfig = {
 describe('ClientConfigSingleton', () => {
     let clientConfigSingleton: ClientConfigSingleton | undefined
     afterEach(() => {
-        clientConfigSingleton?.dispose()
         clientConfigSingleton = undefined
     })
 
-    test('initial', { timeout: 200 }, async () => {
+    test('initial', { timeout: 200 }, async task => {
         vi.useFakeTimers()
         const authStatusSubject = new Subject<AuthStatus>()
         mockAuthStatus(authStatusSubject)
@@ -31,22 +32,73 @@ describe('ClientConfigSingleton', () => {
             .mockResolvedValue(CLIENT_CONFIG_FIXTURE)
         clientConfigSingleton = ClientConfigSingleton.testing__new()
 
-        authStatusSubject.next(AUTH_STATUS_FIXTURE_AUTHED)
+        // Mimic the situation where there are other active subscribers and we are sharing the
+        // replay.
+        const subscription = clientConfigSingleton.changes.subscribe({})
+        task.onTestFinished(() => subscription.unsubscribe())
 
         // Wait for the auth status initial value to be observed, and check that `refreshConfig` was
         // called and the result was cached.
-        await vi.advanceTimersByTimeAsync(1)
+        authStatusSubject.next(AUTH_STATUS_FIXTURE_AUTHED)
+        await vi.advanceTimersByTimeAsync(0)
         expect(getSiteVersionMock).toHaveBeenCalledTimes(1)
         expect(fetchHTTPMock).toHaveBeenCalledTimes(1)
         expect(await clientConfigSingleton.getConfig()).toEqual(CLIENT_CONFIG_FIXTURE)
-        await vi.runAllTimersAsync()
         expect(getSiteVersionMock).toHaveBeenCalledTimes(1)
         expect(fetchHTTPMock).toHaveBeenCalledTimes(1)
         getSiteVersionMock.mockClear()
         fetchHTTPMock.mockClear()
     })
 
-    test('single-flight requests', { timeout: 200 }, async () => {
+    test('refetch interval', { timeout: 200 }, async task => {
+        vi.useFakeTimers()
+        const authStatusSubject = new Subject<AuthStatus>()
+        mockAuthStatus(authStatusSubject)
+        const getSiteVersionMock = vi.spyOn(graphqlClient, 'getSiteVersion').mockResolvedValue('5.5.0')
+        const fetchHTTPMock = vi
+            .spyOn(graphqlClient, 'fetchHTTP')
+            .mockResolvedValue(CLIENT_CONFIG_FIXTURE)
+        clientConfigSingleton = ClientConfigSingleton.testing__new()
+
+        // Mimic the situation where there are other active subscribers and we are sharing the
+        // replay.
+        const subscription = clientConfigSingleton.changes.subscribe({})
+        task.onTestFinished(() => subscription.unsubscribe())
+
+        // Wait for the auth status initial value to be observed.
+        authStatusSubject.next(AUTH_STATUS_FIXTURE_AUTHED)
+        await vi.advanceTimersByTimeAsync(0)
+        expect(getSiteVersionMock).toHaveBeenCalledTimes(1)
+        expect(fetchHTTPMock).toHaveBeenCalledTimes(1)
+        getSiteVersionMock.mockClear()
+        fetchHTTPMock.mockClear()
+
+        // Set a different response for the next refetch.
+        const fixture2: CodyClientConfig = {
+            ...CLIENT_CONFIG_FIXTURE,
+            modelsAPIEnabled: !CLIENT_CONFIG_FIXTURE.modelsAPIEnabled,
+        }
+        fetchHTTPMock.mockImplementation(async () => {
+            await new Promise(resolve => setTimeout(resolve, 100))
+            return fixture2
+        })
+
+        // Ensure that the stale value (for the same endpoint) is still used while we refetch.
+        await vi.advanceTimersByTimeAsync(ClientConfigSingleton.REFETCH_INTERVAL)
+        expect(await clientConfigSingleton.getConfig()).toEqual(CLIENT_CONFIG_FIXTURE)
+        expect(getSiteVersionMock).toHaveBeenCalledTimes(1)
+        expect(fetchHTTPMock).toHaveBeenCalledTimes(1)
+        getSiteVersionMock.mockClear()
+        fetchHTTPMock.mockClear()
+
+        // When the refetch is complete, ensure the new value is emitted.
+        await vi.advanceTimersByTimeAsync(100)
+        expect(await clientConfigSingleton.getConfig()).toEqual(fixture2)
+        expect(getSiteVersionMock).toHaveBeenCalledTimes(0)
+        expect(fetchHTTPMock).toHaveBeenCalledTimes(0)
+    })
+
+    test('single-flight requests', { timeout: 200 }, async task => {
         vi.useFakeTimers()
         const authStatusSubject = new Subject<AuthStatus>()
         mockAuthStatus(authStatusSubject)
@@ -57,16 +109,21 @@ describe('ClientConfigSingleton', () => {
             .spyOn(graphqlClient, 'fetchHTTP')
             .mockResolvedValue(CLIENT_CONFIG_FIXTURE)
         clientConfigSingleton = ClientConfigSingleton.testing__new()
-        authStatusSubject.next(AUTH_STATUS_FIXTURE_AUTHED)
+
+        // Mimic the situation where there are other active subscribers and we are sharing the
+        // replay.
+        const subscription = clientConfigSingleton.changes.subscribe({})
+        task.onTestFinished(() => subscription.unsubscribe())
 
         // Wait for the auth status initial value to be observed, and check that `refreshConfig` was
         // called and the result was cached.
+        authStatusSubject.next(AUTH_STATUS_FIXTURE_AUTHED)
         await vi.advanceTimersByTimeAsync(100)
         getSiteVersionMock.mockClear()
         fetchHTTPMock.mockClear()
 
         // Wait for that cached value to become stale.
-        await vi.advanceTimersByTimeAsync(ClientConfigSingleton.CACHE_TTL + 1)
+        await vi.advanceTimersByTimeAsync(ClientConfigSingleton.REFETCH_INTERVAL + 1)
 
         // Initiate multiple concurrent requests.
         const promise1 = clientConfigSingleton.getConfig()
@@ -101,7 +158,7 @@ describe('ClientConfigSingleton', () => {
         fetchHTTPMock.mockClear()
     })
 
-    test('reuse cached value', { timeout: 200 }, async () => {
+    test('reuse cached value', { timeout: 200 }, async task => {
         vi.useFakeTimers()
         const authStatusSubject = new Subject<AuthStatus>()
         mockAuthStatus(authStatusSubject)
@@ -112,9 +169,14 @@ describe('ClientConfigSingleton', () => {
             .spyOn(graphqlClient, 'fetchHTTP')
             .mockResolvedValue(CLIENT_CONFIG_FIXTURE)
         clientConfigSingleton = ClientConfigSingleton.testing__new()
-        authStatusSubject.next(AUTH_STATUS_FIXTURE_AUTHED)
+
+        // Mimic the situation where there are other active subscribers and we are sharing the
+        // replay.
+        const subscription = clientConfigSingleton.changes.subscribe({})
+        task.onTestFinished(() => subscription.unsubscribe())
 
         // Wait for the initial value to be cached.
+        authStatusSubject.next(AUTH_STATUS_FIXTURE_AUTHED)
         await vi.advanceTimersByTimeAsync(100)
         expect(getSiteVersionMock).toHaveBeenCalledTimes(1)
         expect(fetchHTTPMock).toHaveBeenCalledTimes(1)
@@ -126,23 +188,36 @@ describe('ClientConfigSingleton', () => {
         expect(getSiteVersionMock).toHaveBeenCalledTimes(0)
         expect(fetchHTTPMock).toHaveBeenCalledTimes(0)
 
-        // Wait for that cached value to become stale.
-        await vi.advanceTimersByTimeAsync(ClientConfigSingleton.CACHE_TTL + 1)
-        expect(getSiteVersionMock).toHaveBeenCalledTimes(0)
-        expect(fetchHTTPMock).toHaveBeenCalledTimes(0)
-
-        // A stale cached value will still be returned, but an async refresh is triggered.
-        expect(await clientConfigSingleton.getConfig()).toEqual(CLIENT_CONFIG_FIXTURE)
-        expect(getSiteVersionMock).toHaveBeenCalledTimes(1)
-        expect(fetchHTTPMock).toHaveBeenCalledTimes(0)
-        await vi.advanceTimersByTimeAsync(100)
+        // Wait for that cached value to become stale, and confirm that a refetch was triggered.
+        const fixture2: CodyClientConfig = {
+            ...CLIENT_CONFIG_FIXTURE,
+            modelsAPIEnabled: !CLIENT_CONFIG_FIXTURE.modelsAPIEnabled,
+        }
+        fetchHTTPMock.mockImplementation(async () => {
+            await new Promise(resolve => setTimeout(resolve, 100))
+            return fixture2
+        })
+        await vi.advanceTimersByTimeAsync(ClientConfigSingleton.REFETCH_INTERVAL + 1)
         expect(getSiteVersionMock).toHaveBeenCalledTimes(1)
         expect(fetchHTTPMock).toHaveBeenCalledTimes(1)
         getSiteVersionMock.mockClear()
         fetchHTTPMock.mockClear()
+
+        // A stale cached value will still be returned.
+        expect(await clientConfigSingleton.getConfig()).toEqual(CLIENT_CONFIG_FIXTURE)
+        expect(getSiteVersionMock).toHaveBeenCalledTimes(0)
+        expect(fetchHTTPMock).toHaveBeenCalledTimes(0)
+
+        // When the refetch is done, the new data is used and is available without a refetch.
+        await vi.advanceTimersByTimeAsync(100)
+        expect(await clientConfigSingleton.getConfig()).toEqual(fixture2)
+        expect(getSiteVersionMock).toHaveBeenCalledTimes(0)
+        expect(fetchHTTPMock).toHaveBeenCalledTimes(0)
+        getSiteVersionMock.mockClear()
+        fetchHTTPMock.mockClear()
     })
 
-    test('invalidate cached value when auth status changes', { timeout: 200 }, async () => {
+    test('invalidate cached value when auth status changes', { timeout: 200 }, async task => {
         vi.useFakeTimers()
         const authStatusSubject = new Subject<AuthStatus>()
         mockAuthStatus(authStatusSubject)
@@ -153,26 +228,17 @@ describe('ClientConfigSingleton', () => {
             .spyOn(graphqlClient, 'fetchHTTP')
             .mockResolvedValue(CLIENT_CONFIG_FIXTURE)
         clientConfigSingleton = ClientConfigSingleton.testing__new()
-        authStatusSubject.next(AUTH_STATUS_FIXTURE_AUTHED)
+
+        // Mimic the situation where there are other active subscribers and we are sharing the
+        // replay.
+        const subscription = clientConfigSingleton.changes.subscribe({})
+        task.onTestFinished(() => subscription.unsubscribe())
 
         // Wait for the initial value to be cached.
+        authStatusSubject.next(AUTH_STATUS_FIXTURE_AUTHED)
         await vi.advanceTimersByTimeAsync(100)
         expect(getSiteVersionMock).toHaveBeenCalledTimes(1)
         expect(fetchHTTPMock).toHaveBeenCalledTimes(1)
-        getSiteVersionMock.mockClear()
-        fetchHTTPMock.mockClear()
-
-        // Wait for that cached value to become stale.
-        await vi.advanceTimersByTimeAsync(ClientConfigSingleton.CACHE_TTL + 1)
-        expect(getSiteVersionMock).toHaveBeenCalledTimes(0)
-        expect(fetchHTTPMock).toHaveBeenCalledTimes(0)
-
-        // Start a request that will return immediate stale data. Its background refreshConfig call
-        // will be invalidated by our next change to auth status.
-        const promise1 = clientConfigSingleton.getConfig()
-        await vi.advanceTimersByTimeAsync(50)
-        expect(getSiteVersionMock).toHaveBeenCalledTimes(1)
-        expect(fetchHTTPMock).toHaveBeenCalledTimes(0)
         getSiteVersionMock.mockClear()
         fetchHTTPMock.mockClear()
 
@@ -184,17 +250,16 @@ describe('ClientConfigSingleton', () => {
         fetchHTTPMock.mockResolvedValue(fixture2)
         authStatusSubject.next({ ...AUTH_STATUS_FIXTURE_AUTHED, endpoint: 'https://other.example.com' })
 
-        // Start another promise after the auth status change, which will NOT return stale data.
-        await vi.advanceTimersByTimeAsync(1)
-        const promise2 = clientConfigSingleton.getConfig()
-
-        // The request we made above returns the old data because it returned it (essentially)
-        // synchronously from its cache, so it the auth status change had not happened yet.
-        expect(await promise1).toEqual(CLIENT_CONFIG_FIXTURE)
-        await vi.advanceTimersByTimeAsync(99)
-        expect(await promise2).toEqual(fixture2)
-
-        // Ensure that the new value is returned.
+        // Ensure that the cached value is immediately invalidated.
+        await vi.advanceTimersByTimeAsync(0)
+        expect(
+            await testing__firstValueFromWithinTime(
+                clientConfigSingleton.changes.pipe(skipPendingOperation()),
+                0,
+                vi
+            )
+        ).toBe(undefined)
+        await vi.advanceTimersByTimeAsync(100)
         expect(await clientConfigSingleton.getConfig()).toEqual(fixture2)
         expect(getSiteVersionMock).toHaveBeenCalledTimes(1)
         expect(fetchHTTPMock).toHaveBeenCalledTimes(1)
