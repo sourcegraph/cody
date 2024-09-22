@@ -6,8 +6,6 @@ import { RetrieverIdentifier } from '../../utils'
 
 // XML builder instance for formatting diagnostic messages
 const XML_BUILDER = new XMLBuilder({ format: true })
-// Range of lines to consider when retrieving diagnostic information related to the current cursor position
-const BUFFER_LINES = 3
 // Number of lines of context to include around the diagnostic information in the prompt
 const CONTEXT_LINES = 3
 
@@ -34,11 +32,12 @@ export class DiagnosticsRetriever implements vscode.Disposable, ContextRetriever
         position: vscode.Position,
         diagnostics: vscode.Diagnostic[]
     ): Promise<AutocompleteContextSnippet[]> {
-        const relevantDiagnostics = diagnostics.filter(diagnostic =>
-            this.isRelevantDiagnostic(diagnostic, position, document)
+        const relevantDiagnostics = diagnostics.filter(
+            diagnostic => diagnostic.severity === vscode.DiagnosticSeverity.Error
         )
-        const diagnosticInfos = this.getDiagnosticInfos(document, relevantDiagnostics)
-
+        const diagnosticInfos = this.getDiagnosticInfos(document, relevantDiagnostics).sort(
+            (a, b) => Math.abs(a.line - position.line) - Math.abs(b.line - position.line)
+        )
         return Promise.all(
             diagnosticInfos.map(async info => ({
                 identifier: this.identifier,
@@ -81,21 +80,6 @@ export class DiagnosticsRetriever implements vscode.Disposable, ContextRetriever
             map.get(line)!.push(diagnostic)
         }
         return map
-    }
-
-    private isRelevantDiagnostic(
-        diagnostic: vscode.Diagnostic,
-        position: vscode.Position,
-        document: vscode.TextDocument
-    ): boolean {
-        const endLine = Math.min(document.lineCount - 1, diagnostic.range.end.line + BUFFER_LINES)
-        const expandedRange = new vscode.Range(
-            new vscode.Position(Math.max(0, diagnostic.range.start.line - BUFFER_LINES), 0),
-            new vscode.Position(endLine, document.lineAt(endLine).text.length)
-        )
-        return (
-            expandedRange.contains(position) && diagnostic.severity === vscode.DiagnosticSeverity.Error
-        )
     }
 
     private async getDiagnosticPromptMessage(info: DiagnosticInfo): Promise<string> {

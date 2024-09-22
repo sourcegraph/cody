@@ -115,7 +115,7 @@ describe('DiagnosticsRetriever', () => {
                 "The '+' operator cannot be applied to types 'number' and 'string'."
             ),
         ]
-        const position = new vscode.Position(2, 0)
+        const position = new vscode.Position(1, 0)
 
         const { snippets } = await testDiagnostics(
             testDocument,
@@ -366,8 +366,7 @@ describe('DiagnosticsRetriever', () => {
             "The function 'foo' expects a number as its argument"
         )
     })
-
-    it('should not return snippets for diagnostics outside of the current position context', async () => {
+    it('should return snippets sorted by absolute distance from the current position', async () => {
         const testDocument = document(
             dedent`
             function foo() {
@@ -377,23 +376,44 @@ describe('DiagnosticsRetriever', () => {
             function bar() {
                 let x: number = 'string';
             }
+
+            function baz() {
+                let y: boolean = 42;
+            }
+
+            function qux() {
+                let z: string = true;
+            }
             `,
             'typescript'
         )
-        const diagnostic = [
+        const diagnostics = [
             createDiagnostic(
                 vscode.DiagnosticSeverity.Error,
                 new vscode.Range(5, 24, 5, 32),
                 "Type 'string' is not assignable to type 'number'."
             ),
+            createDiagnostic(
+                vscode.DiagnosticSeverity.Error,
+                new vscode.Range(9, 24, 9, 26),
+                "Type 'number' is not assignable to type 'boolean'."
+            ),
+            createDiagnostic(
+                vscode.DiagnosticSeverity.Error,
+                new vscode.Range(13, 24, 13, 28),
+                "Type 'boolean' is not assignable to type 'string'."
+            ),
         ]
-        const position = new vscode.Position(1, 0)
+        const position = new vscode.Position(10, 0)
 
         const snippets = await retriever.getDiagnosticsPromptFromInformation(
             testDocument,
             position,
-            diagnostic
+            diagnostics
         )
-        expect(snippets).toHaveLength(0)
+        expect(snippets).toHaveLength(3)
+        expect(snippets[0].startLine).toBe(9)
+        expect(snippets[1].startLine).toBe(13)
+        expect(snippets[2].startLine).toBe(5)
     })
 })
