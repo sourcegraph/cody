@@ -544,7 +544,6 @@ describe('Agent', () => {
             {
                 await client.request('chat/setModel', { id, model: 'google/gemini-1.5-flash' })
                 const lastMessage = await client.sendMessage(id, 'what color is the sky?')
-                console.log(lastMessage, 'lastMessage')
                 expect(lastMessage?.text?.toLocaleLowerCase().includes('blue')).toBeTruthy()
             }
         }, 30_000)
