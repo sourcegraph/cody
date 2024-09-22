@@ -6,8 +6,8 @@ import { RetrieverIdentifier } from '../../utils'
 
 const xmlBuilder = new XMLBuilder({ format: true })
 
-interface DiagnosticInformation {
-    severity: string
+interface DiagnosticInfo {
+    severity: 'warning' | 'error'
     message: string
     source?: string
     text: string
@@ -20,116 +20,117 @@ export class DiagnosticsRetriever implements vscode.Disposable, ContextRetriever
     public identifier = RetrieverIdentifier.DiagnosticsRetriever
     private disposables: vscode.Disposable[] = []
 
-    public async retrieve(options: ContextRetrieverOptions): Promise<AutocompleteContextSnippet[]> {
-        const document = options.document
-        const snippets: AutocompleteContextSnippet[] = []
-        const diagnosticInformation = await this.getDiagnosticsForPosition(document, options.position)
-        if (diagnosticInformation.length === 0) {
+    public async retrieve({
+        document,
+        position,
+    }: ContextRetrieverOptions): Promise<AutocompleteContextSnippet[]> {
+        const diagnostics = this.getDiagnosticsForFile(document)
+        return this.getDiagnosticsPromptFromInformation(document, position, diagnostics)
+    }
+
+    public async getDiagnosticsPromptFromInformation(
+        document: vscode.TextDocument,
+        position: vscode.Position,
+        diagnostics: vscode.Diagnostic[]
+    ): Promise<AutocompleteContextSnippet[]> {
+        const filteredDiagnostics = diagnostics.filter(this.isRelevantDiagnostic)
+        const diagnosticInfo = this.getDiagnosticsForPosition(document, position, filteredDiagnostics)
+        if (diagnosticInfo.length === 0) {
             return []
         }
-        for (const diagnostic of diagnosticInformation) {
-            const promptMessage = await this.getDiagnosticPromptMessage(diagnostic)
-            snippets.push({
+        return Promise.all(
+            diagnosticInfo.map(async info => ({
                 identifier: RetrieverIdentifier.DiagnosticsRetriever,
-                content: promptMessage,
+                content: await this.getDiagnosticPromptMessage(info),
                 uri: document.uri,
-                startLine: diagnostic.startLine,
-                endLine: diagnostic.endLine,
-            })
-        }
-        return snippets
+                startLine: info.startLine,
+                endLine: info.endLine,
+            }))
+        )
     }
-    private async getDiagnosticPromptMessage(diagnostic: DiagnosticInformation): Promise<string> {
-        const xmlObj: Record<string, string> = {
-            severity: diagnostic.severity,
-            source: diagnostic.source || '',
-            message: diagnostic.message,
-            text: diagnostic.text,
-            related_information_list: diagnostic.relatedInformation
-                ? await this.getRelatedInformationPrompt(diagnostic.relatedInformation)
-                : '',
+
+    private isRelevantDiagnostic(diagnostic: vscode.Diagnostic): boolean {
+        return (
+            diagnostic.severity === vscode.DiagnosticSeverity.Error ||
+            diagnostic.severity === vscode.DiagnosticSeverity.Warning
+        )
+    }
+
+    private getDiagnosticsForPosition(
+        document: vscode.TextDocument,
+        position: vscode.Position,
+        diagnostics: vscode.Diagnostic[]
+    ): DiagnosticInfo[] {
+        const range = this.getRangeAroundPosition(document, position)
+        return this.getDiagnosticInfoFromRange(document, diagnostics, range)
+    }
+
+    private getDiagnosticsForFile(document: vscode.TextDocument): vscode.Diagnostic[] {
+        return vscode.languages.getDiagnostics(document.uri)
+    }
+
+    private async getDiagnosticPromptMessage(info: DiagnosticInfo): Promise<string> {
+        const xmlObj: Record<string, string | undefined> = {
+            severity: info.severity,
+            source: info.source,
+            message: info.message,
+            text: info.text,
+            related_information_list: info.relatedInformation
+                ? await this.getRelatedInformationPrompt(info.relatedInformation)
+                : undefined,
         }
-        const prompt = xmlBuilder.build({
-            diagnostic: xmlObj,
-        })
-        return prompt
+        return xmlBuilder.build({ diagnostic: xmlObj })
     }
 
     private async getRelatedInformationPrompt(
         relatedInformation: vscode.DiagnosticRelatedInformation[]
     ): Promise<string> {
-        const relatedInformationList: Record<string, string>[] = []
-        for (const info of relatedInformation) {
-            const document = await vscode.workspace.openTextDocument(info.location.uri)
-            relatedInformationList.push({
-                message: info.message,
-                file: info.location.uri.fsPath,
-                text: document.getText(info.location.range),
+        const relatedInfoList = await Promise.all(
+            relatedInformation.map(async info => {
+                const document = await vscode.workspace.openTextDocument(info.location.uri)
+                return {
+                    message: info.message,
+                    file: info.location.uri.fsPath,
+                    text: document.getText(info.location.range),
+                }
             })
-        }
-        const prompt = xmlBuilder.build({
+        )
+        return xmlBuilder.build({
             related_information_list: {
-                related_information: relatedInformationList,
+                related_information: relatedInfoList,
             },
         })
-        return prompt
     }
 
-    private async getDiagnosticsForPosition(
-        document: vscode.TextDocument,
-        position: vscode.Position
-    ): Promise<DiagnosticInformation[]> {
-        const diagnostics = vscode.languages
-            .getDiagnostics(document.uri)
-            .filter(
-                diagnostic =>
-                    diagnostic.severity === vscode.DiagnosticSeverity.Error ||
-                    diagnostic.severity === vscode.DiagnosticSeverity.Warning
-            )
-        if (diagnostics.length === 0) {
-            return []
-        }
-        const range = await this.getRangeFromPosition(document, position)
-        const diagnosticInformation = await this.getDiagnosticInformationFromRange(
-            document,
-            diagnostics,
-            range
-        )
-        return diagnosticInformation
-    }
-
-    private async getDiagnosticInformationFromRange(
+    private getDiagnosticInfoFromRange(
         document: vscode.TextDocument,
         diagnostics: vscode.Diagnostic[],
         range: vscode.Range
-    ): Promise<DiagnosticInformation[]> {
-        const diagnosticsInformation: DiagnosticInformation[] = []
-        for (const diagnostic of diagnostics) {
-            const textAtRange = document.getText(range)
-            diagnosticsInformation.push({
-                severity:
-                    diagnostic.severity === vscode.DiagnosticSeverity.Warning ? 'warning' : 'error',
-                text: textAtRange,
+    ): DiagnosticInfo[] {
+        return diagnostics
+            .filter(diagnostic => diagnostic.range.intersection(range))
+            .map(diagnostic => ({
+                severity: this.getSeverityString(diagnostic.severity),
+                text: document.getText(range),
                 source: diagnostic.source,
                 message: diagnostic.message,
                 startLine: range.start.line,
                 endLine: range.end.line,
                 relatedInformation: diagnostic.relatedInformation,
-            })
-        }
-        return diagnosticsInformation
+            }))
     }
 
-    private async getRangeFromPosition(
+    private getSeverityString(severity: vscode.DiagnosticSeverity): 'warning' | 'error' {
+        return severity === vscode.DiagnosticSeverity.Warning ? 'warning' : 'error'
+    }
+
+    private getRangeAroundPosition(
         document: vscode.TextDocument,
         position: vscode.Position
-    ): Promise<vscode.Range> {
-        // Take a buffer of 3 lines before and after to expand the range, using smart selection can lead to very large ranges
+    ): vscode.Range {
         const startLine = Math.max(0, position.line - 3)
         const endLine = Math.min(document.lineCount - 1, position.line + 3)
-        const startOfRange = new vscode.Position(startLine, 0)
-        const endOfRange = document.lineAt(endLine).range.end
-        return new vscode.Range(startOfRange, endOfRange)
+        return new vscode.Range(new vscode.Position(startLine, 0), document.lineAt(endLine).range.end)
     }
 
     public isSupportedForLanguageId(): boolean {
