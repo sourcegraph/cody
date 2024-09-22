@@ -116,7 +116,6 @@ export class DiagnosticsRetriever implements vscode.Disposable, ContextRetriever
         const diagnosticText = `${' '.repeat(column)}${'^'.repeat(diagnosticLength)} ${
             diagnostic.message
         }`
-        const errorLine = line.text
 
         // Add surrounding context to the diagnostic message
         const contextStartLine = Math.max(0, diagnostic.range.start.line - CONTEXT_LINES)
@@ -125,7 +124,7 @@ export class DiagnosticsRetriever implements vscode.Disposable, ContextRetriever
             diagnostic.range.start.line + CONTEXT_LINES
         )
         const prevLines = document.getText(
-            new vscode.Range(contextStartLine, 0, line.lineNumber - 1, line.range.end.character)
+            new vscode.Range(contextStartLine, 0, line.lineNumber, line.range.end.character)
         )
         const nextLines = document.getText(
             new vscode.Range(
@@ -135,9 +134,8 @@ export class DiagnosticsRetriever implements vscode.Disposable, ContextRetriever
                 document.lineAt(contextEndLine).range.end.character
             )
         )
-
-        const context = [prevLines, errorLine, diagnosticText, nextLines].join('\n')
-        return context
+        const message = `${prevLines}\n${diagnosticText}\n${nextLines}`
+        return message
     }
 
     public isSupportedForLanguageId(): boolean {
