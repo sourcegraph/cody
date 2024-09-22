@@ -42,7 +42,7 @@ export class RecentCopyRetriever implements vscode.Disposable, ContextRetriever 
         const selectionItem = this.getSelectionItemIfExist(clipboardContent)
         if (selectionItem) {
             const autocompleteItem: AutocompleteContextSnippet = {
-                identifier: RetrieverIdentifier.RecentCopyRetriever,
+                identifier: this.identifier,
                 content: selectionItem.content,
                 uri: selectionItem.uri,
                 startLine: selectionItem.startPosition.line,

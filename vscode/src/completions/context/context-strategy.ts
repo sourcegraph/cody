@@ -13,6 +13,7 @@ import { LspLightRetriever } from './retrievers/lsp-light/lsp-light-retriever'
 import { DiagnosticsRetriever } from './retrievers/recent-user-actions/diagnostics-retriever'
 import { RecentCopyRetriever } from './retrievers/recent-user-actions/recent-copy'
 import { RecentEditsRetriever } from './retrievers/recent-user-actions/recent-edits-retriever'
+import { RecentViewPortRetriever } from './retrievers/recent-user-actions/recent-view-port'
 import { loadTscRetriever } from './retrievers/tsc/load-tsc-retriever'
 
 export type ContextStrategy =
@@ -30,6 +31,7 @@ export type ContextStrategy =
     | 'recent-edits-mixed'
     | 'recent-copy'
     | 'diagnostics'
+    | 'recent-view-port'
 
 export interface ContextStrategyFactory extends vscode.Disposable {
     getStrategy(
@@ -94,6 +96,9 @@ export class DefaultContextStrategyFactory implements ContextStrategyFactory {
                             break
                         case 'diagnostics':
                             this.localRetriever = new DiagnosticsRetriever()
+                            break
+                        case 'recent-view-port':
+                            this.localRetriever = new RecentViewPortRetriever()
                             break
                         case 'jaccard-similarity':
                             this.localRetriever = new JaccardSimilarityRetriever()
@@ -163,7 +168,8 @@ export class DefaultContextStrategyFactory implements ContextStrategyFactory {
             case 'recent-edits-1m':
             case 'recent-edits-5m':
             case 'recent-copy':
-            case 'diagnostics': {
+            case 'diagnostics':
+            case 'recent-view-port': {
                 if (this.localRetriever) {
                     retrievers.push(this.localRetriever)
                 }
