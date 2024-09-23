@@ -164,6 +164,9 @@ describe('getConfiguration', () => {
             providerLimitPrompt: 123,
             devModels: [{ model: 'm', provider: 'p' }],
             experimentalGuardrailsTimeoutSeconds: undefined,
+
+            overrideAuthToken: undefined,
+            overrideServerEndpoint: undefined,
         } satisfies ClientConfiguration)
     })
 })

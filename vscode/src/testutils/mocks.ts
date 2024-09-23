@@ -910,4 +910,7 @@ export const DEFAULT_VSCODE_SETTINGS = {
     autocompleteFirstCompletionTimeout: 3500,
     autocompleteExperimentalPreloadDebounceInterval: 0,
     experimentalGuardrailsTimeoutSeconds: undefined,
+
+    overrideAuthToken: undefined,
+    overrideServerEndpoint: undefined,
 } satisfies ClientConfiguration

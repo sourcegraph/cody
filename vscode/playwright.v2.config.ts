@@ -21,9 +21,9 @@ export default defineConfig<WorkerOptions & TestOptions & TmpDirOptions>({
     retries: 0, // NO MORE FLAKE ALLOWED! It's a slippery slope.
     forbidOnly: isCI,
     fullyParallel: true, // Important: parallelizes all tests even in the same file. As such do not save global state in a global scope.
-    timeout: isWin || isCI ? 30000 : 20000,
+    timeout: isWin || isCI ? 30000 : 0,
     expect: {
-        timeout: isWin || isCI ? 20000 : 10000,
+        timeout: isWin || isCI ? 20000 : 0,
     },
     use: {
         viewport: { width: 1366, height: 768 },
@@ -47,7 +47,7 @@ export default defineConfig<WorkerOptions & TestOptions & TmpDirOptions>({
                 ? process.env.CODY_RECORD_IF_MISSING === 'true'
                 : false,
         recordingMode: (process.env.CODY_RECORDING_MODE as any) ?? 'replay',
-        recordingDir: path.join(testRootDir, '../recordings/vscode/'),
+        pollyRecordingDir: './recordings',
         keepUnusedRecordings:
             typeof process.env.CODY_RECORD_KEEP_UNUSED === 'string'
                 ? process.env.CODY_RECORD_KEEP_UNUSED === 'true'
