@@ -1,7 +1,7 @@
 import { type HTMLAttributes, forwardRef } from 'react'
 
 import { clsx } from 'clsx'
-import { upperFirst } from 'lodash'
+import upperFirst from 'lodash/upperFirst'
 
 import type { ForwardReferenceComponent } from '../utils'
 

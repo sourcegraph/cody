@@ -34,7 +34,6 @@ import {
     createMessageAPIForExtension,
     currentAuthStatus,
     currentAuthStatusAuthed,
-    currentAuthStatusOrNotReadyYet,
     currentResolvedConfig,
     featureFlagProvider,
     getContextForChatMessage,
@@ -50,11 +49,13 @@ import {
     logError,
     modelsService,
     parseMentionQuery,
+    promiseToObservable,
     recordErrorToSpan,
     reformatBotMessageForChat,
     resolvedConfig,
     serializeChatMessage,
     startWith,
+    storeLastValue,
     telemetryRecorder,
     tracer,
     truncatePromptString,
@@ -65,8 +66,8 @@ import { captureException } from '@sentry/core'
 import {
     combineLatest,
     createDisposables,
+    firstValueFrom,
     promiseFactoryToObservable,
-    promiseToObservable,
     subscriptionDisposable,
 } from '@sourcegraph/cody-shared/src/misc/observable'
 import { TokenCounterUtils } from '@sourcegraph/cody-shared/src/token/counter'
@@ -217,6 +218,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
 
     public dispose(): void {
         vscode.Disposable.from(...this.disposables).dispose()
+        this.featureCodyExperimentalOneBox.subscription.unsubscribe()
         this.disposables = []
     }
 
@@ -575,19 +577,15 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         return this.extensionClient.capabilities?.edit !== 'none'
     }
 
-    private async isOneBoxEnabled(): Promise<boolean> {
-        return (
-            vscode.workspace.getConfiguration().get<boolean>('cody.internal.onebox') ||
-            (await featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyExperimentalOneBox))
-        )
-    }
+    private featureCodyExperimentalOneBox = storeLastValue(
+        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyExperimentalOneBox)
+    )
 
     private async getConfigForWebview(): Promise<ConfigurationSubsetForWebview & LocalEnv> {
         const { configuration, auth } = await currentResolvedConfig()
         const sidebarViewOnly = this.extensionClient.capabilities?.webviewNativeConfig?.view === 'single'
         const isEditorViewType = this.webviewPanelOrView?.viewType === 'cody.editorPanel'
         const webviewType = isEditorViewType && !sidebarViewOnly ? 'editor' : 'sidebar'
-        const experimentalOneBox = await this.isOneBoxEnabled()
 
         return {
             agentIDE: configuration.agentIDE ?? CodyIDE.VSCode,
@@ -598,7 +596,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             serverEndpoint: auth.serverEndpoint,
             experimentalNoodle: configuration.experimentalNoodle,
             smartApply: this.isSmartApplyEnabled(),
-            experimentalOneBox,
             webviewType,
             multipleWebviewsEnabled: !sidebarViewOnly,
             internalDebugContext: configuration.internalDebugContext,
@@ -615,8 +612,8 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
     }
 
     private async sendConfig(): Promise<void> {
-        const authStatus = currentAuthStatusOrNotReadyYet()
-        if (!authStatus) {
+        const currentAuthStatus = await firstValueFrom(authStatus)
+        if (!currentAuthStatus) {
             return
         }
 
@@ -627,7 +624,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         await this.postMessage({
             type: 'config',
             config: configForWebview,
-            authStatus,
+            authStatus: currentAuthStatus,
             workspaceFolderUris,
             configFeatures: {
                 // If clientConfig is undefined means we were unable to fetch the client configuration -
@@ -638,7 +635,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 attribution: clientConfig?.attributionEnabled ?? false,
                 serverSentModels: clientConfig?.modelsAPIEnabled ?? false,
             },
-            isDotComUser: isDotCom(authStatus),
+            isDotComUser: isDotCom(currentAuthStatus),
         })
         logDebug('ChatController', 'updateViewConfig', {
             verbose: configForWebview,
@@ -731,8 +728,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
 
                 this.postEmptyMessageInProgress()
 
-                const oneBoxEnabled = this.isOneBoxEnabled()
-
                 // All mentions we receive are either source=initial or source=user. If the caller
                 // forgot to set the source, assume it's from the user.
                 mentions = mentions.map(m => (m.source ? m : { ...m, source: ContextItemSource.User }))
@@ -764,7 +759,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     ['repository', 'tree'].includes(contextItem.type)
                 )
 
-                if ((await oneBoxEnabled) && repositoryMentioned) {
+                if (this.featureCodyExperimentalOneBox && repositoryMentioned) {
                     const inputTextWithoutContextChips = editorState
                         ? PromptString.unsafe_fromUserQuery(
                               inputTextWithoutContextChipsFromPromptEditorState(editorState)

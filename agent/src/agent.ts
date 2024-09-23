@@ -7,6 +7,7 @@ import {
     type ChatHistoryKey,
     type CodyCommand,
     ModelUsage,
+    currentAuthStatus,
     telemetryRecorder,
     waitUntilComplete,
 } from '@sourcegraph/cody-shared'
@@ -49,6 +50,7 @@ import levenshtein from 'js-levenshtein'
 import * as uuid from 'uuid'
 import type { MessageConnection } from 'vscode-jsonrpc'
 import type { CommandResult } from '../../vscode/src/CommandResult'
+import { formatURL } from '../../vscode/src/auth/auth'
 import { loadTscRetriever } from '../../vscode/src/completions/context/retrievers/tsc/load-tsc-retriever'
 import { supportedTscLanguages } from '../../vscode/src/completions/context/retrievers/tsc/supportedTscLanguages'
 import type { CompletionItemID } from '../../vscode/src/completions/logger'
@@ -58,6 +60,7 @@ import { getModelOptionItems } from '../../vscode/src/edit/input/get-items/model
 import { getEditSmartSelection } from '../../vscode/src/edit/utils/edit-selection'
 import type { ExtensionClient } from '../../vscode/src/extension-client'
 import { IndentationBasedFoldingRangeProvider } from '../../vscode/src/lsp/foldingRanges'
+import { syncModels } from '../../vscode/src/models/sync'
 import type { FixupActor, FixupFileCollection } from '../../vscode/src/non-stop/roles'
 import type { FixupControlApplicator } from '../../vscode/src/non-stop/strategies'
 import { AgentWorkspaceEdit } from '../../vscode/src/testutils/AgentWorkspaceEdit'
@@ -424,7 +427,10 @@ export class Agent extends MessageHandler implements ExtensionClient {
                 const secrets =
                     clientInfo.capabilities?.secrets === 'client-managed'
                         ? new AgentClientManagedSecretStorage(this, this.secretsDidChange.event)
-                        : new AgentStatelessSecretStorage()
+                        : new AgentStatelessSecretStorage({
+                              [formatURL(clientInfo.extensionConfiguration?.serverEndpoint ?? '') ?? '']:
+                                  clientInfo.extensionConfiguration?.accessToken,
+                          })
 
                 await initializeVscodeExtension(
                     this.workspace.workspaceRootUri,
@@ -1233,6 +1239,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
         })
 
         this.registerAuthenticatedRequest('chat/models', async ({ modelUsage }) => {
+            await syncModels(currentAuthStatus())
             const models = modelsService.getModels(modelUsage)
             return { models }
         })

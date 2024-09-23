@@ -1,4 +1,5 @@
 import { diffJson } from 'diff'
+import isEqual from 'lodash/isEqual'
 import {
     Observable,
     type ObservableLike,
@@ -131,12 +132,13 @@ function promiseWithResolvers<T>(): {
 /**
  * @internal For testing only.
  */
-export function readValuesFrom<T>(observable: Observable<T>): {
-    values: T[]
+export function readValuesFrom<T>(observable: Observable<T>): Readonly<{
+    values: ReadonlyArray<T>
+    clearValues(): void
     done: Promise<void>
     unsubscribe(): void
     status: () => 'pending' | 'complete' | 'error' | 'unsubscribed'
-} {
+}> {
     const values: T[] = []
     const { promise, resolve, reject } = promiseWithResolvers<void>()
     let status: ReturnType<ReturnType<typeof readValuesFrom<T>>['status']> = 'pending'
@@ -153,6 +155,9 @@ export function readValuesFrom<T>(observable: Observable<T>): {
     })
     const result: ReturnType<typeof readValuesFrom<T>> = {
         values,
+        clearValues: () => {
+            values.length = 0
+        },
         done: promise,
         unsubscribe: () => {
             subscription.unsubscribe()
@@ -561,7 +566,7 @@ export function shareReplay<T>(): (observable: ObservableLike<T>) => Observable<
 }
 
 export function distinctUntilChanged<T>(
-    isEqualFn: (a: T, b: T) => boolean = isEqualJSON
+    isEqualFn: (a: T, b: T) => boolean = isEqual
 ): (observable: ObservableLike<T>) => Observable<T> {
     return (observable: ObservableLike<T>): Observable<T> => {
         return new Observable<T>(observer => {
@@ -655,10 +660,6 @@ export function printDiff<T extends object>(): (input: ObservableLike<T>) => Obs
 
 /** Sentinel value. */
 const NO_VALUES_YET: Record<string, never> = {}
-
-function isEqualJSON(a: unknown, b: unknown): boolean {
-    return JSON.stringify(a) === JSON.stringify(b)
-}
 
 export function startWith<T, R>(value: R): (source: ObservableLike<T>) => Observable<R | T> {
     return (source: ObservableLike<T>) =>

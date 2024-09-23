@@ -9,7 +9,7 @@ import {
     KEY_ESCAPE_COMMAND,
     type TextNode,
 } from 'lexical'
-import { isEqual } from 'lodash'
+import isEqual from 'lodash/isEqual'
 import { type FunctionComponent, memo, useCallback, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import styles from './atMentions.module.css'

@@ -5,7 +5,7 @@ import {
     graphqlClient,
 } from '@sourcegraph/cody-shared'
 
-import { isError } from 'lodash'
+import isError from 'lodash/isError'
 import { rewriteKeywordQuery } from '../local-context/rewrite-keyword-query'
 import type * as repofetcher from './remote-repo'
 

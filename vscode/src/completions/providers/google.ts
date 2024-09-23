@@ -101,25 +101,30 @@ Your response should contains only the code required to connect the gap, and the
         return { messages, prefix: { head, tail, overlap } }
     }
 
-    public async generateCompletions(
-        options: GenerateCompletionsOptions,
-        abortSignal: AbortSignal,
-        snippets: AutocompleteContextSnippet[],
-        tracer?: CompletionProviderTracer
-    ): Promise<AsyncGenerator<FetchCompletionResult[]>> {
+    public getRequestParams(options: GenerateCompletionsOptions): CodeCompletionsParams {
+        const { snippets } = options
         const { messages } = this.createPrompt(options, snippets)
 
-        const requestParams: CodeCompletionsParams = {
+        return {
             ...this.defaultRequestParams,
             messages,
             topP: 0.95,
             temperature: 0,
             model: this.legacyModel,
         }
+    }
 
+    public async generateCompletions(
+        generateOptions: GenerateCompletionsOptions,
+        abortSignal: AbortSignal,
+        tracer?: CompletionProviderTracer
+    ): Promise<AsyncGenerator<FetchCompletionResult[]>> {
+        const { numberOfCompletionsToGenerate } = generateOptions
+
+        const requestParams = this.getRequestParams(generateOptions)
         tracer?.params(requestParams)
 
-        const completionsGenerators = Array.from({ length: options.numberOfCompletionsToGenerate }).map(
+        const completionsGenerators = Array.from({ length: numberOfCompletionsToGenerate }).map(
             async () => {
                 const abortController = forkSignal(abortSignal)
 
@@ -132,8 +137,8 @@ Your response should contains only the code required to connect the gap, and the
                 return fetchAndProcessDynamicMultilineCompletions({
                     completionResponseGenerator,
                     abortController,
+                    generateOptions,
                     providerSpecificPostProcess: this.postProcess,
-                    generateOptions: options,
                 })
             }
         )

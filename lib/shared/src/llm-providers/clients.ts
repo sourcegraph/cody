@@ -1,6 +1,6 @@
 import type { ChatNetworkClient, ChatNetworkClientParams } from '.'
 import { googleChatClient, groqChatClient, ollamaChatClient } from '..'
-import { modelsService } from '../models'
+import { modelsService } from '../models/modelsService'
 import { isCustomModel } from '../models/utils'
 import { anthropicChatClient } from './anthropic/chat-client'
 

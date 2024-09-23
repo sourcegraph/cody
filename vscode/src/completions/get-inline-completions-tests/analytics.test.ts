@@ -1,4 +1,4 @@
-import { omit } from 'lodash'
+import omit from 'lodash/omit'
 import * as uuid from 'uuid'
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 

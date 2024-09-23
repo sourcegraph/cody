@@ -1,4 +1,4 @@
-import _ from 'lodash'
+import merge from 'lodash/merge'
 import * as uuid from 'uuid'
 import type { Memento } from 'vscode'
 
@@ -52,8 +52,14 @@ class LocalStorage {
         return this._storage
     }
 
-    public setStorage(storage: Memento | 'noop'): void {
-        this._storage = storage === 'noop' ? noopLocalStorage : storage
+    public setStorage(storage: Memento | 'noop' | 'inMemory'): void {
+        if (storage === 'inMemory') {
+            this._storage = inMemoryEphemeralLocalStorage
+        } else if (storage === 'noop') {
+            this._storage = noopLocalStorage
+        } else {
+            this._storage = storage
+        }
     }
 
     public getClientState(): ClientState {
@@ -163,14 +169,17 @@ class LocalStorage {
         }
     }
 
-    public async importChatHistory(history: AccountKeyedChatHistory, merge: boolean): Promise<void> {
-        if (merge) {
+    public async importChatHistory(
+        history: AccountKeyedChatHistory,
+        shouldMerge: boolean
+    ): Promise<void> {
+        if (shouldMerge) {
             const fullHistory = this.storage.get<AccountKeyedChatHistory | null>(
                 this.KEY_LOCAL_HISTORY,
                 null
             )
 
-            _.merge(history, fullHistory)
+            merge(history, fullHistory)
         }
 
         await this.storage.update(this.KEY_LOCAL_HISTORY, history)
@@ -303,3 +312,28 @@ const noopLocalStorage = {
 export function mockLocalStorage(storage: Memento = noopLocalStorage) {
     localStorage.setStorage(storage)
 }
+
+class InMemoryMemento implements Memento {
+    private storage: Map<string, any> = new Map()
+
+    get<T>(key: string, defaultValue: T): T
+    get<T>(key: string): T | undefined
+    get<T>(key: string, defaultValue?: T): T | undefined {
+        return this.storage.has(key) ? this.storage.get(key) : defaultValue
+    }
+
+    update(key: string, value: any): Thenable<void> {
+        if (value === undefined) {
+            this.storage.delete(key)
+        } else {
+            this.storage.set(key, value)
+        }
+        return Promise.resolve()
+    }
+
+    keys(): readonly string[] {
+        return Array.from(this.storage.keys())
+    }
+}
+
+const inMemoryEphemeralLocalStorage = new InMemoryMemento()

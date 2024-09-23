@@ -2,7 +2,6 @@ import * as anthropic from '@anthropic-ai/sdk'
 
 import {
     type AuthenticatedAuthStatus,
-    type AutocompleteContextSnippet,
     type CodeCompletionsParams,
     type DocumentContext,
     type Message,
@@ -102,13 +101,11 @@ class AnthropicProvider extends Provider {
 
     // Creates the resulting prompt and adds as many snippets from the reference
     // list as possible.
-    protected createPrompt(
-        options: GenerateCompletionsOptions,
-        snippets: AutocompleteContextSnippet[]
-    ): {
+    protected createPrompt(options: GenerateCompletionsOptions): {
         messages: Message[]
         prefix: PrefixComponents
     } {
+        const { snippets } = options
         const { messages: prefixMessages, prefix } = this.createPromptPrefix(options)
 
         const referenceSnippetMessages: Message[] = []
@@ -143,16 +140,10 @@ class AnthropicProvider extends Provider {
         return { messages: [...referenceSnippetMessages, ...prefixMessages], prefix }
     }
 
-    public async generateCompletions(
-        options: GenerateCompletionsOptions,
-        abortSignal: AbortSignal,
-        snippets: AutocompleteContextSnippet[],
-        tracer?: CompletionProviderTracer
-    ): Promise<AsyncGenerator<FetchCompletionResult[]>> {
-        const { docContext } = options
-        const { messages } = this.createPrompt(options, snippets)
+    public getRequestParams(options: GenerateCompletionsOptions): CodeCompletionsParams {
+        const { messages } = this.createPrompt(options)
 
-        const requestParams: CodeCompletionsParams = {
+        return {
             ...this.defaultRequestParams,
             messages,
             temperature: 0.5,
@@ -170,10 +161,19 @@ class AnthropicProvider extends Provider {
                     ? this.legacyModel
                     : undefined,
         }
+    }
+
+    public async generateCompletions(
+        options: GenerateCompletionsOptions,
+        abortSignal: AbortSignal,
+        tracer?: CompletionProviderTracer
+    ): Promise<AsyncGenerator<FetchCompletionResult[]>> {
+        const { docContext, numberOfCompletionsToGenerate } = options
+        const requestParams = this.getRequestParams(options)
 
         tracer?.params(requestParams)
 
-        const completionsGenerators = Array.from({ length: options.numberOfCompletionsToGenerate }).map(
+        const completionsGenerators = Array.from({ length: numberOfCompletionsToGenerate }).map(
             async () => {
                 const abortController = forkSignal(abortSignal)
 

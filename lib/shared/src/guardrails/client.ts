@@ -1,6 +1,7 @@
 import type { Attribution, Guardrails } from '.'
 import { currentResolvedConfig } from '../configuration/resolver'
-import { ClientConfigSingleton, graphqlClient } from '../sourcegraph-api/graphql/client'
+import { ClientConfigSingleton } from '../sourcegraph-api/clientConfig'
+import { graphqlClient } from '../sourcegraph-api/graphql/client'
 import { isError } from '../utils'
 
 // 10s timeout is enough to serve most attribution requests.

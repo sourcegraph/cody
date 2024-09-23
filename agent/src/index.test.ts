@@ -204,8 +204,8 @@ describe('Agent', () => {
         expect(currentUserCodySubscription).toMatchInlineSnapshot(`
           {
             "applyProRateLimits": true,
-            "currentPeriodEndAt": "2024-09-14T22:11:32Z",
-            "currentPeriodStartAt": "2024-08-14T22:11:32Z",
+            "currentPeriodEndAt": "2024-10-14T22:11:32Z",
+            "currentPeriodStartAt": "2024-09-14T22:11:32Z",
             "plan": "PRO",
             "status": "ACTIVE",
           }
@@ -226,7 +226,7 @@ describe('Agent', () => {
               {
                 "model": "anthropic/claude-3-5-sonnet-20240620",
                 "speaker": "assistant",
-                "text": "Hello! I'm Cody, an AI coding assistant from Sourcegraph. How can I help you with your coding tasks today? Whether you need assistance with writing code, debugging, explaining concepts, or discussing best practices, I'm here to help. What would you like to work on?",
+                "text": "Hello! I'm Cody, an AI coding assistant from Sourcegraph. How can I help you with your coding or development tasks today? Whether you need help with writing code, debugging, explaining concepts, or any other programming-related questions, I'm here to assist you. What would you like to work on?",
               }
             `
             )
@@ -293,7 +293,7 @@ describe('Agent', () => {
                 })
             )
             expect(reply2.messages.at(-1)?.text).toMatchInlineSnapshot(
-                `"Your name is Lars Monsen, as you mentioned in your previous message."`,
+                `"Your name is Lars Monsen."`,
                 explainPollyError
             )
         }, 30_000)
@@ -544,7 +544,6 @@ describe('Agent', () => {
             {
                 await client.request('chat/setModel', { id, model: 'google/gemini-1.5-flash' })
                 const lastMessage = await client.sendMessage(id, 'what color is the sky?')
-                console.log(lastMessage, 'lastMessage')
                 expect(lastMessage?.text?.toLocaleLowerCase().includes('blue')).toBeTruthy()
             }
         }, 30_000)

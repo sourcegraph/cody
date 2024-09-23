@@ -4,14 +4,13 @@ import { fetch } from '../../fetch'
 
 import type { TelemetryEventInput } from '@sourcegraph/telemetry'
 
-import { escapeRegExp } from 'lodash'
+import escapeRegExp from 'lodash/escapeRegExp'
 import { Observable } from 'observable-fns'
 import semver from 'semver'
-import { authStatus, currentAuthStatusOrNotReadyYet } from '../../auth/authStatus'
 import { dependentAbortController, onAbort } from '../../common/abortController'
 import { type PickResolvedConfiguration, resolvedConfig } from '../../configuration/resolver'
 import { logDebug, logError } from '../../logger'
-import { type Unsubscribable, abortableOperation, firstValueFrom } from '../../misc/observable'
+import { firstValueFrom } from '../../misc/observable'
 import { addTraceparent, wrapInActiveSpan } from '../../tracing'
 import { isError } from '../../utils'
 import { DOTCOM_URL, isDotCom } from '../environments'
@@ -195,34 +194,7 @@ interface CurrentUserInfoResponse {
     } | null
 }
 
-// The client configuration describing all of the features that are currently available.
-//
-// This is fetched from the Sourcegraph instance and is specific to the current user.
-//
-// For the canonical type definition, see https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/internal/clientconfig/types.go
-interface CodyClientConfig {
-    // Whether the site admin allows this user to make use of the Cody chat feature.
-    chatEnabled: boolean
-
-    // Whether the site admin allows this user to make use of the Cody autocomplete feature.
-    autoCompleteEnabled: boolean
-
-    // Whether the site admin allows the user to make use of the **custom** Cody commands feature.
-    customCommandsEnabled: boolean
-
-    // Whether the site admin allows this user to make use of the Cody attribution feature.
-    attributionEnabled: boolean
-
-    // Whether the 'smart context window' feature should be enabled, and whether the Sourcegraph
-    // instance supports various new GraphQL APIs needed to make it work.
-    smartContextWindowEnabled: boolean
-
-    // Whether the new Sourcegraph backend LLM models API endpoint should be used to query which
-    // models are available.
-    modelsAPIEnabled: boolean
-}
-
-interface CodyConfigFeatures {
+export interface CodyConfigFeatures {
     chat: boolean
     autoComplete: boolean
     commands: boolean
@@ -1036,6 +1008,7 @@ export class SourcegraphGraphQLAPIClient {
         if (isError(version)) {
             return false
         }
+        signal?.throwIfAborted()
 
         const isInsiderBuild = version.length > 12 || version.includes('dev')
 
@@ -1055,6 +1028,7 @@ export class SourcegraphGraphQLAPIClient {
     }): Promise<ContextSearchResult[] | null | Error> {
         const isValidVersion = await this.isValidSiteVersion({ minimumVersion: '5.7.0' })
         const config = await firstValueFrom(this.config!)
+        signal?.throwIfAborted()
 
         return this.fetchSourcegraphAPI<APIResponse<ContextSearchResponse>>(
             isValidVersion ? CONTEXT_SEARCH_QUERY : LEGACY_CONTEXT_SEARCH_QUERY,
@@ -1182,6 +1156,7 @@ export class SourcegraphGraphQLAPIClient {
         if (isError(siteVersion)) {
             return { enabled: false, version: 'unknown' }
         }
+        signal?.throwIfAborted()
         const insiderBuild = siteVersion.length > 12 || siteVersion.includes('dev')
         if (insiderBuild) {
             return { enabled: true, version: siteVersion }
@@ -1194,9 +1169,11 @@ export class SourcegraphGraphQLAPIClient {
         // Beta version is betwewen 5.0.0 - 5.1.0 and does not have isCodyEnabled field
         const betaVersion = semver.gte(siteVersion, '5.0.0') && semver.lt(siteVersion, '5.1.0')
         const hasIsCodyEnabledField = await this.getSiteHasIsCodyEnabledField(signal)
+        signal?.throwIfAborted()
         // The isCodyEnabled field does not exist before version 5.1.0
         if (!betaVersion && !isError(hasIsCodyEnabledField) && hasIsCodyEnabledField) {
             const siteHasCodyEnabled = await this.getSiteHasCodyEnabled(signal)
+            signal?.throwIfAborted()
             return {
                 enabled: !isError(siteHasCodyEnabled) && siteHasCodyEnabled,
                 version: siteVersion,
@@ -1435,6 +1412,9 @@ export class SourcegraphGraphQLAPIClient {
             throw new Error('SourcegraphGraphQLAPIClient config not set')
         }
         const config = await firstValueFrom(this.config)
+        if (signalOrTimeout instanceof AbortSignal) {
+            signalOrTimeout.throwIfAborted()
+        }
 
         const headers = new Headers(config.configuration?.customHeaders as HeadersInit | undefined)
         headers.set('Content-Type', 'application/json; charset=utf-8')
@@ -1543,6 +1523,7 @@ export class SourcegraphGraphQLAPIClient {
             throw new Error('SourcegraphGraphQLAPIClient config not set')
         }
         const config = await firstValueFrom(this.config)
+        signal?.throwIfAborted()
 
         const headers = new Headers(config.configuration?.customHeaders as HeadersInit | undefined)
         headers.set('Content-Type', 'application/json; charset=utf-8')
@@ -1587,210 +1568,6 @@ export class SourcegraphGraphQLAPIClient {
  * Singleton instance of the graphql client.
  */
 export const graphqlClient = SourcegraphGraphQLAPIClient.withGlobalConfig()
-
-/**
- * ClientConfigSingleton is a class that manages the retrieval
- * and caching of configuration features from GraphQL endpoints.
- */
-export class ClientConfigSingleton {
-    private static instance: ClientConfigSingleton
-    private cachedClientConfig?: CodyClientConfig
-    private cachedAt = 0
-    private isSignedIn = false
-
-    // Default values for the legacy GraphQL features API, used when a Sourcegraph instance
-    // does not support even the legacy GraphQL API.
-    private featuresLegacy: CodyConfigFeatures = {
-        chat: true,
-        autoComplete: true,
-        commands: true,
-        attribution: false,
-    }
-
-    private configSubscription: Unsubscribable
-
-    // Constructor is private to prevent creating new instances outside of the class
-    private constructor() {
-        this.configSubscription = authStatus
-            .pipe(
-                abortableOperation(async (authStatus, signal) => {
-                    this.isSignedIn = !!authStatus.authenticated
-                    if (this.isSignedIn) {
-                        this.refreshConfig(signal).catch(() => {})
-                    } else {
-                        this.cachedClientConfig = undefined
-                        this.cachedAt = 0
-                    }
-                })
-            )
-            .subscribe({})
-    }
-
-    public dispose(): void {
-        this.configSubscription.unsubscribe()
-    }
-
-    // Static method to get the singleton instance
-    public static getInstance(): ClientConfigSingleton {
-        if (!ClientConfigSingleton.instance) {
-            ClientConfigSingleton.instance = new ClientConfigSingleton()
-        }
-        return ClientConfigSingleton.instance
-    }
-
-    public async getConfig(signal?: AbortSignal): Promise<CodyClientConfig | undefined> {
-        // TODO(sqs)#observe: make this reactive
-        if (!currentAuthStatusOrNotReadyYet()?.authenticated) {
-            return undefined
-        }
-        try {
-            switch (this.shouldFetch()) {
-                case 'sync':
-                    return this.refreshConfig(signal)
-                // biome-ignore lint/suspicious/noFallthroughSwitchClause: This is intentional
-                case 'async':
-                    this.refreshConfig(signal)
-                case false:
-                    return this.cachedClientConfig
-            }
-        } catch {
-            return
-        }
-    }
-
-    // Refetch the config if the user is signed in and it's not cached or it's older than 60 seconds
-    // If the cached config is >60s old, then we will refresh it async now. In the meantime, we will
-    // continue using the old version.
-    //
-    // Note that this means the time allowance between 'site admin disabled <chat,autocomplete,commands,etc.>
-    // functionality but users can still make use of it' is double this (120s.)
-    private shouldFetch(): 'sync' | 'async' | false {
-        // If the user is not logged in, we will not fetch as it will fail
-        if (!this.isSignedIn) {
-            return false
-        }
-
-        // If they are logged in but not cached, fetch the config synchronously
-        if (!this.cachedClientConfig) {
-            return 'sync'
-        }
-
-        // If the config is cached and greater than 60 seconds old, we can use the cached version
-        // but should asyncronously fetch the new config
-        if (Date.now() - this.cachedAt > 60000) {
-            return 'async'
-        }
-
-        // Otherwise, we have a cache hit!
-        return false
-    }
-
-    // Refreshes the config features by fetching them from the server and caching the result
-    private async refreshConfig(signal?: AbortSignal): Promise<CodyClientConfig> {
-        logDebug('ClientConfigSingleton', 'refreshing configuration')
-
-        // Determine based on the site version if /.api/client-config is available.
-        return graphqlClient
-            .getSiteVersion(signal)
-            .then(siteVersion => {
-                signal?.throwIfAborted()
-                if (isError(siteVersion)) {
-                    logError(
-                        'ClientConfigSingleton',
-                        'Failed to determine site version, GraphQL error',
-                        siteVersion
-                    )
-                    return false // assume /.api/client-config is not supported
-                }
-
-                // Insiders and dev builds support the new /.api/client-config endpoint
-                const insiderBuild = siteVersion.length > 12 || siteVersion.includes('dev')
-                if (insiderBuild) {
-                    return true
-                }
-
-                // Sourcegraph instances before 5.5.0 do not support the new /.api/client-config endpoint.
-                if (semver.lt(siteVersion, '5.5.0')) {
-                    return false
-                }
-                return true
-            })
-            .then(supportsClientConfig => {
-                signal?.throwIfAborted()
-
-                // If /.api/client-config is not available, fallback to the myriad of GraphQL
-                // requests that we previously used to determine the client configuration
-                if (!supportsClientConfig) {
-                    return this.fetchClientConfigLegacy(signal)
-                }
-
-                return graphqlClient
-                    .fetchHTTP<CodyClientConfig>(
-                        'client-config',
-                        'GET',
-                        '/.api/client-config',
-                        undefined,
-                        signal
-                    )
-                    .then(clientConfig => {
-                        if (isError(clientConfig)) {
-                            logError('ClientConfigSingleton', 'refresh client config', clientConfig)
-                            throw clientConfig
-                        }
-                        return clientConfig
-                    })
-                    .catch(e => {
-                        logError('ClientConfigSingleton', 'refresh client config', e)
-                        throw e
-                    })
-            })
-            .then(clientConfig => {
-                logDebug('ClientConfigSingleton', 'refreshed', JSON.stringify(clientConfig))
-                this.cachedClientConfig = clientConfig
-                this.cachedAt = Date.now()
-                return clientConfig
-            })
-            .catch(e => {
-                logError('ClientConfigSingleton', 'failed to refresh client config', e)
-                throw e
-            })
-    }
-
-    private async fetchClientConfigLegacy(signal?: AbortSignal): Promise<CodyClientConfig> {
-        // Note: all of these promises are written carefully to not throw errors internally, but
-        // rather to return sane defaults, and so we do not catch() here.
-        const smartContextWindow = await graphqlClient.getCodyLLMConfigurationSmartContext(signal)
-        signal?.throwIfAborted()
-        const features = await this.fetchConfigFeaturesLegacy(this.featuresLegacy, signal)
-        signal?.throwIfAborted()
-
-        return {
-            chatEnabled: features.chat,
-            autoCompleteEnabled: features.autoComplete,
-            customCommandsEnabled: features.commands,
-            attributionEnabled: features.attribution,
-            smartContextWindowEnabled: smartContextWindow,
-
-            // Things that did not exist before logically default to disabled.
-            modelsAPIEnabled: false,
-        }
-    }
-
-    // Fetches the config features from the server and handles errors, using the old/legacy GraphQL API.
-    private async fetchConfigFeaturesLegacy(
-        defaultErrorValue: CodyConfigFeatures,
-        signal?: AbortSignal
-    ): Promise<CodyConfigFeatures> {
-        const features = await graphqlClient.getCodyConfigFeatures(signal)
-        if (features instanceof Error) {
-            // An error here most likely indicates the Sourcegraph instance is so old that it doesn't
-            // even support this legacy GraphQL API.
-            logError('ClientConfigSingleton', 'refreshConfig', features)
-            return defaultErrorValue
-        }
-        return features
-    }
-}
 
 export async function verifyResponseCode(
     response: BrowserOrNodeResponse

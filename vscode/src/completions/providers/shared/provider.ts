@@ -41,6 +41,7 @@ export interface GenerateCompletionsOptions {
     docContext: DocumentContext
     multiline: boolean
     triggerKind: TriggerKind
+    snippets: AutocompleteContextSnippet[]
     /**
      * Number of parallel LLM requests per completion.
      */
@@ -180,10 +181,11 @@ export abstract class Provider {
         }
     }
 
+    public abstract getRequestParams(options: GenerateCompletionsOptions): object
+
     public abstract generateCompletions(
         options: GenerateCompletionsOptions,
         abortSignal: AbortSignal,
-        snippets: AutocompleteContextSnippet[],
         tracer?: CompletionProviderTracer
     ): AsyncGenerator<FetchCompletionResult[]> | Promise<AsyncGenerator<FetchCompletionResult[]>>
 }

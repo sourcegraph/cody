@@ -279,7 +279,6 @@ export interface ConfigurationSubsetForWebview
         >,
         Pick<AuthCredentials, 'serverEndpoint'> {
     smartApply: boolean
-    experimentalOneBox: boolean
     // Type/location of the current webview.
     webviewType?: WebviewType | undefined | null
     // Whether support running multiple webviews (e.g. sidebar w/ multiple editor panels).

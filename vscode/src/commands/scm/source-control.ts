@@ -26,7 +26,7 @@ export class CodySourceControl implements vscode.Disposable {
     private disposables: vscode.Disposable[] = []
     private gitAPI: API | undefined
     private abortController: AbortController | undefined
-    private model: Model = getDotComDefaultModels()[0]
+    private model: Model | undefined = getDotComDefaultModels().at(0)
 
     private commitTemplate?: string
 
@@ -158,6 +158,10 @@ export class CodySourceControl implements vscode.Disposable {
                 progress.report({ message: 'Aborted' })
                 this.statusUpdate()
             })
+
+            if (!this.model) {
+                throw new Error('No models available')
+            }
 
             const { id: model, contextWindow } = this.model
             const { prompt, ignoredContext } = await this.buildPrompt(

@@ -16,7 +16,7 @@ import {
     graphqlClient,
     isFileURI,
 } from '@sourcegraph/cody-shared'
-import { isError } from 'lodash'
+import isError from 'lodash/isError'
 import * as vscode from 'vscode'
 import { getConfiguration } from '../../configuration'
 import type { VSCodeEditor } from '../../editor/vscode-editor'

@@ -58,6 +58,7 @@ export async function configureExternalServices(
     const guardrails = new SourcegraphGuardrailsClient()
 
     const contextAPIClient = new ContextAPIClient(graphqlClient)
+    disposables.push(contextAPIClient)
 
     return {
         chatClient,

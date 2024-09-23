@@ -2,12 +2,7 @@ import { isEqual, partition } from 'lodash'
 import { LRUCache } from 'lru-cache'
 import type * as vscode from 'vscode'
 
-import {
-    type AutocompleteContextSnippet,
-    type DocumentContext,
-    isDefined,
-    wrapInActiveSpan,
-} from '@sourcegraph/cody-shared'
+import { type DocumentContext, isDefined, wrapInActiveSpan } from '@sourcegraph/cody-shared'
 
 import { addAutocompleteDebugEvent } from '../services/open-telemetry/debug-utils'
 
@@ -57,10 +52,9 @@ export interface RequestManagerResult {
 }
 
 interface RequestsManagerParams {
-    providerOptions: GenerateCompletionsOptions
+    generateOptions: GenerateCompletionsOptions
     requestParams: RequestParams
     provider: Provider
-    context: AutocompleteContextSnippet[]
     isCacheEnabled: boolean
     logId: CompletionLogID
     isPreloadRequest: boolean
@@ -124,7 +118,7 @@ export class RequestManager {
             this.latestRequestParams = params
         }
 
-        const { requestParams, provider, providerOptions, context, tracer, logId } = params
+        const { requestParams, provider, generateOptions, tracer, logId } = params
 
         addAutocompleteDebugEvent('RequestManager.request')
 
@@ -141,9 +135,8 @@ export class RequestManager {
         const generateCompletions = async (): Promise<void> => {
             try {
                 for await (const fetchCompletionResults of await provider.generateCompletions(
-                    providerOptions,
+                    generateOptions,
                     request.abortController.signal,
-                    context,
                     tracer
                 )) {
                     const [hotStreakCompletions, currentCompletions] = partition(
