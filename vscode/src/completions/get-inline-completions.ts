@@ -447,6 +447,8 @@ async function doGetInlineCompletions(
                 abortSignal,
                 maxChars: provider.contextSizeHints.totalChars,
                 lastCandidate,
+                gitUrl: gitIdentifiersForFile?.gitUrl,
+                isDotComUser: isDotComUser,
             })
         ),
         remainingInterval > 0

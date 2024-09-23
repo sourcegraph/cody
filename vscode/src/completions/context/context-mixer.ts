@@ -4,9 +4,12 @@ import {
     type AutocompleteContextSnippet,
     type DocumentContext,
     contextFiltersProvider,
+    subscriptionDisposable,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
 
+import {GitHubDotComRepoMetadata} from '../../repository/repo-metadata-from-git-api';
+import { completionProviderConfig } from '../completion-provider-config'
 import type { LastInlineCompletionCandidate } from '../get-inline-completions'
 import {
     DefaultCompletionsContextRanker,
@@ -21,6 +24,8 @@ interface GetContextOptions {
     abortSignal?: AbortSignal
     maxChars: number
     lastCandidate?: LastInlineCompletionCandidate
+    gitUrl?: string
+    isDotComUser?: boolean
 }
 
 export interface ContextSummary {
@@ -72,8 +77,19 @@ export interface GetContextResult {
  * ranged for the top ranked document from all retrieval sources before we move on to the second
  * document).
  */
-export class ContextMixer {
-    constructor(private strategyFactory: ContextStrategyFactory) {}
+export class ContextMixer implements vscode.Disposable {
+    private disposables: vscode.Disposable[] = []
+    private dataCollectionFlag = false
+
+    constructor(private strategyFactory: ContextStrategyFactory) {
+        this.disposables.push(
+            subscriptionDisposable(
+                completionProviderConfig.completionDataCollectionFlag.subscribe(dataCollectionFlag => {
+                    this.dataCollectionFlag = dataCollectionFlag
+                })
+            )
+        )
+    }
 
     public async getContext(options: GetContextOptions): Promise<GetContextResult> {
         const start = performance.now()
@@ -175,6 +191,22 @@ export class ContextMixer {
             logSummary,
             rankedContextCandidates: Array.from(fusedResults),
         }
+    }
+
+    private shouldLogContext(gitUrl: string, isDotComUser: boolean): boolean {
+        if (!isDotComUser || !this.dataCollectionFlag) {
+            return false
+        }
+        const instance = GitHubDotComRepoMetadata.getInstance()
+        const gitRepoMetadata = instance.getRepoMetadataIfCached(gitUrl)
+        return gitRepoMetadata?.isPublic ?? false
+    }
+
+    public dispose(): void {
+        for (const disposable of this.disposables) {
+            disposable.dispose()
+        }
+        this.disposables = []
     }
 }
 
