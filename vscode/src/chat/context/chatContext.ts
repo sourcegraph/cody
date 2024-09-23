@@ -22,7 +22,9 @@ import {
     skipPendingOperation,
     startWith,
     switchMapReplayOperation,
+    telemetryEvents,
 } from '@sourcegraph/cody-shared'
+import { LRUCache } from 'lru-cache'
 import { Observable, map } from 'observable-fns'
 import * as vscode from 'vscode'
 import { URI } from 'vscode-uri'
@@ -35,6 +37,10 @@ import {
 import { repoNameResolver } from '../../repository/repo-name-resolver'
 import { ChatBuilder } from '../chat-view/ChatBuilder'
 
+/**
+ * This state is used to keep track of telemetry events that have already fired
+ */
+const mentionMenuTelemetryCache = new LRUCache<string | number, Set<string | null>>({ max: 10 })
 export function getMentionMenuData(options: {
     disableProviders: ContextMentionProviderID[]
     query: MentionQuery
@@ -75,10 +81,23 @@ export function getMentionMenuData(options: {
                 : Observable.of([])
         ).pipe(map(providers => providers.filter(p => p.title.toLowerCase().includes(queryLower))))
 
-        return combineLatest(providers, items).map(([providers, items]) => ({
+        const results = combineLatest(providers, items).map(([providers, items]) => ({
             providers,
             items,
         }))
+
+        //telemetry
+        if (options.query.interactionID !== null && options.query.interactionID !== undefined) {
+            const cache =
+                mentionMenuTelemetryCache.get(options.query.interactionID) ?? new Set<string | null>()
+            if (!cache.has(options.query.provider)) {
+                cache.add(options.query.provider)
+                telemetryEvents['cody.at-mention/selected'].record('chat', options.query.provider)
+            }
+            mentionMenuTelemetryCache.set(options.query.interactionID, cache)
+        }
+
+        return results
     } catch (error) {
         if (isAbortError(error)) {
             throw error // rethrow as-is so it gets ignored by our caller

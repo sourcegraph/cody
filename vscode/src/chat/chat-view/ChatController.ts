@@ -3,7 +3,6 @@ import {
     clientCapabilities,
     distinctUntilChanged,
     firstResultFromOperation,
-    firstValueFrom,
     pendingOperation,
     ps,
     resolvedConfig,
@@ -31,7 +30,6 @@ import {
     type EventSource,
     FeatureFlag,
     type Guardrails,
-    type MentionQuery,
     type Message,
     ModelUsage,
     PromptString,
@@ -619,10 +617,10 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             if (!model) {
                 throw new Error('No model selected, and no default chat model is available')
             }
-            const { isPublic: isRepoPublic, repoMetadata } = await firstValueFrom(
-                publicRepoMetadataIfAllWorkspaceReposArePublic.pipe(skipPendingOperation())
+            const { isPublic: repoIsPublic, repoMetadata } = await firstResultFromOperation(
+                publicRepoMetadataIfAllWorkspaceReposArePublic
             )
-            // (await workspaceReposMonitor?.getRepoMetadataIfPublic?.()) ?? { isPublic: false }
+
             const telemetryProperties = {
                 requestID,
                 chatModel: model,
@@ -630,8 +628,8 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 source,
                 command,
                 sessionID: this.chatBuilder.sessionID,
-                repoIsPublic: isRepoPublic,
                 repoMetadata,
+                repoIsPublic,
                 traceId: span.spanContext().traceId,
                 promptText: inputText,
             } as const
@@ -732,7 +730,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                                 context: corpusContext,
                                 userSpecifiedIntent,
                                 detectedIntent: intent,
-                                intentScores,
+                                detectedIntentScores: intentScores,
                             },
                             { current: span, firstToken: firstTokenSpan, addMetadata: true }
                         )
@@ -769,7 +767,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                             context,
                             userSpecifiedIntent,
                             detectedIntent: intent,
-                            intentScores,
+                            detectedIntentScores: intentScores,
                         },
                         {
                             addMetadata: true,
@@ -1521,10 +1519,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             )
         )
 
-        // By storing the previous mentionProvider we know when we switch
-        // between providers so we can limit telemetry events.
-        let previousMentionMenuDataQuery: MentionQuery | undefined = undefined
-
         // Listen for API calls from the webview.
         const initialContext = observeInitialContext({
             chatBuilder: this.chatBuilder.changes,
@@ -1541,17 +1535,12 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 }),
                 {
                     mentionMenuData: query => {
-                        const results = getMentionMenuData({
+                        return getMentionMenuData({
                             disableProviders:
                                 this.extensionClient.capabilities?.disabledMentionsProviders || [],
                             query: query,
                             chatBuilder: this.chatBuilder,
                         })
-                        if (query.provider !== previousMentionMenuDataQuery?.provider ?? null) {
-                            telemetryEvents['cody.at-mention/selected'].record('chat', query.provider)
-                        }
-                        previousMentionMenuDataQuery = query
-                        return results
                     },
                     evaluatedFeatureFlag: flag => featureFlagProvider.evaluatedFeatureFlag(flag),
                     prompts: query =>
