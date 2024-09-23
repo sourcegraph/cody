@@ -5,14 +5,10 @@ import { ulid } from 'ulidx'
 import { CODY_VSCODE_ROOT_DIR } from './e2e/utils/helpers'
 import type { TmpDirOptions } from './e2e/utils/tmpdir.setup'
 import type { TestOptions, WorkerOptions } from './e2e/utils/vscody'
-import { CREDENTIALS_ENVFILE_PATH } from './e2e/utils/vscody/credentials-envfile'
-import { setEnvDecrypted } from './e2e/utils/vscody/credentials-envfile'
 
 // Using dotenv files makes it work nicely in VSCode without having to restart the editor
 // to load new environment variables.
 dotenv.config({ path: path.resolve(CODY_VSCODE_ROOT_DIR, '.env') })
-dotenv.config({ path: CREDENTIALS_ENVFILE_PATH })
-setEnvDecrypted()
 
 const isWin = process.platform.startsWith('win')
 const isCI = !!process.env.CI
