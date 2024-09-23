@@ -1,14 +1,6 @@
 // Add anything else here that needs to be used outside of this library.
 
 export {
-    modelsService,
-    mockModelsService,
-    ModelsService,
-    ModelCategory,
-    ModelTier,
-    type ServerModelConfiguration,
-} from './models/modelsService'
-export {
     type Model,
     type ServerModel,
     createModel,
@@ -16,6 +8,12 @@ export {
     modelTier,
     parseModelRef,
 } from './models/model'
+export {
+    modelsService,
+    mockModelsService,
+    ModelsService,
+    type ServerModelConfiguration,
+} from './models/modelsService'
 export {
     type EditModel,
     type EditProvider,
@@ -234,7 +232,7 @@ export {
     SourcegraphGraphQLAPIClient,
     graphqlClient,
 } from './sourcegraph-api/graphql'
-export { ClientConfigSingleton, CodyClientConfig } from './sourcegraph-api/clientConfig'
+export { ClientConfigSingleton } from './sourcegraph-api/clientConfig'
 export {
     addCustomUserAgent,
     customUserAgent,
