@@ -30,7 +30,7 @@ const workspace = new TestWorkspace(path.join(__dirname, '__tests__', 'example-t
 const mayRecord =
     process.env.CODY_RECORDING_MODE === 'record' || process.env.CODY_RECORD_IF_MISSING === 'true'
 
-async function returnTelemetryEvents(currentClient: TestClient) {
+async function exportedTelemetryEvents(currentClient: TestClient) {
     const response = await currentClient.request('testing/exportedTelemetryEvents', null)
 
     // send data to testing pub/sub topic
@@ -124,14 +124,6 @@ describe('Agent', () => {
     const ignoredUri = workspace.file('src', 'isIgnored.ts')
 
     it('extensionConfiguration/change & chat/models (handle errors)', async () => {
-        // list of v2 events we expect to fire during the test run (feature:action). Add to this list as needed.
-        client.expectedEvents = [
-            'cody.auth:failed',
-            'cody.auth:connected',
-            'cody.auth.login:firstEver',
-            'cody.interactiveTutorial:attemptingStart',
-            'cody.experiment.interactiveTutorial:enrolled',
-        ]
         // Send two config change notifications because this is what the
         // JetBrains client does and there was a bug where everything worked
         // fine as long as we didn't send the second unauthenticated config
@@ -187,14 +179,18 @@ describe('Agent', () => {
 
         // telemetry assertion, to validate the expected events fired during the test run
         // Do not remove this assertion, and instead update the expectedEvents list above
-        expect(await returnTelemetryEvents(client)).toEqual(
-            expect.arrayContaining(client.expectedEvents)
+        expect(await exportedTelemetryEvents(client)).toEqual(
+            expect.arrayContaining([
+                'cody.auth:failed',
+                'cody.auth:connected',
+                'cody.auth.login:firstEver',
+                'cody.interactiveTutorial:attemptingStart',
+                'cody.experiment.interactiveTutorial:enrolled',
+            ])
         )
     }, 10_000)
 
     it('graphql/getCurrentUserCodySubscription', async () => {
-        // list of v2 events we expect to fire during the test run (feature:action). Add to this list as needed.
-        client.expectedEvents = []
         const currentUserCodySubscription = await client.request(
             'graphql/getCurrentUserCodySubscription',
             null
@@ -210,19 +206,13 @@ describe('Agent', () => {
         `)
         // telemetry assertion, to validate the expected events fired during the test run
         // Do not remove this assertion, and instead update the expectedEvents list above
-        expect(await returnTelemetryEvents(client)).toEqual(
-            expect.arrayContaining(client.expectedEvents)
+        expect(await exportedTelemetryEvents(client)).toEqual(
+            expect.arrayContaining([])
         )
     }, 10_000)
 
     describe('Chat', () => {
         it('chat/submitMessage (short message)', async () => {
-            // list of v2 events we expect to fire during the test run (feature:action). Add to this list as needed.
-            client.expectedEvents = [
-                'cody.chat-question:submitted',
-                'cody.chat-question:executed',
-                'cody.chatResponse:noCode',
-            ]
             const lastMessage = await client.sendSingleMessageToNewChat('Hello!')
             expect(lastMessage).toMatchInlineSnapshot(
                 `
@@ -235,18 +225,16 @@ describe('Agent', () => {
             )
             // telemetry assertion, to validate the expected events fired during the test run
             // Do not remove this assertion, and instead update the expectedEvents list above
-            expect(await returnTelemetryEvents(client)).toEqual(
-                expect.arrayContaining(client.expectedEvents)
+            expect(await exportedTelemetryEvents(client)).toEqual(
+                expect.arrayContaining([
+                    'cody.chat-question:submitted',
+                    'cody.chat-question:executed',
+                    'cody.chatResponse:noCode',
+                ])
             )
         }, 30_000)
 
         it('chat/submitMessage (long message)', async () => {
-            // list of v2 events we expect to fire during the test run (feature:action). Add to this list as needed.
-            client.expectedEvents = [
-                'cody.chat-question:submitted',
-                'cody.chat-question:executed',
-                'cody.chatResponse:hasCode',
-            ]
             const lastMessage = await client.sendSingleMessageToNewChat(
                 'Generate simple hello world function in java!'
             )
@@ -254,21 +242,16 @@ describe('Agent', () => {
             expect(trimmedMessage).toMatchSnapshot()
             // telemetry assertion, to validate the expected events fired during the test run
             // Do not remove this assertion, and instead update the expectedEvents list above
-            expect(await returnTelemetryEvents(client)).toEqual(
-                expect.arrayContaining(client.expectedEvents)
+            expect(await exportedTelemetryEvents(client)).toEqual(
+                expect.arrayContaining([
+                    'cody.chat-question:submitted',
+                    'cody.chat-question:executed',
+                    'cody.chatResponse:hasCode',
+                ])
             )
         }, 30_000)
 
         it('chat/restore', async () => {
-            // list of v2 events we expect to fire during the test run (feature:action). Add to this list as needed.
-            client.expectedEvents = [
-                'cody.chat-question:submitted',
-                'cody.chat-question:executed',
-                'cody.chatResponse:noCode',
-                'cody.chat-question:submitted',
-                'cody.chat-question:executed',
-                'cody.chatResponse:noCode',
-            ]
             // Step 1: create a chat session where I share my name.
             const id1 = await client.request('chat/new', null)
             const reply1 = asTranscriptMessage(
@@ -311,21 +294,19 @@ describe('Agent', () => {
             )
             // telemetry assertion, to validate the expected events fired during the test run
             // Do not remove this assertion, and instead update the expectedEvents list above
-            expect(await returnTelemetryEvents(client)).toEqual(
-                expect.arrayContaining(client.expectedEvents)
+            expect(await exportedTelemetryEvents(client)).toEqual(
+                expect.arrayContaining([
+                    'cody.chat-question:submitted',
+                    'cody.chat-question:executed',
+                    'cody.chatResponse:noCode',
+                    'cody.chat-question:submitted',
+                    'cody.chat-question:executed',
+                    'cody.chatResponse:noCode',
+                ])
             )
         }, 30_000)
 
         it('chat/restore (With null model)', async () => {
-            // list of v2 events we expect to fire during the test run (feature:action). Add to this list as needed.
-            client.expectedEvents = [
-                'cody.chat-question:submitted',
-                'cody.chat-question:executed',
-                'cody.chatResponse:noCode',
-                'cody.chat-question:submitted',
-                'cody.chat-question:executed',
-                'cody.chatResponse:noCode',
-            ]
             // Step 1: Create a chat session asking what model is used.
             const id1 = await client.request('chat/new', null)
             const reply1 = asTranscriptMessage(
@@ -360,14 +341,19 @@ describe('Agent', () => {
             expect(reply2.messages.at(-1)?.text).toMatchSnapshot()
             // telemetry assertion, to validate the expected events fired during the test run
             // Do not remove this assertion, and instead update the expectedEvents list above
-            expect(await returnTelemetryEvents(client)).toEqual(
-                expect.arrayContaining(client.expectedEvents)
+            expect(await exportedTelemetryEvents(client)).toEqual(
+                expect.arrayContaining([
+                    'cody.chat-question:submitted',
+                    'cody.chat-question:executed',
+                    'cody.chatResponse:noCode',
+                    'cody.chat-question:submitted',
+                    'cody.chat-question:executed',
+                    'cody.chatResponse:noCode',
+                ])
             )
         }, 30_000)
 
         it('chat/restore (multiple) & export', async () => {
-            // list of v2 events we expect to fire during the test run (feature:action). Add to this list as needed.
-            client.expectedEvents = []
             const date = new Date(1997, 7, 2, 12, 0, 0, 0)
 
             // Step 1: Restore multiple chats
@@ -415,9 +401,7 @@ describe('Agent', () => {
             })
             // telemetry assertion, to validate the expected events fired during the test run
             // Do not remove this assertion, and instead update the expectedEvents list above
-            expect(await returnTelemetryEvents(client)).toEqual(
-                expect.arrayContaining(client.expectedEvents)
-            )
+            expect(await exportedTelemetryEvents(client)).toEqual(expect.arrayContaining([]))
         }, 30_000)
 
         it('chat/import allows importing a chat transcript from an external source', async () => {
@@ -516,12 +500,6 @@ describe('Agent', () => {
         })
 
         it('chat/submitMessage (with mock context)', async () => {
-            // list of v2 events we expect to fire during the test run (feature:action). Add to this list as needed.
-            client.expectedEvents = [
-                'cody.chat-question:submitted',
-                'cody.chat-question:executed',
-                'cody.chatResponse:hasCode',
-            ]
             await client.openFile(animalUri)
             const lastMessage = await client.sendSingleMessageToNewChat(
                 'Write a class Dog that implements the Animal interface in my workspace. Show the code only, no explanation needed.',
@@ -536,18 +514,16 @@ describe('Agent', () => {
             expect(trimEndOfLine(lastMessage?.text ?? '')).toMatchSnapshot()
             // telemetry assertion, to validate the expected events fired during the test run
             // Do not remove this assertion, and instead update the expectedEvents list above
-            expect(await returnTelemetryEvents(client)).toEqual(
-                expect.arrayContaining(client.expectedEvents)
+            expect(await exportedTelemetryEvents(client)).toEqual(
+                expect.arrayContaining([
+                    'cody.chat-question:submitted',
+                    'cody.chat-question:executed',
+                    'cody.chatResponse:hasCode',
+                ])
             )
         }, 30_000)
 
         it('chat/submitMessage (squirrel test)', async () => {
-            // list of v2 events we expect to fire during the test run (feature:action). Add to this list as needed.
-            client.expectedEvents = [
-                'cody.chat-question:submitted',
-                'cody.chat-question:executed',
-                'cody.chatResponse:hasCode',
-            ]
             await client.openFile(squirrelUri)
             const { lastMessage, transcript } =
                 await client.sendSingleMessageToNewChatWithFullTranscript(
@@ -566,18 +542,16 @@ describe('Agent', () => {
             expect(contextFiles.map(file => file.uri.toString())).includes(squirrelUri.toString())
             // telemetry assertion, to validate the expected events fired during the test run
             // Do not remove this assertion, and instead update the expectedEvents list above
-            expect(await returnTelemetryEvents(client)).toEqual(
-                expect.arrayContaining(client.expectedEvents)
+            expect(await exportedTelemetryEvents(client)).toEqual(
+                expect.arrayContaining([
+                    'cody.chat-question:submitted',
+                    'cody.chat-question:executed',
+                    'cody.chatResponse:hasCode',
+                ])
             )
         }, 30_000)
 
         it('webview/receiveMessage (type: chatModel)', async () => {
-            // list of v2 events we expect to fire during the test run (feature:action). Add to this list as needed.
-            client.expectedEvents = [
-                'cody.chat-question:submitted',
-                'cody.chat-question:executed',
-                'cody.chatResponse:noCode',
-            ]
             const id = await client.request('chat/new', null)
             {
                 await client.request('chat/setModel', { id, model: 'openai/gpt-3.5-turbo' })
@@ -586,24 +560,16 @@ describe('Agent', () => {
             }
             // telemetry assertion, to validate the expected events fired during the test run
             // Do not remove this assertion, and instead update the expectedEvents list above
-            expect(await returnTelemetryEvents(client)).toEqual(
-                expect.arrayContaining(client.expectedEvents)
+            expect(await exportedTelemetryEvents(client)).toEqual(
+                expect.arrayContaining([
+                    'cody.chat-question:submitted',
+                    'cody.chat-question:executed',
+                    'cody.chatResponse:noCode',
+                ])
             )
         }, 30_000)
 
         it('webview/receiveMessage (type: reset)', async () => {
-            // list of v2 events we expect to fire during the test run (feature:action). Add to this list as needed.
-            client.expectedEvents = [
-                'cody.chat-question:submitted',
-                'cody.chat-question:executed',
-                'cody.chatResponse:noCode',
-                'cody.chat-question:submitted',
-                'cody.chat-question:executed',
-                'cody.chatResponse:noCode',
-                'cody.chat-question:submitted',
-                'cody.chat-question:executed',
-                'cody.chatResponse:noCode',
-            ]
             const id = await client.request('chat/new', null)
             await client.request('chat/setModel', {
                 id,
@@ -624,8 +590,18 @@ describe('Agent', () => {
             }
             // telemetry assertion, to validate the expected events fired during the test run
             // Do not remove this assertion, and instead update the expectedEvents list above
-            expect(await returnTelemetryEvents(client)).toEqual(
-                expect.arrayContaining(client.expectedEvents)
+            expect(await exportedTelemetryEvents(client)).toEqual(
+                expect.arrayContaining([
+                    'cody.chat-question:submitted',
+                    'cody.chat-question:executed',
+                    'cody.chatResponse:noCode',
+                    'cody.chat-question:submitted',
+                    'cody.chat-question:executed',
+                    'cody.chatResponse:noCode',
+                    'cody.chat-question:submitted',
+                    'cody.chat-question:executed',
+                    'cody.chatResponse:noCode',
+                ])
             )
         })
 
@@ -633,22 +609,6 @@ describe('Agent', () => {
             it(
                 'edits the last human chat message',
                 async () => {
-                    client.expectedEvents = [
-                        'cody.chat-question:submitted',
-                        'cody.chat-question:executed',
-                        'cody.chatResponse:noCode',
-                        'cody.chat-question:submitted',
-                        'cody.chat-question:executed',
-                        'cody.editChatButton:clicked',
-                        'cody.chatResponse:noCode',
-                        'cody.editChatButton:clicked',
-                        'cody.chat-question:submitted',
-                        'cody.chat-question:executed',
-                        'cody.chatResponse:noCode',
-                        'cody.chat-question:submitted',
-                        'cody.chat-question:executed',
-                        'cody.chatResponse:noCode',
-                    ]
                     const id = await client.request('chat/new', null)
                     await client.request('chat/setModel', {
                         id,
@@ -672,23 +632,29 @@ describe('Agent', () => {
                     }
                     // telemetry assertion, to validate the expected events fired during the test run
                     // Do not remove this assertion, and instead update the expectedEvents list above
-                    expect(await returnTelemetryEvents(client)).toEqual(
-                        expect.arrayContaining(client.expectedEvents)
+                    expect(await exportedTelemetryEvents(client)).toEqual(
+                        expect.arrayContaining([
+                            'cody.chat-question:submitted',
+                            'cody.chat-question:executed',
+                            'cody.chatResponse:noCode',
+                            'cody.chat-question:submitted',
+                            'cody.chat-question:executed',
+                            'cody.editChatButton:clicked',
+                            'cody.chatResponse:noCode',
+                            'cody.editChatButton:clicked',
+                            'cody.chat-question:submitted',
+                            'cody.chat-question:executed',
+                            'cody.chatResponse:noCode',
+                            'cody.chat-question:submitted',
+                            'cody.chat-question:executed',
+                            'cody.chatResponse:noCode',
+                        ])
                     )
                 },
                 { timeout: mayRecord ? 10_000 : undefined }
             )
 
             it('edits messages by index', async () => {
-                // list of v2 events we expect to fire during the test run (feature:action). Add to this list as needed.
-                client.expectedEvents = [
-                    'cody.chat-question:submitted',
-                    'cody.chat-question:executed',
-                    'cody.chatResponse:noCode',
-                    'cody.chat-question:submitted',
-                    'cody.chat-question:executed',
-                    'cody.chatResponse:noCode',
-                ]
                 const id = await client.request('chat/new', null)
                 await client.request('chat/setModel', {
                     id,
@@ -722,8 +688,15 @@ describe('Agent', () => {
                 }
                 // telemetry assertion, to validate the expected events fired during the test run
                 // Do not remove this assertion, and instead update the expectedEvents list above
-                expect(await returnTelemetryEvents(client)).toEqual(
-                    expect.arrayContaining(client.expectedEvents)
+                expect(await exportedTelemetryEvents(client)).toEqual(
+                    expect.arrayContaining([
+                        'cody.chat-question:submitted',
+                        'cody.chat-question:executed',
+                        'cody.chatResponse:noCode',
+                        'cody.chat-question:submitted',
+                        'cody.chat-question:executed',
+                        'cody.chatResponse:noCode',
+                    ])
                 )
             }, 30_000)
         })
@@ -918,13 +891,6 @@ describe('Agent', () => {
 
     describe('Commands', () => {
         it('commands/explain', async () => {
-            // list of v2 events we expect to fire during the test run (feature:action). Add to this list as needed.
-            client.expectedEvents = [
-                'cody.command.explain:executed',
-                'cody.chat-question:submitted',
-                'cody.chat-question:executed',
-                'cody.chatResponse:noCode',
-            ]
             await client.openFile(animalUri)
             const freshChatID = await client.request('chat/new', null)
             const id = await client.request('commands/explain', null)
@@ -938,8 +904,13 @@ describe('Agent', () => {
             expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchSnapshot()
             // telemetry assertion, to validate the expected events fired during the test run
             // Do not remove this assertion, and instead update the expectedEvents list above
-            expect(await returnTelemetryEvents(client)).toEqual(
-                expect.arrayContaining(client.expectedEvents)
+            expect(await exportedTelemetryEvents(client)).toEqual(
+                expect.arrayContaining([
+                    'cody.command.explain:executed',
+                    'cody.chat-question:submitted',
+                    'cody.chat-question:executed',
+                    'cody.chatResponse:noCode',
+                ])
             )
         }, 30_000)
 
@@ -947,34 +918,25 @@ describe('Agent', () => {
         it.skipIf(isWindows())(
             'commands/test',
             async () => {
-                // list of v2 events we expect to fire during the test run (feature:action). Add to this list as needed.
-                client.expectedEvents = [
-                    'cody.command.test:executed',
-                    'cody.chat-question:submitted',
-                    'cody.chat-question:executed',
-                    'cody.chatResponse:hasCode',
-                ]
                 await client.openFile(animalUri)
                 const id = await client.request('commands/test', null)
                 const lastMessage = await client.firstNonEmptyTranscript(id)
                 expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchSnapshot()
                 // telemetry assertion, to validate the expected events fired during the test run
                 // Do not remove this assertion, and instead update the expectedEvents list above
-                expect(await returnTelemetryEvents(client)).toEqual(
-                    expect.arrayContaining(client.expectedEvents)
+                expect(await exportedTelemetryEvents(client)).toEqual(
+                    expect.arrayContaining([
+                        'cody.command.test:executed',
+                        'cody.chat-question:submitted',
+                        'cody.chat-question:executed',
+                        'cody.chatResponse:hasCode',
+                    ])
                 )
             },
             30_000
         )
 
         it('commands/smell', async () => {
-            // list of v2 events we expect to fire during the test run (feature:action). Add to this list as needed.
-            client.expectedEvents = [
-                'cody.command.smell:executed',
-                'cody.chat-question:submitted',
-                'cody.chat-question:executed',
-                'cody.chatResponse:hasCode',
-            ]
             await client.openFile(animalUri)
             const id = await client.request('commands/smell', null)
             const lastMessage = await client.firstNonEmptyTranscript(id)
@@ -982,16 +944,19 @@ describe('Agent', () => {
             expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchSnapshot()
             // telemetry assertion, to validate the expected events fired during the test run
             // Do not remove this assertion, and instead update the expectedEvents list above
-            expect(await returnTelemetryEvents(client)).toEqual(
-                expect.arrayContaining(client.expectedEvents)
+            expect(await exportedTelemetryEvents(client)).toEqual(
+                expect.arrayContaining([
+                    'cody.command.smell:executed',
+                    'cody.chat-question:submitted',
+                    'cody.chat-question:executed',
+                    'cody.chatResponse:hasCode',
+                ])
             )
         }, 30_000)
     })
 
     describe('Progress bars', () => {
         it('progress/report', async () => {
-            // list of v2 events we expect to fire during the test run (feature:action). Add to this list as needed.
-            client.expectedEvents = []
             const { result } = await client.request('testing/progress', {
                 title: 'Susan',
             })
@@ -1054,14 +1019,12 @@ describe('Agent', () => {
             `)
             // telemetry assertion, to validate the expected events fired during the test run
             // Do not remove this assertion, and instead update the expectedEvents list above
-            expect(await returnTelemetryEvents(client)).toEqual(
-                expect.arrayContaining(client.expectedEvents)
+            expect(await exportedTelemetryEvents(client)).toEqual(
+                expect.arrayContaining([])
             )
         })
 
         it('progress/cancel', async () => {
-            // list of v2 events we expect to fire during the test run (feature:action). Add to this list as needed.
-            client.expectedEvents = []
             const disposable = client.progressStartEvents.event(params => {
                 if (params.options.title === 'testing/progressCancelation') {
                     client.notify('progress/cancel', { id: params.id })
@@ -1077,8 +1040,8 @@ describe('Agent', () => {
             }
             // telemetry assertion, to validate the expected events fired during the test run
             // Do not remove this assertion, and instead update the expectedEvents list above
-            expect(await returnTelemetryEvents(client)).toEqual(
-                expect.arrayContaining(client.expectedEvents)
+            expect(await exportedTelemetryEvents(client)).toEqual(
+                expect.arrayContaining([])
             )
         })
     })
