@@ -1,3 +1,4 @@
+import { ps } from '@sourcegraph/cody-shared'
 import * as uuid from 'uuid'
 import * as vscode from 'vscode'
 
@@ -863,9 +864,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
 
         this.chatModel.setLastMessageContext(context, contextAlternatives)
         this.chatModel.addBotMessage({
-            text: PromptString.unsafe_fromLLMResponse(
-                '`cody-experimental-one-box` feature flag is turned on.'
-            ),
+            text: ps`"cody-experimental-one-box" feature flag is turned on.`,
         })
 
         void this.saveSession()
