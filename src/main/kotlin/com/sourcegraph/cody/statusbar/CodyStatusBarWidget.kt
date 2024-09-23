@@ -11,6 +11,7 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.wm.StatusBarWidget
 import com.intellij.openapi.wm.WindowManager
 import com.intellij.openapi.wm.impl.status.EditorBasedStatusBarPopup
+import com.intellij.util.ui.GraphicsUtil
 
 class CodyStatusBarWidget(project: Project) : EditorBasedStatusBarPopup(project, false) {
   override fun ID(): String = CodyWidgetFactory.ID
@@ -20,7 +21,9 @@ class CodyStatusBarWidget(project: Project) : EditorBasedStatusBarPopup(project,
     if (currentStatus == CodyStatus.CodyDisabled) {
       return WidgetState.HIDDEN
     }
-    val state = WidgetState(currentStatus.presentableText, "", true)
+    // Remote environment does not support rendering icons, so we use a placeholder text instead
+    val text = if (GraphicsUtil.isRemoteEnvironment()) "Cody" else ""
+    val state = WidgetState(currentStatus.presentableText, text, true)
     state.icon = currentStatus.icon
     return state
   }
