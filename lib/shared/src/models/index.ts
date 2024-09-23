@@ -226,6 +226,7 @@ export class Model {
         clientSideConfig,
         tags = [],
         provider,
+        apiVersion,
         title,
     }: ModelParams) {
         // Start by setting the model ref, by default using a new form but falling
@@ -238,7 +239,7 @@ export class Model {
             const info = getModelInfo(id)
             this.modelRef = {
                 providerId: provider ?? info.provider,
-                apiVersionId: 'unknown',
+                apiVersionId: apiVersion ?? 'unknown',
                 modelId: title ?? info.title,
             }
         }
@@ -315,6 +316,7 @@ interface ModelParams {
     clientSideConfig?: ClientSideConfig
     tags?: ModelTag[]
     provider?: string
+    apiVersion?: string
     title?: string
 }
 
