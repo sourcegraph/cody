@@ -14,6 +14,7 @@ import com.intellij.openapi.editor.ex.EditorEx
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.project.DumbService
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.testFramework.EditorTestUtil
 import com.intellij.testFramework.PlatformTestUtil
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
@@ -22,10 +23,9 @@ import com.sourcegraph.cody.agent.CodyAgentService
 import com.sourcegraph.cody.agent.protocol_generated.ProtocolCodeLens
 import com.sourcegraph.cody.config.CodyPersistentAccountsHost
 import com.sourcegraph.cody.config.SourcegraphServerPath
-import com.sourcegraph.cody.edit.LensListener
-import com.sourcegraph.cody.edit.LensesService
-import com.sourcegraph.cody.edit.widget.LensAction
-import com.sourcegraph.cody.edit.widget.LensWidgetGroup
+import com.sourcegraph.cody.edit.lenses.LensListener
+import com.sourcegraph.cody.edit.lenses.LensesService
+import com.sourcegraph.cody.edit.lenses.providers.EditAcceptCodeVisionProvider
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
 import java.util.regex.Pattern
@@ -33,9 +33,7 @@ import junit.framework.TestCase
 
 open class CodyIntegrationTextFixture : BasePlatformTestCase(), LensListener {
   private val logger = Logger.getInstance(CodyIntegrationTextFixture::class.java)
-  private val lensSubscribers =
-      mutableListOf<
-          Pair<(List<ProtocolCodeLens>) -> Boolean, CompletableFuture<LensWidgetGroup?>>>()
+  private val lensSubscribers = mutableListOf<(List<ProtocolCodeLens>) -> Boolean>()
 
   override fun setUp() {
     super.setUp()
@@ -196,82 +194,65 @@ open class CodyIntegrationTextFixture : BasePlatformTestCase(), LensListener {
     }
   }
 
-  protected fun assertNoInlayShown() {
-    runInEdtAndWait {
-      PlatformTestUtil.dispatchAllEventsInIdeEventQueue()
-      assertFalse(
-          "Lens group inlay should NOT be displayed",
-          myFixture.editor.inlayModel.hasBlockElements())
-    }
+  override fun onLensesUpdate(vf: VirtualFile, codeLenses: List<ProtocolCodeLens>) {
+    synchronized(lensSubscribers) { lensSubscribers.removeAll { it(codeLenses) } }
   }
 
-  protected fun assertInlayIsShown() {
-    runInEdtAndWait {
-      PlatformTestUtil.dispatchAllEventsInIdeEventQueue()
+  fun waitForSuccessfulEdit() {
+    var attempts = 0
+    val maxAttempts = 10
+
+    while (attempts < maxAttempts) {
+      val hasAcceptLens =
+          LensesService.getInstance(myFixture.project).getLenses(myFixture.editor).any {
+            it.command?.command == EditAcceptCodeVisionProvider.command
+          }
+
+      if (hasAcceptLens) break
+      Thread.sleep(1000)
+      attempts++
+    }
+    if (attempts >= maxAttempts) {
       assertTrue(
-          "Lens group inlay should be displayed", myFixture.editor.inlayModel.hasBlockElements())
+          "Awaiting successful edit: No accept lens found after $maxAttempts attempts", false)
     }
   }
 
-  override fun onLensesUpdate(
-      lensWidgetGroup: LensWidgetGroup?,
-      codeLenses: List<ProtocolCodeLens>
-  ) {
+  fun runAndWaitForCleanState(actionIdToRun: String) {
+    runAndWaitForLenses(actionIdToRun)
+  }
+
+  fun runAndWaitForLenses(
+      actionIdToRun: String,
+      vararg expectedLenses: String
+  ): List<ProtocolCodeLens> {
+    val future = CompletableFuture<List<ProtocolCodeLens>>()
     synchronized(lensSubscribers) {
-      lensSubscribers.removeAll { (checkFunc, future) ->
-        if (codeLenses.find { it.command?.command == "cody.fixup.codelens.error" } != null) {
-          future.completeExceptionally(IllegalStateException("Error group shown"))
-          return@removeAll true
+      lensSubscribers.add { codeLenses ->
+        val error = codeLenses.find { it.command?.command == "cody.fixup.codelens.error" }
+        if (error != null) {
+          future.completeExceptionally(
+              IllegalStateException("Error group shown: ${error.command?.title}"))
+          return@add false
         }
 
-        val hasLensAppeared = checkFunc(codeLenses)
-        if (hasLensAppeared) future.complete(lensWidgetGroup)
-        hasLensAppeared
+        if ((expectedLenses.isEmpty() && codeLenses.isEmpty()) ||
+            expectedLenses.all { expected -> codeLenses.any { it.command?.command == expected } }) {
+          future.complete(codeLenses)
+          return@add true
+        }
+        return@add false
       }
     }
-  }
 
-  fun runAndWaitForLenses(actionId: String, actionLensId: String): LensWidgetGroup? {
-    val future = CompletableFuture<LensWidgetGroup?>()
-    val check = { codeLens: List<ProtocolCodeLens> ->
-      codeLens.any { it.command?.command == actionLensId }
-    }
-    lensSubscribers.add(check to future)
-
-    triggerAction(actionId)
+    triggerAction(actionIdToRun)
 
     try {
       return future.get(ASYNC_WAIT_TIMEOUT_SECONDS, TimeUnit.SECONDS)
     } catch (e: Exception) {
-      val stackTrace = e.stackTrace.joinToString("\n") { it.toString() }
+      val codeLenses = LensesService.getInstance(myFixture.project).getLenses(myFixture.editor)
       assertTrue(
-          "Error while awaiting condition after action $actionId: ${e.localizedMessage}\n$stackTrace",
-          false)
-      throw e
-    }
-  }
-
-  fun runLensAction(lensWidgetGroup: LensWidgetGroup, actionLensId: String): LensWidgetGroup? {
-    val future = CompletableFuture<LensWidgetGroup?>()
-    val check = { codeLens: List<ProtocolCodeLens> -> codeLens.isEmpty() }
-    lensSubscribers.add(check to future)
-
-    runInEdtAndWait {
-      val action: LensAction? =
-          lensWidgetGroup.widgets.filterIsInstance<LensAction>().find {
-            it.actionId == actionLensId
-          }
-      PlatformTestUtil.dispatchAllEventsInIdeEventQueue()
-      assertTrue("Lens action $actionLensId should be available", action != null)
-      action?.triggerAction(myFixture.editor)
-    }
-
-    try {
-      return future.get(ASYNC_WAIT_TIMEOUT_SECONDS, TimeUnit.SECONDS)
-    } catch (e: Exception) {
-      val stackTrace = e.stackTrace.joinToString("\n") { it.toString() }
-      assertTrue(
-          "Error while awaiting condition after lens action $actionLensId: ${e.localizedMessage}\n$stackTrace",
+          "Error while awaiting after action $actionIdToRun. Expected lenses: [${expectedLenses.joinToString()}], got: $codeLenses",
           false)
       throw e
     }

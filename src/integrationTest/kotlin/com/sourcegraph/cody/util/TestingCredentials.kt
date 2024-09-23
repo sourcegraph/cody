@@ -14,7 +14,7 @@ data class TestingCredentials(
         TestingCredentials(
             token = System.getenv("SRC_DOTCOM_PRO_ACCESS_TOKEN"),
             redactedToken =
-                "REDACTED_d5e0f0a37c9821e856b923fe14e67a605e3f6c0a517d5a4f46a4e35943ee0f6d",
+                "REDACTED_3dd704711f82a44ff6aba261b53b61a03fb8edba658774639148630d838c2d1d",
             serverEndpoint = ConfigUtil.DOTCOM_URL)
     val dotcomProUserRateLimited =
         TestingCredentials(

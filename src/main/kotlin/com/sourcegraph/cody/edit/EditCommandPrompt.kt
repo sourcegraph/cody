@@ -457,14 +457,6 @@ class EditCommandPrompt(
       val commandPrompt = EDIT_COMMAND_PROMPT_KEY.get(project)
       return commandPrompt?.popup?.isVisible == true
     }
-
-    /** Returns a compact symbol representation of the action's keyboard shortcut, if any. */
-    @JvmStatic
-    fun getShortcutDisplayString(actionId: String): String? {
-      return KeymapManager.getInstance().activeKeymap.getShortcuts(actionId).firstOrNull()?.let {
-        KeymapUtil.getShortcutText(it)
-      }
-    }
   }
 
   override fun getData(dataId: String): Any? {

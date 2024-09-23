@@ -1,4 +1,4 @@
-package com.sourcegraph.cody.edit.actions.lenses
+package com.sourcegraph.cody.edit.lenses.actions
 
 import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnAction
@@ -10,7 +10,7 @@ import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.project.DumbAware
 import com.intellij.openapi.project.Project
 import com.sourcegraph.cody.config.CodyAuthenticationManager
-import com.sourcegraph.cody.edit.LensesService
+import com.sourcegraph.cody.edit.lenses.LensesService
 import com.sourcegraph.common.CodyBundle
 
 abstract class LensEditAction(val editAction: (Project, AnActionEvent, Editor, String) -> Unit) :

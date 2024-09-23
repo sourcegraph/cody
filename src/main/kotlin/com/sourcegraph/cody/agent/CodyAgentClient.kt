@@ -22,7 +22,7 @@ import com.sourcegraph.cody.agent.protocol_generated.TextDocument_ShowParams
 import com.sourcegraph.cody.agent.protocol_generated.UntitledTextDocument
 import com.sourcegraph.cody.agent.protocol_generated.WorkspaceEditParams
 import com.sourcegraph.cody.edit.EditService
-import com.sourcegraph.cody.edit.LensesService
+import com.sourcegraph.cody.edit.lenses.LensesService
 import com.sourcegraph.cody.error.CodyConsole
 import com.sourcegraph.cody.ignore.IgnoreOracle
 import com.sourcegraph.cody.ui.web.NativeWebviewProvider

@@ -1,4 +1,4 @@
-package com.sourcegraph.cody.edit.actions.lenses
+package com.sourcegraph.cody.edit.lenses.actions
 
 import com.intellij.openapi.application.runInEdt
 import com.sourcegraph.cody.edit.EditCommandPrompt
