@@ -6,6 +6,7 @@ import {
     type AccountKeyedChatHistory,
     type ChatHistoryKey,
     type CodyCommand,
+    CodyIDE,
     ModelUsage,
     currentAuthStatus,
     currentAuthStatusAuthed,
@@ -443,11 +444,15 @@ export class Agent extends MessageHandler implements ExtensionClient {
                     secrets
                 )
 
-                this.authenticationPromise = clientInfo.extensionConfiguration?.accessToken
-                    ? this.handleConfigChanges(clientInfo.extensionConfiguration, {
-                          forceAuthentication: true,
-                      })
-                    : Promise.resolve()
+                const ideType = AgentWorkspaceConfiguration.clientNameToIDE(this.clientInfo?.name ?? '')
+
+                this.authenticationPromise =
+                    clientInfo.extensionConfiguration &&
+                    (clientInfo.extensionConfiguration?.accessToken || ideType === CodyIDE.Web)
+                        ? this.handleConfigChanges(clientInfo.extensionConfiguration, {
+                              forceAuthentication: true,
+                          })
+                        : Promise.resolve()
                 await this.authenticationPromise
 
                 const webviewKind = clientInfo.capabilities?.webview || 'agentic'
