@@ -95,7 +95,6 @@ export const CodyPanel: FunctionComponent<
                         showWelcomeMessage={showWelcomeMessage}
                         scrollableParent={tabContainerRef.current}
                         smartApplyEnabled={smartApplyEnabled}
-                        experimentalOneBoxEnabled={experimentalOneBoxEnabled}
                         isUnifiedPromptsAvailable={config.unifiedPromptsAvailable}
                         setView={setView}
                     />

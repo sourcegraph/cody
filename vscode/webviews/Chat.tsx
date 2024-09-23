@@ -32,7 +32,6 @@ interface ChatboxProps {
     showIDESnippetActions?: boolean
     setView: (view: View) => void
     smartApplyEnabled?: boolean
-    experimentalOneBoxEnabled?: boolean
     isUnifiedPromptsAvailable?: boolean
 }
 
@@ -48,7 +47,6 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     showIDESnippetActions = true,
     setView,
     smartApplyEnabled,
-    experimentalOneBoxEnabled,
     isUnifiedPromptsAvailable,
 }) => {
     const telemetryRecorder = useTelemetryRecorder()
