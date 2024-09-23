@@ -11,6 +11,7 @@ class EditCodeAction :
       val project = editor.project
       if (project != null) {
         EditCommandPrompt(project, editor, "Edit Code with Cody")
+      } else {
         logger.warn("EditCodeAction invoked with null project")
       }
     }) {
