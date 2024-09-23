@@ -7,3 +7,17 @@
 .excluded {
     text-decoration: line-through !important;
 }
+
+.repoShortName {
+    color: var(--vscode-disabledForeground);
+    font-size: smaller;
+}
+
+.dirname {
+    color: var(--vscode-disabledForeground);
+    font-size: smaller;
+}
+
+.range {
+    color: var(--vscode-disabledForeground);
+}

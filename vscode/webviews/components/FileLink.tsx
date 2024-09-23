@@ -65,12 +65,16 @@ export const FileLink: React.FunctionComponent<
         // Remote search result.
         if (source === 'unified') {
             const repoShortName = repoName?.slice(repoName.lastIndexOf('/') + 1)
-            const pathToDisplay = `${repoShortName} ${title}`
+            const pathToDisplay = `${title}`
+            const tooltip = `${repoName}${
+                revision ? `@${revision}` : ''
+            }\nincluded from Sourcegraph search`
             return {
                 pathWithRange: range ? `${pathToDisplay}:${displayLineRange(range)}` : pathToDisplay,
-                tooltip: `${repoName} ${
-                    revision ? `@${revision}` : ''
-                }\nincluded via Enhanced Context (Remote Search)`,
+                path: pathToDisplay,
+                range: range ? `${displayLineRange(range)}` : undefined,
+                repoShortName,
+                tooltip,
                 // We can skip encoding when the uri path already contains '@'.
                 href: uri.toString(uri.path.includes('@')),
                 target: '_blank' as const,
@@ -80,13 +84,15 @@ export const FileLink: React.FunctionComponent<
         const pathToDisplay = displayPath(uri)
         const pathWithRange = range ? `${pathToDisplay}:${displayLineRange(range)}` : pathToDisplay
         const openURI = webviewOpenURIForContextItem({ uri, range })
+        const tooltip = isIgnored
+            ? IGNORE_WARNING
+            : isTooLarge
+              ? `${LIMIT_WARNING}${isTooLargeReason ? `: ${isTooLargeReason}` : ''}`
+              : pathWithRange
         return {
-            pathWithRange,
-            tooltip: isIgnored
-                ? IGNORE_WARNING
-                : isTooLarge
-                  ? `${LIMIT_WARNING}${isTooLargeReason ? `: ${isTooLargeReason}` : ''}`
-                  : pathWithRange,
+            path: pathToDisplay,
+            range: range ? `${displayLineRange(range)}` : undefined,
+            tooltip,
             href: openURI.href,
             target: openURI.target,
         }
@@ -106,7 +112,7 @@ export const FileLink: React.FunctionComponent<
             )}
             {source === 'unified' || uri.scheme === 'http' || uri.scheme === 'https' ? (
                 <a
-                    className={linkClassName}
+                    className={`${linkClassName} tw-truncate hover:tw-no-underline !tw-p-0`}
                     title={linkDetails.tooltip}
                     href={linkDetails.href}
                     target={linkDetails.target}
@@ -116,14 +122,19 @@ export const FileLink: React.FunctionComponent<
                         className={clsx(styles.path, (isTooLarge || isIgnored) && styles.excluded)}
                         data-source={source || 'unknown'}
                     >
-                        {linkDetails.pathWithRange}
+                        <PrettyPrintedContextItem
+                            path={linkDetails.path}
+                            range={linkDetails.range}
+                            repoShortName={linkDetails.repoShortName}
+                        />
                     </div>
                 </a>
             ) : (
                 <Button
+                    className={`${linkClassName} tw-truncate hover:tw-no-underline !tw-p-0`}
+                    title={linkDetails.tooltip}
                     variant="link"
                     onClick={onFileLinkClicked}
-                    className="tw-truncate hover:tw-no-underline !tw-p-0"
                 >
                     <i
                         className={clsx('codicon', `codicon-${source === 'user' ? 'mention' : 'file'}`)}
@@ -133,10 +144,44 @@ export const FileLink: React.FunctionComponent<
                         className={clsx(styles.path, (isTooLarge || isIgnored) && styles.excluded)}
                         data-source={source || 'unknown'}
                     >
-                        {linkDetails.pathWithRange}
+                        <PrettyPrintedContextItem
+                            path={linkDetails.path}
+                            range={linkDetails.range}
+                            repoShortName={linkDetails.repoShortName}
+                        />
                     </div>
                 </Button>
             )}
         </div>
+    )
+}
+
+const PrettyPrintedContextItem: React.FunctionComponent<{
+    path: string
+    range?: string
+    repoShortName?: string
+}> = ({ path, range, repoShortName }) => {
+    let sep = '/'
+    if (!path.includes('/')) {
+        sep = '\\'
+    }
+    if (!path.includes(sep)) {
+        return <>{path}</>
+    }
+
+    const basename = path.split(sep).pop()
+    const dirname = path.split(sep).slice(0, -1).join(sep)
+    return (
+        <>
+            <span>{basename}</span>
+            <span className={styles.range}>{range ? `:${range}` : ''}</span>{' '}
+            {repoShortName && (
+                <span className={styles.repoShortName}>
+                    {repoShortName}
+                    {sep}
+                </span>
+            )}
+            <span className={styles.dirname}>{dirname}</span>
+        </>
     )
 }
