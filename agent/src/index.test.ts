@@ -206,9 +206,7 @@ describe('Agent', () => {
         `)
         // telemetry assertion, to validate the expected events fired during the test run
         // Do not remove this assertion, and instead update the expectedEvents list above
-        expect(await exportedTelemetryEvents(client)).toEqual(
-            expect.arrayContaining([])
-        )
+        expect(await exportedTelemetryEvents(client)).toEqual(expect.arrayContaining([]))
     }, 10_000)
 
     describe('Chat', () => {
@@ -1019,9 +1017,7 @@ describe('Agent', () => {
             `)
             // telemetry assertion, to validate the expected events fired during the test run
             // Do not remove this assertion, and instead update the expectedEvents list above
-            expect(await exportedTelemetryEvents(client)).toEqual(
-                expect.arrayContaining([])
-            )
+            expect(await exportedTelemetryEvents(client)).toEqual(expect.arrayContaining([]))
         })
 
         it('progress/cancel', async () => {
@@ -1040,9 +1036,7 @@ describe('Agent', () => {
             }
             // telemetry assertion, to validate the expected events fired during the test run
             // Do not remove this assertion, and instead update the expectedEvents list above
-            expect(await exportedTelemetryEvents(client)).toEqual(
-                expect.arrayContaining([])
-            )
+            expect(await exportedTelemetryEvents(client)).toEqual(expect.arrayContaining([]))
         })
     })
 
