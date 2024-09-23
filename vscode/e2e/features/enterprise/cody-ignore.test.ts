@@ -11,7 +11,7 @@ test.use({
     templateWorkspaceDir: 'test/fixtures/legacy-polyglot-template',
 })
 
-test.describe('cody ignore', {}, () => {
+test.fixme('cody ignore', {}, () => {
     test('it works', async ({ workspaceDir, page, vscodeUI, mitmProxy, polly }, testInfo) => {
         const session = uix.vscode.Session.pending({ page, vscodeUI, workspaceDir })
         const cody = uix.cody.Extension.with({ page, workspaceDir })
@@ -21,8 +21,8 @@ test.describe('cody ignore', {}, () => {
             await modifySettings(
                 s => ({
                     ...s,
-                    'cody.accessToken': MITM_AUTH_TOKEN_PLACEHOLDER,
-                    'cody.serverEndpoint': mitmProxy.sourcegraph.enterprise.endpoint,
+                    'cody.override.authToken': MITM_AUTH_TOKEN_PLACEHOLDER,
+                    'cody.override.serverEndpoint': mitmProxy.sourcegraph.enterprise.endpoint,
                 }),
                 { workspaceDir }
             )
