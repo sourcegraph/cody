@@ -16,6 +16,7 @@ import type { UserAccountInfo } from '../Chat'
 import type { ApiPostMessage } from '../Chat'
 import { Button } from '../components/shadcn/ui/button'
 import { getVSCodeAPI } from '../utils/VSCodeApi'
+import { useExperimentalOneBox } from '../utils/useExperimentalOneBox'
 import type { CodeBlockActionsProps } from './ChatMessageContent/ChatMessageContent'
 import { ContextCell } from './cells/contextCell/ContextCell'
 import {
@@ -41,7 +42,6 @@ interface TranscriptProps {
     insertButtonOnSubmit?: CodeBlockActionsProps['insertButtonOnSubmit']
     smartApply?: CodeBlockActionsProps['smartApply']
     smartApplyEnabled?: boolean
-    experimentalOneBoxEnabled?: boolean
 }
 
 export const Transcript: FC<TranscriptProps> = props => {
@@ -58,7 +58,6 @@ export const Transcript: FC<TranscriptProps> = props => {
         insertButtonOnSubmit,
         smartApply,
         smartApplyEnabled,
-        experimentalOneBoxEnabled,
     } = props
 
     const interactions = useMemo(
@@ -95,7 +94,6 @@ export const Transcript: FC<TranscriptProps> = props => {
                     )}
                     smartApply={smartApply}
                     smartApplyEnabled={smartApplyEnabled}
-                    experimentalOneBoxEnabled={experimentalOneBoxEnabled}
                 />
             ))}
         </div>
@@ -183,7 +181,6 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
         copyButtonOnSubmit,
         smartApply,
         smartApplyEnabled,
-        experimentalOneBoxEnabled,
     } = props
 
     const [intent, setIntent] = useState<ChatMessage['intent']>()
@@ -205,6 +202,8 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
     )
 
     const extensionAPI = useExtensionAPI()
+
+    const experimentalOneBoxEnabled = useExperimentalOneBox()
 
     const onChange = useMemo(() => {
         return debounce(async (editorValue: SerializedPromptEditorValue) => {
@@ -287,7 +286,6 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                 isEditorInitiallyFocused={isLastInteraction}
                 editorRef={humanEditorRef}
                 className={!isFirstInteraction && isLastInteraction ? 'tw-mt-auto' : ''}
-                experimentalOneBoxEnabled={experimentalOneBoxEnabled}
                 onEditorFocusChange={resetIntent}
             />
             {experimentalOneBoxEnabled && humanMessage.intent && (

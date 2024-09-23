@@ -27,7 +27,6 @@ const dummyVSCodeAPI: VSCodeWrapper = {
                 uiKindIsWeb: false,
                 experimentalNoodle: false,
                 smartApply: false,
-                experimentalOneBox: false,
             },
             authStatus: {
                 ...AUTH_STATUS_FIXTURE_AUTHED,

@@ -66,8 +66,6 @@ export const HumanMessageEditor: FunctionComponent<{
 
     /** For use in storybooks only. */
     __storybook__focus?: boolean
-
-    experimentalOneBoxEnabled?: boolean
 }> = ({
     userInfo,
     initialEditorState,
@@ -85,7 +83,6 @@ export const HumanMessageEditor: FunctionComponent<{
     className,
     editorRef: parentEditorRef,
     __storybook__focus,
-    experimentalOneBoxEnabled,
     onEditorFocusChange: parentOnEditorFocusChange,
 }) => {
     const telemetryRecorder = useTelemetryRecorder()
@@ -379,7 +376,6 @@ export const HumanMessageEditor: FunctionComponent<{
                     appendTextToEditor={appendTextToEditor}
                     hidden={!focused && isSent}
                     className={styles.toolbar}
-                    experimentalOneBoxEnabled={experimentalOneBoxEnabled}
                 />
             )}
         </div>
