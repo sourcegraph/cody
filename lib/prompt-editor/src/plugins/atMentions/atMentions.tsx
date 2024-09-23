@@ -187,15 +187,22 @@ export const MentionsPlugin: FunctionComponent<{ contextWindowSizeInTokens?: num
             )
         }, [editor])
 
+        // We use the interaction ID to differentiate between different
+        // invocations of the mention-menu. That way upstream we don't trigger
+        // duplicate telemetry events for the same view
+        const interactionID = useRef(0)
         const onClose = useCallback(() => {
-            updateMentionMenuParams({ parentItem: null })
+            updateMentionMenuParams({ parentItem: null, interactionID: null })
         }, [updateMentionMenuParams])
-
+        const onOpen = useCallback(() => {
+            updateMentionMenuParams({ interactionID: interactionID.current++ })
+        }, [updateMentionMenuParams])
         return (
             <LexicalTypeaheadMenuPlugin<MentionMenuOption>
                 onQueryChange={updateQuery}
                 onSelectOption={onSelectOption}
                 onClose={onClose}
+                onOpen={onOpen}
                 triggerFn={scanForMentionTriggerInLexicalInput}
                 options={DUMMY_OPTIONS}
                 commandPriority={
