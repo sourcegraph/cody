@@ -83,6 +83,7 @@ import {
 import type { startTokenReceiver } from '../../auth/token-receiver'
 import { getContextFileFromUri } from '../../commands/context/file-path'
 import { getContextFileFromCursor, getContextFileFromSelection } from '../../commands/context/selection'
+import { CodyReflection } from '../../context/reflection'
 import { resolveContextItems } from '../../editor/utils/editor-context'
 import type { VSCodeEditor } from '../../editor/vscode-editor'
 import type { ExtensionClient } from '../../extension-client'
@@ -111,7 +112,6 @@ import {
 } from '../clientStateBroadcaster'
 import { getChatContextItemsForMention, getMentionMenuData } from '../context/chatContext'
 import type { ContextAPIClient } from '../context/contextAPIClient'
-import { CodyReflection } from '../context/reflection'
 import {
     CODY_BLOG_URL_o1_WAITLIST,
     type ChatSubmitType,

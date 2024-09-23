@@ -12,13 +12,13 @@ import {
     logDebug,
     modelsService,
 } from '@sourcegraph/cody-shared'
-import { getContextFileFromWorkspaceFsPath } from '../../commands/context/file-path'
-import { getContextFileFromShell } from '../../commands/context/shell'
-import { getCategorizedMentions } from '../../prompt-builder/unique-context'
-import type { ChatModel } from '../chat-view/ChatModel'
-import { type ContextRetriever, toStructuredMentions } from '../chat-view/ContextRetriever'
-import { DefaultPrompter } from '../chat-view/prompt'
-import { getCodebaseContextItemsForEditorState } from '../clientStateBroadcaster'
+import type { ChatModel } from '../chat/chat-view/ChatModel'
+import { type ContextRetriever, toStructuredMentions } from '../chat/chat-view/ContextRetriever'
+import { DefaultPrompter } from '../chat/chat-view/prompt'
+import { getCodebaseContextItemsForEditorState } from '../chat/clientStateBroadcaster'
+import { getContextFileFromWorkspaceFsPath } from '../commands/context/file-path'
+import { getContextFileFromShell } from '../commands/context/shell'
+import { getCategorizedMentions } from '../prompt-builder/unique-context'
 
 /**
  * This is created for each chat submitted by the user. It is responsible for
@@ -27,15 +27,15 @@ import { getCodebaseContextItemsForEditorState } from '../clientStateBroadcaster
 export class CodyReflection {
     private isEnabled = true
 
+    private multiplexer = new BotResponseMultiplexer()
+    private authStatus = currentAuthStatusAuthed()
+
     private responses: Record<string, string> = {
         CODYTOOLCLI: '',
         CODYTOOLFILE: '',
         CODYTOOLSEARCH: '',
     }
     private performedSearch = new Set<string>()
-
-    private multiplexer = new BotResponseMultiplexer()
-    private authStatus = currentAuthStatusAuthed()
 
     constructor(
         private readonly chatModel: ChatModel,
@@ -44,17 +44,23 @@ export class CodyReflection {
         private span: Span,
         private currentContext: ContextItem[]
     ) {
-        // Only enable Cody Reflection for the known model ID for Sourcegraph.com users
+        // Only enable Cody Reflection for the known model ID when feature flag is enabled.
         if (isDotCom(this.authStatus)) {
             this.isEnabled = this.chatModel.modelID === 'sourcegraph/cody-reflection'
+            this.initializeMultiplexer()
+        } else {
+            // For enterprise instances, check the feature flag to enable Cody Reflection.
+            featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyReflection).then(async enabled => {
+                this.isEnabled = enabled
+                this.initializeMultiplexer()
+            })
         }
-        this.init()
     }
 
-    private async init(): Promise<void> {
-        this.isEnabled = await featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyReflection)
+    private initializeMultiplexer(): void {
+        this.reset()
+        this.multiplexer = new BotResponseMultiplexer()
         if (this.isEnabled) {
-            this.multiplexer = new BotResponseMultiplexer()
             for (const key of Object.keys(this.responses)) {
                 this.multiplexer.sub(key, {
                     onResponse: async (c: string) => {
@@ -74,11 +80,10 @@ export class CodyReflection {
         if (!this.isEnabled) {
             return []
         }
+
         await this.review(abortSignal)
-        if (!this.hasContextRequest) {
-            return []
-        }
-        const smartContext = await this.getContext()
+        const smartContext = this.hasContextRequest ? await this.getContext() : []
+
         // TODO: Run this in a loop to review the context?
         // If we have retrieved more context from the search query response,
         // run review again to review the new context and get smarter context if available.
@@ -104,52 +109,61 @@ export class CodyReflection {
     }
 
     private getItems(key: string, tag: string): string[] {
-        return this.responses[key].replaceAll(`</${tag}>`, '').split(`<${tag}>`).slice(1)
-    }
+        const content = this.responses[key]
+        const regex = new RegExp(`<${tag}>(.+?)</${tag}>`, 'g')
+        const matches = content.match(regex) || []
 
+        return matches.map(m => m.replace(new RegExp(`</?${tag}>`, 'g'), '').trim()).filter(Boolean)
+    }
+    /**
+     * Get the output of the commands provided by Cody as context items.
+     */
     private async getCommandContext(): Promise<ContextItem[]> {
         const commands = this.getItems('CODYTOOLCLI', 'cmd')
-        if (!commands.length) {
-            return []
-        }
-        return (await Promise.all(commands.map(cmd => getContextFileFromShell(cmd.trim())))).flat()
+        logDebug('CodyReflection', 'getCommandContext', { verbose: { commands } })
+        return commands.length
+            ? (await Promise.all(commands.map(cmd => getContextFileFromShell(cmd)))).flat()
+            : []
     }
-
+    /**
+     * Get the local context items from the current codebase using the file paths requested by Cody.
+     */
     private async getFileContext(): Promise<ContextItem[]> {
-        const fsPaths = this.getItems('CODYTOOLFILE', 'file')
-        if (!fsPaths.length) {
-            return []
-        }
-        logDebug('ContextReviewer', 'getFileContext', { verbose: { fsPaths } })
-        return (
-            await Promise.all(fsPaths.map(path => getContextFileFromWorkspaceFsPath(path.trim())))
-        ).filter((item): item is ContextItem => item !== null)
+        const filePaths = this.getItems('CODYTOOLFILE', 'file')
+        logDebug('CodyReflection', 'getFileContext', { verbose: { filePaths } })
+        return filePaths.length
+            ? (await Promise.all(filePaths.map(p => getContextFileFromWorkspaceFsPath(p)))).filter(
+                  (i): i is ContextItem => i !== null
+              )
+            : []
     }
-
+    /**
+     * Get the context items from the codebase using the search query provided by Cody.
+     */
     private async getSearchContext(): Promise<ContextItem[]> {
         if (!this.contextRetriever || !this.responses.CODYTOOLSEARCH) {
             return []
         }
+        // Verify that the query is not a duplicate of a previous search query.
         const query = this.getItems('CODYTOOLSEARCH', 'query')?.[0]?.trim()
         if (!query || this.performedSearch.has(query)) {
             return []
         }
-        this.performedSearch.add(query)
-        const useRemote = !isDotCom(this.authStatus)
-        const codebase = await getCodebaseContextItemsForEditorState(useRemote)
-        if (codebase) {
-            const context = await this.contextRetriever.retrieveContext(
-                toStructuredMentions([codebase]),
-                PromptString.unsafe_fromLLMResponse(query),
-                this.span,
-                undefined,
-                'disabled'
-            )
-            return context.slice(-20)
+        // Verify that the codebase is available.
+        const codebase = await getCodebaseContextItemsForEditorState(!isDotCom(this.authStatus))
+        if (!codebase) {
+            return []
         }
-        return []
+        this.performedSearch.add(query) // Store the query to avoid duplicate queries.
+        const context = await this.contextRetriever.retrieveContext(
+            toStructuredMentions([codebase]),
+            PromptString.unsafe_fromLLMResponse(query),
+            this.span,
+            undefined,
+            'disabled'
+        )
+        return context.slice(-20) // Limit the number of new search context items to 20.
     }
-
     /**
      * Reviews the current context and generates a response using the chat model.
      *
@@ -170,44 +184,33 @@ export class CodyReflection {
             this.authStatus.codyApiVersion,
             true
         )
-
         const params = {
             model: this.chatModel.modelID,
             maxTokensToSample: this.chatModel.contextWindow.output,
             stream: !modelsService.isStreamDisabled(this.chatModel.modelID),
         } as CompletionParameters
-
-        let streamed = ''
+        let responseText = ''
         const stream = this.chatClient.chat(prompt, params, abortSignal)
-
         try {
             for await (const message of stream) {
                 if (message.type === 'change') {
-                    const text = message.text.slice(streamed.length)
-                    streamed += text
-                    this.publish(text)
+                    const text = message.text.slice(responseText.length)
+                    responseText += text
+                    this.multiplexer.publish(text)
                 } else if (message.type === 'complete' || message.type === 'error') {
-                    await this.notifyTurnComplete()
-                    logDebug('ContextReviewer', 'Context review turn complete', {
-                        verbose: { prompt, streamed },
-                    })
+                    if (message.type === 'error') {
+                        throw new Error('Error while streaming')
+                    }
+                    await this.multiplexer.notifyTurnComplete()
+                    logDebug('CodyReflection', 'completed', { verbose: { prompt, responseText } })
                     break
                 }
             }
         } catch (error: unknown) {
-            await this.notifyTurnComplete()
-            logDebug('ContextReviewer failed', `${error}`, { verbose: { prompt, streamed } })
+            await this.multiplexer.notifyTurnComplete()
+            logDebug('CodyReflection', `failed: ${error}`, { verbose: { prompt, responseText } })
         }
     }
-
-    private async publish(text: string): Promise<void> {
-        await this.multiplexer.publish(text)
-    }
-
-    private async notifyTurnComplete(): Promise<void> {
-        await this.multiplexer.notifyTurnComplete()
-    }
-
     /**
      * Resets the responses for reviewed items.
      * NOTE: Do not reset the performed search set to avoid duplicate searches.
