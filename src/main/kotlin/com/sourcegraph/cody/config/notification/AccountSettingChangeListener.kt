@@ -4,9 +4,9 @@ import com.intellij.openapi.components.Service
 import com.intellij.openapi.project.Project
 import com.sourcegraph.cody.CodyToolWindowContent
 import com.sourcegraph.cody.statusbar.CodyStatusService
+import com.sourcegraph.cody.telemetry.TelemetryV2
 import com.sourcegraph.common.UpgradeToCodyProNotification
 import com.sourcegraph.config.ConfigUtil
-import com.sourcegraph.telemetry.GraphQlLogger
 
 @Service(Service.Level.PROJECT)
 class AccountSettingChangeListener(project: Project) : ChangeListener(project) {
@@ -31,9 +31,11 @@ class AccountSettingChangeListener(project: Project) : ChangeListener(project) {
             }
 
             if (context.serverUrlChanged) {
-              GraphQlLogger.logCodyEvent(project, "settings.serverURL", "changed")
+              TelemetryV2.sendTelemetryEvent(
+                  project, feature = "settings.serverURL", action = "changed")
             } else if (context.accessTokenChanged) {
-              GraphQlLogger.logCodyEvent(project, "settings.accessToken", "changed")
+              TelemetryV2.sendTelemetryEvent(
+                  project, feature = "settings.accessToken", action = "changed")
             }
           }
         })

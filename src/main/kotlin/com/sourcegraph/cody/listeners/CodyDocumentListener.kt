@@ -13,7 +13,6 @@ import com.sourcegraph.cody.autocomplete.action.AcceptCodyAutocompleteAction
 import com.sourcegraph.cody.chat.CodeEditorFactory
 import com.sourcegraph.cody.telemetry.TelemetryV2
 import com.sourcegraph.cody.vscode.InlineCompletionTriggerKind
-import com.sourcegraph.telemetry.GraphQlLogger
 
 class CodyDocumentListener(val project: Project) : BulkAwareDocumentListener {
 
@@ -21,7 +20,6 @@ class CodyDocumentListener(val project: Project) : BulkAwareDocumentListener {
     val pastedCode = event.newFragment.toString()
     if (pastedCode.isNotBlank() && CodeEditorFactory.lastCopiedText == pastedCode) {
       CodeEditorFactory.lastCopiedText = null
-      GraphQlLogger.logCodeGenerationEvent(project, "keyDown:Paste", "clicked", pastedCode)
       TelemetryV2.sendCodeGenerationEvent(
           project, feature = "keyDown", action = "paste", pastedCode)
     }

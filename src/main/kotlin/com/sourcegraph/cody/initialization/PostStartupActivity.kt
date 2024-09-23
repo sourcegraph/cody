@@ -19,7 +19,6 @@ import com.sourcegraph.cody.statusbar.CodyStatusService
 import com.sourcegraph.cody.telemetry.TelemetryV2
 import com.sourcegraph.config.CodyAuthNotificationActivity
 import com.sourcegraph.config.ConfigUtil
-import com.sourcegraph.telemetry.TelemetryInitializerActivity
 
 class PostStartupActivity : ProjectActivity {
 
@@ -27,7 +26,6 @@ class PostStartupActivity : ProjectActivity {
   // doing something wrong, which may be slowing down agent startup. Not fixing it now but this
   // deserves more investigation.
   override suspend fun execute(project: Project) {
-    TelemetryInitializerActivity().runActivity(project)
     SettingsMigration().runActivity(project)
     CodyAuthNotificationActivity().runActivity(project)
     CodyAuthenticationManager.getInstance().addAuthChangeListener(project)
