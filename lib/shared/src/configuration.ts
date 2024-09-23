@@ -89,6 +89,12 @@ interface RawClientConfiguration {
     autocompleteAdvancedModel: string | null
 
     testingModelConfig: EmbeddingsModelConfig | undefined
+
+    /**
+     * Hidden overrides. Overrides always take precedence over other configuration
+     */
+    overrideServerEndpoint: string | undefined
+    overrideAuthToken: string | undefined
 }
 
 /**

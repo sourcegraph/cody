@@ -19,7 +19,7 @@ const workerOptionsSchema = zod.object({
     vscodeTmpDir: zAbsPath(),
     vscodeServerTmpDir: zAbsPath(),
     binaryTmpDir: zAbsPath(),
-    recordingDir: zAbsPath(),
+    pollyRecordingDir: zAbsPath(),
     vscodeServerPortRange: zod.tuple([zod.number(), zod.number()]).default([33100, 33200]),
     mitmServerPortRange: zod.tuple([zod.number(), zod.number()]).default([34100, 34200]),
     keepRuntimeDirs: zod.enum(['all', 'failed', 'none']).default('none'),
@@ -65,7 +65,7 @@ export const optionsFixture: ReturnType<
             {
                 repoRootDir,
                 binaryTmpDir,
-                recordingDir,
+                pollyRecordingDir,
                 globalTmpDir,
                 vscodeTmpDir,
                 vscodeCommitSha,
@@ -83,7 +83,7 @@ export const optionsFixture: ReturnType<
                 {
                     repoRootDir,
                     binaryTmpDir,
-                    recordingDir,
+                    pollyRecordingDir,
                     globalTmpDir,
                     vscodeCommitSha,
                     vscodeTmpDir,

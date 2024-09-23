@@ -915,6 +915,9 @@ export const DEFAULT_VSCODE_SETTINGS = {
     autocompleteExperimentalPreloadDebounceInterval: 0,
     testingModelConfig: undefined,
     experimentalGuardrailsTimeoutSeconds: undefined,
+
+    overrideAuthToken: undefined,
+    overrideServerEndpoint: undefined,
 } satisfies ClientConfiguration
 
 export function getVSCodeConfigurationWithAccessToken(

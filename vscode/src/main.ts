@@ -242,6 +242,7 @@ const register = async (
         subscriptionDisposable(
             authStatus.subscribe({
                 next: authStatus => {
+                    console.log(authStatus)
                     statusBar.setAuthStatus(authStatus)
                 },
             })

@@ -37,9 +37,10 @@ class AuthProvider implements vscode.Disposable {
 
     // Sign into the last endpoint the user was signed into, if any
     public async init(): Promise<void> {
-        const { auth } = await currentResolvedConfig()
-        const lastEndpoint = localStorage?.getEndpoint() || auth.serverEndpoint
-        const token = (await secretStorage.get(lastEndpoint || '')) || auth.accessToken
+        const { auth, configuration } = await currentResolvedConfig()
+        const lastEndpoint =
+            configuration.overrideServerEndpoint || localStorage?.getEndpoint() || auth.serverEndpoint
+        const token = configuration.overrideAuthToken || (await secretStorage.get(lastEndpoint || ''))
         logDebug(
             'AuthProvider:init:lastEndpoint',
             token?.trim() ? 'Token recovered from secretStorage' : 'No token found in secretStorage',

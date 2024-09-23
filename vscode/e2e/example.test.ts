@@ -29,8 +29,8 @@ test.describe('Demonstrations', () => {
             existing => ({
                 ...existing,
                 'workbench.colorTheme': 'Default Light Modern',
-                // 'cody.accessToken': MITM_AUTH_TOKEN_PLACEHOLDER,
-                // 'cody.serverEndpoint': mitmProxy.sourcegraph.dotcom.endpoint,
+                // 'cody.override.authToken': MITM_AUTH_TOKEN_PLACEHOLDER,
+                // 'cody.override.serverEndpoint': mitmProxy.sourcegraph.dotcom.endpoint,
             }),
             { workspaceDir }
         )

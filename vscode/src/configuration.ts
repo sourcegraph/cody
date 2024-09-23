@@ -64,7 +64,7 @@ export function getConfiguration(
     return {
         proxy: vsCodeConfig.get<string>('http.proxy'),
         codebase: sanitizeCodebase(config.get(CONFIG_KEY.codebase)),
-        serverEndpoint: config.get<string>(CONFIG_KEY.serverEndpoint, 'https://sourcegraph.com'),
+        serverEndpoint: config.get<string>(CONFIG_KEY.serverEndpoint),
         customHeaders: config.get<Record<string, string>>(CONFIG_KEY.customHeaders),
         useContext: config.get<ConfigurationUseContext>(CONFIG_KEY.useContext) || 'embeddings',
         debugVerbose: config.get<boolean>(CONFIG_KEY.debugVerbose, false),
@@ -158,6 +158,9 @@ export function getConfiguration(
                       provider: 'sourcegraph',
                   }
                 : undefined,
+
+        overrideAuthToken: getHiddenSetting<string | undefined>('override.authToken'),
+        overrideServerEndpoint: getHiddenSetting<string | undefined>('override.serverEndpoint'),
     }
 }
 

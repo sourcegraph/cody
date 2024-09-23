@@ -158,6 +158,9 @@ describe('getConfiguration', () => {
             autocompleteExperimentalPreloadDebounceInterval: 0,
             testingModelConfig: undefined,
             experimentalGuardrailsTimeoutSeconds: undefined,
+
+            overrideAuthToken: undefined,
+            overrideServerEndpoint: undefined,
         } satisfies ClientConfiguration)
     })
 })

@@ -17,7 +17,7 @@ const tokenExportedNames = Array.from(tokens.map(([exportedName]) => exportedNam
 
 setup.extend<{}>({})('credentials', async ({}) => {
     for (const [key, value] of (await getLatest()).entries()) {
-        const renamedKey = tokens.find(t => t[0] === key)![1]
+        const renamedKey = tokens.find(t => t[0] === key)![0]
         process.env[renamedKey] = value
     }
 

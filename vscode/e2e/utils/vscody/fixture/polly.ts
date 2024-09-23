@@ -3,11 +3,11 @@ import { Polly, Timing } from '@pollyjs/core'
 import jsonStableStringify from 'fast-json-stable-stringify'
 import 'node:http'
 import 'node:https'
-import path from 'node:path'
 import normalizeUrl from 'normalize-url'
 import type { TestContext, WorkerContext } from '.'
 import { redactAuthorizationHeader } from '../../../../src/testutils/CodyPersisterV2'
-import { CODY_VSCODE_ROOT_DIR } from '../../helpers'
+
+import path from 'node:path'
 import {
     MITM_PROXY_AUTH_AVAILABLE_HEADER,
     MITM_PROXY_AUTH_TOKEN_NAME_HEADER,
@@ -19,6 +19,7 @@ export const pollyFixture = _test.extend<TestContext, WorkerContext>({
     polly: [
         async ({ validOptions }, use, testInfo) => {
             const id = `${testInfo.title.slice(0, 200).replaceAll(/[\\/]/g, '_').toLowerCase()}`
+
             const polly = new Polly(id, {
                 flushRequestsOnStop: true,
                 recordIfMissing: validOptions.recordIfMissing ?? validOptions.recordingMode === 'record',
@@ -88,12 +89,11 @@ export const pollyFixture = _test.extend<TestContext, WorkerContext>({
                     keepUnusedRequests: validOptions.keepUnusedRecordings ?? true,
                     fs: {
                         recordingsDir: path.resolve(
-                            CODY_VSCODE_ROOT_DIR,
-                            validOptions.recordingDir,
+                            validOptions.pollyRecordingDir,
                             testInfo.project.name,
                             // path.dirname(
                             path.relative(
-                                path.resolve(CODY_VSCODE_ROOT_DIR, testInfo.project.testDir),
+                                testInfo.project.testDir,
                                 path.resolve(
                                     testInfo.file,
                                     '..',
