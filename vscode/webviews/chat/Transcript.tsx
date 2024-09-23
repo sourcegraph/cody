@@ -335,29 +335,31 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                     defaultOpen={experimentalOneBoxEnabled && humanMessage.intent === 'search'}
                 />
             )}
-            {assistantMessage && !isContextLoading && (
-                <AssistantMessageCell
-                    key={assistantMessage.index}
-                    userInfo={userInfo}
-                    chatEnabled={chatEnabled}
-                    message={assistantMessage}
-                    feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
-                    copyButtonOnSubmit={copyButtonOnSubmit}
-                    insertButtonOnSubmit={insertButtonOnSubmit}
-                    postMessage={postMessage}
-                    guardrails={guardrails}
-                    humanMessage={humanMessageInfo}
-                    isLoading={assistantMessage.isLoading}
-                    showFeedbackButtons={
-                        !assistantMessage.isLoading &&
-                        !isTranscriptError &&
-                        !assistantMessage.error &&
-                        isLastSentInteraction
-                    }
-                    smartApply={smartApply}
-                    smartApplyEnabled={smartApplyEnabled}
-                />
-            )}
+            {(!experimentalOneBoxEnabled || humanMessage.intent !== 'search') &&
+                assistantMessage &&
+                !isContextLoading && (
+                    <AssistantMessageCell
+                        key={assistantMessage.index}
+                        userInfo={userInfo}
+                        chatEnabled={chatEnabled}
+                        message={assistantMessage}
+                        feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
+                        copyButtonOnSubmit={copyButtonOnSubmit}
+                        insertButtonOnSubmit={insertButtonOnSubmit}
+                        postMessage={postMessage}
+                        guardrails={guardrails}
+                        humanMessage={humanMessageInfo}
+                        isLoading={assistantMessage.isLoading}
+                        showFeedbackButtons={
+                            !assistantMessage.isLoading &&
+                            !isTranscriptError &&
+                            !assistantMessage.error &&
+                            isLastSentInteraction
+                        }
+                        smartApply={smartApply}
+                        smartApplyEnabled={smartApplyEnabled}
+                    />
+                )}
         </>
     )
 }, isEqual)
