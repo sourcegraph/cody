@@ -4,8 +4,8 @@ export {
     modelsService,
     mockModelsService,
     ModelsService,
-    ModelCategory,
-    ModelTier,
+    type ModelCategory,
+    type ModelTier,
     type ServerModelConfiguration,
 } from './models/modelsService'
 export {
@@ -234,7 +234,7 @@ export {
     SourcegraphGraphQLAPIClient,
     graphqlClient,
 } from './sourcegraph-api/graphql'
-export { ClientConfigSingleton, CodyClientConfig } from './sourcegraph-api/clientConfig'
+export { ClientConfigSingleton, type CodyClientConfig } from './sourcegraph-api/clientConfig'
 export {
     addCustomUserAgent,
     customUserAgent,
