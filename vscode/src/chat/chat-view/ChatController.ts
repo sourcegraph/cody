@@ -111,7 +111,7 @@ import {
 } from '../clientStateBroadcaster'
 import { getChatContextItemsForMention, getMentionMenuData } from '../context/chatContext'
 import type { ContextAPIClient } from '../context/contextAPIClient'
-import { ContextReviewer } from '../context/reviewer'
+import { CodyReflection } from '../context/reflection'
 import {
     CODY_BLOG_URL_o1_WAITLIST,
     type ChatSubmitType,
@@ -801,8 +801,9 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     }
                 }
 
-                // NOTE: Experimental
-                const smartContext = await new ContextReviewer(
+                // Additional context retrived from the experimental Cody Reflection feature
+                // Currently, all smart context are marked as user-explicit mentions to be ranked higher during prompt building.
+                const smartContext = await new CodyReflection(
                     this.chatModel,
                     this.chatClient,
                     this.contextRetriever,

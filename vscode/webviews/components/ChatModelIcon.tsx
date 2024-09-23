@@ -1,5 +1,5 @@
 import type { FunctionComponent } from 'react'
-import { CodyLogoBW } from '../icons/CodyLogo'
+import { CodyLogoBW, CodyReflectionLogo } from '../icons/CodyLogo'
 import {
     AnthropicLogo,
     GeminiLogo,
@@ -26,6 +26,9 @@ export function chatModelIconComponent(
     }
     if (model.includes('mistral') || model.includes('mixtral')) {
         return MistralLogo
+    }
+    if (model.startsWith('sourcegraph/cody')) {
+        return CodyReflectionLogo
     }
     return CodyLogoBW
 }

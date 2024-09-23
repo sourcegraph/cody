@@ -20,16 +20,20 @@ import { type ContextRetriever, toStructuredMentions } from '../chat-view/Contex
 import { DefaultPrompter } from '../chat-view/prompt'
 import { getCodebaseContextItemsForEditorState } from '../clientStateBroadcaster'
 
-// TODO (bee) Cody Reflection
-// - Update prompt to let user know about the current editor env
-// - Display error to LLM when command is not found or failed
-export class ContextReviewer {
+/**
+ * This is created for each chat submitted by the user. It is responsible for
+ * handling the reflection step and perform additional context retrieval for the chat.
+ */
+export class CodyReflection {
     private isEnabled = true
+
     private responses: Record<string, string> = {
         CODYTOOLCLI: '',
         CODYTOOLFILE: '',
         CODYTOOLSEARCH: '',
     }
+    private performedSearch = new Set<string>()
+
     private multiplexer = new BotResponseMultiplexer()
     private authStatus = currentAuthStatusAuthed()
 
@@ -38,7 +42,7 @@ export class ContextReviewer {
         private readonly chatClient: ChatClient,
         private readonly contextRetriever: ContextRetriever,
         private span: Span,
-        public currentContext: ContextItem[]
+        private currentContext: ContextItem[]
     ) {
         // Only enable Cody Reflection for the known model ID for Sourcegraph.com users
         if (isDotCom(this.authStatus)) {
@@ -122,7 +126,6 @@ export class ContextReviewer {
         ).filter((item): item is ContextItem => item !== null)
     }
 
-    private performedSearch = new Set<string>()
     private async getSearchContext(): Promise<ContextItem[]> {
         if (!this.contextRetriever || !this.responses.CODYTOOLSEARCH) {
             return []
@@ -147,6 +150,17 @@ export class ContextReviewer {
         return []
     }
 
+    /**
+     * Reviews the current context and generates a response using the chat model.
+     *
+     * This method resets the current state, prepares the prompt using explicit and implicit mentions,
+     * and streams the generated response. It handles the streaming process, publishes updates,
+     * and notifies when the turn is complete.
+     *
+     * @param abortSignal - Signal to abort the operation if needed.
+     * @returns A promise that resolves when the review process is complete.
+     * @private
+     */
     private async review(abortSignal: AbortSignal): Promise<void> {
         this.reset()
         const { explicitMentions, implicitMentions } = getCategorizedMentions(this.currentContext)
@@ -194,6 +208,10 @@ export class ContextReviewer {
         await this.multiplexer.notifyTurnComplete()
     }
 
+    /**
+     * Resets the responses for reviewed items.
+     * NOTE: Do not reset the performed search set to avoid duplicate searches.
+     */
     private reset(): void {
         this.responses = {
             CODYTOOLCLI: '',
