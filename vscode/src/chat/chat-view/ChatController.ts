@@ -864,7 +864,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
 
         this.chatModel.setLastMessageContext(context, contextAlternatives)
         this.chatModel.addBotMessage({
-            text: ps`You have set \`"cody.internal.onebox": true\` in your settings.`,
+            text: ps`"cody-experimental-one-box" feature flag is turned on.`,
         })
 
         void this.saveSession()
