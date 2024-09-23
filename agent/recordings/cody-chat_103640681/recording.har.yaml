@@ -1037,5 +1037,76 @@ log:
         send: 0
         ssl: -1
         wait: 0
+    - _id: 70d63cfe5382426cf94ed76a715e9af5
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 0
+        cookies: []
+        headers:
+          - _fromType: array
+            name: user-agent
+            value: cody-cli / 6.0.0-SNAPSHOT
+          - _fromType: array
+            name: accept
+            value: "*/*"
+          - _fromType: array
+            name: accept-encoding
+            value: gzip,deflate
+          - name: host
+            value: sourcegraph.sourcegraph.com
+        headersSize: 209
+        httpVersion: HTTP/1.1
+        method: GET
+        queryString: []
+        url: https://sourcegraph.sourcegraph.com/.api/modelconfig/supported-models.json
+      response:
+        bodySize: 38
+        content:
+          mimeType: text/plain; charset=utf-8
+          size: 38
+          text: |
+            Private mode requires authentication.
+        cookies: []
+        headers:
+          - name: date
+            value: Wed, 18 Sep 2024 05:01:12 GMT
+          - name: content-type
+            value: text/plain; charset=utf-8
+          - name: content-length
+            value: "38"
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache, max-age=0
+          - name: vary
+            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1218
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 401
+        statusText: Unauthorized
+      startedDateTime: 2024-09-18T05:01:12.456Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
   pages: []
   version: "1.2"

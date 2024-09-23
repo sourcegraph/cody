@@ -79,6 +79,12 @@ export interface PromptsResult {
         | { type: 'unsupported' }
 
     /**
+     * Provides previously built-in commands which became prompt-like actions (explain code,
+     * generate unit tests, document symbol, etc.) Currently, is used behind feature flag.
+     */
+    standardPrompts?: CodyCommand[]
+
+    /**
      * `undefined` means that commands should not be shown at all (not even as an empty
      * list). Builtin and custom commands are deprecated in favor of the Prompt Library.
      */

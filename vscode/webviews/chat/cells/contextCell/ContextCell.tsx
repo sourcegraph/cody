@@ -109,7 +109,7 @@ export const ContextCell: FunctionComponent<{
         return contextItemsToDisplay === undefined || contextItemsToDisplay.length !== 0 ? (
             <Accordion
                 type="single"
-                collapsible
+                collapsible={!showSnippets}
                 defaultValue={((__storybook__initialOpen || defaultOpen) && 'item-1') || undefined}
                 asChild={true}
             >
@@ -142,7 +142,7 @@ export const ContextCell: FunctionComponent<{
                             <LoadingDots />
                         ) : (
                             <>
-                                <AccordionContent>
+                                <AccordionContent overflow={showSnippets}>
                                     {internalDebugContext && contextAlternatives && (
                                         <div>
                                             <button onClick={prevSelectedAlternative} type="button">

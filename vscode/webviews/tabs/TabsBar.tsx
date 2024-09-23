@@ -29,6 +29,7 @@ import { getCreateNewChatCommand } from './utils'
 interface TabsBarProps {
     IDE: CodyIDE
     currentView: View
+    isUnifiedPromptsAvailable: boolean
     setView: (view: View) => void
     onDownloadChatClick?: () => void
 }
@@ -62,8 +63,14 @@ interface TabConfig {
     subActions?: TabSubAction[]
 }
 
-export const TabsBar: React.FC<TabsBarProps> = ({ currentView, setView, IDE, onDownloadChatClick }) => {
-    const tabItems = useTabs({ IDE, onDownloadChatClick })
+export const TabsBar: React.FC<TabsBarProps> = ({
+    currentView,
+    isUnifiedPromptsAvailable,
+    setView,
+    IDE,
+    onDownloadChatClick,
+}) => {
+    const tabItems = useTabs({ IDE, isUnifiedPromptsAvailable, onDownloadChatClick })
     const {
         config: { webviewType, multipleWebviewsEnabled },
     } = useConfig()
@@ -310,8 +317,10 @@ TabButton.displayName = 'TabButton'
  * Returns list of tabs and its sub-action buttons, used later as configuration for
  * tabs rendering in chat header.
  */
-function useTabs(input: Pick<TabsBarProps, 'IDE' | 'onDownloadChatClick'>): TabConfig[] {
-    const { IDE, onDownloadChatClick } = input
+function useTabs(
+    input: Pick<TabsBarProps, 'IDE' | 'isUnifiedPromptsAvailable' | 'onDownloadChatClick'>
+): TabConfig[] {
+    const { isUnifiedPromptsAvailable, IDE, onDownloadChatClick } = input
     const {
         config: { multipleWebviewsEnabled },
     } = useConfig()
@@ -365,7 +374,10 @@ function useTabs(input: Pick<TabsBarProps, 'IDE' | 'onDownloadChatClick'>): TabC
                     },
                     {
                         view: View.Prompts,
-                        title: IDE === CodyIDE.Web ? 'Prompts' : 'Prompts & Commands',
+                        title:
+                            IDE === CodyIDE.Web || isUnifiedPromptsAvailable
+                                ? 'Prompts'
+                                : 'Prompts & Commands',
                         Icon: BookTextIcon,
                         changesView: true,
                     },
@@ -388,6 +400,6 @@ function useTabs(input: Pick<TabsBarProps, 'IDE' | 'onDownloadChatClick'>): TabC
                         : null,
                 ] as (TabConfig | null)[]
             ).filter(isDefined),
-        [IDE, onDownloadChatClick, multipleWebviewsEnabled]
+        [IDE, onDownloadChatClick, multipleWebviewsEnabled, isUnifiedPromptsAvailable]
     )
 }
