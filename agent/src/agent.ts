@@ -769,7 +769,14 @@ export class Agent extends MessageHandler implements ExtensionClient {
                         clientVersion: event.source.clientVersion ?? '',
                     },
                     timestamp: event.timestamp,
-                    // TODO add parameters (metadata, privateMetadata, billingMetadata)
+                    parameters: {
+                        metadata: event.parameters.metadata ?? {},
+                        privateMetadata: event.parameters.privateMetadata ?? {},
+                        billingMetadata: {
+                            product: event.parameters.billingMetadata?.product ?? '',
+                            category: event.parameters.billingMetadata?.category ?? '',
+                        },
+                    },
                     testOnlyAnonymousUserID: event.testOnlyAnonymousUserID,
                 })),
             }
