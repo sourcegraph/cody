@@ -86,10 +86,10 @@ export const ContextCell: FunctionComponent<{
         }
 
         const itemCount = usedContext.length
-        const contextItemCountLabel = `${itemCount} ${!isForFirstMessage ? 'new ' : ''}${pluralize(
-            'item',
-            itemCount
-        )}`
+        const contextItemCountLabel =
+            itemCount === 0
+                ? 'fetching...'
+                : `${itemCount} ${!isForFirstMessage ? 'new ' : ''}${pluralize('item', itemCount)}`
 
         function logContextOpening() {
             getVSCodeAPI().postMessage({
