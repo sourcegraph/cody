@@ -2,10 +2,17 @@
     white-space: nowrap;
     text-overflow: ellipsis;
     overflow: hidden;
+
+    /* Makes ellipsis show in default text color, we show the basename in link color below */
+    color: var(--vscode-disabledForeground);
 }
 
 .excluded {
     text-decoration: line-through !important;
+}
+
+.basename {
+    color: var(--vscode-textLink-foreground);
 }
 
 .repoShortName {

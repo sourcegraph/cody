@@ -166,11 +166,11 @@ export const PrettyPrintedContextItem: React.FunctionComponent<{
         sep = '\\'
     }
 
-    const basename = path.split(sep).pop()
+    const basename = path.split(sep).pop() || ''
     const dirname = path.split(sep).slice(0, -1).join(sep)
     return (
         <>
-            <span>{basename}</span>
+            <span className={styles.basename}>{basename}</span>
             <span className={styles.range}>{range ? `:${range}` : ''}</span>{' '}
             {repoShortName && (
                 <span className={styles.repoShortName}>
