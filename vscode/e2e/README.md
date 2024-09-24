@@ -37,6 +37,8 @@
     - [Telemetry](#telemetry)
       - [Snapshots](#snapshots)
   - [Next Steps](#next-steps)
+  - [OTHER](#other)
+    - [Tools of the Trade](#tools-of-the-trade)
 
 
 ## Fundamental Principles
@@ -63,7 +65,7 @@ pnpm run test:e2e2 --grep "chat" # run all tests matching the given string
 pnpm run test:e2e2 --ui # run tests using the Playwright UI
 ```
 
-![Playwright UI](./img/playwright-ui.jpg)
+![Playwright UI](../doc/images/e2e/playwright-ui.jpg)
 > The Playwright UI
 > 1. Easily trigger or watch tests
 > 2. Scroll trough an interactive recording allowing you to see the UI or try different locators
@@ -76,7 +78,7 @@ If you see an error about Polly missing recordings it means a network request wa
 
 Either update the use statement for a specific test:
 
-![Enable recording for specific test](./img/enable-recording.jpg)
+![Enable recording for specific test](../doc/images/e2e/enable-recording.jpg)
 
 Or you can set the `CODY_RECORD_IF_MISSING` or `CODY_RECORDING_MODE` environment variables.
 
@@ -91,7 +93,7 @@ CODY_RECORD_IF_MISSING=true
 
 Before we dive into how to use the framework to actually write tests let's first orient ourselves a little bit. Starting out the foundation and moving up the stack.
 
-![Overview](./img/overview.svg)
+![Overview](../doc/images/e2e/overview.svg)
 
 ### 1. Playwright
 
@@ -186,7 +188,7 @@ Additionally Playwright produces several artifacts in `vscode/.test-reports`. Th
 
 All of this framework is essentially focussed on eliminating one thing...flake. 
 
-![Flakes You're Looking For](./img/flakes.png)
+![Flakes You're Looking For](../doc/images/e2e/flakes.png)
 
 Flake is where state, timing, or other factors external to the test can influence the outcome of it. To understand how the tools in this framework can help write flake-free tests let's start with some concrete examples of flake we've encountered in the past.
 
@@ -312,7 +314,7 @@ await vscodeSession.runCommand('workbench.action.closeAllEditors')
 
 To find out what command to run you can easily run `> Preferences: Open Keyboard Shortcuts` and then right click on any of the commands to copy the command ID.
 
-![Find Command ID](./img/commands.png)
+![Find Command ID](../doc/images/e2e/commands.png)
 
 #### Macros > Commands
 
@@ -387,8 +389,20 @@ This works because of a special "Testing Extension" which is loaded by the fixtu
 
 
 ## Next Steps
-
+- Allowing a user to "record" their issue as a test in a production build.
 - Full local-only end-to-end tests including locally runing backend instances. This would allow us to more easily develop and verify fullstack changes.
 - Install extension from built `.visx` file to ensure production builts are test.
 - A way to manipulate time in the extension. This would allow us to "fast forward" 15 seconds to check that some telemetry event has fired etc.
 - "Migrate" and expand Authentication tests. This components feels like a prime candidate for thorough testing of core functionality and all edge-cases such as network issues, timeouts, misconfigurations, etc.
+- Being able to record VSCode 'interactions' for better test recording
+- Capturing traces; include as attachments, allow asserts etc.
+
+
+## OTHER
+
+### Tools of the Trade
+
+uix.sleep()
+
+stretchTimeout()
+
