@@ -1,7 +1,6 @@
 import type { CodeCompletionsParams } from '@sourcegraph/cody-shared'
 
 import { OpenAI } from '../model-helpers/openai'
-import { CLOSING_CODE_TAG, MULTILINE_STOP_SEQUENCE } from '../text-processing'
 import { forkSignal, generatorWithTimeout, zipGenerators } from '../utils'
 
 import {
@@ -17,7 +16,6 @@ import {
 } from './shared/provider'
 
 class UnstableOpenAIProvider extends Provider {
-    public stopSequences = [CLOSING_CODE_TAG.toString(), MULTILINE_STOP_SEQUENCE]
     protected modelHelper = new OpenAI()
 
     public getRequestParams(generateOptions: GenerateCompletionsOptions): CodeCompletionsParams {

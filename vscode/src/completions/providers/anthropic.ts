@@ -23,8 +23,6 @@ import {
 let isOutdatedSourcegraphInstanceWithoutAnthropicAllowlist = false
 
 class AnthropicProvider extends Provider {
-    public stopSequences = [anthropic.HUMAN_PROMPT, CLOSING_CODE_TAG.toString(), '\n\n', '\n\r\n']
-
     public getRequestParams(options: GenerateCompletionsOptions): CodeCompletionsParams {
         const { snippets, docContext, document } = options
 
