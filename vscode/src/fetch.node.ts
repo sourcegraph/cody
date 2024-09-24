@@ -1,3 +1,4 @@
+import * as fs from 'node:fs'
 import http from 'node:http'
 import https from 'node:https'
 import { parse as parseUrl } from 'node:url'
@@ -68,10 +69,10 @@ function getCustomAgent({
             return httpsProxyAgent
         }
 
-        const proxyHost = vscode.workspace.getConfiguration('sourcegraph').get<string>('proxyHost')
-        const proxyPort = vscode.workspace.getConfiguration('sourcegraph').get<number>('proxyPort')
+        const proxyHost = vscode.workspace.getConfiguration('cody').get<string>('proxyHost')
+        const proxyPort = vscode.workspace.getConfiguration('cody').get<number>('proxyPort')
         const proxyPath = (() => {
-            const path = vscode.workspace.getConfiguration('sourcegraph').get<string>('proxyPath')
+            const path = vscode.workspace.getConfiguration('cody').get<string>('proxyPath')
             if (path?.startsWith('~/')) {
                 const homeDir = process.env.HOME || process.env.USERPROFILE
                 if (homeDir) {
@@ -79,6 +80,20 @@ function getCustomAgent({
                 }
             }
             return path
+        })()
+        const proxyCACert = (() => {
+            let path = vscode.workspace.getConfiguration('cody').get<string>('proxyCACert')
+            if (path) {
+                if (path?.startsWith('~/')) {
+                    const homeDir = process.env.HOME || process.env.USERPROFILE
+                    if (homeDir) {
+                        path = path.replace('~/', `${homeDir}/`)
+                    }
+                }
+                // support a CA cert in a file, or embedded directly in the settings
+                return fs.statSync(path).isFile() ? fs.readFileSync(path, { encoding: 'utf-8' }) : path
+            }
+            return ''
         })()
 
         if (proxyHost && !proxyPort) {
@@ -101,24 +116,16 @@ function getCustomAgent({
                 ...(proxyHost ? { host: proxyHost } : null),
                 ...(proxyPort ? { port: proxyPort } : null),
                 ...(proxyPath ? { socketPath: proxyPath } : null),
+                keepAlive: true,
+                keepAliveMsecs: 60000,
+                ...https.globalAgent.options,
+                ...(proxyCACert ? { ca: proxyCACert } : null),
             })
             return agent
         }
 
         return protocol === 'http:' ? httpAgent : httpsAgent
     }
-}
-
-function getProtocol(url: URL | string): string | undefined {
-    if (typeof url === 'string') {
-        return url.startsWith('http:') ? 'http' : 'https'
-    }
-
-    if (url.protocol) {
-        return url.protocol === 'http:' ? 'http' : 'https'
-    }
-
-    return undefined
 }
 
 export function setCustomAgent(
