@@ -48,7 +48,7 @@ export class RecentEditsRetriever implements vscode.Disposable, ContextRetriever
             const content = diff.diff.toString()
             const autocompleteSnippet = {
                 uri: diff.uri,
-                identifier: RetrieverIdentifier.RecentEditsRetriever,
+                identifier: this.identifier,
                 content,
             } satisfies Omit<AutocompleteContextSnippet, 'startLine' | 'endLine'>
             autocompleteContextSnippets.push(autocompleteSnippet)

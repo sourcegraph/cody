@@ -44,6 +44,9 @@ class CompletionProviderConfig {
             'recent-edits-1m',
             'recent-edits-5m',
             'recent-edits-mixed',
+            'recent-copy',
+            'diagnostics',
+            'recent-view-port',
         ]
         return resolvedConfig.pipe(
             mergeMap(({ configuration }) => {
