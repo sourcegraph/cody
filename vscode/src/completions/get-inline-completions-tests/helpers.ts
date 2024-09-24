@@ -393,7 +393,7 @@ export function initCompletionProviderConfig({
     configuration,
     authStatus,
 }: Partial<Pick<ParamsResult, 'configuration' | 'authStatus'>>): void {
-    vi.spyOn(featureFlagProvider, 'evaluateFeatureFlag').mockResolvedValue(false)
+    vi.spyOn(featureFlagProvider, 'evaluateFeatureFlagEphemerally').mockResolvedValue(false)
     vi.spyOn(featureFlagProvider, 'evaluatedFeatureFlag').mockReturnValue(Observable.of(false))
     vi.spyOn(ClientConfigSingleton.getInstance(), 'getConfig').mockResolvedValue({
         autoCompleteEnabled: true,

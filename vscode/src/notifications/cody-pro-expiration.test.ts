@@ -45,8 +45,8 @@ describe('Cody Pro expiration notifications', () => {
         enabledFeatureFlags.clear()
         enabledFeatureFlags.add(FeatureFlag.UseSscForCodySubscription)
         enabledFeatureFlags.add(FeatureFlag.CodyProTrialEnded)
-        vi.spyOn(featureFlagProvider, 'evaluateFeatureFlag').mockImplementation((flag: FeatureFlag) =>
-            Promise.resolve(enabledFeatureFlags.has(flag))
+        vi.spyOn(featureFlagProvider, 'evaluateFeatureFlagEphemerally').mockImplementation(
+            (flag: FeatureFlag) => Promise.resolve(enabledFeatureFlags.has(flag))
         )
         vi.spyOn(graphqlClient, 'getCurrentUserCodySubscription').mockImplementation(async () => ({
             status: codyStatus,
