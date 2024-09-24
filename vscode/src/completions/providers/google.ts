@@ -1,6 +1,5 @@
-import { type CodeCompletionsParams, ps } from '@sourcegraph/cody-shared'
+import type { CodeCompletionsParams } from '@sourcegraph/cody-shared'
 
-import { GEMINI_MARKERS } from '../model-helpers/gemini'
 import { forkSignal, generatorWithTimeout, zipGenerators } from '../utils'
 
 import {
@@ -18,7 +17,7 @@ class GoogleGeminiProvider extends Provider {
     public getRequestParams(options: GenerateCompletionsOptions): CodeCompletionsParams {
         const { snippets, docContext, document } = options
 
-        const prompt = this.modelHelper.getPrompt({
+        const messages = this.modelHelper.getMessages({
             snippets,
             docContext,
             document,
@@ -30,10 +29,7 @@ class GoogleGeminiProvider extends Provider {
             topP: 0.95,
             temperature: 0,
             model: this.legacyModel,
-            messages: [
-                { speaker: 'human', text: prompt },
-                { speaker: 'assistant', text: ps`${GEMINI_MARKERS.Response}` },
-            ],
+            messages,
         }
     }
 

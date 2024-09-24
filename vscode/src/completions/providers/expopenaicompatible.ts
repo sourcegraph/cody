@@ -62,7 +62,7 @@ class ExpOpenAICompatibleProvider extends Provider {
     public getRequestParams(options: GenerateCompletionsOptions): CodeCompletionsParams {
         const { multiline, docContext, document, snippets } = options
 
-        const prompt = this.modelHelper.getPrompt({
+        const messages = this.modelHelper.getMessages({
             snippets,
             docContext,
             document,
@@ -80,7 +80,7 @@ class ExpOpenAICompatibleProvider extends Provider {
 
         return {
             ...this.defaultRequestParams,
-            messages: [{ speaker: 'human', text: prompt }],
+            messages,
             model,
         }
     }

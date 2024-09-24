@@ -108,7 +108,7 @@ class FireworksProvider extends Provider {
                 ? MODEL_MAP[useMultilineModel ? 'starcoder-16b' : 'starcoder-7b']
                 : MODEL_MAP[this.legacyModel as keyof typeof MODEL_MAP]
 
-        const prompt = this.modelHelper.getPrompt({
+        const messages = this.modelHelper.getMessages({
             snippets,
             docContext,
             document,
@@ -117,7 +117,7 @@ class FireworksProvider extends Provider {
 
         return this.modelHelper.getRequestParams({
             ...this.defaultRequestParams,
-            messages: [{ speaker: 'human', text: prompt }],
+            messages,
             model,
         })
     }

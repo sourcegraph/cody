@@ -23,7 +23,7 @@ class UnstableOpenAIProvider extends Provider {
     public getRequestParams(generateOptions: GenerateCompletionsOptions): CodeCompletionsParams {
         const { document, docContext, snippets } = generateOptions
 
-        const prompt = this.modelHelper.getPrompt({
+        const messages = this.modelHelper.getMessages({
             snippets,
             docContext,
             document,
@@ -32,7 +32,7 @@ class UnstableOpenAIProvider extends Provider {
 
         return {
             ...this.defaultRequestParams,
-            messages: [{ speaker: 'human', text: prompt }],
+            messages,
             topP: 0.5,
         }
     }
