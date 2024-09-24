@@ -239,15 +239,6 @@ describe('Agent', () => {
                     'cody.chatResponse:noCode',
                 ])
             )
-            // telemetry assertion, to validate the expected events fired during the test run
-            // Do not remove this assertion, and instead update the expectedEvents list above
-            expect(await exportedTelemetryEvents(client)).toEqual(
-                expect.arrayContaining([
-                    'cody.chat-question:submitted',
-                    'cody.chat-question:executed',
-                    'cody.chatResponse:noCode',
-                ])
-            )
         }, 30_000)
 
         it('chat/submitMessage (long message)', async () => {
