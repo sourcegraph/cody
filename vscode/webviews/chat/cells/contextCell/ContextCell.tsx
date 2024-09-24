@@ -236,10 +236,7 @@ export const ContextCell: FunctionComponent<{
                 {contextItemsToDisplay && excludedContextInfo.length && (
                     <div className="tw-mt-2 tw-text-muted-foreground">
                         {excludedContextInfo.map(message => (
-                            <div key={message} className="tw-flex tw-gap-2 tw-my-2 tw-items-center">
-                                <i className="codicon codicon-warning" />
-                                <span>{message}</span>
-                            </div>
+                            <ExcludedContextWarning key={message} message={message} />
                         ))}
                     </div>
                 )}
@@ -279,8 +276,8 @@ const getContextInfo = (items?: ContextItem[], isFirst?: boolean) => {
 }
 
 const template = {
-    filter: 'filtered out by Cody Context Filters. Please contact your site admin for details.',
-    token: 'skipped due to token limit exceeded.',
+    filter: 'filtered out by Cody Context Filters. Please contact your site admin for details',
+    token: 'were retrieved but not used because they exceed the token limit. Learn more about token limits',
 }
 
 function generateExcludedInfo(token: number, filter: number): string[] {
@@ -292,4 +289,20 @@ function generateExcludedInfo(token: number, filter: number): string[] {
         warnings.push(`${filter} ${pluralize('item', filter)} ${template.filter}`)
     }
     return warnings
+}
+
+export const ExcludedContextWarning: React.FunctionComponent<{ message: string }> = ({ message }) => {
+    const type = message.includes(template.token) ? 'token' : 'filter'
+    return (
+        <div className="tw-flex tw-gap-2 tw-my-2 tw-items-center">
+            <i className="codicon codicon-warning" />
+            <span>
+                {message}
+                {type === 'token' && (
+                    <a href="https://sourcegraph.com/docs/cody/core-concepts/token-limits">here</a>
+                )}
+                .
+            </span>
+        </div>
+    )
 }
