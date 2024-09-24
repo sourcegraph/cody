@@ -1,5 +1,6 @@
 # End-To-End Testing
 
+![Cover Image](../doc/images/e2e/cover.jpg)
 
 - [End-To-End Testing](#end-to-end-testing)
   - [Fundamental Principles](#fundamental-principles)
@@ -31,13 +32,13 @@
       - [Authentication](#authentication)
       - [Workspace](#workspace)
     - [Network](#network)
-      - [Recordings](#recordings)
-      - [Mocking](#mocking)
     - [Telemetry](#telemetry)
       - [Snapshots](#snapshots)
+    - [Productivity Tips](#productivity-tips)
+      - [Debug a Problem Reliably](#debug-a-problem-reliably)
+      - [Nail It Then Code It](#nail-it-then-code-it)
+      - [Soft Assertions](#soft-assertions)
   - [Next Steps](#next-steps)
-  - [OTHER](#other)
-    - [Tools of the Trade](#tools-of-the-trade)
 
 
 ## Fundamental Principles
@@ -543,7 +544,10 @@ async select(args: SelectArgs) {
 }
 ```
 
-This works because of a special "Testing Extension" which is loaded by the fixture. This extension provides an `eval` command that takes an arbitrary JavaScript string as input and executes it. The rest is just some typing magic. You can find more details in `vscode/e2e/utils/vscody/extension/main.js`
+This works because of a special "Testing Extension" which is loaded by the
+fixture. This extension provides an `eval` command that takes an arbitrary
+JavaScript string as input and executes it. The rest is just some typing magic.
+You can find more details in `vscode/e2e/utils/vscody/extension/main.js`
 
 ### Setup
 
@@ -551,7 +555,10 @@ Now that we have the basics down let's set up a test.
 
 #### Authentication
 
-Unless you're testing the auth flow, there's no real reason to start your test with authentication flow. Instead you can use the hidden `cody.override.authToken` and `cody.override.serverEndpoint` settings to pre-authenticate your extension.
+Unless you're testing the auth flow, there's no real reason to start your test
+with authentication flow. Instead you can use the hidden
+`cody.override.authToken` and `cody.override.serverEndpoint` settings to
+pre-authenticate your extension.
 
 Here's a basic example of how to start a DotCom session:
 
@@ -592,19 +599,25 @@ test('DotCom', async ({ page, mitmProxy, vscodeUI, workspaceDir }) => {
 })
 ```
 
-Connecting to enterprise can be done very similarly. You just have to change
+Connecting to enterprise can be done in a similar way. You just have to change
 
 ```ts
 'cody.override.serverEndpoint': mitmProxy.sourcegraph.enterprise.endpoint,
 ```
 
-Remember, the endpoint here refers to the endpoint of the MitM server that intercepts the traffic. This MitM server only has two ports, one speaking "DotCom" and the other speaking "Enterprise SG".
+Remember, the endpoint here refers to the endpoint of the MitM server that
+intercepts the traffic. This MitM server only has two ports, one speaking
+"DotCom" and the other speaking "Enterprise SG".
 
-So how do you connect to a different S2 instance? Well you can just re-configure the MitM server to forward traffic to a different endpoint! This is done by setting a different `authName`.
+So how do you connect to a different S2 instance if there's only two ports? Well
+you can just re-configure the MitM server to forward traffic to a different
+endpoint! This is done by setting a different `authName`.
 
 ![Change to S2](../doc/images/e2e/authname.jpg)
 
-This also automatically configures the correct auth token.
+This also automatically configures the correct auth token for you that replaces
+the placeholder token. This makes sure that you can still test "unauthenticated"
+flows easily by simply removing the placeholder.
 
 > **Note**
 >
@@ -612,7 +625,8 @@ This also automatically configures the correct auth token.
 
 #### Workspace
 
-As mentioned before, the test's workspace is a copy of the template workspace. Which can be configured by setting the `templateWorkspaceDir` option.
+As mentioned before, the test's workspace is a copy of the template workspace.
+Which can be configured by setting the `templateWorkspaceDir` option.
 
 ```ts
 test.use({
@@ -620,18 +634,268 @@ test.use({
 })
 ```
 
+The template workspace can be anything but usually sticking with the default
+should be fine. Instead of creating many different templateWorkspaces you can
+just modify your unique copy during your test setup.
+
+For instance if you want to turn the workspace into a git-repo you can do the
+following:
+
+```ts
+test('Git ignored files are not included as context', async ({workspaceDir}) => {
+
+  await test.step('setup', async () => {
+    ...
+    await uix.workspace.gitInit({ 
+      origin: 'git@github.com:sourcegraph/sourcegraph.git' 
+    }, { workspaceDir })
+  })  
+})
+```
+
 ### Network
 
-#### Recordings
+As mentioned network requests are passed to the MitM server which gives us fine
+grained control over the what to do with them. This works on two layers, the
+intercepted re-emitted-request as well as the MitM response.
 
-#### Mocking
+To start with the first one. PollyJS automatically intercepts all fetch calls
+and provides hooks to modify the request and response. By default most network
+traffic that hits the MitM server is forwarded to the upstream proxyTarget and
+recorded. This only succeeds if the `recordIfMissing` or
+`recordingMode="record"` options are set (See [Updating
+Recordings](#updating-recordings)).
+
+You can find these recordings in the `recordings/vscode/e2e` directory and they
+are easily inspectable YAML files.
+
+When the test is re-run it now no longer makes an actual network request and
+instead plays back the recorded response. By default it plays back the response
+without any delay but this can be changed to be the original request time.
+
+The fixture sets up some default hooks to make sure that unimportant network
+traffic (such as `/healthz`) are not recorded. You can find these in
+`vscode/e2e/utils/vscody/fixture/polly.ts`.
+
+But what if you want to test that the `/healthz` endpoint is called? Well you
+can just add your own request interceptor!
+
+```ts
+test('Healthz called', async ({polly, mitmProxy}) => {
+  // This intercept all requests "FORWARDED" to the enterprise proxyTarget by the MitM server.
+  let demoCounter = 0
+  
+  polly.server.host(mitmProxy.sourcegraph.enterprise.proxyTarget, () => {
+      polly.server
+          .get('/healthz') // filter post requests
+          .filter(req => 'Demo' in req.query) // with a query param
+          .intercept((req, res, interceptor) => {
+              demoCounter++
+              if(demoCounter > 3){
+                res.status(500) // send a failed response
+              } else if (demoCounter > 10) {
+                interceptor.passthrough() // return the response of the upstream server
+              } else {
+                res.json({"status": "ok"}).status(200) // custom JSON response
+              }
+          })
+  })
+  // ...
+  expect(demoCounter).toBe(4)
+})
+```
+
+The second layer is the MitM response. Usually this does nothing but there are
+several useful things you can do with it. For instance, if you want to submit a
+chat and test that the "cancel" button works. As mentioned the recorded
+responses are played back instantly making it impossible to have enough time to
+test the cancel button after pressing submit.
+
+That's why you can set a "floor response time" on the MitM server that ensure
+that at least `X` milliseconds pass before the response is played back. This
+keeps tests more performant than adding a fixed delay as if for whatever reason
+the response does take more time (we're recording, we're running some slow
+logic, etc) it doesn't add an unnecessary delay.
+
+So instead of this:
+```ts
+test('cancel works', async ({mitmProxy}) => {
+  await chat.submit()
+
+  // ❌ fails because the loading spinner was already done.
+  await loadingSpinner.cancelButton.click() 
+})
+```
+
+You can do this:
+```ts
+test('cancel works', async ({mitmProxy}) => {  
+  uix.withFloorResponseTime(100, {mitmProxy}, async () => {
+    await chat.submit()
+
+    // ✅ we've now had AT LEAST 100ms to click the button.
+    await loadingSpinner.cancelButton.click() 
+  })
+})
+```
 
 ### Telemetry
 
+Telemetry is automatically intercepted and recorded when sent to the MitM
+server. After a test ends a `telemetry.json` file is created that contains all
+the events that were sent to the MitM server. This file is included as an
+attachment to the test report.
+
+However to actually verify telemetry as part of you test the UIX layer provides
+some useful utilities.
+
+Telemetry is best verified around the actions that should trigger it.  For
+instance instead of:
+
+> "At the end of the test, did the `completion/accepted` event fire?"
+
+it's better to check 
+
+> "When I clicked the `accept` button did the `completion/accepted` event fire?"
+
+This can easily be done using the UIX telemetrySnapshot utility. This utility
+allows you to take point in time recordings of the telemetry events that have
+been recorded.
+
+```ts
+import { fixture as test, uix } from '../utils/vscody'
+
+test('test button telemetry', async ({telemetryRecorder}) => {  
+  /*A*/const telemetry = uix.telemetry.TelemetrySnapshot.fromNow({
+      telemetryRecorder,
+  })
+
+  // no events to start with
+  expect(telemetry.events.events).toEqual([])
+
+  page.selectByRole('button', 'Do Something').click()
+
+  // we now take a new snapshot. This "forks" the original and stops the snapshot, but keeps the original running.
+  /*B*/const afterClick = telemetry.snap() // From A. - B.
+  expect(
+    afterClick.filter(
+      {matching: {signature: 'feature/action'}}
+    ).map(
+      recordedEvent => recordedEvent.event.marketingTracking
+    )
+  ).toEqual([true])
+
+  // do some more actions
+
+  page.selectByRole('button', 'Other Action').click()
+
+  // we take a snapshot from the previous one
+  /*C*/const afterOtherClick = telemetry.snap() // From B. - C.
+  expect(
+    afterOtherClick.events.length
+  ).toEqual(5)
+
+  // but the telemetry "snapshotter" contains all events as it was kept runnning from `A - C`
+  expect(telemetry.events.length).toEqual(1 + 5)
+})
+```
+
 #### Snapshots
 
+Because it can be tedious to test telemetry events by hand the UIX layer
+provides some JSON snapshot testing helpers. These helpers allow you to
+normalize and diff some object with a serialized snapshot.
+
+The normalization can be used to ensure that only "stable" properties are saved
+so that insignificant changes don't cause the test to fail.
+
+```ts
+//Telemetry event normalizer
+const snapshotNormalizers = [
+    // We can pick or omit any object keys
+    uix.snapshot.Normalizers.pick('event', 'proxyName'),
+    // We can sort all object keys
+    uix.snapshot.Normalizers.sortKeysDeep,
+    // We can sort arrays by some property. This can even be a nested path.
+    uix.snapshot.Normalizers.sortPathBy('event.parameters.metadata', 'key'),
+    uix.snapshot.Normalizers.blank( // We can redact fields to <string>, <number>, <object> depending on the type
+        'event.source.clientVersion',
+        'event.timestamp',
+        'event.parameters.privateMetadata.requestID',
+        'event.parameters.interactionID',
+        'event.parameters.privateMetadata.sessionID',
+        'event.parameters.privateMetadata.traceId',
+        'event.parameters.privateMetadata.chatModel',
+        'event.parameters.privateMetadata.responseText',
+        'event.parameters.privateMetadata.gitMetadata'
+    ),
+]
+//...
+// this creates a `mentionedEvents.snap.json` file alongside the test if it did not exist. Otherwise it compares the current snapshot with the last and fails if there are any differences.
+await expect(mentionEvents).toMatchJSONSnapshot('mentionedEvents', {
+    normalizers: snapshotNormalizers,
+})
+```
+
+### Productivity Tips
+
+#### Debug a Problem Reliably
+
+The VSCode server that runs Cody exposes a debug port. When running a test in
+Debugt mode using the VSCode UI this automatically makes sure that breakpoints
+work. Not just in your test...IN THE CODY EXTENSION!
+
+This makes it a great way to debug an issue as you can simply create a "test"
+that scripts the user behaviour to reproduce the problem. And then run the test
+in debug mode to step through your breakpoints.
+
+![Debug a Test in VSCode](../doc/images/e2e/debug.png)
+
+#### Nail It Then Code It
+
+Sometimes the easiest way to write a test, is to just do it manually first.
+Although breakpoints or using the `playwright --debug` flag can be a nice way to
+try out breakpoints I often found that I want to just be able to click around
+for a while at certain points in the test.
+
+That's where the `uix.wait()` function comes in. It simply suspends all timeouts
+and halts until you manually call the `__continueTest()` function in the VSCode
+UI Chrome DevTools. Note that network and telemetry events etc are still
+recorded in the background, so it can also be a great way to just have a quick
+look at what is being sent.
+
+```ts
+test('complicate test', async ({page}, testInfo) => {
+  await extension.start()
+  await button.click()
+
+  // the UI is now in a certain state where i'd like interact with manually.
+  await uix.wait({ page, testInfo }) // this suspends until I manually continue the test from the Chrome DevTools
+})
+```
+
+![Wait in Action](../doc/images/e2e/wait.gif)
+
+#### Soft Assertions
+
+If your test fails, Playwright will give you an error message showing what part
+of the test failed which you can see either in VS Code, the terminal, the HTML
+report, or the trace viewer. However, you can also use soft assertions. These do
+not immediately terminate the test execution, but rather compile and display a
+list of failed assertions once the test ended.
+
+```ts
+// Make a few checks that will not stop the test when failed...
+await expect.soft(
+  page.getByTestId('status')
+).toHaveText('Success');
+
+// ... and continue the test to check more things. 
+await page.getByRole('link', { name: 'next page' }).click();
+```
 
 ## Next Steps
+- Migrate remaining existing E2E / integration tests. List of [priorities](https://buildkite.com/organizations/sourcegraph/analytics/suites/cody/tests?branch=main&filter=reliability&period=7days)
 - Allowing a user to "record" their issue as a test in a production build.
 - Full local-only end-to-end tests including locally runing backend instances.
   This would allow us to more easily develop and verify fullstack changes.
@@ -644,29 +908,3 @@ test.use({
   as network issues, timeouts, misconfigurations, etc.
 - Being able to record VSCode 'interactions' for better test recording
 - Capturing traces; include as attachments, allow asserts etc.
-
-
-## OTHER
-
-### Tools of the Trade
-
-Productivity tips
-
-uix.sleep()
-
-stretchTimeout()
-
-
-
-
-Use Soft assertions If your test fails, Playwright will give you an error
-message showing what part of the test failed which you can see either in VS
-Code, the terminal, the HTML report, or the trace viewer. However, you can also
-use soft assertions. These do not immediately terminate the test execution, but
-rather compile and display a list of failed assertions once the test ended.
-
-// Make a few checks that will not stop the test when failed... await
-expect.soft(page.getByTestId('status')).toHaveText('Success');
-
-// ... and continue the test to check more things. await page.getByRole('link',
-{ name: 'next page' }).click();
