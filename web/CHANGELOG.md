@@ -1,3 +1,6 @@
+## 0.9.0
+- Big refactoring change around authorization (see [#5221](https://github.com/sourcegraph/cody/pull/5221))
+
 ## 0.8.3 
 - Fixes critical problem with auth flow on clear index db storage [#5621](https://github.com/sourcegraph/cody/pull/5621)
 
