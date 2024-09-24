@@ -134,7 +134,7 @@ function applyLocalTokenLimitOverwrite(
  * @returns True if the chat model supports extended context windows, false otherwise.
  */
 const modelWithExpandedWindowSubStrings = [
-    'claude-3-opus',
+    'opus',
     'sonnet', // Covers claude 3 sonnet & 3.5 sonnet
     'gemini-1.5',
     'gpt-4o',
