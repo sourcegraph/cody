@@ -38,7 +38,11 @@ export function getAutocompleteProviderFromLocalSettings({
     providerId,
     legacyModel,
     isDotCom,
-}: { providerId: AutocompleteProviderID; legacyModel: string; isDotCom: boolean }): Promise<Provider> {
+}: {
+    providerId: AutocompleteProviderID
+    legacyModel: string | null
+    isDotCom: boolean
+}): Promise<Provider> {
     return createProviderForTest({
         config: {
             configuration: {
@@ -140,7 +144,7 @@ export function testAutocompleteProvider(
 
         expect(provider.id).toBe(providerId)
         expect(provider.legacyModel).toBe(legacyModel)
-        expect(getRequestParamsWithoutMessages(provider)).toMatchObject(requestParams)
+        expect(getRequestParamsWithoutMessages(provider)).toStrictEqual(requestParams)
     })
 }
 

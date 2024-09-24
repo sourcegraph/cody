@@ -1,21 +1,8 @@
 // TODO(slimsag): self-hosted-models: deprecate and remove this once customers are upgraded
 // to non-experimental version
 
-import {
-    type AutocompleteContextSnippet,
-    type CodeCompletionsParams,
-    PromptString,
-    ps,
-} from '@sourcegraph/cody-shared'
+import type { CodeCompletionsParams } from '@sourcegraph/cody-shared'
 
-import type * as vscode from 'vscode'
-import { getLanguageConfig } from '../../tree-sitter/language'
-import {
-    CLOSING_CODE_TAG,
-    OPENING_CODE_TAG,
-    getHeadAndTail,
-    getSuffixAfterFirstNewline,
-} from '../text-processing'
 import { forkSignal, generatorWithTimeout, zipGenerators } from '../utils'
 
 import {
@@ -28,10 +15,6 @@ import {
     Provider,
     type ProviderFactoryParams,
 } from './shared/provider'
-
-const EOT_STARCHAT = '<|end|>'
-const EOT_STARCODER = '<|endoftext|>'
-const EOT_LLAMA_CODE = ' <EOT>'
 
 // Model identifiers (we are the source/definition for these in case of the openaicompatible provider.)
 const MODEL_MAP = {
@@ -76,98 +59,29 @@ function getMaxContextTokens(model: OpenAICompatibleModel): number {
 }
 
 class ExpOpenAICompatibleProvider extends Provider {
-    private createPrompt(
-        options: GenerateCompletionsOptions,
-        snippets: AutocompleteContextSnippet[]
-    ): PromptString {
-        const { prefix, suffix } = PromptString.fromAutocompleteDocumentContext(
-            options.docContext,
-            options.document.uri
-        )
-
-        const intro: PromptString[] = []
-        let prompt = ps``
-
-        const languageConfig = getLanguageConfig(options.document.languageId)
-
-        // In StarCoder we have a special token to announce the path of the file
-        if (!isStarCoderFamily(this.legacyModel)) {
-            intro.push(ps`Path: ${PromptString.fromDisplayPath(options.document.uri)}`)
-        }
-
-        for (let snippetsToInclude = 0; snippetsToInclude < snippets.length + 1; snippetsToInclude++) {
-            if (snippetsToInclude > 0) {
-                const snippet = snippets[snippetsToInclude - 1]
-                const contextPrompts = PromptString.fromAutocompleteContextSnippet(snippet)
-
-                if (contextPrompts.symbol) {
-                    intro.push(
-                        ps`Additional documentation for \`${contextPrompts.symbol}\`:\n\n${contextPrompts.content}`
-                    )
-                } else {
-                    intro.push(
-                        ps`Here is a reference snippet of code from ${PromptString.fromDisplayPath(
-                            snippet.uri
-                        )}:\n\n${contextPrompts.content}`
-                    )
-                }
-            }
-
-            const joined = PromptString.join(intro, ps`\n\n`)
-            const introString = ps`${PromptString.join(
-                joined
-                    .split('\n')
-                    .map(line => ps`${languageConfig ? languageConfig.commentStart : ps`// `}${line}`),
-                ps`\n`
-            )}\n`
-
-            const suffixAfterFirstNewline = getSuffixAfterFirstNewline(suffix)
-
-            const nextPrompt = this.createInfillingPrompt(
-                options,
-                PromptString.fromDisplayPath(options.document.uri),
-                introString,
-                prefix,
-                suffixAfterFirstNewline
-            )
-
-            if (nextPrompt.length >= this.promptChars) {
-                return prompt
-            }
-
-            prompt = nextPrompt
-        }
-
-        return prompt
-    }
-
     public getRequestParams(options: GenerateCompletionsOptions): CodeCompletionsParams {
         const { multiline, docContext, document, snippets } = options
-        const { prefix, suffix } = PromptString.fromAutocompleteDocumentContext(docContext, document.uri)
 
-        // starchat: Only use infill if the suffix is not empty
-        const useInfill = docContext.suffix.trim().length > 0
-        const promptProps: Prompt = {
-            snippets: [],
-            uri: document.uri,
-            prefix,
-            suffix,
-            languageId: document.languageId,
-        }
+        const prompt = this.modelHelper.getPrompt({
+            snippets,
+            docContext,
+            document,
+            promptChars: this.promptChars,
+            // StarChat: only use infill if the suffix is not empty
+            isInfill: docContext.suffix.trim().length > 0,
+        })
 
-        const prompt = this.legacyModel.startsWith('starchat')
-            ? promptString(promptProps, useInfill, this.legacyModel)
-            : this.createPrompt(options, snippets)
+        const model =
+            this.legacyModel === 'starcoder-hybrid'
+                ? MODEL_MAP[multiline ? 'starcoder-16b' : 'starcoder-7b']
+                : this.legacyModel.startsWith('starchat')
+                  ? '' // starchat is not a supported backend model yet, use the default server-chosen model.
+                  : MODEL_MAP[this.legacyModel as keyof typeof MODEL_MAP]
 
         return {
             ...this.defaultRequestParams,
             messages: [{ speaker: 'human', text: prompt }],
-            model:
-                this.legacyModel === 'starcoder-hybrid'
-                    ? MODEL_MAP[multiline ? 'starcoder-16b' : 'starcoder-7b']
-                    : this.legacyModel.startsWith('starchat')
-                      ? '' // starchat is not a supported backend model yet, use the default server-chosen model.
-                      : MODEL_MAP[this.legacyModel as keyof typeof MODEL_MAP],
+            model,
         }
     }
 
@@ -176,7 +90,7 @@ class ExpOpenAICompatibleProvider extends Provider {
         abortSignal: AbortSignal,
         tracer?: CompletionProviderTracer
     ): Promise<AsyncGenerator<FetchCompletionResult[]>> {
-        const { numberOfCompletionsToGenerate } = generateOptions
+        const { numberOfCompletionsToGenerate, docContext } = generateOptions
 
         const requestParams = this.getRequestParams(generateOptions)
         tracer?.params(requestParams)
@@ -195,7 +109,8 @@ class ExpOpenAICompatibleProvider extends Provider {
                     completionResponseGenerator,
                     abortController,
                     generateOptions,
-                    providerSpecificPostProcess: this.postProcess,
+                    providerSpecificPostProcess: content =>
+                        this.modelHelper.postProcess(content, docContext),
                 })
             }
         )
@@ -217,117 +132,6 @@ class ExpOpenAICompatibleProvider extends Provider {
          */
         return zipGenerators(await Promise.all(completionsGenerators))
     }
-
-    private createInfillingPrompt(
-        options: GenerateCompletionsOptions,
-        filename: PromptString,
-        intro: PromptString,
-        prefix: PromptString,
-        suffix: PromptString
-    ): PromptString {
-        if (isStarCoderFamily(this.legacyModel) || isStarChatFamily(this.legacyModel)) {
-            // c.f. https://huggingface.co/bigcode/starcoder#fill-in-the-middle
-            // c.f. https://arxiv.org/pdf/2305.06161.pdf
-            return ps`<filename>${filename}<fim_prefix>${intro}${prefix}<fim_suffix>${suffix}<fim_middle>`
-        }
-        if (isLlamaCode(this.legacyModel)) {
-            // c.f. https://github.com/facebookresearch/codellama/blob/main/llama/generation.py#L402
-            return ps`<PRE> ${intro}${prefix} <SUF>${suffix} <MID>`
-        }
-        if (this.legacyModel === 'mistral-7b-instruct-4k') {
-            // This part is copied from the anthropic prompt but fitted into the Mistral instruction format
-            const { head, tail } = getHeadAndTail(prefix)
-            const infillBlock = tail.trimmed.toString().endsWith('{\n')
-                ? tail.trimmed.trimEnd()
-                : tail.trimmed
-            const infillPrefix = head.raw
-            return ps`<s>[INST] Below is the code from file path ${PromptString.fromDisplayPath(
-                options.document.uri
-            )}. Review the code outside the XML tags to detect the functionality, formats, style, patterns, and logics in use. Then, use what you detect and reuse methods/libraries to complete and enclose completed code only inside XML tags precisely without duplicating existing implementations. Here is the code:
-\`\`\`
-${intro}${infillPrefix ? infillPrefix : ''}${OPENING_CODE_TAG}${CLOSING_CODE_TAG}${suffix}
-\`\`\`[/INST]
- ${OPENING_CODE_TAG}${infillBlock}`
-        }
-
-        console.error('Could not generate infilling prompt for', this.legacyModel)
-        return ps`${intro}${prefix}`
-    }
-
-    private postProcess = (content: string): string => {
-        if (isStarCoderFamily(this.legacyModel)) {
-            return content.replace(EOT_STARCODER, '')
-        }
-        if (isStarChatFamily(this.legacyModel)) {
-            return content.replace(EOT_STARCHAT, '')
-        }
-        if (isLlamaCode(this.legacyModel)) {
-            return content.replace(EOT_LLAMA_CODE, '')
-        }
-        return content
-    }
-}
-
-function isStarChatFamily(model: string): boolean {
-    return model.startsWith('starchat')
-}
-
-function isStarCoderFamily(model: string): boolean {
-    return model.startsWith('starcoder')
-}
-
-function isLlamaCode(model: string): boolean {
-    return model.startsWith('llama-code')
-}
-
-interface Prompt {
-    snippets: { uri: vscode.Uri; content: PromptString }[]
-
-    uri: vscode.Uri
-    prefix: PromptString
-    suffix: PromptString
-
-    languageId: string
-}
-
-function fileNameLine(uri: vscode.Uri, commentStart: PromptString): PromptString {
-    return ps`${commentStart} Path: ${PromptString.fromDisplayPath(uri)}\n`
-}
-
-function promptString(prompt: Prompt, infill: boolean, model: string): PromptString {
-    const config = getLanguageConfig(prompt.languageId)
-    const commentStart = config?.commentStart || ps`// `
-
-    const context = PromptString.join(
-        prompt.snippets.map(
-            ({ uri, content }) =>
-                ps`${fileNameLine(uri, commentStart)}${PromptString.join(
-                    content.split('\n').map(line => ps`${commentStart} ${line}`),
-                    ps`\n`
-                )}`
-        ),
-        ps`\n\n`
-    )
-
-    const currentFileNameComment = fileNameLine(prompt.uri, commentStart)
-
-    if (model.startsWith('codellama:') && infill) {
-        const infillPrefix = context.concat(currentFileNameComment, prompt.prefix)
-
-        /**
-         * The infilll prompt for Code Llama.
-         * Source: https://github.com/facebookresearch/codellama/blob/e66609cfbd73503ef25e597fd82c59084836155d/llama/generation.py#L418
-         *
-         * Why are there spaces left and right?
-         * > For instance, the model expects this format: `<PRE> {pre} <SUF>{suf} <MID>`.
-         * But you won’t get infilling if the last space isn’t added such as in `<PRE> {pre} <SUF>{suf}<MID>`
-         *
-         * Source: https://blog.fireworks.ai/simplifying-code-infilling-with-code-llama-and-fireworks-ai-92c9bb06e29c
-         */
-        return ps`<PRE> ${infillPrefix} <SUF>${prompt.suffix} <MID>`
-    }
-
-    return context.concat(currentFileNameComment, prompt.prefix)
 }
 
 function getClientModel(model?: string): OpenAICompatibleModel {
