@@ -165,9 +165,6 @@ const PrettyPrintedContextItem: React.FunctionComponent<{
     if (!path.includes('/')) {
         sep = '\\'
     }
-    if (!path.includes(sep)) {
-        return <>{path}</>
-    }
 
     const basename = path.split(sep).pop()
     const dirname = path.split(sep).slice(0, -1).join(sep)
