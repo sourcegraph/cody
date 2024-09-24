@@ -1,10 +1,16 @@
 import { Observable, map } from 'observable-fns'
 import type { AuthCredentials, ClientConfiguration } from '../configuration'
 import { logError } from '../logger'
-import { distinctUntilChanged, firstValueFrom, fromLateSetSource, shareReplay } from '../misc/observable'
+import {
+    distinctUntilChanged,
+    firstValueFrom,
+    fromLateSetSource,
+    promiseToObservable,
+} from '../misc/observable'
+import { skipPendingOperation, switchMapReplayOperation } from '../misc/observableOperation'
 import type { PerSitePreferences } from '../models/modelsService'
 import { DOTCOM_URL } from '../sourcegraph-api/environments'
-import type { PartialDeep, ReadonlyDeep } from '../utils'
+import { type PartialDeep, type ReadonlyDeep, isError } from '../utils'
 
 /**
  * The input from various sources that is needed to compute the {@link ResolvedConfiguration}.
@@ -94,7 +100,20 @@ const _resolvedConfig = fromLateSetSource<ResolvedConfiguration>()
  * set exactly once (except in tests).
  */
 export function setResolvedConfigurationObservable(input: Observable<ConfigurationInput>): void {
-    _resolvedConfig.setSource(input.pipe(map(resolveConfiguration), distinctUntilChanged()), false)
+    _resolvedConfig.setSource(
+        input.pipe(
+            switchMapReplayOperation(input => promiseToObservable(resolveConfiguration(input))),
+            skipPendingOperation(),
+            map(value => {
+                if (isError(value)) {
+                    throw value
+                }
+                return value
+            }),
+            distinctUntilChanged()
+        ),
+        false
+    )
 }
 
 /**
@@ -123,9 +142,7 @@ export function setStaticResolvedConfigurationValue(
  * It is OK to access this before {@link setResolvedConfigurationObservable} is called, but it will
  * not emit any values before then.
  */
-export const resolvedConfig: Observable<ResolvedConfiguration> = _resolvedConfig.observable.pipe(
-    shareReplay()
-)
+export const resolvedConfig: Observable<ResolvedConfiguration> = _resolvedConfig.observable
 
 /**
  * The current resolved configuration. Callers should use {@link resolvedConfig} instead so that
