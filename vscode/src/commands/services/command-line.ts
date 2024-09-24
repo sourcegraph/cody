@@ -157,7 +157,16 @@ class CodyCommandLine implements vscode.Disposable {
         await processStream()
     }
 
-    private run(command: string): void {
+    private async run(command: string): Promise<void> {
+        const confirmation =
+            (await vscode.window.showInformationMessage(
+                `Run command in terminal: ${command}`,
+                'Run',
+                'Cancel'
+            )) ?? ''
+        if (confirmation !== 'Run') {
+            return
+        }
         // TODO: If the terminal was disposed, create a new one
         this.terminal.sendText(command)
         this.terminal.show()
