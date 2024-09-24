@@ -15,6 +15,7 @@ import {
     catchError,
     combineLatest,
     contextFiltersProvider,
+    createDisposables,
     currentAuthStatus,
     distinctUntilChanged,
     featureFlagProvider,
@@ -420,41 +421,74 @@ async function registerCodyCommands(
         )
     )
 
-    const isUntiedPromptsEnabled = await featureFlagProvider.evaluateFeatureFlag(
-        FeatureFlag.CodyUnifiedPrompts
-    )
-
-    // Register prompt-like command if unified prompts feature is available
-    if (isUntiedPromptsEnabled && getConfiguration().agentIDE !== CodyIDE.Web) {
-        // Hide all commands from sub menus and quick menus
-        await vscode.commands.executeCommand('setContext', 'cody.menu.custom-commands.enable', false)
-
-        disposables.push(
-            vscode.commands.registerCommand('cody.action.command', (id, a) => executeCommand(id, a)),
-            vscode.commands.registerCommand('cody.command.explain-code', a => executeExplainCommand(a)),
-            vscode.commands.registerCommand('cody.command.smell-code', a => executeSmellCommand(a)),
-            vscode.commands.registerCommand('cody.command.document-code', a => executeDocChatCommand(a)),
-            vscode.commands.registerCommand('cody.command.unit-tests', a => executeTestChatCommand(a))
-        )
-
-        return
-    }
-
-    // Show all commands from sub menus and quick menus
-    await vscode.commands.executeCommand('setContext', 'cody.menu.custom-commands.enable', true)
-
-    // Register Cody Commands
     disposables.push(
-        vscode.commands.registerCommand('cody.action.command', (id, a) => executeCommand(id, a)),
-        vscode.commands.registerCommand('cody.command.explain-code', a => executeExplainCommand(a)),
-        vscode.commands.registerCommand('cody.command.smell-code', a => executeSmellCommand(a)),
-        vscode.commands.registerCommand('cody.command.document-code', a => executeDocCommand(a)),
-        vscode.commands.registerCommand('cody.command.generate-tests', a => executeTestChatCommand(a)),
-        vscode.commands.registerCommand('cody.command.unit-tests', a => executeTestEditCommand(a)),
-        vscode.commands.registerCommand('cody.command.tests-cases', a => executeTestCaseEditCommand(a)),
-        vscode.commands.registerCommand('cody.command.explain-output', a => executeExplainOutput(a)),
-        vscode.commands.registerCommand('cody.command.auto-edit', a => executeAutoEditCommand(a)),
-        sourceControl // Generate Commit Message command
+        subscriptionDisposable(
+            featureFlagProvider
+                .evaluatedFeatureFlag(FeatureFlag.CodyUnifiedPrompts)
+                .pipe(
+                    createDisposables(codyUnifiedPromptsFlag => {
+                        const unifiedPromptsEnabled =
+                            codyUnifiedPromptsFlag && getConfiguration().agentIDE !== CodyIDE.Web
+                        vscode.commands.executeCommand(
+                            'setContext',
+                            'cody.menu.custom-commands.enable',
+                            !unifiedPromptsEnabled
+                        )
+
+                        return unifiedPromptsEnabled
+                            ? [
+                                  // Register prompt-like command if unified prompts feature is available.
+                                  vscode.commands.registerCommand('cody.action.command', (id, a) =>
+                                      executeCommand(id, a)
+                                  ),
+                                  vscode.commands.registerCommand('cody.command.explain-code', a =>
+                                      executeExplainCommand(a)
+                                  ),
+                                  vscode.commands.registerCommand('cody.command.smell-code', a =>
+                                      executeSmellCommand(a)
+                                  ),
+                                  vscode.commands.registerCommand('cody.command.document-code', a =>
+                                      executeDocChatCommand(a)
+                                  ),
+                                  vscode.commands.registerCommand('cody.command.unit-tests', a =>
+                                      executeTestChatCommand(a)
+                                  ),
+                              ]
+                            : [
+                                  // Otherwise register old-style commands.
+                                  vscode.commands.registerCommand('cody.action.command', (id, a) =>
+                                      executeCommand(id, a)
+                                  ),
+                                  vscode.commands.registerCommand('cody.command.explain-code', a =>
+                                      executeExplainCommand(a)
+                                  ),
+                                  vscode.commands.registerCommand('cody.command.smell-code', a =>
+                                      executeSmellCommand(a)
+                                  ),
+                                  vscode.commands.registerCommand('cody.command.document-code', a =>
+                                      executeDocCommand(a)
+                                  ),
+                                  vscode.commands.registerCommand('cody.command.generate-tests', a =>
+                                      executeTestChatCommand(a)
+                                  ),
+                                  vscode.commands.registerCommand('cody.command.unit-tests', a =>
+                                      executeTestEditCommand(a)
+                                  ),
+                                  vscode.commands.registerCommand('cody.command.tests-cases', a =>
+                                      executeTestCaseEditCommand(a)
+                                  ),
+                                  vscode.commands.registerCommand('cody.command.explain-output', a =>
+                                      executeExplainOutput(a)
+                                  ),
+                                  vscode.commands.registerCommand('cody.command.auto-edit', a =>
+                                      executeAutoEditCommand(a)
+                                  ),
+                                  sourceControl, // Generate Commit Message command
+                              ]
+                    })
+                )
+                .subscribe({})
+        )
     )
 }
 
