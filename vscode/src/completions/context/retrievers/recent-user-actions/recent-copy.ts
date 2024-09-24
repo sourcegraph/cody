@@ -53,6 +53,7 @@ export class RecentCopyRetriever implements vscode.Disposable, ContextRetriever 
         return []
     }
 
+    // This is seperate function because we mock the function in tests
     public async getClipboardContent(): Promise<string> {
         return vscode.env.clipboard.readText()
     }

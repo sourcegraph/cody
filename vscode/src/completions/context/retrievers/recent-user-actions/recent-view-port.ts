@@ -1,6 +1,7 @@
 import type { AutocompleteContextSnippet } from '@sourcegraph/cody-shared'
-import { debounce } from 'lodash'
+import debounce from 'lodash/debounce'
 import * as vscode from 'vscode'
+import { LRUCache } from 'lru-cache'
 import type { ContextRetriever } from '../../../types'
 import { RetrieverIdentifier } from '../../utils'
 
@@ -15,12 +16,13 @@ interface TrackedViewPort {
 export class RecentViewPortRetriever implements vscode.Disposable, ContextRetriever {
     public identifier = RetrieverIdentifier.RecentViewPortRetriever
     private disposables: vscode.Disposable[] = []
-    private trackedViewPorts: Map<string, TrackedViewPort> = new Map()
+    private viewportsByDocumentUri: LRUCache<string, TrackedViewPort>
 
     constructor(
         private readonly maxTrackedFiles: number = 10,
         private window: Pick<typeof vscode.window, 'onDidChangeTextEditorVisibleRanges'> = vscode.window
     ) {
+        this.viewportsByDocumentUri = new LRUCache<string, TrackedViewPort>({ max: this.maxTrackedFiles })
         this.disposables.push(
             this.window.onDidChangeTextEditorVisibleRanges(
                 debounce(this.onDidChangeTextEditorVisibleRanges.bind(this), 300)
@@ -29,7 +31,9 @@ export class RecentViewPortRetriever implements vscode.Disposable, ContextRetrie
     }
 
     public async retrieve(): Promise<AutocompleteContextSnippet[]> {
-        const sortedViewPorts = Array.from(this.trackedViewPorts.values())
+        const sortedViewPorts = Array.from(this.viewportsByDocumentUri.entries())
+            .map(([_, value]) => value)
+            .filter((value): value is TrackedViewPort => value !== undefined)
             .sort((a, b) => b.lastAccessTimestamp - a.lastAccessTimestamp)
             .slice(0, MAX_RETRIEVED_VIEWPORTS)
 
@@ -66,29 +70,15 @@ export class RecentViewPortRetriever implements vscode.Disposable, ContextRetrie
         const now = Date.now()
         const key = uri.toString()
 
-        if (this.trackedViewPorts.has(key)) {
-            const existingViewPort = this.trackedViewPorts.get(key)!
-            existingViewPort.visibleRange = visibleRange
-            existingViewPort.lastAccessTimestamp = now
-        } else {
-            if (this.trackedViewPorts.size >= this.maxTrackedFiles) {
-                // Remove the least recently accessed viewport
-                const oldestKey = Array.from(this.trackedViewPorts.entries()).sort(
-                    ([, a], [, b]) => a.lastAccessTimestamp - b.lastAccessTimestamp
-                )[0][0]
-                this.trackedViewPorts.delete(oldestKey)
-            }
-
-            this.trackedViewPorts.set(key, {
-                uri,
-                visibleRange,
-                lastAccessTimestamp: now,
-            })
-        }
+        this.viewportsByDocumentUri.set(key, {
+            uri,
+            visibleRange,
+            lastAccessTimestamp: now,
+        })
     }
 
     public dispose(): void {
-        this.trackedViewPorts.clear()
+        this.viewportsByDocumentUri.clear()
         for (const disposable of this.disposables) {
             disposable.dispose()
         }
