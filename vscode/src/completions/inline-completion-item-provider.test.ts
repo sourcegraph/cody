@@ -1,13 +1,13 @@
 import dedent from 'dedent'
-import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import * as vscode from 'vscode'
 
 import {
     AUTH_STATUS_FIXTURE_AUTHED,
-    type GraphQLAPIClientConfig,
     RateLimitError,
     contextFiltersProvider,
-    graphqlClient,
+    currentAuthStatusAuthed,
+    mockAuthStatus,
 } from '@sourcegraph/cody-shared'
 
 import { telemetryRecorder } from '@sourcegraph/cody-shared'
@@ -33,8 +33,6 @@ const DUMMY_CONTEXT: vscode.InlineCompletionContext = {
     triggerKind: vscode.InlineCompletionTriggerKind.Automatic,
 }
 
-graphqlClient.setConfig({} as unknown as GraphQLAPIClientConfig)
-
 class MockableInlineCompletionItemProvider extends InlineCompletionItemProvider {
     constructor(
         mockGetInlineCompletions: typeof getInlineCompletions,
@@ -47,9 +45,10 @@ class MockableInlineCompletionItemProvider extends InlineCompletionItemProvider 
             // we can just make them `null`.
             statusBar: null as any,
             provider: createProvider({
-                authStatus: AUTH_STATUS_FIXTURE_AUTHED,
-            } as any),
-            config: {} as any,
+                provider: 'anthropic',
+                source: 'local-editor-settings',
+                authStatus: currentAuthStatusAuthed(),
+            }),
             firstCompletionTimeout:
                 superArgs?.firstCompletionTimeout ??
                 DEFAULT_VSCODE_SETTINGS.autocompleteFirstCompletionTimeout,
@@ -62,12 +61,10 @@ class MockableInlineCompletionItemProvider extends InlineCompletionItemProvider 
 }
 
 describe('InlineCompletionItemProvider', () => {
-    beforeAll(async () => {
-        await initCompletionProviderConfig({})
-        mockLocalStorage()
-    })
-
     beforeEach(() => {
+        mockAuthStatus(AUTH_STATUS_FIXTURE_AUTHED)
+        initCompletionProviderConfig({})
+        mockLocalStorage()
         vi.spyOn(contextFiltersProvider, 'isUriIgnored').mockResolvedValue(false)
         CompletionLogger.reset_testOnly()
     })

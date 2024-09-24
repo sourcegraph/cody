@@ -6,7 +6,7 @@ import type {
     UserLocalHistory,
 } from '@sourcegraph/cody-shared'
 
-import { debounce } from 'lodash'
+import debounce from 'lodash/debounce'
 import * as vscode from 'vscode'
 import { localStorage } from '../../services/LocalStorageProvider'
 

@@ -20,6 +20,9 @@ export enum RetrieverIdentifier {
     JaccardSimilarityRetriever = 'jaccard-similarity',
     TscRetriever = 'tsc',
     LspLightRetriever = 'lsp-light',
+    RecentCopyRetriever = 'recent-copy',
+    DiagnosticsRetriever = 'diagnostics',
+    RecentViewPortRetriever = 'recent-view-port',
 }
 
 export interface ShouldUseContextParams {

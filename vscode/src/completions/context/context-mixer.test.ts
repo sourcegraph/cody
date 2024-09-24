@@ -1,8 +1,6 @@
 import {
     type AutocompleteContextSnippet,
-    type GraphQLAPIClientConfig,
     contextFiltersProvider,
-    graphqlClient,
     testFileUri,
     uriBasename,
 } from '@sourcegraph/cody-shared'
@@ -15,8 +13,6 @@ import { ContextMixer } from './context-mixer'
 import type { ContextStrategyFactory } from './context-strategy'
 
 import type * as vscode from 'vscode'
-
-graphqlClient.setConfig({} as unknown as GraphQLAPIClientConfig)
 
 function createMockStrategy(resultSets: AutocompleteContextSnippet[][]): ContextStrategyFactory {
     const retrievers = []

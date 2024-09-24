@@ -758,7 +758,7 @@ export function loaded(params: LoadedParams): void {
         }
     }
 }
-export function suggestionDocumentDiffTracker(
+function suggestionDocumentDiffTracker(
     interactionId: CompletionAnalyticsID,
     document: vscode.TextDocument,
     position: vscode.Position
@@ -797,7 +797,7 @@ export function suggestionDocumentDiffTracker(
     })
 }
 
-export type SuggestionMarkReadParam = {
+type SuggestionMarkReadParam = {
     document: vscode.TextDocument
     position: vscode.Position
 }
@@ -1170,8 +1170,8 @@ function getSharedParams(event: CompletionBookkeepingEvent): SharedEventPayload 
         items: event.items.map(i => ({ ...i })),
         otherCompletionProviderEnabled: otherCompletionProviders.length > 0,
         otherCompletionProviders,
-        upstreamLatency: upstreamHealthProvider.instance!.getUpstreamLatency(),
-        gatewayLatency: upstreamHealthProvider.instance!.getGatewayLatency(),
+        upstreamLatency: upstreamHealthProvider.getUpstreamLatency(),
+        gatewayLatency: upstreamHealthProvider.getGatewayLatency(),
 
         // 🚨 SECURITY: Do not include any context by default
         inlineCompletionItemContext: undefined,

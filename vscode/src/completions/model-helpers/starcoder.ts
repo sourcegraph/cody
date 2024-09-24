@@ -6,8 +6,20 @@ import {
     type GetOllamaPromptParams,
 } from './default'
 
+// "StarChat is a series of language models that are fine-tuned from StarCoder to act as helpful coding assistants."
+// Source: https://huggingface.co/HuggingFaceH4/starchat-alpha
+const EOT_STARCHAT = '<|end|>'
+const EOT_STARCODER = '<|endoftext|>'
+
 export class StarCoder extends DefaultModel {
-    stopSequences = ['<fim_prefix>', '<fim_suffix>', '<fim_middle>', '<|endoftext|>', '<file_sep>']
+    stopSequences = [
+        '<fim_prefix>',
+        '<fim_suffix>',
+        '<fim_middle>',
+        '<file_sep>',
+        EOT_STARCODER,
+        EOT_STARCHAT,
+    ]
 
     getOllamaPrompt(promptContext: GetOllamaPromptParams): PromptString {
         const { context, prefix, suffix } = promptContext
@@ -32,7 +44,7 @@ export class StarCoder extends DefaultModel {
     }
 
     postProcess(content: string): string {
-        return content.replace('<|endoftext|>', '')
+        return content.replace(EOT_STARCODER, '').replace(EOT_STARCHAT, '')
     }
 
     getDefaultIntroSnippets(params: GetDefaultIntroSnippetsParams): PromptString[] {

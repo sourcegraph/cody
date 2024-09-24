@@ -4,7 +4,7 @@ import { PubSub } from "@google-cloud/pubsub";
 import express from "express";
 import * as uuid from "uuid";
 
-import type { ServerModelConfiguration } from "@sourcegraph/cody-shared/src/models";
+import type { ServerModelConfiguration } from "@sourcegraph/cody-shared";
 import type { TelemetryEventInput } from "@sourcegraph/telemetry";
 
 // create interface for the request

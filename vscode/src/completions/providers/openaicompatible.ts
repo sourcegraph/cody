@@ -1,10 +1,4 @@
-import {
-    type AutocompleteContextSnippet,
-    type CodeCompletionsParams,
-    charsToTokens,
-    logError,
-    tokensToChars,
-} from '@sourcegraph/cody-shared'
+import { type CodeCompletionsParams, charsToTokens, logError } from '@sourcegraph/cody-shared'
 
 import { forkSignal, generatorWithTimeout, zipGenerators } from '../utils'
 
@@ -12,63 +6,50 @@ import { logDebug } from '../../log'
 import {
     type FetchCompletionResult,
     fetchAndProcessDynamicMultilineCompletions,
-} from './fetch-and-process-completions'
-import {
-    MAX_RESPONSE_TOKENS,
-    getCompletionParams,
-    getLineNumberDependentCompletionParams,
-} from './get-completion-params'
+} from './shared/fetch-and-process-completions'
 import {
     type CompletionProviderTracer,
     type GenerateCompletionsOptions,
     Provider,
     type ProviderFactoryParams,
-} from './provider'
-
-const lineNumberDependentCompletionParams = getLineNumberDependentCompletionParams({
-    singlelineStopSequences: ['\n\n', '\n\r\n'],
-    multilineStopSequences: ['\n\n', '\n\r\n'],
-})
+} from './shared/provider'
 
 class OpenAICompatibleProvider extends Provider {
-    public generateCompletions(
-        options: GenerateCompletionsOptions,
-        abortSignal: AbortSignal,
-        snippets: AutocompleteContextSnippet[],
-        tracer?: CompletionProviderTracer
-    ): AsyncGenerator<FetchCompletionResult[]> {
-        const partialRequestParams = getCompletionParams({
-            providerOptions: options,
-            lineNumberDependentCompletionParams,
-        })
-
-        const { docContext, document } = options
+    public getRequestParams(options: GenerateCompletionsOptions): CodeCompletionsParams {
+        const { docContext, document, snippets } = options
 
         const prompt = this.modelHelper.getPrompt({
             snippets,
             docContext,
             document,
-            promptChars: tokensToChars(this.maxContextTokens - MAX_RESPONSE_TOKENS),
+            promptChars: this.promptChars,
             // StarChat: only use infill if the suffix is not empty
             isInfill: docContext.suffix.trim().length > 0,
         })
 
-        const requestParams: CodeCompletionsParams = {
-            ...partialRequestParams,
+        return {
+            ...this.defaultRequestParams,
             messages: [{ speaker: 'human', text: prompt }],
-            temperature: 0.2,
-            topK: 0,
             model: this.legacyModel,
         }
+    }
 
+    public async generateCompletions(
+        generateOptions: GenerateCompletionsOptions,
+        abortSignal: AbortSignal,
+        tracer?: CompletionProviderTracer
+    ): Promise<AsyncGenerator<FetchCompletionResult[]>> {
+        const { docContext, numberOfCompletionsToGenerate } = generateOptions
+
+        const requestParams = this.getRequestParams(generateOptions)
         tracer?.params(requestParams)
 
-        const completionsGenerators = Array.from({ length: options.numberOfCompletionsToGenerate }).map(
-            () => {
+        const completionsGenerators = Array.from({ length: numberOfCompletionsToGenerate }).map(
+            async () => {
                 const abortController = forkSignal(abortSignal)
 
                 const completionResponseGenerator = generatorWithTimeout(
-                    this.client.complete(requestParams, abortController),
+                    await this.client.complete(requestParams, abortController),
                     requestParams.timeoutMs,
                     abortController
                 )
@@ -76,8 +57,9 @@ class OpenAICompatibleProvider extends Provider {
                 return fetchAndProcessDynamicMultilineCompletions({
                     completionResponseGenerator,
                     abortController,
-                    providerSpecificPostProcess: this.modelHelper.postProcess,
-                    generateOptions: options,
+                    generateOptions,
+                    providerSpecificPostProcess: content =>
+                        this.modelHelper.postProcess(content, docContext),
                 })
             }
         )
@@ -97,18 +79,16 @@ class OpenAICompatibleProvider extends Provider {
          * available, and the switch to async generators maintains the same behavior
          * as with promises.
          */
-        return zipGenerators(completionsGenerators)
+        return zipGenerators(await Promise.all(completionsGenerators))
     }
 }
 
-export function createProvider(params: ProviderFactoryParams): Provider {
-    const { model, anonymousUserID } = params
-
+export function createProvider({ model, source }: ProviderFactoryParams): Provider {
     if (model) {
         logDebug('OpenAICompatible', 'autocomplete provider using model', JSON.stringify(model))
 
-        // TODO(slimsag): self-hosted-models: properly respect ClientSideConfig options in the future
-        logDebug('OpenAICompatible', 'note: not all clientSideConfig options are respected yet.')
+        // TODO(slimsag): self-hosted-models: properly respect ClientSideConfig generateOptions in the future
+        logDebug('OpenAICompatible', 'note: not all clientSideConfig generateOptions are respected yet.')
 
         // TODO(slimsag): self-hosted-models: lift ClientSideConfig defaults to a standard centralized location
         const maxContextTokens = charsToTokens(
@@ -119,7 +99,7 @@ export function createProvider(params: ProviderFactoryParams): Provider {
             id: 'openaicompatible',
             model,
             maxContextTokens,
-            anonymousUserID,
+            source,
         })
     }
 

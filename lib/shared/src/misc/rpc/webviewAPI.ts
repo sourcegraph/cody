@@ -2,10 +2,10 @@ import type { Observable } from 'observable-fns'
 import type { ChatMessage } from '../../chat/transcript/messages'
 import type { ContextItem } from '../../codebase-context/messages'
 import type { CodyCommand } from '../../commands/types'
-import type { FeatureFlag } from '../../experimentation/FeatureFlagProvider'
+import { FeatureFlag } from '../../experimentation/FeatureFlagProvider'
 import type { ContextMentionProviderMetadata } from '../../mentions/api'
 import type { MentionQuery } from '../../mentions/query'
-import type { Model } from '../../models'
+import type { Model } from '../../models/model'
 import type { FetchHighlightFileParameters, Prompt } from '../../sourcegraph-api/graphql/client'
 import { type createMessageAPIForWebview, proxyExtensionAPI } from './rpc'
 
@@ -79,6 +79,12 @@ export interface PromptsResult {
         | { type: 'unsupported' }
 
     /**
+     * Provides previously built-in commands which became prompt-like actions (explain code,
+     * generate unit tests, document symbol, etc.) Currently, is used behind feature flag.
+     */
+    standardPrompts?: CodyCommand[]
+
+    /**
      * `undefined` means that commands should not be shown at all (not even as an empty
      * list). Builtin and custom commands are deprecated in favor of the Prompt Library.
      */
@@ -93,5 +99,7 @@ export interface PromptsResult {
  * explicitly requested feature flags are evaluated immediately. If you don't add one here, its old
  * value will be cached on the server and returned until it is explicitly evaluated.
  */
-const FEATURE_FLAGS_USED_IN_WEBVIEW = [] as const satisfies FeatureFlag[]
+const FEATURE_FLAGS_USED_IN_WEBVIEW = [
+    FeatureFlag.CodyExperimentalOneBox,
+] as const satisfies FeatureFlag[]
 export type FeatureFlagUsedInWebview = (typeof FEATURE_FLAGS_USED_IN_WEBVIEW)[number]

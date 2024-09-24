@@ -85,7 +85,6 @@ interface TestClientParams {
     readonly credentials: TestingCredentials
     bin?: string
     telemetryExporter?: 'testing' | 'graphql' // defaults to testing, which doesn't send telemetry
-    areFeatureFlagsEnabled?: boolean // do not evaluate feature flags by default
     logEventMode?: 'connected-instance-only' | 'all' | 'dotcom-only'
     onWindowRequest?: (params: ShowWindowMessageParams) => Promise<string>
     extraConfiguration?: Record<string, any>
@@ -165,7 +164,7 @@ export class TestClient extends MessageHandler {
                 SRC_ACCESS_TOKEN: params.credentials.token,
                 REDACTED_SRC_ACCESS_TOKEN: params.credentials.redactedToken,
                 CODY_TELEMETRY_EXPORTER: params.telemetryExporter ?? 'testing',
-                DISABLE_FEATURE_FLAGS: params.areFeatureFlagsEnabled ? undefined : 'true',
+                DISABLE_FEATURE_FLAGS: 'true',
                 DISABLE_UPSTREAM_HEALTH_PINGS: 'true',
                 CODY_LOG_EVENT_MODE: params.logEventMode,
                 ...process.env,
@@ -984,7 +983,12 @@ ${patch}`
             version: 'v1',
             workspaceRootUri: this.params.workspaceRootUri.toString(),
             workspaceRootPath: this.params.workspaceRootUri.fsPath,
-            capabilities: allClientCapabilitiesEnabled,
+            capabilities: {
+                ...allClientCapabilitiesEnabled,
+                // The test client doesn't implement secrets/didChange, so we need to use the
+                // stateless secrets store.
+                secrets: 'stateless',
+            },
             extensionConfiguration: {
                 anonymousUserID: `${this.name}abcde1234`,
                 accessToken: this.params.credentials.token ?? this.params.credentials.redactedToken,

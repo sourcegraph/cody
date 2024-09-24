@@ -3,9 +3,7 @@ import type { URI } from 'vscode-uri'
 
 import {
     type AutocompleteContextSnippet,
-    type ClientConfigurationWithAccessToken,
     type DocumentContext,
-    currentAuthStatus,
     getActiveTraceAndSpanId,
     isAbortError,
     isDotComAuthed,
@@ -29,7 +27,7 @@ import type {
     CompletionProviderTracer,
     GenerateCompletionsOptions,
     Provider,
-} from './providers/provider'
+} from './providers/shared/provider'
 import type { RequestManager, RequestManagerResult, RequestParams } from './request-manager'
 import { reuseLastCandidate } from './reuse-last-candidate'
 import type { SmartThrottleService } from './smart-throttle'
@@ -48,7 +46,6 @@ export interface InlineCompletionsParams {
     completionIntent?: CompletionIntent
     lastAcceptedCompletionItem?: Pick<AutocompleteItem, 'requestParams' | 'analyticsItem'>
     provider: Provider
-    configuration: ClientConfigurationWithAccessToken
 
     // Shared
     requestManager: RequestManager
@@ -243,7 +240,6 @@ async function doGetInlineCompletions(
         completionIntent,
         lastAcceptedCompletionItem,
         stageRecorder,
-        configuration: config,
         numberOfCompletionsToGenerate,
     } = params
 
@@ -479,7 +475,7 @@ async function doGetInlineCompletions(
           ? 1
           : 3
 
-    const providerOptions: GenerateCompletionsOptions = {
+    const generateOptions: GenerateCompletionsOptions = {
         triggerKind,
         docContext,
         document,
@@ -487,17 +483,16 @@ async function doGetInlineCompletions(
         firstCompletionTimeout,
         completionLogId: logId,
         gitContext,
-        authStatus: currentAuthStatus(),
-        config,
         numberOfCompletionsToGenerate: numberOfCompletionsToGenerate ?? n,
         multiline: !!docContext.multilineTrigger,
+        snippets: contextResult?.context ?? [],
     }
 
     tracer?.({
         completers: [
             {
                 ...provider.options,
-                ...providerOptions,
+                ...generateOptions,
                 completionIntent,
             },
         ],
@@ -510,9 +505,8 @@ async function doGetInlineCompletions(
     const result = await requestManager.request({
         logId,
         requestParams,
-        providerOptions,
+        generateOptions,
         provider,
-        context: contextResult?.context ?? [],
         isCacheEnabled: triggerKind !== TriggerKind.Manual,
         isPreloadRequest: triggerKind === TriggerKind.Preload,
         tracer: tracer ? createCompletionProviderTracer(tracer) : undefined,

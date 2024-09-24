@@ -1,13 +1,22 @@
 import * as vscode from 'vscode'
 
-import { PromptString, logDebug, ps } from '@sourcegraph/cody-shared'
+import type { Span } from '@opentelemetry/api'
+import {
+    type ContextItem,
+    DefaultChatCommands,
+    PromptString,
+    isDefined,
+    logDebug,
+    ps,
+} from '@sourcegraph/cody-shared'
 import { wrapInActiveSpan } from '@sourcegraph/cody-shared'
-import { defaultCommands } from '.'
-import type { EditCommandResult } from '../../CommandResult'
+import { defaultCommands, selectedCodePromptWithExtraFiles } from '.'
 import { type ExecuteEditArguments, executeEdit } from '../../edit/execute'
 import { getEditor } from '../../editor/active-editor'
 import type { CodyCommandArgs } from '../types'
+import { type ExecuteChatArguments, executeChat } from './ask'
 
+import type { CommandResult } from '../../CommandResult'
 import {
     getEditAdjustedUserSelection,
     getEditDefaultProvidedRange,
@@ -15,6 +24,8 @@ import {
     getEditSmartSelection,
 } from '../../edit/utils/edit-selection'
 import { execQueryWrapper } from '../../tree-sitter/query-sdk'
+import { getContextFileFromCurrentFile } from '../context/current-file'
+import { getContextFileFromCursor } from '../context/selection'
 
 /**
  * Gets the default range and insertion point for documenting the code around the current cursor position.
@@ -119,13 +130,82 @@ async function getDocumentableRange(editor: vscode.TextEditor): Promise<{
     }
 }
 
+export async function docChatCommand(
+    span: Span,
+    args?: Partial<CodyCommandArgs>
+): Promise<ExecuteChatArguments | null> {
+    let prompt = PromptString.fromDefaultCommands(defaultCommands, 'doc')
+
+    if (args?.additionalInstruction) {
+        span.addEvent('additionalInstruction')
+        prompt = ps`${prompt} ${args.additionalInstruction}`
+    }
+
+    const editor = args?.uri ? await vscode.window.showTextDocument(args.uri) : getEditor()?.active
+    const { range } = editor ? await getDocumentableRange(editor) : { range: args?.range }
+    const currentSelection = await getContextFileFromCursor(args?.range?.start ?? range?.start)
+    const currentFile = await getContextFileFromCurrentFile()
+    const contextItems: ContextItem[] = [currentSelection, currentFile].filter(isDefined)
+    if (contextItems.length === 0) {
+        return null
+    }
+
+    prompt = prompt.replaceAll(
+        'the selected code',
+        selectedCodePromptWithExtraFiles(contextItems[0], contextItems.slice(1))
+    )
+
+    return {
+        text: prompt,
+        submitType: 'user-newchat',
+        contextItems,
+        addEnhancedContext: false,
+        source: args?.source,
+        command: DefaultChatCommands.Doc,
+    }
+}
+
+export async function executeDocChatCommand(
+    args?: Partial<CodyCommandArgs>
+): Promise<CommandResult | undefined> {
+    return wrapInActiveSpan('command.doc', async span => {
+        span.setAttribute('sampled', true)
+        logDebug('executeDocCommand', 'executing', { verbose: args })
+
+        const editor = args?.uri ? await vscode.window.showTextDocument(args.uri) : getEditor()?.active
+        const document = editor?.document
+
+        if (!document) {
+            return
+        }
+
+        if (args?.range) {
+            editor.selection = new vscode.Selection(args.range.start, args.range.end)
+        }
+
+        const chatArguments = await docChatCommand(span, args)
+
+        if (chatArguments === null) {
+            vscode.window.showInformationMessage(
+                'Please select text before running the "Document Code" command.'
+            )
+            return undefined
+        }
+
+        return {
+            type: 'chat',
+            session: await executeChat(chatArguments),
+        }
+    })
+}
+
 /**
  * The command that generates a new docstring for the selected code.
  * When called, the command will be executed as an inline-edit command.
  */
 export async function executeDocCommand(
     args?: Partial<CodyCommandArgs>
-): Promise<EditCommandResult | undefined> {
+): Promise<CommandResult | undefined> {
     return wrapInActiveSpan('command.doc', async span => {
         span.setAttribute('sampled', true)
         logDebug('executeDocCommand', 'executing', { verbose: args })

@@ -1,13 +1,6 @@
 import * as child_process from 'node:child_process'
-import {
-    promises as fs,
-    type PathLike,
-    type RmOptions,
-    mkdir,
-    mkdtempSync,
-    rmSync,
-    writeFile,
-} from 'node:fs'
+import { promises as fs, type PathLike, type RmOptions, mkdtempSync, rmSync } from 'node:fs'
+import { mkdir, writeFile } from 'node:fs/promises'
 import * as os from 'node:os'
 import * as path from 'node:path'
 
@@ -77,8 +70,8 @@ const vscodeRoot = path.resolve(__dirname, '..', '..')
 export const getAssetsDir = (testName: string): string =>
     path.join(vscodeRoot, '..', 'playwright', escapeToPath(testName))
 
-export const getTempVideoDir = (testName: string): string =>
-    path.join(getAssetsDir(testName), 'temp-videos')
+export const testAssetsTmpDir = (testName: string, label: string): string =>
+    path.join(getAssetsDir(testName), `temp-${label}`)
 
 export const test = base
     // By default, use ../../test/fixtures/workspace as the workspace.
@@ -169,6 +162,11 @@ export const test = base
                 dotcomUrlOverride = { TESTING_DOTCOM_URL: dotcomUrl }
             }
 
+            const tmpLogFile = path.join(testAssetsTmpDir(testInfo.title, 'log'), 'logger.log')
+            await mkdir(path.dirname(tmpLogFile), { recursive: true })
+            await writeFile(tmpLogFile, '')
+            console.error('Cody output channel:', tmpLogFile)
+
             //pre authenticated can ensure that a token is already set in the secret storage
             let secretStorageState: { [key: string]: string } = {}
             if (preAuthenticate) {
@@ -184,6 +182,7 @@ export const test = base
                     ...dotcomUrlOverride,
                     ...secretStorageState,
                     CODY_TESTING: 'true',
+                    CODY_LOG_FILE: tmpLogFile,
                 },
                 args: [
                     // https://github.com/microsoft/vscode/issues/84238
@@ -201,7 +200,7 @@ export const test = base
                 recordVideo: {
                     // All running tests will be recorded to a temp video file.
                     // successful runs will be deleted, failures will be kept
-                    dir: getTempVideoDir(testInfo.title),
+                    dir: testAssetsTmpDir(testInfo.title, 'videos'),
                 },
             })
 
@@ -304,8 +303,9 @@ const attachArtifacts = async (
     await testInfo.attach('screenshot', { body: screenshot, contentType: 'image/png' })
     // Copy the file from the temporary video directory to the assets directory
     // to the assets directory so it is not deleted
-    const [video] = await fs.readdir(getTempVideoDir(testInfo.title))
-    const oldVideoPath = path.join(getTempVideoDir(testInfo.title), video)
+    const videosDir = testAssetsTmpDir(testInfo.title, 'videos')
+    const [video] = await fs.readdir(videosDir)
+    const oldVideoPath = path.join(videosDir, video)
     const newVideoPath = path.join(assetsDirectory, 'videos', `${testSlug}.webm`)
     await fs.mkdir(path.join(assetsDirectory, 'videos'), { recursive: true })
     await fs.rename(oldVideoPath, newVideoPath)
@@ -383,20 +383,8 @@ async function buildWorkSpaceSettings(
     // create a temporary directory with settings.json and add to the workspaceDirectory
     const workspaceSettingsPath = path.join(workspaceDirectory, '.vscode', 'settings.json')
     const workspaceSettingsDirectory = path.join(workspaceDirectory, '.vscode')
-    await new Promise((resolve, reject) => {
-        mkdir(workspaceSettingsDirectory, { recursive: true }, err =>
-            err ? reject(err) : resolve(undefined)
-        )
-    })
-    await new Promise<void>((resolve, reject) => {
-        writeFile(workspaceSettingsPath, JSON.stringify(settings), error => {
-            if (error) {
-                reject(error)
-            } else {
-                resolve()
-            }
-        })
-    })
+    await mkdir(workspaceSettingsDirectory, { recursive: true })
+    await writeFile(workspaceSettingsPath, JSON.stringify(settings))
 }
 
 export async function signOut(page: Page): Promise<void> {

@@ -15,6 +15,7 @@ import {
     type SymbolKind,
     TokenCounterUtils,
     contextFiltersProvider,
+    currentResolvedConfig,
     displayPath,
     graphqlClient,
     isAbortError,
@@ -472,13 +473,14 @@ async function resolveFileOrSymbolContextItem(
             ? { startLine: contextItem.range.start.line, endLine: contextItem.range.end.line + 1 }
             : undefined
 
+        const { auth } = await currentResolvedConfig()
         const resultOrError = await graphqlClient.getFileContent(repository, path, ranges, signal)
 
         if (!isErrorLike(resultOrError)) {
             return {
                 ...contextItem,
                 title: path,
-                uri: URI.parse(`${graphqlClient.endpoint}${repository}/-/blob${path}`),
+                uri: URI.parse(`${auth.serverEndpoint}${repository}/-/blob${path}`),
                 content: resultOrError,
                 repoName: repository,
                 source: ContextItemSource.Unified,

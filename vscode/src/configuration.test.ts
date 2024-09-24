@@ -3,6 +3,7 @@ import type * as vscode from 'vscode'
 
 import { type ClientConfiguration, OLLAMA_DEFAULT_URL, ps } from '@sourcegraph/cody-shared'
 
+import type { ChatModelProviderConfig } from '@sourcegraph/cody-shared/src/models/sync'
 import { getConfiguration } from './configuration'
 import { DEFAULT_VSCODE_SETTINGS } from './testutils/mocks'
 
@@ -56,7 +57,7 @@ describe('getConfiguration', () => {
                     case 'cody.edit.preInstruction':
                         return 'My name is not Jeff.'
                     case 'cody.autocomplete.advanced.provider':
-                        return 'unstable-openai'
+                        return 'default'
                     case 'cody.autocomplete.advanced.model':
                         return 'starcoder-16b'
                     case 'cody.autocomplete.advanced.timeout.multiline':
@@ -70,8 +71,6 @@ describe('getConfiguration', () => {
                     case 'cody.autocomplete.disableInsideComments':
                         return false
                     case 'cody.autocomplete.experimental.fireworksOptions':
-                        return undefined
-                    case 'cody.autocomplete.experimental.multiModelCompletions':
                         return undefined
                     case 'cody.autocomplete.experimental.ollamaOptions':
                         return {
@@ -108,6 +107,10 @@ describe('getConfiguration', () => {
                         return undefined
                     case 'cody.advanced.agent.capabilities.storage':
                         return false
+                    case 'cody.provider.limit.prompt':
+                        return 123
+                    case 'cody.dev.models':
+                        return [{ model: 'm', provider: 'p' }] satisfies ChatModelProviderConfig[]
                     default:
                         throw new Error(`unexpected key: ${key}`)
                 }
@@ -117,6 +120,7 @@ describe('getConfiguration', () => {
             proxy: undefined,
             codebase: 'my/codebase',
             useContext: 'keyword',
+            serverEndpoint: 'http://example.com',
             customHeaders: {
                 'Cache-Control': 'no-cache',
                 'Proxy-Authenticate': 'Basic',
@@ -144,7 +148,7 @@ describe('getConfiguration', () => {
             debugFilter: /.*/,
             telemetryLevel: 'off',
             agentHasPersistentStorage: false,
-            autocompleteAdvancedProvider: 'unstable-openai',
+            autocompleteAdvancedProvider: 'default',
             autocompleteAdvancedModel: 'starcoder-16b',
             autocompleteCompleteSuggestWidgetSelection: false,
             autocompleteFormatOnAccept: true,
@@ -157,6 +161,8 @@ describe('getConfiguration', () => {
             },
             autocompleteFirstCompletionTimeout: 1500,
             autocompleteExperimentalPreloadDebounceInterval: 0,
+            providerLimitPrompt: 123,
+            devModels: [{ model: 'm', provider: 'p' }],
             testingModelConfig: undefined,
             experimentalGuardrailsTimeoutSeconds: undefined,
         } satisfies ClientConfiguration)

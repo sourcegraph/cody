@@ -959,8 +959,16 @@ export interface TestingTelemetryEvent {
         client: string
         clientVersion: string
     }
+    parameters: {
+        metadata: Record<string, number>
+        privateMetadata: Record<string, any>
+        billingMetadata: {
+            product: string
+            category: string
+        }
+    }
     timestamp: string
-    testOnlyAnonymousUserID: string
+    testOnlyAnonymousUserID?: string | null | undefined
 }
 export interface NetworkRequest {
     url: string

@@ -198,10 +198,6 @@ export class GhostHintDecorator implements vscode.Disposable {
             }
         )
 
-        // Set initial state, based on the configuration and authentication status
-        const initialAuth = currentAuthStatus()
-        this.updateEnablement(initialAuth)
-
         // Listen to authentication changes
         this.permanentDisposables.push(
             subscriptionDisposable(authStatus.subscribe(authStatus => this.updateEnablement(authStatus)))

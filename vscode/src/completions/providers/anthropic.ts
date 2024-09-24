@@ -1,19 +1,17 @@
 import * as anthropic from '@anthropic-ai/sdk'
 
 import {
-    type AutocompleteContextSnippet,
+    type AuthenticatedAuthStatus,
     type CodeCompletionsParams,
     type DocumentContext,
     type Message,
     PromptString,
-    currentAuthStatusAuthed,
-    isDotComAuthed,
+    isDotCom,
     ps,
 } from '@sourcegraph/cody-shared'
 
 import {
     CLOSING_CODE_TAG,
-    MULTILINE_STOP_SEQUENCE,
     OPENING_CODE_TAG,
     type PrefixComponents,
     extractFromCodeBlock,
@@ -32,35 +30,19 @@ import {
 import {
     type FetchCompletionResult,
     fetchAndProcessDynamicMultilineCompletions,
-} from './fetch-and-process-completions'
-import { getCompletionParams, getLineNumberDependentCompletionParams } from './get-completion-params'
+} from './shared/fetch-and-process-completions'
 import {
     type CompletionProviderTracer,
     type GenerateCompletionsOptions,
     Provider,
     type ProviderFactoryParams,
-} from './provider'
-
-export const SINGLE_LINE_STOP_SEQUENCES = [
-    anthropic.HUMAN_PROMPT,
-    CLOSING_CODE_TAG.toString(),
-    MULTILINE_STOP_SEQUENCE,
-]
-
-export const MULTI_LINE_STOP_SEQUENCES = [
-    anthropic.HUMAN_PROMPT,
-    CLOSING_CODE_TAG.toString(),
-    MULTILINE_STOP_SEQUENCE,
-]
-
-const lineNumberDependentCompletionParams = getLineNumberDependentCompletionParams({
-    singlelineStopSequences: SINGLE_LINE_STOP_SEQUENCES,
-    multilineStopSequences: MULTI_LINE_STOP_SEQUENCES,
-})
+} from './shared/provider'
 
 let isOutdatedSourcegraphInstanceWithoutAnthropicAllowlist = false
 
 class AnthropicProvider extends Provider {
+    public stopSequences = [anthropic.HUMAN_PROMPT, CLOSING_CODE_TAG.toString(), '\n\n', '\n\r\n']
+
     public emptyPromptLength(options: GenerateCompletionsOptions): number {
         const { messages } = this.createPromptPrefix(options)
         const promptNoSnippets = messagesToText(messages)
@@ -119,13 +101,11 @@ class AnthropicProvider extends Provider {
 
     // Creates the resulting prompt and adds as many snippets from the reference
     // list as possible.
-    protected createPrompt(
-        options: GenerateCompletionsOptions,
-        snippets: AutocompleteContextSnippet[]
-    ): {
+    protected createPrompt(options: GenerateCompletionsOptions): {
         messages: Message[]
         prefix: PrefixComponents
     } {
+        const { snippets } = options
         const { messages: prefixMessages, prefix } = this.createPromptPrefix(options)
 
         const referenceSnippetMessages: Message[] = []
@@ -160,22 +140,12 @@ class AnthropicProvider extends Provider {
         return { messages: [...referenceSnippetMessages, ...prefixMessages], prefix }
     }
 
-    public generateCompletions(
-        options: GenerateCompletionsOptions,
-        abortSignal: AbortSignal,
-        snippets: AutocompleteContextSnippet[],
-        tracer?: CompletionProviderTracer
-    ): AsyncGenerator<FetchCompletionResult[]> {
-        const partialRequestParams = getCompletionParams({
-            providerOptions: options,
-            lineNumberDependentCompletionParams,
-        })
+    public getRequestParams(options: GenerateCompletionsOptions): CodeCompletionsParams {
+        const { messages } = this.createPrompt(options)
 
-        const { docContext } = options
-
-        const requestParams: CodeCompletionsParams = {
-            ...partialRequestParams,
-            messages: this.createPrompt(options, snippets).messages,
+        return {
+            ...this.defaultRequestParams,
+            messages,
             temperature: 0.5,
 
             // Pass forward the unmodified model identifier that is set in the server's site
@@ -191,16 +161,25 @@ class AnthropicProvider extends Provider {
                     ? this.legacyModel
                     : undefined,
         }
+    }
+
+    public async generateCompletions(
+        options: GenerateCompletionsOptions,
+        abortSignal: AbortSignal,
+        tracer?: CompletionProviderTracer
+    ): Promise<AsyncGenerator<FetchCompletionResult[]>> {
+        const { docContext, numberOfCompletionsToGenerate } = options
+        const requestParams = this.getRequestParams(options)
 
         tracer?.params(requestParams)
 
-        const completionsGenerators = Array.from({ length: options.numberOfCompletionsToGenerate }).map(
-            () => {
+        const completionsGenerators = Array.from({ length: numberOfCompletionsToGenerate }).map(
+            async () => {
                 const abortController = forkSignal(abortSignal)
 
                 const completionResponseGenerator = generatorWithErrorObserver(
                     generatorWithTimeout(
-                        this.client.complete(requestParams, abortController),
+                        await this.client.complete(requestParams, abortController),
                         requestParams.timeoutMs,
                         abortController
                     ),
@@ -236,7 +215,7 @@ class AnthropicProvider extends Provider {
             }
         )
 
-        return zipGenerators(completionsGenerators)
+        return zipGenerators(await Promise.all(completionsGenerators))
     }
 
     private postProcess =
@@ -262,9 +241,12 @@ class AnthropicProvider extends Provider {
         }
 }
 
-function getClientModel(provider: string): string {
+function getClientModel(
+    provider: string,
+    authStatus: Pick<AuthenticatedAuthStatus, 'endpoint' | 'configOverwrites'>
+): string {
     // Always use the default PLG model on DotCom
-    if (isDotComAuthed()) {
+    if (isDotCom(authStatus)) {
         return DEFAULT_PLG_ANTHROPIC_MODEL
     }
 
@@ -273,7 +255,7 @@ function getClientModel(provider: string): string {
         return ''
     }
 
-    const { configOverwrites } = currentAuthStatusAuthed()
+    const { configOverwrites } = authStatus
 
     // Only pass through the upstream-defined model if we're using Cody Gateway
     if (configOverwrites?.provider === 'sourcegraph') {
@@ -283,17 +265,15 @@ function getClientModel(provider: string): string {
     return ''
 }
 
-export function createProvider(params: ProviderFactoryParams): Provider {
-    const { provider, anonymousUserID } = params
-
+export function createProvider({ provider, source, authStatus }: ProviderFactoryParams): Provider {
     return new AnthropicProvider({
         id: 'anthropic',
-        legacyModel: getClientModel(provider),
-        anonymousUserID,
+        legacyModel: getClientModel(provider, authStatus),
+        source,
     })
 }
 
-export const DEFAULT_PLG_ANTHROPIC_MODEL = 'anthropic/claude-instant-1.2'
+const DEFAULT_PLG_ANTHROPIC_MODEL = 'anthropic/claude-instant-1.2'
 
 // All the Anthropic version identifiers that are allowlisted as being able to be passed as the
 // model identifier on a Sourcegraph Server

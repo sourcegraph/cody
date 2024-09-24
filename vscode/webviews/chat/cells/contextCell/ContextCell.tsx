@@ -2,7 +2,6 @@ import type { ContextItem, Model } from '@sourcegraph/cody-shared'
 import { pluralize } from '@sourcegraph/cody-shared'
 import type { RankedContext } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { clsx } from 'clsx'
-import isEqual from 'lodash/isEqual'
 import { BrainIcon, MessagesSquareIcon } from 'lucide-react'
 import { type FunctionComponent, memo, useCallback, useState } from 'react'
 import { FileContextItem } from '../../../components/FileContextItem'
@@ -98,7 +97,7 @@ export const ContextCell: FunctionComponent<{
                 {(contextItemsToDisplay === undefined || contextItemsToDisplay.length !== 0) && (
                     <Accordion
                         type="single"
-                        collapsible
+                        collapsible={!showSnippets}
                         defaultValue={
                             ((__storybook__initialOpen || defaultOpen) && 'item-1') || undefined
                         }
@@ -133,7 +132,7 @@ export const ContextCell: FunctionComponent<{
                                     <LoadingDots />
                                 ) : (
                                     <>
-                                        <AccordionContent>
+                                        <AccordionContent overflow={showSnippets}>
                                             {internalDebugContext && contextAlternatives && (
                                                 <div>
                                                     <button
@@ -242,8 +241,7 @@ export const ContextCell: FunctionComponent<{
                 )}
             </div>
         )
-    },
-    isEqual
+    }
 )
 
 const getContextInfo = (items?: ContextItem[], isFirst?: boolean) => {
@@ -275,34 +273,27 @@ const getContextInfo = (items?: ContextItem[], isFirst?: boolean) => {
     }
 }
 
-const template = {
-    filter: 'filtered out by Cody Context Filters. Please contact your site admin for details',
-    token: 'were retrieved but not used because they exceed the token limit. Learn more about token limits',
-}
+const TEMPLATES = {
+    filter: 'filtered out by Cody Context Filters. Please contact your site admin for details.',
+    token: 'were retrieved but not used because they exceed the token limit. Learn more about token limits ',
+} as const
 
 function generateExcludedInfo(token: number, filter: number): string[] {
-    const warnings = []
-    if (token > 0) {
-        warnings.push(`${token} ${pluralize('item', token)} ${template.token}`)
-    }
-    if (filter > 0) {
-        warnings.push(`${filter} ${pluralize('item', filter)} ${template.filter}`)
-    }
-    return warnings
+    return [
+        token > 0 && `${token} ${token === 1 ? 'item' : 'items'} ${TEMPLATES.token}`,
+        filter > 0 && `${filter} ${filter === 1 ? 'item' : 'items'} ${TEMPLATES.filter}`,
+    ].filter(Boolean) as string[]
 }
 
-export const ExcludedContextWarning: React.FunctionComponent<{ message: string }> = ({ message }) => {
-    const type = message.includes(template.token) ? 'token' : 'filter'
-    return (
-        <div className="tw-flex tw-gap-2 tw-my-2 tw-items-center">
-            <i className="codicon codicon-warning" />
-            <span>
-                {message}
-                {type === 'token' && (
-                    <a href="https://sourcegraph.com/docs/cody/core-concepts/token-limits">here</a>
-                )}
-                .
-            </span>
-        </div>
-    )
-}
+export const ExcludedContextWarning: React.FC<{ message: string }> = ({ message }) => (
+    <div className="tw-flex tw-gap-2 tw-my-2 tw-items-center">
+        <i className="codicon codicon-warning" />
+        <span>
+            {message}
+            {message.includes(TEMPLATES.token) && (
+                <a href="https://sourcegraph.com/docs/cody/core-concepts/token-limits">here</a>
+            )}
+            .
+        </span>
+    </div>
+)

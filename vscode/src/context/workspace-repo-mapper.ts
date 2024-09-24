@@ -1,8 +1,13 @@
 import {
+    abortableOperation,
     authStatus,
+    combineLatest,
+    debounceTime,
     graphqlClient,
+    isAbortError,
     isError,
     logDebug,
+    resolvedConfig,
     startWith,
     subscriptionDisposable,
 } from '@sourcegraph/cody-shared'
@@ -12,7 +17,8 @@ import { vscodeGitAPI } from '../repository/git-extension-api'
 import { repoNameResolver } from '../repository/repo-name-resolver'
 import type { CodebaseRepoIdMapper } from './remote-repo'
 import type { Repo } from './remote-repo'
-import { RemoteSearch } from './remote-search'
+
+const MAX_REPO_COUNT = 10
 
 // TODO(dpc): The vscode.git extension has an delay before we can fetch a
 // workspace folder's remote. Switch to cody-engine instead of depending on
@@ -37,9 +43,16 @@ export class WorkspaceRepoMapper implements vscode.Disposable, CodebaseRepoIdMap
         this.disposables.push(
             subscriptionDisposable(
                 authStatus.subscribe(() => {
-                    this.updateRepos()
                     this.start()
                 })
+            ),
+            subscriptionDisposable(
+                combineLatest([authStatus, resolvedConfig])
+                    .pipe(
+                        debounceTime(0),
+                        abortableOperation((_, signal) => this.updateRepos(signal))
+                    )
+                    .subscribe({})
             )
         )
     }
@@ -99,13 +112,6 @@ export class WorkspaceRepoMapper implements vscode.Disposable, CodebaseRepoIdMap
         }
 
         this.started = (async () => {
-            try {
-                await this.updateRepos()
-            } catch (error) {
-                // Reset the started property so the next call to start will try again.
-                this.started = undefined
-                throw error
-            }
             vscode.workspace.onDidChangeWorkspaceFolders(
                 async () => {
                     logDebug('WorkspaceRepoMapper', 'Workspace folders changed, updating repos')
@@ -130,7 +136,7 @@ export class WorkspaceRepoMapper implements vscode.Disposable, CodebaseRepoIdMap
     }
 
     // Updates the `workspaceRepos` property and fires the change event.
-    private async updateRepos(): Promise<void> {
+    private async updateRepos(signal?: AbortSignal): Promise<void> {
         try {
             const folders = vscode.workspace.workspaceFolders || []
             logDebug(
@@ -139,36 +145,51 @@ export class WorkspaceRepoMapper implements vscode.Disposable, CodebaseRepoIdMap
                     .map(f => f.uri.toString())
                     .join()}`
             )
-            this.repos = await this.findRepos(folders)
+            this.repos = await this.findRepos(folders, signal)
             logDebug(
                 'WorkspaceRepoMapper',
                 `Mapped workspace folders to repos: ${JSON.stringify(this.repos.map(repo => repo.name))}`
             )
         } catch (error) {
-            logDebug('WorkspaceRepoMapper', `Error mapping workspace folders to repo IDs: ${error}`)
-            throw error
+            if (!isAbortError(error)) {
+                logDebug('WorkspaceRepoMapper', `Error mapping workspace folders to repo IDs: ${error}`)
+                throw error
+            }
         }
         this.changesSubject.next()
     }
 
     // Given a set of workspace folders, looks up their git remotes and finds the related repo IDs,
     // if any.
-    private async findRepos(folders: readonly vscode.WorkspaceFolder[]): Promise<Repo[]> {
-        const repoNames = await Promise.all(
-            folders.map(folder => {
-                return repoNameResolver.getRepoNamesFromWorkspaceUri(folder.uri)
-            })
+    private async findRepos(
+        folders: readonly vscode.WorkspaceFolder[],
+        signal?: AbortSignal
+    ): Promise<Repo[]> {
+        repoNameResolver.clearCache()
+        const repoNames = (
+            await Promise.all(
+                folders.map(folder => {
+                    return repoNameResolver.getRepoNamesFromWorkspaceUri(folder.uri, signal)
+                })
+            )
+        ).flat()
+        logDebug(
+            'WorkspaceRepoMapper',
+            `Found ${repoNames.length} repo names: ${JSON.stringify(repoNames)}`
         )
+        signal?.throwIfAborted()
 
-        const uniqueRepoNames = new Set(repoNames.flat())
+        const uniqueRepoNames = new Set(repoNames)
         if (uniqueRepoNames.size === 0) {
             // Otherwise we fetch the first 10 repos from the Sourcegraph instance
             return []
         }
         const repos = await graphqlClient.getRepoIds(
             [...uniqueRepoNames.values()],
-            RemoteSearch.MAX_REPO_COUNT
+            MAX_REPO_COUNT,
+            signal
         )
+        signal?.throwIfAborted()
         if (isError(repos)) {
             throw repos
         }

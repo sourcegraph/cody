@@ -124,7 +124,7 @@ export class DefaultModel {
                 const snippet = snippets[snippetsToInclude - 1]
 
                 if ('symbol' in snippet) {
-                    introSnippets.push(symbolSnippetToPromptString(snippet))
+                    introSnippets.push(this.symbolSnippetToPromptString(snippet))
                 } else {
                     introSnippets.push(this.fileSnippetToPromptString(snippet))
                 }
@@ -151,7 +151,7 @@ export class DefaultModel {
         return currentPrompt
     }
 
-    public postProcess(content: string): string {
+    public postProcess(content: string, docContext: DocumentContext): string {
         return content.replace(' <EOT>', '')
     }
 
@@ -167,12 +167,13 @@ export class DefaultModel {
         return ps`Here is a reference snippet of code from ${uriPromptString}:\n${content}`
     }
 
+    protected symbolSnippetToPromptString(snippet: AutocompleteSymbolContextSnippet): PromptString {
+        const { content, symbol } = PromptString.fromAutocompleteContextSnippet(snippet)
+
+        return ps`Additional documentation for \`${symbol!}\`:\n${content}`
+    }
+
     protected formatPrompt(param: FormatPromptParams): PromptString {
         return ps`${param.intro}${param.prefix}`
     }
-}
-
-function symbolSnippetToPromptString(snippet: AutocompleteSymbolContextSnippet): PromptString {
-    const { content, symbol } = PromptString.fromAutocompleteContextSnippet(snippet)
-    return ps`Additional documentation for \`${symbol!}\`:\n${content}`
 }

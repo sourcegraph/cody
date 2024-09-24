@@ -8,7 +8,7 @@ import type {
     CompletionProviderTracerResultData,
     GenerateCompletionsOptions,
     Provider,
-} from '../providers/provider'
+} from '../providers/shared/provider'
 
 /**
  * Traces invocations of {@link InlineCompletionItemProvider.provideInlineCompletionItems}.

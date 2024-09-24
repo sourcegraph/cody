@@ -16,8 +16,6 @@
       "env": {
         "NODE_ENV": "development",
         "CODY_DEBUG_ENABLE": "true",
-        // Enable webview RPC messages logging:
-        "CODY_LOG_WEBVIEW_RPC_MESSAGES": "true"
         // Enable the Node debug protocol for the TypeScript server:
         // "TSS_DEBUG": "5859"
         // Let extension behave like you're on dotcom when connected locally:
@@ -44,8 +42,6 @@
         "NODE_ENV": "development",
         "CODY_PROFILE_TEMP": "true",
         "CODY_DEBUG_ENABLE": "true",
-        // Enable webview RPC messages logging:
-        "CODY_LOG_WEBVIEW_RPC_MESSAGES": "true"
       }
     },
     {

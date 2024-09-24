@@ -1,4 +1,4 @@
-import { REMOTE_DIRECTORY_PROVIDER_URI } from '@sourcegraph/cody-shared'
+import { REMOTE_DIRECTORY_PROVIDER_URI, currentResolvedConfig } from '@sourcegraph/cody-shared'
 
 import type { Item, Mention } from '@openctx/client'
 import { graphqlClient, isDefined, isError } from '@sourcegraph/cody-shared'
@@ -44,14 +44,14 @@ export function createRemoteDirectoryProvider(customTitle?: string): OpenCtxProv
     }
 }
 
-export async function getDirectoryMentions(
-    repoName: string,
-    directoryPath?: string
-): Promise<Mention[]> {
+async function getDirectoryMentions(repoName: string, directoryPath?: string): Promise<Mention[]> {
     const repoRe = `^${escapeRegExp(repoName)}$`
     const directoryRe = directoryPath ? escapeRegExp(directoryPath) : ''
     const query = `repo:${repoRe} file:${directoryRe}.*\/.* select:file.directory count:10`
 
+    const {
+        auth: { serverEndpoint },
+    } = await currentResolvedConfig()
     const dataOrError = await graphqlClient.searchFileMatches(query)
 
     if (isError(dataOrError) || dataOrError === null) {
@@ -64,7 +64,7 @@ export async function getDirectoryMentions(
                 return null
             }
 
-            const url = `${graphqlClient.endpoint.replace(/\/$/, '')}${result.file.url}`
+            const url = `${serverEndpoint.replace(/\/$/, '')}${result.file.url}`
 
             return {
                 uri: url,
@@ -81,11 +81,7 @@ export async function getDirectoryMentions(
         .filter(isDefined)
 }
 
-export async function getDirectoryItem(
-    query: string,
-    repoID: string,
-    directoryPath: string
-): Promise<Item[]> {
+async function getDirectoryItem(query: string, repoID: string, directoryPath: string): Promise<Item[]> {
     const dataOrError = await graphqlClient.contextSearch({
         repoIDs: [repoID],
         query,

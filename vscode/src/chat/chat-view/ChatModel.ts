@@ -1,4 +1,4 @@
-import { findLast } from 'lodash'
+import findLast from 'lodash/findLast'
 
 import {
     type ChatMessage,
@@ -8,6 +8,7 @@ import {
     type SerializedChatInteraction,
     type SerializedChatTranscript,
     errorToChatError,
+    firstResultFromOperation,
     modelsService,
     serializeChatMessage,
     toRangeData,
@@ -26,14 +27,17 @@ export class ChatModel {
         private customChatTitle?: string,
         private selectedRepos?: Repo[]
     ) {
-        this.contextWindow = modelsService.instance!.getContextWindowByID(this.modelID)
+        this.contextWindow = modelsService.getContextWindowByID(this.modelID)
     }
 
-    public updateModel(newModelID: string) {
+    public async updateModel(newModelID: string): Promise<void> {
         // Only update the model if it is available to the user.
-        if (modelsService.instance!.isModelAvailable(newModelID)) {
+        const isModelAvailable = await firstResultFromOperation(
+            modelsService.isModelAvailable(newModelID)
+        )
+        if (isModelAvailable === true) {
             this.modelID = newModelID
-            this.contextWindow = modelsService.instance!.getContextWindowByID(this.modelID)
+            this.contextWindow = modelsService.getContextWindowByID(this.modelID)
         }
     }
 

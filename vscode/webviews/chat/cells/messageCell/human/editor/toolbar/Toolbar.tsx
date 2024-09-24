@@ -3,9 +3,11 @@ import { useExtensionAPI, useObservable } from '@sourcegraph/prompt-editor'
 import clsx from 'clsx'
 import { type FunctionComponent, useCallback, useMemo } from 'react'
 import type { UserAccountInfo } from '../../../../../../Chat'
+import { useClientActionDispatcher } from '../../../../../../client/clientState'
 import { ModelSelectField } from '../../../../../../components/modelSelectField/ModelSelectField'
 import type { PromptOrDeprecatedCommand } from '../../../../../../components/promptList/PromptList'
 import { PromptSelectField } from '../../../../../../components/promptSelectField/PromptSelectField'
+import { onPromptSelectInPanel } from '../../../../../../prompts/PromptsTab'
 import { useConfig } from '../../../../../../utils/useConfig'
 import { AddContextButton } from './AddContextButton'
 import { SubmitButton, type SubmitButtonState } from './SubmitButton'
@@ -27,11 +29,9 @@ export const Toolbar: FunctionComponent<{
     onGapClick?: () => void
 
     focusEditor?: () => void
-    appendTextToEditor: (text: string) => void
 
     hidden?: boolean
     className?: string
-    experimentalOneBoxEnabled?: boolean
 }> = ({
     userInfo,
     isEditorFocused,
@@ -40,10 +40,8 @@ export const Toolbar: FunctionComponent<{
     submitState,
     onGapClick,
     focusEditor,
-    appendTextToEditor,
     hidden,
     className,
-    experimentalOneBoxEnabled,
 }) => {
     /**
      * If the user clicks in a gap or on the toolbar outside of any of its buttons, report back to
@@ -82,11 +80,7 @@ export const Toolbar: FunctionComponent<{
                         className="tw-opacity-60 focus-visible:tw-opacity-100 hover:tw-opacity-100 tw-mr-2"
                     />
                 )}
-                <PromptSelectFieldToolbarItem
-                    focusEditor={focusEditor}
-                    appendTextToEditor={appendTextToEditor}
-                    className="tw-ml-1 tw-mr-1"
-                />
+                <PromptSelectFieldToolbarItem focusEditor={focusEditor} className="tw-ml-1 tw-mr-1" />
                 <ModelSelectFieldToolbarItem
                     userInfo={userInfo}
                     focusEditor={focusEditor}
@@ -98,7 +92,6 @@ export const Toolbar: FunctionComponent<{
                     onClick={onSubmitClick}
                     isEditorFocused={isEditorFocused}
                     state={submitState}
-                    experimentalOneBoxEnabled={experimentalOneBoxEnabled}
                 />
             </div>
         </menu>
@@ -107,15 +100,16 @@ export const Toolbar: FunctionComponent<{
 
 const PromptSelectFieldToolbarItem: FunctionComponent<{
     focusEditor?: () => void
-    appendTextToEditor: (text: string) => void
     className?: string
-}> = ({ focusEditor, appendTextToEditor, className }) => {
+}> = ({ focusEditor, className }) => {
+    const dispatchClientAction = useClientActionDispatcher()
+
     const onSelect = useCallback(
         (item: PromptOrDeprecatedCommand) => {
-            appendTextToEditor(item.type === 'prompt' ? item.value.definition.text : item.value.prompt)
+            onPromptSelectInPanel(item, () => {}, dispatchClientAction)
             focusEditor?.()
         },
-        [appendTextToEditor, focusEditor]
+        [focusEditor, dispatchClientAction]
     )
 
     return <PromptSelectField onSelect={onSelect} onCloseByEscape={focusEditor} className={className} />

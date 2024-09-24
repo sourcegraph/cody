@@ -7,7 +7,8 @@ import {
     WEB_PROVIDER_URI,
     authStatus,
     combineLatest,
-    currentResolvedConfig,
+    createDisposables,
+    debounceTime,
     distinctUntilChanged,
     featureFlagProvider,
     graphqlClient,
@@ -15,8 +16,10 @@ import {
     isError,
     logError,
     pluck,
+    promiseFactoryToObservable,
     resolvedConfig,
     setOpenCtx,
+    switchMap,
 } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 
@@ -25,8 +28,8 @@ import type {
     ClientConfiguration as OpenCtxClientConfiguration,
 } from '@openctx/client'
 import type { createController } from '@openctx/vscode-lib'
-import { Observable } from 'observable-fns'
-import { logDebug, outputChannel } from '../log'
+import { Observable, map } from 'observable-fns'
+import { logDebug } from '../log'
 import { gitMentionsProvider } from './openctx/git'
 import LinearIssuesProvider from './openctx/linear-issues'
 import RemoteDirectoryProvider, { createRemoteDirectoryProvider } from './openctx/remoteDirectorySearch'
@@ -34,42 +37,80 @@ import RemoteFileProvider, { createRemoteFileProvider } from './openctx/remoteFi
 import RemoteRepositorySearch, { createRemoteRepositoryProvider } from './openctx/remoteRepositorySearch'
 import { createWebProvider } from './openctx/web'
 
-export async function exposeOpenCtxClient(
+export function exposeOpenCtxClient(
     context: Pick<vscode.ExtensionContext, 'extension' | 'secrets'>,
     createOpenCtxController: typeof createController | undefined
-): Promise<void> {
-    await warnIfOpenCtxExtensionConflict()
-    try {
-        const config = await currentResolvedConfig()
-        const isCodyWeb = config.configuration.agentIDE === CodyIDE.Web
-        const createController =
-            createOpenCtxController ?? (await import('@openctx/vscode-lib')).createController
+): Observable<void> {
+    void warnIfOpenCtxExtensionConflict()
 
-        // Enable fetching of openctx configuration from Sourcegraph instance
-        const mergeConfiguration = config.configuration.experimentalNoodle
-            ? getMergeConfigurationFunction()
-            : undefined
+    return combineLatest([
+        resolvedConfig.pipe(
+            map(({ configuration: { agentIDE, experimentalNoodle } }) => ({
+                agentIDE,
+                experimentalNoodle,
+            })),
+            distinctUntilChanged()
+        ),
+        authStatus.pipe(
+            distinctUntilChanged(),
+            debounceTime(0),
+            switchMap(auth =>
+                auth.authenticated
+                    ? promiseFactoryToObservable(signal =>
+                          graphqlClient.isValidSiteVersion(
+                              {
+                                  minimumVersion: '5.7.0',
+                              },
+                              signal
+                          )
+                      )
+                    : Observable.of(false)
+            )
+        ),
+        promiseFactoryToObservable(
+            async () => createOpenCtxController ?? (await import('@openctx/vscode-lib')).createController
+        ),
+    ]).pipe(
+        createDisposables(([{ agentIDE, experimentalNoodle }, isValidSiteVersion, createController]) => {
+            try {
+                const isCodyWeb = agentIDE === CodyIDE.Web
 
-        const isValidSiteVersion = await graphqlClient.isValidSiteVersion({ minimumVersion: '5.7.0' })
+                // Enable fetching of openctx configuration from Sourcegraph instance
+                const mergeConfiguration = experimentalNoodle
+                    ? getMergeConfigurationFunction()
+                    : undefined
 
-        const controller = createController({
-            extensionId: context.extension.id,
-            secrets: context.secrets,
-            outputChannel,
-            features: isCodyWeb ? {} : { annotations: true, statusBar: true },
-            providers: isCodyWeb
-                ? Observable.of(getCodyWebOpenCtxProviders())
-                : getOpenCtxProviders(authStatus, isValidSiteVersion),
-            mergeConfiguration,
-        })
-        setOpenCtx({
-            controller: controller.controller,
-            disposable: controller.disposable,
-        })
-    } catch (error) {
-        logDebug('openctx', `Failed to load OpenCtx client: ${error}`)
-    }
+                if (!openctxOutputChannel) {
+                    // Don't dispose this, so that it stays around for easier debugging even if the
+                    // controller (or the whole extension) is disposed.
+                    openctxOutputChannel = vscode.window.createOutputChannel('OpenCtx')
+                }
+
+                const controller = createController({
+                    extensionId: context.extension.id,
+                    secrets: context.secrets,
+                    outputChannel: openctxOutputChannel!,
+                    features: isCodyWeb ? {} : { annotations: true, statusBar: true },
+                    providers: isCodyWeb
+                        ? Observable.of(getCodyWebOpenCtxProviders())
+                        : getOpenCtxProviders(authStatus, isValidSiteVersion),
+                    mergeConfiguration,
+                })
+                setOpenCtx({
+                    controller: controller.controller,
+                    disposable: controller.disposable,
+                })
+                return controller.disposable
+            } catch (error) {
+                logDebug('openctx', `Failed to load OpenCtx client: ${error}`)
+                return undefined
+            }
+        }),
+        map(() => undefined)
+    )
 }
+
+let openctxOutputChannel: vscode.OutputChannel | undefined
 
 export function getOpenCtxProviders(
     authStatusChanges: Observable<Pick<AuthStatus, 'endpoint'>>,

@@ -1,5 +1,5 @@
 import os from 'node:os'
-import { omit } from 'lodash'
+import omit from 'lodash/omit'
 import * as vscode from 'vscode'
 
 import type { CodyCommand } from '@sourcegraph/cody-shared'

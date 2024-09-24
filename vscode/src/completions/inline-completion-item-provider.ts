@@ -6,9 +6,11 @@ import {
     type DocumentContext,
     FeatureFlag,
     RateLimitError,
+    authStatus,
     contextFiltersProvider,
     createDisposables,
     featureFlagProvider,
+    isDotCom,
     subscriptionDisposable,
     telemetryRecorder,
     wrapInActiveSpan,
@@ -120,9 +122,13 @@ export class InlineCompletionItemProvider
      */
     private shouldSample = false
 
+    /** Value derived from the {@link authStatus}, available synchronously. */
+    private isDotComUser = false
+
     private get config(): InlineCompletionItemProviderConfig {
         return InlineCompletionItemProviderConfigSingleton.configuration
     }
+    private disableLowPerfLangDelay = false
 
     constructor({
         completeSuggestWidgetSelection = true,
@@ -143,8 +149,6 @@ export class InlineCompletionItemProvider
             disableInsideComments,
             tracer,
             isRunningInsideAgent: config.isRunningInsideAgent ?? false,
-            isDotComUser: config.isDotComUser ?? false,
-            noInlineAccept: config.noInlineAccept ?? false,
         })
 
         autocompleteStageCounterLogger.setProviderModel(config.provider.legacyModel)
@@ -156,6 +160,14 @@ export class InlineCompletionItemProvider
                     .subscribe(shouldSample => {
                         this.shouldSample = Boolean(shouldSample)
                     })
+            )
+        )
+
+        this.disposables.push(
+            subscriptionDisposable(
+                authStatus.subscribe(({ endpoint }) => {
+                    this.isDotComUser = isDotCom(endpoint)
+                })
             )
         )
 
@@ -180,6 +192,18 @@ export class InlineCompletionItemProvider
 
         this.requestManager = new RequestManager()
 
+        void completionProviderConfig.prefetch()
+
+        // Subscribe to changes in disableLowPerfLangDelay and update the value accordingly
+        this.disposables.push(
+            subscriptionDisposable(
+                completionProviderConfig.completionDisableLowPerfLangDelay.subscribe(
+                    disableLowPerfLangDelay => {
+                        this.disableLowPerfLangDelay = disableLowPerfLangDelay
+                    }
+                )
+            )
+        )
         const strategyFactory = new DefaultContextStrategyFactory(
             completionProviderConfig.contextStrategy,
             createBfgRetriever
@@ -191,22 +215,22 @@ export class InlineCompletionItemProvider
         this.smartThrottleService = new SmartThrottleService()
         this.disposables.push(this.smartThrottleService)
 
+        // TODO(valery): replace `model_configured_by_site_config` with the actual model ID received from backend.
         logDebug(
-            'CodyCompletionProvider:initialized',
-            [this.config.provider.id, this.config.provider.legacyModel].join('/')
+            'AutocompleteProvider:initialized',
+            `using "${this.config.provider.configSource}": "${this.config.provider.id}::${
+                this.config.provider.legacyModel || 'model_configured_by_site_config'
+            }"`
         )
 
-        if (!this.config.noInlineAccept) {
-            // We don't want to accept and log items when we are doing completion comparison from different models.
-            this.disposables.push(
-                vscode.commands.registerCommand(
-                    'cody.autocomplete.inline.accepted',
-                    ({ codyCompletion }: AutocompleteInlineAcceptedCommandArgs) => {
-                        void this.handleDidAcceptCompletionItem(codyCompletion)
-                    }
-                )
+        this.disposables.push(
+            vscode.commands.registerCommand(
+                'cody.autocomplete.inline.accepted',
+                ({ codyCompletion }: AutocompleteInlineAcceptedCommandArgs) => {
+                    void this.handleDidAcceptCompletionItem(codyCompletion)
+                }
             )
-        }
+        )
 
         this.disposables.push(
             subscriptionDisposable(
@@ -435,13 +459,13 @@ export class InlineCompletionItemProvider
                     FeatureFlag.CodyAutocompleteUserLatency
                 ),
             }
-
-            const artificialDelay = getArtificialDelay(
-                latencyFeatureFlags,
-                document.uri.toString(),
-                document.languageId,
-                completionIntent
-            )
+            const artificialDelay = getArtificialDelay({
+                featureFlags: latencyFeatureFlags,
+                uri: document.uri.toString(),
+                languageId: document.languageId,
+                codyAutocompleteDisableLowPerfLangDelay: this.disableLowPerfLangDelay,
+                completionIntent,
+            })
 
             const debounceInterval = this.config.provider.mayUseOnDeviceInference ? 125 : 75
             stageRecorder.record('preGetInlineCompletions')
@@ -457,7 +481,6 @@ export class InlineCompletionItemProvider
                     triggerKind,
                     selectedCompletionInfo: context.selectedCompletionInfo,
                     docContext,
-                    configuration: this.config.config,
                     provider: this.config.provider,
                     contextMixer: this.contextMixer,
                     smartThrottleService: this.smartThrottleService,
@@ -691,7 +714,7 @@ export class InlineCompletionItemProvider
             completion.requestParams.document,
             completion.analyticsItem,
             completion.trackedRange,
-            this.config.isDotComUser
+            this.isDotComUser
         )
     }
 
@@ -866,7 +889,7 @@ export class InlineCompletionItemProvider
             completion.logId,
             completion.analyticsItem,
             acceptedLength,
-            this.config.isDotComUser
+            this.isDotComUser
         )
     }
 
@@ -915,7 +938,7 @@ export class InlineCompletionItemProvider
                 return
             }
 
-            const isEnterpriseUser = this.config.isDotComUser !== true
+            const isEnterpriseUser = this.isDotComUser !== true
             const canUpgrade = error.upgradeIsAvailable
             const tier = isEnterpriseUser ? 'enterprise' : canUpgrade ? 'free' : 'pro'
 
@@ -1132,7 +1155,7 @@ function logIgnored(uri: vscode.Uri, reason: CodyIgnoreType, isManualCompletion:
     }
     lastIgnoredUriLogged = string
     logDebug(
-        'CodyCompletionProvider:ignored',
+        'AutocompleteProvider:ignored',
         'Cody is disabled in file ' + uri.toString() + ' (' + reason + ')'
     )
 }

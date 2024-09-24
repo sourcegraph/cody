@@ -1,6 +1,6 @@
 import type { Span } from '@opentelemetry/api'
 import { addClientInfoParams, getSerializedParams } from '../..'
-import type { ClientConfigurationWithAccessToken } from '../../configuration'
+import { currentResolvedConfig } from '../../configuration/resolver'
 import { useCustomChatClient } from '../../llm-providers'
 import { recordErrorToSpan } from '../../tracing'
 import type {
@@ -32,11 +32,6 @@ export interface CompletionRequestParameters {
     customHeaders?: Record<string, string>
 }
 
-export type CompletionsClientConfig = Pick<
-    ClientConfigurationWithAccessToken,
-    'serverEndpoint' | 'accessToken' | 'customHeaders'
->
-
 /**
  * Access the chat based LLM APIs via a Sourcegraph server instance.
  *
@@ -48,17 +43,11 @@ export abstract class SourcegraphCompletionsClient {
 
     protected readonly isTemperatureZero = process.env.CODY_TEMPERATURE_ZERO === 'true'
 
-    constructor(
-        protected config: CompletionsClientConfig,
-        protected logger?: CompletionLogger
-    ) {}
+    constructor(protected logger?: CompletionLogger) {}
 
-    public onConfigurationChange(newConfig: CompletionsClientConfig): void {
-        this.config = newConfig
-    }
-
-    protected get completionsEndpoint(): string {
-        return new URL('/.api/completions/stream', this.config.serverEndpoint).href
+    protected async completionsEndpoint(): Promise<string> {
+        return new URL('/.api/completions/stream', (await currentResolvedConfig()).auth.serverEndpoint)
+            .href
     }
 
     protected sendEvents(events: Event[], cb: CompletionCallbacks, span?: Span): void {
@@ -97,7 +86,7 @@ export abstract class SourcegraphCompletionsClient {
     ): Promise<{ url: URL; serializedParams: SerializedCompletionParameters }> {
         const { apiVersion } = requestParams
         const serializedParams = await getSerializedParams(params)
-        const url = new URL(this.completionsEndpoint)
+        const url = new URL(await this.completionsEndpoint())
         if (apiVersion >= 1) {
             url.searchParams.append('api-version', '' + apiVersion)
         }
@@ -160,7 +149,7 @@ export abstract class SourcegraphCompletionsClient {
 
         // Custom chat clients for Non-Sourcegraph-supported providers.
         const isNonSourcegraphProvider = await useCustomChatClient({
-            completionsEndpoint: this.completionsEndpoint,
+            completionsEndpoint: await this.completionsEndpoint(),
             params,
             cb: callbacks,
             logger: this.logger,

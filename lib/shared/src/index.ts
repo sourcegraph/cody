@@ -1,6 +1,28 @@
 // Add anything else here that needs to be used outside of this library.
 
-export { Model, modelsService, type ServerModel, type ServerModelConfiguration } from './models'
+export {
+    modelsService,
+    mockModelsService,
+    ModelsService,
+    type ModelCategory,
+    type ModelTier,
+    type ServerModelConfiguration,
+    type PerSitePreferences,
+    type SitePreferences,
+    type ModelRefStr,
+    type ModelRef,
+    type ModelsData,
+    TestLocalStorageForModelPreferences,
+    type LocalStorageForModelPreferences,
+} from './models/modelsService'
+export {
+    type Model,
+    type ServerModel,
+    createModel,
+    createModelFromServerModel,
+    modelTier,
+    parseModelRef,
+} from './models/model'
 export {
     type EditModel,
     type EditProvider,
@@ -16,6 +38,8 @@ export {
     getModelInfo,
     isCodyProModel,
     isCustomModel,
+    toModelRefStr,
+    isWaitlistModel,
 } from './models/utils'
 export { BotResponseMultiplexer } from './chat/bot-response-multiplexer'
 export { ChatClient } from './chat/chat'
@@ -141,7 +165,7 @@ export { hydrateAfterPostMessage } from './editor/hydrateAfterPostMessage'
 export * from './editor/utils'
 export {
     FeatureFlag,
-    FeatureFlagProvider,
+    type FeatureFlagProvider,
     featureFlagProvider,
 } from './experimentation/FeatureFlagProvider'
 export { GuardrailsPost } from './guardrails'
@@ -192,7 +216,6 @@ export { SourcegraphBrowserCompletionsClient } from './sourcegraph-api/completio
 export { SourcegraphCompletionsClient } from './sourcegraph-api/completions/client'
 export type {
     CompletionLogger,
-    CompletionsClientConfig,
     CompletionRequestParameters,
 } from './sourcegraph-api/completions/client'
 export * from './sourcegraph-api/completions/types'
@@ -218,8 +241,8 @@ export {
     SourcegraphGraphQLAPIClient,
     graphqlClient,
 } from './sourcegraph-api/graphql'
+export { ClientConfigSingleton, type CodyClientConfig } from './sourcegraph-api/clientConfig'
 export {
-    ClientConfigSingleton,
     addCustomUserAgent,
     customUserAgent,
     isNodeResponse,
@@ -227,7 +250,6 @@ export {
     INCLUDE_EVERYTHING_CONTEXT_FILTERS,
     EXCLUDE_EVERYTHING_CONTEXT_FILTERS,
     type BrowserOrNodeResponse,
-    type GraphQLAPIClientConfig,
     type LogEventMode,
     type ContextFilters,
     type CodyContextFilterItem,
@@ -330,6 +352,8 @@ export {
     createMessageAPIForExtension,
 } from './misc/rpc/rpc'
 export * from './misc/observable'
+export * from './misc/observableOperation'
 export * from './configuration/resolver'
 export * from './singletons'
 export * from './auth/authStatus'
+export { fetchLocalOllamaModels } from './llm-providers/ollama/utils'

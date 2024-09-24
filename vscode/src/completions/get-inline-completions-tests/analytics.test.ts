@@ -1,4 +1,4 @@
-import { omit } from 'lodash'
+import omit from 'lodash/omit'
 import * as uuid from 'uuid'
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 
@@ -230,13 +230,13 @@ describe('[getInlineCompletions] completion event', () => {
             `)
         })
 
-        it('logs `insertText` only for DotCom users', async () => {
+        it('does not log `insertText` for enterprise users', async () => {
             const event = await getAnalyticsEvent('function foo() {\n  return█}', '"foo"')
 
             expect(event.items?.some(item => item.insertText)).toBe(false)
         })
 
-        it('does not log `insertText` for enterprise users', async () => {
+        it('logs `insertText` only for DotCom users', async () => {
             const event = await getAnalyticsEvent('function foo() {\n  return█}', '"foo"', {
                 isDotComUser: true,
             })

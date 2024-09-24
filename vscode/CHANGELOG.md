@@ -12,13 +12,21 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 ### Fixed
 
-Chat: Fixed feedback buttons not working in chat. [pull/5509](https://github.com/sourcegraph/cody/pull/5509)
-Command: Removed duplicated default commands from the Cody Commands menu that were incorrectly listed as custom commands.
+- Chat: Fixed feedback buttons not working in chat. [pull/5509](https://github.com/sourcegraph/cody/pull/5509)
+- Command: Removed duplicated default commands from the Cody Commands menu that were incorrectly listed as custom commands.
+- Enterprise: Smart context window is now correctly set for all Claude Sonnet models configured on the server side. [pull/5677](https://github.com/sourcegraph/cody/pull/5677)
 
 ### Changed
 
-Enterprise: Remote Repository items in the mention menu now display only the org/repo part of the title, omitting the code host name to prevent repository names from being truncated in the UI. [pull/5518](https://github.com/sourcegraph/cody/pull/5518)
-Cody Ignore: This internal experimental feature is now deprecated and the use of `.cody/ignore` file is no longer supported. [pull/5537](https://github.com/sourcegraph/cody/pull/5537)
+- Enterprise: Remote Repository items in the mention menu now display only the org/repo part of the title, omitting the code host name to prevent repository names from being truncated in the UI. [pull/5518](https://github.com/sourcegraph/cody/pull/5518)
+- Cody Ignore: This internal experimental feature is now deprecated and the use of `.cody/ignore` file is no longer supported. [pull/5537](https://github.com/sourcegraph/cody/pull/5537)
+- Autocomplete: removed the `cody.autocomplete.advanced.model` setting and updated supported values for `cody.autocomplete.advanced.provider`.
+
+## 1.34.3
+
+### Fixed
+
+- Autocomplete Logging: Fix the diff for recent edits by replacing psDedent with ps to preserve the indentation. [pull/5574](https://github.com/sourcegraph/cody/pull/5574)
 
 ## 1.34.2
 
