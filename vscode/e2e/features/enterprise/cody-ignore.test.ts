@@ -69,6 +69,7 @@ test.fixme('cody ignore', {}, () => {
         await session.editor.select({
             selection: { start: { line: 2, col: 9999 }, end: { line: 3, col: 9999 } },
         })
+
         await session.runCommand('cody.autocomplete.manual-trigger')
 
         // Manual autocomplete

@@ -69,14 +69,22 @@ export class Extension {
         return this.ctx.page.locator('.statusbar-item[id="sourcegraph\\.cody-ai\\.extension-status"]')
     }
 
+    get progressNotifications() {
+        const toasts = this.ctx.page.locator('.notification-toast')
+        return toasts.filter({
+            has: this.ctx.page
+                .getByLabel(/source: Cody/)
+                .locator('div.monaco-progress-container.active'),
+        })
+    }
+
     async waitUntilReady() {
         return await t.step('Extension.waitUntilReady', async () => {
             await expect(this.statusBar).toBeVisible({ visible: true })
-            // await this.ctx.page.waitForSelector(this.statusBar, {
-            //     state: 'visible',
-            // })
-            //TODO: Implement this
-            //TODO: make sure we can shift the timeout
+            //TODO: Convert this to binaryDownload and indexingSpecific waits
+            //TODO: We probably want to also allow shifting of timeouts as download might take some time
+            await expect(this.progressNotifications).toHaveCount(0)
+
             await Promise.all([waitForBinaryDownloads(), waitForIndexing()])
         })
     }

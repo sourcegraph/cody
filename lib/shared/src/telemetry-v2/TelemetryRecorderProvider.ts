@@ -85,7 +85,7 @@ export class TelemetryRecorderProvider extends BaseTelemetryRecorderProvider<
             ],
             {
                 ...defaultEventRecordingOptions,
-                bufferTimeMs: 0, // disable buffering for now
+                bufferTimeMs: 0, // disable buffering for now. If this is enabled make sure that it can be disabled during tests.
             }
         )
     }

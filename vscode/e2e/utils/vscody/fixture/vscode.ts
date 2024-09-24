@@ -62,7 +62,14 @@ export const vscodeFixture = _test.extend<TestContext, WorkerContext>({
         { scope: 'test' },
     ],
     vscodeUI: [
-        async ({ validOptions, debugMode, serverRootDir, mitmProxy, page, polly }, use, testInfo) => {
+        async (
+            { validOptions, debugMode, serverRootDir, mitmProxy, page, polly, telemetryRecorder },
+            use,
+            testInfo
+        ) => {
+            if (telemetryRecorder) {
+                //do nothing, we just import it so it is auto included when using VSCode
+            }
             polly.pause()
 
             const executableDir = path.resolve(CODY_VSCODE_ROOT_DIR, validOptions.vscodeTmpDir)
@@ -192,7 +199,7 @@ export const vscodeFixture = _test.extend<TestContext, WorkerContext>({
             polly.pause()
             // Turn of logging browser logging and navigate away from the UI
             // Otherwise we needlessly add a bunch of noisy error logs
-            if (!page.isClosed && page.url().startsWith(config.url)) {
+            if (!page.isClosed() && page.url().startsWith(config.url)) {
                 await page.evaluate(() => {
                     console.log = () => {}
                     console.info = () => {}

@@ -787,6 +787,9 @@ importers:
       http-proxy-middleware:
         specifier: ^3.0.0
         version: 3.0.0
+      immer:
+        specifier: ^10.1.1
+        version: 10.1.1
       keytar:
         specifier: ^7.9.0
         version: 7.9.0
@@ -10392,7 +10395,6 @@ packages:
 
   /immer@10.1.1:
     resolution: {integrity: sha512-s2MPrmjovJcoMaHtx6K11Ra7oD05NT97w1IC5zpMkT6Atjr7H8LjaDd81iIxUYpMKSRRNMJE703M1Fhr/TctHw==}
-    dev: false
 
   /import-fresh@3.3.0:
     resolution: {integrity: sha512-veYYhQa+D1QBKznvhUHxb8faxlrwUnxseDAbAp457E0wLNio2bOSKnjYDhMj+YiAq61xrMGhQk9iXVk5FzgQMw==}

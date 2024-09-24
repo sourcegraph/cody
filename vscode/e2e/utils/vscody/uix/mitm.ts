@@ -12,6 +12,7 @@ export async function withFloorResponseTime<T>(
 ) {
     const originalDelay = mitmProxy.options.responseDelay
     mitmProxy.options.responseDelay = floorResponseDelayFn(ms)
-    await fn()
+    const res = await fn()
     mitmProxy.options.responseDelay = originalDelay
+    return res
 }
