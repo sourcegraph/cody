@@ -46,7 +46,7 @@ export class Claude extends DefaultModel {
     public stopSequences = [anthropic.HUMAN_PROMPT, CLOSING_CODE_TAG.toString()]
 
     getOllamaPrompt(promptContext: GetOllamaPromptParams): PromptString {
-        throw new Error('OpenAI is not supported by the Ollama provider yet!')
+        throw new Error('Claude is not supported by the Ollama provider yet!')
     }
 
     private emptyPromptLength(options: GetIntroMessagesParams): number {

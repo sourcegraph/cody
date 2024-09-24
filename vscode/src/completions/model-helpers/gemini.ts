@@ -26,7 +26,7 @@ export class Gemini extends DefaultModel {
     public stopSequences = [`${GEMINI_MARKERS.Response}`]
 
     getOllamaPrompt(promptContext: GetOllamaPromptParams): PromptString {
-        throw new Error('OpenAI is not supported by the Ollama provider yet!')
+        throw new Error('Gemini is not supported by the Ollama provider yet!')
     }
 
     public getMessages(params: GetPromptParams): Message[] {
