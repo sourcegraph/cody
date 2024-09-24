@@ -72,12 +72,18 @@ export const PromptList: React.FunctionComponent<{
                           p => commandRowValue({ type: 'prompt', value: p }) === rowValue
                       )
                     : undefined
-            const codyCommand =
+
+            const standardPromptCommand =
                 prompt === undefined
-                    ? result?.commands?.find(
+                    ? result?.standardPrompts?.find(
                           c => commandRowValue({ type: 'command', value: c }) === rowValue
                       )
                     : undefined
+
+            const codyCommand =
+                standardPromptCommand ??
+                result?.commands?.find(c => commandRowValue({ type: 'command', value: c }) === rowValue)
+
             const entry: PromptOrDeprecatedCommand | undefined = prompt
                 ? { type: 'prompt', value: prompt }
                 : codyCommand
@@ -236,6 +242,21 @@ export const PromptList: React.FunctionComponent<{
                         )}
                     </CommandGroup>
                 )}
+                {!showOnlyPromptInsertableCommands &&
+                    result?.standardPrompts &&
+                    result.standardPrompts.length > 0 && (
+                        <CommandGroup heading={<span>Standard Prompts</span>}>
+                            {result.standardPrompts.map(command => (
+                                <CodyCommandItem
+                                    key={command.key}
+                                    command={command}
+                                    onSelect={onSelect}
+                                    selectActionLabel={onSelectActionLabels?.prompt}
+                                    showCommandOrigins={false}
+                                />
+                            ))}
+                        </CommandGroup>
+                    )}
                 {result && filteredCommands && filteredCommands.length > 0 && (
                     <CommandGroup
                         heading={

@@ -10,11 +10,13 @@ import {
     type CompletionCallbacks,
     type CompletionParameters,
     type CompletionRequestParameters,
+    type CompletionResponse,
     NetworkError,
     RateLimitError,
     SourcegraphCompletionsClient,
     addClientInfoParams,
     agent,
+    currentResolvedConfig,
     customUserAgent,
     getActiveTraceAndSpanId,
     getSerializedParams,
@@ -29,10 +31,8 @@ import {
 } from '@sourcegraph/cody-shared'
 import { CompletionsResponseBuilder } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/CompletionsResponseBuilder'
 
-const isTemperatureZero = process.env.CODY_TEMPERATURE_ZERO === 'true'
-
 export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClient {
-    protected _streamWithCallbacks(
+    protected async _streamWithCallbacks(
         params: CompletionParameters,
         requestParams: CompletionRequestParameters,
         cb: CompletionCallbacks,
@@ -40,7 +40,7 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
     ): Promise<void> {
         const { apiVersion } = requestParams
 
-        const url = new URL(this.completionsEndpoint)
+        const url = new URL(await this.completionsEndpoint())
         if (apiVersion >= 1) {
             url.searchParams.append('api-version', '' + apiVersion)
         }
@@ -56,7 +56,7 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                 model: params.model,
             })
 
-            if (isTemperatureZero) {
+            if (this.isTemperatureZero) {
                 params = {
                     ...params,
                     temperature: 0,
@@ -89,6 +89,8 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
 
             const builder = new CompletionsResponseBuilder(apiVersion)
 
+            const { auth, configuration } = await currentResolvedConfig()
+
             const request = requestFn(
                 url,
                 {
@@ -98,11 +100,9 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                         // Disable gzip compression since the sg instance will start to batch
                         // responses afterwards.
                         'Accept-Encoding': 'gzip;q=0',
-                        ...(this.config.accessToken
-                            ? { Authorization: `token ${this.config.accessToken}` }
-                            : null),
+                        ...(auth.accessToken ? { Authorization: `token ${auth.accessToken}` } : null),
                         ...(customUserAgent ? { 'User-Agent': customUserAgent } : null),
-                        ...this.config.customHeaders,
+                        ...configuration?.customHeaders,
                         ...requestParams.customHeaders,
                         ...getTraceparentHeaders(),
                         Connection: 'keep-alive',
@@ -273,6 +273,67 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
             request.end()
 
             onAbort(signal, () => request.destroy())
+        })
+    }
+
+    protected async _fetchWithCallbacks(
+        params: CompletionParameters,
+        requestParams: CompletionRequestParameters,
+        cb: CompletionCallbacks,
+        signal?: AbortSignal
+    ): Promise<void> {
+        const { url, serializedParams } = await this.prepareRequest(params, requestParams)
+        const log = this.logger?.startCompletion(params, url.toString())
+        return tracer.startActiveSpan(`POST ${url.toString()}`, async span => {
+            span.setAttributes({
+                fast: params.fast,
+                maxTokensToSample: params.maxTokensToSample,
+                temperature: this.isTemperatureZero ? 0 : params.temperature,
+                topK: params.topK,
+                topP: params.topP,
+                model: params.model,
+            })
+            try {
+                const { auth, configuration } = await currentResolvedConfig()
+                const response = await fetch(url.toString(), {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept-Encoding': 'gzip;q=0',
+                        ...(auth.accessToken ? { Authorization: `token ${auth.accessToken}` } : null),
+                        ...(customUserAgent ? { 'User-Agent': customUserAgent } : null),
+                        ...configuration.customHeaders,
+                        ...requestParams.customHeaders,
+                        ...getTraceparentHeaders(),
+                    },
+                    body: JSON.stringify(serializedParams),
+                    signal,
+                })
+                if (!response.ok) {
+                    const errorMessage = await response.text()
+                    throw new NetworkError(
+                        {
+                            url: url.toString(),
+                            status: response.status,
+                            statusText: response.statusText,
+                        },
+                        errorMessage,
+                        getActiveTraceAndSpanId()?.traceId
+                    )
+                }
+                const json = (await response.json()) as CompletionResponse
+                if (typeof json?.completion === 'string') {
+                    cb.onChange(json.completion)
+                    cb.onComplete()
+                    return
+                }
+                throw new Error('Unexpected response format')
+            } catch (error) {
+                const errorObject = error instanceof Error ? error : new Error(`${error}`)
+                log?.onError(errorObject.message, error)
+                recordErrorToSpan(span, errorObject)
+                cb.onError(errorObject)
+            }
         })
     }
 }

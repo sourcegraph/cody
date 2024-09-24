@@ -1,9 +1,10 @@
 import type { URI } from 'vscode-uri'
 
 import type {
+    AuthCredentials,
     AuthStatus,
     ChatMessage,
-    ClientConfigurationWithEndpoint,
+    ClientConfiguration,
     ClientStateForWebview,
     CodyIDE,
     ContextItem,
@@ -146,7 +147,7 @@ export type WebviewMessage =
       }
     | {
           command: 'auth'
-          authKind: 'signin' | 'signout' | 'support' | 'callback' | 'simplified-onboarding' | 'offline'
+          authKind: 'signin' | 'signout' | 'support' | 'callback' | 'simplified-onboarding'
           endpoint?: string | undefined | null
           value?: string | undefined | null
           authMethod?: AuthMethod | undefined | null
@@ -166,16 +167,11 @@ export type WebviewMessage =
           query: MentionQuery
       }
     | {
-          command: 'reset'
-      }
-    | {
           command: 'attribution-search'
           snippet: string
       }
-    | {
-          command: 'troubleshoot/reloadAuth'
-      }
     | { command: 'rpc/request'; message: RequestMessage }
+    | { command: 'chatSession'; action: 'duplicate' | 'new'; sessionID?: string | undefined | null }
     | { command: 'log'; level: 'debug' | 'error'; filterLabel: string; message: string }
 
 export interface SmartApplyResult {
@@ -275,15 +271,12 @@ export interface ExtensionTranscriptMessage {
  */
 export interface ConfigurationSubsetForWebview
     extends Pick<
-        ClientConfigurationWithEndpoint,
-        | 'experimentalNoodle'
-        | 'serverEndpoint'
-        | 'agentIDE'
-        | 'agentExtensionVersion'
-        | 'internalDebugContext'
-    > {
+            ClientConfiguration,
+            'experimentalNoodle' | 'agentIDE' | 'agentExtensionVersion' | 'internalDebugContext'
+        >,
+        Pick<AuthCredentials, 'serverEndpoint'> {
     smartApply: boolean
-    experimentalOneBox: boolean
+    unifiedPromptsAvailable: boolean
     // Type/location of the current webview.
     webviewType?: WebviewType | undefined | null
     // Whether support running multiple webviews (e.g. sidebar w/ multiple editor panels).
@@ -310,6 +303,8 @@ export const ACCOUNT_USAGE_URL = new URL('https://sourcegraph.com/cody/manage')
 export const ACCOUNT_LIMITS_INFO_URL = new URL(
     'https://sourcegraph.com/docs/cody/troubleshooting#autocomplete-rate-limits'
 )
+// TODO: Update this URL to the correct one when the Cody model waitlist is available
+export const CODY_BLOG_URL_o1_WAITLIST = new URL('https://sourcegraph.com/blog/openai-o1-for-cody')
 
 /** The local environment of the editor. */
 export interface LocalEnv {

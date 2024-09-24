@@ -11,10 +11,9 @@ import type {
 
 import {
     type ClientConfiguration,
-    type ClientConfigurationWithAccessToken,
-    type FeatureFlag,
-    FeatureFlagProvider,
+    type ClientState,
     OLLAMA_DEFAULT_URL,
+    type ResolvedConfiguration,
     ps,
 } from '@sourcegraph/cody-shared'
 
@@ -803,6 +802,8 @@ export const vsCodeMocks = {
         },
         onDidChangeActiveTextEditor() {},
         onDidChangeTextEditorSelection() {},
+        onDidChangeWindowState() {},
+        state: { focused: false },
         createTextEditorDecorationType: () => ({
             key: 'foo',
             dispose: () => {},
@@ -871,26 +872,11 @@ export const vsCodeMocks = {
     ProgressLocation,
 } as const
 
-export class MockFeatureFlagProvider extends FeatureFlagProvider {
-    constructor(private readonly enabledFlags: Set<FeatureFlag>) {
-        super()
-    }
-
-    public evaluateFeatureFlag(flag: FeatureFlag): Promise<boolean> {
-        return Promise.resolve(this.enabledFlags.has(flag))
-    }
-
-    public refresh(): Promise<void> {
-        return Promise.resolve()
-    }
-}
-
-export const emptyMockFeatureFlagProvider = new MockFeatureFlagProvider(new Set<FeatureFlag>())
-
 export const DEFAULT_VSCODE_SETTINGS = {
     proxy: undefined,
     codebase: '',
-    customHeaders: {},
+    serverEndpoint: 'https://sourcegraph.com',
+    customHeaders: undefined,
     chatPreInstruction: ps``,
     editPreInstruction: ps``,
     useContext: 'embeddings',
@@ -915,7 +901,7 @@ export const DEFAULT_VSCODE_SETTINGS = {
     telemetryLevel: 'all',
     internalUnstable: false,
     internalDebugContext: false,
-    autocompleteAdvancedProvider: null,
+    autocompleteAdvancedProvider: 'default',
     autocompleteAdvancedModel: null,
     autocompleteCompleteSuggestWidgetSelection: true,
     autocompleteFormatOnAccept: true,
@@ -933,11 +919,10 @@ export const DEFAULT_VSCODE_SETTINGS = {
 
 export function getVSCodeConfigurationWithAccessToken(
     config: Partial<ClientConfiguration> = {}
-): ClientConfigurationWithAccessToken {
+): ResolvedConfiguration {
     return {
-        ...DEFAULT_VSCODE_SETTINGS,
-        serverEndpoint: 'https://sourcegraph.com',
-        accessToken: 'test_access_token',
-        ...config,
+        configuration: { ...DEFAULT_VSCODE_SETTINGS, ...config },
+        auth: { serverEndpoint: 'https://sourcegraph.com', accessToken: 'test_access_token' },
+        clientState: {} satisfies Partial<ClientState> as ClientState,
     }
 }

@@ -5,7 +5,6 @@ import {
     type CompletionResponse,
     type CompletionResponseGenerator,
     CompletionStopReason,
-    type CompletionsClientConfig,
     FeatureFlag,
     NetworkError,
     RateLimitError,
@@ -13,6 +12,7 @@ import {
     TracedError,
     addTraceparent,
     createSSEIterator,
+    currentResolvedConfig,
     featureFlagProvider,
     getActiveTraceAndSpanId,
     getClientInfoParams,
@@ -38,26 +38,17 @@ import { logger } from '../log'
  * Access the code completion LLM APIs via a Sourcegraph server instance.
  */
 class DefaultCodeCompletionsClient implements CodeCompletionsClient {
-    private config: CompletionsClientConfig | null = null
     public logger = logger
 
-    public onConfigurationChange(newConfig: CompletionsClientConfig) {
-        this.config = newConfig
-    }
-
-    public complete(
+    public async complete(
         params: CodeCompletionsParams,
         abortController: AbortController,
         providerOptions?: CodeCompletionProviderOptions
-    ): CompletionResponseGenerator {
-        const { config, logger } = this
-
-        if (config === null) {
-            throw new Error('DefaultCodeCompletionsClient is not initialized')
-        }
+    ): Promise<CompletionResponseGenerator> {
+        const { auth, configuration } = await currentResolvedConfig()
 
         const query = new URLSearchParams(getClientInfoParams())
-        const url = new URL(`/.api/completions/code?${query.toString()}`, config.serverEndpoint).href
+        const url = new URL(`/.api/completions/code?${query.toString()}`, auth.serverEndpoint).href
         const log = logger?.startCompletion(params, url)
         const { signal } = abortController
 
@@ -69,7 +60,7 @@ class DefaultCodeCompletionsClient implements CodeCompletionsClient {
                 )
 
                 const headers = new Headers({
-                    ...config.customHeaders,
+                    ...configuration.customHeaders,
                     ...providerOptions?.customHeaders,
                 })
 
@@ -77,8 +68,8 @@ class DefaultCodeCompletionsClient implements CodeCompletionsClient {
                 // c.f. https://github.com/microsoft/vscode/issues/173861
                 headers.set('Connection', 'keep-alive')
                 headers.set('Content-Type', 'application/json; charset=utf-8')
-                if (config.accessToken) {
-                    headers.set('Authorization', `token ${config.accessToken}`)
+                if (auth.accessToken) {
+                    headers.set('Authorization', `token ${auth.accessToken}`)
                 }
 
                 if (tracingFlagEnabled) {

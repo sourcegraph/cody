@@ -90,12 +90,11 @@ describe('Agent', () => {
         // Log in so test cases are authenticated by default
         const valid = await client.request('extensionConfiguration/change', {
             ...client.info.extensionConfiguration,
-            anonymousUserID: 'abcde1234',
             accessToken: client.info.extensionConfiguration?.accessToken ?? 'invalid',
             serverEndpoint: client.info.extensionConfiguration?.serverEndpoint ?? DOTCOM_URL.toString(),
             customHeaders: {},
         })
-        expect(valid?.authenticated).toBeTruthy()
+        expect(valid?.authenticated).toBe(true)
 
         for (const name of [
             'src/animal.ts',
@@ -123,20 +122,30 @@ describe('Agent', () => {
     // Context files ends with 'Ignored.ts' will be excluded by .cody/ignore
     const ignoredUri = workspace.file('src', 'isIgnored.ts')
 
+    async function setChatModel(
+        model = 'fireworks/accounts/fireworks/models/mixtral-8x7b-instruct'
+    ): Promise<string> {
+        // Use the same chat model regardless of the server response (in case it changes on the
+        // remote endpoint so we don't need to regenerate all the recordings).
+        const freshChatID = await client.request('chat/new', null)
+        await client.request('chat/setModel', {
+            id: freshChatID,
+            model,
+        })
+        return freshChatID
+    }
+
     it('extensionConfiguration/change & chat/models (handle errors)', async () => {
         // Send two config change notifications because this is what the
         // JetBrains client does and there was a bug where everything worked
         // fine as long as we didn't send the second unauthenticated config
         // change.
         const initModelName = 'anthropic/claude-3-5-sonnet-20240620'
-        const {
-            models: [initModel],
-        } = await client.request('chat/models', { modelUsage: ModelUsage.Chat })
-        expect(initModel.id).toStrictEqual(initModelName)
+        const { models } = await client.request('chat/models', { modelUsage: ModelUsage.Chat })
+        expect(models[0].id).toStrictEqual(initModelName)
 
         const invalid = await client.request('extensionConfiguration/change', {
             ...client.info.extensionConfiguration,
-            anonymousUserID: 'abcde1234',
             // Redacted format of an invalid access token (just random string). Tests fail in replay mode
             // if we don't use the redacted format here.
             accessToken: 'REDACTED_0ba08837494d00e3943c46999589eb29a210ba8063f084fff511c8e4d1503909',
@@ -150,7 +159,6 @@ describe('Agent', () => {
 
         const valid = await client.request('extensionConfiguration/change', {
             ...client.info.extensionConfiguration,
-            anonymousUserID: 'abcde1234',
             accessToken: client.info.extensionConfiguration?.accessToken ?? 'invalid',
             serverEndpoint: client.info.extensionConfiguration?.serverEndpoint ?? DOTCOM_URL.toString(),
             customHeaders: {},
@@ -198,8 +206,8 @@ describe('Agent', () => {
         expect(currentUserCodySubscription).toMatchInlineSnapshot(`
           {
             "applyProRateLimits": true,
-            "currentPeriodEndAt": "2024-09-14T22:11:32Z",
-            "currentPeriodStartAt": "2024-08-14T22:11:32Z",
+            "currentPeriodEndAt": "2024-10-14T22:11:32Z",
+            "currentPeriodStartAt": "2024-09-14T22:11:32Z",
             "plan": "PRO",
             "status": "ACTIVE",
           }
@@ -211,15 +219,25 @@ describe('Agent', () => {
 
     describe('Chat', () => {
         it('chat/submitMessage (short message)', async () => {
+            await setChatModel('anthropic/claude-3-5-sonnet-20240620')
             const lastMessage = await client.sendSingleMessageToNewChat('Hello!')
             expect(lastMessage).toMatchInlineSnapshot(
                 `
               {
                 "model": "anthropic/claude-3-5-sonnet-20240620",
                 "speaker": "assistant",
-                "text": "Hello! I'm Cody, an AI coding assistant from Sourcegraph. How can I help you with your coding tasks today? Whether you need assistance with writing code, debugging, explaining concepts, or discussing best practices, I'm here to help. What would you like to work on?",
+                "text": "Hello! I'm Cody, an AI coding assistant from Sourcegraph. How can I help you with your coding or development tasks today? Whether you need help with writing code, debugging, explaining concepts, or any other programming-related questions, I'm here to assist you. What would you like to work on?",
               }
             `
+            )
+            // telemetry assertion, to validate the expected events fired during the test run
+            // Do not remove this assertion, and instead update the expectedEvents list above
+            expect(await exportedTelemetryEvents(client)).toEqual(
+                expect.arrayContaining([
+                    'cody.chat-question:submitted',
+                    'cody.chat-question:executed',
+                    'cody.chatResponse:noCode',
+                ])
             )
             // telemetry assertion, to validate the expected events fired during the test run
             // Do not remove this assertion, and instead update the expectedEvents list above
@@ -287,7 +305,7 @@ describe('Agent', () => {
                 })
             )
             expect(reply2.messages.at(-1)?.text).toMatchInlineSnapshot(
-                `"Your name is Lars Monsen, as you mentioned in your previous message."`,
+                `"Your name is Lars Monsen."`,
                 explainPollyError
             )
             // telemetry assertion, to validate the expected events fired during the test run
@@ -552,7 +570,7 @@ describe('Agent', () => {
         it('webview/receiveMessage (type: chatModel)', async () => {
             const id = await client.request('chat/new', null)
             {
-                await client.request('chat/setModel', { id, model: 'openai/gpt-3.5-turbo' })
+                await client.request('chat/setModel', { id, model: 'google/gemini-1.5-flash' })
                 const lastMessage = await client.sendMessage(id, 'what color is the sky?')
                 expect(lastMessage?.text?.toLocaleLowerCase().includes('blue')).toBeTruthy()
             }
@@ -890,7 +908,7 @@ describe('Agent', () => {
     describe('Commands', () => {
         it('commands/explain', async () => {
             await client.openFile(animalUri)
-            const freshChatID = await client.request('chat/new', null)
+            const freshChatID = await setChatModel()
             const id = await client.request('commands/explain', null)
 
             // Assert that the server is not using IDs between `chat/new` and
@@ -917,6 +935,7 @@ describe('Agent', () => {
             'commands/test',
             async () => {
                 await client.openFile(animalUri)
+                await setChatModel()
                 const id = await client.request('commands/test', null)
                 const lastMessage = await client.firstNonEmptyTranscript(id)
                 expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchSnapshot()
@@ -936,6 +955,7 @@ describe('Agent', () => {
 
         it('commands/smell', async () => {
             await client.openFile(animalUri)
+            await setChatModel()
             const id = await client.request('commands/smell', null)
             const lastMessage = await client.firstNonEmptyTranscript(id)
 

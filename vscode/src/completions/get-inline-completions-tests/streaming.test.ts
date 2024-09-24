@@ -182,7 +182,9 @@ describe('[getInlineCompletions] streaming', () => {
             }`,
             {
                 configuration: {
-                    autocompleteAdvancedProvider: 'fireworks',
+                    configuration: {
+                        autocompleteAdvancedProvider: 'fireworks',
+                    },
                 },
                 delayBetweenChunks: 50,
             }

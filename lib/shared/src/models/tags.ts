@@ -13,6 +13,9 @@ export enum ModelTag {
     Recommended = 'recommended',
     Deprecated = 'deprecated',
     Experimental = 'experimental',
+    Waitlist = 'waitlist', // join waitlist
+    OnWaitlist = 'on-waitlist', // on waitlist
+    EarlyAccess = 'early-access',
 
     // Tiers - the level of access to the model
     Pro = 'pro',
@@ -25,4 +28,7 @@ export enum ModelTag {
     Local = 'local',
     Ollama = 'ollama',
     Dev = 'dev',
+
+    // Additional Info about the model
+    StreamDisabled = 'stream-disabled', // Model does not support streaming
 }

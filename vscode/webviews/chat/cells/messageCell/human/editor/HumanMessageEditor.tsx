@@ -2,6 +2,7 @@ import {
     type ChatMessage,
     FAST_CHAT_INPUT_TOKEN_BUDGET,
     type Model,
+    ModelTag,
     type SerializedPromptEditorState,
     type SerializedPromptEditorValue,
     textContentFromSerializedLexicalNode,
@@ -65,8 +66,6 @@ export const HumanMessageEditor: FunctionComponent<{
 
     /** For use in storybooks only. */
     __storybook__focus?: boolean
-
-    experimentalOneBoxEnabled?: boolean
 }> = ({
     userInfo,
     initialEditorState,
@@ -84,7 +83,6 @@ export const HumanMessageEditor: FunctionComponent<{
     className,
     editorRef: parentEditorRef,
     __storybook__focus,
-    experimentalOneBoxEnabled,
     onEditorFocusChange: parentOnEditorFocusChange,
 }) => {
     const telemetryRecorder = useTelemetryRecorder()
@@ -230,13 +228,6 @@ export const HumanMessageEditor: FunctionComponent<{
         [onGapClick]
     )
 
-    const appendTextToEditor = useCallback((text: string): void => {
-        if (!editorRef.current) {
-            throw new Error('No editorRef')
-        }
-        editorRef.current.appendText(text)
-    }, [])
-
     const onMentionClick = useCallback((): void => {
         if (!editorRef.current) {
             throw new Error('No editorRef')
@@ -304,15 +295,22 @@ export const HumanMessageEditor: FunctionComponent<{
         )
     )
 
-    const initialContext = useClientState().initialContext
+    const model = useCurrentChatModel()
+
+    let initialContext = useClientState().initialContext
     useEffect(() => {
         if (initialContext && !isSent && isFirstMessage) {
             const editor = editorRef.current
             if (editor) {
+                // Don't show the initial codebase context if the model doesn't support streaming
+                // as including context result in longer processing time.
+                if (model?.tags?.includes(ModelTag.StreamDisabled)) {
+                    initialContext = initialContext.filter(item => item.type !== 'tree')
+                }
                 editor.setInitialContextMentions(initialContext)
             }
         }
-    }, [initialContext, isSent, isFirstMessage])
+    }, [initialContext, isSent, isFirstMessage, model])
 
     const focusEditor = useCallback(() => editorRef.current?.setFocus(true), [])
 
@@ -323,8 +321,6 @@ export const HumanMessageEditor: FunctionComponent<{
     }, [__storybook__focus, focusEditor])
 
     const focused = Boolean(isEditorFocused || isFocusWithin || __storybook__focus)
-
-    const model = useCurrentChatModel()
     const contextWindowSizeInTokens =
         model?.contextWindow?.context?.user ||
         model?.contextWindow?.input ||
@@ -370,10 +366,8 @@ export const HumanMessageEditor: FunctionComponent<{
                     submitState={submitState}
                     onGapClick={onGapClick}
                     focusEditor={focusEditor}
-                    appendTextToEditor={appendTextToEditor}
                     hidden={!focused && isSent}
                     className={styles.toolbar}
-                    experimentalOneBoxEnabled={experimentalOneBoxEnabled}
                 />
             )}
         </div>

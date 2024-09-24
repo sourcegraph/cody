@@ -363,7 +363,7 @@ export class SymfRunner implements vscode.Disposable {
         }
 
         await rename(indexDir.fsPath, trashDir.fsPath)
-        void rm(trashDir.fsPath, { recursive: true, force: true }) // delete in background
+        rm(trashDir.fsPath, { recursive: true, force: true }).catch(() => {}) // delete in background
     }
 
     private async unsafeIndexExists(scopeDir: FileURI): Promise<boolean> {

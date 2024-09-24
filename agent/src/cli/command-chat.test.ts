@@ -30,7 +30,6 @@ describe('cody chat', () => {
         args: string[]
         expectedExitCode?: number
     }): Promise<ChatCommandResult> {
-        process.env.DISABLE_FEATURE_FLAGS = 'true'
         process.env.CODY_TELEMETRY_EXPORTER = 'testing'
         const args = [
             ...params.args,
@@ -96,7 +95,7 @@ describe('cody chat', () => {
         await polly.stop()
     })
 
-    it('--message (hello world test)', async () => {
+    it('--message (hello world test)', { timeout: 10000, repeats: 2 }, async () => {
         expect(
             YAML.stringify(
                 await runCommand({
@@ -104,7 +103,7 @@ describe('cody chat', () => {
                 })
             )
         ).toMatchSnapshot()
-    }, 10_000)
+    })
 
     // This test is failing on macOS. It reports remote search results as failing
     // the context filter, probably because it does not wait for the context filter fetch.
@@ -126,24 +125,20 @@ describe('cody chat', () => {
         ).toMatchSnapshot()
     }, 20_000)
 
-    it.skipIf(isWindows())(
-        '--context-file (animal test)',
-        async () => {
-            expect(
-                YAML.stringify(
-                    await runCommand({
-                        args: [
-                            'chat',
-                            '--context-file',
-                            'animal.ts',
-                            '--show-context',
-                            '-m',
-                            'implement a cow. Only print the code without any explanation.',
-                        ],
-                    })
-                )
-            ).toMatchSnapshot()
-        },
-        20_000
-    )
+    it.skipIf(isWindows())('--context-file (animal test)', { timeout: 20000, repeats: 2 }, async () => {
+        expect(
+            YAML.stringify(
+                await runCommand({
+                    args: [
+                        'chat',
+                        '--context-file',
+                        'animal.ts',
+                        '--show-context',
+                        '-m',
+                        'implement a cow. Only print the code without any explanation.',
+                    ],
+                })
+            )
+        ).toMatchSnapshot()
+    })
 })

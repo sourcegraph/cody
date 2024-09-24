@@ -6,14 +6,26 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 ### Added
 
+- The [new OpenAI models (OpenAI o1-preview & OpenAI o1-mini)](https://sourcegraph.com/blog/openai-o1-for-cody) are now available to selected Cody Pro users for early access. [pull/5508](https://github.com/sourcegraph/cody/pull/5508)
+- Cody Pro users can join the waitlist for the new models by clicking the "Join Waitlist" button. [pull/5508](https://github.com/sourcegraph/cody/pull/5508)
+- Chat: Support non-streaming requests. [pull/5565](https://github.com/sourcegraph/cody/pull/5565)
+
 ### Fixed
 
-Chat: Fixed feedback buttons not working in chat. [pull/5509](https://github.com/sourcegraph/cody/pull/5509)
+- Chat: Fixed feedback buttons not working in chat. [pull/5509](https://github.com/sourcegraph/cody/pull/5509)
+- Command: Removed duplicated default commands from the Cody Commands menu that were incorrectly listed as custom commands.
 
 ### Changed
 
-Enterprise: Remote Repository items in the mention menu now display only the org/repo part of the title, omitting the code host name to prevent repository names from being truncated in the UI. [pull/5518](https://github.com/sourcegraph/cody/pull/5518)
-Cody Ignore: This internal experimental feature is now deprecated and the use of `.cody/ignore` file is no longer supported. [pull/5537](https://github.com/sourcegraph/cody/pull/5537)
+- Enterprise: Remote Repository items in the mention menu now display only the org/repo part of the title, omitting the code host name to prevent repository names from being truncated in the UI. [pull/5518](https://github.com/sourcegraph/cody/pull/5518)
+- Cody Ignore: This internal experimental feature is now deprecated and the use of `.cody/ignore` file is no longer supported. [pull/5537](https://github.com/sourcegraph/cody/pull/5537)
+- Autocomplete: removed the `cody.autocomplete.advanced.model` setting and updated supported values for `cody.autocomplete.advanced.provider`.
+
+## 1.34.3
+
+### Fixed
+- Autocomplete Logging: Fix the diff for recent edits by replacing psDedent with ps to preserve the indentation. [pull/5574](https://github.com/sourcegraph/cody/pull/5574)
+
 
 ## 1.34.2
 

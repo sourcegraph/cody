@@ -10,13 +10,10 @@ import { newAgentClient } from '../../agent'
 import { exec } from 'node:child_process'
 import fs from 'node:fs'
 import { promisify } from 'node:util'
-import {
-    type ConfigurationUseContext,
-    graphqlClient,
-    isDefined,
-    modelsService,
-} from '@sourcegraph/cody-shared'
+import { type ConfigurationUseContext, isDefined, modelsService } from '@sourcegraph/cody-shared'
 import { sleep } from '../../../../vscode/src/completions/utils'
+import { setStaticResolvedConfigurationWithAuthCredentials } from '../../../../vscode/src/configuration'
+import { localStorage } from '../../../../vscode/src/services/LocalStorageProvider'
 import { startPollyRecording } from '../../../../vscode/src/testutils/polly'
 import { dotcomCredentials } from '../../../../vscode/src/testutils/testing-credentials'
 import { allClientCapabilitiesEnabled } from '../../allClientCapabilitiesEnabled'
@@ -25,6 +22,7 @@ import { arrayOption, booleanOption, intOption } from './cli-parsers'
 import { matchesGlobPatterns } from './matchesGlobPatterns'
 import { evaluateAutocompleteStrategy } from './strategy-autocomplete'
 import { evaluateChatStrategy } from './strategy-chat'
+import { evaluateChatContextStrategy } from './strategy-chat-context'
 import { evaluateFixStrategy } from './strategy-fix'
 import { evaluateGitLogStrategy } from './strategy-git-log'
 import { evaluateUnitTestStrategy } from './strategy-unit-test'
@@ -70,6 +68,7 @@ export interface CodyBenchOptions {
     context: { sourcesDir: string; strategy: ConfigurationUseContext }
 
     verbose: boolean
+    insecureTls?: boolean
 }
 
 interface EvaluationConfig extends Partial<CodyBenchOptions> {
@@ -80,6 +79,7 @@ interface EvaluationConfig extends Partial<CodyBenchOptions> {
 export enum BenchStrategy {
     Autocomplete = 'autocomplete',
     Chat = 'chat',
+    ChatContext = 'chat-context',
     Fix = 'fix',
     GitLog = 'git-log',
     UnitTest = 'unit-test',
@@ -143,7 +143,7 @@ async function loadEvaluationConfig(options: CodyBenchOptions): Promise<CodyBenc
 
 export const benchCommand = new commander.Command('bench')
     .description(
-        'Evaluate Cody autocomplete by running the Agent in headless mode. ' +
+        'Evaluate Cody by running the Agent in headless mode. ' +
             'See the repo https://github.com/sourcegraph/cody-bench-data for ' +
             'more details about running cody-bench and how to evaluate the data.'
     )
@@ -295,6 +295,7 @@ export const benchCommand = new commander.Command('bench')
         booleanOption,
         true
     )
+    .option('--insecure-tls', 'Allow insecure server connections when using SSL', false)
     .action(async (options: CodyBenchOptions) => {
         if (!options.srcAccessToken) {
             const { token } = dotcomCredentials()
@@ -325,10 +326,13 @@ export const benchCommand = new commander.Command('bench')
         )
 
         // Required to use `PromptString`.
-        graphqlClient.setConfig({
-            accessToken: options.srcAccessToken,
-            serverEndpoint: options.srcEndpoint,
-            customHeaders: {},
+        localStorage.setStorage('inMemory')
+        setStaticResolvedConfigurationWithAuthCredentials({
+            configuration: { customHeaders: {} },
+            auth: {
+                accessToken: options.srcAccessToken,
+                serverEndpoint: options.srcEndpoint,
+            },
         })
 
         const recordingDirectory = path.join(path.dirname(options.evaluationConfig), 'recordings')
@@ -360,7 +364,7 @@ async function evaluateWorkspace(options: CodyBenchOptions, recordingDirectory: 
         // There is no VSC setting yet to configure the base edit model. Users
         // can only modify this setting by changing it through the quickpick
         // menu in VSC.
-        const provider = modelsService.instance!.getModelByIDSubstringOrError(editModel)
+        const provider = modelsService.getModelByIDSubstringOrError(editModel)
         baseGlobalState.editModel = provider.id
     }
 
@@ -390,7 +394,10 @@ async function evaluateWorkspace(options: CodyBenchOptions, recordingDirectory: 
             baseGlobalState,
         },
         codyAgentPath: options.codyAgentBinary,
-        capabilities: allClientCapabilitiesEnabled,
+        capabilities: {
+            ...allClientCapabilitiesEnabled,
+            secrets: 'stateless',
+        },
         inheritStderr: true,
         extraEnvVariables: {
             CODY_RECORDING_NAME: `${options.fixture.name}-${path.basename(options.workspace)}`,
@@ -422,6 +429,9 @@ async function evaluateWorkspace(options: CodyBenchOptions, recordingDirectory: 
                 break
             case BenchStrategy.Chat:
                 await evaluateChatStrategy(client, options)
+                break
+            case BenchStrategy.ChatContext:
+                await evaluateChatContextStrategy(client, options)
                 break
             case BenchStrategy.UnitTest:
                 await evaluateUnitTestStrategy(client, options)

@@ -44,11 +44,18 @@ export function onPromptSelectInPanel(
             break
         }
         case 'command': {
-            getVSCodeAPI().postMessage({
-                command: 'command',
-                id: 'cody.action.command',
-                arg: item.value.key,
-            })
+            if (item.value.slashCommand) {
+                getVSCodeAPI().postMessage({
+                    command: 'command',
+                    id: item.value.slashCommand,
+                })
+            } else {
+                getVSCodeAPI().postMessage({
+                    command: 'command',
+                    id: 'cody.action.command',
+                    arg: item.value.key,
+                })
+            }
             if (item.value.mode === 'ask' && item.value.type === 'default') {
                 // Chat response will show up in the same panel, so make the chat view visible.
                 setView(View.Chat)

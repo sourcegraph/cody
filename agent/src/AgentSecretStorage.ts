@@ -4,6 +4,17 @@ import { EventEmitter } from './vscode-shim'
 
 export class AgentStatelessSecretStorage implements vscode.SecretStorage {
     private readonly inMemorySecretStorageMap = new Map<string, string>()
+
+    constructor(seedRecords?: Record<string, string | undefined>) {
+        if (seedRecords) {
+            for (const key in seedRecords) {
+                if (seedRecords[key]) {
+                    this.inMemorySecretStorageMap.set(key, seedRecords[key])
+                }
+            }
+        }
+    }
+
     public get(key: string): Thenable<string | undefined> {
         return Promise.resolve(this.inMemorySecretStorageMap.get(key))
     }

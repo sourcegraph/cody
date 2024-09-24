@@ -1,8 +1,8 @@
 import type { CompletionsModelConfig } from '.'
-import { modelsService } from '../models'
+import { modelsService } from '../models/modelsService'
 
 export function getCompletionsModelConfig(modelID: string): CompletionsModelConfig | undefined {
-    const provider = modelsService.instance?.getModelByID(modelID)
+    const provider = modelsService.getModelByID(modelID)
     if (!provider) {
         return undefined
     }

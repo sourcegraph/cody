@@ -1,19 +1,22 @@
 import { Observable, map } from 'observable-fns'
-import type {
-    AuthCredentials,
-    ClientConfiguration,
-    ClientConfigurationWithAccessToken,
-} from '../configuration'
+import type { AuthCredentials, ClientConfiguration } from '../configuration'
 import { logError } from '../logger'
-import { distinctUntilChanged, firstValueFrom, fromLateSetSource, shareReplay } from '../misc/observable'
+import {
+    distinctUntilChanged,
+    firstValueFrom,
+    fromLateSetSource,
+    promiseToObservable,
+} from '../misc/observable'
+import { skipPendingOperation, switchMapReplayOperation } from '../misc/observableOperation'
+import type { PerSitePreferences } from '../models/modelsService'
 import { DOTCOM_URL } from '../sourcegraph-api/environments'
-import type { PartialDeep, ReadonlyDeep } from '../utils'
+import { type PartialDeep, type ReadonlyDeep, isError } from '../utils'
 
 /**
  * The input from various sources that is needed to compute the {@link ResolvedConfiguration}.
  */
 export interface ConfigurationInput {
-    clientConfiguration: ClientConfigurationWithAccessToken
+    clientConfiguration: ClientConfiguration
     clientSecrets: ClientSecrets
     clientState: ClientState
 }
@@ -24,8 +27,10 @@ export interface ClientSecrets {
 
 export interface ClientState {
     lastUsedEndpoint: string | null
-    anonymousUserID: string
+    anonymousUserID: string | null
     lastUsedChatModality: 'sidebar' | 'editor'
+    modelPreferences: PerSitePreferences
+    waitlist_o1: boolean | null
 }
 
 /**
@@ -63,20 +68,20 @@ export type PickResolvedConfiguration<Keys extends KeysSpec> = {
 }
 
 async function resolveConfiguration(input: ConfigurationInput): Promise<ResolvedConfiguration> {
-    const serverEndpoint = input.clientState.lastUsedEndpoint ?? DOTCOM_URL.toString()
+    const serverEndpoint = normalizeServerEndpointURL(
+        input.clientState.lastUsedEndpoint ?? DOTCOM_URL.toString()
+    )
 
     // We must not throw here, because that would result in the `resolvedConfig` observable
     // terminating and all callers receiving no further config updates.
     const accessToken =
-        (input.clientConfiguration.accessToken ||
-            (await input.clientSecrets.getToken(serverEndpoint).catch(error => {
-                logError(
-                    'resolveConfiguration',
-                    `Failed to get access token for endpoint ${serverEndpoint}: ${error}`
-                )
-                return null
-            }))) ??
-        null
+        (await input.clientSecrets.getToken(serverEndpoint).catch(error => {
+            logError(
+                'resolveConfiguration',
+                `Failed to get access token for endpoint ${serverEndpoint}: ${error}`
+            )
+            return null
+        })) ?? null
     return {
         configuration: input.clientConfiguration,
         clientState: input.clientState,
@@ -84,22 +89,31 @@ async function resolveConfiguration(input: ConfigurationInput): Promise<Resolved
     }
 }
 
-const _resolvedConfig = fromLateSetSource<ResolvedConfiguration>()
+export function normalizeServerEndpointURL(url: string): string {
+    return url.endsWith('/') ? url : `${url}/`
+}
 
-let hasSetResolvedConfigurationObservable = false
+const _resolvedConfig = fromLateSetSource<ResolvedConfiguration>()
 
 /**
  * Set the observable that will be used to provide the global {@link resolvedConfig}. This should be
- * set exactly once.
+ * set exactly once (except in tests).
  */
 export function setResolvedConfigurationObservable(input: Observable<ConfigurationInput>): void {
-    if (hasSetResolvedConfigurationObservable) {
-        throw new Error(
-            'setResolvedConfigurationObservable and setStaticResolvedConfigurationValue must be called exactly once total'
-        )
-    }
-    hasSetResolvedConfigurationObservable = true
-    _resolvedConfig.setSource(input.pipe(map(resolveConfiguration), distinctUntilChanged()))
+    _resolvedConfig.setSource(
+        input.pipe(
+            switchMapReplayOperation(input => promiseToObservable(resolveConfiguration(input))),
+            skipPendingOperation(),
+            map(value => {
+                if (isError(value)) {
+                    throw value
+                }
+                return value
+            }),
+            distinctUntilChanged()
+        ),
+        false
+    )
 }
 
 /**
@@ -107,14 +121,10 @@ export function setResolvedConfigurationObservable(input: Observable<Configurati
  * only from clients that can guarantee the configuration will not change during execution (such as
  * simple CLI commands).
  */
-export function setStaticResolvedConfigurationValue(input: ResolvedConfiguration): void {
-    if (hasSetResolvedConfigurationObservable) {
-        throw new Error(
-            'setResolvedConfigurationObservable and setStaticResolvedConfigurationValue must be called exactly once total'
-        )
-    }
-    hasSetResolvedConfigurationObservable = true
-    _resolvedConfig.setSource(Observable.of(input))
+export function setStaticResolvedConfigurationValue(
+    input: ResolvedConfiguration | Observable<ResolvedConfiguration>
+): void {
+    _resolvedConfig.setSource(input instanceof Observable ? input : Observable.of(input), false)
 }
 
 /**
@@ -132,23 +142,7 @@ export function setStaticResolvedConfigurationValue(input: ResolvedConfiguration
  * It is OK to access this before {@link setResolvedConfigurationObservable} is called, but it will
  * not emit any values before then.
  */
-export const resolvedConfig: Observable<ResolvedConfiguration> = _resolvedConfig.observable.pipe(
-    shareReplay()
-)
-
-/**
- * @deprecated Use {@link resolvedConfig} instead.
- */
-export const resolvedConfigWithAccessToken: Observable<ClientConfigurationWithAccessToken> =
-    resolvedConfig.pipe(
-        map(
-            config =>
-                ({
-                    ...config.configuration,
-                    ...config.auth,
-                }) satisfies ClientConfigurationWithAccessToken
-        )
-    )
+export const resolvedConfig: Observable<ResolvedConfiguration> = _resolvedConfig.observable
 
 /**
  * The current resolved configuration. Callers should use {@link resolvedConfig} instead so that
@@ -172,5 +166,13 @@ export function currentResolvedConfig(): Promise<ResolvedConfiguration> {
  * For use in tests only.
  */
 export function mockResolvedConfig(value: PartialDeep<ResolvedConfiguration>): void {
-    _resolvedConfig.setSource(Observable.of(value as ResolvedConfiguration), false)
+    _resolvedConfig.setSource(
+        Observable.of({
+            configuration: {},
+            auth: {},
+            clientState: { modelPreferences: {} },
+            ...value,
+        } as ResolvedConfiguration),
+        false
+    )
 }

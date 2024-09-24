@@ -40,8 +40,6 @@ export interface AuthenticatedAuthStatus {
      * buttons in the UI.
      */
     userCanUpgrade?: boolean
-
-    isOfflineMode?: boolean
 }
 
 /**
@@ -75,13 +73,6 @@ export const AUTH_STATUS_FIXTURE_AUTHED_DOTCOM: AuthenticatedAuthStatus = {
         provider: 'sourcegraph',
         completionModel: 'fireworks/starcoder-hybrid',
     },
-}
-
-export const AUTH_STATUS_FIXTURE_OFFLINE: Omit<AuthenticatedAuthStatus, 'isOfflineMode'> & {
-    isOfflineMode: true
-} = {
-    ...AUTH_STATUS_FIXTURE_AUTHED,
-    isOfflineMode: true,
 }
 
 export function isCodyProUser(authStatus: AuthStatus): boolean {

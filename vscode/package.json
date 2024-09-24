@@ -3,7 +3,7 @@
   "name": "cody-ai",
   "private": true,
   "displayName": "Cody: AI Coding Assistant with Autocomplete & Chat",
-  "version": "1.34.2",
+  "version": "1.34.3",
   "publisher": "sourcegraph",
   "license": "Apache-2.0",
   "icon": "resources/cody.png",
@@ -31,7 +31,7 @@
     "watch:build:dev:desktop": "concurrently \"pnpm run -s _build:esbuild:desktop --watch\" \"pnpm run -s _build:webviews --mode development --watch\"",
     "_build:esbuild:desktop": "pnpm download-wasm && pnpm run -s _build:esbuild:uninstall && pnpm run -s _build:esbuild:node",
     "_build:esbuild:node": "esbuild ./src/extension.node.ts --bundle --outfile=dist/extension.node.js --external:vscode --external:typescript --alias:@sourcegraph/cody-shared=@sourcegraph/cody-shared/src/index --alias:@sourcegraph/cody-shared/src=@sourcegraph/cody-shared/src --alias:lexical=./build/lexical-package-fix --format=cjs --platform=node --sourcemap",
-    "_build:esbuild:web": "esbuild ./src/extension.web.ts --platform=browser --bundle --outfile=dist/extension.web.js --alias:@sourcegraph/cody-shared=@sourcegraph/cody-shared/src/index --alias:@sourcegraph/cody-shared/src=@sourcegraph/cody-shared/src --alias:path=path-browserify --external:typescript --alias:node:path=path-browserify --alias:node:os=os-browserify --external:vscode  --external:node:child_process  --external:node:util --external:node:fs/promises --define:process='{\"env\":{}}' --define:window=self --format=cjs --sourcemap",
+    "_build:esbuild:web": "esbuild ./src/extension.web.ts --platform=browser --bundle --outfile=dist/extension.web.js --alias:@sourcegraph/cody-shared=@sourcegraph/cody-shared/src/index --alias:@sourcegraph/cody-shared/src=@sourcegraph/cody-shared/src --alias:path=path-browserify --external:typescript --alias:node:path=path-browserify --alias:node:os=os-browserify --external:vscode  --external:node:child_process  --external:node:util --external:node:fs --external:node:fs/promises --define:process='{\"env\":{}}' --define:window=self --format=cjs --sourcemap",
     "_build:esbuild:uninstall": "esbuild ./src/uninstall/post-uninstall.ts --bundle --outfile=dist/post-uninstall.js --external:typescript --format=cjs --platform=node --sourcemap --alias:@sourcegraph/cody-shared=@sourcegraph/cody-shared/src/index --alias:@sourcegraph/cody-shared/src=@sourcegraph/cody-shared/src --alias:lexical=./build/lexical-package-fix",
     "_build:webviews": "vite -c webviews/vite.config.mts build",
     "release": "ts-node-transpile-only ./scripts/release.ts",
@@ -416,12 +416,6 @@
         "enablement": "cody.activated && config.cody.autocomplete.enabled && !editorReadonly && !editorHasSelection && !inlineSuggestionsVisible"
       },
       {
-        "command": "cody.multi-model-autocomplete.manual-trigger",
-        "category": "Cody",
-        "title": "Get Completions for multiple autocomplete models",
-        "enablement": "cody.activated && config.cody.autocomplete.experimental.multiModelCompletions && config.cody.autocomplete.enabled && !editorReadonly && !editorHasSelection && !inlineSuggestionsVisible"
-      },
-      {
         "command": "cody.chat.signIn",
         "category": "Cody",
         "group": "Cody",
@@ -697,11 +691,6 @@
         "when": "editorTextFocus && !editorHasSelection && config.cody.autocomplete.enabled && !inlineSuggestionsVisible"
       },
       {
-        "command": "cody.multi-model-autocomplete.manual-trigger",
-        "key": "alt+m",
-        "when": "editorTextFocus && !editorHasSelection && config.cody.autocomplete.enabled && !inlineSuggestionsVisible"
-      },
-      {
         "command": "cody.fixup.acceptNearest",
         "key": "alt+a",
         "when": "cody.activated && !editorReadonly && cody.hasActionableEdit"
@@ -862,7 +851,7 @@
         },
         {
           "command": "cody.menu.custom-commands",
-          "when": "cody.activated",
+          "when": "cody.activated && cody.menu.custom-commands.enable",
           "group": "custom-commands"
         },
         {
@@ -1115,31 +1104,13 @@
         },
         "cody.autocomplete.advanced.provider": {
           "type": "string",
-          "default": null,
-          "enum": [
-            null,
-            "anthropic",
-            "fireworks",
-            "unstable-gemini",
-            "unstable-openai",
-            "experimental-ollama",
-            "experimental-openaicompatible"
+          "default": "default",
+          "enum": ["default", "experimental-ollama"],
+          "enumDescriptions": [
+            "Our recommended setup with the best balance of quality and latency. We continuously update this for optimal performance.",
+            "Experimental support for Ollama users. Use `cody.autocomplete.experimental.ollamaOptions` to configure requests to Ollama server."
           ],
-          "markdownDescription": "The provider used for code autocomplete. Most providers other than `anthropic` require the `cody.autocomplete.advanced.serverEndpoint` and `cody.autocomplete.advanced.accessToken` settings to also be set. Check the Cody output channel for error messages if autocomplete is not working as expected."
-        },
-        "cody.autocomplete.advanced.serverEndpoint": {
-          "type": "string",
-          "markdownDescription": "The server endpoint used for code autocomplete. This is only supported with a provider other than `anthropic`."
-        },
-        "cody.autocomplete.advanced.accessToken": {
-          "type": "string",
-          "markdownDescription": "The access token used for code autocomplete. This is only supported with a provider other than `anthropic`."
-        },
-        "cody.autocomplete.advanced.model": {
-          "type": "string",
-          "default": null,
-          "enum": [null, "starcoder-16b", "starcoder-7b"],
-          "markdownDescription": "Overwrite the  model used for code autocompletion inference. This is only supported with the `fireworks` provider"
+          "markdownDescription": "The provider for code autocomplete. Users should rely on the `default` provider for the best experience. The underlying model can be found in the Cody output channel logs."
         },
         "cody.autocomplete.completeSuggestWidgetSelection": {
           "type": "boolean",
@@ -1350,7 +1321,7 @@
   "dependencies": {
     "@anthropic-ai/sdk": "^0.20.8",
     "@openctx/provider-linear-issues": "^0.0.9",
-    "@openctx/vscode-lib": "^0.0.24",
+    "@openctx/vscode-lib": "^0.0.25",
     "@opentelemetry/api": "^1.7.0",
     "@opentelemetry/core": "^1.18.1",
     "@opentelemetry/exporter-trace-otlp-http": "^0.45.1",

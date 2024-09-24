@@ -1,37 +1,34 @@
 import {
-    type AutocompleteContextSnippet,
+    type AuthenticatedAuthStatus,
     type CodeCompletionsParams,
     type CompletionResponseGenerator,
+    currentAuthStatusAuthed,
+    currentResolvedConfig,
     dotcomTokenToGatewayToken,
+    isDotCom,
     isDotComAuthed,
     tokensToChars,
 } from '@sourcegraph/cody-shared'
-import { forkSignal, generatorWithTimeout, zipGenerators } from '../utils'
-
 import { defaultCodeCompletionsClient } from '../default-client'
 import { createFastPathClient } from '../fast-path-client'
 import { TriggerKind } from '../get-inline-completions'
+import { forkSignal, generatorWithTimeout, zipGenerators } from '../utils'
 import {
     type FetchCompletionResult,
     fetchAndProcessDynamicMultilineCompletions,
-} from './fetch-and-process-completions'
-import {
-    MAX_RESPONSE_TOKENS,
-    getCompletionParams,
-    getLineNumberDependentCompletionParams,
-} from './get-completion-params'
+} from './shared/fetch-and-process-completions'
 import {
     type CompletionProviderTracer,
     type GenerateCompletionsOptions,
+    MAX_RESPONSE_TOKENS,
     Provider,
     type ProviderFactoryParams,
-} from './provider'
+} from './shared/provider'
 
 export const FIREWORKS_DEEPSEEK_7B_LANG_SPECIFIC_V0 = 'deepseek-finetuned-lang-specific-v0'
 export const FIREWORKS_DEEPSEEK_7B_LANG_SPECIFIC_V1 = 'deepseek-finetuned-lang-specific-v1'
 export const FIREWORKS_DEEPSEEK_7B_LANG_ALL = 'deepseek-finetuned-lang-all-v0'
 
-export const DEEPSEEK_CODER_V2_LITE_BASE_DIRECT_ROUTE = 'deepseek-coder-v2-lite-base-direct-route'
 export const DEEPSEEK_CODER_V2_LITE_BASE = 'deepseek-coder-v2-lite-base'
 
 // Context window experiments with DeepSeek Model
@@ -55,8 +52,6 @@ const MODEL_MAP = {
     [FIREWORKS_DEEPSEEK_7B_LANG_SPECIFIC_V1]: 'finetuned-fim-lang-specific-model-ds2-v1',
     [FIREWORKS_DEEPSEEK_7B_LANG_ALL]: 'accounts/sourcegraph/models/finetuned-fim-lang-all-model-ds2-v0',
     [DEEPSEEK_CODER_V2_LITE_BASE]: 'fireworks/deepseek-coder-v2-lite-base',
-    [DEEPSEEK_CODER_V2_LITE_BASE_DIRECT_ROUTE]:
-        'accounts/sourcegraph/models/deepseek-coder-v2-lite-base',
     [DEEPSEEK_CODER_V2_LITE_BASE_WINDOW_4096]: 'accounts/sourcegraph/models/deepseek-coder-v2-lite-base',
     [DEEPSEEK_CODER_V2_LITE_BASE_WINDOW_8192]: 'accounts/sourcegraph/models/deepseek-coder-v2-lite-base',
     [DEEPSEEK_CODER_V2_LITE_BASE_WINDOW_16384]:
@@ -65,7 +60,7 @@ const MODEL_MAP = {
         'accounts/sourcegraph/models/deepseek-coder-v2-lite-base',
 }
 
-export type FireworksModel =
+type FireworksModel =
     | keyof typeof MODEL_MAP
     // `starcoder-hybrid` uses the 16b model for multiline requests and the 7b model for single line
     | 'starcoder-hybrid'
@@ -87,8 +82,7 @@ function getMaxContextTokens(model: FireworksModel): number {
         case FIREWORKS_DEEPSEEK_7B_LANG_SPECIFIC_V0:
         case FIREWORKS_DEEPSEEK_7B_LANG_SPECIFIC_V1:
         case FIREWORKS_DEEPSEEK_7B_LANG_ALL:
-        case DEEPSEEK_CODER_V2_LITE_BASE:
-        case DEEPSEEK_CODER_V2_LITE_BASE_DIRECT_ROUTE: {
+        case DEEPSEEK_CODER_V2_LITE_BASE: {
             return 2048
         }
         case DEEPSEEK_CODER_V2_LITE_BASE_WINDOW_4096:
@@ -104,25 +98,10 @@ function getMaxContextTokens(model: FireworksModel): number {
     }
 }
 
-const lineNumberDependentCompletionParams = getLineNumberDependentCompletionParams({
-    singlelineStopSequences: ['\n\n', '\n\r\n'],
-    multilineStopSequences: ['\n\n', '\n\r\n'],
-})
-
 class FireworksProvider extends Provider {
-    public generateCompletions(
-        options: GenerateCompletionsOptions,
-        abortSignal: AbortSignal,
-        snippets: AutocompleteContextSnippet[],
-        tracer?: CompletionProviderTracer
-    ): AsyncGenerator<FetchCompletionResult[]> {
-        const partialRequestParams = getCompletionParams({
-            providerOptions: options,
-            lineNumberDependentCompletionParams,
-        })
-
-        const { multiline, docContext, document } = options
-        const useMultilineModel = multiline || options.triggerKind !== TriggerKind.Automatic
+    public getRequestParams(options: GenerateCompletionsOptions): CodeCompletionsParams {
+        const { multiline, docContext, document, triggerKind, snippets } = options
+        const useMultilineModel = multiline || triggerKind !== TriggerKind.Automatic
 
         const model: string =
             this.legacyModel === 'starcoder-hybrid'
@@ -136,22 +115,28 @@ class FireworksProvider extends Provider {
             promptChars: tokensToChars(this.maxContextTokens - MAX_RESPONSE_TOKENS),
         })
 
-        const requestParams = this.modelHelper.getRequestParams({
-            ...partialRequestParams,
+        return this.modelHelper.getRequestParams({
+            ...this.defaultRequestParams,
             messages: [{ speaker: 'human', text: prompt }],
-            temperature: 0.2,
-            topK: 0,
             model,
-        } satisfies CodeCompletionsParams)
+        })
+    }
+    public async generateCompletions(
+        generateOptions: GenerateCompletionsOptions,
+        abortSignal: AbortSignal,
+        tracer?: CompletionProviderTracer
+    ): Promise<AsyncGenerator<FetchCompletionResult[]>> {
+        const { docContext, numberOfCompletionsToGenerate } = generateOptions
 
+        const requestParams = this.getRequestParams(generateOptions)
         tracer?.params(requestParams)
 
-        const completionsGenerators = Array.from({ length: options.numberOfCompletionsToGenerate }).map(
-            () => {
+        const completionsGenerators = Array.from({ length: numberOfCompletionsToGenerate }).map(
+            async () => {
                 const abortController = forkSignal(abortSignal)
 
                 const completionResponseGenerator = generatorWithTimeout(
-                    this.createClient(options, requestParams, abortController),
+                    await this.createClient(generateOptions, requestParams, abortController),
                     requestParams.timeoutMs,
                     abortController
                 )
@@ -159,8 +144,9 @@ class FireworksProvider extends Provider {
                 return fetchAndProcessDynamicMultilineCompletions({
                     completionResponseGenerator,
                     abortController,
-                    providerSpecificPostProcess: this.modelHelper.postProcess,
-                    generateOptions: options,
+                    generateOptions,
+                    providerSpecificPostProcess: content =>
+                        this.modelHelper.postProcess(content, docContext),
                 })
             }
         )
@@ -180,10 +166,10 @@ class FireworksProvider extends Provider {
          * available, and the switch to async generators maintains the same behavior
          * as with promises.
          */
-        return zipGenerators(completionsGenerators)
+        return zipGenerators(await Promise.all(completionsGenerators))
     }
 
-    private getCustomHeaders = (isFireworksTracingEnabled?: boolean): Record<string, string> => {
+    private getCustomHeaders(isFireworksTracingEnabled?: boolean): Record<string, string> {
         // Enabled Fireworks tracing for Sourcegraph teammates.
         // https://readme.fireworks.ai/docs/enabling-tracing
         const customHeaders: Record<string, string> = {}
@@ -192,29 +178,16 @@ class FireworksProvider extends Provider {
             customHeaders['X-Fireworks-Genie'] = 'true'
         }
 
-        if (this.checkIfDirectRouteShouldBeEnabled()) {
-            customHeaders['X-Sourcegraph-Use-Direct-Route'] = 'true'
-        }
-
         return customHeaders
     }
 
-    private checkIfDirectRouteShouldBeEnabled(): boolean {
-        return [
-            DEEPSEEK_CODER_V2_LITE_BASE_DIRECT_ROUTE,
-            DEEPSEEK_CODER_V2_LITE_BASE_WINDOW_4096,
-            FIREWORKS_DEEPSEEK_7B_LANG_ALL,
-            FIREWORKS_DEEPSEEK_7B_LANG_SPECIFIC_V0,
-            FIREWORKS_DEEPSEEK_7B_LANG_SPECIFIC_V1,
-        ].includes(this.legacyModel)
-    }
-
-    private createClient(
+    private async createClient(
         options: GenerateCompletionsOptions,
         requestParams: CodeCompletionsParams,
         abortController: AbortController
-    ): CompletionResponseGenerator {
-        const { authStatus, config } = options
+    ): Promise<CompletionResponseGenerator> {
+        const authStatus = currentAuthStatusAuthed()
+        const config = await currentResolvedConfig()
 
         const isLocalInstance = Boolean(
             authStatus.endpoint?.includes('sourcegraph.test') ||
@@ -223,47 +196,49 @@ class FireworksProvider extends Provider {
 
         const isNode = typeof process !== 'undefined'
         let fastPathAccessToken =
-            config.accessToken &&
+            config.auth.accessToken &&
             // Require the upstream to be dotcom
             (isDotComAuthed() || isLocalInstance) &&
             process.env.CODY_DISABLE_FASTPATH !== 'true' && // Used for testing
             // The fast path client only supports Node.js style response streams
             isNode
-                ? dotcomTokenToGatewayToken(config.accessToken)
+                ? dotcomTokenToGatewayToken(config.auth.accessToken)
                 : undefined
 
         if (fastPathAccessToken) {
             const useExperimentalFireworksConfig =
                 process.env.NODE_ENV === 'development' &&
-                config.autocompleteExperimentalFireworksOptions?.token
+                config.configuration.autocompleteExperimentalFireworksOptions?.token
 
             if (useExperimentalFireworksConfig) {
-                fastPathAccessToken = config.autocompleteExperimentalFireworksOptions?.token
+                fastPathAccessToken =
+                    config.configuration.autocompleteExperimentalFireworksOptions?.token
             }
 
             return createFastPathClient(requestParams, abortController, {
                 isLocalInstance,
                 fireworksConfig: useExperimentalFireworksConfig
-                    ? config.autocompleteExperimentalFireworksOptions
+                    ? config.configuration.autocompleteExperimentalFireworksOptions
                     : undefined,
                 logger: defaultCodeCompletionsClient.instance!.logger,
                 providerOptions: options,
                 fastPathAccessToken,
-                customHeaders: this.getCustomHeaders(authStatus.isFireworksTracingEnabled),
-                authStatus: authStatus,
-                anonymousUserID: this.anonymousUserID,
+                fireworksCustomHeaders: this.getCustomHeaders(authStatus.isFireworksTracingEnabled),
             })
         }
 
-        return this.client.complete(requestParams, abortController, {
+        return await this.client.complete(requestParams, abortController, {
             customHeaders: this.getCustomHeaders(authStatus.isFireworksTracingEnabled),
         })
     }
 }
 
-function getClientModel(model?: string): FireworksModel {
+function getClientModel(
+    model: string | undefined,
+    authStatus: Pick<AuthenticatedAuthStatus, 'endpoint'>
+): FireworksModel {
     if (model === undefined || model === '') {
-        return isDotComAuthed() ? DEEPSEEK_CODER_V2_LITE_BASE : 'starcoder-hybrid'
+        return isDotCom(authStatus) ? DEEPSEEK_CODER_V2_LITE_BASE : 'starcoder-hybrid'
     }
 
     if (model === 'starcoder-hybrid' || Object.prototype.hasOwnProperty.call(MODEL_MAP, model)) {
@@ -273,15 +248,13 @@ function getClientModel(model?: string): FireworksModel {
     throw new Error(`Unknown model: \`${model}\``)
 }
 
-export function createProvider(params: ProviderFactoryParams): Provider {
-    const { legacyModel, anonymousUserID } = params
-
-    const clientModel = getClientModel(legacyModel)
+export function createProvider({ legacyModel, source, authStatus }: ProviderFactoryParams): Provider {
+    const clientModel = getClientModel(legacyModel, authStatus)
 
     return new FireworksProvider({
         id: 'fireworks',
         legacyModel: clientModel,
         maxContextTokens: getMaxContextTokens(clientModel),
-        anonymousUserID,
+        source,
     })
 }

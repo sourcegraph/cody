@@ -1,5 +1,6 @@
 import type { EmbeddingsProvider } from './codebase-context/context-status'
 import type { FileURI } from './common/uri'
+import type { ChatModelProviderConfig } from './models/sync'
 
 import type { PromptString } from './prompt/prompt-string'
 import type { ReadonlyDeep } from './utils'
@@ -34,6 +35,7 @@ interface RawClientConfiguration {
     telemetryLevel: 'all' | 'off' | 'agent'
     telemetryClientName?: string
     useContext: ConfigurationUseContext
+    serverEndpoint: string
     customHeaders?: Record<string, string>
     chatPreInstruction: PromptString
     editPreInstruction: PromptString
@@ -46,15 +48,7 @@ interface RawClientConfiguration {
      */
     autocomplete: boolean
     autocompleteLanguages: Record<string, boolean>
-    autocompleteAdvancedProvider:
-        | 'anthropic'
-        | 'fireworks'
-        | 'unstable-gemini'
-        | 'unstable-openai'
-        | 'experimental-openaicompatible'
-        | 'experimental-ollama'
-        | null
-    autocompleteAdvancedModel: string | null
+    autocompleteAdvancedProvider: AutocompleteProviderID | string
     autocompleteCompleteSuggestWidgetSelection?: boolean
     autocompleteFormatOnAccept?: boolean
     autocompleteDisableInsideComments: boolean
@@ -81,7 +75,6 @@ interface RawClientConfiguration {
     autocompleteExperimentalGraphContext: 'lsp-light' | 'bfg' | 'bfg-mixed' | 'tsc' | 'tsc-mixed' | null
     autocompleteExperimentalOllamaOptions: OllamaOptions
     autocompleteExperimentalFireworksOptions?: ExperimentalFireworksConfig
-    autocompleteExperimentalMultiModelCompletions?: MultimodelSingleModelConfig[]
     autocompleteExperimentalPreloadDebounceInterval?: number
 
     /**
@@ -94,6 +87,9 @@ interface RawClientConfiguration {
     agentExtensionVersion?: string
     agentHasPersistentStorage?: boolean
     autocompleteFirstCompletionTimeout: number
+    autocompleteAdvancedModel: string | null
+    providerLimitPrompt?: number
+    devModels?: ChatModelProviderConfig[]
 
     testingModelConfig: EmbeddingsModelConfig | undefined
 }
@@ -113,11 +109,110 @@ export enum CodyIDE {
     Eclipse = 'Eclipse',
 }
 
-export type ClientConfigurationWithEndpoint = Omit<ClientConfigurationWithAccessToken, 'accessToken'>
+export type AutocompleteProviderID = keyof typeof AUTOCOMPLETE_PROVIDER_ID
 
-export interface ClientConfigurationWithAccessToken
-    extends ReadonlyDeep<RawClientConfiguration>,
-        AuthCredentials {}
+export const AUTOCOMPLETE_PROVIDER_ID = {
+    /**
+     * Default identifier that maps to the recommended autocomplete provider on DotCom.
+     */
+    default: 'default',
+
+    /**
+     * Cody talking to Fireworks official API.
+     * https://docs.fireworks.ai/api-reference/introduction
+     */
+    fireworks: 'fireworks',
+
+    /**
+     * Cody talking to openai compatible API.
+     * We plan to use this provider instead of all the existing openai-related providers.
+     */
+    openaicompatible: 'openaicompatible',
+
+    /**
+     * Cody talking to OpenAI's official public API.
+     * https://platform.openai.com/docs/api-reference/introduction
+     */
+    openai: 'openai',
+
+    /**
+     * Cody talking to OpenAI's official public API.
+     * https://platform.openai.com/docs/api-reference/introduction
+     *
+     * @deprecated use `openai` instead
+     */
+    'unstable-openai': 'unstable-openai',
+
+    /**
+     * Cody talking to OpenAI through Microsoft Azure's API (they re-sell the OpenAI API, but slightly modified).
+     *
+     * @deprecated use `openai` instead
+     */
+    'azure-openai': 'azure-openai',
+
+    /**
+     * Cody talking to customer's custom proxy service.
+     *
+     * TODO(slimsag): self-hosted models: deprecate and remove this
+     * once customers are upgraded to non-experimental version.
+     *
+     * @deprecated use `openaicompatible` instead
+     */
+    'experimental-openaicompatible': 'experimental-openaicompatible',
+
+    /**
+     * This refers to either Anthropic models re-sold by AWS,
+     * or to other models hosted by AWS' Bedrock inference API service
+     */
+    'aws-bedrock': 'aws-bedrock',
+
+    /**
+     * Cody talking to Anthropic's official public API.
+     * https://docs.anthropic.com/en/api/getting-started
+     */
+    anthropic: 'anthropic',
+
+    /**
+     * Cody talking to Google's APIs for models created by Google, which include:
+     * - their public Gemini API
+     * - their GCP Gemini API
+     * - GCP Vertex API
+     * - Anthropic-reselling APIs
+     */
+    google: 'google',
+
+    /**
+     * Cody talking to Google's APIs for models created by Google, which include:
+     * - their public Gemini API
+     * - their GCP Gemini API
+     * - GCP Vertex API
+     */
+    gemini: 'gemini',
+
+    /**
+     * Cody talking to Google's APIs for models created by Google, which include:
+     * - their public Gemini API
+     * - their GCP Gemini API
+     * - GCP Vertex API
+     *
+     * @deprecated use `gemini` instead.
+     */
+    'unstable-gemini': 'unstable-gemini',
+
+    /**
+     * Cody talking to Ollama's official public API.
+     * https://ollama.ai/docs/api
+     */
+    'experimental-ollama': 'experimental-ollama',
+
+    /**
+     * Cody talking to Ollama's official public API.
+     * https://ollama.ai/docs/api
+     *
+     * @deprecated use `experimental-ollama` instead.
+     */
+    'unstable-ollama': 'unstable-ollama',
+} as const
 
 export interface OllamaOptions {
     /**
@@ -255,15 +350,6 @@ export interface ExperimentalFireworksConfig {
         top_p?: number
         stop?: string[]
     }
-}
-
-export interface MultimodelSingleModelConfig {
-    provider: string
-    model: string
-    // This flag decides if to enable "cody.autocomplete.experimental.fireworksOptions" settings when creating a custom provider
-    enableExperimentalFireworksOverrides: boolean
-    // Context strategy to use
-    context: string
 }
 
 export interface EmbeddingsModelConfig {

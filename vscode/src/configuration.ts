@@ -2,24 +2,19 @@ import * as vscode from 'vscode'
 
 import {
     type ClientConfiguration,
-    type ClientConfigurationWithAccessToken,
     type CodyIDE,
     type ConfigurationUseContext,
-    DOTCOM_URL,
     OLLAMA_DEFAULT_URL,
+    type PickResolvedConfiguration,
     PromptString,
     ps,
+    setStaticResolvedConfigurationValue,
 } from '@sourcegraph/cody-shared'
 
+import type { ChatModelProviderConfig } from '@sourcegraph/cody-shared/src/models/sync'
 import { URI } from 'vscode-uri'
-import {
-    CONFIG_KEY,
-    type ConfigKeys,
-    type ConfigurationKeysMap,
-    getConfigEnumValues,
-} from './configuration-keys'
+import { CONFIG_KEY, type ConfigKeys } from './configuration-keys'
 import { localStorage } from './services/LocalStorageProvider'
-import { getAccessToken } from './services/SecretStorageProvider'
 
 interface ConfigGetter {
     get<T>(section: (typeof CONFIG_KEY)[ConfigKeys], defaultValue?: T): T
@@ -55,40 +50,6 @@ export function getConfiguration(
         debugRegex = /.*/
     }
 
-    let autocompleteAdvancedProvider = config.get<
-        | ClientConfiguration['autocompleteAdvancedProvider']
-        | 'unstable-ollama'
-        | 'unstable-fireworks'
-        | 'experimental-openaicompatible'
-    >(CONFIG_KEY.autocompleteAdvancedProvider, null)
-
-    // Handle deprecated provider identifiers
-    switch (autocompleteAdvancedProvider) {
-        case 'unstable-fireworks':
-            autocompleteAdvancedProvider = 'fireworks'
-            break
-        case 'unstable-ollama':
-            autocompleteAdvancedProvider = 'experimental-ollama'
-            break
-    }
-
-    // check if the configured enum values are valid
-    const configKeys = [
-        'autocompleteAdvancedProvider',
-        'autocompleteAdvancedModel',
-    ] as (keyof ConfigurationKeysMap)[]
-
-    for (const configVal of configKeys) {
-        const key = configVal.replaceAll(/([A-Z])/g, '.$1').toLowerCase()
-        const value: string | null = config.get(CONFIG_KEY[configVal])
-        checkValidEnumValues(key, value)
-    }
-
-    const autocompleteExperimentalGraphContext: 'lsp-light' | 'bfg' | null = getHiddenSetting(
-        'autocomplete.experimental.graphContext',
-        null
-    )
-
     function hasValidLocalEmbeddingsConfig(): boolean {
         return (
             [
@@ -104,7 +65,8 @@ export function getConfiguration(
     return {
         proxy: vsCodeConfig.get<string>('http.proxy'),
         codebase: sanitizeCodebase(config.get(CONFIG_KEY.codebase)),
-        customHeaders: config.get<object>(CONFIG_KEY.customHeaders, {}) as Record<string, string>,
+        serverEndpoint: config.get<string>(CONFIG_KEY.serverEndpoint, 'https://sourcegraph.com'),
+        customHeaders: config.get<Record<string, string>>(CONFIG_KEY.customHeaders),
         useContext: config.get<ConfigurationUseContext>(CONFIG_KEY.useContext) || 'embeddings',
         debugVerbose: config.get<boolean>(CONFIG_KEY.debugVerbose, false),
         debugFilter: debugRegex,
@@ -116,8 +78,10 @@ export function getConfiguration(
         chatPreInstruction: PromptString.fromConfig(config, CONFIG_KEY.chatPreInstruction, ps``),
         editPreInstruction: PromptString.fromConfig(config, CONFIG_KEY.editPreInstruction, ps``),
         commandCodeLenses: config.get(CONFIG_KEY.commandCodeLenses, false),
-        autocompleteAdvancedProvider,
-        autocompleteAdvancedModel: config.get<string | null>(CONFIG_KEY.autocompleteAdvancedModel, null),
+        autocompleteAdvancedProvider: config.get<ClientConfiguration['autocompleteAdvancedProvider']>(
+            CONFIG_KEY.autocompleteAdvancedProvider,
+            'default'
+        ),
         autocompleteCompleteSuggestWidgetSelection: config.get(
             CONFIG_KEY.autocompleteCompleteSuggestWidgetSelection,
             true
@@ -137,7 +101,10 @@ export function getConfiguration(
         internalUnstable: getHiddenSetting('internal.unstable', isTesting),
         internalDebugContext: getHiddenSetting('internal.debug.context', false),
 
-        autocompleteExperimentalGraphContext,
+        autocompleteAdvancedModel: getHiddenSetting('autocomplete.advanced.model', null),
+        autocompleteExperimentalGraphContext: getHiddenSetting<
+            ClientConfiguration['autocompleteExperimentalGraphContext']
+        >('autocomplete.experimental.graphContext', null),
         experimentalCommitMessage: getHiddenSetting('experimental.commitMessage', true),
         experimentalNoodle: getHiddenSetting('experimental.noodle', false),
 
@@ -159,10 +126,6 @@ export function getConfiguration(
             'autocomplete.experimental.fireworksOptions',
             undefined
         ),
-        autocompleteExperimentalMultiModelCompletions: getHiddenSetting(
-            'autocomplete.experimental.multiModelCompletions',
-            undefined
-        ),
         autocompleteExperimentalPreloadDebounceInterval: getHiddenSetting(
             'autocomplete.experimental.preloadDebounceInterval',
             0
@@ -182,6 +145,8 @@ export function getConfiguration(
             'autocomplete.advanced.timeout.firstCompletion',
             3_500
         ),
+        providerLimitPrompt: getHiddenSetting<number | undefined>('provider.limit.prompt', undefined),
+        devModels: getHiddenSetting<ChatModelProviderConfig[] | undefined>('dev.models', undefined),
 
         telemetryClientName: getHiddenSetting<string | undefined>('telemetry.clientName'),
         testingModelConfig:
@@ -208,33 +173,20 @@ function sanitizeCodebase(codebase: string | undefined): string {
     return codebase.replace(protocolRegexp, '').trim().replace(trailingSlashRegexp, '')
 }
 
-export function getConfigWithEndpoint(): Omit<ClientConfigurationWithAccessToken, 'accessToken'> {
-    const config = getConfiguration()
-    const isTesting = process.env.CODY_TESTING === 'true'
-    const serverEndpoint =
-        localStorage?.getEndpoint() || (isTesting ? 'http://localhost:49300/' : DOTCOM_URL.href)
-    return { ...config, serverEndpoint }
-}
-
-export const getFullConfig = async (): Promise<ClientConfigurationWithAccessToken> => {
-    return {
-        ...getConfigWithEndpoint(),
-        accessToken:
-            vscode.workspace.getConfiguration().get<string>('cody.accessToken') ||
-            (await getAccessToken()) ||
-            null,
-    }
-}
-
-function checkValidEnumValues(configName: string, value: string | null): void {
-    const validEnumValues = getConfigEnumValues(`cody.${configName}`)
-    if (value) {
-        if (!validEnumValues.includes(value)) {
-            void vscode.window.showErrorMessage(
-                `Invalid value for ${configName}: ${value}. Valid values are: ${validEnumValues.join(
-                    ', '
-                )}`
-            )
-        }
-    }
+/**
+ * Set the global {@link resolvedConfig} value with the given {@link AuthCredentials} and otherwise
+ * use global config and client state.
+ *
+ * Call this only when this value is guaranteed not to change during execution (such as in CLI
+ * programs).
+ */
+export function setStaticResolvedConfigurationWithAuthCredentials({
+    configuration,
+    auth,
+}: PickResolvedConfiguration<{ configuration: 'customHeaders'; auth: true }>): void {
+    setStaticResolvedConfigurationValue({
+        configuration: { ...getConfiguration(), customHeaders: configuration.customHeaders },
+        auth,
+        clientState: localStorage.getClientState(),
+    })
 }

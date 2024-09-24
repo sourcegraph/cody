@@ -71,10 +71,11 @@ export function currentAuthStatusOrNotReadyYet(): AuthStatus | undefined {
 }
 
 /**
- * Uses {@link currentAuthStatusAuthed} to determine if a user is authenticated on DotCom.
+ * Whether a user is authenticated on DotCom.
  */
 export function isDotComAuthed(): boolean {
-    return isDotCom(currentAuthStatusAuthed())
+    const authStatus = currentAuthStatusOrNotReadyYet()
+    return Boolean(authStatus?.authenticated && isDotCom(authStatus))
 }
 
 /**
@@ -84,8 +85,12 @@ export function isDotComAuthed(): boolean {
  * For use in tests only.
  */
 export function mockAuthStatus(
-    value: PartialDeep<AuthStatus> = AUTH_STATUS_FIXTURE_AUTHED_DOTCOM
+    value: PartialDeep<AuthStatus> | Observable<AuthStatus> = AUTH_STATUS_FIXTURE_AUTHED_DOTCOM
 ): void {
+    if (value instanceof Observable) {
+        _authStatus.setSource(value, false)
+        return
+    }
     _authStatus.setSource(Observable.of(value as AuthStatus), false)
     Object.assign(syncValue, { last: value, isSet: true })
     syncValueSubscription.unsubscribe()

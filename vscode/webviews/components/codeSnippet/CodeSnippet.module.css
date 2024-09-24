@@ -5,9 +5,8 @@
     --cody-chat-code-border-color: var(--vscode-widget-border);
     --cody-chat-code-text-muted: var(--vscode-input-placeholderForeground);
     --cody-chat-code-focus-border: var(--vscode-focusBorder);
-
-    --mark-bg: #f8e688;
-    --text-muted-highlighted: #566880;
+    --cody-chat-code-mark-background: #f8e688;
+    --cody-chat-code-text-highlighted: #566880;
 }
 
 .result-container {
@@ -16,8 +15,8 @@
     border: solid 1px var(--cody-chat-code-border-color);
 
     :global(.match-highlight) {
-        color: var(--text-muted-highlighted);
-        background-color: var(--mark-bg);
+        color: var(--cody-chat-code-text-highlighted);
+        background-color: var(--cody-chat-code-mark-background);
     }
 
     :global(.sr-only) {

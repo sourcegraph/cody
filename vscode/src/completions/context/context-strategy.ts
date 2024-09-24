@@ -10,7 +10,10 @@ import type { ContextRetriever } from '../types'
 import type { BfgRetriever } from './retrievers/bfg/bfg-retriever'
 import { JaccardSimilarityRetriever } from './retrievers/jaccard-similarity/jaccard-similarity-retriever'
 import { LspLightRetriever } from './retrievers/lsp-light/lsp-light-retriever'
-import { RecentEditsRetriever } from './retrievers/recent-edits/recent-edits-retriever'
+import { DiagnosticsRetriever } from './retrievers/recent-user-actions/diagnostics-retriever'
+import { RecentCopyRetriever } from './retrievers/recent-user-actions/recent-copy'
+import { RecentEditsRetriever } from './retrievers/recent-user-actions/recent-edits-retriever'
+import { RecentViewPortRetriever } from './retrievers/recent-user-actions/recent-view-port'
 import { loadTscRetriever } from './retrievers/tsc/load-tsc-retriever'
 
 export type ContextStrategy =
@@ -26,6 +29,9 @@ export type ContextStrategy =
     | 'recent-edits-1m'
     | 'recent-edits-5m'
     | 'recent-edits-mixed'
+    | 'recent-copy'
+    | 'diagnostics'
+    | 'recent-view-port'
 
 export interface ContextStrategyFactory extends vscode.Disposable {
     getStrategy(
@@ -81,6 +87,18 @@ export class DefaultContextStrategyFactory implements ContextStrategyFactory {
                         case 'lsp-light':
                             this.localRetriever = new JaccardSimilarityRetriever()
                             this.graphRetriever = new LspLightRetriever()
+                            break
+                        case 'recent-copy':
+                            this.localRetriever = new RecentCopyRetriever({
+                                maxAgeMs: 60 * 1000,
+                                maxSelections: 100,
+                            })
+                            break
+                        case 'diagnostics':
+                            this.localRetriever = new DiagnosticsRetriever()
+                            break
+                        case 'recent-view-port':
+                            this.localRetriever = new RecentViewPortRetriever()
                             break
                         case 'jaccard-similarity':
                             this.localRetriever = new JaccardSimilarityRetriever()
@@ -148,7 +166,10 @@ export class DefaultContextStrategyFactory implements ContextStrategyFactory {
             case 'jaccard-similarity':
             case 'recent-edits':
             case 'recent-edits-1m':
-            case 'recent-edits-5m': {
+            case 'recent-edits-5m':
+            case 'recent-copy':
+            case 'diagnostics':
+            case 'recent-view-port': {
                 if (this.localRetriever) {
                     retrievers.push(this.localRetriever)
                 }

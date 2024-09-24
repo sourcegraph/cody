@@ -36,6 +36,7 @@ export interface CompletionParameters {
     topK?: number
     topP?: number
     model?: string
+    stream?: boolean
 }
 
 export interface SerializedCompletionParameters extends Omit<CompletionParameters, 'messages'> {
