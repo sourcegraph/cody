@@ -2,7 +2,9 @@ import dedent from 'dedent'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import * as vscode from 'vscode'
 import { Position, Range } from '../../../../testutils/mocks'
+import { getCurrentDocContext } from '../../../get-current-doc-context'
 import { document } from '../../../test-helpers'
+import type { ContextRetrieverOptions } from '../../../types'
 import { RecentViewPortRetriever } from './recent-view-port'
 
 const MAX_TRACKED_FILES = 2
@@ -49,6 +51,19 @@ describe('RecentViewPortRetriever', () => {
         )
     }
 
+    const getContextRetrieverOptionsFromDoc = (doc: vscode.TextDocument): ContextRetrieverOptions => {
+        return {
+            document: doc,
+            position: new Position(0, 0),
+            docContext: getCurrentDocContext({
+                document: doc,
+                position: new Position(0, 0),
+                maxPrefixLength: 100,
+                maxSuffixLength: 0,
+            }),
+        }
+    }
+
     beforeEach(() => {
         vi.useFakeTimers()
 
@@ -89,12 +104,25 @@ describe('RecentViewPortRetriever', () => {
         await vi.advanceTimersToNextTimerAsync()
     }
 
-    it('should retrieve the most recent visible range', async () => {
+    it('should ignore the current document', async () => {
         const doc = documentList[1]
         const visibleRange = createMockVisibleRange(doc, 1, 2)
         await simulateVisibleRangeChange(doc, [visibleRange])
 
-        const snippets = await retriever.retrieve()
+        const snippets = await retriever.retrieve(getContextRetrieverOptionsFromDoc(doc))
+
+        expect(snippets).toHaveLength(0)
+    })
+
+    it('should retrieve the most recent visible range', async () => {
+        const doc = documentList[1]
+        const visibleRange = createMockVisibleRange(doc, 1, 2)
+        await simulateVisibleRangeChange(doc, [visibleRange])
+        const doc2 = documentList[0]
+        const visibleRange2 = createMockVisibleRange(doc2, 0, 1)
+        await simulateVisibleRangeChange(doc2, [visibleRange2])
+
+        const snippets = await retriever.retrieve(getContextRetrieverOptionsFromDoc(doc2))
 
         expect(snippets).toHaveLength(1)
         expect(snippets[0]).toMatchObject({
@@ -113,8 +141,11 @@ describe('RecentViewPortRetriever', () => {
         const doc = documentList[0]
         await simulateVisibleRangeChange(doc, [createMockVisibleRange(doc, 0, 1)])
         await simulateVisibleRangeChange(doc, [createMockVisibleRange(doc, 1, 2)])
+        const doc2 = documentList[1]
+        const visibleRange2 = createMockVisibleRange(doc2, 0, 1)
+        await simulateVisibleRangeChange(doc2, [visibleRange2])
 
-        const snippets = await retriever.retrieve()
+        const snippets = await retriever.retrieve(getContextRetrieverOptionsFromDoc(doc2))
 
         expect(snippets).toHaveLength(1)
         expect(snippets[0].startLine).toBe(1)
@@ -125,7 +156,7 @@ describe('RecentViewPortRetriever', () => {
         const doc = documentList[0]
         await simulateVisibleRangeChange(doc, [])
 
-        const snippets = await retriever.retrieve()
+        const snippets = await retriever.retrieve(getContextRetrieverOptionsFromDoc(doc))
 
         expect(snippets).toHaveLength(0)
     })
@@ -139,7 +170,7 @@ describe('RecentViewPortRetriever', () => {
         await simulateVisibleRangeChange(doc2, [createMockVisibleRange(doc2, 0, 1)])
         await simulateVisibleRangeChange(doc3, [createMockVisibleRange(doc3, 0, 1)])
 
-        const snippets = await retriever.retrieve()
+        const snippets = await retriever.retrieve(getContextRetrieverOptionsFromDoc(doc1))
 
         expect(snippets).toHaveLength(2)
         expect(snippets[0].uri).toEqual(doc3.uri)

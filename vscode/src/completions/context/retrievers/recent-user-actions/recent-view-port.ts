@@ -1,15 +1,16 @@
 import type { AutocompleteContextSnippet } from '@sourcegraph/cody-shared'
 import debounce from 'lodash/debounce'
-import * as vscode from 'vscode'
 import { LRUCache } from 'lru-cache'
-import type { ContextRetriever } from '../../../types'
-import { RetrieverIdentifier } from '../../utils'
+import * as vscode from 'vscode'
+import type { ContextRetriever, ContextRetrieverOptions } from '../../../types'
+import { RetrieverIdentifier, type ShouldUseContextParams, shouldBeUsedAsContext } from '../../utils'
 
 const MAX_RETRIEVED_VIEWPORTS = 5
 
 interface TrackedViewPort {
     uri: vscode.Uri
     visibleRange: vscode.Range
+    languageId: string
     lastAccessTimestamp: number
 }
 
@@ -22,7 +23,9 @@ export class RecentViewPortRetriever implements vscode.Disposable, ContextRetrie
         private readonly maxTrackedFiles: number = 10,
         private window: Pick<typeof vscode.window, 'onDidChangeTextEditorVisibleRanges'> = vscode.window
     ) {
-        this.viewportsByDocumentUri = new LRUCache<string, TrackedViewPort>({ max: this.maxTrackedFiles })
+        this.viewportsByDocumentUri = new LRUCache<string, TrackedViewPort>({
+            max: this.maxTrackedFiles,
+        })
         this.disposables.push(
             this.window.onDidChangeTextEditorVisibleRanges(
                 debounce(this.onDidChangeTextEditorVisibleRanges.bind(this), 300)
@@ -30,12 +33,8 @@ export class RecentViewPortRetriever implements vscode.Disposable, ContextRetrie
         )
     }
 
-    public async retrieve(): Promise<AutocompleteContextSnippet[]> {
-        const sortedViewPorts = Array.from(this.viewportsByDocumentUri.entries())
-            .map(([_, value]) => value)
-            .filter((value): value is TrackedViewPort => value !== undefined)
-            .sort((a, b) => b.lastAccessTimestamp - a.lastAccessTimestamp)
-            .slice(0, MAX_RETRIEVED_VIEWPORTS)
+    public async retrieve({ document }: ContextRetrieverOptions): Promise<AutocompleteContextSnippet[]> {
+        const sortedViewPorts = this.getValidViewPorts(document)
 
         const snippetPromises = sortedViewPorts.map(async viewPort => {
             const document = await vscode.workspace.openTextDocument(viewPort.uri)
@@ -51,7 +50,28 @@ export class RecentViewPortRetriever implements vscode.Disposable, ContextRetrie
         })
         return Promise.all(snippetPromises)
     }
+    private getValidViewPorts(document: vscode.TextDocument): TrackedViewPort[] {
+        const currentFileUri = document.uri.toString()
+        const currentLanguageId = document.languageId
+        const viewPorts = Array.from(this.viewportsByDocumentUri.entries())
+            .map(([_, value]) => value)
+            .filter((value): value is TrackedViewPort => value !== undefined)
 
+        const sortedViewPorts = viewPorts
+            .filter(viewport => viewport.uri.toString() !== currentFileUri)
+            .filter(viewport => {
+                const params: ShouldUseContextParams = {
+                    enableExtendedLanguagePool: false,
+                    baseLanguageId: currentLanguageId,
+                    languageId: viewport.languageId,
+                }
+                return shouldBeUsedAsContext(params)
+            })
+            .sort((a, b) => b.lastAccessTimestamp - a.lastAccessTimestamp)
+            .slice(0, MAX_RETRIEVED_VIEWPORTS)
+
+        return sortedViewPorts
+    }
     public isSupportedForLanguageId(): boolean {
         return true
     }
@@ -63,16 +83,22 @@ export class RecentViewPortRetriever implements vscode.Disposable, ContextRetrie
         }
         const uri = textEditor.document.uri
         const visibleRange = visibleRanges[0]
-        this.updateTrackedViewPort(uri, visibleRange)
+        const languageId = textEditor.document.languageId
+        this.updateTrackedViewPort(uri, visibleRange, languageId)
     }
 
-    private updateTrackedViewPort(uri: vscode.Uri, visibleRange: vscode.Range): void {
+    private updateTrackedViewPort(
+        uri: vscode.Uri,
+        visibleRange: vscode.Range,
+        languageId: string
+    ): void {
         const now = Date.now()
         const key = uri.toString()
 
         this.viewportsByDocumentUri.set(key, {
             uri,
             visibleRange,
+            languageId,
             lastAccessTimestamp: now,
         })
     }
