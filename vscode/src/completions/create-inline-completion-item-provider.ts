@@ -4,8 +4,9 @@ import {
     type PickResolvedConfiguration,
     type UnauthenticatedAuthStatus,
     createDisposables,
-    mergeMap,
     promiseFactoryToObservable,
+    skipPendingOperation,
+    switchMap,
     vscodeResource,
 } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
@@ -88,8 +89,9 @@ export function createInlineCompletionItemProvider({
         // TODO(sqs)#observe: make the list of vscode languages reactive
         return await getInlineCompletionItemProviderFilters(configuration.autocompleteLanguages)
     }).pipe(
-        mergeMap(documentFilters =>
+        switchMap(documentFilters =>
             createProvider({ config: { configuration }, authStatus }).pipe(
+                skipPendingOperation(),
                 createDisposables(providerOrError => {
                     if (providerOrError instanceof Error) {
                         logDebug('AutocompleteProvider', providerOrError.message)

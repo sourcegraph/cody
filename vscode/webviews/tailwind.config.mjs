@@ -93,6 +93,10 @@ export default {
                     foreground: 'var(--vscode-badge-foreground)',
                     background: 'var(--vscode-badge-background)',
                 },
+                'status-offline': {
+                    background: 'var(--vscode-statusBarItem-offlineBackground)',
+                    foreground: 'var(--vscode-statusBarItem-offlineForeground)',
+                },
             },
             borderRadius: {
                 lg: '6px',

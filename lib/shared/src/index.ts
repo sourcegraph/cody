@@ -7,6 +7,13 @@ export {
     type ModelCategory,
     type ModelTier,
     type ServerModelConfiguration,
+    type PerSitePreferences,
+    type SitePreferences,
+    type ModelRefStr,
+    type ModelRef,
+    type ModelsData,
+    TestLocalStorageForModelPreferences,
+    type LocalStorageForModelPreferences,
 } from './models/modelsService'
 export {
     type Model,
@@ -345,6 +352,8 @@ export {
     createMessageAPIForExtension,
 } from './misc/rpc/rpc'
 export * from './misc/observable'
+export * from './misc/observableOperation'
 export * from './configuration/resolver'
 export * from './singletons'
 export * from './auth/authStatus'
+export { fetchLocalOllamaModels } from './llm-providers/ollama/utils'

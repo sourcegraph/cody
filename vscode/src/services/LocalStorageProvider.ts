@@ -4,24 +4,27 @@ import type { Memento } from 'vscode'
 
 import {
     type AccountKeyedChatHistory,
+    type AuthCredentials,
     type AuthStatus,
     type AuthenticatedAuthStatus,
     type ChatHistoryKey,
     type ClientState,
+    type LocalStorageForModelPreferences,
+    type PerSitePreferences,
     type ResolvedConfiguration,
     type UserLocalHistory,
     distinctUntilChanged,
     fromVSCodeEvent,
     startWith,
 } from '@sourcegraph/cody-shared'
-
 import { type Observable, map } from 'observable-fns'
 import { isSourcegraphToken } from '../chat/protocol'
 import { EventEmitter } from '../testutils/mocks'
+import { secretStorage } from './SecretStorageProvider'
 
 export type ChatLocation = 'editor' | 'sidebar'
 
-class LocalStorage {
+class LocalStorage implements LocalStorageForModelPreferences {
     // Bump this on storage changes so we don't handle incorrectly formatted data
     protected readonly KEY_LOCAL_HISTORY = 'cody-local-chatHistory-v2'
     protected readonly KEY_CONFIG = 'cody-config'
@@ -32,6 +35,7 @@ class LocalStorage {
     public readonly ANONYMOUS_USER_ID_KEY = 'sourcegraphAnonymousUid'
     public readonly LAST_USED_ENDPOINT = 'SOURCEGRAPH_CODY_ENDPOINT'
     public readonly LAST_USED_USERNAME = 'SOURCEGRAPH_CODY_USERNAME'
+    private readonly MODEL_PREFERENCES_KEY = 'cody-model-preferences'
     public readonly keys = {
         // LLM waitlist for the 09/12/2024 openAI o1 models
         waitlist_o1: 'CODY_WAITLIST_LLM_09122024',
@@ -67,6 +71,8 @@ class LocalStorage {
             lastUsedEndpoint: this.getEndpoint(),
             anonymousUserID: this.anonymousUserID(),
             lastUsedChatModality: this.getLastUsedChatModality(),
+            modelPreferences: this.getModelPreferences(),
+            waitlist_o1: this.get(this.keys.waitlist_o1),
         }
     }
 
@@ -79,6 +85,14 @@ class LocalStorage {
         )
     }
 
+    public async setOrDeleteWaitlistO1(value: boolean): Promise<void> {
+        if (value) {
+            await this.set(this.keys.waitlist_o1, value)
+        } else {
+            await this.delete(this.keys.waitlist_o1)
+        }
+    }
+
     public getEndpoint(): string | null {
         const endpoint = this.storage.get<string | null>(this.LAST_USED_ENDPOINT, null)
         // Clear last used endpoint if it is a Sourcegraph token
@@ -89,22 +103,32 @@ class LocalStorage {
         return endpoint
     }
 
-    public async saveEndpoint(endpoint: string): Promise<void> {
-        if (!endpoint) {
+    /**
+     * Save the server endpoint to local storage *and* the access token to secret storage, but wait
+     * until both are stored to emit a change even from either. This prevents the rest of the
+     * application from reacting to one of the "store" events before the other is completed, which
+     * would give an inconsistent view of the state.
+     */
+    public async saveEndpointAndToken(
+        credentials: Pick<AuthCredentials, 'serverEndpoint' | 'accessToken'>
+    ): Promise<void> {
+        if (!credentials.serverEndpoint) {
             return
         }
-        try {
-            // Do not save sourcegraph tokens as the last used endpoint
-            if (isSourcegraphToken(endpoint)) {
-                return
-            }
-
-            const uri = new URL(endpoint).href
-            await this.set(this.LAST_USED_ENDPOINT, uri)
-            await this.addEndpointHistory(uri)
-        } catch (error) {
-            console.error(error)
+        // Do not save an access token as the last-used endpoint, to prevent user mistakes.
+        if (isSourcegraphToken(credentials.serverEndpoint)) {
+            return
         }
+
+        const serverEndpoint = new URL(credentials.serverEndpoint).href
+
+        // Pass `false` to avoid firing the change event until we've stored all of the values.
+        await this.set(this.LAST_USED_ENDPOINT, serverEndpoint, false)
+        await this.addEndpointHistory(serverEndpoint, false)
+        if (credentials.accessToken) {
+            await secretStorage.storeToken(serverEndpoint, credentials.accessToken)
+        }
+        this.onChange.fire()
     }
 
     public async deleteEndpoint(): Promise<void> {
@@ -115,7 +139,7 @@ class LocalStorage {
         return this.get<string[] | null>(this.CODY_ENDPOINT_HISTORY)
     }
 
-    private async addEndpointHistory(endpoint: string): Promise<void> {
+    private async addEndpointHistory(endpoint: string, fire = true): Promise<void> {
         // Do not save sourcegraph tokens as endpoint
         if (isSourcegraphToken(endpoint)) {
             return
@@ -125,13 +149,7 @@ class LocalStorage {
         const historySet = new Set(history)
         historySet.delete(endpoint)
         historySet.add(endpoint)
-        await this.set(this.CODY_ENDPOINT_HISTORY, [...historySet])
-    }
-
-    public getLastStoredUser(): { endpoint: string; username: string } | null {
-        const username = this.storage.get<string | null>(this.LAST_USED_USERNAME, null)
-        const endpoint = this.getEndpoint()
-        return username && endpoint ? { endpoint, username } : null
+        await this.set(this.CODY_ENDPOINT_HISTORY, [...historySet], fire)
     }
 
     public getChatHistory(authStatus: AuthenticatedAuthStatus): UserLocalHistory {
@@ -159,10 +177,6 @@ class LocalStorage {
                 }
             }
 
-            // Store the current username as the last used username
-            if (authStatus.username) {
-                this.storage.update(this.LAST_USED_USERNAME, authStatus.username)
-            }
             await this.set(this.KEY_LOCAL_HISTORY, fullHistory)
         } catch (error) {
             console.error(error)
@@ -275,14 +289,24 @@ class LocalStorage {
         return this.get(this.LAST_USED_CHAT_MODALITY) ?? 'sidebar'
     }
 
+    public getModelPreferences(): PerSitePreferences {
+        return this.get<PerSitePreferences>(this.MODEL_PREFERENCES_KEY) ?? {}
+    }
+
+    public async setModelPreferences(preferences: PerSitePreferences): Promise<void> {
+        await this.set(this.MODEL_PREFERENCES_KEY, preferences)
+    }
+
     public get<T>(key: string): T | null {
         return this.storage.get(key, null)
     }
 
-    public async set<T>(key: string, value: T): Promise<void> {
+    public async set<T>(key: string, value: T, fire = true): Promise<void> {
         try {
             await this.storage.update(key, value)
-            this.onChange.fire()
+            if (fire) {
+                this.onChange.fire()
+            }
         } catch (error) {
             console.error(error)
         }

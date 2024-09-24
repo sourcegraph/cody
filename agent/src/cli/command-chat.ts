@@ -109,6 +109,22 @@ Enterprise Only:
             process.exit(exitCode)
         })
 
+let agentClient: ReturnType<typeof newEmbeddedAgentClient> | undefined
+function getOrCreateEmbeddedAgentClient(
+    ...args: Parameters<typeof newEmbeddedAgentClient>
+): ReturnType<typeof newEmbeddedAgentClient> {
+    // Reuse the agent client because only one can be running in any given process due to the use of
+    // global singletons such as modelsService. If you create multiple, then modelsService will hang
+    // because of competing processes trying to overwrite the globals.
+    //
+    // This assumes that the args are the same for each call. If that is not true, this will
+    // silently break.
+    if (!agentClient) {
+        agentClient = newEmbeddedAgentClient(...args)
+    }
+    return agentClient
+}
+
 export async function chatAction(options: ChatOptions): Promise<number> {
     const streams = options.streams ?? Streams.default()
     const spinner = ora({
@@ -142,7 +158,10 @@ export async function chatAction(options: ChatOptions): Promise<number> {
         },
     }
     spinner.text = 'Initializing...'
-    const { serverInfo, client, messageHandler } = await newEmbeddedAgentClient(clientInfo, activate)
+    const { serverInfo, client, messageHandler } = await getOrCreateEmbeddedAgentClient(
+        clientInfo,
+        activate
+    )
     if (!serverInfo.authStatus?.authenticated) {
         notAuthenticated(spinner)
         return 1

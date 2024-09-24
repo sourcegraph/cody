@@ -1,6 +1,8 @@
-import { describe, expect, it } from 'vitest'
-import * as vscode from 'vscode'
+import { describe, expect, it, vi } from 'vitest'
+import { Uri } from 'vscode'
 import { manipulateWebviewHTML } from './ChatController'
+
+vi.mock('../../services/AuthProvider', () => ({}))
 
 describe('manipulateWebviewHTML', () => {
     const options = {
@@ -10,7 +12,7 @@ describe('manipulateWebviewHTML', () => {
         const html = '<img src="./image.png">'
         const result = manipulateWebviewHTML(html, {
             ...options,
-            resources: vscode.Uri.parse('https://example.com/resources'),
+            resources: Uri.parse('https://example.com/resources'),
         })
         expect(result).toBe('<img src="https://example.com/resources/image.png">')
     })
@@ -54,7 +56,7 @@ describe('manipulateWebviewHTML', () => {
             '<!-- START CSP --><meta http-equiv="Content-Security-Policy" content="default-src \'self\';"><!-- END CSP --><img src="./image1.png"><img src="./image2.png"><script>/*injectedScript*/</script><style>/*injectedStyle*/</style>'
         const result = manipulateWebviewHTML(html, {
             ...options,
-            resources: vscode.Uri.parse('https://example.com/resources'),
+            resources: Uri.parse('https://example.com/resources'),
             injectScript: 'console.log("Test")',
             injectStyle: 'body { color: blue; }',
         })

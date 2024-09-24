@@ -30,7 +30,7 @@ export class AgentWorkspaceConfiguration implements vscode.WorkspaceConfiguratio
         return [...this.prefix, section].join('.')
     }
 
-    private clientNameToIDE(value: string): ClientConfiguration['agentIDE'] | undefined {
+    public static clientNameToIDE(value: string): ClientConfiguration['agentIDE'] | undefined {
         switch (value.toLowerCase()) {
             case 'vscode':
                 return CodyIDE.VSCode
@@ -95,7 +95,7 @@ export class AgentWorkspaceConfiguration implements vscode.WorkspaceConfiguratio
             case 'cody.codebase':
                 return extensionConfig?.codebase
             case 'cody.advanced.agent.ide':
-                return this.clientNameToIDE(this.clientInfo()?.name ?? '')
+                return AgentWorkspaceConfiguration.clientNameToIDE(this.clientInfo()?.name ?? '')
             case 'cody.advanced.agent.ide.version':
                 return this.clientInfo()?.ideVersion
             case 'cody.advanced.agent.extension.version':
