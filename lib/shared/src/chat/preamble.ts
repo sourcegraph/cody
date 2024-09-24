@@ -8,7 +8,9 @@ const DEFAULT_PREAMBLE = ps`You are Cody, an AI coding assistant from Sourcegrap
  * produce code blocks that we can associate with existing file paths.
  * We want to read these file paths to support applying code directly to files from chat.
  */
-const SMART_APPLY_PREAMBLE = ps`If your answer contains fenced code blocks in Markdown, include the relevant full file path in the code block tag using this structure: \`\`\`$LANGUAGE:$FILEPATH\`\`\`.`
+const SMART_APPLY_PREAMBLE = ps`If your answer contains fenced code blocks in Markdown, include the relevant full file path in the code block tag using this structure: \`\`\`$LANGUAGE:$FILEPATH\`\`\`
+For executable terminal commands: enclose in a Markdown code block with the language tag "shell".
+For file paths mentioned outside of code blocks: enclose with single backticks.`
 
 const CHAT_PREAMBLE = DEFAULT_PREAMBLE.concat(SMART_APPLY_PREAMBLE)
 

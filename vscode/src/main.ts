@@ -62,6 +62,7 @@ import {
 import { executeAutoEditCommand } from './commands/execute/auto-edit'
 import { executeDocChatCommand } from './commands/execute/doc'
 import { CodySourceControl } from './commands/scm/source-control'
+import { registerCodyCommandLine } from './commands/services/command-line'
 import type { CodyCommandArgs } from './commands/types'
 import { newCodyCommandArgs } from './commands/utils/get-commands'
 import { createInlineCompletionItemProvider } from './completions/create-inline-completion-item-provider'
@@ -421,6 +422,12 @@ async function registerCodyCommands(
         )
     )
 
+    // Experimental Commands
+    disposables.push(
+        sourceControl, // Generate Commit Message command
+        registerCodyCommandLine(chatClient)
+    )
+
     disposables.push(
         subscriptionDisposable(
             featureFlagProvider
@@ -483,7 +490,6 @@ async function registerCodyCommands(
                                   vscode.commands.registerCommand('cody.command.auto-edit', a =>
                                       executeAutoEditCommand(a)
                                   ),
-                                  sourceControl, // Generate Commit Message command
                               ]
                     })
                 )
