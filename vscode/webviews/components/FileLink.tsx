@@ -156,7 +156,7 @@ export const FileLink: React.FunctionComponent<
     )
 }
 
-const PrettyPrintedContextItem: React.FunctionComponent<{
+export const PrettyPrintedContextItem: React.FunctionComponent<{
     path: string
     range?: string
     repoShortName?: string
@@ -175,7 +175,7 @@ const PrettyPrintedContextItem: React.FunctionComponent<{
             {repoShortName && (
                 <span className={styles.repoShortName}>
                     {repoShortName}
-                    {sep}
+                    {dirname.length === 0 || dirname.startsWith(sep) ? '' : sep}
                 </span>
             )}
             <span className={styles.dirname}>{dirname}</span>
