@@ -94,34 +94,6 @@ describe('createProvider', () => {
             expect(provider.legacyModel).toBe('deepseek-coder-v2-lite-base')
         })
 
-        it('returns "experimental-openaicompatible" provider config and corresponding model if specified', async () => {
-            const provider = await createProviderForTest({
-                config: {
-                    configuration: {
-                        autocompleteAdvancedProvider: 'experimental-openaicompatible',
-                        autocompleteAdvancedModel: 'starchat-16b-beta',
-                    },
-                },
-                authStatus: AUTH_STATUS_FIXTURE_AUTHED,
-            })
-            expect(provider.id).toBe('experimental-openaicompatible')
-            expect(provider.legacyModel).toBe('starchat-16b-beta')
-        })
-
-        it('returns "experimental-openaicompatible" provider config if specified in settings and default model', async () => {
-            const provider = await createProviderForTest({
-                config: {
-                    configuration: {
-                        autocompleteAdvancedProvider: 'experimental-openaicompatible',
-                        autocompleteAdvancedModel: null,
-                    },
-                },
-                authStatus: AUTH_STATUS_FIXTURE_AUTHED,
-            })
-            expect(provider.id).toBe('experimental-openaicompatible')
-            expect(provider.legacyModel).toBe('starcoder-hybrid')
-        })
-
         it('returns "anthropic" provider config if specified in VSCode settings', async () => {
             const provider = await createProviderForTest({
                 config: {
