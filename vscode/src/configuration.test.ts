@@ -111,6 +111,8 @@ describe('getConfiguration', () => {
                         return 123
                     case 'cody.dev.models':
                         return [{ model: 'm', provider: 'p' }] satisfies ChatModelProviderConfig[]
+                    case 'cody.proxy':
+                        return undefined
                     case 'cody.override.authToken':
                         return undefined
                     case 'cody.override.serverEndpoint':
