@@ -19,6 +19,7 @@ import { ScrollDown } from './components/ScrollDown'
 import type { View } from './tabs'
 import { useTelemetryRecorder } from './utils/telemetry'
 import { useUserAccountInfo } from './utils/useConfig'
+import WelcomeFooter from './chat/components/WelcomeFooter'
 
 interface ChatboxProps {
     chatEnabled: boolean
@@ -233,6 +234,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             {scrollableParent && (
                 <ScrollDown scrollableParent={scrollableParent} onClick={handleScrollDownClick} />
             )}
+            <WelcomeFooter />
         </>
     )
 }

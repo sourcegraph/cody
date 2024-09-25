@@ -1,0 +1,26 @@
+.welcome-footer {
+    display: flex;
+    flex-flow: column nowrap;
+}
+
+.tips {
+    display: flex;
+    flex-flow: column nowrap;
+}
+
+.item {
+    display: flex;
+    flex-flow: row nowrap;
+    gap: 1rem;
+    font-size: 1rem;
+    color: var(--text-muted)
+}
+
+.links {
+    display: flex;
+    flex-flow: row nowrap;
+}
+
+.separator {
+    border-bottom: 1px solid white;
+}
