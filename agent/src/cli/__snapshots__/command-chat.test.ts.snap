@@ -11,6 +11,8 @@ stdout: |+
 
 
 
+  Here's the implementation of a cow based on the provided interface:
+
   \`\`\`typescript:animal.ts
   class Cow implements StrangeAnimal {
       makesSound(): 'coo' | 'moo' {
@@ -34,6 +36,8 @@ stdout: |+
 
 
 
+  Here's the implementation of a cow based on the provided interface:
+
   \`\`\`typescript:animal.ts
   class Cow implements StrangeAnimal {
       makesSound(): 'coo' | 'moo' {
@@ -56,6 +60,8 @@ stdout: |+
   > 1. WORKING_DIRECTORY/animal.ts
 
 
+
+  Here's the implementation of a cow based on the provided interface:
 
   \`\`\`typescript:animal.ts
   class Cow implements StrangeAnimal {
