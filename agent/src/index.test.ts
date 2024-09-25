@@ -6,7 +6,6 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
 import {
     type ContextItem,
-    ContextItemSource,
     DOTCOM_URL,
     ModelUsage,
     type SerializedChatTranscript,
@@ -65,7 +64,7 @@ describe('Agent', () => {
         credentials: TESTING_CREDENTIALS.dotcomProUserRateLimited,
     })
 
-    const mockEnhancedContext: ContextItem[] = []
+    const mockContextItems: ContextItem[] = []
 
     // Initialize inside beforeAll so that subsequent tests are skipped if initialization fails.
     beforeAll(async () => {
@@ -101,12 +100,11 @@ describe('Agent', () => {
             'src/ChatColumn.tsx',
             'src/Heading.tsx',
             'src/squirrel.ts',
-            'src/multiple-selections.ts',
         ]) {
             const item = await workspace.loadContextItem(name)
-            // Trim content to the first 20 lines to imitate enhanced context, which only includes file chunks
+            // Trim content to the first 20 lines to imitate our context-fetching, which only includes file chunks
             item.content = item.content?.split('\n').slice(0, 20).join('\n')
-            mockEnhancedContext.push(item)
+            mockContextItems.push(item)
         }
     }, 20_000)
 
@@ -117,7 +115,6 @@ describe('Agent', () => {
     const sumUri = workspace.file('src', 'sum.ts')
     const animalUri = workspace.file('src', 'animal.ts')
     const squirrelUri = workspace.file('src', 'squirrel.ts')
-    const multipleSelectionsUri = workspace.file('src', 'multiple-selections.ts')
 
     // Context files ends with 'Ignored.ts' will be excluded by .cody/ignore
     const ignoredUri = workspace.file('src', 'isIgnored.ts')
@@ -268,7 +265,6 @@ describe('Agent', () => {
                         command: 'submit',
                         text: 'My name is Lars Monsen.',
                         submitType: 'user',
-                        addEnhancedContext: false,
                     },
                 })
             )
@@ -291,7 +287,6 @@ describe('Agent', () => {
                         command: 'submit',
                         text: 'What is my name?',
                         submitType: 'user',
-                        addEnhancedContext: false,
                     },
                 })
             )
@@ -323,7 +318,6 @@ describe('Agent', () => {
                         command: 'submit',
                         text: 'What model are you?',
                         submitType: 'user',
-                        addEnhancedContext: false,
                     },
                 })
             )
@@ -341,7 +335,6 @@ describe('Agent', () => {
                         command: 'submit',
                         text: 'What model are you?',
                         submitType: 'user',
-                        addEnhancedContext: false,
                     },
                 })
             )
@@ -511,8 +504,7 @@ describe('Agent', () => {
             const lastMessage = await client.sendSingleMessageToNewChat(
                 'Write a class Dog that implements the Animal interface in my workspace. Show the code only, no explanation needed.',
                 {
-                    addEnhancedContext: false,
-                    contextFiles: mockEnhancedContext,
+                    contextFiles: mockContextItems,
                 }
             )
             // TODO: make this test return a TypeScript implementation of
@@ -537,8 +529,7 @@ describe('Agent', () => {
                     // Emphasize showing code examples to hit on `chatResponse:hasCode` event.
                     'What is Squirrel? Show me concrete code examples',
                     {
-                        addEnhancedContext: false,
-                        contextFiles: mockEnhancedContext,
+                        contextFiles: mockContextItems,
                     }
                 )
             expect(lastMessage?.text?.toLocaleLowerCase() ?? '').includes('code nav')
@@ -744,7 +735,7 @@ describe('Agent', () => {
             await client.openFile(ignoredUri)
             const { transcript } = await client.sendSingleMessageToNewChatWithFullTranscript(
                 'What files contain SELECTION_START?',
-                { addEnhancedContext: false, contextFiles: mockEnhancedContext }
+                { contextFiles: mockContextItems }
             )
             decodeURIs(transcript)
             const contextFiles = transcript.messages.flatMap(m => m.contextFiles ?? [])
@@ -822,78 +813,6 @@ describe('Agent', () => {
             // context file names from the test.
             expect(groupedText).includes('src/squirrel.ts')
         }, 10_000)
-    })
-
-    describe('Text documents', () => {
-        // Skipping this test because it asserts an outdated behavior.
-        // Previously, the user's selection was added to the context even when
-        // `addEnhancedContext: false`. In the PR
-        // https://github.com/sourcegraph/cody/pull/5060, we change the behavior
-        // so that the user's selection is only added when `addEnhancedContext:
-        // true`.  We can't just set `addEnhancedContext: true` because we have
-        // other assertions that fail the tests when `addEnhancedContext: true`
-        // and symf is disabled. If we remove that assertion, the test still
-        // fails because of other reasons. Most likely, the Right solution is to
-        // remove the concept of `addEnhancedContext` altogether because the
-        // webview-based Chat  UI doesn't even expose a button to control this. We will still
-        // need to figure out how we expose adding the user's selection to the
-        // context when interacting with Cody through the JSON-RPC API.
-        it.skip('chat/submitMessage (understands the selected text)', async () => {
-            await client.openFile(multipleSelectionsUri)
-            await client.changeFile(multipleSelectionsUri)
-            await client.changeFile(multipleSelectionsUri, {
-                selectionName: 'SELECTION_2',
-            })
-            const contextFilesWithoutSelectionFile = mockEnhancedContext.filter(
-                item => item.uri.toString() !== multipleSelectionsUri.toString()
-            )
-
-            const reply = await client.sendSingleMessageToNewChat(
-                'What is the name of the function that I have selected? Only answer with the name of the function, nothing else',
-                // Add context to ensure the LLM can distinguish between the selected code and other context items
-                {
-                    addEnhancedContext: false,
-                    contextFiles: [
-                        ...contextFilesWithoutSelectionFile,
-                        {
-                            type: 'file',
-                            uri: multipleSelectionsUri,
-                            range: {
-                                start: {
-                                    line: 7,
-                                    character: 0,
-                                },
-                                end: {
-                                    line: 8,
-                                    character: 0,
-                                },
-                            },
-                            source: ContextItemSource.Selection,
-                        },
-                    ],
-                }
-            )
-            expect(reply?.text?.trim()).includes('anotherFunction')
-            expect(reply?.text?.trim()).not.includes('inner')
-            await client.changeFile(multipleSelectionsUri)
-            const reply2 = await client.sendSingleMessageToNewChat(
-                'What is the name of the function that I have selected? Only answer with the name of the function, nothing else',
-                // Add context to ensure the LLM can distinguish between the selected code and other context items
-                {
-                    addEnhancedContext: false,
-                    contextFiles: [
-                        ...contextFilesWithoutSelectionFile,
-                        {
-                            type: 'file',
-                            uri: multipleSelectionsUri,
-                            source: ContextItemSource.Selection,
-                        },
-                    ],
-                }
-            )
-            expect(reply2?.text?.trim()).includes('inner')
-            expect(reply2?.text?.trim()).not.includes('anotherFunction')
-        }, 20_000)
     })
 
     describe('Commands', () => {

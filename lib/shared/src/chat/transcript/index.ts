@@ -11,13 +11,6 @@ export interface SerializedChatTranscript {
     chatTitle?: string
     interactions: SerializedChatInteraction[]
     lastInteractionTimestamp: string
-    enhancedContext?: {
-        /**
-         * For enterprise multi-repo search, the manually selected repository names (for example
-         * "github.com/sourcegraph/sourcegraph") and IDs.
-         */
-        selectedRepos: { id: string; name: string }[]
-    }
 }
 
 /**

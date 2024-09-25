@@ -61,7 +61,6 @@ async function unitTestCommand(
     return {
         text: prompt,
         contextItems,
-        addEnhancedContext: false,
         source: args?.source,
         submitType: 'user-newchat',
         command: DefaultChatCommands.Unit,

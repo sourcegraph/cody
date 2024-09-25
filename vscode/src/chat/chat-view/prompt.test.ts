@@ -146,7 +146,7 @@ describe('DefaultPrompter', () => {
         expect(context.ignored).toEqual([])
     })
 
-    it('prefers latest enhanced context', async () => {
+    it('prefers latest context', async () => {
         const modelsService = modelsServiceWithModels([
             createModel({
                 id: 'a-model-id',

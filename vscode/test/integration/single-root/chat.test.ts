@@ -38,7 +38,6 @@ suite('Chat', function () {
             submitType: 'user',
             mentions: [],
             editorState: null,
-            legacyAddEnhancedContext: false,
             signal: new AbortController().signal,
         })
 
@@ -59,7 +58,6 @@ suite('Chat', function () {
             submitType: 'user',
             mentions: [],
             editorState: null,
-            legacyAddEnhancedContext: false,
             signal: new AbortController().signal,
         })
 

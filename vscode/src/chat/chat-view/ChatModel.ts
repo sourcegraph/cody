@@ -15,7 +15,6 @@ import {
 } from '@sourcegraph/cody-shared'
 
 import type { RankedContext } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
-import type { Repo } from '../../context/remote-repo'
 import { getChatPanelTitle } from './chat-helpers'
 
 export class ChatModel {
@@ -24,8 +23,7 @@ export class ChatModel {
         public modelID: string,
         public readonly sessionID: string = new Date(Date.now()).toUTCString(),
         private messages: ChatMessage[] = [],
-        private customChatTitle?: string,
-        private selectedRepos?: Repo[]
+        private customChatTitle?: string
     ) {
         this.contextWindow = modelsService.getContextWindowByID(this.modelID)
     }
@@ -165,22 +163,6 @@ export class ChatModel {
         return getChatPanelTitle(lastHumanMessage?.text?.toString() ?? '')
     }
 
-    public getCustomChatTitle(): string | undefined {
-        return this.customChatTitle
-    }
-
-    public setCustomChatTitle(title: string): void {
-        this.customChatTitle = title
-    }
-
-    public getSelectedRepos(): Repo[] | undefined {
-        return this.selectedRepos ? this.selectedRepos.map(r => ({ ...r })) : undefined
-    }
-
-    public setSelectedRepos(repos: Repo[] | undefined): void {
-        this.selectedRepos = repos ? repos.map(r => ({ ...r })) : undefined
-    }
-
     /**
      * Serializes to the transcript JSON format.
      */
@@ -199,14 +181,9 @@ export class ChatModel {
         }
         const result: SerializedChatTranscript = {
             id: this.sessionID,
-            chatTitle: this.getCustomChatTitle(),
+            chatTitle: undefined,
             lastInteractionTimestamp: this.sessionID,
             interactions,
-        }
-        if (this.selectedRepos) {
-            result.enhancedContext = {
-                selectedRepos: this.selectedRepos.map(r => ({ ...r })),
-            }
         }
         return result
     }
