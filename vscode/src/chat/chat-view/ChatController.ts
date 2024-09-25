@@ -402,9 +402,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             case 'newFile':
                 await handleCodeFromSaveToNewFile(message.text, this.editor)
                 break
-            case 'embeddings/index':
-                await vscode.commands.executeCommand('cody.embeddings.index')
-                break
             case 'show-page':
                 await vscode.commands.executeCommand('cody.show-page', message.page)
                 break

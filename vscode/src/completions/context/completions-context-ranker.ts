@@ -80,7 +80,7 @@ export class DefaultCompletionsContextRanker implements CompletionsContextRanker
         const fusedResults = fuseResults(
             results.map(r => r.snippets),
             result => {
-                // Ensure that context retrieved via BFG works where we do not have a startLine and
+                // Ensure that context retrieved works when we do not have a startLine and
                 // endLine yet.
                 if (typeof result.startLine === 'undefined' || typeof result.endLine === 'undefined') {
                     return [result.uri.toString()]

@@ -5,14 +5,11 @@ import {
     type Guardrails,
     type SourcegraphCompletionsClient,
     SourcegraphGuardrailsClient,
-    type StoredLastValue,
     currentAuthStatusAuthed,
     graphqlClient,
-    subscriptionDisposable,
 } from '@sourcegraph/cody-shared'
 import { ContextAPIClient } from './chat/context/contextAPIClient'
 import type { PlatformContext } from './extension.common'
-import type { LocalEmbeddingsController } from './local-context/local-embeddings'
 import type { SymfRunner } from './local-context/symf'
 import { logger } from './log'
 
@@ -20,7 +17,6 @@ interface ExternalServices {
     chatClient: ChatClient
     completionsClient: SourcegraphCompletionsClient
     guardrails: Guardrails
-    localEmbeddings: StoredLastValue<LocalEmbeddingsController | undefined> | undefined
     symfRunner: SymfRunner | undefined
     contextAPIClient: ContextAPIClient | undefined
     dispose(): void
@@ -30,7 +26,6 @@ export async function configureExternalServices(
     context: vscode.ExtensionContext,
     platform: Pick<
         PlatformContext,
-        | 'createLocalEmbeddingsController'
         | 'createCompletionsClient'
         | 'createSentryService'
         | 'createOpenTelemetryService'
@@ -50,9 +45,6 @@ export async function configureExternalServices(
     const symfRunner = platform.createSymfRunner?.(context, completionsClient)
     if (symfRunner) disposables.push(symfRunner)
 
-    const localEmbeddings = platform.createLocalEmbeddingsController?.()
-    if (localEmbeddings) disposables.push(subscriptionDisposable(localEmbeddings.subscription))
-
     const chatClient = new ChatClient(completionsClient, () => currentAuthStatusAuthed())
 
     const guardrails = new SourcegraphGuardrailsClient()
@@ -64,7 +56,6 @@ export async function configureExternalServices(
         chatClient,
         completionsClient,
         guardrails,
-        localEmbeddings,
         symfRunner,
         contextAPIClient,
         dispose(): void {

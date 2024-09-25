@@ -371,15 +371,6 @@ interface ContextSearchResponse {
     }[]
 }
 
-export interface EmbeddingsSearchResult {
-    repoName?: string
-    revision?: string
-    uri: URI
-    startLine: number
-    endLine: number
-    content: string
-}
-
 export interface ChatIntentResult {
     intent: string
     score: number
