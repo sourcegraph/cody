@@ -128,9 +128,9 @@ export function startClientStateBroadcaster({
     return vscode.Disposable.from(...disposables)
 }
 
-export async function getCorpusContextItemsForEditorState(useRemote: boolean): Promise<ContextItem[]> {
-    const items: ContextItem[] = []
-
+export async function getCodebaseContextItemsForEditorState(
+    useRemote: boolean
+): Promise<ContextItem | undefined> {
     // TODO(sqs): Make this consistent between self-serve (no remote search) and enterprise (has
     // remote search). There should be a single internal thing in Cody that lets you monitor the
     // user's current codebase.
@@ -144,7 +144,7 @@ export async function getCorpusContextItemsForEditorState(useRemote: boolean): P
             if (repo.remoteID === undefined) {
                 continue
             }
-            items.push({
+            return {
                 ...contextItemMentionFromOpenCtxItem(
                     await createRepositoryMention(
                         {
@@ -160,13 +160,13 @@ export async function getCorpusContextItemsForEditorState(useRemote: boolean): P
                 description: repo.repoName,
                 source: ContextItemSource.Initial,
                 icon: 'folder',
-            })
+            }
         }
     } else {
         // TODO(sqs): Support multi-root. Right now, this only supports the 1st workspace root.
         const workspaceFolder = vscode.workspace.workspaceFolders?.at(0)
         if (workspaceFolder) {
-            items.push({
+            return {
                 type: 'tree',
                 uri: workspaceFolder.uri,
                 title: 'Current Repository',
@@ -176,8 +176,18 @@ export async function getCorpusContextItemsForEditorState(useRemote: boolean): P
                 content: null,
                 source: ContextItemSource.Initial,
                 icon: 'folder',
-            } satisfies ContextItemTree)
+            } satisfies ContextItemTree
         }
+    }
+    return undefined
+}
+
+export async function getCorpusContextItemsForEditorState(useRemote: boolean): Promise<ContextItem[]> {
+    const items: ContextItem[] = []
+
+    const rootContext = await getCodebaseContextItemsForEditorState(useRemote)
+    if (rootContext) {
+        items.push(rootContext)
     }
 
     const providers = (await openCtx.controller?.meta({}))?.filter(meta => meta.mentions?.autoInclude)

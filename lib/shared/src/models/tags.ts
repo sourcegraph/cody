@@ -21,6 +21,7 @@ export enum ModelTag {
     Pro = 'pro',
     Free = 'free',
     Enterprise = 'enterprise',
+    Internal = 'internal',
 
     // Origins - where the model comes from
     Gateway = 'gateway',

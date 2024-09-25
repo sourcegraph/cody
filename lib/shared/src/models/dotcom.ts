@@ -46,6 +46,16 @@ export const DEFAULT_DOT_COM_MODELS = [
         tags: [ModelTag.Gateway, ModelTag.Power, ModelTag.Recommended, ModelTag.Free],
     },
     {
+        title: 'Cody Reflection',
+        // NOTE: This is not a valid model ID that gateway recognizes.
+        // The id must be replaced by ChatClient before sending the request"
+        id: 'sourcegraph/cody-reflection',
+        provider: 'Sourcegraph',
+        usage: [ModelUsage.Chat],
+        contextWindow: expandedContextWindow,
+        tags: [ModelTag.Gateway, ModelTag.Power, ModelTag.Pro, ModelTag.Internal],
+    },
+    {
         title: 'Claude 3 Opus',
         id: 'anthropic/claude-3-opus-20240229',
         provider: 'Anthropic',

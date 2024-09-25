@@ -1,5 +1,5 @@
 import type { ContextItem, RangeData } from '@sourcegraph/cody-shared'
-import { getContextItemDisplayPath, getContextItemTokenUsageType } from './utils'
+import { getContextItemDisplayPath, isUserAddedItem } from './utils'
 
 /**
  * Filters exisiting context items for uniqueness.
@@ -105,15 +105,6 @@ function rangeContainsLines(outerRange: RangeData, innerRange: RangeData): boole
  */
 function rangesOnSameLines(range1: RangeData, range2: RangeData): boolean {
     return range1.start?.line === range2.start?.line && range1.end?.line === range2.end?.line
-}
-
-/**
- * If the context item is a user-added item:
- * - `user` - The item was added by the user through @-mentions or other user input.
- * - `selection` - The item was added by the user through a selection.
- */
-function isUserAddedItem(item: ContextItem): boolean {
-    return getContextItemTokenUsageType(item) === 'user'
 }
 
 /**
