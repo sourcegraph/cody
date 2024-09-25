@@ -1,58 +1,40 @@
+import { welcomeTips, welcomeLinks } from './WelcomeFooterContent'
 import styles from './WelcomeFooter.module.css'
 
-const ADD_CONTEXT_MSG = "Type @ to add context to your chat"
-const START_CHAT_MSG = "Start a new chat using ⌥ / or the New Chat button"
-const EDITOR_CONTEXT_MSG = "To add code context from an editor, right click and use Add to Cody Chat"
-const CODY_DOCS_URL = "https://sourcegraph.com/docs/cody"
-const HELP_URL = "https://community.sourcegraph.com/"
-// get the icons set up first, then set up an iterable array.
-
-const { welcomeFooter, tips, item, links, separator } = styles
-
 export default function WelcomeFooter() {
+    const { welcomeFooter, tips, item, links, separator } = styles
+
+    function generateTips() {
+        return welcomeTips.map((tip, key) => {
+            const Icon = tip.icon
+            return (
+                <div key={`tip-${key + 1}`} className={item}>
+                    <Icon className="tw-w-8 tw-h-8" strokeWidth={1.25} />
+                    <div className="tip">{tip.message}</div>
+                </div>
+            )
+        })
+    }
+
+    function generateLinks() {
+        return welcomeLinks.map((link, key) => {
+            const Icon = link.icon
+            return (
+                <div className={item} key={`link-${key + 1}`}>
+                    <Icon className="tw-w-8 tw-h-8" strokeWidth={1.25} />
+                    <a href={link.url} className="tip" rel="noreferrer" target="_blank">
+                        {link.text}
+                    </a>
+                </div>
+            )
+        })
+    }
+
     return (
-        <div id="welcome-footer" className={welcomeFooter}>
-            <div className={tips}>
-                <div className={item}>
-                    <div className="icon">@</div>
-                    <div className="tip">{ADD_CONTEXT_MSG}</div>
-                </div>
-                <div className={item}>
-                    <div className="icon">@</div>
-                    <div className="tip">{START_CHAT_MSG}</div>
-                </div>
-                <div className={item}>
-                    <div className="icon">@</div>
-                    <div className="tip">{EDITOR_CONTEXT_MSG}</div>
-                </div>
-            </div>
-
+        <div className={welcomeFooter}>
+            <div className={tips}>{generateTips()}</div>
             <div className={separator} />
-
-            <div className={links}>
-                <div className={item}>
-                    <div className="icon">@</div>
-                    <a
-                        href={CODY_DOCS_URL}
-                        className="tip"
-                        rel="noreferrer"
-                        target="_blank"
-                    >
-                        Documentation
-                    </a>
-                </div>
-                <div className={styles.item}>
-                    <div className="icon">@</div>
-                    <a
-                        href={HELP_URL}
-                        className="tip"
-                        rel="noreferrer"
-                        target="_blank"
-                    >
-                        Help and Support
-                    </a>
-                </div>
-            </div>
-        </div >
+            <div className={links}>{generateLinks()}</div>
+        </div>
     )
 }

@@ -6,17 +6,22 @@
 .tips {
     display: flex;
     flex-flow: column nowrap;
+    margin: 1.5rem;
+    gap: 0.5rem;
 }
 
 .item {
     display: flex;
     flex-flow: row nowrap;
-    gap: 1rem;
+    gap: 0.5rem;
 }
 
 .links {
     display: flex;
     flex-flow: row nowrap;
+    margin: 1.5rem;
+    gap: 0.5rem;
+    justify-content: center;
 }
 
 .separator {
