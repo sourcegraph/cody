@@ -24,7 +24,6 @@ export const outputChannel: vscode.OutputChannel = vscode.window.createOutputCha
  *
  *   logDebug('label', 'this is a message')
  *   logDebug('label', 'this is a message', 'some', 'args')
- *   logDebug('label', 'this is a message', 'some', 'args', { verbose: 'verbose info goes here' })
  */
 export function logDebug(filterLabel: string, text: string, ...args: unknown[]): void {
     log('debug', filterLabel, text, ...args)
@@ -37,7 +36,6 @@ export function logDebug(filterLabel: string, text: string, ...args: unknown[]):
  *
  *   logError('label', 'this is an error')
  *   logError('label', 'this is an error', 'some', 'args')
- *   logError('label', 'this is an error', 'some', 'args', { verbose: 'verbose info goes here' })
  */
 export function logError(filterLabel: string, text: string, ...args: unknown[]): void {
     log('error', filterLabel, text, ...args)

@@ -18,7 +18,7 @@ export async function executeExplainOutput(
 ): Promise<ChatCommandResult | undefined> {
     return wrapInActiveSpan('command.terminal', async span => {
         span.setAttribute('sampled', true)
-        logDebug('executeExplainOutput', 'executing', { args })
+        logDebug('executeExplainOutput', JSON.stringify(args))
         const requestID = uuid.v4()
         const source = 'terminal'
         telemetryRecorder.recordEvent('cody.command.terminal', 'executed', {
@@ -55,7 +55,7 @@ export async function executeExplainOutput(
             type: 'chat',
             session: await executeChat({
                 text: prompt,
-                submitType: 'user-newchat',
+                submitType: 'user',
                 contextItems: [],
                 source,
             }),
