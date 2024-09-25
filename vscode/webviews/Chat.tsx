@@ -32,7 +32,6 @@ interface ChatboxProps {
     showIDESnippetActions?: boolean
     setView: (view: View) => void
     smartApplyEnabled?: boolean
-    isUnifiedPromptsAvailable?: boolean
 }
 
 export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>> = ({
@@ -47,7 +46,6 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     showIDESnippetActions = true,
     setView,
     smartApplyEnabled,
-    isUnifiedPromptsAvailable,
 }) => {
     const telemetryRecorder = useTelemetryRecorder()
 
@@ -65,11 +63,6 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             telemetryRecorder.recordEvent('cody.feedback', 'submit', {
                 metadata: {
                     feedbackType: text === 'thumbsUp' ? FeedbackType.thumbsUp : FeedbackType.thumbsDown,
-                    lastChatUsedEmbeddings: transcriptRef.current
-                        .at(-1)
-                        ?.contextFiles?.some(file => file.source === 'embeddings')
-                        ? 1
-                        : 0,
                     recordsPrivateMetadataTranscript: userInfo.isDotComUser ? 1 : 0,
                 },
                 privateMetadata: {
@@ -235,11 +228,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                 smartApplyEnabled={smartApplyEnabled}
             />
             {transcript.length === 0 && showWelcomeMessage && (
-                <WelcomeMessage
-                    IDE={userInfo.ide}
-                    setView={setView}
-                    isUnifiedPromptsAvailable={isUnifiedPromptsAvailable}
-                />
+                <WelcomeMessage IDE={userInfo.ide} setView={setView} />
             )}
             {scrollableParent && (
                 <ScrollDown scrollableParent={scrollableParent} onClick={handleScrollDownClick} />

@@ -54,8 +54,8 @@ export class RecentEditsRetriever implements vscode.Disposable, ContextRetriever
             autocompleteContextSnippets.push(autocompleteSnippet)
         }
         // TODO: add `startLine` and `endLine` to `responses` or explicitly add
-        // remove the startLine and endLine from the response similar to how we do
-        // for BFG.
+        // remove the startLine and endLine from the response similar to how we did
+        // it for BFG.
         // @ts-ignore
         return autocompleteContextSnippets
     }

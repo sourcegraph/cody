@@ -1,10 +1,5 @@
 import type { URI } from 'vscode-uri'
-import type { PromptString } from '../prompt/prompt-string'
-import type { EmbeddingsSearchResult } from '../sourcegraph-api/graphql/client'
 
-export interface LocalEmbeddingsFetcher {
-    getContext(query: PromptString, numResults: number): Promise<EmbeddingsSearchResult[]>
-}
 interface Point {
     row: number
     col: number

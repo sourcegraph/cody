@@ -12,9 +12,7 @@ stdout: >+
 
 
 
-
-  Certainly! Here's the implementation of a cow based on the provided codebase context:
-
+  Here's the implementation of a cow based on the provided interface:
 
   \`\`\`typescript:animal.ts
 
@@ -42,9 +40,7 @@ stdout: >+
 
 
 
-
-  Certainly! Here's the implementation of a cow based on the provided codebase context:
-
+  Here's the implementation of a cow based on the provided interface:
 
   \`\`\`typescript:animal.ts
 
@@ -72,9 +68,7 @@ stdout: >+
 
 
 
-
-  Certainly! Here's the implementation of a cow based on the provided codebase context:
-
+  Here's the implementation of a cow based on the provided interface:
 
   \`\`\`typescript:animal.ts
 

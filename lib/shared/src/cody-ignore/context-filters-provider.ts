@@ -122,11 +122,14 @@ export class ContextFiltersProvider implements vscode.Disposable {
         }
     }
 
-    public get changes(): Observable<ContextFilters> {
-        return fromVSCodeEvent(listener => {
-            const dispose = this.onContextFiltersChanged(listener)
-            return { dispose }
-        })
+    public get changes(): Observable<ContextFilters | null> {
+        return fromVSCodeEvent(
+            listener => {
+                const dispose = this.onContextFiltersChanged(listener)
+                return { dispose }
+            },
+            () => this.lastContextFiltersResponse
+        )
     }
 
     private setContextFilters(contextFilters: ContextFilters): void {

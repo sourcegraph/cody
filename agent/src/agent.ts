@@ -37,8 +37,8 @@ import {
     setUserAgent,
 } from '@sourcegraph/cody-shared'
 
+import { ChatBuilder } from '../../vscode/src/chat/chat-view/ChatBuilder'
 import { chatHistory } from '../../vscode/src/chat/chat-view/ChatHistoryManager'
-import { ChatModel } from '../../vscode/src/chat/chat-view/ChatModel'
 import type { ExtensionMessage, WebviewMessage } from '../../vscode/src/chat/protocol'
 import { ProtocolTextDocumentWithUri } from '../../vscode/src/jsonrpc/TextDocumentWithUri'
 import type * as agent_protocol from '../../vscode/src/jsonrpc/agent-protocol'
@@ -1243,8 +1243,8 @@ export class Agent extends MessageHandler implements ExtensionClient {
             const authStatus = currentAuthStatusAuthed()
             modelID ??= (await firstResultFromOperation(modelsService.getDefaultChatModel())) ?? ''
             const chatMessages = messages?.map(PromptString.unsafe_deserializeChatMessage) ?? []
-            const chatModel = new ChatModel(modelID, chatID, chatMessages)
-            await chatHistory.saveChat(authStatus, chatModel.toSerializedChatTranscript())
+            const chatBuilder = new ChatBuilder(modelID, chatID, chatMessages)
+            await chatHistory.saveChat(authStatus, chatBuilder.toSerializedChatTranscript())
             return this.createChatPanel(
                 Promise.resolve({
                     type: 'chat',
@@ -1387,7 +1387,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
         })
 
         this.registerAuthenticatedRequest('featureFlags/getFeatureFlag', async ({ flagName }) => {
-            return featureFlagProvider.evaluateFeatureFlag(
+            return featureFlagProvider.evaluateFeatureFlagEphemerally(
                 FeatureFlag[flagName as keyof typeof FeatureFlag]
             )
         })

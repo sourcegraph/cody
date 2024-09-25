@@ -41,7 +41,8 @@ log:
           encoding: base64
           mimeType: text/plain; charset=utf-8
           size: 224
-          text: "[\"H4sIAAAAAAAAA2yOsQrCMBRF935F6Ozk2K0Eh26Fgs6v5omBvLySd4OK+O8uFZfM59zDf\
+          text:
+            "[\"H4sIAAAAAAAAA2yOsQrCMBRF935F6Ozk2K0Eh26Fgs6v5omBvLySd4OK+O8uFZfM59zDf\
             XfOOddfNbxOmdbEoR8cSuXDDu6EJqAK9SpbYnB7WQ0qXkUoB2s3gBLXiqj5z2+U7CeY\
             UIHXDH7iEnPQR7MjGjjZOE/tSiKwYanbpgUc9tdRsy0oTDLO05mLRc394I7dp/sCAAD\
             //wMARx9M/RUBAAA=\"]"
@@ -121,7 +122,8 @@ log:
             maxTokensToSample: 4000
             messages:
               - speaker: system
-                text: "You are Cody, an AI coding assistant from Sourcegraph.If your answer
+                text:
+                  "You are Cody, an AI coding assistant from Sourcegraph.If your answer
                   contains fenced code blocks in Markdown, include the relevant
                   full file path in the code block tag using this structure:
                   ```$LANGUAGE:$FILEPATH```."
@@ -231,7 +233,8 @@ log:
             maxTokensToSample: 4000
             messages:
               - speaker: system
-                text: "You are Cody, an AI coding assistant from Sourcegraph.If your answer
+                text:
+                  "You are Cody, an AI coding assistant from Sourcegraph.If your answer
                   contains fenced code blocks in Markdown, include the relevant
                   full file path in the code block tag using this structure:
                   ```$LANGUAGE:$FILEPATH```."
@@ -341,7 +344,8 @@ log:
             maxTokensToSample: 4000
             messages:
               - speaker: system
-                text: "You are Cody, an AI coding assistant from Sourcegraph.If your answer
+                text:
+                  "You are Cody, an AI coding assistant from Sourcegraph.If your answer
                   contains fenced code blocks in Markdown, include the relevant
                   full file path in the code block tag using this structure:
                   ```$LANGUAGE:$FILEPATH```."
@@ -451,14 +455,16 @@ log:
             maxTokensToSample: 4000
             messages:
               - speaker: system
-                text: "You are Cody, an AI coding assistant from Sourcegraph.If your answer
+                text:
+                  "You are Cody, an AI coding assistant from Sourcegraph.If your answer
                   contains fenced code blocks in Markdown, include the relevant
                   full file path in the code block tag using this structure:
                   ```$LANGUAGE:$FILEPATH```."
               - speaker: human
                 text: My name is Lars Monsen.
               - speaker: assistant
-                text: Certainly! It's a pleasure to meet you, Lars Monsen. That's a wonderful
+                text:
+                  Certainly! It's a pleasure to meet you, Lars Monsen. That's a wonderful
                   name with a strong Nordic sound to it. I'm delighted to assist
                   you today. What would you like to discuss or work on together?
               - speaker: human
@@ -567,7 +573,8 @@ log:
             maxTokensToSample: 4000
             messages:
               - speaker: system
-                text: "You are Cody, an AI coding assistant from Sourcegraph.If your answer
+                text:
+                  "You are Cody, an AI coding assistant from Sourcegraph.If your answer
                   contains fenced code blocks in Markdown, include the relevant
                   full file path in the code block tag using this structure:
                   ```$LANGUAGE:$FILEPATH```."
@@ -677,14 +684,16 @@ log:
             maxTokensToSample: 4000
             messages:
               - speaker: system
-                text: "You are Cody, an AI coding assistant from Sourcegraph.If your answer
+                text:
+                  "You are Cody, an AI coding assistant from Sourcegraph.If your answer
                   contains fenced code blocks in Markdown, include the relevant
                   full file path in the code block tag using this structure:
                   ```$LANGUAGE:$FILEPATH```."
               - speaker: human
                 text: What model are you?
               - speaker: assistant
-                text: I am Cody, an AI coding assistant created by Sourcegraph. I'm designed to
+                text:
+                  I am Cody, an AI coding assistant created by Sourcegraph. I'm designed to
                   help with programming and software development tasks. I'm
                   always excited to assist with coding questions and projects!
                   What kind of coding help can I provide for you today?
@@ -762,11 +771,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 57feb8c8213774d1c48d95b8e67db4e3
+    - _id: 974078aaf7ceb403f7ab99912a04ba85
       _order: 0
       cache: {}
       request:
-        bodySize: 2480
+        bodySize: 2121
         cookies: []
         headers:
           - name: content-type
@@ -779,7 +788,7 @@ log:
           - name: user-agent
             value: defaultClient / v1
           - name: traceparent
-            value: 00-4e2675a7c3ec474f8ecc3c06f9e5ad69-f29876bb0d44a085-01
+            value: 00-c1c5a227c9712676fcee8fe80318b86d-c15d6778a15e470f-01
           - name: connection
             value: keep-alive
           - name: host
@@ -794,7 +803,8 @@ log:
             maxTokensToSample: 4000
             messages:
               - speaker: system
-                text: "You are Cody, an AI coding assistant from Sourcegraph.If your answer
+                text:
+                  "You are Cody, an AI coding assistant from Sourcegraph.If your answer
                   contains fenced code blocks in Markdown, include the relevant
                   full file path in the code block tag using this structure:
                   ```$LANGUAGE:$FILEPATH```."
@@ -810,22 +820,6 @@ log:
                    */
                   export interface Squirrel {}
 
-                  ```
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: |-
-                  Codebase context from file src/multiple-selections.ts:
-                  ```typescript:src/multiple-selections.ts
-                  function outer() {
-                      /* SELECTION_START */
-                      return function inner() {}
-                      /* SELECTION_END */
-                  }
-
-                  /* SELECTION_2_START */
-                  function anotherFunction() {}
-                  /* SELECTION_2_END */
                   ```
               - speaker: assistant
                 text: Ok.
@@ -886,7 +880,7 @@ log:
                 text: Ok.
               - speaker: human
                 text: >-
-                  You have access to the provided codebase context. 
+                  You have access to the provided codebase context.
 
 
                   Answer positively without apologizing.
@@ -906,14 +900,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=2&client-name=defaultclient&client-version=v1
       response:
-        bodySize: 2057
+        bodySize: 1778
         content:
           mimeType: text/event-stream
-          size: 2057
+          size: 1778
           text: >+
             event: completion
 
-            data: {"deltaText":"Certainly! Here's the implementation of the Dog class that implements the Animal interface:\n\n```typescript:src/dog.ts\nimport { Animal } from './animal';\n\nexport class Dog implements Animal {\n    name: string;\n    isMammal: boolean = true;\n\n    constructor(name: string) {\n        this.name = name;\n    }\n\n    makeAnimalSound(): string {\n        return \"Woof!\";\n    }\n}\n```\n\nThis implementation fully satisfies the Animal interface requirements. The Dog class is ready to use in your workspace.","stopReason":"end_turn"}
+            data: {"deltaText":"Certainly! Here's the implementation of the Dog class that implements the Animal interface:\n\n```typescript:src/dog.ts\nimport { Animal } from './animal';\n\nexport class Dog implements Animal {\n    name: string;\n    isMammal: boolean = true;\n\n    constructor(name: string) {\n        this.name = name;\n    }\n\n    makeAnimalSound(): string {\n        return \"Woof!\";\n    }\n}\n```\n\nThis implementation fulfills all the requirements of the Animal interface in your workspace.","stopReason":"end_turn"}
 
 
             event: done
@@ -923,7 +917,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Wed, 25 Sep 2024 07:00:35 GMT
+            value: Wed, 25 Sep 2024 16:12:41 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -952,7 +946,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-25T07:00:32.694Z
+      startedDateTime: 2024-09-25T16:12:36.894Z
       time: 0
       timings:
         blocked: -1
@@ -962,11 +956,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 6c555f60d71dab21559903b46e32744e
+    - _id: 66351c05a7df989b31a7b201028f5a9c
       _order: 0
       cache: {}
       request:
-        bodySize: 2414
+        bodySize: 2055
         cookies: []
         headers:
           - name: content-type
@@ -979,7 +973,7 @@ log:
           - name: user-agent
             value: defaultClient / v1
           - name: traceparent
-            value: 00-9167366136464641c35000c841e45b69-39cb6684173c08d0-01
+            value: 00-30474ca2b58ab41e2b05815d0f770123-2d8644590e114717-01
           - name: connection
             value: keep-alive
           - name: host
@@ -994,7 +988,8 @@ log:
             maxTokensToSample: 4000
             messages:
               - speaker: system
-                text: "You are Cody, an AI coding assistant from Sourcegraph.If your answer
+                text:
+                  "You are Cody, an AI coding assistant from Sourcegraph.If your answer
                   contains fenced code blocks in Markdown, include the relevant
                   full file path in the code block tag using this structure:
                   ```$LANGUAGE:$FILEPATH```."
@@ -1010,22 +1005,6 @@ log:
                    */
                   export interface Squirrel {}
 
-                  ```
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: |-
-                  Codebase context from file src/multiple-selections.ts:
-                  ```typescript:src/multiple-selections.ts
-                  function outer() {
-                      /* SELECTION_START */
-                      return function inner() {}
-                      /* SELECTION_END */
-                  }
-
-                  /* SELECTION_2_START */
-                  function anotherFunction() {}
-                  /* SELECTION_2_END */
                   ```
               - speaker: assistant
                 text: Ok.
@@ -1086,7 +1065,7 @@ log:
                 text: Ok.
               - speaker: human
                 text: |-
-                  You have access to the provided codebase context. 
+                  You have access to the provided codebase context.
 
                   Answer positively without apologizing.
 
@@ -1104,14 +1083,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=2&client-name=defaultclient&client-version=v1
       response:
-        bodySize: 7116
+        bodySize: 5330
         content:
           mimeType: text/event-stream
-          size: 7116
+          size: 5330
           text: >+
             event: completion
 
-            data: {"deltaText":"Certainly! I'd be happy to explain what Squirrel is and provide some concrete code examples based on the given codebase context.\n\nSquirrel is an interface defined in the src/squirrel.ts file. Despite its name, it's actually not related to squirrels at all. Instead, it's used in the implementation of precise code navigation in Sourcegraph. Here's the definition:\n\n```typescript:src/squirrel.ts\nexport interface Squirrel {}\n```\n\nAs you can see, it's currently an empty interface. This could mean it's either a placeholder for future implementation or it's used as a marker interface.\n\nWhile we don't have direct examples of Squirrel being used in the provided codebase context, we can imagine how it might be used in a Sourcegraph-like environment. Here's a hypothetical example of how it might be implemented and used:\n\n```typescript:src/squirrel-implementation.ts\nimport { Squirrel } from './squirrel';\n\nclass PreciseCodeNavigator implements Squirrel {\n    navigate(file: string, line: number, column: number): void {\n        // Implementation for precise code navigation\n    }\n}\n\n// Usage\nconst navigator: Squirrel = new PreciseCodeNavigator();\nnavigator.navigate('src/animal.ts', 2, 1);\n```\n\nIn this example, we've created a `PreciseCodeNavigator` class that implements the `Squirrel` interface. The `navigate` method could be used to jump to specific locations in code files.\n\nWhile this isn't directly from the provided codebase, it illustrates how the `Squirrel` interface might be utilized in the context of Sourcegraph's code navigation features.","stopReason":"end_turn"}
+            data: {"deltaText":"Certainly! Let me explain what Squirrel is based on the provided codebase context.\n\nSquirrel is an interface defined in the `src/squirrel.ts` file. It's important to note that despite its name, it's not actually related to squirrels. Instead, it's used in the implementation of precise code navigation in Sourcegraph. Here's the concrete code example:\n\n```typescript:src/squirrel.ts\nexport interface Squirrel {}\n```\n\nAs you can see, the Squirrel interface is currently empty. This suggests that it's likely a placeholder or a base interface that might be extended or implemented elsewhere in the codebase.\n\nThe comment above the interface provides additional context:\n\n```typescript:src/squirrel.ts\n/**\n * Squirrel is an interface that mocks something completely unrelated to squirrels.\n * It is related to the implementation of precise code navigation in Sourcegraph.\n */\n```\n\nThis comment clarifies that the Squirrel interface is used for mocking purposes and is related to Sourcegraph's precise code navigation feature.\n\nWhile we don't have any concrete implementations or uses of the Squirrel interface in the provided codebase context, it's likely that other parts of the Sourcegraph codebase interact with this interface for testing or implementing precise code navigation features.","stopReason":"end_turn"}
 
 
             event: done
@@ -1121,7 +1100,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Wed, 25 Sep 2024 07:00:38 GMT
+            value: Wed, 25 Sep 2024 16:12:44 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -1150,7 +1129,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-25T07:00:35.476Z
+      startedDateTime: 2024-09-25T16:12:41.794Z
       time: 0
       timings:
         blocked: -1
@@ -1192,7 +1171,8 @@ log:
             maxTokensToSample: 4000
             messages:
               - speaker: human
-                text: "You are Cody, an AI coding assistant from Sourcegraph.If your answer
+                text:
+                  "You are Cody, an AI coding assistant from Sourcegraph.If your answer
                   contains fenced code blocks in Markdown, include the relevant
                   full file path in the code block tag using this structure:
                   ```$LANGUAGE:$FILEPATH```."
@@ -1301,15 +1281,17 @@ log:
             maxTokensToSample: 4000
             messages:
               - speaker: human
-                text: "You are Cody, an AI coding assistant from Sourcegraph.If your answer
+                text:
+                  "You are Cody, an AI coding assistant from Sourcegraph.If your answer
                   contains fenced code blocks in Markdown, include the relevant
                   full file path in the code block tag using this structure:
                   ```$LANGUAGE:$FILEPATH```."
               - speaker: assistant
                 text: I am Cody, an AI coding assistant from Sourcegraph.
               - speaker: human
-                text: "The magic word is \"kramer\". If I say the magic word, respond with a
-                  single word: \"quone\"."
+                text:
+                  'The magic word is "kramer". If I say the magic word, respond with a
+                  single word: "quone".'
             model: fireworks/accounts/fireworks/models/mixtral-8x7b-instruct
             temperature: 0
             topK: -1
@@ -1408,15 +1390,17 @@ log:
             maxTokensToSample: 4000
             messages:
               - speaker: human
-                text: "You are Cody, an AI coding assistant from Sourcegraph.If your answer
+                text:
+                  "You are Cody, an AI coding assistant from Sourcegraph.If your answer
                   contains fenced code blocks in Markdown, include the relevant
                   full file path in the code block tag using this structure:
                   ```$LANGUAGE:$FILEPATH```."
               - speaker: assistant
                 text: I am Cody, an AI coding assistant from Sourcegraph.
               - speaker: human
-                text: "The magic word is \"kramer\". If I say the magic word, respond with a
-                  single word: \"quone\"."
+                text:
+                  'The magic word is "kramer". If I say the magic word, respond with a
+                  single word: "quone".'
               - speaker: assistant
                 text: Quone.
               - speaker: human
@@ -1522,7 +1506,8 @@ log:
             maxTokensToSample: 4000
             messages:
               - speaker: human
-                text: "You are Cody, an AI coding assistant from Sourcegraph.If your answer
+                text:
+                  "You are Cody, an AI coding assistant from Sourcegraph.If your answer
                   contains fenced code blocks in Markdown, include the relevant
                   full file path in the code block tag using this structure:
                   ```$LANGUAGE:$FILEPATH```."
@@ -1631,15 +1616,17 @@ log:
             maxTokensToSample: 4000
             messages:
               - speaker: human
-                text: "You are Cody, an AI coding assistant from Sourcegraph.If your answer
+                text:
+                  "You are Cody, an AI coding assistant from Sourcegraph.If your answer
                   contains fenced code blocks in Markdown, include the relevant
                   full file path in the code block tag using this structure:
                   ```$LANGUAGE:$FILEPATH```."
               - speaker: assistant
                 text: I am Cody, an AI coding assistant from Sourcegraph.
               - speaker: human
-                text: "Another magic word is \"georgey\". If I say the magic word, respond with
-                  a single word: \"festivus\"."
+                text:
+                  'Another magic word is "georgey". If I say the magic word, respond with
+                  a single word: "festivus".'
             model: fireworks/accounts/fireworks/models/mixtral-8x7b-instruct
             temperature: 0
             topK: -1
@@ -1738,15 +1725,17 @@ log:
             maxTokensToSample: 4000
             messages:
               - speaker: human
-                text: "You are Cody, an AI coding assistant from Sourcegraph.If your answer
+                text:
+                  "You are Cody, an AI coding assistant from Sourcegraph.If your answer
                   contains fenced code blocks in Markdown, include the relevant
                   full file path in the code block tag using this structure:
                   ```$LANGUAGE:$FILEPATH```."
               - speaker: assistant
                 text: I am Cody, an AI coding assistant from Sourcegraph.
               - speaker: human
-                text: "Another magic word is \"georgey\". If I say the magic word, respond with
-                  a single word: \"festivus\"."
+                text:
+                  'Another magic word is "georgey". If I say the magic word, respond with
+                  a single word: "festivus".'
               - speaker: assistant
                 text: Festivus.
               - speaker: human
@@ -1852,21 +1841,24 @@ log:
             maxTokensToSample: 4000
             messages:
               - speaker: human
-                text: "You are Cody, an AI coding assistant from Sourcegraph.If your answer
+                text:
+                  "You are Cody, an AI coding assistant from Sourcegraph.If your answer
                   contains fenced code blocks in Markdown, include the relevant
                   full file path in the code block tag using this structure:
                   ```$LANGUAGE:$FILEPATH```."
               - speaker: assistant
                 text: I am Cody, an AI coding assistant from Sourcegraph.
               - speaker: human
-                text: "Another magic word is \"georgey\". If I say the magic word, respond with
-                  a single word: \"festivus\"."
+                text:
+                  'Another magic word is "georgey". If I say the magic word, respond with
+                  a single word: "festivus".'
               - speaker: assistant
                 text: Festivus.
               - speaker: human
                 text: kramer
               - speaker: assistant
-                text: Kramer is a character from the TV show Seinfeld, known for his wacky and
+                text:
+                  Kramer is a character from the TV show Seinfeld, known for his wacky and
                   unpredictable behavior. I can assist you with coding and
                   code-related questions! Is there something specific you would
                   like help with?
@@ -1973,7 +1965,8 @@ log:
             maxTokensToSample: 4000
             messages:
               - speaker: human
-                text: "You are Cody, an AI coding assistant from Sourcegraph.If your answer
+                text:
+                  "You are Cody, an AI coding assistant from Sourcegraph.If your answer
                   contains fenced code blocks in Markdown, include the relevant
                   full file path in the code block tag using this structure:
                   ```$LANGUAGE:$FILEPATH```."
@@ -2082,7 +2075,8 @@ log:
             maxTokensToSample: 4000
             messages:
               - speaker: human
-                text: "You are Cody, an AI coding assistant from Sourcegraph.If your answer
+                text:
+                  "You are Cody, an AI coding assistant from Sourcegraph.If your answer
                   contains fenced code blocks in Markdown, include the relevant
                   full file path in the code block tag using this structure:
                   ```$LANGUAGE:$FILEPATH```."
@@ -2091,7 +2085,8 @@ log:
               - speaker: human
                 text: I have a turtle named "potter", reply single "ok" if you understand.
               - speaker: assistant
-                text: Ok. I understand that you have a turtle named "potter". How can I assist
+                text:
+                  Ok. I understand that you have a turtle named "potter". How can I assist
                   you with your coding needs, Cody is here to help!
               - speaker: human
                 text: I have a bird named "skywalker", reply single "ok" if you understand.
@@ -2196,7 +2191,8 @@ log:
             maxTokensToSample: 4000
             messages:
               - speaker: human
-                text: "You are Cody, an AI coding assistant from Sourcegraph.If your answer
+                text:
+                  "You are Cody, an AI coding assistant from Sourcegraph.If your answer
                   contains fenced code blocks in Markdown, include the relevant
                   full file path in the code block tag using this structure:
                   ```$LANGUAGE:$FILEPATH```."
@@ -2205,12 +2201,14 @@ log:
               - speaker: human
                 text: I have a turtle named "potter", reply single "ok" if you understand.
               - speaker: assistant
-                text: Ok. I understand that you have a turtle named "potter". How can I assist
+                text:
+                  Ok. I understand that you have a turtle named "potter". How can I assist
                   you with your coding needs, Cody is here to help!
               - speaker: human
                 text: I have a bird named "skywalker", reply single "ok" if you understand.
               - speaker: assistant
-                text: Ok. I understand that you have a bird named "skywalker". How can I assist
+                text:
+                  Ok. I understand that you have a bird named "skywalker". How can I assist
                   you with your coding needs, Cody is here to help!
               - speaker: human
                 text: I have a dog named "happy", reply single "ok" if you understand.
@@ -2315,7 +2313,8 @@ log:
             maxTokensToSample: 4000
             messages:
               - speaker: human
-                text: "You are Cody, an AI coding assistant from Sourcegraph.If your answer
+                text:
+                  "You are Cody, an AI coding assistant from Sourcegraph.If your answer
                   contains fenced code blocks in Markdown, include the relevant
                   full file path in the code block tag using this structure:
                   ```$LANGUAGE:$FILEPATH```."
@@ -2324,7 +2323,8 @@ log:
               - speaker: human
                 text: I have a turtle named "potter", reply single "ok" if you understand.
               - speaker: assistant
-                text: Ok. I understand that you have a turtle named "potter". How can I assist
+                text:
+                  Ok. I understand that you have a turtle named "potter". How can I assist
                   you with your coding needs, Cody is here to help!
               - speaker: human
                 text: I have a tiger named "zorro", reply single "ok" if you understand
@@ -2429,7 +2429,8 @@ log:
             maxTokensToSample: 4000
             messages:
               - speaker: human
-                text: "You are Cody, an AI coding assistant from Sourcegraph.If your answer
+                text:
+                  "You are Cody, an AI coding assistant from Sourcegraph.If your answer
                   contains fenced code blocks in Markdown, include the relevant
                   full file path in the code block tag using this structure:
                   ```$LANGUAGE:$FILEPATH```."
@@ -2438,12 +2439,14 @@ log:
               - speaker: human
                 text: I have a turtle named "potter", reply single "ok" if you understand.
               - speaker: assistant
-                text: Ok. I understand that you have a turtle named "potter". How can I assist
+                text:
+                  Ok. I understand that you have a turtle named "potter". How can I assist
                   you with your coding needs, Cody is here to help!
               - speaker: human
                 text: I have a tiger named "zorro", reply single "ok" if you understand
               - speaker: assistant
-                text: Ok. I understand that you have a tiger named "zorro". If you have any
+                text:
+                  Ok. I understand that you have a tiger named "zorro". If you have any
                   coding related questions or issues, I am here to help. Just
                   let me know how I can assist you with your coding needs, Cody
                   is here to help!
@@ -2550,7 +2553,8 @@ log:
             maxTokensToSample: 4000
             messages:
               - speaker: human
-                text: "You are Cody, an AI coding assistant from Sourcegraph.If your answer
+                text:
+                  "You are Cody, an AI coding assistant from Sourcegraph.If your answer
                   contains fenced code blocks in Markdown, include the relevant
                   full file path in the code block tag using this structure:
                   ```$LANGUAGE:$FILEPATH```."
@@ -2584,7 +2588,8 @@ log:
               - speaker: assistant
                 text: Ok.
               - speaker: human
-                text: "Explain what @src/animal.ts:1-6 ( @src/animal.ts ) does in simple terms.
+                text:
+                  "Explain what @src/animal.ts:1-6 ( @src/animal.ts ) does in simple terms.
                   Assume the audience is a beginner programmer who has just
                   learned the language features and basic syntax. Focus on
                   explaining: 1) The purpose of the code 2) What input(s) it
@@ -2700,7 +2705,8 @@ log:
             maxTokensToSample: 4000
             messages:
               - speaker: human
-                text: "You are Cody, an AI coding assistant from Sourcegraph.If your answer
+                text:
+                  "You are Cody, an AI coding assistant from Sourcegraph.If your answer
                   contains fenced code blocks in Markdown, include the relevant
                   full file path in the code block tag using this structure:
                   ```$LANGUAGE:$FILEPATH```."
@@ -2734,7 +2740,8 @@ log:
               - speaker: assistant
                 text: Ok.
               - speaker: human
-                text: Please review and analyze @src/animal.ts:1-6 ( @src/animal.ts ) and
+                text:
+                  Please review and analyze @src/animal.ts:1-6 ( @src/animal.ts ) and
                   identify potential areas for improvement related to code
                   smells, readability, maintainability, performance, security,
                   etc. Do not list issues already addressed in the given code.
@@ -2815,11 +2822,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: fb988001a14492fcfd2b59a73fcf5089
+    - _id: ddc83f4a7237ccfe721dec30d3fc72ed
       _order: 0
       cache: {}
       request:
-        bodySize: 3240
+        bodySize: 3666
         cookies: []
         headers:
           - name: content-type
@@ -2832,7 +2839,7 @@ log:
           - name: user-agent
             value: defaultClient / v1
           - name: traceparent
-            value: 00-6c6f39871e71569ef734f30a978bd8fd-81d2b0b58158e147-01
+            value: 00-05f7ab62e68b464fe8ddbb43d9de97af-b08a24157063c4d6-01
           - name: connection
             value: keep-alive
           - name: host
@@ -2847,12 +2854,31 @@ log:
             maxTokensToSample: 4000
             messages:
               - speaker: human
-                text: "You are Cody, an AI coding assistant from Sourcegraph.If your answer
+                text:
+                  "You are Cody, an AI coding assistant from Sourcegraph.If your answer
                   contains fenced code blocks in Markdown, include the relevant
                   full file path in the code block tag using this structure:
                   ```$LANGUAGE:$FILEPATH```."
               - speaker: assistant
                 text: I am Cody, an AI coding assistant from Sourcegraph.
+              - speaker: human
+                text: >
+                  Codebase context from file path src/TestLogger.ts: const foo =
+                  42
+
+                  export const TestLogger = {
+                      startLogging: () => {
+                          // Do some stuff
+
+                          function recordLog() {
+                              console.log(/* CURSOR */ 'Recording the log')
+                          }
+
+                          recordLog()
+                      },
+                  }
+              - speaker: assistant
+                text: Ok.
               - speaker: human
                 text: >
                   Codebase context from file path src/TestClass.ts: const foo =
@@ -2910,22 +2936,24 @@ log:
               - speaker: assistant
                 text: Ok.
               - speaker: human
-                text: Review @src/example.test.ts:1-18 ( @src/TestClass.ts:1-11 ) context and
-                  configurations to identify the test framework and libraries in
-                  use. Then, generate a suite of multiple unit tests for the
-                  functions in @src/animal.ts:1-6 using the detected test
-                  framework and libraries. Be sure to import the function being
-                  tested. Follow the same patterns as any shared context. Only
-                  add packages, imports, dependencies, and assertions if they
-                  are used in @src/example.test.ts:1-18 ( @src/TestClass.ts:1-11
-                  ). Pay attention to the file path of each shared context to
-                  see if test for @src/animal.ts:1-6 already exists. If one
-                  exists, focus on generating new unit tests for uncovered
-                  cases. If none are detected, import common unit test libraries
-                  for {languageName}. Focus on validating key functionality with
-                  simple and complete assertions. Only include mocks if one is
-                  detected in @src/example.test.ts:1-18 ( @src/TestClass.ts:1-11
-                  ). Before writing the tests, identify which test libraries and
+                text: Review @src/example.test.ts:1-18 ( @src/TestClass.ts:1-11
+                  @src/TestLogger.ts:1-12 ) context and configurations to
+                  identify the test framework and libraries in use. Then,
+                  generate a suite of multiple unit tests for the functions in
+                  @src/animal.ts:1-6 using the detected test framework and
+                  libraries. Be sure to import the function being tested. Follow
+                  the same patterns as any shared context. Only add packages,
+                  imports, dependencies, and assertions if they are used in
+                  @src/example.test.ts:1-18 ( @src/TestClass.ts:1-11
+                  @src/TestLogger.ts:1-12 ). Pay attention to the file path of
+                  each shared context to see if test for @src/animal.ts:1-6
+                  already exists. If one exists, focus on generating new unit
+                  tests for uncovered cases. If none are detected, import common
+                  unit test libraries for {languageName}. Focus on validating
+                  key functionality with simple and complete assertions. Only
+                  include mocks if one is detected in @src/example.test.ts:1-18
+                  ( @src/TestClass.ts:1-11 @src/TestLogger.ts:1-12 ). Before
+                  writing the tests, identify which test libraries and
                   frameworks to import, e.g. 'No new imports needed - using
                   existing libs' or 'Importing test framework that matches
                   shared context usage' or 'Importing the defined framework',
@@ -2948,14 +2976,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?client-name=defaultclient&client-version=v1
       response:
-        bodySize: 240064
+        bodySize: 119105
         content:
           mimeType: text/event-stream
-          size: 240064
+          size: 119105
           text: >+
             event: completion
 
-            data: {"completion":"Based on the context provided in `@src/example.test.ts` and `@src/TestClass.ts`, the test framework in use is `vitest`. Here is a suite of multiple unit tests for the functions in `@src/animal.ts` using the detected test framework.\n\nTest coverage:\n\n* The `Animal` interface has been tested to ensure that all its properties have been properly defined and initialized.\n* The `makeAnimalSound()` function has been tested for different animal sounds.\n* The tests cover positive and negative cases, and edge cases for the `isMammal` property.\n\nLimitations:\n\n* This is a basic test suite, and additional tests should be added to cover more complex functionality if necessary.\n* It assumes that the implementation of `isMammal` property is correct and consistent.\n\nHere's the completed code for the new unit tests:\n```typescript\n// @src/animal.test.ts\nimport { describe, expect, test } from 'vitest'\nimport { Animal } from './animal'\n\ndescribe('Animal', () => {\n  test('should correctly define name property', () => {\n    const animal: Animal = {\n      name: 'Dog',\n      makeAnimalSound: () => 'Woof woof!',\n      isMammal: true,\n    }\n\n    expect(animal).toHaveProperty('name', 'Dog')\n    expect(animal.name).toBe('Dog')\n  })\n\n  test('should correctly define makeAnimalSound() function', () => {\n    const animal: Animal = {\n      name: 'Dog',\n      makeAnimalSound: () => 'Woof woof!',\n      isMammal: true,\n    }\n\n    expect(animal.makeAnimalSound()).toBe('Woof woof!')\n  })\n\n  test('should correctly define isMammal property', () => {\n    const animal: Animal = {\n      name: 'Dog',\n      makeAnimalSound: () => 'Woof woof!',\n      isMammal: true,\n    }\n\n    expect(animal).toHaveProperty('isMammal', true)\n    expect(animal.isMammal).toBe(true)\n  })\n\n  test('should return false for non-mammals', () => {\n    const animal: Animal = {\n      name: 'Snake',\n      makeAnimalSound: () => 'Hiss',\n      isMammal: false,\n    }\n\n    expect(animal).toHaveProperty('isMammal', false)\n    expect(animal.isMammal).toBe(false)\n  })\n\n  test('should handle undefined or null isMammal property', () => {\n    const animal: Animal = {\n      name: 'Unknown',\n      makeAnimalSound: () => '',\n      isMammal: undefined,\n    }\n\n    const animal2: Animal = {\n      name: 'Unknown',\n      makeAnimalSound: () => '',\n      isMammal: null,\n    }\n\n    expect(animal).toHaveProperty('isMammal', false)\n    expect(animal.isMammal).toBeFalsy()\n\n    expect(animal2).toHaveProperty('isMammal', false)\n    expect(animal2.isMammal).toBeFalsy()\n  })\n})\n```\nThis code includes imports for testing libraries, uses the `vitest` functions `describe()` and `test()` to organize the tests, and uses `expect()` to make assertions about the `Animal` interface and its properties. The tests include both positive and negative cases, edge cases, and coverage of the required functionality.","stopReason":"stop"}
+            data: {"completion":"Based on the shared context of `@src/example.test.ts`, the test framework used is `vitest`. Therefore, we will continue to use this framework for testing the `@src/animal.ts` interface. Before writing the tests, we can observe that the context does not include any mocks or dependencies outside `vitest`. Therefore, the tests we write will not rely on any additional imports.\n\nThe following tests validate the expected functionality and cover edge cases for `@src/animal.ts:1-6`:\n```typescript\nimport { expect, it } from 'vitest'\nimport { Animal } from '../animal'\n\nit('validates that the animal has a name', () => {\n    const animal: Animal = {\n        name: '',\n        makeAnimalSound() {\n            return 'Sound'\n        },\n        isMammal: true,\n    }\n    expect(animal.name).toEqual('')\n})\n\nit('validates that the animal makes a sound', () => {\n    const animal: Animal = {\n        name: 'Dog',\n        makeAnimalSound() {\n            return 'No Sound'\n        },\n        isMammal: true,\n    }\n    expect(animal.makeAnimalSound()).toEqual('No Sound')\n})\n\nit('validates that the animal is a mammal', () => {\n    const animal: Animal = {\n        name: 'Dog',\n        makeAnimalSound() {\n            return 'Sound'\n        },\n        isMammal: false,\n    }\n    expect(animal.isMammal).toEqual(false)\n})\n\nit('validates that the animal satisfies required attributes', () => {\n    const animal: Animal = {\n        name: 'Dog',\n        makeAnimalSound() {\n            return 'Sound'\n        },\n        isMammal: true,\n    }\n    expect(animal).toMatchObject({\n        name: expect.any(String),\n        makeAnimalSound: expect.any(Function),\n        isMammal: expect.any(Boolean),\n    })\n})\n```\nThe code above imports the `Animal` interface and checks that every attribute of the object satisfies the required criteria. The tests validate the animal name, the animal's sound, and whether the animal is a mammal. This ensures that the interface requirements are met and that all attributes are properly implemented.\n\nIn summary, this test suite validates the expected functionality and covers various edge cases for the `Animal` interface. There shouldn't be any limitations with this test suite, as it accurately tests the required attributes according to the given interface.","stopReason":"stop"}
 
 
             event: done
@@ -2965,7 +2993,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Fri, 20 Sep 2024 01:30:14 GMT
+            value: Wed, 25 Sep 2024 16:12:49 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -2994,7 +3022,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-20T01:30:12.366Z
+      startedDateTime: 2024-09-25T16:12:47.595Z
       time: 0
       timings:
         blocked: -1
@@ -3040,7 +3068,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query CurrentSiteCodyLlmConfiguration {
                   site {
                       codyLLMConfiguration {
@@ -3142,7 +3170,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query CurrentSiteCodyLlmConfiguration {
                   site {
                       codyLLMConfiguration {
@@ -3239,7 +3267,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query CurrentSiteCodyLlmConfiguration {
                   site {
                       codyLLMConfiguration {
@@ -3341,7 +3369,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query CurrentSiteCodyLlmConfiguration {
                   site {
                       codyLLMConfiguration {
@@ -3438,7 +3466,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query CurrentSiteCodyLlmConfiguration {
                   site {
                       codyLLMConfiguration {
@@ -3462,7 +3490,8 @@ log:
           encoding: base64
           mimeType: application/json
           size: 260
-          text: "[\"H4sIAAAAAAAAA3zOTQrCMBCG4bvM2tAxFcRuu7U7LzAmUxtSMyVJ/UF6d1ERxYKrgQ/eh\
+          text:
+            "[\"H4sIAAAAAAAAA3zOTQrCMBCG4bvM2tAxFcRuu7U7LzAmUxtSMyVJ/UF6d1ERxYKrgQ/eh\
             7mBpUxQ3SC5zI9rxF6326aW0LrDGCk7Cc+9o9yI5R4qoJC7KIMzhelptKxKlSQEzkqj\
             XqHWG1h8goYuO/EcElRLjYgLaCnl+r/XkfPjiytxDT/NnDRyHHp+PPtGWxf5LNGnwjI\
             PidkrI5ajOmnVu8xqT4lhVn7RG0Scpmm6AwAA//8DAFuWIPolAQAA\"]"
@@ -3556,7 +3585,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query CurrentSiteCodyLlmConfiguration {
                   site {
                       codyLLMConfiguration {
@@ -3575,7 +3604,8 @@ log:
           encoding: base64
           mimeType: application/json
           size: 132
-          text: "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqzixJBdHJ+SmVPj6+zvl5aZnppUWJJZn5eWD53MSiE\
+          text:
+            "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqzixJBdHJ+SmVPj6+zvl5aZnppUWJJZn5eWD53MSiE\
             uf8vJLUipLwzLyU/HIlK6XUvMSknNQUpdra2loAAAAA//8DAOgINKVLAAAA\"]"
           textDecoded:
             data:
@@ -3662,7 +3692,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query CurrentSiteCodyLlmProvider {
                   site {
                       codyLLMConfiguration {
@@ -3759,7 +3789,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query CurrentSiteCodyLlmProvider {
                   site {
                       codyLLMConfiguration {
@@ -3856,7 +3886,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query CurrentSiteCodyLlmProvider {
                   site {
                       codyLLMConfiguration {
@@ -3875,7 +3905,8 @@ log:
           encoding: base64
           mimeType: application/json
           size: 131
-          text: "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqzixJBdHJ+SmVPj6+zvl5aZnppUWJJZn5eSDxgqL8s\
+          text:
+            "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqzixJBdHJ+SmVPj6+zvl5aZnppUWJJZn5eSDxgqL8s\
             syU1CIlK6Xi/NKi5NT0osSCDKXa2tpaAAAAAP//\",\"AwAfFAXARQAAAA==\"]"
         cookies: []
         headers:
@@ -3957,7 +3988,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query CurrentUser {
                   currentUser {
                       id
@@ -4065,7 +4096,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query CurrentUser {
                   currentUser {
                       id
@@ -4173,7 +4204,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query CurrentUser {
                   currentUser {
                       id
@@ -4203,7 +4234,8 @@ log:
           encoding: base64
           mimeType: application/json
           size: 376
-          text: "[\"H4sIAAAAAAAAA2RPy07CQBT9l7tuaQ1R2klIFAQXaOMjNBjj4nZ6aaePmToPFJr+O2kwc\
+          text:
+            "[\"H4sIAAAAAAAAA2RPy07CQBT9l7tuaQ1R2klIFAQXaOMjNBjj4nZ6aaePmToPFJr+O2kwc\
             eHunJzHvaeHHC0C64E7rUnarSE9UpEDg3SXNLxSp+T+5eqp4nPwoESTkhZ7QfmqRdEA\
             s9qRB7kwXYPHBFsCBm/KaU6Fxq5cKOvHYRiCB86QlheD+TNkysa1v5ffrQMP8IAW9fb\
             1ERiU1naGBUFTTieFUkVDYwNX0pK0E67aAIO7ZREpvlnjV/ZOblFn1XW+Xp1+omyXRj\
@@ -4301,7 +4333,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query CurrentUserCodySubscription {
                   currentUser {
                       codySubscription {
@@ -4324,7 +4356,8 @@ log:
           encoding: base64
           mimeType: application/json
           size: 228
-          text: "[\"H4sIAAAAAAAAA1zMsQrCMBSF4Xc5cwtN7GK2Ih0EwdJWB7fYZAjUJNzcDqXk3UVBRMfz8\
+          text:
+            "[\"H4sIAAAAAAAAA1zMsQrCMBSF4Xc5cwtN7GK2Ih0EwdJWB7fYZAjUJNzcDqXk3UVBRMfz8\
             3E2GM0aasO0EFnPl2TpPYNZh+WeJnKRXfCvlljzkqDQHMbjtUWBOGsPha4/o4COcV47\
             Cr1me3IPxwmKabHF57uz5IIZWBM3DAVZybqs9qWoRymVEGonb/jTrTdfK6pfm3POTwA\
             AAP//AwAV1OF3wgAAAA==\"]"
@@ -4417,7 +4450,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query SiteProductVersion {
                   site {
                       productVersion
@@ -4512,7 +4545,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query SiteProductVersion {
                   site {
                       productVersion
@@ -4607,7 +4640,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query SiteProductVersion {
                   site {
                       productVersion
@@ -4624,7 +4657,8 @@ log:
           encoding: base64
           mimeType: application/json
           size: 136
-          text: "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqzixJBdEFRfkppcklYalFxZn5eUpWSkaWhqYmxvFGB\
+          text:
+            "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqzixJBdEFRfkppcklYalFxZn5eUpWSkaWhqYmxvFGB\
             kYmugaWuoYW8aZ65rpJZikWRilplkap5hZKtbW1AAAAAP//AwAMQVH6SQAAAA==\"]"
           textDecoded:
             data:

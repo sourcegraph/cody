@@ -9,13 +9,16 @@ import {
     PromptString,
     currentAuthStatusAuthed,
     featureFlagProvider,
+    firstResultFromOperation,
     isDotCom,
     logDebug,
     modelsService,
     newPromptMixin,
     ps,
+    storeLastValue,
 } from '@sourcegraph/cody-shared'
-import type { ChatModel } from '../chat/chat-view/ChatModel'
+import { isBoolean } from 'lodash'
+import { ChatBuilder } from '../chat/chat-view/ChatBuilder'
 import { type ContextRetriever, toStructuredMentions } from '../chat/chat-view/ContextRetriever'
 import { DefaultPrompter } from '../chat/chat-view/prompt'
 import { getCodebaseContextItemsForEditorState } from '../chat/clientStateBroadcaster'
@@ -63,7 +66,7 @@ export class CodyReflectionAgent {
     private responses: Record<string, string>
 
     constructor(
-        private readonly chatModel: ChatModel,
+        private readonly chatBuilder: ChatBuilder,
         private readonly chatClient: ChatClient,
         contextRetriever: ContextRetriever,
         span: Span,
@@ -79,8 +82,10 @@ export class CodyReflectionAgent {
         // If the user is on Sourcegraph.com, match the Cody Reflection model,
         // as only users with the Cody Reflection feature flag enabled can see it.
         this.isEnabled = this.isDotCom
-            ? this.chatModel.modelID === 'sourcegraph/cody-reflection'
-            : await featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyReflection)
+            ? this.chatBuilder.selectedModel === 'sourcegraph/cody-reflection'
+            : isBoolean(
+                  storeLastValue(featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyReflection))
+              )
         if (this.isEnabled) {
             this.initializeMultiplexer()
         }
@@ -130,14 +135,19 @@ export class CodyReflectionAgent {
         const { explicitMentions, implicitMentions } = getCategorizedMentions(this.currentContext)
 
         PromptMixin.add(newPromptMixin(REFLECTION_AGENT_PROMPT))
+
         // Limit the number of implicit mentions to 20 items.
         const prompter = new DefaultPrompter(explicitMentions, implicitMentions.slice(-20))
-        const { prompt } = await prompter.makePrompt(this.chatModel, 1)
-        const params = {
-            model: this.chatModel.modelID,
-            maxTokensToSample: this.chatModel.contextWindow.output,
-            stream: !modelsService.isStreamDisabled(this.chatModel.modelID),
-        } as CompletionParameters
+        const { prompt } = await prompter.makePrompt(this.chatBuilder, 1)
+
+        const model = this.chatBuilder.selectedModel
+        const contextWindow = await firstResultFromOperation(
+            ChatBuilder.contextWindowForChat(this.chatBuilder)
+        )
+        const params = { model, maxTokensToSample: contextWindow.output } as CompletionParameters
+        if (model && modelsService.isStreamDisabled(model)) {
+            params.stream = false
+        }
 
         let responseText = ''
 

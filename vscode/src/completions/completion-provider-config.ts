@@ -1,5 +1,6 @@
 import {
     FeatureFlag,
+    type Unsubscribable,
     combineLatest,
     distinctUntilChanged,
     featureFlagProvider,
@@ -11,10 +12,18 @@ import { isRunningInsideAgent } from '../jsonrpc/isRunningInsideAgent'
 import type { ContextStrategy } from './context/context-strategy'
 
 class CompletionProviderConfig {
-    /** Pre-fetch the feature flags we need so they are cached and immediately available when the
-     * user performs their first autocomplete, and so that our performance metrics are not
-     * skewed by the 1st autocomplete's feature flag evaluation time. */
+    private prefetchSubscription: Unsubscribable | undefined
+
+    /**
+     * Pre-fetch the feature flags we need so they are cached and immediately available when the
+     * user performs their first autocomplete, and so that our performance metrics are not skewed by
+     * the 1st autocomplete's feature flag evaluation time.
+     */
     public async prefetch(): Promise<void> {
+        if (this.prefetchSubscription) {
+            // Only one prefetch subscription is needed.
+            return
+        }
         const featureFlagsUsed: FeatureFlag[] = [
             FeatureFlag.CodyAutocompleteContextExperimentBaseFeatureFlag,
             FeatureFlag.CodyAutocompleteContextExperimentVariant1,
@@ -27,8 +36,15 @@ class CompletionProviderConfig {
             FeatureFlag.CodyAutocompletePreloadingExperimentVariant2,
             FeatureFlag.CodyAutocompletePreloadingExperimentVariant3,
             FeatureFlag.CodyAutocompleteDisableLowPerfLangDelay,
+            FeatureFlag.CodyAutocompleteTracing,
         ]
-        await Promise.all(featureFlagsUsed.map(flag => featureFlagProvider.evaluateFeatureFlag(flag)))
+        this.prefetchSubscription = combineLatest(
+            featureFlagsUsed.map(flag => featureFlagProvider.evaluatedFeatureFlag(flag))
+        ).subscribe({})
+    }
+
+    public dispose(): void {
+        this.prefetchSubscription?.unsubscribe()
     }
 
     public get contextStrategy(): Observable<ContextStrategy> {
@@ -36,8 +52,6 @@ class CompletionProviderConfig {
             'lsp-light',
             'tsc-mixed',
             'tsc',
-            'bfg',
-            'bfg-mixed',
             'jaccard-similarity',
             'new-jaccard-similarity',
             'recent-edits',

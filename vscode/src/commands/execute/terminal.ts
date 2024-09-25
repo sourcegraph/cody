@@ -20,7 +20,6 @@ export async function executeExplainOutput(
         span.setAttribute('sampled', true)
         logDebug('executeExplainOutput', 'executing', { args })
         const requestID = uuid.v4()
-        const addEnhancedContext = false
         const source = 'terminal'
         telemetryRecorder.recordEvent('cody.command.terminal', 'executed', {
             metadata: {
@@ -58,7 +57,6 @@ export async function executeExplainOutput(
                 text: prompt,
                 submitType: 'user-newchat',
                 contextItems: [],
-                addEnhancedContext,
                 source,
             }),
         }

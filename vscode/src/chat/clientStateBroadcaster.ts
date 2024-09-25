@@ -7,10 +7,14 @@ import {
     authStatus,
     combineLatest,
     contextFiltersProvider,
+    currentAuthStatusOrNotReadyYet,
     currentResolvedConfig,
+    debounceTime,
     displayLineRange,
     displayPathBasename,
     expandToLineRange,
+    firstResultFromOperation,
+    modelsService,
     openCtx,
     resolvedConfig,
     subscriptionDisposable,
@@ -20,7 +24,7 @@ import { URI } from 'vscode-uri'
 import { getSelectionOrFileContext } from '../commands/context/selection'
 import { createRepositoryMention } from '../context/openctx/common/get-repository-mentions'
 import { workspaceReposMonitor } from '../repository/repo-metadata-from-git-api'
-import type { ChatModel } from './chat-view/ChatModel'
+import { ChatBuilder } from './chat-view/ChatBuilder'
 import {
     contextItemMentionFromOpenCtxItem,
     getActiveEditorContextForOpenCtxMentions,
@@ -35,18 +39,25 @@ type PostMessage = (message: Extract<ExtensionMessage, { type: 'clientState' }>)
 export function startClientStateBroadcaster({
     useRemoteSearch,
     postMessage: rawPostMessage,
-    chatModel,
+    chatModel: chatBuilder,
 }: {
     useRemoteSearch: boolean
     postMessage: PostMessage
-    chatModel: ChatModel
+    chatModel: ChatBuilder
 }): vscode.Disposable {
     const postMessage = idempotentPostMessage(rawPostMessage)
 
     async function rawSendClientState(signal: AbortSignal | null): Promise<void> {
+        // Don't bother doing anything if we haven't loaded any models yet.
+        if (!currentAuthStatusOrNotReadyYet()?.authenticated || modelsService.models.length === 0) {
+            return
+        }
+
         const items: ContextItem[] = []
 
-        const { input, context } = chatModel.contextWindow
+        const { input, context } = await firstResultFromOperation(
+            ChatBuilder.contextWindowForChat(chatBuilder)
+        )
         const userContextSize = context?.user ?? input
 
         const [contextFile] = await getSelectionOrFileContext()
@@ -113,12 +124,17 @@ export function startClientStateBroadcaster({
     )
     disposables.push(
         subscriptionDisposable(
-            combineLatest([resolvedConfig, authStatus, contextFiltersProvider.changes]).subscribe(
-                async () => {
+            combineLatest([
+                resolvedConfig,
+                authStatus,
+                contextFiltersProvider.changes,
+                modelsService.modelsChanges,
+            ])
+                .pipe(debounceTime(500))
+                .subscribe(async () => {
                     // Infrequent action, so don't debounce and show immediately in the UI.
                     void sendClientState('immediate')
-                }
-            )
+                })
         )
     )
 

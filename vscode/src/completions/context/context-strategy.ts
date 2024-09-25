@@ -7,7 +7,6 @@ import {
 import type { Observable } from 'observable-fns'
 import type * as vscode from 'vscode'
 import type { ContextRetriever } from '../types'
-import type { BfgRetriever } from './retrievers/bfg/bfg-retriever'
 import { JaccardSimilarityRetriever } from './retrievers/jaccard-similarity/jaccard-similarity-retriever'
 import { LspLightRetriever } from './retrievers/lsp-light/lsp-light-retriever'
 import { DiagnosticsRetriever } from './retrievers/recent-user-actions/diagnostics-retriever'
@@ -18,8 +17,6 @@ import { loadTscRetriever } from './retrievers/tsc/load-tsc-retriever'
 
 export type ContextStrategy =
     | 'lsp-light'
-    | 'bfg'
-    | 'bfg-mixed'
     | 'jaccard-similarity'
     | 'new-jaccard-similarity'
     | 'tsc'
@@ -45,10 +42,7 @@ export class DefaultContextStrategyFactory implements ContextStrategyFactory {
     private localRetriever: ContextRetriever | undefined
     private graphRetriever: ContextRetriever | undefined
 
-    constructor(
-        private contextStrategy: Observable<ContextStrategy>,
-        createBfgRetriever?: () => BfgRetriever
-    ) {
+    constructor(private contextStrategy: Observable<ContextStrategy>) {
         this.contextStrategySubscription = contextStrategy
             .pipe(
                 createDisposables(contextStrategy => {
@@ -74,15 +68,6 @@ export class DefaultContextStrategyFactory implements ContextStrategyFactory {
                             break
                         case 'tsc':
                             this.graphRetriever = loadTscRetriever()
-                            break
-                        case 'bfg-mixed':
-                        case 'bfg':
-                            // The bfg strategy uses jaccard similarity as a fallback if no results are found or
-                            // the language is not supported by BFG
-                            this.localRetriever = new JaccardSimilarityRetriever()
-                            if (createBfgRetriever) {
-                                this.graphRetriever = createBfgRetriever()
-                            }
                             break
                         case 'lsp-light':
                             this.localRetriever = new JaccardSimilarityRetriever()
@@ -141,19 +126,8 @@ export class DefaultContextStrategyFactory implements ContextStrategyFactory {
                 break
             }
 
-            // The bfg strategy exclusively uses bfg strategy when the language is supported
-            case 'bfg':
-                if (this.graphRetriever?.isSupportedForLanguageId(document.languageId)) {
-                    retrievers.push(this.graphRetriever)
-                } else if (this.localRetriever) {
-                    retrievers.push(this.localRetriever)
-                }
-                break
-
             case 'tsc':
             case 'tsc-mixed':
-            // The bfg mixed strategy mixes local and graph based retrievers
-            case 'bfg-mixed':
                 if (this.graphRetriever?.isSupportedForLanguageId(document.languageId)) {
                     retrievers.push(this.graphRetriever)
                 }
