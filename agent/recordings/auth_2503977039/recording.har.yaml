@@ -89,11 +89,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 73bb07640995cd4e7fad6631fe09c324
+    - _id: 99e8808b8151c81b8895af11b94d5217
       _order: 0
       cache: {}
       request:
-        bodySize: 532
+        bodySize: 405
         cookies: []
         headers:
           - name: content-type
@@ -106,12 +106,12 @@ log:
           - name: user-agent
             value: auth / v1
           - name: traceparent
-            value: 00-20f69900c2d83d7b1dd2d9ffcd8afc25-b33cb745d14c8099-01
+            value: 00-1c4a3864e1d2b002c3812410ff2e29ba-4a057acfcf47c2f8-01
           - name: connection
             value: keep-alive
           - name: host
             value: sourcegraph.com
-        headersSize: 383
+        headersSize: 397
         httpVersion: HTTP/1.1
         method: POST
         postData:
@@ -120,48 +120,41 @@ log:
           textJSON:
             maxTokensToSample: 4000
             messages:
-              - speaker: human
+              - speaker: system
                 text: "You are Cody, an AI coding assistant from Sourcegraph.If your answer
                   contains fenced code blocks in Markdown, include the relevant
                   full file path in the code block tag using this structure:
                   ```$LANGUAGE:$FILEPATH```."
-              - speaker: assistant
-                text: I am Cody, an AI coding assistant from Sourcegraph.
               - speaker: human
                 text: hello after reauthentication
-            model: fireworks/accounts/fireworks/models/mixtral-8x7b-instruct
+            model: claude-3-haiku
             temperature: 0
             topK: -1
             topP: -1
         queryString:
+          - name: api-version
+            value: "2"
           - name: client-name
             value: auth
           - name: client-version
             value: v1
-        url: https://sourcegraph.com/.api/completions/stream?client-name=auth&client-version=v1
+        url: https://sourcegraph.com/.api/completions/stream?api-version=2&client-name=auth&client-version=v1
       response:
-        bodySize: 10600
+        bodySize: 100
         content:
-          mimeType: text/event-stream
-          size: 10600
-          text: >+
-            event: completion
-
-            data: {"completion":"Hello! I'm glad to see you again after re-authentication. If you have any coding questions or need assistance with a specific task, feel free to ask. I'm here to help you with care, respect, and truth while ensuring secure and positive interactions. Please note that to ensure the security of your code and project, I don't execute or run any code. Instead, I can help you with advice, explanations, and suggestions in various programming languages and concepts. If you need help with a file, please use the markdown format with the relevant file path so I can better assist you, like so:\n```python:/path/to/your/file.py`\n```","stopReason":"stop"}
-
-
-            event: done
-
-            data: {}
-
+          mimeType: text/plain; charset=utf-8
+          size: 100
+          text: >
+            the requested chat model is not available ("claude-3-haiku",
+            onProTier=true, hasFeatureFlags=false)
         cookies: []
         headers:
           - name: date
-            value: Wed, 25 Sep 2024 10:06:32 GMT
+            value: Wed, 25 Sep 2024 21:35:45 GMT
           - name: content-type
-            value: text/event-stream
-          - name: transfer-encoding
-            value: chunked
+            value: text/plain; charset=utf-8
+          - name: content-length
+            value: "100"
           - name: connection
             value: keep-alive
           - name: access-control-allow-credentials
@@ -169,7 +162,7 @@ log:
           - name: access-control-allow-origin
             value: ""
           - name: cache-control
-            value: no-cache
+            value: no-cache, max-age=0
           - name: vary
             value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
               X-Requested-With,Cookie
@@ -181,12 +174,12 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1299
+        headersSize: 1311
         httpVersion: HTTP/1.1
         redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2024-09-25T10:06:30.987Z
+        status: 400
+        statusText: Bad Request
+      startedDateTime: 2024-09-25T21:35:44.858Z
       time: 0
       timings:
         blocked: -1
@@ -1358,6 +1351,100 @@ log:
         status: 401
         statusText: Unauthorized
       startedDateTime: 2024-09-25T10:06:29.762Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: a1889526ab4ac60a56dc11d08e0510f9
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 0
+        cookies: []
+        headers:
+          - _fromType: array
+            name: authorization
+            value: token
+              REDACTED_3dd704711f82a44ff6aba261b53b61a03fb8edba658774639148630d838c2d1d
+          - _fromType: array
+            name: user-agent
+            value: auth / v1
+          - _fromType: array
+            name: accept
+            value: "*/*"
+          - _fromType: array
+            name: accept-encoding
+            value: gzip,deflate
+          - name: host
+            value: sourcegraph.com
+        headersSize: 253
+        httpVersion: HTTP/1.1
+        method: GET
+        queryString: []
+        url: https://sourcegraph.com/.api/modelconfig/supported-models.json
+      response:
+        bodySize: 1095
+        content:
+          encoding: base64
+          mimeType: text/plain; charset=utf-8
+          size: 1095
+          text: "[\"H4sIAAA=\",\"AAAAAP/smF9v8jYUxu/5FFZu95qaAKXLXUvVrdK6VmvVXUy9MM4BLJLY\
+            sh3+qOp3nxKTdAGXhAlR0bdchfjx49i/Y/vYry2EEPI0m0JMn0FpLhIvQF6nTbwftkz\
+            BnBevSZu0yS8hzItCqcSch6C0F6B/8lfZ77V8ykU8zOrSxEyVkJyt65bFIdcyoqs/aQ\
+            yZ7rLUlbK3H7utx1zBQqiZrrG+KXWNrSdCTCKo8f3NihqbCgkJ5TWm9xKSy9vmpjHXR\
+            tGoxvVurXq3zZ9e1jxjEUK0E2au+AvGFaRB4BO/i8k5Jp0gYBFNQ8Dddh9rkSRgar5p\
+            mOtRt91Hj0593mahLtxx4Y594vfIuU82qzEq6YhH3HCodqlUQMg3G7M1p9R4ldcvW94\
+            GJkKt8mFgLFWUrTbb14aaNGs5exptR5HhoPLwVbBVxkRiYGn+5kkoFl6wQcGOCl3eJj\
+            I1T2IGSdZMr08IcfQmpsv71FSUhJCK7q1BmO1BHguZ1k3Ggjq6d2jdxDNXS9v3fz1V2\
+            lKJLwZ7SvksbUr7d5fYjTv3tby7ZPBZvLUECD97ag+OBrvcS4Ng3gkCbahiIgRVw/fR\
+            UDV06SpoP3Srh0lTI5iIZQQGjgTvQDPVJ72LRuz8/vkh0YUAUgPMcD7ieO7jiBvAI6r\
+            r8plrAPkIMEPPPvqDG0BXjjoVsJQxkSZGn2mRKgYTReX0zCYTZ3t8x3cYHCAMbMpqY2\
+            ACMU847rT72NGNzTQ2F6NOu48etsUV3rt9T2UrPsHE6wO444jqaXO8Ny75R4Cd3j/V7\
+            ntEvutTnAUc82X2B18sByPME21UyuoOU3e2DrpYDq6aLdnltlEs2I2arQ+AEwR9vDTL\
+            XgHkCXUPEz9PqCfS4F7tIv3w5BBV567T51QW5dM7H7lYMhGucDZwWCqYc1hgQjqNbny\
+            Q6BR1dh+TmrTQcJY6xkkbBTS+5jpjFR4S/4JyE3G9taJ8/QDwGwdAtvnuTX/L/pu+S7\
+            gH/dZ/+uuFMKZpZO6KK9L3z7DD+P8uRL0x1WbYrP7WTUsWBjC0x6H1Ff0eh8CW7eNb6\
+            98AAAD///TDOcMGGAAA\"]"
+        cookies: []
+        headers:
+          - name: date
+            value: Wed, 25 Sep 2024 21:25:36 GMT
+          - name: content-type
+            value: text/plain; charset=utf-8
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache, max-age=0
+          - name: content-encoding
+            value: gzip
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1342
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-09-25T21:25:36.303Z
       time: 0
       timings:
         blocked: -1

@@ -26,7 +26,7 @@ describe(
         }
         const FIXTURE_MODELS = {
             // Set this to the default chat model on dotcom.
-            dotcomDefaultChatModel: 'anthropic/claude-3-5-sonnet-20240620',
+            dotcomDefaultChatModel: 'claude-3-5-sonnet-20240620',
 
             // Set this to the default chat model on S2. (It's OK if it's the same as
             // dotcomDefaultChatModel.)
@@ -34,10 +34,7 @@ describe(
 
             // Set this to 2 model IDs that both (1) exist on dotcom and S2 but (2) are NOT the same as
             // dotcomDefaultChatModel or defaultS2ChatModel.
-            differentFromDotcomAndS2DefaultChatModel: [
-                'fireworks/accounts/fireworks/models/mixtral-8x7b-instruct',
-                'google/gemini-1.5-flash',
-            ],
+            differentFromDotcomAndS2DefaultChatModel: ['claude-3-haiku', 'gemini-1.5-flash'],
         }
 
         const workspace = new TestWorkspace(path.join(__dirname, '__tests__', 'auth'))
@@ -129,6 +126,7 @@ describe(
             const chat = await client.sendSingleMessageToNewChatWithFullTranscript(
                 'hello after reauthentication'
             )
+            console.log(chat.lastMessage, 'chat.lastMessage')
             expect(chat.lastMessage?.model).toBe(
                 FIXTURE_MODELS.differentFromDotcomAndS2DefaultChatModel[0]
             )

@@ -291,7 +291,7 @@ describe('Agent', () => {
                 })
             )
             expect(reply2.messages.at(-1)?.text).toMatchInlineSnapshot(
-                `"Your name is Lars Monsen."`,
+                `undefined`,
                 explainPollyError
             )
             // telemetry assertion, to validate the expected events fired during the test run

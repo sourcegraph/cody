@@ -1,4 +1,4 @@
-import { Observable, map } from 'observable-fns'
+import { type Observable, map } from 'observable-fns'
 import { authStatus, currentAuthStatus } from '../auth/authStatus'
 import { mockAuthStatus } from '../auth/authStatus'
 import { type AuthStatus, isCodyProUser, isEnterpriseUser } from '../auth/types'
@@ -21,7 +21,6 @@ import {
 } from '../misc/observableOperation'
 import { ClientConfigSingleton } from '../sourcegraph-api/clientConfig'
 import { CHAT_INPUT_TOKEN_BUDGET, CHAT_OUTPUT_TOKEN_BUDGET } from '../token/constants'
-import { getDotComDefaultModels } from './dotcom'
 import { type Model, type ServerModel, modelTier } from './model'
 import { syncModels } from './sync'
 import { ModelTag } from './tags'
@@ -496,25 +495,7 @@ export class ModelsService {
     }
 }
 
-export const modelsService = new ModelsService(
-    process.env.CODY_SHIM_TESTING === 'true'
-        ? Observable.of<ModelsData>({
-              preferences: {
-                  defaults: {
-                      [ModelUsage.Chat]: findModel('3.5 Sonnet'),
-                      [ModelUsage.Edit]: findModel('3.5 Sonnet'),
-                  },
-                  selected: {},
-              },
-              primaryModels: getDotComDefaultModels(),
-              localModels: [],
-          })
-        : undefined
-)
-
-function findModel(modelID: string): string | undefined {
-    return getDotComDefaultModels().find(m => m.title.includes(modelID))?.id
-}
+export const modelsService = new ModelsService()
 
 interface MockModelsServiceResult {
     storage: TestLocalStorageForModelPreferences
