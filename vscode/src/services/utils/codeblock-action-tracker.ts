@@ -1,5 +1,6 @@
 import * as vscode from 'vscode'
 
+import path from 'node:path'
 import {
     type AuthStatus,
     type EditModel,
@@ -7,11 +8,10 @@ import {
     isDotCom,
     telemetryRecorder,
 } from '@sourcegraph/cody-shared'
-import { getEditor } from '../../editor/active-editor'
-
-import path from 'node:path'
+import { logDebug } from '@sourcegraph/cody-shared'
 import { doesFileExist } from '../../commands/utils/workspace-files'
 import { executeSmartApply } from '../../edit/smart-apply'
+import { getEditor } from '../../editor/active-editor'
 import type { VSCodeEditor } from '../../editor/vscode-editor'
 import { countCode, matchCodeSnippets } from './code-count'
 
@@ -165,51 +165,10 @@ export async function handleSmartApply(
     instruction?: string | null,
     fileUri?: string | null
 ): Promise<void> {
-    const activeEditor = getEditor()?.active
-    const workspaceUri = vscode.workspace.workspaceFolders?.[0].uri
-
-    const uri =
-        fileUri && workspaceUri
-            ? path.isAbsolute(fileUri)
-                ? vscode.Uri.file(fileUri)
-                : smartJoinPath(workspaceUri, fileUri)
-            : activeEditor?.document.uri
-
-    const isNewFile = uri && !(await doesFileExist(uri))
-    if (isNewFile) {
-        const workspaceEditor = new vscode.WorkspaceEdit()
-        workspaceEditor.createFile(uri, { ignoreIfExists: false })
-        await vscode.workspace.applyEdit(workspaceEditor)
-    }
-
-    const document = uri ? await vscode.workspace.openTextDocument(uri) : activeEditor?.document
-    if (!document) {
-        throw new Error('No editor found to insert text')
-    }
-
-    const visibleEditor = vscode.window.visibleTextEditors.find(
-        editor => editor.document.uri.toString() === document.uri.toString()
-    )
-
-    // Open the document for the user, so they can immediately see the progress decorations
-    await vscode.window.showTextDocument(document, {
-        // We may have triggered the smart apply from a different view column to the visible document
-        // so re-use the correct view column if we can
-        viewColumn: visibleEditor?.viewColumn,
-    })
-
-    setLastStoredCode(code, 'applyButton')
-    await executeSmartApply({
-        configuration: {
-            id,
-            document,
-            instruction: PromptString.unsafe_fromUserQuery(instruction || ''),
-            model: getSmartApplyModel(authStatus),
-            replacement: code,
-            isNewFile,
-        },
-        source: 'chat',
-    })
+    const terminal = vscode.window.activeTerminal || vscode.window.createTerminal('Cody Instructions')
+    terminal.show()
+    terminal.sendText(code)
+    return
 }
 
 /**
