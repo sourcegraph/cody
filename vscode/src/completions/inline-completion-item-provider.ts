@@ -455,7 +455,7 @@ export class InlineCompletionItemProvider
             }
 
             const latencyFeatureFlags: LatencyFeatureFlags = {
-                user: await featureFlagProvider.evaluateFeatureFlag(
+                user: await featureFlagProvider.evaluateFeatureFlagEphemerally(
                     FeatureFlag.CodyAutocompleteUserLatency
                 ),
             }

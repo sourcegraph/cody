@@ -39,7 +39,7 @@ export async function mergedPromptsAndLegacyCommands(
     }
 
     const queryLower = query.toLowerCase()
-    const isUnifiedPromptsEnabled = await featureFlagProvider.evaluateFeatureFlag(
+    const isUnifiedPromptsEnabled = await featureFlagProvider.evaluateFeatureFlagEphemerally(
         FeatureFlag.CodyUnifiedPrompts
     )
 

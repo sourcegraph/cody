@@ -975,6 +975,7 @@ export function switchMap<T, R>(
 
 export interface StoredLastValue<T> {
     value: { last: undefined; isSet: false } | { last: T; isSet: true }
+    observable: Observable<T>
     subscription: Unsubscribable
 }
 
@@ -987,7 +988,7 @@ export function storeLastValue<T>(observable: Observable<T>): StoredLastValue<T>
     const subscription = observable.subscribe(v => {
         Object.assign(value, { last: v, isSet: true })
     })
-    return { value, subscription }
+    return { value, observable, subscription }
 }
 
 export function debounceTime<T>(duration: number): (source: ObservableLike<T>) => Observable<T> {

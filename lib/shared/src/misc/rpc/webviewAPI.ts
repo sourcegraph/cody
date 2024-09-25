@@ -2,7 +2,7 @@ import type { Observable } from 'observable-fns'
 import type { ChatMessage } from '../../chat/transcript/messages'
 import type { ContextItem } from '../../codebase-context/messages'
 import type { CodyCommand } from '../../commands/types'
-import { FeatureFlag } from '../../experimentation/FeatureFlagProvider'
+import type { FeatureFlag } from '../../experimentation/FeatureFlagProvider'
 import type { ContextMentionProviderMetadata } from '../../mentions/api'
 import type { MentionQuery } from '../../mentions/query'
 import type { Model } from '../../models/model'
@@ -16,10 +16,9 @@ export interface WebviewToExtensionAPI {
     mentionMenuData(query: MentionQuery): Observable<MentionMenuData>
 
     /**
-     * Get the evaluated value of a feature flag. All feature flags used by the webview must be in
-     * {@link FEATURE_FLAGS_USED_IN_WEBVIEW}.
+     * Get the evaluated value of a feature flag.
      */
-    evaluatedFeatureFlag(flag: FeatureFlagUsedInWebview): Observable<boolean | undefined>
+    evaluatedFeatureFlag(flag: FeatureFlag): Observable<boolean | undefined>
 
     /**
      * Observe the results of querying prompts in the Prompt Library. For backcompat, it also
@@ -93,13 +92,3 @@ export interface PromptsResult {
     /** The original query used to fetch this result. */
     query: string
 }
-
-/**
- * You must add a feature flag here if you need to use it from the frontend. This is because only
- * explicitly requested feature flags are evaluated immediately. If you don't add one here, its old
- * value will be cached on the server and returned until it is explicitly evaluated.
- */
-const FEATURE_FLAGS_USED_IN_WEBVIEW = [
-    FeatureFlag.CodyExperimentalOneBox,
-] as const satisfies FeatureFlag[]
-export type FeatureFlagUsedInWebview = (typeof FEATURE_FLAGS_USED_IN_WEBVIEW)[number]

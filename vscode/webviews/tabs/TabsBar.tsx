@@ -16,20 +16,20 @@ import {
 import { getVSCodeAPI } from '../utils/VSCodeApi'
 import { View } from './types'
 
-import { CodyIDE, isDefined } from '@sourcegraph/cody-shared'
+import { CodyIDE, FeatureFlag, isDefined } from '@sourcegraph/cody-shared'
 import { type FC, Fragment, forwardRef, useCallback, useMemo, useState } from 'react'
 import { Kbd } from '../components/Kbd'
 import { Tooltip, TooltipContent, TooltipTrigger } from '../components/shadcn/ui/tooltip'
 import { useConfig } from '../utils/useConfig'
 
 import { Button } from '../components/shadcn/ui/button'
+import { useFeatureFlag } from '../utils/useFeatureFlags'
 import styles from './TabsBar.module.css'
 import { getCreateNewChatCommand } from './utils'
 
 interface TabsBarProps {
     IDE: CodyIDE
     currentView: View
-    isUnifiedPromptsAvailable: boolean
     setView: (view: View) => void
     onDownloadChatClick?: () => void
 }
@@ -63,14 +63,8 @@ interface TabConfig {
     subActions?: TabSubAction[]
 }
 
-export const TabsBar: React.FC<TabsBarProps> = ({
-    currentView,
-    isUnifiedPromptsAvailable,
-    setView,
-    IDE,
-    onDownloadChatClick,
-}) => {
-    const tabItems = useTabs({ IDE, isUnifiedPromptsAvailable, onDownloadChatClick })
+export const TabsBar: React.FC<TabsBarProps> = ({ currentView, setView, IDE, onDownloadChatClick }) => {
+    const tabItems = useTabs({ IDE, onDownloadChatClick })
     const {
         config: { webviewType, multipleWebviewsEnabled },
     } = useConfig()
@@ -317,13 +311,12 @@ TabButton.displayName = 'TabButton'
  * Returns list of tabs and its sub-action buttons, used later as configuration for
  * tabs rendering in chat header.
  */
-function useTabs(
-    input: Pick<TabsBarProps, 'IDE' | 'isUnifiedPromptsAvailable' | 'onDownloadChatClick'>
-): TabConfig[] {
-    const { isUnifiedPromptsAvailable, IDE, onDownloadChatClick } = input
+function useTabs(input: Pick<TabsBarProps, 'IDE' | 'onDownloadChatClick'>): TabConfig[] {
+    const { IDE, onDownloadChatClick } = input
     const {
         config: { multipleWebviewsEnabled },
     } = useConfig()
+    const isUnifiedPromptsAvailable = useFeatureFlag(FeatureFlag.CodyUnifiedPrompts)
 
     return useMemo<TabConfig[]>(
         () =>
