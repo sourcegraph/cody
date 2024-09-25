@@ -14,7 +14,9 @@ import {
 import { Tooltip, TooltipContent, TooltipTrigger } from '../../../components/shadcn/ui/tooltip'
 import { SourcegraphLogo } from '../../../icons/SourcegraphLogo'
 import { getVSCodeAPI } from '../../../utils/VSCodeApi'
+import { useTelemetryRecorder } from '../../../utils/telemetry'
 import { useConfig } from '../../../utils/useConfig'
+import { useExperimentalOneBox } from '../../../utils/useExperimentalOneBox'
 import { LoadingDots } from '../../components/LoadingDots'
 import { Cell } from '../Cell'
 import { NON_HUMAN_CELL_AVATAR_SIZE } from '../messageCell/assistant/AssistantMessageCell'
@@ -77,7 +79,7 @@ export const ContextCell: FunctionComponent<{
             isForFirstMessage
         )
 
-        function logContextOpening() {
+        const logContextOpening = useCallback(() => {
             getVSCodeAPI().postMessage({
                 command: 'event',
                 eventName: 'CodyVSCodeExtension:chat:context:opened',
@@ -86,12 +88,25 @@ export const ContextCell: FunctionComponent<{
                     excludedAtContext: excludedContext.length,
                 },
             })
-        }
+        }, [excludedContext.length, usedContext])
 
         const {
             config: { internalDebugContext },
         } = useConfig()
 
+        const telemetryRecorder = useTelemetryRecorder()
+        const oneboxEnabled = useExperimentalOneBox()
+        const logValueChange = useCallback(
+            (value: string | undefined) => {
+                if (oneboxEnabled) {
+                    telemetryRecorder.recordEvent(
+                        'onebox.contextDrawer',
+                        value ? 'expanded' : 'collapsed'
+                    )
+                }
+            },
+            [telemetryRecorder, oneboxEnabled]
+        )
         return (
             <div>
                 {(contextItemsToDisplay === undefined || contextItemsToDisplay.length !== 0) && (
@@ -101,6 +116,7 @@ export const ContextCell: FunctionComponent<{
                         defaultValue={
                             ((__storybook__initialOpen || defaultOpen) && 'item-1') || undefined
                         }
+                        onValueChange={logValueChange}
                         asChild={true}
                     >
                         <AccordionItem value="item-1" asChild>

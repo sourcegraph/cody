@@ -16,6 +16,7 @@ import type { UserAccountInfo } from '../Chat'
 import type { ApiPostMessage } from '../Chat'
 import { Button } from '../components/shadcn/ui/button'
 import { getVSCodeAPI } from '../utils/VSCodeApi'
+import { useTelemetryRecorder } from '../utils/telemetry'
 import { useExperimentalOneBox } from '../utils/useExperimentalOneBox'
 import type { CodeBlockActionsProps } from './ChatMessageContent/ChatMessageContent'
 import { ContextCell } from './cells/contextCell/ContextCell'
@@ -189,14 +190,23 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
 
     const onEditSubmit = useCallback(
         (editorValue: SerializedPromptEditorValue, intentFromSubmit?: ChatMessage['intent']): void => {
-            editHumanMessage(humanMessage.index, editorValue, intentFromSubmit || intent)
+            editHumanMessage({
+                messageIndexInTranscript: humanMessage.index,
+                editorValue,
+                intent: intentFromSubmit || intent,
+                manuallySelectedIntent: !!intentFromSubmit,
+            })
         },
         [humanMessage, intent]
     )
 
     const onFollowupSubmit = useCallback(
         (editorValue: SerializedPromptEditorValue, intentFromSubmit?: ChatMessage['intent']): void => {
-            submitHumanMessage(editorValue, intentFromSubmit || intent)
+            submitHumanMessage({
+                editorValue,
+                intent: intentFromSubmit || intent,
+                manuallySelectedIntent: !!intentFromSubmit,
+            })
         },
         [intent]
     )
@@ -250,14 +260,23 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
         }
         return null
     }, [humanMessage, assistantMessage, isContextLoading])
+
+    const telemetryRecorder = useTelemetryRecorder()
     const reSubmitWithIntent = useCallback(
         (intent: ChatMessage['intent']) => {
             const editorState = humanEditorRef.current?.getSerializedValue()
             if (editorState) {
                 onEditSubmit(editorState, intent)
+                telemetryRecorder.recordEvent('onebox.intentCorrection', 'clicked', {
+                    privateMetadata: {
+                        initial_intent: humanMessage.intent,
+                        user_selected_intent: intent,
+                        query: editorState.text,
+                    },
+                })
             }
         },
-        [onEditSubmit]
+        [onEditSubmit, telemetryRecorder, humanMessage]
     )
 
     const reSubmitWithChatIntent = useCallback(() => reSubmitWithIntent('chat'), [reSubmitWithIntent])
@@ -372,11 +391,17 @@ export function focusLastHumanMessageEditor(): void {
     lastEditor?.scrollIntoView()
 }
 
-export function editHumanMessage(
-    messageIndexInTranscript: number,
-    editorValue: SerializedPromptEditorValue,
+export function editHumanMessage({
+    messageIndexInTranscript,
+    editorValue,
+    intent,
+    manuallySelectedIntent,
+}: {
+    messageIndexInTranscript: number
+    editorValue: SerializedPromptEditorValue
     intent?: ChatMessage['intent']
-): void {
+    manuallySelectedIntent?: boolean
+}): void {
     getVSCodeAPI().postMessage({
         command: 'edit',
         index: messageIndexInTranscript,
@@ -384,14 +409,20 @@ export function editHumanMessage(
         editorState: editorValue.editorState,
         contextItems: editorValue.contextItems.map(deserializeContextItem),
         intent,
+        manuallySelectedIntent,
     })
     focusLastHumanMessageEditor()
 }
 
-function submitHumanMessage(
-    editorValue: SerializedPromptEditorValue,
+function submitHumanMessage({
+    editorValue,
+    intent,
+    manuallySelectedIntent,
+}: {
+    editorValue: SerializedPromptEditorValue
     intent?: ChatMessage['intent']
-): void {
+    manuallySelectedIntent?: boolean
+}): void {
     getVSCodeAPI().postMessage({
         command: 'submit',
         submitType: 'user',
@@ -399,6 +430,7 @@ function submitHumanMessage(
         editorState: editorValue.editorState,
         contextItems: editorValue.contextItems.map(deserializeContextItem),
         intent,
+        manuallySelectedIntent,
     })
     focusLastHumanMessageEditor()
 }
