@@ -368,6 +368,12 @@
         "title": "Switch Account…"
       },
       {
+        "command": "cody.auth.refresh",
+        "category": "Cody",
+        "title": "Refresh Settings (Debug)",
+        "enablement": "config.cody.internal.unstable"
+      },
+      {
         "command": "cody.settings.extension",
         "category": "Cody",
         "title": "Extension Settings",
