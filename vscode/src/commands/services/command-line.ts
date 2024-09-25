@@ -180,10 +180,7 @@ class CodyCommandLine implements vscode.Disposable {
     }
 }
 
-export let codyCommandLine: CodyCommandLine | undefined = undefined
-
 // Create and register the command
 export function registerCodyCommandLine(chatClient: ChatClient): CodyCommandLine {
-    codyCommandLine = new CodyCommandLine(chatClient)
-    return codyCommandLine
+    return new CodyCommandLine(chatClient)
 }

@@ -89,431 +89,6 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 9770a01996412d8957a010c901b260b9
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 1115
-        cookies: []
-        headers:
-          - name: content-type
-            value: application/json
-          - name: accept-encoding
-            value: gzip;q=0
-          - name: authorization
-            value: token
-              REDACTED_3dd704711f82a44ff6aba261b53b61a03fb8edba658774639148630d838c2d1d
-          - name: user-agent
-            value: customCommandsClient / v1
-          - name: traceparent
-            value: 00-0384b1f058f6c54f2c9978efddc5d953-0c359cd572e3b867-01
-          - name: connection
-            value: keep-alive
-          - name: host
-            value: sourcegraph.com
-        headersSize: 429
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json
-          params: []
-          textJSON:
-            maxTokensToSample: 4000
-            messages:
-              - speaker: system
-                text: "You are Cody, an AI coding assistant from Sourcegraph.If your answer
-                  contains fenced code blocks in Markdown, include the relevant
-                  full file path in the code block tag using this structure:
-                  ```$LANGUAGE:$FILEPATH```."
-              - speaker: human
-                text: >
-                  Codebase context from file path src/example3.ts: export
-                  function example(): string {
-                      return 'example'
-                  }
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: >
-                  Codebase context from file path src/example2.ts: export
-                  function example(): string {
-                      return 'example'
-                  }
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: |-
-                  My selected code from codebase file src/example1.ts:1-3:
-                  ```
-                  export function example(): string {
-                      return 'example'
-                  }
-                  ```
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: Give me the names of the files I have shared with you so far. Format the
-                  response as a bulleted list. Only include the raw filename, no
-                  extra formatting like quotes.
-            model: anthropic/claude-3-5-sonnet-20240620
-            temperature: 0
-            topK: -1
-            topP: -1
-        queryString:
-          - name: api-version
-            value: "2"
-          - name: client-name
-            value: customcommandsclient
-          - name: client-version
-            value: v1
-        url: https://sourcegraph.com/.api/completions/stream?api-version=2&client-name=customcommandsclient&client-version=v1
-      response:
-        bodySize: 721
-        content:
-          mimeType: text/event-stream
-          size: 721
-          text: >+
-            event: completion
-
-            data: {"deltaText":"Here are the names of the files you've shared with me so far, formatted as a bulleted list:\n\n• example3.ts\n• example2.ts\n• example1.ts","stopReason":"end_turn"}
-
-
-            event: done
-
-            data: {}
-
-        cookies: []
-        headers:
-          - name: date
-            value: Thu, 19 Sep 2024 04:38:54 GMT
-          - name: content-type
-            value: text/event-stream
-          - name: transfer-encoding
-            value: chunked
-          - name: connection
-            value: keep-alive
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache
-          - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
-              X-Requested-With,Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1299
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2024-09-19T04:38:53.400Z
-      time: 0
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 0
-    - _id: c61c807642c00401db65857da9d48925
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 483
-        cookies: []
-        headers:
-          - name: content-type
-            value: application/json
-          - name: accept-encoding
-            value: gzip;q=0
-          - name: authorization
-            value: token
-              REDACTED_3dd704711f82a44ff6aba261b53b61a03fb8edba658774639148630d838c2d1d
-          - name: user-agent
-            value: customCommandsClient / v1
-          - name: traceparent
-            value: 00-8809403755cd681892c6ce9eb389aee9-841f8fe8bed527e3-01
-          - name: connection
-            value: keep-alive
-          - name: host
-            value: sourcegraph.com
-        headersSize: 429
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json
-          params: []
-          textJSON:
-            maxTokensToSample: 4000
-            messages:
-              - speaker: system
-                text: "You are Cody, an AI coding assistant from Sourcegraph.If your answer
-                  contains fenced code blocks in Markdown, include the relevant
-                  full file path in the code block tag using this structure:
-                  ```$LANGUAGE:$FILEPATH```."
-              - speaker: human
-                text: Did I share any code with you? If yes, reply single word 'yes'. If none,
-                  reply 'no'.
-            model: anthropic/claude-3-5-sonnet-20240620
-            temperature: 0
-            topK: -1
-            topP: -1
-        queryString:
-          - name: api-version
-            value: "2"
-          - name: client-name
-            value: customcommandsclient
-          - name: client-version
-            value: v1
-        url: https://sourcegraph.com/.api/completions/stream?api-version=2&client-name=customcommandsclient&client-version=v1
-      response:
-        bodySize: 117
-        content:
-          mimeType: text/event-stream
-          size: 117
-          text: |+
-            event: completion
-            data: {"deltaText":"no","stopReason":"end_turn"}
-
-            event: done
-            data: {}
-
-        cookies: []
-        headers:
-          - name: date
-            value: Thu, 19 Sep 2024 04:38:55 GMT
-          - name: content-type
-            value: text/event-stream
-          - name: transfer-encoding
-            value: chunked
-          - name: connection
-            value: keep-alive
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache
-          - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
-              X-Requested-With,Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1299
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2024-09-19T04:38:54.913Z
-      time: 0
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 0
-    - _id: a4cd3b2f572cd62233548215c5a8e477
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 2227
-        cookies: []
-        headers:
-          - name: content-type
-            value: application/json
-          - name: accept-encoding
-            value: gzip;q=0
-          - name: authorization
-            value: token
-              REDACTED_3dd704711f82a44ff6aba261b53b61a03fb8edba658774639148630d838c2d1d
-          - name: user-agent
-            value: customCommandsClient / v1
-          - name: traceparent
-            value: 00-32e7e41e1214f98a10727a615d8c10bf-9da1fcf38aa53bf6-01
-          - name: connection
-            value: keep-alive
-          - name: host
-            value: sourcegraph.com
-        headersSize: 429
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json
-          params: []
-          textJSON:
-            maxTokensToSample: 4000
-            messages:
-              - speaker: system
-                text: "You are Cody, an AI coding assistant from Sourcegraph.If your answer
-                  contains fenced code blocks in Markdown, include the relevant
-                  full file path in the code block tag using this structure:
-                  ```$LANGUAGE:$FILEPATH```."
-              - speaker: human
-                text: >
-                  Codebase context from file path src/sum.ts: export function
-                  sum(a: number, b: number): number {
-                      /* CURSOR */
-                  }
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: >
-                  Codebase context from file path src/is_ignored.ts: /*
-                  SELECTION_START */
-
-                  function isAlsoIgnoredByCody() {
-                      console.log('This file is ignored by Cody via .cody/ignore.')
-                      console.log('Used in testing for confirming the ignore rule is NOT case sensitive')
-                  }
-
-                  /* SELECTION_END */
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: >
-                  Codebase context from file path src/example4.ts: export
-                  function example(): string {
-                      return 'example'
-                  }
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: >
-                  Codebase context from file path src/example3.ts: export
-                  function example(): string {
-                      return 'example'
-                  }
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: >
-                  Codebase context from file path src/example2.ts: export
-                  function example(): string {
-                      return 'example'
-                  }
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: >
-                  Codebase context from file path src/example1.ts: export
-                  function example(): string {
-                      return 'example'
-                  }
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: >
-                  Codebase context from file path src/animal.ts: /*
-                  SELECTION_START */
-
-                  export interface Animal {
-                      name: string
-                      makeAnimalSound(): string
-                      isMammal: boolean
-                  }
-
-                  /* SELECTION_END */
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: |-
-                  My selected code from codebase file src/animal.ts:1-6:
-                  ```
-
-                  export interface Animal {
-                      name: string
-                      makeAnimalSound(): string
-                      isMammal: boolean
-                  }
-                  ```
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: How many file context have I shared with you? Reply single number. Skip
-                  preamble.
-            model: anthropic/claude-3-5-sonnet-20240620
-            temperature: 0
-            topK: -1
-            topP: -1
-        queryString:
-          - name: api-version
-            value: "2"
-          - name: client-name
-            value: customcommandsclient
-          - name: client-version
-            value: v1
-        url: https://sourcegraph.com/.api/completions/stream?api-version=2&client-name=customcommandsclient&client-version=v1
-      response:
-        bodySize: 116
-        content:
-          mimeType: text/event-stream
-          size: 116
-          text: |+
-            event: completion
-            data: {"deltaText":"7","stopReason":"end_turn"}
-
-            event: done
-            data: {}
-
-        cookies: []
-        headers:
-          - name: date
-            value: Thu, 19 Sep 2024 04:38:56 GMT
-          - name: content-type
-            value: text/event-stream
-          - name: transfer-encoding
-            value: chunked
-          - name: connection
-            value: keep-alive
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache
-          - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
-              X-Requested-With,Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1299
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2024-09-19T04:38:55.802Z
-      time: 0
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 0
     - _id: a8e1ae38d120c607a2474ff6f445adf8
       _order: 0
       cache: {}
@@ -832,6 +407,446 @@ log:
         status: 200
         statusText: OK
       startedDateTime: 2024-09-19T04:38:58.267Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: 6080a54cebaf433abc1ace3d47772bf8
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 1296
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_3dd704711f82a44ff6aba261b53b61a03fb8edba658774639148630d838c2d1d
+          - name: user-agent
+            value: customCommandsClient / v1
+          - name: traceparent
+            value: 00-15e3bd0e02a8d9510642382274c99ce0-849aac601a550883-01
+          - name: connection
+            value: keep-alive
+          - name: host
+            value: sourcegraph.com
+        headersSize: 429
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 4000
+            messages:
+              - speaker: system
+                text: >-
+                  You are Cody, an AI coding assistant from Sourcegraph.If your
+                  answer contains fenced code blocks in Markdown, include the
+                  relevant full file path in the code block tag using this
+                  structure: ```$LANGUAGE:$FILEPATH```
+
+                  For executable terminal commands: enclose in a Markdown code block with the language tag "shell".
+
+                  For file paths mentioned outside of code blocks: enclose with single backticks.
+              - speaker: human
+                text: >
+                  Codebase context from file path src/example3.ts: export
+                  function example(): string {
+                      return 'example'
+                  }
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >
+                  Codebase context from file path src/example2.ts: export
+                  function example(): string {
+                      return 'example'
+                  }
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: |-
+                  My selected code from codebase file src/example1.ts:1-3:
+                  ```
+                  export function example(): string {
+                      return 'example'
+                  }
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: Give me the names of the files I have shared with you so far. Format the
+                  response as a bulleted list. Only include the raw filename, no
+                  extra formatting like quotes.
+            model: anthropic/claude-3-5-sonnet-20240620
+            temperature: 0
+            topK: -1
+            topP: -1
+        queryString:
+          - name: api-version
+            value: "2"
+          - name: client-name
+            value: customcommandsclient
+          - name: client-version
+            value: v1
+        url: https://sourcegraph.com/.api/completions/stream?api-version=2&client-name=customcommandsclient&client-version=v1
+      response:
+        bodySize: 763
+        content:
+          mimeType: text/event-stream
+          size: 763
+          text: >+
+            event: completion
+
+            data: {"deltaText":"Here are the names of the files you've shared with me so far, formatted as a bulleted list:\n\n• example3.ts\n• example2.ts\n• example1.ts","stopReason":"end_turn"}
+
+
+            event: done
+
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Wed, 25 Sep 2024 00:18:11 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1299
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-09-25T00:18:09.917Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: d5fcd081ed88f4720a2a528e11352587
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 664
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_3dd704711f82a44ff6aba261b53b61a03fb8edba658774639148630d838c2d1d
+          - name: user-agent
+            value: customCommandsClient / v1
+          - name: traceparent
+            value: 00-781fe565b857ff2321bc4121a27191ef-04ef583470ed1724-01
+          - name: connection
+            value: keep-alive
+          - name: host
+            value: sourcegraph.com
+        headersSize: 429
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 4000
+            messages:
+              - speaker: system
+                text: >-
+                  You are Cody, an AI coding assistant from Sourcegraph.If your
+                  answer contains fenced code blocks in Markdown, include the
+                  relevant full file path in the code block tag using this
+                  structure: ```$LANGUAGE:$FILEPATH```
+
+                  For executable terminal commands: enclose in a Markdown code block with the language tag "shell".
+
+                  For file paths mentioned outside of code blocks: enclose with single backticks.
+              - speaker: human
+                text: Did I share any code with you? If yes, reply single word 'yes'. If none,
+                  reply 'no'.
+            model: anthropic/claude-3-5-sonnet-20240620
+            temperature: 0
+            topK: -1
+            topP: -1
+        queryString:
+          - name: api-version
+            value: "2"
+          - name: client-name
+            value: customcommandsclient
+          - name: client-version
+            value: v1
+        url: https://sourcegraph.com/.api/completions/stream?api-version=2&client-name=customcommandsclient&client-version=v1
+      response:
+        bodySize: 117
+        content:
+          mimeType: text/event-stream
+          size: 117
+          text: |+
+            event: completion
+            data: {"deltaText":"no","stopReason":"end_turn"}
+
+            event: done
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Wed, 25 Sep 2024 00:18:11 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1299
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-09-25T00:18:11.335Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: 2cf70ad08703ea20b6790d5f09576391
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 2408
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_3dd704711f82a44ff6aba261b53b61a03fb8edba658774639148630d838c2d1d
+          - name: user-agent
+            value: customCommandsClient / v1
+          - name: traceparent
+            value: 00-8ec005b59df0a89867a34ee90ef40be9-d322d45bc23abb66-01
+          - name: connection
+            value: keep-alive
+          - name: host
+            value: sourcegraph.com
+        headersSize: 429
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 4000
+            messages:
+              - speaker: system
+                text: >-
+                  You are Cody, an AI coding assistant from Sourcegraph.If your
+                  answer contains fenced code blocks in Markdown, include the
+                  relevant full file path in the code block tag using this
+                  structure: ```$LANGUAGE:$FILEPATH```
+
+                  For executable terminal commands: enclose in a Markdown code block with the language tag "shell".
+
+                  For file paths mentioned outside of code blocks: enclose with single backticks.
+              - speaker: human
+                text: >
+                  Codebase context from file path src/sum.ts: export function
+                  sum(a: number, b: number): number {
+                      /* CURSOR */
+                  }
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >
+                  Codebase context from file path src/is_ignored.ts: /*
+                  SELECTION_START */
+
+                  function isAlsoIgnoredByCody() {
+                      console.log('This file is ignored by Cody via .cody/ignore.')
+                      console.log('Used in testing for confirming the ignore rule is NOT case sensitive')
+                  }
+
+                  /* SELECTION_END */
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >
+                  Codebase context from file path src/example4.ts: export
+                  function example(): string {
+                      return 'example'
+                  }
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >
+                  Codebase context from file path src/example3.ts: export
+                  function example(): string {
+                      return 'example'
+                  }
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >
+                  Codebase context from file path src/example2.ts: export
+                  function example(): string {
+                      return 'example'
+                  }
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >
+                  Codebase context from file path src/example1.ts: export
+                  function example(): string {
+                      return 'example'
+                  }
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >
+                  Codebase context from file path src/animal.ts: /*
+                  SELECTION_START */
+
+                  export interface Animal {
+                      name: string
+                      makeAnimalSound(): string
+                      isMammal: boolean
+                  }
+
+                  /* SELECTION_END */
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: |-
+                  My selected code from codebase file src/animal.ts:1-6:
+                  ```
+
+                  export interface Animal {
+                      name: string
+                      makeAnimalSound(): string
+                      isMammal: boolean
+                  }
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: How many file context have I shared with you? Reply single number. Skip
+                  preamble.
+            model: anthropic/claude-3-5-sonnet-20240620
+            temperature: 0
+            topK: -1
+            topP: -1
+        queryString:
+          - name: api-version
+            value: "2"
+          - name: client-name
+            value: customcommandsclient
+          - name: client-version
+            value: v1
+        url: https://sourcegraph.com/.api/completions/stream?api-version=2&client-name=customcommandsclient&client-version=v1
+      response:
+        bodySize: 116
+        content:
+          mimeType: text/event-stream
+          size: 116
+          text: |+
+            event: completion
+            data: {"deltaText":"7","stopReason":"end_turn"}
+
+            event: done
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Wed, 25 Sep 2024 00:18:12 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1299
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-09-25T00:18:12.000Z
       time: 0
       timings:
         blocked: -1

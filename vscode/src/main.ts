@@ -224,11 +224,9 @@ const register = async (
     )
     disposables.push(chatsController)
 
-    const sourceControl = new CodySourceControl(chatClient)
     const statusBar = createStatusBar()
     disposables.push(
         statusBar,
-        sourceControl,
         subscriptionDisposable(
             authStatus.subscribe({
                 next: authStatus => {
@@ -244,7 +242,7 @@ const register = async (
     registerAutocomplete(platform, statusBar, disposables)
     const tutorialSetup = tryRegisterTutorial(context, disposables)
 
-    await registerCodyCommands(statusBar, sourceControl, chatClient, disposables)
+    await registerCodyCommands(statusBar, chatClient, disposables)
     registerAuthCommands(disposables)
     registerChatCommands(disposables)
     disposables.push(...registerSidebarCommands())
@@ -380,7 +378,6 @@ async function registerOtherCommands(disposables: vscode.Disposable[]) {
 
 async function registerCodyCommands(
     statusBar: CodyStatusBar,
-    sourceControl: CodySourceControl,
     chatClient: ChatClient,
     disposables: vscode.Disposable[]
 ): Promise<void> {
@@ -420,12 +417,6 @@ async function registerCodyCommands(
             ({ configuration }) => configuration.experimentalSupercompletions,
             () => new SupercompletionProvider({ statusBar, chat: chatClient })
         )
-    )
-
-    // Experimental Commands
-    disposables.push(
-        sourceControl, // Generate Commit Message command
-        registerCodyCommandLine(chatClient)
     )
 
     disposables.push(
@@ -490,6 +481,8 @@ async function registerCodyCommands(
                                   vscode.commands.registerCommand('cody.command.auto-edit', a =>
                                       executeAutoEditCommand(a)
                                   ),
+                                  new CodySourceControl(chatClient), // Generate Commit Message command
+                                  registerCodyCommandLine(chatClient),
                               ]
                     })
                 )
