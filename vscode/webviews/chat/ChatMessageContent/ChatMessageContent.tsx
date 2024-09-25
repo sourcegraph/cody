@@ -114,15 +114,12 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
                 // Extract the <code> element and attached `data-file-path` if present.
                 // This allows us to intelligently apply code to the suitable file.
                 const codeElement = preElement.querySelectorAll('code')?.[0]
-                let fileName = codeElement?.getAttribute('data-file-path') || undefined
-
+                const fileName = codeElement?.getAttribute('data-file-path') || undefined
                 // Check if the code element has either 'language-bash' or 'language-shell' class
-                if (
+                const isShellCommand =
                     codeElement?.classList.contains('language-bash') ||
                     codeElement?.classList.contains('language-shell')
-                ) {
-                    fileName = 'command'
-                }
+                const codeBlockName = isShellCommand ? 'command' : fileName
 
                 let buttons: HTMLElement
 
@@ -133,7 +130,7 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
                         preText,
                         humanMessage,
                         userInfo,
-                        fileName,
+                        codeBlockName,
                         copyButtonOnSubmit,
                         insertButtonOnSubmit,
                         smartApplyInterceptor,
