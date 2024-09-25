@@ -10,7 +10,6 @@ import {
 import * as vscode from 'vscode'
 import { startTokenReceiver } from './auth/token-receiver'
 import { CommandsProvider } from './commands/services/provider'
-import { BfgRetriever } from './completions/context/retrievers/bfg/bfg-retriever'
 import { SourcegraphNodeCompletionsClient } from './completions/nodeClient'
 import type { ExtensionApi } from './extension-api'
 import { type ExtensionClient, defaultVSCodeExtensionClient } from './extension-client'
@@ -50,7 +49,6 @@ export function activate(
         createCompletionsClient: (...args) => new SourcegraphNodeCompletionsClient(...args),
         createCommandsProvider: () => new CommandsProvider(),
         createSymfRunner: isSymfEnabled ? (...args) => new SymfRunner(...args) : undefined,
-        createBfgRetriever: () => new BfgRetriever(context),
         createSentryService: (...args) => new NodeSentryService(...args),
         createOpenTelemetryService: isTelemetryEnabled
             ? (...args) => new OpenTelemetryService(...args)

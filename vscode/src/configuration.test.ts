@@ -78,7 +78,7 @@ describe('getConfiguration', () => {
                             url: OLLAMA_DEFAULT_URL,
                         }
                     case 'cody.autocomplete.experimental.graphContext':
-                        return 'bfg'
+                        return 'lsp-light'
                     case 'cody.advanced.agent.running':
                         return false
                     case 'cody.advanced.hasNativeWebview':
@@ -154,7 +154,7 @@ describe('getConfiguration', () => {
             autocompleteFormatOnAccept: true,
             autocompleteDisableInsideComments: false,
             autocompleteExperimentalFireworksOptions: undefined,
-            autocompleteExperimentalGraphContext: 'bfg',
+            autocompleteExperimentalGraphContext: 'lsp-light',
             autocompleteExperimentalOllamaOptions: {
                 model: 'codellama:7b-code',
                 url: OLLAMA_DEFAULT_URL,

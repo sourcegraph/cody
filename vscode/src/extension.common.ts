@@ -6,8 +6,6 @@ import type {
     StoredLastValue,
 } from '@sourcegraph/cody-shared'
 import type { startTokenReceiver } from './auth/token-receiver'
-
-import type { BfgRetriever } from './completions/context/retrievers/bfg/bfg-retriever'
 import { onActivationDevelopmentHelpers } from './dev/helpers'
 
 import './editor/displayPathEnvInfo' // import for side effects
@@ -34,7 +32,6 @@ export interface PlatformContext {
     createCommandsProvider?: Constructor<typeof CommandsProvider>
     createLocalEmbeddingsController?: () => StoredLastValue<LocalEmbeddingsController | undefined>
     createSymfRunner?: Constructor<typeof SymfRunner>
-    createBfgRetriever?: () => BfgRetriever
     createCompletionsClient: (logger?: CompletionLogger) => SourcegraphCompletionsClient
     createSentryService?: () => SentryService
     createOpenTelemetryService?: () => OpenTelemetryService

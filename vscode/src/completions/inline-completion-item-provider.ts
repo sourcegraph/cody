@@ -136,7 +136,6 @@ export class InlineCompletionItemProvider
         formatOnAccept = true,
         disableInsideComments = false,
         tracer = null,
-        createBfgRetriever,
         ...config
     }: CodyCompletionItemProviderConfig) {
         // This is a static field to allow for easy access in the static `configuration` getter.
@@ -205,8 +204,7 @@ export class InlineCompletionItemProvider
             )
         )
         const strategyFactory = new DefaultContextStrategyFactory(
-            completionProviderConfig.contextStrategy,
-            createBfgRetriever
+            completionProviderConfig.contextStrategy
         )
         this.disposables.push(strategyFactory)
 
