@@ -1,3 +1,4 @@
+import type { ChatModel, EditModel } from '../models/types'
 import { type PromptString, ps } from '../prompt/prompt-string'
 import type { Message } from '../sourcegraph-api'
 
@@ -13,7 +14,7 @@ const SMART_APPLY_PREAMBLE = ps`If your answer contains fenced code blocks in Ma
 const CHAT_PREAMBLE = DEFAULT_PREAMBLE.concat(SMART_APPLY_PREAMBLE)
 
 export function getSimplePreamble(
-    model: string | undefined,
+    model: ChatModel | EditModel | undefined,
     apiVersion: number,
     type: 'Chat' | 'Default',
     preInstruction?: PromptString

@@ -87,8 +87,7 @@ export function getChatEditorPanel(page: Page): FrameLocator {
 }
 
 /**
- * Create and open a new chat panel, and close the enhanced context settings window.
- * Returns the chat panel frame locator.
+ * Create and open a new chat panel. Returns the chat panel frame locator.
  */
 export async function createEmptyChatPanel(
     page: Page

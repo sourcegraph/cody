@@ -132,7 +132,7 @@ test.extend<ExpectedV2Events>({
         chatPanelFrame.getByText(withPlatformSlashes('Explain var.go and visualize.go'))
     ).toBeVisible()
 
-    // Ensure explicitly @-included context shows up as enhanced context
+    // Ensure explicitly @-included context is shown.
     await expect(contextCell).toHaveCount(2)
 
     // Check pressing tab after typing a complete filename.

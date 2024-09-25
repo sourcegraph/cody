@@ -89,9 +89,6 @@ export class AgentWorkspaceConfiguration implements vscode.WorkspaceConfiguratio
                 return extensionConfig?.verboseDebug ?? false
             case 'cody.experimental.tracing':
                 return extensionConfig?.verboseDebug ?? false
-            case 'cody.useContext':
-                // Disable embeddings by default.
-                return 'keyword'
             case 'cody.codebase':
                 return extensionConfig?.codebase
             case 'cody.advanced.agent.ide':

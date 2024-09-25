@@ -159,7 +159,6 @@ export async function docChatCommand(
         text: prompt,
         submitType: 'user-newchat',
         contextItems,
-        addEnhancedContext: false,
         source: args?.source,
         command: DefaultChatCommands.Doc,
     }

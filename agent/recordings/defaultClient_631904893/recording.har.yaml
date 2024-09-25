@@ -748,11 +748,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 2fa7b0236e8f5b6cec28d8a1b9211fa9
+    - _id: 974078aaf7ceb403f7ab99912a04ba85
       _order: 0
       cache: {}
       request:
-        bodySize: 2477
+        bodySize: 2121
         cookies: []
         headers:
           - name: content-type
@@ -765,7 +765,7 @@ log:
           - name: user-agent
             value: defaultClient / v1
           - name: traceparent
-            value: 00-d4bbb3e4cd7759bec351c5b580702f1c-237dd799d648fa80-01
+            value: 00-c1c5a227c9712676fcee8fe80318b86d-c15d6778a15e470f-01
           - name: connection
             value: keep-alive
           - name: host
@@ -796,22 +796,6 @@ log:
                    */
                   export interface Squirrel {}
 
-                  ```
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: |-
-                  Codebase context from file src/multiple-selections.ts:
-                  ```typescript:src/multiple-selections.ts
-                  function outer() {
-                      /* SELECTION_START */
-                      return function inner() {}
-                      /* SELECTION_END */
-                  }
-
-                  /* SELECTION_2_START */
-                  function anotherFunction() {}
-                  /* SELECTION_2_END */
                   ```
               - speaker: assistant
                 text: Ok.
@@ -890,14 +874,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=2&client-name=defaultclient&client-version=v1
       response:
-        bodySize: 1918
+        bodySize: 1778
         content:
           mimeType: text/event-stream
-          size: 1918
+          size: 1778
           text: >+
             event: completion
 
-            data: {"deltaText":"Certainly! Here's a class Dog that implements the Animal interface based on the context provided:\n\n```typescript:src/dog.ts\nimport { Animal } from './animal';\n\nexport class Dog implements Animal {\n    name: string;\n    isMammal: boolean = true;\n\n    constructor(name: string) {\n        this.name = name;\n    }\n\n    makeAnimalSound(): string {\n        return \"Woof!\";\n    }\n}\n```\n\nThis implementation fulfills all the requirements of the Animal interface defined in your workspace.","stopReason":"end_turn"}
+            data: {"deltaText":"Certainly! Here's the implementation of the Dog class that implements the Animal interface:\n\n```typescript:src/dog.ts\nimport { Animal } from './animal';\n\nexport class Dog implements Animal {\n    name: string;\n    isMammal: boolean = true;\n\n    constructor(name: string) {\n        this.name = name;\n    }\n\n    makeAnimalSound(): string {\n        return \"Woof!\";\n    }\n}\n```\n\nThis implementation fulfills all the requirements of the Animal interface in your workspace.","stopReason":"end_turn"}
 
 
             event: done
@@ -907,15 +891,13 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 19 Sep 2024 04:39:05 GMT
+            value: Wed, 25 Sep 2024 16:12:41 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
             value: chunked
           - name: connection
             value: keep-alive
-          - name: retry-after
-            value: "595"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -933,12 +915,12 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1406
+        headersSize: 1299
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-19T04:39:03.393Z
+      startedDateTime: 2024-09-25T16:12:36.894Z
       time: 0
       timings:
         blocked: -1
@@ -948,11 +930,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 0324ac7a7de375d30b47b9f3d3ecd71c
+    - _id: 66351c05a7df989b31a7b201028f5a9c
       _order: 0
       cache: {}
       request:
-        bodySize: 2411
+        bodySize: 2055
         cookies: []
         headers:
           - name: content-type
@@ -965,7 +947,7 @@ log:
           - name: user-agent
             value: defaultClient / v1
           - name: traceparent
-            value: 00-4f51ff8c51bc07e262b8f4f86403c6ae-23b507a28d23f8f5-01
+            value: 00-30474ca2b58ab41e2b05815d0f770123-2d8644590e114717-01
           - name: connection
             value: keep-alive
           - name: host
@@ -996,22 +978,6 @@ log:
                    */
                   export interface Squirrel {}
 
-                  ```
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: |-
-                  Codebase context from file src/multiple-selections.ts:
-                  ```typescript:src/multiple-selections.ts
-                  function outer() {
-                      /* SELECTION_START */
-                      return function inner() {}
-                      /* SELECTION_END */
-                  }
-
-                  /* SELECTION_2_START */
-                  function anotherFunction() {}
-                  /* SELECTION_2_END */
                   ```
               - speaker: assistant
                 text: Ok.
@@ -1090,14 +1056,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=2&client-name=defaultclient&client-version=v1
       response:
-        bodySize: 5920
+        bodySize: 5330
         content:
           mimeType: text/event-stream
-          size: 5920
+          size: 5330
           text: >+
             event: completion
 
-            data: {"deltaText":"Certainly! Squirrel is an interface defined in the codebase, specifically in the file `src/squirrel.ts`. Here's the concrete code example for the Squirrel interface:\n\n```typescript:src/squirrel.ts\nexport interface Squirrel {}\n```\n\nAs we can see from the code and the associated comment, Squirrel is an interface that, despite its name, is not actually related to squirrels. It's used in the context of implementing precise code navigation in Sourcegraph.\n\nThe interface is currently empty, which means it doesn't define any properties or methods. This type of empty interface is sometimes used as a marker interface or for future extensibility.\n\nWhile we don't have any concrete implementations of the Squirrel interface in the provided codebase context, we can imagine how it might be used:\n\n```typescript\nclass PreciseCodeNavigator implements Squirrel {\n    // Implementation details would go here\n}\n```\n\nOr it could be used as a type in function parameters or return types:\n\n```typescript\nfunction useSquirrel(navigator: Squirrel) {\n    // Function implementation\n}\n```\n\nThe empty interface allows for flexibility in how it's implemented or used, depending on the specific requirements of the precise code navigation feature in Sourcegraph.","stopReason":"end_turn"}
+            data: {"deltaText":"Certainly! Let me explain what Squirrel is based on the provided codebase context.\n\nSquirrel is an interface defined in the `src/squirrel.ts` file. It's important to note that despite its name, it's not actually related to squirrels. Instead, it's used in the implementation of precise code navigation in Sourcegraph. Here's the concrete code example:\n\n```typescript:src/squirrel.ts\nexport interface Squirrel {}\n```\n\nAs you can see, the Squirrel interface is currently empty. This suggests that it's likely a placeholder or a base interface that might be extended or implemented elsewhere in the codebase.\n\nThe comment above the interface provides additional context:\n\n```typescript:src/squirrel.ts\n/**\n * Squirrel is an interface that mocks something completely unrelated to squirrels.\n * It is related to the implementation of precise code navigation in Sourcegraph.\n */\n```\n\nThis comment clarifies that the Squirrel interface is used for mocking purposes and is related to Sourcegraph's precise code navigation feature.\n\nWhile we don't have any concrete implementations or uses of the Squirrel interface in the provided codebase context, it's likely that other parts of the Sourcegraph codebase interact with this interface for testing or implementing precise code navigation features.","stopReason":"end_turn"}
 
 
             event: done
@@ -1107,15 +1073,13 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 19 Sep 2024 04:39:08 GMT
+            value: Wed, 25 Sep 2024 16:12:44 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
             value: chunked
           - name: connection
             value: keep-alive
-          - name: retry-after
-            value: "592"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -1133,12 +1097,12 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1406
+        headersSize: 1299
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-19T04:39:06.187Z
+      startedDateTime: 2024-09-25T16:12:41.794Z
       time: 0
       timings:
         blocked: -1
@@ -2803,11 +2767,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: fb988001a14492fcfd2b59a73fcf5089
+    - _id: ddc83f4a7237ccfe721dec30d3fc72ed
       _order: 0
       cache: {}
       request:
-        bodySize: 3240
+        bodySize: 3666
         cookies: []
         headers:
           - name: content-type
@@ -2820,7 +2784,7 @@ log:
           - name: user-agent
             value: defaultClient / v1
           - name: traceparent
-            value: 00-6c6f39871e71569ef734f30a978bd8fd-81d2b0b58158e147-01
+            value: 00-05f7ab62e68b464fe8ddbb43d9de97af-b08a24157063c4d6-01
           - name: connection
             value: keep-alive
           - name: host
@@ -2841,6 +2805,24 @@ log:
                   ```$LANGUAGE:$FILEPATH```."
               - speaker: assistant
                 text: I am Cody, an AI coding assistant from Sourcegraph.
+              - speaker: human
+                text: >
+                  Codebase context from file path src/TestLogger.ts: const foo =
+                  42
+
+                  export const TestLogger = {
+                      startLogging: () => {
+                          // Do some stuff
+
+                          function recordLog() {
+                              console.log(/* CURSOR */ 'Recording the log')
+                          }
+
+                          recordLog()
+                      },
+                  }
+              - speaker: assistant
+                text: Ok.
               - speaker: human
                 text: >
                   Codebase context from file path src/TestClass.ts: const foo =
@@ -2898,22 +2880,24 @@ log:
               - speaker: assistant
                 text: Ok.
               - speaker: human
-                text: Review @src/example.test.ts:1-18 ( @src/TestClass.ts:1-11 ) context and
-                  configurations to identify the test framework and libraries in
-                  use. Then, generate a suite of multiple unit tests for the
-                  functions in @src/animal.ts:1-6 using the detected test
-                  framework and libraries. Be sure to import the function being
-                  tested. Follow the same patterns as any shared context. Only
-                  add packages, imports, dependencies, and assertions if they
-                  are used in @src/example.test.ts:1-18 ( @src/TestClass.ts:1-11
-                  ). Pay attention to the file path of each shared context to
-                  see if test for @src/animal.ts:1-6 already exists. If one
-                  exists, focus on generating new unit tests for uncovered
-                  cases. If none are detected, import common unit test libraries
-                  for {languageName}. Focus on validating key functionality with
-                  simple and complete assertions. Only include mocks if one is
-                  detected in @src/example.test.ts:1-18 ( @src/TestClass.ts:1-11
-                  ). Before writing the tests, identify which test libraries and
+                text: Review @src/example.test.ts:1-18 ( @src/TestClass.ts:1-11
+                  @src/TestLogger.ts:1-12 ) context and configurations to
+                  identify the test framework and libraries in use. Then,
+                  generate a suite of multiple unit tests for the functions in
+                  @src/animal.ts:1-6 using the detected test framework and
+                  libraries. Be sure to import the function being tested. Follow
+                  the same patterns as any shared context. Only add packages,
+                  imports, dependencies, and assertions if they are used in
+                  @src/example.test.ts:1-18 ( @src/TestClass.ts:1-11
+                  @src/TestLogger.ts:1-12 ). Pay attention to the file path of
+                  each shared context to see if test for @src/animal.ts:1-6
+                  already exists. If one exists, focus on generating new unit
+                  tests for uncovered cases. If none are detected, import common
+                  unit test libraries for {languageName}. Focus on validating
+                  key functionality with simple and complete assertions. Only
+                  include mocks if one is detected in @src/example.test.ts:1-18
+                  ( @src/TestClass.ts:1-11 @src/TestLogger.ts:1-12 ). Before
+                  writing the tests, identify which test libraries and
                   frameworks to import, e.g. 'No new imports needed - using
                   existing libs' or 'Importing test framework that matches
                   shared context usage' or 'Importing the defined framework',
@@ -2936,14 +2920,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?client-name=defaultclient&client-version=v1
       response:
-        bodySize: 240064
+        bodySize: 119105
         content:
           mimeType: text/event-stream
-          size: 240064
+          size: 119105
           text: >+
             event: completion
 
-            data: {"completion":"Based on the context provided in `@src/example.test.ts` and `@src/TestClass.ts`, the test framework in use is `vitest`. Here is a suite of multiple unit tests for the functions in `@src/animal.ts` using the detected test framework.\n\nTest coverage:\n\n* The `Animal` interface has been tested to ensure that all its properties have been properly defined and initialized.\n* The `makeAnimalSound()` function has been tested for different animal sounds.\n* The tests cover positive and negative cases, and edge cases for the `isMammal` property.\n\nLimitations:\n\n* This is a basic test suite, and additional tests should be added to cover more complex functionality if necessary.\n* It assumes that the implementation of `isMammal` property is correct and consistent.\n\nHere's the completed code for the new unit tests:\n```typescript\n// @src/animal.test.ts\nimport { describe, expect, test } from 'vitest'\nimport { Animal } from './animal'\n\ndescribe('Animal', () => {\n  test('should correctly define name property', () => {\n    const animal: Animal = {\n      name: 'Dog',\n      makeAnimalSound: () => 'Woof woof!',\n      isMammal: true,\n    }\n\n    expect(animal).toHaveProperty('name', 'Dog')\n    expect(animal.name).toBe('Dog')\n  })\n\n  test('should correctly define makeAnimalSound() function', () => {\n    const animal: Animal = {\n      name: 'Dog',\n      makeAnimalSound: () => 'Woof woof!',\n      isMammal: true,\n    }\n\n    expect(animal.makeAnimalSound()).toBe('Woof woof!')\n  })\n\n  test('should correctly define isMammal property', () => {\n    const animal: Animal = {\n      name: 'Dog',\n      makeAnimalSound: () => 'Woof woof!',\n      isMammal: true,\n    }\n\n    expect(animal).toHaveProperty('isMammal', true)\n    expect(animal.isMammal).toBe(true)\n  })\n\n  test('should return false for non-mammals', () => {\n    const animal: Animal = {\n      name: 'Snake',\n      makeAnimalSound: () => 'Hiss',\n      isMammal: false,\n    }\n\n    expect(animal).toHaveProperty('isMammal', false)\n    expect(animal.isMammal).toBe(false)\n  })\n\n  test('should handle undefined or null isMammal property', () => {\n    const animal: Animal = {\n      name: 'Unknown',\n      makeAnimalSound: () => '',\n      isMammal: undefined,\n    }\n\n    const animal2: Animal = {\n      name: 'Unknown',\n      makeAnimalSound: () => '',\n      isMammal: null,\n    }\n\n    expect(animal).toHaveProperty('isMammal', false)\n    expect(animal.isMammal).toBeFalsy()\n\n    expect(animal2).toHaveProperty('isMammal', false)\n    expect(animal2.isMammal).toBeFalsy()\n  })\n})\n```\nThis code includes imports for testing libraries, uses the `vitest` functions `describe()` and `test()` to organize the tests, and uses `expect()` to make assertions about the `Animal` interface and its properties. The tests include both positive and negative cases, edge cases, and coverage of the required functionality.","stopReason":"stop"}
+            data: {"completion":"Based on the shared context of `@src/example.test.ts`, the test framework used is `vitest`. Therefore, we will continue to use this framework for testing the `@src/animal.ts` interface. Before writing the tests, we can observe that the context does not include any mocks or dependencies outside `vitest`. Therefore, the tests we write will not rely on any additional imports.\n\nThe following tests validate the expected functionality and cover edge cases for `@src/animal.ts:1-6`:\n```typescript\nimport { expect, it } from 'vitest'\nimport { Animal } from '../animal'\n\nit('validates that the animal has a name', () => {\n    const animal: Animal = {\n        name: '',\n        makeAnimalSound() {\n            return 'Sound'\n        },\n        isMammal: true,\n    }\n    expect(animal.name).toEqual('')\n})\n\nit('validates that the animal makes a sound', () => {\n    const animal: Animal = {\n        name: 'Dog',\n        makeAnimalSound() {\n            return 'No Sound'\n        },\n        isMammal: true,\n    }\n    expect(animal.makeAnimalSound()).toEqual('No Sound')\n})\n\nit('validates that the animal is a mammal', () => {\n    const animal: Animal = {\n        name: 'Dog',\n        makeAnimalSound() {\n            return 'Sound'\n        },\n        isMammal: false,\n    }\n    expect(animal.isMammal).toEqual(false)\n})\n\nit('validates that the animal satisfies required attributes', () => {\n    const animal: Animal = {\n        name: 'Dog',\n        makeAnimalSound() {\n            return 'Sound'\n        },\n        isMammal: true,\n    }\n    expect(animal).toMatchObject({\n        name: expect.any(String),\n        makeAnimalSound: expect.any(Function),\n        isMammal: expect.any(Boolean),\n    })\n})\n```\nThe code above imports the `Animal` interface and checks that every attribute of the object satisfies the required criteria. The tests validate the animal name, the animal's sound, and whether the animal is a mammal. This ensures that the interface requirements are met and that all attributes are properly implemented.\n\nIn summary, this test suite validates the expected functionality and covers various edge cases for the `Animal` interface. There shouldn't be any limitations with this test suite, as it accurately tests the required attributes according to the given interface.","stopReason":"stop"}
 
 
             event: done
@@ -2953,7 +2937,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Fri, 20 Sep 2024 01:30:14 GMT
+            value: Wed, 25 Sep 2024 16:12:49 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -2982,7 +2966,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-20T01:30:12.366Z
+      startedDateTime: 2024-09-25T16:12:47.595Z
       time: 0
       timings:
         blocked: -1

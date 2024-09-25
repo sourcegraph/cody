@@ -1,5 +1,3 @@
-import type { EmbeddingsProvider } from './codebase-context/context-status'
-import type { FileURI } from './common/uri'
 import type { ChatModelProviderConfig } from './models/sync'
 
 import type { PromptString } from './prompt/prompt-string'
@@ -14,19 +12,6 @@ export interface AuthCredentials {
     accessToken: string | null
 }
 
-export type ConfigurationUseContext = 'embeddings' | 'keyword' | 'none' | 'blended' | 'unified'
-
-/**
- * Get the numeric ID corresponding to the ConfigurationUseContext mode.
- */
-export const CONTEXT_SELECTION_ID: Record<ConfigurationUseContext, number> = {
-    none: 0,
-    embeddings: 1,
-    keyword: 2,
-    blended: 10,
-    unified: 11,
-}
-
 interface RawClientConfiguration {
     proxy?: string | null
     codebase?: string
@@ -34,7 +19,6 @@ interface RawClientConfiguration {
     debugVerbose: boolean
     telemetryLevel: 'all' | 'off' | 'agent'
     telemetryClientName?: string
-    useContext: ConfigurationUseContext
     serverEndpoint: string
     customHeaders?: Record<string, string>
     chatPreInstruction: PromptString
@@ -72,7 +56,7 @@ interface RawClientConfiguration {
     /**
      * Experimental autocomplete
      */
-    autocompleteExperimentalGraphContext: 'lsp-light' | 'bfg' | 'bfg-mixed' | 'tsc' | 'tsc-mixed' | null
+    autocompleteExperimentalGraphContext: 'lsp-light' | 'tsc' | 'tsc-mixed' | null
     autocompleteExperimentalOllamaOptions: OllamaOptions
     autocompleteExperimentalFireworksOptions?: ExperimentalFireworksConfig
     autocompleteExperimentalPreloadDebounceInterval?: number
@@ -90,8 +74,6 @@ interface RawClientConfiguration {
     autocompleteAdvancedModel: string | null
     providerLimitPrompt?: number
     devModels?: ChatModelProviderConfig[]
-
-    testingModelConfig: EmbeddingsModelConfig | undefined
 }
 
 /**
@@ -350,14 +332,6 @@ export interface ExperimentalFireworksConfig {
         top_p?: number
         stop?: string[]
     }
-}
-
-export interface EmbeddingsModelConfig {
-    model: string
-    dimension: number
-    provider: EmbeddingsProvider
-    endpoint: string
-    indexPath: FileURI
 }
 
 /**

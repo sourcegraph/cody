@@ -280,7 +280,6 @@ export async function chatAction(options: ChatOptions): Promise<number> {
                 command: 'submit',
                 submitType: 'user',
                 text: messageText,
-                addEnhancedContext: false,
                 contextItems,
             },
         },

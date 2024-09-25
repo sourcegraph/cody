@@ -1,4 +1,4 @@
-import type { FeatureFlagUsedInWebview } from '@sourcegraph/cody-shared'
+import type { FeatureFlag } from '@sourcegraph/cody-shared'
 import { useExtensionAPI, useObservable } from '@sourcegraph/prompt-editor'
 import { useMemo } from 'react'
 
@@ -8,7 +8,7 @@ import { useMemo } from 'react'
  * @returns `true` or `false` if the flag is exposed by the server endpoint, has been fetched, and
  * is not stale. Otherwise `undefined` (which callers should usually treat as `false`).
  */
-export function useFeatureFlag(flag: FeatureFlagUsedInWebview): boolean | undefined {
+export function useFeatureFlag(flag: FeatureFlag): boolean | undefined {
     const evaluatedFeatureFlag = useExtensionAPI().evaluatedFeatureFlag
     return useObservable(useMemo(() => evaluatedFeatureFlag(flag), [evaluatedFeatureFlag, flag])).value
 }

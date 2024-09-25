@@ -74,8 +74,6 @@ export type {
     ContextGroup,
     ContextProvider,
     Disposable,
-    EnhancedContextContextT,
-    LocalEmbeddingsProvider,
     LocalSearchProvider,
     RemoteSearchProvider,
     SearchProvider,
@@ -180,10 +178,7 @@ export {
     type CompletionResponseGenerator,
     type CompletionResponseWithMetaData,
 } from './inferenceClient/misc'
-export type {
-    LocalEmbeddingsFetcher,
-    Result,
-} from './local-context'
+export type { Result } from './local-context'
 export { logDebug, logError, setLogger } from './logger'
 export {
     createOllamaClient,
@@ -262,7 +257,6 @@ export {
 export type {
     CodyLLMSiteConfiguration,
     ContextSearchResult,
-    EmbeddingsSearchResult,
     Prompt,
     event,
 } from './sourcegraph-api/graphql/client'
