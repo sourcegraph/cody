@@ -89,11 +89,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 73bb07640995cd4e7fad6631fe09c324
+    - _id: 31f0e72151d94faa165c88882cbf798c
       _order: 0
       cache: {}
       request:
-        bodySize: 532
+        bodySize: 713
         cookies: []
         headers:
           - name: content-type
@@ -106,7 +106,7 @@ log:
           - name: user-agent
             value: auth / v1
           - name: traceparent
-            value: 00-20f69900c2d83d7b1dd2d9ffcd8afc25-b33cb745d14c8099-01
+            value: 00-92843aecc08a9dfd104b5284651e356b-32e2e5df14b37980-01
           - name: connection
             value: keep-alive
           - name: host
@@ -121,10 +121,15 @@ log:
             maxTokensToSample: 4000
             messages:
               - speaker: human
-                text: "You are Cody, an AI coding assistant from Sourcegraph.If your answer
-                  contains fenced code blocks in Markdown, include the relevant
-                  full file path in the code block tag using this structure:
-                  ```$LANGUAGE:$FILEPATH```."
+                text: >-
+                  You are Cody, an AI coding assistant from Sourcegraph.If your
+                  answer contains fenced code blocks in Markdown, include the
+                  relevant full file path in the code block tag using this
+                  structure: ```$LANGUAGE:$FILEPATH```
+
+                  For executable terminal commands: enclose in a Markdown code block with the language tag "shell".
+
+                  For file paths mentioned outside of code blocks: enclose with single backticks.
               - speaker: assistant
                 text: I am Cody, an AI coding assistant from Sourcegraph.
               - speaker: human
@@ -140,14 +145,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?client-name=auth&client-version=v1
       response:
-        bodySize: 10600
+        bodySize: 2641
         content:
           mimeType: text/event-stream
-          size: 10600
+          size: 2641
           text: >+
             event: completion
 
-            data: {"completion":"Hello! I'm glad to see you again after re-authentication. If you have any coding questions or need assistance with a specific task, feel free to ask. I'm here to help you with care, respect, and truth while ensuring secure and positive interactions. Please note that to ensure the security of your code and project, I don't execute or run any code. Instead, I can help you with advice, explanations, and suggestions in various programming languages and concepts. If you need help with a file, please use the markdown format with the relevant file path so I can better assist you, like so:\n```python:/path/to/your/file.py`\n```","stopReason":"stop"}
+            data: {"completion":"Hello! I am Cody, an AI coding assistant, ready to help you with your coding needs after re-authentication. Fire away with any questions or problems you have, and I'll do my best to assist you with care, respect, and truthwhile ensuring that my replies promote fairness and positivity.","stopReason":"stop"}
 
 
             event: done
@@ -157,13 +162,15 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Wed, 25 Sep 2024 10:06:32 GMT
+            value: Wed, 25 Sep 2024 22:23:39 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
             value: chunked
           - name: connection
             value: keep-alive
+          - name: retry-after
+            value: "539"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -181,12 +188,12 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1299
+        headersSize: 1406
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-25T10:06:30.987Z
+      startedDateTime: 2024-09-25T22:23:37.648Z
       time: 0
       timings:
         blocked: -1
@@ -1451,11 +1458,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 59d1c99b486d76ecaee6deb31889631b
+    - _id: 43da84626e19c8b07a83bafe165c7c1f
       _order: 0
       cache: {}
       request:
-        bodySize: 410
+        bodySize: 591
         cookies: []
         headers:
           - name: content-type
@@ -1468,7 +1475,7 @@ log:
           - name: user-agent
             value: auth / v1
           - name: traceparent
-            value: 00-f005f82dca1ff7f78dcc936f1f263eb1-e98ce602ec473477-01
+            value: 00-6ac70f380e40da1fbef79db4ee6bd2bd-d23f876962d3b444-01
           - name: connection
             value: keep-alive
           - name: host
@@ -1483,10 +1490,15 @@ log:
             maxTokensToSample: 4000
             messages:
               - speaker: system
-                text: "You are Cody, an AI coding assistant from Sourcegraph.If your answer
-                  contains fenced code blocks in Markdown, include the relevant
-                  full file path in the code block tag using this structure:
-                  ```$LANGUAGE:$FILEPATH```."
+                text: >-
+                  You are Cody, an AI coding assistant from Sourcegraph.If your
+                  answer contains fenced code blocks in Markdown, include the
+                  relevant full file path in the code block tag using this
+                  structure: ```$LANGUAGE:$FILEPATH```
+
+                  For executable terminal commands: enclose in a Markdown code block with the language tag "shell".
+
+                  For file paths mentioned outside of code blocks: enclose with single backticks.
               - speaker: human
                 text: hello after switching accounts
             model: claude-3.5-sonnet
@@ -1502,14 +1514,14 @@ log:
             value: v1
         url: https://sourcegraph.sourcegraph.com/.api/completions/stream?api-version=2&client-name=auth&client-version=v1
       response:
-        bodySize: 1734
+        bodySize: 1555
         content:
           mimeType: text/event-stream
-          size: 1734
+          size: 1555
           text: >+
             event: completion
 
-            data: {"deltaText":"Hello! It's nice to meet you. I'm Cody, an AI coding assistant from Sourcegraph. I'm here to help you with any coding-related questions or tasks you might have. Since you mentioned switching accounts, is there anything specific you'd like assistance with regarding your new account or any coding projects you're working on? I'm ready to help in any way I can.","stopReason":"end_turn"}
+            data: {"deltaText":"Hello! It's nice to meet you after switching accounts. How can I assist you with coding or development today? Whether you have questions about a specific programming language, need help with a coding problem, or want guidance on best practices, I'm here to help. Please feel free to ask any coding-related questions or share what you're working on.","stopReason":"end_turn"}
 
 
             event: done
@@ -1519,7 +1531,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Wed, 25 Sep 2024 17:46:24 GMT
+            value: Wed, 25 Sep 2024 22:23:56 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -1548,7 +1560,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-25T17:46:23.324Z
+      startedDateTime: 2024-09-25T22:23:54.922Z
       time: 0
       timings:
         blocked: -1
