@@ -45,7 +45,7 @@ export function activate(
         .get<boolean>('cody.experimental.telemetry.enabled', true)
 
     return activateCommon(context, {
-        createLocalEmbeddingsController: () => createLocalEmbeddingsController(context),
+        createLocalEmbeddingsController: () => createLocalEmbeddingsController(),
         createCompletionsClient: (...args) => new SourcegraphNodeCompletionsClient(...args),
         createCommandsProvider: () => new CommandsProvider(),
         createSymfRunner: isSymfEnabled ? (...args) => new SymfRunner(...args) : undefined,

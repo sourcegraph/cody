@@ -6,15 +6,10 @@ import { catchError, filter, firstValueFrom, shareReplay, startWith, switchMap }
 export const pendingOperation = Symbol.for('@@pendingOperation')
 
 /**
- * Run an operation with the outer observable as input. The result is replayed to all subscribers
- * (including future subscribers) using {@link shareReplay}, but it is immediately invalidated when
- * the outer observable emits again.
- *
- * This is a useful helper for memoizing an expensive operation. It will emit the cached value until
- * the input changes, at which point it will immediately stop emitting the cached value until the
- * operation completes with the new input.
+ * Run an operation with the outer observable as input, returning {@link pendingOperation} if the
+ * outer observable has changed and the operation has not yet emitted.
  */
-export function switchMapReplayOperation<T, R>(
+export function switchMapOperation<T, R>(
     operation: (value: T) => Observable<R>
 ): (
     source: ObservableLike<T | typeof pendingOperation>
@@ -32,9 +27,29 @@ export function switchMapReplayOperation<T, R>(
                           ),
                           startWith(pendingOperation)
                       )
-            ),
-            shareReplay()
+            )
         )
+    }
+}
+
+/**
+ * Run an operation with the outer observable as input. The result is replayed to all subscribers
+ * (including future subscribers) using {@link shareReplay}, but it is immediately invalidated when
+ * the outer observable emits again.
+ *
+ * This is a useful helper for memoizing an expensive operation. It will emit the cached value until
+ * the input changes, at which point it will immediately stop emitting the cached value until the
+ * operation completes with the new input.
+ */
+export function switchMapReplayOperation<T, R>(
+    operation: (value: T) => Observable<R>
+): (
+    source: ObservableLike<T | typeof pendingOperation>
+) => Observable<R | typeof pendingOperation | Error> {
+    return (
+        source: ObservableLike<T | typeof pendingOperation>
+    ): Observable<R | typeof pendingOperation | Error> => {
+        return Observable.from(source).pipe(switchMapOperation(operation), shareReplay())
     }
 }
 

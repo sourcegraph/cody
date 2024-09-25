@@ -19,6 +19,7 @@ export interface ConfigurationInput {
     clientConfiguration: ClientConfiguration
     clientSecrets: ClientSecrets
     clientState: ClientState
+    extensionContext: Pick<ExtensionContext, 'globalStorageUri'>
 }
 
 export interface ClientSecrets {
@@ -34,6 +35,13 @@ export interface ClientState {
 }
 
 /**
+ * The subset of {@link vscode.ExtensionContext} that is needed.
+ */
+export interface ExtensionContext {
+    globalStorageUri: string
+}
+
+/**
  * The fully resolved configuration, which is what almost all callers should use.
  *
  * This combines information from various sources (see {@link ConfigurationInput}).
@@ -42,6 +50,7 @@ export type ResolvedConfiguration = ReadonlyDeep<{
     configuration: ClientConfiguration
     auth: AuthCredentials
     clientState: ClientState
+    extensionContext: ExtensionContext
 }>
 
 /**
@@ -86,6 +95,7 @@ async function resolveConfiguration(input: ConfigurationInput): Promise<Resolved
         configuration: input.clientConfiguration,
         clientState: input.clientState,
         auth: { accessToken, serverEndpoint },
+        extensionContext: input.extensionContext,
     }
 }
 

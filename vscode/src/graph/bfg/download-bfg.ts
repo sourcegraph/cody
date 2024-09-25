@@ -1,6 +1,7 @@
 import fs from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
+import type { ExtensionContext } from '@sourcegraph/cody-shared'
 import { SemverString } from '@sourcegraph/cody-shared/src/utils'
 import * as vscode from 'vscode'
 import { downloadFile, fileExists, unzip } from '../../local-context/utils'
@@ -21,7 +22,7 @@ export const _config = {
 /**
  * Get the path to `bfg` binary. If possible it will be downloaded.
  */
-export async function getBfgPath(context: vscode.ExtensionContext): Promise<string | null> {
+export async function getBfgPath(extensionContext: ExtensionContext): Promise<string | null> {
     // If user-specified symf path is set, use that
     // TODO: maybe we do want an option to download bfg if it's not found?
     const config = vscode.workspace.getConfiguration()
@@ -37,7 +38,7 @@ export async function getBfgPath(context: vscode.ExtensionContext): Promise<stri
     const bfgContainingDir =
         typeof process !== 'undefined' && process.env.CODY_TESTING_BFG_DIR
             ? process.env.CODY_TESTING_BFG_DIR
-            : path.join(context.globalStorageUri.fsPath, 'cody-engine')
+            : path.join(vscode.Uri.parse(extensionContext.globalStorageUri).fsPath, 'cody-engine')
 
     // remove any preceding v symbol
     const bfgVersion = SemverString.forcePrefix(

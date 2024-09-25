@@ -11,17 +11,15 @@ import {
     type LocalEmbeddingsProvider,
     type PromptString,
     type StoredLastValue,
-    type Unsubscribable,
     authStatus,
     combineLatest,
     createDisposables,
     currentResolvedConfig,
-    distinctUntilChanged,
     featureFlagProvider,
     isDefined,
     isDotCom,
+    isError,
     isFileURI,
-    pluck,
     recordErrorToSpan,
     resolvedConfig,
     storeLastValue,
@@ -29,17 +27,16 @@ import {
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
 import { map } from 'observable-fns'
-import { startCodyEngine } from '../graph/bfg/spawn-bfg'
+import { useCodyEngine } from '../graph/bfg/spawn-bfg'
 import type { IndexHealthResultFound, IndexRequest } from '../jsonrpc/embeddings-protocol'
 import { isRunningInsideAgent } from '../jsonrpc/isRunningInsideAgent'
-import type { MessageHandler } from '../jsonrpc/jsonrpc'
 import { logDebug } from '../log'
 import { vscodeGitAPI } from '../repository/git-extension-api'
 import { captureException } from '../services/sentry/sentry'
 
-export function createLocalEmbeddingsController(
-    context: vscode.ExtensionContext
-): StoredLastValue<LocalEmbeddingsController | undefined> {
+export function createLocalEmbeddingsController(): StoredLastValue<
+    LocalEmbeddingsController | undefined
+> {
     return storeLastValue(
         combineLatest([
             resolvedConfig,
@@ -66,7 +63,7 @@ export function createLocalEmbeddingsController(
                     config.configuration.testingModelConfig || ffCodyEmbeddingsGenerateMetadata
                         ? sourcegraphMetadataModelConfig
                         : sourcegraphModelConfig
-                return new LocalEmbeddingsController(context, modelConfig)
+                return new LocalEmbeddingsController(modelConfig)
             }),
             createDisposables(localEmbeddings => localEmbeddings)
         )
@@ -122,10 +119,6 @@ const sourcegraphMetadataModelConfig: EmbeddingsModelConfig = {
 export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, vscode.Disposable {
     private disposables: vscode.Disposable[] = []
 
-    // The cody-engine child process, if starting or started.
-    private service: Promise<MessageHandler> | undefined
-    // True if the service has finished starting and been initialized.
-    private serviceStarted = false
     // The last index we loaded, or attempted to load, if any.
     private lastRepo: { dir: FileURI; repoName: string | false } | undefined
     // The last health report, if any.
@@ -142,12 +135,7 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, vscode
     // The status bar item local embeddings is displaying, if any.
     private statusBar: vscode.StatusBarItem | undefined
 
-    private configSubscription: Unsubscribable
-
-    constructor(
-        private readonly context: vscode.ExtensionContext,
-        private readonly modelConfig: EmbeddingsModelConfig
-    ) {
+    constructor(private readonly modelConfig: EmbeddingsModelConfig) {
         logDebug('LocalEmbeddingsController', 'constructor')
         this.disposables.push(
             vscode.commands.registerCommand('cody.embeddings.resolveIssue', () =>
@@ -155,21 +143,6 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, vscode
             ),
             vscode.commands.registerCommand('cody.embeddings.index', () => this.index())
         )
-
-        // Keep token updated.
-        this.configSubscription = resolvedConfig
-            .pipe(pluck('auth'), distinctUntilChanged())
-            .subscribe(async auth => {
-                if (isDotCom(auth.serverEndpoint)) {
-                    // TODO: Add a "drop token" for sign out
-                    if (this.serviceStarted) {
-                        await (await this.getService()).request(
-                            'embeddings/set-token',
-                            auth.accessToken ?? ''
-                        )
-                    }
-                }
-            })
 
         void this.start()
     }
@@ -179,7 +152,7 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, vscode
             disposable.dispose()
         }
         this.statusBar?.dispose()
-        this.configSubscription.unsubscribe()
+        this.codyEngine.subscription.unsubscribe()
     }
 
     // Hint that local embeddings should start cody-engine, if necessary.
@@ -188,7 +161,6 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, vscode
         wrapInActiveSpan('embeddings.start', async span => {
             span.setAttribute('sampled', true)
             span.setAttribute('provider', this.modelConfig.provider)
-            await this.getService()
             const repoUri = vscode.workspace.workspaceFolders?.[0]?.uri
             if (repoUri && isFileURI(repoUri)) {
                 span.setAttribute('hasRepo', true)
@@ -205,78 +177,53 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, vscode
         })
     }
 
-    private async getService(): Promise<MessageHandler> {
-        const { auth } = await currentResolvedConfig()
-        if (!isDotCom(auth.serverEndpoint)) {
-            // This should never be reached because of the check in
-            // `createLocalEmbeddingsController`, but check again here just in case (of code
-            // changes, bugs, etc.).
-            throw new Error('local embeddings are only available on Sourcegraph.com')
-        }
-
-        if (!this.service) {
-            logDebug('LocalEmbeddingsController', 'getService', 'starting BFG')
-            this.service = startCodyEngine(this.context).then(async service => {
-                // TODO: Add more states for cody-engine fetching and trigger status updates here
-                service.registerNotification('embeddings/progress', obj => {
-                    if (typeof obj === 'object') {
-                        switch (obj.type) {
-                            case 'progress': {
-                                this.lastError = undefined
-                                const percent = Math.floor((100 * obj.numItems) / obj.totalItems)
-                                if (this.statusBar) {
-                                    this.statusBar.text = `Indexing Embeddings… (${percent.toFixed(0)}%)`
-                                    this.statusBar.backgroundColor = undefined
-                                    this.statusBar.tooltip = obj.currentPath
-                                    this.statusBar.show()
-                                }
-                                return
-                            }
-                            case 'error': {
-                                this.lastError = obj.message
-                                this.loadAfterIndexing()
-                                return
-                            }
-                            case 'done': {
-                                this.lastError = undefined
-                                this.loadAfterIndexing()
-                                return
-                            }
+    private codyEngine = useCodyEngine(async codyEngine => {
+        logDebug('LocalEmbeddingsController', 'getService', 'starting BFG')
+        // TODO: Add more states for cody-engine fetching and trigger status updates here
+        codyEngine.registerNotification('embeddings/progress', obj => {
+            if (typeof obj === 'object') {
+                switch (obj.type) {
+                    case 'progress': {
+                        this.lastError = undefined
+                        const percent = Math.floor((100 * obj.numItems) / obj.totalItems)
+                        if (this.statusBar) {
+                            this.statusBar.text = `Indexing Embeddings… (${percent.toFixed(0)}%)`
+                            this.statusBar.backgroundColor = undefined
+                            this.statusBar.tooltip = obj.currentPath
+                            this.statusBar.show()
                         }
+                        return
                     }
-                    logDebug('LocalEmbeddingsController', 'unknown notification', JSON.stringify(obj))
-                })
+                    case 'error': {
+                        this.lastError = obj.message
+                        this.loadAfterIndexing()
+                        return
+                    }
+                    case 'done': {
+                        this.lastError = undefined
+                        this.loadAfterIndexing()
+                        return
+                    }
+                }
+            }
+            logDebug('LocalEmbeddingsController', 'unknown notification', JSON.stringify(obj))
+        })
 
-                logDebug(
-                    'LocalEmbeddingsController',
-                    'spawnAndBindService',
-                    'service started, initializing'
-                )
+        logDebug('LocalEmbeddingsController', 'spawnAndBindService', 'service started, initializing')
 
-                const initResult = await service.request('embeddings/initialize', {
-                    codyGatewayEndpoint: this.modelConfig.endpoint,
-                    indexPath: this.modelConfig.indexPath.fsPath,
-                })
+        const initResult = await codyEngine.request('embeddings/initialize', {
+            codyGatewayEndpoint: this.modelConfig.endpoint,
+            indexPath: this.modelConfig.indexPath.fsPath,
+        })
 
-                const { auth } = await currentResolvedConfig()
-                logDebug('LocalEmbeddingsController', 'spawnAndBindService', 'initialized', {
-                    verbose: {
-                        initResult,
-                        tokenAvailable: Boolean(auth.accessToken),
-                    },
-                })
-
-                // Set the initial access token
-                await service.request('embeddings/set-token', auth.accessToken ?? '')
-
-                this.serviceStarted = true
-
-                return service
-            })
-        }
-
-        return this.service
-    }
+        const { auth } = await currentResolvedConfig()
+        logDebug('LocalEmbeddingsController', 'spawnAndBindService', 'initialized', {
+            verbose: {
+                initResult,
+                tokenAvailable: Boolean(auth.accessToken),
+            },
+        })
+    })
 
     // After indexing succeeds or fails, try to load the index. Update state
     // indicating we are no longer loading the index.
@@ -334,8 +281,13 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, vscode
     }
 
     private async indexRequest(options: IndexRequest): Promise<void> {
+        const codyEngine = await this.codyEngine.get()
+        if (!codyEngine || isError(codyEngine)) {
+            return
+        }
+
         try {
-            await (await this.getService()).request('embeddings/index', options)
+            await codyEngine.request('embeddings/index', options)
             this.dirBeingIndexed = URI.file(options.repoPath)
             this.statusBar?.dispose()
             this.statusBar = vscode.window.createStatusBarItem(
@@ -355,9 +307,14 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, vscode
     // - To implement the final step of `load`, if we did not hit any cached
     //   results.
     private async eagerlyLoad(repoDir: FileURI): Promise<boolean> {
+        const codyEngine = await this.codyEngine.get()
+        if (!codyEngine || isError(codyEngine)) {
+            return false
+        }
+
         await wrapInActiveSpan('embeddings.load', async span => {
             try {
-                const { repoName, indexSizeBytes } = await (await this.getService()).request(
+                const { repoName, indexSizeBytes } = await codyEngine.request(
                     'embeddings/load',
                     repoDir.fsPath
                 )
@@ -429,9 +386,14 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, vscode
             return
         }
 
+        const codyEngine = await this.codyEngine.get()
+        if (!codyEngine || isError(codyEngine)) {
+            return
+        }
+
         await wrapInActiveSpan('embeddings.index-health', async span => {
             try {
-                const health = await (await this.getService()).request('embeddings/index-health', {
+                const health = await codyEngine.request('embeddings/index-health', {
                     repoName,
                 })
                 logDebug('LocalEmbeddingsController', 'index-health', JSON.stringify(health))
@@ -629,6 +591,12 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, vscode
         if (!endpointIsDotCom) {
             return []
         }
+
+        const codyEngine = await this.codyEngine.get()
+        if (!codyEngine || isError(codyEngine)) {
+            return []
+        }
+
         return wrapInActiveSpan('LocalEmbeddingsController.query', async span => {
             try {
                 span.setAttribute('provider', this.modelConfig.provider)
@@ -637,8 +605,7 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, vscode
                     span.setAttribute('noResultReason', 'last-repo-not-set')
                     return []
                 }
-                const service = await this.getService()
-                const resp = await service.request('embeddings/query', {
+                const resp = await codyEngine.request('embeddings/query', {
                     repoName: lastRepo.repoName,
                     query: query.toString(),
                     numResults,

@@ -148,6 +148,7 @@ export async function start(
                         clientConfiguration,
                         clientSecrets,
                         clientState,
+                        extensionContext: { globalStorageUri: context.globalStorageUri.toString() },
                     }) satisfies ConfigurationInput
             )
         )

@@ -3,38 +3,118 @@ import * as child_process from 'node:child_process'
 import * as vscode from 'vscode'
 
 import { captureException } from '@sentry/core'
+import {
+    type ExtensionContext,
+    type Unsubscribable,
+    authStatus,
+    catchError,
+    combineLatest,
+    createDisposables,
+    distinctUntilChanged,
+    firstValueFrom,
+    isDotCom,
+    isError,
+    type pendingOperation,
+    pluck,
+    promiseFactoryToObservable,
+    promiseToObservable,
+    resolvedConfig,
+    skipPendingOperation,
+    switchMap,
+    switchMapOperation,
+    switchMapReplayOperation,
+} from '@sourcegraph/cody-shared'
+import { Observable, map } from 'observable-fns'
 import { StreamMessageReader, StreamMessageWriter, createMessageConnection } from 'vscode-jsonrpc/node'
 import { MessageHandler } from '../../jsonrpc/jsonrpc'
 import { logDebug, logError } from '../../log'
 import { getBfgPath } from './download-bfg'
 
-/** Global singleton for the cody-engine child process channel. */
-let codyEngine: Promise<MessageHandler> | null = null
-
 /**
- * Spawn and initialize cody-engine, reusing the existing connection if it has already been spawned
- * and has not exited.
+ * Global singleton accessor for the cody-engine message handler.
+ *
+ * It reuses the same process for multiple subscribers and kills the process when there are no more
+ * subscribers, so subscribers should take care to unsubscribe when they no longer need it.
+ *
+ * If there is an initialization error, subscribers will continue to receive the same error until
+ * the auth status changes. This is to avoid crash loops where we repeatedly try to initialize
+ * cody-engine and fail for the same reason, which could make Cody unresponsive.
  */
-export async function startCodyEngine(
-    context: vscode.ExtensionContext
-): Promise<MessageHandler & vscode.Disposable> {
-    if (!codyEngine) {
-        const onDispose = () => {
-            logDebug('CodyEngine', 'Disposing')
-            codyEngine = null
-        }
-        codyEngine = spawnAndInitializeCodyEngine(context, onDispose)
+export function useCodyEngine(setup: (codyEngine: MessageHandler) => Promise<void>): CodyEngineHandle {
+    const subscription = codyEngine
+        .pipe(
+            switchMapOperation((codyEngine): Observable<MessageHandler | Error | null> => {
+                if (codyEngine && !isError(codyEngine)) {
+                    return promiseToObservable(setup(codyEngine)).pipe(
+                        map(() => codyEngine),
+                        catchError(error =>
+                            Observable.of(isError(error) ? error : new Error(String(error)))
+                        )
+                    )
+                }
+                return Observable.of(codyEngine)
+            })
+        )
+        .subscribe({})
+    return {
+        get: () => firstValueFrom(codyEngine),
+        subscription,
     }
-    return codyEngine
 }
 
-async function spawnAndInitializeCodyEngine(
-    context: vscode.ExtensionContext,
-    onDispose: () => void
-): Promise<MessageHandler> {
+export interface CodyEngineHandle {
+    get(): Promise<MessageHandler | Error | null>
+    subscription: Unsubscribable
+}
+
+const codyEngine: Observable<MessageHandler | null | Error> = combineLatest([
+    resolvedConfig.pipe(pluck('extensionContext'), distinctUntilChanged()),
+    authStatus.pipe(
+        map(({ authenticated, endpoint }) => ({ authenticated, endpoint })),
+        distinctUntilChanged()
+    ),
+]).pipe(
+    switchMapReplayOperation(([extensionContext, authStatus]) => {
+        if (!authStatus.authenticated || !isDotCom(authStatus.endpoint)) {
+            // cody-engine is only used for dotcom.
+            return Observable.of(null)
+        }
+
+        return promiseToObservable(spawnAndInitializeCodyEngine({ extensionContext })).pipe(
+            createDisposables(handler => (isError(handler) || !handler ? undefined : handler)),
+            switchMap((handler): Observable<MessageHandler | Error | typeof pendingOperation> => {
+                if (isError(handler)) {
+                    return Observable.of(handler)
+                }
+
+                // Keep the access token updated.
+                return resolvedConfig.pipe(
+                    pluck('auth'),
+                    distinctUntilChanged(),
+                    switchMapReplayOperation(auth =>
+                        promiseFactoryToObservable(async () => {
+                            // Be extra safe and check again here that this is being used against dotcom, to
+                            // avoid sending non-dotcom access tokens to dotcom.
+                            const accessToken = isDotCom(auth.serverEndpoint) ? auth.accessToken : null
+                            await handler.request('embeddings/set-token', accessToken ?? '')
+                            return handler
+                        })
+                    )
+                )
+            })
+        )
+    }),
+    skipPendingOperation()
+)
+
+async function spawnAndInitializeCodyEngine({
+    extensionContext,
+}: {
+    extensionContext: ExtensionContext
+}): Promise<MessageHandler | Error> {
     logDebug('CodyEngine', 'Spawning and initializing')
 
-    const codyrpc = await getBfgPath(context)
+    const codyrpc = await getBfgPath(extensionContext)
     if (!codyrpc) {
         throw new Error(
             'Failed to download BFG binary. To fix this problem, set the "cody.experimental.cody-engine.path" configuration to the path of your BFG binary'
@@ -61,29 +141,31 @@ async function spawnAndInitializeCodyEngine(
     let handler: MessageHandler | undefined
     child.on('exit', code => {
         handler?.exit()
-        if (code !== 0) {
-            logError('CodyEngine', 'Exited with error code', code)
+        if (code !== null && code !== 0) {
+            logError('CodyEngine', `Exited with error code ${code}`)
             captureException(new Error(`CodyEngine: exited with error code ${code}`))
         }
     })
     child.stderr.pipe(process.stderr)
 
+    const conn = createMessageConnection(
+        new StreamMessageReader(child.stdout),
+        new StreamMessageWriter(child.stdin)
+    )
+    handler = new MessageHandler(conn)
     try {
-        const conn = createMessageConnection(
-            new StreamMessageReader(child.stdout),
-            new StreamMessageWriter(child.stdin)
-        )
-        handler = new MessageHandler(conn)
         conn.listen()
         handler.onDispose(() => {
-            onDispose()
             conn.dispose()
             child.kill()
         })
         await handler.request('bfg/initialize', { clientName: 'vscode' })
         return handler
     } catch (error) {
+        handler.dispose()
+        conn.dispose()
+        logDebug('CodyEngine', 'Failed to spawn and initialize', error)
         captureException(error)
-        throw error
+        return isError(error) ? error : new Error(String(error))
     }
 }
