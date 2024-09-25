@@ -7,6 +7,8 @@
 #   pnpm update-agent-recordings
 #   pnpm update-rewrite-recordings
 #
+# If you change this script, please also update export-cody-http-recording-tokens.ps1
+#
 # Tips to update these secrets:
 #  - Use 1Password to find account passwords
 #  - Use no expiration dates when creating access tokens
