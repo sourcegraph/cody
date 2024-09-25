@@ -4,8 +4,6 @@ import {
     type ContextItem,
     ContextItemSource,
     MAX_BYTES_PER_FILE,
-    NUM_CODE_RESULTS,
-    NUM_TEXT_RESULTS,
     type PromptString,
     type Result,
     isAbortError,
@@ -15,7 +13,6 @@ import {
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
 import type { VSCodeEditor } from '../../editor/vscode-editor'
-import type { LocalEmbeddingsController } from '../../local-context/local-embeddings'
 import type { SymfRunner } from '../../local-context/symf'
 import { logDebug, logError } from '../../log'
 
@@ -94,35 +91,6 @@ export async function searchSymf(
         })
 
         return (await Promise.all(r0)).flat()
-    })
-}
-
-export async function searchEmbeddingsLocal(
-    localEmbeddings: LocalEmbeddingsController,
-    text: PromptString,
-    numResults: number = NUM_CODE_RESULTS + NUM_TEXT_RESULTS
-): Promise<ContextItem[]> {
-    return wrapInActiveSpan('chat.context.embeddings.local', async span => {
-        logDebug('ChatController', 'resolveContext > searching local embeddings')
-        const contextItems: ContextItem[] = []
-        const embeddingsResults = await localEmbeddings.getContext(text, numResults)
-        span.setAttribute('numResults', embeddingsResults.length)
-
-        for (const result of embeddingsResults) {
-            const range = new vscode.Range(
-                new vscode.Position(result.startLine, 0),
-                new vscode.Position(result.endLine, 0)
-            )
-
-            contextItems.push({
-                type: 'file',
-                uri: result.uri,
-                range,
-                content: result.content,
-                source: ContextItemSource.Embeddings,
-            })
-        }
-        return contextItems
     })
 }
 

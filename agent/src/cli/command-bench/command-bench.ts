@@ -10,7 +10,7 @@ import { newAgentClient } from '../../agent'
 import { exec } from 'node:child_process'
 import fs from 'node:fs'
 import { promisify } from 'node:util'
-import { type ConfigurationUseContext, isDefined, modelsService } from '@sourcegraph/cody-shared'
+import { isDefined, modelsService } from '@sourcegraph/cody-shared'
 import { sleep } from '../../../../vscode/src/completions/utils'
 import { setStaticResolvedConfigurationWithAuthCredentials } from '../../../../vscode/src/configuration'
 import { localStorage } from '../../../../vscode/src/services/LocalStorageProvider'
@@ -60,12 +60,11 @@ export interface CodyBenchOptions {
     evaluationConfig: string
     snapshotDirectory: string
     csvPath?: string
-    bfgBinary?: string
     installCommand?: string
     testCommand?: string
     gitLogFilter?: string
     fixture: EvaluationFixture
-    context: { sourcesDir: string; strategy: ConfigurationUseContext }
+    context?: { sourcesDir: string }
 
     verbose: boolean
     insecureTls?: boolean
@@ -270,9 +269,6 @@ export const benchCommand = new commander.Command('bench')
         arrayOption as any,
         []
     )
-    .addOption(
-        new commander.Option('--bfg-binary <path>', 'Optional path to a BFG binary').env('BFG_BINARY')
-    )
     .option(
         '--tree-sitter-grammars <path>',
         'Path to a directory containing tree-sitter grammars',
@@ -381,13 +377,7 @@ async function evaluateWorkspace(options: CodyBenchOptions, recordingDirectory: 
             serverEndpoint: options.srcEndpoint,
             customHeaders: {},
             customConfiguration: {
-                'cody.experimental.symf.enabled': ['keyword', 'blended'].includes(
-                    options.context?.strategy
-                ), // disabling fixes errors in Polly.js related to fetching the symf binary
-                'cody.experimental.localEmbeddings.enabled': ['embeddings', 'blended'].includes(
-                    options.context?.strategy
-                ),
-                'cody.useContext': options.context?.strategy,
+                'cody.experimental.symf.enabled': !!options.context, // disabling fixes errors in Polly.js related to fetching the symf binary
                 'cody.experimental.telemetry.enabled': false,
                 ...options.fixture.customConfiguration,
             },
@@ -475,6 +465,10 @@ function expandWorkspaces(
 }
 
 async function gitInitContextSourcesDir(options: CodyBenchOptions): Promise<void> {
+    if (!options.context) {
+        return
+    }
+
     // If this is our first run, we need to git init the context sources dir so symf & embeddings pick it up
     if (fs.existsSync(path.join(options.workspace, '.git'))) {
         return
@@ -491,9 +485,8 @@ async function gitInitContextSourcesDir(options: CodyBenchOptions): Promise<void
 }
 
 async function indexContextSourcesDir(options: CodyBenchOptions): Promise<void> {
-    // If this is our first run, we need to index the context sources dir so symf & embeddings can retrieve results
+    // If this is our first run, we need to index the context sources dir so symf can retrieve results
     // The agent has started symf by this point - we need to wait until the symf index has been created
-    // TODO: for embeddings, we don't have access to do it the same way
 
     const symfIndex = path.join(codyPaths().data, 'symf/indexroot', options.workspace)
 

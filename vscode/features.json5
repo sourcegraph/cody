@@ -25,18 +25,6 @@
         },
         tags: ['chat']
       },
-      {
-        "name": "ToggleEnhancedContextButtons",
-        "description": "Added buttons in the chat input box for enabling/disabling Enhanced Context.",
-        "productLine": "all",
-        "documentation": [],
-        "editors": {
-          "vscode": {
-            "status": "stable",
-          }
-        },
-        tags: ['chat']
-      },
        {
         "name": "GenerateUnitTestCodeAction",
         "description": "Generate unit test now shows on any function symbol in code actions",

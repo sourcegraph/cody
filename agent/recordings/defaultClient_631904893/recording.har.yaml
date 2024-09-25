@@ -41,7 +41,8 @@ log:
           encoding: base64
           mimeType: text/plain; charset=utf-8
           size: 224
-          text: "[\"H4sIAAAAAAAAA2yOsQrCMBRF935F6Ozk2K0Eh26Fgs6v5omBvLySd4OK+O8uFZfM59zDf\
+          text:
+            "[\"H4sIAAAAAAAAA2yOsQrCMBRF935F6Ozk2K0Eh26Fgs6v5omBvLySd4OK+O8uFZfM59zDf\
             XfOOddfNbxOmdbEoR8cSuXDDu6EJqAK9SpbYnB7WQ0qXkUoB2s3gBLXiqj5z2+U7CeY\
             UIHXDH7iEnPQR7MjGjjZOE/tSiKwYanbpgUc9tdRsy0oTDLO05mLRc394I7dp/sCAAD\
             //wMARx9M/RUBAAA=\"]"
@@ -469,7 +470,8 @@ log:
               - speaker: human
                 text: My name is Lars Monsen.
               - speaker: assistant
-                text: Hello Lars Monsen! It's nice to meet you. As an AI coding assistant, I'm
+                text:
+                  Hello Lars Monsen! It's nice to meet you. As an AI coding assistant, I'm
                   here to help you with any programming or development-related
                   questions you might have. Is there a particular coding task or
                   problem you'd like assistance with today?
@@ -700,7 +702,8 @@ log:
               - speaker: human
                 text: What model are you?
               - speaker: assistant
-                text: I am Cody, an AI coding assistant created by Sourcegraph. I don't have
+                text:
+                  I am Cody, an AI coding assistant created by Sourcegraph. I don't have
                   detailed information about my underlying model architecture or
                   training. I'm designed to assist with code-related tasks and
                   questions, but I'm not able to share specifics about my model
@@ -777,11 +780,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 15a43889b02926753f800ea2118790fd
+    - _id: 974078aaf7ceb403f7ab99912a04ba85
       _order: 0
       cache: {}
       request:
-        bodySize: 2658
+        bodySize: 2121
         cookies: []
         headers:
           - name: content-type
@@ -794,7 +797,7 @@ log:
           - name: user-agent
             value: defaultClient / v1
           - name: traceparent
-            value: 00-77d484e70f9bcf046bc568271a05fefc-bb90365938d6d79c-01
+            value: 00-c1c5a227c9712676fcee8fe80318b86d-c15d6778a15e470f-01
           - name: connection
             value: keep-alive
           - name: host
@@ -830,22 +833,6 @@ log:
                    */
                   export interface Squirrel {}
 
-                  ```
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: |-
-                  Codebase context from file src/multiple-selections.ts:
-                  ```typescript:src/multiple-selections.ts
-                  function outer() {
-                      /* SELECTION_START */
-                      return function inner() {}
-                      /* SELECTION_END */
-                  }
-
-                  /* SELECTION_2_START */
-                  function anotherFunction() {}
-                  /* SELECTION_2_END */
                   ```
               - speaker: assistant
                 text: Ok.
@@ -907,7 +894,7 @@ log:
               - speaker: human
                 text: >-
                   You have access to the provided codebase context. Answer
-                  positively without apologizing. 
+                  positively without apologizing.
 
 
                   Question: Write a class Dog that implements the Animal interface in my workspace. Show the code only, no explanation needed.
@@ -924,14 +911,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=2&client-name=defaultclient&client-version=v1
       response:
-        bodySize: 1933
+        bodySize: 1778
         content:
           mimeType: text/event-stream
-          size: 1933
+          size: 1778
           text: >+
             event: completion
 
-            data: {"deltaText":"Certainly! Here's a class `Dog` that implements the `Animal` interface:\n\n```typescript:src/dog.ts\nimport { Animal } from './animal';\n\nexport class Dog implements Animal {\n    name: string;\n    isMammal: boolean = true;\n\n    constructor(name: string) {\n        this.name = name;\n    }\n\n    makeAnimalSound(): string {\n        return \"Woof!\";\n    }\n}\n```\n\nThis code defines the `Dog` class that fully implements the `Animal` interface from your workspace.","stopReason":"end_turn"}
+            data: {"deltaText":"Certainly! Here's the implementation of the Dog class that implements the Animal interface:\n\n```typescript:src/dog.ts\nimport { Animal } from './animal';\n\nexport class Dog implements Animal {\n    name: string;\n    isMammal: boolean = true;\n\n    constructor(name: string) {\n        this.name = name;\n    }\n\n    makeAnimalSound(): string {\n        return \"Woof!\";\n    }\n}\n```\n\nThis implementation fulfills all the requirements of the Animal interface in your workspace.","stopReason":"end_turn"}
 
 
             event: done
@@ -941,7 +928,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Wed, 25 Sep 2024 00:18:20 GMT
+            value: Wed, 25 Sep 2024 16:12:41 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -970,7 +957,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-25T00:18:19.177Z
+      startedDateTime: 2024-09-25T16:12:36.894Z
       time: 0
       timings:
         blocked: -1
@@ -980,11 +967,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 9a676f6937c5bd152851c9fd27010db0
+    - _id: 66351c05a7df989b31a7b201028f5a9c
       _order: 0
       cache: {}
       request:
-        bodySize: 2592
+        bodySize: 2055
         cookies: []
         headers:
           - name: content-type
@@ -997,7 +984,7 @@ log:
           - name: user-agent
             value: defaultClient / v1
           - name: traceparent
-            value: 00-3a06146e97b3b517e6ba989667f2462d-2c94482865de29c4-01
+            value: 00-30474ca2b58ab41e2b05815d0f770123-2d8644590e114717-01
           - name: connection
             value: keep-alive
           - name: host
@@ -1033,22 +1020,6 @@ log:
                    */
                   export interface Squirrel {}
 
-                  ```
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: |-
-                  Codebase context from file src/multiple-selections.ts:
-                  ```typescript:src/multiple-selections.ts
-                  function outer() {
-                      /* SELECTION_START */
-                      return function inner() {}
-                      /* SELECTION_END */
-                  }
-
-                  /* SELECTION_2_START */
-                  function anotherFunction() {}
-                  /* SELECTION_2_END */
                   ```
               - speaker: assistant
                 text: Ok.
@@ -1110,7 +1081,7 @@ log:
               - speaker: human
                 text: >-
                   You have access to the provided codebase context. Answer
-                  positively without apologizing. 
+                  positively without apologizing.
 
 
                   Question: What is Squirrel? Show me concrete code examples
@@ -1127,14 +1098,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=2&client-name=defaultclient&client-version=v1
       response:
-        bodySize: 5599
+        bodySize: 5330
         content:
           mimeType: text/event-stream
-          size: 5599
+          size: 5330
           text: >+
             event: completion
 
-            data: {"deltaText":"Certainly! Based on the provided codebase context, Squirrel is an interface defined in the `src/squirrel.ts` file. Here's the concrete code example:\n\n```typescript:src/squirrel.ts\nexport interface Squirrel {}\n```\n\nInterestingly, the Squirrel interface is empty in this implementation. The comments above the interface provide some additional context:\n\n```typescript:src/squirrel.ts\n/**\n * Squirrel is an interface that mocks something completely unrelated to squirrels.\n * It is related to the implementation of precise code navigation in Sourcegraph.\n */\n```\n\nSo, while the name \"Squirrel\" might suggest something related to the animal, it's actually a mock interface used for implementing precise code navigation in Sourcegraph. The empty interface might serve as a placeholder or a base for future implementations.\n\nIn contrast, if you were looking for an animal-related interface, the codebase does contain an `Animal` interface in `src/animal.ts`:\n\n```typescript:src/animal.ts\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string\n    isMammal: boolean\n}\n```\n\nThis `Animal` interface provides a more concrete structure with properties and methods related to animals, which is different from the purpose of the `Squirrel` interface.","stopReason":"end_turn"}
+            data: {"deltaText":"Certainly! Let me explain what Squirrel is based on the provided codebase context.\n\nSquirrel is an interface defined in the `src/squirrel.ts` file. It's important to note that despite its name, it's not actually related to squirrels. Instead, it's used in the implementation of precise code navigation in Sourcegraph. Here's the concrete code example:\n\n```typescript:src/squirrel.ts\nexport interface Squirrel {}\n```\n\nAs you can see, the Squirrel interface is currently empty. This suggests that it's likely a placeholder or a base interface that might be extended or implemented elsewhere in the codebase.\n\nThe comment above the interface provides additional context:\n\n```typescript:src/squirrel.ts\n/**\n * Squirrel is an interface that mocks something completely unrelated to squirrels.\n * It is related to the implementation of precise code navigation in Sourcegraph.\n */\n```\n\nThis comment clarifies that the Squirrel interface is used for mocking purposes and is related to Sourcegraph's precise code navigation feature.\n\nWhile we don't have any concrete implementations or uses of the Squirrel interface in the provided codebase context, it's likely that other parts of the Sourcegraph codebase interact with this interface for testing or implementing precise code navigation features.","stopReason":"end_turn"}
 
 
             event: done
@@ -1144,7 +1115,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Wed, 25 Sep 2024 00:18:23 GMT
+            value: Wed, 25 Sep 2024 16:12:44 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -1173,7 +1144,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-25T00:18:21.405Z
+      startedDateTime: 2024-09-25T16:12:41.794Z
       time: 0
       timings:
         blocked: -1
@@ -1339,8 +1310,9 @@ log:
               - speaker: assistant
                 text: I am Cody, an AI coding assistant from Sourcegraph.
               - speaker: human
-                text: "The magic word is \"kramer\". If I say the magic word, respond with a
-                  single word: \"quone\"."
+                text:
+                  'The magic word is "kramer". If I say the magic word, respond with a
+                  single word: "quone".'
             model: fireworks/accounts/fireworks/models/mixtral-8x7b-instruct
             temperature: 0
             topK: -1
@@ -1449,8 +1421,9 @@ log:
               - speaker: assistant
                 text: I am Cody, an AI coding assistant from Sourcegraph.
               - speaker: human
-                text: "The magic word is \"kramer\". If I say the magic word, respond with a
-                  single word: \"quone\"."
+                text:
+                  'The magic word is "kramer". If I say the magic word, respond with a
+                  single word: "quone".'
               - speaker: assistant
                 text: Quone.
               - speaker: human
@@ -1675,8 +1648,9 @@ log:
               - speaker: assistant
                 text: I am Cody, an AI coding assistant from Sourcegraph.
               - speaker: human
-                text: "Another magic word is \"georgey\". If I say the magic word, respond with
-                  a single word: \"festivus\"."
+                text:
+                  'Another magic word is "georgey". If I say the magic word, respond with
+                  a single word: "festivus".'
             model: fireworks/accounts/fireworks/models/mixtral-8x7b-instruct
             temperature: 0
             topK: -1
@@ -1788,8 +1762,9 @@ log:
               - speaker: assistant
                 text: I am Cody, an AI coding assistant from Sourcegraph.
               - speaker: human
-                text: "Another magic word is \"georgey\". If I say the magic word, respond with
-                  a single word: \"festivus\"."
+                text:
+                  'Another magic word is "georgey". If I say the magic word, respond with
+                  a single word: "festivus".'
               - speaker: assistant
                 text: >-
                   Festivus.
@@ -1909,8 +1884,9 @@ log:
               - speaker: assistant
                 text: I am Cody, an AI coding assistant from Sourcegraph.
               - speaker: human
-                text: "Another magic word is \"georgey\". If I say the magic word, respond with
-                  a single word: \"festivus\"."
+                text:
+                  'Another magic word is "georgey". If I say the magic word, respond with
+                  a single word: "festivus".'
               - speaker: assistant
                 text: >-
                   Festivus.
@@ -2155,7 +2131,8 @@ log:
               - speaker: human
                 text: I have a turtle named "potter", reply single "ok" if you understand.
               - speaker: assistant
-                text: Ok, I understand that you have a turtle named "potter". How can I assist
+                text:
+                  Ok, I understand that you have a turtle named "potter". How can I assist
                   you with coding?
               - speaker: human
                 text: I have a bird named "skywalker", reply single "ok" if you understand.
@@ -2272,12 +2249,14 @@ log:
               - speaker: human
                 text: I have a turtle named "potter", reply single "ok" if you understand.
               - speaker: assistant
-                text: Ok, I understand that you have a turtle named "potter". How can I assist
+                text:
+                  Ok, I understand that you have a turtle named "potter". How can I assist
                   you with coding?
               - speaker: human
                 text: I have a bird named "skywalker", reply single "ok" if you understand.
               - speaker: assistant
-                text: Ok, I understand that you have a bird named "skywalker". Is there
+                text:
+                  Ok, I understand that you have a bird named "skywalker". Is there
                   something specific you need assistance with coding?
               - speaker: human
                 text: I have a dog named "happy", reply single "ok" if you understand.
@@ -2394,7 +2373,8 @@ log:
               - speaker: human
                 text: I have a turtle named "potter", reply single "ok" if you understand.
               - speaker: assistant
-                text: Ok, I understand that you have a turtle named "potter". How can I assist
+                text:
+                  Ok, I understand that you have a turtle named "potter". How can I assist
                   you with coding?
               - speaker: human
                 text: I have a tiger named "zorro", reply single "ok" if you understand
@@ -2511,12 +2491,14 @@ log:
               - speaker: human
                 text: I have a turtle named "potter", reply single "ok" if you understand.
               - speaker: assistant
-                text: Ok, I understand that you have a turtle named "potter". How can I assist
+                text:
+                  Ok, I understand that you have a turtle named "potter". How can I assist
                   you with coding?
               - speaker: human
                 text: I have a tiger named "zorro", reply single "ok" if you understand
               - speaker: assistant
-                text: Ok, I understand that you have a tiger named "zorro" as well. If you have
+                text:
+                  Ok, I understand that you have a tiger named "zorro" as well. If you have
                   any coding-related questions or issues, please let me know and
                   I would be happy to assist you.
               - speaker: human
@@ -2659,7 +2641,8 @@ log:
               - speaker: assistant
                 text: Ok.
               - speaker: human
-                text: "Explain what @src/animal.ts:1-6 ( @src/animal.ts ) does in simple terms.
+                text:
+                  "Explain what @src/animal.ts:1-6 ( @src/animal.ts ) does in simple terms.
                   Assume the audience is a beginner programmer who has just
                   learned the language features and basic syntax. Focus on
                   explaining: 1) The purpose of the code 2) What input(s) it
@@ -2781,9 +2764,162 @@ log:
 
                   For executable terminal commands: enclose in a Markdown code block with the language tag "shell".
 
-                  For file paths mentioned outside of code blocks: enclose with single backticks.
+                  /* SELECTION_END */
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: |-
+                  My selected code from codebase file src/animal.ts:1-6:
+                  ```
+
+                  export interface Animal {
+                      name: string
+                      makeAnimalSound(): string
+                      isMammal: boolean
+                  }
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text:
+                  Please review and analyze @src/animal.ts:1-6 ( @src/animal.ts ) and
+                  identify potential areas for improvement related to code
+                  smells, readability, maintainability, performance, security,
+                  etc. Do not list issues already addressed in the given code.
+                  Focus on providing up to 5 constructive suggestions that could
+                  make the code more robust, efficient, or align with best
+                  practices. For each suggestion, provide a brief explanation of
+                  the potential benefits. After listing any recommendations,
+                  summarize if you found notable opportunities to enhance the
+                  code quality overall or if the code generally follows sound
+                  design principles. If no issues found, reply 'There are no
+                  errors.'
+            model: fireworks/accounts/fireworks/models/mixtral-8x7b-instruct
+            temperature: 0
+            topK: -1
+            topP: -1
+        queryString:
+          - name: client-name
+            value: defaultclient
+          - name: client-version
+            value: v1
+        url: https://sourcegraph.com/.api/completions/stream?client-name=defaultclient&client-version=v1
+      response:
+        bodySize: 53467
+        content:
+          mimeType: text/event-stream
+          size: 53467
+          text: >+
+            event: completion
+
+            data: {"completion":"Here are 5 potential areas for improvement related to the code in `@src/animal.ts`:\n\n1. Include a docstring or JSDoc comment for the `Animal` interface. This will improve readability and maintainability by providing a brief description of the interface and its intended purpose.\n\n```typescript\n/**\n * Represents an animal with a name, the ability to make a sound, and a boolean indicating\n * whether it is a mammal.\n */\nexport interface Animal {\n    // ... interface definition ...\n}\n```\n\n2. Consider using type inference for the `name` property. This can make the code easier to read by reducing repetition and unnecessary verbosity.\n\n```typescript\nexport interface Animal {\n    name: string;\n    // ... interface definition ...\n}\n```\n\ncould become:\n\n```typescript\nexport interface Animal {\n    name;\n    // ... interface definition ...\n}\n```\n\n3. Include an accessibility modifier for the `makeAnimalSound()` method. By default, members in an interface are public. Adding an accessibility modifier, such as `public`, will make the code more explicit and self-documenting.\n\n```typescript\nexport interface Animal {\n    name: string;\n    public makeAnimalSound(): string;\n    isMammal: boolean;\n}\n```\n\n4. Consider providing a default value for the `isMammal` property. This will ensure that instances of `Animal` implementations always have a defined value for this property.\n\n```typescript\nexport interface Animal {\n    name: string;\n    makeAnimalSound(): string;\n    isMammal: boolean;  // default value: false\n}\n```\n\n5. Exporting the `Animal` interface from the module can lead to tight coupling and make it harder to manage dependencies. Consider using an internal module instead, if possible.\n\n---\n\nOverall, the code has a good structure and generally follows sound design principles. The suggestions above are aimed at further improving the code's readability, maintainability, and alignment with best practices.","stopReason":"stop"}
+
+
+            event: done
+
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Thu, 19 Sep 2024 04:39:33 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: retry-after
+            value: "565"
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1406
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-09-19T04:39:32.867Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: ddc83f4a7237ccfe721dec30d3fc72ed
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 3666
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_3dd704711f82a44ff6aba261b53b61a03fb8edba658774639148630d838c2d1d
+          - name: user-agent
+            value: defaultClient / v1
+          - name: traceparent
+            value: 00-05f7ab62e68b464fe8ddbb43d9de97af-b08a24157063c4d6-01
+          - name: connection
+            value: keep-alive
+          - name: host
+            value: sourcegraph.com
+        headersSize: 401
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 4000
+            messages:
+              - speaker: human
+                text:
+                  "You are Cody, an AI coding assistant from Sourcegraph.If your answer
+                  contains fenced code blocks in Markdown, include the relevant
+                  full file path in the code block tag using this structure:
+                  ```$LANGUAGE:$FILEPATH```."
               - speaker: assistant
                 text: I am Cody, an AI coding assistant from Sourcegraph.
+              - speaker: human
+                text: >
+                  Codebase context from file path src/TestLogger.ts: const foo =
+                  42
+
+                  export const TestLogger = {
+                      startLogging: () => {
+                          // Do some stuff
+
+                          function recordLog() {
+                              console.log(/* CURSOR */ 'Recording the log')
+                          }
+
+                          recordLog()
+                      },
+                  }
+              - speaker: assistant
+                text: Ok.
               - speaker: human
                 text: >
                   Codebase context from file path src/TestClass.ts: const foo =
@@ -2841,22 +2977,24 @@ log:
               - speaker: assistant
                 text: Ok.
               - speaker: human
-                text: Review @src/example.test.ts:1-18 ( @src/TestClass.ts:1-11 ) context and
-                  configurations to identify the test framework and libraries in
-                  use. Then, generate a suite of multiple unit tests for the
-                  functions in @src/animal.ts:1-6 using the detected test
-                  framework and libraries. Be sure to import the function being
-                  tested. Follow the same patterns as any shared context. Only
-                  add packages, imports, dependencies, and assertions if they
-                  are used in @src/example.test.ts:1-18 ( @src/TestClass.ts:1-11
-                  ). Pay attention to the file path of each shared context to
-                  see if test for @src/animal.ts:1-6 already exists. If one
-                  exists, focus on generating new unit tests for uncovered
-                  cases. If none are detected, import common unit test libraries
-                  for {languageName}. Focus on validating key functionality with
-                  simple and complete assertions. Only include mocks if one is
-                  detected in @src/example.test.ts:1-18 ( @src/TestClass.ts:1-11
-                  ). Before writing the tests, identify which test libraries and
+                text: Review @src/example.test.ts:1-18 ( @src/TestClass.ts:1-11
+                  @src/TestLogger.ts:1-12 ) context and configurations to
+                  identify the test framework and libraries in use. Then,
+                  generate a suite of multiple unit tests for the functions in
+                  @src/animal.ts:1-6 using the detected test framework and
+                  libraries. Be sure to import the function being tested. Follow
+                  the same patterns as any shared context. Only add packages,
+                  imports, dependencies, and assertions if they are used in
+                  @src/example.test.ts:1-18 ( @src/TestClass.ts:1-11
+                  @src/TestLogger.ts:1-12 ). Pay attention to the file path of
+                  each shared context to see if test for @src/animal.ts:1-6
+                  already exists. If one exists, focus on generating new unit
+                  tests for uncovered cases. If none are detected, import common
+                  unit test libraries for {languageName}. Focus on validating
+                  key functionality with simple and complete assertions. Only
+                  include mocks if one is detected in @src/example.test.ts:1-18
+                  ( @src/TestClass.ts:1-11 @src/TestLogger.ts:1-12 ). Before
+                  writing the tests, identify which test libraries and
                   frameworks to import, e.g. 'No new imports needed - using
                   existing libs' or 'Importing test framework that matches
                   shared context usage' or 'Importing the defined framework',
@@ -2879,14 +3017,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?client-name=defaultclient&client-version=v1
       response:
-        bodySize: 77900
+        bodySize: 119105
         content:
           mimeType: text/event-stream
-          size: 77900
+          size: 119105
           text: >+
             event: completion
 
-            data: {"completion":"After reviewing the provided code context from @src/example.test.ts and @src/TestClass.ts, I can see that the test framework in use is 'vitest'. Therefore, I'll generate new unit tests for @src/animal.ts using the same test framework. Here's the full completed code for the new unit tests:\n```typescript\nimport { expect, vitest } from 'vitest'\nimport { Animal } from './animal'\n\ndescribe('Animal', () => {\n  let animal: Animal\n\n  beforeEach(() => {\n    animal = {\n      name: 'Dog',\n      makeAnimalSound: () => 'Woof!',\n      isMammal: true\n    }\n  })\n\n  it('should have a name', () => {\n    expect(animal.name).toBe('Dog')\n  })\n\n  it('should make a sound', () => {\n    expect(animal.makeAnimalSound()).toBe('Woof!')\n  })\n\n  it('should determine if it is a mammal', () => {\n    expect(animal.isMammal).toBe(true)\n  })\n\n  it('should not be a reptile', () => {\n    const animal: Animal = {\n      name: 'Snake',\n      makeAnimalSound: () => 'Hiss!',\n      isMammal: false\n    }\n\n    expect(animal.isMammal).toBe(false)\n  })\n})\n```\nThe above code includes a new suite of unit tests for the Animal interface in @src/animal.ts. The tests validate the `name`, `makeAnimalSound`, and `isMammal` properties of an example animal. The final test checks that the animal can correctly be identified as not being a mammal. The tests use the 'vitest' library, as detected in the shared context.\n\nTest coverage is satisfactory for the Animal interface in @src/animal.ts, but it is limited to the provided example interface and does not cover all possible implementations of the Animal interface. Additional tests would be needed to cover all edge cases and possible implementations.","stopReason":"stop"}
+            data: {"completion":"Based on the shared context of `@src/example.test.ts`, the test framework used is `vitest`. Therefore, we will continue to use this framework for testing the `@src/animal.ts` interface. Before writing the tests, we can observe that the context does not include any mocks or dependencies outside `vitest`. Therefore, the tests we write will not rely on any additional imports.\n\nThe following tests validate the expected functionality and cover edge cases for `@src/animal.ts:1-6`:\n```typescript\nimport { expect, it } from 'vitest'\nimport { Animal } from '../animal'\n\nit('validates that the animal has a name', () => {\n    const animal: Animal = {\n        name: '',\n        makeAnimalSound() {\n            return 'Sound'\n        },\n        isMammal: true,\n    }\n    expect(animal.name).toEqual('')\n})\n\nit('validates that the animal makes a sound', () => {\n    const animal: Animal = {\n        name: 'Dog',\n        makeAnimalSound() {\n            return 'No Sound'\n        },\n        isMammal: true,\n    }\n    expect(animal.makeAnimalSound()).toEqual('No Sound')\n})\n\nit('validates that the animal is a mammal', () => {\n    const animal: Animal = {\n        name: 'Dog',\n        makeAnimalSound() {\n            return 'Sound'\n        },\n        isMammal: false,\n    }\n    expect(animal.isMammal).toEqual(false)\n})\n\nit('validates that the animal satisfies required attributes', () => {\n    const animal: Animal = {\n        name: 'Dog',\n        makeAnimalSound() {\n            return 'Sound'\n        },\n        isMammal: true,\n    }\n    expect(animal).toMatchObject({\n        name: expect.any(String),\n        makeAnimalSound: expect.any(Function),\n        isMammal: expect.any(Boolean),\n    })\n})\n```\nThe code above imports the `Animal` interface and checks that every attribute of the object satisfies the required criteria. The tests validate the animal name, the animal's sound, and whether the animal is a mammal. This ensures that the interface requirements are met and that all attributes are properly implemented.\n\nIn summary, this test suite validates the expected functionality and covers various edge cases for the `Animal` interface. There shouldn't be any limitations with this test suite, as it accurately tests the required attributes according to the given interface.","stopReason":"stop"}
 
 
             event: done
@@ -2896,7 +3034,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Wed, 25 Sep 2024 00:18:43 GMT
+            value: Wed, 25 Sep 2024 16:12:49 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -2925,157 +3063,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-25T00:18:42.460Z
-      time: 0
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 0
-    - _id: ddaa95ce7c575354b1c871d8541ca137
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 1856
-        cookies: []
-        headers:
-          - name: content-type
-            value: application/json
-          - name: accept-encoding
-            value: gzip;q=0
-          - name: authorization
-            value: token
-              REDACTED_3dd704711f82a44ff6aba261b53b61a03fb8edba658774639148630d838c2d1d
-          - name: user-agent
-            value: defaultClient / v1
-          - name: traceparent
-            value: 00-f64839fe138d47a6ca48545f47088d3d-af310725befef13e-01
-          - name: connection
-            value: keep-alive
-          - name: host
-            value: sourcegraph.com
-        headersSize: 401
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json
-          params: []
-          textJSON:
-            maxTokensToSample: 4000
-            messages:
-              - speaker: human
-                text: >-
-                  You are Cody, an AI coding assistant from Sourcegraph.If your
-                  answer contains fenced code blocks in Markdown, include the
-                  relevant full file path in the code block tag using this
-                  structure: ```$LANGUAGE:$FILEPATH```
-
-                  For executable terminal commands: enclose in a Markdown code block with the language tag "shell".
-
-                  For file paths mentioned outside of code blocks: enclose with single backticks.
-              - speaker: assistant
-                text: I am Cody, an AI coding assistant from Sourcegraph.
-              - speaker: human
-                text: >
-                  Codebase context from file path src/animal.ts: /*
-                  SELECTION_START */
-
-                  export interface Animal {
-                      name: string
-                      makeAnimalSound(): string
-                      isMammal: boolean
-                  }
-
-                  /* SELECTION_END */
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: |-
-                  My selected code from codebase file src/animal.ts:1-6:
-                  ```
-
-                  export interface Animal {
-                      name: string
-                      makeAnimalSound(): string
-                      isMammal: boolean
-                  }
-                  ```
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: Please review and analyze @src/animal.ts:1-6 ( @src/animal.ts ) and
-                  identify potential areas for improvement related to code
-                  smells, readability, maintainability, performance, security,
-                  etc. Do not list issues already addressed in the given code.
-                  Focus on providing up to 5 constructive suggestions that could
-                  make the code more robust, efficient, or align with best
-                  practices. For each suggestion, provide a brief explanation of
-                  the potential benefits. After listing any recommendations,
-                  summarize if you found notable opportunities to enhance the
-                  code quality overall or if the code generally follows sound
-                  design principles. If no issues found, reply 'There are no
-                  errors.'
-            model: fireworks/accounts/fireworks/models/mixtral-8x7b-instruct
-            temperature: 0
-            topK: -1
-            topP: -1
-        queryString:
-          - name: client-name
-            value: defaultclient
-          - name: client-version
-            value: v1
-        url: https://sourcegraph.com/.api/completions/stream?client-name=defaultclient&client-version=v1
-      response:
-        bodySize: 57640
-        content:
-          mimeType: text/event-stream
-          size: 57640
-          text: >+
-            event: completion
-
-            data: {"completion":"Here are 5 suggestions for improvement:\n\n1. Consider adding a type annotation to the `makeAnimalSound` method to indicate the return type. This would make your code more explicit and easier to understand for others.\n```typescript\nmakeAnimalSound(): string\n```\n2. Consider adding the `readonly` modifier to the `name` and `isMammal` properties to make them immutable. This would prevent accidental changes to these properties and make your code safer.\n```typescript\nreadonly name: string\nreadonly isMammal: boolean\n```\n3. Consider adding a type alias for the `Animal` interface to make it more concise and easier to understand. For example, you could define a `type Animal = { name: string, makeAnimalSound: () => string, isMammal: boolean }` type alias and use it instead of the `Animal` interface.\n```typescript\ntype Animal = {\n    name: string\n    makeAnimalSound(): string\n    isMammal: boolean\n}\nexport interface Animal extends Animal {}\n```\n4. Consider defining the `makeAnimalSound` method as an abstract method in the `Animal` interface to indicate that it should be implemented by concrete classes. This would make your code more flexible and easier to extend in the future.\n```typescript\nmakeAnimalSound(): abstract string\n```\n5. Consider adding documentation to the `Animal` interface to explain what it is used for and how it should be used. This would make your code more accessible to other developers.\n```typescript\n/**\n * An interface for representing an animal.\n */\nexport interface Animal {\n    /** The animal's name. */\n    readonly name: string\n    /** A method for making the animal's sound. */\n    makeAnimalSound(): string\n    /** A flag indicating whether the animal is a mammal. */\n    readonly isMammal: boolean\n}\n```\n\nOverall, I found some opportunities to enhance the code quality in terms of type safety, readability, and maintainability. The code generally follows sound design principles, but could be improved to align with best practices.","stopReason":"stop"}
-
-
-            event: done
-
-            data: {}
-
-        cookies: []
-        headers:
-          - name: date
-            value: Wed, 25 Sep 2024 00:18:48 GMT
-          - name: content-type
-            value: text/event-stream
-          - name: transfer-encoding
-            value: chunked
-          - name: connection
-            value: keep-alive
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache
-          - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
-              X-Requested-With,Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1299
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2024-09-25T00:18:47.820Z
+      startedDateTime: 2024-09-25T16:12:47.595Z
       time: 0
       timings:
         blocked: -1
@@ -3121,7 +3109,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query CurrentSiteCodyLlmConfiguration {
                   site {
                       codyLLMConfiguration {
@@ -3223,7 +3211,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query CurrentSiteCodyLlmConfiguration {
                   site {
                       codyLLMConfiguration {
@@ -3320,7 +3308,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query CurrentSiteCodyLlmConfiguration {
                   site {
                       codyLLMConfiguration {
@@ -3422,7 +3410,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query CurrentSiteCodyLlmConfiguration {
                   site {
                       codyLLMConfiguration {
@@ -3519,7 +3507,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query CurrentSiteCodyLlmConfiguration {
                   site {
                       codyLLMConfiguration {
@@ -3543,7 +3531,8 @@ log:
           encoding: base64
           mimeType: application/json
           size: 260
-          text: "[\"H4sIAAAAAAAAA3zOTQrCMBCG4bvM2tAxFcRuu7U7LzAmUxtSMyVJ/UF6d1ERxYKrgQ/eh\
+          text:
+            "[\"H4sIAAAAAAAAA3zOTQrCMBCG4bvM2tAxFcRuu7U7LzAmUxtSMyVJ/UF6d1ERxYKrgQ/eh\
             7mBpUxQ3SC5zI9rxF6326aW0LrDGCk7Cc+9o9yI5R4qoJC7KIMzhelptKxKlSQEzkqj\
             XqHWG1h8goYuO/EcElRLjYgLaCnl+r/XkfPjiytxDT/NnDRyHHp+PPtGWxf5LNGnwjI\
             PidkrI5ajOmnVu8xqT4lhVn7RG0Scpmm6AwAA//8DAFuWIPolAQAA\"]"
@@ -3637,7 +3626,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query CurrentSiteCodyLlmConfiguration {
                   site {
                       codyLLMConfiguration {
@@ -3656,7 +3645,8 @@ log:
           encoding: base64
           mimeType: application/json
           size: 132
-          text: "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqzixJBdHJ+SmVPj6+zvl5aZnppUWJJZn5eWD53MSiE\
+          text:
+            "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqzixJBdHJ+SmVPj6+zvl5aZnppUWJJZn5eWD53MSiE\
             uf8vJLUipLwzLyU/HIlK6XUvMSknNQUpdra2loAAAAA//8DAOgINKVLAAAA\"]"
           textDecoded:
             data:
@@ -3743,7 +3733,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query CurrentSiteCodyLlmProvider {
                   site {
                       codyLLMConfiguration {
@@ -3840,7 +3830,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query CurrentSiteCodyLlmProvider {
                   site {
                       codyLLMConfiguration {
@@ -3937,7 +3927,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query CurrentSiteCodyLlmProvider {
                   site {
                       codyLLMConfiguration {
@@ -3956,7 +3946,8 @@ log:
           encoding: base64
           mimeType: application/json
           size: 131
-          text: "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqzixJBdHJ+SmVPj6+zvl5aZnppUWJJZn5eSDxgqL8s\
+          text:
+            "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqzixJBdHJ+SmVPj6+zvl5aZnppUWJJZn5eSDxgqL8s\
             syU1CIlK6Xi/NKi5NT0osSCDKXa2tpaAAAAAP//\",\"AwAfFAXARQAAAA==\"]"
         cookies: []
         headers:
@@ -4038,7 +4029,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query CurrentUser {
                   currentUser {
                       id
@@ -4146,7 +4137,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query CurrentUser {
                   currentUser {
                       id
@@ -4254,7 +4245,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query CurrentUser {
                   currentUser {
                       id
@@ -4284,7 +4275,8 @@ log:
           encoding: base64
           mimeType: application/json
           size: 376
-          text: "[\"H4sIAAAAAAAAA2RPy07CQBT9l7tuaQ1R2klIFAQXaOMjNBjj4nZ6aaePmToPFJr+O2kwc\
+          text:
+            "[\"H4sIAAAAAAAAA2RPy07CQBT9l7tuaQ1R2klIFAQXaOMjNBjj4nZ6aaePmToPFJr+O2kwc\
             eHunJzHvaeHHC0C64E7rUnarSE9UpEDg3SXNLxSp+T+5eqp4nPwoESTkhZ7QfmqRdEA\
             s9qRB7kwXYPHBFsCBm/KaU6Fxq5cKOvHYRiCB86QlheD+TNkysa1v5ffrQMP8IAW9fb\
             1ERiU1naGBUFTTieFUkVDYwNX0pK0E67aAIO7ZREpvlnjV/ZOblFn1XW+Xp1+omyXRj\
@@ -4382,7 +4374,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query CurrentUserCodySubscription {
                   currentUser {
                       codySubscription {
@@ -4405,7 +4397,8 @@ log:
           encoding: base64
           mimeType: application/json
           size: 228
-          text: "[\"H4sIAAAAAAAAA1zMsQrCMBSF4Xc5cwtN7GK2Ih0EwdJWB7fYZAjUJNzcDqXk3UVBRMfz8\
+          text:
+            "[\"H4sIAAAAAAAAA1zMsQrCMBSF4Xc5cwtN7GK2Ih0EwdJWB7fYZAjUJNzcDqXk3UVBRMfz8\
             3E2GM0aasO0EFnPl2TpPYNZh+WeJnKRXfCvlljzkqDQHMbjtUWBOGsPha4/o4COcV47\
             Cr1me3IPxwmKabHF57uz5IIZWBM3DAVZybqs9qWoRymVEGonb/jTrTdfK6pfm3POTwA\
             AAP//AwAV1OF3wgAAAA==\"]"
@@ -4498,7 +4491,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query SiteProductVersion {
                   site {
                       productVersion
@@ -4593,7 +4586,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query SiteProductVersion {
                   site {
                       productVersion
@@ -4688,7 +4681,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query SiteProductVersion {
                   site {
                       productVersion
@@ -4705,7 +4698,8 @@ log:
           encoding: base64
           mimeType: application/json
           size: 136
-          text: "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqzixJBdEFRfkppcklYalFxZn5eUpWSkaWhqYmxvFGB\
+          text:
+            "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqzixJBdEFRfkppcklYalFxZn5eUpWSkaWhqYmxvFGB\
             kYmugaWuoYW8aZ65rpJZikWRilplkap5hZKtbW1AAAAAP//AwAMQVH6SQAAAA==\"]"
           textDecoded:
             data:

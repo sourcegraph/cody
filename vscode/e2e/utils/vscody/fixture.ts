@@ -763,7 +763,6 @@ const implFixture = _test.extend<TestContext, WorkerContext>({
                     ? { VSCODE_CLI_QUALITY: validOptions.vscodeVersion }
                     : { VSCODE_CLI_COMMIT: validOptions.vscodeVersion }),
                 TESTING_DOTCOM_URL: mitmProxy.sourcegraph.dotcom.endpoint,
-                CODY_TESTING_BFG_DIR: path.resolve(process.cwd(), validOptions.binaryTmpDir),
                 CODY_TESTING_SYMF_DIR: path.resolve(process.cwd(), validOptions.binaryTmpDir),
             }
             const codeProcess = spawn(codeTunnelCliPath, args, {

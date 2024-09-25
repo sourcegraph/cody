@@ -311,7 +311,6 @@ export class ChatsController implements vscode.Disposable {
         text,
         submitType,
         contextItems,
-        addEnhancedContext,
         source = DEFAULT_EVENT_SOURCE,
         command,
     }: ExecuteChatArguments): Promise<ChatSession | undefined> {
@@ -330,7 +329,6 @@ export class ChatsController implements vscode.Disposable {
             submitType,
             mentions: contextItems ?? [],
             editorState,
-            legacyAddEnhancedContext: addEnhancedContext ?? true,
             signal: abortSignal,
             source,
             command,

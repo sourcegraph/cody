@@ -56,7 +56,7 @@ This simple example demonstrates how to create a function in Java and call it fr
 `;
 
 exports[`Agent > Chat > chat/submitMessage (with mock context) 1`] = `
-"Certainly! Here's a class \`Dog\` that implements the \`Animal\` interface:
+"Certainly! Here's the implementation of the Dog class that implements the Animal interface:
 
 \`\`\`typescript:src/dog.ts
 import { Animal } from './animal';
@@ -75,7 +75,7 @@ export class Dog implements Animal {
 }
 \`\`\`
 
-This code defines the \`Dog\` class that fully implements the \`Animal\` interface from your workspace."
+This implementation fulfills all the requirements of the Animal interface in your workspace."
 `;
 
 exports[`Agent > Commands > commands/explain 1`] = `
@@ -134,46 +134,62 @@ Overall, I found some opportunities to enhance the code quality in terms of type
 `;
 
 exports[`Agent > Commands > commands/test 1`] = `
-"After reviewing the provided code context from @src/example.test.ts and @src/TestClass.ts, I can see that the test framework in use is 'vitest'. Therefore, I'll generate new unit tests for @src/animal.ts using the same test framework. Here's the full completed code for the new unit tests:
+"Based on the shared context of \`@src/example.test.ts\`, the test framework used is \`vitest\`. Therefore, we will continue to use this framework for testing the \`@src/animal.ts\` interface. Before writing the tests, we can observe that the context does not include any mocks or dependencies outside \`vitest\`. Therefore, the tests we write will not rely on any additional imports.
+
+The following tests validate the expected functionality and cover edge cases for \`@src/animal.ts:1-6\`:
 \`\`\`typescript
-import { expect, vitest } from 'vitest'
-import { Animal } from './animal'
+import { expect, it } from 'vitest'
+import { Animal } from '../animal'
 
-describe('Animal', () => {
-  let animal: Animal
-
-  beforeEach(() => {
-    animal = {
-      name: 'Dog',
-      makeAnimalSound: () => 'Woof!',
-      isMammal: true
-    }
-  })
-
-  it('should have a name', () => {
-    expect(animal.name).toBe('Dog')
-  })
-
-  it('should make a sound', () => {
-    expect(animal.makeAnimalSound()).toBe('Woof!')
-  })
-
-  it('should determine if it is a mammal', () => {
-    expect(animal.isMammal).toBe(true)
-  })
-
-  it('should not be a reptile', () => {
+it('validates that the animal has a name', () => {
     const animal: Animal = {
-      name: 'Snake',
-      makeAnimalSound: () => 'Hiss!',
-      isMammal: false
+        name: '',
+        makeAnimalSound() {
+            return 'Sound'
+        },
+        isMammal: true,
     }
+    expect(animal.name).toEqual('')
+})
 
-    expect(animal.isMammal).toBe(false)
-  })
+it('validates that the animal makes a sound', () => {
+    const animal: Animal = {
+        name: 'Dog',
+        makeAnimalSound() {
+            return 'No Sound'
+        },
+        isMammal: true,
+    }
+    expect(animal.makeAnimalSound()).toEqual('No Sound')
+})
+
+it('validates that the animal is a mammal', () => {
+    const animal: Animal = {
+        name: 'Dog',
+        makeAnimalSound() {
+            return 'Sound'
+        },
+        isMammal: false,
+    }
+    expect(animal.isMammal).toEqual(false)
+})
+
+it('validates that the animal satisfies required attributes', () => {
+    const animal: Animal = {
+        name: 'Dog',
+        makeAnimalSound() {
+            return 'Sound'
+        },
+        isMammal: true,
+    }
+    expect(animal).toMatchObject({
+        name: expect.any(String),
+        makeAnimalSound: expect.any(Function),
+        isMammal: expect.any(Boolean),
+    })
 })
 \`\`\`
-The above code includes a new suite of unit tests for the Animal interface in @src/animal.ts. The tests validate the \`name\`, \`makeAnimalSound\`, and \`isMammal\` properties of an example animal. The final test checks that the animal can correctly be identified as not being a mammal. The tests use the 'vitest' library, as detected in the shared context.
+The code above imports the \`Animal\` interface and checks that every attribute of the object satisfies the required criteria. The tests validate the animal name, the animal's sound, and whether the animal is a mammal. This ensures that the interface requirements are met and that all attributes are properly implemented.
 
-Test coverage is satisfactory for the Animal interface in @src/animal.ts, but it is limited to the provided example interface and does not cover all possible implementations of the Animal interface. Additional tests would be needed to cover all edge cases and possible implementations."
+In summary, this test suite validates the expected functionality and covers various edge cases for the \`Animal\` interface. There shouldn't be any limitations with this test suite, as it accurately tests the required attributes according to the given interface."
 `;

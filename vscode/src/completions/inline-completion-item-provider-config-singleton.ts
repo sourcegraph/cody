@@ -1,5 +1,4 @@
 import type { CodyStatusBar } from '../services/StatusBar'
-import type { BfgRetriever } from './context/retrievers/bfg/bfg-retriever'
 import type { Provider } from './providers/shared/provider'
 import type { ProvideInlineCompletionItemsTracer } from './tracer'
 
@@ -10,8 +9,6 @@ export interface CodyCompletionItemProviderConfig {
     tracer?: ProvideInlineCompletionItemsTracer | null
     isRunningInsideAgent?: boolean
 
-    createBfgRetriever?: () => BfgRetriever
-
     // Settings
     formatOnAccept?: boolean
     disableInsideComments?: boolean
@@ -21,10 +18,7 @@ export interface CodyCompletionItemProviderConfig {
     completeSuggestWidgetSelection?: boolean
 }
 
-export type InlineCompletionItemProviderConfig = Omit<
-    CodyCompletionItemProviderConfig,
-    'createBfgRetriever'
->
+export type InlineCompletionItemProviderConfig = CodyCompletionItemProviderConfig
 
 /**
  * A singleton that manages the configuration for the inline completion item provider.

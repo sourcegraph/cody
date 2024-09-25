@@ -33,7 +33,9 @@ export const maybeStartInteractiveTutorial = async () => {
         },
     })
     await featureFlagProvider.refresh()
-    const enabled = await featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyInteractiveTutorial)
+    const enabled = await featureFlagProvider.evaluateFeatureFlagEphemerally(
+        FeatureFlag.CodyInteractiveTutorial
+    )
     logFirstEnrollmentEvent(FeatureFlag.CodyInteractiveTutorial, enabled)
     if (!enabled) {
         return

@@ -185,7 +185,9 @@ describe('modelsService', () => {
             vi.spyOn(modelsService, 'modelsChanges', 'get').mockReturnValue(
                 Observable.of(EMPTY_MODELS_DATA)
             )
-            await modelsService.setSelectedModel(ModelUsage.Chat, model2chat.id)
+            await expect(
+                modelsService.setSelectedModel(ModelUsage.Chat, model2chat.id)
+            ).rejects.toThrowError('Model not found: model-2')
             vi.spyOn(modelsService, 'modelsChanges', 'get').mockReturnValue(
                 Observable.of({
                     ...EMPTY_MODELS_DATA,

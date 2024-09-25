@@ -1,3 +1,4 @@
+import type { ChatModel, EditModel } from '../models/types'
 import { type PromptString, ps } from '../prompt/prompt-string'
 import type { Message } from '../sourcegraph-api'
 
@@ -15,7 +16,7 @@ For file paths mentioned outside of code blocks: enclose with single backticks.`
 const CHAT_PREAMBLE = DEFAULT_PREAMBLE.concat(SMART_APPLY_PREAMBLE)
 
 export function getSimplePreamble(
-    model: string | undefined,
+    model: ChatModel | EditModel | undefined,
     apiVersion: number,
     type: 'Chat' | 'Default',
     preInstruction?: PromptString

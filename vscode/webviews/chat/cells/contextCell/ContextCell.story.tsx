@@ -72,6 +72,21 @@ export const Default: Story = {
                 source: ContextItemSource.User,
             },
             {
+                type: 'file',
+                uri: URI.file('README.md'),
+                range: { start: { line: 1, character: 2 }, end: { line: 5, character: 0 } },
+            },
+            {
+                type: 'file',
+                uri: URI.file('C:\\windows\\style\\path\\file.go'),
+                range: { start: { line: 1, character: 2 }, end: { line: 5, character: 0 } },
+            },
+            {
+                type: 'file',
+                uri: URI.file('\\\\remote\\server\\README.md'),
+                range: { start: { line: 1, character: 2 }, end: { line: 5, character: 0 } },
+            },
+            {
                 type: 'symbol',
                 uri: URI.file('/util/urlParser.php'),
                 kind: 'function',

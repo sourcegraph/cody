@@ -194,7 +194,6 @@ const register = async (
         chatClient,
         completionsClient,
         guardrails,
-        localEmbeddings,
         symfRunner,
         contextAPIClient,
         dispose: disposeExternalServices,
@@ -202,12 +201,7 @@ const register = async (
     disposables.push({ dispose: disposeExternalServices })
 
     const editor = new VSCodeEditor()
-    const contextRetriever = new ContextRetriever(
-        editor,
-        symfRunner,
-        localEmbeddings?.value,
-        completionsClient
-    )
+    const contextRetriever = new ContextRetriever(editor, symfRunner, completionsClient)
 
     const { chatsController } = registerChat(
         {
@@ -679,7 +673,6 @@ function registerAutocomplete(
                             authStatus,
                             platform,
                             statusBar,
-                            createBfgRetriever: platform.createBfgRetriever,
                         })
                     ),
                     catchError(error => {
