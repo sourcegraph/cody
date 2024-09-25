@@ -52,7 +52,6 @@ async function smellCommand(
         text: prompt,
         submitType: 'user-newchat',
         contextItems,
-        addEnhancedContext: false,
         source: args?.source,
         command: DefaultChatCommands.Smell,
     }

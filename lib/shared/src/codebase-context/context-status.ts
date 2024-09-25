@@ -57,8 +57,3 @@ export interface ContextGroup {
 
     providers: ContextProvider[]
 }
-
-// TODO: rename to EnhancedContextStatusT
-export interface EnhancedContextContextT {
-    groups: ContextGroup[]
-}

@@ -74,7 +74,6 @@ export type {
     ContextGroup,
     ContextProvider,
     Disposable,
-    EnhancedContextContextT,
     LocalEmbeddingsProvider,
     LocalSearchProvider,
     RemoteSearchProvider,
