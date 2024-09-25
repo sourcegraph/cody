@@ -23,11 +23,11 @@ export class ContextRetrieverDataCollection implements vscode.Disposable {
 
     constructor() {
         this.retrieverConfigs = [
-            { identifier: RetrieverIdentifier.RecentEditsRetriever, maxSnippets: 10 },
-            { identifier: RetrieverIdentifier.DiagnosticsRetriever, maxSnippets: 10 },
+            { identifier: RetrieverIdentifier.RecentCopyRetriever, maxSnippets: 1 },
+            { identifier: RetrieverIdentifier.RecentEditsRetriever, maxSnippets: 15 },
+            { identifier: RetrieverIdentifier.DiagnosticsRetriever, maxSnippets: 15 },
             { identifier: RetrieverIdentifier.RecentViewPortRetriever, maxSnippets: 10 },
-            { identifier: RetrieverIdentifier.RecentCopyRetriever, maxSnippets: 10 },
-            { identifier: RetrieverIdentifier.JaccardSimilarityRetriever, maxSnippets: 10 },
+            { identifier: RetrieverIdentifier.JaccardSimilarityRetriever, maxSnippets: 15 },
         ]
         this.dataCollectionRetrievers = this.retrieverConfigs
             .map(config => this.createRetriever(config))
@@ -55,15 +55,15 @@ export class ContextRetrieverDataCollection implements vscode.Disposable {
 
             if (snippets) {
                 for (const snippet of snippets) {
-                    const snippetSizeBytes = Buffer.byteLength(JSON.stringify(snippet), 'utf8')
+                    const snippetSizeBytes = Buffer.byteLength(JSON.stringify(snippet) || '', 'utf8')
                     if (
-                        currentPayloadSizeBytes + snippetSizeBytes >
-                        ContextRetrieverDataCollection.MAX_PAYLOAD_SIZE_BYTES
+                        snippetSizeBytes > 0 &&
+                        currentPayloadSizeBytes + snippetSizeBytes <=
+                            ContextRetrieverDataCollection.MAX_PAYLOAD_SIZE_BYTES
                     ) {
-                        return dataLoggingContext
+                        dataLoggingContext.push(snippet)
+                        currentPayloadSizeBytes += snippetSizeBytes
                     }
-                    dataLoggingContext.push(snippet)
-                    currentPayloadSizeBytes += snippetSizeBytes
                 }
             }
         }
@@ -74,11 +74,14 @@ export class ContextRetrieverDataCollection implements vscode.Disposable {
     private createRetriever(config: RetrieverConfig): ContextRetriever | undefined {
         switch (config.identifier) {
             case RetrieverIdentifier.RecentEditsRetriever:
-                return new RecentEditsRetriever(5 * 60 * 1000)
+                return new RecentEditsRetriever(10 * 60 * 1000)
             case RetrieverIdentifier.DiagnosticsRetriever:
                 return new DiagnosticsRetriever()
             case RetrieverIdentifier.RecentViewPortRetriever:
-                return new RecentViewPortRetriever()
+                return new RecentViewPortRetriever({
+                    maxTrackedViewPorts: 50,
+                    maxRetrievedViewPorts: 10,
+                })
             case RetrieverIdentifier.RecentCopyRetriever:
                 return new RecentCopyRetriever({
                     maxAgeMs: 60 * 1000,
