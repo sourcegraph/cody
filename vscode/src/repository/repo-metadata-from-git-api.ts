@@ -2,7 +2,7 @@ import { authStatus, combineLatest, subscriptionDisposable } from '@sourcegraph/
 import * as vscode from 'vscode'
 import { WorkspaceRepoMapper } from '../context/workspace-repo-mapper'
 import { logDebug } from '../log'
-import { gitCommitIdFromGitExtension, vscodeGitAPI } from './git-extension-api'
+import { gitCommitIdFromGitExtension } from './git-extension-api'
 import { repoNameResolver } from './repo-name-resolver'
 
 export interface RepoRevMetaData extends GitHubDotComRepoMetaData {
@@ -118,13 +118,6 @@ export let workspaceReposMonitor: WorkspaceReposMonitor | undefined = undefined
 export function initWorkspaceReposMonitor(
     disposables: vscode.Disposable[]
 ): WorkspaceReposMonitor | undefined {
-    if (!vscodeGitAPI) {
-        logDebug(
-            'WorkspaceReposMonitor',
-            'not initializing workspace repos monitor because the Git API is not available'
-        )
-        return undefined
-    }
     workspaceReposMonitor = new WorkspaceReposMonitor()
     disposables.push(workspaceReposMonitor)
     return workspaceReposMonitor
