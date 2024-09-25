@@ -122,7 +122,6 @@ export type WebviewMessage =
           range?: RangeData | undefined | null
       }
     | ({ command: 'edit' } & WebviewEditMessage)
-    | { command: 'embeddings/index' }
     | { command: 'insert'; text: string }
     | { command: 'newFile'; text: string }
     | {
@@ -256,7 +255,6 @@ interface WebviewEditMessage extends WebviewContextMessage {
 }
 
 interface WebviewContextMessage {
-    addEnhancedContext?: boolean | undefined | null
     contextItems?: ContextItem[] | undefined | null
 }
 
@@ -276,7 +274,6 @@ export interface ConfigurationSubsetForWebview
         >,
         Pick<AuthCredentials, 'serverEndpoint'> {
     smartApply: boolean
-    unifiedPromptsAvailable: boolean
     // Type/location of the current webview.
     webviewType?: WebviewType | undefined | null
     // Whether support running multiple webviews (e.g. sidebar w/ multiple editor panels).

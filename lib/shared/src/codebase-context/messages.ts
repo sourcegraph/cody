@@ -84,9 +84,6 @@ interface ContextItemCommon {
  * The source of this context.
  */
 export enum ContextItemSource {
-    /** From embeddings search */
-    Embeddings = 'embeddings',
-
     /** Explicitly @-mentioned by the user in chat */
     User = 'user',
 

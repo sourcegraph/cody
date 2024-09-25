@@ -85,7 +85,7 @@ import {
 } from '../../auth/auth-progress-indicator'
 import type { startTokenReceiver } from '../../auth/token-receiver'
 import { getContextFileFromUri } from '../../commands/context/file-path'
-import { getContextFileFromCursor, getContextFileFromSelection } from '../../commands/context/selection'
+import { getContextFileFromCursor } from '../../commands/context/selection'
 import { resolveContextItems } from '../../editor/utils/editor-context'
 import type { VSCodeEditor } from '../../editor/vscode-editor'
 import type { ExtensionClient } from '../../extension-client'
@@ -107,10 +107,7 @@ import {
 import { openExternalLinks, openLocalFileWithRange } from '../../services/utils/workspace-action'
 import { TestSupport } from '../../test-support'
 import type { MessageErrorType } from '../MessageProvider'
-import {
-    getCorpusContextItemsForEditorState,
-    startClientStateBroadcaster,
-} from '../clientStateBroadcaster'
+import { startClientStateBroadcaster } from '../clientStateBroadcaster'
 import { getChatContextItemsForMention, getMentionMenuData } from '../context/chatContext'
 import type { ContextAPIClient } from '../context/contextAPIClient'
 import {
@@ -315,7 +312,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     submitType: message.submitType,
                     mentions: message.contextItems ?? [],
                     editorState: message.editorState as SerializedPromptEditorState,
-                    legacyAddEnhancedContext: message.addEnhancedContext ?? false,
                     signal: this.startNewSubmitOrEditOperation(),
                     source: 'chat',
                     intent: message.intent,
@@ -329,7 +325,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     index: message.index ?? undefined,
                     contextFiles: message.contextItems ?? [],
                     editorState: message.editorState as SerializedPromptEditorState,
-                    addEnhancedContext: message.addEnhancedContext || false,
                     intent: message.intent,
                 })
                 break
@@ -406,9 +401,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 break
             case 'newFile':
                 await handleCodeFromSaveToNewFile(message.text, this.editor)
-                break
-            case 'embeddings/index':
-                await vscode.commands.executeCommand('cody.embeddings.index')
                 break
             case 'show-page':
                 await vscode.commands.executeCommand('cody.show-page', message.page)
@@ -564,9 +556,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         const sidebarViewOnly = this.extensionClient.capabilities?.webviewNativeConfig?.view === 'single'
         const isEditorViewType = this.webviewPanelOrView?.viewType === 'cody.editorPanel'
         const webviewType = isEditorViewType && !sidebarViewOnly ? 'editor' : 'sidebar'
-        const unifiedPromptsAvailable = await featureFlagProvider.evaluateFeatureFlag(
-            FeatureFlag.CodyUnifiedPrompts
-        )
 
         return {
             agentIDE: configuration.agentIDE ?? CodyIDE.VSCode,
@@ -577,7 +566,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             serverEndpoint: auth.serverEndpoint,
             experimentalNoodle: configuration.experimentalNoodle,
             smartApply: this.isSmartApplyEnabled(),
-            unifiedPromptsAvailable,
             webviewType,
             multipleWebviewsEnabled: !sidebarViewOnly,
             internalDebugContext: configuration.internalDebugContext,
@@ -669,7 +657,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         submitType,
         mentions,
         editorState,
-        legacyAddEnhancedContext,
         signal,
         source,
         command,
@@ -680,7 +667,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         submitType: ChatSubmitType
         mentions: ContextItem[]
         editorState: SerializedPromptEditorState | null
-        legacyAddEnhancedContext: boolean
         signal: AbortSignal
         source?: EventSource
         command?: DefaultChatCommands
@@ -705,11 +691,9 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 command,
                 traceId: span.spanContext().traceId,
                 sessionID: this.chatModel.sessionID,
-                addEnhancedContext: legacyAddEnhancedContext,
             }
             await this.recordChatQuestionTelemetryEvent(
                 authStatus,
-                legacyAddEnhancedContext,
                 mentions,
                 sharedProperties,
                 inputText
@@ -737,19 +721,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 // All mentions we receive are either source=initial or source=user. If the caller
                 // forgot to set the source, assume it's from the user.
                 mentions = mentions.map(m => (m.source ? m : { ...m, source: ContextItemSource.User }))
-
-                // If the legacyAddEnhancedContext param is true, then pretend there is a `@repo` or `@tree`
-                // mention and a mention of the current selection to match the old behavior.
-                if (legacyAddEnhancedContext) {
-                    const corpusMentions = await getCorpusContextItemsForEditorState(
-                        this.retrievers.allowRemoteContext
-                    )
-                    mentions = mentions.concat(corpusMentions)
-
-                    const selectionContext = source === 'chat' ? await getContextFileFromSelection() : []
-                    signal.throwIfAborted()
-                    mentions = mentions.concat(selectionContext)
-                }
 
                 const contextAlternatives = await this.computeContext(
                     { text: inputText, mentions },
@@ -1070,7 +1041,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         index,
         contextFiles,
         editorState,
-        addEnhancedContext = true,
         intent,
     }: {
         requestID: string
@@ -1078,7 +1048,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         index: number | undefined
         contextFiles: ContextItem[]
         editorState: SerializedPromptEditorState | null
-        addEnhancedContext?: boolean
         intent?: ChatMessage['intent'] | undefined | null
     }): Promise<void> {
         const abortSignal = this.startNewSubmitOrEditOperation()
@@ -1102,7 +1071,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 submitType: 'user',
                 mentions: contextFiles,
                 editorState,
-                legacyAddEnhancedContext: addEnhancedContext,
                 signal: abortSignal,
                 source: 'chat',
                 intent,
@@ -1666,9 +1634,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         viewOrPanel.onDidDispose(() => {
             this.cancelSubmitOrEditOperation()
             this._webviewPanelOrView = undefined
-            if ('dispose' in viewOrPanel) {
-                viewOrPanel.dispose()
-            }
         })
 
         this.disposables.push(
@@ -1774,7 +1739,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
 
     private async recordChatQuestionTelemetryEvent(
         authStatus: AuthStatus,
-        legacyAddEnhancedContext: boolean,
         mentions: ContextItem[],
         sharedProperties: any,
         inputText: PromptString
@@ -1786,7 +1750,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         if (workspaceReposMonitor) {
             const { isPublic: isWorkspacePublic, repoMetadata } =
                 await workspaceReposMonitor.getRepoMetadataIfPublic()
-            if (isDotCom(authStatus) && legacyAddEnhancedContext && isWorkspacePublic) {
+            if (isDotCom(authStatus) && isWorkspacePublic) {
                 gitMetadata = JSON.stringify(repoMetadata)
             }
         }
@@ -1795,7 +1759,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 // Flag indicating this is a transcript event to go through ML data pipeline. Only for DotCom users
                 // See https://github.com/sourcegraph/sourcegraph/pull/59524
                 recordsPrivateMetadataTranscript: authStatus.endpoint && isDotCom(authStatus) ? 1 : 0,
-                addEnhancedContext: legacyAddEnhancedContext ? 1 : 0,
 
                 // All mentions
                 mentionsTotal: mentions.length,
@@ -1865,8 +1828,7 @@ function newChatModelFromSerializedChatTranscript(
                     : null,
             ].filter(isDefined)
         ),
-        json.chatTitle,
-        json.enhancedContext?.selectedRepos
+        json.chatTitle
     )
 }
 

@@ -57,7 +57,7 @@ export async function _upsertSymfForPlatform(containingDir: string): Promise<str
         void vscode.window.showErrorMessage(
             `No symf binary available for ${os.platform()}/${os.machine()}`
         )
-        logError('CodyEngine', `No symf binary available for ${os.platform()}/${os.machine()}`)
+        logError('symf', `No symf binary available for ${os.platform()}/${os.machine()}`)
         return null
     }
     const { symfFilename, symfUnzippedFilename, zigPlatform } = _getNamesForPlatform(platform, arch)

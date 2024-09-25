@@ -237,7 +237,7 @@ describe('PromptBuilder', () => {
             const innerRange: ContextItem = {
                 ...fileWithSameUri,
                 range: { start: { line: 1, character: 0 }, end: { line: 2, character: 1 } },
-                source: ContextItemSource.Embeddings,
+                source: ContextItemSource.Terminal,
             }
 
             const outerRange: ContextItem = {
@@ -270,7 +270,7 @@ describe('PromptBuilder', () => {
             const partialFile: ContextItem = {
                 ...fileWithSameUri,
                 range: { start: { line: 1, character: 0 }, end: { line: 2, character: 1 } },
-                source: ContextItemSource.Embeddings,
+                source: ContextItemSource.Terminal,
             }
 
             const fullFile: ContextItem = {

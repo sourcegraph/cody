@@ -62,7 +62,6 @@ async function explainHistoryCommand(
     return {
         text: prompt,
         submitType: 'user-newchat',
-        addEnhancedContext: false,
         contextItems,
         source: args?.source,
     }

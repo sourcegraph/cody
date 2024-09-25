@@ -17,11 +17,11 @@ import { vscodeGitAPI } from '../repository/git-extension-api'
 import { repoNameResolver } from '../repository/repo-name-resolver'
 import type { CodebaseRepoIdMapper } from './remote-repo'
 import type { Repo } from './remote-repo'
-import { RemoteSearch } from './remote-search'
+
+const MAX_REPO_COUNT = 10
 
 // TODO(dpc): The vscode.git extension has an delay before we can fetch a
-// workspace folder's remote. Switch to cody-engine instead of depending on
-// vscode.git and this arbitrary delay.
+// workspace folder's remote.
 const GIT_REFRESH_DELAY = 2000
 
 // Watches the VSCode workspace roots and maps any it finds to remote repository
@@ -185,7 +185,7 @@ export class WorkspaceRepoMapper implements vscode.Disposable, CodebaseRepoIdMap
         }
         const repos = await graphqlClient.getRepoIds(
             [...uniqueRepoNames.values()],
-            RemoteSearch.MAX_REPO_COUNT,
+            MAX_REPO_COUNT,
             signal
         )
         signal?.throwIfAborted()

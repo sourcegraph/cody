@@ -879,7 +879,6 @@ export const DEFAULT_VSCODE_SETTINGS = {
     customHeaders: undefined,
     chatPreInstruction: ps``,
     editPreInstruction: ps``,
-    useContext: 'embeddings',
     autocomplete: true,
     autocompleteLanguages: {
         '*': true,
@@ -913,7 +912,6 @@ export const DEFAULT_VSCODE_SETTINGS = {
     },
     autocompleteFirstCompletionTimeout: 3500,
     autocompleteExperimentalPreloadDebounceInterval: 0,
-    testingModelConfig: undefined,
     experimentalGuardrailsTimeoutSeconds: undefined,
 } satisfies ClientConfiguration
 

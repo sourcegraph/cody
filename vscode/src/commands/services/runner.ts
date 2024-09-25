@@ -125,7 +125,6 @@ export class CommandRunner implements vscode.Disposable {
                 text: prompt,
                 submitType: 'user',
                 contextItems,
-                addEnhancedContext: this.command.context?.codebase ?? false,
                 source: 'custom-commands',
                 command: DefaultChatCommands.Custom,
             }),

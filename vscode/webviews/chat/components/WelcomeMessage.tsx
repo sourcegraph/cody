@@ -1,4 +1,4 @@
-import { CodyIDE } from '@sourcegraph/cody-shared'
+import { CodyIDE, FeatureFlag } from '@sourcegraph/cody-shared'
 import {
     AtSignIcon,
     type LucideProps,
@@ -14,6 +14,7 @@ import { Kbd } from '../../components/Kbd'
 import { PromptListSuitedForNonPopover } from '../../components/promptList/PromptList'
 import { onPromptSelectInPanel, onPromptSelectInPanelActionLabels } from '../../prompts/PromptsTab'
 import type { View } from '../../tabs'
+import { useFeatureFlag } from '../../utils/useFeatureFlags'
 
 const MenuExample: FunctionComponent<{ children: React.ReactNode }> = ({ children }) => (
     <span className="tw-p-1 tw-rounded tw-text-keybinding-foreground tw-border tw-border-keybinding-border tw-bg-keybinding-background tw-whitespace-nowrap">
@@ -45,19 +46,16 @@ const localStorageKey = 'chat.welcome-message-dismissed'
 
 interface WelcomeMessageProps {
     IDE: CodyIDE
-    isUnifiedPromptsAvailable?: boolean
     setView: (view: View) => void
 }
 
-export const WelcomeMessage: FunctionComponent<WelcomeMessageProps> = ({
-    IDE,
-    isUnifiedPromptsAvailable,
-    setView,
-}) => {
+export const WelcomeMessage: FunctionComponent<WelcomeMessageProps> = ({ IDE, setView }) => {
     // Remove the old welcome message dismissal key that is no longer used.
     localStorage.removeItem(localStorageKey)
 
     const dispatchClientAction = useClientActionDispatcher()
+
+    const isUnifiedPromptsAvailable = useFeatureFlag(FeatureFlag.CodyUnifiedPrompts)
 
     return (
         <div className="tw-flex-1 tw-flex tw-flex-col tw-items-start tw-w-full tw-px-6 tw-gap-6 tw-transition-all">
