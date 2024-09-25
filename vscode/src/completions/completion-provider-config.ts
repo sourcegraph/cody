@@ -52,8 +52,6 @@ class CompletionProviderConfig {
             'lsp-light',
             'tsc-mixed',
             'tsc',
-            'bfg',
-            'bfg-mixed',
             'jaccard-similarity',
             'new-jaccard-similarity',
             'recent-edits',

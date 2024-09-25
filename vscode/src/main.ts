@@ -663,7 +663,6 @@ function registerAutocomplete(
                             authStatus,
                             platform,
                             statusBar,
-                            createBfgRetriever: platform.createBfgRetriever,
                         })
                     ),
                     catchError(error => {

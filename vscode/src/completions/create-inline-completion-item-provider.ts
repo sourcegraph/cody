@@ -16,7 +16,6 @@ import type { CodyStatusBar } from '../services/StatusBar'
 
 import { type Observable, map } from 'observable-fns'
 import type { PlatformContext } from '../extension.common'
-import type { BfgRetriever } from './context/retrievers/bfg/bfg-retriever'
 import { InlineCompletionItemProvider } from './inline-completion-item-provider'
 import { createProvider } from './providers/shared/create-provider'
 import { registerAutocompleteTraceView } from './tracer/traceView'
@@ -28,7 +27,6 @@ interface InlineCompletionItemProviderArgs {
         | Pick<AuthenticatedAuthStatus, 'authenticated' | 'endpoint' | 'configOverwrites'>
     platform: Pick<PlatformContext, 'extensionClient'>
     statusBar: CodyStatusBar
-    createBfgRetriever?: () => BfgRetriever
 }
 
 /**
@@ -52,7 +50,6 @@ export function createInlineCompletionItemProvider({
     authStatus,
     platform,
     statusBar,
-    createBfgRetriever,
 }: InlineCompletionItemProviderArgs): Observable<void> {
     if (!configuration.autocomplete) {
         if (
@@ -122,7 +119,6 @@ export function createInlineCompletionItemProvider({
                         formatOnAccept: configuration.autocompleteFormatOnAccept,
                         disableInsideComments: configuration.autocompleteDisableInsideComments,
                         isRunningInsideAgent: configuration.isRunningInsideAgent,
-                        createBfgRetriever,
                     })
 
                     return [

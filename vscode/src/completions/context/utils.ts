@@ -15,7 +15,6 @@ const htmlFamily = new Set([
 ])
 
 export enum RetrieverIdentifier {
-    BfgRetriever = 'bfg',
     RecentEditsRetriever = 'recent-edits',
     JaccardSimilarityRetriever = 'jaccard-similarity',
     TscRetriever = 'tsc',
