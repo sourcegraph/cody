@@ -1,29 +1,34 @@
 .welcome-footer {
     display: flex;
     flex-flow: column nowrap;
+    align-items: center;
+    margin: 1rem 1.5rem;
+    min-width: 336px;
+    color: var(--vscode-input-placeholderForeground)
 }
 
 .tips {
     display: flex;
     flex-flow: column nowrap;
-    margin: 1.5rem;
     gap: 0.5rem;
+    padding: 1.0rem;
+    border-bottom: 0.25px solid var(--vscode-input-placeholderForeground);
+}
+
+.links {
+    display: flex;
+    flex-shrink: none;
+    flex-flow: row nowrap;
+    padding: 1.0rem 1.5rem;
+    gap: 0.5rem;
+    justify-content: space-around;
+    align-items: center;
+    min-width: 325px;
 }
 
 .item {
     display: flex;
     flex-flow: row nowrap;
     gap: 0.5rem;
-}
-
-.links {
-    display: flex;
-    flex-flow: row nowrap;
-    margin: 1.5rem;
-    gap: 0.5rem;
-    justify-content: center;
-}
-
-.separator {
-    border-bottom: 1px solid white;
+    align-items: center;
 }

@@ -1,24 +1,25 @@
+import type { ForwardRefExoticComponent } from "react"
 import {
     AtSignIcon,
+    BookOpenText,
     MessageCircleQuestion,
     MessageSquarePlus,
     TextSelect,
     type LucideProps
 } from "lucide-react"
-import type { ForwardRefExoticComponent } from "react"
 
-interface Tip {
+interface ChatViewTip {
     message: string;
     icon: ForwardRefExoticComponent<Omit<LucideProps, "ref">>;
 }
 
-interface WelcomeLink {
+interface ChatViewLink {
     icon: ForwardRefExoticComponent<Omit<LucideProps, "ref">>;
     text: string;
     url: string;
 }
 
-export const welcomeTips: Tip[] = [
+export const chatTips: ChatViewTip[] = [
     {
         message: "Type @ to add context to your chat",
         icon: AtSignIcon
@@ -33,9 +34,9 @@ export const welcomeTips: Tip[] = [
     },
 ]
 
-export const welcomeLinks: WelcomeLink[] = [
+export const chatLinks: ChatViewLink[] = [
     {
-        icon: AtSignIcon,
+        icon: BookOpenText,
         text: "Documentation",
         url: "https://sourcegraph.com/docs/cody"
     },

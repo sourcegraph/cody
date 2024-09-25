@@ -1,28 +1,26 @@
-import { welcomeTips, welcomeLinks } from './WelcomeFooterContent'
+import { chatTips, chatLinks } from './WelcomeFooterContent'
 import styles from './WelcomeFooter.module.css'
 
 export default function WelcomeFooter() {
-    const { welcomeFooter, tips, item, links, separator } = styles
-
-    function generateTips() {
-        return welcomeTips.map((tip, key) => {
+    function tips() {
+        return chatTips.map((tip, key) => {
             const Icon = tip.icon
             return (
-                <div key={`tip-${key + 1}`} className={item}>
+                <div key={`tip-${key + 1}`} className={styles.item}>
                     <Icon className="tw-w-8 tw-h-8" strokeWidth={1.25} />
-                    <div className="tip">{tip.message}</div>
+                    <div className="tw-text-muted-foreground">{tip.message}</div>
                 </div>
             )
         })
     }
 
-    function generateLinks() {
-        return welcomeLinks.map((link, key) => {
+    function links() {
+        return chatLinks.map((link, key) => {
             const Icon = link.icon
             return (
-                <div className={item} key={`link-${key + 1}`}>
+                <div className={styles.item} key={`link-${key + 1}`}>
                     <Icon className="tw-w-8 tw-h-8" strokeWidth={1.25} />
-                    <a href={link.url} className="tip" rel="noreferrer" target="_blank">
+                    <a href={link.url} rel="noreferrer" target="_blank">
                         {link.text}
                     </a>
                 </div>
@@ -31,10 +29,9 @@ export default function WelcomeFooter() {
     }
 
     return (
-        <div className={welcomeFooter}>
-            <div className={tips}>{generateTips()}</div>
-            <div className={separator} />
-            <div className={links}>{generateLinks()}</div>
+        <div className={styles.welcomeFooter}>
+            <div className={styles.tips}>{tips()}</div>
+            <div className={styles.links}>{links()}</div>
         </div>
     )
 }
