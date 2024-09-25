@@ -12,8 +12,6 @@
     display: flex;
     flex-flow: row nowrap;
     gap: 1rem;
-    font-size: 1rem;
-    color: var(--text-muted)
 }
 
 .links {
