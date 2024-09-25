@@ -2,41 +2,112 @@ import findLast from 'lodash/findLast'
 
 import {
     type ChatMessage,
+    type ChatModel,
     type ContextItem,
     type Message,
     type ModelContextWindow,
     type SerializedChatInteraction,
     type SerializedChatTranscript,
+    distinctUntilChanged,
     errorToChatError,
-    firstResultFromOperation,
     modelsService,
+    pendingOperation,
     serializeChatMessage,
+    startWith,
+    switchMap,
     toRangeData,
 } from '@sourcegraph/cody-shared'
 
 import type { RankedContext } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import { Observable, Subject, map } from 'observable-fns'
 import { getChatPanelTitle } from './chat-helpers'
 
-export class ChatModel {
-    public contextWindow: ModelContextWindow
+/**
+ * A builder for a chat thread. This is the canonical way to construct and mutate a chat thread.
+ */
+export class ChatBuilder {
+    /**
+     * Observe the context window for the {@link chat} thread's model (or the default chat model if
+     * it has none).
+     */
+    public static contextWindowForChat(
+        chat: ChatBuilder
+    ): Observable<ModelContextWindow | Error | typeof pendingOperation> {
+        return ChatBuilder.resolvedModelForChat(chat).pipe(
+            switchMap(
+                (model): Observable<ModelContextWindow | Error | typeof pendingOperation> =>
+                    model === pendingOperation
+                        ? Observable.of(pendingOperation)
+                        : model
+                          ? modelsService.observeContextWindowByID(model)
+                          : Observable.of(
+                                new Error('No chat model is set, and no default chat model is available')
+                            )
+            )
+        )
+    }
+
+    /**
+     * Observe the resolved model for the {@link chat}, which is its selected model, or else the
+     * default chat model if it has no selected model.
+     */
+    public static resolvedModelForChat(
+        chat: ChatBuilder
+    ): Observable<ChatModel | undefined | typeof pendingOperation> {
+        return chat.changes.pipe(
+            map(chat => chat.selectedModel),
+            distinctUntilChanged(),
+            switchMap(selectedModel =>
+                selectedModel
+                    ? modelsService.isModelAvailable(selectedModel).pipe(
+                          switchMap(isModelAvailable => {
+                              // Confirm that the user's explicitly selected model is available on the endpoint.
+                              if (isModelAvailable) {
+                                  return Observable.of(selectedModel)
+                              }
+
+                              // If the user's explicitly selected model is not available on the
+                              // endpoint, clear it and use the default going forward. This should
+                              // only happen if the server's model selection changes or if the user
+                              // switches accounts with an open chat. Perhaps we could show some
+                              // kind of indication to the user, but this is fine for now.
+                              chat.setSelectedModel(undefined)
+                              return modelsService.getDefaultChatModel()
+                          })
+                      )
+                    : modelsService.getDefaultChatModel()
+            )
+        )
+    }
+
+    private changeNotifications = new Subject<void>()
+
+    /** An observable that emits whenever the {@link ChatBuilder}'s chat changes. */
+    public changes: Observable<ChatBuilder> = this.changeNotifications.pipe(
+        startWith(undefined),
+        map(() => this)
+    )
+
     constructor(
-        public modelID: string,
+        /**
+         * The model ID to use for the next assistant response if the user has explicitly chosen
+         * one, or else `undefined` to use the default chat model on the current endpoint at the
+         * time the chat is sent.
+         */
+        public selectedModel: ChatModel | undefined,
+
         public readonly sessionID: string = new Date(Date.now()).toUTCString(),
         private messages: ChatMessage[] = [],
         private customChatTitle?: string
-    ) {
-        this.contextWindow = modelsService.getContextWindowByID(this.modelID)
-    }
+    ) {}
 
-    public async updateModel(newModelID: string): Promise<void> {
-        // Only update the model if it is available to the user.
-        const isModelAvailable = await firstResultFromOperation(
-            modelsService.isModelAvailable(newModelID)
-        )
-        if (isModelAvailable === true) {
-            this.modelID = newModelID
-            this.contextWindow = modelsService.getContextWindowByID(this.modelID)
-        }
+    /**
+     * Set the selected model to use for the next assistant response, or `undefined` to use the
+     * default chat model.
+     */
+    public setSelectedModel(newModelID: ChatModel | undefined): void {
+        this.selectedModel = newModelID
+        this.changeNotifications.next()
     }
 
     public isEmpty(): boolean {
@@ -53,6 +124,8 @@ export class ChatModel {
         }
 
         lastMessage.intent = intent
+
+        this.changeNotifications.next()
     }
 
     public setLastMessageContext(
@@ -74,6 +147,8 @@ export class ChatModel {
                 strategy,
             }
         })
+
+        this.changeNotifications.next()
     }
 
     public addHumanMessage(message: Omit<ChatMessage, 'speaker'>): void {
@@ -81,9 +156,19 @@ export class ChatModel {
             throw new Error('Cannot add a user message after a user message')
         }
         this.messages.push({ ...message, speaker: 'human' })
+        this.changeNotifications.next()
     }
 
-    public addBotMessage(message: Omit<Message, 'speaker'>): void {
+    /**
+     * A special sentinel value for {@link ChatBuilder.addBotMessage} for when the assistant message
+     * is not from any model. Only used in edge cases.
+     */
+    public static readonly NO_MODEL = Symbol('noChatModel')
+
+    public addBotMessage(
+        message: Omit<Message, 'speaker'>,
+        model: ChatModel | typeof ChatBuilder.NO_MODEL
+    ): void {
         const lastMessage = this.messages.at(-1)
         let error: any
         // If there is no text, it could be a placeholder message for an error
@@ -94,25 +179,27 @@ export class ChatModel {
             error = this.messages.pop()?.error
         }
         this.messages.push({
-            model: this.modelID,
+            model: model === ChatBuilder.NO_MODEL ? undefined : model,
             ...message,
             speaker: 'assistant',
             error,
         })
+        this.changeNotifications.next()
     }
 
-    public addErrorAsBotMessage(error: Error): void {
+    public addErrorAsBotMessage(error: Error, model: ChatModel | typeof ChatBuilder.NO_MODEL): void {
         const lastMessage = this.messages.at(-1)
         // Remove the last assistant message if any
         const lastAssistantMessage: ChatMessage | undefined =
             lastMessage?.speaker === 'assistant' ? this.messages.pop() : undefined
         // Then add a new assistant message with error added
         this.messages.push({
-            model: this.modelID,
+            model: model === ChatBuilder.NO_MODEL ? undefined : model,
             ...(lastAssistantMessage ?? {}),
             speaker: 'assistant',
             error: errorToChatError(error),
         })
+        this.changeNotifications.next()
     }
 
     public getLastHumanMessage(): ChatMessage | undefined {
@@ -143,6 +230,7 @@ export class ChatModel {
 
         // Removes everything from the index to the last element
         this.messages.splice(index)
+        this.changeNotifications.next()
     }
 
     public getMessages(): readonly ChatMessage[] {
