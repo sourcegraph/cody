@@ -13,11 +13,10 @@ import {
 import { Observable } from 'observable-fns'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { URI } from 'vscode-uri'
-import type { ChatBuilder } from '../chat/chat-view/ChatBuilder'
+import { ChatBuilder } from '../chat/chat-view/ChatBuilder'
 import type { ContextRetriever } from '../chat/chat-view/ContextRetriever'
 import * as clientStateBroadcaster from '../chat/clientStateBroadcaster'
 import { CodyReflectionAgent } from './agentic'
-
 describe('CodyReflectionAgent', () => {
     const codyProAuthStatus: AuthenticatedAuthStatus = {
         ...AUTH_STATUS_FIXTURE_AUTHED,
@@ -32,7 +31,7 @@ describe('CodyReflectionAgent', () => {
         userCanUpgrade: false,
     }
 
-    let mockChatModel: ChatBuilder
+    let mockChatBuilder: ChatBuilder
     let mockChatClient: ChatClient
     let mockContextRetriever: ContextRetriever
     let mockSpan: any
@@ -40,11 +39,15 @@ describe('CodyReflectionAgent', () => {
 
     beforeEach(() => {
         mockAuthStatus(codyProAuthStatus)
-        mockChatModel = {
-            modelID: 'sourcegraph/cody-reflection',
+        mockChatBuilder = {
+            selectedModel: 'sourcegraph/cody-reflection',
+            changes: {
+                pipe: vi.fn(),
+            },
+            resolvedModelForChat: vi.fn().mockReturnValue('sourcegraph/cody-reflection'),
             addHumanMessage: vi.fn(),
             addBotMessage: vi.fn(),
-            contextWindow: { input: 10000, output: 1000 },
+            contextWindowForChat: vi.fn().mockReturnValue({ input: 10000, output: 1000 }),
             getDehydratedMessages: vi.fn().mockReturnValue([
                 {
                     speaker: 'human',
@@ -74,13 +77,21 @@ describe('CodyReflectionAgent', () => {
         ]
 
         vi.spyOn(featureFlagProvider, 'evaluatedFeatureFlag').mockReturnValue(Observable.of(false))
-
         vi.spyOn(modelsService, 'isStreamDisabled').mockReturnValue(false)
+        vi.spyOn(ChatBuilder, 'resolvedModelForChat').mockReturnValue(Observable.of('mockedModelId'))
+        vi.spyOn(ChatBuilder, 'contextWindowForChat').mockReturnValue(
+            Observable.of({ input: 10000, output: 1000 })
+        )
+        // Ensure mockChatBuilder has a changes property
+        mockChatBuilder.changes = Observable.of(mockChatBuilder)
+        vi.spyOn(modelsService, 'observeContextWindowByID').mockReturnValue(
+            Observable.of({ input: 10000, output: 1000 })
+        )
     })
 
     it('initializes correctly for dotcom user', async () => {
         const agent = new CodyReflectionAgent(
-            mockChatModel,
+            mockChatBuilder,
             mockChatClient,
             mockContextRetriever,
             mockSpan,
@@ -116,7 +127,7 @@ describe('CodyReflectionAgent', () => {
         })
 
         const agent = new CodyReflectionAgent(
-            mockChatModel,
+            mockChatBuilder,
             mockChatClient,
             mockContextRetriever,
             mockSpan,
@@ -125,10 +136,10 @@ describe('CodyReflectionAgent', () => {
 
         const result = await agent.getContext({ aborted: false } as AbortSignal)
 
-        expect(result).toHaveLength(1)
-        expect(result[0].content).toBe('const newExample = "test result";')
         expect(mockChatClient.chat).toHaveBeenCalled()
         expect(mockContextRetriever.retrieveContext).toHaveBeenCalled()
+        expect(result).toHaveLength(1)
+        expect(result[0].content).toBe('const newExample = "test result";')
     })
 
     it('does not retrieve additional context for enterprise user without feature flag', async () => {
@@ -136,7 +147,7 @@ describe('CodyReflectionAgent', () => {
         vi.spyOn(featureFlagProvider, 'evaluatedFeatureFlag').mockReturnValue(Observable.of(false))
 
         const agent = new CodyReflectionAgent(
-            mockChatModel,
+            mockChatBuilder,
             mockChatClient,
             mockContextRetriever,
             mockSpan,
