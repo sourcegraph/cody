@@ -67,10 +67,9 @@ export function getConfiguration(
                 }
                 fs.accessSync(path, fs.constants.R_OK | fs.constants.W_OK)
                 return path
-            } catch (error: any) {
+            } catch (error) {
                 void vscode.window.showErrorMessage(
-                    `Cannot verify ${CONFIG_KEY.proxyPath}: ${path}`,
-                    error
+                    `Cannot verify ${CONFIG_KEY.proxyPath}: ${path}:\n${error}`
                 )
             }
         }
@@ -88,10 +87,9 @@ export function getConfiguration(
         }
         try {
             return fs.readFileSync(path, { encoding: 'utf-8' })
-        } catch (error: any) {
+        } catch (error) {
             void vscode.window.showErrorMessage(
-                `Error reading ${CONFIG_KEY.proxyCacert} from ${path}`,
-                error
+                `Error reading ${CONFIG_KEY.proxyCacert} from ${path}:\n${error}`
             )
         }
         return undefined
