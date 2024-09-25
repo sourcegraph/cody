@@ -149,7 +149,7 @@ export function createModelFromServerModel({
         _contextWindow.context = { user: EXTENDED_USER_CONTEXT_TOKEN_BUDGET }
     }
     return createModel({
-        id: ref.modelId,
+        id: modelRef,
         modelRef: ref,
         usage: capabilities.flatMap(capabilityToUsage),
         contextWindow: _contextWindow,
