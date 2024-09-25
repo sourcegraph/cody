@@ -43,6 +43,7 @@ export type ModelStatus =
     | ModelTag.EarlyAccess
     | ModelTag.OnWaitlist
     | ModelTag.Waitlist
+    | ModelTag.Internal
     | 'stable'
     | ModelTag.Deprecated
 export type ModelTier = ModelTag.Free | ModelTag.Pro | ModelTag.Enterprise

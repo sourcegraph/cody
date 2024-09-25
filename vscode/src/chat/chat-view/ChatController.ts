@@ -86,12 +86,14 @@ import {
 import type { startTokenReceiver } from '../../auth/token-receiver'
 import { getContextFileFromUri } from '../../commands/context/file-path'
 import { getContextFileFromCursor, getContextFileFromSelection } from '../../commands/context/selection'
+import { CodyReflectionAgent } from '../../context/agentic'
 import { resolveContextItems } from '../../editor/utils/editor-context'
 import type { VSCodeEditor } from '../../editor/vscode-editor'
 import type { ExtensionClient } from '../../extension-client'
 import type { SymfRunner } from '../../local-context/symf'
 import { logDebug } from '../../log'
 import { migrateAndNotifyForOutdatedModels } from '../../models/modelMigrator'
+import { getCategorizedMentions } from '../../prompt-builder/utils'
 import { mergedPromptsAndLegacyCommands } from '../../prompts/prompts'
 import { workspaceReposMonitor } from '../../repository/repo-metadata-from-git-api'
 import { authProvider } from '../../services/AuthProvider'
@@ -795,8 +797,18 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     }
                 }
 
-                const explicitMentions = corpusContext.filter(c => c.source === ContextItemSource.User)
-                const implicitMentions = corpusContext.filter(c => c.source !== ContextItemSource.User)
+                // Additional context retrived from the experimental Cody Reflection feature
+                // Currently, all agentic context are marked as user-explicit mentions to be ranked higher during prompt building.
+                const agenticContext = await new CodyReflectionAgent(
+                    this.chatModel,
+                    this.chatClient,
+                    this.contextRetriever,
+                    span,
+                    corpusContext
+                ).getContext(signal)
+                corpusContext.push(...agenticContext)
+
+                const { explicitMentions, implicitMentions } = getCategorizedMentions(corpusContext)
 
                 const prompter = new DefaultPrompter(
                     explicitMentions,
