@@ -11,6 +11,7 @@ import {
     authStatus,
     combineLatest,
     currentResolvedConfig,
+    disposableSubscription,
     distinctUntilChanged,
     normalizeServerEndpointURL,
     pluck,
@@ -108,6 +109,12 @@ class AuthProvider implements vscode.Disposable {
 
         // Report auth changes.
         this.subscriptions.push(startAuthTelemetryReporter())
+
+        this.subscriptions.push(
+            disposableSubscription(
+                vscode.commands.registerCommand('cody.auth.refresh', () => this.refresh())
+            )
+        )
     }
 
     private async handleAuthTelemetry(authStatus: AuthStatus, signal?: AbortSignal): Promise<void> {
