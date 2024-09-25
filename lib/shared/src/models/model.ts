@@ -206,20 +206,25 @@ export function getServerModelTags(
     tier: ModelTier
 ): ModelTag[] {
     const tags: ModelTag[] = [tier]
-    if (capabilities.includes('streamDisabled')) {
-        tags.push(ModelTag.StreamDisabled)
-    }
     if (capabilities.includes('vision')) {
         tags.push(ModelTag.Vision)
     }
+    // TODO (bee) removes once o1 is rolled out.
+    // HACK: Currently only o1 models are waitlisted,
+    // so we can use this to determine if a model is stream-disabled.
+    // In the future, we should have a seperate field for this.
     if (status === 'waitlist') {
         tags.push(ModelTag.Waitlist)
-    }
-    if (status === 'internal') {
+        if (tier === ModelTag.Pro) {
+            tags.push(ModelTag.StreamDisabled)
+        }
+    } else if (status === 'internal') {
         tags.push(ModelTag.Internal)
     }
     if (category === 'accuracy') {
         tags.push(ModelTag.Power)
+    } else if (category === 'other') {
+        tags.push(ModelTag.Balanced)
     } else {
         tags.push(category)
     }

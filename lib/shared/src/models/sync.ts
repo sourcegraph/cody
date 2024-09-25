@@ -143,11 +143,13 @@ export function syncModels({
                     return Observable.of<RemoteModelsData>({ primaryModels: [], preferences: null })
                 }
 
+                const isDotComUser = isDotCom(authStatus)
+
                 const serverModelsConfig: Observable<
                     RemoteModelsData | Error | typeof pendingOperation
                 > = clientConfig.pipe(
                     switchMapReplayOperation(maybeClientConfig => {
-                        if (maybeClientConfig?.modelsAPIEnabled || isDotCom(authStatus)) {
+                        if (maybeClientConfig?.modelsAPIEnabled || isDotComUser) {
                             logDebug('ModelsService', 'new models API enabled')
                             return promiseFactoryToObservable(signal =>
                                 fetchServerSideModels_(config, signal)
@@ -161,9 +163,12 @@ export function syncModels({
                                     // If the request failed, fall back to using the default models
                                     if (serverModelsConfig) {
                                         data.primaryModels.push(
-                                            ...maybeAdjustContextWindows(serverModelsConfig.models).map(
-                                                createModelFromServerModel
-                                            )
+                                            ...maybeAdjustContextWindows(
+                                                // Remove deprecated models from the list.
+                                                serverModelsConfig.models.filter(
+                                                    m => m.status !== 'deprecated'
+                                                )
+                                            ).map(createModelFromServerModel)
                                         )
                                         data.preferences!.defaults =
                                             defaultModelPreferencesFromServerModelsConfig(
@@ -180,7 +185,9 @@ export function syncModels({
                                             ...getModelsFromVSCodeConfiguration(config)
                                         )
                                     }
-                                    if (isDotCom(authStatus)) {
+
+                                    // For users with early access or on the waitlist, replace the waitlist tag with the appropriate tags.
+                                    if (isDotComUser) {
                                         // For users with early access or on the waitlist, replace the waitlist tag with the
                                         // appropriate tags.
                                         return featureFlagProvider
@@ -215,6 +222,11 @@ export function syncModels({
                                                 })
                                             )
                                     }
+
+                                    // Remove Waitlist models for enterprise users.
+                                    data.primaryModels = data.primaryModels.filter(
+                                        m => !m.tags.includes(ModelTag.Waitlist)
+                                    )
 
                                     return Observable.of(data)
                                 })

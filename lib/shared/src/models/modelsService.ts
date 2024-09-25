@@ -37,7 +37,7 @@ export interface ModelRef {
     modelId: ModelId
 }
 
-export type ModelCategory = ModelTag.Power | ModelTag.Balanced | ModelTag.Speed | 'accuracy'
+export type ModelCategory = ModelTag.Power | ModelTag.Balanced | ModelTag.Speed | 'accuracy' | 'other'
 export type ModelStatus =
     | ModelTag.Experimental
     | ModelTag.EarlyAccess
@@ -47,7 +47,7 @@ export type ModelStatus =
     | ModelTag.Deprecated
     | ModelTag.Internal
 export type ModelTier = ModelTag.Free | ModelTag.Pro | ModelTag.Enterprise
-export type ModelCapability = 'chat' | 'autocomplete' | 'edit' | 'streamDisabled' | 'vision'
+export type ModelCapability = 'chat' | 'autocomplete' | 'edit' | 'vision'
 
 export interface ContextWindow {
     maxInputTokens: number

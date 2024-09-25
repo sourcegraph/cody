@@ -9,29 +9,13 @@ describe('getServerModelTags', () => {
     })
 
     it('convert accuracy to power tag', () => {
-        const tags = getServerModelTags(
-            ['chat', 'streamDisabled', 'vision'],
-            'accuracy',
-            'stable',
-            ModelTag.Enterprise
-        )
+        const tags = getServerModelTags(['chat', 'vision'], 'accuracy', 'stable', ModelTag.Enterprise)
         expect(tags).toEqual([
             ModelTag.Enterprise,
             ModelTag.StreamDisabled,
             ModelTag.Vision,
             ModelTag.Power,
         ])
-    })
-
-    it('includes StreamDisabled tag when capability is present', () => {
-        const tags = getServerModelTags(
-            ['chat', 'streamDisabled'],
-            ModelTag.Speed,
-            'stable',
-            ModelTag.Pro
-        )
-        expect(tags).toContain(ModelTag.StreamDisabled)
-        expect(tags).toContain(ModelTag.Speed)
     })
 
     it('includes Vision tag when capability is present', () => {
