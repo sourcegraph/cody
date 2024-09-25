@@ -4,14 +4,18 @@ import {
     type AutocompleteContextSnippet,
     type DocumentContext,
     contextFiltersProvider,
+    subscriptionDisposable,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
-
+import { GitHubDotComRepoMetadata } from '../../repository/repo-metadata-from-git-api'
+import { completionProviderConfig } from '../completion-provider-config'
 import type { LastInlineCompletionCandidate } from '../get-inline-completions'
+import type { ContextRetriever } from '../types'
 import {
     DefaultCompletionsContextRanker,
     type RetrievedContextResults,
 } from './completions-context-ranker'
+import { ContextRetrieverDataCollection } from './context-data-logging'
 import type { ContextStrategy, ContextStrategyFactory } from './context-strategy'
 
 interface GetContextOptions {
@@ -21,6 +25,8 @@ interface GetContextOptions {
     abortSignal?: AbortSignal
     maxChars: number
     lastCandidate?: LastInlineCompletionCandidate
+    gitUrl?: string
+    isDotComUser?: boolean
 }
 
 export interface ContextSummary {
@@ -60,7 +66,7 @@ export interface ContextSummary {
 export interface GetContextResult {
     context: AutocompleteContextSnippet[]
     logSummary: ContextSummary
-    rankedContextCandidates: AutocompleteContextSnippet[]
+    contextLoggingSnippets: AutocompleteContextSnippet[]
 }
 
 /**
@@ -72,14 +78,51 @@ export interface GetContextResult {
  * ranged for the top ranked document from all retrieval sources before we move on to the second
  * document).
  */
-export class ContextMixer {
-    constructor(private strategyFactory: ContextStrategyFactory) {}
+export class ContextMixer implements vscode.Disposable {
+    private disposables: vscode.Disposable[] = []
+    private dataCollectionEnabled = false
+    private contextDataCollector?: ContextRetrieverDataCollection
 
+    constructor(private strategyFactory: ContextStrategyFactory) {
+        this.disposables.push(
+            subscriptionDisposable(
+                completionProviderConfig.completionDataCollectionFlag.subscribe(dataCollectionFlag => {
+                    this.manageContextDataCollector(dataCollectionFlag)
+                })
+            )
+        )
+    }
+
+    private manageContextDataCollector(newDataCollectionFlag: boolean): void {
+        if (this.dataCollectionEnabled === newDataCollectionFlag) {
+            return
+        }
+
+        this.dataCollectionEnabled = newDataCollectionFlag
+
+        if (newDataCollectionFlag && !this.contextDataCollector) {
+            this.contextDataCollector = new ContextRetrieverDataCollection()
+            this.disposables.push(this.contextDataCollector)
+        } else if (!newDataCollectionFlag && this.contextDataCollector) {
+            const index = this.disposables.indexOf(this.contextDataCollector)
+            if (index !== -1) {
+                this.disposables.splice(index, 1)
+            }
+            this.contextDataCollector.dispose()
+            this.contextDataCollector = undefined
+        }
+    }
     public async getContext(options: GetContextOptions): Promise<GetContextResult> {
         const start = performance.now()
 
         const { name: strategy, retrievers } = await this.strategyFactory.getStrategy(options.document)
-        if (retrievers.length === 0) {
+        const updatedRetrievers = this.getUpdatedRetrievers(
+            options.gitUrl,
+            options.isDotComUser,
+            retrievers
+        )
+
+        if (updatedRetrievers.length === 0) {
             return {
                 context: [],
                 logSummary: {
@@ -90,12 +133,12 @@ export class ContextMixer {
                     duration: 0,
                     retrieverStats: {},
                 },
-                rankedContextCandidates: [],
+                contextLoggingSnippets: [],
             }
         }
 
-        const results: RetrievedContextResults[] = await Promise.all(
-            retrievers.map(async retriever => {
+        const updatedRetrieverResults: RetrievedContextResults[] = await Promise.all(
+            updatedRetrievers.map(async retriever => {
                 const retrieverStart = performance.now()
                 const allSnippets = await wrapInActiveSpan(
                     `autocomplete.retrieve.${retriever.identifier}`,
@@ -118,6 +161,28 @@ export class ContextMixer {
                 }
             })
         )
+
+        // Extract back the context results for the original retrievers
+        const results = this.extractOriginalRetrieverResults(updatedRetrieverResults, retrievers)
+        const contextLoggingSnippets =
+            this.contextDataCollector?.getDataLoggingContextFromRetrievers(updatedRetrieverResults) ?? []
+
+        // Original retrievers were 'none'
+        if (results.length === 0) {
+            return {
+                context: [],
+                logSummary: {
+                    strategy: 'none',
+                    totalChars: options.docContext.prefix.length + options.docContext.suffix.length,
+                    prefixChars: options.docContext.prefix.length,
+                    suffixChars: options.docContext.suffix.length,
+                    duration: 0,
+                    retrieverStats: {},
+                },
+                contextLoggingSnippets,
+            }
+        }
+
         const contextRanker = new DefaultCompletionsContextRanker()
         const fusedResults = contextRanker.rankAndFuseContext(results)
 
@@ -173,8 +238,64 @@ export class ContextMixer {
         return {
             context: mixedContext,
             logSummary,
-            rankedContextCandidates: Array.from(fusedResults),
+            contextLoggingSnippets: contextLoggingSnippets,
         }
+    }
+
+    private extractOriginalRetrieverResults(
+        updatedRetrieverResults: RetrievedContextResults[],
+        originalRetrievers: ContextRetriever[]
+    ): RetrievedContextResults[] {
+        const originalIdentifiers = new Set(originalRetrievers.map(r => r.identifier))
+        return updatedRetrieverResults.filter(result => originalIdentifiers.has(result.identifier))
+    }
+
+    private getUpdatedRetrievers(
+        gitUrl: string | undefined,
+        isDotComUser: boolean | undefined,
+        originalRetrievers: ContextRetriever[]
+    ): ContextRetriever[] {
+        if (
+            this.contextDataCollector === undefined ||
+            !this.shouldCollectContextDatapoint(gitUrl, isDotComUser)
+        ) {
+            return originalRetrievers
+        }
+        const combinedRetrievers = new Map<string, ContextRetriever>()
+        for (const retriever of this.contextDataCollector.getRetrievers()) {
+            combinedRetrievers.set(retriever.identifier, retriever)
+        }
+        // Always give priority to the original retrievers
+        for (const retriever of originalRetrievers) {
+            combinedRetrievers.set(retriever.identifier, retriever)
+        }
+        return Array.from(combinedRetrievers.values())
+    }
+
+    private shouldCollectContextDatapoint(
+        gitUrl: string | undefined,
+        isDotComUser: boolean | undefined
+    ): boolean {
+        /**
+         * Only collect the relevant datapoint if the request satisfies these conditions:
+         * 1. If the current repo is a public github repo.
+         * 2. If the user is a dotcom user.
+         * 3. If the user is in data collection variant.
+         */
+        if (!gitUrl || !isDotComUser || !this.dataCollectionEnabled) {
+            return false
+        }
+        const instance = GitHubDotComRepoMetadata.getInstance()
+        const gitRepoMetadata = instance.getRepoMetadataIfCached(gitUrl)
+        return gitRepoMetadata?.isPublic ?? false
+    }
+
+    public dispose(): void {
+        for (const disposable of this.disposables) {
+            disposable.dispose()
+        }
+        this.contextDataCollector = undefined
+        this.disposables = []
     }
 }
 
