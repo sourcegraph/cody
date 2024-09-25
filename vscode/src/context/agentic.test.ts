@@ -13,7 +13,7 @@ import {
 import { Observable } from 'observable-fns'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { URI } from 'vscode-uri'
-import type { ChatModel } from '../chat/chat-view/ChatModel'
+import type { ChatBuilder } from '../chat/chat-view/ChatBuilder'
 import type { ContextRetriever } from '../chat/chat-view/ContextRetriever'
 import * as clientStateBroadcaster from '../chat/clientStateBroadcaster'
 import { CodyReflectionAgent } from './agentic'
@@ -32,7 +32,7 @@ describe('CodyReflectionAgent', () => {
         userCanUpgrade: false,
     }
 
-    let mockChatModel: ChatModel
+    let mockChatModel: ChatBuilder
     let mockChatClient: ChatClient
     let mockContextRetriever: ContextRetriever
     let mockSpan: any
@@ -51,7 +51,7 @@ describe('CodyReflectionAgent', () => {
                     text: ps`test message`,
                 },
             ]),
-        } as unknown as ChatModel
+        } as unknown as ChatBuilder
 
         mockChatClient = {
             chat: vi.fn(),
