@@ -1,3 +1,4 @@
+import * as fs from 'node:fs'
 import * as vscode from 'vscode'
 
 import {
@@ -47,10 +48,63 @@ export function getConfiguration(
         debugRegex = /.*/
     }
 
+    function expandTilde(path?: string): string | undefined {
+        if (path?.startsWith('~/')) {
+            const homeDir = process.env.HOME || process.env.USERPROFILE
+            if (homeDir) {
+                return `${homeDir}/${path.slice(2)}`
+            }
+        }
+        return path
+    }
+
+    function readProxyPath(): string | undefined {
+        const path = expandTilde(config.get<string>(CONFIG_KEY.proxyPath))
+        if (path) {
+            try {
+                if (!fs.statSync(path).isSocket()) {
+                    throw new Error('Not a socket')
+                }
+                fs.accessSync(path, fs.constants.R_OK | fs.constants.W_OK)
+                return path
+            } catch (error: any) {
+                void vscode.window.showErrorMessage(
+                    `Cannot verify ${CONFIG_KEY.proxyPath}: ${path}`,
+                    error
+                )
+            }
+        }
+        return undefined
+    }
+
+    function readProxyCACert(): string | undefined {
+        const path = expandTilde(config.get<string>(CONFIG_KEY.proxyCacert))
+        if (!path) {
+            return undefined
+        }
+        // support directly embedding a CA cert in the settings
+        if (path.startsWith('-----BEGIN CERTIFICATE-----')) {
+            return path
+        }
+        try {
+            return fs.readFileSync(path, { encoding: 'utf-8' })
+        } catch (error: any) {
+            void vscode.window.showErrorMessage(
+                `Error reading ${CONFIG_KEY.proxyCacert} from ${path}`,
+                error
+            )
+        }
+        return undefined
+    }
+
     const vsCodeConfig = vscode.workspace.getConfiguration()
 
     return {
         proxy: vsCodeConfig.get<string>('http.proxy'),
+        proxyHost: config.get<string>(CONFIG_KEY.proxyHost),
+        proxyPort: config.get<number>(CONFIG_KEY.proxyPort),
+        proxyPath: readProxyPath(),
+        proxyCACert: readProxyCACert(),
         codebase: sanitizeCodebase(config.get(CONFIG_KEY.codebase)),
         serverEndpoint: config.get<string>(CONFIG_KEY.serverEndpoint),
         customHeaders: config.get<Record<string, string>>(CONFIG_KEY.customHeaders),

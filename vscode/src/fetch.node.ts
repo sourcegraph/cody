@@ -1,4 +1,3 @@
-import * as fs from 'node:fs'
 import http from 'node:http'
 import https from 'node:https'
 import { parse as parseUrl } from 'node:url'
@@ -8,7 +7,7 @@ import { HttpProxyAgent } from 'http-proxy-agent'
 import { HttpsProxyAgent } from 'https-proxy-agent'
 import { ProxyAgent } from 'proxy-agent'
 import { SocksProxyAgent } from 'socks-proxy-agent'
-import * as vscode from 'vscode'
+import type * as vscode from 'vscode'
 // @ts-ignore
 import { registerLocalCertificates } from './certs'
 import { getConfiguration } from './configuration'
@@ -30,6 +29,10 @@ let httpsProxyAgent: HttpsProxyAgent<string>
 
 function getCustomAgent({
     proxy,
+    proxyHost,
+    proxyPort,
+    proxyPath,
+    proxyCACert,
 }: ClientConfiguration): ({ protocol }: Pick<URL, 'protocol'>) => http.Agent {
     return ({ protocol }) => {
         const proxyURL = proxy || getSystemProxyURI(protocol, process.env)
@@ -68,33 +71,6 @@ function getCustomAgent({
             }
             return httpsProxyAgent
         }
-
-        const proxyHost = vscode.workspace.getConfiguration('cody').get<string>('proxyHost')
-        const proxyPort = vscode.workspace.getConfiguration('cody').get<number>('proxyPort')
-        const proxyPath = (() => {
-            const path = vscode.workspace.getConfiguration('cody').get<string>('proxyPath')
-            if (path?.startsWith('~/')) {
-                const homeDir = process.env.HOME || process.env.USERPROFILE
-                if (homeDir) {
-                    return path.replace('~/', `${homeDir}/`)
-                }
-            }
-            return path
-        })()
-        const proxyCACert = (() => {
-            let path = vscode.workspace.getConfiguration('cody').get<string>('proxyCACert')
-            if (path) {
-                if (path?.startsWith('~/')) {
-                    const homeDir = process.env.HOME || process.env.USERPROFILE
-                    if (homeDir) {
-                        path = path.replace('~/', `${homeDir}/`)
-                    }
-                }
-                // support a CA cert in a file, or embedded directly in the settings
-                return fs.statSync(path).isFile() ? fs.readFileSync(path, { encoding: 'utf-8' }) : path
-            }
-            return ''
-        })()
 
         if (proxyHost && !proxyPort) {
             console.error(
