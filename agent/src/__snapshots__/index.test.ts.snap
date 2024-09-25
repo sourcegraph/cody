@@ -1,9 +1,9 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`Agent > Chat > chat/restore (With null model) 1`] = `"I apologize for any confusion, but I don't have specific information about my underlying model architecture or version. As I mentioned, I'm Cody, an AI coding assistant created by Sourcegraph. I'm designed to help with coding and software development tasks, but details about my exact model or training are not something I have access to or am able to share. Is there a particular coding or development task I can assist you with today?"`;
+exports[`Agent > Chat > chat/restore (With null model) 1`] = `"I'm Cody, an AI coding assistant developed by Sourcegraph. I'm specifically designed to help with programming and software development tasks. My knowledge covers a wide range of programming languages, frameworks, and development practices. I'm here to assist you with any coding challenges, answer technical questions, or help brainstorm solutions for your projects. Feel free to ask me about anything related to software development - I'm eager to help!"`;
 
 exports[`Agent > Chat > chat/submitMessage (long message) 1`] = `
-"Certainly! I'll create a simple "Hello, World!" function in Java for you. Here's the code:
+"Certainly! I'd be happy to generate a simple "Hello World" function in Java for you. Here's a straightforward implementation:
 
 \`\`\`java:HelloWorld.java
 public class HelloWorld {
@@ -17,30 +17,18 @@ public class HelloWorld {
 }
 \`\`\`
 
-This Java code does the following:
+This Java code defines a class called \`HelloWorld\` with two methods:
 
-1. We define a class called \`HelloWorld\`.
-2. Inside the class, we have the \`main\` method, which is the entry point of any Java program.
-3. We also define a \`sayHello()\` method that prints "Hello, World!" to the console.
-4. In the \`main\` method, we call the \`sayHello()\` function.
+1. The \`main\` method, which is the entry point of the program.
+2. The \`sayHello\` method, which prints "Hello, World!" to the console.
 
-To run this program:
+When you run this program, it will call the \`sayHello\` function, resulting in the classic "Hello, World!" message being displayed.
 
-1. Save the file as \`HelloWorld.java\`.
-2. Compile it using the command: \`javac HelloWorld.java\`
-3. Run it using the command: \`java HelloWorld\`
-
-When you run this program, it will output:
-
-\`\`\`
-Hello, World!
-\`\`\`
-
-This is a basic example of a Java function that prints a greeting to the console."
+Feel free to use this code as a starting point for your Java projects or to experiment with further modifications!"
 `;
 
 exports[`Agent > Chat > chat/submitMessage (with mock context) 1`] = `
-"Certainly! Here's a class Dog that implements the Animal interface based on the context provided:
+"Certainly! Here's the implementation of the Dog class that implements the Animal interface:
 
 \`\`\`typescript:src/dog.ts
 import { Animal } from './animal';
@@ -59,7 +47,7 @@ export class Dog implements Animal {
 }
 \`\`\`
 
-This implementation fulfills all the requirements of the Animal interface defined in your workspace."
+This implementation fully satisfies the Animal interface requirements. The Dog class is ready to use in your workspace."
 `;
 
 exports[`Agent > Commands > commands/explain 1`] = `
