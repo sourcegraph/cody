@@ -23,7 +23,6 @@ describe(
         }
         const SWITCH_CREDENTIALS: TestingCredentials = {
             ...TESTING_CREDENTIALS.s2,
-            redactedToken: 'REDACTED_4229eb42e0efa2f15f3e6f8843764c7f92ab8051020cc4e90802f4fc0cc91bfa',
         }
         const FIXTURE_MODELS = {
             // Set this to the default chat model on dotcom.
