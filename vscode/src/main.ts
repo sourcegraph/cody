@@ -247,6 +247,7 @@ const register = async (
     registerChatCommands(disposables)
     disposables.push(...registerSidebarCommands())
     registerOtherCommands(disposables)
+    registerInternalUnstableCommands(context.extensionMode, chatClient, disposables)
     if (isExtensionModeDevOrTest) {
         await registerTestCommands(context, disposables)
     }
@@ -481,14 +482,30 @@ async function registerCodyCommands(
                                   vscode.commands.registerCommand('cody.command.auto-edit', a =>
                                       executeAutoEditCommand(a)
                                   ),
-                                  new CodySourceControl(chatClient), // Generate Commit Message command
-                                  registerCodyCommandLine(chatClient),
                               ]
                     })
                 )
                 .subscribe({})
         )
     )
+}
+
+/**
+ * Commands available only in VS Code that are currently
+ * behind the `cody.internal.unstable` feature flag.
+ */
+function registerInternalUnstableCommands(
+    extensionMode: vscode.ExtensionMode,
+    chatClient: ChatClient,
+    disposable: vscode.Disposable[]
+): void {
+    // Source Control Panel for generating commit message command.
+    disposable.push(new CodySourceControl(chatClient))
+    // Do not register and execute these commands in test mode
+    if (extensionMode !== vscode.ExtensionMode.Test) {
+        // Command for executing CLI commands in the VS Code terminal.
+        disposable.push(registerCodyCommandLine(chatClient))
+    }
 }
 
 function enableFeature(

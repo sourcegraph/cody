@@ -1,12 +1,15 @@
 import {
     type ChatClient,
     type ChatMessage,
+    type Model,
     ModelUsage,
     PromptString,
-    firstResultFromOperation,
     getSimplePreamble,
+    logDebug,
     modelsService,
     ps,
+    skipPendingOperation,
+    subscriptionDisposable,
     telemetryRecorder,
 } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
@@ -34,20 +37,37 @@ const CODY_ACTION_CLI_PROMPT = ps`Generate a shell command for the following use
 
 class CodyCommandLine implements vscode.Disposable {
     private disposables: vscode.Disposable[] = []
-
-    private terminal: vscode.Terminal
+    private model: Model | undefined
+    private codyTerminal: vscode.Terminal | undefined
 
     constructor(private readonly chatClient: ChatClient) {
-        this.terminal = this.getRegisteredTerminal()
         this.disposables.push(
             vscode.commands.registerCommand('cody.command.cody-cli', () => this.open()),
             vscode.commands.registerCommand('cody.command.cody-cli-run', (command: string) =>
                 this.run(command)
             )
         )
+        this.disposables.push(
+            subscriptionDisposable(
+                modelsService
+                    .getModels(ModelUsage.Chat)
+                    .pipe(skipPendingOperation())
+                    .subscribe(models => {
+                        // Try looking for fast models.
+                        const preferredModel = models.find(p => p.id.includes('haiku'))
+                        this.model = preferredModel ?? models.at(0)
+                    })
+            )
+        )
     }
 
-    private getRegisteredTerminal(): vscode.Terminal {
+    private get terminal(): vscode.Terminal {
+        if (vscode.window.activeTerminal) {
+            return vscode.window.activeTerminal
+        }
+        if (this.codyTerminal) {
+            return this.codyTerminal
+        }
         const terminal = vscode.window.createTerminal({
             name: 'Cody Command Line',
             hideFromUser: true,
@@ -55,21 +75,25 @@ class CodyCommandLine implements vscode.Disposable {
             isTransient: true,
         })
         this.disposables.push(terminal)
+        this.codyTerminal = terminal
         return terminal
     }
 
     private async open(): Promise<void> {
+        if (!this.model) {
+            logDebug('CodyCommandLine', 'No model found for Cody Command Line')
+            return
+        }
+        const model = this.model.id
         telemetryRecorder.recordEvent('cody.command.commit', 'executed')
-        const models = await firstResultFromOperation(modelsService.getModels(ModelUsage.Chat))
-        const model = models.find(model => model.id === 'haiku')?.id ?? models[0]?.id ?? ''
         const input = await vscode.window.showInputBox({
             title: 'Cody Command Line',
             placeHolder: 'e.g., Revert the current branch to match the latest commit on origin/main.',
             prompt: 'Tell Cody your task, and Cody will generate the necessary shell command to execute it.',
             valueSelection: [0, 1],
         })
-        if (!input || !model) {
-            return
+        if (!input) {
+            return // aborted by user
         }
         const inputPromptString = PromptString.unsafe_fromUserQuery(input)
         const text = CODY_ACTION_CLI_PROMPT.replace('{input}', inputPromptString)
@@ -157,17 +181,26 @@ class CodyCommandLine implements vscode.Disposable {
         await processStream()
     }
 
+    private skipConfirmationOnRun = false
+
     private async run(command: string): Promise<void> {
-        const confirmation =
-            (await vscode.window.showInformationMessage(
-                `Run command in terminal: ${command}`,
-                'Run',
-                'Cancel'
-            )) ?? ''
-        if (confirmation !== 'Run') {
+        if (this.skipConfirmationOnRun) {
+            this._run(command)
             return
         }
-        // TODO: If the terminal was disposed, create a new one
+        await vscode.window
+            .showInformationMessage(`Run \`${command}\` in terminal?`, 'Yes', 'Do not ask again')
+            .then(selected => {
+                if (selected) {
+                    if (selected?.startsWith('Do not show again')) {
+                        this.skipConfirmationOnRun = true
+                    }
+                    this._run(command)
+                }
+            })
+    }
+
+    private _run(command: string): void {
         this.terminal.sendText(command)
         this.terminal.show()
     }
