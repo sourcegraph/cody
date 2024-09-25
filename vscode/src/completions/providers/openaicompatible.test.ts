@@ -19,7 +19,18 @@ describe('openaicompatible autocomplete provider', () => {
         vi.spyOn(featureFlagProvider, 'evaluatedFeatureFlag').mockReturnValue(Observable.of(false))
     })
 
-    const valuesToAssert = {
+    const anthropicParams = {
+        providerId: 'anthropic',
+        legacyModel: 'claude-instant-1.2',
+        requestParams: {
+            maxTokensToSample: 256,
+            temperature: 0.5,
+            timeoutMs: 7000,
+            topK: 0,
+        },
+    } satisfies AutocompleteProviderValuesToAssert
+
+    const openaicompatibleParams = {
         providerId: 'openaicompatible',
         legacyModel: 'llama-3.1-70b-versatile',
         requestParams: {
@@ -51,8 +62,11 @@ describe('openaicompatible autocomplete provider', () => {
 
         // Switches to the first available model, because `llama-3.1-70b-versatile` is
         // the enterprise tier model and cannot be used on DotCom.
-        expect(provider.id).toBe('anthropic')
-        expect(provider.legacyModel).toBe('anthropic/claude-instant-1.2')
+        const { providerId, legacyModel, requestParams } = anthropicParams
+
+        expect(provider.id).toBe(providerId)
+        expect(provider.legacyModel).toBe(legacyModel)
+        expect(getRequestParamsWithoutMessages(provider)).toMatchObject(requestParams)
     })
 
     it('[enterprise] server-side-model-config', async () => {
@@ -60,7 +74,7 @@ describe('openaicompatible autocomplete provider', () => {
             modelRef: 'groq::v1::llama-3.1-70b-versatile',
             isDotCom: false,
         })
-        const { providerId, legacyModel, requestParams } = valuesToAssert
+        const { providerId, legacyModel, requestParams } = openaicompatibleParams
 
         expect(provider.id).toBe(providerId)
         expect(provider.legacyModel).toBe(legacyModel)
@@ -69,8 +83,8 @@ describe('openaicompatible autocomplete provider', () => {
 
     it('throws if used with site-config-cody-llm-configuration', async () => {
         const createCall = getAutocompleteProviderFromSiteConfigCodyLLMConfiguration({
-            providerId: 'openaicompatible',
-            legacyModel: 'gpt-4o',
+            provider: 'sourcegraph',
+            completionModel: 'openaicompatible/gpt-4o',
             isDotCom: true,
         })
 

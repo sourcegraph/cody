@@ -144,8 +144,7 @@ export function params(
 
     // TODO: add support for `createProvider` from `vscode/src/completions/providers/shared/create-provider.ts`
     const createProvider =
-        config?.configuration?.autocompleteAdvancedProvider === 'fireworks' &&
-        config?.configuration?.autocompleteAdvancedModel
+        config?.configuration?.autocompleteAdvancedProvider === 'fireworks'
             ? createFireworksProvider
             : createAnthropicProvider
 

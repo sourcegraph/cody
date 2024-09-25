@@ -1,12 +1,9 @@
-import * as anthropic from '@anthropic-ai/sdk'
-
 import {
     type AuthenticatedAuthStatus,
     type CodeCompletionsParams,
     isDotCom,
 } from '@sourcegraph/cody-shared'
 
-import { CLOSING_CODE_TAG } from '../text-processing'
 import { forkSignal, generatorWithErrorObserver, generatorWithTimeout, zipGenerators } from '../utils'
 
 import {
@@ -14,17 +11,24 @@ import {
     fetchAndProcessDynamicMultilineCompletions,
 } from './shared/fetch-and-process-completions'
 import {
+    BYOK_MODEL_ID_FOR_LOGS,
     type CompletionProviderTracer,
     type GenerateCompletionsOptions,
     Provider,
     type ProviderFactoryParams,
 } from './shared/provider'
 
-let isOutdatedSourcegraphInstanceWithoutAnthropicAllowlist = false
+let isModernSourcegraphInstanceWithoutAnthropicAllowlist = true
 
 class AnthropicProvider extends Provider {
     public getRequestParams(options: GenerateCompletionsOptions): CodeCompletionsParams {
         const { snippets, docContext, document } = options
+
+        const model =
+            isModernSourcegraphInstanceWithoutAnthropicAllowlist &&
+            SUPPORTED_MODELS.includes(this.legacyModel)
+                ? (`${this.id}/${this.legacyModel}` as const)
+                : undefined
 
         const messages = this.modelHelper.getMessages({
             snippets,
@@ -45,11 +49,7 @@ class AnthropicProvider extends Provider {
             // Note: This behavior only works when Cody Gateway is used (as that's the only backend
             //       that supports switching between providers at the same time). We also only allow
             //       models that are allowlisted on a recent SG server build to avoid regressions.
-            model:
-                !isOutdatedSourcegraphInstanceWithoutAnthropicAllowlist &&
-                isAllowlistedModel(this.legacyModel)
-                    ? this.legacyModel
-                    : undefined,
+            model: this.maybeFilterOutModel(model),
         }
     }
 
@@ -90,7 +90,7 @@ class AnthropicProvider extends Provider {
                                 error.message.includes('Unsupported chat model') ||
                                 error.message.includes('Unsupported custom model')
                             ) {
-                                isOutdatedSourcegraphInstanceWithoutAnthropicAllowlist = true
+                                isModernSourcegraphInstanceWithoutAnthropicAllowlist = false
                             }
                         }
                     }
@@ -111,50 +111,33 @@ class AnthropicProvider extends Provider {
 }
 
 function getClientModel(
-    provider: string,
-    authStatus: Pick<AuthenticatedAuthStatus, 'endpoint' | 'configOverwrites'>
+    model: string | undefined,
+    authStatus: Pick<AuthenticatedAuthStatus, 'endpoint'>
 ): string {
     // Always use the default PLG model on DotCom
     if (isDotCom(authStatus)) {
         return DEFAULT_PLG_ANTHROPIC_MODEL
     }
 
-    if (provider === 'google') {
-        // Model name for google provider is a deployment name. It shouldn't appear in logs.
-        return ''
-    }
-
-    const { configOverwrites } = authStatus
-
-    // Only pass through the upstream-defined model if we're using Cody Gateway
-    if (configOverwrites?.provider === 'sourcegraph') {
-        return configOverwrites.completionModel || ''
-    }
-
-    return ''
+    return model || BYOK_MODEL_ID_FOR_LOGS
 }
 
-export function createProvider({ provider, source, authStatus }: ProviderFactoryParams): Provider {
+export function createProvider({ legacyModel, source, authStatus }: ProviderFactoryParams): Provider {
     return new AnthropicProvider({
         id: 'anthropic',
-        legacyModel: getClientModel(provider, authStatus),
+        legacyModel: getClientModel(legacyModel, authStatus),
         source,
     })
 }
 
-const DEFAULT_PLG_ANTHROPIC_MODEL = 'anthropic/claude-instant-1.2'
+const DEFAULT_PLG_ANTHROPIC_MODEL = 'claude-instant-1.2'
 
 // All the Anthropic version identifiers that are allowlisted as being able to be passed as the
 // model identifier on a Sourcegraph Server
-// TODO: drop this in a follow up PR
-function isAllowlistedModel(model: string | undefined): boolean {
-    switch (model) {
-        case 'anthropic/claude-instant-1.2-cyan':
-        case 'anthropic/claude-instant-1.2':
-        case 'anthropic/claude-instant-v1':
-        case 'anthropic/claude-instant-1':
-        case 'anthropic/claude-3-haiku-20240307':
-            return true
-    }
-    return false
-}
+const SUPPORTED_MODELS = [
+    DEFAULT_PLG_ANTHROPIC_MODEL,
+    'claude-instant-1.2-cyan',
+    'claude-instant-v1',
+    'claude-instant-1',
+    'claude-3-haiku-20240307',
+]

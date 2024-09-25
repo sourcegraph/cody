@@ -28,7 +28,7 @@ const MODEL_MAP = {
     'llama-code-13b': 'openaicompatible/llama-code-13b',
     'llama-code-13b-instruct': 'openaicompatible/llama-code-13b-instruct',
     'mistral-7b-instruct-4k': 'openaicompatible/mistral-7b-instruct-4k',
-}
+} as const
 
 type OpenAICompatibleModel =
     | keyof typeof MODEL_MAP
@@ -75,7 +75,7 @@ class ExpOpenAICompatibleProvider extends Provider {
             this.legacyModel === 'starcoder-hybrid'
                 ? MODEL_MAP[multiline ? 'starcoder-16b' : 'starcoder-7b']
                 : this.legacyModel.startsWith('starchat')
-                  ? '' // starchat is not a supported backend model yet, use the default server-chosen model.
+                  ? undefined // starchat is not a supported backend model yet, use the default server-chosen model.
                   : MODEL_MAP[this.legacyModel as keyof typeof MODEL_MAP]
 
         return {

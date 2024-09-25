@@ -30,7 +30,6 @@ class OpenAICompatibleProvider extends Provider {
         return {
             ...this.defaultRequestParams,
             messages,
-            model: this.legacyModel,
         }
     }
 

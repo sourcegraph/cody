@@ -9,7 +9,9 @@ import {
     type CompletionParameters,
     type DocumentContext,
     type GitContext,
+    type LegacyModelRefStr,
     type Model,
+    currentAuthStatusAuthed,
     tokensToChars,
 } from '@sourcegraph/cody-shared'
 
@@ -76,6 +78,10 @@ type ProviderModelOptions = {
 // TODO: drop this in favor of `ProviderModelOptions` once we migrate to
 // the new model ref syntax everywhere.
 type ProviderLegacyModelOptions = {
+    /**
+     * The model name _without_ the provider ID.
+     * e.g. "claude-3-sonnet-20240229", not "anthropic/claude-3-sonnet-20240229".
+     */
     legacyModel: string
 }
 
@@ -95,9 +101,12 @@ export type ProviderFactoryParams = {
      */
     model?: Model
     /**
-     * Model string ID kept here for backward compatibility. Should be replaced fully by `model`.
+     * The model name _without_ the provider ID.
+     * e.g. "claude-3-sonnet-20240229", not "anthropic/claude-3-sonnet-20240229".
+     *
+     * Kept here for backward compatibility. Should be replaced fully by `model`.
      */
-    legacyModel?: string
+    legacyModel?: Provider['legacyModel']
     /**
      * Client provider ID.
      */
@@ -127,8 +136,8 @@ export abstract class Provider {
     public model?: Model
 
     /**
-     * Either `provider/model-name` or `model-name` depending on the provider implementation.
-     * TODO: migrate to one syntax.
+     * The model name _without_ the provider ID.
+     * e.g. "claude-3-sonnet-20240229", not "anthropic/claude-3-sonnet-20240229".
      */
     public legacyModel: string
     public contextSizeHints: ProviderContextSizeHints
@@ -151,6 +160,21 @@ export abstract class Provider {
         temperature: 0.2,
         topK: 0,
     } as const satisfies Omit<CodeCompletionsParams, 'messages'>
+
+    /**
+     * Returns the passed model ID only if we're using Cody Gateway and
+     * the model ID is resolved on the client.
+     */
+    protected maybeFilterOutModel(
+        model?: typeof BYOK_MODEL_ID_FOR_LOGS | LegacyModelRefStr
+    ): LegacyModelRefStr | undefined {
+        if (!model || model === BYOK_MODEL_ID_FOR_LOGS) {
+            return undefined
+        }
+
+        const { configOverwrites } = currentAuthStatusAuthed()
+        return configOverwrites?.provider === 'sourcegraph' ? model : undefined
+    }
 
     constructor(public readonly options: Readonly<ProviderOptions>) {
         const {

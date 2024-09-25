@@ -28,7 +28,7 @@ class GoogleGeminiProvider extends Provider {
             ...this.defaultRequestParams,
             topP: 0.95,
             temperature: 0,
-            model: this.legacyModel,
+            model: `${this.id}/${this.legacyModel}`,
             messages,
         }
     }
@@ -70,7 +70,7 @@ class GoogleGeminiProvider extends Provider {
 const SUPPORTED_GEMINI_MODELS = ['gemini-1.5-flash', 'gemini-pro', 'gemini-1.0-pro'] as const
 
 export function createProvider({ legacyModel, source }: ProviderFactoryParams): Provider {
-    const clientModel = legacyModel ?? 'google/gemini-1.5-flash'
+    const clientModel = legacyModel ?? 'gemini-1.5-flash'
 
     if (!SUPPORTED_GEMINI_MODELS.some(m => clientModel.includes(m))) {
         throw new Error(`Model ${legacyModel} is not supported by GeminiProvider`)

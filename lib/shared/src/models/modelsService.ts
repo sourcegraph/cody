@@ -31,6 +31,7 @@ type ApiVersionId = string
 type ProviderId = string
 
 export type ModelRefStr = `${ProviderId}::${ApiVersionId}::${ModelId}`
+export type LegacyModelRefStr = `${ProviderId}/${ModelId}`
 export interface ModelRef {
     providerId: ProviderId
     apiVersionId: ApiVersionId
