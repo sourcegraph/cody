@@ -29,13 +29,13 @@ import {
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
 import { map } from 'observable-fns'
+import { startCodyEngine } from '../graph/bfg/spawn-bfg'
 import type { IndexHealthResultFound, IndexRequest } from '../jsonrpc/embeddings-protocol'
 import { isRunningInsideAgent } from '../jsonrpc/isRunningInsideAgent'
 import type { MessageHandler } from '../jsonrpc/jsonrpc'
 import { logDebug } from '../log'
 import { vscodeGitAPI } from '../repository/git-extension-api'
 import { captureException } from '../services/sentry/sentry'
-import { CodyEngineService } from './cody-engine'
 
 export function createLocalEmbeddingsController(
     context: vscode.ExtensionContext
@@ -215,63 +215,67 @@ export class LocalEmbeddingsController implements LocalEmbeddingsFetcher, vscode
         }
 
         if (!this.service) {
-            const instance = CodyEngineService.getInstance(this.context)
-            this.service = instance.getService(this.setupLocalEmbeddingsService)
+            logDebug('LocalEmbeddingsController', 'getService', 'starting BFG')
+            this.service = startCodyEngine(this.context).then(async service => {
+                // TODO: Add more states for cody-engine fetching and trigger status updates here
+                service.registerNotification('embeddings/progress', obj => {
+                    if (typeof obj === 'object') {
+                        switch (obj.type) {
+                            case 'progress': {
+                                this.lastError = undefined
+                                const percent = Math.floor((100 * obj.numItems) / obj.totalItems)
+                                if (this.statusBar) {
+                                    this.statusBar.text = `Indexing Embeddings… (${percent.toFixed(0)}%)`
+                                    this.statusBar.backgroundColor = undefined
+                                    this.statusBar.tooltip = obj.currentPath
+                                    this.statusBar.show()
+                                }
+                                return
+                            }
+                            case 'error': {
+                                this.lastError = obj.message
+                                this.loadAfterIndexing()
+                                return
+                            }
+                            case 'done': {
+                                this.lastError = undefined
+                                this.loadAfterIndexing()
+                                return
+                            }
+                        }
+                    }
+                    logDebug('LocalEmbeddingsController', 'unknown notification', JSON.stringify(obj))
+                })
+
+                logDebug(
+                    'LocalEmbeddingsController',
+                    'spawnAndBindService',
+                    'service started, initializing'
+                )
+
+                const initResult = await service.request('embeddings/initialize', {
+                    codyGatewayEndpoint: this.modelConfig.endpoint,
+                    indexPath: this.modelConfig.indexPath.fsPath,
+                })
+
+                const { auth } = await currentResolvedConfig()
+                logDebug('LocalEmbeddingsController', 'spawnAndBindService', 'initialized', {
+                    verbose: {
+                        initResult,
+                        tokenAvailable: Boolean(auth.accessToken),
+                    },
+                })
+
+                // Set the initial access token
+                await service.request('embeddings/set-token', auth.accessToken ?? '')
+
+                this.serviceStarted = true
+
+                return service
+            })
         }
 
         return this.service
-    }
-
-    private setupLocalEmbeddingsService = async (service: MessageHandler): Promise<void> => {
-        // TODO: Add more states for cody-engine fetching and trigger status updates here
-        service.registerNotification('embeddings/progress', obj => {
-            if (typeof obj === 'object') {
-                switch (obj.type) {
-                    case 'progress': {
-                        this.lastError = undefined
-                        const percent = Math.floor((100 * obj.numItems) / obj.totalItems)
-                        if (this.statusBar) {
-                            this.statusBar.text = `Indexing Embeddings… (${percent.toFixed(0)}%)`
-                            this.statusBar.backgroundColor = undefined
-                            this.statusBar.tooltip = obj.currentPath
-                            this.statusBar.show()
-                        }
-                        return
-                    }
-                    case 'error': {
-                        this.lastError = obj.message
-                        this.loadAfterIndexing()
-                        return
-                    }
-                    case 'done': {
-                        this.lastError = undefined
-                        this.loadAfterIndexing()
-                        return
-                    }
-                }
-            }
-            logDebug('LocalEmbeddingsController', 'unknown notification', JSON.stringify(obj))
-        })
-
-        logDebug('LocalEmbeddingsController', 'spawnAndBindService', 'service started, initializing')
-
-        const initResult = await service.request('embeddings/initialize', {
-            codyGatewayEndpoint: this.modelConfig.endpoint,
-            indexPath: this.modelConfig.indexPath.fsPath,
-        })
-
-        const { auth } = await currentResolvedConfig()
-        logDebug('LocalEmbeddingsController', 'spawnAndBindService', 'initialized', {
-            verbose: {
-                initResult,
-                tokenAvailable: Boolean(auth.accessToken),
-            },
-        })
-
-        // Set the initial access token
-        await service.request('embeddings/set-token', auth.accessToken ?? '')
-
-        this.serviceStarted = true
     }
 
     // After indexing succeeds or fails, try to load the index. Update state

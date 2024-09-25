@@ -53,7 +53,8 @@ export class MessageHandler {
         this.disposables.push(
             conn.onClose(() => {
                 this.alive = false
-            })
+            }),
+            this.onDisposeEvent
         )
         if (tracePath) {
             if (existsSync(tracePath)) {
@@ -182,8 +183,12 @@ export class MessageHandler {
         this.dispose()
     }
 
+    private onDisposeEvent = new vscode.EventEmitter<void>()
+    public readonly onDispose = this.onDisposeEvent.event
+
     public dispose(): void {
         this.alive = false
+        this.onDisposeEvent.fire()
         for (const disposable of this.disposables) {
             disposable.dispose()
         }
