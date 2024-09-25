@@ -232,7 +232,7 @@ export const ContextCell: FunctionComponent<{
                         </AccordionItem>
                     </Accordion>
                 )}
-                {contextItemsToDisplay && excludedContextInfo.length && (
+                {contextItemsToDisplay && excludedContextInfo.length > 0 && (
                     <div className="tw-mt-2 tw-text-muted-foreground">
                         {excludedContextInfo.map(message => (
                             <ExcludedContextWarning key={message} message={message} />
