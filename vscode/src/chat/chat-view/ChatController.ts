@@ -1666,9 +1666,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         viewOrPanel.onDidDispose(() => {
             this.cancelSubmitOrEditOperation()
             this._webviewPanelOrView = undefined
-            if ('dispose' in viewOrPanel) {
-                viewOrPanel.dispose()
-            }
         })
 
         this.disposables.push(
