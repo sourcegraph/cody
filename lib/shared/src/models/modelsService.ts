@@ -366,7 +366,7 @@ export class ModelsService {
         const modelsData = await firstResultFromOperation(this.modelsChanges)
         const resolved = this.resolveModel(modelsData, model)
         if (!resolved) {
-            return
+            throw new Error(`Model not found: ${typeof model === 'string' ? model : model.id}`)
         }
         if (!resolved.usage.includes(type)) {
             throw new Error(`Model "${resolved.id}" is not compatible with usage type "${type}".`)

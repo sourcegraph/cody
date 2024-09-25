@@ -443,11 +443,15 @@ export function defaultWebviewPanel(params: {
     onDidReceiveMessage: vscode.EventEmitter<any>
     onDidPostMessage: EventEmitter<any>
 }): vscode.WebviewPanel {
+    const onDidDispose = new EventEmitter<void>()
     return {
         active: false,
-        dispose: () => {},
+        dispose: () => {
+            onDidDispose.fire()
+            onDidDispose.dispose()
+        },
         onDidChangeViewState: emptyEvent(),
-        onDidDispose: emptyEvent(),
+        onDidDispose: onDidDispose.event,
         options: params.options ?? {
             enableFindWidget: false,
             retainContextWhenHidden: false,
