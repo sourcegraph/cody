@@ -78,19 +78,18 @@ export function getConfiguration(
 
     function readProxyCACert(): string | undefined {
         const path = expandTilde(config.get<string>(CONFIG_KEY.proxyCacert))
-        if (!path) {
-            return undefined
-        }
-        // support directly embedding a CA cert in the settings
-        if (path.startsWith('-----BEGIN CERTIFICATE-----')) {
-            return path
-        }
-        try {
-            return fs.readFileSync(path, { encoding: 'utf-8' })
-        } catch (error) {
-            void vscode.window.showErrorMessage(
-                `Error reading ${CONFIG_KEY.proxyCacert} from ${path}:\n${error}`
-            )
+        if (path) {
+            // support directly embedding a CA cert in the settings
+            if (path.startsWith('-----BEGIN CERTIFICATE-----')) {
+                return path
+            }
+            try {
+                return fs.readFileSync(path, { encoding: 'utf-8' })
+            } catch (error) {
+                void vscode.window.showErrorMessage(
+                    `Error reading ${CONFIG_KEY.proxyCacert} from ${path}:\n${error}`
+                )
+            }
         }
         return undefined
     }
