@@ -1,6 +1,6 @@
 import { exec } from 'node:child_process'
 import os from 'node:os'
-import path from 'node:path/posix'
+import path from 'node:path'
 import { promisify } from 'node:util'
 import {
     type ContextItem,
@@ -28,9 +28,9 @@ export async function getContextFileFromShell(command: string): Promise<ContextI
             return []
         }
 
-        const homeDir = os.homedir()
-        const filteredCommand = command.replace(/(\s~\/)/g, ` ${homeDir}${path.sep}`)
+        const homeDir = os.homedir() || process.env.HOME || process.env.USERPROFILE || ''
         const cwd = vscode.workspace.workspaceFolders?.[0]?.uri?.fsPath
+        const filteredCommand = command.replaceAll(/(\s~\/)/g, ` ${homeDir}${path.sep}`)
 
         try {
             const { stdout, stderr } = await execAsync(filteredCommand, { cwd, encoding: 'utf8' })
