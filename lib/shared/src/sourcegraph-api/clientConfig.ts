@@ -1,10 +1,12 @@
 import { Observable, interval, map } from 'observable-fns'
 import semver from 'semver'
 import { authStatus } from '../auth/authStatus'
+import { editorWindowIsFocused } from '../editor/editorState'
 import { logDebug, logError } from '../logger'
 import {
     debounceTime,
     distinctUntilChanged,
+    filter,
     firstValueFrom,
     promiseFactoryToObservable,
     startWith,
@@ -74,6 +76,12 @@ export class ClientConfigSingleton {
             switchMapReplayOperation(authStatus =>
                 authStatus.authenticated
                     ? interval(ClientConfigSingleton.REFETCH_INTERVAL).pipe(
+                          map(() => undefined),
+                          // Don't update if the editor is in the background, to avoid network
+                          // activity that can cause OS warnings or authorization flows when the
+                          // user is not using Cody. See
+                          // linear.app/sourcegraph/issue/CODY-3745/codys-background-periodic-network-access-causes-2fa.
+                          filter((_value): _value is undefined => editorWindowIsFocused()),
                           startWith(undefined),
                           switchMap(() => promiseFactoryToObservable(signal => this.fetchConfig(signal)))
                       )
