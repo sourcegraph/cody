@@ -535,11 +535,6 @@
         "enablement": "cody.activated && resourceSet"
       },
       {
-        "command": "cody.embeddings.resolveIssue",
-        "title": "Cody Embeddings",
-        "enablement": "cody.activated && cody.embeddings.hasIssue"
-      },
-      {
         "command": "cody.debug.export.logs",
         "category": "Cody Debug",
         "group": "Debug",
@@ -768,10 +763,6 @@
           "when": "cody.activated"
         },
         {
-          "command": "cody.embeddings.resolveIssue",
-          "when": "false"
-        },
-        {
           "command": "cody.chat.signIn",
           "when": "!cody.activated"
         },
@@ -977,13 +968,6 @@
           "type": "string",
           "markdownDescription": "A Git repository URL to use instead of allowing Cody to infer the Git repository from the workspace.",
           "examples": ["https://github.com/sourcegraph/cody", "ssh://git@github.com/sourcegraph/cody"]
-        },
-        "cody.useContext": {
-          "order": 99,
-          "type": "string",
-          "enum": ["embeddings", "keyword", "blended", "none"],
-          "default": "blended",
-          "markdownDescription": "Controls which context providers Cody uses for chat, commands and inline edits. Use 'blended' for best results. For debugging other context sources, 'embeddings' will use an embeddings-based index if available. 'keyword' will use a search-based index. 'none' will not use embeddings or search-based indexes."
         },
         "cody.customHeaders": {
           "order": 4,

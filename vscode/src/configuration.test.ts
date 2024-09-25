@@ -23,8 +23,6 @@ describe('getConfiguration', () => {
                         return 'http://example.com'
                     case 'cody.codebase':
                         return 'my/codebase'
-                    case 'cody.useContext':
-                        return 'keyword'
                     case 'cody.customHeaders':
                         return {
                             'Cache-Control': 'no-cache',
@@ -119,7 +117,6 @@ describe('getConfiguration', () => {
         expect(getConfiguration(config)).toEqual({
             proxy: undefined,
             codebase: 'my/codebase',
-            useContext: 'keyword',
             serverEndpoint: 'http://example.com',
             customHeaders: {
                 'Cache-Control': 'no-cache',
@@ -163,7 +160,6 @@ describe('getConfiguration', () => {
             autocompleteExperimentalPreloadDebounceInterval: 0,
             providerLimitPrompt: 123,
             devModels: [{ model: 'm', provider: 'p' }],
-            testingModelConfig: undefined,
             experimentalGuardrailsTimeoutSeconds: undefined,
         } satisfies ClientConfiguration)
     })

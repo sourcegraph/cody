@@ -37,7 +37,6 @@ const hoverSourceLabels: Record<ContextItemSource, string | undefined> = {
     // Shown in the format `Included ${label}`
     unified: 'via remote repository search',
     search: 'via local repository index (symf)',
-    embeddings: 'via local repository index (embeddings)',
     editor: 'from workspace files',
     selection: 'from selected code',
     user: 'via @-mention',

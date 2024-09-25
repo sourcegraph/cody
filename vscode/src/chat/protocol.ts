@@ -122,7 +122,6 @@ export type WebviewMessage =
           range?: RangeData | undefined | null
       }
     | ({ command: 'edit' } & WebviewEditMessage)
-    | { command: 'embeddings/index' }
     | { command: 'insert'; text: string }
     | { command: 'newFile'; text: string }
     | {

@@ -21,8 +21,7 @@ import type { Repo } from './remote-repo'
 const MAX_REPO_COUNT = 10
 
 // TODO(dpc): The vscode.git extension has an delay before we can fetch a
-// workspace folder's remote. Switch to cody-engine instead of depending on
-// vscode.git and this arbitrary delay.
+// workspace folder's remote.
 const GIT_REFRESH_DELAY = 2000
 
 // Watches the VSCode workspace roots and maps any it finds to remote repository

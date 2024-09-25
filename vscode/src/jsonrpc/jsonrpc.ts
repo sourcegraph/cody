@@ -6,11 +6,9 @@ import * as vscode from 'vscode'
 import { type CancellationToken, type MessageConnection, ResponseError, Trace } from 'vscode-jsonrpc'
 import { CodyJsonRpcErrorCode } from './CodyJsonRpcErrorCode'
 import type * as agent from './agent-protocol'
-import type * as bfg from './bfg-protocol'
-import type * as embeddings from './embeddings-protocol'
 
-type Requests = bfg.Requests & agent.Requests & embeddings.Requests
-type Notifications = bfg.Notifications & agent.Notifications & embeddings.Notifications
+type Requests = agent.Requests
+type Notifications = agent.Notifications
 
 // String literal types for the names of the Cody Agent protocol methods.
 export type RequestMethodName = keyof Requests
