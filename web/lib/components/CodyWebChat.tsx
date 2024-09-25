@@ -4,7 +4,6 @@ import { URI } from 'vscode-uri'
 
 import {
     type ChatMessage,
-    type ClientStateForWebview,
     CodyIDE,
     type ContextItem,
     type ContextItemOpenCtx,
@@ -107,7 +106,7 @@ interface CodyWebPanelProps {
 }
 
 const CodyWebPanel: FC<CodyWebPanelProps> = props => {
-    const { vscodeAPI, initialContext, className } = props
+    const { vscodeAPI, initialContext: initialContextData, className } = props
 
     const dispatchClientAction = useClientActionDispatcher()
     const [errorMessages, setErrorMessages] = useState<string[]>([])
@@ -163,11 +162,11 @@ const CodyWebPanel: FC<CodyWebPanelProps> = props => {
     // V2 telemetry recorder
     const telemetryRecorder = useMemo(() => createWebviewTelemetryRecorder(vscodeAPI), [vscodeAPI])
 
-    const clientState: ClientStateForWebview = useMemo<ClientStateForWebview>(() => {
-        const { repository, fileURL, isDirectory } = initialContext ?? {}
+    const initialContext = useMemo<ContextItem[]>(() => {
+        const { repository, fileURL, isDirectory } = initialContextData ?? {}
 
         if (!repository) {
-            return { initialContext: [] }
+            return []
         }
 
         const mentions: ContextItem[] = [
@@ -195,7 +194,7 @@ const CodyWebPanel: FC<CodyWebPanelProps> = props => {
                     title: fileURL,
                     uri: URI.file(`${repository.name}/${fileURL}/`),
                     providerUri: REMOTE_DIRECTORY_PROVIDER_URI,
-                    description: 'Current directory',
+                    description: 'Current Directory',
                     source: ContextItemSource.Initial,
                     mention: {
                         data: {
@@ -210,12 +209,12 @@ const CodyWebPanel: FC<CodyWebPanelProps> = props => {
                 // Common file mention with possible file range positions
                 mentions.push({
                     type: 'file',
-                    title: initialContext?.fileRange ? 'Current Selection' : 'Current File',
+                    title: initialContextData?.fileRange ? 'Current Selection' : 'Current File',
                     isIgnored: false,
-                    range: initialContext?.fileRange
+                    range: initialContextData?.fileRange
                         ? {
-                              start: { line: initialContext.fileRange.startLine, character: 0 },
-                              end: { line: initialContext.fileRange.endLine + 1, character: 0 },
+                              start: { line: initialContextData.fileRange.startLine, character: 0 },
+                              end: { line: initialContextData.fileRange.endLine + 1, character: 0 },
                           }
                         : undefined,
                     remoteRepositoryName: repository.name,
@@ -225,26 +224,24 @@ const CodyWebPanel: FC<CodyWebPanelProps> = props => {
             }
         }
 
-        return {
-            initialContext: mentions,
-        }
-    }, [initialContext])
+        return mentions
+    }, [initialContextData])
 
     const envVars = useMemo(() => ({ clientType: CodyIDE.Web }), [])
 
     const wrappers = useMemo<Wrapper[]>(
-        () => getAppWrappers(vscodeAPI, telemetryRecorder, clientState, config, envVars),
-        [vscodeAPI, telemetryRecorder, clientState, config, envVars]
+        () => getAppWrappers(vscodeAPI, telemetryRecorder, config, initialContext, envVars),
+        [vscodeAPI, telemetryRecorder, config, initialContext, envVars]
     )
 
     const CONTEXT_MENTIONS_SETTINGS = useMemo<ChatMentionsSettings>(() => {
-        const { repository } = initialContext ?? {}
+        const { repository } = initialContextData ?? {}
 
         return {
             resolutionMode: 'remote',
             remoteRepositoriesNames: repository?.name ? [repository.name] : [],
         }
-    }, [initialContext])
+    }, [initialContextData])
 
     const isLoading = !config || !view || !userHistory
 
