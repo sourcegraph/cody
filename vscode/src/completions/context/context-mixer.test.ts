@@ -145,14 +145,14 @@ describe('ContextMixer', () => {
                 createMockStrategy([
                     [
                         {
-                            identifier: 'retriever-1',
+                            identifier: 'retriever1',
                             uri: testFileUri('foo.ts'),
                             content: 'function foo1() {}',
                             startLine: 0,
                             endLine: 0,
                         },
                         {
-                            identifier: 'retriever-1',
+                            identifier: 'retriever1',
                             uri: testFileUri('bar.ts'),
                             content: 'function bar1() {}',
                             startLine: 0,
@@ -162,21 +162,21 @@ describe('ContextMixer', () => {
 
                     [
                         {
-                            identifier: 'retriever-2',
+                            identifier: 'retriever2',
                             uri: testFileUri('foo.ts'),
                             content: 'function foo3() {}',
                             startLine: 10,
                             endLine: 10,
                         },
                         {
-                            identifier: 'retriever-2',
+                            identifier: 'retriever2',
                             uri: testFileUri('foo.ts'),
                             content: 'function foo1() {}\nfunction foo2() {}',
                             startLine: 0,
                             endLine: 1,
                         },
                         {
-                            identifier: 'retriever-2',
+                            identifier: 'retriever2',
                             uri: testFileUri('bar.ts'),
                             content: 'function bar1() {}\nfunction bar2() {}',
                             startLine: 0,
@@ -196,7 +196,7 @@ describe('ContextMixer', () => {
                   "content": "function foo1() {}",
                   "endLine": 0,
                   "fileName": "foo.ts",
-                  "identifier": "retriever-1",
+                  "identifier": "retriever1",
                   "startLine": 0,
                 },
                 {
@@ -204,14 +204,14 @@ describe('ContextMixer', () => {
               function foo2() {}",
                   "endLine": 1,
                   "fileName": "foo.ts",
-                  "identifier": "retriever-2",
+                  "identifier": "retriever2",
                   "startLine": 0,
                 },
                 {
                   "content": "function bar1() {}",
                   "endLine": 0,
                   "fileName": "bar.ts",
-                  "identifier": "retriever-1",
+                  "identifier": "retriever1",
                   "startLine": 0,
                 },
                 {
@@ -219,14 +219,14 @@ describe('ContextMixer', () => {
               function bar2() {}",
                   "endLine": 1,
                   "fileName": "bar.ts",
-                  "identifier": "retriever-2",
+                  "identifier": "retriever2",
                   "startLine": 0,
                 },
                 {
                   "content": "function foo3() {}",
                   "endLine": 10,
                   "fileName": "foo.ts",
-                  "identifier": "retriever-2",
+                  "identifier": "retriever2",
                   "startLine": 10,
                 },
               ]
@@ -234,14 +234,14 @@ describe('ContextMixer', () => {
             expect(logSummary).toEqual({
                 duration: expect.any(Number),
                 retrieverStats: {
-                    'retriever-1': {
+                    retriever1: {
                         duration: expect.any(Number),
                         positionBitmap: 0b00101,
                         retrievedItems: 2,
                         suggestedItems: 2,
                         retrieverChars: 36,
                     },
-                    'retriever-2': {
+                    retriever2: {
                         duration: expect.any(Number),
                         positionBitmap: 0b11010,
                         retrievedItems: 3,
@@ -272,14 +272,14 @@ describe('ContextMixer', () => {
                     createMockStrategy([
                         [
                             {
-                                identifier: 'retriever-1',
+                                identifier: 'retriever1',
                                 uri: testFileUri('foo.ts'),
                                 content: 'function foo1() {}',
                                 startLine: 0,
                                 endLine: 0,
                             },
                             {
-                                identifier: 'retriever-1',
+                                identifier: 'retriever1',
                                 uri: testFileUri('foo/bar.ts'),
                                 content: 'function bar1() {}',
                                 startLine: 0,
@@ -288,21 +288,21 @@ describe('ContextMixer', () => {
                         ],
                         [
                             {
-                                identifier: 'retriever-2',
+                                identifier: 'retriever2',
                                 uri: testFileUri('test/foo.ts'),
                                 content: 'function foo3() {}',
                                 startLine: 10,
                                 endLine: 10,
                             },
                             {
-                                identifier: 'retriever-2',
+                                identifier: 'retriever2',
                                 uri: testFileUri('foo.ts'),
                                 content: 'function foo1() {}\nfunction foo2() {}',
                                 startLine: 0,
                                 endLine: 1,
                             },
                             {
-                                identifier: 'retriever-2',
+                                identifier: 'retriever2',
                                 uri: testFileUri('example/bar.ts'),
                                 content: 'function bar1() {}\nfunction bar2() {}',
                                 startLine: 0,
@@ -341,14 +341,14 @@ describe('ContextMixer', () => {
             const primaryRetrievers = [
                 [
                     {
-                        identifier: 'primary-retriever',
+                        identifier: 'retriever1',
                         uri: testFileUri('foo.ts'),
                         content: 'function foo() {}',
                         startLine: 0,
                         endLine: 0,
                     },
                     {
-                        identifier: 'primary-retriever',
+                        identifier: 'retriever1',
                         uri: testFileUri('bar.ts'),
                         content: 'function bar() {}',
                         startLine: 0,
@@ -394,14 +394,14 @@ describe('ContextMixer', () => {
                 {
                     fileName: 'foo.ts',
                     content: 'function foo() {}',
-                    identifier: 'primary-retriever',
+                    identifier: 'retriever1',
                     startLine: 0,
                     endLine: 0,
                 },
                 {
                     fileName: 'bar.ts',
                     content: 'function bar() {}',
-                    identifier: 'primary-retriever',
+                    identifier: 'retriever1',
                     startLine: 0,
                     endLine: 0,
                 },
@@ -409,7 +409,7 @@ describe('ContextMixer', () => {
             expect(logSummary).toEqual({
                 duration: expect.any(Number),
                 retrieverStats: {
-                    'primary-retriever': {
+                    'retriever1': {
                         duration: expect.any(Number),
                         positionBitmap: 3,
                         retrievedItems: 2,
@@ -437,7 +437,7 @@ describe('ContextMixer', () => {
             const primaryRetrievers = [
                 [
                     {
-                        identifier: 'primary-retriever',
+                        identifier: 'retriever1',
                         uri: testFileUri('foo.ts'),
                         content: 'function foo() {}',
                         startLine: 0,
