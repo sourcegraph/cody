@@ -92,6 +92,7 @@ export const AppWrapperForTest: FunctionComponent<{ children: ReactNode }> = ({ 
                     value: {
                         authStatus: {
                             endpoint: 'https://sourcegraph.example.com',
+                            authenticated: true,
                         } satisfies Partial<AuthStatus> as any,
                         config: {} as any,
                         configFeatures: {
