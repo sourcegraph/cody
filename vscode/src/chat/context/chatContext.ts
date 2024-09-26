@@ -30,10 +30,7 @@ import {
     getOpenTabsContextFile,
     getSymbolContextFiles,
 } from '../../editor/utils/editor-context'
-import {
-    fetchRepoMetadataForFolder,
-    workspaceReposMonitor,
-} from '../../repository/repo-metadata-from-git-api'
+import { repoNameResolver } from '../../repository/repo-name-resolver'
 import { ChatBuilder } from '../chat-view/ChatBuilder'
 
 interface GetContextItemsTelemetry {
@@ -204,15 +201,15 @@ export async function getActiveEditorContextForOpenCtxMentions(): Promise<{
     uri: string | undefined
     codebase: string | undefined
 }> {
-    const uri = vscode.window.activeTextEditor?.document.uri?.toString()
-    const activeWorkspaceURI =
-        uri &&
-        workspaceReposMonitor?.getFolderURIs().find(folderURI => uri?.startsWith(folderURI.toString()))
+    const uri = vscode.window.activeTextEditor?.document.uri
+    if (!uri) {
+        return { uri: undefined, codebase: undefined }
+    }
 
-    const codebase =
-        activeWorkspaceURI && (await fetchRepoMetadataForFolder(activeWorkspaceURI)).at(0)?.repoName
-
-    return { uri, codebase }
+    return {
+        uri: uri.toString(),
+        codebase: (await repoNameResolver.getRepoNamesContainingUri(uri)).at(0),
+    }
 }
 
 export function contextItemMentionFromOpenCtxItem(

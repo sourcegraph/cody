@@ -4,7 +4,7 @@ import { repoNameResolver } from '../repository/repo-name-resolver'
 
 const MAX_REPO_COUNT = 10
 
-interface Repo {
+export interface RemoteRepo {
     name: string
     id: string
 }
@@ -13,7 +13,7 @@ interface Repo {
 // IDs. This depends on the vscode.git extension for mapping git repositories
 // to their remotes.
 export class WorkspaceRepoMapper {
-    public async repoForCodebase(repoName: string): Promise<Repo | undefined> {
+    public async repoForCodebase(repoName: string): Promise<RemoteRepo | undefined> {
         const repos = await this.findRepos(vscode.workspace.workspaceFolders ?? [])
 
         // Check workspace repository list.
@@ -42,7 +42,7 @@ export class WorkspaceRepoMapper {
     private async findRepos(
         folders: readonly vscode.WorkspaceFolder[],
         signal?: AbortSignal
-    ): Promise<Repo[]> {
+    ): Promise<RemoteRepo[]> {
         const repoNames = (
             await Promise.all(
                 folders.map(folder => {

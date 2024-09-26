@@ -43,14 +43,14 @@ export async function getRepositoryMentions(
 
     const repositories = dataOrError.search.results.repositories
     const fzf = new Fzf(repositories, REPO_FZF_OPTIONS)
-    const localRepos = (await workspaceReposMonitor?.getRepoMetadata()) || []
+    const localRepos = (await workspaceReposMonitor.getRepoMetadataForAllWorkspaceFolders()) || []
 
     return await Promise.all(
         fzf.find(cleanRegex(query)).map(repository =>
             createRepositoryMention(
                 {
                     ...repository.item,
-                    current: !!localRepos.find(({ repoName }) => repoName === repository.item.name),
+                    current: !!localRepos.find(({ name }) => name === repository.item.name),
                 },
                 providerId,
                 currentAuthStatus()

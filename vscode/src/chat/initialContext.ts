@@ -172,28 +172,28 @@ function getCorpusContextItemsForEditorState(): Observable<ContextItem[]> {
             // remote search). There should be a single internal thing in Cody that lets you monitor the
             // user's current codebase.
             if (authStatus.allowRemoteContext && workspaceReposMonitor) {
-                const repoMetadata = await workspaceReposMonitor.getRepoMetadata()
+                const repoMetadata = await workspaceReposMonitor.getRepoMetadataForAllWorkspaceFolders()
                 for (const repo of repoMetadata) {
-                    if (await contextFiltersProvider.isRepoNameIgnored(repo.repoName)) {
+                    if (await contextFiltersProvider.isRepoNameIgnored(repo.name)) {
                         continue
                     }
-                    if (repo.remoteID === undefined) {
+                    if (repo.id === undefined) {
                         continue
                     }
                     items.push({
                         ...contextItemMentionFromOpenCtxItem(
                             await createRepositoryMention(
                                 {
-                                    id: repo.remoteID,
-                                    name: repo.repoName,
-                                    url: repo.repoName,
+                                    id: repo.id,
+                                    name: repo.name,
+                                    url: repo.name,
                                 },
                                 REMOTE_REPOSITORY_PROVIDER_URI,
                                 authStatus
                             )
                         ),
                         title: 'Current Repository',
-                        description: repo.repoName,
+                        description: repo.name,
                         source: ContextItemSource.Initial,
                         icon: 'folder',
                     })
