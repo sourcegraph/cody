@@ -144,7 +144,7 @@ export function startClientStateBroadcaster({
     return vscode.Disposable.from(...disposables)
 }
 
-export async function getCorpusContextItemsForEditorState(useRemote: boolean): Promise<ContextItem[]> {
+async function getCorpusContextItemsForEditorState(useRemote: boolean): Promise<ContextItem[]> {
     const items: ContextItem[] = []
 
     // TODO(sqs): Make this consistent between self-serve (no remote search) and enterprise (has

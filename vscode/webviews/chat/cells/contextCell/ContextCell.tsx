@@ -300,7 +300,7 @@ function generateExcludedInfo(token: number, filter: number): string[] {
     ].filter(Boolean) as string[]
 }
 
-export const ExcludedContextWarning: React.FC<{ message: string }> = ({ message }) => (
+const ExcludedContextWarning: React.FC<{ message: string }> = ({ message }) => (
     <div className="tw-flex tw-gap-2 tw-my-2 tw-items-center">
         <i className="codicon codicon-warning" />
         <span>

@@ -9,7 +9,6 @@ import type { Position } from 'vscode'
 
 export const OPENING_CODE_TAG = ps`<CODE5711>`
 export const CLOSING_CODE_TAG = ps`</CODE5711>`
-export const MULTILINE_STOP_SEQUENCE = '\n\n'
 
 /**
  * This extracts the generated code from the response from Anthropic. The generated code is book
@@ -75,7 +74,7 @@ interface TrimmedString {
  * prefers shorter Assistant responses, so if the tail is too long, the returned completion
  * will be very short or empty. In practice, a good length for tail is 1-2 lines.
  */
-export interface PrefixComponents {
+interface PrefixComponents {
     head: TrimmedString
     tail: TrimmedString
     overlap?: PromptString

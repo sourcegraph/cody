@@ -142,7 +142,7 @@ function copyExtensionRelativeResources(extensionPath: string, extensionClient: 
     }
 }
 
-export async function initializeVscodeExtension(
+async function initializeVscodeExtension(
     workspaceRoot: vscode.Uri,
     extensionActivate: ExtensionActivate,
     extensionClient: ExtensionClient,

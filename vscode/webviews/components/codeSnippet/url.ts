@@ -8,7 +8,7 @@
  * For backward compatibility, `character` and `endCharacter` are allowed to be 0,
  * which is the same as not being set.
  */
-export type LineOrPositionOrRange =
+type LineOrPositionOrRange =
     | { line?: undefined; character?: undefined; endLine?: undefined; endCharacter?: undefined }
     | { line: number; character?: number; endLine?: undefined; endCharacter?: undefined }
     | { line: number; character?: undefined; endLine?: number; endCharacter?: undefined }
@@ -175,7 +175,7 @@ function addOrUpdateLineRange(
  *
  * @param hash The URL fragment.
  */
-export function isLegacyFragment(hash: string): boolean {
+function isLegacyFragment(hash: string): boolean {
     if (hash.startsWith('#')) {
         hash = hash.slice(1)
     }
