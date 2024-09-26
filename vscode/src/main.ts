@@ -81,7 +81,6 @@ import { PoorMansBash } from './minion/environment'
 import { CodyProExpirationNotifications } from './notifications/cody-pro-expiration'
 import { showSetupNotification } from './notifications/setup-notification'
 import { initVSCodeGitApi } from './repository/git-extension-api'
-import { initWorkspaceReposMonitor } from './repository/repo-metadata-from-git-api'
 import { authProvider } from './services/AuthProvider'
 import { CharactersLogger } from './services/CharactersLogger'
 import { showFeedbackSupportQuickPick } from './services/FeedbackOptions'
@@ -184,7 +183,6 @@ const register = async (
 
     // Ensure Git API is available
     disposables.push(await initVSCodeGitApi())
-    initWorkspaceReposMonitor(disposables)
 
     registerParserListeners(disposables)
     registerChatListeners(disposables)

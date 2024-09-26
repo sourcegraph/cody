@@ -74,7 +74,6 @@ import {
 
 import type { Span } from '@opentelemetry/api'
 import { captureException } from '@sentry/core'
-import { TokenCounterUtils } from '@sourcegraph/cody-shared/src/token/counter'
 import type { TelemetryEventParameters } from '@sourcegraph/telemetry'
 import { map } from 'observable-fns'
 import type { URI } from 'vscode-uri'
@@ -94,7 +93,6 @@ import type { ExtensionClient } from '../../extension-client'
 import { logDebug } from '../../log'
 import { migrateAndNotifyForOutdatedModels } from '../../models/modelMigrator'
 import { mergedPromptsAndLegacyCommands } from '../../prompts/prompts'
-import { workspaceReposMonitor } from '../../repository/repo-metadata-from-git-api'
 import { authProvider } from '../../services/AuthProvider'
 import { AuthProviderSimplified } from '../../services/AuthProviderSimplified'
 import { localStorage } from '../../services/LocalStorageProvider'
@@ -882,8 +880,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             }
         }
 
-        const privateContextSummary = context && (await this.buildPrivateContextSummary(context))
-
         const properties = {
             ...sharedProperties,
             traceId: span.spanContext().traceId,
@@ -902,7 +898,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 detectedIntent,
                 userSpecifiedIntent,
                 properties,
-                privateContextSummary: privateContextSummary,
                 // 🚨 SECURITY: chat transcripts are to be included only for DotCom users AND for V2 telemetry
                 // V2 telemetry exports privateMetadata only for DotCom users
                 // the condition below is an additional safeguard measure
@@ -1285,42 +1280,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         this.contextAPIClient?.recordContext(requestID, context.used, context.ignored)
 
         return { prompt, context }
-    }
-
-    private async buildPrivateContextSummary(context: {
-        used: ContextItem[]
-        ignored: ContextItem[]
-    }): Promise<object> {
-        // 🚨 SECURITY: included only for dotcom users & public repos
-        if (!isDotCom(currentAuthStatus())) {
-            return {}
-        }
-        if (!workspaceReposMonitor) {
-            return {}
-        }
-
-        const { isPublic, repoMetadata: gitMetadata } =
-            await workspaceReposMonitor.getRepoMetadataIfPublic()
-        if (!isPublic) {
-            return {}
-        }
-
-        const getContextSummary = async (items: ContextItem[]) => ({
-            count: items.length,
-            items: await Promise.all(
-                items.map(async i => ({
-                    source: i.source,
-                    size: i.size || (await TokenCounterUtils.countTokens(i.content || '')),
-                    content: i.content,
-                }))
-            ),
-        })
-
-        return {
-            included: await getContextSummary(context.used),
-            excluded: await getContextSummary(context.ignored),
-            gitMetadata,
-        }
     }
 
     private streamAssistantResponse(
@@ -1788,14 +1747,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         const mentionsInInitialContext = mentions.filter(item => item.source !== ContextItemSource.User)
         const mentionsByUser = mentions.filter(item => item.source === ContextItemSource.User)
 
-        let gitMetadata = ''
-        if (workspaceReposMonitor) {
-            const { isPublic: isWorkspacePublic, repoMetadata } =
-                await workspaceReposMonitor.getRepoMetadataIfPublic()
-            if (isDotCom(authStatus) && isWorkspacePublic) {
-                gitMetadata = JSON.stringify(repoMetadata)
-            }
-        }
         telemetryRecorder.recordEvent('cody.chat-question', 'submitted', {
             metadata: {
                 // Flag indicating this is a transcript event to go through ML data pipeline. Only for DotCom users
@@ -1844,7 +1795,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 promptText:
                     isDotCom(authStatus) &&
                     (await truncatePromptString(inputText, CHAT_INPUT_TOKEN_BUDGET)),
-                gitMetadata,
             },
             billingMetadata: {
                 product: 'cody',
