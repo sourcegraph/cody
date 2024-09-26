@@ -308,6 +308,12 @@ function createApplyButton(
     return button
 }
 
+/**
+ * Creates a button that executes the command in the editor terminal on click.
+ *
+ * @param command - The command to be executed when the button is clicked.
+ * @returns An HTMLElement representing the created button.
+ */
 function createExecuteButton(command: string): HTMLElement {
     const button = document.createElement('button')
     button.className = styles.button
@@ -320,7 +326,7 @@ function createExecuteButton(command: string): HTMLElement {
     button.addEventListener('click', () => {
         return getVSCodeAPI().postMessage({
             command: 'command',
-            id: 'cody.command.cody-cli-run',
+            id: 'cody.terminal.execute',
             arg: command.trim(),
         })
     })

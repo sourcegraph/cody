@@ -62,7 +62,6 @@ import {
 import { executeAutoEditCommand } from './commands/execute/auto-edit'
 import { executeDocChatCommand } from './commands/execute/doc'
 import { CodySourceControl } from './commands/scm/source-control'
-import { registerCodyCommandLine } from './commands/services/command-line'
 import type { CodyCommandArgs } from './commands/types'
 import { newCodyCommandArgs } from './commands/utils/get-commands'
 import { createInlineCompletionItemProvider } from './completions/create-inline-completion-item-provider'
@@ -85,6 +84,7 @@ import { initVSCodeGitApi } from './repository/git-extension-api'
 import { initWorkspaceReposMonitor } from './repository/repo-metadata-from-git-api'
 import { authProvider } from './services/AuthProvider'
 import { CharactersLogger } from './services/CharactersLogger'
+import { CodyTerminal } from './services/CodyTerminal'
 import { showFeedbackSupportQuickPick } from './services/FeedbackOptions'
 import { displayHistoryQuickPick } from './services/HistoryChat'
 import { localStorage } from './services/LocalStorageProvider'
@@ -241,7 +241,9 @@ const register = async (
     registerChatCommands(disposables)
     disposables.push(...registerSidebarCommands())
     registerOtherCommands(disposables)
-    registerInternalUnstableCommands(context.extensionMode, chatClient, disposables)
+    if (!getConfiguration().agentIDE) {
+        registerVSCodeOnlyFeatures(chatClient, disposables)
+    }
     if (isExtensionModeDevOrTest) {
         await registerTestCommands(context, disposables)
     }
@@ -485,21 +487,13 @@ async function registerCodyCommands(
 }
 
 /**
- * Commands available only in VS Code that are currently
- * behind the `cody.internal.unstable` feature flag.
+ * Features that are currently available only in VS Code.
  */
-function registerInternalUnstableCommands(
-    extensionMode: vscode.ExtensionMode,
-    chatClient: ChatClient,
-    disposable: vscode.Disposable[]
-): void {
+function registerVSCodeOnlyFeatures(chatClient: ChatClient, disposable: vscode.Disposable[]): void {
     // Source Control Panel for generating commit message command.
     disposable.push(new CodySourceControl(chatClient))
-    // Do not register and execute these commands in test mode
-    if (extensionMode !== vscode.ExtensionMode.Test) {
-        // Command for executing CLI commands in the VS Code terminal.
-        disposable.push(registerCodyCommandLine(chatClient))
-    }
+    // Command for executing CLI commands in the VS Code terminal.
+    disposable.push(new CodyTerminal())
 }
 
 function enableFeature(

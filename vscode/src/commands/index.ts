@@ -88,15 +88,6 @@ export const CodyCommandMenuItems: MenuCommandAccessor[] = [
         requires: { setting: 'cody.experimental.commitMessage' },
     },
     {
-        key: 'shell',
-        description: 'Cody Command Line',
-        icon: 'terminal',
-        command: { command: 'cody.command.cody-cli' },
-        keybinding: '',
-        isBuiltin: true,
-        requires: { setting: 'cody.internal.unstable' },
-    },
-    {
         key: 'custom',
         description: 'Custom Commands',
         icon: 'tools',
