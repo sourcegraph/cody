@@ -22,13 +22,7 @@ import { isDotCom } from '../sourcegraph-api/environments'
 import { RestClient } from '../sourcegraph-api/rest/client'
 import { CHAT_INPUT_TOKEN_BUDGET } from '../token/constants'
 import { isError } from '../utils'
-import {
-    type Model,
-    type ServerModel,
-    createModel,
-    createModelFromServerModel,
-    parseModelRef,
-} from './model'
+import { type Model, type ServerModel, createModel, createModelFromServerModel } from './model'
 import type { ModelsData, ServerModelConfiguration, SitePreferences } from './modelsService'
 import { ModelTag } from './tags'
 import { ModelUsage } from './types'
@@ -165,13 +159,16 @@ export function syncModels({
 
                                     // If the request failed, fall back to using the default models
                                     if (serverModelsConfig) {
+                                        // Remove deprecated models from the list, filter out waitlisted models for Enterprise.
+                                        const filteredModels = serverModelsConfig?.models.filter(
+                                            m =>
+                                                m.status !== 'deprecated' &&
+                                                (isDotComUser || m.status !== 'waitlist')
+                                        )
                                         data.primaryModels.push(
-                                            ...maybeAdjustContextWindows(
-                                                // Remove deprecated models from the list.
-                                                serverModelsConfig.models.filter(
-                                                    m => m.status !== 'deprecated'
-                                                )
-                                            ).map(createModelFromServerModel)
+                                            ...maybeAdjustContextWindows(filteredModels).map(
+                                                createModelFromServerModel
+                                            )
                                         )
                                         data.preferences!.defaults =
                                             defaultModelPreferencesFromServerModelsConfig(
@@ -189,13 +186,17 @@ export function syncModels({
                                         )
                                     }
 
+                                    if (!isDotComUser) {
+                                        return Observable.of(data)
+                                    }
+
                                     // For DotCom users with early access or on the waitlist, replace the waitlist tag with the appropriate tags.
                                     return featureFlagProvider
                                         .evaluatedFeatureFlag(FeatureFlag.CodyEarlyAccess)
                                         .pipe(
                                             switchMap(hasEarlyAccess => {
                                                 const isOnWaitlist = config.clientState.waitlist_o1
-                                                if (isDotComUser && (hasEarlyAccess || isOnWaitlist)) {
+                                                if (hasEarlyAccess || isOnWaitlist) {
                                                     data.primaryModels = data.primaryModels.map(
                                                         model => {
                                                             if (model.tags.includes(ModelTag.Waitlist)) {
@@ -433,8 +434,8 @@ export function defaultModelPreferencesFromServerModelsConfig(
     config: ServerModelConfiguration
 ): SitePreferences['defaults'] {
     return {
-        autocomplete: parseModelRef(config.defaultModels.codeCompletion).modelId,
-        chat: parseModelRef(config.defaultModels.chat).modelId,
-        edit: parseModelRef(config.defaultModels.chat).modelId,
+        autocomplete: config.defaultModels.codeCompletion,
+        chat: config.defaultModels.chat,
+        edit: config.defaultModels.chat,
     }
 }

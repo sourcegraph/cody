@@ -199,6 +199,18 @@ export function parseModelRef(ref: ModelRefStr): ModelRef {
     }
 }
 
+/**
+ * Converts a model reference or ID to its legacy model ID format.
+ * If the input is a model reference, it extracts the modelId.
+ * If the input is already a legacy ID, it returns it unchanged.
+ *
+ * @param modelRefOrID - The model reference string or legacy model ID
+ * @returns The legacy model ID
+ */
+export function toLegacyModel(modelRefOrID: string): string {
+    return parseModelRef(modelRefOrID as ModelRefStr).modelId || modelRefOrID
+}
+
 export function getServerModelTags(
     capabilities: ModelCapability[],
     category: ModelCategory,
