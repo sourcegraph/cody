@@ -26,15 +26,18 @@ describe(
         }
         const FIXTURE_MODELS = {
             // Set this to the default chat model on dotcom.
-            dotcomDefaultChatModel: 'claude-3-5-sonnet-20240620',
+            dotcomDefaultChatModel: 'anthropic::2023-06-01::claude-3.5-sonnet',
 
             // Set this to the default chat model on S2. (It's OK if it's the same as
             // dotcomDefaultChatModel.)
-            defaultS2ChatModel: 'claude-3.5-sonnet',
+            defaultS2ChatModel: 'anthropic::2023-06-01::claude-3.5-sonnet',
 
             // Set this to 2 model IDs that both (1) exist on dotcom and S2 but (2) are NOT the same as
             // dotcomDefaultChatModel or defaultS2ChatModel.
-            differentFromDotcomAndS2DefaultChatModel: ['claude-3-haiku', 'gemini-1.5-flash'],
+            differentFromDotcomAndS2DefaultChatModel: [
+                'anthropic::2023-06-01::claude-3-haiku',
+                'google::v1::gemini-1.5-pro',
+            ],
         }
 
         const workspace = new TestWorkspace(path.join(__dirname, '__tests__', 'auth'))
@@ -126,7 +129,6 @@ describe(
             const chat = await client.sendSingleMessageToNewChatWithFullTranscript(
                 'hello after reauthentication'
             )
-            console.log(chat.lastMessage, 'chat.lastMessage')
             expect(chat.lastMessage?.model).toBe(
                 FIXTURE_MODELS.differentFromDotcomAndS2DefaultChatModel[0]
             )
@@ -135,7 +137,7 @@ describe(
             // Listing models should work.
             const { models } = await client.request('chat/models', { modelUsage: ModelUsage.Chat })
             expect(models.length).toBeGreaterThanOrEqual(2)
-            expect(models.map(model => model.id)).toContain('openai/gpt-4o') // arbitrary model that we expect to be included
+            expect(models.map(model => model.id)).toContain('openai::2024-02-01::gpt-4o') // arbitrary model that we expect to be included
         })
 
         it('switches to a different account', async ({ task }) => {
@@ -183,6 +185,7 @@ describe(
             const chat = await client.sendSingleMessageToNewChatWithFullTranscript(
                 'hello after switching accounts'
             )
+
             expect(chat.lastMessage?.model).toBe(FIXTURE_MODELS.defaultS2ChatModel)
             expect(chat.lastMessage?.error).toBeUndefined()
 

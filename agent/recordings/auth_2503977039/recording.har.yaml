@@ -89,11 +89,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 99e8808b8151c81b8895af11b94d5217
+    - _id: 93b3fa8a48b0e97eb1e29fdda693d524
       _order: 0
       cache: {}
       request:
-        bodySize: 405
+        bodySize: 428
         cookies: []
         headers:
           - name: content-type
@@ -106,7 +106,7 @@ log:
           - name: user-agent
             value: auth / v1
           - name: traceparent
-            value: 00-1c4a3864e1d2b002c3812410ff2e29ba-4a057acfcf47c2f8-01
+            value: 00-8948fc5ddea20e6aac0df00a159676ce-83508520beff3ece-01
           - name: connection
             value: keep-alive
           - name: host
@@ -127,7 +127,7 @@ log:
                   ```$LANGUAGE:$FILEPATH```."
               - speaker: human
                 text: hello after reauthentication
-            model: claude-3-haiku
+            model: anthropic::2023-06-01::claude-3-haiku
             temperature: 0
             topK: -1
             topP: -1
@@ -140,21 +140,28 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=2&client-name=auth&client-version=v1
       response:
-        bodySize: 100
+        bodySize: 535
         content:
-          mimeType: text/plain; charset=utf-8
-          size: 100
-          text: >
-            the requested chat model is not available ("claude-3-haiku",
-            onProTier=true, hasFeatureFlags=false)
+          mimeType: text/event-stream
+          size: 535
+          text: >+
+            event: completion
+
+            data: {"deltaText":"Hello! I'm Claude, an AI assistant created by Anthropic. How can I assist you today?","stopReason":"end_turn"}
+
+
+            event: done
+
+            data: {}
+
         cookies: []
         headers:
           - name: date
-            value: Wed, 25 Sep 2024 21:35:45 GMT
+            value: Thu, 26 Sep 2024 16:10:05 GMT
           - name: content-type
-            value: text/plain; charset=utf-8
-          - name: content-length
-            value: "100"
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
           - name: connection
             value: keep-alive
           - name: access-control-allow-credentials
@@ -162,7 +169,7 @@ log:
           - name: access-control-allow-origin
             value: ""
           - name: cache-control
-            value: no-cache, max-age=0
+            value: no-cache
           - name: vary
             value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
               X-Requested-With,Cookie
@@ -174,12 +181,12 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1311
+        headersSize: 1299
         httpVersion: HTTP/1.1
         redirectURL: ""
-        status: 400
-        statusText: Bad Request
-      startedDateTime: 2024-09-25T21:35:44.858Z
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-09-26T16:10:04.397Z
       time: 0
       timings:
         blocked: -1
@@ -477,7 +484,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Wed, 25 Sep 2024 10:06:29 GMT
+            value: Thu, 26 Sep 2024 00:00:12 GMT
           - name: content-type
             value: text/plain; charset=utf-8
           - name: content-length
@@ -505,7 +512,7 @@ log:
         redirectURL: ""
         status: 401
         statusText: Unauthorized
-      startedDateTime: 2024-09-25T10:06:29.764Z
+      startedDateTime: 2024-09-26T00:00:12.242Z
       time: 0
       timings:
         blocked: -1
@@ -574,7 +581,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Wed, 25 Sep 2024 10:06:29 GMT
+            value: Thu, 26 Sep 2024 00:00:12 GMT
           - name: content-type
             value: text/plain; charset=utf-8
           - name: content-length
@@ -602,7 +609,7 @@ log:
         redirectURL: ""
         status: 401
         statusText: Unauthorized
-      startedDateTime: 2024-09-25T10:06:29.767Z
+      startedDateTime: 2024-09-26T00:00:12.290Z
       time: 0
       timings:
         blocked: -1
@@ -772,7 +779,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Wed, 25 Sep 2024 10:06:29 GMT
+            value: Thu, 26 Sep 2024 00:00:12 GMT
           - name: content-type
             value: text/plain; charset=utf-8
           - name: content-length
@@ -800,7 +807,7 @@ log:
         redirectURL: ""
         status: 401
         statusText: Unauthorized
-      startedDateTime: 2024-09-25T10:06:29.765Z
+      startedDateTime: 2024-09-26T00:00:12.266Z
       time: 0
       timings:
         blocked: -1
@@ -1008,7 +1015,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Wed, 25 Sep 2024 10:06:29 GMT
+            value: Thu, 26 Sep 2024 00:00:12 GMT
           - name: content-type
             value: text/plain; charset=utf-8
           - name: content-length
@@ -1036,7 +1043,7 @@ log:
         redirectURL: ""
         status: 401
         statusText: Unauthorized
-      startedDateTime: 2024-09-25T10:06:29.768Z
+      startedDateTime: 2024-09-26T00:00:12.314Z
       time: 0
       timings:
         blocked: -1
@@ -1322,7 +1329,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Wed, 25 Sep 2024 10:06:29 GMT
+            value: Thu, 26 Sep 2024 00:00:12 GMT
           - name: content-type
             value: text/plain; charset=utf-8
           - name: content-length
@@ -1350,7 +1357,7 @@ log:
         redirectURL: ""
         status: 401
         statusText: Unauthorized
-      startedDateTime: 2024-09-25T10:06:29.762Z
+      startedDateTime: 2024-09-26T00:00:12.196Z
       time: 0
       timings:
         blocked: -1
@@ -1485,19 +1492,19 @@ log:
         queryString: []
         url: https://sourcegraph.sourcegraph.com/.api/client-config
       response:
-        bodySize: 219
+        bodySize: 227
         content:
           encoding: base64
           mimeType: text/plain; charset=utf-8
-          size: 219
-          text: "[\"H4sIAAAAAAAAA2zOsQrDMAwE0D1fYTJ36pgthA7ZAoF2VmpBDZYUrDNNKf33Lhk9v7vjv\
-            l0IIfRPi5+b0pY59kNAqXw54UVo\",\"AlXYZLJnBreb1WEymQhp9PYGUNJWkUyb7kI\
-            Fkyn4wCNptHczJhY5+7jMTc0Edqx1362A4/k5mfqKwiTjMt+5eDLth3Dtft0fAAD//w\
-            MAHTrgHxMBAAA=\"]"
+          size: 227
+          text: "[\"H4sIAAAAAAAAA2zOMQvCMBAF4L2/InR2cuxWgkO3QkHnqzkxkMuV3Asq4n93qbhk/t57v\
+            HfnnHP9VcPrlGlNHPrBoVQ+7HAn\",\"NIEq1KtsicHtZjWoeBWhHKy9AZS4VkTNTTe\
+            hAq8Z/MQl5qCPZkw0cLJxnv56o2Q/TgQ2LHXbtIDDfjpqtgWFScZ5OnOxqLkf3LH7dF\
+            8AAAD//wMA25lY2RQBAAA=\"]"
         cookies: []
         headers:
           - name: date
-            value: Wed, 25 Sep 2024 17:46:23 GMT
+            value: Thu, 26 Sep 2024 00:00:14 GMT
           - name: content-type
             value: text/plain; charset=utf-8
           - name: transfer-encoding
@@ -1528,7 +1535,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-25T17:46:23.133Z
+      startedDateTime: 2024-09-26T00:00:14.704Z
       time: 0
       timings:
         blocked: -1
@@ -1538,11 +1545,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 59d1c99b486d76ecaee6deb31889631b
+    - _id: 86add348fb54e340e0eb55a89ef56c90
       _order: 0
       cache: {}
       request:
-        bodySize: 410
+        bodySize: 422
         cookies: []
         headers:
           - name: content-type
@@ -1555,7 +1562,7 @@ log:
           - name: user-agent
             value: auth / v1
           - name: traceparent
-            value: 00-f005f82dca1ff7f78dcc936f1f263eb1-e98ce602ec473477-01
+            value: 00-7c3fe12c35f6c93bc22ca917e5a56024-d41f72b17aa94e4c-01
           - name: connection
             value: keep-alive
           - name: host
@@ -1576,7 +1583,7 @@ log:
                   ```$LANGUAGE:$FILEPATH```."
               - speaker: human
                 text: hello after switching accounts
-            model: claude-3.5-sonnet
+            model: sourcegraph/claude-3.5-sonnet
             temperature: 0
             topK: -1
             topP: -1
@@ -1589,28 +1596,21 @@ log:
             value: v1
         url: https://sourcegraph.sourcegraph.com/.api/completions/stream?api-version=2&client-name=auth&client-version=v1
       response:
-        bodySize: 1734
+        bodySize: 108
         content:
-          mimeType: text/event-stream
-          size: 1734
-          text: >+
-            event: completion
-
-            data: {"deltaText":"Hello! It's nice to meet you. I'm Cody, an AI coding assistant from Sourcegraph. I'm here to help you with any coding-related questions or tasks you might have. Since you mentioned switching accounts, is there anything specific you'd like assistance with regarding your new account or any coding projects you're working on? I'm ready to help in any way I can.","stopReason":"end_turn"}
-
-
-            event: done
-
-            data: {}
-
+          mimeType: text/plain; charset=utf-8
+          size: 108
+          text: >
+            unsupported chat model "sourcegraph/claude-3.5-sonnet" (default
+            "anthropic::2023-06-01::claude-3.5-sonnet")
         cookies: []
         headers:
           - name: date
-            value: Wed, 25 Sep 2024 17:46:24 GMT
+            value: Thu, 26 Sep 2024 00:00:15 GMT
           - name: content-type
-            value: text/event-stream
-          - name: transfer-encoding
-            value: chunked
+            value: text/plain; charset=utf-8
+          - name: content-length
+            value: "108"
           - name: connection
             value: keep-alive
           - name: access-control-allow-credentials
@@ -1618,7 +1618,7 @@ log:
           - name: access-control-allow-origin
             value: ""
           - name: cache-control
-            value: no-cache
+            value: no-cache, max-age=0
           - name: vary
             value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
               Cookie
@@ -1630,12 +1630,12 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1215
+        headersSize: 1227
         httpVersion: HTTP/1.1
         redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2024-09-25T17:46:23.324Z
+        status: 400
+        statusText: Bad Request
+      startedDateTime: 2024-09-26T00:00:14.802Z
       time: 0
       timings:
         blocked: -1
@@ -1712,7 +1712,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Wed, 25 Sep 2024 17:46:22 GMT
+            value: Thu, 26 Sep 2024 00:00:14 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -1743,7 +1743,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-25T17:46:22.521Z
+      startedDateTime: 2024-09-26T00:00:14.340Z
       time: 0
       timings:
         blocked: -1
@@ -1814,7 +1814,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Wed, 25 Sep 2024 17:46:22 GMT
+            value: Thu, 26 Sep 2024 00:00:14 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -1845,7 +1845,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-25T17:46:22.576Z
+      startedDateTime: 2024-09-26T00:00:14.388Z
       time: 0
       timings:
         blocked: -1
@@ -1915,7 +1915,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Wed, 25 Sep 2024 17:46:23 GMT
+            value: Thu, 26 Sep 2024 00:00:14 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -1946,7 +1946,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-25T17:46:22.550Z
+      startedDateTime: 2024-09-26T00:00:14.363Z
       time: 0
       timings:
         blocked: -1
@@ -2029,7 +2029,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Wed, 25 Sep 2024 17:46:22 GMT
+            value: Thu, 26 Sep 2024 00:00:14 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -2060,7 +2060,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-25T17:46:22.601Z
+      startedDateTime: 2024-09-26T00:00:14.413Z
       time: 0
       timings:
         blocked: -1
@@ -2123,13 +2123,13 @@ log:
           encoding: base64
           mimeType: application/json
           size: 139
-          text: "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqzixJBdEFRfkppcklYalFxZn5eUpWSkaWRsZmhvFGB\
-            kYmugaWukam8aZ65roGpqmmJkYpSRYpBklKtbW1\",\"AAAAAP//AwA/YNqlSQAAAA==\
+          text: "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqzixJBdEFRfkppcklYalFxZn5eUpWSkaWRiZG5vFGB\
+            kYmugaWukam8aZ65rqpqWmJpkZGiYmplqZKtbW1\",\"AAAAAP//AwDlhX5cSQAAAA==\
             \"]"
         cookies: []
         headers:
           - name: date
-            value: Wed, 25 Sep 2024 17:46:22 GMT
+            value: Thu, 26 Sep 2024 00:00:14 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -2160,100 +2160,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-25T17:46:22.401Z
-      time: 0
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 0
-    - _id: b67fa467a48dcabba8c60bd47c398d1a
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 0
-        cookies: []
-        headers:
-          - _fromType: array
-            name: authorization
-            value: token
-              REDACTED_4229eb42e0efa2f15f3e6f8843764c7f92ab8051020cc4e90802f4fc0cc91bfa
-          - _fromType: array
-            name: user-agent
-            value: auth / v1
-          - _fromType: array
-            name: accept
-            value: "*/*"
-          - _fromType: array
-            name: accept-encoding
-            value: gzip,deflate
-          - name: host
-            value: sourcegraph.sourcegraph.com
-        headersSize: 277
-        httpVersion: HTTP/1.1
-        method: GET
-        queryString: []
-        url: https://sourcegraph.sourcegraph.com/.api/modelconfig/supported-models.json
-      response:
-        bodySize: 767
-        content:
-          encoding: base64
-          mimeType: text/plain; charset=utf-8
-          size: 767
-          text: "[\"H4sIAAAAAAAA/+yYz0/jOBTH7/0rrFwXFzdtYTc3tit2kIYBDYg5jDi8Oq+t1SS2bKelQ\
-            vzvoyRNmDRpk6IKBENPUfx9X//4PDfPfuwQQohj+Aw=\",\"Q7hDbYSMHI84vS5zjrI\
-            2jQuRv2Zd1mV/+bjIG5WWC+GjNo5Hfqavkt9j8ZSKhJ/EQmRnWirB17FFsy+MCmD1DU\
-            JMdGeFrpA9He22ngiNS6nnpsH6vNC1tp5KOQ2wwff/TNTaVCqMQDSYXimMzi7am4bCW\
-            A1Bg+vlWvVsmz7dr3mG0sdgJ8xU8R0nJaSe5zK3T9kJZT3P4wHEPtJ+d0iNjCK0DWMa\
-            pXrS7w7JTa0+7TNX5+40d6cucwfsxGWbYRwUjEUgrMDylAoF+mKzsyxyBtYpvb6veFu\
-            cSr1KRjSGACKO/mb/xoKNk56Tp3E1i6xAnaavxkobl5HFB/tDRL5cOt4GhWxV4OEiUr\
-            G9lXOMkm4GQ8ZYzWxCeLiKbUnJGCvpnlqk2R7kqVRx02bMqZOrGm098cQ1o+26/7wVb\
-            WlnqF+KWmn5wUjPQMzjtqi/1InrWae+Gew+O30r2Ebh2+/r01eDXXxIPW/R8zxjQXPp\
-            V9N9g++NBT2q05XQbnVrhgmxlVyGKkCLrwTvQDvVZYO/W7FzhyeHROcjKoM4p+mK04V\
-            LA2GRjsE0FTP/IaobxDm5c8lXYZH8WxNTAgucyziy5tjIWHOcalCz46ySON5jHJ9pcI\
-            A0yOrVLAemGIpI0F53SGumsVnDpmLS6w7JdVVc4r3b97PqKoSH/nveAncSgJm1x3teJ\
-            98GuNb7j/r6viLf7FyYFloDyty00JoqSweNm/f6tkZUZlrr81426/urm+tYcumvaLJw\
-            VGlcCFxSxnqtrgGI7OUxu8vnNj00Q98PLnAea+Cr7XCXIGwgTOVg//Hxuq3xJn+5e7O\
-            t2H+y3cm289t8HR8nEAf2Mr/zeh5Gtkgvu+FyJmDsqF185fScQMZRVuKu71z3KOw72R\
-            yfOr8CAAD//xV7s5PXFQAA\"]"
-        cookies: []
-        headers:
-          - name: date
-            value: Wed, 25 Sep 2024 17:46:23 GMT
-          - name: content-type
-            value: text/plain; charset=utf-8
-          - name: content-length
-            value: "767"
-          - name: connection
-            value: keep-alive
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache, max-age=0
-          - name: content-encoding
-            value: gzip
-          - name: vary
-            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
-              Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1251
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2024-09-25T17:46:23.230Z
+      startedDateTime: 2024-09-26T00:00:14.318Z
       time: 0
       timings:
         blocked: -1

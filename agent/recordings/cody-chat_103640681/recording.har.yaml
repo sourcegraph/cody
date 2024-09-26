@@ -41,8 +41,7 @@ log:
           encoding: base64
           mimeType: text/plain; charset=utf-8
           size: 219
-          text:
-            "[\"H4sIAAAAAAAAA2zOsQrDMAwE0D1fYTJ36pgthA7ZAoF2VmpBDZYUrDNNKf33Lhk9v7vjv\
+          text: "[\"H4sIAAAAAAAAA2zOsQrDMAwE0D1fYTJ36pgthA7ZAoF2VmpBDZYUrDNNKf33Lhk9v7vjv\
             l0IIfRPi5+b0pY59kNAqXw54UVo\",\"AlXYZLJnBreb1WEymQhp9PYGUNJWkUyb7kI\
             Fkyn4wCNptHczJhY5+7jMTc0Edqx1362A4/k5mfqKwiTjMt+5eDLth3Dtft0fAAD//w\
             MAHTrgHxMBAAA=\"]"
@@ -63,8 +62,7 @@ log:
           - name: cache-control
             value: no-cache, max-age=0
           - name: vary
-            value:
-              Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
+            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
               Cookie
           - name: x-content-type-options
             value: nosniff
@@ -91,11 +89,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 4f404d7847541071a3e9dedfe5ce2895
+    - _id: a40311a0f8aac5eeb7fe447fdc52ed4b
       _order: 0
       cache: {}
       request:
-        bodySize: 421
+        bodySize: 444
         cookies: []
         headers:
           - name: content-type
@@ -121,14 +119,13 @@ log:
             maxTokensToSample: 4000
             messages:
               - speaker: system
-                text:
-                  "You are Cody, an AI coding assistant from Sourcegraph.If your answer
+                text: "You are Cody, an AI coding assistant from Sourcegraph.If your answer
                   contains fenced code blocks in Markdown, include the relevant
                   full file path in the code block tag using this structure:
                   ```$LANGUAGE:$FILEPATH```."
               - speaker: human
                 text: respond with "hello" and nothing else
-            model: claude-3.5-sonnet
+            model: anthropic::2023-06-01::claude-3.5-sonnet
             temperature: 0.2
             topK: -1
             topP: -1
@@ -155,7 +152,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Wed, 25 Sep 2024 17:46:27 GMT
+            value: Wed, 25 Sep 2024 23:48:44 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -169,8 +166,7 @@ log:
           - name: cache-control
             value: no-cache
           - name: vary
-            value:
-              Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
+            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
               Cookie
           - name: x-content-type-options
             value: nosniff
@@ -185,7 +181,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-25T17:46:27.135Z
+      startedDateTime: 2024-09-25T23:48:43.393Z
       time: 0
       timings:
         blocked: -1
@@ -195,11 +191,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 45a85dd5e8b0aa83b8d9d99d2c0caecb
+    - _id: 008d642088cdbffaba5473bb8ef3487c
       _order: 0
       cache: {}
       request:
-        bodySize: 743
+        bodySize: 766
         cookies: []
         headers:
           - name: content-type
@@ -225,8 +221,7 @@ log:
             maxTokensToSample: 4000
             messages:
               - speaker: system
-                text:
-                  "You are Cody, an AI coding assistant from Sourcegraph.If your answer
+                text: "You are Cody, an AI coding assistant from Sourcegraph.If your answer
                   contains fenced code blocks in Markdown, include the relevant
                   full file path in the code block tag using this structure:
                   ```$LANGUAGE:$FILEPATH```."
@@ -243,11 +238,11 @@ log:
               - speaker: human
                 text: >-
                   You have access to the provided codebase context. Answer
-                  positively without apologizing.
+                  positively without apologizing. 
 
 
                   Question: implement a cow. Only print the code without any explanation.
-            model: claude-3.5-sonnet
+            model: anthropic::2023-06-01::claude-3.5-sonnet
             temperature: 0.2
             topK: -1
             topP: -1
@@ -260,14 +255,14 @@ log:
             value: 6.0.0-SNAPSHOT
         url: https://sourcegraph.sourcegraph.com/.api/completions/stream?api-version=2&client-name=jetbrains&client-version=6.0.0-SNAPSHOT
       response:
-        bodySize: 950
+        bodySize: 1019
         content:
           mimeType: text/event-stream
-          size: 950
+          size: 1019
           text: >+
             event: completion
 
-            data: {"deltaText":"Here's the implementation of a cow based on the provided interface:\n\n```typescript:animal.ts\nclass Cow implements StrangeAnimal {\n    makesSound(): 'coo' | 'moo' {\n        return 'moo';\n    }\n}\n```","stopReason":"end_turn"}
+            data: {"deltaText":"Certainly! Here's the implementation of a cow based on the provided `StrangeAnimal` interface:\n\n```typescript:animal.ts\nclass Cow implements StrangeAnimal {\n    makesSound(): 'coo' | 'moo' {\n        return 'moo';\n    }\n}\n```","stopReason":"end_turn"}
 
 
             event: done
@@ -277,7 +272,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Wed, 25 Sep 2024 17:46:29 GMT
+            value: Wed, 25 Sep 2024 23:48:46 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -291,8 +286,7 @@ log:
           - name: cache-control
             value: no-cache
           - name: vary
-            value:
-              Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
+            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
               Cookie
           - name: x-content-type-options
             value: nosniff
@@ -307,7 +301,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-25T17:46:28.815Z
+      startedDateTime: 2024-09-25T23:48:45.096Z
       time: 0
       timings:
         blocked: -1
@@ -353,7 +347,7 @@ log:
           params: []
           textJSON:
             query: |-
-
+              
               query ContextFilters {
                   site {
                       codyContextFilters(version: V1) {
@@ -372,8 +366,7 @@ log:
           encoding: base64
           mimeType: application/json
           size: 104
-          text:
-            "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqzixJBdHJ+SmVzvl5JakVJW6ZOSWpRcUg0aLEciWrv\
+          text: "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqzixJBdHJ+SmVzvl5JakVJW6ZOSWpRcUg0aLEciWrv\
             NKcnNra2loAAAAA//8DADYuyGU1AAAA\"]"
           textDecoded:
             data:
@@ -397,8 +390,7 @@ log:
           - name: cache-control
             value: no-cache, max-age=0
           - name: vary
-            value:
-              Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
+            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
               Cookie
           - name: x-content-type-options
             value: nosniff
@@ -461,7 +453,7 @@ log:
           params: []
           textJSON:
             query: |-
-
+              
               query CurrentSiteCodyLlmConfiguration {
                   site {
                       codyLLMConfiguration {
@@ -485,8 +477,7 @@ log:
           encoding: base64
           mimeType: application/json
           size: 251
-          text:
-            "[\"H4sIAAAAAAAAA4TOTQ6CMBAF4LvMmmqDEA1btrLzAmM7QAN2SH+MhvTuBjYSNXH1ksmbL\
+          text: "[\"H4sIAAAAAAAAA4TOTQ6CMBAF4LvMmmqDEA1btrLzAmM7QAN2SH+MhvTuBjYSNXH1ksmbL\
             28GjQGhmsGbQEsq1s/zuanZtqaLDoNhu957DA1r\",\"GqECz9Ep6hxO/V6NGDWJw64\
             Unq2lANm72+DjwgNZD1VRSikzaNGH+g8lejRDhI/yxjqulOLbNNKy7xemiSZPNAjFmp\
             y452I0gcQVPcHX78bOZXFKKaUXAAAA//8DADDh/dAaAQAA\"]"
@@ -507,8 +498,7 @@ log:
           - name: cache-control
             value: no-cache, max-age=0
           - name: vary
-            value:
-              Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
+            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
               Cookie
           - name: x-content-type-options
             value: nosniff
@@ -571,7 +561,7 @@ log:
           params: []
           textJSON:
             query: |-
-
+              
               query CurrentSiteCodyLlmConfiguration {
                   site {
                       codyLLMConfiguration {
@@ -590,8 +580,7 @@ log:
           encoding: base64
           mimeType: application/json
           size: 139
-          text:
-            "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqzixJBdHJ+SmVPj6+zvl5aZnppUWJJZn5eWD53MSiE\
+          text: "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqzixJBdHJ+SmVPj6+zvl5aZnppUWJJZn5eWD53MSiE\
             uf8vJLUipLwzLyU/HIlK6WUzOLEpJzUFKXa2tpa\",\"AAAAAP//AwArMNn0TAAAAA==\
             \"]"
         cookies: []
@@ -611,8 +600,7 @@ log:
           - name: cache-control
             value: no-cache, max-age=0
           - name: vary
-            value:
-              Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
+            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
               Cookie
           - name: x-content-type-options
             value: nosniff
@@ -675,7 +663,7 @@ log:
           params: []
           textJSON:
             query: |-
-
+              
               query CurrentSiteCodyLlmProvider {
                   site {
                       codyLLMConfiguration {
@@ -694,8 +682,7 @@ log:
           encoding: base64
           mimeType: application/json
           size: 131
-          text:
-            "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqzixJBdHJ+SmVPj6+zvl5aZnppUWJJZn5eSDxgqL8s\
+          text: "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqzixJBdHJ+SmVPj6+zvl5aZnppUWJJZn5eSDxgqL8s\
             syU1CIlK6Xi/NKi5NT0osSCDKXa2tpaAAAAAP//\",\"AwAfFAXARQAAAA==\"]"
         cookies: []
         headers:
@@ -714,8 +701,7 @@ log:
           - name: cache-control
             value: no-cache, max-age=0
           - name: vary
-            value:
-              Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
+            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
               Cookie
           - name: x-content-type-options
             value: nosniff
@@ -778,7 +764,7 @@ log:
           params: []
           textJSON:
             query: |-
-
+              
               query CurrentUser {
                   currentUser {
                       id
@@ -808,8 +794,7 @@ log:
           encoding: base64
           mimeType: application/json
           size: 231
-          text:
-            "[\"H4sIAAAAAAAAAzSOuwrCQBBF/2XqLawXLO0kgpggiMWQncTRzWyY2Qgx7L9LfJTncricB\
+          text: "[\"H4sIAAAAAAAAAzSOuwrCQBBF/2XqLawXLO0kgpggiMWQncTRzWyY2Qgx7L9LfJTncricB\
             QJmBL9AO6mS5NpIV+QAHppzFdt72hxOjy04uKE1\",\"pNwxhd2AHMF3GI0cBLYx4lz\
             hQOBlitHBZKTyYWhTmDNZZunBAT4xo9bH/d8clQfU+ff43ZL2KPzCzElszZEUyMBfrq\
             WU8gYAAP//AwAAXh5NtQAAAA==\"]"
@@ -830,8 +815,7 @@ log:
           - name: cache-control
             value: no-cache, max-age=0
           - name: vary
-            value:
-              Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
+            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
               Cookie
           - name: x-content-type-options
             value: nosniff
@@ -894,7 +878,7 @@ log:
           params: []
           textJSON:
             query: |-
-
+              
               query SiteProductVersion {
                   site {
                       productVersion
@@ -911,8 +895,7 @@ log:
           encoding: base64
           mimeType: application/json
           size: 139
-          text:
-            "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqzixJBdEFRfkppcklYalFxZn5eUpWSkaWRsZmhvFGB\
+          text: "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqzixJBdEFRfkppcklYalFxZn5eUpWSkaWRsZmhvFGB\
             kYmugaWukam8aZ65roGpqmmJkYpSRYpBklKtbW1\",\"AAAAAP//AwA/YNqlSQAAAA==\
             \"]"
         cookies: []
@@ -932,8 +915,7 @@ log:
           - name: cache-control
             value: no-cache, max-age=0
           - name: vary
-            value:
-              Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
+            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
               Cookie
           - name: x-content-type-options
             value: nosniff
@@ -993,8 +975,7 @@ log:
           encoding: base64
           mimeType: text/plain; charset=utf-8
           size: 767
-          text:
-            "[\"H4sIAAAAAAAA/+yYz0/jOBTH7/0rrFwXFzdtYTc3tit2kIYBDYg5jDi8Oq+t1SS2bKelQ\
+          text: "[\"H4sIAAAAAAAA/+yYz0/jOBTH7/0rrFwXFzdtYTc3tit2kIYBDYg5jDi8Oq+t1SS2bKelQ\
             vzvoyRNmDRpk6IKBENPUfx9X//4PDfPfuwQQohj+Aw=\",\"Q7hDbYSMHI84vS5zjrI\
             2jQuRv2Zd1mV/+bjIG5WWC+GjNo5Hfqavkt9j8ZSKhJ/EQmRnWirB17FFsy+MCmD1DU\
             JMdGeFrpA9He22ngiNS6nnpsH6vNC1tp5KOQ2wwff/TNTaVCqMQDSYXimMzi7am4bCW\
@@ -1029,8 +1010,7 @@ log:
           - name: content-encoding
             value: gzip
           - name: vary
-            value:
-              Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
+            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
               Cookie
           - name: x-content-type-options
             value: nosniff

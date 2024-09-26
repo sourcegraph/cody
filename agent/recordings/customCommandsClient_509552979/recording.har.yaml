@@ -89,11 +89,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 542180b7b9d41f8a5deb3dd7d633fc55
+    - _id: 3aebb42d2b0616392c25465ba566c6f3
       _order: 0
       cache: {}
       request:
-        bodySize: 1096
+        bodySize: 1119
         cookies: []
         headers:
           - name: content-type
@@ -106,7 +106,7 @@ log:
           - name: user-agent
             value: customCommandsClient / v1
           - name: traceparent
-            value: 00-91fde7ad4e2c97a1f181525c06478f73-1ec61b8d90eb71c6-01
+            value: 00-83fdb746cd10e40d65a0c05604a67558-841341f5367df10c-01
           - name: connection
             value: keep-alive
           - name: host
@@ -155,7 +155,7 @@ log:
                 text: Give me the names of the files I have shared with you so far. Format the
                   response as a bulleted list. Only include the raw filename, no
                   extra formatting like quotes.
-            model: claude-3.5-sonnet
+            model: anthropic::2023-06-01::claude-3.5-sonnet
             temperature: 0
             topK: -1
             topP: -1
@@ -168,21 +168,28 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=2&client-name=customcommandsclient&client-version=v1
       response:
-        bodySize: 103
+        bodySize: 699
         content:
-          mimeType: text/plain; charset=utf-8
-          size: 103
-          text: >
-            the requested chat model is not available ("claude-3.5-sonnet",
-            onProTier=true, hasFeatureFlags=false)
+          mimeType: text/event-stream
+          size: 699
+          text: >+
+            event: completion
+
+            data: {"deltaText":"Here's a bulleted list of the filenames you've shared with me so far:\n\n• example3.ts\n• example2.ts\n• example1.ts","stopReason":"end_turn"}
+
+
+            event: done
+
+            data: {}
+
         cookies: []
         headers:
           - name: date
-            value: Wed, 25 Sep 2024 21:25:44 GMT
+            value: Wed, 25 Sep 2024 23:48:44 GMT
           - name: content-type
-            value: text/plain; charset=utf-8
-          - name: content-length
-            value: "103"
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
           - name: connection
             value: keep-alive
           - name: access-control-allow-credentials
@@ -190,7 +197,7 @@ log:
           - name: access-control-allow-origin
             value: ""
           - name: cache-control
-            value: no-cache, max-age=0
+            value: no-cache
           - name: vary
             value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
               X-Requested-With,Cookie
@@ -202,12 +209,12 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1311
+        headersSize: 1299
         httpVersion: HTTP/1.1
         redirectURL: ""
-        status: 400
-        statusText: Bad Request
-      startedDateTime: 2024-09-25T21:25:43.643Z
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-09-25T23:48:43.561Z
       time: 0
       timings:
         blocked: -1
@@ -217,11 +224,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 78207e4aa818f41fe0069546bd6fbd3b
+    - _id: d036a6bf944ebb1cba8c30cd90c94499
       _order: 0
       cache: {}
       request:
-        bodySize: 464
+        bodySize: 487
         cookies: []
         headers:
           - name: content-type
@@ -234,7 +241,7 @@ log:
           - name: user-agent
             value: customCommandsClient / v1
           - name: traceparent
-            value: 00-dc0ff25a8e82ec133c9b58dc20218324-1d66dfa33a31f1ba-01
+            value: 00-1b8a8a5421a12ce833025c12bd9b9d5e-f0818a41a1b016b9-01
           - name: connection
             value: keep-alive
           - name: host
@@ -256,7 +263,7 @@ log:
               - speaker: human
                 text: Did I share any code with you? If yes, reply single word 'yes'. If none,
                   reply 'no'.
-            model: claude-3.5-sonnet
+            model: anthropic::2023-06-01::claude-3.5-sonnet
             temperature: 0
             topK: -1
             topP: -1
@@ -269,21 +276,25 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=2&client-name=customcommandsclient&client-version=v1
       response:
-        bodySize: 103
+        bodySize: 117
         content:
-          mimeType: text/plain; charset=utf-8
-          size: 103
-          text: >
-            the requested chat model is not available ("claude-3.5-sonnet",
-            onProTier=true, hasFeatureFlags=false)
+          mimeType: text/event-stream
+          size: 117
+          text: |+
+            event: completion
+            data: {"deltaText":"no","stopReason":"end_turn"}
+
+            event: done
+            data: {}
+
         cookies: []
         headers:
           - name: date
-            value: Wed, 25 Sep 2024 21:25:44 GMT
+            value: Wed, 25 Sep 2024 23:48:45 GMT
           - name: content-type
-            value: text/plain; charset=utf-8
-          - name: content-length
-            value: "103"
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
           - name: connection
             value: keep-alive
           - name: access-control-allow-credentials
@@ -291,7 +302,7 @@ log:
           - name: access-control-allow-origin
             value: ""
           - name: cache-control
-            value: no-cache, max-age=0
+            value: no-cache
           - name: vary
             value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
               X-Requested-With,Cookie
@@ -303,12 +314,12 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1311
+        headersSize: 1299
         httpVersion: HTTP/1.1
         redirectURL: ""
-        status: 400
-        statusText: Bad Request
-      startedDateTime: 2024-09-25T21:25:44.002Z
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-09-25T23:48:44.667Z
       time: 0
       timings:
         blocked: -1
@@ -318,11 +329,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 20bb5333eff1fe0d464f9eacc17ca393
+    - _id: 0ae405e092988385f535eaa38ebe857f
       _order: 0
       cache: {}
       request:
-        bodySize: 2208
+        bodySize: 2231
         cookies: []
         headers:
           - name: content-type
@@ -335,7 +346,7 @@ log:
           - name: user-agent
             value: customCommandsClient / v1
           - name: traceparent
-            value: 00-6ee7c592c3220351b7e94234c64c7965-85a02755fd0253b6-01
+            value: 00-1b2c23d006d522ed7f9370c438b32483-1dee69dcb26d4bf9-01
           - name: connection
             value: keep-alive
           - name: host
@@ -437,7 +448,7 @@ log:
               - speaker: human
                 text: How many file context have I shared with you? Reply single number. Skip
                   preamble.
-            model: claude-3.5-sonnet
+            model: anthropic::2023-06-01::claude-3.5-sonnet
             temperature: 0
             topK: -1
             topP: -1
@@ -450,21 +461,25 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=2&client-name=customcommandsclient&client-version=v1
       response:
-        bodySize: 103
+        bodySize: 116
         content:
-          mimeType: text/plain; charset=utf-8
-          size: 103
-          text: >
-            the requested chat model is not available ("claude-3.5-sonnet",
-            onProTier=true, hasFeatureFlags=false)
+          mimeType: text/event-stream
+          size: 116
+          text: |+
+            event: completion
+            data: {"deltaText":"7","stopReason":"end_turn"}
+
+            event: done
+            data: {}
+
         cookies: []
         headers:
           - name: date
-            value: Wed, 25 Sep 2024 21:25:44 GMT
+            value: Wed, 25 Sep 2024 23:48:46 GMT
           - name: content-type
-            value: text/plain; charset=utf-8
-          - name: content-length
-            value: "103"
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
           - name: connection
             value: keep-alive
           - name: access-control-allow-credentials
@@ -472,7 +487,7 @@ log:
           - name: access-control-allow-origin
             value: ""
           - name: cache-control
-            value: no-cache, max-age=0
+            value: no-cache
           - name: vary
             value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
               X-Requested-With,Cookie
@@ -484,12 +499,12 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1311
+        headersSize: 1299
         httpVersion: HTTP/1.1
         redirectURL: ""
-        status: 400
-        statusText: Bad Request
-      startedDateTime: 2024-09-25T21:25:44.277Z
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-09-25T23:48:45.214Z
       time: 0
       timings:
         blocked: -1
@@ -499,11 +514,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 89009942cc268770e085ba5d017e4cde
+    - _id: 40238f110033505562d573cc012d4364
       _order: 0
       cache: {}
       request:
-        bodySize: 2213
+        bodySize: 2236
         cookies: []
         headers:
           - name: content-type
@@ -516,7 +531,7 @@ log:
           - name: user-agent
             value: customCommandsClient / v1
           - name: traceparent
-            value: 00-54e480606e3ccfbd2ac59c207dcaf672-859ad87558779747-01
+            value: 00-049c9645632dd7d5b99bffbc094087a7-f93800cbe6ba215c-01
           - name: connection
             value: keep-alive
           - name: host
@@ -587,7 +602,7 @@ log:
                   </INSTRUCTIONS7390>
               - speaker: assistant
                 text: <CODE5711>
-            model: claude-3.5-sonnet
+            model: anthropic::2023-06-01::claude-3.5-sonnet
             stopSequences:
               - </CODE5711>
             temperature: 0
@@ -602,21 +617,25 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=2&client-name=customcommandsclient&client-version=v1
       response:
-        bodySize: 103
+        bodySize: 214
         content:
-          mimeType: text/plain; charset=utf-8
-          size: 103
-          text: >
-            the requested chat model is not available ("claude-3.5-sonnet",
-            onProTier=true, hasFeatureFlags=false)
+          mimeType: text/event-stream
+          size: 214
+          text: |+
+            event: completion
+            data: {"deltaText":"// hello\n","stopReason":"stop_sequence"}
+
+            event: done
+            data: {}
+
         cookies: []
         headers:
           - name: date
-            value: Wed, 25 Sep 2024 21:25:44 GMT
+            value: Wed, 25 Sep 2024 23:48:47 GMT
           - name: content-type
-            value: text/plain; charset=utf-8
-          - name: content-length
-            value: "103"
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
           - name: connection
             value: keep-alive
           - name: access-control-allow-credentials
@@ -624,7 +643,7 @@ log:
           - name: access-control-allow-origin
             value: ""
           - name: cache-control
-            value: no-cache, max-age=0
+            value: no-cache
           - name: vary
             value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
               X-Requested-With,Cookie
@@ -636,12 +655,12 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1311
+        headersSize: 1299
         httpVersion: HTTP/1.1
         redirectURL: ""
-        status: 400
-        statusText: Bad Request
-      startedDateTime: 2024-09-25T21:25:44.534Z
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-09-25T23:48:46.232Z
       time: 0
       timings:
         blocked: -1
@@ -651,11 +670,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 4a1f10925f703de1899604ddbca4eeb4
+    - _id: 651748358eff6e372c333cc49c9c1724
       _order: 0
       cache: {}
       request:
-        bodySize: 2331
+        bodySize: 2354
         cookies: []
         headers:
           - name: content-type
@@ -668,7 +687,7 @@ log:
           - name: user-agent
             value: customCommandsClient / v1
           - name: traceparent
-            value: 00-dbd7058d6a44cd7911d0bd40880f0de7-60d3e02529dc14b4-01
+            value: 00-66b49da987541e5d823e6ac7699fe6d9-bac05b9cd22d9782-01
           - name: connection
             value: keep-alive
           - name: host
@@ -749,7 +768,7 @@ log:
                   </INSTRUCTIONS7390>
               - speaker: assistant
                 text: <CODE5711>
-            model: claude-3.5-sonnet
+            model: anthropic::2023-06-01::claude-3.5-sonnet
             stopSequences:
               - </CODE5711>
             temperature: 0
@@ -764,21 +783,28 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=2&client-name=customcommandsclient&client-version=v1
       response:
-        bodySize: 103
+        bodySize: 579
         content:
-          mimeType: text/plain; charset=utf-8
-          size: 103
-          text: >
-            the requested chat model is not available ("claude-3.5-sonnet",
-            onProTier=true, hasFeatureFlags=false)
+          mimeType: text/event-stream
+          size: 579
+          text: >+
+            event: completion
+
+            data: {"deltaText":"export interface Animal {\n    name: string\n    makeAnimalSound(): string\n    isMammal: boolean\n    logName(): void\n}\n","stopReason":"stop_sequence"}
+
+
+            event: done
+
+            data: {}
+
         cookies: []
         headers:
           - name: date
-            value: Wed, 25 Sep 2024 21:25:45 GMT
+            value: Wed, 25 Sep 2024 23:48:48 GMT
           - name: content-type
-            value: text/plain; charset=utf-8
-          - name: content-length
-            value: "103"
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
           - name: connection
             value: keep-alive
           - name: access-control-allow-credentials
@@ -786,7 +812,7 @@ log:
           - name: access-control-allow-origin
             value: ""
           - name: cache-control
-            value: no-cache, max-age=0
+            value: no-cache
           - name: vary
             value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
               X-Requested-With,Cookie
@@ -798,12 +824,12 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1311
+        headersSize: 1299
         httpVersion: HTTP/1.1
         redirectURL: ""
-        status: 400
-        statusText: Bad Request
-      startedDateTime: 2024-09-25T21:25:44.771Z
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-09-25T23:48:47.329Z
       time: 0
       timings:
         blocked: -1

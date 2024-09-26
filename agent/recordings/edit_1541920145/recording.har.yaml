@@ -592,11 +592,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: b9c79e2b7db48634241a56e11d0fc650
+    - _id: 43ae94f4eef0d77027035dcc0ee1fbdf
       _order: 0
       cache: {}
       request:
-        bodySize: 1954
+        bodySize: 1977
         cookies: []
         headers:
           - name: content-type
@@ -609,7 +609,7 @@ log:
           - name: user-agent
             value: edit / v1
           - name: traceparent
-            value: 00-9e781d4f313bd2b3aeaccc03d907848d-eeb65932c14c25ed-01
+            value: 00-fbef8c018bec4c25732d38062ab189a4-462cf43f09938cca-01
           - name: connection
             value: keep-alive
           - name: host
@@ -670,7 +670,7 @@ log:
                   </INSTRUCTIONS7390>
               - speaker: assistant
                 text: <CODE5711>
-            model: claude-3.5-sonnet
+            model: anthropic::2023-06-01::claude-3.5-sonnet
             stopSequences:
               - </CODE5711>
             temperature: 0
@@ -685,21 +685,28 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=2&client-name=edit&client-version=v1
       response:
-        bodySize: 103
+        bodySize: 446
         content:
-          mimeType: text/plain; charset=utf-8
-          size: 103
-          text: >
-            the requested chat model is not available ("claude-3.5-sonnet",
-            onProTier=true, hasFeatureFlags=false)
+          mimeType: text/event-stream
+          size: 446
+          text: >+
+            event: completion
+
+            data: {"deltaText":"export function sum(c: number, b: number): number {\n    /* CURSOR */\n}\n","stopReason":"stop_sequence"}
+
+
+            event: done
+
+            data: {}
+
         cookies: []
         headers:
           - name: date
-            value: Wed, 25 Sep 2024 21:25:41 GMT
+            value: Wed, 25 Sep 2024 23:48:42 GMT
           - name: content-type
-            value: text/plain; charset=utf-8
-          - name: content-length
-            value: "103"
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
           - name: connection
             value: keep-alive
           - name: access-control-allow-credentials
@@ -707,7 +714,7 @@ log:
           - name: access-control-allow-origin
             value: ""
           - name: cache-control
-            value: no-cache, max-age=0
+            value: no-cache
           - name: vary
             value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
               X-Requested-With,Cookie
@@ -719,12 +726,12 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1311
+        headersSize: 1299
         httpVersion: HTTP/1.1
         redirectURL: ""
-        status: 400
-        statusText: Bad Request
-      startedDateTime: 2024-09-25T21:25:41.237Z
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-09-25T23:48:41.450Z
       time: 0
       timings:
         blocked: -1
