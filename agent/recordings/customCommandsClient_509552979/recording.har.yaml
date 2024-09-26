@@ -416,11 +416,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 6080a54cebaf433abc1ace3d47772bf8
+    - _id: 7bd1392a5bf3d9ae42fb5abd0009c963
       _order: 0
       cache: {}
       request:
-        bodySize: 1296
+        bodySize: 1214
         cookies: []
         headers:
           - name: content-type
@@ -433,7 +433,7 @@ log:
           - name: user-agent
             value: customCommandsClient / v1
           - name: traceparent
-            value: 00-15e3bd0e02a8d9510642382274c99ce0-849aac601a550883-01
+            value: 00-9ab0936830ab8587d66d4cf881c998ce-e2003f038f65d07c-01
           - name: connection
             value: keep-alive
           - name: host
@@ -454,9 +454,7 @@ log:
                   relevant full file path in the code block tag using this
                   structure: ```$LANGUAGE:$FILEPATH```
 
-                  For executable terminal commands: enclose in a Markdown code block with the language tag "shell".
-
-                  For file paths mentioned outside of code blocks: enclose with single backticks.
+                  For executable terminal commands: enclose in a Markdown code block with the language tag "bash".
               - speaker: human
                 text: >
                   Codebase context from file path src/example3.ts: export
@@ -500,14 +498,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=2&client-name=customcommandsclient&client-version=v1
       response:
-        bodySize: 763
+        bodySize: 699
         content:
           mimeType: text/event-stream
-          size: 763
+          size: 699
           text: >+
             event: completion
 
-            data: {"deltaText":"Here are the names of the files you've shared with me so far, formatted as a bulleted list:\n\n• example3.ts\n• example2.ts\n• example1.ts","stopReason":"end_turn"}
+            data: {"deltaText":"Here's a bulleted list of the filenames you've shared with me so far:\n\n• example3.ts\n• example2.ts\n• example1.ts","stopReason":"end_turn"}
 
 
             event: done
@@ -517,7 +515,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Wed, 25 Sep 2024 00:18:11 GMT
+            value: Thu, 26 Sep 2024 15:35:18 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -546,7 +544,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-25T00:18:09.917Z
+      startedDateTime: 2024-09-26T15:35:17.177Z
       time: 0
       timings:
         blocked: -1
@@ -556,11 +554,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: d5fcd081ed88f4720a2a528e11352587
+    - _id: 8dbf014bc3b64ae5970581ada8548fd9
       _order: 0
       cache: {}
       request:
-        bodySize: 664
+        bodySize: 582
         cookies: []
         headers:
           - name: content-type
@@ -573,7 +571,7 @@ log:
           - name: user-agent
             value: customCommandsClient / v1
           - name: traceparent
-            value: 00-781fe565b857ff2321bc4121a27191ef-04ef583470ed1724-01
+            value: 00-15cadfd4eaec425072b6391b203b8d70-a3427a9334b32bc5-01
           - name: connection
             value: keep-alive
           - name: host
@@ -594,9 +592,7 @@ log:
                   relevant full file path in the code block tag using this
                   structure: ```$LANGUAGE:$FILEPATH```
 
-                  For executable terminal commands: enclose in a Markdown code block with the language tag "shell".
-
-                  For file paths mentioned outside of code blocks: enclose with single backticks.
+                  For executable terminal commands: enclose in a Markdown code block with the language tag "bash".
               - speaker: human
                 text: Did I share any code with you? If yes, reply single word 'yes'. If none,
                   reply 'no'.
@@ -627,7 +623,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Wed, 25 Sep 2024 00:18:11 GMT
+            value: Thu, 26 Sep 2024 15:35:19 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -656,7 +652,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-25T00:18:11.335Z
+      startedDateTime: 2024-09-26T15:35:18.345Z
       time: 0
       timings:
         blocked: -1
@@ -666,11 +662,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 2cf70ad08703ea20b6790d5f09576391
+    - _id: ea12b9a258b744319192c219eb15d6c8
       _order: 0
       cache: {}
       request:
-        bodySize: 2408
+        bodySize: 2326
         cookies: []
         headers:
           - name: content-type
@@ -683,7 +679,7 @@ log:
           - name: user-agent
             value: customCommandsClient / v1
           - name: traceparent
-            value: 00-8ec005b59df0a89867a34ee90ef40be9-d322d45bc23abb66-01
+            value: 00-74489508d9607b44f7ae52b5fda113a6-339c5b02361f1ea6-01
           - name: connection
             value: keep-alive
           - name: host
@@ -704,9 +700,7 @@ log:
                   relevant full file path in the code block tag using this
                   structure: ```$LANGUAGE:$FILEPATH```
 
-                  For executable terminal commands: enclose in a Markdown code block with the language tag "shell".
-
-                  For file paths mentioned outside of code blocks: enclose with single backticks.
+                  For executable terminal commands: enclose in a Markdown code block with the language tag "bash".
               - speaker: human
                 text: >
                   Codebase context from file path src/sum.ts: export function
@@ -817,7 +811,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Wed, 25 Sep 2024 00:18:12 GMT
+            value: Thu, 26 Sep 2024 15:35:20 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -846,7 +840,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-25T00:18:12.000Z
+      startedDateTime: 2024-09-26T15:35:19.119Z
       time: 0
       timings:
         blocked: -1

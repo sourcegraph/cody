@@ -89,11 +89,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 31f0e72151d94faa165c88882cbf798c
+    - _id: bf3f81f9adc9a5b9216c04c36934e13f
       _order: 0
       cache: {}
       request:
-        bodySize: 713
+        bodySize: 631
         cookies: []
         headers:
           - name: content-type
@@ -106,7 +106,7 @@ log:
           - name: user-agent
             value: auth / v1
           - name: traceparent
-            value: 00-92843aecc08a9dfd104b5284651e356b-32e2e5df14b37980-01
+            value: 00-ab97ff74dd33b04d0ca214f43c7607db-bad5d4b06a4cd68b-01
           - name: connection
             value: keep-alive
           - name: host
@@ -127,9 +127,7 @@ log:
                   relevant full file path in the code block tag using this
                   structure: ```$LANGUAGE:$FILEPATH```
 
-                  For executable terminal commands: enclose in a Markdown code block with the language tag "shell".
-
-                  For file paths mentioned outside of code blocks: enclose with single backticks.
+                  For executable terminal commands: enclose in a Markdown code block with the language tag "bash".
               - speaker: assistant
                 text: I am Cody, an AI coding assistant from Sourcegraph.
               - speaker: human
@@ -145,14 +143,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?client-name=auth&client-version=v1
       response:
-        bodySize: 2641
+        bodySize: 4815
         content:
           mimeType: text/event-stream
-          size: 2641
+          size: 4815
           text: >+
             event: completion
 
-            data: {"completion":"Hello! I am Cody, an AI coding assistant, ready to help you with your coding needs after re-authentication. Fire away with any questions or problems you have, and I'll do my best to assist you with care, respect, and truthwhile ensuring that my replies promote fairness and positivity.","stopReason":"stop"}
+            data: {"completion":"Hello! I'm glad to see you again after re-authentication. How can I assist you with your coding-related inquiries today? If you have any questions or need help with a specific programming language or concept, feel free to ask!\n\n(Note: I am a text-based AI model, and I do not have the ability to execute or run code. However, I can certainly help explain code snippets, suggest improvements, or provide guidance on how to approach coding problems.)","stopReason":"stop"}
 
 
             event: done
@@ -162,15 +160,13 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Wed, 25 Sep 2024 22:23:39 GMT
+            value: Thu, 26 Sep 2024 15:35:13 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
             value: chunked
           - name: connection
             value: keep-alive
-          - name: retry-after
-            value: "539"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -188,12 +184,12 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1406
+        headersSize: 1299
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-25T22:23:37.648Z
+      startedDateTime: 2024-09-26T15:35:12.814Z
       time: 0
       timings:
         blocked: -1
@@ -1458,11 +1454,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 43da84626e19c8b07a83bafe165c7c1f
+    - _id: e14fe1fad3b920799e1b13bed3a30a01
       _order: 0
       cache: {}
       request:
-        bodySize: 591
+        bodySize: 509
         cookies: []
         headers:
           - name: content-type
@@ -1475,7 +1471,7 @@ log:
           - name: user-agent
             value: auth / v1
           - name: traceparent
-            value: 00-6ac70f380e40da1fbef79db4ee6bd2bd-d23f876962d3b444-01
+            value: 00-3ad7618ff8b1a1566582874f3f40b144-e6fd6e1f6572806f-01
           - name: connection
             value: keep-alive
           - name: host
@@ -1496,9 +1492,7 @@ log:
                   relevant full file path in the code block tag using this
                   structure: ```$LANGUAGE:$FILEPATH```
 
-                  For executable terminal commands: enclose in a Markdown code block with the language tag "shell".
-
-                  For file paths mentioned outside of code blocks: enclose with single backticks.
+                  For executable terminal commands: enclose in a Markdown code block with the language tag "bash".
               - speaker: human
                 text: hello after switching accounts
             model: claude-3.5-sonnet
@@ -1514,14 +1508,14 @@ log:
             value: v1
         url: https://sourcegraph.sourcegraph.com/.api/completions/stream?api-version=2&client-name=auth&client-version=v1
       response:
-        bodySize: 1555
+        bodySize: 1614
         content:
           mimeType: text/event-stream
-          size: 1555
+          size: 1614
           text: >+
             event: completion
 
-            data: {"deltaText":"Hello! It's nice to meet you after switching accounts. How can I assist you with coding or development today? Whether you have questions about a specific programming language, need help with a coding problem, or want guidance on best practices, I'm here to help. Please feel free to ask any coding-related questions or share what you're working on.","stopReason":"end_turn"}
+            data: {"deltaText":"Hello! I'm glad to assist you after switching accounts. How can I help you with coding or development-related tasks today? Whether you have questions about a specific programming language, need help with a coding problem, or want to discuss software development concepts, I'm here to help. Please feel free to ask anything!","stopReason":"end_turn"}
 
 
             event: done
@@ -1531,13 +1525,15 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Wed, 25 Sep 2024 22:23:56 GMT
+            value: Thu, 26 Sep 2024 15:35:34 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
             value: chunked
           - name: connection
             value: keep-alive
+          - name: retry-after
+            value: "36"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -1555,12 +1551,12 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1215
+        headersSize: 1321
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-25T22:23:54.922Z
+      startedDateTime: 2024-09-26T15:35:32.854Z
       time: 0
       timings:
         blocked: -1

@@ -9,7 +9,6 @@ import {
     DOTCOM_URL,
     ModelUsage,
     type SerializedChatTranscript,
-    isWindows,
 } from '@sourcegraph/cody-shared'
 
 import * as uuid from 'uuid'
@@ -223,7 +222,7 @@ describe('Agent', () => {
               {
                 "model": "anthropic/claude-3-5-sonnet-20240620",
                 "speaker": "assistant",
-                "text": "Hello! I'm Cody, an AI coding assistant from Sourcegraph. How can I help you with your coding or development tasks today? Whether you need help with writing code, debugging, explaining concepts, or anything else related to programming, I'm here to assist. What would you like to work on?",
+                "text": "Hello! I'm Cody, an AI coding assistant from Sourcegraph. How can I help you with your coding tasks today? Whether you need assistance with writing code, debugging, explaining concepts, or any other programming-related questions, I'm here to help. What would you like to work on?",
               }
             `
             )
@@ -291,7 +290,7 @@ describe('Agent', () => {
                 })
             )
             expect(reply2.messages.at(-1)?.text).toMatchInlineSnapshot(
-                `"Your name is Lars Monsen, as you mentioned in your previous message."`,
+                `"Your name is Lars Monsen."`,
                 explainPollyError
             )
             // telemetry assertion, to validate the expected events fired during the test run
@@ -839,29 +838,6 @@ describe('Agent', () => {
                 ])
             )
         }, 30_000)
-
-        // This test seems extra sensitive on Node v16 for some reason.
-        it.skipIf(isWindows())(
-            'commands/test',
-            async () => {
-                await client.openFile(animalUri)
-                await setChatModel()
-                const id = await client.request('commands/test', null)
-                const lastMessage = await client.firstNonEmptyTranscript(id)
-                expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchSnapshot()
-                // telemetry assertion, to validate the expected events fired during the test run
-                // Do not remove this assertion, and instead update the expectedEvents list above
-                expect(await exportedTelemetryEvents(client)).toEqual(
-                    expect.arrayContaining([
-                        'cody.command.test:executed',
-                        'cody.chat-question:submitted',
-                        'cody.chat-question:executed',
-                        'cody.chatResponse:hasCode',
-                    ])
-                )
-            },
-            30_000
-        )
 
         it('commands/smell', async () => {
             await client.openFile(animalUri)

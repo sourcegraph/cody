@@ -89,11 +89,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 0ace2d823d569c82598a16c75165715a
+    - _id: 14b3d97729c7e3ca019651e82c60302a
       _order: 0
       cache: {}
       request:
-        bodySize: 602
+        bodySize: 520
         cookies: []
         headers:
           - name: content-type
@@ -125,9 +125,7 @@ log:
                   relevant full file path in the code block tag using this
                   structure: ```$LANGUAGE:$FILEPATH```
 
-                  For executable terminal commands: enclose in a Markdown code block with the language tag "shell".
-
-                  For file paths mentioned outside of code blocks: enclose with single backticks.
+                  For executable terminal commands: enclose in a Markdown code block with the language tag "bash".
               - speaker: human
                 text: respond with "hello" and nothing else
             model: claude-3.5-sonnet
@@ -157,13 +155,15 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Wed, 25 Sep 2024 22:23:43 GMT
+            value: Thu, 26 Sep 2024 15:35:17 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
             value: chunked
           - name: connection
             value: keep-alive
+          - name: retry-after
+            value: "52"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -181,12 +181,12 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1215
+        headersSize: 1321
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-25T22:23:42.799Z
+      startedDateTime: 2024-09-26T15:35:16.965Z
       time: 0
       timings:
         blocked: -1
@@ -196,11 +196,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: e6f3dd65aa44ac914e06a9045f467f92
+    - _id: be4e4113ce833b4c0ba3df9e52cab44d
       _order: 0
       cache: {}
       request:
-        bodySize: 924
+        bodySize: 842
         cookies: []
         headers:
           - name: content-type
@@ -232,9 +232,7 @@ log:
                   relevant full file path in the code block tag using this
                   structure: ```$LANGUAGE:$FILEPATH```
 
-                  For executable terminal commands: enclose in a Markdown code block with the language tag "shell".
-
-                  For file paths mentioned outside of code blocks: enclose with single backticks.
+                  For executable terminal commands: enclose in a Markdown code block with the language tag "bash".
               - speaker: human
                 text: |-
                   Codebase context from file animal.ts:
@@ -265,14 +263,14 @@ log:
             value: 6.0.0-SNAPSHOT
         url: https://sourcegraph.sourcegraph.com/.api/completions/stream?api-version=2&client-name=jetbrains&client-version=6.0.0-SNAPSHOT
       response:
-        bodySize: 1092
+        bodySize: 950
         content:
           mimeType: text/event-stream
-          size: 1092
+          size: 950
           text: >+
             event: completion
 
-            data: {"deltaText":"Here's the implementation of a cow based on the provided `StrangeAnimal` interface:\n\n```typescript:animal.ts\nclass Cow implements StrangeAnimal {\n    makesSound(): 'coo' | 'moo' {\n        return 'moo';\n    }\n}\n```","stopReason":"end_turn"}
+            data: {"deltaText":"Here's the implementation of a cow based on the provided interface:\n\n```typescript:animal.ts\nclass Cow implements StrangeAnimal {\n    makesSound(): 'coo' | 'moo' {\n        return 'moo';\n    }\n}\n```","stopReason":"end_turn"}
 
 
             event: done
@@ -282,13 +280,15 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Wed, 25 Sep 2024 22:23:45 GMT
+            value: Thu, 26 Sep 2024 15:35:19 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
             value: chunked
           - name: connection
             value: keep-alive
+          - name: retry-after
+            value: "51"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -306,12 +306,12 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1215
+        headersSize: 1321
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-25T22:23:44.377Z
+      startedDateTime: 2024-09-26T15:35:18.762Z
       time: 0
       timings:
         blocked: -1
