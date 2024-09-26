@@ -203,7 +203,7 @@ describe('server sent models', async () => {
     vi.spyOn(modelsService, 'modelsChanges', 'get').mockReturnValue(Observable.of(result))
 
     it('constructs from server models', () => {
-        expect(opus.id).toBe(serverOpus.modelName)
+        expect(opus.id).toBe(serverOpus.modelRef)
         expect(opus.title).toBe(serverOpus.displayName)
         expect(opus.provider).toBe('anthropic')
         expect(opus.contextWindow).toEqual({ input: 9000, output: 4000 })

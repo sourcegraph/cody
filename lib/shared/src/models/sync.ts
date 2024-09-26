@@ -149,6 +149,9 @@ export function syncModels({
                     RemoteModelsData | Error | typeof pendingOperation
                 > = clientConfig.pipe(
                     switchMapReplayOperation(maybeClientConfig => {
+                        // NOTE: isDotComUser to enable server-side models for DotCom users,
+                        // as the modelsAPIEnabled is default to return false on DotCom to avoid older clients
+                        // that also share the same check from breaking.
                         if (maybeClientConfig?.modelsAPIEnabled || isDotComUser) {
                             logDebug('ModelsService', 'new models API enabled')
                             return promiseFactoryToObservable(signal =>

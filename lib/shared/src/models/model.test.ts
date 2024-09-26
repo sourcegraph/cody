@@ -10,12 +10,7 @@ describe('getServerModelTags', () => {
 
     it('convert accuracy to power tag', () => {
         const tags = getServerModelTags(['chat', 'vision'], 'accuracy', 'stable', ModelTag.Enterprise)
-        expect(tags).toEqual([
-            ModelTag.Enterprise,
-            ModelTag.StreamDisabled,
-            ModelTag.Vision,
-            ModelTag.Power,
-        ])
+        expect(tags).toEqual([ModelTag.Enterprise, ModelTag.Vision, ModelTag.Power])
     })
 
     it('includes Vision tag when capability is present', () => {

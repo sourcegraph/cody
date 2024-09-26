@@ -352,9 +352,21 @@ export class ModelsService {
         )
     }
 
+    /**
+     * Gets the default edit model, which is determined by first checking the default edit model,
+     * and if that is not available, falling back to the default chat model.
+     */
     public getDefaultEditModel(): Observable<EditModel | undefined | typeof pendingOperation> {
-        return this.getDefaultModel(ModelUsage.Edit).pipe(
-            map(model => (model === pendingOperation ? pendingOperation : model?.id))
+        return combineLatest([
+            this.getDefaultModel(ModelUsage.Edit),
+            this.getDefaultModel(ModelUsage.Chat),
+        ]).pipe(
+            map(([editModel, chatModel]) => {
+                if (editModel === pendingOperation || chatModel === pendingOperation) {
+                    return pendingOperation
+                }
+                return editModel?.id || chatModel?.id
+            })
         )
     }
 
