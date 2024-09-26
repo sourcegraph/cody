@@ -1,4 +1,6 @@
 import * as fs from 'node:fs'
+import * as os from 'node:os'
+import * as path from 'node:path'
 import * as vscode from 'vscode'
 
 import {
@@ -48,18 +50,17 @@ export function getConfiguration(
         debugRegex = /.*/
     }
 
-    function expandTilde(path?: string): string | undefined {
-        if (path?.startsWith('~/')) {
-            const homeDir = process.env.HOME || process.env.USERPROFILE
-            if (homeDir) {
-                return `${homeDir}/${path.slice(2)}`
+    function resolveHomedir(filePath?: string): string | undefined {
+        for (const homeDir of ['~/', '%USERPROFILE%\\']) {
+            if (filePath?.startsWith(homeDir)) {
+                return `${os.homedir()}${path.sep}${filePath.slice(homeDir.length)}`
             }
         }
-        return path
+        return filePath
     }
 
     function readProxyPath(): string | undefined {
-        const path = expandTilde(config.get<string>(CONFIG_KEY.proxyPath))
+        const path = resolveHomedir(config.get<string>(CONFIG_KEY.proxyPath))
         if (path) {
             try {
                 if (!fs.statSync(path).isSocket()) {
@@ -77,7 +78,7 @@ export function getConfiguration(
     }
 
     function readProxyCACert(): string | undefined {
-        const path = expandTilde(config.get<string>(CONFIG_KEY.proxyCacert))
+        const path = resolveHomedir(config.get<string>(CONFIG_KEY.proxyCacert))
         if (path) {
             // support directly embedding a CA cert in the settings
             if (path.startsWith('-----BEGIN CERTIFICATE-----')) {
