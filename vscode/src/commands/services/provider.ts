@@ -41,7 +41,7 @@ export class CommandsProvider implements vscode.Disposable {
         }
 
         // Only initialize custom commands store in VS Code.
-        if (agentIDE === CodyIDE.VSCode) {
+        if (!agentIDE || agentIDE === CodyIDE.VSCode) {
             this.customCommandsStoreInit()
         }
 
