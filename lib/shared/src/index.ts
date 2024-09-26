@@ -10,6 +10,7 @@ export {
     type PerSitePreferences,
     type SitePreferences,
     type ModelRefStr,
+    type LegacyModelRefStr,
     type ModelRef,
     type ModelsData,
     TestLocalStorageForModelPreferences,
@@ -351,3 +352,4 @@ export * from './configuration/resolver'
 export * from './singletons'
 export * from './auth/authStatus'
 export { fetchLocalOllamaModels } from './llm-providers/ollama/utils'
+export * from './editor/editorState'

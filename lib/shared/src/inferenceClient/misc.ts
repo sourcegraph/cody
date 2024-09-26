@@ -1,3 +1,4 @@
+import type { LegacyModelRefStr, ModelRefStr } from '../models/modelsService'
 import type { CompletionLogger } from '../sourcegraph-api/completions/client'
 import type {
     CompletionParameters,
@@ -23,7 +24,11 @@ export enum CompletionStopReason {
     RequestFinished = 'cody-request-finished',
 }
 
-export type CodeCompletionsParams = Omit<CompletionParameters, 'fast'> & { timeoutMs: number }
+export type CodeCompletionsParams = Omit<CompletionParameters, 'fast'> & {
+    timeoutMs: number
+    // TODO: apply the same type to the underlying `CompletionParameters`
+    model?: LegacyModelRefStr | ModelRefStr
+}
 export type SerializedCodeCompletionsParams = Omit<SerializedCompletionParameters, 'fast'>
 
 export type CompletionResponseWithMetaData = {

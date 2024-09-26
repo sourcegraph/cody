@@ -104,7 +104,7 @@ const serverSentModelsMock = {
             },
         },
         {
-            modelRef: 'anthropic::2023-06-01::claude-3-haiku',
+            modelRef: 'anthropic::2023-06-01::claude-3-haiku-20240307',
             displayName: 'Claude 3 Haiku',
             modelName: 'claude-3-haiku-20240307',
             capabilities: ['autocomplete', 'chat'],

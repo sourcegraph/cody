@@ -27,7 +27,7 @@ describe('experimental-openaicompatible autocomplete provider', () => {
             temperature: 0.2,
             timeoutMs: 7000,
             topK: 0,
-            model: '',
+            model: undefined,
         },
     } satisfies AutocompleteProviderValuesToAssert
 
@@ -68,16 +68,16 @@ describe('experimental-openaicompatible autocomplete provider', () => {
 
     testAutocompleteProvider('site-config-cody-llm-configuration', starChatAssertion, isDotCom =>
         getAutocompleteProviderFromSiteConfigCodyLLMConfiguration({
-            providerId: 'experimental-openaicompatible',
-            legacyModel: 'starchat-16b-beta',
+            provider: 'sourcegraph',
+            completionModel: 'experimental-openaicompatible/starchat-16b-beta',
             isDotCom,
         })
     )
 
     testAutocompleteProvider('site-config-cody-llm-configuration', starCoderHybridAssertion, isDotCom =>
         getAutocompleteProviderFromSiteConfigCodyLLMConfiguration({
-            providerId: 'experimental-openaicompatible',
-            legacyModel: 'starcoder-hybrid',
+            provider: 'sourcegraph',
+            completionModel: 'experimental-openaicompatible/starcoder-hybrid',
             isDotCom,
         })
     )

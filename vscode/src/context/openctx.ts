@@ -90,7 +90,7 @@ export function exposeOpenCtxClient(
                     extensionId: context.extension.id,
                     secrets: context.secrets,
                     outputChannel: openctxOutputChannel!,
-                    features: isCodyWeb ? {} : { annotations: true, statusBar: true },
+                    features: isCodyWeb ? {} : { annotations: true },
                     providers: isCodyWeb
                         ? Observable.of(getCodyWebOpenCtxProviders())
                         : getOpenCtxProviders(authStatus, isValidSiteVersion),

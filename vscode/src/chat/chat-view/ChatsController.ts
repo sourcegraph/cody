@@ -438,7 +438,7 @@ export class ChatsController implements vscode.Disposable {
     ): Promise<ChatController> {
         const chatController = this.createChatController()
         if (chatID) {
-            await chatController.restoreSession(chatID)
+            chatController.restoreSession(chatID)
         }
 
         if (panel) {
