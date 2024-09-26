@@ -1,6 +1,12 @@
-import type { AutocompleteContextSnippet } from '@sourcegraph/cody-shared'
+import {
+    type AutocompleteContextSnippet,
+    isDotComAuthed,
+    subscriptionDisposable,
+} from '@sourcegraph/cody-shared'
 import type * as vscode from 'vscode'
 import { logDebug } from '../../log'
+import { GitHubDotComRepoMetadata } from '../../repository/repo-metadata-from-git-api'
+import { completionProviderConfig } from '../completion-provider-config'
 import type { ContextRetriever } from '../types'
 import type { RetrievedContextResults } from './completions-context-ranker'
 import { JaccardSimilarityRetriever } from './retrievers/jaccard-similarity/jaccard-similarity-retriever'
@@ -16,28 +22,42 @@ interface RetrieverConfig {
 }
 
 export class ContextRetrieverDataCollection implements vscode.Disposable {
-    private readonly retrieverConfigs: ReadonlyArray<RetrieverConfig>
-    private readonly dataCollectionRetrievers: ReadonlyArray<ContextRetriever>
+    public dataCollectionRetrievers: ContextRetriever[] = []
     private disposables: vscode.Disposable[] = []
     private static readonly MAX_PAYLOAD_SIZE_BYTES = 1024 * 1024 // 1 MB
+    private dataCollectionFlagState = false
+
+    private readonly retrieverConfigs: RetrieverConfig[] = [
+        { identifier: RetrieverIdentifier.RecentCopyRetriever, maxSnippets: 1 },
+        { identifier: RetrieverIdentifier.RecentEditsRetriever, maxSnippets: 15 },
+        { identifier: RetrieverIdentifier.DiagnosticsRetriever, maxSnippets: 15 },
+        { identifier: RetrieverIdentifier.RecentViewPortRetriever, maxSnippets: 10 },
+        { identifier: RetrieverIdentifier.JaccardSimilarityRetriever, maxSnippets: 15 },
+    ]
 
     constructor() {
-        this.retrieverConfigs = [
-            { identifier: RetrieverIdentifier.RecentCopyRetriever, maxSnippets: 1 },
-            { identifier: RetrieverIdentifier.RecentEditsRetriever, maxSnippets: 15 },
-            { identifier: RetrieverIdentifier.DiagnosticsRetriever, maxSnippets: 15 },
-            { identifier: RetrieverIdentifier.RecentViewPortRetriever, maxSnippets: 10 },
-            { identifier: RetrieverIdentifier.JaccardSimilarityRetriever, maxSnippets: 15 },
-        ]
-        this.dataCollectionRetrievers = this.retrieverConfigs
-            .map(config => this.createRetriever(config))
-            .filter((retriever): retriever is ContextRetriever => retriever !== undefined)
-
-        this.disposables = this.dataCollectionRetrievers.slice()
+        this.disposables.push(
+            subscriptionDisposable(
+                completionProviderConfig.completionDataCollectionFlag.subscribe(
+                    this.manageDataCollectionRetrievers.bind(this)
+                )
+            )
+        )
     }
 
-    public getRetrievers(): ReadonlyArray<ContextRetriever> {
-        return this.dataCollectionRetrievers
+    private manageDataCollectionRetrievers(dataCollectionEnabled: boolean): void {
+        if (this.dataCollectionFlagState === dataCollectionEnabled) {
+            return
+        }
+
+        this.dataCollectionFlagState = dataCollectionEnabled
+        this.disposeDataCollectionRetrievers()
+
+        if (dataCollectionEnabled) {
+            this.dataCollectionRetrievers = this.retrieverConfigs
+                .map(this.createRetriever)
+                .filter((retriever): retriever is ContextRetriever => retriever !== undefined)
+        }
     }
 
     public getDataLoggingContextFromRetrievers(
@@ -71,6 +91,14 @@ export class ContextRetrieverDataCollection implements vscode.Disposable {
         return dataLoggingContext
     }
 
+    public shouldCollectContextDatapoint(gitUrl: string | undefined): boolean {
+        if (!gitUrl || !isDotComAuthed() || this.dataCollectionRetrievers.length === 0) {
+            return false
+        }
+        const gitRepoMetadata = GitHubDotComRepoMetadata.getInstance().getRepoMetadataIfCached(gitUrl)
+        return gitRepoMetadata?.isPublic ?? false
+    }
+
     private createRetriever(config: RetrieverConfig): ContextRetriever | undefined {
         switch (config.identifier) {
             case RetrieverIdentifier.RecentEditsRetriever:
@@ -99,7 +127,15 @@ export class ContextRetrieverDataCollection implements vscode.Disposable {
         }
     }
 
+    private disposeDataCollectionRetrievers(): void {
+        for (const retriever of this.dataCollectionRetrievers) {
+            retriever.dispose()
+        }
+        this.dataCollectionRetrievers = []
+    }
+
     public dispose(): void {
+        this.disposeDataCollectionRetrievers()
         for (const disposable of this.disposables) {
             disposable.dispose()
         }
