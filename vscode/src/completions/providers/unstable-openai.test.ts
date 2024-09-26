@@ -48,8 +48,8 @@ describe('unstable-openai autocomplete provider', () => {
 
     testAutocompleteProvider('site-config-cody-llm-configuration', valuesToAssert, isDotCom =>
         getAutocompleteProviderFromSiteConfigCodyLLMConfiguration({
-            providerId: 'unstable-openai',
-            legacyModel: 'gpt-4o',
+            provider: 'sourcegraph',
+            completionModel: 'unstable-openai/gpt-4o',
             isDotCom,
         })
     )

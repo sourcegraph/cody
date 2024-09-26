@@ -1,147 +1,41 @@
-import * as anthropic from '@anthropic-ai/sdk'
-
 import {
     type AuthenticatedAuthStatus,
     type CodeCompletionsParams,
-    type DocumentContext,
-    type Message,
-    PromptString,
     isDotCom,
-    ps,
 } from '@sourcegraph/cody-shared'
 
-import {
-    CLOSING_CODE_TAG,
-    OPENING_CODE_TAG,
-    type PrefixComponents,
-    extractFromCodeBlock,
-    fixBadCompletionStart,
-    getHeadAndTail,
-    trimLeadingWhitespaceUntilNewline,
-} from '../text-processing'
-import {
-    forkSignal,
-    generatorWithErrorObserver,
-    generatorWithTimeout,
-    messagesToText,
-    zipGenerators,
-} from '../utils'
+import { forkSignal, generatorWithErrorObserver, generatorWithTimeout, zipGenerators } from '../utils'
 
 import {
     type FetchCompletionResult,
     fetchAndProcessDynamicMultilineCompletions,
 } from './shared/fetch-and-process-completions'
 import {
+    BYOK_MODEL_ID_FOR_LOGS,
     type CompletionProviderTracer,
     type GenerateCompletionsOptions,
     Provider,
     type ProviderFactoryParams,
 } from './shared/provider'
 
-let isOutdatedSourcegraphInstanceWithoutAnthropicAllowlist = false
+let isModernSourcegraphInstanceWithoutAnthropicAllowlist = true
 
 class AnthropicProvider extends Provider {
-    public stopSequences = [anthropic.HUMAN_PROMPT, CLOSING_CODE_TAG.toString(), '\n\n', '\n\r\n']
-
-    public emptyPromptLength(options: GenerateCompletionsOptions): number {
-        const { messages } = this.createPromptPrefix(options)
-        const promptNoSnippets = messagesToText(messages)
-        return promptNoSnippets.length - 10 // extra 10 chars of buffer cuz who knows
-    }
-
-    private createPromptPrefix(options: GenerateCompletionsOptions): {
-        messages: Message[]
-        prefix: PrefixComponents
-    } {
-        const { prefix, suffix } = PromptString.fromAutocompleteDocumentContext(
-            options.docContext,
-            options.document.uri
-        )
-
-        const prefixLines = prefix.split('\n')
-        if (prefixLines.length === 0) {
-            throw new Error('no prefix lines')
-        }
-
-        const { head, tail, overlap } = getHeadAndTail(prefix)
-
-        // Infill block represents the code we want the model to complete
-        const infillBlock = tail.trimmed.toString().endsWith('{\n')
-            ? tail.trimmed.trimEnd()
-            : tail.trimmed
-        // code before the cursor, without the code extracted for the infillBlock
-        const infillPrefix = head.raw
-        // code after the cursor
-        const infillSuffix = suffix
-        const relativeFilePath = PromptString.fromDisplayPath(options.document.uri)
-
-        const prefixMessagesWithInfill: Message[] = [
-            {
-                speaker: 'human',
-                text: ps`You are a code completion AI designed to take the surrounding code and shared context into account in order to predict and suggest high-quality code to complete the code enclosed in ${OPENING_CODE_TAG} tags. You only respond with code that works and fits seamlessly with surrounding code if any or use best practice and nothing else.`,
-            },
-            {
-                speaker: 'assistant',
-                text: ps`I am a code completion AI with exceptional context-awareness designed to auto-complete nested code blocks with high-quality code that seamlessly integrates with surrounding code.`,
-            },
-            {
-                speaker: 'human',
-                text: ps`Below is the code from file path ${relativeFilePath}. Review the code outside the XML tags to detect the functionality, formats, style, patterns, and logics in use. Then, use what you detect and reuse methods/libraries to complete and enclose completed code only inside XML tags precisely without duplicating existing implementations. Here is the code: \n\`\`\`\n${
-                    infillPrefix ? infillPrefix : ''
-                }${OPENING_CODE_TAG}${CLOSING_CODE_TAG}${infillSuffix}\n\`\`\``,
-            },
-            {
-                speaker: 'assistant',
-                text: ps`${OPENING_CODE_TAG}${infillBlock}`,
-            },
-        ]
-
-        return { messages: prefixMessagesWithInfill, prefix: { head, tail, overlap } }
-    }
-
-    // Creates the resulting prompt and adds as many snippets from the reference
-    // list as possible.
-    protected createPrompt(options: GenerateCompletionsOptions): {
-        messages: Message[]
-        prefix: PrefixComponents
-    } {
-        const { snippets } = options
-        const { messages: prefixMessages, prefix } = this.createPromptPrefix(options)
-
-        const referenceSnippetMessages: Message[] = []
-
-        let remainingChars = this.promptChars - this.emptyPromptLength(options)
-
-        for (const snippet of snippets) {
-            const contextPrompts = PromptString.fromAutocompleteContextSnippet(snippet)
-
-            const snippetMessages: Message[] = [
-                {
-                    speaker: 'human',
-                    text: contextPrompts.symbol
-                        ? ps`Additional documentation for \`${contextPrompts.symbol}\`: ${OPENING_CODE_TAG}${contextPrompts.content}${CLOSING_CODE_TAG}`
-                        : ps`Codebase context from file path '${PromptString.fromDisplayPath(
-                              snippet.uri
-                          )}': ${OPENING_CODE_TAG}${contextPrompts.content}${CLOSING_CODE_TAG}`,
-                },
-                {
-                    speaker: 'assistant',
-                    text: ps`I will refer to this code to complete your next request.`,
-                },
-            ]
-            const numSnippetChars = messagesToText(snippetMessages).length + 1
-            if (numSnippetChars > remainingChars) {
-                break
-            }
-            referenceSnippetMessages.push(...snippetMessages)
-            remainingChars -= numSnippetChars
-        }
-
-        return { messages: [...referenceSnippetMessages, ...prefixMessages], prefix }
-    }
-
     public getRequestParams(options: GenerateCompletionsOptions): CodeCompletionsParams {
-        const { messages } = this.createPrompt(options)
+        const { snippets, docContext, document } = options
+
+        const model =
+            isModernSourcegraphInstanceWithoutAnthropicAllowlist &&
+            SUPPORTED_MODELS.includes(this.legacyModel)
+                ? (`${this.id}/${this.legacyModel}` as const)
+                : undefined
+
+        const messages = this.modelHelper.getMessages({
+            snippets,
+            docContext,
+            document,
+            promptChars: this.promptChars,
+        })
 
         return {
             ...this.defaultRequestParams,
@@ -155,11 +49,7 @@ class AnthropicProvider extends Provider {
             // Note: This behavior only works when Cody Gateway is used (as that's the only backend
             //       that supports switching between providers at the same time). We also only allow
             //       models that are allowlisted on a recent SG server build to avoid regressions.
-            model:
-                !isOutdatedSourcegraphInstanceWithoutAnthropicAllowlist &&
-                isAllowlistedModel(this.legacyModel)
-                    ? this.legacyModel
-                    : undefined,
+            model: this.maybeFilterOutModel(model),
         }
     }
 
@@ -169,8 +59,8 @@ class AnthropicProvider extends Provider {
         tracer?: CompletionProviderTracer
     ): Promise<AsyncGenerator<FetchCompletionResult[]>> {
         const { docContext, numberOfCompletionsToGenerate } = options
-        const requestParams = this.getRequestParams(options)
 
+        const requestParams = this.getRequestParams(options)
         tracer?.params(requestParams)
 
         const completionsGenerators = Array.from({ length: numberOfCompletionsToGenerate }).map(
@@ -200,7 +90,7 @@ class AnthropicProvider extends Provider {
                                 error.message.includes('Unsupported chat model') ||
                                 error.message.includes('Unsupported custom model')
                             ) {
-                                isOutdatedSourcegraphInstanceWithoutAnthropicAllowlist = true
+                                isModernSourcegraphInstanceWithoutAnthropicAllowlist = false
                             }
                         }
                     }
@@ -209,83 +99,45 @@ class AnthropicProvider extends Provider {
                 return fetchAndProcessDynamicMultilineCompletions({
                     completionResponseGenerator,
                     abortController,
-                    providerSpecificPostProcess: this.postProcess(docContext),
                     generateOptions: options,
+                    providerSpecificPostProcess: content =>
+                        this.modelHelper.postProcess(content, docContext),
                 })
             }
         )
 
         return zipGenerators(await Promise.all(completionsGenerators))
     }
-
-    private postProcess =
-        (docContext: DocumentContext) =>
-        (rawResponse: string): string => {
-            let completion = extractFromCodeBlock(rawResponse)
-
-            const trimmedPrefixContainNewline = docContext.prefix
-                .slice(docContext.prefix.trimEnd().length)
-                .includes('\n')
-            if (trimmedPrefixContainNewline) {
-                // The prefix already contains a `\n` that Claude was not aware of, so we remove any
-                // leading `\n` followed by whitespace that Claude might add.
-                completion = completion.replace(/^\s*\n\s*/, '')
-            } else {
-                completion = trimLeadingWhitespaceUntilNewline(completion)
-            }
-
-            // Remove bad symbols from the start of the completion string.
-            completion = fixBadCompletionStart(completion)
-
-            return completion
-        }
 }
 
 function getClientModel(
-    provider: string,
-    authStatus: Pick<AuthenticatedAuthStatus, 'endpoint' | 'configOverwrites'>
+    model: string | undefined,
+    authStatus: Pick<AuthenticatedAuthStatus, 'endpoint'>
 ): string {
     // Always use the default PLG model on DotCom
     if (isDotCom(authStatus)) {
         return DEFAULT_PLG_ANTHROPIC_MODEL
     }
 
-    if (provider === 'google') {
-        // Model name for google provider is a deployment name. It shouldn't appear in logs.
-        return ''
-    }
-
-    const { configOverwrites } = authStatus
-
-    // Only pass through the upstream-defined model if we're using Cody Gateway
-    if (configOverwrites?.provider === 'sourcegraph') {
-        return configOverwrites.completionModel || ''
-    }
-
-    return ''
+    return model || BYOK_MODEL_ID_FOR_LOGS
 }
 
-export function createProvider({ provider, source, authStatus }: ProviderFactoryParams): Provider {
+export function createProvider({ legacyModel, source, authStatus }: ProviderFactoryParams): Provider {
     return new AnthropicProvider({
         id: 'anthropic',
-        legacyModel: getClientModel(provider, authStatus),
+        legacyModel: getClientModel(legacyModel, authStatus),
         source,
     })
 }
 
-const DEFAULT_PLG_ANTHROPIC_MODEL = 'anthropic/claude-instant-1.2'
+const DEFAULT_PLG_ANTHROPIC_MODEL = 'claude-instant-1.2'
 
 // All the Anthropic version identifiers that are allowlisted as being able to be passed as the
 // model identifier on a Sourcegraph Server
-// TODO: drop this in a follow up PR
-function isAllowlistedModel(model: string | undefined): boolean {
-    switch (model) {
-        case 'anthropic/claude-instant-1.2-cyan':
-        case 'anthropic/claude-instant-1.2':
-        case 'anthropic/claude-instant-v1':
-        case 'anthropic/claude-instant-1':
-        case 'anthropic/claude-3-haiku-20240307':
-            return true
-    }
-    return false
-}
+const SUPPORTED_MODELS = [
+    DEFAULT_PLG_ANTHROPIC_MODEL,
+    'claude-instant-1.2-cyan',
+    'claude-instant-v1',
+    'claude-instant-1',
+    'claude-3-haiku-20240307',
+]

@@ -10,6 +10,7 @@ export {
     type PerSitePreferences,
     type SitePreferences,
     type ModelRefStr,
+    type LegacyModelRefStr,
     type ModelRef,
     type ModelsData,
     TestLocalStorageForModelPreferences,

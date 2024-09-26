@@ -7,12 +7,12 @@ import { completionParams, contextSnippets } from './test-data'
 import { Gemini } from '../gemini'
 
 describe('Gemini ', () => {
-    describe.skipIf(isWindows())('getPrompt', () => {
+    describe.skipIf(isWindows())('getMessages', () => {
         it('returns the prompt with the correct intro snippets', () => {
             const model = new Gemini()
             const { docContext, document, provider } = completionParams
 
-            const result = model.getPrompt({
+            const result = model.getMessages({
                 document,
                 docContext,
                 snippets: contextSnippets,
@@ -20,7 +20,10 @@ describe('Gemini ', () => {
             })
 
             expect(result).toMatchInlineSnapshot(`
-              "You are a code completion AI, designed to autofill code enclosed in special markers based on its surrounding context.
+              [
+                {
+                  "speaker": "human",
+                  "text": "You are a code completion AI, designed to autofill code enclosed in special markers based on its surrounding context.
 
               -TYPE: file
               -NAME: codebase/context1.ts
@@ -177,7 +180,13 @@ describe('Gemini ', () => {
               Do not repeat code from before and after <|fim|> in your output.
               Maintain consistency with the indentation, spacing, and coding style used in the code.
               Leave the output markers empty if no code is required to bridge the gap.
-              Your response should contains only the code required to connect the gap, and the code must be enclosed between <|fim|> WITHOUT backticks"
+              Your response should contains only the code required to connect the gap, and the code must be enclosed between <|fim|> WITHOUT backticks",
+                },
+                {
+                  "speaker": "assistant",
+                  "text": "<|fim|>",
+                },
+              ]
             `)
         })
     })

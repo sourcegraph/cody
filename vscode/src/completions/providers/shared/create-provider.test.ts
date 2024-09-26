@@ -110,20 +110,6 @@ describe('createProvider', () => {
             expect(provider.legacyModel).toBe('deepseek-coder-v2-lite-base')
         })
 
-        it('returns "anthropic" provider config if specified in VSCode settings', async () => {
-            const provider = await createProviderForTest({
-                config: {
-                    configuration: {
-                        autocompleteAdvancedProvider: 'anthropic',
-                        autocompleteAdvancedModel: null,
-                    },
-                },
-                authStatus: AUTH_STATUS_FIXTURE_AUTHED_DOTCOM,
-            })
-            expect(provider.id).toBe('anthropic')
-            expect(provider.legacyModel).toBe('anthropic/claude-instant-1.2')
-        })
-
         it('provider specified in VSCode settings takes precedence over the one defined in the site config', async () => {
             const provider = await createProviderForTest({
                 config: {
@@ -154,51 +140,9 @@ describe('createProvider', () => {
             {
                 configOverwrites: {
                     provider: 'sourcegraph',
-                    completionModel: 'anthropic/claude-instant-1.2',
-                },
-                expected: { provider: 'anthropic', legacyModel: 'anthropic/claude-instant-1.2' },
-            },
-            {
-                configOverwrites: { provider: 'sourcegraph', completionModel: 'anthropic/' },
-                expected: null,
-            },
-            {
-                configOverwrites: {
-                    provider: 'sourcegraph',
-                    completionModel: '/claude-instant-1.2',
-                },
-                expected: null,
-            },
-            {
-                configOverwrites: {
-                    provider: 'sourcegraph',
                     completionModel: 'fireworks/starcoder',
                 },
                 expected: { provider: 'fireworks', legacyModel: 'starcoder' },
-            },
-
-            // aws-bedrock
-            {
-                configOverwrites: { provider: 'aws-bedrock', completionModel: 'hello-world' },
-                expected: null,
-            },
-            {
-                configOverwrites: {
-                    provider: 'aws-bedrock',
-                    completionModel: 'anthropic.claude-instant-1.2',
-                },
-                expected: { provider: 'anthropic', legacyModel: 'anthropic/claude-instant-1.2' },
-            },
-            {
-                configOverwrites: { provider: 'aws-bedrock', completionModel: 'anthropic.' },
-                expected: null,
-            },
-            {
-                configOverwrites: {
-                    provider: 'aws-bedrock',
-                    completionModel: 'anthropic/claude-instant-1.2',
-                },
-                expected: null,
             },
 
             // open-ai
