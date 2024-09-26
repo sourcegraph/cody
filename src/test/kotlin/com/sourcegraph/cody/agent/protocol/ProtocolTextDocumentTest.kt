@@ -233,6 +233,8 @@ class ProtocolTextDocumentTest : BasePlatformTestCase() {
             "D:/home/person" to "d:/home/person",
             "file://\\\\wsl$\\Ubuntu\\home\\person" to "file:////wsl.localhost/Ubuntu/home/person",
             "file://c:/home/person" to "file:///c:/home/person",
+            "file://Z:/home/PERSON" to "file:///z:/home/PERSON",
+            "file:///C:/Users/person" to "file:///c:/Users/person",
             "/home/person/documents" to "/home/person/documents",
             "file:///home/person/documents" to "file:///home/person/documents")
 

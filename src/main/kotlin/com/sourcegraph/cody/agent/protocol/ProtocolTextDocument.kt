@@ -212,7 +212,7 @@ private constructor(
       }
 
       // Normalize drive letters for Windows
-      val driveLetterPattern = """^(\w):/""".toRegex()
+      val driveLetterPattern = """^(/?\w):/""".toRegex()
       val normalizedPath =
           driveLetterPattern.replace(path) { matchResult ->
             val driveLetter = matchResult.groupValues[1].lowercase(Locale.getDefault())
