@@ -7,7 +7,7 @@ import {
 
 import type { PromptBoxProps } from "./PromptBox"
 
-export const chatTips: PromptBoxProps[] = [
+export const standardPrompts: PromptBoxProps[] = [
     {
         name: "Edit Code",
         description: "Run on a file or selection to modify code",

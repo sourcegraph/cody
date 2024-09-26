@@ -32,5 +32,8 @@
 .name {}
 .description {
     color: var(--vscode-input-placeholderForeground);
+}
+
+.default {
 
 }
