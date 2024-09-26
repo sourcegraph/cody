@@ -594,6 +594,12 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
 
     private async sendConfig(): Promise<void> {
         const authStatus = currentAuthStatus()
+
+        // Don't emit config if we're verifying auth status to avoid UI auth flashes on the client
+        if ('verifying' in authStatus) {
+            return
+        }
+
         const configForWebview = await this.getConfigForWebview()
         const workspaceFolderUris =
             vscode.workspace.workspaceFolders?.map(folder => folder.uri.toString()) ?? []

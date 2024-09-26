@@ -82,6 +82,7 @@ class AuthProvider implements vscode.Disposable {
                         // authentication status.
                         this.status.next({
                             authenticated: false,
+                            verifying: true,
                             endpoint: config.auth.serverEndpoint,
                         })
 

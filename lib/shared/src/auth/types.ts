@@ -5,7 +5,7 @@ import type { CodyLLMSiteConfiguration } from '../sourcegraph-api/graphql/client
  * The authentication status, which includes representing the state when authentication failed or
  * has not yet been attempted.
  */
-export type AuthStatus = UnauthenticatedAuthStatus | AuthenticatedAuthStatus
+export type AuthStatus = UnauthenticatedAuthStatus | AuthenticatedAuthStatus | AuthenticatingAuthStatus
 
 /**
  * The authentication status for a user who has successfully authenticated.
@@ -51,6 +51,10 @@ export interface UnauthenticatedAuthStatus {
     authenticated: false
     showNetworkError?: boolean
     showInvalidAccessTokenError?: boolean
+}
+
+export interface AuthenticatingAuthStatus extends UnauthenticatedAuthStatus {
+    verifying: true
 }
 
 export const AUTH_STATUS_FIXTURE_AUTHED: AuthenticatedAuthStatus = {
