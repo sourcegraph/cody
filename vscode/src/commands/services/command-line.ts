@@ -188,13 +188,14 @@ class CodyCommandLine implements vscode.Disposable {
             this._run(command)
             return
         }
+        const SkipButtonText = 'Do not ask again'
         await vscode.window
-            .showInformationMessage(`Run \`${command}\` in terminal?`, 'Yes', 'Do not ask again')
+            .showInformationMessage(`Run \`${command}\` in terminal?`, 'Yes', SkipButtonText)
             .then(selected => {
+                if (selected === SkipButtonText) {
+                    this.skipConfirmationOnRun = true
+                }
                 if (selected) {
-                    if (selected?.startsWith('Do not show again')) {
-                        this.skipConfirmationOnRun = true
-                    }
                     this._run(command)
                 }
             })
