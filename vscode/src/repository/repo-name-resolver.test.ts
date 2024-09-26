@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest'
 
 import { AUTH_STATUS_FIXTURE_AUTHED, graphqlClient, mockAuthStatus } from '@sourcegraph/cody-shared'
 
-import * as gitExtensionAPI from './git-extension-api'
+import * as remoteUrlsFromParentDirs from './remote-urls-from-parent-dirs'
 import { RepoNameResolver } from './repo-name-resolver'
 import { mockFsCalls } from './test-helpers'
 
@@ -13,7 +13,7 @@ describe('getRepoNamesFromWorkspaceUri', () => {
         const repoNameResolver = new RepoNameResolver()
         mockAuthStatus(AUTH_STATUS_FIXTURE_AUTHED)
 
-        vi.spyOn(gitExtensionAPI, 'gitRemoteUrlsFromGitExtension').mockReturnValue([
+        vi.spyOn(remoteUrlsFromParentDirs, 'gitRemoteUrlsForUri').mockResolvedValue([
             'git@github.com:sourcegraph/cody.git',
         ])
 
@@ -34,9 +34,7 @@ describe('getRepoNamesFromWorkspaceUri', () => {
             .spyOn(graphqlClient, 'getRepoName')
             .mockResolvedValue('sourcegraph/cody')
 
-        expect(await repoNameResolver.getRepoNamesFromWorkspaceUri(fileUri)).toEqual([
-            'sourcegraph/cody',
-        ])
+        expect(await repoNameResolver.getRepoNamesContainingUri(fileUri)).toEqual(['sourcegraph/cody'])
         expect(getRepoNameGraphQLMock).toBeCalledTimes(1)
     })
 
@@ -44,7 +42,7 @@ describe('getRepoNamesFromWorkspaceUri', () => {
         const repoNameResolver = new RepoNameResolver()
         mockAuthStatus()
 
-        vi.spyOn(gitExtensionAPI, 'gitRemoteUrlsFromGitExtension').mockReturnValue([
+        vi.spyOn(remoteUrlsFromParentDirs, 'gitRemoteUrlsForUri').mockResolvedValue([
             'git@github.com:sourcegraph/cody.git',
         ])
 
@@ -65,7 +63,7 @@ describe('getRepoNamesFromWorkspaceUri', () => {
             .spyOn(graphqlClient, 'getRepoName')
             .mockResolvedValue('sourcegraph/cody')
 
-        expect(await repoNameResolver.getRepoNamesFromWorkspaceUri(fileUri)).toEqual([
+        expect(await repoNameResolver.getRepoNamesContainingUri(fileUri)).toEqual([
             'github.com/sourcegraph/cody',
         ])
         expect(getRepoNameGraphQLMock).not.toBeCalled()

@@ -1,11 +1,20 @@
-import { describe, expect, it, vi } from 'vitest'
+import { beforeAll, describe, expect, it, vi } from 'vitest'
 import * as vscode from 'vscode'
 import { URI } from 'vscode-uri'
 
-import { gitRemoteUrlsFromParentDirs } from './remote-urls-from-parent-dirs'
+import { vscodeGitAPI } from './git-extension-api'
+import { gitRemoteUrlsForUri } from './remote-urls-from-parent-dirs'
 import { mockFsCalls } from './test-helpers'
 
-describe('gitRemoteUrlsFromParentDirs', () => {
+describe('gitRemoteUrlsForUri', () => {
+    beforeAll(() => {
+        // Ensure that the `vscodeGitAPI` is not somehow set, because these tests were written to
+        // test the behavior that is the fallback for when it is not set.
+        if (vscodeGitAPI) {
+            throw new Error('expected vscodeGitAPI to not be set')
+        }
+    })
+
     it('finds remote urls in the `.git/config` file with one remote', async () => {
         const { fileUri, statMock, readFileMock } = mockFsCalls({
             filePath: '/repo/src/dir/foo.ts',
@@ -26,7 +35,7 @@ describe('gitRemoteUrlsFromParentDirs', () => {
             `,
         })
 
-        const remoteUrls = await gitRemoteUrlsFromParentDirs(fileUri)
+        const remoteUrls = await gitRemoteUrlsForUri(fileUri)
 
         expect(statMock).toBeCalledTimes(4)
         expect(readFileMock).toBeCalledTimes(1)
@@ -64,7 +73,7 @@ describe('gitRemoteUrlsFromParentDirs', () => {
             `,
         })
 
-        const remoteUrls = await gitRemoteUrlsFromParentDirs(fileUri)
+        const remoteUrls = await gitRemoteUrlsForUri(fileUri)
         expect(remoteUrls).toEqual([
             'https://github.com/username/yourproject.git',
             'https://github.com/originalauthor/yourproject.git',
@@ -89,7 +98,7 @@ describe('gitRemoteUrlsFromParentDirs', () => {
             `,
         })
 
-        const remoteUrls = await gitRemoteUrlsFromParentDirs(fileUri)
+        const remoteUrls = await gitRemoteUrlsForUri(fileUri)
         expect(remoteUrls).toBe(undefined)
     })
 
@@ -100,7 +109,7 @@ describe('gitRemoteUrlsFromParentDirs', () => {
             .mockRejectedValue(new vscode.FileSystemError('file does not exist'))
 
         const uri = URI.file('repo/src/dir/foo.ts')
-        const remoteUrls = await gitRemoteUrlsFromParentDirs(uri)
+        const remoteUrls = await gitRemoteUrlsForUri(uri)
 
         expect(statMock).toBeCalledTimes(5)
         expect(remoteUrls).toBe(undefined)
@@ -132,7 +141,7 @@ describe('gitRemoteUrlsFromParentDirs', () => {
             `,
         })
 
-        const remoteUrls = await gitRemoteUrlsFromParentDirs(fileUri)
+        const remoteUrls = await gitRemoteUrlsForUri(fileUri)
         expect(remoteUrls).toEqual(['https://github.com/example/submodule.git'])
     })
 
@@ -162,7 +171,7 @@ describe('gitRemoteUrlsFromParentDirs', () => {
             `,
         })
 
-        const remoteUrls = await gitRemoteUrlsFromParentDirs(fileUri)
+        const remoteUrls = await gitRemoteUrlsForUri(fileUri)
         expect(remoteUrls).toEqual(['https://github.com/nested/submodule.git'])
     })
 
@@ -189,7 +198,22 @@ describe('gitRemoteUrlsFromParentDirs', () => {
             `,
         })
 
-        const remoteUrls = await gitRemoteUrlsFromParentDirs(fileUri)
+        const remoteUrls = await gitRemoteUrlsForUri(fileUri)
         expect(remoteUrls).toBe(undefined)
+    })
+
+    it('refuses to work on non-file URIs', async () => {
+        const { statMock, readFileMock } = mockFsCalls({
+            filePath: '/repo/src/dir/foo.ts',
+            gitRepoPath: '/repo',
+            gitConfig: 'a',
+        })
+
+        expect(await gitRemoteUrlsForUri(URI.parse('https://example.com/foo/bar'))).toBe(undefined)
+        expect(await gitRemoteUrlsForUri(URI.parse('https://gitlab.com/foo/bar'))).toBe(undefined)
+        expect(await gitRemoteUrlsForUri(URI.parse('https://github.com/foo/bar'))).toBe(undefined)
+        expect(await gitRemoteUrlsForUri(URI.parse('ssh://git@github.com:foo/bar.git'))).toBe(undefined)
+        expect(statMock).toBeCalledTimes(0)
+        expect(readFileMock).toBeCalledTimes(0)
     })
 })

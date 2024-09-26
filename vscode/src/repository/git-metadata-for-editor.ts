@@ -34,7 +34,7 @@ class GitMetadataForCurrentEditor {
             const repoName =
                 config.codebase ??
                 (currentFile
-                    ? (await repoNameResolver.getRepoNamesFromWorkspaceUri(currentFile)).at(0)
+                    ? (await repoNameResolver.getRepoNamesContainingUri(currentFile)).at(0)
                     : config.codebase)
 
             const commit = gitCommitIdFromGitExtension(currentFile)

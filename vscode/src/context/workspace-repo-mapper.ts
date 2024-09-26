@@ -44,7 +44,7 @@ export class WorkspaceRepoMapper implements CodebaseRepoIdMapper {
         const repoNames = (
             await Promise.all(
                 folders.map(folder => {
-                    return repoNameResolver.getRepoNamesFromWorkspaceUri(folder.uri, signal)
+                    return repoNameResolver.getRepoNamesContainingUri(folder.uri, signal)
                 })
             )
         ).flat()

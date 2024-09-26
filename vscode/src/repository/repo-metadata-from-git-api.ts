@@ -57,7 +57,7 @@ export const workspaceReposMonitor = new WorkspaceReposMonitor()
 export async function fetchRepoMetadataForFolder(
     folderURI: vscode.Uri
 ): Promise<GitHubDotComRepoMetaData[]> {
-    const repoNames = await repoNameResolver.getRepoNamesFromWorkspaceUri(folderURI)
+    const repoNames = await repoNameResolver.getRepoNamesContainingUri(folderURI)
     if (repoNames.length === 0) {
         return []
     }

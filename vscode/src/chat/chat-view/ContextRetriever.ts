@@ -108,7 +108,7 @@ async function codebaseRootsFromMentions(
     const treesToRepoNames = await Promise.all(
         trees.map(async tree => ({
             tree,
-            names: await repoNameResolver.getRepoNamesFromWorkspaceUri(tree.uri, signal),
+            names: await repoNameResolver.getRepoNamesContainingUri(tree.uri, signal),
         }))
     )
     const localRepoNames = treesToRepoNames.flatMap(t => t.names)
