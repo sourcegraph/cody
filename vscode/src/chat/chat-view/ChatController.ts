@@ -46,7 +46,6 @@ import {
     currentAuthStatusAuthed,
     currentResolvedConfig,
     featureFlagProvider,
-    firstValueFrom,
     getContextForChatMessage,
     graphqlClient,
     hydrateAfterPostMessage,
@@ -594,11 +593,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
     }
 
     private async sendConfig(): Promise<void> {
-        const currentAuthStatus = await firstValueFrom(authStatus)
-        if (!currentAuthStatus) {
-            return
-        }
-
+        const authStatus = currentAuthStatus()
         const configForWebview = await this.getConfigForWebview()
         const workspaceFolderUris =
             vscode.workspace.workspaceFolders?.map(folder => folder.uri.toString()) ?? []
@@ -620,7 +615,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         await this.postMessage({
             type: 'config',
             config: configForWebview,
-            authStatus: currentAuthStatus,
+            authStatus: authStatus,
             workspaceFolderUris,
             configFeatures: {
                 // If clientConfig is undefined means we were unable to fetch the client configuration -
@@ -631,7 +626,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 attribution: clientConfig?.attributionEnabled ?? false,
                 serverSentModels: clientConfig?.modelsAPIEnabled ?? false,
             },
-            isDotComUser: isDotCom(currentAuthStatus),
+            isDotComUser: isDotCom(authStatus),
         })
         logDebug('ChatController', 'updateViewConfig', {
             verbose: configForWebview,
