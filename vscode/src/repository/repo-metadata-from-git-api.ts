@@ -69,7 +69,7 @@ export async function fetchRepoMetadataForFolder(
             return {
                 repoName: rn,
                 isPublic: rn === metadata?.repoName && metadata.isPublic,
-            }
+            } satisfies GitHubDotComRepoMetaData
         })
     )
 }

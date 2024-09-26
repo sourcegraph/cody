@@ -210,7 +210,7 @@ export async function getActiveEditorContextForOpenCtxMentions(): Promise<{
         workspaceReposMonitor?.getFolderURIs().find(folderURI => uri?.startsWith(folderURI.toString()))
 
     const codebase =
-        activeWorkspaceURI && (await fetchRepoMetadataForFolder(activeWorkspaceURI))[0]?.repoName
+        activeWorkspaceURI && (await fetchRepoMetadataForFolder(activeWorkspaceURI)).at(0)?.repoName
 
     return { uri, codebase }
 }
