@@ -1,0 +1,36 @@
+.container {
+    padding: 0.75rem 0.75rem;
+    border: 0.25px solid var(--vscode-dropdown-border);
+    border-radius: 4px;
+    display: flex;
+    flex-flow: row nowrap;
+    align-items: center;
+    gap: 1rem;
+    width: 100%;
+}
+.container:hover {
+    background-color: var(--vscode-editorPane-background)
+}
+
+.glyph {
+    display: flex;
+    flex-shrink: 0;
+}
+.icon {
+    height: 1.5rem;
+    width: 1.5rem;
+    flex-shrink: 0;
+    color: var(--vscode-foreground);
+}
+.avatar {
+    height: 3.5rem;
+    width: 3.5rem;
+    flex-shrink: 0;
+}
+
+.definition {}
+.name {}
+.description {
+    color: var(--vscode-input-placeholderForeground);
+
+}

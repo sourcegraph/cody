@@ -3,6 +3,8 @@ import { useUserAccountInfo } from "../../utils/useConfig"
 import type { LucideProps } from "lucide-react"
 import type { ForwardRefExoticComponent } from "react"
 
+import styles from "./PromptBox.module.css"
+
 export interface PromptBoxProps {
     name: string
     description: string
@@ -14,16 +16,18 @@ export default function PromptBox({ name, description, icon }: PromptBoxProps) {
     const Icon = icon ? icon : undefined
 
     return (
-        <div className="container">
-            {Icon ? (
-                <Icon className="tw-w-16 tw-h-16" strokeWidth={1.25} />
-            ) : (
-                <UserAvatar user={userInfo.user} size={16} />
-            )}
-            <div className="definition">
-                <div className="title">{name}</div>
-                <div className="description">{description}</div>
+        <div className={styles.container}>
+            <div className={styles.glyph}>
+                {Icon ? (
+                    <Icon className={styles.icon} strokeWidth={1.25} />
+                ) : (
+                    <UserAvatar className={styles.avatar} user={userInfo.user} size={24} />
+                )}
             </div>
-        </div>
+            <div className={styles.definition}>
+                <div className={styles.name}>{name}</div>
+                <div className={styles.description}>{description}</div>
+            </div>
+        </div >
     )
 }
