@@ -47,10 +47,10 @@ export class RepoNameResolver {
         return []
     }
 
-    public getRepoRemoteUrlsFromWorkspaceUri = async (
+    private async getRepoRemoteUrlsFromWorkspaceUri(
         uri: vscode.Uri,
         signal?: AbortSignal
-    ): Promise<string[]> => {
+    ): Promise<string[]> {
         if (!isFileURI(uri)) {
             return []
         }

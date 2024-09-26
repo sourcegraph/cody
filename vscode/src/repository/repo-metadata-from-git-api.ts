@@ -65,7 +65,7 @@ export async function fetchRepoMetadataForFolder(
     const instance = GitHubDotComRepoMetadata.getInstance()
     return Promise.all(
         repoNames.map(async rn => {
-            const metadata = await instance.getRepoMetadataUsingGitUrl(rn)
+            const metadata = await instance.getRepoMetadataUsingRepoName(rn)
             return {
                 repoName: rn,
                 isPublic: rn === metadata?.repoName && metadata.isPublic,
@@ -84,7 +84,7 @@ interface GitHubDotComRepoMetaData {
 export class GitHubDotComRepoMetadata {
     // This class is used to get the metadata from the gitApi.
     private static instance: GitHubDotComRepoMetadata | null = null
-    private cache = new Map<string, GitHubDotComRepoMetaData | undefined>()
+    private cache = new Map<string /* repoName */, GitHubDotComRepoMetaData | undefined>()
 
     private constructor() {}
 
@@ -95,25 +95,25 @@ export class GitHubDotComRepoMetadata {
         return GitHubDotComRepoMetadata.instance
     }
 
-    public getRepoMetadataIfCached(gitUrl: string): GitHubDotComRepoMetaData | undefined {
-        return this.cache.get(gitUrl)
+    public getRepoMetadataIfCached(repoName: string): GitHubDotComRepoMetaData | undefined {
+        return this.cache.get(repoName)
     }
 
-    public async getRepoMetadataUsingGitUrl(
-        gitUrl: string
+    public async getRepoMetadataUsingRepoName(
+        repoName: string
     ): Promise<GitHubDotComRepoMetaData | undefined> {
-        if (this.cache.has(gitUrl)) {
-            return this.cache.get(gitUrl)
+        if (this.cache.has(repoName)) {
+            return this.cache.get(repoName)
         }
-        const repoMetaData = await this.ghMetadataFromGit(gitUrl)
+        const repoMetaData = await this.ghMetadataFromGit(repoName)
         if (repoMetaData) {
-            this.cache.set(gitUrl, repoMetaData)
+            this.cache.set(repoName, repoMetaData)
         }
         return repoMetaData
     }
 
-    private async ghMetadataFromGit(gitUrl: string): Promise<GitHubDotComRepoMetaData | undefined> {
-        const ownerAndRepoName = this.parseOwnerAndRepoName(gitUrl)
+    private async ghMetadataFromGit(repoName: string): Promise<GitHubDotComRepoMetaData | undefined> {
+        const ownerAndRepoName = this.parseOwnerAndRepoName(repoName)
         if (!ownerAndRepoName) {
             return undefined
         }
@@ -123,10 +123,10 @@ export class GitHubDotComRepoMetadata {
 
     private async queryGitHubApi(
         owner: string,
-        repoName: string
+        repoBasename: string
     ): Promise<GitHubDotComRepoMetaData | undefined> {
-        const apiUrl = `https://api.github.com/repos/${owner}/${repoName}`
-        const metadata = { repoName: `github.com/${owner}/${repoName}`, isPublic: false }
+        const apiUrl = `https://api.github.com/repos/${owner}/${repoBasename}`
+        const metadata = { repoName: `github.com/${owner}/${repoBasename}`, isPublic: false }
         try {
             const response = await fetch(apiUrl, { method: 'HEAD' })
             metadata.isPublic = response.ok
@@ -134,19 +134,19 @@ export class GitHubDotComRepoMetadata {
             logDebug(
                 'queryGitHubApi',
                 'error querying GitHub API (assuming repository is non-public',
-                `${owner}/${repoName}`,
+                `${owner}/${repoBasename}`,
                 error
             )
         }
         return metadata
     }
 
-    private parseOwnerAndRepoName(gitUrl: string): { owner: string; repoName: string } | undefined {
-        const match = gitUrl?.match(/github\.com\/([^/]+)\/([^/]+?)(?:\.git)?$/)
+    private parseOwnerAndRepoName(repoName: string): { owner: string; repoName: string } | undefined {
+        const match = repoName?.match(/github\.com\/([^/]+)\/([^/]+?)(?:\.git)?$/)
         if (!match) {
             return undefined
         }
-        const [, owner, repoName] = match
-        return { owner, repoName }
+        const [, owner, repoBasename] = match
+        return { owner, repoName: repoBasename }
     }
 }

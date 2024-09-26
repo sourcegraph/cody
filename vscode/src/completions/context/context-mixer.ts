@@ -23,7 +23,7 @@ interface GetContextOptions {
     abortSignal?: AbortSignal
     maxChars: number
     lastCandidate?: LastInlineCompletionCandidate
-    gitUrl?: string
+    repoName?: string
 }
 
 export interface ContextSummary {
@@ -87,7 +87,10 @@ export class ContextMixer implements vscode.Disposable {
         const start = performance.now()
 
         const { name: strategy, retrievers } = await this.strategyFactory.getStrategy(options.document)
-        const retrieversWithDataLogging = this.maybeAddDataLoggingRetrievers(options.gitUrl, retrievers)
+        const retrieversWithDataLogging = this.maybeAddDataLoggingRetrievers(
+            options.repoName,
+            retrievers
+        )
 
         if (retrieversWithDataLogging.length === 0) {
             return {
@@ -218,16 +221,16 @@ export class ContextMixer implements vscode.Disposable {
     }
 
     private maybeAddDataLoggingRetrievers(
-        gitUrl: string | undefined,
+        repoName: string | undefined,
         originalRetrievers: ContextRetriever[]
     ): ContextRetriever[] {
-        const dataCollectionRetrievers = this.getDataCollectionRetrievers(gitUrl)
+        const dataCollectionRetrievers = this.getDataCollectionRetrievers(repoName)
         const combinedRetrievers = [...originalRetrievers, ...dataCollectionRetrievers]
         return dedupeWith(combinedRetrievers, 'identifier')
     }
 
-    private getDataCollectionRetrievers(gitUrl: string | undefined): ContextRetriever[] {
-        if (!this.contextDataCollector.shouldCollectContextDatapoint(gitUrl)) {
+    private getDataCollectionRetrievers(repoName: string | undefined): ContextRetriever[] {
+        if (!this.contextDataCollector.shouldCollectContextDatapoint(repoName)) {
             return []
         }
         return this.contextDataCollector.dataCollectionRetrievers

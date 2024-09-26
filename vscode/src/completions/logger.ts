@@ -23,6 +23,7 @@ import type {
     PersistencePresentEventPayload,
     PersistenceRemovedEventPayload,
 } from '../common/persistence-tracker/types'
+import type { GitIdentifiersForFile } from '../repository/git-metadata-for-editor'
 import { GitHubDotComRepoMetadata } from '../repository/repo-metadata-from-git-api'
 import { upstreamHealthProvider } from '../services/UpstreamHealthProvider'
 import {
@@ -72,17 +73,13 @@ interface InlineCompletionItemRetrievedContext {
     endLine: number
 }
 
-interface InlineContextItemsParams {
+interface InlineContextItemsParams extends GitIdentifiersForFile {
     context: AutocompleteContextSnippet[]
-    filePath: string | undefined
-    gitUrl: string | undefined
-    commit: string | undefined
 }
 
-export interface InlineCompletionItemContext {
-    gitUrl: string
-    commit?: string
-    filePath?: string
+export interface InlineCompletionItemContext
+    extends Omit<GitIdentifiersForFile, 'repoName'>,
+        Required<Pick<GitIdentifiersForFile, 'repoName'>> {
     prefix?: string
     suffix?: string
     triggerLine?: number
@@ -736,16 +733,16 @@ function getInlineContextItemContext(
     inlineContextParams?: InlineContextItemsParams
 ): InlineCompletionItemContext | undefined {
     // 🚨 SECURITY: included only for DotCom users & Public github Repos.
-    if (!isDotComUser || !inlineContextParams?.gitUrl) {
+    if (!isDotComUser || !inlineContextParams?.repoName) {
         return undefined
     }
 
     const gitRepoMetadata = GitHubDotComRepoMetadata.getInstance().getRepoMetadataIfCached(
-        inlineContextParams.gitUrl
+        inlineContextParams.repoName
     )
 
     const baseContext: InlineCompletionItemContext = {
-        gitUrl: inlineContextParams.gitUrl,
+        repoName: inlineContextParams.repoName,
         commit: inlineContextParams.commit,
         isRepoPublic: gitRepoMetadata?.isPublic,
     }
