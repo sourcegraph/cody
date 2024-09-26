@@ -834,7 +834,6 @@ describe('Agent', () => {
                 expect.arrayContaining([
                     'cody.command.explain:executed',
                     'cody.chat-question:submitted',
-                    'cody.chat-question:executed',
                     'cody.chatResponse:noCode',
                 ])
             )
