@@ -4,8 +4,9 @@ import { PubSub } from "@google-cloud/pubsub";
 import express from "express";
 import * as uuid from "uuid";
 
-import { ModelTag, type ModelCategory, type ModelTier, type ServerModelConfiguration } from "@sourcegraph/cody-shared";
+import { type ServerModelConfiguration } from "@sourcegraph/cody-shared";
 import type { TelemetryEventInput } from "@sourcegraph/telemetry";
+import { getServerSentModelsMock } from '../../src/completions/providers/shared/__mocks__/create-provider-mocks'
 
 // create interface for the request
 interface MockRequest {
@@ -154,7 +155,7 @@ class GraphQlMock {
 // Lets the test change the behavior of the mock server.
 export class MockServer {
     graphQlMocks: Map<string, GraphQlMock> = new Map();
-    availableLLMs: ServerModelConfiguration | undefined = MOCK_SERVER_MODELS
+    availableLLMs: ServerModelConfiguration | undefined = getServerSentModelsMock()
 
     constructor(public readonly express: express.Express) {}
 
@@ -642,82 +643,4 @@ export let loggedV2Events: string[] = [];
 
 export function resetLoggedEvents(): void {
    loggedV2Events = [];
-}
-
-const MOCK_SERVER_MODELS: ServerModelConfiguration = {
-    schemaVersion: '1.0',
-    revision: '-',
-    providers: [],
-    models: [
-        {
-            modelRef: 'anthropic::xyz::claude-3.5-sonnet',
-            displayName: 'Claude 3.5 Sonnet',
-            modelName: 'claude-3.5-sonnet',
-            capabilities: ['chat', 'edit'],
-            category: 'balanced' as ModelCategory,
-            status: 'stable',
-            tier: 'pro' as ModelTier,
-            contextWindow: {
-                maxInputTokens: 9000,
-                maxOutputTokens: 4000,
-            },
-        },
-        {
-            modelRef: 'anthropic::unknown::anthropic.claude-3-opus-20240229-v1_0',
-            displayName: 'Opus',
-            modelName: 'anthropic.claude-3-opus-20240229-v1_0',
-            capabilities: ['autocomplete', 'chat'],
-            category: 'balanced' as ModelCategory,
-            status: 'stable',
-            tier: 'pro' as ModelTier,
-            contextWindow: {
-                maxInputTokens: 9000,
-                maxOutputTokens: 4000,
-            },
-        },
-        {
-            modelRef: 'anthropic::0.0.0::anthropic.claude-instant-v1',
-            displayName: 'Claude Instant',
-            modelName: 'anthropic.claude-instant-v1',
-            capabilities: ['autocomplete'],
-            category: 'speed' as ModelCategory,
-            status: 'stable',
-            tier: 'free' as ModelTier,
-            contextWindow: {
-                maxInputTokens: 9000,
-                maxOutputTokens: 4000,
-            },
-        },
-        {
-            modelRef: 'google::v1::gemini-flash',
-            displayName: 'Gemini Flash',
-            modelName: 'gemini-flash',
-            capabilities: ['autocomplete', 'chat', 'edit'],
-            category: 'speed' as ModelCategory,
-            status: 'stable',
-            tier: 'free' as ModelTier,
-            contextWindow: {
-                maxInputTokens: 9000,
-                maxOutputTokens: 4000,
-            },
-        },
-        {
-            modelRef: 'google::no-stream::waitlist-model',
-            displayName: 'Google Waitlist Model',
-            modelName: 'waitlist-model',
-            capabilities: ['chat'],
-            category: 'accuracy' as ModelCategory,
-            status: ModelTag.Waitlist,
-            tier: 'pro' as ModelTier,
-            contextWindow: {
-                maxInputTokens: 9000,
-                maxOutputTokens: 4000,
-            },
-        },
-    ],
-    defaultModels: {
-        chat: 'anthropic::xyz::claude-3.5-sonnet',
-        fastChat: 'google::v1::gemini-flash',
-        codeCompletion: 'anthropic::0.0.0::anthropic.claude-instant-v1',
-    },
 }
