@@ -5,7 +5,7 @@ import type { CodyLLMSiteConfiguration } from '../sourcegraph-api/graphql/client
  * The authentication status, which includes representing the state when authentication failed or
  * has not yet been attempted.
  */
-export type AuthStatus = UnauthenticatedAuthStatus | AuthenticatedAuthStatus | AuthenticatingAuthStatus
+export type AuthStatus = UnauthenticatedAuthStatus | AuthenticatedAuthStatus
 
 /**
  * The authentication status for a user who has successfully authenticated.
@@ -40,6 +40,7 @@ export interface AuthenticatedAuthStatus {
      * buttons in the UI.
      */
     userCanUpgrade?: boolean
+    pendingValidation: boolean
 }
 
 /**
@@ -51,10 +52,7 @@ export interface UnauthenticatedAuthStatus {
     authenticated: false
     showNetworkError?: boolean
     showInvalidAccessTokenError?: boolean
-}
-
-export interface AuthenticatingAuthStatus extends UnauthenticatedAuthStatus {
-    verifying: true
+    pendingValidation: boolean
 }
 
 export const AUTH_STATUS_FIXTURE_AUTHED: AuthenticatedAuthStatus = {
@@ -63,11 +61,13 @@ export const AUTH_STATUS_FIXTURE_AUTHED: AuthenticatedAuthStatus = {
     username: 'alice',
     codyApiVersion: 1,
     siteVersion: '9999',
+    pendingValidation: false,
 }
 
 export const AUTH_STATUS_FIXTURE_UNAUTHED: AuthStatus & { authenticated: false } = {
     endpoint: 'https://example.com',
     authenticated: false,
+    pendingValidation: false,
 }
 
 export const AUTH_STATUS_FIXTURE_AUTHED_DOTCOM: AuthenticatedAuthStatus = {

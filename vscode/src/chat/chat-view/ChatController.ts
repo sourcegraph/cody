@@ -596,7 +596,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         const authStatus = currentAuthStatus()
 
         // Don't emit config if we're verifying auth status to avoid UI auth flashes on the client
-        if ('verifying' in authStatus) {
+        if (authStatus.pendingValidation) {
             return
         }
 
