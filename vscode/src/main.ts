@@ -25,6 +25,7 @@ import {
     modelsService,
     resolvedConfig,
     setClientNameVersion,
+    setEditorWindowIsFocused,
     setLogger,
     setResolvedConfigurationObservable,
     startWith,
@@ -153,6 +154,7 @@ export async function start(
             )
         )
     )
+    setEditorWindowIsFocused(() => vscode.window.state.focused)
 
     if (process.env.LOG_GLOBAL_STATE_EMISSIONS) {
         disposables.push(logGlobalStateEmissions())

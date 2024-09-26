@@ -29,7 +29,7 @@ export function parseProviderAndModel({
         return { provider, legacyModel }
     }
 
-    if (legacyModel) {
+    if (legacyModel.includes(delimiter)) {
         const index = legacyModel.indexOf(delimiter)
         const parsedProvider = legacyModel.slice(0, index)
         const parsedModel = legacyModel.slice(index + 1)
@@ -39,6 +39,6 @@ export function parseProviderAndModel({
     }
 
     return new Error(
-        `Failed to parse the model name ${legacyModel} for '${provider}' completions provider.`
+        `Failed to parse the model name '${legacyModel}' for '${provider}' completions provider.`
     )
 }

@@ -1,9 +1,12 @@
 import {
+    AUTH_STATUS_FIXTURE_AUTHED,
     type AuthStatus,
+    type ClientConfiguration,
     type ContextItem,
     type ContextItemSymbol,
     EMPTY,
     FILE_CONTEXT_MENTION_PROVIDER,
+    type ResolvedConfiguration,
     SYMBOL_CONTEXT_MENTION_PROVIDER,
     type SymbolKind,
     getDotComDefaultModels,
@@ -14,6 +17,7 @@ import { Observable } from 'observable-fns'
 import { type ComponentProps, type FunctionComponent, type ReactNode, useMemo } from 'react'
 import { URI } from 'vscode-uri'
 import { COMMON_WRAPPERS } from './AppWrapper'
+import { FIXTURE_TRANSCRIPT } from './chat/fixtures'
 import { FIXTURE_COMMANDS, makePromptsAPIWithData } from './components/promptList/fixtures'
 import { FIXTURE_PROMPTS } from './components/promptSelectField/fixtures'
 import { ComposedWrappers, type Wrapper } from './utils/composeWrappers'
@@ -80,6 +84,17 @@ export const AppWrapperForTest: FunctionComponent<{ children: ReactNode }> = ({ 
                     models: () => Observable.of(getDotComDefaultModels()),
                     setChatModel: () => EMPTY,
                     detectIntent: () => Observable.of(),
+                    resolvedConfig: () =>
+                        Observable.of({
+                            auth: { accessToken: 'abc', serverEndpoint: 'https://example.com' },
+                            configuration: {
+                                autocomplete: true,
+                                agentIDEVersion: '1.2.3',
+                                devModels: [{ model: 'my-model', provider: 'my-provider' }],
+                            } satisfies Partial<ClientConfiguration> as ClientConfiguration,
+                        } satisfies Partial<ResolvedConfiguration> as ResolvedConfiguration),
+                    authStatus: () => Observable.of(AUTH_STATUS_FIXTURE_AUTHED),
+                    transcript: () => Observable.of(FIXTURE_TRANSCRIPT.explainCode),
                 },
             } satisfies Wrapper<ComponentProps<typeof ExtensionAPIProviderForTestsOnly>['value']>,
             {
@@ -92,6 +107,7 @@ export const AppWrapperForTest: FunctionComponent<{ children: ReactNode }> = ({ 
                     value: {
                         authStatus: {
                             endpoint: 'https://sourcegraph.example.com',
+                            authenticated: true,
                         } satisfies Partial<AuthStatus> as any,
                         config: {} as any,
                         configFeatures: {

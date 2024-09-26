@@ -900,6 +900,7 @@ export const DEFAULT_VSCODE_SETTINGS = {
     telemetryLevel: 'all',
     internalUnstable: false,
     internalDebugContext: false,
+    internalDebugState: false,
     autocompleteAdvancedProvider: 'default',
     autocompleteAdvancedModel: null,
     autocompleteCompleteSuggestWidgetSelection: true,

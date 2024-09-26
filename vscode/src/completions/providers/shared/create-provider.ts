@@ -98,7 +98,8 @@ export function createProvider({
                         }
 
                         return createProviderHelper({
-                            ...parsedProviderAndModel,
+                            legacyModel: parsedProviderAndModel.legacyModel,
+                            provider: parsedProviderAndModel.provider,
                             source: 'site-config-cody-llm-configuration',
                             authStatus,
                         })

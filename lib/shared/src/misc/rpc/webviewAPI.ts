@@ -1,4 +1,5 @@
 import type { Observable } from 'observable-fns'
+import type { AuthStatus, ResolvedConfiguration } from '../..'
 import type { ChatMessage } from '../../chat/transcript/messages'
 import type { ContextItem } from '../../codebase-context/messages'
 import type { CodyCommand } from '../../commands/types'
@@ -40,6 +41,22 @@ export interface WebviewToExtensionAPI {
     setChatModel(model: Model['id']): Observable<void>
 
     detectIntent(text: string): Observable<ChatMessage['intent']>
+
+    /**
+     * Observe the current resolved configuration (same as the global {@link resolvedConfig}
+     * observable).
+     */
+    resolvedConfig(): Observable<ResolvedConfiguration>
+
+    /**
+     * Observe the current auth status (same as the global {@link authStatus} observable).
+     */
+    authStatus(): Observable<AuthStatus>
+
+    /**
+     * Observe the current transcript.
+     */
+    transcript(): Observable<readonly ChatMessage[]>
 }
 
 export function createExtensionAPI(
@@ -53,6 +70,9 @@ export function createExtensionAPI(
         highlights: proxyExtensionAPI(messageAPI, 'highlights'),
         setChatModel: proxyExtensionAPI(messageAPI, 'setChatModel'),
         detectIntent: proxyExtensionAPI(messageAPI, 'detectIntent'),
+        resolvedConfig: proxyExtensionAPI(messageAPI, 'resolvedConfig'),
+        authStatus: proxyExtensionAPI(messageAPI, 'authStatus'),
+        transcript: proxyExtensionAPI(messageAPI, 'transcript'),
     }
 }
 

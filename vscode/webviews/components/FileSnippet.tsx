@@ -3,7 +3,9 @@ import { useExtensionAPI } from '@sourcegraph/prompt-editor'
 import { type FC, useCallback, useMemo } from 'react'
 
 import type { Observable } from 'observable-fns'
+import { useTelemetryRecorder } from '../utils/telemetry'
 import { useConfig } from '../utils/useConfig'
+import { useExperimentalOneBox } from '../utils/useExperimentalOneBox'
 import { type FetchFileParameters, FileContentSearchResult } from './codeSnippet/CodeSnippet'
 import type { ContentMatch } from './codeSnippet/types'
 
@@ -44,6 +46,16 @@ export const FileSnippet: FC<FileSnippetProps> = props => {
         }
     }, [item])
 
+    const telemetryRecorder = useTelemetryRecorder()
+    const oneboxEnabled = useExperimentalOneBox()
+    const logSelection = useCallback(() => {
+        if (oneboxEnabled) {
+            telemetryRecorder.recordEvent('onebox.searchResult', 'clicked', {
+                privateMetadata: { filename: contentMatch.path },
+            })
+        }
+    }, [telemetryRecorder, oneboxEnabled, contentMatch.path])
+
     // Supports only file context (openctx items are not supported
     // but possible could be presented by snippets as well)
     if (item.type !== 'file') {
@@ -58,7 +70,7 @@ export const FileSnippet: FC<FileSnippetProps> = props => {
             defaultExpanded={false}
             fetchHighlightedFileLineRanges={fetchHighlights}
             className={className}
-            onSelect={() => {}}
+            onSelect={logSelection}
         />
     )
 }

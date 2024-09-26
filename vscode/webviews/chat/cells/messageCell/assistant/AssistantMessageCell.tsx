@@ -216,7 +216,11 @@ export function makeHumanMessageInfo(
                             withInitialContext.repositories) ||
                         (item.type === 'file' && withInitialContext.files)
                 )
-                editHumanMessage(assistantMessage.index - 1, newEditorValue)
+                editHumanMessage({
+                    messageIndexInTranscript: assistantMessage.index - 1,
+                    editorValue: newEditorValue,
+                    intent: humanMessage.intent,
+                })
             }
         },
         hasExplicitMentions: Boolean(contextItems.some(item => item.source === ContextItemSource.User)),

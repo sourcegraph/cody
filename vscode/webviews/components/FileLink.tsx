@@ -9,9 +9,11 @@ import {
     webviewOpenURIForContextItem,
 } from '@sourcegraph/cody-shared'
 
-import { useMemo } from 'react'
+import { useCallback, useMemo } from 'react'
 import type { URI } from 'vscode-uri'
 import { getVSCodeAPI } from '../utils/VSCodeApi'
+import { useTelemetryRecorder } from '../utils/telemetry'
+import { useExperimentalOneBox } from '../utils/useExperimentalOneBox'
 import styles from './FileLink.module.css'
 import { Button } from './shadcn/ui/button'
 
@@ -109,8 +111,30 @@ export const FileLink: React.FunctionComponent<
     const iconTitle =
         source && hoverSourceLabels[source] ? `Included ${hoverSourceLabels[source]}` : undefined
 
+    const telemetryRecorder = useTelemetryRecorder()
+    const oneboxEnabled = useExperimentalOneBox()
+    const logClick = useCallback(() => {
+        if (!oneboxEnabled) {
+            return
+        }
+        const external = uri.scheme === 'http' || uri.scheme === 'https'
+        telemetryRecorder.recordEvent('onebox.searchResult', 'clicked', {
+            metadata: {
+                is_local: external ? 0 : 1,
+                is_remote: external ? 1 : 0,
+            },
+            privateMetadata: {
+                filename: displayPath(uri),
+            },
+        })
+    }, [telemetryRecorder, oneboxEnabled, uri])
+
     return (
-        <div className={clsx('tw-inline-flex tw-items-center tw-max-w-full', className)}>
+        <div
+            className={clsx('tw-inline-flex tw-items-center tw-max-w-full', className)}
+            onClick={logClick}
+            onKeyDown={logClick}
+        >
             {(isIgnored || isTooLarge) && (
                 <i className="codicon codicon-warning" title={linkDetails.tooltip} />
             )}

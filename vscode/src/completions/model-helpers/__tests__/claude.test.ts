@@ -2,14 +2,13 @@ import { describe, expect, it } from 'vitest'
 
 import { isWindows } from '@sourcegraph/cody-shared'
 
+import { Claude } from '../claude'
 import { completionParams, contextSnippets } from './test-data'
 
-import { Mistral } from '../mistral'
-
-describe('Mistral', () => {
+describe('Claude ', () => {
     describe.skipIf(isWindows())('getMessages', () => {
         it('returns the prompt with the correct intro snippets', () => {
-            const model = new Mistral()
+            const model = new Claude()
             const { docContext, document, provider } = completionParams
 
             const result = model.getMessages({
@@ -23,17 +22,40 @@ describe('Mistral', () => {
               [
                 {
                   "speaker": "human",
-                  "text": "<s>[INST] Below is the code from file path codebase/test.ts. Review the code outside the XML tags to detect the functionality, formats, style, patterns, and logics in use. Then, use what you detect and reuse methods/libraries to complete and enclose completed code only inside XML tags precisely without duplicating existing implementations. Here is the code:
+                  "text": "Codebase context from file path 'codebase/context1.ts': <CODE5711>function contextSnippetOne() {}</CODE5711>",
+                },
+                {
+                  "speaker": "assistant",
+                  "text": "I will refer to this code to complete your next request.",
+                },
+                {
+                  "speaker": "human",
+                  "text": "Codebase context from file path 'codebase/context2.ts': <CODE5711>const contextSnippet2 = {}</CODE5711>",
+                },
+                {
+                  "speaker": "assistant",
+                  "text": "I will refer to this code to complete your next request.",
+                },
+                {
+                  "speaker": "human",
+                  "text": "Additional documentation for \`ContextParams\`: <CODE5711>interface ContextParams {}</CODE5711>",
+                },
+                {
+                  "speaker": "assistant",
+                  "text": "I will refer to this code to complete your next request.",
+                },
+                {
+                  "speaker": "human",
+                  "text": "You are a code completion AI designed to take the surrounding code and shared context into account in order to predict and suggest high-quality code to complete the code enclosed in <CODE5711> tags. You only respond with code that works and fits seamlessly with surrounding code if any or use best practice and nothing else.",
+                },
+                {
+                  "speaker": "assistant",
+                  "text": "I am a code completion AI with exceptional context-awareness designed to auto-complete nested code blocks with high-quality code that seamlessly integrates with surrounding code.",
+                },
+                {
+                  "speaker": "human",
+                  "text": "Below is the code from file path codebase/test.ts. Review the code outside the XML tags to detect the functionality, formats, style, patterns, and logics in use. Then, use what you detect and reuse methods/libraries to complete and enclose completed code only inside XML tags precisely without duplicating existing implementations. Here is the code: 
               \`\`\`
-              // Here is a reference snippet of code from codebase/context1.ts:
-              // function contextSnippetOne() {}
-
-              // Here is a reference snippet of code from codebase/context2.ts:
-              // const contextSnippet2 = {}
-
-              // Additional documentation for \`ContextParams\`:
-              // interface ContextParams {}
-
               console.log(prefix line: 1)
               console.log(prefix line: 2)
               console.log(prefix line: 3)
@@ -164,8 +186,11 @@ describe('Mistral', () => {
               console.log(suffix line: 23)
               console.log(suffix line: 24)
               console.log(suffix line: 25)
-              \`\`\`[/INST]
-               <CODE5711>console.log(3)
+              \`\`\`",
+                },
+                {
+                  "speaker": "assistant",
+                  "text": "<CODE5711>console.log(3)
                   console.log(4)
               ",
                 },

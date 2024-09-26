@@ -2,6 +2,7 @@ import {
     type AutocompleteContextSnippet,
     type AutocompleteSymbolContextSnippet,
     type DocumentContext,
+    type Message,
     PromptString,
     ps,
 } from '@sourcegraph/cody-shared'
@@ -12,9 +13,10 @@ import {
     type FormatIntroSnippetsParams,
     type FormatPromptParams,
     type GetOllamaPromptParams,
+    type GetPromptParams,
 } from './default'
 
-export const GEMINI_MARKERS = {
+const GEMINI_MARKERS = {
     Prefix: ps`<|prefix|>`,
     Suffix: ps`<|suffix|>`,
     Response: ps`<|fim|>`,
@@ -24,7 +26,14 @@ export class Gemini extends DefaultModel {
     public stopSequences = [`${GEMINI_MARKERS.Response}`]
 
     getOllamaPrompt(promptContext: GetOllamaPromptParams): PromptString {
-        throw new Error('OpenAI is not supported by the Ollama provider yet!')
+        throw new Error('Gemini is not supported by the Ollama provider yet!')
+    }
+
+    public getMessages(params: GetPromptParams): Message[] {
+        return [
+            { speaker: 'human', text: this.getPrompt(params) },
+            { speaker: 'assistant', text: ps`${GEMINI_MARKERS.Response}` },
+        ]
     }
 
     protected fileSnippetToPromptString(snippet: AutocompleteContextSnippet): PromptString {

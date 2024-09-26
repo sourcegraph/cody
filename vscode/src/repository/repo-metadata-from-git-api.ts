@@ -28,6 +28,8 @@ class WorkspaceReposMonitor implements vscode.Disposable {
         this.disposables.push(
             subscriptionDisposable(
                 combineLatest([authStatus, this.workspaceRepoMapper.changes]).subscribe(() => {
+                    this.repoMetadata.clear()
+                    this.workspaceRepoMapper.clear()
                     for (const folderURI of this.getFolderURIs()) {
                         this.addWorkspaceFolder(folderURI)
                     }
