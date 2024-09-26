@@ -1,8 +1,9 @@
 import {
+    NEVER,
     abortableOperation,
     authStatus,
+    catchError,
     combineLatest,
-    debounceTime,
     graphqlClient,
     isAbortError,
     isError,
@@ -48,8 +49,8 @@ export class WorkspaceRepoMapper implements vscode.Disposable, CodebaseRepoIdMap
             subscriptionDisposable(
                 combineLatest([authStatus, resolvedConfig])
                     .pipe(
-                        debounceTime(0),
-                        abortableOperation((_, signal) => this.updateRepos(signal))
+                        abortableOperation((_, signal) => this.updateRepos(signal)),
+                        catchError(() => NEVER)
                     )
                     .subscribe({})
             )
@@ -58,6 +59,11 @@ export class WorkspaceRepoMapper implements vscode.Disposable, CodebaseRepoIdMap
 
     public get changes(): Observable<void> {
         return this.changesSubject.pipe(startWith(undefined))
+    }
+
+    public clear(): void {
+        this.repos = []
+        this.nonWorkspaceRepos = new Map()
     }
 
     public dispose(): void {
@@ -150,12 +156,14 @@ export class WorkspaceRepoMapper implements vscode.Disposable, CodebaseRepoIdMap
                 `Mapped workspace folders to repos: ${JSON.stringify(this.repos.map(repo => repo.name))}`
             )
         } catch (error) {
+            this.repos = []
             if (!isAbortError(error)) {
                 logDebug('WorkspaceRepoMapper', `Error mapping workspace folders to repo IDs: ${error}`)
                 throw error
             }
+        } finally {
+            this.changesSubject.next()
         }
-        this.changesSubject.next()
     }
 
     // Given a set of workspace folders, looks up their git remotes and finds the related repo IDs,
