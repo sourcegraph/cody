@@ -94,7 +94,7 @@ export class ChatBuilder {
          * one, or else `undefined` to use the default chat model on the current endpoint at the
          * time the chat is sent.
          */
-        public selectedModel: ChatModel | undefined,
+        public selectedModel?: ChatModel | undefined,
 
         public readonly sessionID: string = new Date(Date.now()).toUTCString(),
         private messages: ChatMessage[] = [],
