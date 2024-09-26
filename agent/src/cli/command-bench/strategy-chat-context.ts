@@ -3,6 +3,7 @@ import { graphqlClient, isError } from '@sourcegraph/cody-shared'
 import type { RpcMessageHandler } from '../../jsonrpc-alias'
 import type { CodyBenchOptions } from './command-bench'
 import {
+    type ClientOptions,
     type EvalContextItem,
     type Example,
     type ExampleOutput,
@@ -10,6 +11,7 @@ import {
     contextItemToString,
     readExamplesFromCSV,
     writeExamplesToCSV,
+    writeYAMLMetadata,
 } from './strategy-chat-context-types'
 
 export async function evaluateChatContextStrategy(
@@ -17,35 +19,72 @@ export async function evaluateChatContextStrategy(
     options: CodyBenchOptions
 ): Promise<void> {
     const inputFilename = options.fixture.customConfiguration?.['cody-bench.chatContext.inputFile']
+    if (options.insecureTls) {
+        process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'
+    }
+
     if (!inputFilename) {
         throw new Error(
             'Missing cody-bench.chatContext.inputFile. To fix this problem, add "customConfiguration": { "cody-bench.chatContext.inputFile": "examples.csv" } to the cody-bench JSON config.'
         )
     }
-    const outputFilename = options.fixture.customConfiguration?.['cody-bench.chatContext.outputFile']
-    if (!outputFilename) {
-        throw new Error(
-            'Missing cody-bench.chatContext.outputFile. To fix this problem, add "customConfiguration": { "cody-bench.chatContext.outputFile": "output.csv" } to the cody-bench JSON config.'
-        )
-    }
-    const inputFile = path.join(options.workspace, inputFilename)
-    const outputFile = path.join(options.snapshotDirectory, outputFilename)
+    const inputBasename = path.basename(inputFilename).replace(/\.csv$/, '')
 
-    if (options.insecureTls) {
-        process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'
+    const siteVersion = await graphqlClient.getSiteVersion()
+    if (isError(siteVersion)) {
+        throw siteVersion
     }
+    const userInfo = await graphqlClient.getCurrentUserInfo()
+    if (isError(userInfo)) {
+        throw userInfo
+    }
+    const evaluatedFeatureFlags = await graphqlClient.getEvaluatedFeatureFlags()
+    if (isError(evaluatedFeatureFlags)) {
+        throw evaluatedFeatureFlags
+    }
+    const shortSiteVersion = siteVersion.match(/-[0-9a-f]{7,40}$/)
+        ? siteVersion.match(/-([0-9a-f]{7,40})$/)?.[1]
+        : siteVersion
+    const currentTimestamp = new Date().toISOString()
+
+    const outputBase = `${inputBasename}__${shortSiteVersion}`
+    const outputCSVFilename = `${outputBase}.csv`
+    const outputYAMLFilename = `${outputBase}.yaml`
+
+    const inputFile = path.join(options.workspace, inputFilename)
+    const outputCSVFile = path.join(options.snapshotDirectory, outputCSVFilename)
+    const outputYAMLFile = path.join(options.snapshotDirectory, outputYAMLFilename)
 
     const { examples, ignoredRecords } = await readExamplesFromCSV(inputFile)
 
-    console.error(`ignoring ${ignoredRecords.length} malformed rows`)
-    if (!outputFile) {
-        throw new Error('no output file specified')
+    if (ignoredRecords.length > 0) {
+        console.log(`⚠ ignoring ${ignoredRecords.length} malformed rows`)
     }
 
-    await runContextCommand(examples, outputFile)
+    const rewrite = false // TODO(beyang): make configurable
+
+    const outputs = await runContextCommand({ rewrite }, examples)
+    await writeExamplesToCSV(outputCSVFile, outputs)
+    await writeYAMLMetadata(outputYAMLFile, {
+        evaluatedAt: currentTimestamp,
+        clientOptions: {
+            rewrite,
+        },
+        siteUserMetadata: {
+            url: options.srcEndpoint,
+            version: siteVersion,
+            username: userInfo?.username ?? '[none]',
+            userId: userInfo?.id ?? '[none]',
+            evaluatedFeatureFlags,
+        },
+        examples: outputs,
+    })
 }
 
-async function runContextCommand(examples: Example[], outputFile: string): Promise<void> {
+async function runContextCommand(
+    ops: ClientOptions, // TODO(beyang)
+    examples: Example[]
+): Promise<ExampleOutput[]> {
     const exampleOutputs: ExampleOutput[] = []
 
     for (const example of examples) {
@@ -94,7 +133,7 @@ async function runContextCommand(examples: Example[], outputFile: string): Promi
         })
     }
 
-    await writeExamplesToCSV(outputFile, exampleOutputs)
+    return exampleOutputs
 }
 
 function contextOverlaps(
