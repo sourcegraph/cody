@@ -1,16 +1,18 @@
 import { graphqlClient, isError, logDebug } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 import { repoNameResolver } from '../repository/repo-name-resolver'
-import type { CodebaseRepoIdMapper } from './remote-repo'
-import type { Repo } from './remote-repo'
 
 const MAX_REPO_COUNT = 10
+
+interface Repo {
+    name: string
+    id: string
+}
 
 // Watches the VSCode workspace roots and maps any it finds to remote repository
 // IDs. This depends on the vscode.git extension for mapping git repositories
 // to their remotes.
-export class WorkspaceRepoMapper implements CodebaseRepoIdMapper {
-    // CodebaseRepoIdMapper implementation.
+export class WorkspaceRepoMapper {
     public async repoForCodebase(repoName: string): Promise<Repo | undefined> {
         const repos = await this.findRepos(vscode.workspace.workspaceFolders ?? [])
 
