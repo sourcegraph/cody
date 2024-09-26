@@ -1089,18 +1089,6 @@ export class Agent extends MessageHandler implements ExtensionClient {
             )
         })
 
-        this.registerAuthenticatedRequest('commands/test', () => {
-            return this.createChatPanel(
-                vscode.commands.executeCommand('cody.command.generate-tests', commandArgs)
-            )
-        })
-
-        this.registerAuthenticatedRequest('editCommands/test', () => {
-            return this.createEditTask(
-                vscode.commands.executeCommand<CommandResult | undefined>('cody.command.unit-tests')
-            )
-        })
-
         this.registerAuthenticatedRequest('editTask/accept', async ({ id }) => {
             this.fixups?.accept(id)
             return null
