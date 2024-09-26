@@ -87,6 +87,7 @@ export function getConfiguration(
 
         internalUnstable: getHiddenSetting('internal.unstable', isTesting),
         internalDebugContext: getHiddenSetting('internal.debug.context', false),
+        internalDebugState: getHiddenSetting('internal.debug.state', false),
 
         autocompleteAdvancedModel: getHiddenSetting('autocomplete.advanced.model', null),
         autocompleteExperimentalGraphContext: getHiddenSetting<
