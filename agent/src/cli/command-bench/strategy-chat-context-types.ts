@@ -12,10 +12,11 @@ export interface ClientOptions {
 
 export interface EvalOutput {
     evaluatedAt: string
+    codyClientVersion: string
     clientOptions: ClientOptions
     siteUserMetadata: {
         url: string
-        version: string
+        sourcegraphVersion: string
         username: string
         userId: string
         evaluatedFeatureFlags: Record<string, boolean>

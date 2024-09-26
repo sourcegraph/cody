@@ -7,6 +7,7 @@ import {
 } from '@sourcegraph/cody-shared'
 import { SourcegraphNodeCompletionsClient } from '../../../../vscode/src/completions/nodeClient'
 import { rewriteKeywordQuery } from '../../../../vscode/src/local-context/rewrite-keyword-query'
+import { version } from '../../../package.json'
 import type { RpcMessageHandler } from '../../jsonrpc-alias'
 import type { CodyBenchOptions } from './command-bench'
 import {
@@ -74,13 +75,15 @@ export async function evaluateChatContextStrategy(
     }
 
     const outputs = await runContextCommand({ rewrite: clientOptions.rewrite }, examples)
+    const codyClientVersion = process.env.CODY_COMMIT ?? version
     await writeExamplesToCSV(outputCSVFile, outputs)
     await writeYAMLMetadata(outputYAMLFile, {
         evaluatedAt: currentTimestamp,
         clientOptions,
+        codyClientVersion,
         siteUserMetadata: {
             url: options.srcEndpoint,
-            version: siteVersion,
+            sourcegraphVersion: siteVersion,
             username: userInfo?.username ?? '[none]',
             userId: userInfo?.id ?? '[none]',
             evaluatedFeatureFlags,
