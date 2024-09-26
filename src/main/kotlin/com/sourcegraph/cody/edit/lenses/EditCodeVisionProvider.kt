@@ -9,6 +9,7 @@ import com.intellij.codeInsight.codeVision.ui.model.ClickableRichTextCodeVisionE
 import com.intellij.codeInsight.codeVision.ui.model.richText.RichText
 import com.intellij.icons.AllIcons
 import com.intellij.openapi.actionSystem.ActionManager
+import com.intellij.openapi.actionSystem.ActionPlaces
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.DataContext
 import com.intellij.openapi.actionSystem.PlatformDataKeys
@@ -126,7 +127,7 @@ abstract class EditCodeVisionProvider(private val metadata: EditCodeVisionProvid
           AnActionEvent(
               event,
               dataContext,
-              "",
+              ActionPlaces.EDITOR_INLAY,
               action.templatePresentation.clone(),
               ActionManager.getInstance(),
               0)

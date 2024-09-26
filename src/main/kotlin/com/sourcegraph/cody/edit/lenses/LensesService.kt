@@ -3,14 +3,11 @@ package com.sourcegraph.cody.edit.lenses
 import com.intellij.codeInsight.codeVision.CodeVisionHost
 import com.intellij.codeInsight.codeVision.CodeVisionInitializer
 import com.intellij.openapi.application.runInEdt
-import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.editor.Editor
-import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
-import com.intellij.psi.PsiDocumentManager
 import com.sourcegraph.cody.agent.protocol_generated.ProtocolCodeLens
 import com.sourcegraph.config.ConfigUtil
 import com.sourcegraph.utils.CodyEditorUtil
@@ -66,22 +63,19 @@ class LensesService(val project: Project) {
 
     runInEdt {
       if (project.isDisposed) return@runInEdt
-      val editor = FileEditorManager.getInstance(project).selectedTextEditor
-      CodeVisionInitializer.getInstance(project)
-          .getCodeVisionHost()
-          .invalidateProvider(
-              CodeVisionHost.LensInvalidateSignal(
-                  editor, EditCodeVisionProvider.allEditProviders().map { it.id }))
+      CodyEditorUtil.getSelectedEditors(project).forEach { editor ->
+        CodeVisionInitializer.getInstance(project)
+            .getCodeVisionHost()
+            .invalidateProvider(
+                CodeVisionHost.LensInvalidateSignal(
+                    editor, EditCodeVisionProvider.allEditProviders().map { it.id }))
+      }
     }
     listeners.forEach { it.onLensesUpdate(vf, codeLens) }
   }
 
   fun getLenses(editor: Editor): List<ProtocolCodeLens> {
-    val document = editor.document
-    val file =
-        runReadAction { PsiDocumentManager.getInstance(project).getPsiFile(document) }
-            ?: return emptyList()
-    val vf = file.viewProvider.virtualFile
+    val vf = editor.virtualFile
 
     synchronized(this) {
       return lensGroups[vf] ?: emptyList()

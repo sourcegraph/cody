@@ -7,7 +7,6 @@ import com.intellij.openapi.components.service
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.fileEditor.FileDocumentManager
-import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
 import com.intellij.util.containers.SLRUMap
 import com.sourcegraph.cody.agent.CodyAgent
@@ -15,6 +14,7 @@ import com.sourcegraph.cody.agent.CodyAgentService
 import com.sourcegraph.cody.agent.protocol.IgnoreTestParams
 import com.sourcegraph.cody.agent.protocol.ProtocolTextDocument
 import com.sourcegraph.cody.statusbar.CodyStatusService
+import com.sourcegraph.utils.CodyEditorUtil
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeoutException
@@ -44,11 +44,12 @@ class IgnoreOracle(private val project: Project) {
     // Synthesize a focus event for the current editor, if any,
     // to fetch and cache ignore state for it.
     runInEdt {
-      val editor = FileEditorManager.getInstance(project).selectedTextEditor
-      if (willFocusUri == null && editor != null) {
-        val uri = ProtocolTextDocument.fromEditor(editor)?.uri
-        if (uri != null) {
-          focusedFileDidChange(uri)
+      CodyEditorUtil.getSelectedEditors(project).forEach { editor ->
+        if (willFocusUri == null) {
+          val uri = ProtocolTextDocument.fromEditor(editor)?.uri
+          if (uri != null) {
+            focusedFileDidChange(uri)
+          }
         }
       }
     }

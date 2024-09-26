@@ -2,7 +2,6 @@ package com.sourcegraph.cody.listeners
 
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.diagnostic.Logger
-import com.intellij.openapi.editor.EditorFactory
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.fileEditor.FileEditorManagerListener
@@ -13,6 +12,7 @@ import com.sourcegraph.cody.agent.CodyAgent
 import com.sourcegraph.cody.agent.CodyAgentService.Companion.withAgent
 import com.sourcegraph.cody.agent.protocol.ProtocolTextDocument
 import com.sourcegraph.cody.agent.protocol.ProtocolTextDocument.Companion.fromVirtualEditorFile
+import com.sourcegraph.utils.CodyEditorUtil
 
 class CodyFileEditorListener : FileEditorManagerListener {
   private val logger = Logger.getInstance(CodyFileEditorListener::class.java)
@@ -54,7 +54,7 @@ class CodyFileEditorListener : FileEditorManagerListener {
       ApplicationManager.getApplication().invokeLater {
         val fileDocumentManager = FileDocumentManager.getInstance()
 
-        EditorFactory.getInstance().allEditors.forEach { editor ->
+        CodyEditorUtil.getAllOpenEditors().forEach { editor ->
           fileDocumentManager.getFile(editor.document)?.let { file ->
             try {
               val textDocument = fromVirtualEditorFile(editor, file)
@@ -66,7 +66,7 @@ class CodyFileEditorListener : FileEditorManagerListener {
         }
 
         if (project.isDisposed) return@invokeLater
-        FileEditorManager.getInstance(project).selectedTextEditor?.let { editor ->
+        CodyEditorUtil.getSelectedEditors(project).forEach { editor ->
           val file = fileDocumentManager.getFile(editor.document)
           try {
             val textDocument = fromVirtualEditorFile(editor, file!!)

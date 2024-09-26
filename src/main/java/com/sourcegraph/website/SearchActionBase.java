@@ -7,13 +7,13 @@ import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.editor.SelectionModel;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
-import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.TextRange;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.sourcegraph.common.BrowserOpener;
 import com.sourcegraph.common.ui.DumbAwareEDTAction;
 import com.sourcegraph.find.SourcegraphVirtualFile;
+import com.sourcegraph.utils.CodyEditorUtil;
 import com.sourcegraph.vcs.RepoInfo;
 import com.sourcegraph.vcs.RepoUtil;
 import com.sourcegraph.vcs.VCSType;
@@ -31,10 +31,13 @@ public abstract class SearchActionBase extends DumbAwareEDTAction {
     if (selectedText == null || selectedText.length() == 0) {
       return;
     }
+    Editor editor = CodyEditorUtil.getFirstSelectedEditor(project);
+    if (editor == null) {
+      return;
+    }
+
     //noinspection ConstantConditions selectedText != null, so the editor can't be null.
-    VirtualFile currentFile =
-        FileDocumentManager.getInstance()
-            .getFile(FileEditorManager.getInstance(project).getSelectedTextEditor().getDocument());
+    VirtualFile currentFile = FileDocumentManager.getInstance().getFile(editor.getDocument());
     assert currentFile != null; // selectedText != null, so this can't be null.
 
     if (currentFile instanceof SourcegraphVirtualFile) {
@@ -103,7 +106,7 @@ public abstract class SearchActionBase extends DumbAwareEDTAction {
       return null;
     }
 
-    Editor editor = FileEditorManager.getInstance(project).getSelectedTextEditor();
+    Editor editor = CodyEditorUtil.getFirstSelectedEditor(project);
     if (editor == null) {
       return null;
     }

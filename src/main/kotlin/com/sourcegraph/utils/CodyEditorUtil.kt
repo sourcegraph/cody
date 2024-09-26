@@ -75,13 +75,24 @@ object CodyEditorUtil {
   }
 
   @JvmStatic
-  fun getFocusedEditorForAnActionEvent(e: AnActionEvent): Editor? {
-    return e.project?.let { FileEditorManager.getInstance(it).selectedTextEditor }
+  fun getSelectedEditors(project: Project): Array<out Editor> {
+    return FileEditorManager.getInstance(project).selectedTextEditorWithRemotes
+  }
+
+  @JvmStatic
+  fun getFirstSelectedEditor(project: Project): Editor? {
+    return getSelectedEditors(project).firstOrNull()
+  }
+
+  @JvmStatic
+  fun getEditorForDocument(document: Document): Editor? {
+    return getAllOpenEditors().find { it.document == document }
   }
 
   @JvmStatic
   fun getLanguageForFocusedEditor(e: AnActionEvent): Language? {
-    return getFocusedEditorForAnActionEvent(e)?.let { getLanguage(it) }
+    val project = e.project ?: return null
+    return getSelectedEditors(project).firstOrNull()?.let { getLanguage(it) }
   }
 
   @JvmStatic

@@ -3,7 +3,6 @@ package com.sourcegraph.cody.listeners
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.editor.event.BulkAwareDocumentListener
 import com.intellij.openapi.editor.event.DocumentEvent
-import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
 import com.sourcegraph.cody.agent.CodyAgentService
 import com.sourcegraph.cody.agent.protocol.CompletionItemParams
@@ -13,6 +12,7 @@ import com.sourcegraph.cody.autocomplete.action.AcceptCodyAutocompleteAction
 import com.sourcegraph.cody.chat.CodeEditorFactory
 import com.sourcegraph.cody.telemetry.TelemetryV2
 import com.sourcegraph.cody.vscode.InlineCompletionTriggerKind
+import com.sourcegraph.utils.CodyEditorUtil
 
 class CodyDocumentListener(val project: Project) : BulkAwareDocumentListener {
 
@@ -37,10 +37,7 @@ class CodyDocumentListener(val project: Project) : BulkAwareDocumentListener {
   }
 
   private fun handleDocumentEvent(event: DocumentEvent) {
-    val editor = FileEditorManager.getInstance(project).selectedTextEditor
-    if (editor?.document != event.document) {
-      return
-    }
+    val editor = CodyEditorUtil.getEditorForDocument(event.document) ?: return
 
     logCodeCopyPastedFromChat(event)
     CodyAutocompleteManager.instance.clearAutocompleteSuggestions(editor)

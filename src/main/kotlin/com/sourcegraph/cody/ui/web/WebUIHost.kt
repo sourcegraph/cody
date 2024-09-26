@@ -8,7 +8,6 @@ import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.CommonDataKeys
 import com.intellij.openapi.actionSystem.impl.SimpleDataContext
 import com.intellij.openapi.application.runInEdt
-import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.options.ShowSettingsUtil
 import com.intellij.openapi.project.Project
 import com.sourcegraph.cody.agent.*
@@ -16,6 +15,7 @@ import com.sourcegraph.cody.agent.protocol.WebviewOptions
 import com.sourcegraph.cody.config.CodyAuthenticationManager
 import com.sourcegraph.cody.config.ui.AccountConfigurable
 import com.sourcegraph.cody.config.ui.CodyConfigurable
+import com.sourcegraph.utils.CodyEditorUtil
 import java.net.URLDecoder
 
 // TODO:
@@ -87,7 +87,7 @@ internal class WebUIHostImpl(
         val actionManager = ActionManager.getInstance()
         val action = actionManager.getAction("cody.editCodeAction")
         val dataContext =
-            FileEditorManager.getInstance(project).selectedTextEditor?.let { editor ->
+            CodyEditorUtil.getSelectedEditors(project).firstOrNull()?.let { editor ->
               SimpleDataContext.getSimpleContext(CommonDataKeys.EDITOR, editor)
             } ?: SimpleDataContext.EMPTY_CONTEXT
 

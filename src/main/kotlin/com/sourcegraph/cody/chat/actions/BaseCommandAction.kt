@@ -5,7 +5,6 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.application.ReadAction
 import com.intellij.openapi.fileEditor.FileDocumentManager
-import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
 import com.intellij.util.concurrency.AppExecutorUtil
 import com.sourcegraph.cody.agent.CodyAgentService
@@ -16,6 +15,7 @@ import com.sourcegraph.cody.ignore.ActionInIgnoredFileNotification
 import com.sourcegraph.cody.ignore.IgnoreOracle
 import com.sourcegraph.cody.ignore.IgnorePolicy
 import com.sourcegraph.common.ui.DumbAwareEDTAction
+import com.sourcegraph.utils.CodyEditorUtil
 import java.util.concurrent.Callable
 
 abstract class BaseCommandAction : DumbAwareEDTAction() {
@@ -28,7 +28,7 @@ abstract class BaseCommandAction : DumbAwareEDTAction() {
 
   open fun doAction(project: Project) {
     ApplicationManager.getApplication().assertIsDispatchThread()
-    FileEditorManager.getInstance(project).selectedTextEditor?.let { editor ->
+    CodyEditorUtil.getSelectedEditors(project).firstOrNull()?.let { editor ->
       val file = FileDocumentManager.getInstance().getFile(editor.document)
       val protocolFile =
           file?.let { ProtocolTextDocument.fromVirtualEditorFile(editor, it) } ?: return
