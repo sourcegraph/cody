@@ -1,42 +1,43 @@
+import { graphqlClient, isError } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
-import { type RemoteRepo, WorkspaceRepoMapper } from '../context/workspace-repo-mapper'
 import { logDebug } from '../log'
 import { repoNameResolver } from './repo-name-resolver'
+
+interface RemoteRepo {
+    /** The name of the repository (e.g., `github.com/foo/bar`). */
+    name: string
+
+    /** The GraphQL ID of the repository on the Sourcegraph instance. */
+    id: string
+}
 
 /**
  * A {@link RemoteRepo} where the `id` is optional.
  */
 interface MaybeRemoteRepo extends Pick<RemoteRepo, 'name'>, Partial<Pick<RemoteRepo, 'id'>> {}
 
-class WorkspaceReposMonitor {
-    private workspaceRepoMapper = new WorkspaceRepoMapper()
+const MAX_REPO_COUNT = 10
 
-    public async getRepoMetadataForAllWorkspaceFolders(): Promise<MaybeRemoteRepo[]> {
+class WorkspaceReposMonitor {
+    public async getRepoMetadataForAllWorkspaceFolders(
+        signal?: AbortSignal
+    ): Promise<MaybeRemoteRepo[]> {
         return (
             await Promise.all(
                 vscode.workspace.workspaceFolders?.map(folder =>
-                    repoNameResolver.getRepoNamesContainingUri(folder.uri).then(repoNames =>
-                        Promise.all(
-                            repoNames.map(async (repoName): Promise<MaybeRemoteRepo> => {
-                                try {
-                                    const remoteRepo =
-                                        await this.workspaceRepoMapper.repoForCodebase(repoName)
-                                    if (remoteRepo) {
-                                        return remoteRepo
-                                    }
-                                } catch (error) {
-                                    logDebug(
-                                        'WorkspaceReposMonitor',
-                                        'failed to find repo ID for repoName',
-                                        repoName,
-                                        'error',
-                                        error
-                                    )
-                                }
-                                return { name: repoName }
-                            })
-                        )
-                    )
+                    repoNameResolver
+                        .getRepoNamesContainingUri(folder.uri)
+                        .then(async (repoNames): Promise<MaybeRemoteRepo[]> => {
+                            const reposOrError = await graphqlClient.getRepoIds(
+                                repoNames,
+                                MAX_REPO_COUNT,
+                                signal
+                            )
+                            if (isError(reposOrError)) {
+                                throw reposOrError
+                            }
+                            return reposOrError
+                        })
                 ) ?? []
             )
         ).flat()
