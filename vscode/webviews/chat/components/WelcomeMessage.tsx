@@ -73,7 +73,7 @@ export function WelcomeMessage({ IDE, setView }: WelcomeMessageProps) {
 // temporary hard-coded values
 export const standardPrompts: Prompt[] = [
     {
-        id: '123456',
+        id: '12345',
         name: 'Edit Code',
         description: 'Run on a file or selection to modify code',
         nameWithOwner: '',
@@ -103,7 +103,7 @@ export const standardPrompts: Prompt[] = [
         icon: FileQuestion,
     },
     {
-        id: '123456',
+        id: '1234567',
         name: 'Document Code',
         description: 'Add comments to file or section',
         nameWithOwner: '',
@@ -118,7 +118,7 @@ export const standardPrompts: Prompt[] = [
         icon: BookOpen,
     },
     {
-        id: '123456',
+        id: '12345678',
         name: 'Generate Unit Tests',
         description: 'Create tests for the open file',
         nameWithOwner: '',

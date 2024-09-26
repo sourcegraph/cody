@@ -17,13 +17,11 @@ export default function PromptBox({ prompt, icon, onSelect }: PromptBoxProps) {
     const userInfo = useUserAccountInfo()
     const Icon = icon ? icon : undefined
 
-    // TODO: append the definition.text to the input field
-
     return (
         <div onMouseUp={onSelect} className={styles.container}>
             <div className={styles.glyph}>
                 {Icon ? (
-                    <Icon className={styles.icon} strokeWidth={1.25} />
+                    <Icon className={styles.icon} strokeWidth={1} />
                 ) : (
                     <UserAvatar className={styles.avatar} user={userInfo.user} size={24} />
                 )}

@@ -1,8 +1,13 @@
-.welcome-footer {
+.welcomeFooter {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 1rem 1.5rem;
     display: flex;
     flex-flow: column nowrap;
+    justify-content: space-between;
     align-items: center;
-    margin: 1rem 1.5rem;
     min-width: 336px;
     color: var(--vscode-input-placeholderForeground)
 }
