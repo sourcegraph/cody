@@ -1,5 +1,12 @@
 import path from 'node:path'
-import { graphqlClient, isError } from '@sourcegraph/cody-shared'
+import {
+    PromptString,
+    SourcegraphCompletionsClient,
+    graphqlClient,
+    isError,
+} from '@sourcegraph/cody-shared'
+import { SourcegraphNodeCompletionsClient } from '../../../../vscode/src/completions/nodeClient'
+import { rewriteKeywordQuery } from '../../../../vscode/src/local-context/rewrite-keyword-query'
 import type { RpcMessageHandler } from '../../jsonrpc-alias'
 import type { CodyBenchOptions } from './command-bench'
 import {
@@ -22,13 +29,18 @@ export async function evaluateChatContextStrategy(
     if (options.insecureTls) {
         process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'
     }
-
     if (!inputFilename) {
         throw new Error(
             'Missing cody-bench.chatContext.inputFile. To fix this problem, add "customConfiguration": { "cody-bench.chatContext.inputFile": "examples.csv" } to the cody-bench JSON config.'
         )
     }
     const inputBasename = path.basename(inputFilename).replace(/\.csv$/, '')
+
+    const clientOptions: ClientOptions = options.fixture.customConfiguration?.[
+        'cody-bench.chatContext.clientOptions'
+    ] ?? {
+        rewrite: false,
+    }
 
     const siteVersion = await graphqlClient.getSiteVersion()
     if (isError(siteVersion)) {
@@ -61,15 +73,11 @@ export async function evaluateChatContextStrategy(
         console.log(`⚠ ignoring ${ignoredRecords.length} malformed rows`)
     }
 
-    const rewrite = false // TODO(beyang): make configurable
-
-    const outputs = await runContextCommand({ rewrite }, examples)
+    const outputs = await runContextCommand({ rewrite: clientOptions.rewrite }, examples)
     await writeExamplesToCSV(outputCSVFile, outputs)
     await writeYAMLMetadata(outputYAMLFile, {
         evaluatedAt: currentTimestamp,
-        clientOptions: {
-            rewrite,
-        },
+        clientOptions,
         siteUserMetadata: {
             url: options.srcEndpoint,
             version: siteVersion,
@@ -82,13 +90,14 @@ export async function evaluateChatContextStrategy(
 }
 
 async function runContextCommand(
-    ops: ClientOptions, // TODO(beyang)
+    clientOps: ClientOptions,
     examples: Example[]
 ): Promise<ExampleOutput[]> {
+    const completionsClient = new SourcegraphNodeCompletionsClient()
     const exampleOutputs: ExampleOutput[] = []
 
     for (const example of examples) {
-        const { targetRepoRevs, query, essentialContext } = example
+        const { targetRepoRevs, query: origQuery, essentialContext } = example
         const repoNames = targetRepoRevs.map(repoRev => repoRev.repoName)
         const repoIDNames = await graphqlClient.getRepoIds(repoNames, repoNames.length + 10)
         if (isError(repoIDNames)) {
@@ -102,6 +111,15 @@ async function runContextCommand(
             )
         }
         const repoIDs = repoIDNames.map(repoIDName => repoIDName.id)
+
+        let query = origQuery
+        if (clientOps.rewrite) {
+            query = await rewriteKeywordQuery(
+                completionsClient,
+                PromptString.unsafe_fromUserQuery(origQuery)
+            )
+        }
+
         const resultsResp = await graphqlClient.contextSearch({
             repoIDs,
             query,
