@@ -91,6 +91,8 @@ describe('getConfiguration', () => {
                         return false
                     case 'cody.internal.debug.context':
                         return false
+                    case 'cody.internal.debug.state':
+                        return false
                     case 'cody.experimental.supercompletions':
                         return false
                     case 'cody.experimental.noodle':
@@ -141,6 +143,7 @@ describe('getConfiguration', () => {
             hasNativeWebview: true,
             internalUnstable: false,
             internalDebugContext: false,
+            internalDebugState: false,
             debugVerbose: true,
             debugFilter: /.*/,
             telemetryLevel: 'off',

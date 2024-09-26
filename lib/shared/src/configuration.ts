@@ -52,6 +52,7 @@ interface RawClientConfiguration {
      */
     internalUnstable: boolean
     internalDebugContext?: boolean
+    internalDebugState?: boolean
 
     /**
      * Experimental autocomplete

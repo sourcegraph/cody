@@ -1,4 +1,10 @@
-import { type ChatModel, firstResultFromOperation, pendingOperation, ps } from '@sourcegraph/cody-shared'
+import {
+    type ChatModel,
+    firstResultFromOperation,
+    pendingOperation,
+    ps,
+    resolvedConfig,
+} from '@sourcegraph/cody-shared'
 import * as uuid from 'uuid'
 import * as vscode from 'vscode'
 
@@ -1746,6 +1752,10 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                         promiseFactoryToObservable<ChatMessage['intent']>(() =>
                             this.detectChatIntent({ text })
                         ),
+                    resolvedConfig: () => resolvedConfig,
+                    authStatus: () => authStatus,
+                    transcript: () =>
+                        this.chatBuilder.changes.pipe(map(chat => chat.getDehydratedMessages())),
                 }
             )
         )
