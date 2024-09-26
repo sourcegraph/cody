@@ -268,6 +268,9 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
             if (editorState) {
                 onEditSubmit(editorState, intent)
                 telemetryRecorder.recordEvent('onebox.intentCorrection', 'clicked', {
+                    metadata: {
+                        recordsPrivateMetadataTranscript: 1,
+                    },
                     privateMetadata: {
                         initial_intent: humanMessage.intent,
                         user_selected_intent: intent,

@@ -99,10 +99,9 @@ export const ContextCell: FunctionComponent<{
         const logValueChange = useCallback(
             (value: string | undefined) => {
                 if (oneboxEnabled) {
-                    telemetryRecorder.recordEvent(
-                        'onebox.contextDrawer',
-                        value ? 'expanded' : 'collapsed'
-                    )
+                    telemetryRecorder.recordEvent('onebox.contextDrawer', 'clicked', {
+                        [value ? 'expanded' : 'collapsed']: 1,
+                    })
                 }
             },
             [telemetryRecorder, oneboxEnabled]
