@@ -162,7 +162,7 @@ export abstract class Provider {
     } as const satisfies Omit<CodeCompletionsParams, 'messages'>
 
     /**
-     * Returns the passed model ID only if we're using Cody Gateway and
+     * Returns the passed model ID only if we're using Cody Gateway (not BYOK) and
      * the model ID is resolved on the client.
      */
     protected maybeFilterOutModel(
@@ -173,6 +173,9 @@ export abstract class Provider {
         }
 
         const { configOverwrites } = currentAuthStatusAuthed()
+
+        // The model ID is ignored by BYOK clients (configOverwrites?.provider !== 'sourcegraph')
+        // so we can remove it from the request params we send to the backend.
         return configOverwrites?.provider === 'sourcegraph' ? model : undefined
     }
 
