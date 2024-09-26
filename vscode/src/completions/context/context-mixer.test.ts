@@ -409,7 +409,7 @@ describe('ContextMixer', () => {
             expect(logSummary).toEqual({
                 duration: expect.any(Number),
                 retrieverStats: {
-                    'retriever1': {
+                    retriever1: {
                         duration: expect.any(Number),
                         positionBitmap: 3,
                         retrievedItems: 2,
