@@ -32,6 +32,7 @@ export function onPromptSelectInPanel(
     setView: (view: View) => void,
     dispatchClientAction: ReturnType<typeof useClientActionDispatcher>
 ): void {
+    console.log(item)
     switch (item.type) {
         case 'prompt': {
             setView(View.Chat)

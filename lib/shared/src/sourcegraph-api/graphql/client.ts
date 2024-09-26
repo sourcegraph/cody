@@ -411,6 +411,8 @@ export interface Prompt {
         text: string
     }
     url: string
+    // TODO JHH: pick a better type
+    icon?: any
 }
 
 interface ContextFiltersResponse {

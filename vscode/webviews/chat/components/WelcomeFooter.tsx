@@ -1,52 +1,52 @@
 import styles from './WelcomeFooter.module.css'
 
-import type { ForwardRefExoticComponent } from "react"
 import {
     AtSignIcon,
     BookOpenText,
+    type LucideProps,
     MessageCircleQuestion,
     MessageSquarePlus,
     TextSelect,
-    type LucideProps
-} from "lucide-react"
+} from 'lucide-react'
+import type { ForwardRefExoticComponent } from 'react'
 
 interface ChatViewTip {
-    message: string;
-    icon: ForwardRefExoticComponent<Omit<LucideProps, "ref">>;
+    message: string
+    icon: ForwardRefExoticComponent<Omit<LucideProps, 'ref'>>
 }
 
 interface ChatViewLink {
-    icon: ForwardRefExoticComponent<Omit<LucideProps, "ref">>;
-    text: string;
-    url: string;
+    icon: ForwardRefExoticComponent<Omit<LucideProps, 'ref'>>
+    text: string
+    url: string
 }
 
 const chatTips: ChatViewTip[] = [
     {
-        message: "Type @ to add context to your chat",
-        icon: AtSignIcon
+        message: 'Type @ to add context to your chat',
+        icon: AtSignIcon,
     },
     {
-        message: "Start a new chat using ⌥ / or the New Chat button",
-        icon: MessageSquarePlus
+        message: 'Start a new chat using ⌥ / or the New Chat button',
+        icon: MessageSquarePlus,
     },
     {
-        message: "To add code context from an editor, right click and use Add to Cody Chat",
-        icon: TextSelect
+        message: 'To add code context from an editor, right click and use Add to Cody Chat',
+        icon: TextSelect,
     },
 ]
 
 const chatLinks: ChatViewLink[] = [
     {
         icon: BookOpenText,
-        text: "Documentation",
-        url: "https://sourcegraph.com/docs/cody"
+        text: 'Documentation',
+        url: 'https://sourcegraph.com/docs/cody',
     },
     {
         icon: MessageCircleQuestion,
-        text: "Help and Support",
-        url: "https://community.sourcegraph.com/"
-    }
+        text: 'Help and Support',
+        url: 'https://community.sourcegraph.com/',
+    },
 ]
 
 export default function WelcomeFooter() {
