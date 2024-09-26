@@ -539,7 +539,7 @@ export interface FetchHighlightFileParameters {
 }
 
 /** A specific highlighted line range to fetch. */
-export interface HighlightLineRange {
+interface HighlightLineRange {
     /**
      * The last line to fetch (0-indexed, inclusive). Values outside the bounds of the file will
      * automatically be clamped within the valid range.

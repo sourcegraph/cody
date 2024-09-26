@@ -34,7 +34,7 @@ export interface ChunkMatch {
     contentTruncated?: boolean
 }
 
-export interface Location {
+interface Location {
     line: number
     column: number
 }
@@ -65,20 +65,11 @@ export interface MatchGroup {
     endLine: number
 }
 
-export interface MatchGroupMatch {
+interface MatchGroupMatch {
     startLine: number
     startCharacter: number
     endLine: number
     endCharacter: number
-}
-
-export enum HighlightResponseFormat {
-    /** HTML formatted file content with syntax highlighting. */
-    HTML_HIGHLIGHT = 'HTML_HIGHLIGHT',
-    /** HTML formatted file content without syntax highlighting. */
-    HTML_PLAINTEXT = 'HTML_PLAINTEXT',
-    /** SCIP highlighting information as JSON. */
-    JSON_SCIP = 'JSON_SCIP',
 }
 
 /** A specific highlighted line range to fetch. */

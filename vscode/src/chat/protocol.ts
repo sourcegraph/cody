@@ -286,7 +286,6 @@ export interface ConfigurationSubsetForWebview
  * URLs for the Sourcegraph instance and app.
  */
 export const CODY_DOC_URL = new URL('https://sourcegraph.com/docs/cody')
-export const SG_BLOG_URL = new URL('https://sourcegraph.com/blog/')
 export const SG_CHANGELOG_URL = new URL('https://sourcegraph.com/changelog')
 
 // Community and support
