@@ -1,9 +1,11 @@
 import {
     type ChatModel,
+    distinctUntilChanged,
     firstResultFromOperation,
     pendingOperation,
     ps,
     resolvedConfig,
+    skip,
 } from '@sourcegraph/cody-shared'
 import * as uuid from 'uuid'
 import * as vscode from 'vscode'
@@ -270,6 +272,24 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     // and awaiting on this.postMessage may result in a deadlock
                     void this.sendConfig()
                 })
+            ),
+
+            // Reset the chat when the endpoint changes so that we don't try to use old models.
+            subscriptionDisposable(
+                authStatus
+                    .pipe(
+                        map(authStatus => authStatus.endpoint),
+                        distinctUntilChanged(),
+                        // Skip the initial emission (which occurs immediately upon subscription)
+                        // because we only want to reset it when it changes after the ChatController
+                        // has been in use. If we didn't have `skip(1)`, then `new
+                        // ChatController().restoreSession(...)` usage would break because we would
+                        // immediately overwrite the just-restored chat.
+                        skip(1)
+                    )
+                    .subscribe(() => {
+                        this.chatBuilder = new ChatBuilder(undefined)
+                    })
             )
         )
 
@@ -401,7 +421,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 await this.handleAttributionSearch(message.snippet)
                 break
             case 'restoreHistory':
-                await this.restoreSession(message.chatID)
+                this.restoreSession(message.chatID)
                 this.setWebviewToChat()
                 break
             case 'chatSession':
@@ -1532,7 +1552,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
     // history. If it does, then saves the current session and cancels the
     // current in-progress completion. If the chat does not exist, then this
     // is a no-op.
-    public async restoreSession(sessionID: string): Promise<void> {
+    public restoreSession(sessionID: string): void {
         const authStatus = currentAuthStatus()
         if (!authStatus.authenticated) {
             return
@@ -1582,7 +1602,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         // Move the new session to the editor
         await vscode.commands.executeCommand('cody.chat.moveToEditor')
         // Restore the old session in the current window
-        await this.restoreSession(sessionID)
+        this.restoreSession(sessionID)
 
         telemetryRecorder.recordEvent('cody.duplicateSession', 'clicked')
     }
