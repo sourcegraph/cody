@@ -152,7 +152,7 @@ export function syncModels({
                         // NOTE: isDotComUser to enable server-side models for DotCom users,
                         // as the modelsAPIEnabled is default to return false on DotCom to avoid older clients
                         // that also share the same check from breaking.
-                        if (maybeClientConfig?.modelsAPIEnabled || isDotComUser) {
+                        if (isDotComUser || maybeClientConfig?.modelsAPIEnabled) {
                             logDebug('ModelsService', 'new models API enabled')
                             return promiseFactoryToObservable(signal =>
                                 fetchServerSideModels_(config, signal)
@@ -189,49 +189,34 @@ export function syncModels({
                                         )
                                     }
 
-                                    // For users with early access or on the waitlist, replace the waitlist tag with the appropriate tags.
-                                    if (isDotComUser) {
-                                        // For users with early access or on the waitlist, replace the waitlist tag with the
-                                        // appropriate tags.
-                                        return featureFlagProvider
-                                            .evaluatedFeatureFlag(FeatureFlag.CodyEarlyAccess)
-                                            .pipe(
-                                                switchMap(hasEarlyAccess => {
-                                                    const isOnWaitlist = config.clientState.waitlist_o1
-                                                    if (hasEarlyAccess || isOnWaitlist) {
-                                                        data.primaryModels = data.primaryModels.map(
-                                                            model => {
-                                                                if (
-                                                                    model.tags.includes(
-                                                                        ModelTag.Waitlist
-                                                                    )
-                                                                ) {
-                                                                    const newTags = model.tags.filter(
-                                                                        tag => tag !== ModelTag.Waitlist
-                                                                    )
-                                                                    newTags.push(
-                                                                        hasEarlyAccess
-                                                                            ? ModelTag.EarlyAccess
-                                                                            : ModelTag.OnWaitlist
-                                                                    )
-                                                                    return { ...model, tags: newTags }
-                                                                }
-                                                                return model
+                                    // For DotCom users with early access or on the waitlist, replace the waitlist tag with the appropriate tags.
+                                    return featureFlagProvider
+                                        .evaluatedFeatureFlag(FeatureFlag.CodyEarlyAccess)
+                                        .pipe(
+                                            switchMap(hasEarlyAccess => {
+                                                const isOnWaitlist = config.clientState.waitlist_o1
+                                                if (isDotComUser && (hasEarlyAccess || isOnWaitlist)) {
+                                                    data.primaryModels = data.primaryModels.map(
+                                                        model => {
+                                                            if (model.tags.includes(ModelTag.Waitlist)) {
+                                                                const newTags = model.tags.filter(
+                                                                    tag => tag !== ModelTag.Waitlist
+                                                                )
+                                                                newTags.push(
+                                                                    hasEarlyAccess
+                                                                        ? ModelTag.EarlyAccess
+                                                                        : ModelTag.OnWaitlist
+                                                                )
+                                                                return { ...model, tags: newTags }
                                                             }
-                                                        )
-                                                        // TODO(sqs): remove waitlist from localStorage when user has access
-                                                    }
-                                                    return Observable.of(data)
-                                                })
-                                            )
-                                    }
-
-                                    // Remove Waitlist models for enterprise users.
-                                    data.primaryModels = data.primaryModels.filter(
-                                        m => !m.tags.includes(ModelTag.Waitlist)
-                                    )
-
-                                    return Observable.of(data)
+                                                            return model
+                                                        }
+                                                    )
+                                                    // TODO(sqs): remove waitlist from localStorage when user has access
+                                                }
+                                                return Observable.of(data)
+                                            })
+                                        )
                                 })
                             )
                         }

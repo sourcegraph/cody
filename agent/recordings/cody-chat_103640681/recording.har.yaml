@@ -152,7 +152,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Wed, 25 Sep 2024 23:48:44 GMT
+            value: Thu, 26 Sep 2024 19:19:18 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -181,7 +181,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-25T23:48:43.393Z
+      startedDateTime: 2024-09-26T19:19:18.366Z
       time: 0
       timings:
         blocked: -1
@@ -255,14 +255,14 @@ log:
             value: 6.0.0-SNAPSHOT
         url: https://sourcegraph.sourcegraph.com/.api/completions/stream?api-version=2&client-name=jetbrains&client-version=6.0.0-SNAPSHOT
       response:
-        bodySize: 1019
+        bodySize: 950
         content:
           mimeType: text/event-stream
-          size: 1019
+          size: 950
           text: >+
             event: completion
 
-            data: {"deltaText":"Certainly! Here's the implementation of a cow based on the provided `StrangeAnimal` interface:\n\n```typescript:animal.ts\nclass Cow implements StrangeAnimal {\n    makesSound(): 'coo' | 'moo' {\n        return 'moo';\n    }\n}\n```","stopReason":"end_turn"}
+            data: {"deltaText":"Here's the implementation of a cow based on the provided interface:\n\n```typescript:animal.ts\nclass Cow implements StrangeAnimal {\n    makesSound(): 'coo' | 'moo' {\n        return 'moo';\n    }\n}\n```","stopReason":"end_turn"}
 
 
             event: done
@@ -272,7 +272,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Wed, 25 Sep 2024 23:48:46 GMT
+            value: Thu, 26 Sep 2024 19:19:21 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -301,7 +301,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-25T23:48:45.096Z
+      startedDateTime: 2024-09-26T19:19:19.997Z
       time: 0
       timings:
         blocked: -1

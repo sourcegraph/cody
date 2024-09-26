@@ -1,5 +1,5 @@
 import path from 'node:path'
-import { ModelUsage, toModelRefStr } from '@sourcegraph/cody-shared'
+import { ModelTag, ModelUsage, toModelRefStr } from '@sourcegraph/cody-shared'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import {
     TESTING_CREDENTIALS,
@@ -153,6 +153,9 @@ describe(
             expect(preAuthStatus?.authenticated).toBe(true)
             expect(preAuthStatus?.endpoint).toBe(INITIAL_CREDENTIALS.serverEndpoint)
 
+            const dotcomModels = await client.request('chat/models', { modelUsage: ModelUsage.Chat })
+            expect(dotcomModels?.models?.length).toBeGreaterThanOrEqual(1)
+
             // Before switching, set a chat model as default on the prior endpoint. We want it to NOT be
             // carried over to the endpoint we switch to.
             const preChatID = await client.request('chat/new', null)
@@ -172,6 +175,10 @@ describe(
 
             // Test things that should work after having switched accounts.
 
+            // Enterprise models should not contain models with the waitlist tag.
+            const enterpriseModels = await client.request('chat/models', { modelUsage: ModelUsage.Chat })
+            expect(enterpriseModels.models?.some(m => m.tags.includes(ModelTag.Waitlist))).toBeFalsy()
+
             // The chat that we started before switching accounts should not be usable from the new
             // account.
             await expect(
@@ -180,7 +187,6 @@ describe(
                     { id: preChatID }
                 )
             ).rejects.toThrow(`No panel with ID ${preChatID}`)
-
             // Chats should work, and it should use the default model.
             const chat = await client.sendSingleMessageToNewChatWithFullTranscript(
                 'hello after switching accounts'

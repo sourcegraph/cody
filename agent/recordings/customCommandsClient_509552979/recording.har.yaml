@@ -106,7 +106,7 @@ log:
           - name: user-agent
             value: customCommandsClient / v1
           - name: traceparent
-            value: 00-83fdb746cd10e40d65a0c05604a67558-841341f5367df10c-01
+            value: 00-b6db151f3c37711e48d849846d088e33-5d671b32401e67a8-01
           - name: connection
             value: keep-alive
           - name: host
@@ -168,10 +168,10 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=2&client-name=customcommandsclient&client-version=v1
       response:
-        bodySize: 699
+        bodySize: 741
         content:
           mimeType: text/event-stream
-          size: 699
+          size: 741
           text: >+
             event: completion
 
@@ -185,7 +185,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Wed, 25 Sep 2024 23:48:44 GMT
+            value: Thu, 26 Sep 2024 19:19:19 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -214,7 +214,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-25T23:48:43.561Z
+      startedDateTime: 2024-09-26T19:19:18.055Z
       time: 0
       timings:
         blocked: -1
@@ -241,7 +241,7 @@ log:
           - name: user-agent
             value: customCommandsClient / v1
           - name: traceparent
-            value: 00-1b8a8a5421a12ce833025c12bd9b9d5e-f0818a41a1b016b9-01
+            value: 00-169ca90f0d4f98aba827fd675ef5a5f7-a4e3557c0c28ed44-01
           - name: connection
             value: keep-alive
           - name: host
@@ -282,7 +282,7 @@ log:
           size: 117
           text: |+
             event: completion
-            data: {"deltaText":"no","stopReason":"end_turn"}
+            data: {"deltaText":"No","stopReason":"end_turn"}
 
             event: done
             data: {}
@@ -290,7 +290,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Wed, 25 Sep 2024 23:48:45 GMT
+            value: Thu, 26 Sep 2024 19:19:19 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -319,7 +319,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-25T23:48:44.667Z
+      startedDateTime: 2024-09-26T19:19:19.239Z
       time: 0
       timings:
         blocked: -1
@@ -346,7 +346,7 @@ log:
           - name: user-agent
             value: customCommandsClient / v1
           - name: traceparent
-            value: 00-1b2c23d006d522ed7f9370c438b32483-1dee69dcb26d4bf9-01
+            value: 00-0437ce2b203a332b242bdc001f21e036-c74e89d9bc20d524-01
           - name: connection
             value: keep-alive
           - name: host
@@ -475,7 +475,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Wed, 25 Sep 2024 23:48:46 GMT
+            value: Thu, 26 Sep 2024 19:19:20 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -504,7 +504,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-25T23:48:45.214Z
+      startedDateTime: 2024-09-26T19:19:19.911Z
       time: 0
       timings:
         blocked: -1
@@ -531,7 +531,7 @@ log:
           - name: user-agent
             value: customCommandsClient / v1
           - name: traceparent
-            value: 00-049c9645632dd7d5b99bffbc094087a7-f93800cbe6ba215c-01
+            value: 00-5242361ae94cda349c38ce4efdd53f11-693d8bf53cb7b40c-01
           - name: connection
             value: keep-alive
           - name: host
@@ -617,13 +617,13 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=2&client-name=customcommandsclient&client-version=v1
       response:
-        bodySize: 214
+        bodySize: 170
         content:
           mimeType: text/event-stream
-          size: 214
+          size: 170
           text: |+
             event: completion
-            data: {"deltaText":"// hello\n","stopReason":"stop_sequence"}
+            data: {"deltaText":"// hello","stopReason":"stop_sequence"}
 
             event: done
             data: {}
@@ -631,7 +631,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Wed, 25 Sep 2024 23:48:47 GMT
+            value: Thu, 26 Sep 2024 19:19:22 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -660,7 +660,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-25T23:48:46.232Z
+      startedDateTime: 2024-09-26T19:19:20.917Z
       time: 0
       timings:
         blocked: -1
@@ -687,7 +687,7 @@ log:
           - name: user-agent
             value: customCommandsClient / v1
           - name: traceparent
-            value: 00-66b49da987541e5d823e6ac7699fe6d9-bac05b9cd22d9782-01
+            value: 00-207ee49bb0ae004332ee974487fc820b-6b8dfd78be4a0047-01
           - name: connection
             value: keep-alive
           - name: host
@@ -783,14 +783,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=2&client-name=customcommandsclient&client-version=v1
       response:
-        bodySize: 579
+        bodySize: 749
         content:
           mimeType: text/event-stream
-          size: 579
+          size: 749
           text: >+
             event: completion
 
-            data: {"deltaText":"export interface Animal {\n    name: string\n    makeAnimalSound(): string\n    isMammal: boolean\n    logName(): void\n}\n","stopReason":"stop_sequence"}
+            data: {"deltaText":"/* SELECTION_START */\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string\n    isMammal: boolean\n    logName(): void\n}\n/* SELECTION_END */\n","stopReason":"stop_sequence"}
 
 
             event: done
@@ -800,7 +800,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Wed, 25 Sep 2024 23:48:48 GMT
+            value: Thu, 26 Sep 2024 19:19:23 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -829,7 +829,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-25T23:48:47.329Z
+      startedDateTime: 2024-09-26T19:19:22.026Z
       time: 0
       timings:
         blocked: -1
@@ -1535,27 +1535,27 @@ log:
           encoding: base64
           mimeType: text/plain; charset=utf-8
           size: 1095
-          text: "[\"H4sIAAA=\",\"AAAAAP/smF9v8jYUxu/5FFZu95qaAKXLXUvVrdK6VmvVXUy9MM4BLJLY\
-            sh3+qOp3nxKTdAGXhAlR0bdchfjx49i/Y/vYry2EEPI0m0JMn0FpLhIvQF6nTbwftkz\
-            BnBevSZu0yS8hzItCqcSch6C0F6B/8lfZ77V8ykU8zOrSxEyVkJyt65bFIdcyoqs/aQ\
-            yZ7rLUlbK3H7utx1zBQqiZrrG+KXWNrSdCTCKo8f3NihqbCgkJ5TWm9xKSy9vmpjHXR\
-            tGoxvVurXq3zZ9e1jxjEUK0E2au+AvGFaRB4BO/i8k5Jp0gYBFNQ8Dddh9rkSRgar5p\
-            mOtRt91Hj0593mahLtxx4Y594vfIuU82qzEq6YhH3HCodqlUQMg3G7M1p9R4ldcvW94\
-            GJkKt8mFgLFWUrTbb14aaNGs5exptR5HhoPLwVbBVxkRiYGn+5kkoFl6wQcGOCl3eJj\
-            I1T2IGSdZMr08IcfQmpsv71FSUhJCK7q1BmO1BHguZ1k3Ggjq6d2jdxDNXS9v3fz1V2\
-            lKJLwZ7SvksbUr7d5fYjTv3tby7ZPBZvLUECD97ag+OBrvcS4Ng3gkCbahiIgRVw/fR\
-            UDV06SpoP3Srh0lTI5iIZQQGjgTvQDPVJ72LRuz8/vkh0YUAUgPMcD7ieO7jiBvAI6r\
-            r8plrAPkIMEPPPvqDG0BXjjoVsJQxkSZGn2mRKgYTReX0zCYTZ3t8x3cYHCAMbMpqY2\
-            ACMU847rT72NGNzTQ2F6NOu48etsUV3rt9T2UrPsHE6wO444jqaXO8Ny75R4Cd3j/V7\
-            ntEvutTnAUc82X2B18sByPME21UyuoOU3e2DrpYDq6aLdnltlEs2I2arQ+AEwR9vDTL\
-            XgHkCXUPEz9PqCfS4F7tIv3w5BBV567T51QW5dM7H7lYMhGucDZwWCqYc1hgQjqNbny\
-            Q6BR1dh+TmrTQcJY6xkkbBTS+5jpjFR4S/4JyE3G9taJ8/QDwGwdAtvnuTX/L/pu+S7\
-            gH/dZ/+uuFMKZpZO6KK9L3z7DD+P8uRL0x1WbYrP7WTUsWBjC0x6H1Ff0eh8CW7eNb6\
-            98AAAD///TDOcMGGAAA\"]"
+          text: "[\"H4sIAAA=\",\"AAAAAP/smM9P4zgUx+/9K6xcFxc3bSmbG3TFLtIyoAExhxEH13ltrSax\
+            ZTv9IcT/PkrchEmTNimqimDoKU2+7+s4n2f72c8thBByNJtCSB9BaS4ix0NOp02cE/t\
+            MwZxnt0mbtMlfPsyzh1KJOfdBacdDP9Nbye85v0pF3E9iaWSmSkjO1rH5Y59rGdDVNx\
+            pCorvIdbns5WS39ZgrWAg10zXWV7musfVEiEkANb7/WlFjUyEhorzG9FZCdHHd3DTk2\
+            iga1LjerFWvtunV05pnKHwIdsJMFd9hXEDqeS5xu5icYdLxPBbQ2AfcbfexFlEEpuad\
+            hqkeddt9dF+pT9vM1Jk7ztyxS9weOXPJZhijko54wA2HYpdyBfh8szEbOaXGKdx+Knk\
+            bmAi1St5oRAMaMfA329eGmjhpObkalbPIcFBp+iooPWMiMrA0P3jki4XjbVCwX4Uury\
+            MZmwcxgyhpptcnhFT0JqTL29gUlISQgu6lQZrtQR4LGdcNxow6uq3QVhNPXC1t1/37v\
+            WgLMwX1VtRSiU9Gekr5LG6K+r8qcTXr1NfC7pLBe8HWEt5/XA+OBjtfSD1v3vE8bahi\
+            wi+n+wbfe0PVsEpXQLvVrR4mjY1gIpQBGDgSvAONVJf0zhuxc/tnh0TnA0gNMMPpF8d\
+            zFwfcAB5RXVfM/AMg7wFm6NFF/3MD6LIipgCWMibiyOhTLWLFYKKonJ7aSuJ0j/f4So\
+            MDpIGtV20OTCDkEceddh9XdGOzhk3FqNPuo7uyuMB7t+9X1ZULDz09b4E7DqieNsd7V\
+            SXfBrjS+49afY/Id72Fs4BDvkz+4PPlYIR5pI2KWd1O6sbGoPPl4LLZlJ0vG9mE3ajZ\
+            +gT4gKCPV2bZ/X9aUPcwcdOCeiIN7tVO0ncPFaLi2K30+SiT8sfbH1WxZMJf4eTDYal\
+            gzmGBCek0Ou5BopPF7N4mNWnh0KOUMhYrylbb4S4oNwHXpfni8+N1G+NNlta92Zbsv9\
+            juZNv6rb+OD2MaB+YmO9t8fQ37kd52kumMqTbDZvGlU5IEMgztVmZ9tr7HBq5l+/jS+\
+            hUAAP//hA2w578XAAA=\"]"
         cookies: []
         headers:
           - name: date
-            value: Wed, 25 Sep 2024 21:25:43 GMT
+            value: Thu, 26 Sep 2024 19:19:18 GMT
           - name: content-type
             value: text/plain; charset=utf-8
           - name: transfer-encoding
@@ -1586,7 +1586,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-25T21:25:43.086Z
+      startedDateTime: 2024-09-26T19:19:17.544Z
       time: 0
       timings:
         blocked: -1
