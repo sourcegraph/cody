@@ -299,6 +299,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     signal: this.startNewSubmitOrEditOperation(),
                     source: 'chat',
                     intent: message.intent,
+                    manuallySelectedIntent: message.manuallySelectedIntent,
                 })
                 break
             }
@@ -310,6 +311,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     contextFiles: message.contextItems ?? [],
                     editorState: message.editorState as SerializedPromptEditorState,
                     intent: message.intent,
+                    manuallySelectedIntent: message.manuallySelectedIntent,
                 })
                 break
             }
@@ -640,6 +642,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         source,
         command,
         intent: detectedIntent,
+        manuallySelectedIntent,
     }: {
         requestID: string
         inputText: PromptString
@@ -650,6 +653,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         source?: EventSource
         command?: DefaultChatCommands
         intent?: ChatMessage['intent'] | undefined | null
+        manuallySelectedIntent?: boolean | undefined | null
     }): Promise<void> {
         return tracer.startActiveSpan('chat.submit', async (span): Promise<void> => {
             span.setAttribute('sampled', true)
@@ -719,6 +723,17 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     ['repository', 'tree'].includes(contextItem.type)
                 )
 
+                // We are checking the feature flag here to log non-undefined intent only if the feature flag is on
+                let intent: ChatMessage['intent'] | undefined = this.featureCodyExperimentalOneBox
+                    ? detectedIntent
+                    : undefined
+
+                const userSpecifiedIntent = this.featureCodyExperimentalOneBox
+                    ? manuallySelectedIntent && detectedIntent
+                        ? detectedIntent
+                        : 'auto'
+                    : undefined
+
                 if (this.featureCodyExperimentalOneBox && repositoryMentioned) {
                     const inputTextWithoutContextChips = editorState
                         ? PromptString.unsafe_fromUserQuery(
@@ -726,7 +741,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                           )
                         : inputText
 
-                    const intent = detectedIntent
+                    intent = detectedIntent
                         ? detectedIntent
                         : await this.detectChatIntent({
                               requestID,
@@ -741,6 +756,15 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                               .catch(() => undefined)
                     signal.throwIfAborted()
                     if (intent === 'search') {
+                        void this.sendChatExecutedTelemetry({
+                            span,
+                            firstTokenSpan,
+                            inputText,
+                            sharedProperties,
+                            userSpecifiedIntent,
+                            detectedIntent: intent,
+                        })
+
                         return await this.handleSearchIntent({
                             context: corpusContext,
                             signal,
@@ -767,13 +791,15 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                         contextAlternatives
                     )
 
-                    void this.sendChatExecutedTelemetry(
+                    void this.sendChatExecutedTelemetry({
                         span,
                         firstTokenSpan,
                         inputText,
                         sharedProperties,
-                        context
-                    )
+                        context,
+                        detectedIntent: intent,
+                        userSpecifiedIntent,
+                    })
 
                     signal.throwIfAborted()
                     this.streamAssistantResponse(requestID, prompt, model, span, firstTokenSpan, signal)
@@ -834,29 +860,42 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         this.postViewTranscript()
     }
 
-    private async sendChatExecutedTelemetry(
-        span: Span,
-        firstTokenSpan: Span,
-        inputText: PromptString,
-        sharedProperties: any,
-        context: PromptInfo['context']
-    ): Promise<void> {
+    private async sendChatExecutedTelemetry({
+        span,
+        firstTokenSpan,
+        inputText,
+        sharedProperties,
+        context,
+        detectedIntent,
+        userSpecifiedIntent,
+    }: {
+        span: Span
+        firstTokenSpan: Span
+        inputText: PromptString
+        sharedProperties: any
+        context?: PromptInfo['context']
+        detectedIntent?: ChatMessage['intent']
+        userSpecifiedIntent?: ChatMessage['intent'] | 'auto'
+    }): Promise<void> {
         const authStatus = currentAuthStatus()
 
         // Create a summary of how many code snippets of each context source are being
         // included in the prompt
         const contextSummary: { [key: string]: number } = {}
-        for (const { source } of context.used) {
-            if (!source) {
-                continue
-            }
-            if (contextSummary[source]) {
-                contextSummary[source] += 1
-            } else {
-                contextSummary[source] = 1
+        if (context) {
+            for (const { source } of context.used) {
+                if (!source) {
+                    continue
+                }
+                if (contextSummary[source]) {
+                    contextSummary[source] += 1
+                } else {
+                    contextSummary[source] = 1
+                }
             }
         }
-        const privateContextSummary = await this.buildPrivateContextSummary(context)
+
+        const privateContextSummary = context && (await this.buildPrivateContextSummary(context))
 
         const properties = {
             ...sharedProperties,
@@ -873,6 +912,8 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 recordsPrivateMetadataTranscript: isDotCom(authStatus) ? 1 : 0,
             },
             privateMetadata: {
+                detectedIntent,
+                userSpecifiedIntent,
                 properties,
                 privateContextSummary: privateContextSummary,
                 // 🚨 SECURITY: chat transcripts are to be included only for DotCom users AND for V2 telemetry
@@ -1028,6 +1069,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         contextFiles,
         editorState,
         intent,
+        manuallySelectedIntent,
     }: {
         requestID: string
         text: PromptString
@@ -1035,6 +1077,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         contextFiles: ContextItem[]
         editorState: SerializedPromptEditorState | null
         intent?: ChatMessage['intent'] | undefined | null
+        manuallySelectedIntent?: boolean | undefined | null
     }): Promise<void> {
         const abortSignal = this.startNewSubmitOrEditOperation()
 
@@ -1060,6 +1103,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 signal: abortSignal,
                 source: 'chat',
                 intent,
+                manuallySelectedIntent,
             })
         } catch {
             this.postError(new Error('Failed to edit prompt'), 'transcript')
