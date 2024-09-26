@@ -252,7 +252,7 @@ async function doGetInlineCompletions(
     if (gitIdentifiersForFile?.gitUrl) {
         const repoMetadataInstance = GitHubDotComRepoMetadata.getInstance()
         // Calling this so that it precomputes the `gitRepoUrl` and store in its cache for query later.
-        repoMetadataInstance.getRepoMetadataUsingGitUrl(gitIdentifiersForFile.gitUrl)
+        repoMetadataInstance.getRepoMetadataUsingGitUrl(gitIdentifiersForFile.gitUrl).catch(() => {})
     }
 
     if (

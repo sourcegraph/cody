@@ -34,12 +34,12 @@ class GitMetadataForCurrentEditor {
 
     public getGitIdentifiersForFile(): GitIdentifiersForFile | undefined {
         if (this.gitIdentifiersForFile === undefined) {
-            this.updateStatus()
+            this.updateStatus().catch(() => {})
         }
         return this.gitIdentifiersForFile
     }
 
-    private async updateStatus() {
+    private async updateStatus(): Promise<void> {
         let newGitIdentifiersForFile: GitIdentifiersForFile | undefined = undefined
 
         const config = getConfiguration()
