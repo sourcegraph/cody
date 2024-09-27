@@ -4,8 +4,8 @@ import styles from './App.module.css'
 
 import {
     type ChatMessage,
-    type ClientStateForWebview,
     CodyIDE,
+    type ContextItem,
     GuardrailsPost,
     PromptString,
     type SerializedChatTranscript,
@@ -16,10 +16,7 @@ import { LoadingPage } from './LoadingPage'
 import { LoginSimplified } from './OnboardingExperiment'
 import { useClientActionDispatcher } from './client/clientState'
 
-import {
-    ClientStateContextProvider,
-    ExtensionAPIProviderFromVSCodeAPI,
-} from '@sourcegraph/prompt-editor'
+import { ExtensionAPIProviderFromVSCodeAPI } from '@sourcegraph/prompt-editor'
 import { CodyPanel } from './CodyPanel'
 import { ChatEnvironmentContext, type ChatEnvironmentContextData } from './chat/ChatEnvironmentContext'
 import { View } from './tabs'
@@ -42,9 +39,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     const [errorMessages, setErrorMessages] = useState<string[]>([])
     const [isTranscriptError, setIsTranscriptError] = useState<boolean>(false)
 
-    const [clientState, setClientState] = useState<ClientStateForWebview>({
-        initialContext: [],
-    })
     const dispatchClientAction = useClientActionDispatcher()
 
     const guardrails = useMemo(() => {
@@ -97,9 +91,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                         break
                     case 'clientAction':
                         dispatchClientAction(message)
-                        break
-                    case 'clientState':
-                        setClientState(message.value)
                         break
                     case 'errors':
                         setErrorMessages(prev => [...prev, message.errors].slice(-5))
@@ -179,8 +170,8 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     }, [config?.config?.agentIDE])
 
     const wrappers = useMemo<Wrapper[]>(
-        () => getAppWrappers(vscodeAPI, telemetryRecorder, clientState, config, chatEnvironmentContext),
-        [vscodeAPI, telemetryRecorder, clientState, config, chatEnvironmentContext]
+        () => getAppWrappers(vscodeAPI, telemetryRecorder, config, undefined, chatEnvironmentContext),
+        [vscodeAPI, telemetryRecorder, config, chatEnvironmentContext]
     )
 
     // Wait for all the data to be loaded before rendering Chat View
@@ -224,8 +215,8 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
 export function getAppWrappers(
     vscodeAPI: VSCodeWrapper,
     telemetryRecorder: TelemetryRecorder,
-    clientState: ClientStateForWebview,
     config: Config | null,
+    staticInitialContext: ContextItem[] | undefined,
     chatEnvironmentContext: ChatEnvironmentContextData
 ): Wrapper[] {
     return [
@@ -235,12 +226,8 @@ export function getAppWrappers(
         } satisfies Wrapper<ComponentProps<typeof TelemetryRecorderContext.Provider>['value']>,
         {
             component: ExtensionAPIProviderFromVSCodeAPI,
-            props: { vscodeAPI },
+            props: { vscodeAPI, staticInitialContext },
         } satisfies Wrapper<any, ComponentProps<typeof ExtensionAPIProviderFromVSCodeAPI>>,
-        {
-            provider: ClientStateContextProvider,
-            value: clientState,
-        } satisfies Wrapper<ComponentProps<typeof ClientStateContextProvider>['value']>,
         {
             component: ConfigProvider,
             props: { value: config },

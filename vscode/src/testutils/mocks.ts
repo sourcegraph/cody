@@ -9,13 +9,7 @@ import type {
     Range as VSCodeRange,
 } from 'vscode'
 
-import {
-    type ClientConfiguration,
-    type ClientState,
-    OLLAMA_DEFAULT_URL,
-    type ResolvedConfiguration,
-    ps,
-} from '@sourcegraph/cody-shared'
+import { type ClientConfiguration, OLLAMA_DEFAULT_URL, ps } from '@sourcegraph/cody-shared'
 
 import path from 'node:path'
 import { AgentEventEmitter as EventEmitter } from './AgentEventEmitter'
@@ -915,13 +909,3 @@ export const DEFAULT_VSCODE_SETTINGS = {
     autocompleteExperimentalPreloadDebounceInterval: 0,
     experimentalGuardrailsTimeoutSeconds: undefined,
 } satisfies ClientConfiguration
-
-export function getVSCodeConfigurationWithAccessToken(
-    config: Partial<ClientConfiguration> = {}
-): ResolvedConfiguration {
-    return {
-        configuration: { ...DEFAULT_VSCODE_SETTINGS, ...config },
-        auth: { serverEndpoint: 'https://sourcegraph.com', accessToken: 'test_access_token' },
-        clientState: {} satisfies Partial<ClientState> as ClientState,
-    }
-}

@@ -1,4 +1,9 @@
-import { CHAT_INPUT_TOKEN_BUDGET, CHAT_OUTPUT_TOKEN_BUDGET } from '../token/constants'
+import {
+    CHAT_INPUT_TOKEN_BUDGET,
+    CHAT_OUTPUT_TOKEN_BUDGET,
+    EXTENDED_CHAT_INPUT_TOKEN_BUDGET,
+    EXTENDED_USER_CONTEXT_TOKEN_BUDGET,
+} from '../token/constants'
 import type {
     ClientSideConfig,
     ContextWindow,
@@ -128,20 +133,28 @@ export function createModelFromServerModel({
     capabilities,
     category,
     tier,
+    status,
     clientSideConfig,
     contextWindow,
-}: ServerModel) {
+}: ServerModel): Model {
     const ref = parseModelRef(modelRef)
+    const { maxInputTokens, maxOutputTokens } = contextWindow
+    const _contextWindow: ModelContextWindow = {
+        input: maxInputTokens,
+        output: maxOutputTokens,
+    }
+    // Use Extended Context Window
+    if (maxInputTokens === EXTENDED_CHAT_INPUT_TOKEN_BUDGET + EXTENDED_USER_CONTEXT_TOKEN_BUDGET) {
+        _contextWindow.input = EXTENDED_CHAT_INPUT_TOKEN_BUDGET
+        _contextWindow.context = { user: EXTENDED_USER_CONTEXT_TOKEN_BUDGET }
+    }
     return createModel({
-        id: ref.modelId,
+        id: modelRef,
         modelRef: ref,
         usage: capabilities.flatMap(capabilityToUsage),
-        contextWindow: {
-            input: contextWindow.maxInputTokens,
-            output: contextWindow.maxOutputTokens,
-        },
-        clientSideConfig: clientSideConfig,
-        tags: [category, tier],
+        contextWindow: _contextWindow,
+        clientSideConfig,
+        tags: getServerModelTags(capabilities, category, status, tier),
         provider: ref.providerId,
         title: displayName,
     })
@@ -151,8 +164,13 @@ function capabilityToUsage(capability: ModelCapability): ModelUsage[] {
     switch (capability) {
         case 'autocomplete':
             return [ModelUsage.Autocomplete]
+        case 'edit':
+            return [ModelUsage.Edit]
         case 'chat':
-            return [ModelUsage.Chat, ModelUsage.Edit]
+            return [ModelUsage.Chat]
+        // unknown capability should be handled as tags.
+        default:
+            return []
     }
 }
 
@@ -179,4 +197,48 @@ export function parseModelRef(ref: ModelRefStr): ModelRef {
             apiVersionId: 'unknown',
         }
     }
+}
+
+/**
+ * Converts a model reference or ID to its legacy model ID format.
+ * If the input is a model reference, it extracts the modelId.
+ * If the input is already a legacy ID, it returns it unchanged.
+ *
+ * @param modelRefOrID - The model reference string or legacy model ID
+ * @returns The legacy model ID
+ */
+export function toLegacyModel(modelRefOrID: string): string {
+    return parseModelRef(modelRefOrID as ModelRefStr).modelId || modelRefOrID
+}
+
+export function getServerModelTags(
+    capabilities: ModelCapability[],
+    category: ModelCategory,
+    status: ModelStatus,
+    tier: ModelTier
+): ModelTag[] {
+    const tags: ModelTag[] = [tier]
+    if (capabilities.includes('vision')) {
+        tags.push(ModelTag.Vision)
+    }
+    // TODO (bee) removes once o1 is rolled out.
+    // HACK: Currently only o1 models are waitlisted,
+    // so we can use this to determine if a model is stream-disabled.
+    // In the future, we should have a seperate field for this.
+    if (status === 'waitlist') {
+        tags.push(ModelTag.Waitlist)
+        if (tier === ModelTag.Pro) {
+            tags.push(ModelTag.StreamDisabled)
+        }
+    } else if (status === 'internal') {
+        tags.push(ModelTag.Internal)
+    }
+    if (category === 'accuracy') {
+        tags.push(ModelTag.Power)
+    } else if (category === 'other') {
+        tags.push(ModelTag.Balanced)
+    } else {
+        tags.push(category)
+    }
+    return tags
 }

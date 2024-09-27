@@ -10,15 +10,15 @@ import type { EditModelItem } from './types'
 
 const getModelProviderIcon = (provider: string): string => {
     switch (provider) {
-        case 'Anthropic':
+        case 'anthropic':
             return '$(anthropic-logo)'
-        case 'OpenAI':
+        case 'openAI':
             return '$(openai-logo)'
-        case 'Mistral':
+        case 'mistral':
             return '$(mistral-logo)'
-        case 'Ollama':
+        case 'ollama':
             return '$(ollama-logo)'
-        case 'Google':
+        case 'google':
             return '$(gemini-logo)'
         default:
             return '$(cody-logo)'
@@ -28,7 +28,7 @@ const getModelProviderIcon = (provider: string): string => {
 export const getModelOptionItems = (modelOptions: Model[], isCodyPro: boolean): EditModelItem[] => {
     const allOptions = modelOptions
         .map(modelOption => {
-            const icon = getModelProviderIcon(modelOption.provider)
+            const icon = getModelProviderIcon(modelOption.provider.toLowerCase())
             const title = modelOption.title || modelOption.id
             return {
                 label: `${QUICK_PICK_ITEM_EMPTY_INDENT_PREFIX} ${icon} ${title}`,

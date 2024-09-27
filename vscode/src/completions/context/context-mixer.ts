@@ -4,14 +4,16 @@ import {
     type AutocompleteContextSnippet,
     type DocumentContext,
     contextFiltersProvider,
+    dedupeWith,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
-
 import type { LastInlineCompletionCandidate } from '../get-inline-completions'
+import type { ContextRetriever } from '../types'
 import {
     DefaultCompletionsContextRanker,
     type RetrievedContextResults,
 } from './completions-context-ranker'
+import { ContextRetrieverDataCollection } from './context-data-logging'
 import type { ContextStrategy, ContextStrategyFactory } from './context-strategy'
 
 interface GetContextOptions {
@@ -21,6 +23,7 @@ interface GetContextOptions {
     abortSignal?: AbortSignal
     maxChars: number
     lastCandidate?: LastInlineCompletionCandidate
+    gitUrl?: string
 }
 
 export interface ContextSummary {
@@ -60,7 +63,7 @@ export interface ContextSummary {
 export interface GetContextResult {
     context: AutocompleteContextSnippet[]
     logSummary: ContextSummary
-    rankedContextCandidates: AutocompleteContextSnippet[]
+    contextLoggingSnippets: AutocompleteContextSnippet[]
 }
 
 /**
@@ -72,14 +75,21 @@ export interface GetContextResult {
  * ranged for the top ranked document from all retrieval sources before we move on to the second
  * document).
  */
-export class ContextMixer {
-    constructor(private strategyFactory: ContextStrategyFactory) {}
+export class ContextMixer implements vscode.Disposable {
+    private disposables: vscode.Disposable[] = []
+    private contextDataCollector = new ContextRetrieverDataCollection()
+
+    constructor(private strategyFactory: ContextStrategyFactory) {
+        this.disposables.push(this.contextDataCollector)
+    }
 
     public async getContext(options: GetContextOptions): Promise<GetContextResult> {
         const start = performance.now()
 
         const { name: strategy, retrievers } = await this.strategyFactory.getStrategy(options.document)
-        if (retrievers.length === 0) {
+        const retrieversWithDataLogging = this.maybeAddDataLoggingRetrievers(options.gitUrl, retrievers)
+
+        if (retrieversWithDataLogging.length === 0) {
             return {
                 context: [],
                 logSummary: {
@@ -90,12 +100,12 @@ export class ContextMixer {
                     duration: 0,
                     retrieverStats: {},
                 },
-                rankedContextCandidates: [],
+                contextLoggingSnippets: [],
             }
         }
 
-        const results: RetrievedContextResults[] = await Promise.all(
-            retrievers.map(async retriever => {
+        const resultsWithDataLogging: RetrievedContextResults[] = await Promise.all(
+            retrieversWithDataLogging.map(async retriever => {
                 const retrieverStart = performance.now()
                 const allSnippets = await wrapInActiveSpan(
                     `autocomplete.retrieve.${retriever.identifier}`,
@@ -118,6 +128,28 @@ export class ContextMixer {
                 }
             })
         )
+
+        // Extract back the context results for the original retrievers
+        const results = this.extractOriginalRetrieverResults(resultsWithDataLogging, retrievers)
+        const contextLoggingSnippets =
+            this.contextDataCollector?.getDataLoggingContextFromRetrievers(resultsWithDataLogging) ?? []
+
+        // Original retrievers were 'none'
+        if (results.length === 0) {
+            return {
+                context: [],
+                logSummary: {
+                    strategy: 'none',
+                    totalChars: options.docContext.prefix.length + options.docContext.suffix.length,
+                    prefixChars: options.docContext.prefix.length,
+                    suffixChars: options.docContext.suffix.length,
+                    duration: 0,
+                    retrieverStats: {},
+                },
+                contextLoggingSnippets,
+            }
+        }
+
         const contextRanker = new DefaultCompletionsContextRanker()
         const fusedResults = contextRanker.rankAndFuseContext(results)
 
@@ -173,8 +205,39 @@ export class ContextMixer {
         return {
             context: mixedContext,
             logSummary,
-            rankedContextCandidates: Array.from(fusedResults),
+            contextLoggingSnippets,
         }
+    }
+
+    private extractOriginalRetrieverResults(
+        resultsWithDataLogging: RetrievedContextResults[],
+        originalRetrievers: ContextRetriever[]
+    ): RetrievedContextResults[] {
+        const originalIdentifiers = new Set(originalRetrievers.map(r => r.identifier))
+        return resultsWithDataLogging.filter(result => originalIdentifiers.has(result.identifier))
+    }
+
+    private maybeAddDataLoggingRetrievers(
+        gitUrl: string | undefined,
+        originalRetrievers: ContextRetriever[]
+    ): ContextRetriever[] {
+        const dataCollectionRetrievers = this.getDataCollectionRetrievers(gitUrl)
+        const combinedRetrievers = [...originalRetrievers, ...dataCollectionRetrievers]
+        return dedupeWith(combinedRetrievers, 'identifier')
+    }
+
+    private getDataCollectionRetrievers(gitUrl: string | undefined): ContextRetriever[] {
+        if (!this.contextDataCollector.shouldCollectContextDatapoint(gitUrl)) {
+            return []
+        }
+        return this.contextDataCollector.dataCollectionRetrievers
+    }
+
+    public dispose(): void {
+        for (const disposable of this.disposables) {
+            disposable.dispose()
+        }
+        this.disposables = []
     }
 }
 

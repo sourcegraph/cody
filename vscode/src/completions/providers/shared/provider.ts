@@ -21,6 +21,7 @@ import type * as CompletionLogger from '../../logger'
 import { type DefaultModel, getModelHelpers } from '../../model-helpers'
 import type { InlineCompletionItemWithAnalytics } from '../../text-processing/process-inline-completions'
 
+import { toLegacyModel } from '@sourcegraph/cody-shared/src/models/model'
 import type { AutocompleteProviderConfigSource } from './create-provider'
 import type { FetchCompletionResult } from './fetch-and-process-completions'
 
@@ -189,9 +190,9 @@ export abstract class Provider {
 
         if ('model' in options) {
             this.model = options.model
-            this.legacyModel = options.model.id
+            this.legacyModel = toLegacyModel(options.model.id)
         } else {
-            this.legacyModel = options.legacyModel
+            this.legacyModel = toLegacyModel(options.legacyModel)
         }
 
         this.id = id

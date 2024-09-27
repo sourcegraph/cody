@@ -210,7 +210,6 @@ const register = async (
             chatClient,
             guardrails,
             editor,
-            symfRunner,
             contextAPIClient,
             contextRetriever,
         },
@@ -695,7 +694,6 @@ interface RegisterChatOptions {
     chatClient: ChatClient
     guardrails: Guardrails
     editor: VSCodeEditor
-    symfRunner?: SymfRunner
     contextAPIClient?: ContextAPIClient
     contextRetriever: ContextRetriever
 }
@@ -707,7 +705,6 @@ function registerChat(
         chatClient,
         guardrails,
         editor,
-        symfRunner,
         contextAPIClient,
         contextRetriever,
     }: RegisterChatOptions,
@@ -728,7 +725,6 @@ function registerChat(
             startTokenReceiver: platform.startTokenReceiver,
         },
         chatClient,
-        symfRunner || null,
         contextRetriever,
         guardrails,
         contextAPIClient || null,

@@ -5,7 +5,7 @@ import { AUTH_STATUS_FIXTURE_AUTHED, type AuthenticatedAuthStatus } from '../aut
 import { firstValueFrom } from '../misc/observable'
 import { DOTCOM_URL } from '../sourcegraph-api/environments'
 import { CHAT_INPUT_TOKEN_BUDGET, CHAT_OUTPUT_TOKEN_BUDGET } from '../token/constants'
-import { getDotComDefaultModels } from './dotcom'
+import { getMockedDotComClientModels } from './dotcom'
 import type { Model } from './model'
 import { createModel } from './model'
 import { type ModelsData, ModelsService, TestLocalStorageForModelPreferences } from './modelsService'
@@ -60,7 +60,7 @@ describe('modelsService', () => {
         })
 
         it('returns max token limit for known DotCom chat model ', () => {
-            const models = getDotComDefaultModels()
+            const models = getMockedDotComClientModels()
             const modelsService = modelsServiceWithModels(models)
             expect(models[0].id).toBeDefined()
             const cw = modelsService.getContextWindowByID(models[0].id)
@@ -68,13 +68,13 @@ describe('modelsService', () => {
         })
 
         it('returns max token limit for known DotCom chat model with higher context window (claude 3)', () => {
-            const models = getDotComDefaultModels()
+            const models = getMockedDotComClientModels()
             const modelsService = modelsServiceWithModels(models)
-            const claude3SonnetModelID = 'anthropic/claude-3-5-sonnet-20240620'
-            const claude3SonnetModel = modelsService.getModelByID(claude3SonnetModelID)
+            const claude3SonnetSubString = 'claude-3.5-sonnet'
+            const claude3SonnetModel = modelsService.getModelByIDSubstringOrError(claude3SonnetSubString)
             expect(claude3SonnetModel?.contextWindow?.context?.user).greaterThan(0)
             expect(claude3SonnetModel).toBeDefined()
-            const cw = modelsService.getContextWindowByID(claude3SonnetModelID)
+            const cw = modelsService.getContextWindowByID(claude3SonnetModel.id)
             expect(cw).toEqual(claude3SonnetModel?.contextWindow)
         })
 
@@ -103,7 +103,7 @@ describe('modelsService', () => {
         })
 
         it('returns max token limit for known chat model', () => {
-            const models = getDotComDefaultModels()
+            const models = getMockedDotComClientModels()
             const modelsService = modelsServiceWithModels(models)
             const knownModel = models[0]
             const { output } = modelsService.getContextWindowByID(knownModel.id)

@@ -203,7 +203,7 @@ describe('server sent models', async () => {
     vi.spyOn(modelsService, 'modelsChanges', 'get').mockReturnValue(Observable.of(result))
 
     it('constructs from server models', () => {
-        expect(opus.id).toBe(serverOpus.modelName)
+        expect(opus.id).toBe(serverOpus.modelRef)
         expect(opus.title).toBe(serverOpus.displayName)
         expect(opus.provider).toBe('anthropic')
         expect(opus.contextWindow).toEqual({ input: 9000, output: 4000 })
@@ -368,9 +368,9 @@ describe('syncModels', () => {
                 primaryModels: [createModelFromServerModel(quxModel)],
                 preferences: {
                     defaults: {
-                        autocomplete: 'a',
-                        chat: 'a',
-                        edit: 'a',
+                        autocomplete: 'qux::a::a',
+                        chat: 'qux::a::a',
+                        edit: 'qux::a::a',
                     },
                     selected: {},
                 },
@@ -433,9 +433,9 @@ describe('syncModels', () => {
                     primaryModels: [createModelFromServerModel(zzzModel)],
                     preferences: {
                         defaults: {
-                            autocomplete: 'a',
-                            chat: 'a',
-                            edit: 'a',
+                            autocomplete: 'zzz::a::a',
+                            chat: 'zzz::a::a',
+                            edit: 'zzz::a::a',
                         },
                         selected: {},
                     },

@@ -9,10 +9,10 @@ import {
     type ResolvedConfiguration,
     SYMBOL_CONTEXT_MENTION_PROVIDER,
     type SymbolKind,
-    getDotComDefaultModels,
+    getMockedDotComClientModels,
     promiseFactoryToObservable,
 } from '@sourcegraph/cody-shared'
-import { ClientStateContextProvider, ExtensionAPIProviderForTestsOnly } from '@sourcegraph/prompt-editor'
+import { ExtensionAPIProviderForTestsOnly } from '@sourcegraph/prompt-editor'
 import { Observable } from 'observable-fns'
 import { type ComponentProps, type FunctionComponent, type ReactNode, useMemo } from 'react'
 import { URI } from 'vscode-uri'
@@ -81,8 +81,9 @@ export const AppWrapperForTest: FunctionComponent<{ children: ReactNode }> = ({ 
                         commands: FIXTURE_COMMANDS,
                     }),
                     highlights: () => Observable.of([]),
-                    models: () => Observable.of(getDotComDefaultModels()),
+                    models: () => Observable.of(getMockedDotComClientModels()),
                     setChatModel: () => EMPTY,
+                    initialContext: () => Observable.of([]),
                     detectIntent: () => Observable.of(),
                     resolvedConfig: () =>
                         Observable.of({
@@ -97,10 +98,6 @@ export const AppWrapperForTest: FunctionComponent<{ children: ReactNode }> = ({ 
                     transcript: () => Observable.of(FIXTURE_TRANSCRIPT.explainCode),
                 },
             } satisfies Wrapper<ComponentProps<typeof ExtensionAPIProviderForTestsOnly>['value']>,
-            {
-                provider: ClientStateContextProvider,
-                value: { initialContext: [] },
-            } satisfies Wrapper<ComponentProps<typeof ClientStateContextProvider>['value']>,
             {
                 component: ConfigProvider,
                 props: {

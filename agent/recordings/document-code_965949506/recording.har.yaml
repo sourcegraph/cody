@@ -1638,5 +1638,99 @@ log:
         send: 0
         ssl: -1
         wait: 0
+    - _id: a1889526ab4ac60a56dc11d08e0510f9
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 0
+        cookies: []
+        headers:
+          - _fromType: array
+            name: authorization
+            value: token
+              REDACTED_3dd704711f82a44ff6aba261b53b61a03fb8edba658774639148630d838c2d1d
+          - _fromType: array
+            name: user-agent
+            value: document-code / v1
+          - _fromType: array
+            name: accept
+            value: "*/*"
+          - _fromType: array
+            name: accept-encoding
+            value: gzip,deflate
+          - name: host
+            value: sourcegraph.com
+        headersSize: 262
+        httpVersion: HTTP/1.1
+        method: GET
+        queryString: []
+        url: https://sourcegraph.com/.api/modelconfig/supported-models.json
+      response:
+        bodySize: 1092
+        content:
+          encoding: base64
+          mimeType: text/plain; charset=utf-8
+          size: 1092
+          text: "[\"H4sIAAAAAAAA/+yYz0/jOBTH7/0rrFwXFzdtKZsbdMUu0jKgATGHEQfXeW2tJrFlO/0hx\
+            P8+StyESZM2KaqKYOgpTb7v6zifZ/vZzy2EEHI0m0JIH0FpLiLHQ06nTZwT+0zBnGe3\
+            SZu0yV8+zLOHUok590Fpx0M/01vJ7zm/SkXcT2JpZKZKSM7Wsfljn2sZ0NU3GkKiu8h\
+            1uezlZLf1mCtYCDXTNdZXua6x9USISQA1vv9aUWNTISGivMb0VkJ0cd3cNOTaKBrUuN\
+            6sVa+26dXTmmcofAh2wkwV32FcQOp5LnG7mJxh0vE8FtDYB9xt97EWUQSm5p2GqR512\
+            310X6lP28zUmTvO3LFL3B45c8lmGKOSjnjADYdil3IF+HyzMRs5pcYp3H4qeRuYCLVK\
+            3mhEAxox8Dfb14aaOGk5uRqVs8hwUGn6Kig9YyIysDQ/eOSLheNtULBfhS6vIxmbBzG\
+            DKGmm1yeEVPQmpMvb2BSUhJCC7qVBmu1BHgsZ1w3GjDq6rdBWE09cLW3X/fu9aAszBf\
+            VW1FKJT0Z6Svksbor6vypxNevU18LuksF7wdYS3n9cD44GO19IPW/e8TxtqGLCL6f7B\
+            t97Q9WwSldAu9WtHiaNjWAilAEYOBK8A41Ul/TOG7Fz+2eHROcDSA0ww+kXx3MXB9wA\
+            HlFdV8z8AyDvAWbo0UX/cwPosiKmAJYyJuLI6FMtYsVgoqicntpK4nSP9/hKgwOkga1\
+            XbQ5MIOQRx512H1d0Y7OGTcWo0+6ju7K4wHu371fVlQsPPT1vgTsOqJ42x3tVJd8GuN\
+            L7j1p9j8h3vYWzgEO+TP7g8+VghHmkjYpZ3U7qxsag8+XgstmUnS8b2YTdqNn6BPiAo\
+            I9XZtn9f1pQ9zBx04J6Ig3u1U7Sdw8VouLYrfT5KJPyx9sfVbFkwl/h5MNhqWDOYYEJ\
+            6TQ67kGik8Xs3iY1aeHQo5QyFivKVtvhLig3Adel+eLz43Ub402W1r3Zluy/2O5k2/q\
+            tv44PYxoH5iY723x9DfuR3naS6YypNsNm8aVTkgQyDO1WZn22vscGrmX7+NL6FQAA//\
+            +EDbDnvxcAAA==\"]"
+        cookies: []
+        headers:
+          - name: date
+            value: Thu, 26 Sep 2024 19:19:29 GMT
+          - name: content-type
+            value: text/plain; charset=utf-8
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache, max-age=0
+          - name: content-encoding
+            value: gzip
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1342
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-09-26T19:19:29.800Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
   pages: []
   version: "1.2"

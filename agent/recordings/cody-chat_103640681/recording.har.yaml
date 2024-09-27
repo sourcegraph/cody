@@ -89,11 +89,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 4f404d7847541071a3e9dedfe5ce2895
+    - _id: a40311a0f8aac5eeb7fe447fdc52ed4b
       _order: 0
       cache: {}
       request:
-        bodySize: 421
+        bodySize: 444
         cookies: []
         headers:
           - name: content-type
@@ -125,7 +125,7 @@ log:
                   ```$LANGUAGE:$FILEPATH```."
               - speaker: human
                 text: respond with "hello" and nothing else
-            model: claude-3.5-sonnet
+            model: anthropic::2023-06-01::claude-3.5-sonnet
             temperature: 0.2
             topK: -1
             topP: -1
@@ -152,7 +152,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Wed, 25 Sep 2024 17:46:27 GMT
+            value: Thu, 26 Sep 2024 19:19:18 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -181,7 +181,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-25T17:46:27.135Z
+      startedDateTime: 2024-09-26T19:19:18.366Z
       time: 0
       timings:
         blocked: -1
@@ -191,11 +191,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 45a85dd5e8b0aa83b8d9d99d2c0caecb
+    - _id: 008d642088cdbffaba5473bb8ef3487c
       _order: 0
       cache: {}
       request:
-        bodySize: 743
+        bodySize: 766
         cookies: []
         headers:
           - name: content-type
@@ -242,7 +242,7 @@ log:
 
 
                   Question: implement a cow. Only print the code without any explanation.
-            model: claude-3.5-sonnet
+            model: anthropic::2023-06-01::claude-3.5-sonnet
             temperature: 0.2
             topK: -1
             topP: -1
@@ -272,7 +272,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Wed, 25 Sep 2024 17:46:29 GMT
+            value: Thu, 26 Sep 2024 19:19:21 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -301,7 +301,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-25T17:46:28.815Z
+      startedDateTime: 2024-09-26T19:19:19.997Z
       time: 0
       timings:
         blocked: -1

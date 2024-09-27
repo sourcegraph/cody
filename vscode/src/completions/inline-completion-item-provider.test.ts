@@ -204,6 +204,8 @@ describe('InlineCompletionItemProvider', () => {
         expect(withPosixPaths(provider.lastCandidate!)).toMatchInlineSnapshot(`
           {
             "lastTriggerDocContext": {
+              "completePrefix": "const foo = ",
+              "completeSuffix": "\nconsole.log(1)\nconsole.log(2)",
               "currentLinePrefix": "const foo = ",
               "currentLineSuffix": "",
               "injectedPrefix": null,

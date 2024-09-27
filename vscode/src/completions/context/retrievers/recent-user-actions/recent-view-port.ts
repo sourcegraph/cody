@@ -5,8 +5,6 @@ import * as vscode from 'vscode'
 import type { ContextRetriever, ContextRetrieverOptions } from '../../../types'
 import { RetrieverIdentifier, type ShouldUseContextParams, shouldBeUsedAsContext } from '../../utils'
 
-const MAX_RETRIEVED_VIEWPORTS = 5
-
 interface TrackedViewPort {
     uri: vscode.Uri
     visibleRange: vscode.Range
@@ -14,17 +12,30 @@ interface TrackedViewPort {
     lastAccessTimestamp: number
 }
 
+interface RecentViewPortRetrieverOptions {
+    maxTrackedViewPorts: number
+    maxRetrievedViewPorts: number
+    window?: Pick<typeof vscode.window, 'onDidChangeTextEditorVisibleRanges'>
+}
+
 export class RecentViewPortRetriever implements vscode.Disposable, ContextRetriever {
     public identifier = RetrieverIdentifier.RecentViewPortRetriever
     private disposables: vscode.Disposable[] = []
     private viewportsByDocumentUri: LRUCache<string, TrackedViewPort>
+    private readonly maxTrackedViewPorts: number
+    private readonly maxRetrievedViewPorts: number
+    private window: Pick<typeof vscode.window, 'onDidChangeTextEditorVisibleRanges'>
 
-    constructor(
-        private readonly maxTrackedFiles: number = 10,
-        private window: Pick<typeof vscode.window, 'onDidChangeTextEditorVisibleRanges'> = vscode.window
-    ) {
+    constructor({
+        maxTrackedViewPorts,
+        maxRetrievedViewPorts,
+        window = vscode.window,
+    }: RecentViewPortRetrieverOptions) {
+        this.maxTrackedViewPorts = maxTrackedViewPorts
+        this.maxRetrievedViewPorts = maxRetrievedViewPorts
+        this.window = window
         this.viewportsByDocumentUri = new LRUCache<string, TrackedViewPort>({
-            max: this.maxTrackedFiles,
+            max: this.maxTrackedViewPorts,
         })
         this.disposables.push(
             this.window.onDidChangeTextEditorVisibleRanges(
@@ -68,7 +79,7 @@ export class RecentViewPortRetriever implements vscode.Disposable, ContextRetrie
                 return shouldBeUsedAsContext(params)
             })
             .sort((a, b) => b.lastAccessTimestamp - a.lastAccessTimestamp)
-            .slice(0, MAX_RETRIEVED_VIEWPORTS)
+            .slice(0, this.maxRetrievedViewPorts)
 
         return sortedViewPorts
     }
