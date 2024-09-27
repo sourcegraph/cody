@@ -36,7 +36,8 @@
       - [Snapshots](#snapshots)
     - [Productivity Tips](#productivity-tips)
       - [Debug a Problem Reliably](#debug-a-problem-reliably)
-      - [Nail It Then Code It](#nail-it-then-code-it)
+      - [Show Don't Tell](#show-dont-tell)
+      - [Freeze...in the Name of Tests](#freezein-the-name-of-tests)
       - [Soft Assertions](#soft-assertions)
   - [Next Steps](#next-steps)
 
@@ -851,7 +852,7 @@ in debug mode to step through your breakpoints.
 
 ![Debug a Test in VSCode](../doc/images/e2e/debug.png)
 
-#### Nail It Then Code It
+#### Show Don't Tell
 
 Sometimes the easiest way to write a test, is to just do it manually first.
 Although breakpoints or using the `playwright --debug` flag can be a nice way to
@@ -863,6 +864,20 @@ and halts until you manually call the `__continueTest()` function in the VSCode
 UI Chrome DevTools. Note that network and telemetry events etc are still
 recorded in the background, so it can also be a great way to just have a quick
 look at what is being sent.
+
+#### Freeze...in the Name of Tests
+
+Building on the previous one. When running a test in debug/headed mode it's great to be able to use the Chrome DevTools (`Cmd + Shift + I`) or Playwright Inspector to be able to find or debug locators. That is, until you find yourself needing to inspect something that's not there unless it's hovered! Which you can't do when also trying to use the Inspector.
+
+Although Chrome does have some burried settings for freezing the UI state there's usually a much easier way of temporarily keeping those ephemeral menus open. Simply open the Chrome Devtools and type
+
+```
+setTimeout(() => {
+  debugger;
+}, 5 * 1000);
+```
+
+After you hit `Enter` you now have 5 seconds to put the UI into the hover state you're interested in before the debugger suspends the application. Giving you plenty of time to poke and prod at the UI with the inspector until you resume the execution.
 
 ```ts
 test('complicate test', async ({page}, testInfo) => {
