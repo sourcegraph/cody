@@ -47,6 +47,7 @@ describe('createProvider', () => {
                 Observable.of(EMPTY_MODELS_DATA)
             )
         })
+
         it('throws an error message if the configuration completions provider is not supported', async () => {
             const createCall = createProviderForTest({
                 config: {
@@ -81,62 +82,26 @@ describe('createProvider', () => {
     })
 
     describe('legacy site-config Cody LLM configuration', () => {
-        const testCases: {
-            configOverwrites: CodyLLMSiteConfiguration
-            expected: { provider: string; legacyModel?: string } | null
-        }[] = [
+        const testCases: CodyLLMSiteConfiguration[] = [
             // sourcegraph
             {
-                configOverwrites: { provider: 'sourcegraph', completionModel: 'hello-world' },
-                expected: null,
+                provider: 'sourcegraph',
+                completionModel: 'hello-world',
             },
-
-            // open-ai
-            {
-                configOverwrites: { provider: 'openai', completionModel: 'gpt-35-turbo-test' },
-                expected: { provider: 'unstable-openai', legacyModel: 'gpt-35-turbo-test' },
-            },
-            {
-                configOverwrites: { provider: 'openai' },
-                expected: {
-                    provider: 'unstable-openai',
-                    legacyModel: 'model-will-be-picked-by-sourcegraph-backend-based-on-site-config',
-                },
-            },
-
-            // azure-openai
-            {
-                configOverwrites: { provider: 'azure-openai', completionModel: 'gpt-35-turbo-test' },
-                expected: { provider: 'unstable-openai', legacyModel: 'gpt-35-turbo-test' },
-            },
-            {
-                configOverwrites: { provider: 'azure-openai' },
-                expected: {
-                    provider: 'unstable-openai',
-                    legacyModel: 'model-will-be-picked-by-sourcegraph-backend-based-on-site-config',
-                },
-            },
-
             // unknown-provider
             {
-                configOverwrites: {
-                    provider: 'unknown-provider',
-                    completionModel: 'superdupercoder-7b',
-                },
-                expected: null,
+                provider: 'unknown-provider',
+                completionModel: 'superdupercoder-7b',
             },
-
             // provider not defined (backward compat)
             {
-                configOverwrites: { provider: undefined, completionModel: 'superdupercoder-7b' },
-                expected: null,
+                provider: undefined,
+                completionModel: 'superdupercoder-7b',
             },
         ]
 
-        for (const { configOverwrites, expected } of testCases) {
-            it(`returns ${JSON.stringify(expected)} when cody LLM config is ${JSON.stringify(
-                configOverwrites
-            )}`, async () => {
+        for (const configOverwrites of testCases) {
+            it(`throws when cody LLM config is ${JSON.stringify(configOverwrites)}`, async () => {
                 const createCall = createProviderForTest({
                     config: {
                         configuration: {
@@ -149,13 +114,8 @@ describe('createProvider', () => {
                         configOverwrites,
                     },
                 })
-                if (expected === null) {
-                    await expect(createCall).rejects.toThrow()
-                } else {
-                    const provider = await createCall
-                    expect(provider.id).toBe(expected.provider)
-                    expect(provider.legacyModel).toBe(expected.legacyModel)
-                }
+
+                await expect(createCall).rejects.toThrow()
             })
         }
     })

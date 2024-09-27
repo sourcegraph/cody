@@ -295,7 +295,7 @@ const serverSentModelsMock = {
             capabilities: ['chat', 'autocomplete'],
             category: 'power' as ModelTag.Balanced,
             status: 'stable',
-            tier: 'enterprise' as ModelTag.Enterprise,
+            tier: 'free' as ModelTag.Free,
             contextWindow: {
                 maxInputTokens: 8192,
                 maxOutputTokens: 4000,
