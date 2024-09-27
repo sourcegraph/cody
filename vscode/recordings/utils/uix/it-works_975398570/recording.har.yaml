@@ -1,5 +1,5 @@
 log:
-  _recordingName: show off v2 features
+  _recordingName: it works
   creator:
     comment: persister:fs
     name: Polly.JS
@@ -63,15 +63,13 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Fri, 27 Sep 2024 10:12:53 GMT
+            value: Fri, 27 Sep 2024 08:43:23 GMT
           - name: content-type
             value: application/json
           - name: content-length
             value: "112"
           - name: connection
             value: close
-          - name: retry-after
-            value: "579"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -89,13 +87,13 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1544
+        headersSize: 1437
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-27T10:12:52.849Z
-      time: 297
+      startedDateTime: 2024-09-27T08:43:23.140Z
+      time: 242
       timings:
         blocked: -1
         connect: -1
@@ -103,7 +101,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 297
+        wait: 242
     - _id: b73fd2a755e6422dc3e7196dc0a79adc
       _order: 0
       cache: {}
@@ -156,15 +154,13 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Fri, 27 Sep 2024 10:12:53 GMT
+            value: Fri, 27 Sep 2024 08:43:23 GMT
           - name: content-type
             value: application/json
           - name: content-length
             value: "61"
           - name: connection
             value: close
-          - name: retry-after
-            value: "579"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -182,13 +178,13 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1543
+        headersSize: 1436
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-27T10:12:53.154Z
-      time: 243
+      startedDateTime: 2024-09-27T08:43:23.411Z
+      time: 216
       timings:
         blocked: -1
         connect: -1
@@ -196,7 +192,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 243
+        wait: 216
     - _id: df9bbe44d51a47ebe6840a3b9fba1c29
       _order: 0
       cache: {}
@@ -249,15 +245,13 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Fri, 27 Sep 2024 10:12:52 GMT
+            value: Fri, 27 Sep 2024 08:43:23 GMT
           - name: content-type
             value: application/json
           - name: content-length
             value: "73"
           - name: connection
             value: close
-          - name: retry-after
-            value: "579"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -275,13 +269,13 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1543
+        headersSize: 1436
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-27T10:12:52.429Z
-      time: 382
+      startedDateTime: 2024-09-27T08:43:23.079Z
+      time: 241
       timings:
         blocked: -1
         connect: -1
@@ -289,6 +283,6 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 382
+        wait: 241
   pages: []
   version: "1.2"

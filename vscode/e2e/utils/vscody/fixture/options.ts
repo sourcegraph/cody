@@ -10,9 +10,12 @@ import { CODY_VSCODE_ROOT_DIR } from '../../helpers'
 
 const zAbsPath = () => zod.string().transform(p => path.resolve(CODY_VSCODE_ROOT_DIR, p))
 const workerOptionsSchema = zod.object({
-    repoRootDir: zAbsPath().describe(
-        'DEPRECATED: The .git root of this project. Might still get used for some path defaults so must be set'
-    ),
+    forbidNonPlayback: zod
+        .boolean()
+        .default(true)
+        .describe(
+            'Forbid the use of record/passthrough for MitM requests. This is useful in CI to prevent accidentally comitted config overrides'
+        ),
     vscodeCommitSha: zod.string().nullable().default(null),
     vscodeExtensionCacheDir: zAbsPath(),
     globalTmpDir: zAbsPath(),
@@ -23,31 +26,56 @@ const workerOptionsSchema = zod.object({
     vscodeServerPortRange: zod.tuple([zod.number(), zod.number()]).default([33100, 33200]),
     mitmServerPortRange: zod.tuple([zod.number(), zod.number()]).default([34100, 34200]),
     keepRuntimeDirs: zod.enum(['all', 'failed', 'none']).default('none'),
-    allowGlobalVSCodeModification: zod.boolean().default(false),
     waitForExtensionHostDebugger: zod.boolean().default(false),
 })
 
-const testOptionsSchema = zod.object({
+const onlyTestOptionsSchema = zod.object({
     vscodeVersion: zod.string().default('stable'),
     vscodeExtensions: zod.array(zod.string().toLowerCase()).default([]),
     symlinkExtensions: zod.array(zAbsPath()).default([]),
     templateWorkspaceDir: zAbsPath(),
-    recordingMode: zod.enum([
-        'passthrough',
-        'record',
-        'replay',
-        'stopped',
-    ] satisfies ArrayContainsAll<MODE>),
-    recordIfMissing: zod.boolean(),
+    recordingMode: zod
+        .enum(['passthrough', 'record', 'replay', 'stopped'] satisfies ArrayContainsAll<MODE>)
+        .default('replay'),
+    recordIfMissing: zod.boolean().default(false),
     keepUnusedRecordings: zod.boolean().default(true),
     recordingExpiryStrategy: zod
         .enum(['record', 'warn', 'error'] satisfies ArrayContainsAll<EXPIRY_STRATEGY>)
-        .default('record'),
+        .default('error'),
     recordingExpiresIn: zod.string().nullable().default(null),
 })
 
-export type TestOptions = zod.infer<typeof testOptionsSchema>
+const combinedOptionsSchema = zod
+    .intersection(workerOptionsSchema, onlyTestOptionsSchema)
+    .superRefine((opt, ctx) => {
+        if (opt.forbidNonPlayback) {
+            if (opt.recordIfMissing) {
+                ctx.addIssue({
+                    code: zod.ZodIssueCode.custom,
+                    message: 'recordIfMissing is not allowed when forbidNonPlayback is enabled',
+                    path: ['recordIfMissing'],
+                })
+            }
+            if (opt.recordingExpiryStrategy === 'record') {
+                ctx.addIssue({
+                    code: zod.ZodIssueCode.custom,
+                    message: `recordingExpiryStrategy can't be "record" when forbidNonPlayback is enabled`,
+                    path: ['recordingExpiryStrategy'],
+                })
+            }
+            if (opt.recordingMode !== 'replay') {
+                ctx.addIssue({
+                    code: zod.ZodIssueCode.custom,
+                    message: `recordingMode can't be anything other than "replay" when forbidNonPlayback is enabled`,
+                    path: ['recordingMode'],
+                })
+            }
+        }
+    })
+
+export type TestOptions = zod.infer<typeof onlyTestOptionsSchema>
 export type WorkerOptions = zod.infer<typeof workerOptionsSchema>
+type CombinedOptions = zod.infer<typeof combinedOptionsSchema>
 
 // We split out the options fixutre from the implementation fixture so that in
 // the implementaiton fixture we don't accidentally use any options directly,
@@ -59,11 +87,10 @@ export const optionsFixture: ReturnType<
     WorkerOptions & Pick<WorkerContext, 'validWorkerOptions'>
 >({
     ...schemaOptions(workerOptionsSchema, 'worker'),
-    ...schemaOptions(testOptionsSchema, 'test'),
+    ...schemaOptions(onlyTestOptionsSchema, 'test'),
     validWorkerOptions: [
         async (
             {
-                repoRootDir,
                 binaryTmpDir,
                 pollyRecordingDir,
                 globalTmpDir,
@@ -74,14 +101,13 @@ export const optionsFixture: ReturnType<
                 keepRuntimeDirs,
                 vscodeServerPortRange,
                 mitmServerPortRange,
-                allowGlobalVSCodeModification,
                 waitForExtensionHostDebugger,
+                forbidNonPlayback,
             },
             use
         ) => {
             const validOptionsWithDefaults = await workerOptionsSchema.safeParseAsync(
                 {
-                    repoRootDir,
                     binaryTmpDir,
                     pollyRecordingDir,
                     globalTmpDir,
@@ -92,8 +118,8 @@ export const optionsFixture: ReturnType<
                     keepRuntimeDirs,
                     vscodeServerPortRange,
                     mitmServerPortRange,
-                    allowGlobalVSCodeModification,
                     waitForExtensionHostDebugger,
+                    forbidNonPlayback,
                 } satisfies { [key in keyof WorkerOptions]-?: WorkerOptions[key] },
                 {}
             )
@@ -126,7 +152,7 @@ export const optionsFixture: ReturnType<
             },
             use
         ) => {
-            const validOptionsWithDefaults = await testOptionsSchema.safeParseAsync(
+            const validOptionsWithDefaults = await combinedOptionsSchema.safeParseAsync(
                 {
                     vscodeExtensions,
                     symlinkExtensions,
@@ -137,7 +163,8 @@ export const optionsFixture: ReturnType<
                     templateWorkspaceDir,
                     recordIfMissing,
                     recordingMode,
-                } satisfies { [key in keyof TestOptions]-?: TestOptions[key] },
+                    ...validWorkerOptions,
+                } satisfies { [key in keyof CombinedOptions]-?: CombinedOptions[key] },
                 {}
             )
             if (!validOptionsWithDefaults.success) {
@@ -149,7 +176,7 @@ export const optionsFixture: ReturnType<
                     )}`
                 )
             }
-            use({ ...validOptionsWithDefaults.data, ...validWorkerOptions })
+            use(validOptionsWithDefaults.data)
         },
         { scope: 'test', auto: true },
     ],

@@ -55,13 +55,15 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 23 Sep 2024 16:10:48 GMT
+            value: Fri, 27 Sep 2024 10:12:53 GMT
           - name: content-type
             value: text/plain; charset=utf-8
           - name: content-length
             value: "277"
           - name: connection
             value: close
+          - name: retry-after
+            value: "578"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -79,13 +81,13 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1306
+        headersSize: 1413
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-23T16:10:47.756Z
-      time: 359
+      startedDateTime: 2024-09-27T10:12:53.578Z
+      time: 318
       timings:
         blocked: -1
         connect: -1
@@ -93,7 +95,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 359
+        wait: 318
     - _id: 28c346c4c160958f92e8f989a1737e5e
       _order: 0
       cache: {}
@@ -149,25 +151,27 @@ log:
             value: null
         url: https://sourcegraph.com/.api/graphql?CurrentSiteCodyLlmConfiguration
       response:
-        bodySize: 293
+        bodySize: 282
         content:
           mimeType: application/json
-          size: 293
-          text: "{\"data\":{\"site\":{\"codyLLMConfiguration\":{\"chatModel\":\"anthropic\
-            /claude-3-sonnet-20240229\",\"chatModelMaxTokens\":12000,\"fastChat\
-            Model\":\"anthropic/claude-3-haiku-20240307\",\"fastChatModelMaxTok\
-            ens\":12000,\"completionModel\":\"fireworks/deepseek-coder-v2-lite-\
-            base\",\"completionModelMaxTokens\":9000}}}}"
+          size: 282
+          text: "{\"data\":{\"site\":{\"codyLLMConfiguration\":{\"chatModel\":\"sourcegra\
+            ph/claude-3.5-sonnet\",\"chatModelMaxTokens\":45000,\"fastChatModel\
+            \":\"sourcegraph/claude-3-haiku\",\"fastChatModelMaxTokens\":7000,\
+            \"completionModel\":\"sourcegraph/deepseek-coder-v2-lite-base\",\"c\
+            ompletionModelMaxTokens\":2048}}}}"
         cookies: []
         headers:
           - name: date
-            value: Mon, 23 Sep 2024 16:10:47 GMT
+            value: Fri, 27 Sep 2024 10:12:52 GMT
           - name: content-type
             value: application/json
           - name: content-length
-            value: "293"
+            value: "282"
           - name: connection
             value: close
+          - name: retry-after
+            value: "580"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -185,13 +189,13 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1437
+        headersSize: 1544
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-23T16:10:46.665Z
-      time: 366
+      startedDateTime: 2024-09-27T10:12:52.423Z
+      time: 248
       timings:
         blocked: -1
         connect: -1
@@ -199,7 +203,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 366
+        wait: 248
     - _id: a4d641ac3093a4efbffe59352b351757
       _order: 0
       cache: {}
@@ -250,22 +254,24 @@ log:
             value: null
         url: https://sourcegraph.com/.api/graphql?CurrentSiteCodyLlmConfiguration
       response:
-        bodySize: 75
+        bodySize: 76
         content:
           mimeType: application/json
-          size: 75
+          size: 76
           text: "{\"data\":{\"site\":{\"codyLLMConfiguration\":{\"smartContextWindow\":\"\
-            enabled\"}}}}"
+            disabled\"}}}}"
         cookies: []
         headers:
           - name: date
-            value: Mon, 23 Sep 2024 16:10:46 GMT
+            value: Fri, 27 Sep 2024 10:12:52 GMT
           - name: content-type
             value: application/json
           - name: content-length
-            value: "75"
+            value: "76"
           - name: connection
             value: close
+          - name: retry-after
+            value: "580"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -283,13 +289,13 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1436
+        headersSize: 1543
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-23T16:10:46.667Z
-      time: 279
+      startedDateTime: 2024-09-27T10:12:52.427Z
+      time: 257
       timings:
         blocked: -1
         connect: -1
@@ -297,7 +303,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 279
+        wait: 257
     - _id: 06568f66a76daea32430b82552305046
       _order: 0
       cache: {}
@@ -357,13 +363,15 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 23 Sep 2024 16:10:46 GMT
+            value: Fri, 27 Sep 2024 10:12:52 GMT
           - name: content-type
             value: application/json
           - name: content-length
             value: "69"
           - name: connection
             value: close
+          - name: retry-after
+            value: "579"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -381,13 +389,13 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1436
+        headersSize: 1543
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-23T16:10:46.666Z
-      time: 299
+      startedDateTime: 2024-09-27T10:12:52.424Z
+      time: 337
       timings:
         blocked: -1
         connect: -1
@@ -395,7 +403,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 299
+        wait: 337
     - _id: d1e9e9d8ae116eb7e71823b775d35828
       _order: 0
       cache: {}
@@ -470,13 +478,15 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 23 Sep 2024 16:10:46 GMT
+            value: Fri, 27 Sep 2024 10:12:52 GMT
           - name: content-type
             value: application/json
           - name: content-length
             value: "334"
           - name: connection
             value: close
+          - name: retry-after
+            value: "579"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -494,13 +504,13 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1437
+        headersSize: 1544
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-23T16:10:46.668Z
-      time: 290
+      startedDateTime: 2024-09-27T10:12:52.428Z
+      time: 334
       timings:
         blocked: -1
         connect: -1
@@ -508,7 +518,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 290
+        wait: 334
     - _id: 9fdf3418a505d251116e020fda591c55
       _order: 0
       cache: {}
@@ -574,13 +584,15 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 23 Sep 2024 16:10:47 GMT
+            value: Fri, 27 Sep 2024 10:12:53 GMT
           - name: content-type
             value: application/json
           - name: content-length
             value: "194"
           - name: connection
             value: close
+          - name: retry-after
+            value: "579"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -598,13 +610,13 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1437
+        headersSize: 1544
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-23T16:10:47.035Z
-      time: 345
+      startedDateTime: 2024-09-27T10:12:52.844Z
+      time: 402
       timings:
         blocked: -1
         connect: -1
@@ -612,7 +624,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 345
+        wait: 402
     - _id: 39fe3efa22c727dff9fd6b923a145b81
       _order: 0
       cache: {}
@@ -676,13 +688,15 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 23 Sep 2024 16:10:48 GMT
+            value: Fri, 27 Sep 2024 10:12:53 GMT
           - name: content-type
             value: application/json
           - name: content-length
             value: "112"
           - name: connection
             value: close
+          - name: retry-after
+            value: "579"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -700,13 +714,13 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1437
+        headersSize: 1544
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-23T16:10:48.170Z
-      time: 254
+      startedDateTime: 2024-09-27T10:12:52.896Z
+      time: 260
       timings:
         blocked: -1
         connect: -1
@@ -714,7 +728,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 254
+        wait: 260
     - _id: 34f0242529b88d6ed08202747e213ebd
       _order: 0
       cache: {}
@@ -772,13 +786,15 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 23 Sep 2024 16:10:48 GMT
+            value: Fri, 27 Sep 2024 10:12:53 GMT
           - name: content-type
             value: application/json
           - name: content-length
             value: "61"
           - name: connection
             value: close
+          - name: retry-after
+            value: "579"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -796,13 +812,13 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1436
+        headersSize: 1543
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-23T16:10:48.271Z
-      time: 253
+      startedDateTime: 2024-09-27T10:12:53.154Z
+      time: 248
       timings:
         blocked: -1
         connect: -1
@@ -810,7 +826,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 253
+        wait: 248
     - _id: a4f06f44ac6627e56ffe62ff40b4aaa9
       _order: 0
       cache: {}
@@ -863,18 +879,20 @@ log:
         content:
           mimeType: application/json
           size: 73
-          text: "{\"data\":{\"site\":{\"productVersion\":\"291878_2024-09-19_5.7-73aab569\
-            b19c\"}}}"
+          text: "{\"data\":{\"site\":{\"productVersion\":\"292441_2024-09-26_5.7-6dcef87b\
+            0f7c\"}}}"
         cookies: []
         headers:
           - name: date
-            value: Mon, 23 Sep 2024 16:10:46 GMT
+            value: Fri, 27 Sep 2024 10:12:52 GMT
           - name: content-type
             value: application/json
           - name: content-length
             value: "73"
           - name: connection
             value: close
+          - name: retry-after
+            value: "580"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -892,13 +910,13 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1436
+        headersSize: 1543
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-23T16:10:46.637Z
-      time: 282
+      startedDateTime: 2024-09-27T10:12:52.393Z
+      time: 275
       timings:
         blocked: -1
         connect: -1
@@ -906,6 +924,289 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 282
+        wait: 275
+    - _id: 5bf27035df04d471d88a6d6cb52a0dd6
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 0
+        cookies: []
+        headers:
+          - name: connection
+            value: close
+          - name: host
+            value: sourcegraph.com
+          - name: accept-encoding
+            value: identity
+          - name: user-agent
+            value: node-fetch/1.0 (+https://github.com/bitinn/node-fetch)
+          - name: accept
+            value: "*/*"
+          - name: authorization
+            value: token
+              REDACTED_fc324d3667e841181b0779375f26dedc911d26b303d23b29b1a2d7ee63dc77eb
+          - name: x-mitm-proxy-name
+            value: sourcegraph.dotcom
+          - name: x-mitm-auth-token-name
+            value: sourcegraph.dotcom
+        headersSize: 486
+        httpVersion: HTTP/1.1
+        method: GET
+        queryString: []
+        url: https://sourcegraph.com/.api/modelconfig/supported-models.json
+      response:
+        bodySize: 6079
+        content:
+          mimeType: text/plain; charset=utf-8
+          size: 6079
+          text: >
+            {
+                "schemaVersion": "1.0",
+                "revision": "0.0.0+dev",
+                "providers": [
+                    {
+                        "id": "anthropic",
+                        "displayName": "Anthropic"
+                    },
+                    {
+                        "id": "fireworks",
+                        "displayName": "Fireworks"
+                    },
+                    {
+                        "id": "google",
+                        "displayName": "Google"
+                    },
+                    {
+                        "id": "openai",
+                        "displayName": "OpenAI"
+                    },
+                    {
+                        "id": "mistral",
+                        "displayName": "Mistral"
+                    }
+                ],
+                "models": [
+                    {
+                        "modelRef": "anthropic::2023-06-01::claude-3.5-sonnet",
+                        "displayName": "Claude 3.5 Sonnet",
+                        "modelName": "claude-3-5-sonnet-20240620",
+                        "capabilities": [
+                            "edit",
+                            "chat"
+                        ],
+                        "category": "balanced",
+                        "status": "stable",
+                        "tier": "free",
+                        "contextWindow": {
+                            "maxInputTokens": 45000,
+                            "maxOutputTokens": 4000
+                        }
+                    },
+                    {
+                        "modelRef": "anthropic::2023-06-01::claude-3-opus",
+                        "displayName": "Claude 3 Opus",
+                        "modelName": "claude-3-opus-20240229",
+                        "capabilities": [
+                            "edit",
+                            "chat"
+                        ],
+                        "category": "other",
+                        "status": "stable",
+                        "tier": "pro",
+                        "contextWindow": {
+                            "maxInputTokens": 45000,
+                            "maxOutputTokens": 4000
+                        }
+                    },
+                    {
+                        "modelRef": "anthropic::2023-06-01::claude-3-haiku",
+                        "displayName": "Claude 3 Haiku",
+                        "modelName": "claude-3-haiku-20240307",
+                        "capabilities": [
+                            "edit",
+                            "chat"
+                        ],
+                        "category": "speed",
+                        "status": "stable",
+                        "tier": "free",
+                        "contextWindow": {
+                            "maxInputTokens": 7000,
+                            "maxOutputTokens": 4000
+                        }
+                    },
+                    {
+                        "modelRef": "fireworks::v1::starcoder",
+                        "displayName": "StarCoder",
+                        "modelName": "starcoder",
+                        "capabilities": [
+                            "autocomplete"
+                        ],
+                        "category": "speed",
+                        "status": "stable",
+                        "tier": "pro",
+                        "contextWindow": {
+                            "maxInputTokens": 2048,
+                            "maxOutputTokens": 256
+                        }
+                    },
+                    {
+                        "modelRef": "fireworks::v1::deepseek-coder-v2-lite-base",
+                        "displayName": "DeepSeek V2 Lite Base",
+                        "modelName": "accounts/sourcegraph/models/deepseek-coder-v2-lite-base",
+                        "capabilities": [
+                            "autocomplete"
+                        ],
+                        "category": "speed",
+                        "status": "stable",
+                        "tier": "pro",
+                        "contextWindow": {
+                            "maxInputTokens": 2048,
+                            "maxOutputTokens": 256
+                        }
+                    },
+                    {
+                        "modelRef": "google::v1::gemini-1.5-pro",
+                        "displayName": "Gemini 1.5 Pro",
+                        "modelName": "gemini-1.5-pro",
+                        "capabilities": [
+                            "edit",
+                            "chat"
+                        ],
+                        "category": "balanced",
+                        "status": "stable",
+                        "tier": "free",
+                        "contextWindow": {
+                            "maxInputTokens": 45000,
+                            "maxOutputTokens": 4000
+                        }
+                    },
+                    {
+                        "modelRef": "google::v1::gemini-1.5-flash",
+                        "displayName": "Gemini 1.5 Flash",
+                        "modelName": "gemini-1.5-flash",
+                        "capabilities": [
+                            "edit",
+                            "chat"
+                        ],
+                        "category": "speed",
+                        "status": "stable",
+                        "tier": "free",
+                        "contextWindow": {
+                            "maxInputTokens": 45000,
+                            "maxOutputTokens": 4000
+                        }
+                    },
+                    {
+                        "modelRef": "mistral::v1::mixtral-8x7b-instruct",
+                        "displayName": "Mixtral 8x7B",
+                        "modelName": "accounts/fireworks/models/mixtral-8x7b-instruct",
+                        "capabilities": [
+                            "chat"
+                        ],
+                        "category": "speed",
+                        "status": "stable",
+                        "tier": "free",
+                        "contextWindow": {
+                            "maxInputTokens": 7000,
+                            "maxOutputTokens": 4000
+                        }
+                    },
+                    {
+                        "modelRef": "openai::2024-02-01::gpt-4o",
+                        "displayName": "GPT-4o",
+                        "modelName": "gpt-4o",
+                        "capabilities": [
+                            "edit",
+                            "chat"
+                        ],
+                        "category": "balanced",
+                        "status": "stable",
+                        "tier": "pro",
+                        "contextWindow": {
+                            "maxInputTokens": 45000,
+                            "maxOutputTokens": 4000
+                        }
+                    },
+                    {
+                        "modelRef": "openai::2024-02-01::cody-chat-preview-001",
+                        "displayName": "OpenAI o1-preview",
+                        "modelName": "cody-chat-preview-001",
+                        "capabilities": [
+                            "chat"
+                        ],
+                        "category": "accuracy",
+                        "status": "waitlist",
+                        "tier": "pro",
+                        "contextWindow": {
+                            "maxInputTokens": 45000,
+                            "maxOutputTokens": 4000
+                        }
+                    },
+                    {
+                        "modelRef": "openai::2024-02-01::cody-chat-preview-002",
+                        "displayName": "OpenAI o1-mini",
+                        "modelName": "cody-chat-preview-002",
+                        "capabilities": [
+                            "chat"
+                        ],
+                        "category": "accuracy",
+                        "status": "waitlist",
+                        "tier": "pro",
+                        "contextWindow": {
+                            "maxInputTokens": 45000,
+                            "maxOutputTokens": 4000
+                        }
+                    }
+                ],
+                "defaultModels": {
+                    "chat": "anthropic::2023-06-01::claude-3.5-sonnet",
+                    "fastChat": "anthropic::2023-06-01::claude-3-haiku",
+                    "codeCompletion": "fireworks::v1::deepseek-coder-v2-lite-base"
+                }
+            }
+        cookies: []
+        headers:
+          - name: date
+            value: Fri, 27 Sep 2024 10:18:02 GMT
+          - name: content-type
+            value: text/plain; charset=utf-8
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: close
+          - name: retry-after
+            value: "291"
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache, max-age=0
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1420
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-09-27T10:18:02.423Z
+      time: 607
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 607
   pages: []
   version: "1.2"
