@@ -368,9 +368,9 @@ describe('syncModels', () => {
                 primaryModels: [createModelFromServerModel(quxModel)],
                 preferences: {
                     defaults: {
-                        autocomplete: 'a',
-                        chat: 'a',
-                        edit: 'a',
+                        autocomplete: 'qux::a::a',
+                        chat: 'qux::a::a',
+                        edit: 'qux::a::a',
                     },
                     selected: {},
                 },
@@ -433,9 +433,9 @@ describe('syncModels', () => {
                     primaryModels: [createModelFromServerModel(zzzModel)],
                     preferences: {
                         defaults: {
-                            autocomplete: 'a',
-                            chat: 'a',
-                            edit: 'a',
+                            autocomplete: 'zzz::a::a',
+                            chat: 'zzz::a::a',
+                            edit: 'zzz::a::a',
                         },
                         selected: {},
                     },
