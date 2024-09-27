@@ -67,7 +67,7 @@ describe('Custom Commands', () => {
         expect(result.type).toBe('chat')
         const lastMessage = await client.firstNonEmptyTranscript(result.chatResult as string)
         expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchInlineSnapshot(
-            `"No"`,
+            `"no"`,
             explainPollyError
         )
     }, 30_000)

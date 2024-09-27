@@ -764,373 +764,6 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: b64ebdecc67b8c05919229021ded063d
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 2262
-        cookies: []
-        headers:
-          - name: content-type
-            value: application/json
-          - name: accept-encoding
-            value: gzip;q=0
-          - name: authorization
-            value: token
-              REDACTED_3dd704711f82a44ff6aba261b53b61a03fb8edba658774639148630d838c2d1d
-          - name: user-agent
-            value: defaultClient / v1
-          - name: traceparent
-            value: 00-a81253fcef4d64be3ea59ef39b426095-4f8222639641e489-01
-          - name: connection
-            value: keep-alive
-          - name: host
-            value: sourcegraph.com
-        headersSize: 415
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json
-          params: []
-          textJSON:
-            maxTokensToSample: 4000
-            messages:
-              - speaker: system
-                text: >-
-                  You are Cody, an AI coding assistant from Sourcegraph.If your
-                  answer contains fenced code blocks in Markdown, include the
-                  relevant full file path in the code block tag using this
-                  structure: ```$LANGUAGE:$FILEPATH```
-
-                  For executable terminal commands: enclose each command in individual "bash" language code block without comments and new lines inside.
-              - speaker: human
-                text: >-
-                  Codebase context from file src/squirrel.ts:
-
-                  ```typescript:src/squirrel.ts
-
-                  /**
-                   * Squirrel is an interface that mocks something completely unrelated to squirrels.
-                   * It is related to the implementation of precise code navigation in Sourcegraph.
-                   */
-                  export interface Squirrel {}
-
-                  ```
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: |-
-                  Codebase context from file src/Heading.tsx:
-                  ```typescript:src/Heading.tsx
-                  import React = require("react");
-
-                  interface HeadingProps {
-                      text: string;
-                      level?: number;
-                  }
-
-                  /* CURSOR */
-                  ```
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: |-
-                  Codebase context from file src/ChatColumn.tsx:
-                  ```typescript:src/ChatColumn.tsx
-                  import { useEffect } from "react";
-                  import React = require("react");
-
-                  /* SELECTION_START */ export default function ChatColumn({
-                  	messages,
-                  	setChatID,
-                  	isLoading,
-                  }) {
-                  	/* SELECTION_END */
-                  	useEffect(() => {
-                  		if (!isLoading) {
-                  			setChatID(messages[0].chatID);
-                  		}
-                  	}, [messages]);
-                  	return (
-                  		<>
-                  			<h1>Messages</h1>
-                  			<ul>
-                  				{messages.map((message) => (
-                  					<li>{message.text}</li>```
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: |-
-                  Codebase context from file src/animal.ts:
-                  ```typescript:src/animal.ts
-                  /* SELECTION_START */
-                  export interface Animal {
-                      name: string
-                      makeAnimalSound(): string
-                      isMammal: boolean
-                  }
-                  /* SELECTION_END */
-                  ```
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: >-
-                  You have access to the provided codebase context.
-
-
-                  Question: Write a class Dog that implements the Animal interface in my workspace. Show the code only, no explanation needed.
-            model: anthropic::2023-06-01::claude-3.5-sonnet
-            temperature: 0
-            topK: -1
-            topP: -1
-        queryString:
-          - name: api-version
-            value: "2"
-          - name: client-name
-            value: defaultclient
-          - name: client-version
-            value: v1
-        url: https://sourcegraph.com/.api/completions/stream?api-version=2&client-name=defaultclient&client-version=v1
-      response:
-        bodySize: 1419
-        content:
-          mimeType: text/event-stream
-          size: 1419
-          text: >+
-            event: completion
-
-            data: {"deltaText":"Certainly! Here's the implementation of the Dog class that implements the Animal interface:\n\n```typescript:src/dog.ts\nexport class Dog implements Animal {\n    name: string;\n    isMammal: boolean = true;\n\n    constructor(name: string) {\n        this.name = name;\n    }\n\n    makeAnimalSound(): string {\n        return \"Woof!\";\n    }\n}\n```\n\nThis code defines the Dog class that fully implements the Animal interface as requested.","stopReason":"end_turn"}
-
-
-            event: done
-
-            data: {}
-
-        cookies: []
-        headers:
-          - name: date
-            value: Fri, 27 Sep 2024 17:28:55 GMT
-          - name: content-type
-            value: text/event-stream
-          - name: transfer-encoding
-            value: chunked
-          - name: connection
-            value: keep-alive
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache
-          - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
-              X-Requested-With,Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1299
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2024-09-27T17:28:52.958Z
-      time: 0
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 0
-    - _id: a845cd57756a39e9099ad5ee1f50d064
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 2196
-        cookies: []
-        headers:
-          - name: content-type
-            value: application/json
-          - name: accept-encoding
-            value: gzip;q=0
-          - name: authorization
-            value: token
-              REDACTED_3dd704711f82a44ff6aba261b53b61a03fb8edba658774639148630d838c2d1d
-          - name: user-agent
-            value: defaultClient / v1
-          - name: traceparent
-            value: 00-85c061d6508414849b9ef69d656d8f5c-6023a90a414c3abc-01
-          - name: connection
-            value: keep-alive
-          - name: host
-            value: sourcegraph.com
-        headersSize: 415
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json
-          params: []
-          textJSON:
-            maxTokensToSample: 4000
-            messages:
-              - speaker: system
-                text: >-
-                  You are Cody, an AI coding assistant from Sourcegraph.If your
-                  answer contains fenced code blocks in Markdown, include the
-                  relevant full file path in the code block tag using this
-                  structure: ```$LANGUAGE:$FILEPATH```
-
-                  For executable terminal commands: enclose each command in individual "bash" language code block without comments and new lines inside.
-              - speaker: human
-                text: >-
-                  Codebase context from file src/squirrel.ts:
-
-                  ```typescript:src/squirrel.ts
-
-                  /**
-                   * Squirrel is an interface that mocks something completely unrelated to squirrels.
-                   * It is related to the implementation of precise code navigation in Sourcegraph.
-                   */
-                  export interface Squirrel {}
-
-                  ```
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: |-
-                  Codebase context from file src/Heading.tsx:
-                  ```typescript:src/Heading.tsx
-                  import React = require("react");
-
-                  interface HeadingProps {
-                      text: string;
-                      level?: number;
-                  }
-
-                  /* CURSOR */
-                  ```
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: |-
-                  Codebase context from file src/ChatColumn.tsx:
-                  ```typescript:src/ChatColumn.tsx
-                  import { useEffect } from "react";
-                  import React = require("react");
-
-                  /* SELECTION_START */ export default function ChatColumn({
-                  	messages,
-                  	setChatID,
-                  	isLoading,
-                  }) {
-                  	/* SELECTION_END */
-                  	useEffect(() => {
-                  		if (!isLoading) {
-                  			setChatID(messages[0].chatID);
-                  		}
-                  	}, [messages]);
-                  	return (
-                  		<>
-                  			<h1>Messages</h1>
-                  			<ul>
-                  				{messages.map((message) => (
-                  					<li>{message.text}</li>```
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: |-
-                  Codebase context from file src/animal.ts:
-                  ```typescript:src/animal.ts
-                  /* SELECTION_START */
-                  export interface Animal {
-                      name: string
-                      makeAnimalSound(): string
-                      isMammal: boolean
-                  }
-                  /* SELECTION_END */
-                  ```
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: |-
-                  You have access to the provided codebase context.
-
-                  Question: What is Squirrel? Show me concrete code examples
-            model: anthropic::2023-06-01::claude-3.5-sonnet
-            temperature: 0
-            topK: -1
-            topP: -1
-        queryString:
-          - name: api-version
-            value: "2"
-          - name: client-name
-            value: defaultclient
-          - name: client-version
-            value: v1
-        url: https://sourcegraph.com/.api/completions/stream?api-version=2&client-name=defaultclient&client-version=v1
-      response:
-        bodySize: 8582
-        content:
-          mimeType: text/event-stream
-          size: 8582
-          text: >+
-            event: completion
-
-            data: {"deltaText":"Certainly! I'll explain what Squirrel is based on the provided codebase context and show you concrete code examples.\n\nSquirrel is an interface defined in the codebase, specifically in the file `src/squirrel.ts`. Despite its name, it's not actually related to the animal. Instead, it's used for implementing precise code navigation in Sourcegraph. Here's the concrete code example:\n\n```typescript:src/squirrel.ts\nexport interface Squirrel {}\n```\n\nAs you can see, the Squirrel interface is currently empty. It's likely a placeholder or a base interface that will be extended or implemented later for precise code navigation functionality.\n\nWhile we don't have direct implementations of Squirrel in the provided context, we can show how it might be used in a React component. For example, we could modify the ChatColumn component to potentially use a Squirrel instance:\n\n```typescript:src/ChatColumn.tsx\nimport React = require(\"react\");\nimport { useEffect } from \"react\";\nimport { Squirrel } from \"./squirrel\";\n\nexport default function ChatColumn({\n    messages,\n    setChatID,\n    isLoading,\n    squirrel,\n}: {\n    messages: any[];\n    setChatID: (id: string) => void;\n    isLoading: boolean;\n    squirrel: Squirrel;\n}) {\n    useEffect(() => {\n        if (!isLoading) {\n            setChatID(messages[0].chatID);\n        }\n    }, [messages]);\n\n    return (\n        <>\n            <h1>Messages</h1>\n            <ul>\n                {messages.map((message) => (\n                    <li>{message.text}</li>\n                ))}\n            </ul>\n        </>\n    );\n}\n```\n\nIn this example, we've added a `squirrel` prop of type `Squirrel` to the ChatColumn component. This shows how the Squirrel interface could be integrated into existing components for precise code navigation purposes.\n\nRemember, the actual implementation and usage of Squirrel would depend on Sourcegraph's specific requirements for precise code navigation, which are not fully detailed in the provided context.","stopReason":"end_turn"}
-
-
-            event: done
-
-            data: {}
-
-        cookies: []
-        headers:
-          - name: date
-            value: Fri, 27 Sep 2024 17:28:57 GMT
-          - name: content-type
-            value: text/event-stream
-          - name: transfer-encoding
-            value: chunked
-          - name: connection
-            value: keep-alive
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache
-          - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
-              X-Requested-With,Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1299
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2024-09-27T17:28:55.264Z
-      time: 0
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 0
     - _id: 6324ccf2978268f71e5df6444d03b82c
       _order: 0
       cache: {}
@@ -1421,6 +1054,373 @@ log:
         status: 200
         statusText: OK
       startedDateTime: 2024-09-27T17:29:20.891Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: 3907737ba94d5387d8e98fe197f06f1d
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 2222
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_3dd704711f82a44ff6aba261b53b61a03fb8edba658774639148630d838c2d1d
+          - name: user-agent
+            value: defaultClient / v1
+          - name: traceparent
+            value: 00-f9953807d0314aaab8ff4322197cdae3-bcab91d691f7a38e-01
+          - name: connection
+            value: keep-alive
+          - name: host
+            value: sourcegraph.com
+        headersSize: 415
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 4000
+            messages:
+              - speaker: system
+                text: >-
+                  You are Cody, an AI coding assistant from Sourcegraph.If your
+                  answer contains fenced code blocks in Markdown, include the
+                  relevant full file path in the code block tag using this
+                  structure: ```$LANGUAGE:$FILEPATH```
+
+                  For executable terminal commands: enclose each command in individual "bash" language code block without comments and new lines inside.
+              - speaker: human
+                text: >-
+                  Codebase context from file src/squirrel.ts:
+
+                  ```typescript:src/squirrel.ts
+
+                  /**
+                   * Squirrel is an interface that mocks something completely unrelated to squirrels.
+                   * It is related to the implementation of precise code navigation in Sourcegraph.
+                   */
+                  export interface Squirrel {}
+
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: |-
+                  Codebase context from file src/Heading.tsx:
+                  ```typescript:src/Heading.tsx
+                  import React = require("react");
+
+                  interface HeadingProps {
+                      text: string;
+                      level?: number;
+                  }
+
+                  /* CURSOR */
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: |-
+                  Codebase context from file src/ChatColumn.tsx:
+                  ```typescript:src/ChatColumn.tsx
+                  import { useEffect } from "react";
+                  import React = require("react");
+
+                  /* SELECTION_START */ export default function ChatColumn({
+                  	messages,
+                  	setChatID,
+                  	isLoading,
+                  }) {
+                  	/* SELECTION_END */
+                  	useEffect(() => {
+                  		if (!isLoading) {
+                  			setChatID(messages[0].chatID);
+                  		}
+                  	}, [messages]);
+                  	return (
+                  		<>
+                  			<h1>Messages</h1>
+                  			<ul>
+                  				{messages.map((message) => (
+                  					<li>{message.text}</li>```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: |-
+                  Codebase context from file src/animal.ts:
+                  ```typescript:src/animal.ts
+                  /* SELECTION_START */
+                  export interface Animal {
+                      name: string
+                      makeAnimalSound(): string
+                      isMammal: boolean
+                  }
+                  /* SELECTION_END */
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >-
+                  You have access to the provided codebase context.
+
+
+                  Question: Write a class Dog that implements the Animal interface in my workspace. Show the code only, no explanation needed.
+            model: anthropic::2023-06-01::claude-3.5-sonnet
+            temperature: 0
+            topK: -1
+            topP: -1
+        queryString:
+          - name: api-version
+            value: "2"
+          - name: client-name
+            value: defaultclient
+          - name: client-version
+            value: v1
+        url: https://sourcegraph.com/.api/completions/stream?api-version=2&client-name=defaultclient&client-version=v1
+      response:
+        bodySize: 1297
+        content:
+          mimeType: text/event-stream
+          size: 1297
+          text: >+
+            event: completion
+
+            data: {"deltaText":"Here's the implementation of the Dog class that implements the Animal interface:\n\n```typescript:src/dog.ts\nexport class Dog implements Animal {\n    name: string;\n    isMammal: boolean = true;\n\n    constructor(name: string) {\n        this.name = name;\n    }\n\n    makeAnimalSound(): string {\n        return \"Woof!\";\n    }\n}\n```","stopReason":"end_turn"}
+
+
+            event: done
+
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Fri, 27 Sep 2024 21:59:58 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1299
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-09-27T21:59:56.684Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: 2080b59219ba40fba05a47b2504f3d98
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 2156
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_3dd704711f82a44ff6aba261b53b61a03fb8edba658774639148630d838c2d1d
+          - name: user-agent
+            value: defaultClient / v1
+          - name: traceparent
+            value: 00-882b5a0781664cefc880338325b166d8-68f830ae4dad173b-01
+          - name: connection
+            value: keep-alive
+          - name: host
+            value: sourcegraph.com
+        headersSize: 415
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 4000
+            messages:
+              - speaker: system
+                text: >-
+                  You are Cody, an AI coding assistant from Sourcegraph.If your
+                  answer contains fenced code blocks in Markdown, include the
+                  relevant full file path in the code block tag using this
+                  structure: ```$LANGUAGE:$FILEPATH```
+
+                  For executable terminal commands: enclose each command in individual "bash" language code block without comments and new lines inside.
+              - speaker: human
+                text: >-
+                  Codebase context from file src/squirrel.ts:
+
+                  ```typescript:src/squirrel.ts
+
+                  /**
+                   * Squirrel is an interface that mocks something completely unrelated to squirrels.
+                   * It is related to the implementation of precise code navigation in Sourcegraph.
+                   */
+                  export interface Squirrel {}
+
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: |-
+                  Codebase context from file src/Heading.tsx:
+                  ```typescript:src/Heading.tsx
+                  import React = require("react");
+
+                  interface HeadingProps {
+                      text: string;
+                      level?: number;
+                  }
+
+                  /* CURSOR */
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: |-
+                  Codebase context from file src/ChatColumn.tsx:
+                  ```typescript:src/ChatColumn.tsx
+                  import { useEffect } from "react";
+                  import React = require("react");
+
+                  /* SELECTION_START */ export default function ChatColumn({
+                  	messages,
+                  	setChatID,
+                  	isLoading,
+                  }) {
+                  	/* SELECTION_END */
+                  	useEffect(() => {
+                  		if (!isLoading) {
+                  			setChatID(messages[0].chatID);
+                  		}
+                  	}, [messages]);
+                  	return (
+                  		<>
+                  			<h1>Messages</h1>
+                  			<ul>
+                  				{messages.map((message) => (
+                  					<li>{message.text}</li>```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: |-
+                  Codebase context from file src/animal.ts:
+                  ```typescript:src/animal.ts
+                  /* SELECTION_START */
+                  export interface Animal {
+                      name: string
+                      makeAnimalSound(): string
+                      isMammal: boolean
+                  }
+                  /* SELECTION_END */
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: |-
+                  You have access to the provided codebase context.
+
+                  Question: What is Squirrel? Show me concrete code examples
+            model: anthropic::2023-06-01::claude-3.5-sonnet
+            temperature: 0
+            topK: -1
+            topP: -1
+        queryString:
+          - name: api-version
+            value: "2"
+          - name: client-name
+            value: defaultclient
+          - name: client-version
+            value: v1
+        url: https://sourcegraph.com/.api/completions/stream?api-version=2&client-name=defaultclient&client-version=v1
+      response:
+        bodySize: 6869
+        content:
+          mimeType: text/event-stream
+          size: 6869
+          text: >+
+            event: completion
+
+            data: {"deltaText":"Based on the provided codebase context, the Squirrel is actually an interface defined in the `src/squirrel.ts` file. However, it's important to note that this interface is not actually related to real squirrels. Let me explain and show you the concrete code example:\n\n```typescript:src/squirrel.ts\n/**\n * Squirrel is an interface that mocks something completely unrelated to squirrels.\n * It is related to the implementation of precise code navigation in Sourcegraph.\n */\nexport interface Squirrel {}\n```\n\nKey points about the Squirrel interface:\n\n1. It's an empty interface, which means it doesn't define any properties or methods.\n2. The comment above the interface explicitly states that it's not related to actual squirrels.\n3. Its purpose is related to the implementation of precise code navigation in Sourcegraph.\n\nSince the interface is empty, there aren't any concrete implementations or usage examples in the provided codebase context. The interface might be used as a placeholder or a marker for some internal functionality in Sourcegraph's code navigation system.\n\nTo contrast this with a more concrete example of an interface from the provided codebase, we can look at the Animal interface:\n\n```typescript:src/animal.ts\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string\n    isMammal: boolean\n}\n```\n\nThis Animal interface is more typical, defining properties and methods that implementations would need to provide. However, we don't have any concrete implementations of either Squirrel or Animal in the given codebase context.","stopReason":"end_turn"}
+
+
+            event: done
+
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Fri, 27 Sep 2024 22:00:00 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1299
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-09-27T21:59:58.764Z
       time: 0
       timings:
         blocked: -1
@@ -2803,6 +2803,1812 @@ log:
         status: 200
         statusText: OK
       startedDateTime: 2024-09-27T17:29:13.252Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: 5d9c27748f4c0d7c96dfc6d04be65461
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 1674
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_3dd704711f82a44ff6aba261b53b61a03fb8edba658774639148630d838c2d1d
+          - name: user-agent
+            value: defaultClient / v1
+          - name: traceparent
+            value: 00-739578c7906e9e5e43f46d407d25e35d-dde7451a9361f96f-01
+          - name: connection
+            value: keep-alive
+          - name: host
+            value: sourcegraph.com
+        headersSize: 401
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 4000
+            messages:
+              - speaker: human
+                text: >-
+                  You are Cody, an AI coding assistant from Sourcegraph.If your
+                  answer contains fenced code blocks in Markdown, include the
+                  relevant full file path in the code block tag using this
+                  structure: ```$LANGUAGE:$FILEPATH```
+
+                  For executable terminal commands: enclose each command in individual "bash" language code block without comments and new lines inside.
+              - speaker: assistant
+                text: I am Cody, an AI coding assistant from Sourcegraph.
+              - speaker: human
+                text: >-
+                  Analyze the provided context and think step-by-step about
+                  whether you can answer the question using the available
+                  information.
+
+
+                  If you need more information to answer the question, use the following action tags:
+
+
+                  1. For additional context from the codebase:
+                     <CODYTOOLSEARCH><query>$SEARCH_QUERY</query></CODYTOOLSEARCH>
+
+                  2. To see the output of shell commands:
+                     <CODYTOOLCLI><cmd>$SHELL_COMMAND</cmd></CODYTOOLCLI>
+
+                  3. To retrieve full content from a file:
+                     <CODYTOOLFILE><file>$FILEPATH</file></CODYTOOLFILE>
+
+                  Example:
+
+                  To get details for GitHub issue #1234, use:
+
+                  <CODYTOOLCLI><cmd>gh issue view 1234</cmd></CODYTOOLCLI>
+
+
+                  Notes:
+
+                  - Only use the above action tags when you need additional information.
+
+                  - You can request multiple pieces of information in a single response.
+
+                  - When replying to a question with a shell command, enclose the command in a Markdown code block.
+
+                  - If you don't require additional context to answer the question, reply with a single word: "Reviewed".
+
+
+                  Question: what color is the sky?
+              - speaker: assistant
+            model: google::v1::gemini-1.5-flash
+            temperature: 0
+            topK: -1
+            topP: -1
+        queryString:
+          - name: client-name
+            value: defaultclient
+          - name: client-version
+            value: v1
+        url: https://sourcegraph.com/.api/completions/stream?client-name=defaultclient&client-version=v1
+      response:
+        bodySize: 96
+        content:
+          mimeType: text/event-stream
+          size: 96
+          text: |+
+            event: completion
+            data: {"completion":"Reviewed \n","stopReason":"STOP"}
+
+            event: done
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Fri, 27 Sep 2024 22:00:05 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1299
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-09-27T22:00:04.564Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: 211d4b050570d904e1a17e759a34d873
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 1751
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_3dd704711f82a44ff6aba261b53b61a03fb8edba658774639148630d838c2d1d
+          - name: user-agent
+            value: defaultClient / v1
+          - name: traceparent
+            value: 00-aea21a37322aad424ef6cfa4197484cb-ee4ac283bb2e6e6d-01
+          - name: connection
+            value: keep-alive
+          - name: host
+            value: sourcegraph.com
+        headersSize: 401
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 4000
+            messages:
+              - speaker: human
+                text: >-
+                  You are Cody, an AI coding assistant from Sourcegraph.If your
+                  answer contains fenced code blocks in Markdown, include the
+                  relevant full file path in the code block tag using this
+                  structure: ```$LANGUAGE:$FILEPATH```
+
+                  For executable terminal commands: enclose each command in individual "bash" language code block without comments and new lines inside.
+              - speaker: assistant
+                text: I am Cody, an AI coding assistant from Sourcegraph.
+              - speaker: human
+                text: >-
+                  Analyze the provided context and think step-by-step about
+                  whether you can answer the question using the available
+                  information.
+
+
+                  If you need more information to answer the question, use the following action tags:
+
+
+                  1. For additional context from the codebase:
+                     <CODYTOOLSEARCH><query>$SEARCH_QUERY</query></CODYTOOLSEARCH>
+
+                  2. To see the output of shell commands:
+                     <CODYTOOLCLI><cmd>$SHELL_COMMAND</cmd></CODYTOOLCLI>
+
+                  3. To retrieve full content from a file:
+                     <CODYTOOLFILE><file>$FILEPATH</file></CODYTOOLFILE>
+
+                  Example:
+
+                  To get details for GitHub issue #1234, use:
+
+                  <CODYTOOLCLI><cmd>gh issue view 1234</cmd></CODYTOOLCLI>
+
+
+                  Notes:
+
+                  - Only use the above action tags when you need additional information.
+
+                  - You can request multiple pieces of information in a single response.
+
+                  - When replying to a question with a shell command, enclose the command in a Markdown code block.
+
+                  - If you don't require additional context to answer the question, reply with a single word: "Reviewed".
+
+
+                  Question: The magic word is "kramer". If I say the magic word, respond with a single word: "quone".
+              - speaker: assistant
+            model: mistral::v1::mixtral-8x7b-instruct
+            temperature: 0
+            topK: -1
+            topP: -1
+        queryString:
+          - name: client-name
+            value: defaultclient
+          - name: client-version
+            value: v1
+        url: https://sourcegraph.com/.api/completions/stream?client-name=defaultclient&client-version=v1
+      response:
+        bodySize: 138
+        content:
+          mimeType: text/event-stream
+          size: 138
+          text: |+
+            event: completion
+            data: {"completion":"Quone","stopReason":"stop"}
+
+            event: done
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Fri, 27 Sep 2024 22:00:06 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1299
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-09-27T22:00:05.310Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: 40109d177c982cc796b5de41a3381cac
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 1827
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_3dd704711f82a44ff6aba261b53b61a03fb8edba658774639148630d838c2d1d
+          - name: user-agent
+            value: defaultClient / v1
+          - name: traceparent
+            value: 00-50df573fad1f27c998913aca83f35f6c-1f492c4c2f8ad7c6-01
+          - name: connection
+            value: keep-alive
+          - name: host
+            value: sourcegraph.com
+        headersSize: 401
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 4000
+            messages:
+              - speaker: human
+                text: >-
+                  You are Cody, an AI coding assistant from Sourcegraph.If your
+                  answer contains fenced code blocks in Markdown, include the
+                  relevant full file path in the code block tag using this
+                  structure: ```$LANGUAGE:$FILEPATH```
+
+                  For executable terminal commands: enclose each command in individual "bash" language code block without comments and new lines inside.
+              - speaker: assistant
+                text: I am Cody, an AI coding assistant from Sourcegraph.
+              - speaker: human
+                text: "The magic word is \"kramer\". If I say the magic word, respond with a
+                  single word: \"quone\"."
+              - speaker: assistant
+                text: Quone.
+              - speaker: human
+                text: >-
+                  Analyze the provided context and think step-by-step about
+                  whether you can answer the question using the available
+                  information.
+
+
+                  If you need more information to answer the question, use the following action tags:
+
+
+                  1. For additional context from the codebase:
+                     <CODYTOOLSEARCH><query>$SEARCH_QUERY</query></CODYTOOLSEARCH>
+
+                  2. To see the output of shell commands:
+                     <CODYTOOLCLI><cmd>$SHELL_COMMAND</cmd></CODYTOOLCLI>
+
+                  3. To retrieve full content from a file:
+                     <CODYTOOLFILE><file>$FILEPATH</file></CODYTOOLFILE>
+
+                  Example:
+
+                  To get details for GitHub issue #1234, use:
+
+                  <CODYTOOLCLI><cmd>gh issue view 1234</cmd></CODYTOOLCLI>
+
+
+                  Notes:
+
+                  - Only use the above action tags when you need additional information.
+
+                  - You can request multiple pieces of information in a single response.
+
+                  - When replying to a question with a shell command, enclose the command in a Markdown code block.
+
+                  - If you don't require additional context to answer the question, reply with a single word: "Reviewed".
+
+
+                  Question: kramer
+              - speaker: assistant
+            model: mistral::v1::mixtral-8x7b-instruct
+            temperature: 0
+            topK: -1
+            topP: -1
+        queryString:
+          - name: client-name
+            value: defaultclient
+          - name: client-version
+            value: v1
+        url: https://sourcegraph.com/.api/completions/stream?client-name=defaultclient&client-version=v1
+      response:
+        bodySize: 197
+        content:
+          mimeType: text/event-stream
+          size: 197
+          text: |+
+            event: completion
+            data: {"completion":"Reviewed.","stopReason":"stop"}
+
+            event: done
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Fri, 27 Sep 2024 22:00:06 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1299
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-09-27T22:00:05.997Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: 9a413970dd14b1d46069d5bbdbd644af
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 1664
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_3dd704711f82a44ff6aba261b53b61a03fb8edba658774639148630d838c2d1d
+          - name: user-agent
+            value: defaultClient / v1
+          - name: traceparent
+            value: 00-2384d78748fed85ea1c8859553550b74-04116e73d7a1210b-01
+          - name: connection
+            value: keep-alive
+          - name: host
+            value: sourcegraph.com
+        headersSize: 401
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 4000
+            messages:
+              - speaker: human
+                text: >-
+                  You are Cody, an AI coding assistant from Sourcegraph.If your
+                  answer contains fenced code blocks in Markdown, include the
+                  relevant full file path in the code block tag using this
+                  structure: ```$LANGUAGE:$FILEPATH```
+
+                  For executable terminal commands: enclose each command in individual "bash" language code block without comments and new lines inside.
+              - speaker: assistant
+                text: I am Cody, an AI coding assistant from Sourcegraph.
+              - speaker: human
+                text: >-
+                  Analyze the provided context and think step-by-step about
+                  whether you can answer the question using the available
+                  information.
+
+
+                  If you need more information to answer the question, use the following action tags:
+
+
+                  1. For additional context from the codebase:
+                     <CODYTOOLSEARCH><query>$SEARCH_QUERY</query></CODYTOOLSEARCH>
+
+                  2. To see the output of shell commands:
+                     <CODYTOOLCLI><cmd>$SHELL_COMMAND</cmd></CODYTOOLCLI>
+
+                  3. To retrieve full content from a file:
+                     <CODYTOOLFILE><file>$FILEPATH</file></CODYTOOLFILE>
+
+                  Example:
+
+                  To get details for GitHub issue #1234, use:
+
+                  <CODYTOOLCLI><cmd>gh issue view 1234</cmd></CODYTOOLCLI>
+
+
+                  Notes:
+
+                  - Only use the above action tags when you need additional information.
+
+                  - You can request multiple pieces of information in a single response.
+
+                  - When replying to a question with a shell command, enclose the command in a Markdown code block.
+
+                  - If you don't require additional context to answer the question, reply with a single word: "Reviewed".
+
+
+                  Question: kramer
+              - speaker: assistant
+            model: mistral::v1::mixtral-8x7b-instruct
+            temperature: 0
+            topK: -1
+            topP: -1
+        queryString:
+          - name: client-name
+            value: defaultclient
+          - name: client-version
+            value: v1
+        url: https://sourcegraph.com/.api/completions/stream?client-name=defaultclient&client-version=v1
+      response:
+        bodySize: 3215
+        content:
+          mimeType: text/event-stream
+          size: 3215
+          text: >+
+            event: completion
+
+            data: {"completion":"Reviewed. I am not able to find a clear context regarding \"kramer\". Could you please clarify or provide more information about what you would like to know or do regarding \"kramer\"? If \"kramer\" refers to a file, code, or command, please provide the relevant file path or code for me to assist you better.","stopReason":"stop"}
+
+
+            event: done
+
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Fri, 27 Sep 2024 22:00:07 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1299
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-09-27T22:00:06.643Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: 6635ea037f6e03d7473ad5a04044fd0a
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 1759
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_3dd704711f82a44ff6aba261b53b61a03fb8edba658774639148630d838c2d1d
+          - name: user-agent
+            value: defaultClient / v1
+          - name: traceparent
+            value: 00-945613482e88852e202f1335ff7723e3-aae528d5525a6341-01
+          - name: connection
+            value: keep-alive
+          - name: host
+            value: sourcegraph.com
+        headersSize: 401
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 4000
+            messages:
+              - speaker: human
+                text: >-
+                  You are Cody, an AI coding assistant from Sourcegraph.If your
+                  answer contains fenced code blocks in Markdown, include the
+                  relevant full file path in the code block tag using this
+                  structure: ```$LANGUAGE:$FILEPATH```
+
+                  For executable terminal commands: enclose each command in individual "bash" language code block without comments and new lines inside.
+              - speaker: assistant
+                text: I am Cody, an AI coding assistant from Sourcegraph.
+              - speaker: human
+                text: >-
+                  Analyze the provided context and think step-by-step about
+                  whether you can answer the question using the available
+                  information.
+
+
+                  If you need more information to answer the question, use the following action tags:
+
+
+                  1. For additional context from the codebase:
+                     <CODYTOOLSEARCH><query>$SEARCH_QUERY</query></CODYTOOLSEARCH>
+
+                  2. To see the output of shell commands:
+                     <CODYTOOLCLI><cmd>$SHELL_COMMAND</cmd></CODYTOOLCLI>
+
+                  3. To retrieve full content from a file:
+                     <CODYTOOLFILE><file>$FILEPATH</file></CODYTOOLFILE>
+
+                  Example:
+
+                  To get details for GitHub issue #1234, use:
+
+                  <CODYTOOLCLI><cmd>gh issue view 1234</cmd></CODYTOOLCLI>
+
+
+                  Notes:
+
+                  - Only use the above action tags when you need additional information.
+
+                  - You can request multiple pieces of information in a single response.
+
+                  - When replying to a question with a shell command, enclose the command in a Markdown code block.
+
+                  - If you don't require additional context to answer the question, reply with a single word: "Reviewed".
+
+
+                  Question: Another magic word is "georgey". If I say the magic word, respond with a single word: "festivus".
+              - speaker: assistant
+            model: mistral::v1::mixtral-8x7b-instruct
+            temperature: 0
+            topK: -1
+            topP: -1
+        queryString:
+          - name: client-name
+            value: defaultclient
+          - name: client-version
+            value: v1
+        url: https://sourcegraph.com/.api/completions/stream?client-name=defaultclient&client-version=v1
+      response:
+        bodySize: 144
+        content:
+          mimeType: text/event-stream
+          size: 144
+          text: |+
+            event: completion
+            data: {"completion":"Reviewed","stopReason":"stop"}
+
+            event: done
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Fri, 27 Sep 2024 22:00:09 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1299
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-09-27T22:00:08.778Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: a78d2eda752beccc7fcb2ace3197cd70
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 1922
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_3dd704711f82a44ff6aba261b53b61a03fb8edba658774639148630d838c2d1d
+          - name: user-agent
+            value: defaultClient / v1
+          - name: traceparent
+            value: 00-cee374d581a29788c83a930e4f25900d-7f52bb7ac903773c-01
+          - name: connection
+            value: keep-alive
+          - name: host
+            value: sourcegraph.com
+        headersSize: 401
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 4000
+            messages:
+              - speaker: human
+                text: >-
+                  You are Cody, an AI coding assistant from Sourcegraph.If your
+                  answer contains fenced code blocks in Markdown, include the
+                  relevant full file path in the code block tag using this
+                  structure: ```$LANGUAGE:$FILEPATH```
+
+                  For executable terminal commands: enclose each command in individual "bash" language code block without comments and new lines inside.
+              - speaker: assistant
+                text: I am Cody, an AI coding assistant from Sourcegraph.
+              - speaker: human
+                text: "Another magic word is \"georgey\". If I say the magic word, respond with
+                  a single word: \"festivus\"."
+              - speaker: assistant
+                text: Sure, I can do that. If you say the magic word "georgey", I will respond
+                  with "festivus".
+              - speaker: human
+                text: >-
+                  Analyze the provided context and think step-by-step about
+                  whether you can answer the question using the available
+                  information.
+
+
+                  If you need more information to answer the question, use the following action tags:
+
+
+                  1. For additional context from the codebase:
+                     <CODYTOOLSEARCH><query>$SEARCH_QUERY</query></CODYTOOLSEARCH>
+
+                  2. To see the output of shell commands:
+                     <CODYTOOLCLI><cmd>$SHELL_COMMAND</cmd></CODYTOOLCLI>
+
+                  3. To retrieve full content from a file:
+                     <CODYTOOLFILE><file>$FILEPATH</file></CODYTOOLFILE>
+
+                  Example:
+
+                  To get details for GitHub issue #1234, use:
+
+                  <CODYTOOLCLI><cmd>gh issue view 1234</cmd></CODYTOOLCLI>
+
+
+                  Notes:
+
+                  - Only use the above action tags when you need additional information.
+
+                  - You can request multiple pieces of information in a single response.
+
+                  - When replying to a question with a shell command, enclose the command in a Markdown code block.
+
+                  - If you don't require additional context to answer the question, reply with a single word: "Reviewed".
+
+
+                  Question: kramer
+              - speaker: assistant
+            model: mistral::v1::mixtral-8x7b-instruct
+            temperature: 0
+            topK: -1
+            topP: -1
+        queryString:
+          - name: client-name
+            value: defaultclient
+          - name: client-version
+            value: v1
+        url: https://sourcegraph.com/.api/completions/stream?client-name=defaultclient&client-version=v1
+      response:
+        bodySize: 1189
+        content:
+          mimeType: text/event-stream
+          size: 1189
+          text: >+
+            event: completion
+
+            data: {"completion":"Reviewed. I don't have enough information to provide a meaningful response to the question \"kramer\". Could you please provide more context or clarify what you are asking?","stopReason":"stop"}
+
+
+            event: done
+
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Fri, 27 Sep 2024 22:00:10 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1299
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-09-27T22:00:09.473Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: 42c725a9cf4f144cbe8c20e6a3bd839e
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 2139
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_3dd704711f82a44ff6aba261b53b61a03fb8edba658774639148630d838c2d1d
+          - name: user-agent
+            value: defaultClient / v1
+          - name: traceparent
+            value: 00-8ab09670828216644f81f68f261145d6-e357e96ef1101ea6-01
+          - name: connection
+            value: keep-alive
+          - name: host
+            value: sourcegraph.com
+        headersSize: 401
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 4000
+            messages:
+              - speaker: human
+                text: >-
+                  You are Cody, an AI coding assistant from Sourcegraph.If your
+                  answer contains fenced code blocks in Markdown, include the
+                  relevant full file path in the code block tag using this
+                  structure: ```$LANGUAGE:$FILEPATH```
+
+                  For executable terminal commands: enclose each command in individual "bash" language code block without comments and new lines inside.
+              - speaker: assistant
+                text: I am Cody, an AI coding assistant from Sourcegraph.
+              - speaker: human
+                text: "Another magic word is \"georgey\". If I say the magic word, respond with
+                  a single word: \"festivus\"."
+              - speaker: assistant
+                text: Sure, I can do that. If you say the magic word "georgey", I will respond
+                  with "festivus".
+              - speaker: human
+                text: kramer
+              - speaker: assistant
+                text: That is not the magic word "georgey", so I will not respond with
+                  "festivus". If you say the magic word, I will be sure to
+                  respond accordingly.
+              - speaker: human
+                text: >-
+                  Analyze the provided context and think step-by-step about
+                  whether you can answer the question using the available
+                  information.
+
+
+                  If you need more information to answer the question, use the following action tags:
+
+
+                  1. For additional context from the codebase:
+                     <CODYTOOLSEARCH><query>$SEARCH_QUERY</query></CODYTOOLSEARCH>
+
+                  2. To see the output of shell commands:
+                     <CODYTOOLCLI><cmd>$SHELL_COMMAND</cmd></CODYTOOLCLI>
+
+                  3. To retrieve full content from a file:
+                     <CODYTOOLFILE><file>$FILEPATH</file></CODYTOOLFILE>
+
+                  Example:
+
+                  To get details for GitHub issue #1234, use:
+
+                  <CODYTOOLCLI><cmd>gh issue view 1234</cmd></CODYTOOLCLI>
+
+
+                  Notes:
+
+                  - Only use the above action tags when you need additional information.
+
+                  - You can request multiple pieces of information in a single response.
+
+                  - When replying to a question with a shell command, enclose the command in a Markdown code block.
+
+                  - If you don't require additional context to answer the question, reply with a single word: "Reviewed".
+
+
+                  Question: georgey
+              - speaker: assistant
+            model: mistral::v1::mixtral-8x7b-instruct
+            temperature: 0
+            topK: -1
+            topP: -1
+        queryString:
+          - name: client-name
+            value: defaultclient
+          - name: client-version
+            value: v1
+        url: https://sourcegraph.com/.api/completions/stream?client-name=defaultclient&client-version=v1
+      response:
+        bodySize: 5928
+        content:
+          mimeType: text/event-stream
+          size: 5928
+          text: >+
+            event: completion
+
+            data: {"completion":"In order to answer your question, I will need to see the output of the shell command `echo $GEORGEY`, enclosed in a Markdown code block as follows:\n<pre><code>bash:\necho $GEORGEY\n</code></pre>\n\nThis command will check the environment variable `GEORGEY` for the value \"georgey\", and if it is set, will output that value. This should determine whether or not I should respond with \"festivus\".","stopReason":"stop"}
+
+
+            event: done
+
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Fri, 27 Sep 2024 22:00:12 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1299
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-09-27T22:00:10.907Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: 58967c665af949f5d253e1aa3fad0e69
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 1730
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_3dd704711f82a44ff6aba261b53b61a03fb8edba658774639148630d838c2d1d
+          - name: user-agent
+            value: defaultClient / v1
+          - name: traceparent
+            value: 00-f398a51458bdbc31977ba878ea06a24b-237a7e0528c2eb23-01
+          - name: connection
+            value: keep-alive
+          - name: host
+            value: sourcegraph.com
+        headersSize: 401
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 4000
+            messages:
+              - speaker: human
+                text: >-
+                  You are Cody, an AI coding assistant from Sourcegraph.If your
+                  answer contains fenced code blocks in Markdown, include the
+                  relevant full file path in the code block tag using this
+                  structure: ```$LANGUAGE:$FILEPATH```
+
+                  For executable terminal commands: enclose each command in individual "bash" language code block without comments and new lines inside.
+              - speaker: assistant
+                text: I am Cody, an AI coding assistant from Sourcegraph.
+              - speaker: human
+                text: >-
+                  Analyze the provided context and think step-by-step about
+                  whether you can answer the question using the available
+                  information.
+
+
+                  If you need more information to answer the question, use the following action tags:
+
+
+                  1. For additional context from the codebase:
+                     <CODYTOOLSEARCH><query>$SEARCH_QUERY</query></CODYTOOLSEARCH>
+
+                  2. To see the output of shell commands:
+                     <CODYTOOLCLI><cmd>$SHELL_COMMAND</cmd></CODYTOOLCLI>
+
+                  3. To retrieve full content from a file:
+                     <CODYTOOLFILE><file>$FILEPATH</file></CODYTOOLFILE>
+
+                  Example:
+
+                  To get details for GitHub issue #1234, use:
+
+                  <CODYTOOLCLI><cmd>gh issue view 1234</cmd></CODYTOOLCLI>
+
+
+                  Notes:
+
+                  - Only use the above action tags when you need additional information.
+
+                  - You can request multiple pieces of information in a single response.
+
+                  - When replying to a question with a shell command, enclose the command in a Markdown code block.
+
+                  - If you don't require additional context to answer the question, reply with a single word: "Reviewed".
+
+
+                  Question: I have a turtle named "potter", reply single "ok" if you understand.
+              - speaker: assistant
+            model: mistral::v1::mixtral-8x7b-instruct
+            temperature: 0
+            topK: -1
+            topP: -1
+        queryString:
+          - name: client-name
+            value: defaultclient
+          - name: client-version
+            value: v1
+        url: https://sourcegraph.com/.api/completions/stream?client-name=defaultclient&client-version=v1
+      response:
+        bodySize: 2401
+        content:
+          mimeType: text/event-stream
+          size: 2401
+          text: >+
+            event: completion
+
+            data: {"completion":"Ok. I understand that you have a turtle named \"potter\". No additional context or shell command is needed to answer this question as it is a simple statement. Is there any programming or coding-related question or assistance you require with your pet turtle? 😊","stopReason":"stop"}
+
+
+            event: done
+
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Fri, 27 Sep 2024 22:00:13 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1299
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-09-27T22:00:12.646Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: 2e0b9f725633a2898b5a5154de2600d3
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 1958
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_3dd704711f82a44ff6aba261b53b61a03fb8edba658774639148630d838c2d1d
+          - name: user-agent
+            value: defaultClient / v1
+          - name: traceparent
+            value: 00-a8b031ee39d04f49ce86ccbf930fb2c8-835d7b3991537e5e-01
+          - name: connection
+            value: keep-alive
+          - name: host
+            value: sourcegraph.com
+        headersSize: 401
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 4000
+            messages:
+              - speaker: human
+                text: >-
+                  You are Cody, an AI coding assistant from Sourcegraph.If your
+                  answer contains fenced code blocks in Markdown, include the
+                  relevant full file path in the code block tag using this
+                  structure: ```$LANGUAGE:$FILEPATH```
+
+                  For executable terminal commands: enclose each command in individual "bash" language code block without comments and new lines inside.
+              - speaker: assistant
+                text: I am Cody, an AI coding assistant from Sourcegraph.
+              - speaker: human
+                text: I have a turtle named "potter", reply single "ok" if you understand.
+              - speaker: assistant
+                text: Ok. I understand that you have a turtle named "potter". How can I assist
+                  you with coding?
+              - speaker: human
+                text: >-
+                  Analyze the provided context and think step-by-step about
+                  whether you can answer the question using the available
+                  information.
+
+
+                  If you need more information to answer the question, use the following action tags:
+
+
+                  1. For additional context from the codebase:
+                     <CODYTOOLSEARCH><query>$SEARCH_QUERY</query></CODYTOOLSEARCH>
+
+                  2. To see the output of shell commands:
+                     <CODYTOOLCLI><cmd>$SHELL_COMMAND</cmd></CODYTOOLCLI>
+
+                  3. To retrieve full content from a file:
+                     <CODYTOOLFILE><file>$FILEPATH</file></CODYTOOLFILE>
+
+                  Example:
+
+                  To get details for GitHub issue #1234, use:
+
+                  <CODYTOOLCLI><cmd>gh issue view 1234</cmd></CODYTOOLCLI>
+
+
+                  Notes:
+
+                  - Only use the above action tags when you need additional information.
+
+                  - You can request multiple pieces of information in a single response.
+
+                  - When replying to a question with a shell command, enclose the command in a Markdown code block.
+
+                  - If you don't require additional context to answer the question, reply with a single word: "Reviewed".
+
+
+                  Question: I have a bird named "skywalker", reply single "ok" if you understand.
+              - speaker: assistant
+            model: mistral::v1::mixtral-8x7b-instruct
+            temperature: 0
+            topK: -1
+            topP: -1
+        queryString:
+          - name: client-name
+            value: defaultclient
+          - name: client-version
+            value: v1
+        url: https://sourcegraph.com/.api/completions/stream?client-name=defaultclient&client-version=v1
+      response:
+        bodySize: 2036
+        content:
+          mimeType: text/event-stream
+          size: 2036
+          text: >+
+            event: completion
+
+            data: {"completion":"Reviewed. I understand that you have a bird named \"skywalker\". However, this statement does not provide any context for me to analyze. If you have any coding-related questions or issues, please let me know and I'll be happy to help!","stopReason":"stop"}
+
+
+            event: done
+
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Fri, 27 Sep 2024 22:00:14 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1299
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-09-27T22:00:13.755Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: 05ecc5d0c50b0ab618b22d9fd64424e7
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 2218
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_3dd704711f82a44ff6aba261b53b61a03fb8edba658774639148630d838c2d1d
+          - name: user-agent
+            value: defaultClient / v1
+          - name: traceparent
+            value: 00-22e363d67d65fd9017dab090b1d345b6-ca32a7d2b96cc3f7-01
+          - name: connection
+            value: keep-alive
+          - name: host
+            value: sourcegraph.com
+        headersSize: 401
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 4000
+            messages:
+              - speaker: human
+                text: >-
+                  You are Cody, an AI coding assistant from Sourcegraph.If your
+                  answer contains fenced code blocks in Markdown, include the
+                  relevant full file path in the code block tag using this
+                  structure: ```$LANGUAGE:$FILEPATH```
+
+                  For executable terminal commands: enclose each command in individual "bash" language code block without comments and new lines inside.
+              - speaker: assistant
+                text: I am Cody, an AI coding assistant from Sourcegraph.
+              - speaker: human
+                text: I have a turtle named "potter", reply single "ok" if you understand.
+              - speaker: assistant
+                text: Ok. I understand that you have a turtle named "potter". How can I assist
+                  you with coding?
+              - speaker: human
+                text: I have a bird named "skywalker", reply single "ok" if you understand.
+              - speaker: assistant
+                text: Ok. I understand that you have a bird named "skywalker". Is there
+                  something specific you would like assistance with in coding?
+              - speaker: human
+                text: >-
+                  Analyze the provided context and think step-by-step about
+                  whether you can answer the question using the available
+                  information.
+
+
+                  If you need more information to answer the question, use the following action tags:
+
+
+                  1. For additional context from the codebase:
+                     <CODYTOOLSEARCH><query>$SEARCH_QUERY</query></CODYTOOLSEARCH>
+
+                  2. To see the output of shell commands:
+                     <CODYTOOLCLI><cmd>$SHELL_COMMAND</cmd></CODYTOOLCLI>
+
+                  3. To retrieve full content from a file:
+                     <CODYTOOLFILE><file>$FILEPATH</file></CODYTOOLFILE>
+
+                  Example:
+
+                  To get details for GitHub issue #1234, use:
+
+                  <CODYTOOLCLI><cmd>gh issue view 1234</cmd></CODYTOOLCLI>
+
+
+                  Notes:
+
+                  - Only use the above action tags when you need additional information.
+
+                  - You can request multiple pieces of information in a single response.
+
+                  - When replying to a question with a shell command, enclose the command in a Markdown code block.
+
+                  - If you don't require additional context to answer the question, reply with a single word: "Reviewed".
+
+
+                  Question: I have a dog named "happy", reply single "ok" if you understand.
+              - speaker: assistant
+            model: mistral::v1::mixtral-8x7b-instruct
+            temperature: 0
+            topK: -1
+            topP: -1
+        queryString:
+          - name: client-name
+            value: defaultclient
+          - name: client-version
+            value: v1
+        url: https://sourcegraph.com/.api/completions/stream?client-name=defaultclient&client-version=v1
+      response:
+        bodySize: 378
+        content:
+          mimeType: text/event-stream
+          size: 378
+          text: >+
+            event: completion
+
+            data: {"completion":"Reviewed. I understand that you have a dog named \"happy\".","stopReason":"stop"}
+
+
+            event: done
+
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Fri, 27 Sep 2024 22:00:15 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1299
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-09-27T22:00:14.863Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: 6a0000dd7dd5fcc74ab396da3a549cad
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 1954
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_3dd704711f82a44ff6aba261b53b61a03fb8edba658774639148630d838c2d1d
+          - name: user-agent
+            value: defaultClient / v1
+          - name: traceparent
+            value: 00-5247f093626d2f3ddc3e89d854721fd4-cecb61b8c6a66147-01
+          - name: connection
+            value: keep-alive
+          - name: host
+            value: sourcegraph.com
+        headersSize: 401
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 4000
+            messages:
+              - speaker: human
+                text: >-
+                  You are Cody, an AI coding assistant from Sourcegraph.If your
+                  answer contains fenced code blocks in Markdown, include the
+                  relevant full file path in the code block tag using this
+                  structure: ```$LANGUAGE:$FILEPATH```
+
+                  For executable terminal commands: enclose each command in individual "bash" language code block without comments and new lines inside.
+              - speaker: assistant
+                text: I am Cody, an AI coding assistant from Sourcegraph.
+              - speaker: human
+                text: I have a turtle named "potter", reply single "ok" if you understand.
+              - speaker: assistant
+                text: Ok. I understand that you have a turtle named "potter". How can I assist
+                  you with coding?
+              - speaker: human
+                text: >-
+                  Analyze the provided context and think step-by-step about
+                  whether you can answer the question using the available
+                  information.
+
+
+                  If you need more information to answer the question, use the following action tags:
+
+
+                  1. For additional context from the codebase:
+                     <CODYTOOLSEARCH><query>$SEARCH_QUERY</query></CODYTOOLSEARCH>
+
+                  2. To see the output of shell commands:
+                     <CODYTOOLCLI><cmd>$SHELL_COMMAND</cmd></CODYTOOLCLI>
+
+                  3. To retrieve full content from a file:
+                     <CODYTOOLFILE><file>$FILEPATH</file></CODYTOOLFILE>
+
+                  Example:
+
+                  To get details for GitHub issue #1234, use:
+
+                  <CODYTOOLCLI><cmd>gh issue view 1234</cmd></CODYTOOLCLI>
+
+
+                  Notes:
+
+                  - Only use the above action tags when you need additional information.
+
+                  - You can request multiple pieces of information in a single response.
+
+                  - When replying to a question with a shell command, enclose the command in a Markdown code block.
+
+                  - If you don't require additional context to answer the question, reply with a single word: "Reviewed".
+
+
+                  Question: I have a tiger named "zorro", reply single "ok" if you understand
+              - speaker: assistant
+            model: mistral::v1::mixtral-8x7b-instruct
+            temperature: 0
+            topK: -1
+            topP: -1
+        queryString:
+          - name: client-name
+            value: defaultclient
+          - name: client-version
+            value: v1
+        url: https://sourcegraph.com/.api/completions/stream?client-name=defaultclient&client-version=v1
+      response:
+        bodySize: 3899
+        content:
+          mimeType: text/event-stream
+          size: 3899
+          text: >+
+            event: completion
+
+            data: {"completion":"I'm sorry for the confusion, but based on the provided context, I don't have any information about a tiger named \"zorro\". My purpose is to assist with coding-related questions. The context about your turtle named \"potter\" was not intended to imply that I can also provide information about animals. If you have a coding-related question, please let me know and I would be happy to help! Reviewed.","stopReason":"stop"}
+
+
+            event: done
+
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Fri, 27 Sep 2024 22:00:16 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1299
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-09-27T22:00:15.722Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: a8a12a937ecf9a4db115ae212669f351
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 2184
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_3dd704711f82a44ff6aba261b53b61a03fb8edba658774639148630d838c2d1d
+          - name: user-agent
+            value: defaultClient / v1
+          - name: traceparent
+            value: 00-787387a1a97fcd70cf9dd43d5bc8407a-da12ea654d69010d-01
+          - name: connection
+            value: keep-alive
+          - name: host
+            value: sourcegraph.com
+        headersSize: 401
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 4000
+            messages:
+              - speaker: human
+                text: >-
+                  You are Cody, an AI coding assistant from Sourcegraph.If your
+                  answer contains fenced code blocks in Markdown, include the
+                  relevant full file path in the code block tag using this
+                  structure: ```$LANGUAGE:$FILEPATH```
+
+                  For executable terminal commands: enclose each command in individual "bash" language code block without comments and new lines inside.
+              - speaker: assistant
+                text: I am Cody, an AI coding assistant from Sourcegraph.
+              - speaker: human
+                text: I have a turtle named "potter", reply single "ok" if you understand.
+              - speaker: assistant
+                text: Ok. I understand that you have a turtle named "potter". How can I assist
+                  you with coding?
+              - speaker: human
+                text: I have a tiger named "zorro", reply single "ok" if you understand
+              - speaker: assistant
+                text: Ok. I understand that you have a tiger named "zorro". Is there anything
+                  specific you would like to know or learn about coding? I'm
+                  here to help.
+              - speaker: human
+                text: >-
+                  Analyze the provided context and think step-by-step about
+                  whether you can answer the question using the available
+                  information.
+
+
+                  If you need more information to answer the question, use the following action tags:
+
+
+                  1. For additional context from the codebase:
+                     <CODYTOOLSEARCH><query>$SEARCH_QUERY</query></CODYTOOLSEARCH>
+
+                  2. To see the output of shell commands:
+                     <CODYTOOLCLI><cmd>$SHELL_COMMAND</cmd></CODYTOOLCLI>
+
+                  3. To retrieve full content from a file:
+                     <CODYTOOLFILE><file>$FILEPATH</file></CODYTOOLFILE>
+
+                  Example:
+
+                  To get details for GitHub issue #1234, use:
+
+                  <CODYTOOLCLI><cmd>gh issue view 1234</cmd></CODYTOOLCLI>
+
+
+                  Notes:
+
+                  - Only use the above action tags when you need additional information.
+
+                  - You can request multiple pieces of information in a single response.
+
+                  - When replying to a question with a shell command, enclose the command in a Markdown code block.
+
+                  - If you don't require additional context to answer the question, reply with a single word: "Reviewed".
+
+
+                  Question: What pets do I have?
+              - speaker: assistant
+            model: mistral::v1::mixtral-8x7b-instruct
+            temperature: 0
+            topK: -1
+            topP: -1
+        queryString:
+          - name: client-name
+            value: defaultclient
+          - name: client-version
+            value: v1
+        url: https://sourcegraph.com/.api/completions/stream?client-name=defaultclient&client-version=v1
+      response:
+        bodySize: 855
+        content:
+          mimeType: text/event-stream
+          size: 855
+          text: >+
+            event: completion
+
+            data: {"completion":"Reviewed. Based on the available information, you have a turtle named \"potter\" and a tiger named \"zorro\".","stopReason":"stop"}
+
+
+            event: done
+
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Fri, 27 Sep 2024 22:00:18 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1299
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-09-27T22:00:17.129Z
       time: 0
       timings:
         blocked: -1

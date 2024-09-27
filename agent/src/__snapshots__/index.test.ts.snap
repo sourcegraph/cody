@@ -67,9 +67,7 @@ export class Dog implements Animal {
         return "Woof!";
     }
 }
-\`\`\`
-
-This code defines the Dog class that fully implements the Animal interface as requested."
+\`\`\`"
 `;
 
 exports[`Agent > Commands > commands/explain 1`] = `

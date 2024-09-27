@@ -197,11 +197,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 1fa3fc31a4e1b350a35d9f91acf5cf65
+    - _id: f87119efb12a2f1fb24bc666fd2a060e
       _order: 0
       cache: {}
       request:
-        bodySize: 903
+        bodySize: 863
         cookies: []
         headers:
           - name: content-type
@@ -280,7 +280,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Fri, 27 Sep 2024 17:28:48 GMT
+            value: Fri, 27 Sep 2024 22:00:02 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -309,7 +309,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-27T17:28:47.215Z
+      startedDateTime: 2024-09-27T22:00:00.568Z
       time: 0
       timings:
         blocked: -1
