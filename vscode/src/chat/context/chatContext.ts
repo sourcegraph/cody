@@ -41,6 +41,7 @@ import { ChatBuilder } from '../chat-view/ChatBuilder'
  * This state is used to keep track of telemetry events that have already fired
  */
 const mentionMenuTelemetryCache = new LRUCache<string | number, Set<string | null>>({ max: 10 })
+
 export function getMentionMenuData(options: {
     disableProviders: ContextMentionProviderID[]
     query: MentionQuery
