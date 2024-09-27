@@ -41,7 +41,7 @@ import { showSignInMenu, showSignOutMenu, tokenCallbackHandler } from './auth/au
 import type { MessageProviderOptions } from './chat/MessageProvider'
 import { ChatsController, CodyChatEditorViewType } from './chat/chat-view/ChatsController'
 import { ContextRetriever } from './chat/chat-view/ContextRetriever'
-import type { ContextAPIClient } from './chat/context/contextAPIClient'
+import type { ChatIntentAPIClient } from './chat/context/chatIntentAPIClient'
 import {
     ACCOUNT_LIMITS_INFO_URL,
     ACCOUNT_UPGRADE_URL,
@@ -193,7 +193,7 @@ const register = async (
         completionsClient,
         guardrails,
         symfRunner,
-        contextAPIClient,
+        chatIntentAPIClient,
         dispose: disposeExternalServices,
     } = await configureExternalServices(context, platform)
     disposables.push({ dispose: disposeExternalServices })
@@ -208,7 +208,7 @@ const register = async (
             chatClient,
             guardrails,
             editor,
-            contextAPIClient,
+            chatIntentAPIClient,
             contextRetriever,
         },
         disposables
@@ -692,7 +692,7 @@ interface RegisterChatOptions {
     chatClient: ChatClient
     guardrails: Guardrails
     editor: VSCodeEditor
-    contextAPIClient?: ContextAPIClient
+    chatIntentAPIClient?: ChatIntentAPIClient
     contextRetriever: ContextRetriever
 }
 
@@ -703,7 +703,7 @@ function registerChat(
         chatClient,
         guardrails,
         editor,
-        contextAPIClient,
+        chatIntentAPIClient,
         contextRetriever,
     }: RegisterChatOptions,
     disposables: vscode.Disposable[]
@@ -725,7 +725,7 @@ function registerChat(
         chatClient,
         contextRetriever,
         guardrails,
-        contextAPIClient || null,
+        chatIntentAPIClient || null,
         platform.extensionClient
     )
     chatsController.registerViewsAndCommands()
