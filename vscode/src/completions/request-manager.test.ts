@@ -49,10 +49,17 @@ class MockProvider extends Provider {
         return {} as any as CodeCompletionsParams
     }
 
-    public async *generateCompletions(
+    public async generateCompletions(
+        options: GenerateCompletionsOptions,
+        abortSignal: AbortSignal
+    ): Promise<AsyncGenerator<FetchCompletionResult[]>> {
+        return this.responseGenerator(options, abortSignal)
+    }
+
+    public async *responseGenerator(
         generateOptions: GenerateCompletionsOptions,
         abortSignal: AbortSignal
-    ): AsyncGenerator<FetchCompletionResult[]> {
+    ) {
         this.generateOptions = generateOptions
 
         abortSignal.addEventListener('abort', () => {

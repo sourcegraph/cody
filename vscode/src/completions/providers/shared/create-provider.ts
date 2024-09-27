@@ -11,6 +11,7 @@ import {
     modelsService,
     pendingOperation,
     switchMapReplayOperation,
+    toLegacyModel,
 } from '@sourcegraph/cody-shared'
 
 import { createProvider as createAnthropicProvider } from '../anthropic'
@@ -21,7 +22,6 @@ import { createProvider as createGeminiProviderConfig } from '../google'
 import { createProvider as createOpenAICompatibleProviderConfig } from '../openaicompatible'
 import { createProvider as createUnstableOpenAIProviderConfig } from '../unstable-openai'
 
-import { toLegacyModel } from '@sourcegraph/cody-shared/src/models/model'
 import { getDotComExperimentModel } from './get-experiment-model'
 import { parseProviderAndModel } from './parse-provider-and-model'
 import type { Provider, ProviderFactory } from './provider'

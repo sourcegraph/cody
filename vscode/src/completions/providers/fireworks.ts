@@ -12,13 +12,7 @@ import {
 import { defaultCodeCompletionsClient } from '../default-client'
 import { createFastPathClient } from '../fast-path-client'
 import { TriggerKind } from '../get-inline-completions'
-import { forkSignal, generatorWithTimeout, zipGenerators } from '../utils'
 import {
-    type FetchCompletionResult,
-    fetchAndProcessDynamicMultilineCompletions,
-} from './shared/fetch-and-process-completions'
-import {
-    type CompletionProviderTracer,
     type GenerateCompletionsOptions,
     MAX_RESPONSE_TOKENS,
     Provider,
@@ -121,55 +115,12 @@ class FireworksProvider extends Provider {
             model,
         })
     }
-    public async generateCompletions(
-        generateOptions: GenerateCompletionsOptions,
-        abortSignal: AbortSignal,
-        tracer?: CompletionProviderTracer
-    ): Promise<AsyncGenerator<FetchCompletionResult[]>> {
-        const { docContext, numberOfCompletionsToGenerate } = generateOptions
 
-        const requestParams = this.getRequestParams(generateOptions)
-        tracer?.params(requestParams)
-
-        const completionsGenerators = Array.from({ length: numberOfCompletionsToGenerate }).map(
-            async () => {
-                const abortController = forkSignal(abortSignal)
-
-                const completionResponseGenerator = generatorWithTimeout(
-                    await this.createClient(generateOptions, requestParams, abortController),
-                    requestParams.timeoutMs,
-                    abortController
-                )
-
-                return fetchAndProcessDynamicMultilineCompletions({
-                    completionResponseGenerator,
-                    abortController,
-                    generateOptions,
-                    providerSpecificPostProcess: content =>
-                        this.modelHelper.postProcess(content, docContext),
-                })
-            }
-        )
-
-        /**
-         * This implementation waits for all generators to yield values
-         * before passing them to the consumer (request-manager). While this may appear
-         * as a performance bottleneck, it's necessary for the current design.
-         *
-         * The consumer operates on promises, allowing only a single resolve call
-         * from `requestManager.request`. Therefore, we must wait for the initial
-         * batch of completions before returning them collectively, ensuring all
-         * are included as suggested completions.
-         *
-         * To circumvent this performance issue, a method for adding completions to
-         * the existing suggestion list is needed. Presently, this feature is not
-         * available, and the switch to async generators maintains the same behavior
-         * as with promises.
-         */
-        return zipGenerators(await Promise.all(completionsGenerators))
-    }
-
-    private async createClient(
+    /**
+     * Switches to fast-path for DotCom users, where we skip the Sourcegraph instance backend
+     * and go directly to Cody Gateway and Fireworks.
+     */
+    protected async getCompletionResponseGenerator(
         options: GenerateCompletionsOptions,
         requestParams: CodeCompletionsParams,
         abortController: AbortController
@@ -212,7 +163,7 @@ class FireworksProvider extends Provider {
             }
         }
 
-        return await this.client.complete(requestParams, abortController, {
+        return this.client.complete(requestParams, abortController, {
             customHeaders: this.getCustomHeaders(authStatus.isFireworksTracingEnabled),
         })
     }

@@ -4,31 +4,32 @@ import {
     isDotCom,
 } from '@sourcegraph/cody-shared'
 
-import { forkSignal, generatorWithErrorObserver, generatorWithTimeout, zipGenerators } from '../utils'
-
-import {
-    type FetchCompletionResult,
-    fetchAndProcessDynamicMultilineCompletions,
-} from './shared/fetch-and-process-completions'
 import {
     BYOK_MODEL_ID_FOR_LOGS,
-    type CompletionProviderTracer,
     type GenerateCompletionsOptions,
     Provider,
     type ProviderFactoryParams,
 } from './shared/provider'
 
-let isModernSourcegraphInstanceWithoutAnthropicAllowlist = true
+const CLAUDE_INSTANT_1_2 = 'claude-instant-1.2'
+
+// All the Anthropic version identifiers that are allowlisted as being able to be passed as the
+// model identifier on a Sourcegraph Server
+const SUPPORTED_MODELS = [
+    CLAUDE_INSTANT_1_2,
+    'claude-instant-1.2-cyan',
+    'claude-instant-v1',
+    'claude-instant-1',
+    'claude-3-haiku-20240307',
+]
 
 class AnthropicProvider extends Provider {
     public getRequestParams(options: GenerateCompletionsOptions): CodeCompletionsParams {
         const { snippets, docContext, document } = options
 
-        const model =
-            isModernSourcegraphInstanceWithoutAnthropicAllowlist &&
-            SUPPORTED_MODELS.includes(this.legacyModel)
-                ? (`${this.id}/${this.legacyModel}` as const)
-                : undefined
+        const model = SUPPORTED_MODELS.includes(this.legacyModel)
+            ? (`${this.id}/${this.legacyModel}` as const)
+            : undefined
 
         const messages = this.modelHelper.getMessages({
             snippets,
@@ -52,62 +53,6 @@ class AnthropicProvider extends Provider {
             model: this.maybeFilterOutModel(model),
         }
     }
-
-    public async generateCompletions(
-        options: GenerateCompletionsOptions,
-        abortSignal: AbortSignal,
-        tracer?: CompletionProviderTracer
-    ): Promise<AsyncGenerator<FetchCompletionResult[]>> {
-        const { docContext, numberOfCompletionsToGenerate } = options
-
-        const requestParams = this.getRequestParams(options)
-        tracer?.params(requestParams)
-
-        const completionsGenerators = Array.from({ length: numberOfCompletionsToGenerate }).map(
-            async () => {
-                const abortController = forkSignal(abortSignal)
-
-                const completionResponseGenerator = generatorWithErrorObserver(
-                    generatorWithTimeout(
-                        await this.client.complete(requestParams, abortController),
-                        requestParams.timeoutMs,
-                        abortController
-                    ),
-                    error => {
-                        if (error instanceof Error) {
-                            // If an "unsupported code completion model" error is thrown for Anthropic,
-                            // it's most likely because we started adding the `model` identifier to
-                            // requests to ensure the clients does not crash when the default site
-                            // config value changes.
-                            //
-                            // Older instances do not allow for the `model` to be set, even to
-                            // identifiers it supports and thus the error.
-                            //
-                            // If it happens once, we disable the behavior where the client includes a
-                            // `model` parameter.
-                            if (
-                                error.message.includes('Unsupported code completion model') ||
-                                error.message.includes('Unsupported chat model') ||
-                                error.message.includes('Unsupported custom model')
-                            ) {
-                                isModernSourcegraphInstanceWithoutAnthropicAllowlist = false
-                            }
-                        }
-                    }
-                )
-
-                return fetchAndProcessDynamicMultilineCompletions({
-                    completionResponseGenerator,
-                    abortController,
-                    generateOptions: options,
-                    providerSpecificPostProcess: content =>
-                        this.modelHelper.postProcess(content, docContext),
-                })
-            }
-        )
-
-        return zipGenerators(await Promise.all(completionsGenerators))
-    }
 }
 
 function getClientModel(
@@ -116,7 +61,7 @@ function getClientModel(
 ): string {
     // Always use the default PLG model on DotCom
     if (isDotCom(authStatus)) {
-        return DEFAULT_PLG_ANTHROPIC_MODEL
+        return CLAUDE_INSTANT_1_2
     }
 
     return model || BYOK_MODEL_ID_FOR_LOGS
@@ -129,15 +74,3 @@ export function createProvider({ legacyModel, source, authStatus }: ProviderFact
         source,
     })
 }
-
-const DEFAULT_PLG_ANTHROPIC_MODEL = 'claude-instant-1.2'
-
-// All the Anthropic version identifiers that are allowlisted as being able to be passed as the
-// model identifier on a Sourcegraph Server
-const SUPPORTED_MODELS = [
-    DEFAULT_PLG_ANTHROPIC_MODEL,
-    'claude-instant-1.2-cyan',
-    'claude-instant-v1',
-    'claude-instant-1',
-    'claude-3-haiku-20240307',
-]

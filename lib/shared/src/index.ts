@@ -23,6 +23,7 @@ export {
     createModelFromServerModel,
     modelTier,
     parseModelRef,
+    toLegacyModel,
 } from './models/model'
 export {
     type EditModel,
