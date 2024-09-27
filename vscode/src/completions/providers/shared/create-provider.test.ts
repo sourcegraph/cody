@@ -268,10 +268,10 @@ describe('createProvider', () => {
             )
 
             expect(currentModel?.provider).toBe('fireworks')
-            expect(currentModel?.id).toBe('deepseek-coder-v2-lite-base')
+            expect(currentModel?.modelRef?.modelId).toBe('deepseek-coder-v2-lite-base')
 
             expect(provider.id).toBe(currentModel?.provider)
-            expect(provider.legacyModel).toBe(currentModel?.id)
+            expect(provider.legacyModel).toBe(currentModel?.modelRef?.modelId)
         })
 
         it('uses the `anthropic` model from the config', async () => {

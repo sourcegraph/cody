@@ -32,7 +32,7 @@ export {
     ModelUsage,
     type ModelContextWindow,
 } from './models/types'
-export { getDotComDefaultModels } from './models/dotcom'
+export { getMockedDotComClientModels, getMockedDotComServerModels } from './models/dotcom'
 export { ModelTag } from './models/tags'
 export {
     getProviderName,

@@ -144,7 +144,7 @@ test('edit (fixup) input - model selection', async ({ page, nap, sidebar }) => {
 
     // Check the correct model item is auto-selected
     await nap()
-    const modelItem = page.getByLabel('$(anthropic-logo) Claude 3.5').locator('a')
+    const modelItem = page.getByLabel('$(anthropic-logo) Claude 3.5 Sonnet').locator('a')
     await nap()
     expect(modelItem).toBeVisible()
 
