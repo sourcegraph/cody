@@ -9,7 +9,7 @@ import {
     type ResolvedConfiguration,
     SYMBOL_CONTEXT_MENTION_PROVIDER,
     type SymbolKind,
-    getDotComDefaultModels,
+    getMockedDotComClientModels,
     promiseFactoryToObservable,
 } from '@sourcegraph/cody-shared'
 import { ClientStateContextProvider, ExtensionAPIProviderForTestsOnly } from '@sourcegraph/prompt-editor'
@@ -81,7 +81,7 @@ export const AppWrapperForTest: FunctionComponent<{ children: ReactNode }> = ({ 
                         commands: FIXTURE_COMMANDS,
                     }),
                     highlights: () => Observable.of([]),
-                    models: () => Observable.of(getDotComDefaultModels()),
+                    models: () => Observable.of(getMockedDotComClientModels()),
                     setChatModel: () => EMPTY,
                     detectIntent: () => Observable.of(),
                     resolvedConfig: () =>

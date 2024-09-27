@@ -8,7 +8,6 @@ import {
     type ModelContextWindow,
     ModelUsage,
     Typewriter,
-    getDotComDefaultModels,
     getSimplePreamble,
     modelsService,
     pluralize,
@@ -26,7 +25,7 @@ export class CodySourceControl implements vscode.Disposable {
     private disposables: vscode.Disposable[] = []
     private gitAPI: API | undefined
     private abortController: AbortController | undefined
-    private model: Model | undefined = getDotComDefaultModels().at(0)
+    private model: Model | undefined
 
     private commitTemplate?: string
 
