@@ -39,7 +39,7 @@ function openExternalAuthUrl(
         : ''
 
     const newTokenUrl = `/user/settings/tokens/new/callback?requestFrom=${referralCode}${tokenReceiver}`
-    const site = new URL(newTokenUrl, DOTCOM_URL)
+    const site = DOTCOM_URL.toString() // Note, ends with the path /
     const genericLoginUrl = `${site}sign-in?returnTo=${newTokenUrl}`
     const gitHubLoginUrl = `${site}.auth/openidconnect/login?prompt_auth=github&pc=sams&redirect=${newTokenUrl}`
     const gitLabLoginUrl = `${site}.auth/openidconnect/login?prompt_auth=gitlab&pc=sams&redirect=${newTokenUrl}`
