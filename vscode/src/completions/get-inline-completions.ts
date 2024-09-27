@@ -18,7 +18,7 @@ import {
     type GitIdentifiersForFile,
     gitMetadataForCurrentEditor,
 } from '../repository/git-metadata-for-editor'
-import { GitHubDotComRepoMetadata } from '../repository/repo-metadata-from-git-api'
+import { GitHubDotComRepoMetadata } from '../repository/githubRepoMetadata'
 import type { ContextMixer } from './context/context-mixer'
 import { insertIntoDocContext } from './get-current-doc-context'
 import * as CompletionLogger from './logger'

@@ -846,6 +846,8 @@ export const vsCodeMocks = {
         onDidRenameFiles() {},
         onDidDeleteFiles() {},
         textDocuments: vscodeWorkspaceTextDocuments,
+        workspaceFolders: undefined,
+        onDidChangeWorkspaceFolders: () => {},
     },
     ConfigurationTarget: {
         Global: undefined,

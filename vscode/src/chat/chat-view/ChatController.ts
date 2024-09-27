@@ -7,6 +7,7 @@ import {
     resolvedConfig,
     shareReplay,
     skip,
+    skipPendingOperation,
 } from '@sourcegraph/cody-shared'
 import * as uuid from 'uuid'
 import * as vscode from 'vscode'
@@ -1691,7 +1692,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                             await modelsService.setSelectedModel(ModelUsage.Chat, model)
                         })
                     },
-                    initialContext: () => initialContext,
+                    initialContext: () => initialContext.pipe(skipPendingOperation()),
                     detectIntent: text =>
                         promiseFactoryToObservable<ChatMessage['intent']>(() =>
                             this.detectChatIntent({ text })

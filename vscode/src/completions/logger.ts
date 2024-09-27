@@ -24,7 +24,7 @@ import type {
     PersistenceRemovedEventPayload,
 } from '../common/persistence-tracker/types'
 import type { GitIdentifiersForFile } from '../repository/git-metadata-for-editor'
-import { GitHubDotComRepoMetadata } from '../repository/repo-metadata-from-git-api'
+import { GitHubDotComRepoMetadata } from '../repository/githubRepoMetadata'
 import { upstreamHealthProvider } from '../services/UpstreamHealthProvider'
 import {
     AUTOCOMPLETE_STAGE_COUNTER_INITIAL_STATE,
