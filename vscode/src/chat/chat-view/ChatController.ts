@@ -1627,6 +1627,10 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                             mergedPromptsAndLegacyCommands(query, signal)
                         ),
                     models: () =>
+                        modelsService.modelsChanges.pipe(
+                            map(models => (models === pendingOperation ? null : models))
+                        ),
+                    chatModels: () =>
                         modelsService.getModels(ModelUsage.Chat).pipe(
                             startWith([]),
                             map(models => (models === pendingOperation ? [] : models))

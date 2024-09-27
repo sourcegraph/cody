@@ -7,6 +7,7 @@ import {
     type ContextItemSymbol,
     EMPTY,
     FILE_CONTEXT_MENTION_PROVIDER,
+    type ModelsData,
     type ResolvedConfiguration,
     SYMBOL_CONTEXT_MENTION_PROVIDER,
     type SymbolKind,
@@ -83,7 +84,13 @@ export const AppWrapperForTest: FunctionComponent<{ children: ReactNode }> = ({ 
                         commands: FIXTURE_COMMANDS,
                     }),
                     highlights: () => Observable.of([]),
-                    models: () => Observable.of(getMockedDotComClientModels()),
+                    models: () =>
+                        Observable.of({
+                            localModels: [],
+                            primaryModels: getMockedDotComClientModels(),
+                            preferences: { defaults: {}, selected: {} },
+                        } satisfies ModelsData),
+                    chatModels: () => Observable.of(getMockedDotComClientModels()),
                     setChatModel: () => EMPTY,
                     initialContext: () => Observable.of([]),
                     detectIntent: () => Observable.of(),

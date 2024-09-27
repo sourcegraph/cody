@@ -63,7 +63,7 @@ export const WithInitialContext: StoryObj<typeof meta> = {
         <ExtensionAPIProviderForTestsOnly
             value={{
                 ...MOCK_API,
-                models: () => Observable.of([]),
+                chatModels: () => Observable.of([]),
                 initialContext: () =>
                     Observable.of([
                         {
@@ -92,7 +92,7 @@ export const WithInitialContextFileTooLarge: StoryObj<typeof meta> = {
         <ExtensionAPIProviderForTestsOnly
             value={{
                 ...MOCK_API,
-                models: () => Observable.of([]),
+                chatModels: () => Observable.of([]),
                 initialContext: () =>
                     Observable.of([
                         {

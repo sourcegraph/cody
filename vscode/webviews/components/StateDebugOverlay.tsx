@@ -1,4 +1,9 @@
-import type { AuthStatus, ChatMessage, Model, ResolvedConfiguration } from '@sourcegraph/cody-shared'
+import type {
+    AuthStatus,
+    ChatMessage,
+    ModelsData,
+    ResolvedConfiguration,
+} from '@sourcegraph/cody-shared'
 import { useExtensionAPI, useObservable } from '@sourcegraph/prompt-editor'
 import { type FunctionComponent, useMemo } from 'react'
 import { CollapsiblePanel } from './CollapsiblePanel'
@@ -23,7 +28,7 @@ const StateDebugOverlayInner: FunctionComponent<{ resolvedConfig: ResolvedConfig
     resolvedConfig,
 }) => {
     const authStatus = useAuthStatus()
-    const models = useChatModels()
+    const modelsData = useModelsData()
     const transcript = useTranscript()
     return (
         resolvedConfig?.configuration.internalDebugState && (
@@ -43,7 +48,7 @@ const StateDebugOverlayInner: FunctionComponent<{ resolvedConfig: ResolvedConfig
                             }`,
                             value: authStatus,
                         },
-                        { title: 'models', value: models },
+                        { title: 'modelsData', value: modelsData },
                         { title: 'transcript', value: transcript },
                     ] satisfies { title: string; value: unknown }[]
                 ).map(({ title, value }) => (
@@ -73,7 +78,7 @@ function useAuthStatus(): AuthStatus | undefined {
     return useObservable(useMemo(() => authStatus(), [authStatus])).value
 }
 
-function useChatModels(): Model[] | undefined {
+function useModelsData(): ModelsData | null | undefined {
     const models = useExtensionAPI().models
     return useObservable(useMemo(() => models(), [models])).value
 }

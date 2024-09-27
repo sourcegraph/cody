@@ -375,6 +375,6 @@ export const HumanMessageEditor: FunctionComponent<{
 }
 
 function useCurrentChatModel(): Model | undefined {
-    const models = useExtensionAPI().models
+    const models = useExtensionAPI().chatModels
     return useObservable(useMemo(() => models(), [models])).value?.at(0)
 }
