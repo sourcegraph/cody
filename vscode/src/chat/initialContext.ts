@@ -32,8 +32,8 @@ import { createRepositoryMention } from '../context/openctx/common/get-repositor
 import { remoteReposForAllWorkspaceFolders } from '../repository/remoteRepos'
 import { ChatBuilder } from './chat-view/ChatBuilder'
 import {
+    activeEditorContextForOpenCtxMentions,
     contextItemMentionFromOpenCtxItem,
-    getActiveEditorContextForOpenCtxMentions,
 } from './context/chatContext'
 
 /**
@@ -248,8 +248,14 @@ function getOpenCtxContextItems(): Observable<ContextItem[] | typeof pendingOper
 
             return activeTextEditor.pipe(
                 debounceTime(50),
-                abortableOperation(() => getActiveEditorContextForOpenCtxMentions()),
+                switchMap(() => activeEditorContextForOpenCtxMentions),
                 switchMap(activeEditorContext => {
+                    if (activeEditorContext === pendingOperation) {
+                        return Observable.of(pendingOperation)
+                    }
+                    if (isError(activeEditorContext)) {
+                        return Observable.of([])
+                    }
                     return combineLatest(
                         providersWithAutoInclude.map(provider =>
                             openctxController.mentionsChanges(

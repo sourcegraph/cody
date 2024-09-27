@@ -12,6 +12,7 @@ import {
     type FileURI,
     type PromptString,
     type SourcegraphCompletionsClient,
+    firstResultFromOperation,
     graphqlClient,
     isFileURI,
 } from '@sourcegraph/cody-shared'
@@ -108,7 +109,10 @@ async function codebaseRootsFromMentions(
     const treesToRepoNames = await Promise.all(
         trees.map(async tree => ({
             tree,
-            names: await repoNameResolver.getRepoNamesContainingUri(tree.uri, signal),
+            names: await firstResultFromOperation(
+                repoNameResolver.getRepoNamesContainingUri(tree.uri),
+                signal
+            ),
         }))
     )
     const localRepoNames = treesToRepoNames.flatMap(t => t.names)

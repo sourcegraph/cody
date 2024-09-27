@@ -11,6 +11,8 @@ import {
     REMOTE_REPOSITORY_PROVIDER_URI,
     SYMBOL_CONTEXT_MENTION_PROVIDER,
     combineLatest,
+    firstResultFromOperation,
+    fromVSCodeEvent,
     isAbortError,
     isError,
     mentionProvidersMetadata,
@@ -18,6 +20,8 @@ import {
     pendingOperation,
     promiseFactoryToObservable,
     skipPendingOperation,
+    startWith,
+    switchMapReplayOperation,
     telemetryRecorder,
 } from '@sourcegraph/cody-shared'
 import { Observable, map } from 'observable-fns'
@@ -185,7 +189,10 @@ export async function getChatContextItemsForMention(
             }
 
             const items = await openCtx.controller.mentions(
-                { query: mentionQuery.text, ...(await getActiveEditorContextForOpenCtxMentions()) },
+                {
+                    query: mentionQuery.text,
+                    ...(await firstResultFromOperation(activeEditorContextForOpenCtxMentions)),
+                },
                 // get mention items for the selected provider only.
                 { providerUri: mentionQuery.provider }
             )
@@ -197,20 +204,46 @@ export async function getChatContextItemsForMention(
     }
 }
 
-export async function getActiveEditorContextForOpenCtxMentions(): Promise<{
+const activeTextEditor: Observable<vscode.TextEditor | undefined> = fromVSCodeEvent(
+    vscode.window.onDidChangeActiveTextEditor
+).pipe(
+    startWith(undefined),
+    map(() => vscode.window.activeTextEditor)
+)
+
+interface ContextForOpenCtxMentions {
     uri: string | undefined
     codebase: string | undefined
-}> {
-    const uri = vscode.window.activeTextEditor?.document.uri
-    if (!uri) {
-        return { uri: undefined, codebase: undefined }
-    }
-
-    return {
-        uri: uri.toString(),
-        codebase: (await repoNameResolver.getRepoNamesContainingUri(uri)).at(0),
-    }
 }
+export const activeEditorContextForOpenCtxMentions: Observable<
+    ContextForOpenCtxMentions | typeof pendingOperation | Error
+> = activeTextEditor.pipe(
+    switchMapReplayOperation(
+        (textEditor): Observable<ContextForOpenCtxMentions | typeof pendingOperation> => {
+            const uri = textEditor?.document.uri
+            if (!uri) {
+                return Observable.of({ uri: undefined, codebase: undefined })
+            }
+
+            return repoNameResolver.getRepoNamesContainingUri(uri).pipe(
+                map(repoNames =>
+                    repoNames === pendingOperation
+                        ? pendingOperation
+                        : {
+                              uri: uri.toString(),
+                              codebase: repoNames.at(0),
+                          }
+                ),
+                map(value => {
+                    if (isError(value)) {
+                        return { uri: uri.toString(), codebase: undefined }
+                    }
+                    return value
+                })
+            )
+        }
+    )
+)
 
 export function contextItemMentionFromOpenCtxItem(
     item: Mention & { providerUri: string }

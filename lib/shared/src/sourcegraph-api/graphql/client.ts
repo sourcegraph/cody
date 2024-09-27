@@ -925,12 +925,13 @@ export class SourcegraphGraphQLAPIClient {
         ).then(response => extractDataOrError(response, data => data.repositories?.nodes || []))
     }
 
-    public async getRepoName(cloneURL: string): Promise<string | null> {
+    public async getRepoName(cloneURL: string, signal?: AbortSignal): Promise<string | null> {
         const response = await this.fetchSourcegraphAPI<APIResponse<RepositoryNameResponse>>(
             REPO_NAME_QUERY,
             {
                 cloneURL,
-            }
+            },
+            signal
         )
 
         const result = extractDataOrError(response, data => data.repository?.name ?? null)
