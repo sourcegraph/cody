@@ -1,7 +1,7 @@
-import _fs from 'node:fs'
 import fs from 'node:fs/promises'
 import path from 'node:path'
 import { type ExpectMatcherState, type MatcherReturnType, type TestInfo, test } from '@playwright/test'
+import fse from 'fs-extra'
 import { produce } from 'immer'
 import _ from 'lodash'
 import type { ArraySlice } from 'type-fest'
@@ -32,44 +32,49 @@ export const expect = {
                 ? normalized.map(v => produce(v, normalizer))
                 : produce(normalized, normalizer)
         }
-
-        const serialized = JSON.stringify(normalized, null, 2)
-
         const snapshotDir = testInfo.snapshotDir
+        await fs.mkdir(snapshotDir, { recursive: true })
         const snapshotPath = path.join(snapshotDir, `${snapshotName}.snap.json`)
+        const newSnapshotPath = path.join(snapshotDir, `${snapshotName}.new.json`)
 
-        if (testInfo._projectInternal.ignoreSnapshots)
+        const currentJsonString = JSON.stringify(normalized, null, 2)
+        const [previousJsonString, previousExists] = await fs
+            .readFile(snapshotPath, 'utf-8')
+            .then(v => [v, true] as const)
+            .catch(() => [null, false] as const)
+
+        if (
+            testInfo.config.updateSnapshots === 'all' ||
+            (testInfo.config.updateSnapshots === 'missing' && !previousExists)
+        ) {
+            await fs.writeFile(snapshotPath, currentJsonString)
+            await fse.unlink(newSnapshotPath).catch(() => {}) // we don't care
             return {
                 pass: true,
-                message: () => '',
+                message: () => 'Snapshot updated',
                 name,
                 expected: snapshotName,
             }
-
-        const updateSnapshots = testInfo.config.updateSnapshots === 'all'
-        const exists = _fs.existsSync(snapshotPath)
-        if (exists) {
-            const previousJSON = await fs.readFile(snapshotPath, 'utf-8')
-            const previous = JSON.parse(previousJSON)
-            const current = JSON.parse(serialized)
-            if (!_.isEqual(current, previous)) {
-                return {
-                    pass: false,
-                    message: () =>
-                        `Snapshot does not match ${snapshotName}\n\n${this.utils.diff(
-                            previous,
-                            current
-                        )}`,
-                    name,
-                    expected: previous,
-                    actual: current,
-                }
-            }
         }
 
-        if (updateSnapshots || !exists) {
-            await fs.mkdir(snapshotDir, { recursive: true })
-            await fs.writeFile(snapshotPath, serialized)
+        const previousJson = previousJsonString ? JSON.parse(previousJsonString) : null
+        const currentJson = JSON.parse(currentJsonString)
+
+        if (!_.isEqual(currentJson, previousJson)) {
+            await fs.writeFile(newSnapshotPath, currentJsonString)
+            return {
+                pass: false,
+                message: () =>
+                    previousExists
+                        ? `Snapshot (${snapshotPath}) does not match (${newSnapshotPath}):\n\n${this.utils.diff(
+                              previousJson,
+                              currentJson
+                          )}`
+                        : `New snapshot created (${newSnapshotPath}).\n\nChange the \`.new.json\` to \`.snap.json\` to accept the diff or run with \`updateSnapshots\` setting.\n\n${currentJsonString}`,
+                name,
+                expected: previousJson,
+                actual: currentJson,
+            }
         }
 
         return {
