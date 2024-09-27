@@ -1,7 +1,7 @@
-import type { ContextItem } from '@sourcegraph/cody-shared'
 import { useExtensionAPI } from '@sourcegraph/prompt-editor'
 import { type FC, useCallback, useMemo } from 'react'
 
+import type { ContextItemFile } from '@sourcegraph/cody-shared'
 import type { Observable } from 'observable-fns'
 import { useTelemetryRecorder } from '../utils/telemetry'
 import { useConfig } from '../utils/useConfig'
@@ -10,7 +10,7 @@ import { type FetchFileParameters, FileContentSearchResult } from './codeSnippet
 import type { ContentMatch } from './codeSnippet/types'
 
 interface FileSnippetProps {
-    item: ContextItem
+    item: ContextItemFile
     className?: string
 }
 
@@ -40,7 +40,7 @@ export const FileSnippet: FC<FileSnippetProps> = props => {
                 {
                     content: item.content ?? '',
                     contentStart: { line: Math.max(startLine - 1, 0), column: 0 },
-                    ranges: [],
+                    ranges: item.ranges ?? [],
                 },
             ],
         }
