@@ -105,7 +105,7 @@ export function getAutocompleteProviderFromSiteConfigCodyLLMConfiguration({
     provider,
     isDotCom,
 }: {
-    completionModel: string
+    completionModel: string | undefined
     provider: AutocompleteProviderID | 'sourcegraph'
     isDotCom: boolean
 }): Promise<Provider> {
