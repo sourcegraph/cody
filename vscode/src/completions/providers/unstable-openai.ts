@@ -1,15 +1,9 @@
 import type { CodeCompletionsParams } from '@sourcegraph/cody-shared'
 
 import { OpenAI } from '../model-helpers/openai'
-import { forkSignal, generatorWithTimeout, zipGenerators } from '../utils'
 
 import {
-    type FetchCompletionResult,
-    fetchAndProcessDynamicMultilineCompletions,
-} from './shared/fetch-and-process-completions'
-import {
     BYOK_MODEL_ID_FOR_LOGS,
-    type CompletionProviderTracer,
     type GenerateCompletionsOptions,
     Provider,
     type ProviderFactoryParams,
@@ -33,39 +27,6 @@ class UnstableOpenAIProvider extends Provider {
             messages,
             topP: 0.5,
         }
-    }
-
-    public async generateCompletions(
-        generateOptions: GenerateCompletionsOptions,
-        abortSignal: AbortSignal,
-        tracer?: CompletionProviderTracer
-    ): Promise<AsyncGenerator<FetchCompletionResult[]>> {
-        const { docContext, numberOfCompletionsToGenerate } = generateOptions
-
-        const requestParams = this.getRequestParams(generateOptions)
-        tracer?.params(requestParams)
-
-        const completionsGenerators = Array.from({ length: numberOfCompletionsToGenerate }).map(
-            async () => {
-                const abortController = forkSignal(abortSignal)
-
-                const completionResponseGenerator = generatorWithTimeout(
-                    await this.client.complete(requestParams, abortController),
-                    requestParams.timeoutMs,
-                    abortController
-                )
-
-                return fetchAndProcessDynamicMultilineCompletions({
-                    completionResponseGenerator,
-                    abortController,
-                    generateOptions,
-                    providerSpecificPostProcess: content =>
-                        this.modelHelper.postProcess(content, docContext),
-                })
-            }
-        )
-
-        return zipGenerators(await Promise.all(completionsGenerators))
     }
 }
 
