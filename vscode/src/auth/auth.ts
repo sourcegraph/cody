@@ -21,6 +21,16 @@ import { localStorage } from '../services/LocalStorageProvider'
 import { secretStorage } from '../services/SecretStorageProvider'
 import { closeAuthProgressIndicator } from './auth-progress-indicator'
 
+interface LoginMenuItem {
+    id: string
+    label: string
+    description: string
+    totalSteps: number
+    uri: string
+}
+
+type AuthMenuType = 'signin' | 'switch'
+
 /**
  * Show a quickpick to select the endpoint to sign into.
  */
@@ -30,7 +40,7 @@ export async function showSignInMenu(
     agentIDE: CodyIDE = CodyIDE.VSCode
 ): Promise<void> {
     const authStatus = currentAuthStatus()
-    const mode = authStatus.authenticated ? 'switch' : 'signin'
+    const mode: AuthMenuType = authStatus.authenticated ? 'switch' : 'signin'
     logDebug('AuthProvider:signinMenu', mode)
     telemetryRecorder.recordEvent('cody.auth.login', 'clicked')
     const item = await showAuthMenu(mode)
@@ -94,47 +104,30 @@ export async function showSignInMenu(
     }
 }
 
-interface LoginMenuItem {
-    id: string
-    label: string
-    description: string
-    totalSteps: number
-    uri: string
-}
-
-type AuthMenuType = 'signin' | 'switch'
-
-function getItemLabel(uri: string, isSwitch: boolean): string {
-    const icon = isSwitch && currentAuthStatus().endpoint === uri ? '$(check) ' : ''
-    if (isDotCom(uri)) {
-        return `${icon}Sourcegraph.com`
-    }
-    return `${icon}${uri}`
+function getEndpointItemLabel(uri: string, isAuthenticated: boolean): string {
+    const icon = isAuthenticated ? '$(check) ' : ''
+    return isDotCom(uri) ? `${icon}Sourcegraph.com` : `${icon}${uri}`
 }
 
 async function showAuthMenu(type: AuthMenuType): Promise<LoginMenuItem | null> {
+    const { endpoint: currentEndpoint } = currentAuthStatus()
     const endpointHistory = localStorage.getEndpointHistory() ?? []
 
-    // Create option items
-    const historySize = endpointHistory?.length
-    const history =
-        historySize > 0
-            ? endpointHistory
-                  ?.map((uri, i) => ({
-                      id: uri,
-                      label: getItemLabel(uri, type === 'switch'),
-                      description: '',
-                      uri,
-                  }))
-                  .reverse()
-            : []
-    const separator = [{ label: type === 'signin' ? 'previously used' : 'current', kind: -1 }]
-    const optionItems = [...LoginMenuOptionItems, ...separator, ...history]
-    const option = (await vscode.window.showQuickPick(
-        optionItems,
-        AuthMenuOptions[type]
-    )) as LoginMenuItem
-    return option
+    const historyItems = endpointHistory.reverse().map(uri => ({
+        id: uri,
+        label: getEndpointItemLabel(uri, currentEndpoint === uri),
+        description: '',
+        totalSteps: 1,
+        uri,
+    }))
+
+    const optionItems: vscode.QuickPickItem[] = [
+        ...LoginMenuOptionItems,
+        { label: 'account history', kind: vscode.QuickPickItemKind.Separator },
+        ...historyItems,
+    ]
+
+    return vscode.window.showQuickPick(optionItems, AuthMenuOptions[type]) as Promise<LoginMenuItem>
 }
 
 /**
