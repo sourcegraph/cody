@@ -113,7 +113,7 @@ import { openExternalLinks, openLocalFileWithRange } from '../../services/utils/
 import { TestSupport } from '../../test-support'
 import type { MessageErrorType } from '../MessageProvider'
 import { getChatContextItemsForMention, getMentionMenuData } from '../context/chatContext'
-import type { ContextAPIClient } from '../context/contextAPIClient'
+import type { ChatIntentAPIClient } from '../context/chatIntentAPIClient'
 import { observeInitialContext } from '../initialContext'
 import {
     CODY_BLOG_URL_o1_WAITLIST,
@@ -139,7 +139,7 @@ interface ChatControllerOptions {
     chatClient: ChatClient
 
     contextRetriever: ContextRetriever
-    contextAPIClient: ContextAPIClient | null
+    chatIntentAPIClient: ChatIntentAPIClient | null
 
     extensionClient: ExtensionClient
 
@@ -192,7 +192,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
     private readonly guardrails: Guardrails
 
     private readonly startTokenReceiver: typeof startTokenReceiver | undefined
-    private readonly contextAPIClient: ContextAPIClient | null
+    private readonly chatIntentAPIClient: ChatIntentAPIClient | null
 
     private disposables: vscode.Disposable[] = []
 
@@ -208,7 +208,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         editor,
         guardrails,
         startTokenReceiver,
-        contextAPIClient,
+        chatIntentAPIClient,
         contextRetriever,
         extensionClient,
     }: ChatControllerOptions) {
@@ -222,7 +222,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
 
         this.guardrails = guardrails
         this.startTokenReceiver = startTokenReceiver
-        this.contextAPIClient = contextAPIClient
+        this.chatIntentAPIClient = chatIntentAPIClient
 
         if (TestSupport.instance) {
             TestSupport.instance.chatPanelProvider.set(this)
@@ -817,7 +817,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         requestID,
         text,
     }: { requestID?: string; text: string }): Promise<ChatMessage['intent'] | undefined> {
-        const response = await this.contextAPIClient
+        const response = await this.chatIntentAPIClient
             ?.detectChatIntent(requestID || '', text)
             .catch(() => null)
 
@@ -981,55 +981,17 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             signal
         )
 
-        const rankedContext: RankedContext[] = []
-        const useReranker =
-            vscode.workspace.getConfiguration().get<boolean>('cody.internal.useReranker') ?? false
-        if (useReranker && this.contextAPIClient && retrievedContext.length > 1) {
-            const response = await this.contextAPIClient.rankContext(
-                requestID,
-                inputTextWithoutContextChips.toString(),
-                retrievedContext
-            )
-            if (isError(response)) {
-                throw response
-            }
-            if (!response) {
-                throw new Error('empty response from context reranking API')
-            }
-            const { used, ignored } = response
-            const all: [ContextItem, number][] = []
-            const usedContext: ContextItem[] = []
-            const ignoredContext: ContextItem[] = []
-            for (const { index, score } of used) {
-                usedContext.push(retrievedContext[index])
-                all.push([retrievedContext[index], score])
-            }
-            for (const { index, score } of ignored) {
-                ignoredContext.push(retrievedContext[index])
-                all.push([retrievedContext[index], score])
-            }
-
-            rankedContext.push({
-                strategy: 'local+remote, reranked',
+        return [
+            {
+                strategy: 'local+remote',
                 items: combineContext(
                     await resolvedExplicitMentionsPromise,
                     openCtxContext,
                     priorityContext,
-                    usedContext
+                    retrievedContext
                 ),
-            })
-        }
-
-        rankedContext.push({
-            strategy: 'local+remote',
-            items: combineContext(
-                await resolvedExplicitMentionsPromise,
-                openCtxContext,
-                priorityContext,
-                retrievedContext
-            ),
-        })
-        return rankedContext
+            },
+        ]
     }
 
     private submitOrEditOperation: AbortController | undefined
@@ -1284,9 +1246,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             [...context.used, ...context.ignored],
             contextAlternatives
         )
-
-        // This is not awaited, so we kick the call off but don't block on it returning
-        this.contextAPIClient?.recordContext(requestID, context.used, context.ignored)
 
         return { prompt, context }
     }

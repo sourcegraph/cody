@@ -27,7 +27,7 @@ import {
     handleCodeFromInsertAtCursor,
     handleCodeFromSaveToNewFile,
 } from '../../services/utils/codeblock-action-tracker'
-import type { ContextAPIClient } from '../context/contextAPIClient'
+import type { ChatIntentAPIClient } from '../context/chatIntentAPIClient'
 import type { SmartApplyResult } from '../protocol'
 import {
     ChatController,
@@ -69,7 +69,7 @@ export class ChatsController implements vscode.Disposable {
         private readonly contextRetriever: ContextRetriever,
 
         private readonly guardrails: Guardrails,
-        private readonly contextAPIClient: ContextAPIClient | null,
+        private readonly chatIntentAPIClient: ChatIntentAPIClient | null,
         private readonly extensionClient: ExtensionClient
     ) {
         logDebug('ChatsController:constructor', 'init')
@@ -474,7 +474,7 @@ export class ChatsController implements vscode.Disposable {
             chatClient: this.chatClient,
             guardrails: this.guardrails,
             startTokenReceiver: this.options.startTokenReceiver,
-            contextAPIClient: this.contextAPIClient,
+            chatIntentAPIClient: this.chatIntentAPIClient,
             contextRetriever: this.contextRetriever,
             extensionClient: this.extensionClient,
         })
