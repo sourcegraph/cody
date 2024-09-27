@@ -94,11 +94,11 @@ log:
         send: 0
         ssl: -1
         wait: 302
-    - _id: 2426219b807d0dc43882cd923c2fa69e
+    - _id: d2bbc3f370b93363e7d9a30dc2a71ab8
       _order: 0
       cache: {}
       request:
-        bodySize: 1044
+        bodySize: 1048
         cookies: []
         headers:
           - name: transfer-encoding
@@ -108,7 +108,7 @@ log:
           - name: connection
             value: close
           - name: traceparent
-            value: 00-986a0545491b66dd840704aa8d68c480-7e73093010979ec6-01
+            value: 00-f4ed19886cbfd77f8009f630dae52c6c-f7e5daa35def8385-01
           - name: authorization
             value: token
               REDACTED_fc324d3667e841181b0779375f26dedc911d26b303d23b29b1a2d7ee63dc77eb
@@ -163,7 +163,7 @@ log:
 
 
                   Question: buzz.ts 
-            model: anthropic/claude-3-5-sonnet-20240620
+            model: anthropic::2023-06-01::claude-3.5-sonnet
             temperature: 0.2
             topK: -1
             topP: -1
@@ -176,14 +176,14 @@ log:
             value: 1.34.3
         url: https://sourcegraph.com/.api/completions/stream?api-version=2&client-name=vscode&client-version=1.34.3
       response:
-        bodySize: 4625
+        bodySize: 4759
         content:
           mimeType: text/event-stream
-          size: 4625
+          size: 4759
           text: >+
             event: completion
 
-            data: {"deltaText":"Certainly! I'd be happy to discuss the `buzz.ts` file. This file contains a TypeScript implementation of the classic FizzBuzz problem. Here's a breakdown of what the code does:\n\n1. It exports a function called `fizzbuzz()`.\n2. Inside the function, an empty array called `fizzbuzz` is initialized.\n3. The function uses a for loop to iterate from 1 to 100.\n4. For each number, it applies the FizzBuzz rules:\n   - If the number is divisible by both 3 and 5 (i.e., divisible by 15), it adds 'FizzBuzz' to the array.\n   - If the number is only divisible by 3, it adds 'Fizz' to the array.\n   - If the number is only divisible by 5, it adds 'Buzz' to the array.\n   - If the number is not divisible by 3 or 5, it adds the number itself (as a string) to the array.\n5. Finally, the function returns the completed `fizzbuzz` array.\n\nThis implementation is concise and follows the standard FizzBuzz rules. It's a good example of how to solve this common programming challenge in TypeScript. Would you like me to explain any specific part of the code in more detail?","stopReason":"end_turn"}
+            data: {"deltaText":"Certainly! I'd be happy to discuss the `buzz.ts` file. This file contains a TypeScript implementation of the classic FizzBuzz problem. Here's a breakdown of what the code does:\n\n1. It exports a function called `fizzbuzz()`.\n2. Inside the function, an empty array called `fizzbuzz` is initialized.\n3. The function uses a for loop to iterate from 1 to 100.\n4. For each number, it applies the FizzBuzz rules:\n   - If the number is divisible by both 3 and 5 (i.e., divisible by 15), it adds 'FizzBuzz' to the array.\n   - If the number is only divisible by 3, it adds 'Fizz' to the array.\n   - If the number is only divisible by 5, it adds 'Buzz' to the array.\n   - For any other number, it adds the number itself (as a string) to the array.\n5. Finally, the function returns the completed `fizzbuzz` array.\n\nThis implementation is concise and follows the standard FizzBuzz rules. It's a good example of how to solve this common programming challenge in TypeScript. Would you like me to explain any specific part of the code in more detail or suggest any improvements?","stopReason":"end_turn"}
 
 
             event: done
@@ -193,7 +193,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 23 Sep 2024 16:23:33 GMT
+            value: Fri, 27 Sep 2024 13:32:09 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -222,8 +222,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-23T16:23:30.874Z
-      time: 5240
+      startedDateTime: 2024-09-27T13:32:06.760Z
+      time: 4722
       timings:
         blocked: -1
         connect: -1
@@ -231,7 +231,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 5240
+        wait: 4722
     - _id: 28c346c4c160958f92e8f989a1737e5e
       _order: 0
       cache: {}
@@ -1160,5 +1160,286 @@ log:
         send: 0
         ssl: -1
         wait: 276
+    - _id: 5bf27035df04d471d88a6d6cb52a0dd6
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 0
+        cookies: []
+        headers:
+          - name: connection
+            value: close
+          - name: host
+            value: sourcegraph.com
+          - name: accept-encoding
+            value: identity
+          - name: user-agent
+            value: node-fetch/1.0 (+https://github.com/bitinn/node-fetch)
+          - name: accept
+            value: "*/*"
+          - name: authorization
+            value: token
+              REDACTED_fc324d3667e841181b0779375f26dedc911d26b303d23b29b1a2d7ee63dc77eb
+          - name: x-mitm-proxy-name
+            value: sourcegraph.dotcom
+          - name: x-mitm-auth-token-name
+            value: sourcegraph.dotcom
+        headersSize: 486
+        httpVersion: HTTP/1.1
+        method: GET
+        queryString: []
+        url: https://sourcegraph.com/.api/modelconfig/supported-models.json
+      response:
+        bodySize: 6079
+        content:
+          mimeType: text/plain; charset=utf-8
+          size: 6079
+          text: >
+            {
+                "schemaVersion": "1.0",
+                "revision": "0.0.0+dev",
+                "providers": [
+                    {
+                        "id": "anthropic",
+                        "displayName": "Anthropic"
+                    },
+                    {
+                        "id": "fireworks",
+                        "displayName": "Fireworks"
+                    },
+                    {
+                        "id": "google",
+                        "displayName": "Google"
+                    },
+                    {
+                        "id": "openai",
+                        "displayName": "OpenAI"
+                    },
+                    {
+                        "id": "mistral",
+                        "displayName": "Mistral"
+                    }
+                ],
+                "models": [
+                    {
+                        "modelRef": "anthropic::2023-06-01::claude-3.5-sonnet",
+                        "displayName": "Claude 3.5 Sonnet",
+                        "modelName": "claude-3-5-sonnet-20240620",
+                        "capabilities": [
+                            "edit",
+                            "chat"
+                        ],
+                        "category": "balanced",
+                        "status": "stable",
+                        "tier": "free",
+                        "contextWindow": {
+                            "maxInputTokens": 45000,
+                            "maxOutputTokens": 4000
+                        }
+                    },
+                    {
+                        "modelRef": "anthropic::2023-06-01::claude-3-opus",
+                        "displayName": "Claude 3 Opus",
+                        "modelName": "claude-3-opus-20240229",
+                        "capabilities": [
+                            "edit",
+                            "chat"
+                        ],
+                        "category": "other",
+                        "status": "stable",
+                        "tier": "pro",
+                        "contextWindow": {
+                            "maxInputTokens": 45000,
+                            "maxOutputTokens": 4000
+                        }
+                    },
+                    {
+                        "modelRef": "anthropic::2023-06-01::claude-3-haiku",
+                        "displayName": "Claude 3 Haiku",
+                        "modelName": "claude-3-haiku-20240307",
+                        "capabilities": [
+                            "edit",
+                            "chat"
+                        ],
+                        "category": "speed",
+                        "status": "stable",
+                        "tier": "free",
+                        "contextWindow": {
+                            "maxInputTokens": 7000,
+                            "maxOutputTokens": 4000
+                        }
+                    },
+                    {
+                        "modelRef": "fireworks::v1::starcoder",
+                        "displayName": "StarCoder",
+                        "modelName": "starcoder",
+                        "capabilities": [
+                            "autocomplete"
+                        ],
+                        "category": "speed",
+                        "status": "stable",
+                        "tier": "pro",
+                        "contextWindow": {
+                            "maxInputTokens": 2048,
+                            "maxOutputTokens": 256
+                        }
+                    },
+                    {
+                        "modelRef": "fireworks::v1::deepseek-coder-v2-lite-base",
+                        "displayName": "DeepSeek V2 Lite Base",
+                        "modelName": "accounts/sourcegraph/models/deepseek-coder-v2-lite-base",
+                        "capabilities": [
+                            "autocomplete"
+                        ],
+                        "category": "speed",
+                        "status": "stable",
+                        "tier": "pro",
+                        "contextWindow": {
+                            "maxInputTokens": 2048,
+                            "maxOutputTokens": 256
+                        }
+                    },
+                    {
+                        "modelRef": "google::v1::gemini-1.5-pro",
+                        "displayName": "Gemini 1.5 Pro",
+                        "modelName": "gemini-1.5-pro",
+                        "capabilities": [
+                            "edit",
+                            "chat"
+                        ],
+                        "category": "balanced",
+                        "status": "stable",
+                        "tier": "free",
+                        "contextWindow": {
+                            "maxInputTokens": 45000,
+                            "maxOutputTokens": 4000
+                        }
+                    },
+                    {
+                        "modelRef": "google::v1::gemini-1.5-flash",
+                        "displayName": "Gemini 1.5 Flash",
+                        "modelName": "gemini-1.5-flash",
+                        "capabilities": [
+                            "edit",
+                            "chat"
+                        ],
+                        "category": "speed",
+                        "status": "stable",
+                        "tier": "free",
+                        "contextWindow": {
+                            "maxInputTokens": 45000,
+                            "maxOutputTokens": 4000
+                        }
+                    },
+                    {
+                        "modelRef": "mistral::v1::mixtral-8x7b-instruct",
+                        "displayName": "Mixtral 8x7B",
+                        "modelName": "accounts/fireworks/models/mixtral-8x7b-instruct",
+                        "capabilities": [
+                            "chat"
+                        ],
+                        "category": "speed",
+                        "status": "stable",
+                        "tier": "free",
+                        "contextWindow": {
+                            "maxInputTokens": 7000,
+                            "maxOutputTokens": 4000
+                        }
+                    },
+                    {
+                        "modelRef": "openai::2024-02-01::gpt-4o",
+                        "displayName": "GPT-4o",
+                        "modelName": "gpt-4o",
+                        "capabilities": [
+                            "edit",
+                            "chat"
+                        ],
+                        "category": "balanced",
+                        "status": "stable",
+                        "tier": "pro",
+                        "contextWindow": {
+                            "maxInputTokens": 45000,
+                            "maxOutputTokens": 4000
+                        }
+                    },
+                    {
+                        "modelRef": "openai::2024-02-01::cody-chat-preview-001",
+                        "displayName": "OpenAI o1-preview",
+                        "modelName": "cody-chat-preview-001",
+                        "capabilities": [
+                            "chat"
+                        ],
+                        "category": "accuracy",
+                        "status": "waitlist",
+                        "tier": "pro",
+                        "contextWindow": {
+                            "maxInputTokens": 45000,
+                            "maxOutputTokens": 4000
+                        }
+                    },
+                    {
+                        "modelRef": "openai::2024-02-01::cody-chat-preview-002",
+                        "displayName": "OpenAI o1-mini",
+                        "modelName": "cody-chat-preview-002",
+                        "capabilities": [
+                            "chat"
+                        ],
+                        "category": "accuracy",
+                        "status": "waitlist",
+                        "tier": "pro",
+                        "contextWindow": {
+                            "maxInputTokens": 45000,
+                            "maxOutputTokens": 4000
+                        }
+                    }
+                ],
+                "defaultModels": {
+                    "chat": "anthropic::2023-06-01::claude-3.5-sonnet",
+                    "fastChat": "anthropic::2023-06-01::claude-3-haiku",
+                    "codeCompletion": "fireworks::v1::deepseek-coder-v2-lite-base"
+                }
+            }
+        cookies: []
+        headers:
+          - name: date
+            value: Fri, 27 Sep 2024 10:38:50 GMT
+          - name: content-type
+            value: text/plain; charset=utf-8
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: close
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache, max-age=0
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1313
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-09-27T10:38:50.240Z
+      time: 238
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 238
   pages: []
   version: "1.2"

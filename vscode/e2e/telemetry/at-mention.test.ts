@@ -120,6 +120,7 @@ const snapshotNormalizers = [
         'event.parameters.privateMetadata.sessionID',
         'event.parameters.privateMetadata.traceId',
         'event.parameters.privateMetadata.chatModel',
+        'event.parameters.privateMetadata.promptText',
         'event.parameters.privateMetadata.responseText',
         'event.parameters.privateMetadata.gitMetadata'
     ),
