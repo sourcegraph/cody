@@ -5,7 +5,6 @@ import type {
     AuthStatus,
     ChatMessage,
     ClientConfiguration,
-    ClientStateForWebview,
     CodyIDE,
     ContextItem,
     ContextItemSource,
@@ -207,7 +206,6 @@ export type ExtensionMessage =
           type: 'userContextFiles'
           userContextFiles?: ContextItem[] | undefined | null
       }
-    | { type: 'clientState'; value: ClientStateForWebview }
     | {
           type: 'clientAction'
           addContextItemsToLastHumanInput?: ContextItem[] | null | undefined
@@ -243,6 +241,7 @@ export interface WebviewSubmitMessage extends WebviewContextMessage {
     /** An opaque value representing the text editor's state. @see {ChatMessage.editorState} */
     editorState?: unknown | undefined | null
     intent?: ChatMessage['intent'] | undefined | null
+    manuallySelectedIntent?: boolean | undefined | null
 }
 
 interface WebviewEditMessage extends WebviewContextMessage {
@@ -252,6 +251,7 @@ interface WebviewEditMessage extends WebviewContextMessage {
     /** An opaque value representing the text editor's state. @see {ChatMessage.editorState} */
     editorState?: unknown | undefined | null
     intent?: ChatMessage['intent'] | undefined | null
+    manuallySelectedIntent?: boolean | undefined | null
 }
 
 interface WebviewContextMessage {
@@ -284,7 +284,6 @@ export interface ConfigurationSubsetForWebview
  * URLs for the Sourcegraph instance and app.
  */
 export const CODY_DOC_URL = new URL('https://sourcegraph.com/docs/cody')
-export const SG_BLOG_URL = new URL('https://sourcegraph.com/blog/')
 export const SG_CHANGELOG_URL = new URL('https://sourcegraph.com/changelog')
 
 // Community and support

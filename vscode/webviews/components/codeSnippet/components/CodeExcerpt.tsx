@@ -21,7 +21,7 @@ interface Props {
     onCopy?: () => void
 }
 
-export interface HighlightRange {
+interface HighlightRange {
     /**
      * The 0-based line number where this highlight range begins
      */

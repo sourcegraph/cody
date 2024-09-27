@@ -180,7 +180,7 @@ describe('logger', () => {
     describe('getInlineContextItemToLog', () => {
         it('filters context items based on payload size limit', () => {
             const inlineCompletionItemContext: InlineCompletionItemContext = {
-                gitUrl: 'https://github.com/example/repo',
+                repoName: 'https://github.com/example/repo',
                 commit: 'abc123',
                 filePath: '/path/to/file.ts',
                 prefix: 'const foo = ',
@@ -226,7 +226,7 @@ describe('logger', () => {
 
         it('filters when the prefix and suffix is too long', () => {
             const inlineCompletionItemContext: InlineCompletionItemContext = {
-                gitUrl: 'https://github.com/example/repo',
+                repoName: 'https://github.com/example/repo',
                 commit: 'abc123',
                 filePath: '/path/to/file.ts',
                 prefix: 'a'.repeat(1024 * 1024),

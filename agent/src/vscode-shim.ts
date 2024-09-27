@@ -575,6 +575,23 @@ export function setCreateWebviewPanel(
     shimmedCreateWebviewPanel = newCreateWebviewPanel
 }
 
+function terminal(): vscode.Terminal {
+    // TODO: implement this when needed
+    return {
+        name: 'Cody Command Line',
+        processId: Promise.resolve(0),
+        creationOptions: {},
+        exitStatus: undefined,
+        state: {
+            isInteractedWith: false,
+        },
+        sendText: () => {},
+        show: () => {},
+        hide: () => {},
+        dispose: () => {},
+    }
+}
+
 export const progressBars = new Map<string, CancellationTokenSource>()
 
 async function showWindowMessage(
@@ -815,10 +832,7 @@ const _window: typeof vscode.window = {
         console.log(new Error().stack)
         throw new Error('Not implemented: vscode.window.withScmProgress')
     },
-    createTerminal: () => {
-        console.log(new Error().stack)
-        throw new Error('Not implemented: vscode.window.createTerminal')
-    },
+    createTerminal: () => terminal(),
     activeTextEditor: undefined, // Updated by AgentWorkspaceDocuments
     visibleNotebookEditors: [],
     activeNotebookEditor: undefined,

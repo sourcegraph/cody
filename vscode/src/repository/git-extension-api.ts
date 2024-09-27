@@ -52,26 +52,6 @@ export async function initVSCodeGitApi(): Promise<vscode.Disposable> {
 }
 
 /**
- * ❗️ The Git extension API instance is only available in the VS Code extension. ️️❗️
- */
-export function gitRemoteUrlsFromGitExtension(uri: vscode.Uri): string[] | undefined {
-    const repository = vscodeGitAPI?.getRepository(uri)
-    const remoteUrls = new Set<string>()
-
-    for (const remote of repository?.state?.remotes || []) {
-        if (remote.fetchUrl) {
-            remoteUrls.add(remote.fetchUrl)
-        }
-
-        if (remote.pushUrl) {
-            remoteUrls.add(remote.pushUrl)
-        }
-    }
-
-    return remoteUrls.size ? Array.from(remoteUrls) : undefined
-}
-
-/**
  * Gets the list of locally modified files in the Git repository for the given URI.
  * This is defined as the list of files modified since the merge base of the current
  * branch with its upstream. If the upstream doesn't exist, then we use the list of

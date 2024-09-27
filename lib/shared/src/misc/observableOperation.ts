@@ -53,9 +53,10 @@ export function skipPendingOperation<T>(): (
  * uses {@link switchMapReplayOperation}). If the result is an error, it throws.
  */
 export async function firstResultFromOperation<T>(
-    observable: ObservableLike<T | typeof pendingOperation | Error>
+    observable: ObservableLike<T | typeof pendingOperation | Error>,
+    signal?: AbortSignal
 ): Promise<T> {
-    const result = await firstValueFrom(Observable.from(observable).pipe(skipPendingOperation()))
+    const result = await firstValueFrom(Observable.from(observable).pipe(skipPendingOperation()), signal)
     if (isError(result)) {
         throw result
     }

@@ -1,4 +1,5 @@
-import type { Observable } from 'observable-fns'
+import { Observable } from 'observable-fns'
+import type { AuthStatus, ResolvedConfiguration } from '../..'
 import type { ChatMessage } from '../../chat/transcript/messages'
 import type { ContextItem } from '../../codebase-context/messages'
 import type { CodyCommand } from '../../commands/types'
@@ -39,11 +40,35 @@ export interface WebviewToExtensionAPI {
      */
     setChatModel(model: Model['id']): Observable<void>
 
+    /**
+     * Observe the initial context that should be populated in the chat message input field.
+     */
+    initialContext(): Observable<ContextItem[]>
+
     detectIntent(text: string): Observable<ChatMessage['intent']>
+
+    /**
+     * Observe the current resolved configuration (same as the global {@link resolvedConfig}
+     * observable).
+     */
+    resolvedConfig(): Observable<ResolvedConfiguration>
+
+    /**
+     * Observe the current auth status (same as the global {@link authStatus} observable).
+     */
+    authStatus(): Observable<AuthStatus>
+
+    /**
+     * Observe the current transcript.
+     */
+    transcript(): Observable<readonly ChatMessage[]>
 }
 
 export function createExtensionAPI(
-    messageAPI: ReturnType<typeof createMessageAPIForWebview>
+    messageAPI: ReturnType<typeof createMessageAPIForWebview>,
+
+    // As a workaround for Cody Web, support providing static initial context.
+    staticInitialContext?: ContextItem[]
 ): WebviewToExtensionAPI {
     return {
         mentionMenuData: proxyExtensionAPI(messageAPI, 'mentionMenuData'),
@@ -52,7 +77,13 @@ export function createExtensionAPI(
         models: proxyExtensionAPI(messageAPI, 'models'),
         highlights: proxyExtensionAPI(messageAPI, 'highlights'),
         setChatModel: proxyExtensionAPI(messageAPI, 'setChatModel'),
+        initialContext: staticInitialContext
+            ? () => Observable.of(staticInitialContext)
+            : proxyExtensionAPI(messageAPI, 'initialContext'),
         detectIntent: proxyExtensionAPI(messageAPI, 'detectIntent'),
+        resolvedConfig: proxyExtensionAPI(messageAPI, 'resolvedConfig'),
+        authStatus: proxyExtensionAPI(messageAPI, 'authStatus'),
+        transcript: proxyExtensionAPI(messageAPI, 'transcript'),
     }
 }
 

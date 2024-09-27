@@ -31,7 +31,7 @@ export class ChatBuilder {
      * it has none).
      */
     public static contextWindowForChat(
-        chat: ChatBuilder
+        chat: ChatBuilder | Observable<ChatBuilder>
     ): Observable<ModelContextWindow | Error | typeof pendingOperation> {
         return ChatBuilder.resolvedModelForChat(chat).pipe(
             switchMap(
@@ -52,9 +52,9 @@ export class ChatBuilder {
      * default chat model if it has no selected model.
      */
     public static resolvedModelForChat(
-        chat: ChatBuilder
+        chat: ChatBuilder | Observable<ChatBuilder>
     ): Observable<ChatModel | undefined | typeof pendingOperation> {
-        return chat.changes.pipe(
+        return (chat instanceof Observable ? chat : chat.changes).pipe(
             map(chat => chat.selectedModel),
             distinctUntilChanged(),
             switchMap(selectedModel =>
@@ -71,7 +71,9 @@ export class ChatBuilder {
                               // only happen if the server's model selection changes or if the user
                               // switches accounts with an open chat. Perhaps we could show some
                               // kind of indication to the user, but this is fine for now.
-                              chat.setSelectedModel(undefined)
+                              if (chat instanceof ChatBuilder) {
+                                  chat.setSelectedModel(undefined)
+                              }
                               return modelsService.getDefaultChatModel()
                           })
                       )
@@ -94,7 +96,7 @@ export class ChatBuilder {
          * one, or else `undefined` to use the default chat model on the current endpoint at the
          * time the chat is sent.
          */
-        public selectedModel: ChatModel | undefined,
+        public selectedModel?: ChatModel | undefined,
 
         public readonly sessionID: string = new Date(Date.now()).toUTCString(),
         private messages: ChatMessage[] = [],

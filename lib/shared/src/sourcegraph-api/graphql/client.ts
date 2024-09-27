@@ -19,6 +19,7 @@ import {
     CHAT_INTENT_QUERY,
     CONTEXT_FILTERS_QUERY,
     CONTEXT_SEARCH_QUERY,
+    CONTEXT_SEARCH_QUERY_WITH_RANGES,
     CURRENT_SITE_CODY_CONFIG_FEATURES,
     CURRENT_SITE_CODY_LLM_CONFIGURATION,
     CURRENT_SITE_CODY_LLM_CONFIGURATION_SMART_CONTEXT,
@@ -368,7 +369,18 @@ interface ContextSearchResponse {
         startLine: number
         endLine: number
         chunkContent: string
+        matchedRanges: Range[]
     }[]
+}
+
+interface Location {
+    line: number
+    column: number
+}
+
+export interface Range {
+    start: Location
+    end: Location
 }
 
 export interface ChatIntentResult {
@@ -393,6 +405,7 @@ export interface ContextSearchResult {
     startLine: number
     endLine: number
     content: string
+    ranges: Range[]
 }
 
 /**
@@ -539,7 +552,7 @@ export interface FetchHighlightFileParameters {
 }
 
 /** A specific highlighted line range to fetch. */
-export interface HighlightLineRange {
+interface HighlightLineRange {
     /**
      * The last line to fetch (0-indexed, inclusive). Values outside the bounds of the file will
      * automatically be clamped within the valid range.
@@ -925,12 +938,13 @@ export class SourcegraphGraphQLAPIClient {
         ).then(response => extractDataOrError(response, data => data.repositories?.nodes || []))
     }
 
-    public async getRepoName(cloneURL: string): Promise<string | null> {
+    public async getRepoName(cloneURL: string, signal?: AbortSignal): Promise<string | null> {
         const response = await this.fetchSourcegraphAPI<APIResponse<RepositoryNameResponse>>(
             REPO_NAME_QUERY,
             {
                 cloneURL,
-            }
+            },
+            signal
         )
 
         const result = extractDataOrError(response, data => data.repository?.name ?? null)
@@ -1017,18 +1031,24 @@ export class SourcegraphGraphQLAPIClient {
         signal?: AbortSignal
         filePatterns?: string[]
     }): Promise<ContextSearchResult[] | null | Error> {
-        const isValidVersion = await this.isValidSiteVersion({ minimumVersion: '5.7.0' })
+        const hasContextMatchingSupport = await this.isValidSiteVersion({ minimumVersion: '5.8.0' })
+        const hasFilePathSupport =
+            hasContextMatchingSupport || (await this.isValidSiteVersion({ minimumVersion: '5.7.0' }))
         const config = await firstValueFrom(this.config!)
         signal?.throwIfAborted()
 
         return this.fetchSourcegraphAPI<APIResponse<ContextSearchResponse>>(
-            isValidVersion ? CONTEXT_SEARCH_QUERY : LEGACY_CONTEXT_SEARCH_QUERY,
+            hasContextMatchingSupport
+                ? CONTEXT_SEARCH_QUERY_WITH_RANGES
+                : hasFilePathSupport
+                  ? CONTEXT_SEARCH_QUERY
+                  : LEGACY_CONTEXT_SEARCH_QUERY,
             {
                 repos: repoIDs,
                 query,
                 codeResultsCount: 15,
                 textResultsCount: 5,
-                ...(isValidVersion ? { filePatterns } : {}),
+                ...(hasFilePathSupport ? { filePatterns } : {}),
             },
             signal
         ).then(response =>
@@ -1045,6 +1065,7 @@ export class SourcegraphGraphQLAPIClient {
                     startLine: item.startLine,
                     endLine: item.endLine,
                     content: item.chunkContent,
+                    ranges: item.matchedRanges ?? [],
                 }))
             )
         )

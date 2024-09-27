@@ -8,22 +8,16 @@ import {
 import type { GetItemsResult } from '../quick-pick'
 import type { EditModelItem } from './types'
 
-const getModelProviderIcon = (provider: string): string => {
-    switch (provider) {
-        case 'Anthropic':
-            return '$(anthropic-logo)'
-        case 'OpenAI':
-            return '$(openai-logo)'
-        case 'Mistral':
-            return '$(mistral-logo)'
-        case 'Ollama':
-            return '$(ollama-logo)'
-        case 'Google':
-            return '$(gemini-logo)'
-        default:
-            return '$(cody-logo)'
-    }
+const MODEL_PROVIDER_ICONS: Record<string, string> = {
+    anthropic: '$(anthropic-logo)',
+    openai: '$(openai-logo)',
+    mistral: '$(mistral-logo)',
+    ollama: '$(ollama-logo)',
+    google: '$(gemini-logo)',
 }
+
+const getModelProviderIcon = (provider: string): string =>
+    MODEL_PROVIDER_ICONS[provider.toLowerCase()] || '$(cody-logo)'
 
 export const getModelOptionItems = (modelOptions: Model[], isCodyPro: boolean): EditModelItem[] => {
     const allOptions = modelOptions

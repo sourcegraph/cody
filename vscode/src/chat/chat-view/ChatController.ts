@@ -1,4 +1,15 @@
-import { type ChatModel, firstResultFromOperation, pendingOperation, ps } from '@sourcegraph/cody-shared'
+import {
+    type ChatModel,
+    TokenCounterUtils,
+    distinctUntilChanged,
+    firstResultFromOperation,
+    pendingOperation,
+    ps,
+    resolvedConfig,
+    shareReplay,
+    skip,
+    skipPendingOperation,
+} from '@sourcegraph/cody-shared'
 import * as uuid from 'uuid'
 import * as vscode from 'vscode'
 
@@ -32,13 +43,11 @@ import {
     Typewriter,
     addMessageListenersForExtensionAPI,
     authStatus,
-    createDisposables,
     createMessageAPIForExtension,
     currentAuthStatus,
     currentAuthStatusAuthed,
     currentResolvedConfig,
     featureFlagProvider,
-    firstValueFrom,
     getContextForChatMessage,
     graphqlClient,
     hydrateAfterPostMessage,
@@ -67,7 +76,6 @@ import {
 
 import type { Span } from '@opentelemetry/api'
 import { captureException } from '@sentry/core'
-import { TokenCounterUtils } from '@sourcegraph/cody-shared/src/token/counter'
 import type { TelemetryEventParameters } from '@sourcegraph/telemetry'
 import { map } from 'observable-fns'
 import type { URI } from 'vscode-uri'
@@ -85,12 +93,14 @@ import { CodyReflectionAgent } from '../../context/agentic'
 import { resolveContextItems } from '../../editor/utils/editor-context'
 import type { VSCodeEditor } from '../../editor/vscode-editor'
 import type { ExtensionClient } from '../../extension-client'
-import type { SymfRunner } from '../../local-context/symf'
 import { logDebug } from '../../log'
 import { migrateAndNotifyForOutdatedModels } from '../../models/modelMigrator'
 import { getCategorizedMentions } from '../../prompt-builder/utils'
 import { mergedPromptsAndLegacyCommands } from '../../prompts/prompts'
-import { workspaceReposMonitor } from '../../repository/repo-metadata-from-git-api'
+import {
+    type RepoRevMetaData,
+    publicRepoMetadataIfAllWorkspaceReposArePublic,
+} from '../../repository/githubRepoMetadata'
 import { authProvider } from '../../services/AuthProvider'
 import { AuthProviderSimplified } from '../../services/AuthProviderSimplified'
 import { localStorage } from '../../services/LocalStorageProvider'
@@ -104,9 +114,9 @@ import {
 import { openExternalLinks, openLocalFileWithRange } from '../../services/utils/workspace-action'
 import { TestSupport } from '../../test-support'
 import type { MessageErrorType } from '../MessageProvider'
-import { startClientStateBroadcaster } from '../clientStateBroadcaster'
 import { getChatContextItemsForMention, getMentionMenuData } from '../context/chatContext'
 import type { ContextAPIClient } from '../context/contextAPIClient'
+import { observeInitialContext } from '../initialContext'
 import {
     CODY_BLOG_URL_o1_WAITLIST,
     type ChatSubmitType,
@@ -130,8 +140,6 @@ interface ChatControllerOptions {
     extensionUri: vscode.Uri
     chatClient: ChatClient
 
-    retrievers: AuthDependentRetrievers
-
     contextRetriever: ContextRetriever
     contextAPIClient: ContextAPIClient | null
 
@@ -145,26 +153,6 @@ interface ChatControllerOptions {
 export interface ChatSession {
     webviewPanelOrView: vscode.WebviewView | vscode.WebviewPanel | undefined
     sessionID: string
-}
-
-export class AuthDependentRetrievers {
-    constructor(private _symf: SymfRunner | null) {}
-
-    private isCodyWeb(): boolean {
-        return vscode.workspace.getConfiguration().get<string>('cody.advanced.agent.ide') === CodyIDE.Web
-    }
-
-    private isConsumer(): boolean {
-        return isDotCom(currentAuthStatus())
-    }
-
-    public get allowRemoteContext(): boolean {
-        return this.isCodyWeb() || !this.isConsumer()
-    }
-
-    get symf(): SymfRunner | null {
-        return this.isConsumer() ? this._symf : null
-    }
 }
 
 /**
@@ -199,8 +187,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
 
     private readonly chatClient: ChatClient
 
-    private readonly retrievers: AuthDependentRetrievers
-
     private readonly contextRetriever: ContextRetriever
 
     private readonly editor: VSCodeEditor
@@ -221,7 +207,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
     constructor({
         extensionUri,
         chatClient,
-        retrievers,
         editor,
         guardrails,
         startTokenReceiver,
@@ -231,7 +216,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
     }: ChatControllerOptions) {
         this.extensionUri = extensionUri
         this.chatClient = chatClient
-        this.retrievers = retrievers
         this.editor = editor
         this.extensionClient = extensionClient
         this.contextRetriever = contextRetriever
@@ -248,24 +232,29 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
 
         this.disposables.push(
             subscriptionDisposable(
-                authStatus
-                    .pipe(
-                        createDisposables(() =>
-                            startClientStateBroadcaster({
-                                useRemoteSearch: this.retrievers.allowRemoteContext,
-                                postMessage: (message: ExtensionMessage) => this.postMessage(message),
-                                chatModel: this.chatBuilder,
-                            })
-                        )
-                    )
-                    .subscribe({})
-            ),
-            subscriptionDisposable(
                 authStatus.subscribe(() => {
                     // Run this async because this method may be called during initialization
                     // and awaiting on this.postMessage may result in a deadlock
                     void this.sendConfig()
                 })
+            ),
+
+            // Reset the chat when the endpoint changes so that we don't try to use old models.
+            subscriptionDisposable(
+                authStatus
+                    .pipe(
+                        map(authStatus => authStatus.endpoint),
+                        distinctUntilChanged(),
+                        // Skip the initial emission (which occurs immediately upon subscription)
+                        // because we only want to reset it when it changes after the ChatController
+                        // has been in use. If we didn't have `skip(1)`, then `new
+                        // ChatController().restoreSession(...)` usage would break because we would
+                        // immediately overwrite the just-restored chat.
+                        skip(1)
+                    )
+                    .subscribe(() => {
+                        this.chatBuilder = new ChatBuilder(undefined)
+                    })
             )
         )
 
@@ -301,6 +290,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     signal: this.startNewSubmitOrEditOperation(),
                     source: 'chat',
                     intent: message.intent,
+                    manuallySelectedIntent: message.manuallySelectedIntent,
                 })
                 break
             }
@@ -312,6 +302,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     contextFiles: message.contextItems ?? [],
                     editorState: message.editorState as SerializedPromptEditorState,
                     intent: message.intent,
+                    manuallySelectedIntent: message.manuallySelectedIntent,
                 })
                 break
             }
@@ -395,7 +386,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 await this.handleAttributionSearch(message.snippet)
                 break
             case 'restoreHistory':
-                await this.restoreSession(message.chatID)
+                this.restoreSession(message.chatID)
                 this.setWebviewToChat()
                 break
             case 'chatSession':
@@ -568,8 +559,10 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
     }
 
     private async sendConfig(): Promise<void> {
-        const currentAuthStatus = await firstValueFrom(authStatus)
-        if (!currentAuthStatus) {
+        const authStatus = currentAuthStatus()
+
+        // Don't emit config if we're verifying auth status to avoid UI auth flashes on the client
+        if (authStatus.pendingValidation) {
             return
         }
 
@@ -594,7 +587,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         await this.postMessage({
             type: 'config',
             config: configForWebview,
-            authStatus: currentAuthStatus,
+            authStatus: authStatus,
             workspaceFolderUris,
             configFeatures: {
                 // If clientConfig is undefined means we were unable to fetch the client configuration -
@@ -605,7 +598,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 attribution: clientConfig?.attributionEnabled ?? false,
                 serverSentModels: clientConfig?.modelsAPIEnabled ?? false,
             },
-            isDotComUser: isDotCom(currentAuthStatus),
+            isDotComUser: isDotCom(authStatus),
         })
         logDebug('ChatController', 'updateViewConfig', {
             verbose: configForWebview,
@@ -642,6 +635,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         source,
         command,
         intent: detectedIntent,
+        manuallySelectedIntent,
     }: {
         requestID: string
         inputText: PromptString
@@ -652,6 +646,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         source?: EventSource
         command?: DefaultChatCommands
         intent?: ChatMessage['intent'] | undefined | null
+        manuallySelectedIntent?: boolean | undefined | null
     }): Promise<void> {
         return tracer.startActiveSpan('chat.submit', async (span): Promise<void> => {
             span.setAttribute('sampled', true)
@@ -721,6 +716,17 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     ['repository', 'tree'].includes(contextItem.type)
                 )
 
+                // We are checking the feature flag here to log non-undefined intent only if the feature flag is on
+                let intent: ChatMessage['intent'] | undefined = this.featureCodyExperimentalOneBox
+                    ? detectedIntent
+                    : undefined
+
+                const userSpecifiedIntent = this.featureCodyExperimentalOneBox
+                    ? manuallySelectedIntent && detectedIntent
+                        ? detectedIntent
+                        : 'auto'
+                    : undefined
+
                 if (this.featureCodyExperimentalOneBox && repositoryMentioned) {
                     const inputTextWithoutContextChips = editorState
                         ? PromptString.unsafe_fromUserQuery(
@@ -728,7 +734,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                           )
                         : inputText
 
-                    const intent = detectedIntent
+                    intent = detectedIntent
                         ? detectedIntent
                         : await this.detectChatIntent({
                               requestID,
@@ -743,6 +749,15 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                               .catch(() => undefined)
                     signal.throwIfAborted()
                     if (intent === 'search') {
+                        void this.sendChatExecutedTelemetry({
+                            span,
+                            firstTokenSpan,
+                            inputText,
+                            sharedProperties,
+                            userSpecifiedIntent,
+                            detectedIntent: intent,
+                        })
+
                         return await this.handleSearchIntent({
                             context: corpusContext,
                             signal,
@@ -779,13 +794,15 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                         contextAlternatives
                     )
 
-                    void this.sendChatExecutedTelemetry(
+                    void this.sendChatExecutedTelemetry({
                         span,
                         firstTokenSpan,
                         inputText,
                         sharedProperties,
-                        context
-                    )
+                        context,
+                        detectedIntent: intent,
+                        userSpecifiedIntent,
+                    })
 
                     signal.throwIfAborted()
                     this.streamAssistantResponse(requestID, prompt, model, span, firstTokenSpan, signal)
@@ -846,29 +863,42 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         this.postViewTranscript()
     }
 
-    private async sendChatExecutedTelemetry(
-        span: Span,
-        firstTokenSpan: Span,
-        inputText: PromptString,
-        sharedProperties: any,
-        context: PromptInfo['context']
-    ): Promise<void> {
+    private async sendChatExecutedTelemetry({
+        span,
+        firstTokenSpan,
+        inputText,
+        sharedProperties,
+        context,
+        detectedIntent,
+        userSpecifiedIntent,
+    }: {
+        span: Span
+        firstTokenSpan: Span
+        inputText: PromptString
+        sharedProperties: any
+        context?: PromptInfo['context']
+        detectedIntent?: ChatMessage['intent']
+        userSpecifiedIntent?: ChatMessage['intent'] | 'auto'
+    }): Promise<void> {
         const authStatus = currentAuthStatus()
 
         // Create a summary of how many code snippets of each context source are being
         // included in the prompt
         const contextSummary: { [key: string]: number } = {}
-        for (const { source } of context.used) {
-            if (!source) {
-                continue
-            }
-            if (contextSummary[source]) {
-                contextSummary[source] += 1
-            } else {
-                contextSummary[source] = 1
+        if (context) {
+            for (const { source } of context.used) {
+                if (!source) {
+                    continue
+                }
+                if (contextSummary[source]) {
+                    contextSummary[source] += 1
+                } else {
+                    contextSummary[source] = 1
+                }
             }
         }
-        const privateContextSummary = await this.buildPrivateContextSummary(context)
+
+        const privateContextSummary = context && (await this.buildPrivateContextSummary(context))
 
         const properties = {
             ...sharedProperties,
@@ -885,8 +915,10 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 recordsPrivateMetadataTranscript: isDotCom(authStatus) ? 1 : 0,
             },
             privateMetadata: {
+                detectedIntent,
+                userSpecifiedIntent,
                 properties,
-                privateContextSummary: privateContextSummary,
+                privateContextSummary,
                 // 🚨 SECURITY: chat transcripts are to be included only for DotCom users AND for V2 telemetry
                 // V2 telemetry exports privateMetadata only for DotCom users
                 // the condition below is an additional safeguard measure
@@ -1040,6 +1072,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         contextFiles,
         editorState,
         intent,
+        manuallySelectedIntent,
     }: {
         requestID: string
         text: PromptString
@@ -1047,6 +1080,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         contextFiles: ContextItem[]
         editorState: SerializedPromptEditorState | null
         intent?: ChatMessage['intent'] | undefined | null
+        manuallySelectedIntent?: boolean | undefined | null
     }): Promise<void> {
         const abortSignal = this.startNewSubmitOrEditOperation()
 
@@ -1072,6 +1106,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 signal: abortSignal,
                 source: 'chat',
                 intent,
+                manuallySelectedIntent,
             })
         } catch {
             this.postError(new Error('Failed to edit prompt'), 'transcript')
@@ -1271,22 +1306,28 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
     private async buildPrivateContextSummary(context: {
         used: ContextItem[]
         ignored: ContextItem[]
-    }): Promise<object> {
+    }): Promise<
+        | undefined
+        | (Record<
+              'included' | 'excluded',
+              { count: number; items: Pick<ContextItem, 'source' | 'size' | 'content'>[] }
+          > & { repoMetadata: RepoRevMetaData[] | undefined })
+    > {
         // 🚨 SECURITY: included only for dotcom users & public repos
         if (!isDotCom(currentAuthStatus())) {
-            return {}
-        }
-        if (!workspaceReposMonitor) {
-            return {}
+            return undefined
         }
 
-        const { isPublic, repoMetadata: gitMetadata } =
-            await workspaceReposMonitor.getRepoMetadataIfPublic()
+        const { isPublic, repoMetadata } = await firstResultFromOperation(
+            publicRepoMetadataIfAllWorkspaceReposArePublic
+        )
         if (!isPublic) {
-            return {}
+            return undefined
         }
 
-        const getContextSummary = async (items: ContextItem[]) => ({
+        const getContextSummary = async (
+            items: ContextItem[]
+        ): Promise<{ count: number; items: Pick<ContextItem, 'source' | 'size' | 'content'>[] }> => ({
             count: items.length,
             items: await Promise.all(
                 items.map(async i => ({
@@ -1300,7 +1341,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         return {
             included: await getContextSummary(context.used),
             excluded: await getContextSummary(context.ignored),
-            gitMetadata,
+            repoMetadata,
         }
     }
 
@@ -1494,7 +1535,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
     // history. If it does, then saves the current session and cancels the
     // current in-progress completion. If the chat does not exist, then this
     // is a no-op.
-    public async restoreSession(sessionID: string): Promise<void> {
+    public restoreSession(sessionID: string): void {
         const authStatus = currentAuthStatus()
         if (!authStatus.authenticated) {
             return
@@ -1544,7 +1585,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         // Move the new session to the editor
         await vscode.commands.executeCommand('cody.chat.moveToEditor')
         // Restore the old session in the current window
-        await this.restoreSession(sessionID)
+        this.restoreSession(sessionID)
 
         telemetryRecorder.recordEvent('cody.duplicateSession', 'clicked')
     }
@@ -1662,6 +1703,9 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         )
 
         // Listen for API calls from the webview.
+        const initialContext = observeInitialContext({
+            chatBuilder: this.chatBuilder.changes,
+        }).pipe(shareReplay())
         this.disposables.push(
             addMessageListenersForExtensionAPI(
                 createMessageAPIForExtension({
@@ -1710,10 +1754,15 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                             await modelsService.setSelectedModel(ModelUsage.Chat, model)
                         })
                     },
+                    initialContext: () => initialContext.pipe(skipPendingOperation()),
                     detectIntent: text =>
                         promiseFactoryToObservable<ChatMessage['intent']>(() =>
                             this.detectChatIntent({ text })
                         ),
+                    resolvedConfig: () => resolvedConfig,
+                    authStatus: () => authStatus,
+                    transcript: () =>
+                        this.chatBuilder.changes.pipe(map(chat => chat.getDehydratedMessages())),
                 }
             )
         )
@@ -1762,13 +1811,15 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         const mentionsByUser = mentions.filter(item => item.source === ContextItemSource.User)
 
         let gitMetadata = ''
-        if (workspaceReposMonitor) {
-            const { isPublic: isWorkspacePublic, repoMetadata } =
-                await workspaceReposMonitor.getRepoMetadataIfPublic()
-            if (isDotCom(authStatus) && isWorkspacePublic) {
+        if (isDotCom(authStatus)) {
+            const { isPublic, repoMetadata } = await firstResultFromOperation(
+                publicRepoMetadataIfAllWorkspaceReposArePublic
+            )
+            if (isPublic) {
                 gitMetadata = JSON.stringify(repoMetadata)
             }
         }
+
         telemetryRecorder.recordEvent('cody.chat-question', 'submitted', {
             metadata: {
                 // Flag indicating this is a transcript event to go through ML data pipeline. Only for DotCom users

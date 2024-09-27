@@ -142,7 +142,7 @@ function copyExtensionRelativeResources(extensionPath: string, extensionClient: 
     }
 }
 
-export async function initializeVscodeExtension(
+async function initializeVscodeExtension(
     workspaceRoot: vscode.Uri,
     extensionActivate: ExtensionActivate,
     extensionClient: ExtensionClient,
@@ -1086,18 +1086,6 @@ export class Agent extends MessageHandler implements ExtensionClient {
         this.registerAuthenticatedRequest('commands/explain', () => {
             return this.createChatPanel(
                 vscode.commands.executeCommand('cody.command.explain-code', commandArgs)
-            )
-        })
-
-        this.registerAuthenticatedRequest('commands/test', () => {
-            return this.createChatPanel(
-                vscode.commands.executeCommand('cody.command.generate-tests', commandArgs)
-            )
-        })
-
-        this.registerAuthenticatedRequest('editCommands/test', () => {
-            return this.createEditTask(
-                vscode.commands.executeCommand<CommandResult | undefined>('cody.command.unit-tests')
             )
         })
 

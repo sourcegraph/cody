@@ -10,6 +10,7 @@ export {
     type PerSitePreferences,
     type SitePreferences,
     type ModelRefStr,
+    type LegacyModelRefStr,
     type ModelRef,
     type ModelsData,
     TestLocalStorageForModelPreferences,
@@ -22,6 +23,7 @@ export {
     createModelFromServerModel,
     modelTier,
     parseModelRef,
+    toLegacyModel,
 } from './models/model'
 export {
     type EditModel,
@@ -31,7 +33,7 @@ export {
     ModelUsage,
     type ModelContextWindow,
 } from './models/types'
-export { getDotComDefaultModels } from './models/dotcom'
+export { getMockedDotComClientModels, getMockedDotComServerModels } from './models/dotcom'
 export { ModelTag } from './models/tags'
 export {
     getProviderName,
@@ -325,7 +327,6 @@ export {
     GIT_OPENCTX_PROVIDER_URI,
 } from './context/openctx/api'
 export * from './context/openctx/context'
-export { type ClientStateForWebview } from './clientState'
 export * from './lexicalEditor/editorState'
 export * from './lexicalEditor/nodes'
 export {
@@ -351,3 +352,4 @@ export * from './configuration/resolver'
 export * from './singletons'
 export * from './auth/authStatus'
 export { fetchLocalOllamaModels } from './llm-providers/ollama/utils'
+export * from './editor/editorState'

@@ -25,6 +25,7 @@ import {
     modelsService,
     resolvedConfig,
     setClientNameVersion,
+    setEditorWindowIsFocused,
     setLogger,
     setResolvedConfigurationObservable,
     startWith,
@@ -56,7 +57,6 @@ import {
     executeExplainOutput,
     executeSmellCommand,
     executeTestCaseEditCommand,
-    executeTestChatCommand,
     executeTestEditCommand,
 } from './commands/execute'
 import { executeAutoEditCommand } from './commands/execute/auto-edit'
@@ -81,9 +81,9 @@ import { PoorMansBash } from './minion/environment'
 import { CodyProExpirationNotifications } from './notifications/cody-pro-expiration'
 import { showSetupNotification } from './notifications/setup-notification'
 import { initVSCodeGitApi } from './repository/git-extension-api'
-import { initWorkspaceReposMonitor } from './repository/repo-metadata-from-git-api'
 import { authProvider } from './services/AuthProvider'
 import { CharactersLogger } from './services/CharactersLogger'
+import { CodyTerminal } from './services/CodyTerminal'
 import { showFeedbackSupportQuickPick } from './services/FeedbackOptions'
 import { displayHistoryQuickPick } from './services/HistoryChat'
 import { localStorage } from './services/LocalStorageProvider'
@@ -152,6 +152,7 @@ export async function start(
             )
         )
     )
+    setEditorWindowIsFocused(() => vscode.window.state.focused)
 
     if (process.env.LOG_GLOBAL_STATE_EMISSIONS) {
         disposables.push(logGlobalStateEmissions())
@@ -183,7 +184,6 @@ const register = async (
 
     // Ensure Git API is available
     disposables.push(await initVSCodeGitApi())
-    initWorkspaceReposMonitor(disposables)
 
     registerParserListeners(disposables)
     registerChatListeners(disposables)
@@ -209,7 +209,6 @@ const register = async (
             chatClient,
             guardrails,
             editor,
-            symfRunner,
             contextAPIClient,
             contextRetriever,
         },
@@ -217,11 +216,9 @@ const register = async (
     )
     disposables.push(chatsController)
 
-    const sourceControl = new CodySourceControl(chatClient)
     const statusBar = createStatusBar()
     disposables.push(
         statusBar,
-        sourceControl,
         subscriptionDisposable(
             authStatus.subscribe({
                 next: authStatus => {
@@ -237,11 +234,14 @@ const register = async (
     registerAutocomplete(platform, statusBar, disposables)
     const tutorialSetup = tryRegisterTutorial(context, disposables)
 
-    await registerCodyCommands(statusBar, sourceControl, chatClient, disposables)
+    await registerCodyCommands(statusBar, chatClient, disposables)
     registerAuthCommands(disposables)
     registerChatCommands(disposables)
     disposables.push(...registerSidebarCommands())
     registerOtherCommands(disposables)
+    if (!getConfiguration().agentIDE) {
+        registerVSCodeOnlyFeatures(chatClient, disposables)
+    }
     if (isExtensionModeDevOrTest) {
         await registerTestCommands(context, disposables)
     }
@@ -373,7 +373,6 @@ async function registerOtherCommands(disposables: vscode.Disposable[]) {
 
 async function registerCodyCommands(
     statusBar: CodyStatusBar,
-    sourceControl: CodySourceControl,
     chatClient: ChatClient,
     disposables: vscode.Disposable[]
 ): Promise<void> {
@@ -444,9 +443,6 @@ async function registerCodyCommands(
                                   vscode.commands.registerCommand('cody.command.document-code', a =>
                                       executeDocChatCommand(a)
                                   ),
-                                  vscode.commands.registerCommand('cody.command.unit-tests', a =>
-                                      executeTestChatCommand(a)
-                                  ),
                               ]
                             : [
                                   // Otherwise register old-style commands.
@@ -462,9 +458,6 @@ async function registerCodyCommands(
                                   vscode.commands.registerCommand('cody.command.document-code', a =>
                                       executeDocCommand(a)
                                   ),
-                                  vscode.commands.registerCommand('cody.command.generate-tests', a =>
-                                      executeTestChatCommand(a)
-                                  ),
                                   vscode.commands.registerCommand('cody.command.unit-tests', a =>
                                       executeTestEditCommand(a)
                                   ),
@@ -477,13 +470,22 @@ async function registerCodyCommands(
                                   vscode.commands.registerCommand('cody.command.auto-edit', a =>
                                       executeAutoEditCommand(a)
                                   ),
-                                  sourceControl, // Generate Commit Message command
                               ]
                     })
                 )
                 .subscribe({})
         )
     )
+}
+
+/**
+ * Features that are currently available only in VS Code.
+ */
+function registerVSCodeOnlyFeatures(chatClient: ChatClient, disposable: vscode.Disposable[]): void {
+    // Source Control Panel for generating commit message command.
+    disposable.push(new CodySourceControl(chatClient))
+    // Command for executing CLI commands in the VS Code terminal.
+    disposable.push(new CodyTerminal())
 }
 
 function enableFeature(
@@ -700,7 +702,6 @@ interface RegisterChatOptions {
     chatClient: ChatClient
     guardrails: Guardrails
     editor: VSCodeEditor
-    symfRunner?: SymfRunner
     contextAPIClient?: ContextAPIClient
     contextRetriever: ContextRetriever
 }
@@ -712,7 +713,6 @@ function registerChat(
         chatClient,
         guardrails,
         editor,
-        symfRunner,
         contextAPIClient,
         contextRetriever,
     }: RegisterChatOptions,
@@ -733,7 +733,6 @@ function registerChat(
             startTokenReceiver: platform.startTokenReceiver,
         },
         chatClient,
-        symfRunner || null,
         contextRetriever,
         guardrails,
         contextAPIClient || null,

@@ -51,6 +51,11 @@ describe('[getInlineCompletions] completion event', () => {
                     },
                 ],
                 {
+                    configuration: {
+                        configuration: {
+                            autocompleteAdvancedProvider: 'fireworks',
+                        },
+                    },
                     authStatus: additionalParams.isDotComUser
                         ? AUTH_STATUS_FIXTURE_AUTHED_DOTCOM
                         : AUTH_STATUS_FIXTURE_AUTHED,
@@ -142,8 +147,8 @@ describe('[getInlineCompletions] completion event', () => {
                   "languageId": "typescript",
                   "multiline": true,
                   "multilineMode": "block",
-                  "providerIdentifier": "anthropic",
-                  "providerModel": "",
+                  "providerIdentifier": "fireworks",
+                  "providerModel": "starcoder-hybrid",
                   "resolvedModel": "sourcegraph/gateway-model",
                   "responseHeaders": {
                     "fireworks-speculation-matched-tokens": "100",
@@ -214,8 +219,8 @@ describe('[getInlineCompletions] completion event', () => {
                   "languageId": "typescript",
                   "multiline": false,
                   "multilineMode": null,
-                  "providerIdentifier": "anthropic",
-                  "providerModel": "",
+                  "providerIdentifier": "fireworks",
+                  "providerModel": "starcoder-hybrid",
                   "resolvedModel": "sourcegraph/gateway-model",
                   "responseHeaders": {
                     "fireworks-speculation-matched-tokens": "100",

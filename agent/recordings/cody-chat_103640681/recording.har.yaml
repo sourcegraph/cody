@@ -89,11 +89,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 4f404d7847541071a3e9dedfe5ce2895
+    - _id: b789e742db8bc977e50cd181bc632b9a
       _order: 0
       cache: {}
       request:
-        bodySize: 421
+        bodySize: 581
         cookies: []
         headers:
           - name: content-type
@@ -119,13 +119,16 @@ log:
             maxTokensToSample: 4000
             messages:
               - speaker: system
-                text: "You are Cody, an AI coding assistant from Sourcegraph.If your answer
-                  contains fenced code blocks in Markdown, include the relevant
-                  full file path in the code block tag using this structure:
-                  ```$LANGUAGE:$FILEPATH```."
+                text: >-
+                  You are Cody, an AI coding assistant from Sourcegraph.If your
+                  answer contains fenced code blocks in Markdown, include the
+                  relevant full file path in the code block tag using this
+                  structure: ```$LANGUAGE:$FILEPATH```
+
+                  For executable terminal commands: enclose each command in individual "bash" language code block without comments and new lines inside.
               - speaker: human
                 text: respond with "hello" and nothing else
-            model: claude-3.5-sonnet
+            model: anthropic::2023-06-01::claude-3.5-sonnet
             temperature: 0.2
             topK: -1
             topP: -1
@@ -138,21 +141,24 @@ log:
             value: 6.0.0-SNAPSHOT
         url: https://sourcegraph.sourcegraph.com/.api/completions/stream?api-version=2&client-name=jetbrains&client-version=6.0.0-SNAPSHOT
       response:
-        bodySize: 120
+        bodySize: 227
         content:
           mimeType: text/event-stream
-          size: 120
-          text: |+
+          size: 227
+          text: >+
             event: completion
-            data: {"deltaText":"hello","stopReason":"end_turn"}
+
+            data: {"deltaText":"```bash\necho \"hello\"\n```","stopReason":"end_turn"}
+
 
             event: done
+
             data: {}
 
         cookies: []
         headers:
           - name: date
-            value: Wed, 25 Sep 2024 17:46:27 GMT
+            value: Fri, 27 Sep 2024 17:28:46 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -181,7 +187,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-25T17:46:27.135Z
+      startedDateTime: 2024-09-27T17:28:45.110Z
       time: 0
       timings:
         blocked: -1
@@ -191,11 +197,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 51fbdff13ed3e9d1e988964404572294
+    - _id: 1fa3fc31a4e1b350a35d9f91acf5cf65
       _order: 0
       cache: {}
       request:
-        bodySize: 703
+        bodySize: 903
         cookies: []
         headers:
           - name: content-type
@@ -221,10 +227,13 @@ log:
             maxTokensToSample: 4000
             messages:
               - speaker: system
-                text: "You are Cody, an AI coding assistant from Sourcegraph.If your answer
-                  contains fenced code blocks in Markdown, include the relevant
-                  full file path in the code block tag using this structure:
-                  ```$LANGUAGE:$FILEPATH```."
+                text: >-
+                  You are Cody, an AI coding assistant from Sourcegraph.If your
+                  answer contains fenced code blocks in Markdown, include the
+                  relevant full file path in the code block tag using this
+                  structure: ```$LANGUAGE:$FILEPATH```
+
+                  For executable terminal commands: enclose each command in individual "bash" language code block without comments and new lines inside.
               - speaker: human
                 text: |-
                   Codebase context from file animal.ts:
@@ -241,7 +250,7 @@ log:
 
 
                   Question: implement a cow. Only print the code without any explanation.
-            model: claude-3.5-sonnet
+            model: anthropic::2023-06-01::claude-3.5-sonnet
             temperature: 0.2
             topK: -1
             topP: -1
@@ -271,7 +280,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Wed, 25 Sep 2024 22:38:23 GMT
+            value: Fri, 27 Sep 2024 17:28:48 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -300,7 +309,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-25T22:38:22.220Z
+      startedDateTime: 2024-09-27T17:28:47.215Z
       time: 0
       timings:
         blocked: -1

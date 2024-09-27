@@ -14,7 +14,6 @@ import {
     subscriptionDisposable,
     telemetryRecorder,
 } from '@sourcegraph/cody-shared'
-import type { SymfRunner } from '../../local-context/symf'
 import { logDebug, logError } from '../../log'
 import type { MessageProviderOptions } from '../MessageProvider'
 
@@ -31,7 +30,6 @@ import {
 import type { ContextAPIClient } from '../context/contextAPIClient'
 import type { SmartApplyResult } from '../protocol'
 import {
-    AuthDependentRetrievers,
     ChatController,
     type ChatSession,
     disposeWebviewViewOrPanel,
@@ -67,8 +65,6 @@ export class ChatsController implements vscode.Disposable {
     constructor(
         private options: Options,
         private chatClient: ChatClient,
-
-        private readonly symf: SymfRunner | null,
 
         private readonly contextRetriever: ContextRetriever,
 
@@ -438,7 +434,7 @@ export class ChatsController implements vscode.Disposable {
     ): Promise<ChatController> {
         const chatController = this.createChatController()
         if (chatID) {
-            await chatController.restoreSession(chatID)
+            chatController.restoreSession(chatID)
         }
 
         if (panel) {
@@ -476,7 +472,6 @@ export class ChatsController implements vscode.Disposable {
         return new ChatController({
             ...this.options,
             chatClient: this.chatClient,
-            retrievers: new AuthDependentRetrievers(this.symf),
             guardrails: this.guardrails,
             startTokenReceiver: this.options.startTokenReceiver,
             contextAPIClient: this.contextAPIClient,

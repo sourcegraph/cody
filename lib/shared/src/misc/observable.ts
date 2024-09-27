@@ -126,10 +126,16 @@ export async function waitUntilComplete(observable: Observable<unknown>): Promis
 export async function allValuesFrom<T>(observable: Observable<T>): Promise<T[]> {
     return new Promise<T[]>((resolve, reject) => {
         const values: T[] = []
-        observable.subscribe({
+        const subscription = observable.subscribe({
             next: value => values.push(value),
-            error: reject,
-            complete: () => resolve(values),
+            error: error => {
+                subscription.unsubscribe()
+                reject(error)
+            },
+            complete: () => {
+                subscription.unsubscribe()
+                resolve(values)
+            },
         })
     })
 }
@@ -366,9 +372,7 @@ export function combineLatest<T>(observables: Array<Observable<T>>): Observable<
         }
     })
 }
-/**
- * Return an Observable that emits the latest value from the given Observable.
- */
+
 export function memoizeLastValue<P extends unknown[], T>(
     factory: (...args: P) => Observable<T>,
     keyFn: (args: P) => string | number

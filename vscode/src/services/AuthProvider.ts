@@ -82,6 +82,7 @@ class AuthProvider implements vscode.Disposable {
                         // authentication status.
                         this.status.next({
                             authenticated: false,
+                            pendingValidation: true,
                             endpoint: config.auth.serverEndpoint,
                         })
 
@@ -182,7 +183,7 @@ class AuthProvider implements vscode.Disposable {
 
     public setAuthPendingToEndpoint(endpoint: string): void {
         // TODO(sqs)#observe: store this pending endpoint in clientState instead of authStatus
-        this.status.next({ authenticated: false, endpoint })
+        this.status.next({ authenticated: false, endpoint, pendingValidation: true })
     }
 
     // Logs a telemetry event if the user has never authenticated to Sourcegraph.

@@ -47,6 +47,7 @@ interface TabSubAction {
     command: string
     arg?: string | undefined | null
     callback?: () => void
+    changesView?: View
     confirmation?: {
         title: string
         description: string
@@ -83,7 +84,7 @@ export const TabsBar: React.FC<TabsBarProps> = ({ currentView, setView, IDE, onD
     )
 
     const handleSubActionClick = useCallback(
-        (action: Pick<TabSubAction, 'callback' | 'command' | 'arg'>) => {
+        (action: Pick<TabSubAction, 'callback' | 'command' | 'arg' | 'changesView'>) => {
             if (action.callback) {
                 action.callback()
             } else {
@@ -93,8 +94,11 @@ export const TabsBar: React.FC<TabsBarProps> = ({ currentView, setView, IDE, onD
                     arg: action.arg,
                 })
             }
+            if (action.changesView) {
+                setView(action.changesView)
+            }
         },
-        []
+        [setView]
     )
 
     return (
@@ -129,8 +133,10 @@ export const TabsBar: React.FC<TabsBarProps> = ({ currentView, setView, IDE, onD
                                     )}
                                 </>
                             }
+                            view={View.Chat}
                             onClick={() =>
                                 handleSubActionClick({
+                                    changesView: View.Chat,
                                     command: getCreateNewChatCommand({
                                         IDE,
                                         webviewType,
@@ -265,7 +271,7 @@ interface TabButtonProps {
     'data-testid'?: string
 }
 
-export const TabButton = forwardRef<HTMLButtonElement, TabButtonProps>((props, ref) => {
+const TabButton = forwardRef<HTMLButtonElement, TabButtonProps>((props, ref) => {
     const {
         IDE,
         Icon,

@@ -3,6 +3,7 @@ import type { Meta, StoryObj } from '@storybook/react'
 import { AUTH_STATUS_FIXTURE_AUTHED } from '@sourcegraph/cody-shared'
 import { App } from './App'
 import { VSCodeWebview } from './storybook/VSCodeStoryDecorator'
+import { View } from './tabs'
 import type { VSCodeWrapper } from './utils/VSCodeApi'
 
 const meta: Meta<typeof App> = {
@@ -59,9 +60,15 @@ const dummyVSCodeAPI: VSCodeWrapper = {
                 },
             },
         })
+        if (firstTime) {
+            cb({ type: 'view', view: View.Chat })
+            firstTime = false
+        }
         return () => {}
     },
     postMessage: () => {},
     getState: () => ({}),
     setState: () => {},
 }
+
+let firstTime = true
