@@ -1,4 +1,3 @@
-import fs from 'node:fs'
 import * as path from 'node:path'
 import { type ReporterDescription, defineConfig } from '@playwright/test'
 import * as dotenv from 'dotenv'
@@ -6,12 +5,27 @@ import { ulid } from 'ulidx'
 import { CODY_VSCODE_ROOT_DIR } from './e2e/utils/helpers'
 import type { TmpDirOptions } from './e2e/utils/tmpdir.setup'
 import type { TestOptions, WorkerOptions } from './e2e/utils/vscody'
-
-prepareEnv()
-
 const isWin = process.platform.startsWith('win')
 const isCI = !!process.env.CI
 const testRootDir = path.resolve(CODY_VSCODE_ROOT_DIR, '..', '.test')
+
+process.env.RUN_ID = process.env.RUN_ID || ulid()
+
+const paths = [
+    path.resolve(CODY_VSCODE_ROOT_DIR, '..', '.env'),
+    path.resolve(CODY_VSCODE_ROOT_DIR, '.env'),
+]
+dotenv.config({ path: paths })
+
+if (process.env.CODY_RECORD_IF_MISSING === 'once') {
+    // this will get commented out again in teardown
+    process.env.CODY_RECORD_IF_MISSING = 'true'
+}
+
+if (process.env.CODY_RECORDING_MODE === 'once') {
+    // this will get commented out again in teardown
+    process.env.CODY_RECORDING_MODE = 'record'
+}
 
 export default defineConfig<WorkerOptions & TestOptions & TmpDirOptions>({
     workers: '50%',
@@ -131,62 +145,6 @@ export default defineConfig<WorkerOptions & TestOptions & TmpDirOptions>({
               ]
             : []),
     ],
+    globalSetup: require.resolve(path.resolve(CODY_VSCODE_ROOT_DIR, './e2e/utils/global.setup')),
+    globalTeardown: require.resolve(path.resolve(CODY_VSCODE_ROOT_DIR, './e2e/utils/global.teardown')),
 })
-
-function prepareEnv() {
-    process.env.RUN_ID = process.env.RUN_ID || ulid()
-
-    const paths = [
-        path.resolve(CODY_VSCODE_ROOT_DIR, '..', '.env'),
-        path.resolve(CODY_VSCODE_ROOT_DIR, '.env'),
-    ]
-    dotenv.config({ path: paths })
-
-    if (process.env.CODY_RECORD_IF_MISSING === 'once') {
-        // we try and unset this value in the file it came from
-        const success = commentEnvFileLine(paths, 'CODY_RECORD_IF_MISSING', 'once')
-        if (!success) {
-            throw new Error('Failed to find .env file that sets CODY_RECORD_IF_MISSING=once')
-        }
-        console.log('Updated .env file to unset CODY_RECORD_IF_MISSING=once')
-        process.env.CODY_RECORD_IF_MISSING = 'true'
-    }
-
-    if (process.env.CODY_RECORDING_MODE === 'once') {
-        // we try and unset this value in the file it came from
-        const success = commentEnvFileLine(paths, 'CODY_RECORDING_MODE', 'once')
-        if (!success) {
-            throw new Error('Failed to find .env file that sets CODY_RECORDING_MODE=once')
-        }
-        console.log('Updated .env file to unset CODY_RECORDING_MODE=once')
-        process.env.CODY_RECORDING_MODE = 'record'
-    }
-}
-
-/**
- * This is used to update the .env file that contributes key with a new value for that key
- * @returns true if the value was updated, false if the key was not found in any of the files
- */
-function commentEnvFileLine(envFiles: string[], key: string, expectedValue: string): boolean {
-    // Array of .env file paths, ordered by priority
-
-    for (const filePath of envFiles) {
-        if (fs.existsSync(filePath)) {
-            const envConfig = dotenv.parse(fs.readFileSync(filePath))
-
-            if (key in envConfig) {
-                // Found the key in this file, update it
-                const fileContent = fs.readFileSync(filePath, 'utf8')
-                const updatedContent = fileContent.replace(
-                    new RegExp(`^(${key}=${expectedValue})`, 'm'),
-                    '# $1'
-                )
-
-                fs.writeFileSync(filePath, updatedContent)
-                return true
-            }
-        }
-    }
-
-    return false
-}
