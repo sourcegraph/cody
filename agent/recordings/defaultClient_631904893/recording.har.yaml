@@ -89,11 +89,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 15193cbfef2a0ce988d8e4f52f87f152
+    - _id: 08ccdbb26e85d775bfdb556b7fa1dc83
       _order: 0
       cache: {}
       request:
-        bodySize: 409
+        bodySize: 546
         cookies: []
         headers:
           - name: content-type
@@ -106,7 +106,7 @@ log:
           - name: user-agent
             value: defaultClient / v1
           - name: traceparent
-            value: 00-e1d642daec337e75d40d9db30c774e68-009e9201cc8b000d-01
+            value: 00-a8de4328431305ca52e95f726c4e04fb-dd3c301ed2d63dfb-01
           - name: connection
             value: keep-alive
           - name: host
@@ -121,10 +121,13 @@ log:
             maxTokensToSample: 4000
             messages:
               - speaker: system
-                text: "You are Cody, an AI coding assistant from Sourcegraph.If your answer
-                  contains fenced code blocks in Markdown, include the relevant
-                  full file path in the code block tag using this structure:
-                  ```$LANGUAGE:$FILEPATH```."
+                text: >-
+                  You are Cody, an AI coding assistant from Sourcegraph.If your
+                  answer contains fenced code blocks in Markdown, include the
+                  relevant full file path in the code block tag using this
+                  structure: ```$LANGUAGE:$FILEPATH```
+
+                  For executable terminal commands: enclose each command in individual "bash" language code block without comments and new lines inside.
               - speaker: human
                 text: Hello!
             model: anthropic::2023-06-01::claude-3.5-sonnet
@@ -140,14 +143,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=2&client-name=defaultclient&client-version=v1
       response:
-        bodySize: 1823
+        bodySize: 1189
         content:
           mimeType: text/event-stream
-          size: 1823
+          size: 1189
           text: >+
             event: completion
 
-            data: {"deltaText":"Hello! It's great to meet you. I'm Cody, an AI coding assistant from Sourcegraph. How can I help you with coding or development tasks today? Whether you need assistance with writing code, debugging, explaining concepts, or anything else related to programming, I'm here to help. Feel free to ask me any questions or let me know what kind of task you're working on.","stopReason":"end_turn"}
+            data: {"deltaText":"Hello! I'm Cody, an AI coding assistant from Sourcegraph. How can I help you with your coding or development tasks today? Whether you need help with writing code, debugging, explaining concepts, or discussing best practices, I'm here to assist. What would you like to work on?","stopReason":"end_turn"}
 
 
             event: done
@@ -157,7 +160,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 26 Sep 2024 19:19:16 GMT
+            value: Fri, 27 Sep 2024 17:28:42 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -186,7 +189,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-26T19:19:14.361Z
+      startedDateTime: 2024-09-27T17:28:40.879Z
       time: 0
       timings:
         blocked: -1
@@ -196,11 +199,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 0337a880c24278899ffbd7c02c24469f
+    - _id: be01d264aba69e9d10af7bc242085913
       _order: 0
       cache: {}
       request:
-        bodySize: 448
+        bodySize: 585
         cookies: []
         headers:
           - name: content-type
@@ -213,7 +216,7 @@ log:
           - name: user-agent
             value: defaultClient / v1
           - name: traceparent
-            value: 00-7be2912d9773fe9323069b9fe48a9aa1-fbcc611857ac2904-01
+            value: 00-5bfd963cfd050de30175cf4f7a8e670d-4bc8ddcb10f65e29-01
           - name: connection
             value: keep-alive
           - name: host
@@ -228,10 +231,13 @@ log:
             maxTokensToSample: 4000
             messages:
               - speaker: system
-                text: "You are Cody, an AI coding assistant from Sourcegraph.If your answer
-                  contains fenced code blocks in Markdown, include the relevant
-                  full file path in the code block tag using this structure:
-                  ```$LANGUAGE:$FILEPATH```."
+                text: >-
+                  You are Cody, an AI coding assistant from Sourcegraph.If your
+                  answer contains fenced code blocks in Markdown, include the
+                  relevant full file path in the code block tag using this
+                  structure: ```$LANGUAGE:$FILEPATH```
+
+                  For executable terminal commands: enclose each command in individual "bash" language code block without comments and new lines inside.
               - speaker: human
                 text: Generate simple hello world function in java!
             model: anthropic::2023-06-01::claude-3.5-sonnet
@@ -247,14 +253,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=2&client-name=defaultclient&client-version=v1
       response:
-        bodySize: 4680
+        bodySize: 4956
         content:
           mimeType: text/event-stream
-          size: 4680
+          size: 4956
           text: >+
             event: completion
 
-            data: {"deltaText":"Certainly! Here's a simple \"Hello World\" function in Java:\n\n```java:HelloWorld.java\npublic class HelloWorld {\n    public static void main(String[] args) {\n        sayHello();\n    }\n\n    public static void sayHello() {\n        System.out.println(\"Hello, World!\");\n    }\n}\n```\n\nThis code does the following:\n\n1. We define a class called `HelloWorld`.\n2. Inside the class, we have the `main` method, which is the entry point of any Java program.\n3. We also define a `sayHello` method that prints \"Hello, World!\" to the console.\n4. In the `main` method, we call the `sayHello` function.\n\nTo run this program:\n\n1. Save the code in a file named `HelloWorld.java`.\n2. Compile the Java file by running `javac HelloWorld.java` in the terminal.\n3. Run the compiled program with `java HelloWorld`.\n\nWhen you run this program, it will output:\n\n```\nHello, World!\n```\n\nThis is a basic example of a Java function that prints a greeting to the console. You can modify the `sayHello` function to print different messages or add more functionality as needed.","stopReason":"end_turn"}
+            data: {"deltaText":"Certainly! I'll generate a simple \"Hello, World!\" function in Java for you. Here's the code:\n\n```java:/src/HelloWorld.java\npublic class HelloWorld {\n    public static void main(String[] args) {\n        sayHello();\n    }\n\n    public static void sayHello() {\n        System.out.println(\"Hello, World!\");\n    }\n}\n```\n\nThis Java code defines a class called `HelloWorld` with two methods:\n\n1. The `main` method, which is the entry point of the program.\n2. The `sayHello` method, which prints \"Hello, World!\" to the console.\n\nTo run this program, you would need to:\n\n1. Save the file as `HelloWorld.java` in a directory of your choice.\n2. Compile the Java file using the Java compiler.\n3. Run the compiled class file.\n\nHere are the commands to compile and run the program, assuming you're in the directory containing the `HelloWorld.java` file:\n\nTo compile the Java file:\n\n```bash\njavac HelloWorld.java\n```\n\nTo run the compiled program:\n\n```bash\njava HelloWorld\n```\n\nWhen you run the program, it will output:\n\n```\nHello, World!\n```\n\nThis simple example demonstrates how to create a basic function in Java that prints a message to the console.","stopReason":"end_turn"}
 
 
             event: done
@@ -264,7 +270,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 26 Sep 2024 19:19:17 GMT
+            value: Fri, 27 Sep 2024 17:28:44 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -293,7 +299,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-26T19:19:16.336Z
+      startedDateTime: 2024-09-27T17:28:42.638Z
       time: 0
       timings:
         blocked: -1
@@ -303,11 +309,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 328e66ff72fd7c749085ba6bcc05e0b6
+    - _id: 26917bc7b8247d96b50e7c0c08fefd2b
       _order: 0
       cache: {}
       request:
-        bodySize: 426
+        bodySize: 563
         cookies: []
         headers:
           - name: content-type
@@ -320,7 +326,7 @@ log:
           - name: user-agent
             value: defaultClient / v1
           - name: traceparent
-            value: 00-bbd76f111cce7ad5ebdf0c99530bbb48-b65e6d7b70a4cf0b-01
+            value: 00-d2808d913abe36a281cf76d39f453048-652bdebb969ff106-01
           - name: connection
             value: keep-alive
           - name: host
@@ -335,10 +341,13 @@ log:
             maxTokensToSample: 4000
             messages:
               - speaker: system
-                text: "You are Cody, an AI coding assistant from Sourcegraph.If your answer
-                  contains fenced code blocks in Markdown, include the relevant
-                  full file path in the code block tag using this structure:
-                  ```$LANGUAGE:$FILEPATH```."
+                text: >-
+                  You are Cody, an AI coding assistant from Sourcegraph.If your
+                  answer contains fenced code blocks in Markdown, include the
+                  relevant full file path in the code block tag using this
+                  structure: ```$LANGUAGE:$FILEPATH```
+
+                  For executable terminal commands: enclose each command in individual "bash" language code block without comments and new lines inside.
               - speaker: human
                 text: My name is Lars Monsen.
             model: anthropic::2023-06-01::claude-3.5-sonnet
@@ -354,14 +363,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=2&client-name=defaultclient&client-version=v1
       response:
-        bodySize: 780
+        bodySize: 1147
         content:
           mimeType: text/event-stream
-          size: 780
+          size: 1147
           text: >+
             event: completion
 
-            data: {"deltaText":"Hello Lars Monsen, it's nice to meet you. I'm Cody, an AI coding assistant created by Sourcegraph. How can I help you with any coding or development tasks today?","stopReason":"end_turn"}
+            data: {"deltaText":"Hello Lars Monsen! It's nice to meet you. As an AI coding assistant, I'm here to help you with any programming or coding-related questions you might have. Is there a particular coding topic or problem you'd like assistance with today?","stopReason":"end_turn"}
 
 
             event: done
@@ -371,7 +380,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 26 Sep 2024 19:19:21 GMT
+            value: Fri, 27 Sep 2024 17:28:47 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -400,7 +409,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-26T19:19:20.104Z
+      startedDateTime: 2024-09-27T17:28:46.598Z
       time: 0
       timings:
         blocked: -1
@@ -410,11 +419,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: ed41c78d2430ce8914228e58f5942cd0
+    - _id: 18954814b62c1f6497031ef73bf1000d
       _order: 0
       cache: {}
       request:
-        bodySize: 667
+        bodySize: 877
         cookies: []
         headers:
           - name: content-type
@@ -427,7 +436,7 @@ log:
           - name: user-agent
             value: defaultClient / v1
           - name: traceparent
-            value: 00-d1a46e24f18391275d01d2faf699e0b4-8b5fd638dd9f219f-01
+            value: 00-2d3b81e1b4664b71bd784e4811247830-79111e370d3aabf5-01
           - name: connection
             value: keep-alive
           - name: host
@@ -442,16 +451,20 @@ log:
             maxTokensToSample: 4000
             messages:
               - speaker: system
-                text: "You are Cody, an AI coding assistant from Sourcegraph.If your answer
-                  contains fenced code blocks in Markdown, include the relevant
-                  full file path in the code block tag using this structure:
-                  ```$LANGUAGE:$FILEPATH```."
+                text: >-
+                  You are Cody, an AI coding assistant from Sourcegraph.If your
+                  answer contains fenced code blocks in Markdown, include the
+                  relevant full file path in the code block tag using this
+                  structure: ```$LANGUAGE:$FILEPATH```
+
+                  For executable terminal commands: enclose each command in individual "bash" language code block without comments and new lines inside.
               - speaker: human
                 text: My name is Lars Monsen.
               - speaker: assistant
-                text: Hello Lars Monsen, it's nice to meet you. I'm Cody, an AI coding assistant
-                  created by Sourcegraph. How can I help you with any coding or
-                  development tasks today?
+                text: Hello Lars Monsen! It's nice to meet you. As an AI coding assistant, I'm
+                  here to help you with any programming or coding-related
+                  questions you might have. Is there a particular coding topic
+                  or problem you'd like assistance with today?
               - speaker: human
                 text: What is my name?
             model: anthropic::2023-06-01::claude-3.5-sonnet
@@ -467,10 +480,10 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=2&client-name=defaultclient&client-version=v1
       response:
-        bodySize: 309
+        bodySize: 393
         content:
           mimeType: text/event-stream
-          size: 309
+          size: 393
           text: >+
             event: completion
 
@@ -484,7 +497,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 26 Sep 2024 19:19:21 GMT
+            value: Fri, 27 Sep 2024 17:28:48 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -513,7 +526,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-26T19:19:21.202Z
+      startedDateTime: 2024-09-27T17:28:47.892Z
       time: 0
       timings:
         blocked: -1
@@ -523,11 +536,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 3504e01f0d2c1641be879e96158ba3f0
+    - _id: a2b2a86bf1c469a8c917bd396e124c26
       _order: 0
       cache: {}
       request:
-        bodySize: 422
+        bodySize: 559
         cookies: []
         headers:
           - name: content-type
@@ -540,7 +553,7 @@ log:
           - name: user-agent
             value: defaultClient / v1
           - name: traceparent
-            value: 00-d6fe16c4ebac3b122c92d823e9ed2a5d-a08b3d128e881f1f-01
+            value: 00-6892b5f4a7dec064d17c843c373b4883-065f329b7b7d0421-01
           - name: connection
             value: keep-alive
           - name: host
@@ -555,10 +568,13 @@ log:
             maxTokensToSample: 4000
             messages:
               - speaker: system
-                text: "You are Cody, an AI coding assistant from Sourcegraph.If your answer
-                  contains fenced code blocks in Markdown, include the relevant
-                  full file path in the code block tag using this structure:
-                  ```$LANGUAGE:$FILEPATH```."
+                text: >-
+                  You are Cody, an AI coding assistant from Sourcegraph.If your
+                  answer contains fenced code blocks in Markdown, include the
+                  relevant full file path in the code block tag using this
+                  structure: ```$LANGUAGE:$FILEPATH```
+
+                  For executable terminal commands: enclose each command in individual "bash" language code block without comments and new lines inside.
               - speaker: human
                 text: What model are you?
             model: anthropic::2023-06-01::claude-3.5-sonnet
@@ -574,14 +590,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=2&client-name=defaultclient&client-version=v1
       response:
-        bodySize: 1026
+        bodySize: 1224
         content:
           mimeType: text/event-stream
-          size: 1026
+          size: 1224
           text: >+
             event: completion
 
-            data: {"deltaText":"I am Cody, an AI coding assistant created by Sourcegraph. I don't have detailed information about my exact model architecture or training. My purpose is to assist with code-related tasks and questions. How can I help you with coding today?","stopReason":"end_turn"}
+            data: {"deltaText":"I am an AI coding assistant called Cody, created by Sourcegraph. I don't have detailed information about my exact model architecture or training. My purpose is to assist with coding and development tasks. How can I help you with any coding or technical questions today?","stopReason":"end_turn"}
 
 
             event: done
@@ -591,7 +607,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 26 Sep 2024 19:19:23 GMT
+            value: Fri, 27 Sep 2024 17:28:50 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -620,7 +636,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-26T19:19:21.892Z
+      startedDateTime: 2024-09-27T17:28:48.705Z
       time: 0
       timings:
         blocked: -1
@@ -630,11 +646,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 10b282a03a4a0ac298b7f4c6421552d3
+    - _id: c1b7a591f7dc6e59c5840f32bb4b1193
       _order: 0
       cache: {}
       request:
-        bodySize: 744
+        bodySize: 911
         cookies: []
         headers:
           - name: content-type
@@ -647,7 +663,7 @@ log:
           - name: user-agent
             value: defaultClient / v1
           - name: traceparent
-            value: 00-d32c63963370159044efd5491fe7c0d0-852c45a49093342a-01
+            value: 00-30b2f0923ab769a9957ab53e4ac03bca-dd15788adfe86844-01
           - name: connection
             value: keep-alive
           - name: host
@@ -662,17 +678,21 @@ log:
             maxTokensToSample: 4000
             messages:
               - speaker: system
-                text: "You are Cody, an AI coding assistant from Sourcegraph.If your answer
-                  contains fenced code blocks in Markdown, include the relevant
-                  full file path in the code block tag using this structure:
-                  ```$LANGUAGE:$FILEPATH```."
+                text: >-
+                  You are Cody, an AI coding assistant from Sourcegraph.If your
+                  answer contains fenced code blocks in Markdown, include the
+                  relevant full file path in the code block tag using this
+                  structure: ```$LANGUAGE:$FILEPATH```
+
+                  For executable terminal commands: enclose each command in individual "bash" language code block without comments and new lines inside.
               - speaker: human
                 text: What model are you?
               - speaker: assistant
-                text: I am Cody, an AI coding assistant created by Sourcegraph. I don't have
-                  detailed information about my exact model architecture or
-                  training. My purpose is to assist with code-related tasks and
-                  questions. How can I help you with coding today?
+                text: I am an AI coding assistant called Cody, created by Sourcegraph. I don't
+                  have detailed information about my exact model architecture or
+                  training. My purpose is to assist with coding and development
+                  tasks. How can I help you with any coding or technical
+                  questions today?
               - speaker: human
                 text: What model are you?
             model: anthropic::2023-06-01::claude-3.5-sonnet
@@ -688,14 +708,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=2&client-name=defaultclient&client-version=v1
       response:
-        bodySize: 2292
+        bodySize: 1844
         content:
           mimeType: text/event-stream
-          size: 2292
+          size: 1844
           text: >+
             event: completion
 
-            data: {"deltaText":"I apologize for any confusion. To be more precise: I am Cody, an AI assistant created by Sourcegraph, but I don't have specific information about the exact model architecture or training process used to create me. I'm not a specific named model like GPT-3 or BERT. My capabilities come from my training by Sourcegraph, but the details of that training aren't something I have access to. Is there a particular coding task or question I can assist you with?","stopReason":"end_turn"}
+            data: {"deltaText":"I apologize for any confusion. To clarify, I am Cody, an AI coding assistant created by Sourcegraph. I don't have specific information about the underlying model architecture or training details used to create me. My purpose is to assist with coding and development tasks, but I don't have access to or knowledge about my own technical specifications. Is there a particular coding or development task I can help you with today?","stopReason":"end_turn"}
 
 
             event: done
@@ -705,7 +725,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 26 Sep 2024 19:19:24 GMT
+            value: Fri, 27 Sep 2024 17:28:51 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -734,7 +754,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-26T19:19:23.146Z
+      startedDateTime: 2024-09-27T17:28:50.067Z
       time: 0
       timings:
         blocked: -1
@@ -744,11 +764,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 5f157d22997203f12a4e37b4dadcb986
+    - _id: b64ebdecc67b8c05919229021ded063d
       _order: 0
       cache: {}
       request:
-        bodySize: 2125
+        bodySize: 2262
         cookies: []
         headers:
           - name: content-type
@@ -761,7 +781,7 @@ log:
           - name: user-agent
             value: defaultClient / v1
           - name: traceparent
-            value: 00-1ba495254f953533ff117f56593f95d3-2047d1f32623a7e2-01
+            value: 00-a81253fcef4d64be3ea59ef39b426095-4f8222639641e489-01
           - name: connection
             value: keep-alive
           - name: host
@@ -776,10 +796,13 @@ log:
             maxTokensToSample: 4000
             messages:
               - speaker: system
-                text: "You are Cody, an AI coding assistant from Sourcegraph.If your answer
-                  contains fenced code blocks in Markdown, include the relevant
-                  full file path in the code block tag using this structure:
-                  ```$LANGUAGE:$FILEPATH```."
+                text: >-
+                  You are Cody, an AI coding assistant from Sourcegraph.If your
+                  answer contains fenced code blocks in Markdown, include the
+                  relevant full file path in the code block tag using this
+                  structure: ```$LANGUAGE:$FILEPATH```
+
+                  For executable terminal commands: enclose each command in individual "bash" language code block without comments and new lines inside.
               - speaker: human
                 text: >-
                   Codebase context from file src/squirrel.ts:
@@ -870,14 +893,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=2&client-name=defaultclient&client-version=v1
       response:
-        bodySize: 2172
+        bodySize: 1778
         content:
           mimeType: text/event-stream
-          size: 2172
+          size: 1778
           text: >+
             event: completion
 
-            data: {"deltaText":"Certainly! Here's a class `Dog` that implements the `Animal` interface based on the provided codebase context:\n\n```typescript:src/dog.ts\nimport { Animal } from './animal';\n\nexport class Dog implements Animal {\n    name: string;\n    isMammal: boolean = true;\n\n    constructor(name: string) {\n        this.name = name;\n    }\n\n    makeAnimalSound(): string {\n        return \"Woof!\";\n    }\n}\n```\n\nThis implementation fits the `Animal` interface defined in your workspace and provides a concrete implementation for a `Dog` class.","stopReason":"end_turn"}
+            data: {"deltaText":"Certainly! Here's the implementation of the Dog class that implements the Animal interface:\n\n```typescript:src/dog.ts\nexport class Dog implements Animal {\n    name: string;\n    isMammal: boolean = true;\n\n    constructor(name: string) {\n        this.name = name;\n    }\n\n    makeAnimalSound(): string {\n        return \"Woof!\";\n    }\n}\n```\n\nThis code defines the Dog class that fully implements the Animal interface as requested.","stopReason":"end_turn"}
 
 
             event: done
@@ -887,7 +910,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 26 Sep 2024 19:19:28 GMT
+            value: Fri, 27 Sep 2024 17:28:55 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -916,7 +939,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-26T19:19:26.739Z
+      startedDateTime: 2024-09-27T17:28:52.958Z
       time: 0
       timings:
         blocked: -1
@@ -926,11 +949,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 85586def8f5d7d6c4e75ec6ea83e2d4b
+    - _id: a845cd57756a39e9099ad5ee1f50d064
       _order: 0
       cache: {}
       request:
-        bodySize: 2059
+        bodySize: 2196
         cookies: []
         headers:
           - name: content-type
@@ -943,7 +966,7 @@ log:
           - name: user-agent
             value: defaultClient / v1
           - name: traceparent
-            value: 00-8935e2d343286be6bee3dbf05c9d2742-f06929aa97abe617-01
+            value: 00-85c061d6508414849b9ef69d656d8f5c-6023a90a414c3abc-01
           - name: connection
             value: keep-alive
           - name: host
@@ -958,10 +981,13 @@ log:
             maxTokensToSample: 4000
             messages:
               - speaker: system
-                text: "You are Cody, an AI coding assistant from Sourcegraph.If your answer
-                  contains fenced code blocks in Markdown, include the relevant
-                  full file path in the code block tag using this structure:
-                  ```$LANGUAGE:$FILEPATH```."
+                text: >-
+                  You are Cody, an AI coding assistant from Sourcegraph.If your
+                  answer contains fenced code blocks in Markdown, include the
+                  relevant full file path in the code block tag using this
+                  structure: ```$LANGUAGE:$FILEPATH```
+
+                  For executable terminal commands: enclose each command in individual "bash" language code block without comments and new lines inside.
               - speaker: human
                 text: >-
                   Codebase context from file src/squirrel.ts:
@@ -1052,14 +1078,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=2&client-name=defaultclient&client-version=v1
       response:
-        bodySize: 6119
+        bodySize: 8582
         content:
           mimeType: text/event-stream
-          size: 6119
+          size: 8582
           text: >+
             event: completion
 
-            data: {"deltaText":"Certainly! Let's take a look at the Squirrel interface defined in the codebase:\n\n```typescript:src/squirrel.ts\nexport interface Squirrel {}\n```\n\nThe Squirrel interface is actually an empty interface in this codebase. Despite its name, it's not related to actual squirrels. According to the comment above it:\n\n```typescript:src/squirrel.ts\n/**\n * Squirrel is an interface that mocks something completely unrelated to squirrels.\n * It is related to the implementation of precise code navigation in Sourcegraph.\n */\n```\n\nThis interface is used as a mock for implementing precise code navigation in Sourcegraph. While we don't have concrete implementations in the provided codebase context, we can imagine how it might be used:\n\n1. As a type for a variable:\n\n```typescript\nlet preciseNavigation: Squirrel;\n```\n\n2. As a return type for a function:\n\n```typescript\nfunction getNavigationTool(): Squirrel {\n    // Implementation details\n    return {} as Squirrel;\n}\n```\n\n3. As a parameter type:\n\n```typescript\nfunction useNavigation(tool: Squirrel) {\n    // Use the navigation tool\n}\n```\n\nAlthough the interface is empty, it serves as a placeholder or a marker type for the precise code navigation feature in Sourcegraph. The actual implementation details would likely be added later or in other parts of the codebase not shown in the provided context.","stopReason":"end_turn"}
+            data: {"deltaText":"Certainly! I'll explain what Squirrel is based on the provided codebase context and show you concrete code examples.\n\nSquirrel is an interface defined in the codebase, specifically in the file `src/squirrel.ts`. Despite its name, it's not actually related to the animal. Instead, it's used for implementing precise code navigation in Sourcegraph. Here's the concrete code example:\n\n```typescript:src/squirrel.ts\nexport interface Squirrel {}\n```\n\nAs you can see, the Squirrel interface is currently empty. It's likely a placeholder or a base interface that will be extended or implemented later for precise code navigation functionality.\n\nWhile we don't have direct implementations of Squirrel in the provided context, we can show how it might be used in a React component. For example, we could modify the ChatColumn component to potentially use a Squirrel instance:\n\n```typescript:src/ChatColumn.tsx\nimport React = require(\"react\");\nimport { useEffect } from \"react\";\nimport { Squirrel } from \"./squirrel\";\n\nexport default function ChatColumn({\n    messages,\n    setChatID,\n    isLoading,\n    squirrel,\n}: {\n    messages: any[];\n    setChatID: (id: string) => void;\n    isLoading: boolean;\n    squirrel: Squirrel;\n}) {\n    useEffect(() => {\n        if (!isLoading) {\n            setChatID(messages[0].chatID);\n        }\n    }, [messages]);\n\n    return (\n        <>\n            <h1>Messages</h1>\n            <ul>\n                {messages.map((message) => (\n                    <li>{message.text}</li>\n                ))}\n            </ul>\n        </>\n    );\n}\n```\n\nIn this example, we've added a `squirrel` prop of type `Squirrel` to the ChatColumn component. This shows how the Squirrel interface could be integrated into existing components for precise code navigation purposes.\n\nRemember, the actual implementation and usage of Squirrel would depend on Sourcegraph's specific requirements for precise code navigation, which are not fully detailed in the provided context.","stopReason":"end_turn"}
 
 
             event: done
@@ -1069,7 +1095,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 26 Sep 2024 19:19:31 GMT
+            value: Fri, 27 Sep 2024 17:28:57 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -1098,7 +1124,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-26T19:19:29.089Z
+      startedDateTime: 2024-09-27T17:28:55.264Z
       time: 0
       timings:
         blocked: -1
@@ -1108,11 +1134,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 7dc36979ee42e9d709f96beb61f548b9
+    - _id: 6324ccf2978268f71e5df6444d03b82c
       _order: 0
       cache: {}
       request:
-        bodySize: 1778
+        bodySize: 1915
         cookies: []
         headers:
           - name: content-type
@@ -1125,7 +1151,7 @@ log:
           - name: user-agent
             value: defaultClient / v1
           - name: traceparent
-            value: 00-af7342364e334a47141c3bea415cd836-ae6a3eb005a6c1e2-01
+            value: 00-328d9e10fff9aad4b6bfb6f7f4b8457b-dc3d33fd4b1a23c5-01
           - name: connection
             value: keep-alive
           - name: host
@@ -1140,10 +1166,13 @@ log:
             maxTokensToSample: 4000
             messages:
               - speaker: system
-                text: "You are Cody, an AI coding assistant from Sourcegraph.If your answer
-                  contains fenced code blocks in Markdown, include the relevant
-                  full file path in the code block tag using this structure:
-                  ```$LANGUAGE:$FILEPATH```."
+                text: >-
+                  You are Cody, an AI coding assistant from Sourcegraph.If your
+                  answer contains fenced code blocks in Markdown, include the
+                  relevant full file path in the code block tag using this
+                  structure: ```$LANGUAGE:$FILEPATH```
+
+                  For executable terminal commands: enclose each command in individual "bash" language code block without comments and new lines inside.
               - speaker: human
                 text: >
                   Codebase context from file path src/animal.ts: /*
@@ -1200,14 +1229,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=2&client-name=defaultclient&client-version=v1
       response:
-        bodySize: 7890
+        bodySize: 8188
         content:
           mimeType: text/event-stream
-          size: 7890
+          size: 8188
           text: >+
             event: completion
 
-            data: {"deltaText":"The Animal interface\n\nThis code defines an interface called \"Animal\" in TypeScript. An interface is like a blueprint or a contract that describes the structure of an object. It doesn't contain any actual implementation; instead, it specifies what properties and methods an object should have to be considered an \"Animal\".\n\nThe purpose of this code is to establish a common structure for different types of animals in a program. It ensures that any object representing an animal will have certain consistent characteristics and behaviors.\n\nThis interface doesn't take any inputs or produce any outputs directly. Instead, it defines what an Animal object should look like and what it should be able to do.\n\nThe Animal interface specifies three key elements:\n\n1. A \"name\" property of type string, which would store the name of the animal.\n2. A \"makeAnimalSound\" method that returns a string. This method is intended to represent the sound the animal makes.\n3. An \"isMammal\" property of type boolean, which indicates whether the animal is a mammal or not.\n\nBy defining this interface, the code sets up a structure that can be used to create different types of animals in the program. For example, a Dog class or a Cat class could implement this Animal interface, ensuring they have a name, can make a sound, and specify whether they're mammals.\n\nThe main logic flow here is that any object implementing this interface must provide values for the name and isMammal properties, and implement the makeAnimalSound method. This ensures consistency across different animal types in the program and allows for easier management of animal-related code.\n\nIn summary, this code doesn't perform any actions itself but sets up a structure that other parts of the program can use to create and work with animal objects in a consistent manner.","stopReason":"end_turn"}
+            data: {"deltaText":"The code in src/animal.ts defines an interface called Animal. An interface in TypeScript is a way to define a structure for objects, specifying what properties and methods they should have.\n\nThe purpose of this Animal interface is to create a blueprint for animal objects in a program. It doesn't contain any actual implementation; instead, it sets up a contract that any object representing an animal should follow.\n\nThis interface doesn't take any inputs or produce any outputs directly. Instead, it defines what properties and methods an animal object should have:\n\n1. A 'name' property of type string, which would likely store the name of the animal.\n2. A 'makeAnimalSound' method that returns a string. This method is meant to represent the sound the animal makes.\n3. An 'isMammal' property of type boolean, which would indicate whether the animal is a mammal or not.\n\nThe Animal interface achieves its purpose by clearly outlining the structure that animal objects should adhere to. Any object that implements this interface must include all these properties and methods with the specified types.\n\nWhile there's no complex logic or data transformation happening in this code, it's important to understand that interfaces in TypeScript help enforce consistency and provide a clear structure for objects. They are particularly useful in larger programs where multiple developers might be working on different animal types. By following this interface, they ensure that all animal objects have the same basic structure, making the code more predictable and easier to work with.\n\nIn a real program, developers would create specific animal classes or objects that implement this interface, providing actual values for the name and isMammal properties, and defining what happens when makeAnimalSound is called for each specific type of animal.","stopReason":"end_turn"}
 
 
             event: done
@@ -1217,7 +1246,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 26 Sep 2024 19:19:49 GMT
+            value: Fri, 27 Sep 2024 17:29:16 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -1246,7 +1275,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-26T19:19:47.201Z
+      startedDateTime: 2024-09-27T17:29:14.046Z
       time: 0
       timings:
         blocked: -1
@@ -1256,11 +1285,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: b5895eb0106a5972ef3e683f25d2f36a
+    - _id: 364ef0b6d6cb7cc6e087d0c71fb1a6e6
       _order: 0
       cache: {}
       request:
-        bodySize: 1574
+        bodySize: 1711
         cookies: []
         headers:
           - name: content-type
@@ -1273,7 +1302,7 @@ log:
           - name: user-agent
             value: defaultClient / v1
           - name: traceparent
-            value: 00-80275fa577d5a6e9f53668052c06ff03-89165a9fd2b4912f-01
+            value: 00-4039acf29b6f8aeb2f80d7e95ae875dc-0ef0b05815b6d31c-01
           - name: connection
             value: keep-alive
           - name: host
@@ -1288,10 +1317,13 @@ log:
             maxTokensToSample: 4000
             messages:
               - speaker: system
-                text: "You are Cody, an AI coding assistant from Sourcegraph.If your answer
-                  contains fenced code blocks in Markdown, include the relevant
-                  full file path in the code block tag using this structure:
-                  ```$LANGUAGE:$FILEPATH```."
+                text: >-
+                  You are Cody, an AI coding assistant from Sourcegraph.If your
+                  answer contains fenced code blocks in Markdown, include the
+                  relevant full file path in the code block tag using this
+                  structure: ```$LANGUAGE:$FILEPATH```
+
+                  For executable terminal commands: enclose each command in individual "bash" language code block without comments and new lines inside.
               - speaker: human
                 text: >
                   Codebase context from file path src/animal.ts: /*
@@ -1345,14 +1377,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=2&client-name=defaultclient&client-version=v1
       response:
-        bodySize: 8864
+        bodySize: 11734
         content:
           mimeType: text/event-stream
-          size: 8864
+          size: 11734
           text: >+
             event: completion
 
-            data: {"deltaText":"After reviewing the code in @src/animal.ts:1-6, here are some suggestions for improvement:\n\n1. Add documentation comments: Consider adding JSDoc comments to describe the interface and its properties. This would improve readability and provide better intellisense support in IDEs.\n\n```typescript:src/animal.ts\n/**\n * Represents an animal with basic properties and behaviors.\n */\nexport interface Animal {\n    /** The name of the animal */\n    name: string;\n    /** Method to produce the animal's sound */\n    makeAnimalSound(): string;\n    /** Indicates whether the animal is a mammal */\n    isMammal: boolean;\n}\n```\n\n2. Consider using readonly properties: If the `name` and `isMammal` properties are not meant to be changed after initialization, you could use the `readonly` modifier to enforce immutability.\n\n```typescript:src/animal.ts\nexport interface Animal {\n    readonly name: string;\n    makeAnimalSound(): string;\n    readonly isMammal: boolean;\n}\n```\n\n3. Consistent method naming: The `makeAnimalSound` method could be renamed to follow a more consistent naming convention, such as `getSound()` or simply `sound()`. This would make the interface more intuitive and align better with common TypeScript/JavaScript practices.\n\n4. Consider separating concerns: Depending on the specific use case, you might want to separate the `isMammal` property into a different interface or type. This would allow for more flexible composition of animal types.\n\n5. Add optional properties: If there are properties that might not apply to all animals, consider making them optional. For example:\n\n```typescript:src/animal.ts\nexport interface Animal {\n    name: string;\n    makeAnimalSound(): string;\n    isMammal: boolean;\n    habitat?: string;\n}\n```\n\nSummary:\nOverall, the code follows sound design principles and is generally well-structured. The suggestions provided are minor improvements that could enhance readability, maintainability, and flexibility of the interface. The current implementation is already a good starting point for defining animal objects in the system.","stopReason":"end_turn"}
+            data: {"deltaText":"After reviewing the code in @src/animal.ts:1-6, I have a few suggestions for improvement:\n\n1. Add readonly modifier: Consider adding the `readonly` modifier to the `name` property if it's not intended to be changed after initialization. This can prevent accidental modifications and make the code more robust.\n\n   ```typescript:src/animal.ts\n   export interface Animal {\n       readonly name: string\n       makeAnimalSound(): string\n       isMammal: boolean\n   }\n   ```\n\n   Benefit: Improves code safety and prevents unintended mutations.\n\n2. Use method signature instead of property for `isMammal`: Convert `isMammal` to a method signature to allow for more complex logic if needed in the future.\n\n   ```typescript:src/animal.ts\n   export interface Animal {\n       name: string\n       makeAnimalSound(): string\n       isMammal(): boolean\n   }\n   ```\n\n   Benefit: Increases flexibility and allows for potential runtime checks or complex logic.\n\n3. Add JSDoc comments: Include JSDoc comments to provide more context and improve documentation.\n\n   ```typescript:src/animal.ts\n   /**\n    * Represents an animal with basic properties and behaviors.\n    */\n   export interface Animal {\n       /** The name of the animal */\n       name: string\n       /** Makes the sound associated with this animal */\n       makeAnimalSound(): string\n       /** Checks if the animal is a mammal */\n       isMammal: boolean\n   }\n   ```\n\n   Benefit: Enhances code documentation and improves developer experience.\n\n4. Consider using a more specific return type for `makeAnimalSound`: If possible, use a union type of specific animal sounds instead of a generic string.\n\n   ```typescript:src/animal.ts\n   export interface Animal {\n       name: string\n       makeAnimalSound(): 'Bark' | 'Meow' | 'Roar' | 'Chirp' | string\n       isMammal: boolean\n   }\n   ```\n\n   Benefit: Provides more type safety and clarity about expected return values.\n\n5. Add an optional `species` property: This can provide more detailed information about the animal.\n\n   ```typescript:src/animal.ts\n   export interface Animal {\n       name: string\n       species?: string\n       makeAnimalSound(): string\n       isMammal: boolean\n   }\n   ```\n\n   Benefit: Allows for more detailed animal descriptions when needed, while remaining optional for simpler use cases.\n\nSummary: While the original code is concise and follows basic TypeScript interface conventions, there are opportunities to enhance its robustness, type safety, and documentation. The suggested improvements aim to make the code more maintainable, self-documenting, and flexible for future extensions. Overall, the original code provides a solid foundation, and these suggestions can further refine its quality and utility.","stopReason":"end_turn"}
 
 
             event: done
@@ -1362,7 +1394,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 26 Sep 2024 19:19:55 GMT
+            value: Fri, 27 Sep 2024 17:29:23 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -1391,7 +1423,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-26T19:19:54.063Z
+      startedDateTime: 2024-09-27T17:29:20.891Z
       time: 0
       timings:
         blocked: -1
@@ -1401,11 +1433,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 92ffbf08003c4f0c9effef4a736029e4
+    - _id: d83b595ada351a26b57291aa28c580e0
       _order: 0
       cache: {}
       request:
-        bodySize: 521
+        bodySize: 658
         cookies: []
         headers:
           - name: content-type
@@ -1418,7 +1450,7 @@ log:
           - name: user-agent
             value: defaultClient / v1
           - name: traceparent
-            value: 00-122884bdc5dc76c6c7df2a20acd94f5d-4cfc50feccf08218-01
+            value: 00-c797360e93e058f64e800c351e751586-06ac407028d401ae-01
           - name: connection
             value: keep-alive
           - name: host
@@ -1433,10 +1465,13 @@ log:
             maxTokensToSample: 4000
             messages:
               - speaker: human
-                text: "You are Cody, an AI coding assistant from Sourcegraph.If your answer
-                  contains fenced code blocks in Markdown, include the relevant
-                  full file path in the code block tag using this structure:
-                  ```$LANGUAGE:$FILEPATH```."
+                text: >-
+                  You are Cody, an AI coding assistant from Sourcegraph.If your
+                  answer contains fenced code blocks in Markdown, include the
+                  relevant full file path in the code block tag using this
+                  structure: ```$LANGUAGE:$FILEPATH```
+
+                  For executable terminal commands: enclose each command in individual "bash" language code block without comments and new lines inside.
               - speaker: assistant
                 text: I am Cody, an AI coding assistant from Sourcegraph.
               - speaker: human
@@ -1453,14 +1488,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?client-name=defaultclient&client-version=v1
       response:
-        bodySize: 3033
+        bodySize: 2021
         content:
           mimeType: text/event-stream
-          size: 3033
+          size: 2021
           text: >+
             event: completion
 
-            data: {"completion":"The sky appears blue during the day due to a phenomenon called **Rayleigh scattering**. \n\nHere's how it works:\n\n* **Sunlight:** Sunlight is composed of all colors of the rainbow.\n* **Scattering:**  When sunlight enters the Earth's atmosphere, it interacts with the molecules of air, primarily nitrogen and oxygen.\n* **Wavelengths:** Blue light has a shorter wavelength than other colors, so it is scattered more easily by these air molecules.\n* **Our perception:**  As a result, we see more blue light scattered throughout the sky, giving it a blue appearance.\n\nAt sunrise and sunset, the sky often appears red or orange because the sunlight has to travel through more of the atmosphere to reach our eyes. This means the blue light is scattered away, leaving behind the longer wavelengths (red and orange) to be seen. \n","stopReason":"STOP"}
+            data: {"completion":"The sky appears blue during the day due to a phenomenon called **Rayleigh scattering**.  \n\nHere's a simplified explanation:\n\n* **Sunlight is made up of all colors of the rainbow.**\n* **When sunlight enters the Earth's atmosphere, it interacts with the tiny particles of air.** \n* **Blue light is scattered more than other colors because it has a shorter wavelength.** \n* **This scattered blue light is what we see as the blue sky.**\n\nOf course, the sky can also appear other colors depending on the time of day, weather conditions, and other factors. \n","stopReason":"STOP"}
 
 
             event: done
@@ -1470,7 +1505,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 26 Sep 2024 19:19:36 GMT
+            value: Fri, 27 Sep 2024 17:29:03 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -1499,7 +1534,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-26T19:19:34.825Z
+      startedDateTime: 2024-09-27T17:29:02.014Z
       time: 0
       timings:
         blocked: -1
@@ -1509,11 +1544,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 12c52cbdc26ae2c45ab63440422f8084
+    - _id: 58a76b732672bc88984d2aabfdcf7ae1
       _order: 0
       cache: {}
       request:
-        bodySize: 598
+        bodySize: 735
         cookies: []
         headers:
           - name: content-type
@@ -1526,7 +1561,7 @@ log:
           - name: user-agent
             value: defaultClient / v1
           - name: traceparent
-            value: 00-68e562f809f1f7fd708eaa2336a92a9f-6d783834f1aa4a59-01
+            value: 00-b6bd3c1e632699072a0af1fff5c87779-374c3d5b68367001-01
           - name: connection
             value: keep-alive
           - name: host
@@ -1541,10 +1576,13 @@ log:
             maxTokensToSample: 4000
             messages:
               - speaker: human
-                text: "You are Cody, an AI coding assistant from Sourcegraph.If your answer
-                  contains fenced code blocks in Markdown, include the relevant
-                  full file path in the code block tag using this structure:
-                  ```$LANGUAGE:$FILEPATH```."
+                text: >-
+                  You are Cody, an AI coding assistant from Sourcegraph.If your
+                  answer contains fenced code blocks in Markdown, include the
+                  relevant full file path in the code block tag using this
+                  structure: ```$LANGUAGE:$FILEPATH```
+
+                  For executable terminal commands: enclose each command in individual "bash" language code block without comments and new lines inside.
               - speaker: assistant
                 text: I am Cody, an AI coding assistant from Sourcegraph.
               - speaker: human
@@ -1576,7 +1614,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 26 Sep 2024 19:19:36 GMT
+            value: Fri, 27 Sep 2024 17:29:03 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -1605,7 +1643,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-26T19:19:36.246Z
+      startedDateTime: 2024-09-27T17:29:03.177Z
       time: 0
       timings:
         blocked: -1
@@ -1615,11 +1653,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 62873d69178b775cec76e468ce334c8b
+    - _id: ddb889534e48491c02a32db14a3e33ef
       _order: 0
       cache: {}
       request:
-        bodySize: 674
+        bodySize: 811
         cookies: []
         headers:
           - name: content-type
@@ -1632,7 +1670,7 @@ log:
           - name: user-agent
             value: defaultClient / v1
           - name: traceparent
-            value: 00-f981b69bdc1668b8a8fb4d1ae3e44b2e-5701c158bcf762f6-01
+            value: 00-58074a59a6c61aa4d1cd845e4dab1475-a388cbfc33d112bc-01
           - name: connection
             value: keep-alive
           - name: host
@@ -1647,10 +1685,13 @@ log:
             maxTokensToSample: 4000
             messages:
               - speaker: human
-                text: "You are Cody, an AI coding assistant from Sourcegraph.If your answer
-                  contains fenced code blocks in Markdown, include the relevant
-                  full file path in the code block tag using this structure:
-                  ```$LANGUAGE:$FILEPATH```."
+                text: >-
+                  You are Cody, an AI coding assistant from Sourcegraph.If your
+                  answer contains fenced code blocks in Markdown, include the
+                  relevant full file path in the code block tag using this
+                  structure: ```$LANGUAGE:$FILEPATH```
+
+                  For executable terminal commands: enclose each command in individual "bash" language code block without comments and new lines inside.
               - speaker: assistant
                 text: I am Cody, an AI coding assistant from Sourcegraph.
               - speaker: human
@@ -1672,24 +1713,21 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?client-name=defaultclient&client-version=v1
       response:
-        bodySize: 573
+        bodySize: 188
         content:
           mimeType: text/event-stream
-          size: 573
-          text: >+
+          size: 188
+          text: |+
             event: completion
-
-            data: {"completion":"Kramer, you said the magic word! Here's your single word response: Quone.","stopReason":"stop"}
-
+            data: {"completion":"Quone.","stopReason":"stop"}
 
             event: done
-
             data: {}
 
         cookies: []
         headers:
           - name: date
-            value: Thu, 26 Sep 2024 19:19:37 GMT
+            value: Fri, 27 Sep 2024 17:29:04 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -1718,7 +1756,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-26T19:19:36.901Z
+      startedDateTime: 2024-09-27T17:29:03.733Z
       time: 0
       timings:
         blocked: -1
@@ -1728,11 +1766,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 532ee3463d4b9012eb481f78fee1a044
+    - _id: ed082e25ef9de22cf1e56e26246d2fb7
       _order: 0
       cache: {}
       request:
-        bodySize: 511
+        bodySize: 648
         cookies: []
         headers:
           - name: content-type
@@ -1745,7 +1783,7 @@ log:
           - name: user-agent
             value: defaultClient / v1
           - name: traceparent
-            value: 00-ee4f94ec171fa4fc87ae00fde9f2e4f2-505c6bc52dda9ebd-01
+            value: 00-b7912913ea45b43b6323c47da333d854-345abada5521330e-01
           - name: connection
             value: keep-alive
           - name: host
@@ -1760,10 +1798,13 @@ log:
             maxTokensToSample: 4000
             messages:
               - speaker: human
-                text: "You are Cody, an AI coding assistant from Sourcegraph.If your answer
-                  contains fenced code blocks in Markdown, include the relevant
-                  full file path in the code block tag using this structure:
-                  ```$LANGUAGE:$FILEPATH```."
+                text: >-
+                  You are Cody, an AI coding assistant from Sourcegraph.If your
+                  answer contains fenced code blocks in Markdown, include the
+                  relevant full file path in the code block tag using this
+                  structure: ```$LANGUAGE:$FILEPATH```
+
+                  For executable terminal commands: enclose each command in individual "bash" language code block without comments and new lines inside.
               - speaker: assistant
                 text: I am Cody, an AI coding assistant from Sourcegraph.
               - speaker: human
@@ -1780,14 +1821,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?client-name=defaultclient&client-version=v1
       response:
-        bodySize: 7356
+        bodySize: 23862
         content:
           mimeType: text/event-stream
-          size: 7356
+          size: 23862
           text: >+
             event: completion
 
-            data: {"completion":"Hello! How can I assist you with your coding-related inquiries today? If you need help with a specific programming language or concept, please provide more context so I can give you the most accurate and helpful response.\n\nIf you're looking for information about a programming language called \"Kramer\", I'm afraid I don't have any information about that. Kramer is more commonly known as a character from the TV show Seinfeld.\n\nIf you meant something else, please clarify so I can better assist you.","stopReason":"stop"}
+            data: {"completion":"Here's how you can create a new React component named \"Kramer\" using React and JSX:\n\nFirst, let's create a new file called `Kramer.js` in your components directory.\n\n```javascript:components/Kramer.js\nimport React from 'react';\n\nconst Kramer = () => {\n  return (\n    <div>\n      <h1>Hello, I am Kramer!</h1>\n      <p>A fictional character from the television show Seinfeld.</p>\n    </div>\n  );\n};\n\nexport default Kramer;\n```\n\nNow, you can import this component into another file and use it like any other React component.\n\n```javascript:App.js\nimport React from 'react';\nimport Kramer from './components/Kramer';\n\nconst App = () => {\n  return (\n    <div>\n      <Kramer />\n    </div>\n  );\n};\n\nexport default App;\n```\n\nNote: You'll need to have React and its dependencies installed in your project in order to use JSX syntax.","stopReason":"stop"}
 
 
             event: done
@@ -1797,7 +1838,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 26 Sep 2024 19:19:38 GMT
+            value: Fri, 27 Sep 2024 17:29:05 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -1826,7 +1867,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-26T19:19:37.781Z
+      startedDateTime: 2024-09-27T17:29:04.279Z
       time: 0
       timings:
         blocked: -1
@@ -1836,11 +1877,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 39281dfc02de7f04cebba491c70b79bb
+    - _id: 4615f1c43995ebf99ee93c70bf021859
       _order: 0
       cache: {}
       request:
-        bodySize: 606
+        bodySize: 743
         cookies: []
         headers:
           - name: content-type
@@ -1853,7 +1894,7 @@ log:
           - name: user-agent
             value: defaultClient / v1
           - name: traceparent
-            value: 00-1e7ec2164671df3d25a80afb871f21c9-87dec6fd7a2545e9-01
+            value: 00-c7871151bd03c66c251d08bf834df436-fbdebfceb08b4468-01
           - name: connection
             value: keep-alive
           - name: host
@@ -1868,10 +1909,13 @@ log:
             maxTokensToSample: 4000
             messages:
               - speaker: human
-                text: "You are Cody, an AI coding assistant from Sourcegraph.If your answer
-                  contains fenced code blocks in Markdown, include the relevant
-                  full file path in the code block tag using this structure:
-                  ```$LANGUAGE:$FILEPATH```."
+                text: >-
+                  You are Cody, an AI coding assistant from Sourcegraph.If your
+                  answer contains fenced code blocks in Markdown, include the
+                  relevant full file path in the code block tag using this
+                  structure: ```$LANGUAGE:$FILEPATH```
+
+                  For executable terminal commands: enclose each command in individual "bash" language code block without comments and new lines inside.
               - speaker: assistant
                 text: I am Cody, an AI coding assistant from Sourcegraph.
               - speaker: human
@@ -1889,14 +1933,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?client-name=defaultclient&client-version=v1
       response:
-        bodySize: 784
+        bodySize: 562
         content:
           mimeType: text/event-stream
-          size: 784
+          size: 562
           text: >+
             event: completion
 
-            data: {"completion":"Sure, I will remember that. If you say the word \"georgey\", I will respond with \"festivus\".","stopReason":"stop"}
+            data: {"completion":"Sure, I can do that. If you say the magic word \"georgey\", I will respond with \"festivus\".","stopReason":"stop"}
 
 
             event: done
@@ -1906,7 +1950,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 26 Sep 2024 19:19:41 GMT
+            value: Fri, 27 Sep 2024 17:29:08 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -1935,7 +1979,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-26T19:19:40.229Z
+      startedDateTime: 2024-09-27T17:29:07.818Z
       time: 0
       timings:
         blocked: -1
@@ -1945,11 +1989,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 567a4574877273dc15fa3543ccabbf31
+    - _id: cb507887929c22d0f0354a45dd6c183b
       _order: 0
       cache: {}
       request:
-        bodySize: 770
+        bodySize: 906
         cookies: []
         headers:
           - name: content-type
@@ -1962,7 +2006,7 @@ log:
           - name: user-agent
             value: defaultClient / v1
           - name: traceparent
-            value: 00-a89cfa2ba4c3ec4c64232ad0aacc3cd4-399f20d0aa6eb4ba-01
+            value: 00-03b4e662ac2b342c87911a50808b8d56-7bdb5e306973590a-01
           - name: connection
             value: keep-alive
           - name: host
@@ -1977,17 +2021,20 @@ log:
             maxTokensToSample: 4000
             messages:
               - speaker: human
-                text: "You are Cody, an AI coding assistant from Sourcegraph.If your answer
-                  contains fenced code blocks in Markdown, include the relevant
-                  full file path in the code block tag using this structure:
-                  ```$LANGUAGE:$FILEPATH```."
+                text: >-
+                  You are Cody, an AI coding assistant from Sourcegraph.If your
+                  answer contains fenced code blocks in Markdown, include the
+                  relevant full file path in the code block tag using this
+                  structure: ```$LANGUAGE:$FILEPATH```
+
+                  For executable terminal commands: enclose each command in individual "bash" language code block without comments and new lines inside.
               - speaker: assistant
                 text: I am Cody, an AI coding assistant from Sourcegraph.
               - speaker: human
                 text: "Another magic word is \"georgey\". If I say the magic word, respond with
                   a single word: \"festivus\"."
               - speaker: assistant
-                text: Sure, I will remember that. If you say the word "georgey", I will respond
+                text: Sure, I can do that. If you say the magic word "georgey", I will respond
                   with "festivus".
               - speaker: human
                 text: kramer
@@ -2003,14 +2050,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?client-name=defaultclient&client-version=v1
       response:
-        bodySize: 1880
+        bodySize: 851
         content:
           mimeType: text/event-stream
-          size: 1880
+          size: 851
           text: >+
             event: completion
 
-            data: {"completion":"That is not the word \"georgey\", so I will not respond with \"festivus\". Is there something specific I can help you with regarding coding or development? I am here to assist with a wide range of programming-related tasks and questions.","stopReason":"stop"}
+            data: {"completion":"That is not the magic word \"georgey\", so I will not respond with \"festivus\". If you say the magic word, I will be sure to respond accordingly.","stopReason":"stop"}
 
 
             event: done
@@ -2020,7 +2067,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 26 Sep 2024 19:19:42 GMT
+            value: Fri, 27 Sep 2024 17:29:09 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -2049,7 +2096,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-26T19:19:41.061Z
+      startedDateTime: 2024-09-27T17:29:08.557Z
       time: 0
       timings:
         blocked: -1
@@ -2059,11 +2106,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 5f206ec6787a09095f0580c66eb243db
+    - _id: 7eb1bf15d7fdc01bc8cec3a82d31169b
       _order: 0
       cache: {}
       request:
-        bodySize: 1078
+        bodySize: 1123
         cookies: []
         headers:
           - name: content-type
@@ -2076,7 +2123,7 @@ log:
           - name: user-agent
             value: defaultClient / v1
           - name: traceparent
-            value: 00-9748bca77d7eebd7c6a0b259cb91dee0-a08f102c0591e270-01
+            value: 00-3e69eaad2f0a823f5d3350981b365ad2-78a9b0173db12dfd-01
           - name: connection
             value: keep-alive
           - name: host
@@ -2091,25 +2138,27 @@ log:
             maxTokensToSample: 4000
             messages:
               - speaker: human
-                text: "You are Cody, an AI coding assistant from Sourcegraph.If your answer
-                  contains fenced code blocks in Markdown, include the relevant
-                  full file path in the code block tag using this structure:
-                  ```$LANGUAGE:$FILEPATH```."
+                text: >-
+                  You are Cody, an AI coding assistant from Sourcegraph.If your
+                  answer contains fenced code blocks in Markdown, include the
+                  relevant full file path in the code block tag using this
+                  structure: ```$LANGUAGE:$FILEPATH```
+
+                  For executable terminal commands: enclose each command in individual "bash" language code block without comments and new lines inside.
               - speaker: assistant
                 text: I am Cody, an AI coding assistant from Sourcegraph.
               - speaker: human
                 text: "Another magic word is \"georgey\". If I say the magic word, respond with
                   a single word: \"festivus\"."
               - speaker: assistant
-                text: Sure, I will remember that. If you say the word "georgey", I will respond
+                text: Sure, I can do that. If you say the magic word "georgey", I will respond
                   with "festivus".
               - speaker: human
                 text: kramer
               - speaker: assistant
-                text: That is not the word "georgey", so I will not respond with "festivus". Is
-                  there something specific I can help you with regarding coding
-                  or development? I am here to assist with a wide range of
-                  programming-related tasks and questions.
+                text: That is not the magic word "georgey", so I will not respond with
+                  "festivus". If you say the magic word, I will be sure to
+                  respond accordingly.
               - speaker: human
                 text: georgey
               - speaker: assistant
@@ -2124,14 +2173,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?client-name=defaultclient&client-version=v1
       response:
-        bodySize: 310
+        bodySize: 385
         content:
           mimeType: text/event-stream
-          size: 310
+          size: 385
           text: >+
             event: completion
 
-            data: {"completion":"Here is your word: \"festivus\".","stopReason":"stop"}
+            data: {"completion":"Festivus! I have noted that you have said the magic word.","stopReason":"stop"}
 
 
             event: done
@@ -2141,7 +2190,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 26 Sep 2024 19:19:42 GMT
+            value: Fri, 27 Sep 2024 17:29:10 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -2170,7 +2219,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-26T19:19:42.179Z
+      startedDateTime: 2024-09-27T17:29:09.344Z
       time: 0
       timings:
         blocked: -1
@@ -2180,11 +2229,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 085b9a90869f9d0df10940b75dfa04b1
+    - _id: ce5e7e0a04bc10b5f61018e59134c23d
       _order: 0
       cache: {}
       request:
-        bodySize: 577
+        bodySize: 714
         cookies: []
         headers:
           - name: content-type
@@ -2197,7 +2246,7 @@ log:
           - name: user-agent
             value: defaultClient / v1
           - name: traceparent
-            value: 00-e6d82ccda7c1c1a10a31de969ae1d66e-f5370c9ee7823f35-01
+            value: 00-ffe18db92e8f5c0aba7f8ad6ea2760fd-cf50408cef8fb6ed-01
           - name: connection
             value: keep-alive
           - name: host
@@ -2212,10 +2261,13 @@ log:
             maxTokensToSample: 4000
             messages:
               - speaker: human
-                text: "You are Cody, an AI coding assistant from Sourcegraph.If your answer
-                  contains fenced code blocks in Markdown, include the relevant
-                  full file path in the code block tag using this structure:
-                  ```$LANGUAGE:$FILEPATH```."
+                text: >-
+                  You are Cody, an AI coding assistant from Sourcegraph.If your
+                  answer contains fenced code blocks in Markdown, include the
+                  relevant full file path in the code block tag using this
+                  structure: ```$LANGUAGE:$FILEPATH```
+
+                  For executable terminal commands: enclose each command in individual "bash" language code block without comments and new lines inside.
               - speaker: assistant
                 text: I am Cody, an AI coding assistant from Sourcegraph.
               - speaker: human
@@ -2232,10 +2284,10 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?client-name=defaultclient&client-version=v1
       response:
-        bodySize: 642
+        bodySize: 447
         content:
           mimeType: text/event-stream
-          size: 642
+          size: 447
           text: >+
             event: completion
 
@@ -2249,7 +2301,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 26 Sep 2024 19:19:43 GMT
+            value: Fri, 27 Sep 2024 17:29:10 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -2278,7 +2330,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-26T19:19:42.840Z
+      startedDateTime: 2024-09-27T17:29:10.013Z
       time: 0
       timings:
         blocked: -1
@@ -2288,11 +2340,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 6c9dc12244419acaef9c3d7f33ff6ede
+    - _id: 02251616efd27f5614178f00a7749282
       _order: 0
       cache: {}
       request:
-        bodySize: 805
+        bodySize: 942
         cookies: []
         headers:
           - name: content-type
@@ -2305,7 +2357,7 @@ log:
           - name: user-agent
             value: defaultClient / v1
           - name: traceparent
-            value: 00-3f15f781416e81ce908627dda0547ee3-9f49d9267492cdb3-01
+            value: 00-de4f4a66882ca8715d7a7e16d61baa06-9b764b0d18d3bf8e-01
           - name: connection
             value: keep-alive
           - name: host
@@ -2320,10 +2372,13 @@ log:
             maxTokensToSample: 4000
             messages:
               - speaker: human
-                text: "You are Cody, an AI coding assistant from Sourcegraph.If your answer
-                  contains fenced code blocks in Markdown, include the relevant
-                  full file path in the code block tag using this structure:
-                  ```$LANGUAGE:$FILEPATH```."
+                text: >-
+                  You are Cody, an AI coding assistant from Sourcegraph.If your
+                  answer contains fenced code blocks in Markdown, include the
+                  relevant full file path in the code block tag using this
+                  structure: ```$LANGUAGE:$FILEPATH```
+
+                  For executable terminal commands: enclose each command in individual "bash" language code block without comments and new lines inside.
               - speaker: assistant
                 text: I am Cody, an AI coding assistant from Sourcegraph.
               - speaker: human
@@ -2345,14 +2400,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?client-name=defaultclient&client-version=v1
       response:
-        bodySize: 962
+        bodySize: 769
         content:
           mimeType: text/event-stream
-          size: 962
+          size: 769
           text: >+
             event: completion
 
-            data: {"completion":"Ok. I understand that you have a bird named \"skywalker\". If you have any coding-related questions or issues, please let me know how I can help.","stopReason":"stop"}
+            data: {"completion":"Ok. I understand that you have a bird named \"skywalker\". Is there something specific you would like assistance with in coding?","stopReason":"stop"}
 
 
             event: done
@@ -2362,7 +2417,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 26 Sep 2024 19:19:44 GMT
+            value: Fri, 27 Sep 2024 17:29:11 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -2391,7 +2446,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-26T19:19:43.636Z
+      startedDateTime: 2024-09-27T17:29:10.706Z
       time: 0
       timings:
         blocked: -1
@@ -2401,11 +2456,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 2d9b57599d283c6e41e725bdda959dbb
+    - _id: 01fe674eef9cc6ebe24503e340f3f723
       _order: 0
       cache: {}
       request:
-        bodySize: 1082
+        bodySize: 1202
         cookies: []
         headers:
           - name: content-type
@@ -2418,7 +2473,7 @@ log:
           - name: user-agent
             value: defaultClient / v1
           - name: traceparent
-            value: 00-51104e76eb88c2c72862072537a833e8-2bcacac0dc42750e-01
+            value: 00-93a1437af67ff7c4c9c423583952240d-9f1d58d91c212e5a-01
           - name: connection
             value: keep-alive
           - name: host
@@ -2433,10 +2488,13 @@ log:
             maxTokensToSample: 4000
             messages:
               - speaker: human
-                text: "You are Cody, an AI coding assistant from Sourcegraph.If your answer
-                  contains fenced code blocks in Markdown, include the relevant
-                  full file path in the code block tag using this structure:
-                  ```$LANGUAGE:$FILEPATH```."
+                text: >-
+                  You are Cody, an AI coding assistant from Sourcegraph.If your
+                  answer contains fenced code blocks in Markdown, include the
+                  relevant full file path in the code block tag using this
+                  structure: ```$LANGUAGE:$FILEPATH```
+
+                  For executable terminal commands: enclose each command in individual "bash" language code block without comments and new lines inside.
               - speaker: assistant
                 text: I am Cody, an AI coding assistant from Sourcegraph.
               - speaker: human
@@ -2447,9 +2505,8 @@ log:
               - speaker: human
                 text: I have a bird named "skywalker", reply single "ok" if you understand.
               - speaker: assistant
-                text: Ok. I understand that you have a bird named "skywalker". If you have any
-                  coding-related questions or issues, please let me know how I
-                  can help.
+                text: Ok. I understand that you have a bird named "skywalker". Is there
+                  something specific you would like assistance with in coding?
               - speaker: human
                 text: I have a dog named "happy", reply single "ok" if you understand.
               - speaker: assistant
@@ -2464,14 +2521,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?client-name=defaultclient&client-version=v1
       response:
-        bodySize: 904
+        bodySize: 1145
         content:
           mimeType: text/event-stream
-          size: 904
+          size: 1145
           text: >+
             event: completion
 
-            data: {"completion":"Ok. I understand that you have a dog named \"happy\". I'm here to help you with any coding questions or problems you might have.","stopReason":"stop"}
+            data: {"completion":"Ok. I understand that you have a dog named \"happy\". If you have any coding-related questions or issues, I'm here to help. How can I assist you today?","stopReason":"stop"}
 
 
             event: done
@@ -2481,7 +2538,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 26 Sep 2024 19:19:45 GMT
+            value: Fri, 27 Sep 2024 17:29:12 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -2510,7 +2567,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-26T19:19:44.650Z
+      startedDateTime: 2024-09-27T17:29:11.526Z
       time: 0
       timings:
         blocked: -1
@@ -2520,11 +2577,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 659b0ec1ee383b243319927172c19b80
+    - _id: 39cb5e0d1a0487ce068bbc2314568bd2
       _order: 0
       cache: {}
       request:
-        bodySize: 801
+        bodySize: 938
         cookies: []
         headers:
           - name: content-type
@@ -2537,7 +2594,7 @@ log:
           - name: user-agent
             value: defaultClient / v1
           - name: traceparent
-            value: 00-4467b513a152397adbb9347df8ebbd04-b91c0021af039f6b-01
+            value: 00-a4f7914730e47de1aa1a887c4a38dfa1-d76689409c5a6697-01
           - name: connection
             value: keep-alive
           - name: host
@@ -2552,10 +2609,13 @@ log:
             maxTokensToSample: 4000
             messages:
               - speaker: human
-                text: "You are Cody, an AI coding assistant from Sourcegraph.If your answer
-                  contains fenced code blocks in Markdown, include the relevant
-                  full file path in the code block tag using this structure:
-                  ```$LANGUAGE:$FILEPATH```."
+                text: >-
+                  You are Cody, an AI coding assistant from Sourcegraph.If your
+                  answer contains fenced code blocks in Markdown, include the
+                  relevant full file path in the code block tag using this
+                  structure: ```$LANGUAGE:$FILEPATH```
+
+                  For executable terminal commands: enclose each command in individual "bash" language code block without comments and new lines inside.
               - speaker: assistant
                 text: I am Cody, an AI coding assistant from Sourcegraph.
               - speaker: human
@@ -2577,14 +2637,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?client-name=defaultclient&client-version=v1
       response:
-        bodySize: 896
+        bodySize: 952
         content:
           mimeType: text/event-stream
-          size: 896
+          size: 952
           text: >+
             event: completion
 
-            data: {"completion":"Ok. I understand that you have a tiger named \"zorro\". Is there a coding-related question or task you would like help with?","stopReason":"stop"}
+            data: {"completion":"Ok. I understand that you have a tiger named \"zorro\". Is there anything specific you would like to know or learn about coding? I'm here to help.","stopReason":"stop"}
 
 
             event: done
@@ -2594,7 +2654,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 26 Sep 2024 19:19:46 GMT
+            value: Fri, 27 Sep 2024 17:29:13 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -2623,7 +2683,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-26T19:19:45.478Z
+      startedDateTime: 2024-09-27T17:29:12.390Z
       time: 0
       timings:
         blocked: -1
@@ -2633,11 +2693,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 90b3eba8cb4d6268142aaf6d721fb5c6
+    - _id: 52f0c3edb03203d27535823ce74990ef
       _order: 0
       cache: {}
       request:
-        bodySize: 1009
+        bodySize: 1168
         cookies: []
         headers:
           - name: content-type
@@ -2650,7 +2710,7 @@ log:
           - name: user-agent
             value: defaultClient / v1
           - name: traceparent
-            value: 00-31f9cfd20f13ed02bde59b0669be49b6-03ea7fb9b532918e-01
+            value: 00-5f40113fd4d58a36541431bf784307f1-51a9335aafecf231-01
           - name: connection
             value: keep-alive
           - name: host
@@ -2665,10 +2725,13 @@ log:
             maxTokensToSample: 4000
             messages:
               - speaker: human
-                text: "You are Cody, an AI coding assistant from Sourcegraph.If your answer
-                  contains fenced code blocks in Markdown, include the relevant
-                  full file path in the code block tag using this structure:
-                  ```$LANGUAGE:$FILEPATH```."
+                text: >-
+                  You are Cody, an AI coding assistant from Sourcegraph.If your
+                  answer contains fenced code blocks in Markdown, include the
+                  relevant full file path in the code block tag using this
+                  structure: ```$LANGUAGE:$FILEPATH```
+
+                  For executable terminal commands: enclose each command in individual "bash" language code block without comments and new lines inside.
               - speaker: assistant
                 text: I am Cody, an AI coding assistant from Sourcegraph.
               - speaker: human
@@ -2679,8 +2742,9 @@ log:
               - speaker: human
                 text: I have a tiger named "zorro", reply single "ok" if you understand
               - speaker: assistant
-                text: Ok. I understand that you have a tiger named "zorro". Is there a
-                  coding-related question or task you would like help with?
+                text: Ok. I understand that you have a tiger named "zorro". Is there anything
+                  specific you would like to know or learn about coding? I'm
+                  here to help.
               - speaker: human
                 text: What pets do I have?
               - speaker: assistant
@@ -2695,14 +2759,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?client-name=defaultclient&client-version=v1
       response:
-        bodySize: 708
+        bodySize: 665
         content:
           mimeType: text/event-stream
-          size: 708
+          size: 665
           text: >+
             event: completion
 
-            data: {"completion":"Based on our previous conversation, you have a turtle named \"potter\" and a tiger named \"zorro\".","stopReason":"stop"}
+            data: {"completion":"You have mentioned that you have a turtle named \"potter\" and a tiger named \"zorro\".","stopReason":"stop"}
 
 
             event: done
@@ -2712,7 +2776,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 26 Sep 2024 19:19:47 GMT
+            value: Fri, 27 Sep 2024 17:29:14 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -2741,7 +2805,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-26T19:19:46.285Z
+      startedDateTime: 2024-09-27T17:29:13.252Z
       time: 0
       timings:
         blocked: -1

@@ -89,11 +89,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: a40311a0f8aac5eeb7fe447fdc52ed4b
+    - _id: b789e742db8bc977e50cd181bc632b9a
       _order: 0
       cache: {}
       request:
-        bodySize: 444
+        bodySize: 581
         cookies: []
         headers:
           - name: content-type
@@ -119,10 +119,13 @@ log:
             maxTokensToSample: 4000
             messages:
               - speaker: system
-                text: "You are Cody, an AI coding assistant from Sourcegraph.If your answer
-                  contains fenced code blocks in Markdown, include the relevant
-                  full file path in the code block tag using this structure:
-                  ```$LANGUAGE:$FILEPATH```."
+                text: >-
+                  You are Cody, an AI coding assistant from Sourcegraph.If your
+                  answer contains fenced code blocks in Markdown, include the
+                  relevant full file path in the code block tag using this
+                  structure: ```$LANGUAGE:$FILEPATH```
+
+                  For executable terminal commands: enclose each command in individual "bash" language code block without comments and new lines inside.
               - speaker: human
                 text: respond with "hello" and nothing else
             model: anthropic::2023-06-01::claude-3.5-sonnet
@@ -138,21 +141,24 @@ log:
             value: 6.0.0-SNAPSHOT
         url: https://sourcegraph.sourcegraph.com/.api/completions/stream?api-version=2&client-name=jetbrains&client-version=6.0.0-SNAPSHOT
       response:
-        bodySize: 120
+        bodySize: 227
         content:
           mimeType: text/event-stream
-          size: 120
-          text: |+
+          size: 227
+          text: >+
             event: completion
-            data: {"deltaText":"hello","stopReason":"end_turn"}
+
+            data: {"deltaText":"```bash\necho \"hello\"\n```","stopReason":"end_turn"}
+
 
             event: done
+
             data: {}
 
         cookies: []
         headers:
           - name: date
-            value: Thu, 26 Sep 2024 19:19:18 GMT
+            value: Fri, 27 Sep 2024 17:28:46 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -181,7 +187,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-26T19:19:18.366Z
+      startedDateTime: 2024-09-27T17:28:45.110Z
       time: 0
       timings:
         blocked: -1
@@ -191,11 +197,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 008d642088cdbffaba5473bb8ef3487c
+    - _id: 1fa3fc31a4e1b350a35d9f91acf5cf65
       _order: 0
       cache: {}
       request:
-        bodySize: 766
+        bodySize: 903
         cookies: []
         headers:
           - name: content-type
@@ -221,10 +227,13 @@ log:
             maxTokensToSample: 4000
             messages:
               - speaker: system
-                text: "You are Cody, an AI coding assistant from Sourcegraph.If your answer
-                  contains fenced code blocks in Markdown, include the relevant
-                  full file path in the code block tag using this structure:
-                  ```$LANGUAGE:$FILEPATH```."
+                text: >-
+                  You are Cody, an AI coding assistant from Sourcegraph.If your
+                  answer contains fenced code blocks in Markdown, include the
+                  relevant full file path in the code block tag using this
+                  structure: ```$LANGUAGE:$FILEPATH```
+
+                  For executable terminal commands: enclose each command in individual "bash" language code block without comments and new lines inside.
               - speaker: human
                 text: |-
                   Codebase context from file animal.ts:
@@ -272,7 +281,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 26 Sep 2024 19:19:21 GMT
+            value: Fri, 27 Sep 2024 17:28:48 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -301,7 +310,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-26T19:19:19.997Z
+      startedDateTime: 2024-09-27T17:28:47.215Z
       time: 0
       timings:
         blocked: -1

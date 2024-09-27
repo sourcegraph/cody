@@ -89,11 +89,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 93b3fa8a48b0e97eb1e29fdda693d524
+    - _id: 825e31b60b6b41433e01a4db191b110c
       _order: 0
       cache: {}
       request:
-        bodySize: 428
+        bodySize: 565
         cookies: []
         headers:
           - name: content-type
@@ -106,7 +106,7 @@ log:
           - name: user-agent
             value: auth / v1
           - name: traceparent
-            value: 00-168f24483992926b1be67c69c16163c6-4bf791f48bd652eb-01
+            value: 00-6f66f41f0d4006f17a172e3010558ace-3cb2f8342f7d4e14-01
           - name: connection
             value: keep-alive
           - name: host
@@ -121,10 +121,13 @@ log:
             maxTokensToSample: 4000
             messages:
               - speaker: system
-                text: "You are Cody, an AI coding assistant from Sourcegraph.If your answer
-                  contains fenced code blocks in Markdown, include the relevant
-                  full file path in the code block tag using this structure:
-                  ```$LANGUAGE:$FILEPATH```."
+                text: >-
+                  You are Cody, an AI coding assistant from Sourcegraph.If your
+                  answer contains fenced code blocks in Markdown, include the
+                  relevant full file path in the code block tag using this
+                  structure: ```$LANGUAGE:$FILEPATH```
+
+                  For executable terminal commands: enclose each command in individual "bash" language code block without comments and new lines inside.
               - speaker: human
                 text: hello after reauthentication
             model: anthropic::2023-06-01::claude-3-haiku
@@ -140,14 +143,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=2&client-name=auth&client-version=v1
       response:
-        bodySize: 3014
+        bodySize: 241
         content:
           mimeType: text/event-stream
-          size: 3014
+          size: 241
           text: >+
             event: completion
 
-            data: {"deltaText":"I'm afraid I don't have enough context to provide a specific response for \"hello after reauthentication\". I'm an AI assistant, so I don't have any information about your previous interactions or what kind of reauthentication you're referring to.\n\nIn general, a \"hello after reauthentication\" message could potentially indicate that the user has logged out and then logged back in, or that some kind of authentication process has occurred. Without more details about the specific context, I can't provide a tailored response. Please feel free to provide more information about the situation, and I'll do my best to assist you.","stopReason":"end_turn"}
+            data: {"deltaText":"```bash\nhello after reauthentication\n```","stopReason":"end_turn"}
 
 
             event: done
@@ -157,7 +160,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 26 Sep 2024 19:19:11 GMT
+            value: Fri, 27 Sep 2024 17:28:42 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -186,7 +189,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-26T19:19:10.494Z
+      startedDateTime: 2024-09-27T17:28:41.298Z
       time: 0
       timings:
         blocked: -1
@@ -1545,11 +1548,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 0925fe52a0b271d58599da1e7929dc2d
+    - _id: 9b9152f0377dec9ed637889dbf8ddfe5
       _order: 0
       cache: {}
       request:
-        bodySize: 433
+        bodySize: 570
         cookies: []
         headers:
           - name: content-type
@@ -1562,7 +1565,7 @@ log:
           - name: user-agent
             value: auth / v1
           - name: traceparent
-            value: 00-acab12221609e439213e0b3700d9b26f-779f9efbe9d20bc8-01
+            value: 00-34de8606d62cb93bff6d663b17d64a7d-0898b03bd6648012-01
           - name: connection
             value: keep-alive
           - name: host
@@ -1577,10 +1580,13 @@ log:
             maxTokensToSample: 4000
             messages:
               - speaker: system
-                text: "You are Cody, an AI coding assistant from Sourcegraph.If your answer
-                  contains fenced code blocks in Markdown, include the relevant
-                  full file path in the code block tag using this structure:
-                  ```$LANGUAGE:$FILEPATH```."
+                text: >-
+                  You are Cody, an AI coding assistant from Sourcegraph.If your
+                  answer contains fenced code blocks in Markdown, include the
+                  relevant full file path in the code block tag using this
+                  structure: ```$LANGUAGE:$FILEPATH```
+
+                  For executable terminal commands: enclose each command in individual "bash" language code block without comments and new lines inside.
               - speaker: human
                 text: hello after switching accounts
             model: anthropic::2023-06-01::claude-3.5-sonnet
@@ -1596,14 +1602,14 @@ log:
             value: v1
         url: https://sourcegraph.sourcegraph.com/.api/completions/stream?api-version=2&client-name=auth&client-version=v1
       response:
-        bodySize: 1796
+        bodySize: 1531
         content:
           mimeType: text/event-stream
-          size: 1796
+          size: 1531
           text: >+
             event: completion
 
-            data: {"deltaText":"Hello! It's nice to meet you. I'm Cody, an AI coding assistant from Sourcegraph. I'm here to help you with any coding-related questions or tasks you might have. Since you mentioned switching accounts, is there anything specific you'd like assistance with regarding your new account or any coding projects you're working on? Feel free to ask anything, and I'll do my best to help!","stopReason":"end_turn"}
+            data: {"deltaText":"Hello! It's nice to meet you. I'm Cody, an AI coding assistant from Sourcegraph. How can I help you today? Whether you have questions about coding, need help with a programming task, or want to discuss software development topics, I'm here to assist. What would you like to work on?","stopReason":"end_turn"}
 
 
             event: done
@@ -1613,7 +1619,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 26 Sep 2024 19:19:20 GMT
+            value: Fri, 27 Sep 2024 17:28:53 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -1642,7 +1648,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-26T19:19:19.072Z
+      startedDateTime: 2024-09-27T17:28:51.566Z
       time: 0
       timings:
         blocked: -1

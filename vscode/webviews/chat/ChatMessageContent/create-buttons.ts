@@ -14,6 +14,7 @@ import { CodyIDE } from '@sourcegraph/cody-shared'
 import type { FixupTaskID } from '../../../src/non-stop/FixupTask'
 import { CodyTaskState } from '../../../src/non-stop/state'
 import type { UserAccountInfo } from '../../Chat'
+import { getVSCodeAPI } from '../../utils/VSCodeApi'
 import type { PriorHumanMessageInfo } from '../cells/messageCell/assistant/AssistantMessageCell'
 import type { CodeBlockActionsProps } from './ChatMessageContent'
 import styles from './ChatMessageContent.module.css'
@@ -81,7 +82,7 @@ export function createButtonsExperimentalUI(
     preText: string,
     humanMessage: PriorHumanMessageInfo | null,
     userInfo: UserAccountInfo,
-    fileName?: string,
+    codeBlockName?: string, // The name of the code block, can be file name or 'command'.
     copyButtonOnSubmit?: CodeBlockActionsProps['copyButtonOnSubmit'],
     insertButtonOnSubmit?: CodeBlockActionsProps['insertButtonOnSubmit'],
     smartApply?: CodeBlockActionsProps['smartApply'],
@@ -93,6 +94,8 @@ export function createButtonsExperimentalUI(
     if (!copyButtonOnSubmit) {
         return container
     }
+
+    const isVSCode = userInfo.ide === CodyIDE.VSCode
 
     const buttons = document.createElement('div')
     buttons.className = styles.buttons
@@ -106,18 +109,24 @@ export function createButtonsExperimentalUI(
         buttons.append(copyButton)
 
         if (smartApply && smartApplyId) {
-            const applyButton = createApplyButton(
-                preText,
-                humanMessage,
-                smartApply,
-                smartApplyId,
-                smartApplyState,
-                fileName
-            )
-            buttons.append(applyButton)
+            // Execute button is only available in VS Code.
+            const isExecutable = codeBlockName === 'command'
+            const smartButton =
+                isExecutable && isVSCode
+                    ? createExecuteButton(preText)
+                    : createApplyButton(
+                          preText,
+                          humanMessage,
+                          smartApply,
+                          smartApplyId,
+                          smartApplyState,
+                          codeBlockName
+                      )
+            smartButton.title = isExecutable ? 'Execute in Terminal' : 'Apply in Editor'
+            buttons.append(smartButton)
         }
 
-        if (userInfo.ide === CodyIDE.VSCode) {
+        if (isVSCode) {
             // VS Code provides additional support for rendering an OS-native dropdown, that has some
             // additional benefits. Mainly that it can "break out" of the webview.
             // TODO: A dropdown would be useful for other clients too, we should consider building
@@ -268,7 +277,6 @@ function createApplyButton(
 ): HTMLElement {
     const button = document.createElement('button')
     button.className = styles.button
-
     switch (smartApplyState) {
         case 'Working': {
             button.innerHTML = 'Applying'
@@ -291,11 +299,38 @@ function createApplyButton(
             iconContainer.innerHTML = SparkleIcon
             button.prepend(iconContainer)
 
-            button.addEventListener('click', () => {
+            button.addEventListener('click', () =>
                 smartApply.onSubmit(smartApplyId, preText, humanMessage?.text, fileName)
-            })
+            )
         }
     }
+
+    return button
+}
+
+/**
+ * Creates a button that sends the command to the editor terminal on click.
+ *
+ * @param command - The command to be executed when the button is clicked.
+ * @returns An HTMLElement representing the created button.
+ */
+function createExecuteButton(command: string): HTMLElement {
+    const button = document.createElement('button')
+    button.className = styles.button
+    button.innerHTML = 'Execute'
+    button.title = 'Send command to Terminal'
+    const iconContainer = document.createElement('div')
+    iconContainer.className = styles.iconContainer
+    iconContainer.innerHTML = '<i class="codicon codicon-terminal tw-align-middle"></i>'
+    button.prepend(iconContainer)
+
+    button.addEventListener('click', () => {
+        return getVSCodeAPI().postMessage({
+            command: 'command',
+            id: 'cody.terminal.execute',
+            arg: command.trim(),
+        })
+    })
 
     return button
 }

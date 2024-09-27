@@ -79,7 +79,9 @@ exports[`--message (hello world test) 1`] = `
 "command: cody chat chat -m respond with "hello" and nothing else
 exitCode: 0
 stdout: |+
-  hello
+  \`\`\`bash
+  echo "hello"
+  \`\`\`
 
 stderr: ""
 "
@@ -89,7 +91,9 @@ exports[`--message (hello world test) 2`] = `
 "command: cody chat chat -m respond with "hello" and nothing else
 exitCode: 0
 stdout: |+
-  hello
+  \`\`\`bash
+  echo "hello"
+  \`\`\`
 
 stderr: ""
 "
@@ -99,7 +103,9 @@ exports[`--message (hello world test) 3`] = `
 "command: cody chat chat -m respond with "hello" and nothing else
 exitCode: 0
 stdout: |+
-  hello
+  \`\`\`bash
+  echo "hello"
+  \`\`\`
 
 stderr: ""
 "

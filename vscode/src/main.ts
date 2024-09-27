@@ -83,6 +83,7 @@ import { showSetupNotification } from './notifications/setup-notification'
 import { initVSCodeGitApi } from './repository/git-extension-api'
 import { authProvider } from './services/AuthProvider'
 import { CharactersLogger } from './services/CharactersLogger'
+import { CodyTerminal } from './services/CodyTerminal'
 import { showFeedbackSupportQuickPick } from './services/FeedbackOptions'
 import { displayHistoryQuickPick } from './services/HistoryChat'
 import { localStorage } from './services/LocalStorageProvider'
@@ -215,11 +216,9 @@ const register = async (
     )
     disposables.push(chatsController)
 
-    const sourceControl = new CodySourceControl(chatClient)
     const statusBar = createStatusBar()
     disposables.push(
         statusBar,
-        sourceControl,
         subscriptionDisposable(
             authStatus.subscribe({
                 next: authStatus => {
@@ -235,11 +234,14 @@ const register = async (
     registerAutocomplete(platform, statusBar, disposables)
     const tutorialSetup = tryRegisterTutorial(context, disposables)
 
-    await registerCodyCommands(statusBar, sourceControl, chatClient, disposables)
+    await registerCodyCommands(statusBar, chatClient, disposables)
     registerAuthCommands(disposables)
     registerChatCommands(disposables)
     disposables.push(...registerSidebarCommands())
     registerOtherCommands(disposables)
+    if (!getConfiguration().agentIDE) {
+        registerVSCodeOnlyFeatures(chatClient, disposables)
+    }
     if (isExtensionModeDevOrTest) {
         await registerTestCommands(context, disposables)
     }
@@ -371,7 +373,6 @@ async function registerOtherCommands(disposables: vscode.Disposable[]) {
 
 async function registerCodyCommands(
     statusBar: CodyStatusBar,
-    sourceControl: CodySourceControl,
     chatClient: ChatClient,
     disposables: vscode.Disposable[]
 ): Promise<void> {
@@ -469,13 +470,22 @@ async function registerCodyCommands(
                                   vscode.commands.registerCommand('cody.command.auto-edit', a =>
                                       executeAutoEditCommand(a)
                                   ),
-                                  sourceControl, // Generate Commit Message command
                               ]
                     })
                 )
                 .subscribe({})
         )
     )
+}
+
+/**
+ * Features that are currently available only in VS Code.
+ */
+function registerVSCodeOnlyFeatures(chatClient: ChatClient, disposable: vscode.Disposable[]): void {
+    // Source Control Panel for generating commit message command.
+    disposable.push(new CodySourceControl(chatClient))
+    // Command for executing CLI commands in the VS Code terminal.
+    disposable.push(new CodyTerminal())
 }
 
 function enableFeature(

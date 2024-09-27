@@ -82,7 +82,12 @@ export const FileLink: React.FunctionComponent<
             }
         }
 
-        const pathToDisplay = displayPath(uri)
+        let pathToDisplay = displayPath(uri)
+        // Remove all the starting slashes from the path
+        if (source === 'terminal') {
+            pathToDisplay = pathToDisplay.replace(/^\/+/g, '')
+        }
+
         const pathWithRange = range ? `${pathToDisplay}:${displayLineRange(range)}` : pathToDisplay
         const openURI = webviewOpenURIForContextItem({ uri, range })
         const tooltip = isIgnored
@@ -160,7 +165,16 @@ export const FileLink: React.FunctionComponent<
                     onClick={onFileLinkClicked}
                 >
                     <i
-                        className={clsx('codicon', `codicon-${source === 'user' ? 'mention' : 'file'}`)}
+                        className={clsx(
+                            'codicon',
+                            `codicon-${
+                                source === 'terminal'
+                                    ? 'terminal'
+                                    : source === 'user'
+                                      ? 'mention'
+                                      : 'file'
+                            }`
+                        )}
                         title={iconTitle}
                     />
                     <div
