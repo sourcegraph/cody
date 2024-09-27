@@ -126,10 +126,16 @@ export async function waitUntilComplete(observable: Observable<unknown>): Promis
 export async function allValuesFrom<T>(observable: Observable<T>): Promise<T[]> {
     return new Promise<T[]>((resolve, reject) => {
         const values: T[] = []
-        observable.subscribe({
+        const subscription = observable.subscribe({
             next: value => values.push(value),
-            error: reject,
-            complete: () => resolve(values),
+            error: error => {
+                subscription.unsubscribe()
+                reject(error)
+            },
+            complete: () => {
+                subscription.unsubscribe()
+                resolve(values)
+            },
         })
     })
 }
