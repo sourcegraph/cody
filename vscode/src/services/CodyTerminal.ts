@@ -18,6 +18,12 @@ export class CodyTerminal implements vscode.Disposable {
     private skipConfirmationOnRun = false
 
     private run(command: string): void {
+        if (!vscode.workspace.isTrusted) {
+            const WARNING = 'Commands are disabled in untrusted workspaces.'
+            vscode.window.showErrorMessage(WARNING)
+            throw new Error(WARNING)
+        }
+
         if (this.skipConfirmationOnRun) {
             this.send(command)
             return
@@ -39,8 +45,11 @@ export class CodyTerminal implements vscode.Disposable {
     }
 
     private send(command: string): void {
-        this.terminal.sendText(command)
-        this.terminal.show()
+        // 🚨 SECURITY: Only allow running commands in trusted workspaces.
+        if (vscode.workspace.isTrusted) {
+            this.terminal.sendText(command)
+            this.terminal.show()
+        }
     }
 
     private get terminal(): vscode.Terminal {
