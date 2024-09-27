@@ -414,11 +414,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: eef8a1120bbe0d9ae7313d0798761704
+    - _id: b59ea82b0f24299dc941ee310563d4d3
       _order: 0
       cache: {}
       request:
-        bodySize: 1218
+        bodySize: 1256
         cookies: []
         headers:
           - name: content-type
@@ -431,7 +431,7 @@ log:
           - name: user-agent
             value: customCommandsClient / v1
           - name: traceparent
-            value: 00-97880a3c8f3f345e365c625d2233db36-2597cd39014d7f71-01
+            value: 00-3adf229090878a9a6e35b188339a0d9a-8752c6f9286f5fe5-01
           - name: connection
             value: keep-alive
           - name: host
@@ -452,7 +452,7 @@ log:
                   relevant full file path in the code block tag using this
                   structure: ```$LANGUAGE:$FILEPATH```
 
-                  For executable terminal commands: enclose in a Markdown code block with the language tag "bash".
+                  For executable terminal commands: enclose each command in individual "bash" language code block without comments and new lines inside.
               - speaker: human
                 text: >
                   Codebase context from file path src/example3.ts: export
@@ -513,7 +513,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Fri, 27 Sep 2024 06:45:55 GMT
+            value: Fri, 27 Sep 2024 17:28:46 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -542,7 +542,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-27T06:45:54.398Z
+      startedDateTime: 2024-09-27T17:28:45.771Z
       time: 0
       timings:
         blocked: -1
@@ -552,11 +552,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 515dc44d3cef2c5acb1784b5c46fecd9
+    - _id: 24ed74efe3e1c78b973ab613f117f2fd
       _order: 0
       cache: {}
       request:
-        bodySize: 586
+        bodySize: 624
         cookies: []
         headers:
           - name: content-type
@@ -569,7 +569,7 @@ log:
           - name: user-agent
             value: customCommandsClient / v1
           - name: traceparent
-            value: 00-152f3cbfc3041f7fc287f029df1b83bd-2c98891076029b3e-01
+            value: 00-26fb9de3d38aab3b3cd42b93244ac196-4502d6fc8ee55b9e-01
           - name: connection
             value: keep-alive
           - name: host
@@ -590,7 +590,7 @@ log:
                   relevant full file path in the code block tag using this
                   structure: ```$LANGUAGE:$FILEPATH```
 
-                  For executable terminal commands: enclose in a Markdown code block with the language tag "bash".
+                  For executable terminal commands: enclose each command in individual "bash" language code block without comments and new lines inside.
               - speaker: human
                 text: Did I share any code with you? If yes, reply single word 'yes'. If none,
                   reply 'no'.
@@ -613,7 +613,7 @@ log:
           size: 117
           text: |+
             event: completion
-            data: {"deltaText":"No","stopReason":"end_turn"}
+            data: {"deltaText":"no","stopReason":"end_turn"}
 
             event: done
             data: {}
@@ -621,7 +621,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Fri, 27 Sep 2024 06:45:56 GMT
+            value: Fri, 27 Sep 2024 17:28:47 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -650,7 +650,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-27T06:45:55.470Z
+      startedDateTime: 2024-09-27T17:28:47.033Z
       time: 0
       timings:
         blocked: -1
@@ -660,11 +660,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 3dddbcad515c535b9f9f0609c31198a6
+    - _id: f76f88602508ad8fee9290a1c7a53094
       _order: 0
       cache: {}
       request:
-        bodySize: 2330
+        bodySize: 2368
         cookies: []
         headers:
           - name: content-type
@@ -677,7 +677,7 @@ log:
           - name: user-agent
             value: customCommandsClient / v1
           - name: traceparent
-            value: 00-332b8221d02ac7b4e792d6093fcfae10-987542a56c8122c3-01
+            value: 00-b43df7f6d0d10b418bdadbde8c1f93ae-8d9acb629a561b98-01
           - name: connection
             value: keep-alive
           - name: host
@@ -698,7 +698,7 @@ log:
                   relevant full file path in the code block tag using this
                   structure: ```$LANGUAGE:$FILEPATH```
 
-                  For executable terminal commands: enclose in a Markdown code block with the language tag "bash".
+                  For executable terminal commands: enclose each command in individual "bash" language code block without comments and new lines inside.
               - speaker: human
                 text: >
                   Codebase context from file path src/sum.ts: export function
@@ -801,7 +801,7 @@ log:
           size: 116
           text: |+
             event: completion
-            data: {"deltaText":"8","stopReason":"end_turn"}
+            data: {"deltaText":"7","stopReason":"end_turn"}
 
             event: done
             data: {}
@@ -809,7 +809,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Fri, 27 Sep 2024 06:45:56 GMT
+            value: Fri, 27 Sep 2024 17:28:48 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -838,7 +838,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-27T06:45:56.067Z
+      startedDateTime: 2024-09-27T17:28:47.857Z
       time: 0
       timings:
         blocked: -1
