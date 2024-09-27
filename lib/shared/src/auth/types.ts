@@ -40,6 +40,7 @@ export interface AuthenticatedAuthStatus {
      * buttons in the UI.
      */
     userCanUpgrade?: boolean
+    pendingValidation: boolean
 }
 
 /**
@@ -51,6 +52,7 @@ export interface UnauthenticatedAuthStatus {
     authenticated: false
     showNetworkError?: boolean
     showInvalidAccessTokenError?: boolean
+    pendingValidation: boolean
 }
 
 export const AUTH_STATUS_FIXTURE_AUTHED: AuthenticatedAuthStatus = {
@@ -59,11 +61,13 @@ export const AUTH_STATUS_FIXTURE_AUTHED: AuthenticatedAuthStatus = {
     username: 'alice',
     codyApiVersion: 1,
     siteVersion: '9999',
+    pendingValidation: false,
 }
 
 export const AUTH_STATUS_FIXTURE_UNAUTHED: AuthStatus & { authenticated: false } = {
     endpoint: 'https://example.com',
     authenticated: false,
+    pendingValidation: false,
 }
 
 export const AUTH_STATUS_FIXTURE_AUTHED_DOTCOM: AuthenticatedAuthStatus = {
