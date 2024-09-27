@@ -15,8 +15,9 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { URI } from 'vscode-uri'
 import { ChatBuilder } from '../chat/chat-view/ChatBuilder'
 import type { ContextRetriever } from '../chat/chat-view/ContextRetriever'
-import * as clientStateBroadcaster from '../chat/clientStateBroadcaster'
+import * as initialContext from '../chat/initialContext'
 import { CodyReflectionAgent } from './agentic'
+
 describe('CodyReflectionAgent', () => {
     const codyProAuthStatus: AuthenticatedAuthStatus = {
         ...AUTH_STATUS_FIXTURE_AUTHED,
@@ -40,11 +41,11 @@ describe('CodyReflectionAgent', () => {
     beforeEach(() => {
         mockAuthStatus(codyProAuthStatus)
         mockChatBuilder = {
-            selectedModel: 'sourcegraph/cody-reflection',
+            selectedModel: 'anthropic::2023-06-01::cody-reflection',
             changes: {
                 pipe: vi.fn(),
             },
-            resolvedModelForChat: vi.fn().mockReturnValue('sourcegraph/cody-reflection'),
+            resolvedModelForChat: vi.fn().mockReturnValue('anthropic::2023-06-01::cody-reflection'),
             addHumanMessage: vi.fn(),
             addBotMessage: vi.fn(),
             contextWindowForChat: vi.fn().mockReturnValue({ input: 10000, output: 1000 }),
@@ -78,7 +79,9 @@ describe('CodyReflectionAgent', () => {
 
         vi.spyOn(featureFlagProvider, 'evaluatedFeatureFlag').mockReturnValue(Observable.of(false))
         vi.spyOn(modelsService, 'isStreamDisabled').mockReturnValue(false)
-        vi.spyOn(ChatBuilder, 'resolvedModelForChat').mockReturnValue(Observable.of('mockedModelId'))
+        vi.spyOn(ChatBuilder, 'resolvedModelForChat').mockReturnValue(
+            Observable.of('anthropic::2023-06-01::cody-reflection')
+        )
         vi.spyOn(ChatBuilder, 'contextWindowForChat').mockReturnValue(
             Observable.of({ input: 10000, output: 1000 })
         )
@@ -117,14 +120,18 @@ describe('CodyReflectionAgent', () => {
             },
         ])
 
-        vi.spyOn(clientStateBroadcaster, 'getCodebaseContextItemsForEditorState').mockResolvedValue({
-            type: 'tree',
-            uri: URI.file('/path/to/repo/'),
-            name: 'Mock Repository',
-            isWorkspaceRoot: true,
-            content: null,
-            source: ContextItemSource.Initial,
-        })
+        vi.spyOn(initialContext, 'getCorpusContextItemsForEditorState').mockReturnValue(
+            Observable.of([
+                {
+                    type: 'tree',
+                    uri: URI.file('/path/to/repo/'),
+                    name: 'Mock Repository',
+                    isWorkspaceRoot: true,
+                    content: null,
+                    source: ContextItemSource.Initial,
+                },
+            ])
+        )
 
         const agent = new CodyReflectionAgent(
             mockChatBuilder,

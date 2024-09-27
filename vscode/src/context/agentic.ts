@@ -4,24 +4,21 @@ import {
     type ChatClient,
     type CompletionParameters,
     type ContextItem,
-    FeatureFlag,
     PromptMixin,
     PromptString,
-    currentAuthStatusAuthed,
-    featureFlagProvider,
     firstResultFromOperation,
-    isDotCom,
+    firstValueFrom,
     logDebug,
     modelsService,
     newPromptMixin,
+    pendingOperation,
     ps,
-    storeLastValue,
 } from '@sourcegraph/cody-shared'
 import { isBoolean } from 'lodash'
 import { ChatBuilder } from '../chat/chat-view/ChatBuilder'
 import { type ContextRetriever, toStructuredMentions } from '../chat/chat-view/ContextRetriever'
 import { DefaultPrompter } from '../chat/chat-view/prompt'
-import { getCodebaseContextItemsForEditorState } from '../chat/clientStateBroadcaster'
+import { getCorpusContextItemsForEditorState } from '../chat/initialContext'
 import { getContextFromRelativePath } from '../commands/context/file-path'
 import { getContextFileFromShell } from '../commands/context/shell'
 import { getCategorizedMentions } from '../prompt-builder/utils'
@@ -60,7 +57,6 @@ Notes:
  */
 export class CodyReflectionAgent {
     private isEnabled = false
-    private readonly isDotCom: boolean
     private readonly actions: CodyActions
     private readonly multiplexer = new BotResponseMultiplexer()
     private responses: Record<string, string>
@@ -72,20 +68,14 @@ export class CodyReflectionAgent {
         span: Span,
         private currentContext: ContextItem[]
     ) {
-        this.isDotCom = isDotCom(currentAuthStatusAuthed())
-        this.actions = new CodyActions(contextRetriever, this.isDotCom, span)
+        this.actions = new CodyActions(contextRetriever, span)
         this.responses = { CODYTOOLCLI: '', CODYTOOLFILE: '', CODYTOOLSEARCH: '' }
         this.initializeAgent()
     }
 
     private async initializeAgent(): Promise<void> {
-        // If the user is on Sourcegraph.com, match the Cody Reflection model,
-        // as only users with the Cody Reflection feature flag enabled can see it.
-        this.isEnabled = this.isDotCom
-            ? this.chatBuilder.selectedModel === 'sourcegraph/cody-reflection'
-            : isBoolean(
-                  storeLastValue(featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyReflection))
-              )
+        console.log(this.chatBuilder.selectedModel, 'this.chatBuilder.selectedModel?')
+        this.isEnabled = isBoolean(this.chatBuilder.selectedModel?.includes('cody-reflection'))
         if (this.isEnabled) {
             this.initializeMultiplexer()
         }
@@ -196,7 +186,6 @@ export class CodyReflectionAgent {
 class CodyActions {
     constructor(
         private readonly contextRetriever: ContextRetriever,
-        private readonly isDotCom: boolean,
         private readonly span: Span
     ) {}
 
@@ -210,12 +199,18 @@ class CodyActions {
         if (!this.contextRetriever || !query || this.performedSearch.has(query)) {
             return []
         }
-        const codebase = await getCodebaseContextItemsForEditorState(!this.isDotCom)
-        if (!codebase) {
+        // Get the latest corpus context items
+        const corpusItems = await firstValueFrom(getCorpusContextItemsForEditorState())
+        if (corpusItems === pendingOperation || corpusItems.length === 0) {
+            return []
+        }
+        // Find the first item that represents a repository
+        const repo = corpusItems.find(i => i.type === 'tree' || i.type === 'repository')
+        if (!repo) {
             return []
         }
         const context = await this.contextRetriever.retrieveContext(
-            toStructuredMentions([codebase]),
+            toStructuredMentions([repo]),
             PromptString.unsafe_fromLLMResponse(query),
             this.span
         )

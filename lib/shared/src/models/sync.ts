@@ -11,6 +11,7 @@ import {
     promiseFactoryToObservable,
     shareReplay,
     startWith,
+    storeLastValue,
     switchMap,
     take,
     tap,
@@ -22,6 +23,7 @@ import { isDotCom } from '../sourcegraph-api/environments'
 import { RestClient } from '../sourcegraph-api/rest/client'
 import { CHAT_INPUT_TOKEN_BUDGET } from '../token/constants'
 import { isError } from '../utils'
+import { getExperimentalModels } from './client'
 import { type Model, type ServerModel, createModel, createModelFromServerModel } from './model'
 import type { ModelsData, ServerModelConfiguration, SitePreferences } from './modelsService'
 import { ModelTag } from './tags'
@@ -183,6 +185,20 @@ export function syncModels({
                                         // https://sourcegraph.com/blog/local-code-completion-with-ollama-and-cody
                                         data.primaryModels.push(
                                             ...getModelsFromVSCodeConfiguration(config)
+                                        )
+                                    }
+
+                                    if (
+                                        storeLastValue(
+                                            featureFlagProvider.evaluatedFeatureFlag(
+                                                FeatureFlag.CodyReflection
+                                            )
+                                        )
+                                    ) {
+                                        data.primaryModels.push(
+                                            ...maybeAdjustContextWindows(getExperimentalModels()).map(
+                                                createModelFromServerModel
+                                            )
                                         )
                                     }
 

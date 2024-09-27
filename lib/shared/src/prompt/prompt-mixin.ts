@@ -42,7 +42,7 @@ export class PromptMixin {
         }
 
         // Add prompt that provides answer guidelines for the Cody Reflection model.
-        if (modelID === 'sourcegraph/cody-reflection' && !PromptMixin.mixins.length) {
+        if (modelID?.includes('cody-reflection') && !PromptMixin.mixins.length) {
             mixins.push(PromptMixin.reflection)
         }
 
