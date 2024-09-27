@@ -6,7 +6,6 @@ import {
 } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 
-
 export class ChatIntentAPIClient {
     private featureCodyIntentDetectionAPI = storeLastValue(
         featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyIntentDetectionAPI)

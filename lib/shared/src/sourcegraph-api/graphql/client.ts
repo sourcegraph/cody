@@ -341,7 +341,6 @@ interface ChatIntentResponse {
     }
 }
 
-
 interface ContextSearchResponse {
     getCodyContext: {
         blob: {

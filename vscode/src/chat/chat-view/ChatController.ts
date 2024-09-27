@@ -981,15 +981,17 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             signal
         )
 
-        return [{
-            strategy: 'local+remote',
-            items: combineContext(
-                await resolvedExplicitMentionsPromise,
-                openCtxContext,
-                priorityContext,
-                retrievedContext
-            ),
-        }]
+        return [
+            {
+                strategy: 'local+remote',
+                items: combineContext(
+                    await resolvedExplicitMentionsPromise,
+                    openCtxContext,
+                    priorityContext,
+                    retrievedContext
+                ),
+            },
+        ]
     }
 
     private submitOrEditOperation: AbortController | undefined
