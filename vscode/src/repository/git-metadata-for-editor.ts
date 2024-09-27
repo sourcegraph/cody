@@ -1,4 +1,8 @@
-import { convertGitCloneURLToCodebaseName } from '@sourcegraph/cody-shared'
+import {
+    convertGitCloneURLToCodebaseName,
+    displayPathWithoutWorkspaceFolderPrefix,
+    firstResultFromOperation,
+} from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 import { getConfiguration } from '../configuration'
 import { getEditor } from '../editor/active-editor'
@@ -7,7 +11,7 @@ import { gitCommitIdFromGitExtension } from './git-extension-api'
 
 export interface GitIdentifiersForFile {
     filePath?: string
-    gitUrl?: string
+    repoName?: string
     commit?: string
 }
 
@@ -34,31 +38,39 @@ class GitMetadataForCurrentEditor {
 
     public getGitIdentifiersForFile(): GitIdentifiersForFile | undefined {
         if (this.gitIdentifiersForFile === undefined) {
-            this.updateStatus()
+            this.updateStatus().catch(() => {})
         }
         return this.gitIdentifiersForFile
     }
 
-    private async updateStatus() {
+    private async updateStatus(): Promise<void> {
         let newGitIdentifiersForFile: GitIdentifiersForFile | undefined = undefined
 
         const config = getConfiguration()
         const currentFile = getEditor()?.active?.document?.uri
-        const remoteGitUrl =
-            fakeGitURLFromCodebase(config.codebase) ||
-            (currentFile
-                ? (await repoNameResolver.getRepoRemoteUrlsFromWorkspaceUri(currentFile))[0]
-                : fakeGitURLFromCodebase(config.codebase))
-
-        const gitUrl = remoteGitUrl
-            ? convertGitCloneURLToCodebaseName(remoteGitUrl) || undefined
-            : undefined
         if (currentFile) {
+            let repoName: string | undefined
+            if (config.codebase) {
+                const codebaseUrl = fakeGitURLFromCodebase(config.codebase)
+                if (codebaseUrl) {
+                    repoName = convertGitCloneURLToCodebaseName(codebaseUrl) ?? undefined
+                }
+            }
+            if (!repoName) {
+                repoName = currentFile
+                    ? (
+                          await firstResultFromOperation(
+                              repoNameResolver.getRepoNamesContainingUri(currentFile)
+                          )
+                      ).at(0)
+                    : undefined
+            }
+
             const commit = gitCommitIdFromGitExtension(currentFile)
             newGitIdentifiersForFile = {
-                filePath: currentFile.fsPath,
-                gitUrl: gitUrl,
-                commit: commit,
+                filePath: displayPathWithoutWorkspaceFolderPrefix(currentFile),
+                repoName,
+                commit,
             }
         }
         this.gitIdentifiersForFile = newGitIdentifiersForFile

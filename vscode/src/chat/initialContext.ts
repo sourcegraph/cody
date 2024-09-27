@@ -29,11 +29,11 @@ import { URI } from 'vscode-uri'
 import { getSelectionOrFileContext } from '../commands/context/selection'
 import { getConfiguration } from '../configuration'
 import { createRepositoryMention } from '../context/openctx/common/get-repository-mentions'
-import { workspaceReposMonitor } from '../repository/repo-metadata-from-git-api'
+import { remoteReposForAllWorkspaceFolders } from '../repository/remoteRepos'
 import { ChatBuilder } from './chat-view/ChatBuilder'
 import {
+    activeEditorContextForOpenCtxMentions,
     contextItemMentionFromOpenCtxItem,
-    getActiveEditorContextForOpenCtxMentions,
 } from './context/chatContext'
 
 /**
@@ -43,22 +43,29 @@ export function observeInitialContext({
     chatBuilder,
 }: {
     chatBuilder: Observable<ChatBuilder>
-}): Observable<ContextItem[]> {
+}): Observable<ContextItem[] | typeof pendingOperation> {
     return combineLatest([
         getCurrentFileOrSelection({ chatBuilder }).pipe(distinctUntilChanged()),
         getCorpusContextItemsForEditorState().pipe(distinctUntilChanged()),
         getOpenCtxContextItems().pipe(distinctUntilChanged()),
     ]).pipe(
         debounceTime(50),
-        switchMap(([currentFileOrSelectionContext, corpusContext, openctxContext]) => {
-            return Observable.of([
-                ...(openctxContext === pendingOperation ? [] : openctxContext),
-                ...(currentFileOrSelectionContext === pendingOperation
-                    ? []
-                    : currentFileOrSelectionContext),
-                ...corpusContext,
-            ])
-        })
+        switchMap(
+            ([currentFileOrSelectionContext, corpusContext, openctxContext]): Observable<
+                ContextItem[] | typeof pendingOperation
+            > => {
+                if (corpusContext === pendingOperation) {
+                    return Observable.of(pendingOperation)
+                }
+                return Observable.of([
+                    ...(openctxContext === pendingOperation ? [] : openctxContext),
+                    ...(currentFileOrSelectionContext === pendingOperation
+                        ? []
+                        : currentFileOrSelectionContext),
+                    ...corpusContext,
+                ])
+            }
+        )
     )
 }
 
@@ -148,7 +155,7 @@ function getCurrentFileOrSelection({
     )
 }
 
-function getCorpusContextItemsForEditorState(): Observable<ContextItem[]> {
+function getCorpusContextItemsForEditorState(): Observable<ContextItem[] | typeof pendingOperation> {
     const relevantAuthStatus = authStatus.pipe(
         map(
             authStatus =>
@@ -164,36 +171,41 @@ function getCorpusContextItemsForEditorState(): Observable<ContextItem[]> {
         distinctUntilChanged()
     )
 
-    return relevantAuthStatus.pipe(
-        abortableOperation(async (authStatus, signal) => {
+    return combineLatest([relevantAuthStatus, remoteReposForAllWorkspaceFolders]).pipe(
+        abortableOperation(async ([authStatus, remoteReposForAllWorkspaceFolders], signal) => {
             const items: ContextItem[] = []
 
             // TODO(sqs): Make this consistent between self-serve (no remote search) and enterprise (has
             // remote search). There should be a single internal thing in Cody that lets you monitor the
             // user's current codebase.
-            if (authStatus.allowRemoteContext && workspaceReposMonitor) {
-                const repoMetadata = await workspaceReposMonitor.getRepoMetadata()
-                for (const repo of repoMetadata) {
-                    if (await contextFiltersProvider.isRepoNameIgnored(repo.repoName)) {
+            if (authStatus.allowRemoteContext) {
+                if (remoteReposForAllWorkspaceFolders === pendingOperation) {
+                    return pendingOperation
+                }
+                if (isError(remoteReposForAllWorkspaceFolders)) {
+                    throw remoteReposForAllWorkspaceFolders
+                }
+                for (const repo of remoteReposForAllWorkspaceFolders) {
+                    if (await contextFiltersProvider.isRepoNameIgnored(repo.name)) {
                         continue
                     }
-                    if (repo.remoteID === undefined) {
+                    if (repo.id === undefined) {
                         continue
                     }
                     items.push({
                         ...contextItemMentionFromOpenCtxItem(
                             await createRepositoryMention(
                                 {
-                                    id: repo.remoteID,
-                                    name: repo.repoName,
-                                    url: repo.repoName,
+                                    id: repo.id,
+                                    name: repo.name,
+                                    url: repo.name,
                                 },
                                 REMOTE_REPOSITORY_PROVIDER_URI,
                                 authStatus
                             )
                         ),
                         title: 'Current Repository',
-                        description: repo.repoName,
+                        description: repo.name,
                         source: ContextItemSource.Initial,
                         icon: 'folder',
                     })
@@ -236,8 +248,14 @@ function getOpenCtxContextItems(): Observable<ContextItem[] | typeof pendingOper
 
             return activeTextEditor.pipe(
                 debounceTime(50),
-                abortableOperation(() => getActiveEditorContextForOpenCtxMentions()),
+                switchMap(() => activeEditorContextForOpenCtxMentions),
                 switchMap(activeEditorContext => {
+                    if (activeEditorContext === pendingOperation) {
+                        return Observable.of(pendingOperation)
+                    }
+                    if (isError(activeEditorContext)) {
+                        return Observable.of([])
+                    }
                     return combineLatest(
                         providersWithAutoInclude.map(provider =>
                             openctxController.mentionsChanges(
