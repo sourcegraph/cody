@@ -6,7 +6,7 @@ import {
 } from '@sourcegraph/cody-shared'
 import type * as vscode from 'vscode'
 import { logDebug } from '../../log'
-import { GitHubDotComRepoMetadata } from '../../repository/repo-metadata-from-git-api'
+import { GitHubDotComRepoMetadata } from '../../repository/githubRepoMetadata'
 import { completionProviderConfig } from '../completion-provider-config'
 import type { ContextRetriever } from '../types'
 import type { RetrievedContextResults } from './completions-context-ranker'
@@ -92,11 +92,11 @@ export class ContextRetrieverDataCollection implements vscode.Disposable {
         return dataLoggingContext
     }
 
-    public shouldCollectContextDatapoint(gitUrl: string | undefined): boolean {
-        if (!gitUrl || !isDotComAuthed() || this.dataCollectionRetrievers.length === 0) {
+    public shouldCollectContextDatapoint(repoName: string | undefined): boolean {
+        if (!repoName || !isDotComAuthed() || this.dataCollectionRetrievers.length === 0) {
             return false
         }
-        const gitRepoMetadata = GitHubDotComRepoMetadata.getInstance().getRepoMetadataIfCached(gitUrl)
+        const gitRepoMetadata = GitHubDotComRepoMetadata.getInstance().getRepoMetadataIfCached(repoName)
         return gitRepoMetadata?.isPublic ?? false
     }
 
