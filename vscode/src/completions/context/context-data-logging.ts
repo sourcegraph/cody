@@ -1,5 +1,6 @@
 import {
     type AutocompleteContextSnippet,
+    isDefined,
     isDotComAuthed,
     subscriptionDisposable,
 } from '@sourcegraph/cody-shared'
@@ -56,7 +57,7 @@ export class ContextRetrieverDataCollection implements vscode.Disposable {
         if (dataCollectionEnabled) {
             this.dataCollectionRetrievers = this.retrieverConfigs
                 .map(this.createRetriever)
-                .filter((retriever): retriever is ContextRetriever => retriever !== undefined)
+                .filter(isDefined)
         }
     }
 
