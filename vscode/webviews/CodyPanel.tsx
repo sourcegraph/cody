@@ -60,7 +60,6 @@ export const CodyPanel: FunctionComponent<
             orientation="vertical"
             className={styles.outerContainer}
         >
-            <StateDebugOverlay />
             {!authStatus.authenticated && authStatus.showNetworkError && <ConnectivityStatusBanner />}
 
             {/* Hide tab bar in editor chat panels. */}
@@ -95,6 +94,7 @@ export const CodyPanel: FunctionComponent<
                 {view === View.Account && <AccountTab setView={setView} />}
                 {view === View.Settings && <SettingsTab />}
             </TabContainer>
+            <StateDebugOverlay />
         </TabRoot>
     )
 }

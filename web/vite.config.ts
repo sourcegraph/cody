@@ -11,6 +11,7 @@ const fakeProcessEnv: Record<string, string | boolean> = {
     CODY_TESTING: false,
     CODY_PROFILE_TEMP: false,
     CODY_TELEMETRY_EXPORTER: 'graphql',
+    CODY_WEB_DEMO: true,
     NODE_ENV: 'production',
     NODE_DEBUG: false,
     TESTING_DOTCOM_URL: 'https://sourcegraph.com',
