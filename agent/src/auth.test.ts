@@ -1,5 +1,5 @@
 import path from 'node:path'
-import { ModelUsage, toModelRefStr } from '@sourcegraph/cody-shared'
+import { ModelTag, ModelUsage, toModelRefStr } from '@sourcegraph/cody-shared'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import {
     TESTING_CREDENTIALS,
@@ -26,17 +26,17 @@ describe(
         }
         const FIXTURE_MODELS = {
             // Set this to the default chat model on dotcom.
-            dotcomDefaultChatModel: 'anthropic/claude-3-5-sonnet-20240620',
+            dotcomDefaultChatModel: 'anthropic::2023-06-01::claude-3.5-sonnet',
 
             // Set this to the default chat model on S2. (It's OK if it's the same as
             // dotcomDefaultChatModel.)
-            defaultS2ChatModel: 'claude-3.5-sonnet',
+            defaultS2ChatModel: 'anthropic::2023-06-01::claude-3.5-sonnet',
 
             // Set this to 2 model IDs that both (1) exist on dotcom and S2 but (2) are NOT the same as
             // dotcomDefaultChatModel or defaultS2ChatModel.
             differentFromDotcomAndS2DefaultChatModel: [
-                'fireworks/accounts/fireworks/models/mixtral-8x7b-instruct',
-                'google/gemini-1.5-flash',
+                'anthropic::2023-06-01::claude-3-haiku',
+                'google::v1::gemini-1.5-pro',
             ],
         }
 
@@ -137,7 +137,7 @@ describe(
             // Listing models should work.
             const { models } = await client.request('chat/models', { modelUsage: ModelUsage.Chat })
             expect(models.length).toBeGreaterThanOrEqual(2)
-            expect(models.map(model => model.id)).toContain('openai/gpt-4o') // arbitrary model that we expect to be included
+            expect(models.map(model => model.id)).toContain('openai::2024-02-01::gpt-4o') // arbitrary model that we expect to be included
         })
 
         it('switches to a different account', async ({ task }) => {
@@ -152,6 +152,9 @@ describe(
             })
             expect(preAuthStatus?.authenticated).toBe(true)
             expect(preAuthStatus?.endpoint).toBe(INITIAL_CREDENTIALS.serverEndpoint)
+
+            const dotcomModels = await client.request('chat/models', { modelUsage: ModelUsage.Chat })
+            expect(dotcomModels?.models?.length).toBeGreaterThanOrEqual(1)
 
             // Before switching, set a chat model as default on the prior endpoint. We want it to NOT be
             // carried over to the endpoint we switch to.
@@ -172,6 +175,10 @@ describe(
 
             // Test things that should work after having switched accounts.
 
+            // Enterprise models should not contain models with the waitlist tag.
+            const enterpriseModels = await client.request('chat/models', { modelUsage: ModelUsage.Chat })
+            expect(enterpriseModels.models?.some(m => m.tags.includes(ModelTag.Waitlist))).toBeFalsy()
+
             // The chat that we started before switching accounts should not be usable from the new
             // account.
             await expect(
@@ -180,11 +187,11 @@ describe(
                     { id: preChatID }
                 )
             ).rejects.toThrow(`No panel with ID ${preChatID}`)
-
             // Chats should work, and it should use the default model.
             const chat = await client.sendSingleMessageToNewChatWithFullTranscript(
                 'hello after switching accounts'
             )
+
             expect(chat.lastMessage?.model).toBe(FIXTURE_MODELS.defaultS2ChatModel)
             expect(chat.lastMessage?.error).toBeUndefined()
 

@@ -14,9 +14,9 @@ import {
 } from '@sourcegraph/cody-shared'
 import debounce from 'lodash/debounce'
 import { useCallback, useContext, useMemo, useState } from 'react'
-import { useClientState } from '../../clientState'
 import { ChatMentionContext } from '../../plugins/atMentions/useChatContextItems'
 import { useExtensionAPI } from '../../useExtensionAPI'
+import { useInitialContextForChat } from '../../useInitialContext'
 import { type UseObservableResult, useObservable } from '../../useObservable'
 
 export interface MentionMenuParams {
@@ -85,14 +85,13 @@ export function useMentionMenuData(
     const { value, error } = useCallMentionMenuData(params)
     const queryLower = params.query?.toLowerCase()?.trim() ?? null
 
-    const clientState = useClientState()
-
     const isInProvider = !!params.parentItem
 
     // Initial context items aren't filtered when we receive them, so we need to filter them here.
+    const initialContext = useInitialContextForChat()
     const filteredInitialContextItems = isInProvider
         ? []
-        : clientState.initialContext.filter(item =>
+        : initialContext.filter(item =>
               queryLower
                   ? item.title?.toLowerCase().includes(queryLower) ||
                     item.uri.toString().toLowerCase().includes(queryLower) ||
