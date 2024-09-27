@@ -134,10 +134,6 @@ export function isAuthenticationChange(newConfig: ExtensionConfiguration): boole
         return true
     }
 
-    if (!newConfig.accessToken || !newConfig.serverEndpoint) {
-        return false
-    }
-
     return (
         extensionConfiguration.accessToken !== newConfig.accessToken ||
         extensionConfiguration.serverEndpoint !== newConfig.serverEndpoint

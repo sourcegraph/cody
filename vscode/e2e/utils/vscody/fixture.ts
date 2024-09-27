@@ -983,6 +983,11 @@ function sourcegraphProxyReqHandler(
             if (headers.authorization) {
                 // can be used to match without worrying about the specific token value
                 const before = getFirstOrValue(headers.authorization)
+                if (!authReplacement) {
+                    throw new Error(
+                        'unauthenticated requests (with no access token) are not yet supported'
+                    )
+                }
                 const after = before.replace(MITM_AUTH_TOKEN_PLACEHOLDER, authReplacement)
                 if (before !== after) {
                     // this means we set the token. This allows you to still
