@@ -234,7 +234,6 @@ function publicMentionSummary(context: ContextItem[]) {
 function publicContextSummary(globalPrefix: string, context: ContextItem[]) {
     const global = cloneDeep(defaultSharedItemCount)
     const bySource = {
-        [ContextItemSource.Embeddings]: cloneDeep(defaultBySourceCount),
         [ContextItemSource.User]: cloneDeep(defaultBySourceCount),
         [ContextItemSource.Editor]: cloneDeep(defaultBySourceCount),
         [ContextItemSource.Search]: cloneDeep(defaultBySourceCount),
@@ -393,7 +392,6 @@ type ByTypeCount = SharedItemCount & {
 const defaultByTypeCount: ByTypeCount = {
     ...defaultSharedItemCount,
     sources: {
-        [ContextItemSource.Embeddings]: undefined,
         [ContextItemSource.User]: undefined,
         [ContextItemSource.Editor]: undefined,
         [ContextItemSource.Search]: undefined,

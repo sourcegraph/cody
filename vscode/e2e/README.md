@@ -7,6 +7,7 @@
   - [Quick Start](#quick-start)
     - [Running tests](#running-tests)
   - [Updating Recordings](#updating-recordings)
+    - [.env File](#env-file)
   - [Overview](#overview)
     - [1. Playwright](#1-playwright)
     - [2. Fixture](#2-fixture)
@@ -106,17 +107,26 @@ Update the use statement for a specific test:
 
 Set the `CODY_RECORD_IF_MISSING` or `CODY_RECORDING_MODE` environment variables.
 
-> **Top Tip** 💡
-> 
-> VSCode can be a bit stubborn with environment variables, so
-> playwright.v2.config.ts loads an optional vscode/.env file. This lets you
-> toggle environment variables on the fly without rebooting your IDE (because
-> who has time for that?).
+### .env File
+VSCode can be a bit stubborn with environment variables, so
+playwright.v2.config.ts loads an optional vscode/.env file. This lets you toggle
+environment variables on the fly without rebooting your IDE (because who has
+time for that?).
 
 ```sh
 # vscode/.env
 CODY_RECORD_IF_MISSING=true
 # ... any other environment variables you want to set
+```
+
+You can also set these values to `once` which will then automatically comment
+out the line after you've run your tests. This ensures you don't accidentally
+leave the flag on.
+
+```sh
+# vscode/.env
+# CODY_RECORD_IF_MISSING=once
+CODY_RECORDING_MODE=once # after you've run your tests this line will be commented out again! 🙌
 ```
 
 ## Overview
