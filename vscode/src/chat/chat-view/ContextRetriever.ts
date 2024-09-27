@@ -347,9 +347,8 @@ export class ContextRetriever implements vscode.Disposable {
             return []
         }
 
-        const remoteResultPromise = graphqlClient.contextSearch({ repoIDs, query, signal })
+        const remoteResult = await graphqlClient.contextSearch({ repoIDs, query, signal })
 
-        const remoteResult = await remoteResultPromise
         if (isError(remoteResult)) {
             throw remoteResult
         }
@@ -385,7 +384,7 @@ export class ContextRetriever implements vscode.Disposable {
     }
 }
 
-function contextSearchResultToContextItem(result: ContextSearchResult): ContextItem | undefined {
+function contextSearchResultToContextItem(result: ContextSearchResult): ContextItemFile | undefined {
     if (result.startLine < 0 || result.endLine < 0) {
         logDebug(
             'ContextRetriever',
@@ -404,6 +403,7 @@ function contextSearchResultToContextItem(result: ContextSearchResult): ContextI
         repoName: result.repoName,
         title: result.path,
         revision: result.commit,
+        ranges: result.ranges,
     }
 }
 

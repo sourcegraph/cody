@@ -270,6 +270,38 @@ query GetCodyContext($repos: [ID!]!, $query: String!, $codeResultsCount: Int!, $
     }
 }`
 
+export const CONTEXT_SEARCH_QUERY_WITH_RANGES = `
+query GetCodyContext($repos: [ID!]!, $query: String!, $codeResultsCount: Int!, $textResultsCount: Int!, $filePatterns: [String!]) {
+	getCodyContext(repos: $repos, query: $query, codeResultsCount: $codeResultsCount, textResultsCount: $textResultsCount, filePatterns: $filePatterns) {
+        ...on FileChunkContext {
+            blob {
+                path
+                repository {
+                  id
+                  name
+                }
+                commit {
+                  oid
+                }
+                url
+              }
+              startLine
+              endLine
+              chunkContent
+              matchedRanges {
+                start {
+                  line
+                  column: character
+                }
+                end {
+                  line
+                  column: character
+                }
+              }
+        }
+    }
+}`
+
 export const CONTEXT_FILTERS_QUERY = `
 query ContextFilters {
     site {
