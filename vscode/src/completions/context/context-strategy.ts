@@ -83,7 +83,10 @@ export class DefaultContextStrategyFactory implements ContextStrategyFactory {
                             this.localRetriever = new DiagnosticsRetriever()
                             break
                         case 'recent-view-port':
-                            this.localRetriever = new RecentViewPortRetriever()
+                            this.localRetriever = new RecentViewPortRetriever({
+                                maxTrackedViewPorts: 50,
+                                maxRetrievedViewPorts: 10,
+                            })
                             break
                         case 'jaccard-similarity':
                             this.localRetriever = new JaccardSimilarityRetriever()
