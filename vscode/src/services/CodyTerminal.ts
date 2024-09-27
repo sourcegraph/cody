@@ -1,5 +1,14 @@
 import * as vscode from 'vscode'
 
+const BUTTON = {
+    run: 'Confirm and run',
+    skip: 'Do not ask again',
+}
+
+const WARNING = {
+    untrusted: 'Terminal commands are disabled in untrusted workspaces.',
+}
+
 export class CodyTerminal implements vscode.Disposable {
     public static readonly title = 'Cody by Sourcegraph'
     private codyTerminal: vscode.Terminal | undefined
@@ -7,7 +16,7 @@ export class CodyTerminal implements vscode.Disposable {
 
     constructor() {
         this.disposables.push(
-            vscode.commands.registerCommand('cody.terminal.execute', (cmd: string) => this.run(cmd))
+            vscode.commands.registerCommand('cody.terminal.execute', c => this.run(c.trim()))
         )
     }
 
@@ -19,35 +28,42 @@ export class CodyTerminal implements vscode.Disposable {
 
     private run(command: string): void {
         if (!vscode.workspace.isTrusted) {
-            const WARNING = 'Commands are disabled in untrusted workspaces.'
-            vscode.window.showErrorMessage(WARNING)
-            throw new Error(WARNING)
+            vscode.window.showErrorMessage(WARNING.untrusted)
+            throw new Error(WARNING.untrusted)
         }
 
         if (this.skipConfirmationOnRun) {
             this.send(command)
             return
         }
-        const BUTTON = {
-            confirm: 'Yes',
-            skip: 'Do not ask again',
-        }
-        vscode.window
-            .showInformationMessage(`Run \`${command}\` in the terminal?`, BUTTON.confirm, BUTTON.skip)
-            .then(selected => {
-                if (selected === BUTTON.skip) {
-                    this.skipConfirmationOnRun = true
-                }
-                if (selected) {
-                    this.send(command)
-                }
-            })
+
+        vscode.window.showInformationMessage(command, BUTTON.run, BUTTON.skip).then(selected => {
+            if (selected === BUTTON.skip) {
+                this.skipConfirmationOnRun = true
+            }
+
+            if (selected) {
+                // Try not to run multiline commands automatically to allow user a chance to review it,
+                // it does not always work however.
+                this.send(command, !isMultiLine(command))
+            }
+        })
     }
 
-    private send(command: string): void {
+    /**
+     * Sends the specified command to the Cody terminal and optionally executes it.
+     *
+     * This method ensures that the command is only executed in trusted workspaces to
+     * prevent potential security risks.
+     *
+     * @param command The command to send to the Cody terminal.
+     * @param execute Whether to execute the command immediately. If false, the command
+     * will be sent to the terminal but not executed.
+     */
+    private send(command: string, execute = true): void {
         // 🚨 SECURITY: Only allow running commands in trusted workspaces.
         if (vscode.workspace.isTrusted) {
-            this.terminal.sendText(command)
+            this.terminal.sendText(command.trim(), execute)
             this.terminal.show()
         }
     }
@@ -92,4 +108,8 @@ export class CodyTerminal implements vscode.Disposable {
         }
         this.disposables = []
     }
+}
+
+function isMultiLine(command: string): boolean {
+    return /[\r\n]/.test(command)
 }

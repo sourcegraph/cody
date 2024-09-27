@@ -309,7 +309,7 @@ function createApplyButton(
 }
 
 /**
- * Creates a button that executes the command in the editor terminal on click.
+ * Creates a button that sends the command to the editor terminal on click.
  *
  * @param command - The command to be executed when the button is clicked.
  * @returns An HTMLElement representing the created button.
@@ -318,6 +318,7 @@ function createExecuteButton(command: string): HTMLElement {
     const button = document.createElement('button')
     button.className = styles.button
     button.innerHTML = 'Execute'
+    button.title = 'Send command to Terminal'
     const iconContainer = document.createElement('div')
     iconContainer.className = styles.iconContainer
     iconContainer.innerHTML = '<i class="codicon codicon-terminal tw-align-middle"></i>'
