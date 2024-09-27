@@ -10,8 +10,8 @@ import {
 import {
     PromptEditor,
     type PromptEditorRefAPI,
-    useClientState,
     useExtensionAPI,
+    useInitialContextForChat,
     useObservable,
 } from '@sourcegraph/prompt-editor'
 import clsx from 'clsx'
@@ -297,9 +297,9 @@ export const HumanMessageEditor: FunctionComponent<{
 
     const model = useCurrentChatModel()
 
-    let initialContext = useClientState().initialContext
+    let initialContext = useInitialContextForChat()
     useEffect(() => {
-        if (initialContext && !isSent && isFirstMessage) {
+        if (!isSent && isFirstMessage) {
             const editor = editorRef.current
             if (editor) {
                 // Don't show the initial codebase context if the model doesn't support streaming
