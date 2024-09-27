@@ -169,18 +169,6 @@ class FireworksProvider extends Provider {
         return zipGenerators(await Promise.all(completionsGenerators))
     }
 
-    private getCustomHeaders(isFireworksTracingEnabled?: boolean): Record<string, string> {
-        // Enabled Fireworks tracing for Sourcegraph teammates.
-        // https://readme.fireworks.ai/docs/enabling-tracing
-        const customHeaders: Record<string, string> = {}
-
-        if (isFireworksTracingEnabled) {
-            customHeaders['X-Fireworks-Genie'] = 'true'
-        }
-
-        return customHeaders
-    }
-
     private async createClient(
         options: GenerateCompletionsOptions,
         requestParams: CodeCompletionsParams,
@@ -194,42 +182,51 @@ class FireworksProvider extends Provider {
                 authStatus.endpoint?.includes('localhost')
         )
 
-        const isNode = typeof process !== 'undefined'
-        let fastPathAccessToken =
-            config.auth.accessToken &&
+        const canFastPathBeUsed =
             // Require the upstream to be dotcom
             (isDotComAuthed() || isLocalInstance) &&
-            process.env.CODY_DISABLE_FASTPATH !== 'true' && // Used for testing
+            // Used for testing
+            process.env.CODY_DISABLE_FASTPATH !== 'true' &&
             // The fast path client only supports Node.js style response streams
-            isNode
-                ? dotcomTokenToGatewayToken(config.auth.accessToken)
-                : undefined
+            typeof process !== 'undefined'
 
-        if (fastPathAccessToken) {
-            const useExperimentalFireworksConfig =
-                process.env.NODE_ENV === 'development' &&
-                config.configuration.autocompleteExperimentalFireworksOptions?.token
+        if (canFastPathBeUsed) {
+            const fastPathAccessToken = dotcomTokenToGatewayToken(config.auth.accessToken)
 
-            if (useExperimentalFireworksConfig) {
-                fastPathAccessToken =
-                    config.configuration.autocompleteExperimentalFireworksOptions?.token
+            const localFastPathAccessToken =
+                process.env.NODE_ENV === 'development'
+                    ? config.configuration.autocompleteExperimentalFireworksOptions?.token
+                    : undefined
+
+            if (fastPathAccessToken || localFastPathAccessToken) {
+                return createFastPathClient(requestParams, abortController, {
+                    isLocalInstance,
+                    fireworksConfig: localFastPathAccessToken
+                        ? config.configuration.autocompleteExperimentalFireworksOptions
+                        : undefined,
+                    logger: defaultCodeCompletionsClient.instance!.logger,
+                    providerOptions: options,
+                    fastPathAccessToken: localFastPathAccessToken || fastPathAccessToken,
+                    fireworksCustomHeaders: this.getCustomHeaders(authStatus.isFireworksTracingEnabled),
+                })
             }
-
-            return createFastPathClient(requestParams, abortController, {
-                isLocalInstance,
-                fireworksConfig: useExperimentalFireworksConfig
-                    ? config.configuration.autocompleteExperimentalFireworksOptions
-                    : undefined,
-                logger: defaultCodeCompletionsClient.instance!.logger,
-                providerOptions: options,
-                fastPathAccessToken,
-                fireworksCustomHeaders: this.getCustomHeaders(authStatus.isFireworksTracingEnabled),
-            })
         }
 
         return await this.client.complete(requestParams, abortController, {
             customHeaders: this.getCustomHeaders(authStatus.isFireworksTracingEnabled),
         })
+    }
+
+    private getCustomHeaders(isFireworksTracingEnabled?: boolean): Record<string, string> {
+        // Enabled Fireworks tracing for Sourcegraph teammates.
+        // https://readme.fireworks.ai/docs/enabling-tracing
+        const customHeaders: Record<string, string> = {}
+
+        if (isFireworksTracingEnabled) {
+            customHeaders['X-Fireworks-Genie'] = 'true'
+        }
+
+        return customHeaders
     }
 }
 
@@ -245,7 +242,7 @@ function getClientModel(
         return model as FireworksModel
     }
 
-    throw new Error(`Unknown model: \`${model}\``)
+    throw new Error(`Unknown model: '${model}'`)
 }
 
 export function createProvider({ legacyModel, source, authStatus }: ProviderFactoryParams): Provider {
