@@ -5,6 +5,7 @@ import {
     pendingOperation,
     ps,
     resolvedConfig,
+    shareReplay,
     skip,
 } from '@sourcegraph/cody-shared'
 import * as uuid from 'uuid'
@@ -40,13 +41,11 @@ import {
     Typewriter,
     addMessageListenersForExtensionAPI,
     authStatus,
-    createDisposables,
     createMessageAPIForExtension,
     currentAuthStatus,
     currentAuthStatusAuthed,
     currentResolvedConfig,
     featureFlagProvider,
-    firstValueFrom,
     getContextForChatMessage,
     graphqlClient,
     hydrateAfterPostMessage,
@@ -92,7 +91,6 @@ import { getContextFileFromCursor } from '../../commands/context/selection'
 import { resolveContextItems } from '../../editor/utils/editor-context'
 import type { VSCodeEditor } from '../../editor/vscode-editor'
 import type { ExtensionClient } from '../../extension-client'
-import type { SymfRunner } from '../../local-context/symf'
 import { logDebug } from '../../log'
 import { migrateAndNotifyForOutdatedModels } from '../../models/modelMigrator'
 import { mergedPromptsAndLegacyCommands } from '../../prompts/prompts'
@@ -110,9 +108,9 @@ import {
 import { openExternalLinks, openLocalFileWithRange } from '../../services/utils/workspace-action'
 import { TestSupport } from '../../test-support'
 import type { MessageErrorType } from '../MessageProvider'
-import { startClientStateBroadcaster } from '../clientStateBroadcaster'
 import { getChatContextItemsForMention, getMentionMenuData } from '../context/chatContext'
 import type { ContextAPIClient } from '../context/contextAPIClient'
+import { observeInitialContext } from '../initialContext'
 import {
     CODY_BLOG_URL_o1_WAITLIST,
     type ChatSubmitType,
@@ -136,8 +134,6 @@ interface ChatControllerOptions {
     extensionUri: vscode.Uri
     chatClient: ChatClient
 
-    retrievers: AuthDependentRetrievers
-
     contextRetriever: ContextRetriever
     contextAPIClient: ContextAPIClient | null
 
@@ -151,26 +147,6 @@ interface ChatControllerOptions {
 export interface ChatSession {
     webviewPanelOrView: vscode.WebviewView | vscode.WebviewPanel | undefined
     sessionID: string
-}
-
-export class AuthDependentRetrievers {
-    constructor(private _symf: SymfRunner | null) {}
-
-    private isCodyWeb(): boolean {
-        return vscode.workspace.getConfiguration().get<string>('cody.advanced.agent.ide') === CodyIDE.Web
-    }
-
-    private isConsumer(): boolean {
-        return isDotCom(currentAuthStatus())
-    }
-
-    public get allowRemoteContext(): boolean {
-        return this.isCodyWeb() || !this.isConsumer()
-    }
-
-    get symf(): SymfRunner | null {
-        return this.isConsumer() ? this._symf : null
-    }
 }
 
 /**
@@ -205,8 +181,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
 
     private readonly chatClient: ChatClient
 
-    private readonly retrievers: AuthDependentRetrievers
-
     private readonly contextRetriever: ContextRetriever
 
     private readonly editor: VSCodeEditor
@@ -227,7 +201,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
     constructor({
         extensionUri,
         chatClient,
-        retrievers,
         editor,
         guardrails,
         startTokenReceiver,
@@ -237,7 +210,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
     }: ChatControllerOptions) {
         this.extensionUri = extensionUri
         this.chatClient = chatClient
-        this.retrievers = retrievers
         this.editor = editor
         this.extensionClient = extensionClient
         this.contextRetriever = contextRetriever
@@ -253,19 +225,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         }
 
         this.disposables.push(
-            subscriptionDisposable(
-                authStatus
-                    .pipe(
-                        createDisposables(() =>
-                            startClientStateBroadcaster({
-                                useRemoteSearch: this.retrievers.allowRemoteContext,
-                                postMessage: (message: ExtensionMessage) => this.postMessage(message),
-                                chatModel: this.chatBuilder,
-                            })
-                        )
-                    )
-                    .subscribe({})
-            ),
             subscriptionDisposable(
                 authStatus.subscribe(() => {
                     // Run this async because this method may be called during initialization
@@ -594,8 +553,10 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
     }
 
     private async sendConfig(): Promise<void> {
-        const currentAuthStatus = await firstValueFrom(authStatus)
-        if (!currentAuthStatus) {
+        const authStatus = currentAuthStatus()
+
+        // Don't emit config if we're verifying auth status to avoid UI auth flashes on the client
+        if (authStatus.pendingValidation) {
             return
         }
 
@@ -620,7 +581,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         await this.postMessage({
             type: 'config',
             config: configForWebview,
-            authStatus: currentAuthStatus,
+            authStatus: authStatus,
             workspaceFolderUris,
             configFeatures: {
                 // If clientConfig is undefined means we were unable to fetch the client configuration -
@@ -631,7 +592,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 attribution: clientConfig?.attributionEnabled ?? false,
                 serverSentModels: clientConfig?.modelsAPIEnabled ?? false,
             },
-            isDotComUser: isDotCom(currentAuthStatus),
+            isDotComUser: isDotCom(authStatus),
         })
         logDebug('ChatController', 'updateViewConfig', {
             verbose: configForWebview,
@@ -1720,6 +1681,9 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         )
 
         // Listen for API calls from the webview.
+        const initialContext = observeInitialContext({
+            chatBuilder: this.chatBuilder.changes,
+        }).pipe(shareReplay())
         this.disposables.push(
             addMessageListenersForExtensionAPI(
                 createMessageAPIForExtension({
@@ -1768,6 +1732,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                             await modelsService.setSelectedModel(ModelUsage.Chat, model)
                         })
                     },
+                    initialContext: () => initialContext,
                     detectIntent: text =>
                         promiseFactoryToObservable<ChatMessage['intent']>(() =>
                             this.detectChatIntent({ text })

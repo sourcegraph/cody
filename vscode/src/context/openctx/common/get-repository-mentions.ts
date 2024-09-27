@@ -1,9 +1,9 @@
 import type { Mention } from '@openctx/client'
 import {
-    type AuthCredentials,
+    type AuthStatus,
     type SuggestionsRepo,
     contextFiltersProvider,
-    currentResolvedConfig,
+    currentAuthStatus,
     graphqlClient,
     isError,
 } from '@sourcegraph/cody-shared'
@@ -35,7 +35,6 @@ export async function getRepositoryMentions(
     query: string,
     providerId: string
 ): Promise<ProviderMention[]> {
-    const { auth } = await currentResolvedConfig()
     const dataOrError = await graphqlClient.searchRepoSuggestions(query)
 
     if (isError(dataOrError) || dataOrError === null || dataOrError.search === null) {
@@ -54,7 +53,7 @@ export async function getRepositoryMentions(
                     current: !!localRepos.find(({ repoName }) => repoName === repository.item.name),
                 },
                 providerId,
-                auth
+                currentAuthStatus()
             )
         )
     )
@@ -65,12 +64,12 @@ type MinimalRepoMention = Pick<SuggestionsRepo, 'id' | 'url' | 'name'> & { curre
 export async function createRepositoryMention(
     repo: MinimalRepoMention,
     providerId: string,
-    { serverEndpoint }: Pick<AuthCredentials, 'serverEndpoint'>
+    { endpoint }: Pick<AuthStatus, 'endpoint'>
 ): Promise<ProviderMention> {
     return {
         title: repo.name,
         providerUri: providerId,
-        uri: serverEndpoint + repo.url,
+        uri: endpoint + repo.url,
 
         // By default, we show <title> <uri> in the mentions' menu.
         // As repo.url and repo.name are almost same, we do not want to show the uri.

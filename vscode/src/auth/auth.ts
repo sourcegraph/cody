@@ -392,7 +392,7 @@ export async function validateCredentials(
     // An access token is needed except for Cody Web, which uses cookies.
     const isCodyWeb = config.configuration.agentIDE === CodyIDE.Web
     if (!config.auth.accessToken && !isCodyWeb) {
-        return { authenticated: false, endpoint: config.auth.serverEndpoint }
+        return { authenticated: false, endpoint: config.auth.serverEndpoint, pendingValidation: false }
     }
 
     // Check if credentials are valid and if Cody is enabled for the credentials and endpoint.
@@ -417,20 +417,26 @@ export async function validateCredentials(
         JSON.stringify({ siteHasCodyEnabled, siteVersion, codyLLMConfiguration, userInfo })
     )
     if (isError(userInfo) && isNetworkLikeError(userInfo)) {
-        return { authenticated: false, showNetworkError: true, endpoint: config.auth.serverEndpoint }
+        return {
+            authenticated: false,
+            showNetworkError: true,
+            endpoint: config.auth.serverEndpoint,
+            pendingValidation: false,
+        }
     }
     if (!userInfo || isError(userInfo)) {
         return {
             authenticated: false,
             endpoint: config.auth.serverEndpoint,
             showInvalidAccessTokenError: true,
+            pendingValidation: false,
         }
     }
     if (!siteHasCodyEnabled) {
         vscode.window.showErrorMessage(
             `Cody is not enabled on this Sourcegraph instance (${config.auth.serverEndpoint}). Ask a site administrator to enable it.`
         )
-        return { authenticated: false, endpoint: config.auth.serverEndpoint }
+        return { authenticated: false, endpoint: config.auth.serverEndpoint, pendingValidation: false }
     }
 
     const configOverwrites = isError(codyLLMConfiguration) ? undefined : codyLLMConfiguration

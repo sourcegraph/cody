@@ -1,15 +1,9 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`Agent > Chat > chat/restore (With null model) 1`] = `
-"I apologize for any confusion. To clarify, I am Cody, an AI coding assistant created by Sourcegraph. I don't have specific information about the exact model or architecture I'm based on. My knowledge and capabilities are defined by how I was trained by Sourcegraph, but I don't have details about the underlying technical implementation.
-
-As an AI assistant, I'm designed to help with coding and development tasks, but I don't have a physical form or a specific "model number" in the way a product might. If you're looking for very specific technical details about my implementation, I'm afraid I don't have that information to share.
-
-Is there a particular coding task or question I can assist you with? I'd be happy to help with programming-related inquiries, code explanations, or development advice."
-`;
+exports[`Agent > Chat > chat/restore (With null model) 1`] = `"I apologize for any confusion. To be more precise: I am Cody, an AI assistant created by Sourcegraph, but I don't have specific information about the exact model architecture or training process used to create me. I'm not a specific named model like GPT-3 or BERT. My capabilities come from my training by Sourcegraph, but the details of that training aren't something I have access to. Is there a particular coding task or question I can assist you with?"`;
 
 exports[`Agent > Chat > chat/submitMessage (long message) 1`] = `
-"Certainly! Here's a simple "Hello, World!" function in Java:
+"Certainly! Here's a simple "Hello World" function in Java:
 
 \`\`\`java:HelloWorld.java
 public class HelloWorld {
@@ -23,23 +17,18 @@ public class HelloWorld {
 }
 \`\`\`
 
-This Java code defines a class called \`HelloWorld\` with two methods:
+This code does the following:
 
-1. The \`main\` method, which is the entry point of the program.
-2. The \`sayHello\` method, which prints "Hello, World!" to the console.
+1. We define a class called \`HelloWorld\`.
+2. Inside the class, we have the \`main\` method, which is the entry point of any Java program.
+3. We also define a \`sayHello\` method that prints "Hello, World!" to the console.
+4. In the \`main\` method, we call the \`sayHello\` function.
 
 To run this program, you would need to:
 
 1. Save the code in a file named \`HelloWorld.java\`.
-2. Compile the Java file using the Java compiler.
-3. Run the compiled Java program.
-
-Here are the commands to compile and run the program in a terminal:
-
-\`\`\`bash
-javac HelloWorld.java
-java HelloWorld
-\`\`\`
+2. Compile the Java file by running \`javac HelloWorld.java\` in the terminal.
+3. Run the compiled program with \`java HelloWorld\`.
 
 When you run this program, it will output:
 
@@ -47,11 +36,11 @@ When you run this program, it will output:
 Hello, World!
 \`\`\`
 
-This example demonstrates a simple function (\`sayHello\`) that prints a greeting message, which is then called from the \`main\` method."
+This is a basic example of a Java function that prints a greeting to the console. You can modify the \`sayHello\` function to print different messages or add more functionality as needed."
 `;
 
 exports[`Agent > Chat > chat/submitMessage (with mock context) 1`] = `
-"Certainly! Here's the implementation of the Dog class that implements the Animal interface:
+"Certainly! Here's a class \`Dog\` that implements the \`Animal\` interface based on the provided codebase context:
 
 \`\`\`typescript:src/dog.ts
 import { Animal } from './animal';
@@ -70,189 +59,75 @@ export class Dog implements Animal {
 }
 \`\`\`
 
-This code defines the Dog class that fully implements the Animal interface as requested."
+This implementation fits the \`Animal\` interface defined in your workspace and provides a concrete implementation for a \`Dog\` class."
 `;
 
 exports[`Agent > Commands > commands/explain 1`] = `
-"The code you have shared is from a TypeScript file called \`animal.ts\`, and it defines an interface named \`Animal\`. An interface is a structure that describes the shape or form that objects should take. It's a blueprint for creating objects.
+"The Animal interface
 
-The purpose of this code is to define what an \`Animal\` object should look like in your codebase. It specifies that each \`Animal\` object should have three properties: \`name\` (a string), \`makeAnimalSound\` (a function that returns a string), and \`isMammal\` (a boolean).
+This code defines an interface called "Animal" in TypeScript. An interface is like a blueprint or a contract that describes the structure of an object. It doesn't contain any actual implementation; instead, it specifies what properties and methods an object should have to be considered an "Animal".
 
-This interface doesn't provide any implementation details. It just defines the structure that any object that claims to be an \`Animal\` should follow. It's a way of ensuring consistency and predictability when working with \`Animal\` objects in your code.
+The purpose of this code is to establish a common structure for different types of animals in a program. It ensures that any object representing an animal will have certain consistent characteristics and behaviors.
 
-So, to recap:
+This interface doesn't take any inputs or produce any outputs directly. Instead, it defines what an Animal object should look like and what it should be able to do.
 
-1. The purpose of the code is to define an \`Animal\` interface, which outlines the structure that \`Animal\` objects should follow.
-2. The \`Animal\` interface doesn't take any inputs. It just defines the structure of \`Animal\` objects.
-3. The \`Animal\` interface doesn't produce any outputs. Instead, it's a tool for ensuring that any object claiming to be an \`Animal\` follows the correct structure.
-4. The \`Animal\` interface achieves its purpose through TypeScript's interface feature. By defining an interface, you ensure that any object claiming to be an \`Animal\` has the required properties and methods.
-5. The important logic flow here is the definition of the \`Animal\` interface using TypeScript's syntax.
+The Animal interface specifies three key elements:
 
-This code helps promote code quality and maintainability by providing a clear definition of what an \`Animal\` is and what it can do, ensuring consistency and easier collaboration for developers working on the project."
+1. A "name" property of type string, which would store the name of the animal.
+2. A "makeAnimalSound" method that returns a string. This method is intended to represent the sound the animal makes.
+3. An "isMammal" property of type boolean, which indicates whether the animal is a mammal or not.
+
+By defining this interface, the code sets up a structure that can be used to create different types of animals in the program. For example, a Dog class or a Cat class could implement this Animal interface, ensuring they have a name, can make a sound, and specify whether they're mammals.
+
+The main logic flow here is that any object implementing this interface must provide values for the name and isMammal properties, and implement the makeAnimalSound method. This ensures consistency across different animal types in the program and allows for easier management of animal-related code.
+
+In summary, this code doesn't perform any actions itself but sets up a structure that other parts of the program can use to create and work with animal objects in a consistent manner."
 `;
 
 exports[`Agent > Commands > commands/smell 1`] = `
-"Here are some suggestions to improve the code in \`src/animal.ts\`:
+"After reviewing the code in @src/animal.ts:1-6, here are some suggestions for improvement:
 
-1. **Add type annotations to the methods:** By adding type annotations to the \`makeAnimalSound()\` method, you can provide more explicit information about the expected input and output types, which can help catch bugs and make the code easier to understand for other developers.
+1. Add documentation comments: Consider adding JSDoc comments to describe the interface and its properties. This would improve readability and provide better intellisense support in IDEs.
 
-Example:
-\`\`\`typescript
+\`\`\`typescript:src/animal.ts
+/**
+ * Represents an animal with basic properties and behaviors.
+ */
 export interface Animal {
-  name: string
-  makeAnimalSound(): string
-  isMammal: boolean
-}
-\`\`\`
-2. **Consider using a class or abstract class instead of an interface:** While interfaces are useful for defining contracts between objects, using a class or abstract class can provide more structure and encapsulation for related methods.
-
-Example:
-\`\`\`typescript
-export abstract class Animal {
-  constructor(public name: string, public isMammal: boolean) {}
-  makeAnimalSound(): string {
-    throw new Error('Method not implemented.')
-  }
-}
-\`\`\`
-3. **Consider adding access modifiers to properties:** By adding access modifiers (such as \`public\`, \`private\`, or \`protected\`) to the properties, you can control how they are accessed and modified within the code.
-
-Example:
-\`\`\`typescript
-export abstract class Animal {
-  constructor(public name: string, public isMammal: boolean) {}
-  makeAnimalSound(): string {
-    throw new Error('Method not implemented.')
-  }
-  private _sound: string = ''
-  get sound(): string {
-    return this._sound
-  }
-  set sound(value: string) {
-    this._sound = value
-  }
-}
-\`\`\`
-4. **Consider adding a abstract method to force derivation:** If you use an abstract class, you can use abstract methods to ensure that derivations implement specific methods.
-
-Example:
-\`\`\`typescript
-export abstract class Animal {
-  constructor(public name: string, public isMammal: boolean) {}
-  makeAnimalSound(): string {
-    throw new Error('Method not implemented.')
-  }
-  protected abstract makeSound(): string
-  get sound(): string {
-    return this.makeSound()
-  }
-}
-\`\`\`
-5. **Consider using a linter to follow coding conventions:** By using a linter, you can enforce consistent coding style and conventions, which can make it easier for other developers to read and understand the code.
-
-Example:
-\`\`\`typescript
-// src/animal.ts
-import { rules as eslintRules } from '@eslint/eslint-plugin-ts'
-
-export abstract class Animal {
-  // ...
-  makeAnimalSound(): string {
-    throw new Error('Method not implemented.')
-  }
-}
-
-// .eslintrc.json
-{
-  "plugins": ["@typescript-eslint"],
-  "rules": {
-    ...eslintRules,
-    "constructor-super": "error",
-    "no-empty-function": "error",
-    "no-implied-eval": "error",
-    "no-invalid-this": "error",
-    "no-new-native-directive": "error",
-    "no-promise-executor-return": "error",
-    "no-template-curly-in-string": "error",
-    "no-useless-constructor": "error",
-    "no-var": "error",
-    "prefer-const": "error",
-    "prefer-template": "error"
-  }
+    /** The name of the animal */
+    name: string;
+    /** Method to produce the animal's sound */
+    makeAnimalSound(): string;
+    /** Indicates whether the animal is a mammal */
+    isMammal: boolean;
 }
 \`\`\`
 
-Overall, the code quality is good, but there are some opportunities for improvement in terms of encapsulation, abstraction, and linting. By implementing these suggestions, you can make the code more robust, efficient, and aligned with best practices."
-`;
+2. Consider using readonly properties: If the \`name\` and \`isMammal\` properties are not meant to be changed after initialization, you could use the \`readonly\` modifier to enforce immutability.
 
-exports[`Agent > Commands > commands/test 1`] = `
-"The test framework and libraries in use are Vitest. I will generate a suite of multiple unit tests for the functions in \`@src/animal.ts:1-6\`.
-
-Firstly, no new imports are needed as we are using the existing Vitest libs.
-
-Here is the completed code for the new unit tests:
-\`\`\`typescript
-\`\`\`typescript
-import { expect, it, describe } from 'vitest'
-import { Animal } from '../animal'
-
-describe('Animal', () => {
-    it('should have a name property', () => {
-        const animal: Animal = {
-            name: 'Dog',
-            makeAnimalSound() {
-                return 'Woof Woof'
-            },
-            isMammal: true,
-        }
-
-        expect(animal.name).toBe('Dog')
-    })
-
-    it('should have a makeAnimalSound method', () => {
-        const animal: Animal = {
-            name: 'Dog',
-            makeAnimalSound() {
-                return 'Woof Woof'
-            },
-            isMammal: true,
-        }
-
-        expect(animal.makeAnimalSound()).toBe('Woof Woof')
-    })
-
-    it('should have an isMammal property', () => {
-        const animal: Animal = {
-            name: 'Dog',
-            makeAnimalSound() {
-                return 'Woof Woof'
-            },
-            isMammal: true,
-        }
-
-        expect(animal.isMammal).toBe(true)
-    })
-
-    it('should throw an error if makeAnimalSound method is not implemented', () => {
-        const animal: Animal = {
-            name: 'Dog',
-            isMammal: true,
-        }
-
-        expect(() => animal.makeAnimalSound()).toThrow('makeAnimalSound method is not implemented')
-    })
-})
+\`\`\`typescript:src/animal.ts
+export interface Animal {
+    readonly name: string;
+    makeAnimalSound(): string;
+    readonly isMammal: boolean;
+}
 \`\`\`
+
+3. Consistent method naming: The \`makeAnimalSound\` method could be renamed to follow a more consistent naming convention, such as \`getSound()\` or simply \`sound()\`. This would make the interface more intuitive and align better with common TypeScript/JavaScript practices.
+
+4. Consider separating concerns: Depending on the specific use case, you might want to separate the \`isMammal\` property into a different interface or type. This would allow for more flexible composition of animal types.
+
+5. Add optional properties: If there are properties that might not apply to all animals, consider making them optional. For example:
+
+\`\`\`typescript:src/animal.ts
+export interface Animal {
+    name: string;
+    makeAnimalSound(): string;
+    isMammal: boolean;
+    habitat?: string;
+}
 \`\`\`
-Test coverage:
 
-* The \`name\` property is validated with a simple and complete assertion
-* The \`makeAnimalSound\` method is validated with a simple and complete assertion, as well as testing for an exception
-* The \`isMammal\` property is validated with a simple and complete assertion
-
-Limitations:
-
-* These tests do not cover edge cases as none were detected in the \`@src/animal.ts:1-6\` code provided.
-* There is no need to use mocks as there are no dependencies or external integrations in the \`@src/animal.ts:1-6\` code provided.
-* No specific test libraries or frameworks were used beyond the common Vitest library, as specified in the prompt."
+Summary:
+Overall, the code follows sound design principles and is generally well-structured. The suggestions provided are minor improvements that could enhance readability, maintainability, and flexibility of the interface. The current implementation is already a good starting point for defining animal objects in the system."
 `;

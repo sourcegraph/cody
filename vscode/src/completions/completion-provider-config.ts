@@ -36,6 +36,7 @@ class CompletionProviderConfig {
             FeatureFlag.CodyAutocompletePreloadingExperimentVariant2,
             FeatureFlag.CodyAutocompletePreloadingExperimentVariant3,
             FeatureFlag.CodyAutocompleteDisableLowPerfLangDelay,
+            FeatureFlag.CodyAutocompleteDataCollectionFlag,
             FeatureFlag.CodyAutocompleteTracing,
         ]
         this.prefetchSubscription = combineLatest(
@@ -205,6 +206,12 @@ class CompletionProviderConfig {
     public get completionDisableLowPerfLangDelay(): Observable<boolean> {
         return featureFlagProvider
             .evaluatedFeatureFlag(FeatureFlag.CodyAutocompleteDisableLowPerfLangDelay)
+            .pipe(distinctUntilChanged())
+    }
+
+    public get completionDataCollectionFlag(): Observable<boolean> {
+        return featureFlagProvider
+            .evaluatedFeatureFlag(FeatureFlag.CodyAutocompleteDataCollectionFlag)
             .pipe(distinctUntilChanged())
     }
 }

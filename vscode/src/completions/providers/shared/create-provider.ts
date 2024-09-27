@@ -21,6 +21,7 @@ import { createProvider as createGeminiProviderConfig } from '../google'
 import { createProvider as createOpenAICompatibleProviderConfig } from '../openaicompatible'
 import { createProvider as createUnstableOpenAIProviderConfig } from '../unstable-openai'
 
+import { toLegacyModel } from '@sourcegraph/cody-shared/src/models/model'
 import { getDotComExperimentModel } from './get-experiment-model'
 import { parseProviderAndModel } from './parse-provider-and-model'
 import type { Provider, ProviderFactory } from './provider'
@@ -135,7 +136,7 @@ function createProviderHelper(params: CreateProviderHelperParams): Provider | Er
     if (providerCreator) {
         return providerCreator({
             model,
-            legacyModel: legacyModel,
+            legacyModel: legacyModel ? toLegacyModel(legacyModel) : legacyModel,
             provider: provider as AutocompleteProviderID,
             source,
             authStatus,

@@ -64,42 +64,6 @@ export async function getContextFileFromCursor(
 }
 
 /**
- * Gets the context items for the current selection in the active editor.
- *
- * If the file is ignored or if no selection, an empty array is returned.
- *
- * @returns An array of context items for the current selection.
- */
-export async function getContextFileFromSelection(): Promise<ContextItem[]> {
-    return wrapInActiveSpan('commands.context.selection', async span => {
-        const editor = getEditor()?.active
-        const document = editor?.document
-        const selection = editor?.selection
-
-        if (!document || selection?.isEmpty || (await shouldIgnore(document.uri))) {
-            return []
-        }
-
-        try {
-            const content = document.getText(selection)
-            return [
-                {
-                    type: 'file',
-                    uri: document.uri,
-                    content,
-                    source: ContextItemSource.Selection,
-                    range: toRangeData(selection),
-                    size: await TokenCounterUtils.countTokens(content),
-                } satisfies ContextItemFile,
-            ]
-        } catch (error) {
-            logError('getContextFileFromSelection', 'failed', { verbose: error })
-            return []
-        }
-    })
-}
-
-/**
  * Gets the context items for the current selection in the active editor, or the entire file if there is no selection.
  *
  * The context items include the file URI, content, source (selection or file), range, and token count.

@@ -271,7 +271,7 @@ interface TabButtonProps {
     'data-testid'?: string
 }
 
-export const TabButton = forwardRef<HTMLButtonElement, TabButtonProps>((props, ref) => {
+const TabButton = forwardRef<HTMLButtonElement, TabButtonProps>((props, ref) => {
     const {
         IDE,
         Icon,

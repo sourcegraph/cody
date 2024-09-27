@@ -4,7 +4,6 @@
 import type { CodeCompletionsParams } from '@sourcegraph/cody-shared'
 
 import { forkSignal, generatorWithTimeout, zipGenerators } from '../utils'
-
 import {
     type FetchCompletionResult,
     fetchAndProcessDynamicMultilineCompletions,
@@ -139,7 +138,7 @@ function getClientModel(model?: string): OpenAICompatibleModel {
         return 'starcoder-hybrid' as OpenAICompatibleModel
     }
 
-    if (model === 'starcoder-hybrid' || Object.prototype.hasOwnProperty.call(MODEL_MAP, model)) {
+    if (model.includes('starcoder-hybrid') || Object.prototype.hasOwnProperty.call(MODEL_MAP, model)) {
         return model as OpenAICompatibleModel
     }
 

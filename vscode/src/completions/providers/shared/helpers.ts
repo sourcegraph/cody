@@ -24,9 +24,7 @@ import type { Provider } from './provider'
  * Creates autocomplete provider and resolves
  * to the first value emitted by the observable wrapper.
  */
-export async function createProviderForTest(
-    ...args: Parameters<typeof createProvider>
-): Promise<Provider> {
+async function createProviderForTest(...args: Parameters<typeof createProvider>): Promise<Provider> {
     const providerOrError = await firstValueFrom(createProvider(...args).pipe(skipPendingOperation()))
 
     if (providerOrError instanceof Error) {
