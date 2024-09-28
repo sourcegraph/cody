@@ -1,4 +1,4 @@
-import { type AuthStatus, CodyIDE, type TelemetryRecorder } from '@sourcegraph/cody-shared'
+import type { AuthStatus } from '@sourcegraph/cody-shared'
 
 import { type AuthMethod, isSourcegraphToken } from '../src/chat/protocol'
 
@@ -9,7 +9,7 @@ import signInLogoGoogle from './sign-in-logo-google.svg'
 import { type VSCodeWrapper, getVSCodeAPI } from './utils/VSCodeApi'
 
 import { GlobeIcon, LockKeyholeIcon } from 'lucide-react'
-import { useCallback, useState } from 'react'
+import { type FormEventHandler, useCallback, useState } from 'react'
 import { Button } from './components/shadcn/ui/button'
 import { Form, FormControl, FormField, FormLabel, FormMessage } from './components/shadcn/ui/form'
 import { useTelemetryRecorder } from './utils/telemetry'
@@ -29,8 +29,6 @@ export const AuthPage: React.FunctionComponent<React.PropsWithoutRef<LoginProps>
         vscodeAPI.postMessage({ command: 'auth', authKind: 'signin' })
     }
     const cap = useLegacyWebviewConfig().clientCapabilities
-    const isNonVSCodeIDE = cap.agentIDE !== CodyIDE.Web && cap.agentIDE !== CodyIDE.VSCode
-    const isCodyWebUI = (uiKindIsWeb || cap.agentIDE === CodyIDE.Web) && !isNonVSCodeIDE
     return (
         <div className="tw-flex tw-flex-col tw-items-center tw-gap-8 tw-h-full tw-py-10 tw-px-8">
             <div className="tw-w-full tw-max-w-md tw-flex tw-justify-center">
@@ -38,7 +36,7 @@ export const AuthPage: React.FunctionComponent<React.PropsWithoutRef<LoginProps>
             </div>
             <section className="tw-bg-sidebar-background tw-text-sidebar-foreground tw-border tw-border-border tw-rounded-lg tw-p-6 tw-w-full tw-max-w-md">
                 <h2 className="tw-font-semibold tw-text-lg tw-mb-4">Cody Enterprise</h2>
-                {isCodyWebUI || cap.isVSCode ? (
+                {cap.isVSCode ? (
                     <div className="tw-flex tw-flex-col tw-gap-6 tw-w-full">
                         <Button onClick={otherSignInClick}>Sign In to Your Enterprise Instance</Button>
                     </div>
@@ -52,12 +50,40 @@ export const AuthPage: React.FunctionComponent<React.PropsWithoutRef<LoginProps>
             <section className="tw-bg-sidebar-background tw-text-sidebar-foreground tw-border tw-border-border tw-rounded-lg tw-p-6 tw-w-full tw-max-w-md">
                 <h2 className="tw-font-semibold tw-text-lg tw-mb-4">Cody Free or Cody Pro</h2>
                 <div className="tw-flex tw-flex-col tw-gap-6 tw-w-full">
-                    {isCodyWebUI ? (
-                        <WebLogin
-                            telemetryRecorder={telemetryRecorder}
-                            vscodeAPI={vscodeAPI}
-                            isCodyWeb={isCodyWebUI}
-                        />
+                    {uiKindIsWeb ? (
+                        <ol>
+                            <li>
+                                <a href="https://sourcegraph.com/sign-up" target="site">
+                                    Sign Up at Sourcegraph.com
+                                </a>
+                            </li>
+                            <li>
+                                <a href="https://sourcegraph.com/user/settings/tokens" target="site">
+                                    Generate an Access Token
+                                </a>
+                            </li>
+                            {cap.isVSCode && (
+                                <li>
+                                    <a
+                                        href="about:blank"
+                                        onClick={event => {
+                                            telemetryRecorder.recordEvent(
+                                                'cody.webview.auth',
+                                                'clickSignIn'
+                                            )
+                                            vscodeAPI.postMessage({
+                                                command: 'simplified-onboarding',
+                                                onboardingKind: 'web-sign-in-token',
+                                            })
+                                            event.preventDefault()
+                                            event.stopPropagation()
+                                        }}
+                                    >
+                                        Add Access Token to Cody
+                                    </a>
+                                </li>
+                            )}
+                        </ol>
                     ) : (
                         <>
                             <Button
@@ -126,48 +152,6 @@ interface LoginProps {
     vscodeAPI: Pick<VSCodeWrapper, 'postMessage'>
 }
 
-const WebLogin: React.FunctionComponent<
-    React.PropsWithoutRef<{
-        isCodyWeb: boolean
-        telemetryRecorder: TelemetryRecorder
-        vscodeAPI: Pick<VSCodeWrapper, 'postMessage'>
-    }>
-> = ({ vscodeAPI, isCodyWeb }) => {
-    const telemetryRecorder = useTelemetryRecorder()
-    return (
-        <ol>
-            <li>
-                <a href="https://sourcegraph.com/sign-up" target="site">
-                    Sign Up at Sourcegraph.com
-                </a>
-            </li>
-            <li>
-                <a href="https://sourcegraph.com/user/settings/tokens" target="site">
-                    Generate an Access Token
-                </a>
-            </li>
-            {isCodyWeb && (
-                <li>
-                    <a
-                        href="about:blank"
-                        onClick={event => {
-                            telemetryRecorder.recordEvent('cody.webview.auth', 'clickSignIn')
-                            vscodeAPI.postMessage({
-                                command: 'simplified-onboarding',
-                                onboardingKind: 'web-sign-in-token',
-                            })
-                            event.preventDefault()
-                            event.stopPropagation()
-                        }}
-                    >
-                        Add Access Token to Cody
-                    </a>
-                </li>
-            )}
-        </ol>
-    )
-}
-
 interface ClientSignInFormProps {
     vscodeAPI: Pick<VSCodeWrapper, 'postMessage'>
     authStatus?: AuthStatus
@@ -209,13 +193,17 @@ const ClientSignInForm: React.FC<ClientSignInFormProps> = ({ className, authStat
         })
     }, [formData])
 
-    const onSubmit = useCallback(() => {
-        if (formData.accessToken) {
-            onAccessTokenSignInClick()
-        } else {
-            onBrowserSignInClick()
-        }
-    }, [formData.accessToken, onAccessTokenSignInClick, onBrowserSignInClick])
+    const onSubmit = useCallback<FormEventHandler>(
+        event => {
+            event.preventDefault()
+            if (formData.accessToken) {
+                onAccessTokenSignInClick()
+            } else {
+                onBrowserSignInClick()
+            }
+        },
+        [formData.accessToken, onAccessTokenSignInClick, onBrowserSignInClick]
+    )
 
     return (
         <Form className={className} onSubmit={onSubmit}>

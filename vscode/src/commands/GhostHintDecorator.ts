@@ -2,7 +2,7 @@ import {
     type AuthStatus,
     authStatus,
     contextFiltersProvider,
-    currentAuthStatus,
+    currentAuthStatusOrNotReadyYet,
     getEditorInsertSpaces,
     getEditorTabSize,
     isMacOS,
@@ -207,7 +207,7 @@ export class GhostHintDecorator implements vscode.Disposable {
         this.permanentDisposables.push(
             vscode.workspace.onDidChangeConfiguration(e => {
                 if (e.affectsConfiguration('cody')) {
-                    this.updateEnablement(currentAuthStatus())
+                    this.updateEnablement(currentAuthStatusOrNotReadyYet())
                 }
             }),
             vscode.workspace.onDidChangeTextDocument(event => {
@@ -408,10 +408,10 @@ export class GhostHintDecorator implements vscode.Disposable {
         telemetryRecorder.recordEvent('cody.ghostText', 'visible', { privateMetadata: { variant } })
     }
 
-    private async updateEnablement(authStatus: AuthStatus): Promise<void> {
+    private async updateEnablement(authStatus: AuthStatus | undefined): Promise<void> {
         const featureEnablement = await getGhostHintEnablement()
         if (
-            !authStatus.authenticated ||
+            !authStatus?.authenticated ||
             !(featureEnablement.Document || featureEnablement.EditOrChat || featureEnablement.Generate)
         ) {
             this.disposeActive()

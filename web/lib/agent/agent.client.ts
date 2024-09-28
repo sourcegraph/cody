@@ -7,6 +7,7 @@ import {
     Trace,
     createMessageConnection,
 } from 'vscode-jsonrpc/browser'
+import { registerClientManagedSecretStorage } from './secretStorage'
 
 // TODO(sqs): dedupe with agentClient.ts in [experimental Cody CLI](https://github.com/sourcegraph/cody/pull/3418)
 interface AgentClient {
@@ -17,7 +18,7 @@ interface AgentClient {
 
 interface AgentClientOptions {
     serverEndpoint: string
-    accessToken: string
+    accessToken?: string
     createAgentWorker: () => Worker
     workspaceRootUri: string
     telemetryClientName?: string
@@ -66,6 +67,8 @@ export async function createAgentClient({
         }
     })
 
+    const clientManagedSecretStorage = registerClientManagedSecretStorage(rpc)
+
     // Initialize
     const serverInfo: ServerInfo = await rpc.sendRequest('initialize', {
         name: 'web',
@@ -73,6 +76,7 @@ export async function createAgentClient({
         workspaceRootUri,
         capabilities: {
             completions: 'none',
+            secrets: 'client-managed',
             webview: 'agentic',
             disabledMentionsProviders: [FILE_CONTEXT_MENTION_PROVIDER.id],
             webviewNativeConfig: {
@@ -102,6 +106,7 @@ export async function createAgentClient({
         dispose(): void {
             rpc.end()
             worker.terminate()
+            clientManagedSecretStorage.dispose()
         },
     }
 }

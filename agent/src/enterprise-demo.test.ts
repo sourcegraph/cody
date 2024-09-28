@@ -16,15 +16,15 @@ describe('Enterprise', () => {
     })
     // Initialize inside beforeAll so that subsequent tests are skipped if initialization fails.
     beforeAll(async () => {
-        const serverInfo = await demoEnterpriseClient.initialize()
-
-        expect(serverInfo.authStatus?.authenticated).toBeTruthy()
-        if (!serverInfo.authStatus?.authenticated) {
+        await demoEnterpriseClient.initialize()
+        const authStatus = await demoEnterpriseClient.request('extensionConfiguration/status', null)
+        expect(authStatus?.authenticated).toBeTruthy()
+        if (!authStatus?.authenticated) {
             throw new Error('unreachable')
         }
-        expect(serverInfo.authStatus?.status).toStrictEqual('authenticated')
-        if (serverInfo.authStatus?.status === 'authenticated') {
-            expect(serverInfo.authStatus?.username).toStrictEqual('codytesting')
+        expect(authStatus?.status).toStrictEqual('authenticated')
+        if (authStatus?.status === 'authenticated') {
+            expect(authStatus?.username).toStrictEqual('codytesting')
         }
     }, 10_000)
 

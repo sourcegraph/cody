@@ -74,14 +74,15 @@ describe('Agent', () => {
             stdio: 'inherit',
         })
 
-        const serverInfo = await client.initialize({
+        await client.initialize({
             serverEndpoint: 'https://sourcegraph.com',
             // Initialization should always succeed even if authentication fails
             // because otherwise clients need to restart the process to test
             // with a new access token.
             accessToken: 'sgp_INVALIDACCESSTOK_ENTHISSHOULDFAILEEEEEEEEEEEEEEEEEEEEEEE2',
         })
-        expect(serverInfo?.authStatus?.authenticated).toBeFalsy()
+        const authStatus = await client.request('extensionConfiguration/status', null)
+        expect(authStatus?.authenticated).toBeFalsy()
 
         // Log in so test cases are authenticated by default
         const valid = await client.request('extensionConfiguration/change', {
@@ -679,13 +680,17 @@ describe('Agent', () => {
     describe('RateLimitedAgent', () => {
         // Initialize inside beforeAll so that subsequent tests are skipped if initialization fails.
         beforeAll(async () => {
-            const serverInfo = await rateLimitedClient.initialize()
-
-            expect(serverInfo.authStatus?.status).toEqual('authenticated')
-            if (serverInfo.authStatus?.status !== 'authenticated') {
+            await rateLimitedClient.initialize()
+            const authStatus = await rateLimitedClient.request('extensionConfiguration/status', null)
+            expect(authStatus?.authenticated).toBeTruthy()
+            if (!authStatus?.authenticated) {
                 throw new Error('unreachable')
             }
-            expect(serverInfo.authStatus.username).toStrictEqual('sourcegraphcodyclients-1-efapb')
+            expect(authStatus?.status).toEqual('authenticated')
+            if (authStatus?.status !== 'authenticated') {
+                throw new Error('unreachable')
+            }
+            expect(authStatus?.username).toStrictEqual('sourcegraphcodyclients-1-efapb')
         }, 10_000)
 
         // Skipped because Polly is failing to record the HTTP rate-limit error

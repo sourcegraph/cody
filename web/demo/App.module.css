@@ -1,5 +1,12 @@
 @import url('../../vscode/.storybook/static/vscode-themes/dark-modern.css');
 
+:root {
+    --vscode-font-size: 13px;
+    --vscode-editor-font-size: var(--vscode-font-size);
+    --vscode-font-family: -apple-system, BlinkMacSystemFont, 'Ubuntu', 'Droid Sans', 'Segoe WPC', 'Segoe UI', sans-serif;
+    --vscode-editor-font-family: 'Monaco', 'Consolas', monospace;
+}
+
 html,
 :host {
     tab-size: 4;

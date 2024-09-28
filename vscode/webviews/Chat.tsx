@@ -1,13 +1,13 @@
 import type React from 'react'
 import { useCallback, useEffect, useMemo, useRef } from 'react'
 
-import type {
-    AuthenticatedAuthStatus,
-    ChatMessage,
-    CodyIDE,
-    Guardrails,
-    Model,
-    PromptString,
+import {
+    type AuthenticatedAuthStatus,
+    type ChatMessage,
+    type CodyIDE,
+    GuardrailsPost,
+    type Model,
+    type PromptString,
 } from '@sourcegraph/cody-shared'
 import { Transcript, focusLastHumanMessageEditor } from './chat/Transcript'
 import type { VSCodeWrapper } from './utils/VSCodeApi'
@@ -20,15 +20,13 @@ import { WelcomeMessage } from './chat/components/WelcomeMessage'
 import { ScrollDown } from './components/ScrollDown'
 import type { View } from './tabs'
 import { useTelemetryRecorder } from './utils/telemetry'
-import { useUserAccountInfo } from './utils/useLegacyWebviewConfig'
+import { useLegacyWebviewConfig, useUserAccountInfo } from './utils/useLegacyWebviewConfig'
 
 interface ChatboxProps {
-    chatEnabled: boolean
     messageInProgress: ChatMessage | null
     transcript: ChatMessage[] | null
     models: Model[]
     vscodeAPI: Pick<VSCodeWrapper, 'postMessage' | 'onMessage'>
-    guardrails?: Guardrails
     scrollableParent?: HTMLElement | null
     showWelcomeMessage?: boolean
     showIDESnippetActions?: boolean
@@ -41,8 +39,6 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     transcript,
     models,
     vscodeAPI,
-    chatEnabled = true,
-    guardrails,
     scrollableParent,
     showWelcomeMessage = true,
     showIDESnippetActions = true,
@@ -55,6 +51,45 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     transcriptRef.current = transcript
 
     const userInfo = useUserAccountInfo()
+
+    const config = useLegacyWebviewConfig()
+
+    const guardrails = useMemo(() => {
+        return config.configFeatures.attribution
+            ? new GuardrailsPost((snippet: string) => {
+                  vscodeAPI.postMessage({
+                      command: 'attribution-search',
+                      snippet,
+                  })
+              })
+            : undefined
+    }, [config.configFeatures.attribution, vscodeAPI])
+    useEffect(
+        () =>
+            vscodeAPI.onMessage(message => {
+                switch (message.type) {
+                    case 'attribution':
+                        if (message.attribution) {
+                            guardrails!.notifyAttributionSuccess(message.snippet, {
+                                repositories: message.attribution.repositoryNames.map(name => {
+                                    return { name }
+                                }),
+                                limitHit: message.attribution.limitHit,
+                            })
+                        }
+                        if (message.error) {
+                            guardrails!.notifyAttributionFailure(
+                                message.snippet,
+                                new Error(message.error)
+                            )
+                        }
+                        break
+                }
+            }),
+        [vscodeAPI, guardrails]
+    )
+
+    const chatEnabled = config.configFeatures.chat
 
     const feedbackButtonsOnSubmit = useCallback(
         (text: string) => {

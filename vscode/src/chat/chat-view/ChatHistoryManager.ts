@@ -7,6 +7,7 @@ import {
     type UserLocalHistory,
     authStatus,
     combineLatest,
+    currentAuthStatusAuthed,
     distinctUntilChanged,
     startWith,
 } from '@sourcegraph/cody-shared'
@@ -42,10 +43,8 @@ class ChatHistoryManager implements vscode.Disposable {
         return chatHistory?.chat ? chatHistory.chat[sessionID] : null
     }
 
-    public async saveChat(
-        authStatus: AuthenticatedAuthStatus,
-        chat: SerializedChatTranscript
-    ): Promise<void> {
+    public async saveChat(chat: SerializedChatTranscript): Promise<void> {
+        const authStatus = currentAuthStatusAuthed()
         const history = localStorage.getChatHistory(authStatus)
         history.chat[chat.id] = chat
         await localStorage.setChatHistory(authStatus, history)

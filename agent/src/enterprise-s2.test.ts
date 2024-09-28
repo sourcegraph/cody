@@ -33,15 +33,16 @@ describe('Enterprise - S2 (close main branch)', { timeout: 5000 }, () => {
             stdio: 'inherit',
         })
 
-        const serverInfo = await s2EnterpriseClient.initialize()
+        await s2EnterpriseClient.initialize()
+        const authStatus = await s2EnterpriseClient.request('extensionConfiguration/status', null)
 
-        expect(serverInfo.authStatus?.authenticated).toBeTruthy()
-        if (!serverInfo.authStatus?.authenticated) {
+        expect(authStatus?.authenticated).toBeTruthy()
+        if (!authStatus?.authenticated) {
             throw new Error('unreachable')
         }
-        expect(serverInfo.authStatus?.status).toStrictEqual('authenticated')
-        if (serverInfo.authStatus?.status === 'authenticated') {
-            expect(serverInfo.authStatus?.username).toStrictEqual('codytesting')
+        expect(authStatus?.status).toStrictEqual('authenticated')
+        if (authStatus?.status === 'authenticated') {
+            expect(authStatus?.username).toStrictEqual('codytesting')
         }
     }, 10_000)
 

@@ -1,5 +1,11 @@
-import { forceHydration, hydrateAfterPostMessage, isErrorLike } from '@sourcegraph/cody-shared'
+import {
+    DOTCOM_URL,
+    forceHydration,
+    hydrateAfterPostMessage,
+    isErrorLike,
+} from '@sourcegraph/cody-shared'
 import type { ExtensionMessage } from 'cody-ai/src/chat/protocol'
+import type { ClientRequests } from 'cody-ai/src/jsonrpc/agent-protocol'
 import { type VSCodeWrapper, setVSCodeWrapper } from 'cody-ai/webviews/utils/VSCodeApi'
 import {
     type DependencyList,
@@ -32,8 +38,8 @@ interface AgentClient {
 }
 
 interface UseCodyWebAgentInput {
-    serverEndpoint: string
-    accessToken: string | null
+    serverEndpoint?: string
+    accessToken?: string
     createAgentWorker: () => Worker
     telemetryClientName?: string
     initialContext?: InitialContext
@@ -43,6 +49,7 @@ interface UseCodyWebAgentInput {
 interface UseCodyWebAgentResult {
     client: AgentClient | Error | null
     vscodeAPI: VSCodeWrapper | null
+    panelId: string | undefined
 }
 
 /**
@@ -51,26 +58,26 @@ interface UseCodyWebAgentResult {
  * main and web-worker threads, see agent.client.ts for more details
  */
 export function useCodyWebAgent(input: UseCodyWebAgentInput): UseCodyWebAgentResult {
-    const { serverEndpoint, accessToken, telemetryClientName, customHeaders, createAgentWorker } = input
+    const { telemetryClientName, customHeaders, createAgentWorker } = input
 
     const [panelId, setPanelId] = useState<string>()
     const [client, setClient] = useState<AgentClient | Error | null>(null)
 
     useEffectOnce(() => {
         createAgentClient({
+            serverEndpoint: input.serverEndpoint ?? DOTCOM_URL.toString(),
+            accessToken: input.accessToken,
             customHeaders,
             telemetryClientName,
             createAgentWorker,
             workspaceRootUri: '',
-            serverEndpoint: serverEndpoint,
-            accessToken: accessToken ?? '',
         })
             .then(setClient)
             .catch(error => {
                 console.error('Cody Web Agent creation failed', error)
                 setClient(() => error as Error)
             })
-    }, [accessToken, serverEndpoint, createAgentWorker, customHeaders, telemetryClientName])
+    }, [createAgentWorker, customHeaders, telemetryClientName])
 
     // Special override for chat creating for Cody Web, otherwise the create new chat doesn't work
     const createNewChat = useCallback(async (agent: AgentClient | Error | null) => {
@@ -93,7 +100,7 @@ export function useCodyWebAgent(input: UseCodyWebAgentInput): UseCodyWebAgentRes
     const isInitRef = useRef(false)
     const vscodeAPI = useVSCodeAPI({ panelId, createNewChat, client })
 
-    // Always create new chat when Cody Web is opened for the first time
+    // Create new chat when Cody Web is opened for the first time.
     useEffect(() => {
         // Skip panel creation if it already happened before
         // React in dev mode run all effect twice so it's important here to
@@ -106,7 +113,7 @@ export function useCodyWebAgent(input: UseCodyWebAgentInput): UseCodyWebAgentRes
         isInitRef.current = true
     }, [client, createNewChat])
 
-    return { client, vscodeAPI }
+    return { client, vscodeAPI, panelId }
 }
 
 interface useVSCodeAPIInput {
@@ -121,7 +128,7 @@ function useVSCodeAPI(input: useVSCodeAPIInput): VSCodeWrapper | null {
     const onMessageCallbacksRef = useRef<((message: ExtensionMessage) => void)[]>([])
 
     return useMemo<VSCodeWrapper | null>(() => {
-        if (!client) {
+        if (!client || panelId === null) {
             return null
         }
         if (!isErrorLike(client)) {
@@ -156,7 +163,7 @@ function useVSCodeAPI(input: useVSCodeAPIInput): VSCodeWrapper | null {
                     void client.rpc.sendRequest('webview/receiveMessage', {
                         id: panelId,
                         message: forceHydration(message),
-                    })
+                    } satisfies ClientRequests['webview/receiveMessage'][0])
                 }
             },
             onMessage: callback => {
