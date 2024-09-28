@@ -25,7 +25,6 @@ interface ChatboxProps {
     messageInProgress: ChatMessage | null
     transcript: ChatMessage[]
     vscodeAPI: Pick<VSCodeWrapper, 'postMessage' | 'onMessage'>
-    isTranscriptError: boolean
     guardrails?: Guardrails
     scrollableParent?: HTMLElement | null
     showWelcomeMessage?: boolean
@@ -38,7 +37,6 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     messageInProgress,
     transcript,
     vscodeAPI,
-    isTranscriptError,
     chatEnabled = true,
     guardrails,
     scrollableParent,
@@ -220,7 +218,6 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                 copyButtonOnSubmit={copyButtonOnSubmit}
                 insertButtonOnSubmit={insertButtonOnSubmit}
                 smartApply={smartApply}
-                isTranscriptError={isTranscriptError}
                 userInfo={userInfo}
                 chatEnabled={chatEnabled}
                 postMessage={postMessage}

@@ -37,7 +37,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     const [userHistory, setUserHistory] = useState<SerializedChatTranscript[]>()
 
     const [errorMessages, setErrorMessages] = useState<string[]>([])
-    const [isTranscriptError, setIsTranscriptError] = useState<boolean>(false)
 
     const dispatchClientAction = useClientActionDispatcher()
 
@@ -70,7 +69,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                             const msgLength = deserializedMessages.length - 1
                             setTranscript(deserializedMessages.slice(0, msgLength))
                             setMessageInProgress(deserializedMessages[msgLength])
-                            setIsTranscriptError(false)
                         } else {
                             setTranscript(deserializedMessages)
                             setMessageInProgress(null)
@@ -97,9 +95,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                         break
                     case 'view':
                         setView(message.view)
-                        break
-                    case 'transcript-errors':
-                        setIsTranscriptError(message.isTranscriptError)
                         break
                     case 'attribution':
                         if (message.attribution) {
@@ -202,7 +197,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                     messageInProgress={messageInProgress}
                     transcript={transcript}
                     vscodeAPI={vscodeAPI}
-                    isTranscriptError={isTranscriptError}
                     guardrails={guardrails}
                     userHistory={userHistory ?? []}
                     smartApplyEnabled={config.config.smartApply}

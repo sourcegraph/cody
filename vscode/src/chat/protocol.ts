@@ -154,7 +154,6 @@ export type ExtensionMessage =
     | ({ type: 'transcript' } & ExtensionTranscriptMessage)
     | { type: 'view'; view: View }
     | { type: 'errors'; errors: string }
-    | { type: 'transcript-errors'; isTranscriptError: boolean }
     | {
           type: 'clientAction'
           addContextItemsToLastHumanInput?: ContextItem[] | null | undefined
