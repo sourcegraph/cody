@@ -12,7 +12,8 @@ import {
 import { mockEnterpriseRepoMapping, testWithGitRemote } from './helpers'
 
 testWithGitRemote('@-mention repository', async ({ page, sidebar, server }) => {
-    mockEnterpriseRepoMapping(server, 'codehost.example/user/myrepo')
+    const userRepo = 'codehost.example/user/myrepo'
+    mockEnterpriseRepoMapping(server, userRepo)
 
     await sidebarSignin(page, sidebar)
     const [chatFrame, lastChatInput] = await createEmptyChatPanel(page)
@@ -40,11 +41,10 @@ testWithGitRemote('@-mention repository', async ({ page, sidebar, server }) => {
         } satisfies RepoSuggestionsSearchResponse,
     })
 
+    // Wait for the current user repo to be loaded before opening the mention menu.
+    await expect(chatInputMentions(lastChatInput)).toHaveText([userRepo])
     await openMentionsForProvider(chatFrame, lastChatInput, 'Remote Repositories')
     await expect(mentionMenuItems(chatFrame)).toHaveText(['a/b', 'c/d'])
     await selectMentionMenuItem(chatFrame, 'c/d')
-    await expect(chatInputMentions(lastChatInput)).toHaveText([
-        'codehost.example/user/myrepo',
-        'codehost.example/c/d',
-    ])
+    await expect(chatInputMentions(lastChatInput)).toHaveText([userRepo, 'codehost.example/c/d'])
 })
