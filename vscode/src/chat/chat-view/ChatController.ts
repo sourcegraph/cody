@@ -61,7 +61,6 @@ import {
     isRateLimitError,
     logError,
     modelsService,
-    parseMentionQuery,
     promiseFactoryToObservable,
     recordErrorToSpan,
     reformatBotMessageForChat,
@@ -109,10 +108,10 @@ import {
     handleCopiedCode,
     handleSmartApply,
 } from '../../services/utils/codeblock-action-tracker'
-import { openExternalLinks, openLocalFileWithRange } from '../../services/utils/workspace-action'
+import { openExternalLinks } from '../../services/utils/workspace-action'
 import { TestSupport } from '../../test-support'
 import type { MessageErrorType } from '../MessageProvider'
-import { getChatContextItemsForMention, getMentionMenuData } from '../context/chatContext'
+import { getMentionMenuData } from '../context/chatContext'
 import type { ChatIntentAPIClient } from '../context/chatIntentAPIClient'
 import { observeInitialContext } from '../initialContext'
 import {
@@ -130,7 +129,7 @@ import { chatHistory } from './ChatHistoryManager'
 import { CodyChatEditorViewType } from './ChatsController'
 import { type ContextRetriever, toStructuredMentions } from './ContextRetriever'
 import { InitDoer } from './InitDoer'
-import { getChatPanelTitle, openFile } from './chat-helpers'
+import { getChatPanelTitle } from './chat-helpers'
 import { type HumanInput, getPriorityContext } from './context'
 import { DefaultPrompter, type PromptInfo } from './prompt'
 
@@ -307,16 +306,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             case 'abort':
                 this.handleAbort()
                 break
-            case 'getUserContext': {
-                const result = await getChatContextItemsForMention({
-                    mentionQuery: parseMentionQuery(message.query, null),
-                })
-                await this.postMessage({
-                    type: 'userContextFiles',
-                    userContextFiles: result,
-                })
-                break
-            }
             case 'insert':
                 await handleCodeFromInsertAtCursor(message.text)
                 break
@@ -362,18 +351,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     viewColumn: vscode.ViewColumn.Beside,
                 })
                 break
-            case 'openFile':
-                await openFile(
-                    message.uri,
-                    message.range ?? undefined,
-                    this._webviewPanelOrView && 'viewColumn' in this._webviewPanelOrView
-                        ? this._webviewPanelOrView.viewColumn
-                        : undefined
-                )
-                break
-            case 'openLocalFileWithRange':
-                await openLocalFileWithRange(message.filePath, message.range ?? undefined)
-                break
             case 'newFile':
                 await handleCodeFromSaveToNewFile(message.text, this.editor)
                 break
@@ -399,9 +376,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 break
             case 'command':
                 vscode.commands.executeCommand(message.id, message.arg)
-                break
-            case 'event':
-                // no-op, legacy v1 telemetry has been removed. This should be removed as well.
                 break
             case 'recordEvent':
                 telemetryRecorder.recordEvent(

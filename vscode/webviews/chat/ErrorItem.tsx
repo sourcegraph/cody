@@ -61,13 +61,6 @@ const RateLimitErrorItem: React.FunctionComponent<{
     // biome-ignore lint/correctness/useExhaustiveDependencies: intentionally only logs once on mount
     React.useEffect(() => {
         // Log as abuseUsageLimit if pro user run into rate limit
-        postMessage({
-            command: 'event',
-            eventName: canUpgrade
-                ? 'CodyVSCodeExtension:upsellUsageLimitCTA:shown'
-                : 'CodyVSCodeExtension:abuseUsageLimitCTA:shown',
-            properties: { limit_type: 'chat_commands', tier },
-        })
         telemetryRecorder.recordEvent(
             canUpgrade ? 'cody.upsellUsageLimitCTA' : 'cody.abuseUsageLimitCTA',
             'shown',
@@ -83,11 +76,6 @@ const RateLimitErrorItem: React.FunctionComponent<{
     const onButtonClick = useCallback(
         (page: 'upgrade' | 'rate-limits', call_to_action: 'upgrade' | 'learn-more'): void => {
             // Log click event
-            postMessage({
-                command: 'event',
-                eventName: 'CodyVSCodeExtension:upsellUsageLimitCTA:clicked',
-                properties: { limit_type: 'chat_commands', call_to_action, tier },
-            })
             telemetryRecorder.recordEvent('cody.upsellUsageLimitCTA', 'clicked', {
                 privateMetadata: {
                     limit_type: 'chat_commands',
