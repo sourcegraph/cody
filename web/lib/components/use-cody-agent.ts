@@ -73,7 +73,6 @@ export function useCodyWebAgent(input: UseCodyWebAgentInput): UseCodyWebAgentRes
     }, [accessToken, serverEndpoint, createAgentWorker, customHeaders, telemetryClientName])
 
     // Special override for chat creating for Cody Web, otherwise the create new chat doesn't work
-    // TODO: Move this special logic to the Cody Web agent handle "chat/web/new"
     const createNewChat = useCallback(async (agent: AgentClient | Error | null) => {
         if (!agent || isErrorLike(agent)) {
             return
@@ -82,7 +81,7 @@ export function useCodyWebAgent(input: UseCodyWebAgentInput): UseCodyWebAgentRes
         const { panelId, chatId } = await agent.rpc.sendRequest<{
             panelId: string
             chatId: string
-        }>('chat/web/new', null)
+        }>('chat/sidebar/new', null)
         setPanelId(panelId)
 
         await agent.rpc.sendRequest('webview/receiveMessage', {

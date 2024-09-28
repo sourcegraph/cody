@@ -53,6 +53,7 @@ import * as uuid from 'uuid'
 import type { MessageConnection } from 'vscode-jsonrpc'
 import type { CommandResult } from '../../vscode/src/CommandResult'
 import { formatURL } from '../../vscode/src/auth/auth'
+import type { ChatController } from '../../vscode/src/chat/chat-view/ChatController'
 import { executeExplainCommand, executeSmellCommand } from '../../vscode/src/commands/execute'
 import type { CodyCommandArgs } from '../../vscode/src/commands/types'
 import { loadTscRetriever } from '../../vscode/src/completions/context/retrievers/tsc/load-tsc-retriever'
@@ -1215,23 +1216,11 @@ export class Agent extends MessageHandler implements ExtensionClient {
             )
         })
 
-        this.registerAuthenticatedRequest('chat/web/new', async () => {
-            const panelId = await this.createChatPanel(
-                Promise.resolve({
-                    type: 'chat',
-                    session: await vscode.commands.executeCommand('cody.chat.newEditorPanel'),
-                })
-            )
-
-            const chatId = this.webPanels.panels.get(panelId)?.chatID ?? ''
-            return { panelId, chatId }
-        })
-
         this.registerAuthenticatedRequest('chat/sidebar/new', async () => {
             const panelId = await this.createChatPanel(
                 Promise.resolve({
                     type: 'chat',
-                    session: await vscode.commands.executeCommand('cody.chat.newPanel'),
+                    session: await vscode.commands.executeCommand<ChatController>('cody.chat.newPanel'),
                 })
             )
 
@@ -1645,9 +1634,12 @@ export class Agent extends MessageHandler implements ExtensionClient {
             throw new TypeError(`Expected chat command result, got ${result.type}`)
         }
 
-        const { sessionID, webviewPanelOrView: webviewPanel } = result.session ?? {}
-        if (sessionID === undefined || webviewPanel === undefined) {
-            throw new Error('chatID is undefined')
+        if (!result.session) {
+            throw new TypeError('new chat panel has no session')
+        }
+        const { sessionID, webviewPanelOrView: webviewPanel } = result.session
+        if (webviewPanel === undefined) {
+            throw new Error('new chat panel has no webviewPanel')
         }
         if (!(webviewPanel instanceof AgentWebviewPanel)) {
             // TODO: For WebViews we don't want to throw here, nor do we want to set chatID
