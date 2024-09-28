@@ -75,6 +75,10 @@ export async function createAgentClient({
             completions: 'none',
             webview: 'agentic',
             disabledMentionsProviders: [FILE_CONTEXT_MENTION_PROVIDER.id],
+            webviewNativeConfig: {
+                view: 'single',
+                cspSource: '',
+            },
         },
         extensionConfiguration: {
             accessToken,

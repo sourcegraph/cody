@@ -5,6 +5,7 @@ import {
     type AuthenticatedAuthStatus,
     CODY_PASSTHROUGH_VSCODE_OPEN_COMMAND_ID,
     type ChatClient,
+    CodyIDE,
     DEFAULT_EVENT_SOURCE,
     type Guardrails,
     authStatus,
@@ -50,7 +51,7 @@ interface Options extends MessageProviderOptions {
 
 export class ChatsController implements vscode.Disposable {
     // Chat view in the panel (typically in the sidebar)
-    private panel: ChatController
+    private readonly panel: ChatController
 
     // Chat views in editor panels
     private editors: ChatController[] = []
@@ -138,15 +139,23 @@ export class ChatsController implements vscode.Disposable {
                 vscode.commands.executeCommand('cody.chat.focus')
             ),
 
-            vscode.commands.registerCommand('cody.chat.newPanel', async () => {
+            vscode.commands.registerCommand('cody.chat.newPanel', async (): Promise<ChatController> => {
                 localStorage.setLastUsedChatModality('sidebar')
                 const isVisible = this.panel.isVisible()
                 await this.panel.clearAndRestartSession()
                 if (!isVisible) {
-                    await vscode.commands.executeCommand('cody.chat.focus')
+                    // In VS Code, `cody.chat.focus` is an automatically registered command that
+                    // causes the webview to be resolved. Outside of VS Code, we need to ensure that
+                    // the webview is resolved manually.
+                    if (getConfiguration().agentIDE === CodyIDE.VSCode) {
+                        await vscode.commands.executeCommand('cody.chat.focus')
+                    } else {
+                        await this.panel.createWebviewViewOrPanel()
+                    }
                 }
+                return this.panel
             }),
-            vscode.commands.registerCommand('cody.chat.newEditorPanel', () => {
+            vscode.commands.registerCommand('cody.chat.newEditorPanel', (): Promise<ChatController> => {
                 localStorage.setLastUsedChatModality('editor')
                 return this.getOrCreateEditorChatController()
             }),
