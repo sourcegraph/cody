@@ -33,7 +33,7 @@ const HAS_AUTHENTICATED_BEFORE_KEY = 'has-authenticated-before'
 
 class AuthProvider implements vscode.Disposable {
     private status = new Subject<AuthStatus>()
-    private refreshRequests = new Subject<void>()
+    private refreshRequests = new Subject<true>()
 
     /**
      * Credentials that were already validated with
@@ -68,8 +68,8 @@ class AuthProvider implements vscode.Disposable {
                 this.refreshRequests.pipe(startWith(undefined)),
             ])
                 .pipe(
-                    abortableOperation(async ([config], signal) => {
-                        if (clientCapabilities().isCodyWeb) {
+                    abortableOperation(async ([config, isRefreshRequested], signal) => {
+                        if (clientCapabilities().isCodyWeb && !isRefreshRequested) {
                             // Cody Web calls {@link AuthProvider.validateAndStoreCredentials}
                             // explicitly. This early exit prevents duplicate authentications during
                             // the initial load.
@@ -143,7 +143,7 @@ class AuthProvider implements vscode.Disposable {
      */
     public refresh(): void {
         this.lastValidatedAndStoredCredentials.next(null)
-        this.refreshRequests.next()
+        this.refreshRequests.next(true)
     }
 
     public async validateAndStoreCredentials(
