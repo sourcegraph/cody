@@ -1,7 +1,11 @@
 import {
     type ChatModel,
+    type ConfigurationSubsetForWebview,
+    type LegacyWebviewConfig,
+    type LocalEnv,
     TokenCounterUtils,
     clientCapabilities,
+    combineLatest,
     distinctUntilChanged,
     firstResultFromOperation,
     pendingOperation,
@@ -10,6 +14,7 @@ import {
     shareReplay,
     skip,
     skipPendingOperation,
+    switchMap,
 } from '@sourcegraph/cody-shared'
 import * as uuid from 'uuid'
 import * as vscode from 'vscode'
@@ -23,7 +28,6 @@ import {
     type ChatClient,
     type ChatMessage,
     ClientConfigSingleton,
-    type CodyClientConfig,
     type CompletionParameters,
     type ContextItem,
     type ContextItemOpenCtx,
@@ -46,13 +50,11 @@ import {
     createMessageAPIForExtension,
     currentAuthStatus,
     currentAuthStatusAuthed,
-    currentResolvedConfig,
     featureFlagProvider,
     getContextForChatMessage,
     graphqlClient,
     hydrateAfterPostMessage,
     inputTextWithoutContextChipsFromPromptEditorState,
-    isAbortError,
     isAbortErrorOrSocketHangUp,
     isContextWindowLimitError,
     isDefined,
@@ -76,7 +78,7 @@ import {
 import type { Span } from '@opentelemetry/api'
 import { captureException } from '@sentry/core'
 import type { TelemetryEventParameters } from '@sourcegraph/telemetry'
-import { map } from 'observable-fns'
+import { Observable, map } from 'observable-fns'
 import type { URI } from 'vscode-uri'
 import { View } from '../../../webviews/tabs/types'
 import { redirectToEndpointLogin, showSignOutMenu } from '../../auth/auth'
@@ -97,6 +99,7 @@ import {
     type RepoRevMetaData,
     publicRepoMetadataIfAllWorkspaceReposArePublic,
 } from '../../repository/githubRepoMetadata'
+import { workspaceFolders } from '../../repository/remoteRepos'
 import { authProvider } from '../../services/AuthProvider'
 import { AuthProviderSimplified } from '../../services/AuthProviderSimplified'
 import { localStorage } from '../../services/LocalStorageProvider'
@@ -116,9 +119,7 @@ import { observeInitialContext } from '../initialContext'
 import {
     CODY_BLOG_URL_o1_WAITLIST,
     type ChatSubmitType,
-    type ConfigurationSubsetForWebview,
     type ExtensionMessage,
-    type LocalEnv,
     type SmartApplyResult,
     type WebviewMessage,
 } from '../protocol'
@@ -227,14 +228,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         }
 
         this.disposables.push(
-            subscriptionDisposable(
-                authStatus.subscribe(() => {
-                    // Run this async because this method may be called during initialization
-                    // and awaiting on this.postMessage may result in a deadlock
-                    void this.sendConfig()
-                })
-            ),
-
             // Reset the chat when the endpoint changes so that we don't try to use old models.
             subscriptionDisposable(
                 authStatus
@@ -261,9 +254,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
      */
     private async onDidReceiveMessage(message: WebviewMessage): Promise<void> {
         switch (message.command) {
-            case 'ready':
-                await this.handleReady()
-                break
             case 'initialized':
                 await this.handleInitialized()
                 this.setWebviewToChat()
@@ -489,79 +479,65 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyExperimentalOneBox)
     )
 
-    private async getConfigForWebview(): Promise<ConfigurationSubsetForWebview & LocalEnv> {
-        const { configuration, auth } = await currentResolvedConfig()
-        const sidebarViewOnly = this.extensionClient.capabilities?.webviewNativeConfig?.view === 'single'
-        const isEditorViewType = this.webviewPanelOrView?.viewType === 'cody.editorPanel'
-        const webviewType = isEditorViewType && !sidebarViewOnly ? 'editor' : 'sidebar'
-
-        return {
-            uiKindIsWeb: vscode.env.uiKind === vscode.UIKind.Web,
-            serverEndpoint: auth.serverEndpoint,
-            experimentalNoodle: configuration.experimentalNoodle,
-            smartApply: this.isSmartApplyEnabled(),
-            webviewType,
-            multipleWebviewsEnabled: !sidebarViewOnly,
-            internalDebugContext: configuration.internalDebugContext,
-        }
-    }
-
     // =======================================================================
     // #region top-level view action handlers
     // =======================================================================
 
-    // When the webview sends the 'ready' message, respond by posting the view config
-    private async handleReady(): Promise<void> {
-        await this.sendConfig()
-    }
+    private legacyConfig: Observable<LegacyWebviewConfig | typeof pendingOperation> = combineLatest([
+        authStatus,
+        resolvedConfig,
+        workspaceFolders,
+        ClientConfigSingleton.getInstance().changes,
+    ]).pipe(
+        switchMap(
+            ([authStatus, { configuration }, workspaceFolders, clientConfig]): Observable<
+                LegacyWebviewConfig | typeof pendingOperation
+            > => {
+                // Don't emit config if we're verifying auth status to avoid UI auth flashes on the client
+                if (authStatus.pendingValidation) {
+                    return Observable.of(pendingOperation)
+                }
 
-    private async sendConfig(): Promise<void> {
-        const authStatus = currentAuthStatus()
+                if (clientConfig === pendingOperation) {
+                    return Observable.of(pendingOperation)
+                }
 
-        // Don't emit config if we're verifying auth status to avoid UI auth flashes on the client
-        if (authStatus.pendingValidation) {
-            return
-        }
+                const sidebarViewOnly =
+                    this.extensionClient.capabilities?.webviewNativeConfig?.view === 'single'
+                const configForWebview: ConfigurationSubsetForWebview & LocalEnv = {
+                    uiKindIsWeb: vscode.env.uiKind === vscode.UIKind.Web,
+                    serverEndpoint: authStatus.endpoint,
+                    experimentalNoodle: configuration.experimentalNoodle,
+                    smartApply: this.isSmartApplyEnabled(),
+                    webviewType:
+                        this.webviewPanelOrView?.viewType === 'cody.editorPanel' && !sidebarViewOnly
+                            ? 'editor'
+                            : 'sidebar',
+                    multipleWebviewsEnabled: !sidebarViewOnly,
+                    internalDebugContext: configuration.internalDebugContext,
+                }
 
-        const configForWebview = await this.getConfigForWebview()
-        const workspaceFolderUris =
-            vscode.workspace.workspaceFolders?.map(folder => folder.uri.toString()) ?? []
+                const workspaceFolderUris = workspaceFolders?.map(folder => folder.uri.toString()) ?? []
 
-        const abortController = new AbortController()
-        let clientConfig: CodyClientConfig | undefined
-        try {
-            clientConfig = await ClientConfigSingleton.getInstance().getConfig(abortController.signal)
-            if (abortController.signal.aborted) {
-                return
+                return Observable.of<LegacyWebviewConfig>({
+                    config: configForWebview,
+                    clientCapabilities: clientCapabilities(),
+                    authStatus,
+                    workspaceFolderUris,
+                    configFeatures: {
+                        // If clientConfig is undefined means we were unable to fetch the client configuration -
+                        // most likely because we are not authenticated yet. We need to be able to display the
+                        // chat panel (which is where all login functionality is) in this case, so we fallback
+                        // to some default values:
+                        chat: clientConfig?.chatEnabled ?? true,
+                        attribution: clientConfig?.attributionEnabled ?? false,
+                        serverSentModels: clientConfig?.modelsAPIEnabled ?? false,
+                    },
+                    isDotComUser: isDotCom(authStatus),
+                })
             }
-        } catch (error) {
-            if (isAbortError(error) || abortController.signal.aborted) {
-                return
-            }
-            throw error
-        }
-
-        await this.postMessage({
-            type: 'config',
-            config: configForWebview,
-            clientCapabilities: clientCapabilities(),
-            authStatus: authStatus,
-            workspaceFolderUris,
-            configFeatures: {
-                // If clientConfig is undefined means we were unable to fetch the client configuration -
-                // most likely because we are not authenticated yet. We need to be able to display the
-                // chat panel (which is where all login functionality is) in this case, so we fallback
-                // to some default values:
-                chat: clientConfig?.chatEnabled ?? true,
-                attribution: clientConfig?.attributionEnabled ?? false,
-                serverSentModels: clientConfig?.modelsAPIEnabled ?? false,
-            },
-            isDotComUser: isDotCom(authStatus),
-        })
-        logDebug('ChatController', 'updateViewConfig', {
-            verbose: configForWebview,
-        })
-    }
+        )
+    )
 
     private initDoer = new InitDoer<boolean | undefined>()
     private async handleInitialized(): Promise<void> {
@@ -1614,6 +1590,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     },
                 }),
                 {
+                    legacyConfig: () => this.legacyConfig.pipe(skipPendingOperation()),
                     mentionMenuData: query =>
                         getMentionMenuData({
                             disableProviders:

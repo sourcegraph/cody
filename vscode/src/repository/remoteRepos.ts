@@ -25,12 +25,11 @@ export interface RemoteRepo {
 
 const MAX_REPO_COUNT = 10
 
-const workspaceFolders: Observable<readonly vscode.WorkspaceFolder[] | undefined> = fromVSCodeEvent(
-    vscode.workspace.onDidChangeWorkspaceFolders
-).pipe(
-    startWith(undefined),
-    map(() => vscode.workspace.workspaceFolders)
-)
+export const workspaceFolders: Observable<readonly vscode.WorkspaceFolder[] | undefined> =
+    fromVSCodeEvent(vscode.workspace.onDidChangeWorkspaceFolders).pipe(
+        startWith(undefined),
+        map(() => vscode.workspace.workspaceFolders)
+    )
 
 /**
  * A list of all remote repositories for all workspace root folders.

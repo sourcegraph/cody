@@ -23,7 +23,6 @@ import { useClientActionDispatcher } from 'cody-ai/webviews/client/clientState'
 import type { View } from 'cody-ai/webviews/tabs'
 import { ComposedWrappers, type Wrapper } from 'cody-ai/webviews/utils/composeWrappers'
 import { createWebviewTelemetryRecorder } from 'cody-ai/webviews/utils/telemetry'
-import type { Config } from 'cody-ai/webviews/utils/useConfig'
 
 import type { InitialContext } from '../types'
 
@@ -109,7 +108,6 @@ const CodyWebPanel: FC<CodyWebPanelProps> = props => {
     const [errorMessages, setErrorMessages] = useState<string[]>([])
     const [messageInProgress, setMessageInProgress] = useState<ChatMessage | null>(null)
     const [transcript, setTranscript] = useState<ChatMessage[]>([])
-    const [config, setConfig] = useState<Config | null>(null)
     const [view, setView] = useState<View | undefined>()
 
     useLayoutEffect(() => {
@@ -134,11 +132,6 @@ const CodyWebPanel: FC<CodyWebPanelProps> = props => {
                     break
                 case 'view':
                     setView(message.view)
-                    break
-                case 'config':
-                    message.config.webviewType = 'sidebar'
-                    message.config.multipleWebviewsEnabled = false
-                    setConfig(message)
                     break
                 case 'clientAction':
                     dispatchClientAction(message)
@@ -216,8 +209,8 @@ const CodyWebPanel: FC<CodyWebPanelProps> = props => {
     }, [initialContextData])
 
     const wrappers = useMemo<Wrapper[]>(
-        () => getAppWrappers(vscodeAPI, telemetryRecorder, config, initialContext),
-        [vscodeAPI, telemetryRecorder, config, initialContext]
+        () => getAppWrappers(vscodeAPI, telemetryRecorder, initialContext),
+        [vscodeAPI, telemetryRecorder, initialContext]
     )
 
     const CONTEXT_MENTIONS_SETTINGS = useMemo<ChatMentionsSettings>(() => {
@@ -229,7 +222,7 @@ const CodyWebPanel: FC<CodyWebPanelProps> = props => {
         }
     }, [initialContextData])
 
-    const isLoading = !config || !view
+    const isLoading = !view
 
     return (
         <div className={className} data-cody-web-chat={true}>
@@ -242,7 +235,6 @@ const CodyWebPanel: FC<CodyWebPanelProps> = props => {
                             errorMessages={errorMessages}
                             setErrorMessages={setErrorMessages}
                             attributionEnabled={false}
-                            configuration={config}
                             chatEnabled={true}
                             showWelcomeMessage={true}
                             showIDESnippetActions={false}

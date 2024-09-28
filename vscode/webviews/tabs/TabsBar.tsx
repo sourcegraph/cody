@@ -20,7 +20,7 @@ import { CodyIDE, FeatureFlag, isDefined } from '@sourcegraph/cody-shared'
 import { type FC, Fragment, forwardRef, useCallback, useMemo, useState } from 'react'
 import { Kbd } from '../components/Kbd'
 import { Tooltip, TooltipContent, TooltipTrigger } from '../components/shadcn/ui/tooltip'
-import { useConfig } from '../utils/useConfig'
+import { useLegacyWebviewConfig } from '../utils/useLegacyWebviewConfig'
 
 import { useExtensionAPI } from '@sourcegraph/prompt-editor'
 import { downloadChatHistory } from '../chat/downloadChatHistory'
@@ -69,7 +69,7 @@ export const TabsBar: React.FC<TabsBarProps> = ({ currentView, setView, IDE }) =
     const tabItems = useTabs({ IDE })
     const {
         config: { webviewType, multipleWebviewsEnabled },
-    } = useConfig()
+    } = useLegacyWebviewConfig()
     const currentViewSubActions = tabItems.find(tab => tab.view === currentView)?.subActions ?? []
 
     const handleClick = useCallback(
@@ -322,7 +322,7 @@ function useTabs(input: Pick<TabsBarProps, 'IDE'>): TabConfig[] {
     const { IDE } = input
     const {
         config: { multipleWebviewsEnabled },
-    } = useConfig()
+    } = useLegacyWebviewConfig()
     const isUnifiedPromptsAvailable = useFeatureFlag(FeatureFlag.CodyUnifiedPrompts)
 
     const extensionAPI = useExtensionAPI<'userHistory'>()

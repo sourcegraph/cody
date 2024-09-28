@@ -17,7 +17,7 @@ import { WelcomeMessage } from './chat/components/WelcomeMessage'
 import { ScrollDown } from './components/ScrollDown'
 import type { View } from './tabs'
 import { useTelemetryRecorder } from './utils/telemetry'
-import { useUserAccountInfo } from './utils/useConfig'
+import { useUserAccountInfo } from './utils/useLegacyWebviewConfig'
 
 interface ChatboxProps {
     chatEnabled: boolean

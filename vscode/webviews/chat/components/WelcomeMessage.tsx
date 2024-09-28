@@ -14,8 +14,8 @@ import { Kbd } from '../../components/Kbd'
 import { PromptListSuitedForNonPopover } from '../../components/promptList/PromptList'
 import { onPromptSelectInPanel, onPromptSelectInPanelActionLabels } from '../../prompts/PromptsTab'
 import type { View } from '../../tabs'
-import { useConfig } from '../../utils/useConfig'
 import { useFeatureFlag } from '../../utils/useFeatureFlags'
+import { useLegacyWebviewConfig } from '../../utils/useLegacyWebviewConfig'
 
 const MenuExample: FunctionComponent<{ children: React.ReactNode }> = ({ children }) => (
     <span className="tw-p-1 tw-rounded tw-text-keybinding-foreground tw-border tw-border-keybinding-border tw-bg-keybinding-background tw-whitespace-nowrap">
@@ -57,7 +57,7 @@ export const WelcomeMessage: FunctionComponent<WelcomeMessageProps> = ({ setView
 
     const isUnifiedPromptsAvailable = useFeatureFlag(FeatureFlag.CodyUnifiedPrompts)
 
-    const config = useConfig()
+    const config = useLegacyWebviewConfig()
 
     return (
         <div className="tw-flex-1 tw-flex tw-flex-col tw-items-start tw-w-full tw-px-6 tw-gap-6 tw-transition-all">

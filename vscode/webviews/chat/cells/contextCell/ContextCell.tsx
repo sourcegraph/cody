@@ -14,8 +14,8 @@ import {
 import { Tooltip, TooltipContent, TooltipTrigger } from '../../../components/shadcn/ui/tooltip'
 import { SourcegraphLogo } from '../../../icons/SourcegraphLogo'
 import { useTelemetryRecorder } from '../../../utils/telemetry'
-import { useConfig } from '../../../utils/useConfig'
 import { useExperimentalOneBox } from '../../../utils/useExperimentalOneBox'
+import { useLegacyWebviewConfig } from '../../../utils/useLegacyWebviewConfig'
 import { LoadingDots } from '../../components/LoadingDots'
 import { Cell } from '../Cell'
 import { NON_HUMAN_CELL_AVATAR_SIZE } from '../messageCell/assistant/AssistantMessageCell'
@@ -89,7 +89,7 @@ export const ContextCell: FunctionComponent<{
 
         const {
             config: { internalDebugContext },
-        } = useConfig()
+        } = useLegacyWebviewConfig()
 
         const telemetryRecorder = useTelemetryRecorder()
         const oneboxEnabled = useExperimentalOneBox()

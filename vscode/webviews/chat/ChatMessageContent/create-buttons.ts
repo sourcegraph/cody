@@ -1,3 +1,4 @@
+import type { LegacyWebviewConfig } from '@sourcegraph/cody-shared'
 import type { FixupTaskID } from '../../../src/non-stop/FixupTask'
 import { CodyTaskState } from '../../../src/non-stop/state'
 import {
@@ -12,7 +13,6 @@ import {
     TickIcon,
 } from '../../icons/CodeBlockActionIcons'
 import { getVSCodeAPI } from '../../utils/VSCodeApi'
-import type { Config } from '../../utils/useConfig'
 import type { PriorHumanMessageInfo } from '../cells/messageCell/assistant/AssistantMessageCell'
 import type { CodeBlockActionsProps } from './ChatMessageContent'
 import styles from './ChatMessageContent.module.css'
@@ -79,7 +79,7 @@ export function createButtons(
 export function createButtonsExperimentalUI(
     preText: string,
     humanMessage: PriorHumanMessageInfo | null,
-    config: Config,
+    config: LegacyWebviewConfig,
     codeBlockName?: string, // The name of the code block, can be file name or 'command'.
     copyButtonOnSubmit?: CodeBlockActionsProps['copyButtonOnSubmit'],
     insertButtonOnSubmit?: CodeBlockActionsProps['insertButtonOnSubmit'],

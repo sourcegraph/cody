@@ -8,7 +8,7 @@ import { ModelSelectField } from '../../../../../../components/modelSelectField/
 import type { PromptOrDeprecatedCommand } from '../../../../../../components/promptList/PromptList'
 import { PromptSelectField } from '../../../../../../components/promptSelectField/PromptSelectField'
 import { onPromptSelectInPanel } from '../../../../../../prompts/PromptsTab'
-import { useConfig } from '../../../../../../utils/useConfig'
+import { useLegacyWebviewConfig } from '../../../../../../utils/useLegacyWebviewConfig'
 import { AddContextButton } from './AddContextButton'
 import { SubmitButton, type SubmitButtonState } from './SubmitButton'
 
@@ -120,7 +120,7 @@ const ModelSelectFieldToolbarItem: FunctionComponent<{
     focusEditor?: () => void
     className?: string
 }> = ({ userInfo, focusEditor, className }) => {
-    const config = useConfig()
+    const config = useLegacyWebviewConfig()
 
     const api = useExtensionAPI()
 

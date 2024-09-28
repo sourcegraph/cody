@@ -1,9 +1,11 @@
 import {
-    AUTH_STATUS_FIXTURE_AUTHED,
     AUTH_STATUS_FIXTURE_UNAUTHED,
     CLIENT_CAPABILITIES_FIXTURE,
+    type LegacyWebviewConfig,
 } from '@sourcegraph/cody-shared'
+import { ExtensionAPIProviderForTestsOnly, MOCK_API } from '@sourcegraph/prompt-editor'
 import type { Meta, StoryObj } from '@storybook/react'
+import { Observable } from 'observable-fns'
 import { CodyPanel } from './CodyPanel'
 import { FIXTURE_TRANSCRIPT } from './chat/fixtures'
 import { VSCodeWebview } from './storybook/VSCodeStoryDecorator'
@@ -22,11 +24,6 @@ const meta: Meta<typeof CodyPanel> = {
         },
         view: View.Chat,
         setView: () => {},
-        configuration: {
-            config: {} as any,
-            clientCapabilities: CLIENT_CAPABILITIES_FIXTURE,
-            authStatus: AUTH_STATUS_FIXTURE_AUTHED,
-        },
     },
     decorators: [VSCodeWebview],
 }
@@ -34,14 +31,22 @@ const meta: Meta<typeof CodyPanel> = {
 export default meta
 
 export const NetworkError: StoryObj<typeof meta> = {
-    args: {
-        configuration: {
-            config: {} as any,
-            clientCapabilities: CLIENT_CAPABILITIES_FIXTURE,
-            authStatus: {
-                ...AUTH_STATUS_FIXTURE_UNAUTHED,
-                showNetworkError: true,
-            },
-        },
-    },
+    render: args => (
+        <ExtensionAPIProviderForTestsOnly
+            value={{
+                ...MOCK_API,
+                legacyConfig: () =>
+                    Observable.of({
+                        config: {} as any,
+                        clientCapabilities: CLIENT_CAPABILITIES_FIXTURE,
+                        authStatus: {
+                            ...AUTH_STATUS_FIXTURE_UNAUTHED,
+                            showNetworkError: true,
+                        },
+                    } satisfies Partial<LegacyWebviewConfig> as LegacyWebviewConfig),
+            }}
+        >
+            <CodyPanel {...args} />
+        </ExtensionAPIProviderForTestsOnly>
+    ),
 }

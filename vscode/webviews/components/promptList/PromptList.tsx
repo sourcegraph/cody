@@ -3,8 +3,8 @@ import clsx from 'clsx'
 import { PlusIcon } from 'lucide-react'
 import { type ComponentProps, type FunctionComponent, useCallback, useState } from 'react'
 import { useTelemetryRecorder } from '../../utils/telemetry'
-import { useConfig } from '../../utils/useConfig'
 import { useDebounce } from '../../utils/useDebounce'
+import { useLegacyWebviewConfig } from '../../utils/useLegacyWebviewConfig'
 import { Badge } from '../shadcn/ui/badge'
 import { Button } from '../shadcn/ui/button'
 import {
@@ -139,7 +139,7 @@ export const PromptList: React.FunctionComponent<{
         ]
     )
 
-    const endpointURL = new URL(useConfig().authStatus.endpoint)
+    const endpointURL = new URL(useLegacyWebviewConfig().authStatus.endpoint)
 
     // Don't show builtin commands to insert in the prompt editor.
     const filteredCommands = showOnlyPromptInsertableCommands
