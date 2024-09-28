@@ -1176,10 +1176,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         if (type === 'transcript') {
             this.chatBuilder.addErrorAsBotMessage(error, ChatBuilder.NO_MODEL)
             this.postViewTranscript()
-            void this.postMessage({
-                type: 'transcript-errors',
-                isTranscriptError: true,
-            })
             return
         }
 

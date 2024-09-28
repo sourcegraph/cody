@@ -16,7 +16,6 @@ const meta: Meta<typeof CodyPanel> = {
             postMessage: () => {},
             onMessage: () => () => {},
         },
-        isTranscriptError: false,
         view: View.Chat,
         setView: () => {},
         configuration: {

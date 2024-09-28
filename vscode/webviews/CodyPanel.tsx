@@ -26,7 +26,6 @@ export const CodyPanel: FunctionComponent<
         | 'messageInProgress'
         | 'transcript'
         | 'vscodeAPI'
-        | 'isTranscriptError'
         | 'guardrails'
         | 'showWelcomeMessage'
         | 'showIDESnippetActions'
@@ -44,7 +43,6 @@ export const CodyPanel: FunctionComponent<
     messageInProgress,
     transcript,
     vscodeAPI,
-    isTranscriptError,
     guardrails,
     showIDESnippetActions,
     showWelcomeMessage,
@@ -93,7 +91,6 @@ export const CodyPanel: FunctionComponent<
                         messageInProgress={messageInProgress}
                         transcript={transcript}
                         vscodeAPI={vscodeAPI}
-                        isTranscriptError={isTranscriptError}
                         guardrails={attributionEnabled ? guardrails : undefined}
                         showIDESnippetActions={showIDESnippetActions}
                         showWelcomeMessage={showWelcomeMessage}

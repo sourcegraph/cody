@@ -110,7 +110,6 @@ const CodyWebPanel: FC<CodyWebPanelProps> = props => {
 
     const dispatchClientAction = useClientActionDispatcher()
     const [errorMessages, setErrorMessages] = useState<string[]>([])
-    const [isTranscriptError, setIsTranscriptError] = useState<boolean>(false)
     const [messageInProgress, setMessageInProgress] = useState<ChatMessage | null>(null)
     const [transcript, setTranscript] = useState<ChatMessage[]>([])
     const [config, setConfig] = useState<Config | null>(null)
@@ -128,7 +127,6 @@ const CodyWebPanel: FC<CodyWebPanelProps> = props => {
                         const msgLength = deserializedMessages.length - 1
                         setTranscript(deserializedMessages.slice(0, msgLength))
                         setMessageInProgress(deserializedMessages[msgLength])
-                        setIsTranscriptError(false)
                     } else {
                         setTranscript(deserializedMessages)
                         setMessageInProgress(null)
@@ -140,9 +138,6 @@ const CodyWebPanel: FC<CodyWebPanelProps> = props => {
                     break
                 case 'view':
                     setView(message.view)
-                    break
-                case 'transcript-errors':
-                    setIsTranscriptError(message.isTranscriptError)
                     break
                 case 'config':
                     message.config.webviewType = 'sidebar'
@@ -265,7 +260,6 @@ const CodyWebPanel: FC<CodyWebPanelProps> = props => {
                                 messageInProgress={messageInProgress}
                                 transcript={transcript}
                                 vscodeAPI={vscodeAPI}
-                                isTranscriptError={isTranscriptError}
                             />
                         </ComposedWrappers>
                     </ChatMentionContext.Provider>
