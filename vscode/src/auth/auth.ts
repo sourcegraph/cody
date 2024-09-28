@@ -395,12 +395,19 @@ export async function validateCredentials(
         auth: config.auth,
         clientState: config.clientState,
     })
-    const [{ enabled: siteHasCodyEnabled, version: siteVersion }, codyLLMConfiguration, userInfo] =
-        await Promise.all([
-            client.isCodyEnabled(signal),
-            client.getCodyLLMConfiguration(signal),
-            client.getCurrentUserInfo(signal),
-        ])
+    const [
+        { enabled: siteHasCodyEnabled, version: siteVersion },
+        codyLLMConfiguration,
+        userInfo,
+        proStatus,
+    ] = await Promise.all([
+        client.isCodyEnabled(signal),
+        client.getCodyLLMConfiguration(signal),
+        client.getCurrentUserInfo(signal),
+        isDotCom(config.auth.serverEndpoint)
+            ? client.getCurrentUserCodySubscription(signal)
+            : Promise.resolve(null),
+    ])
     signal?.throwIfAborted()
 
     logDebug(
@@ -444,8 +451,6 @@ export async function validateCredentials(
         })
     }
 
-    const proStatus = await client.getCurrentUserCodySubscription()
-    signal?.throwIfAborted()
     const isActiveProUser =
         proStatus !== null &&
         'plan' in proStatus &&

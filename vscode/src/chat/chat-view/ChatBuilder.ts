@@ -257,6 +257,10 @@ export class ChatBuilder {
      * Serializes to the transcript JSON format.
      */
     public toSerializedChatTranscript(): SerializedChatTranscript | undefined {
+        if (this.isEmpty()) {
+            return undefined
+        }
+
         const interactions: SerializedChatInteraction[] = []
         for (let i = 0; i < this.messages.length; i += 2) {
             const humanMessage = this.messages[i]

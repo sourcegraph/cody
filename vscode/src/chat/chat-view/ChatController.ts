@@ -6,6 +6,7 @@ import {
     TokenCounterUtils,
     clientCapabilities,
     combineLatest,
+    currentAuthStatusOrNotReadyYet,
     distinctUntilChanged,
     firstResultFromOperation,
     pendingOperation,
@@ -422,10 +423,13 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     break
                 }
                 if (message.authKind === 'signin' && message.endpoint && message.value) {
-                    await localStorage.saveEndpointAndToken({
-                        serverEndpoint: message.endpoint,
-                        accessToken: message.value,
-                    })
+                    await authProvider.validateAndStoreCredentials(
+                        {
+                            serverEndpoint: message.endpoint,
+                            accessToken: message.value,
+                        },
+                        'always-store'
+                    )
                     break
                 }
                 if (message.authKind === 'signout') {
@@ -1431,13 +1435,9 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
     }
 
     private async saveSession(): Promise<void> {
-        const authStatus = currentAuthStatus()
-        if (authStatus.authenticated) {
-            // Only try to save if authenticated because otherwise we wouldn't be showing a chat.
-            const chat = this.chatBuilder.toSerializedChatTranscript()
-            if (chat) {
-                await chatHistory.saveChat(authStatus, chat)
-            }
+        const chat = this.chatBuilder.toSerializedChatTranscript()
+        if (chat) {
+            await chatHistory.saveChat(chat)
         }
     }
 
@@ -1496,8 +1496,10 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         }
 
         const viewType = CodyChatEditorViewType
+        const authStatus = currentAuthStatusOrNotReadyYet()
         const panelTitle =
-            chatHistory.getChat(currentAuthStatusAuthed(), this.chatBuilder.sessionID)?.chatTitle ||
+            (authStatus?.authenticated &&
+                chatHistory.getChat(authStatus, this.chatBuilder.sessionID)?.chatTitle) ||
             getChatPanelTitle(lastQuestion)
         const viewColumn = activePanelViewColumn || vscode.ViewColumn.Beside
         const webviewPath = vscode.Uri.joinPath(this.extensionUri, 'dist', 'webviews')

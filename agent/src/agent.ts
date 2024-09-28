@@ -6,11 +6,9 @@ import {
     type AccountKeyedChatHistory,
     type ChatHistoryKey,
     type CodyCommand,
-    CodyIDE,
     ModelUsage,
     currentAuthStatus,
     currentAuthStatusAuthed,
-    currentAuthStatusOrNotReadyYet,
     firstResultFromOperation,
     telemetryRecorder,
     waitUntilComplete,
@@ -74,7 +72,6 @@ import { AgentFixupControls } from './AgentFixupControls'
 import { AgentProviders } from './AgentProviders'
 import { AgentClientManagedSecretStorage, AgentStatelessSecretStorage } from './AgentSecretStorage'
 import { AgentWebviewPanel, AgentWebviewPanels } from './AgentWebviewPanel'
-import { AgentWorkspaceConfiguration } from './AgentWorkspaceConfiguration'
 import { AgentWorkspaceDocuments } from './AgentWorkspaceDocuments'
 import { registerNativeWebviewHandlers, resolveWebviewView } from './NativeWebview'
 import type { PollyRequestError } from './cli/command-jsonrpc-stdio'
@@ -446,16 +443,9 @@ export class Agent extends MessageHandler implements ExtensionClient {
                     secrets
                 )
 
-                const ideType = AgentWorkspaceConfiguration.clientNameToIDE(this.clientInfo?.name ?? '')
-
-                this.authenticationPromise =
-                    clientInfo.extensionConfiguration &&
-                    (clientInfo.extensionConfiguration?.accessToken || ideType === CodyIDE.Web)
-                        ? this.handleConfigChanges(clientInfo.extensionConfiguration, {
-                              forceAuthentication: true,
-                          })
-                        : Promise.resolve()
-                await this.authenticationPromise
+                if (clientInfo.extensionConfiguration) {
+                    await this.handleConfigChanges(clientInfo.extensionConfiguration)
+                }
 
                 const webviewKind = clientInfo.capabilities?.webview || 'agentic'
                 const nativeWebviewConfig = clientInfo.capabilities?.webviewNativeConfig
@@ -474,13 +464,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
                     this.registerWebviewHandlers()
                 }
 
-                const authStatus = currentAuthStatusOrNotReadyYet()
-                return {
-                    name: 'cody-agent',
-                    authenticated: authStatus?.authenticated ?? false,
-                    codyVersion: authStatus?.authenticated ? authStatus.siteVersion : undefined,
-                    authStatus,
-                }
+                return { name: 'cody-agent' }
             } catch (error) {
                 console.error(
                     `Cody Agent: failed to initialize VSCode extension at workspace root path '${clientInfo.workspaceRootUri}': ${error}\n`
@@ -1470,15 +1454,12 @@ export class Agent extends MessageHandler implements ExtensionClient {
         return this.clientInfo?.capabilities ?? undefined
     }
 
-    private async handleConfigChanges(
-        config: ExtensionConfiguration,
-        params?: { forceAuthentication: boolean }
-    ): Promise<void> {
+    private async handleConfigChanges(config: ExtensionConfiguration): Promise<void> {
         const isAuthChange = vscode_shim.isAuthenticationChange(config)
         vscode_shim.setExtensionConfiguration(config)
         // If this is an authentication change we need to reauthenticate prior to firing events
         // that update the clients
-        if (isAuthChange || params?.forceAuthentication) {
+        if (isAuthChange) {
             try {
                 await authProvider.validateAndStoreCredentials(
                     {
@@ -1618,8 +1599,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
 
         const panel = this.webPanels.panels.get(id)
         if (!panel) {
-            console.log(`No panel with id ${id} found`)
-            return
+            throw new Error(`No webview panel exists with ID ${JSON.stringify(id)}`)
         }
         await panel.receiveMessage.cody_fireAsync(message)
     }

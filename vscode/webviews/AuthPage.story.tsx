@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react'
 
 import { type ClientCapabilities, CodyIDE, type LegacyWebviewConfig } from '@sourcegraph/cody-shared'
-import { ExtensionAPIProviderForTestsOnly, MOCK_API } from '@sourcegraph/prompt-editor'
+import { ExtensionAPIProviderForTestsOnly, MOCK_API_PROXY } from '@sourcegraph/prompt-editor'
 import { Observable } from 'observable-fns'
 import type { ComponentProps } from 'react'
 import { AuthPage } from './AuthPage'
@@ -27,7 +27,7 @@ const meta: Meta<ComponentProps<typeof AuthPage> & { clientCapabilities: ClientC
     render: args => (
         <ExtensionAPIProviderForTestsOnly
             value={{
-                ...MOCK_API,
+                ...MOCK_API_PROXY,
                 legacyConfig: () =>
                     Observable.of({
                         config: {} as any,

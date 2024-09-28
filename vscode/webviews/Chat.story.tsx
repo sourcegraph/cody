@@ -1,10 +1,12 @@
-import { ExtensionAPIProviderForTestsOnly, MOCK_API } from '@sourcegraph/prompt-editor'
+import { ExtensionAPIProviderForTestsOnly } from '@sourcegraph/prompt-editor'
 import type { Meta, StoryObj } from '@storybook/react'
 import { Observable } from 'observable-fns'
+import { LEGACY_WEBVIEW_CONFIG_FIXTURE, MOCK_API } from './AppWrapperForTest'
 import { Chat } from './Chat'
 import { FIXTURE_TRANSCRIPT } from './chat/fixtures'
 import { FIXTURE_COMMANDS, makePromptsAPIWithData } from './components/promptList/fixtures'
 import { VSCodeWebview } from './storybook/VSCodeStoryDecorator'
+import { LegacyWebviewConfigProviderForTestsOnly } from './utils/useLegacyWebviewConfig'
 
 const meta: Meta<typeof Chat> = {
     title: 'cody/Chat',
@@ -21,7 +23,6 @@ const meta: Meta<typeof Chat> = {
     args: {
         transcript: FIXTURE_TRANSCRIPT.simple2,
         messageInProgress: null,
-        chatEnabled: true,
         vscodeAPI: {
             postMessage: () => {},
             onMessage: () => () => {},
@@ -74,4 +75,16 @@ export const EmptyWithNoPrompts: StoryObj<typeof meta> = {
     ),
 }
 
-export const Disabled: StoryObj<typeof meta> = { args: { chatEnabled: false } }
+export const Disabled: StoryObj<typeof meta> = {
+    args: { transcript: [] },
+    render: args => (
+        <LegacyWebviewConfigProviderForTestsOnly
+            value={{
+                ...LEGACY_WEBVIEW_CONFIG_FIXTURE,
+                configFeatures: { ...LEGACY_WEBVIEW_CONFIG_FIXTURE.configFeatures, chat: false },
+            }}
+        >
+            <Chat {...args} />
+        </LegacyWebviewConfigProviderForTestsOnly>
+    ),
+}

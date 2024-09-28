@@ -1,10 +1,10 @@
-import { hydrateAfterPostMessage, isErrorLike } from '@sourcegraph/cody-shared'
+import { DOTCOM_URL, hydrateAfterPostMessage, isErrorLike } from '@sourcegraph/cody-shared'
 import type { ExtensionMessage } from 'cody-ai/src/chat/protocol'
+import type { ClientRequests } from 'cody-ai/src/jsonrpc/agent-protocol'
 import { type VSCodeWrapper, setVSCodeWrapper } from 'cody-ai/webviews/utils/VSCodeApi'
 import {
     type DependencyList,
     type EffectCallback,
-    type MutableRefObject,
     useCallback,
     useEffect,
     useMemo,
@@ -33,8 +33,8 @@ interface AgentClient {
 }
 
 interface UseCodyWebAgentInput {
-    serverEndpoint: string
-    accessToken: string | null
+    serverEndpoint?: string
+    accessToken?: string
     createAgentWorker: () => Worker
     telemetryClientName?: string
     initialContext?: InitialContext
@@ -44,6 +44,7 @@ interface UseCodyWebAgentInput {
 interface UseCodyWebAgentResult {
     client: AgentClient | Error | null
     vscodeAPI: VSCodeWrapper | null
+    panelId: string | null
 }
 
 /**
@@ -52,26 +53,26 @@ interface UseCodyWebAgentResult {
  * main and web-worker threads, see agent.client.ts for more details
  */
 export function useCodyWebAgent(input: UseCodyWebAgentInput): UseCodyWebAgentResult {
-    const { serverEndpoint, accessToken, telemetryClientName, customHeaders, createAgentWorker } = input
+    const { telemetryClientName, customHeaders, createAgentWorker } = input
 
-    const activeWebviewPanelIDRef = useRef<string>('')
+    const [panelId, setPanelId] = useState<string | null>(null)
     const [client, setClient] = useState<AgentClient | Error | null>(null)
 
     useEffectOnce(() => {
         createAgentClient({
+            serverEndpoint: input.serverEndpoint ?? DOTCOM_URL.toString(),
+            accessToken: input.accessToken,
             customHeaders,
             telemetryClientName,
             createAgentWorker,
             workspaceRootUri: '',
-            serverEndpoint: serverEndpoint,
-            accessToken: accessToken ?? '',
         })
             .then(setClient)
             .catch(error => {
                 console.error('Cody Web Agent creation failed', error)
                 setClient(() => error as Error)
             })
-    }, [accessToken, serverEndpoint, createAgentWorker, customHeaders, telemetryClientName])
+    }, [createAgentWorker, customHeaders, telemetryClientName])
 
     // Special override for chat creating for Cody Web, otherwise the create new chat doesn't work
     const createNewChat = useCallback(async (agent: AgentClient | Error | null) => {
@@ -84,18 +85,18 @@ export function useCodyWebAgent(input: UseCodyWebAgentInput): UseCodyWebAgentRes
             chatId: string
         }>('chat/sidebar/new', null)
 
-        activeWebviewPanelIDRef.current = panelId
+        setPanelId(panelId)
 
         await agent.rpc.sendRequest('webview/receiveMessage', {
-            id: activeWebviewPanelIDRef.current,
+            id: panelId,
             message: { chatID: chatId, command: 'restoreHistory' },
         })
     }, [])
 
     const isInitRef = useRef(false)
-    const vscodeAPI = useVSCodeAPI({ activeWebviewPanelIDRef, createNewChat, client })
+    const vscodeAPI = useVSCodeAPI({ panelId, createNewChat, client })
 
-    // Always create new chat when Cody Web is opened for the first time
+    // Create new chat when Cody Web is opened for the first time.
     useEffect(() => {
         // Skip panel creation if it already happened before
         // React in dev mode run all effect twice so it's important here to
@@ -108,32 +109,29 @@ export function useCodyWebAgent(input: UseCodyWebAgentInput): UseCodyWebAgentRes
         isInitRef.current = true
     }, [client, createNewChat])
 
-    return { client, vscodeAPI }
+    return { client, vscodeAPI, panelId }
 }
 
 interface useVSCodeAPIInput {
     client: AgentClient | Error | null
-    activeWebviewPanelIDRef: MutableRefObject<string>
+    panelId: string | null
     createNewChat: (client: AgentClient | Error | null) => Promise<void>
 }
 
 function useVSCodeAPI(input: useVSCodeAPIInput): VSCodeWrapper | null {
-    const { client, activeWebviewPanelIDRef, createNewChat } = input
+    const { client, panelId, createNewChat } = input
 
     const onMessageCallbacksRef = useRef<((message: ExtensionMessage) => void)[]>([])
 
     return useMemo<VSCodeWrapper | null>(() => {
-        if (!client) {
+        if (!client || panelId === null) {
             return null
         }
         if (!isErrorLike(client)) {
             client.rpc.onNotification(
                 'webview/postMessage',
                 ({ id, message }: { id: string; message: ExtensionMessage }) => {
-                    if (
-                        activeWebviewPanelIDRef.current === id ||
-                        GLOBAL_MESSAGE_TYPES.includes(message.type)
-                    ) {
+                    if (panelId === id || GLOBAL_MESSAGE_TYPES.includes(message.type)) {
                         for (const callback of onMessageCallbacksRef.current) {
                             callback(hydrateAfterPostMessage(message, uri => URI.from(uri as any)))
                         }
@@ -150,10 +148,13 @@ function useVSCodeAPI(input: useVSCodeAPIInput): VSCodeWrapper | null {
                         void createNewChat(client)
                         return
                     }
+                    if (!panelId) {
+                        throw new Error('No active webview panel ID yet')
+                    }
                     void client.rpc.sendRequest('webview/receiveMessage', {
-                        id: activeWebviewPanelIDRef.current,
+                        id: panelId,
                         message,
-                    })
+                    } satisfies ClientRequests['webview/receiveMessage'][0])
                 }
             },
             onMessage: callback => {
@@ -181,7 +182,7 @@ function useVSCodeAPI(input: useVSCodeAPIInput): VSCodeWrapper | null {
         // components will have access to the mocked/synthetic VSCode API
         setVSCodeWrapper(vscodeAPI)
         return vscodeAPI
-    }, [client, createNewChat, activeWebviewPanelIDRef])
+    }, [client, createNewChat, panelId])
 }
 
 function useEffectOnce(effect: EffectCallback, deps?: DependencyList) {

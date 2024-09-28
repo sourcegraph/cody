@@ -1,4 +1,4 @@
-import { ExtensionAPIProviderForTestsOnly, MOCK_API } from '@sourcegraph/prompt-editor'
+import { ExtensionAPIProviderForTestsOnly, MOCK_API_PROXY } from '@sourcegraph/prompt-editor'
 import type { Meta, StoryObj } from '@storybook/react'
 import { VSCodeStandaloneComponent } from '../../storybook/VSCodeStoryDecorator'
 import { FIXTURE_PROMPTS } from '../promptSelectField/fixtures'
@@ -33,7 +33,7 @@ export const WithPromptsAndCommands: Story = {
     render: args => (
         <ExtensionAPIProviderForTestsOnly
             value={{
-                ...MOCK_API,
+                ...MOCK_API_PROXY,
                 prompts: makePromptsAPIWithData({
                     prompts: { type: 'results', results: FIXTURE_PROMPTS },
                     commands: FIXTURE_COMMANDS,
@@ -49,7 +49,7 @@ export const WithOnlyCommands: Story = {
     render: args => (
         <ExtensionAPIProviderForTestsOnly
             value={{
-                ...MOCK_API,
+                ...MOCK_API_PROXY,
                 prompts: makePromptsAPIWithData({
                     prompts: { type: 'unsupported' },
                     commands: FIXTURE_COMMANDS,
@@ -65,7 +65,7 @@ export const ErrorMessage: Story = {
     render: args => (
         <ExtensionAPIProviderForTestsOnly
             value={{
-                ...MOCK_API,
+                ...MOCK_API_PROXY,
                 prompts: () => {
                     throw new Error('my error')
                 },

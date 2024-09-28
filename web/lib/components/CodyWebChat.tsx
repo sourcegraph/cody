@@ -1,14 +1,11 @@
-import classNames from 'classnames'
 import { type FC, type FunctionComponent, useLayoutEffect, useMemo, useState } from 'react'
 import { URI } from 'vscode-uri'
 
 import {
-    type ChatMessage,
     type ContextItem,
     type ContextItemOpenCtx,
     type ContextItemRepository,
     ContextItemSource,
-    PromptString,
     REMOTE_DIRECTORY_PROVIDER_URI,
     isErrorLike,
     setDisplayPathEnvInfo,
@@ -19,10 +16,8 @@ import type { VSCodeWrapper } from 'cody-ai/webviews/utils/VSCodeApi'
 import { ChatMentionContext, type ChatMentionsSettings } from '@sourcegraph/prompt-editor'
 import { getAppWrappers } from 'cody-ai/webviews/App'
 import { CodyPanel } from 'cody-ai/webviews/CodyPanel'
-import { useClientActionDispatcher } from 'cody-ai/webviews/client/clientState'
-import type { View } from 'cody-ai/webviews/tabs'
+import { View } from 'cody-ai/webviews/tabs'
 import { ComposedWrappers, type Wrapper } from 'cody-ai/webviews/utils/composeWrappers'
-import { createWebviewTelemetryRecorder } from 'cody-ai/webviews/utils/telemetry'
 
 import type { InitialContext } from '../types'
 
@@ -30,7 +25,6 @@ import { useCodyWebAgent } from './use-cody-agent'
 
 // Include global Cody Web styles to the styles bundle
 import '../global-styles/styles.css'
-import styles from './CodyWebChat.module.css'
 import { ChatSkeleton } from './skeleton/ChatSkeleton'
 
 // Internal API mock call in order to set up web version of
@@ -41,8 +35,6 @@ setDisplayPathEnvInfo({
 })
 
 export interface CodyWebChatProps {
-    serverEndpoint: string
-    accessToken: string | null
     createAgentWorker: () => Worker
     telemetryClientName?: string
     initialContext?: InitialContext
@@ -57,17 +49,13 @@ export interface CodyWebChatProps {
  * You can see the demo usage of this component in demo/App.tsx
  */
 export const CodyWebChat: FunctionComponent<CodyWebChatProps> = ({
-    serverEndpoint,
-    accessToken,
     createAgentWorker,
     initialContext,
     telemetryClientName,
     customHeaders,
     className,
 }) => {
-    const { client, vscodeAPI } = useCodyWebAgent({
-        serverEndpoint,
-        accessToken,
+    const { client, vscodeAPI, panelId } = useCodyWebAgent({
         createAgentWorker,
         initialContext,
         telemetryClientName,
@@ -78,19 +66,13 @@ export const CodyWebChat: FunctionComponent<CodyWebChatProps> = ({
         return <p>Cody Web client agent error: {client.message}</p>
     }
 
-    if (client === null || vscodeAPI === null) {
-        return <ChatSkeleton className={classNames(className, styles.root)} />
+    if (client === null || vscodeAPI === null || panelId === null) {
+        return <ChatSkeleton className={className} />
     }
 
     return (
         <AppWrapper>
-            <div className={classNames(className, styles.root)}>
-                <CodyWebPanel
-                    vscodeAPI={vscodeAPI}
-                    initialContext={initialContext}
-                    className={styles.container}
-                />
-            </div>
+            <CodyWebPanel vscodeAPI={vscodeAPI} initialContext={initialContext} />
         </AppWrapper>
     )
 }
@@ -98,50 +80,22 @@ export const CodyWebChat: FunctionComponent<CodyWebChatProps> = ({
 interface CodyWebPanelProps {
     vscodeAPI: VSCodeWrapper
     initialContext: InitialContext | undefined
-    className?: string
 }
 
 const CodyWebPanel: FC<CodyWebPanelProps> = props => {
-    const { vscodeAPI, initialContext: initialContextData, className } = props
+    const { vscodeAPI, initialContext: initialContextData } = props
 
-    const dispatchClientAction = useClientActionDispatcher()
-    const [errorMessages, setErrorMessages] = useState<string[]>([])
-    const [messageInProgress, setMessageInProgress] = useState<ChatMessage | null>(null)
-    const [transcript, setTranscript] = useState<ChatMessage[]>([])
     const [view, setView] = useState<View | undefined>()
 
     useLayoutEffect(() => {
         vscodeAPI.onMessage(message => {
             switch (message.type) {
-                case 'transcript': {
-                    const deserializedMessages = message.messages.map(
-                        PromptString.unsafe_deserializeChatMessage
-                    )
-                    if (message.isMessageInProgress) {
-                        const msgLength = deserializedMessages.length - 1
-                        setTranscript(deserializedMessages.slice(0, msgLength))
-                        setMessageInProgress(deserializedMessages[msgLength])
-                    } else {
-                        setTranscript(deserializedMessages)
-                        setMessageInProgress(null)
-                    }
-                    break
-                }
-                case 'errors':
-                    setErrorMessages(prev => [...prev, message.errors].slice(-5))
-                    break
                 case 'view':
                     setView(message.view)
                     break
-                case 'clientAction':
-                    dispatchClientAction(message)
-                    break
             }
         })
-    }, [vscodeAPI, dispatchClientAction])
-
-    // V2 telemetry recorder
-    const telemetryRecorder = useMemo(() => createWebviewTelemetryRecorder(vscodeAPI), [vscodeAPI])
+    }, [vscodeAPI])
 
     const initialContext = useMemo<ContextItem[]>(() => {
         const { repository, fileURL, isDirectory } = initialContextData ?? {}
@@ -209,8 +163,8 @@ const CodyWebPanel: FC<CodyWebPanelProps> = props => {
     }, [initialContextData])
 
     const wrappers = useMemo<Wrapper[]>(
-        () => getAppWrappers(vscodeAPI, telemetryRecorder, initialContext),
-        [vscodeAPI, telemetryRecorder, initialContext]
+        () => getAppWrappers(vscodeAPI, initialContext),
+        [vscodeAPI, initialContext]
     )
 
     const CONTEXT_MENTIONS_SETTINGS = useMemo<ChatMentionsSettings>(() => {
@@ -222,29 +176,18 @@ const CodyWebPanel: FC<CodyWebPanelProps> = props => {
         }
     }, [initialContextData])
 
-    const isLoading = !view
-
     return (
-        <div className={className} data-cody-web-chat={true}>
-            {!isLoading && (
-                <ChatMentionContext.Provider value={CONTEXT_MENTIONS_SETTINGS}>
-                    <ComposedWrappers wrappers={wrappers}>
-                        <CodyPanel
-                            view={view}
-                            setView={setView}
-                            errorMessages={errorMessages}
-                            setErrorMessages={setErrorMessages}
-                            attributionEnabled={false}
-                            chatEnabled={true}
-                            showWelcomeMessage={true}
-                            showIDESnippetActions={false}
-                            messageInProgress={messageInProgress}
-                            transcript={transcript}
-                            vscodeAPI={vscodeAPI}
-                        />
-                    </ComposedWrappers>
-                </ChatMentionContext.Provider>
-            )}
-        </div>
+        <ChatMentionContext.Provider value={CONTEXT_MENTIONS_SETTINGS}>
+            <ComposedWrappers wrappers={wrappers}>
+                <CodyPanel
+                    view={view ?? View.Chat}
+                    setView={setView}
+                    showWelcomeMessage={true}
+                    showIDESnippetActions={false}
+                    vscodeAPI={vscodeAPI}
+                    data-cody-web-chat={true}
+                />
+            </ComposedWrappers>
+        </ChatMentionContext.Provider>
     )
 }

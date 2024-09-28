@@ -4,10 +4,15 @@ import type { AuthCredentials } from '@sourcegraph/cody-shared'
 
 import { localStorage } from '../services/LocalStorageProvider'
 
-import { telemetryRecorder } from '@sourcegraph/cody-shared'
+import { CodyIDE, telemetryRecorder } from '@sourcegraph/cody-shared'
 import { showActionNotification } from '.'
+import { getConfiguration } from '../configuration'
 
 export const showSetupNotification = async (auth: AuthCredentials): Promise<void> => {
+    if (getConfiguration().agentIDE === CodyIDE.Web) {
+        return
+    }
+
     if (auth.serverEndpoint && auth.accessToken) {
         // User has already attempted to configure Cody.
         // Regardless of if they are authenticated or not, we don't want to prompt them.

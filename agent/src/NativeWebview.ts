@@ -299,7 +299,7 @@ class NativeWebview implements vscode.Webview {
     }
 
     public get cspSource(): string {
-        return this.delegate.cspSource
+        return this.delegate.cspSource ?? ''
     }
 }
 

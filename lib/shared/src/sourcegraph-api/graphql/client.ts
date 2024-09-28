@@ -747,10 +747,13 @@ export class SourcegraphGraphQLAPIClient {
         )
     }
 
-    public async getCurrentUserCodySubscription(): Promise<CurrentUserCodySubscription | null | Error> {
+    public async getCurrentUserCodySubscription(
+        signal?: AbortSignal
+    ): Promise<CurrentUserCodySubscription | null | Error> {
         return this.fetchSourcegraphAPI<APIResponse<CurrentUserCodySubscriptionResponse>>(
             CURRENT_USER_CODY_SUBSCRIPTION_QUERY,
-            {}
+            {},
+            signal
         ).then(response =>
             extractDataOrError(response, data => data.currentUser?.codySubscription ?? null)
         )

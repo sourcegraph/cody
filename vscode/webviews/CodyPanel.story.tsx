@@ -3,50 +3,52 @@ import {
     CLIENT_CAPABILITIES_FIXTURE,
     type LegacyWebviewConfig,
 } from '@sourcegraph/cody-shared'
-import { ExtensionAPIProviderForTestsOnly, MOCK_API } from '@sourcegraph/prompt-editor'
 import type { Meta, StoryObj } from '@storybook/react'
-import { Observable } from 'observable-fns'
-import { CodyPanel } from './CodyPanel'
+import { useState } from 'react'
+import { CodyPanelWithData } from './CodyPanel'
 import { FIXTURE_TRANSCRIPT } from './chat/fixtures'
 import { VSCodeWebview } from './storybook/VSCodeStoryDecorator'
 import { View } from './tabs'
+import { LegacyWebviewConfigProviderForTestsOnly } from './utils/useLegacyWebviewConfig'
 
-const meta: Meta<typeof CodyPanel> = {
+const meta: Meta<typeof CodyPanelWithData> = {
     title: 'cody/CodyPanel',
-    component: CodyPanel,
+    component: CodyPanelWithData,
     args: {
         transcript: FIXTURE_TRANSCRIPT.simple2,
         messageInProgress: null,
-        chatEnabled: true,
         vscodeAPI: {
             postMessage: () => {},
             onMessage: () => () => {},
         },
-        view: View.Chat,
-        setView: () => {},
     },
     decorators: [VSCodeWebview],
 }
 
 export default meta
 
+export const Default: StoryObj<typeof meta> = {
+    render: args => {
+        const [view, setView] = useState<View>(View.Chat)
+        return <CodyPanelWithData {...args} view={view} setView={setView} />
+    },
+}
+
 export const NetworkError: StoryObj<typeof meta> = {
     render: args => (
-        <ExtensionAPIProviderForTestsOnly
-            value={{
-                ...MOCK_API,
-                legacyConfig: () =>
-                    Observable.of({
-                        config: {} as any,
-                        clientCapabilities: CLIENT_CAPABILITIES_FIXTURE,
-                        authStatus: {
-                            ...AUTH_STATUS_FIXTURE_UNAUTHED,
-                            showNetworkError: true,
-                        },
-                    } satisfies Partial<LegacyWebviewConfig> as LegacyWebviewConfig),
-            }}
+        <LegacyWebviewConfigProviderForTestsOnly
+            value={
+                {
+                    config: {} as any,
+                    clientCapabilities: CLIENT_CAPABILITIES_FIXTURE,
+                    authStatus: {
+                        ...AUTH_STATUS_FIXTURE_UNAUTHED,
+                        showNetworkError: true,
+                    },
+                } satisfies Partial<LegacyWebviewConfig> as LegacyWebviewConfig
+            }
         >
-            <CodyPanel {...args} />
-        </ExtensionAPIProviderForTestsOnly>
+            <CodyPanelWithData {...args} />
+        </LegacyWebviewConfigProviderForTestsOnly>
     ),
 }

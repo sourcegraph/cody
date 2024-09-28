@@ -8,7 +8,6 @@ import {
     type Unsubscribable,
     abortableOperation,
     authStatus,
-    clientCapabilities,
     combineLatest,
     currentResolvedConfig,
     disposableSubscription,
@@ -33,7 +32,7 @@ const HAS_AUTHENTICATED_BEFORE_KEY = 'has-authenticated-before'
 
 class AuthProvider implements vscode.Disposable {
     private status = new Subject<AuthStatus>()
-    private refreshRequests = new Subject<true>()
+    private refreshRequests = new Subject<void>()
 
     /**
      * Credentials that were already validated with
@@ -68,14 +67,7 @@ class AuthProvider implements vscode.Disposable {
                 this.refreshRequests.pipe(startWith(undefined)),
             ])
                 .pipe(
-                    abortableOperation(async ([config, isRefreshRequested], signal) => {
-                        if (clientCapabilities().isCodyWeb && !isRefreshRequested) {
-                            // Cody Web calls {@link AuthProvider.validateAndStoreCredentials}
-                            // explicitly. This early exit prevents duplicate authentications during
-                            // the initial load.
-                            return
-                        }
-
+                    abortableOperation(async ([config], signal) => {
                         // Immediately emit the unauthenticated status while we are authenticating.
                         // Emitting `authenticated: false` for a brief period is both true and a
                         // way to ensure that subscribers are robust to changes in
@@ -143,7 +135,7 @@ class AuthProvider implements vscode.Disposable {
      */
     public refresh(): void {
         this.lastValidatedAndStoredCredentials.next(null)
-        this.refreshRequests.next(true)
+        this.refreshRequests.next()
     }
 
     public async validateAndStoreCredentials(

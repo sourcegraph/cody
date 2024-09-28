@@ -611,7 +611,7 @@ export interface WebviewNativeConfig {
      */
     view: 'multiple' | 'single'
     // cspSource is passed to the extension as the Webview cspSource property.
-    cspSource: string
+    cspSource?: string
     // webviewBundleServingPrefix is prepended to resource paths under 'dist' in
     // asWebviewUri (note, multiple prefixes are not yet implemented.)
     webviewBundleServingPrefix?: string | undefined | null
@@ -624,9 +624,6 @@ export interface WebviewNativeConfig {
 
 export interface ServerInfo {
     name: string
-    authenticated?: boolean | undefined | null
-    codyVersion?: string | undefined | null
-    authStatus?: AuthStatus | undefined | null
 }
 
 export interface ExtensionConfiguration {
