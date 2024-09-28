@@ -22,6 +22,8 @@ import { Kbd } from '../components/Kbd'
 import { Tooltip, TooltipContent, TooltipTrigger } from '../components/shadcn/ui/tooltip'
 import { useConfig } from '../utils/useConfig'
 
+import { useExtensionAPI } from '@sourcegraph/prompt-editor'
+import { downloadChatHistory } from '../chat/downloadChatHistory'
 import { Button } from '../components/shadcn/ui/button'
 import { useFeatureFlag } from '../utils/useFeatureFlags'
 import styles from './TabsBar.module.css'
@@ -31,7 +33,6 @@ interface TabsBarProps {
     IDE: CodyIDE
     currentView: View
     setView: (view: View) => void
-    onDownloadChatClick?: () => void
 }
 
 type IconComponent = React.ForwardRefExoticComponent<
@@ -64,8 +65,8 @@ interface TabConfig {
     subActions?: TabSubAction[]
 }
 
-export const TabsBar: React.FC<TabsBarProps> = ({ currentView, setView, IDE, onDownloadChatClick }) => {
-    const tabItems = useTabs({ IDE, onDownloadChatClick })
+export const TabsBar: React.FC<TabsBarProps> = ({ currentView, setView, IDE }) => {
+    const tabItems = useTabs({ IDE })
     const {
         config: { webviewType, multipleWebviewsEnabled },
     } = useConfig()
@@ -317,12 +318,14 @@ TabButton.displayName = 'TabButton'
  * Returns list of tabs and its sub-action buttons, used later as configuration for
  * tabs rendering in chat header.
  */
-function useTabs(input: Pick<TabsBarProps, 'IDE' | 'onDownloadChatClick'>): TabConfig[] {
-    const { IDE, onDownloadChatClick } = input
+function useTabs(input: Pick<TabsBarProps, 'IDE'>): TabConfig[] {
+    const { IDE } = input
     const {
         config: { multipleWebviewsEnabled },
     } = useConfig()
     const isUnifiedPromptsAvailable = useFeatureFlag(FeatureFlag.CodyUnifiedPrompts)
+
+    const extensionAPI = useExtensionAPI<'userHistory'>()
 
     return useMemo<TabConfig[]>(
         () =>
@@ -343,7 +346,7 @@ function useTabs(input: Pick<TabsBarProps, 'IDE' | 'onDownloadChatClick'>): TabC
                                 title: 'Export',
                                 Icon: DownloadIcon,
                                 command: 'cody.chat.history.export',
-                                callback: onDownloadChatClick,
+                                callback: () => downloadChatHistory(extensionAPI),
                             },
                             {
                                 title: 'Delete all',
@@ -399,6 +402,6 @@ function useTabs(input: Pick<TabsBarProps, 'IDE' | 'onDownloadChatClick'>): TabC
                         : null,
                 ] as (TabConfig | null)[]
             ).filter(isDefined),
-        [IDE, onDownloadChatClick, multipleWebviewsEnabled, isUnifiedPromptsAvailable]
+        [IDE, multipleWebviewsEnabled, isUnifiedPromptsAvailable, extensionAPI]
     )
 }

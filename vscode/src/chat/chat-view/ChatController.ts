@@ -253,14 +253,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     })
             )
         )
-
-        // Observe any changes in chat history and send client notifications to
-        // the consumer
-        this.disposables.push(
-            chatHistory.onHistoryChanged(chatHistory => {
-                this.postMessage({ type: 'history', localHistory: chatHistory })
-            })
-        )
     }
 
     /**
@@ -1466,15 +1458,9 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         const authStatus = currentAuthStatus()
         if (authStatus.authenticated) {
             // Only try to save if authenticated because otherwise we wouldn't be showing a chat.
-            const allHistory = await chatHistory.saveChat(
-                authStatus,
-                this.chatBuilder.toSerializedChatTranscript()
-            )
-            if (allHistory) {
-                void this.postMessage({
-                    type: 'history',
-                    localHistory: allHistory,
-                })
+            const chat = this.chatBuilder.toSerializedChatTranscript()
+            if (chat) {
+                await chatHistory.saveChat(authStatus, chat)
             }
         }
     }
@@ -1674,6 +1660,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     authStatus: () => authStatus,
                     transcript: () =>
                         this.chatBuilder.changes.pipe(map(chat => chat.getDehydratedMessages())),
+                    userHistory: () => chatHistory.changes,
                 }
             )
         )

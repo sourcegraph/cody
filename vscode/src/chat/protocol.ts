@@ -11,7 +11,6 @@ import type {
     RequestMessage,
     ResponseMessage,
     SerializedChatMessage,
-    UserLocalHistory,
 } from '@sourcegraph/cody-shared'
 
 import type { BillingCategory, BillingProduct } from '@sourcegraph/cody-shared/src/telemetry-v2'
@@ -146,7 +145,6 @@ export type ExtensionMessage =
           isDotComUser: boolean
           workspaceFolderUris: string[]
       }
-    | { type: 'history'; localHistory?: UserLocalHistory | undefined | null }
     | {
           /** Used by JetBrains and not VS Code. */
           type: 'ui/theme'

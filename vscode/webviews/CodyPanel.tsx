@@ -1,6 +1,6 @@
 import { type AuthStatus, type ClientCapabilities, CodyIDE } from '@sourcegraph/cody-shared'
 import type React from 'react'
-import { type ComponentProps, type FunctionComponent, useCallback, useRef } from 'react'
+import { type ComponentProps, type FunctionComponent, useRef } from 'react'
 import type { ConfigurationSubsetForWebview, LocalEnv } from '../src/chat/protocol'
 import styles from './App.module.css'
 import { Chat } from './Chat'
@@ -34,8 +34,7 @@ export const CodyPanel: FunctionComponent<
         | 'showWelcomeMessage'
         | 'showIDESnippetActions'
         | 'smartApplyEnabled'
-    > &
-        Pick<ComponentProps<typeof HistoryTab>, 'userHistory'>
+    >
 > = ({
     view,
     setView,
@@ -50,23 +49,9 @@ export const CodyPanel: FunctionComponent<
     guardrails,
     showIDESnippetActions,
     showWelcomeMessage,
-    userHistory,
     smartApplyEnabled,
 }) => {
     const tabContainerRef = useRef<HTMLDivElement>(null)
-
-    // Use native browser download dialog to download chat history as a JSON file.
-    const onDownloadChatClick = useCallback(() => {
-        const json = JSON.stringify(userHistory, null, 2)
-        const blob = new Blob([json], { type: 'application/json' })
-        const url = URL.createObjectURL(blob)
-        const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5) // Format: YYYY-MM-DDTHH-mm
-        const a = document.createElement('a') // a temporary anchor element
-        a.href = url
-        a.download = `cody-chat-history-${timestamp}.json`
-        a.target = '_blank'
-        a.click()
-    }, [userHistory])
 
     return (
         <TabRoot
@@ -80,12 +65,7 @@ export const CodyPanel: FunctionComponent<
 
             {/* Hide tab bar in editor chat panels. */}
             {(clientCapabilities.agentIDE === CodyIDE.Web || config.webviewType !== 'editor') && (
-                <TabsBar
-                    currentView={view}
-                    setView={setView}
-                    IDE={clientCapabilities.agentIDE}
-                    onDownloadChatClick={onDownloadChatClick}
-                />
+                <TabsBar currentView={view} setView={setView} IDE={clientCapabilities.agentIDE} />
             )}
             {errorMessages && <ErrorBanner errors={errorMessages} setErrors={setErrorMessages} />}
             <TabContainer value={view} ref={tabContainerRef}>
@@ -109,7 +89,6 @@ export const CodyPanel: FunctionComponent<
                         setView={setView}
                         webviewType={config.webviewType}
                         multipleWebviewsEnabled={config.multipleWebviewsEnabled}
-                        userHistory={userHistory}
                     />
                 )}
                 {view === View.Prompts && <PromptsTab setView={setView} />}
