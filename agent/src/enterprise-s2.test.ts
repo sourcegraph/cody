@@ -31,15 +31,16 @@ describe('Enterprise - S2 (close main branch)', { timeout: 5000 }, () => {
             stdio: 'inherit',
         })
 
-        const serverInfo = await s2EnterpriseClient.initialize({
+        await s2EnterpriseClient.initialize({
             autocompleteAdvancedProvider: 'fireworks',
         })
+        const authStatus = await s2EnterpriseClient.request('extensionConfiguration/status', null)
 
-        expect(serverInfo.authStatus?.authenticated).toBeTruthy()
-        if (!serverInfo.authStatus?.authenticated) {
+        expect(authStatus?.authenticated).toBeTruthy()
+        if (!authStatus?.authenticated) {
             throw new Error('unreachable')
         }
-        expect(serverInfo.authStatus?.username).toStrictEqual('codytesting')
+        expect(authStatus?.username).toStrictEqual('codytesting')
     }, 10_000)
 
     // Disabled because `attribution/search` GraphQL does not work on S2

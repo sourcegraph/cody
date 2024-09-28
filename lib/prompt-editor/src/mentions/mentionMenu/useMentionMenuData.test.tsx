@@ -10,7 +10,7 @@ import { renderHook } from '@testing-library/react'
 import { Observable } from 'observable-fns'
 import { describe, expect, test, vi } from 'vitest'
 import { URI } from 'vscode-uri'
-import { MOCK_API, useExtensionAPI } from '../../useExtensionAPI'
+import { MOCK_API_PROXY, useExtensionAPI } from '../../useExtensionAPI'
 import { useInitialContextForChat } from '../../useInitialContext'
 import { waitForObservableInTest } from '../../useObservable'
 import { useCallMentionMenuData, useMentionMenuData } from './useMentionMenuData'
@@ -47,7 +47,7 @@ describe('useMentionMenuData', () => {
             ]
 
             vi.mocked(useExtensionAPI).mockReturnValue({
-                ...MOCK_API,
+                ...MOCK_API_PROXY,
                 mentionMenuData: () =>
                     Observable.of({
                         providers: mockProviders,
@@ -76,7 +76,7 @@ describe('useMentionMenuData', () => {
             // When there's a query that matches the initial context, the file should still be
             // found.
             vi.mocked(useExtensionAPI).mockReturnValue({
-                ...MOCK_API,
+                ...MOCK_API_PROXY,
                 mentionMenuData: () =>
                     Observable.of({
                         providers: [],
@@ -104,7 +104,7 @@ describe('useMentionMenuData', () => {
         ]
 
         vi.mocked(useExtensionAPI).mockReturnValue({
-            ...MOCK_API,
+            ...MOCK_API_PROXY,
             mentionMenuData: () =>
                 Observable.of({
                     providers: mockProviders,
@@ -137,7 +137,7 @@ describe('useCallMentionMenuData', () => {
         })
 
         vi.mocked(useExtensionAPI).mockReturnValue({
-            ...MOCK_API,
+            ...MOCK_API_PROXY,
             mentionMenuData: () => promiseToObservable(dataPromise),
         })
 

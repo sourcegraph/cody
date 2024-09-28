@@ -1,7 +1,7 @@
-@import '@vscode/codicons/dist/codicon';
-@import url(./utils/highlight.css);
-@import url(./components/shadcn/shadcn.css);
-@import url(./themes/index.css);
+@import url('@vscode/codicons/dist/codicon');
+@import url('./utils/highlight.css');
+@import url('./components/shadcn/shadcn.css');
+@import url('./themes/index.css');
 
 @font-face {
     font-family: cody-icons;
@@ -22,6 +22,7 @@
     font-family: var(--vscode-font-family);
     color: var(--vscode-sideBar-foreground);
     background-color: var(--vscode-sideBar-background);
+
     /* Override VS Code Webview Toolkit elements */
     --border-width: none;
 }
@@ -58,3 +59,7 @@ a:hover {
     font-weight: bold;
 }
 
+/* Undo the UA stylesheet set by vscode */
+kbd {
+    all: unset;
+}

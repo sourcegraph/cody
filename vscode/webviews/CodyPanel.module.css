@@ -1,9 +1,19 @@
+/*
+    Root element which only exists to use container query
+    for changing header tabs layout.
+*/
+.root {
+    container-type: inline-size;
+    container-name: tabs-container;
+    isolation: isolate;
+}
+
 .outer-container {
     background-color: var(--vscode-sideBar-background);
     display: flex;
     flex-direction: column;
     box-sizing: border-box;
-    height: 100%;
+    flex: 1;
     overflow: hidden;
 }
 
@@ -33,9 +43,4 @@
     border: none;
     color: var(--vscode-input-foreground);
     cursor: pointer;
-}
-
-/* Undo the UA stylesheet set by vscode */
-kbd {
-    all: unset;
 }

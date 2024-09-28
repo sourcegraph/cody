@@ -158,11 +158,9 @@ export async function chatAction(options: ChatOptions): Promise<number> {
         },
     }
     spinner.text = 'Initializing...'
-    const { serverInfo, client, messageHandler } = await getOrCreateEmbeddedAgentClient(
-        clientInfo,
-        activate
-    )
-    if (!serverInfo.authStatus?.authenticated) {
+    const { client, messageHandler } = await getOrCreateEmbeddedAgentClient(clientInfo, activate)
+    const authStatus = await client.request('extensionConfiguration/status', null)
+    if (!authStatus?.authenticated) {
         notAuthenticated(spinner)
         return 1
     }
@@ -175,7 +173,7 @@ export async function chatAction(options: ChatOptions): Promise<number> {
         })
     }
 
-    const endpoint = serverInfo.authStatus.endpoint ?? options.endpoint
+    const endpoint = authStatus.endpoint ?? options.endpoint
     const tokenSource = new vscode.CancellationTokenSource()
     const token = tokenSource.token
 
@@ -213,7 +211,7 @@ export async function chatAction(options: ChatOptions): Promise<number> {
 
     const contextItems: ContextItem[] = []
     if (options.contextRepo && options.contextRepo.length > 0) {
-        if (isDotCom(serverInfo.authStatus)) {
+        if (isDotCom(authStatus)) {
             spinner.fail(
                 'The --context-repo option is only available for Sourcegraph Enterprise users. ' +
                     'Please sign into an Enterprise instance with the command: cody auth logout && cody auth login --web'

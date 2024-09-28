@@ -3,15 +3,6 @@
     --vscode-modal-background: var(--vscode-sideBar-background);
 }
 
-/*
-    Root element which only exists to use container query
-    for changing header tabs layout.
-*/
-.tabs-root {
-    container-type: inline-size;
-    container-name: tabs-container;
-    isolation: isolate;
-}
 
 .tabs-container {
     display: flex;

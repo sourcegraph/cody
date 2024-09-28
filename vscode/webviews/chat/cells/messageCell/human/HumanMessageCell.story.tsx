@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react'
 
 import { PromptString, ps } from '@sourcegraph/cody-shared'
-import { ExtensionAPIProviderForTestsOnly, MOCK_API } from '@sourcegraph/prompt-editor'
+import { ExtensionAPIProviderForTestsOnly, MOCK_API_PROXY } from '@sourcegraph/prompt-editor'
 import { Observable } from 'observable-fns'
 import { URI } from 'vscode-uri'
 import { VSCodeCell } from '../../../../storybook/VSCodeStoryDecorator'
@@ -62,7 +62,7 @@ export const WithInitialContext: StoryObj<typeof meta> = {
     render: props => (
         <ExtensionAPIProviderForTestsOnly
             value={{
-                ...MOCK_API,
+                ...MOCK_API_PROXY,
                 chatModels: () => Observable.of([]),
                 initialContext: () =>
                     Observable.of([
@@ -91,7 +91,7 @@ export const WithInitialContextFileTooLarge: StoryObj<typeof meta> = {
     render: props => (
         <ExtensionAPIProviderForTestsOnly
             value={{
-                ...MOCK_API,
+                ...MOCK_API_PROXY,
                 chatModels: () => Observable.of([]),
                 initialContext: () =>
                     Observable.of([

@@ -12,6 +12,7 @@ import {
     SYMBOL_CONTEXT_MENTION_PROVIDER,
     type SymbolKind,
     type UserLocalHistory,
+    type WebviewToExtensionAPI,
     getMockedDotComClientModels,
     promiseFactoryToObservable,
 } from '@sourcegraph/cody-shared'
@@ -50,6 +51,83 @@ export const LEGACY_WEBVIEW_CONFIG_FIXTURE: LegacyWebviewConfig = {
     isDotComUser: true,
 }
 
+export const MOCK_API: WebviewToExtensionAPI = {
+    legacyConfig: () => Observable.of<LegacyWebviewConfig>(LEGACY_WEBVIEW_CONFIG_FIXTURE),
+    mentionMenuData: query =>
+        promiseFactoryToObservable(async () => {
+            await new Promise<void>(resolve => setTimeout(resolve, 250))
+            const queryTextLower = query.text.toLowerCase()
+            return {
+                providers: [
+                    {
+                        title: 'My Context Source',
+                        id: 'my-context-source',
+                        queryLabel: 'Type a query for My Context Source',
+                        emptyLabel: 'No results found from My Context Source',
+                    },
+                ].filter(p => query.provider === null && p.title.toLowerCase().includes(queryTextLower)),
+                items:
+                    query.provider === SYMBOL_CONTEXT_MENTION_PROVIDER.id
+                        ? DUMMY_SYMBOLS.filter(
+                              f =>
+                                  f.symbolName.toLowerCase().includes(queryTextLower) ||
+                                  f.uri.path.includes(queryTextLower)
+                          )
+                        : query.provider === null || query.provider === FILE_CONTEXT_MENTION_PROVIDER.id
+                          ? DUMMY_FILES.filter(f => f.uri.path.includes(queryTextLower))
+                          : [
+                                {
+                                    type: 'file',
+                                    uri: URI.file(`sample-${query.provider}-result`),
+                                } satisfies ContextItem,
+                            ].filter(f => f.uri.path.includes(queryTextLower)),
+            }
+        }),
+    evaluatedFeatureFlag: _flag => Observable.of(false),
+    prompts: makePromptsAPIWithData({
+        prompts: FIXTURE_PROMPTS,
+        commands: FIXTURE_COMMANDS,
+    }),
+    highlights: () => Observable.of([]),
+    models: () =>
+        Observable.of({
+            localModels: [],
+            primaryModels: getMockedDotComClientModels(),
+            preferences: { defaults: {}, selected: {} },
+        } satisfies ModelsData),
+    chatModels: () => Observable.of(getMockedDotComClientModels()),
+    setChatModel: () => EMPTY,
+    initialContext: () => Observable.of([]),
+    detectIntent: () => Observable.of(),
+    resolvedConfig: () =>
+        Observable.of({
+            auth: { accessToken: 'abc', serverEndpoint: 'https://example.com' },
+            configuration: {
+                autocomplete: true,
+                agentIDEVersion: '1.2.3',
+                devModels: [{ model: 'my-model', provider: 'my-provider' }],
+            } satisfies Partial<ClientConfiguration> as ClientConfiguration,
+        } satisfies Partial<ResolvedConfiguration> as ResolvedConfiguration),
+    authStatus: () => Observable.of(AUTH_STATUS_FIXTURE_AUTHED),
+    transcript: () => Observable.of(FIXTURE_TRANSCRIPT.explainCode),
+    userHistory: () =>
+        Observable.of<UserLocalHistory | null>({
+            chat: {
+                a: {
+                    id: 'a',
+                    lastInteractionTimestamp: '2024-03-29',
+                    interactions: [
+                        {
+                            humanMessage: { speaker: 'human', text: 'Hello, world!' },
+                            assistantMessage: { speaker: 'assistant', text: 'Hi!' },
+                        },
+                    ],
+                },
+            },
+        }),
+    userProductSubscription: () => Observable.of(null),
+}
+
 /**
  * For use in tests only.
  */
@@ -69,87 +147,7 @@ export const AppWrapperForTest: FunctionComponent<{ children: ReactNode }> = ({ 
             } satisfies Wrapper<ComponentProps<typeof LegacyWebviewConfigProviderForTestsOnly>['value']>,
             {
                 provider: ExtensionAPIProviderForTestsOnly,
-                value: {
-                    legacyConfig: () =>
-                        Observable.of<LegacyWebviewConfig>(LEGACY_WEBVIEW_CONFIG_FIXTURE),
-                    mentionMenuData: query =>
-                        promiseFactoryToObservable(async () => {
-                            await new Promise<void>(resolve => setTimeout(resolve, 250))
-                            const queryTextLower = query.text.toLowerCase()
-                            return {
-                                providers: [
-                                    {
-                                        title: 'My Context Source',
-                                        id: 'my-context-source',
-                                        queryLabel: 'Type a query for My Context Source',
-                                        emptyLabel: 'No results found from My Context Source',
-                                    },
-                                ].filter(
-                                    p =>
-                                        query.provider === null &&
-                                        p.title.toLowerCase().includes(queryTextLower)
-                                ),
-                                items:
-                                    query.provider === SYMBOL_CONTEXT_MENTION_PROVIDER.id
-                                        ? DUMMY_SYMBOLS.filter(
-                                              f =>
-                                                  f.symbolName.toLowerCase().includes(queryTextLower) ||
-                                                  f.uri.path.includes(queryTextLower)
-                                          )
-                                        : query.provider === null ||
-                                            query.provider === FILE_CONTEXT_MENTION_PROVIDER.id
-                                          ? DUMMY_FILES.filter(f => f.uri.path.includes(queryTextLower))
-                                          : [
-                                                {
-                                                    type: 'file',
-                                                    uri: URI.file(`sample-${query.provider}-result`),
-                                                } satisfies ContextItem,
-                                            ].filter(f => f.uri.path.includes(queryTextLower)),
-                            }
-                        }),
-                    evaluatedFeatureFlag: _flag => Observable.of(true),
-                    prompts: makePromptsAPIWithData({
-                        prompts: FIXTURE_PROMPTS,
-                        commands: FIXTURE_COMMANDS,
-                    }),
-                    highlights: () => Observable.of([]),
-                    models: () =>
-                        Observable.of({
-                            localModels: [],
-                            primaryModels: getMockedDotComClientModels(),
-                            preferences: { defaults: {}, selected: {} },
-                        } satisfies ModelsData),
-                    chatModels: () => Observable.of(getMockedDotComClientModels()),
-                    setChatModel: () => EMPTY,
-                    initialContext: () => Observable.of([]),
-                    detectIntent: () => Observable.of(),
-                    resolvedConfig: () =>
-                        Observable.of({
-                            auth: { accessToken: 'abc', serverEndpoint: 'https://example.com' },
-                            configuration: {
-                                autocomplete: true,
-                                devModels: [{ model: 'my-model', provider: 'my-provider' }],
-                            } satisfies Partial<ClientConfiguration> as ClientConfiguration,
-                        } satisfies Partial<ResolvedConfiguration> as ResolvedConfiguration),
-                    authStatus: () => Observable.of(AUTH_STATUS_FIXTURE_AUTHED),
-                    transcript: () => Observable.of(FIXTURE_TRANSCRIPT.explainCode),
-                    userHistory: () =>
-                        Observable.of<UserLocalHistory | null>({
-                            chat: {
-                                a: {
-                                    id: 'a',
-                                    lastInteractionTimestamp: '2024-03-29',
-                                    interactions: [
-                                        {
-                                            humanMessage: { speaker: 'human', text: 'Hello, world!' },
-                                            assistantMessage: { speaker: 'assistant', text: 'Hi!' },
-                                        },
-                                    ],
-                                },
-                            },
-                        }),
-                    userProductSubscription: () => Observable.of(null),
-                },
+                value: MOCK_API,
             } satisfies Wrapper<ComponentProps<typeof ExtensionAPIProviderForTestsOnly>['value']>,
         ],
         []

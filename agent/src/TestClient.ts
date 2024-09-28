@@ -883,9 +883,12 @@ ${patch}`
         additionalConfig?: Partial<ExtensionConfiguration>,
         { expectAuthenticated = true }: { expectAuthenticated?: boolean } = {}
     ) {
-        const info = await this.initialize(additionalConfig)
-        if (expectAuthenticated && !info.authStatus?.authenticated) {
-            throw new Error('Could not log in')
+        await this.initialize(additionalConfig)
+        if (expectAuthenticated) {
+            const authStatus = await this.request('extensionConfiguration/status', null)
+            if (authStatus?.authenticated) {
+                throw new Error('Could not log in')
+            }
         }
     }
     public async afterAll() {

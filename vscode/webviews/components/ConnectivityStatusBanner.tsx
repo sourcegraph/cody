@@ -2,9 +2,11 @@ import { TriangleAlertIcon } from 'lucide-react'
 import type React from 'react'
 import { useCallback } from 'react'
 import { getVSCodeAPI } from '../utils/VSCodeApi'
+import { useLegacyWebviewConfig } from '../utils/useLegacyWebviewConfig'
 import { Button } from './shadcn/ui/button'
 
 export const ConnectivityStatusBanner: React.FunctionComponent = () => {
+    const authStatus = useLegacyWebviewConfig().authStatus
     const signOut = useCallback(() => {
         getVSCodeAPI().postMessage({ command: 'auth', authKind: 'signout' })
     }, [])
@@ -15,9 +17,11 @@ export const ConnectivityStatusBanner: React.FunctionComponent = () => {
             <span>
                 <span className="tw-font-bold">Network Error</span> &mdash; Cody is unreachable
             </span>
-            <Button variant="secondary" size="sm" onClick={signOut}>
-                Sign Out
-            </Button>
+            {authStatus.authenticated && (
+                <Button variant="secondary" size="sm" onClick={signOut}>
+                    Sign Out
+                </Button>
+            )}
         </div>
     )
 }

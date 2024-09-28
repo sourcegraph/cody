@@ -8,7 +8,6 @@ import {
     type Unsubscribable,
     abortableOperation,
     authStatus,
-    clientCapabilities,
     combineLatest,
     currentResolvedConfig,
     disposableSubscription,
@@ -70,13 +69,6 @@ class AuthProvider implements vscode.Disposable {
             )
                 .pipe(
                     abortableOperation(async ([config], signal) => {
-                        if (clientCapabilities().isCodyWeb) {
-                            // Cody Web calls {@link AuthProvider.validateAndStoreCredentials}
-                            // explicitly. This early exit prevents duplicate authentications during
-                            // the initial load.
-                            return
-                        }
-
                         // Immediately emit the unauthenticated status while we are authenticating.
                         // Emitting `authenticated: false` for a brief period is both true and a
                         // way to ensure that subscribers are robust to changes in
