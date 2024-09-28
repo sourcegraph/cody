@@ -16,8 +16,6 @@ interface CodyAgentServer {
   fun shutdown(params: Null?): CompletableFuture<Null?>
   @JsonRequest("chat/new")
   fun chat_new(params: Null?): CompletableFuture<String>
-  @JsonRequest("chat/web/new")
-  fun chat_web_new(params: Null?): CompletableFuture<Chat_Web_NewResult>
   @JsonRequest("chat/sidebar/new")
   fun chat_sidebar_new(params: Null?): CompletableFuture<Chat_Sidebar_NewResult>
   @JsonRequest("chat/delete")
