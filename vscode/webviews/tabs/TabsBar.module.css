@@ -1,5 +1,5 @@
 :root {
-    --vscode-overlay-background: rgba(0, 0, 0, 0.5);
+    --vscode-overlay-background: rgb(0 0 0 / 50%);
     --vscode-modal-background: var(--vscode-sideBar-background);
 }
 
@@ -10,9 +10,7 @@
 .tabs-root {
     container-type: inline-size;
     container-name: tabs-container;
-
     isolation: isolate;
-    z-index: 1;
 }
 
 .tabs-container {
@@ -92,10 +90,9 @@
         left: 50%;
         transform: translate(-50%, -50%);
         padding: 25px;
-
         border-radius: 6px;
         background-color: var(--vscode-modal-background);
-        box-shadow: hsl(206 22% 7% / 35%) 0 10px 38px -10px, hsl(206 22% 7% / 20%) 0 10px 20px -15px;
+        box-shadow: hsl(206deg 22% 7% / 35%) 0 10px 38px -10px, hsl(206deg 22% 7% / 20%) 0 10px 20px -15px;
 
         &:focus {
             outline: none;
