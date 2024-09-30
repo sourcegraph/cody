@@ -295,6 +295,12 @@ query ViewerPrompts($query: String!) {
                 text
             }
             url
+            createdBy {
+                id
+                username
+                displayName
+                avatarURL
+            }
         }
         totalCount
         pageInfo {

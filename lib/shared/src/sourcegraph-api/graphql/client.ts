@@ -57,6 +57,7 @@ import {
     VIEWER_SETTINGS_QUERY,
 } from './queries'
 import { buildGraphQLUrl } from './url'
+import type { AuthenticatedAuthStatus } from '../..'
 
 export type BrowserOrNodeResponse = Response | NodeResponse
 
@@ -411,8 +412,11 @@ export interface Prompt {
         text: string
     }
     url: string
-    // TODO JHH: pick a better type
     icon?: any
+    createdBy?: Pick<
+        AuthenticatedAuthStatus,
+        "username" | "avatarURL" | "displayName" | "primaryEmail"
+    >
 }
 
 interface ContextFiltersResponse {
@@ -590,7 +594,7 @@ export class SourcegraphGraphQLAPIClient {
         return new SourcegraphGraphQLAPIClient(Observable.of(config))
     }
 
-    private constructor(private readonly config: Observable<GraphQLAPIClientConfig>) {}
+    private constructor(private readonly config: Observable<GraphQLAPIClientConfig>) { }
 
     public async getSiteVersion(signal?: AbortSignal): Promise<string | Error> {
         return this.fetchSourcegraphAPI<APIResponse<SiteVersionResponse>>(
@@ -612,9 +616,8 @@ export class SourcegraphGraphQLAPIClient {
         return this.fetchSourcegraphAPI<APIResponse<FuzzyFindFilesResponse>>(
             FUZZY_FILES_QUERY,
             {
-                query: `type:path count:30 ${
-                    repositories.length > 0 ? `repo:^(${repositories.map(escapeRegExp).join('|')})$` : ''
-                } ${query}`,
+                query: `type:path count:30 ${repositories.length > 0 ? `repo:^(${repositories.map(escapeRegExp).join('|')})$` : ''
+                    } ${query}`,
             },
             AbortSignal.timeout(15000)
         ).then(response =>
@@ -630,9 +633,8 @@ export class SourcegraphGraphQLAPIClient {
         query: string
     ): Promise<FuzzyFindSymbol[] | Error> {
         return this.fetchSourcegraphAPI<APIResponse<FuzzyFindSymbolsResponse>>(FUZZY_SYMBOLS_QUERY, {
-            query: `type:symbol count:30 ${
-                repositories.length > 0 ? `repo:^(${repositories.map(escapeRegExp).join('|')})$` : ''
-            } ${query}`,
+            query: `type:symbol count:30 ${repositories.length > 0 ? `repo:^(${repositories.map(escapeRegExp).join('|')})$` : ''
+                } ${query}`,
         }).then(response =>
             extractDataOrError(
                 response,
@@ -707,9 +709,9 @@ export class SourcegraphGraphQLAPIClient {
             data.site?.siteID
                 ? data.site?.productSubscription?.license?.hashedKey
                     ? {
-                          siteid: data.site?.siteID,
-                          hashedLicenseKey: data.site?.productSubscription?.license?.hashedKey,
-                      }
+                        siteid: data.site?.siteID,
+                        hashedLicenseKey: data.site?.productSubscription?.license?.hashedKey,
+                    }
                     : new Error('site hashed license key not found')
                 : new Error('site ID not found')
         )
@@ -1040,8 +1042,7 @@ export class SourcegraphGraphQLAPIClient {
                     repoName: item.blob.repository.name,
                     path: item.blob.path,
                     uri: URI.parse(
-                        `${config.auth.serverEndpoint}${item.blob.repository.name}/-/blob/${
-                            item.blob.path
+                        `${config.auth.serverEndpoint}${item.blob.repository.name}/-/blob/${item.blob.path
                         }?L${item.startLine + 1}-${item.endLine}`
                     ),
                     startLine: item.startLine,

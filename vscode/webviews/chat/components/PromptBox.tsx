@@ -1,7 +1,6 @@
 import type { LucideProps } from 'lucide-react'
 import type { ForwardRefExoticComponent } from 'react'
 import { UserAvatar } from '../../components/UserAvatar'
-import { useUserAccountInfo } from '../../utils/useConfig'
 
 import type { Prompt } from '@sourcegraph/cody-shared'
 import styles from './PromptBox.module.css'
@@ -13,8 +12,9 @@ export interface PromptBoxProps {
 }
 
 export default function PromptBox({ prompt, icon, onSelect }: PromptBoxProps) {
-    const { name, description } = prompt
-    const userInfo = useUserAccountInfo()
+    const { name, description, createdBy } = prompt
+    // endpoint is required by UserAvatar component
+    const userInfo = { ...createdBy ?? {}, endpoint: '' }
     const Icon = icon ? icon : undefined
 
     return (
@@ -23,7 +23,7 @@ export default function PromptBox({ prompt, icon, onSelect }: PromptBoxProps) {
                 {Icon ? (
                     <Icon className={styles.icon} strokeWidth={1} />
                 ) : (
-                    <UserAvatar className={styles.avatar} user={userInfo.user} size={24} />
+                    <UserAvatar className={styles.avatar} user={userInfo} size={24} />
                 )}
             </div>
             <div className={styles.definition}>
