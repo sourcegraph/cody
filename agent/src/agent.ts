@@ -1202,13 +1202,12 @@ export class Agent extends MessageHandler implements ExtensionClient {
 
         // TODO: JetBrains no longer uses this, consider deleting it.
         this.registerAuthenticatedRequest('chat/restore', async ({ modelID, messages, chatID }) => {
-            const authStatus = currentAuthStatusAuthed()
             modelID ??= (await firstResultFromOperation(modelsService.getDefaultChatModel())) ?? ''
             const chatMessages = messages?.map(PromptString.unsafe_deserializeChatMessage) ?? []
             const chatBuilder = new ChatBuilder(modelID, chatID, chatMessages)
             const chat = chatBuilder.toSerializedChatTranscript()
             if (chat) {
-                await chatHistory.saveChat(authStatus, chat)
+                await chatHistory.saveChat(chat)
             }
             return this.createChatPanel(
                 Promise.resolve({

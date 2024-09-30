@@ -6,7 +6,7 @@ import { createPatch } from 'diff'
 import { execSync, spawn } from 'node:child_process'
 import fspromises from 'node:fs/promises'
 import path from 'node:path'
-import { type ContextItem, type SerializedChatMessage, logError } from '@sourcegraph/cody-shared'
+import {type ContextItem, type SerializedChatMessage, logError, currentAuthStatusAuthed} from '@sourcegraph/cody-shared'
 import dedent from 'dedent'
 import { applyPatch } from 'fast-myers-diff'
 import * as vscode from 'vscode'
@@ -883,8 +883,9 @@ ${patch}`
         additionalConfig?: Partial<ExtensionConfiguration>,
         { expectAuthenticated = true }: { expectAuthenticated?: boolean } = {}
     ) {
-        const info = await this.initialize(additionalConfig)
-        if (expectAuthenticated && !info.authStatus?.authenticated) {
+        await this.initialize(additionalConfig)
+        const authStatus = currentAuthStatusAuthed()
+        if (expectAuthenticated && !authStatus?.authenticated) {
             throw new Error('Could not log in')
         }
     }

@@ -1,7 +1,7 @@
 import path from 'node:path'
 
 import { spawnSync } from 'node:child_process'
-import { INCLUDE_EVERYTHING_CONTEXT_FILTERS } from '@sourcegraph/cody-shared'
+import {currentAuthStatusAuthed, INCLUDE_EVERYTHING_CONTEXT_FILTERS} from '@sourcegraph/cody-shared'
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 import { TESTING_CREDENTIALS } from '../../vscode/src/testutils/testing-credentials'
 import { TestClient } from './TestClient'
@@ -31,15 +31,16 @@ describe('Enterprise - S2 (close main branch)', () => {
             stdio: 'inherit',
         })
 
-        const serverInfo = await s2EnterpriseClient.initialize({
+        await s2EnterpriseClient.initialize({
             autocompleteAdvancedProvider: 'fireworks',
         })
 
-        expect(serverInfo.authStatus?.authenticated).toBeTruthy()
-        if (!serverInfo.authStatus?.authenticated) {
+        const authStatus = currentAuthStatusAuthed()
+        expect(authStatus?.authenticated).toBeTruthy()
+        if (!authStatus?.authenticated) {
             throw new Error('unreachable')
         }
-        expect(serverInfo.authStatus?.username).toStrictEqual('codytesting')
+        expect(authStatus?.username).toStrictEqual('codytesting')
     }, 10_000)
 
     // Disabled because `attribution/search` GraphQL does not work on S2

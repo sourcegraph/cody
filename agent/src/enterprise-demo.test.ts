@@ -4,6 +4,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { TESTING_CREDENTIALS } from '../../vscode/src/testutils/testing-credentials'
 import { TestClient } from './TestClient'
 import { TestWorkspace } from './TestWorkspace'
+import {currentAuthStatusAuthed} from "@sourcegraph/cody-shared";
 
 const workspace = new TestWorkspace(path.join(__dirname, '__tests__', 'example-ts'))
 
@@ -16,13 +17,14 @@ describe('Enterprise', () => {
     })
     // Initialize inside beforeAll so that subsequent tests are skipped if initialization fails.
     beforeAll(async () => {
-        const serverInfo = await demoEnterpriseClient.initialize()
+         await demoEnterpriseClient.initialize()
 
-        expect(serverInfo.authStatus?.authenticated).toBeTruthy()
-        if (!serverInfo.authStatus?.authenticated) {
+        const authStatus = currentAuthStatusAuthed()
+        expect(authStatus?.authenticated).toBeTruthy()
+        if (!authStatus?.authenticated) {
             throw new Error('unreachable')
         }
-        expect(serverInfo.authStatus?.username).toStrictEqual('codytesting')
+        expect(authStatus?.username).toStrictEqual('codytesting')
     }, 10_000)
 
     // Skip because it consistently fails with:
