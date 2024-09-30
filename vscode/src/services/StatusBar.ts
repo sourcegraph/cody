@@ -378,7 +378,7 @@ export class CodyStatusBar {
         if (loaders.size > 0) {
             return {
                 icon: 'loading',
-                tooltip: `Loading: ${loaders.values().next().value.title}`,
+                tooltip: `${loaders.values().next().value.title}`,
                 style: 'normal',
                 tags,
                 interact: interactDefault({
