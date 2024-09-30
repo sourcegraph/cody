@@ -216,30 +216,6 @@ export class CodyStatusBar {
         }
         return false
     }
-    // startLoading
-
-    // startLoading(label: string, params: { timeoutMs?: number } = {}) {
-    //     openLoadingLeases++
-    //     statusBarItem.tooltip = label
-    //     rerender()
-
-    //     let didClose = false
-    //     const timeoutId = params.timeoutMs ? setTimeout(stopLoading, params.timeoutMs) : null
-    //     function stopLoading() {
-    //         if (didClose) {
-    //             return
-    //         }
-    //         didClose = true
-
-    //         openLoadingLeases--
-    //         rerender()
-    //         if (timeoutId) {
-    //             clearTimeout(timeoutId)
-    //         }
-    //     }
-
-    //     return stopLoading
-    // },
 
     private async handleInteraction() {
         this.currentInteraction?.abort()
