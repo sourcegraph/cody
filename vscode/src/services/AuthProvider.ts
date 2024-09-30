@@ -3,12 +3,12 @@ import * as vscode from 'vscode'
 import {
     type AuthCredentials,
     type AuthStatus,
-    CodyIDE,
     NEVER,
     type ResolvedConfiguration,
     type Unsubscribable,
     abortableOperation,
     authStatus,
+    clientCapabilities,
     combineLatest,
     currentResolvedConfig,
     disposableSubscription,
@@ -69,7 +69,7 @@ class AuthProvider implements vscode.Disposable {
             ])
                 .pipe(
                     abortableOperation(async ([config], signal) => {
-                        if (config.configuration.agentIDE === CodyIDE.Web) {
+                        if (clientCapabilities().isCodyWeb) {
                             // Cody Web calls {@link AuthProvider.validateAndStoreCredentials}
                             // explicitly. This early exit prevents duplicate authentications during
                             // the initial load.
@@ -249,7 +249,6 @@ function toCredentialsOnlyNormalized(
 ): ResolvedConfigurationCredentialsOnly {
     return {
         configuration: {
-            agentIDE: config.configuration.agentIDE,
             customHeaders: config.configuration.customHeaders,
         },
         auth: { ...config.auth, serverEndpoint: normalizeServerEndpointURL(config.auth.serverEndpoint) },

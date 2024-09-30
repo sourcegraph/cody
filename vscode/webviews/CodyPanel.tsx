@@ -1,4 +1,4 @@
-import { type AuthStatus, CodyIDE } from '@sourcegraph/cody-shared'
+import { type AuthStatus, type ClientCapabilities, CodyIDE } from '@sourcegraph/cody-shared'
 import type React from 'react'
 import { type ComponentProps, type FunctionComponent, useCallback, useRef } from 'react'
 import type { ConfigurationSubsetForWebview, LocalEnv } from '../src/chat/protocol'
@@ -16,7 +16,11 @@ export const CodyPanel: FunctionComponent<
     {
         view: View
         setView: (view: View) => void
-        configuration: { config: LocalEnv & ConfigurationSubsetForWebview; authStatus: AuthStatus }
+        configuration: {
+            config: LocalEnv & ConfigurationSubsetForWebview
+            clientCapabilities: ClientCapabilities
+            authStatus: AuthStatus
+        }
         errorMessages: string[]
         setErrorMessages: (errors: string[]) => void
         attributionEnabled: boolean
@@ -35,7 +39,7 @@ export const CodyPanel: FunctionComponent<
 > = ({
     view,
     setView,
-    configuration: { config, authStatus },
+    configuration: { config, clientCapabilities, authStatus },
     errorMessages,
     setErrorMessages,
     attributionEnabled,
@@ -75,11 +79,11 @@ export const CodyPanel: FunctionComponent<
             {!authStatus.authenticated && authStatus.showNetworkError && <ConnectivityStatusBanner />}
 
             {/* Hide tab bar in editor chat panels. */}
-            {(config.agentIDE === CodyIDE.Web || config.webviewType !== 'editor') && (
+            {(clientCapabilities.agentIDE === CodyIDE.Web || config.webviewType !== 'editor') && (
                 <TabsBar
                     currentView={view}
                     setView={setView}
-                    IDE={config.agentIDE || CodyIDE.VSCode}
+                    IDE={clientCapabilities.agentIDE}
                     onDownloadChatClick={onDownloadChatClick}
                 />
             )}
@@ -101,7 +105,7 @@ export const CodyPanel: FunctionComponent<
                 )}
                 {view === View.History && (
                     <HistoryTab
-                        IDE={config.agentIDE || CodyIDE.VSCode}
+                        IDE={clientCapabilities.agentIDE}
                         setView={setView}
                         webviewType={config.webviewType}
                         multipleWebviewsEnabled={config.multipleWebviewsEnabled}

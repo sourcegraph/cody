@@ -2,6 +2,7 @@ import { Observable, Subject } from 'observable-fns'
 import { describe, expect, it, vi } from 'vitest'
 import { mockAuthStatus } from '../auth/authStatus'
 import { AUTH_STATUS_FIXTURE_AUTHED, type AuthStatus } from '../auth/types'
+import { CLIENT_CAPABILITIES_FIXTURE, mockClientCapabilities } from '../configuration/clientCapabilities'
 import type { ResolvedConfiguration } from '../configuration/resolver'
 import { featureFlagProvider } from '../experimentation/FeatureFlagProvider'
 import {
@@ -35,6 +36,8 @@ import { ModelUsage } from './types'
 vi.mock('graphqlClient')
 vi.mock('../services/LocalStorageProvider')
 vi.mock('../experimentation/FeatureFlagProvider')
+
+mockClientCapabilities(CLIENT_CAPABILITIES_FIXTURE)
 
 describe('maybeAdjustContextWindows', () => {
     it('works', () => {

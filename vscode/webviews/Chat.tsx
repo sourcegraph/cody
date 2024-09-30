@@ -4,7 +4,6 @@ import { useCallback, useEffect, useMemo, useRef } from 'react'
 import type {
     AuthenticatedAuthStatus,
     ChatMessage,
-    CodyIDE,
     Guardrails,
     PromptString,
 } from '@sourcegraph/cody-shared'
@@ -224,9 +223,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                 guardrails={guardrails}
                 smartApplyEnabled={smartApplyEnabled}
             />
-            {transcript.length === 0 && showWelcomeMessage && (
-                <WelcomeMessage IDE={userInfo.ide} setView={setView} />
-            )}
+            {transcript.length === 0 && showWelcomeMessage && <WelcomeMessage setView={setView} />}
             {scrollableParent && (
                 <ScrollDown scrollableParent={scrollableParent} onClick={handleScrollDownClick} />
             )}
@@ -241,7 +238,6 @@ export interface UserAccountInfo {
         AuthenticatedAuthStatus,
         'username' | 'displayName' | 'avatarURL' | 'endpoint' | 'primaryEmail'
     >
-    ide: CodyIDE
 }
 
 export type ApiPostMessage = (message: any) => void

@@ -91,7 +91,7 @@ export const MarkdownFromCody: FunctionComponent<{ className?: string; children:
     className,
     children,
 }) => {
-    const clientType = useConfig().config.agentIDE ?? CodyIDE.VSCode
+    const clientType = useConfig().clientCapabilities.agentIDE
     const urlTransform = useMemo(() => URL_PROCESSORS[clientType], [clientType])
 
     return (

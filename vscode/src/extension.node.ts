@@ -18,7 +18,6 @@ import { initializeNetworkAgent, setCustomAgent } from './fetch.node'
 import { SymfRunner } from './local-context/symf'
 import { localStorage } from './services/LocalStorageProvider'
 import { OpenTelemetryService } from './services/open-telemetry/OpenTelemetryService.node'
-import { getExtensionDetails } from './services/telemetry-v2'
 import { serializeConfigSnapshot } from './uninstall/serializeConfig'
 
 /**
@@ -70,6 +69,5 @@ export async function deactivate(): Promise<void> {
     serializeConfigSnapshot({
         config,
         authStatus,
-        extensionDetails: getExtensionDetails(config.configuration),
     })
 }

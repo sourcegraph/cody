@@ -1,6 +1,7 @@
 import {
     type ChatModel,
     TokenCounterUtils,
+    clientCapabilities,
     distinctUntilChanged,
     firstResultFromOperation,
     pendingOperation,
@@ -23,7 +24,6 @@ import {
     type ChatMessage,
     ClientConfigSingleton,
     type CodyClientConfig,
-    CodyIDE,
     type CompletionParameters,
     type ContextItem,
     type ContextItemOpenCtx,
@@ -78,7 +78,6 @@ import { captureException } from '@sentry/core'
 import type { TelemetryEventParameters } from '@sourcegraph/telemetry'
 import { map } from 'observable-fns'
 import type { URI } from 'vscode-uri'
-import { version as VSCEVersion } from '../../../package.json'
 import { View } from '../../../webviews/tabs/types'
 import { redirectToEndpointLogin, showSignOutMenu } from '../../auth/auth'
 import {
@@ -398,9 +397,8 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 )
                 break
             case 'auth': {
-                const { configuration: config } = await currentResolvedConfig()
                 if (message.authKind === 'callback' && message.endpoint) {
-                    redirectToEndpointLogin(message.endpoint, config.agentIDE)
+                    redirectToEndpointLogin(message.endpoint)
                     break
                 }
                 if (message.authKind === 'simplified-onboarding') {
@@ -434,8 +432,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     const authMethod = message.authMethod || 'dotcom'
                     const successfullyOpenedUrl = await authProviderSimplified.openExternalAuthUrl(
                         authMethod,
-                        tokenReceiverUrl,
-                        config?.agentIDE
+                        tokenReceiverUrl
                     )
                     if (!successfullyOpenedUrl) {
                         closeAuthProgressIndicator()
@@ -507,10 +504,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         const webviewType = isEditorViewType && !sidebarViewOnly ? 'editor' : 'sidebar'
 
         return {
-            agentIDE: configuration.agentIDE ?? CodyIDE.VSCode,
-            agentExtensionVersion: configuration.isRunningInsideAgent
-                ? configuration.agentExtensionVersion
-                : VSCEVersion,
             uiKindIsWeb: vscode.env.uiKind === vscode.UIKind.Web,
             serverEndpoint: auth.serverEndpoint,
             experimentalNoodle: configuration.experimentalNoodle,
@@ -559,6 +552,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         await this.postMessage({
             type: 'config',
             config: configForWebview,
+            clientCapabilities: clientCapabilities(),
             authStatus: authStatus,
             workspaceFolderUris,
             configFeatures: {

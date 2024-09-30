@@ -3,9 +3,11 @@ import { describe, expect, it, vi } from 'vitest'
 import {
     AUTH_STATUS_FIXTURE_AUTHED,
     AUTH_STATUS_FIXTURE_AUTHED_DOTCOM,
+    CLIENT_CAPABILITIES_FIXTURE,
     firstResultFromOperation,
     graphqlClient,
     mockAuthStatus,
+    mockClientCapabilities,
     mockResolvedConfig,
 } from '@sourcegraph/cody-shared'
 
@@ -20,6 +22,7 @@ describe('getRepoNamesContainingUri', () => {
         const repoNameResolver = new RepoNameResolver()
         mockAuthStatus(AUTH_STATUS_FIXTURE_AUTHED)
         mockResolvedConfig({ auth: {} })
+        mockClientCapabilities(CLIENT_CAPABILITIES_FIXTURE)
 
         vi.spyOn(remoteUrlsFromParentDirs, 'gitRemoteUrlsForUri').mockResolvedValue([
             'git@github.com:sourcegraph/cody.git',
