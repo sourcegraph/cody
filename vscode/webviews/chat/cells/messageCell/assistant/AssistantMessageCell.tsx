@@ -236,7 +236,7 @@ export function makeHumanMessageInfo(
 function useChatModelByID(
     model: string | undefined
 ): Pick<Model, 'id' | 'title' | 'provider' | 'tags'> | undefined {
-    const models = useExtensionAPI().models
+    const models = useExtensionAPI().chatModels
     const chatModels = useObservable(useMemo(() => models(), [models])).value
     return (
         chatModels?.find(m => m.id === model) ??
