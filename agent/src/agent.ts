@@ -10,6 +10,7 @@ import {
     ModelUsage,
     currentAuthStatus,
     currentAuthStatusAuthed,
+    currentAuthStatusOrNotReadyYet,
     firstResultFromOperation,
     telemetryRecorder,
     waitUntilComplete,
@@ -433,7 +434,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
                         ? new AgentClientManagedSecretStorage(this, this.secretsDidChange.event)
                         : new AgentStatelessSecretStorage({
                               [formatURL(clientInfo.extensionConfiguration?.serverEndpoint ?? '') ?? '']:
-                                  clientInfo.extensionConfiguration?.accessToken,
+                                  clientInfo.extensionConfiguration?.accessToken ?? undefined,
                           })
 
                 await initializeVscodeExtension(
@@ -472,10 +473,10 @@ export class Agent extends MessageHandler implements ExtensionClient {
                     this.registerWebviewHandlers()
                 }
 
-                const authStatus = currentAuthStatus()
+                const authStatus = currentAuthStatusOrNotReadyYet()
                 return {
                     name: 'cody-agent',
-                    authenticated: authStatus?.authenticated,
+                    authenticated: authStatus?.authenticated ?? false,
                     codyVersion: authStatus?.authenticated ? authStatus.siteVersion : undefined,
                     authStatus,
                 }
@@ -1497,7 +1498,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
                         },
                         auth: {
                             serverEndpoint: config.serverEndpoint,
-                            accessToken: config.accessToken,
+                            accessToken: config.accessToken ?? null,
                         },
                         clientState: {
                             anonymousUserID: config.anonymousUserID ?? null,
