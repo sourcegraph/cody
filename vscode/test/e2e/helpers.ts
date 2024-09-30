@@ -100,16 +100,8 @@ export const test = base
         expectedV2Events: async ({ preAuthenticate }, use) =>
             await use(
                 preAuthenticate
-                    ? [
-                          // ToDo: Uncomment once this bug is resolved: https://github.com/sourcegraph/cody/issues/3825
-                          // 'cody.extention.installed'
-                          'cody.auth:connected',
-                      ]
-                    : [
-                          // ToDo: Uncomment once this bug is resolved: https://github.com/sourcegraph/cody/issues/3825
-                          // 'cody.extention.installed',
-                          'cody.auth:connected',
-                      ]
+                    ? ['cody.extention.installed', 'cody.auth:connected']
+                    : ['cody.extention.installed', 'cody.auth:connected']
             ),
     })
     .extend<TestDirectories>({
