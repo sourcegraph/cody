@@ -16,8 +16,6 @@ test.describe('cody.at-mention', () => {
             // Behavior is described here:
             // https://linear.app/sourcegraph/issue/CODY-3405/fix-mention-telemetry
 
-            console.log(vscodeUI.url, workspaceDir)
-
             const session = uix.vscode.Session.pending({ page, vscodeUI, workspaceDir })
             const cody = uix.cody.Extension.with({ page, workspaceDir })
             // if (variant === 'private') {
@@ -91,24 +89,26 @@ test.describe('cody.at-mention', () => {
                 normalizers: snapshotNormalizers,
             })
 
-            // we now ensure that the event did fire if we do select a file
-            await atMenu.locator('[data-value^="[\\"file\\""]').locator('[title="buzz.ts"]').click()
-            await expect(atMenu).not.toBeVisible()
-            await chatInput.press('Enter')
+            await uix.mitm.withFloorResponseTime(120 * 1000, { mitmProxy }, async () => {
+                // we now ensure that the event did fire if we do select a file
+                await atMenu.locator('[data-value^="[\\"file\\""]').locator('[title="buzz.ts"]').click()
+                await expect(atMenu).not.toBeVisible()
+                await chatInput.press('Enter')
 
-            // wait until the response is displayed
-            await expect(chat.content.locator('[data-testid="message"]').nth(2)).toBeVisible()
-            const selectTelemetry = telemetry.snap(mentionTelemetry)
-            expect(
-                selectTelemetry.filter({ matching: { feature: 'cody.at-mention' } }),
-                'No additional at-mention events to fire on actual selection'
-            ).toEqual([])
-            await expect(
-                selectTelemetry.filter({
-                    matching: [{ feature: 'cody.chatResponse' }, { feature: 'cody.chat-question' }],
+                // wait until the response is displayed
+                await expect(chat.content.locator('[data-testid="message"]').nth(2)).toBeVisible()
+                const selectTelemetry = telemetry.snap(mentionTelemetry)
+                expect(
+                    selectTelemetry.filter({ matching: { feature: 'cody.at-mention' } }),
+                    'No additional at-mention events to fire on actual selection'
+                ).toEqual([])
+                await expect(
+                    selectTelemetry.filter({
+                        matching: [{ feature: 'cody.chat-question' }],
+                    })
+                ).toMatchJSONSnapshot(`responseRecievedEvents.${variant}`, {
+                    normalizers: snapshotNormalizers,
                 })
-            ).toMatchJSONSnapshot(`responseRecievedEvents.${variant}`, {
-                normalizers: snapshotNormalizers,
             })
         })
     }

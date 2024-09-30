@@ -1,5 +1,5 @@
 log:
-  _recordingName: mentioneventsfirecorrectlyprivaterepo
+  _recordingName: canbestartedfromsidebar
   creator:
     comment: persister:fs
     name: Polly.JS
@@ -55,13 +55,15 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 30 Sep 2024 23:01:29 GMT
+            value: Mon, 30 Sep 2024 22:47:48 GMT
           - name: content-type
             value: text/plain; charset=utf-8
           - name: content-length
             value: "277"
           - name: connection
             value: close
+          - name: retry-after
+            value: "221"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -79,13 +81,13 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1306
+        headersSize: 1413
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-30T23:01:28.850Z
-      time: 221
+      startedDateTime: 2024-09-30T22:47:47.843Z
+      time: 234
       timings:
         blocked: -1
         connect: -1
@@ -93,148 +95,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 221
-    - _id: 16ccd937ae1d4b916753adfd8c5679bc
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 1185
-        cookies: []
-        headers:
-          - name: transfer-encoding
-            value: chunked
-          - name: host
-            value: sourcegraph.com
-          - name: connection
-            value: close
-          - name: traceparent
-            value: 00-e90da6b9ee4698c278b960ff9dfb3616-f77e3240c5d67b90-01
-          - name: authorization
-            value: token
-              REDACTED_fc324d3667e841181b0779375f26dedc911d26b303d23b29b1a2d7ee63dc77eb
-          - name: accept-encoding
-            value: identity
-          - name: content-type
-            value: application/json
-          - name: x-mitm-proxy-name
-            value: sourcegraph.dotcom
-          - name: x-mitm-auth-token-name
-            value: sourcegraph.dotcom
-        headersSize: 576
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json
-          params: []
-          textJSON:
-            maxTokensToSample: 4000
-            messages:
-              - speaker: system
-                text: >-
-                  You are Cody, an AI coding assistant from Sourcegraph.If your
-                  answer contains fenced code blocks in Markdown, include the
-                  relevant full file path in the code block tag using this
-                  structure: ```$LANGUAGE:$FILEPATH```
-
-                  For executable terminal commands: enclose each command in individual "bash" language code block without comments and new lines inside.
-              - speaker: human
-                text: |-
-                  Codebase context from file buzz.ts:
-                  ```typescript:buzz.ts
-                  export function fizzbuzz() {
-                      const fizzbuzz = []
-                      for (let i = 1; i <= 100; i++) {
-                          if (i % 15 === 0) {
-                              fizzbuzz.push('FizzBuzz')
-                          } else if (i % 3 === 0) {
-                              fizzbuzz.push('Fizz')
-                          } else if (i % 5 === 0) {
-                              fizzbuzz.push('Buzz')
-                          } else {
-                              fizzbuzz.push(i.toString())
-                          }
-                      }
-                      return fizzbuzz
-                  }
-                  ```
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: >-
-                  You have access to the provided codebase context. Answer
-                  positively without apologizing. 
-
-
-                  Question: buzz.ts 
-            model: anthropic::2023-06-01::claude-3.5-sonnet
-            temperature: 0.2
-            topK: -1
-            topP: -1
-        queryString:
-          - name: api-version
-            value: "2"
-          - name: client-name
-            value: vscode
-          - name: client-version
-            value: 1.34.3
-        url: https://sourcegraph.com/.api/completions/stream?api-version=2&client-name=vscode&client-version=1.34.3
-      response:
-        bodySize: 5120
-        content:
-          mimeType: text/event-stream
-          size: 5120
-          text: >+
-            event: completion
-
-            data: {"deltaText":"Certainly! I can provide information about the `buzz.ts` file you've shared. This file contains a TypeScript implementation of the classic FizzBuzz problem. Here's a breakdown of what the code does:\n\n1. It exports a function called `fizzbuzz()`.\n2. Inside the function, an empty array called `fizzbuzz` is initialized.\n3. The function uses a for loop to iterate from 1 to 100.\n4. For each number:\n   - If it's divisible by both 3 and 5 (i.e., divisible by 15), it adds 'FizzBuzz' to the array.\n   - If it's only divisible by 3, it adds 'Fizz' to the array.\n   - If it's only divisible by 5, it adds 'Buzz' to the array.\n   - For all other numbers, it adds the number itself (as a string) to the array.\n5. Finally, the function returns the completed `fizzbuzz` array.\n\nThis implementation follows the standard FizzBuzz rules and stores the results in an array, which can be useful for further processing or display. The function is exported, so it can be imported and used in other parts of a TypeScript or JavaScript project.\n\nIs there anything specific about this file or its implementation that you'd like to know more about?","stopReason":"end_turn"}
-
-
-            event: done
-
-            data: {}
-
-        cookies: []
-        headers:
-          - name: date
-            value: Mon, 30 Sep 2024 23:01:35 GMT
-          - name: content-type
-            value: text/event-stream
-          - name: transfer-encoding
-            value: chunked
-          - name: connection
-            value: close
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache
-          - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
-              X-Requested-With,Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1279
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2024-09-30T23:01:33.249Z
-      time: 4874
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 4874
+        wait: 234
     - _id: 28c346c4c160958f92e8f989a1737e5e
       _order: 0
       cache: {}
@@ -302,13 +163,15 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 30 Sep 2024 23:01:28 GMT
+            value: Mon, 30 Sep 2024 22:47:47 GMT
           - name: content-type
             value: application/json
           - name: content-length
             value: "282"
           - name: connection
             value: close
+          - name: retry-after
+            value: "222"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -326,13 +189,13 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1437
+        headersSize: 1544
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-30T23:01:27.963Z
-      time: 241
+      startedDateTime: 2024-09-30T22:47:46.805Z
+      time: 375
       timings:
         blocked: -1
         connect: -1
@@ -340,7 +203,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 241
+        wait: 375
     - _id: a4d641ac3093a4efbffe59352b351757
       _order: 0
       cache: {}
@@ -400,13 +263,15 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 30 Sep 2024 23:01:28 GMT
+            value: Mon, 30 Sep 2024 22:47:47 GMT
           - name: content-type
             value: application/json
           - name: content-length
             value: "76"
           - name: connection
             value: close
+          - name: retry-after
+            value: "222"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -424,13 +289,13 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1436
+        headersSize: 1543
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-30T23:01:27.964Z
-      time: 252
+      startedDateTime: 2024-09-30T22:47:46.808Z
+      time: 373
       timings:
         blocked: -1
         connect: -1
@@ -438,7 +303,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 252
+        wait: 373
     - _id: 06568f66a76daea32430b82552305046
       _order: 0
       cache: {}
@@ -498,13 +363,15 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 30 Sep 2024 23:01:28 GMT
+            value: Mon, 30 Sep 2024 22:47:47 GMT
           - name: content-type
             value: application/json
           - name: content-length
             value: "69"
           - name: connection
             value: close
+          - name: retry-after
+            value: "222"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -522,13 +389,13 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1436
+        headersSize: 1543
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-30T23:01:27.964Z
-      time: 234
+      startedDateTime: 2024-09-30T22:47:46.806Z
+      time: 374
       timings:
         blocked: -1
         connect: -1
@@ -536,7 +403,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 234
+        wait: 374
     - _id: d1e9e9d8ae116eb7e71823b775d35828
       _order: 0
       cache: {}
@@ -611,13 +478,15 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 30 Sep 2024 23:01:28 GMT
+            value: Mon, 30 Sep 2024 22:47:47 GMT
           - name: content-type
             value: application/json
           - name: content-length
             value: "334"
           - name: connection
             value: close
+          - name: retry-after
+            value: "222"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -635,13 +504,13 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1437
+        headersSize: 1544
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-30T23:01:27.965Z
-      time: 242
+      startedDateTime: 2024-09-30T22:47:46.809Z
+      time: 380
       timings:
         blocked: -1
         connect: -1
@@ -649,7 +518,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 242
+        wait: 380
     - _id: 9fdf3418a505d251116e020fda591c55
       _order: 0
       cache: {}
@@ -715,13 +584,15 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 30 Sep 2024 23:01:28 GMT
+            value: Mon, 30 Sep 2024 22:47:47 GMT
           - name: content-type
             value: application/json
           - name: content-length
             value: "194"
           - name: connection
             value: close
+          - name: retry-after
+            value: "222"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -739,13 +610,13 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1437
+        headersSize: 1544
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-30T23:01:28.220Z
-      time: 358
+      startedDateTime: 2024-09-30T22:47:47.202Z
+      time: 374
       timings:
         blocked: -1
         connect: -1
@@ -753,7 +624,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 358
+        wait: 374
     - _id: 39fe3efa22c727dff9fd6b923a145b81
       _order: 0
       cache: {}
@@ -817,13 +688,15 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 30 Sep 2024 23:01:32 GMT
+            value: Mon, 30 Sep 2024 22:47:52 GMT
           - name: content-type
             value: application/json
           - name: content-length
             value: "112"
           - name: connection
             value: close
+          - name: retry-after
+            value: "217"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -841,13 +714,13 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1437
+        headersSize: 1544
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-30T23:01:32.627Z
-      time: 244
+      startedDateTime: 2024-09-30T22:47:51.752Z
+      time: 246
       timings:
         blocked: -1
         connect: -1
@@ -855,7 +728,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 244
+        wait: 246
     - _id: a4f06f44ac6627e56ffe62ff40b4aaa9
       _order: 0
       cache: {}
@@ -913,13 +786,15 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 30 Sep 2024 23:01:28 GMT
+            value: Mon, 30 Sep 2024 22:47:47 GMT
           - name: content-type
             value: application/json
           - name: content-length
             value: "73"
           - name: connection
             value: close
+          - name: retry-after
+            value: "222"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -937,13 +812,13 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1436
+        headersSize: 1543
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-30T23:01:27.942Z
-      time: 262
+      startedDateTime: 2024-09-30T22:47:46.782Z
+      time: 396
       timings:
         blocked: -1
         connect: -1
@@ -951,7 +826,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 262
+        wait: 396
     - _id: a6632f96ba91fb74e4e450ec8da83f1a
       _order: 0
       cache: {}
@@ -1028,13 +903,15 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 30 Sep 2024 23:01:32 GMT
+            value: Mon, 30 Sep 2024 22:47:51 GMT
           - name: content-type
             value: application/json
           - name: content-length
             value: "98"
           - name: connection
             value: close
+          - name: retry-after
+            value: "217"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -1052,13 +929,13 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1436
+        headersSize: 1543
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-30T23:01:32.607Z
-      time: 245
+      startedDateTime: 2024-09-30T22:47:51.720Z
+      time: 250
       timings:
         blocked: -1
         connect: -1
@@ -1066,7 +943,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 245
+        wait: 250
     - _id: 5bf27035df04d471d88a6d6cb52a0dd6
       _order: 0
       cache: {}
@@ -1311,13 +1188,15 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 30 Sep 2024 23:01:29 GMT
+            value: Mon, 30 Sep 2024 22:47:48 GMT
           - name: content-type
             value: text/plain; charset=utf-8
           - name: transfer-encoding
             value: chunked
           - name: connection
             value: close
+          - name: retry-after
+            value: "221"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -1335,12 +1214,12 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1313
+        headersSize: 1420
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-30T23:01:29.076Z
+      startedDateTime: 2024-09-30T22:47:48.086Z
       time: 239
       timings:
         blocked: -1
