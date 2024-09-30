@@ -35,6 +35,7 @@ import {
     take,
     telemetryRecorder,
 } from '@sourcegraph/cody-shared'
+import { isEqual } from 'lodash'
 import { filter, map } from 'observable-fns'
 import type { CommandResult } from './CommandResult'
 import { showAccountMenu } from './auth/account-menu'
@@ -90,7 +91,7 @@ import { displayHistoryQuickPick } from './services/HistoryChat'
 import { localStorage } from './services/LocalStorageProvider'
 import { VSCodeSecretStorage, secretStorage } from './services/SecretStorageProvider'
 import { registerSidebarCommands } from './services/SidebarCommands'
-import { type CodyStatusBar, createStatusBar } from './services/StatusBar'
+import { CodyStatusBar } from './services/StatusBar'
 import { createOrUpdateTelemetryRecorderProvider } from './services/telemetry-v2'
 import { onTextDocumentChange } from './services/utils/codeblock-action-tracker'
 import {
@@ -130,7 +131,7 @@ export async function start(
     setClientCapabilitiesFromConfiguration(getConfiguration())
 
     setResolvedConfigurationObservable(
-        combineLatest([
+        combineLatest(
             fromVSCodeEvent(vscode.workspace.onDidChangeConfiguration).pipe(
                 filter(
                     event => event.affectsConfiguration('cody') || event.affectsConfiguration('openctx')
@@ -143,8 +144,8 @@ export async function start(
                 startWith(undefined),
                 map(() => secretStorage)
             ),
-            localStorage.clientStateChanges.pipe(distinctUntilChanged()),
-        ]).pipe(
+            localStorage.clientStateChanges.pipe(distinctUntilChanged())
+        ).pipe(
             map(
                 ([clientConfiguration, clientSecrets, clientState]) =>
                     ({
@@ -219,16 +220,8 @@ const register = async (
     )
     disposables.push(chatsController)
 
-    const statusBar = createStatusBar()
+    const statusBar = CodyStatusBar.init(disposables)
     disposables.push(
-        statusBar,
-        subscriptionDisposable(
-            authStatus.subscribe({
-                next: authStatus => {
-                    statusBar.setAuthStatus(authStatus)
-                },
-            })
-        ),
         subscriptionDisposable(
             exposeOpenCtxClient(context, platform.createOpenCtxController).subscribe({})
         )
@@ -652,19 +645,46 @@ function registerAutocomplete(
     statusBar: CodyStatusBar,
     disposables: vscode.Disposable[]
 ): void {
+    //@ts-ignore
+    let statusBarLoader: undefined | (() => void) = statusBar.addLoader({
+        title: 'Completion Provider is starting',
+        kind: 'startup',
+    })
+    const finishLoading = () => {
+        statusBarLoader?.()
+        statusBarLoader = undefined
+    }
     disposables.push(
         subscriptionDisposable(
-            combineLatest([resolvedConfig, authStatus])
+            combineLatest(resolvedConfig, authStatus)
                 .pipe(
-                    switchMap(([config, authStatus]) =>
-                        createInlineCompletionItemProvider({
+                    //TODO(@rnauta -> @sqs): It feels yuk to handle the invalidation outside of
+                    //where the state is picked. It's also very tedious
+                    distinctUntilChanged((a, b) => {
+                        return isEqual(a[0].configuration, b[0].configuration) && isEqual(a[1], b[1])
+                    }),
+                    switchMap(([config, authStatus]) => {
+                        if (!authStatus.pendingValidation && !statusBarLoader) {
+                            statusBarLoader = statusBar.addLoader({
+                                title: 'Completion Provider is starting',
+                            })
+                        }
+                        const res = createInlineCompletionItemProvider({
                             config,
                             authStatus,
                             platform,
                             statusBar,
                         })
-                    ),
+                        if (res === NEVER && !authStatus.pendingValidation) {
+                            finishLoading()
+                        }
+                        return res.tap(res => {
+                            finishLoading()
+                        })
+                    }),
                     catchError(error => {
+                        finishLoading()
+                        //TODO: We could show something in the statusbar
                         logError('registerAutocomplete', 'Error', error)
                         return NEVER
                     })

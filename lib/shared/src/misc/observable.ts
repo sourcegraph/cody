@@ -312,28 +312,19 @@ export const NEVER: Observable<never> = new Observable<never>(() => {})
  * Combine the latest values from multiple {@link Observable}s into a single {@link Observable} that
  * emits only after all input observables have emitted once.
  */
-export function combineLatest<T1>(observables: [Observable<T1>]): Observable<[T1]>
-export function combineLatest<T1, T2>(
-    observables: [Observable<T1>, Observable<T2>]
-): Observable<[T1, T2]>
-export function combineLatest<T1, T2, T3>(
-    observables: [Observable<T1>, Observable<T2>, Observable<T3>]
-): Observable<[T1, T2, T3]>
-export function combineLatest<T1, T2, T3, T4>(
-    observables: [Observable<T1>, Observable<T2>, Observable<T3>, Observable<T4>]
-): Observable<[T1, T2, T3, T4]>
-export function combineLatest<T>(observables: Array<Observable<T>>): Observable<T[]>
-export function combineLatest<T>(observables: Array<Observable<T>>): Observable<T[]> {
+export function combineLatest<T extends unknown[]>(
+    ...observables: { [K in keyof T]: Observable<T[K]> }
+): Observable<T> {
     if (observables.length === 0) {
         return EMPTY
     }
-    return new Observable<T[]>(observer => {
+    return new Observable<T>(observer => {
         const latestValues: T[] = new Array(observables.length)
         const latestSeq: number[] = new Array(observables.length).fill(0)
         const hasValue: boolean[] = new Array(observables.length).fill(false)
         let completed = 0
         const subscriptions: Subscription<T>[] = []
-        const scheduler = new AsyncSerialScheduler<T[]>(observer)
+        const scheduler = new AsyncSerialScheduler<T>(observer)
 
         for (let index = 0; index < observables.length; index++) {
             const observable = observables[index]
@@ -349,7 +340,11 @@ export function combineLatest<T>(observables: Array<Observable<T>>): Observable<
                                 // and when we're running, then this emission was already emitted by
                                 // another task and we can skip it.
                                 if (latestSeq[index] === seq) {
-                                    next([...latestValues])
+                                    next(
+                                        [
+                                            ...latestValues,
+                                        ] as T /* We have ensured they are in the correct order. We just spread to prevent mutation of the array.*/
+                                    )
                                 }
                             })
                         }

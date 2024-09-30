@@ -73,7 +73,7 @@ class ChatHistoryManager implements vscode.Disposable {
     }
 
     private changeNotifications = new Subject<void>()
-    public changes: Observable<UserLocalHistory | null> = combineLatest([
+    public changes: Observable<UserLocalHistory | null> = combineLatest(
         authStatus.pipe(
             // Only need to rere-fetch the chat history when the endpoint or username changes for
             // authed users (i.e., when they switch to a different account), not when anything else
@@ -94,8 +94,8 @@ class ChatHistoryManager implements vscode.Disposable {
             ),
             distinctUntilChanged()
         ),
-        this.changeNotifications.pipe(startWith(undefined)),
-    ]).pipe(map(([authStatus]) => (authStatus.authenticated ? this.getLocalHistory(authStatus) : null)))
+        this.changeNotifications.pipe(startWith(undefined))
+    ).pipe(map(([authStatus]) => (authStatus.authenticated ? this.getLocalHistory(authStatus) : null)))
 }
 
 export const chatHistory = new ChatHistoryManager()

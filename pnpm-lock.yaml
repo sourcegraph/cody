@@ -356,6 +356,9 @@ importers:
       diff:
         specifier: ^5.2.0
         version: 5.2.0
+      immer:
+        specifier: ^10.1.1
+        version: 10.1.1
       isomorphic-fetch:
         specifier: ^3.0.0
         version: 3.0.0
@@ -411,6 +414,9 @@ importers:
       '@types/vscode':
         specifier: ^1.80.0
         version: 1.80.0
+      type-fest:
+        specifier: ^4.26.1
+        version: 4.26.1
 
   vscode:
     dependencies:
@@ -799,6 +805,9 @@ importers:
       react-head:
         specifier: ^3.4.2
         version: 3.4.2(react-dom@18.2.0)(react@18.2.0)
+      type-fest:
+        specifier: ^4.26.1
+        version: 4.26.1
       typescript-language-server:
         specifier: ^4.3.3
         version: 4.3.3
@@ -10332,6 +10341,10 @@ packages:
     resolution: {integrity: sha512-XXOFtyqDjNDAQxVfYxuF7g9Il/IbWmmlQg2MYKOH8ExIT1qg6xc4zyS3HaEEATgs1btfzxq15ciUiY7gjSXRGQ==}
     dev: true
 
+  /immer@10.1.1:
+    resolution: {integrity: sha512-s2MPrmjovJcoMaHtx6K11Ra7oD05NT97w1IC5zpMkT6Atjr7H8LjaDd81iIxUYpMKSRRNMJE703M1Fhr/TctHw==}
+    dev: false
+
   /import-fresh@3.3.0:
     resolution: {integrity: sha512-veYYhQa+D1QBKznvhUHxb8faxlrwUnxseDAbAp457E0wLNio2bOSKnjYDhMj+YiAq61xrMGhQk9iXVk5FzgQMw==}
     engines: {node: '>=6'}
@@ -15447,6 +15460,11 @@ packages:
   /type-fest@2.19.0:
     resolution: {integrity: sha512-RAH822pAdBgcNMAfWnCBU3CFZcfZ/i1eZjwFU/dsLKumyuuP3niueg2UAukXYF0E2AAoc82ZSSf9J0WQBinzHA==}
     engines: {node: '>=12.20'}
+    dev: true
+
+  /type-fest@4.26.1:
+    resolution: {integrity: sha512-yOGpmOAL7CkKe/91I5O3gPICmJNLJ1G4zFYVAsRHg7M64biSnPtRj0WNQt++bRkjYOqjWXrhnUw1utzmVErAdg==}
+    engines: {node: '>=16'}
     dev: true
 
   /type-is@1.6.18:
