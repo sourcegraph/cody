@@ -10,8 +10,8 @@ import {
     type TelemetryRecorder,
 } from '@sourcegraph/cody-shared'
 import type { AuthMethod } from '../src/chat/protocol'
+import { AuthPage } from './AuthPage'
 import { LoadingPage } from './LoadingPage'
-import { LoginSimplified } from './OnboardingExperiment'
 import { useClientActionDispatcher } from './client/clientState'
 
 import { ExtensionAPIProviderFromVSCodeAPI } from '@sourcegraph/prompt-editor'
@@ -166,7 +166,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
         <ComposedWrappers wrappers={wrappers}>
             {view === View.Login || !config.authStatus.authenticated ? (
                 <div className={styles.outerContainer}>
-                    <LoginSimplified
+                    <AuthPage
                         simplifiedLoginRedirect={loginRedirect}
                         uiKindIsWeb={config.config.uiKindIsWeb}
                         vscodeAPI={vscodeAPI}
