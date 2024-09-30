@@ -24,12 +24,22 @@
     position: sticky;
     border-bottom: 1px solid var(--vscode-dropdown-border);
     background-color: var(--vscode-sideBar-background);
+    padding: 0.5rem 0rem 0.5rem;
+}
+
+.new-chat-btn {
+    border: 0.25px solid var(--vscode-dropdown-border);
+    border-radius: 4px;
+    margin:6px;
 }
 
 .tabs {
     display: flex;
+    flex-flow: row nowrap;
+    align-items: center;
     flex-shrink: 0;
-    gap: 2px;
+    justify-content: space-between;
+    gap: 8px;
     width: 100%;
     padding: 0 8px;
     border-bottom: 1px solid var(--vscode-dropdown-border);

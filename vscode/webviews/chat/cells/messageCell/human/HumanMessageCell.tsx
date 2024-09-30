@@ -87,7 +87,10 @@ export const HumanMessageCell: FunctionComponent<{
                     <HumanMessageEditor
                         userInfo={userInfo}
                         initialEditorState={initialEditorState}
-                        placeholder={isFirstMessage ? 'Ask...' : 'Ask a followup...'}
+                        placeholder={isFirstMessage
+                            ? "Ask anything. Use @ to specify context or ⌥Q to select predefined prompts"
+                            : 'Ask a followup...'
+                        }
                         isFirstMessage={isFirstMessage}
                         isSent={isSent}
                         isPendingPriorResponse={isPendingPriorResponse}

@@ -20,12 +20,13 @@ import { CodyIDE, FeatureFlag, isDefined } from '@sourcegraph/cody-shared'
 import { type FC, Fragment, forwardRef, useCallback, useMemo, useState } from 'react'
 import { Kbd } from '../components/Kbd'
 import { Tooltip, TooltipContent, TooltipTrigger } from '../components/shadcn/ui/tooltip'
-import { useConfig } from '../utils/useConfig'
+import { useConfig, useUserAccountInfo } from '../utils/useConfig'
 
 import { Button } from '../components/shadcn/ui/button'
 import { useFeatureFlag } from '../utils/useFeatureFlags'
 import styles from './TabsBar.module.css'
 import { getCreateNewChatCommand } from './utils'
+import { UserAvatar } from '../components/UserAvatar'
 
 interface TabsBarProps {
     IDE: CodyIDE
@@ -66,6 +67,7 @@ interface TabConfig {
 
 export const TabsBar: React.FC<TabsBarProps> = ({ currentView, setView, IDE, onDownloadChatClick }) => {
     const tabItems = useTabs({ IDE, onDownloadChatClick })
+    const userInfo = useUserAccountInfo()
     const {
         config: { webviewType, multipleWebviewsEnabled },
     } = useConfig()
@@ -115,17 +117,20 @@ export const TabsBar: React.FC<TabsBarProps> = ({ currentView, setView, IDE, onD
                                 isActive={currentView === view}
                                 onClick={() => handleClick(view, command, changesView)}
                                 data-testid={`tab-${view}`}
+                                showTitle={false}
                             />
                         </Tabs.Trigger>
                     ))}
 
-                    <div className="tw-ml-auto">
+                    <div className={clsx(styles.newChatBtn, "tw-ml-auto")}>
                         <TabButton
                             prominent
                             Icon={MessageSquarePlusIcon}
                             title="New Chat"
                             IDE={IDE}
-                            alwaysShowTitle={true}
+                            alwaysShowTitle={false}
+                            showTitle={true}
+                            titleFirst={true}
                             tooltipExtra={
                                 <>
                                     {IDE === CodyIDE.VSCode && (
@@ -146,6 +151,7 @@ export const TabsBar: React.FC<TabsBarProps> = ({ currentView, setView, IDE, onD
                             }
                         />
                     </div>
+                    <UserAvatar size={20} user={userInfo.user} />
                 </div>
                 <div className={styles.subTabs}>
                     {currentViewSubActions.map(subAction => (
@@ -265,6 +271,8 @@ interface TabButtonProps {
     onClick?: () => void
     prominent?: boolean
     alwaysShowTitle?: boolean
+    showTitle?: boolean
+    titleFirst?: boolean
 
     /** Extra content to display in the tooltip (in addition to the title). */
     tooltipExtra?: React.ReactNode
@@ -279,6 +287,8 @@ export const TabButton = forwardRef<HTMLButtonElement, TabButtonProps>((props, r
         onClick,
         title,
         alwaysShowTitle,
+        showTitle,
+        titleFirst,
         tooltipExtra,
         prominent,
         'data-testid': dataTestId,
@@ -300,14 +310,20 @@ export const TabButton = forwardRef<HTMLButtonElement, TabButtonProps>((props, r
                     )}
                     data-testid={dataTestId}
                 >
-                    <Icon size={16} strokeWidth={1.25} className="tw-w-8 tw-h-8" />
-                    <span className={alwaysShowTitle ? '' : styles.tabActionLabel}>{title}</span>
+                    {(showTitle && titleFirst) &&
+                        <span className={alwaysShowTitle ? '' : styles.tabActionLabel}>{title}</span>
+
+                    }
+                    <Icon size={20} strokeWidth={1.25} className="tw-shrink-0" />
+                    {(showTitle && !titleFirst) &&
+                        <span className={alwaysShowTitle ? '' : styles.tabActionLabel}>{title}</span>
+                    }
                 </button>
             </TooltipTrigger>
             <TooltipContent portal={IDE === CodyIDE.Web}>
                 {title} {tooltipExtra}
             </TooltipContent>
-        </Tooltip>
+        </Tooltip >
     )
 })
 
@@ -356,11 +372,11 @@ function useTabs(input: Pick<TabsBarProps, 'IDE' | 'onDownloadChatClick'>): TabC
                                 confirmation:
                                     IDE === CodyIDE.Web
                                         ? {
-                                              title: 'Are you sure you want to delete all of your chats?',
-                                              description:
-                                                  'You will not be able to recover them once deleted.',
-                                              confirmationAction: 'Delete all chats',
-                                          }
+                                            title: 'Are you sure you want to delete all of your chats?',
+                                            description:
+                                                'You will not be able to recover them once deleted.',
+                                            confirmationAction: 'Delete all chats',
+                                        }
                                         : undefined,
 
                                 // We don't have a way to request user confirmation in Cody Agent
@@ -382,20 +398,20 @@ function useTabs(input: Pick<TabsBarProps, 'IDE' | 'onDownloadChatClick'>): TabC
                     },
                     multipleWebviewsEnabled
                         ? {
-                              view: View.Settings,
-                              title: 'Settings',
-                              Icon: SettingsIcon,
-                              command: 'cody.status-bar.interacted',
-                          }
+                            view: View.Settings,
+                            title: 'Settings',
+                            Icon: SettingsIcon,
+                            command: 'cody.status-bar.interacted',
+                        }
                         : null,
                     IDE !== CodyIDE.Web
                         ? {
-                              view: View.Account,
-                              title: 'Account',
-                              Icon: CircleUserIcon,
-                              command: 'cody.auth.account',
-                              changesView: IDE !== CodyIDE.VSCode,
-                          }
+                            view: View.Account,
+                            title: 'Account',
+                            Icon: CircleUserIcon,
+                            command: 'cody.auth.account',
+                            changesView: IDE !== CodyIDE.VSCode,
+                        }
                         : null,
                 ] as (TabConfig | null)[]
             ).filter(isDefined),
