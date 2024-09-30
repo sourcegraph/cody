@@ -1,4 +1,5 @@
 import { expect, test as t } from '@playwright/test'
+import { InvisibleStatusBarTag } from '@sourcegraph/cody-shared'
 import type { UIXContextFnContext } from '.'
 
 type WebViewCtx = Pick<UIXContextFnContext, 'page'>
@@ -58,6 +59,58 @@ export class WebView {
     }
 }
 
+export class StatusBarItem {
+    private constructor(private ctx: Pick<UIXContextFnContext, 'page' | 'workspaceDir'>) {}
+
+    static with(init: Pick<UIXContextFnContext, 'page' | 'workspaceDir'>) {
+        return new StatusBarItem(init)
+    }
+    get locator() {
+        return this.ctx.page.locator('.statusbar-item[id="sourcegraph\\.cody-ai\\.extension-status"]')
+    }
+
+    withTags(tags: {
+        loading?: boolean
+        hasErrors?: boolean
+        hasIgnoredFile?: boolean
+        isAuthenticated?: boolean
+    }) {
+        // let targetStatus = this.statusBar.filter({
+        //     hasNot:
+        // })
+        let locator = this.locator
+        if (tags.loading !== undefined) {
+            const filterLocator = this.ctx.page.getByRole('button', {
+                name: 'loading~spin',
+            })
+            locator = locator.filter(tags.loading ? { has: filterLocator } : { hasNot: filterLocator })
+        }
+        if (tags.hasErrors !== undefined) {
+            const filterLocator = this.ctx.page.getByRole('button', {
+                name: InvisibleStatusBarTag.HasErrors,
+            })
+            locator = locator.filter(tags.hasErrors ? { has: filterLocator } : { hasNot: filterLocator })
+        }
+        if (tags.hasIgnoredFile !== undefined) {
+            const filterLocator = this.ctx.page.getByRole('button', {
+                name: InvisibleStatusBarTag.IsIgnored,
+            })
+            locator = locator.filter(
+                tags.hasIgnoredFile ? { has: filterLocator } : { hasNot: filterLocator }
+            )
+        }
+        if (tags.isAuthenticated !== undefined) {
+            const filterLocator = this.ctx.page.getByRole('button', {
+                name: InvisibleStatusBarTag.IsAuthenticated,
+            })
+            locator = locator.filter(
+                tags.isAuthenticated ? { has: filterLocator } : { hasNot: filterLocator }
+            )
+        }
+        return locator
+    }
+}
+
 export class Extension {
     private constructor(private ctx: Pick<UIXContextFnContext, 'page' | 'workspaceDir'>) {}
 
@@ -65,8 +118,8 @@ export class Extension {
         return new Extension(init)
     }
 
-    get statusBar() {
-        return this.ctx.page.locator('.statusbar-item[id="sourcegraph\\.cody-ai\\.extension-status"]')
+    get statusBarItem() {
+        return StatusBarItem.with(this.ctx)
     }
 
     get progressNotifications() {
@@ -78,9 +131,19 @@ export class Extension {
         })
     }
 
-    async waitUntilReady() {
+    async waitUntilReady(
+        additionalChecks: { isAuthenticated?: boolean; hasErrors?: boolean } = {
+            isAuthenticated: true,
+            hasErrors: false,
+        }
+    ) {
         return await t.step('Extension.waitUntilReady', async () => {
-            await expect(this.statusBar).toBeVisible({ visible: true })
+            const targetStatus = this.statusBarItem.withTags({
+                loading: false,
+                hasErrors: additionalChecks.hasErrors,
+                isAuthenticated: additionalChecks.isAuthenticated,
+            })
+            await expect(targetStatus).toBeVisible({ visible: true })
             //TODO: Convert this to binaryDownload and indexingSpecific waits
             //TODO: We probably want to also allow shifting of timeouts as download might take some time
             await expect(this.progressNotifications).toHaveCount(0)
