@@ -297,6 +297,7 @@ export {
 export type { TelemetryRecorder } from './telemetry-v2/TelemetryRecorderProvider'
 export * from './telemetry-v2/singleton'
 export { testFileUri } from './test/path-helpers'
+export * from './test/constants'
 export * from './tracing'
 export {
     assertUnreachable,

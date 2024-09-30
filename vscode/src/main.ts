@@ -35,6 +35,7 @@ import {
     take,
     telemetryRecorder,
 } from '@sourcegraph/cody-shared'
+import { isEqual } from 'lodash'
 import { filter, map } from 'observable-fns'
 import type { CommandResult } from './CommandResult'
 import { showAccountMenu } from './auth/account-menu'
@@ -644,19 +645,46 @@ function registerAutocomplete(
     statusBar: CodyStatusBar,
     disposables: vscode.Disposable[]
 ): void {
+    //@ts-ignore
+    let statusBarLoader: undefined | (() => void) = statusBar.addLoader({
+        title: 'Completion Provider is starting',
+        kind: 'startup',
+    })
+    const finishLoading = () => {
+        statusBarLoader?.()
+        statusBarLoader = undefined
+    }
     disposables.push(
         subscriptionDisposable(
             combineLatest(resolvedConfig, authStatus)
                 .pipe(
-                    switchMap(([config, authStatus]) =>
-                        createInlineCompletionItemProvider({
+                    //TODO(@rnauta -> @sqs): It feels yuk to handle the invalidation outside of
+                    //where the state is picked. It's also very tedious
+                    distinctUntilChanged((a, b) => {
+                        return isEqual(a[0].configuration, b[0].configuration) && isEqual(a[1], b[1])
+                    }),
+                    switchMap(([config, authStatus]) => {
+                        if (!authStatus.pendingValidation && !statusBarLoader) {
+                            statusBarLoader = statusBar.addLoader({
+                                title: 'Completion Provider is starting',
+                            })
+                        }
+                        const res = createInlineCompletionItemProvider({
                             config,
                             authStatus,
                             platform,
                             statusBar,
                         })
-                    ),
+                        if (res === NEVER && !authStatus.pendingValidation) {
+                            finishLoading()
+                        }
+                        return res.tap(res => {
+                            finishLoading()
+                        })
+                    }),
                     catchError(error => {
+                        finishLoading()
+                        //TODO: We could show something in the statusbar
                         logError('registerAutocomplete', 'Error', error)
                         return NEVER
                     })

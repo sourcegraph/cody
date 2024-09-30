@@ -4,6 +4,7 @@ import {
     type AuthStatus,
     type ClientConfiguration,
     CodyIDE,
+    InvisibleStatusBarTag,
     type IsIgnored,
     Mutable,
     type ResolvedConfiguration,
@@ -29,23 +30,6 @@ import { FeedbackOptionItems, SupportOptionItems } from './FeedbackOptions'
 import { enableVerboseDebugMode } from './utils/export-logs'
 
 let singleton: CodyStatusBar | undefined = undefined
-
-/**
- * These are a set of invisible tags that are used to invisibly indicate
- * internal state without opening the extension. Primarily used for testing.
- * This is done because the text of the status bar is considered flaky as
- * depending on other state the displayed value might change.
- */
-export enum InvisibleStatusBarTag {
-    IsAuthenticated = '\u200B',
-    HasErrors = '\u200C',
-    HasLoaders = '\u200D',
-    // Unassigned = '\u2060'
-    // Unassigned = '\u2061'
-    // Unassigned = '\u2062'
-    // Unassigned = '\u2063'
-    // Unassigned = '\u2064'
-}
 
 const QUICK_PICK_ITEM_CHECKED_PREFIX = '$(check) '
 const QUICK_PICK_ITEM_EMPTY_INDENT_PREFIX = '\u00A0\u00A0\u00A0\u00A0\u00A0 '
@@ -192,6 +176,7 @@ export class CodyStatusBar {
         const loaderObject = Object.assign(loaderHandle, {
             createdAt: now,
             title: args.title,
+            kind: args.kind || 'feature',
         })
         this.loaders.mutate(draft => {
             draft.add(loaderObject)
@@ -238,8 +223,10 @@ export class CodyStatusBar {
                 : newState.icon === 'loading'
                   ? '$(loading~spin)'
                   : '$(cody-logo-heavy)'
-        this.statusBarItem.text = `${[...newState.tags.values()].join('')}${icon} ${newState.text}`
-        this.statusBarItem.tooltip = newState.tooltip
+        this.statusBarItem.text = `${icon} ${newState.text}`
+        // we insert tags in the tooltip as it's not escaped by vscode
+        const hiddenTags = [...newState.tags.values()].join('')
+        this.statusBarItem.tooltip = `${hiddenTags}${newState.tooltip}`
         switch (newState.style) {
             case 'normal':
                 this.statusBarItem.backgroundColor = new vscode.ThemeColor(
@@ -289,6 +276,9 @@ export class CodyStatusBar {
         }
         if (loaders.size > 0) {
             tags.add(InvisibleStatusBarTag.HasLoaders)
+        }
+        if (ignoreStatus !== false) {
+            tags.add(InvisibleStatusBarTag.IsIgnored)
         }
         if (authStatus.pendingValidation) {
             return {
@@ -352,9 +342,12 @@ export class CodyStatusBar {
         }
 
         if (loaders.size > 0) {
+            const isStarting = [...loaders.values()].some(loader => loader.kind === 'startup')
             return {
                 icon: 'loading',
-                tooltip: `${loaders.values().next().value.title}`,
+                tooltip: isStarting
+                    ? 'Cody is getting ready...'
+                    : `${loaders.values().next().value.title}`,
                 style: 'normal',
                 tags,
                 interact: interactDefault({
@@ -630,6 +623,7 @@ function ignoreReason(isIgnore: IsIgnored): string | null {
 interface StatusBarLoaderArgs {
     title: string
     timeout?: Milliseconds
+    kind?: 'startup' | 'feature'
 }
 
 //this is mainly done to ensure the type shows up as Milliseconds not 'number'
@@ -657,6 +651,7 @@ interface StatusBarError {
 interface StatusBarLoader {
     createdAt: number
     title: string
+    kind: 'startup' | 'feature'
 }
 
 type StatusBarErrorType = 'auth' | 'RateLimitError' | 'AutoCompleteDisabledByAdmin'
