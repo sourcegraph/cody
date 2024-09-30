@@ -161,8 +161,8 @@ export class TestClient extends MessageHandler {
                 CODY_RECORDING_MODE: 'replay', // can be overwritten with process.env.CODY_RECORDING_MODE
                 CODY_RECORDING_DIRECTORY: recordingDirectory,
                 CODY_RECORDING_NAME: params.name,
-                SRC_ACCESS_TOKEN: params.credentials.token,
-                REDACTED_SRC_ACCESS_TOKEN: params.credentials.redactedToken,
+                SRC_ACCESS_TOKEN: params.credentials?.token ?? '',
+                REDACTED_SRC_ACCESS_TOKEN: params.credentials?.redactedToken ?? '',
                 CODY_TELEMETRY_EXPORTER: params.telemetryExporter ?? 'testing',
                 DISABLE_FEATURE_FLAGS: 'true',
                 DISABLE_UPSTREAM_HEALTH_PINGS: 'true',
@@ -749,7 +749,6 @@ export class TestClient extends MessageHandler {
         id: string,
         text: string,
         params?: {
-            addEnhancedContext?: boolean
             contextFiles?: ContextItem[]
             index?: number
         }
@@ -762,7 +761,6 @@ export class TestClient extends MessageHandler {
                     text,
                     index: params?.index,
                     contextItems: params?.contextFiles ?? [],
-                    addEnhancedContext: params?.addEnhancedContext ?? false,
                 },
             })
         )
@@ -772,7 +770,7 @@ export class TestClient extends MessageHandler {
     public async sendMessage(
         id: string,
         text: string,
-        params?: { addEnhancedContext?: boolean; contextFiles?: ContextItem[] }
+        params?: { contextFiles?: ContextItem[] }
     ): Promise<SerializedChatMessage | undefined> {
         return (
             await this.sendSingleMessageToNewChatWithFullTranscript(text, {
@@ -784,7 +782,7 @@ export class TestClient extends MessageHandler {
 
     public async sendSingleMessageToNewChat(
         text: string,
-        params?: { addEnhancedContext?: boolean; contextFiles?: ContextItem[] }
+        params?: { contextFiles?: ContextItem[] }
     ): Promise<SerializedChatMessage | undefined> {
         return (await this.sendSingleMessageToNewChatWithFullTranscript(text, params))?.lastMessage
     }
@@ -792,7 +790,6 @@ export class TestClient extends MessageHandler {
     public async sendSingleMessageToNewChatWithFullTranscript(
         text: string,
         params?: {
-            addEnhancedContext?: boolean
             contextFiles?: ContextItem[]
             id?: string
         }
@@ -802,13 +799,6 @@ export class TestClient extends MessageHandler {
         transcript: ExtensionTranscriptMessage
     }> {
         const id = params?.id ?? (await this.request('chat/new', null))
-        if (params?.addEnhancedContext === true && this.isSymfDisabled()) {
-            throw new Error(
-                'addEnhancedContext:true when symf is disabled. ' +
-                    'To fix this problem, make sure the setting "cody.experimental.symf.enabled" is set to true. ' +
-                    'You can enable symf in the call to `TestClient.beforeAll()` or `TestClient.initialize()`.'
-            )
-        }
         const reply = asTranscriptMessage(
             await this.request('chat/submitMessage', {
                 id,
@@ -816,7 +806,6 @@ export class TestClient extends MessageHandler {
                     command: 'submit',
                     text,
                     submitType: 'user',
-                    addEnhancedContext: params?.addEnhancedContext ?? false,
                     contextItems: params?.contextFiles,
                 },
             })
@@ -826,10 +815,6 @@ export class TestClient extends MessageHandler {
             transcript: reply,
             lastMessage: reply.messages.at(-1),
         }
-    }
-    private isSymfDisabled(): boolean {
-        const customConfiguration = this.extensionConfigurationDuringInitialization?.customConfiguration
-        return customConfiguration?.['cody.experimental.symf.enabled'] === false
     }
 
     // Given the following missing recording, tries to find an existing
@@ -894,9 +879,12 @@ ${patch}`
         }
     }
 
-    public async beforeAll(additionalConfig?: Partial<ExtensionConfiguration>) {
+    public async beforeAll(
+        additionalConfig?: Partial<ExtensionConfiguration>,
+        { expectAuthenticated = true }: { expectAuthenticated?: boolean } = {}
+    ) {
         const info = await this.initialize(additionalConfig)
-        if (!info.authStatus?.authenticated) {
+        if (expectAuthenticated && !info.authStatus?.authenticated) {
             throw new Error('Could not log in')
         }
     }

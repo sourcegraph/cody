@@ -112,7 +112,6 @@ export const AssistantMessageCell: FunctionComponent<{
                                 humanMessage={humanMessage}
                                 smartApplyEnabled={smartApplyEnabled}
                                 smartApply={smartApply}
-                                userInfo={userInfo}
                             />
                         ) : (
                             isLoading && (
@@ -216,7 +215,11 @@ export function makeHumanMessageInfo(
                             withInitialContext.repositories) ||
                         (item.type === 'file' && withInitialContext.files)
                 )
-                editHumanMessage(assistantMessage.index - 1, newEditorValue)
+                editHumanMessage({
+                    messageIndexInTranscript: assistantMessage.index - 1,
+                    editorValue: newEditorValue,
+                    intent: humanMessage.intent,
+                })
             }
         },
         hasExplicitMentions: Boolean(contextItems.some(item => item.source === ContextItemSource.User)),
@@ -233,7 +236,7 @@ export function makeHumanMessageInfo(
 function useChatModelByID(
     model: string | undefined
 ): Pick<Model, 'id' | 'title' | 'provider' | 'tags'> | undefined {
-    const models = useExtensionAPI().models
+    const models = useExtensionAPI().chatModels
     const chatModels = useObservable(useMemo(() => models(), [models])).value
     return (
         chatModels?.find(m => m.id === model) ??

@@ -11,6 +11,8 @@ stdout: |+
 
 
 
+  Here's the implementation of a cow based on the provided interface:
+
   \`\`\`typescript:animal.ts
   class Cow implements StrangeAnimal {
       makesSound(): 'coo' | 'moo' {
@@ -33,6 +35,8 @@ stdout: |+
   > 1. WORKING_DIRECTORY/animal.ts
 
 
+
+  Here's the implementation of a cow based on the provided interface:
 
   \`\`\`typescript:animal.ts
   class Cow implements StrangeAnimal {
@@ -57,6 +61,8 @@ stdout: |+
 
 
 
+  Here's the implementation of a cow based on the provided interface:
+
   \`\`\`typescript:animal.ts
   class Cow implements StrangeAnimal {
       makesSound(): 'coo' | 'moo' {
@@ -73,7 +79,9 @@ exports[`--message (hello world test) 1`] = `
 "command: cody chat chat -m respond with "hello" and nothing else
 exitCode: 0
 stdout: |+
-  hello
+  \`\`\`bash
+  echo "hello"
+  \`\`\`
 
 stderr: ""
 "
@@ -83,7 +91,9 @@ exports[`--message (hello world test) 2`] = `
 "command: cody chat chat -m respond with "hello" and nothing else
 exitCode: 0
 stdout: |+
-  hello
+  \`\`\`bash
+  echo "hello"
+  \`\`\`
 
 stderr: ""
 "
@@ -93,7 +103,9 @@ exports[`--message (hello world test) 3`] = `
 "command: cody chat chat -m respond with "hello" and nothing else
 exitCode: 0
 stdout: |+
-  hello
+  \`\`\`bash
+  echo "hello"
+  \`\`\`
 
 stderr: ""
 "

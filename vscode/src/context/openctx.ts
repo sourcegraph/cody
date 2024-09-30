@@ -1,11 +1,11 @@
 import {
     type AuthStatus,
     type ClientConfiguration,
-    CodyIDE,
     FeatureFlag,
     GIT_OPENCTX_PROVIDER_URI,
     WEB_PROVIDER_URI,
     authStatus,
+    clientCapabilities,
     combineLatest,
     createDisposables,
     debounceTime,
@@ -45,8 +45,7 @@ export function exposeOpenCtxClient(
 
     return combineLatest([
         resolvedConfig.pipe(
-            map(({ configuration: { agentIDE, experimentalNoodle } }) => ({
-                agentIDE,
+            map(({ configuration: { experimentalNoodle } }) => ({
                 experimentalNoodle,
             })),
             distinctUntilChanged()
@@ -71,10 +70,8 @@ export function exposeOpenCtxClient(
             async () => createOpenCtxController ?? (await import('@openctx/vscode-lib')).createController
         ),
     ]).pipe(
-        createDisposables(([{ agentIDE, experimentalNoodle }, isValidSiteVersion, createController]) => {
+        createDisposables(([{ experimentalNoodle }, isValidSiteVersion, createController]) => {
             try {
-                const isCodyWeb = agentIDE === CodyIDE.Web
-
                 // Enable fetching of openctx configuration from Sourcegraph instance
                 const mergeConfiguration = experimentalNoodle
                     ? getMergeConfigurationFunction()
@@ -90,8 +87,8 @@ export function exposeOpenCtxClient(
                     extensionId: context.extension.id,
                     secrets: context.secrets,
                     outputChannel: openctxOutputChannel!,
-                    features: isCodyWeb ? {} : { annotations: true, statusBar: true },
-                    providers: isCodyWeb
+                    features: clientCapabilities().isVSCode ? { annotations: true } : {},
+                    providers: clientCapabilities().isCodyWeb
                         ? Observable.of(getCodyWebOpenCtxProviders())
                         : getOpenCtxProviders(authStatus, isValidSiteVersion),
                     mergeConfiguration,

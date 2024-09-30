@@ -1,13 +1,7 @@
 import * as vscode from 'vscode'
 
-import type {
-    CompletionLogger,
-    SourcegraphCompletionsClient,
-    StoredLastValue,
-} from '@sourcegraph/cody-shared'
+import type { CompletionLogger, SourcegraphCompletionsClient } from '@sourcegraph/cody-shared'
 import type { startTokenReceiver } from './auth/token-receiver'
-
-import type { BfgRetriever } from './completions/context/retrievers/bfg/bfg-retriever'
 import { onActivationDevelopmentHelpers } from './dev/helpers'
 
 import './editor/displayPathEnvInfo' // import for side effects
@@ -16,7 +10,6 @@ import type { createController } from '@openctx/vscode-lib'
 import type { CommandsProvider } from './commands/services/provider'
 import { ExtensionApi } from './extension-api'
 import type { ExtensionClient } from './extension-client'
-import type { LocalEmbeddingsController } from './local-context/local-embeddings'
 import type { SymfRunner } from './local-context/symf'
 import { start } from './main'
 import type { OpenTelemetryService } from './services/open-telemetry/OpenTelemetryService.node'
@@ -32,9 +25,7 @@ export interface PlatformContext {
     createOpenCtxController?: typeof createController
     createStorage?: () => Promise<vscode.Memento>
     createCommandsProvider?: Constructor<typeof CommandsProvider>
-    createLocalEmbeddingsController?: () => StoredLastValue<LocalEmbeddingsController | undefined>
     createSymfRunner?: Constructor<typeof SymfRunner>
-    createBfgRetriever?: () => BfgRetriever
     createCompletionsClient: (logger?: CompletionLogger) => SourcegraphCompletionsClient
     createSentryService?: () => SentryService
     createOpenTelemetryService?: () => OpenTelemetryService

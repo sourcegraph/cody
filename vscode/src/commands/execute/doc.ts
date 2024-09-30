@@ -130,7 +130,7 @@ async function getDocumentableRange(editor: vscode.TextEditor): Promise<{
     }
 }
 
-export async function docChatCommand(
+async function docChatCommand(
     span: Span,
     args?: Partial<CodyCommandArgs>
 ): Promise<ExecuteChatArguments | null> {
@@ -159,7 +159,6 @@ export async function docChatCommand(
         text: prompt,
         submitType: 'user-newchat',
         contextItems,
-        addEnhancedContext: false,
         source: args?.source,
         command: DefaultChatCommands.Doc,
     }

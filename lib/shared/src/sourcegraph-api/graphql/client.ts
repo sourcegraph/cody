@@ -19,6 +19,7 @@ import {
     CHAT_INTENT_QUERY,
     CONTEXT_FILTERS_QUERY,
     CONTEXT_SEARCH_QUERY,
+    CONTEXT_SEARCH_QUERY_WITH_RANGES,
     CURRENT_SITE_CODY_CONFIG_FEATURES,
     CURRENT_SITE_CODY_LLM_CONFIGURATION,
     CURRENT_SITE_CODY_LLM_CONFIGURATION_SMART_CONTEXT,
@@ -40,13 +41,12 @@ import {
     GET_REMOTE_FILE_QUERY,
     GET_URL_CONTENT_QUERY,
     HIGHLIGHTED_FILE_QUERY,
+    LEGACY_CHAT_INTENT_QUERY,
     LEGACY_CONTEXT_SEARCH_QUERY,
     LOG_EVENT_MUTATION,
     LOG_EVENT_MUTATION_DEPRECATED,
     PACKAGE_LIST_QUERY,
     PROMPTS_QUERY,
-    RANK_CONTEXT_QUERY,
-    RECORD_CONTEXT_QUERY,
     RECORD_TELEMETRY_EVENTS_MUTATION,
     REPOSITORY_IDS_QUERY,
     REPOSITORY_ID_QUERY,
@@ -339,16 +339,10 @@ interface ChatIntentResponse {
     chatIntent: {
         intent: string
         score: number
-    }
-}
-
-type RecordContextResponse = unknown
-
-interface RankContextResponse {
-    rankContext: {
-        ranker: string
-        used: { index: number; score: number }[]
-        ignored: { index: number; score: number }[]
+        allScores?: {
+            intent: string
+            score: number
+        }[]
     }
 }
 
@@ -368,32 +362,32 @@ interface ContextSearchResponse {
         startLine: number
         endLine: number
         chunkContent: string
+        matchedRanges: Range[]
     }[]
 }
 
-export interface EmbeddingsSearchResult {
-    repoName?: string
-    revision?: string
-    uri: URI
-    startLine: number
-    endLine: number
-    content: string
+interface Location {
+    line: number
+    column: number
+}
+
+export interface Range {
+    start: Location
+    end: Location
 }
 
 export interface ChatIntentResult {
     intent: string
     score: number
+    allScores?: {
+        intent: string
+        score: number
+    }[]
 }
 
 /**
  * Experimental API.
  */
-export interface InputContextItem {
-    content: string
-    retriever: string
-    score?: number
-}
-
 export interface ContextSearchResult {
     repoName: string
     commit: string
@@ -402,6 +396,7 @@ export interface ContextSearchResult {
     startLine: number
     endLine: number
     content: string
+    ranges: Range[]
 }
 
 /**
@@ -548,7 +543,7 @@ export interface FetchHighlightFileParameters {
 }
 
 /** A specific highlighted line range to fetch. */
-export interface HighlightLineRange {
+interface HighlightLineRange {
     /**
      * The last line to fetch (0-indexed, inclusive). Values outside the bounds of the file will
      * automatically be clamped within the valid range.
@@ -934,12 +929,13 @@ export class SourcegraphGraphQLAPIClient {
         ).then(response => extractDataOrError(response, data => data.repositories?.nodes || []))
     }
 
-    public async getRepoName(cloneURL: string): Promise<string | null> {
+    public async getRepoName(cloneURL: string, signal?: AbortSignal): Promise<string | null> {
         const response = await this.fetchSourcegraphAPI<APIResponse<RepositoryNameResponse>>(
             REPO_NAME_QUERY,
             {
                 cloneURL,
-            }
+            },
+            signal
         )
 
         const result = extractDataOrError(response, data => data.repository?.name ?? null)
@@ -948,48 +944,19 @@ export class SourcegraphGraphQLAPIClient {
 
     /** Experimental API */
     public async chatIntent(interactionID: string, query: string): Promise<ChatIntentResult | Error> {
+        const hasAllScoresField = await this.isValidSiteVersion({
+            minimumVersion: '5.9.0',
+            insider: true,
+        })
+
         const response = await this.fetchSourcegraphAPI<APIResponse<ChatIntentResponse>>(
-            CHAT_INTENT_QUERY,
+            hasAllScoresField ? CHAT_INTENT_QUERY : LEGACY_CHAT_INTENT_QUERY,
             {
                 query: query,
                 interactionId: interactionID,
             }
         )
         return extractDataOrError(response, data => data.chatIntent)
-    }
-
-    /** Experimental API */
-    public async recordContext(
-        interactionID: string,
-        used: InputContextItem[],
-        ignored: InputContextItem[]
-    ): Promise<RecordContextResponse | Error> {
-        const response = await this.fetchSourcegraphAPI<APIResponse<RecordContextResponse>>(
-            RECORD_CONTEXT_QUERY,
-            {
-                interactionId: interactionID,
-                usedContextItems: used,
-                ignoredContextItems: ignored,
-            }
-        )
-        return extractDataOrError(response, data => data)
-    }
-
-    /** Experimental API */
-    public async rankContext(
-        interactionID: string,
-        query: string,
-        context: InputContextItem[]
-    ): Promise<RankContextResponse | Error> {
-        const response = await this.fetchSourcegraphAPI<APIResponse<RankContextResponse>>(
-            RANK_CONTEXT_QUERY,
-            {
-                interactionId: interactionID,
-                query,
-                contextItems: context,
-            }
-        )
-        return extractDataOrError(response, data => data)
     }
 
     /**
@@ -1026,18 +993,24 @@ export class SourcegraphGraphQLAPIClient {
         signal?: AbortSignal
         filePatterns?: string[]
     }): Promise<ContextSearchResult[] | null | Error> {
-        const isValidVersion = await this.isValidSiteVersion({ minimumVersion: '5.7.0' })
+        const hasContextMatchingSupport = await this.isValidSiteVersion({ minimumVersion: '5.8.0' })
+        const hasFilePathSupport =
+            hasContextMatchingSupport || (await this.isValidSiteVersion({ minimumVersion: '5.7.0' }))
         const config = await firstValueFrom(this.config!)
         signal?.throwIfAborted()
 
         return this.fetchSourcegraphAPI<APIResponse<ContextSearchResponse>>(
-            isValidVersion ? CONTEXT_SEARCH_QUERY : LEGACY_CONTEXT_SEARCH_QUERY,
+            hasContextMatchingSupport
+                ? CONTEXT_SEARCH_QUERY_WITH_RANGES
+                : hasFilePathSupport
+                  ? CONTEXT_SEARCH_QUERY
+                  : LEGACY_CONTEXT_SEARCH_QUERY,
             {
                 repos: repoIDs,
                 query,
                 codeResultsCount: 15,
                 textResultsCount: 5,
-                ...(isValidVersion ? { filePatterns } : {}),
+                ...(hasFilePathSupport ? { filePatterns } : {}),
             },
             signal
         ).then(response =>
@@ -1054,6 +1027,7 @@ export class SourcegraphGraphQLAPIClient {
                     startLine: item.startLine,
                     endLine: item.endLine,
                     content: item.chunkContent,
+                    ranges: item.matchedRanges ?? [],
                 }))
             )
         )

@@ -6,6 +6,7 @@ import {
     type CodeCompletionsParams,
     type DocumentContext,
     type GitContext,
+    type Message,
     type OllamaGenerateParameters,
     PromptString,
     ps,
@@ -31,7 +32,7 @@ export interface FormatIntroSnippetsParams {
     languageConfig: LanguageConfig | null
 }
 
-interface GetPromptParams {
+export interface GetPromptParams {
     snippets: AutocompleteContextSnippet[]
     docContext: DocumentContext
     document: vscode.TextDocument
@@ -102,7 +103,11 @@ export class DefaultModel {
         return ps`${PromptString.join(commentedOutSnippets, ps`\n\n`)}\n\n`
     }
 
-    public getPrompt(params: GetPromptParams): PromptString {
+    public getMessages(params: GetPromptParams): Message[] {
+        return [{ speaker: 'human', text: this.getPrompt(params) }]
+    }
+
+    protected getPrompt(params: GetPromptParams): PromptString {
         const { snippets, docContext, document, promptChars, gitContext, isInfill = true } = params
         const { prefix, suffix } = PromptString.fromAutocompleteDocumentContext(docContext, document.uri)
 

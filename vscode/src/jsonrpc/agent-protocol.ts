@@ -103,7 +103,6 @@ export type ClientRequests = {
     // of these commands is the same as `chat/new`, an ID to reference to the
     // webview panel where the reply from this command appears.
     'commands/explain': [null, string] // TODO: rename to chatCommands/{explain,test,smell}
-    'commands/test': [null, string]
     'commands/smell': [null, string]
 
     // Trigger custom commands that could be a chat-based command or an edit command.
@@ -636,7 +635,7 @@ export interface ServerInfo {
 export interface ExtensionConfiguration {
     serverEndpoint: string
     proxy?: string | undefined | null
-    accessToken: string
+    accessToken?: string | undefined | null
     customHeaders: Record<string, string>
 
     /**

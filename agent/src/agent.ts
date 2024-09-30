@@ -10,6 +10,7 @@ import {
     ModelUsage,
     currentAuthStatus,
     currentAuthStatusAuthed,
+    currentAuthStatusOrNotReadyYet,
     firstResultFromOperation,
     telemetryRecorder,
     waitUntilComplete,
@@ -37,8 +38,8 @@ import {
     setUserAgent,
 } from '@sourcegraph/cody-shared'
 
+import { ChatBuilder } from '../../vscode/src/chat/chat-view/ChatBuilder'
 import { chatHistory } from '../../vscode/src/chat/chat-view/ChatHistoryManager'
-import { ChatModel } from '../../vscode/src/chat/chat-view/ChatModel'
 import type { ExtensionMessage, WebviewMessage } from '../../vscode/src/chat/protocol'
 import { ProtocolTextDocumentWithUri } from '../../vscode/src/jsonrpc/TextDocumentWithUri'
 import type * as agent_protocol from '../../vscode/src/jsonrpc/agent-protocol'
@@ -142,7 +143,7 @@ function copyExtensionRelativeResources(extensionPath: string, extensionClient: 
     }
 }
 
-export async function initializeVscodeExtension(
+async function initializeVscodeExtension(
     workspaceRoot: vscode.Uri,
     extensionActivate: ExtensionActivate,
     extensionClient: ExtensionClient,
@@ -433,7 +434,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
                         ? new AgentClientManagedSecretStorage(this, this.secretsDidChange.event)
                         : new AgentStatelessSecretStorage({
                               [formatURL(clientInfo.extensionConfiguration?.serverEndpoint ?? '') ?? '']:
-                                  clientInfo.extensionConfiguration?.accessToken,
+                                  clientInfo.extensionConfiguration?.accessToken ?? undefined,
                           })
 
                 await initializeVscodeExtension(
@@ -472,10 +473,10 @@ export class Agent extends MessageHandler implements ExtensionClient {
                     this.registerWebviewHandlers()
                 }
 
-                const authStatus = currentAuthStatus()
+                const authStatus = currentAuthStatusOrNotReadyYet()
                 return {
                     name: 'cody-agent',
-                    authenticated: authStatus?.authenticated,
+                    authenticated: authStatus?.authenticated ?? false,
                     codyVersion: authStatus?.authenticated ? authStatus.siteVersion : undefined,
                     authStatus,
                 }
@@ -1089,18 +1090,6 @@ export class Agent extends MessageHandler implements ExtensionClient {
             )
         })
 
-        this.registerAuthenticatedRequest('commands/test', () => {
-            return this.createChatPanel(
-                vscode.commands.executeCommand('cody.command.generate-tests', commandArgs)
-            )
-        })
-
-        this.registerAuthenticatedRequest('editCommands/test', () => {
-            return this.createEditTask(
-                vscode.commands.executeCommand<CommandResult | undefined>('cody.command.unit-tests')
-            )
-        })
-
         this.registerAuthenticatedRequest('editTask/accept', async ({ id }) => {
             this.fixups?.accept(id)
             return null
@@ -1243,8 +1232,11 @@ export class Agent extends MessageHandler implements ExtensionClient {
             const authStatus = currentAuthStatusAuthed()
             modelID ??= (await firstResultFromOperation(modelsService.getDefaultChatModel())) ?? ''
             const chatMessages = messages?.map(PromptString.unsafe_deserializeChatMessage) ?? []
-            const chatModel = new ChatModel(modelID, chatID, chatMessages)
-            await chatHistory.saveChat(authStatus, chatModel.toSerializedChatTranscript())
+            const chatBuilder = new ChatBuilder(modelID, chatID, chatMessages)
+            const chat = chatBuilder.toSerializedChatTranscript()
+            if (chat) {
+                await chatHistory.saveChat(authStatus, chat)
+            }
             return this.createChatPanel(
                 Promise.resolve({
                     type: 'chat',
@@ -1387,7 +1379,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
         })
 
         this.registerAuthenticatedRequest('featureFlags/getFeatureFlag', async ({ flagName }) => {
-            return featureFlagProvider.evaluateFeatureFlag(
+            return featureFlagProvider.evaluateFeatureFlagEphemerally(
                 FeatureFlag[flagName as keyof typeof FeatureFlag]
             )
         })
@@ -1502,14 +1494,11 @@ export class Agent extends MessageHandler implements ExtensionClient {
                 await authProvider.validateAndStoreCredentials(
                     {
                         configuration: {
-                            agentIDE: AgentWorkspaceConfiguration.clientNameToIDE(
-                                this.clientInfo?.name ?? ''
-                            ),
                             customHeaders: config.customHeaders,
                         },
                         auth: {
                             serverEndpoint: config.serverEndpoint,
-                            accessToken: config.accessToken,
+                            accessToken: config.accessToken ?? null,
                         },
                         clientState: {
                             anonymousUserID: config.anonymousUserID ?? null,

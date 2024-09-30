@@ -16,22 +16,23 @@ import {
 import { getVSCodeAPI } from '../utils/VSCodeApi'
 import { View } from './types'
 
-import { CodyIDE, isDefined } from '@sourcegraph/cody-shared'
+import { CodyIDE, FeatureFlag, isDefined } from '@sourcegraph/cody-shared'
 import { type FC, Fragment, forwardRef, useCallback, useMemo, useState } from 'react'
 import { Kbd } from '../components/Kbd'
 import { Tooltip, TooltipContent, TooltipTrigger } from '../components/shadcn/ui/tooltip'
 import { useConfig } from '../utils/useConfig'
 
+import { useExtensionAPI } from '@sourcegraph/prompt-editor'
+import { downloadChatHistory } from '../chat/downloadChatHistory'
 import { Button } from '../components/shadcn/ui/button'
+import { useFeatureFlag } from '../utils/useFeatureFlags'
 import styles from './TabsBar.module.css'
 import { getCreateNewChatCommand } from './utils'
 
 interface TabsBarProps {
     IDE: CodyIDE
     currentView: View
-    isUnifiedPromptsAvailable: boolean
     setView: (view: View) => void
-    onDownloadChatClick?: () => void
 }
 
 type IconComponent = React.ForwardRefExoticComponent<
@@ -47,6 +48,7 @@ interface TabSubAction {
     command: string
     arg?: string | undefined | null
     callback?: () => void
+    changesView?: View
     confirmation?: {
         title: string
         description: string
@@ -63,14 +65,8 @@ interface TabConfig {
     subActions?: TabSubAction[]
 }
 
-export const TabsBar: React.FC<TabsBarProps> = ({
-    currentView,
-    isUnifiedPromptsAvailable,
-    setView,
-    IDE,
-    onDownloadChatClick,
-}) => {
-    const tabItems = useTabs({ IDE, isUnifiedPromptsAvailable, onDownloadChatClick })
+export const TabsBar: React.FC<TabsBarProps> = ({ currentView, setView, IDE }) => {
+    const tabItems = useTabs({ IDE })
     const {
         config: { webviewType, multipleWebviewsEnabled },
     } = useConfig()
@@ -89,7 +85,7 @@ export const TabsBar: React.FC<TabsBarProps> = ({
     )
 
     const handleSubActionClick = useCallback(
-        (action: Pick<TabSubAction, 'callback' | 'command' | 'arg'>) => {
+        (action: Pick<TabSubAction, 'callback' | 'command' | 'arg' | 'changesView'>) => {
             if (action.callback) {
                 action.callback()
             } else {
@@ -99,8 +95,11 @@ export const TabsBar: React.FC<TabsBarProps> = ({
                     arg: action.arg,
                 })
             }
+            if (action.changesView) {
+                setView(action.changesView)
+            }
         },
-        []
+        [setView]
     )
 
     return (
@@ -135,8 +134,10 @@ export const TabsBar: React.FC<TabsBarProps> = ({
                                     )}
                                 </>
                             }
+                            view={View.Chat}
                             onClick={() =>
                                 handleSubActionClick({
+                                    changesView: View.Chat,
                                     command: getCreateNewChatCommand({
                                         IDE,
                                         webviewType,
@@ -271,7 +272,7 @@ interface TabButtonProps {
     'data-testid'?: string
 }
 
-export const TabButton = forwardRef<HTMLButtonElement, TabButtonProps>((props, ref) => {
+const TabButton = forwardRef<HTMLButtonElement, TabButtonProps>((props, ref) => {
     const {
         IDE,
         Icon,
@@ -317,13 +318,14 @@ TabButton.displayName = 'TabButton'
  * Returns list of tabs and its sub-action buttons, used later as configuration for
  * tabs rendering in chat header.
  */
-function useTabs(
-    input: Pick<TabsBarProps, 'IDE' | 'isUnifiedPromptsAvailable' | 'onDownloadChatClick'>
-): TabConfig[] {
-    const { isUnifiedPromptsAvailable, IDE, onDownloadChatClick } = input
+function useTabs(input: Pick<TabsBarProps, 'IDE'>): TabConfig[] {
+    const { IDE } = input
     const {
         config: { multipleWebviewsEnabled },
     } = useConfig()
+    const isUnifiedPromptsAvailable = useFeatureFlag(FeatureFlag.CodyUnifiedPrompts)
+
+    const extensionAPI = useExtensionAPI<'userHistory'>()
 
     return useMemo<TabConfig[]>(
         () =>
@@ -344,7 +346,7 @@ function useTabs(
                                 title: 'Export',
                                 Icon: DownloadIcon,
                                 command: 'cody.chat.history.export',
-                                callback: onDownloadChatClick,
+                                callback: () => downloadChatHistory(extensionAPI),
                             },
                             {
                                 title: 'Delete all',
@@ -400,6 +402,6 @@ function useTabs(
                         : null,
                 ] as (TabConfig | null)[]
             ).filter(isDefined),
-        [IDE, onDownloadChatClick, multipleWebviewsEnabled, isUnifiedPromptsAvailable]
+        [IDE, multipleWebviewsEnabled, isUnifiedPromptsAvailable, extensionAPI]
     )
 }

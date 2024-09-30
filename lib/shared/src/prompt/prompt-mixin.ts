@@ -1,4 +1,5 @@
 import type { ChatMessage } from '../chat/transcript/messages'
+import type { ChatModel } from '../models/types'
 import { PromptString, ps } from './prompt-string'
 
 /**
@@ -22,7 +23,7 @@ export class PromptMixin {
      * Prepends all mixins to `humanMessage`. Modifies and returns `humanMessage`.
      * Add hedging prevention prompt to specific models who need this.
      */
-    public static mixInto(humanMessage: ChatMessage, modelID: string): ChatMessage {
+    public static mixInto(humanMessage: ChatMessage, modelID: ChatModel | undefined): ChatMessage {
         // Default Mixin is added at the end so that it cannot be overriden by other mixins.
         let mixins = PromptString.join(
             [...PromptMixin.mixins, PromptMixin.contextMixin].map(mixin => mixin.prompt),
@@ -30,7 +31,7 @@ export class PromptMixin {
         )
 
         // Add prompt that prevents Claude 3.5 Sonnet from apologizing constantly.
-        if (modelID.includes('3-5-sonnet') || modelID.includes('3.5-sonnet')) {
+        if (modelID?.includes('3-5-sonnet') || modelID?.includes('3.5-sonnet')) {
             mixins = mixins.concat(HEDGES_PREVENTION)
         }
 

@@ -4,7 +4,6 @@ import { useCallback, useEffect, useMemo, useRef } from 'react'
 import type {
     AuthenticatedAuthStatus,
     ChatMessage,
-    CodyIDE,
     Guardrails,
     PromptString,
 } from '@sourcegraph/cody-shared'
@@ -25,21 +24,18 @@ interface ChatboxProps {
     messageInProgress: ChatMessage | null
     transcript: ChatMessage[]
     vscodeAPI: Pick<VSCodeWrapper, 'postMessage' | 'onMessage'>
-    isTranscriptError: boolean
     guardrails?: Guardrails
     scrollableParent?: HTMLElement | null
     showWelcomeMessage?: boolean
     showIDESnippetActions?: boolean
     setView: (view: View) => void
     smartApplyEnabled?: boolean
-    isUnifiedPromptsAvailable?: boolean
 }
 
 export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>> = ({
     messageInProgress,
     transcript,
     vscodeAPI,
-    isTranscriptError,
     chatEnabled = true,
     guardrails,
     scrollableParent,
@@ -47,7 +43,6 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     showIDESnippetActions = true,
     setView,
     smartApplyEnabled,
-    isUnifiedPromptsAvailable,
 }) => {
     const telemetryRecorder = useTelemetryRecorder()
 
@@ -65,11 +60,6 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             telemetryRecorder.recordEvent('cody.feedback', 'submit', {
                 metadata: {
                     feedbackType: text === 'thumbsUp' ? FeedbackType.thumbsUp : FeedbackType.thumbsDown,
-                    lastChatUsedEmbeddings: transcriptRef.current
-                        .at(-1)
-                        ?.contextFiles?.some(file => file.source === 'embeddings')
-                        ? 1
-                        : 0,
                     recordsPrivateMetadataTranscript: userInfo.isDotComUser ? 1 : 0,
                 },
                 privateMetadata: {
@@ -227,20 +217,13 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                 copyButtonOnSubmit={copyButtonOnSubmit}
                 insertButtonOnSubmit={insertButtonOnSubmit}
                 smartApply={smartApply}
-                isTranscriptError={isTranscriptError}
                 userInfo={userInfo}
                 chatEnabled={chatEnabled}
                 postMessage={postMessage}
                 guardrails={guardrails}
                 smartApplyEnabled={smartApplyEnabled}
             />
-            {transcript.length === 0 && showWelcomeMessage && (
-                <WelcomeMessage
-                    IDE={userInfo.ide}
-                    setView={setView}
-                    isUnifiedPromptsAvailable={isUnifiedPromptsAvailable}
-                />
-            )}
+            {transcript.length === 0 && showWelcomeMessage && <WelcomeMessage setView={setView} />}
             {scrollableParent && (
                 <ScrollDown scrollableParent={scrollableParent} onClick={handleScrollDownClick} />
             )}
@@ -255,7 +238,6 @@ export interface UserAccountInfo {
         AuthenticatedAuthStatus,
         'username' | 'displayName' | 'avatarURL' | 'endpoint' | 'primaryEmail'
     >
-    ide: CodyIDE
 }
 
 export type ApiPostMessage = (message: any) => void

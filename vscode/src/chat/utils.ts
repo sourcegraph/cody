@@ -29,7 +29,12 @@ type NewAuthStatusOptions = { endpoint: string } & (
 
 export function newAuthStatus(options: NewAuthStatusOptions): AuthStatus {
     if (!options.authenticated) {
-        return { authenticated: false, endpoint: options.endpoint, showInvalidAccessTokenError: true }
+        return {
+            authenticated: false,
+            endpoint: options.endpoint,
+            showInvalidAccessTokenError: true,
+            pendingValidation: false,
+        }
     }
 
     const { endpoint, siteVersion, userOrganizations } = options
@@ -47,6 +52,7 @@ export function newAuthStatus(options: NewAuthStatusOptions): AuthStatus {
         requiresVerifiedEmail,
         hasVerifiedEmail,
         codyApiVersion,
+        pendingValidation: false,
         isFireworksTracingEnabled:
             isDotCom_ && !!userOrganizations?.nodes.find(org => org.name === 'sourcegraph'),
     }

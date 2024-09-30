@@ -23,8 +23,6 @@ describe('getConfiguration', () => {
                         return 'http://example.com'
                     case 'cody.codebase':
                         return 'my/codebase'
-                    case 'cody.useContext':
-                        return 'keyword'
                     case 'cody.customHeaders':
                         return {
                             'Cache-Control': 'no-cache',
@@ -78,7 +76,7 @@ describe('getConfiguration', () => {
                             url: OLLAMA_DEFAULT_URL,
                         }
                     case 'cody.autocomplete.experimental.graphContext':
-                        return 'bfg'
+                        return 'lsp-light'
                     case 'cody.advanced.agent.running':
                         return false
                     case 'cody.advanced.hasNativeWebview':
@@ -92,6 +90,8 @@ describe('getConfiguration', () => {
                     case 'cody.internal.unstable':
                         return false
                     case 'cody.internal.debug.context':
+                        return false
+                    case 'cody.internal.debug.state':
                         return false
                     case 'cody.experimental.supercompletions':
                         return false
@@ -119,7 +119,6 @@ describe('getConfiguration', () => {
         expect(getConfiguration(config)).toEqual({
             proxy: undefined,
             codebase: 'my/codebase',
-            useContext: 'keyword',
             serverEndpoint: 'http://example.com',
             customHeaders: {
                 'Cache-Control': 'no-cache',
@@ -144,6 +143,7 @@ describe('getConfiguration', () => {
             hasNativeWebview: true,
             internalUnstable: false,
             internalDebugContext: false,
+            internalDebugState: false,
             debugVerbose: true,
             debugFilter: /.*/,
             telemetryLevel: 'off',
@@ -154,7 +154,7 @@ describe('getConfiguration', () => {
             autocompleteFormatOnAccept: true,
             autocompleteDisableInsideComments: false,
             autocompleteExperimentalFireworksOptions: undefined,
-            autocompleteExperimentalGraphContext: 'bfg',
+            autocompleteExperimentalGraphContext: 'lsp-light',
             autocompleteExperimentalOllamaOptions: {
                 model: 'codellama:7b-code',
                 url: OLLAMA_DEFAULT_URL,
@@ -163,7 +163,6 @@ describe('getConfiguration', () => {
             autocompleteExperimentalPreloadDebounceInterval: 0,
             providerLimitPrompt: 123,
             devModels: [{ model: 'm', provider: 'p' }],
-            testingModelConfig: undefined,
             experimentalGuardrailsTimeoutSeconds: undefined,
         } satisfies ClientConfiguration)
     })

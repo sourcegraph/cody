@@ -23,7 +23,8 @@ import type {
     PersistencePresentEventPayload,
     PersistenceRemovedEventPayload,
 } from '../common/persistence-tracker/types'
-import { GitHubDotComRepoMetadata } from '../repository/repo-metadata-from-git-api'
+import type { GitIdentifiersForFile } from '../repository/git-metadata-for-editor'
+import { GitHubDotComRepoMetadata } from '../repository/githubRepoMetadata'
 import { upstreamHealthProvider } from '../services/UpstreamHealthProvider'
 import {
     AUTOCOMPLETE_STAGE_COUNTER_INITIAL_STATE,
@@ -72,17 +73,13 @@ interface InlineCompletionItemRetrievedContext {
     endLine: number
 }
 
-interface InlineContextItemsParams {
+interface InlineContextItemsParams extends GitIdentifiersForFile {
     context: AutocompleteContextSnippet[]
-    filePath: string | undefined
-    gitUrl: string | undefined
-    commit: string | undefined
 }
 
-export interface InlineCompletionItemContext {
-    gitUrl: string
-    commit?: string
-    filePath?: string
+export interface InlineCompletionItemContext
+    extends Omit<GitIdentifiersForFile, 'repoName'>,
+        Required<Pick<GitIdentifiersForFile, 'repoName'>> {
     prefix?: string
     suffix?: string
     triggerLine?: number
@@ -720,44 +717,61 @@ export function loaded(params: LoadedParams): void {
     if (!event.params.responseHeaders && completions[0]?.responseHeaders) {
         event.params.responseHeaders = completions[0]?.responseHeaders
     }
-
-    // 🚨 SECURITY: included only for DotCom users & Public github Repos.
-    if (
-        isDotComUser &&
-        inlineContextParams?.gitUrl &&
-        event.params.inlineCompletionItemContext === undefined
-    ) {
-        const instance = GitHubDotComRepoMetadata.getInstance()
-        // Get the metadata only if already cached, We don't wait for the network call here.
-        const gitRepoMetadata = instance.getRepoMetadataIfCached(inlineContextParams.gitUrl)
-        if (gitRepoMetadata === undefined || !gitRepoMetadata.isPublic) {
-            // 🚨 SECURITY: For Non-Public git Repos, We cannot log any code related information, just git url and commit.
-            event.params.inlineCompletionItemContext = {
-                gitUrl: inlineContextParams.gitUrl,
-                commit: inlineContextParams.commit,
-                isRepoPublic: gitRepoMetadata?.isPublic,
-            }
-            return
-        }
-        event.params.inlineCompletionItemContext = {
-            gitUrl: inlineContextParams.gitUrl,
-            commit: inlineContextParams.commit,
-            isRepoPublic: gitRepoMetadata?.isPublic,
-            filePath: inlineContextParams.filePath,
-            prefix: requestParams.docContext.prefix,
-            suffix: requestParams.docContext.suffix,
-            triggerLine: requestParams.position.line,
-            triggerCharacter: requestParams.position.character,
-            context: inlineContextParams.context.map(snippet => ({
-                identifier: snippet.identifier,
-                content: snippet.content,
-                startLine: snippet.startLine,
-                endLine: snippet.endLine,
-                filePath: snippet.uri.fsPath,
-            })),
-        }
+    const inlineCompletionContext = getInlineContextItemContext(
+        requestParams,
+        isDotComUser,
+        inlineContextParams
+    )
+    if (inlineCompletionContext) {
+        event.params.inlineCompletionItemContext = inlineCompletionContext
     }
 }
+
+function getInlineContextItemContext(
+    requestParams: RequestParams,
+    isDotComUser: boolean,
+    inlineContextParams?: InlineContextItemsParams
+): InlineCompletionItemContext | undefined {
+    // 🚨 SECURITY: included only for DotCom users & Public github Repos.
+    if (!isDotComUser || !inlineContextParams?.repoName) {
+        return undefined
+    }
+
+    const gitRepoMetadata = GitHubDotComRepoMetadata.getInstance().getRepoMetadataIfCached(
+        inlineContextParams.repoName
+    )
+
+    const baseContext: InlineCompletionItemContext = {
+        repoName: inlineContextParams.repoName,
+        commit: inlineContextParams.commit,
+        isRepoPublic: gitRepoMetadata?.isPublic,
+    }
+
+    if (!gitRepoMetadata?.isPublic) {
+        // 🚨 SECURITY: For Non-Public git Repos, We cannot log any code related information, just git url and commit.
+        return baseContext
+    }
+
+    const MAX_PREFIX_SUFFIX_SIZE_BYTES = 1024 * 32
+    const { position, docContext } = requestParams
+
+    return {
+        ...baseContext,
+        filePath: inlineContextParams.filePath,
+        prefix: docContext.completePrefix.slice(-MAX_PREFIX_SUFFIX_SIZE_BYTES),
+        suffix: docContext.completeSuffix.slice(0, MAX_PREFIX_SUFFIX_SIZE_BYTES),
+        triggerLine: position.line,
+        triggerCharacter: position.character,
+        context: inlineContextParams.context.map(({ identifier, content, startLine, endLine, uri }) => ({
+            identifier,
+            content,
+            startLine,
+            endLine,
+            filePath: uri.fsPath,
+        })),
+    }
+}
+
 function suggestionDocumentDiffTracker(
     interactionId: CompletionAnalyticsID,
     document: vscode.TextDocument,
@@ -780,6 +794,7 @@ function suggestionDocumentDiffTracker(
     const documentText = document.getText(trackingRange)
 
     const persistenceTimeoutList = [
+        20 * 1000, // 20 seconds
         60 * 1000, // 60 seconds
     ]
     persistenceTracker.track({

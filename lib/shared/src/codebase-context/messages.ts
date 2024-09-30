@@ -2,6 +2,7 @@ import type { URI } from 'vscode-uri'
 
 import type { RangeData } from '../common/range'
 import type { Message } from '../sourcegraph-api'
+import type { Range } from '../sourcegraph-api/graphql/client'
 
 export type ContextFileType = 'file' | 'symbol'
 
@@ -84,9 +85,6 @@ interface ContextItemCommon {
  * The source of this context.
  */
 export enum ContextItemSource {
-    /** From embeddings search */
-    Embeddings = 'embeddings',
-
     /** Explicitly @-mentioned by the user in chat */
     User = 'user',
 
@@ -172,6 +170,8 @@ export interface ContextItemFile extends ContextItemCommon {
      * that we need to resolve this context item mention via remote search file
      */
     remoteRepositoryName?: string
+
+    ranges?: Range[]
 }
 
 /**

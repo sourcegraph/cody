@@ -23,7 +23,7 @@ describe.skipIf(isWindows())('AutocompleteMatcher', () => {
                     fixture: 'test',
                     languageid: getLanguageForFileName(filename),
                     revision: 'HEAD',
-                    strategy: 'bfg',
+                    strategy: 'foo',
                     workspace: 'test',
                 },
                 queries,

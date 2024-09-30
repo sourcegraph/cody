@@ -54,7 +54,7 @@ export type IsIgnored =
     | 'no-repo-found'
     | `repo:${string}`
 
-export type GetRepoNamesFromWorkspaceUri = (
+export type GetRepoNamesContainingUri = (
     uri: vscode.Uri,
     signal?: AbortSignal
 ) => Promise<string[] | null>
@@ -81,7 +81,7 @@ function canonicalizeContextFilters(filters: ContextFilters): ContextFilters {
 
 export class ContextFiltersProvider implements vscode.Disposable {
     static repoNameResolver: {
-        getRepoNamesFromWorkspaceUri: GetRepoNamesFromWorkspaceUri
+        getRepoNamesContainingUri: GetRepoNamesContainingUri
     }
 
     /**
@@ -122,11 +122,14 @@ export class ContextFiltersProvider implements vscode.Disposable {
         }
     }
 
-    public get changes(): Observable<ContextFilters> {
-        return fromVSCodeEvent(listener => {
-            const dispose = this.onContextFiltersChanged(listener)
-            return { dispose }
-        })
+    public get changes(): Observable<ContextFilters | null> {
+        return fromVSCodeEvent(
+            listener => {
+                const dispose = this.onContextFiltersChanged(listener)
+                return { dispose }
+            },
+            () => this.lastContextFiltersResponse
+        )
     }
 
     private setContextFilters(contextFilters: ContextFilters): void {
@@ -248,7 +251,7 @@ export class ContextFiltersProvider implements vscode.Disposable {
             'repoNameResolver.getRepoNamesFromWorkspaceUri',
             span => {
                 span.setAttribute('sampled', true)
-                return ContextFiltersProvider.repoNameResolver.getRepoNamesFromWorkspaceUri?.(uri)
+                return ContextFiltersProvider.repoNameResolver.getRepoNamesContainingUri?.(uri)
             }
         )
 

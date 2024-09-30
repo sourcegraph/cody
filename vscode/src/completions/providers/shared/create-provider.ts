@@ -11,6 +11,7 @@ import {
     modelsService,
     pendingOperation,
     switchMapReplayOperation,
+    toLegacyModel,
 } from '@sourcegraph/cody-shared'
 
 import { createProvider as createAnthropicProvider } from '../anthropic'
@@ -98,7 +99,8 @@ export function createProvider({
                         }
 
                         return createProviderHelper({
-                            ...parsedProviderAndModel,
+                            legacyModel: parsedProviderAndModel.legacyModel,
+                            provider: parsedProviderAndModel.provider,
                             source: 'site-config-cody-llm-configuration',
                             authStatus,
                         })
@@ -134,7 +136,7 @@ function createProviderHelper(params: CreateProviderHelperParams): Provider | Er
     if (providerCreator) {
         return providerCreator({
             model,
-            legacyModel: legacyModel,
+            legacyModel: legacyModel ? toLegacyModel(legacyModel) : legacyModel,
             provider: provider as AutocompleteProviderID,
             source,
             authStatus,

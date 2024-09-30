@@ -6,11 +6,9 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
 import {
     type ContextItem,
-    ContextItemSource,
     DOTCOM_URL,
     ModelUsage,
     type SerializedChatTranscript,
-    isWindows,
 } from '@sourcegraph/cody-shared'
 
 import * as uuid from 'uuid'
@@ -65,7 +63,7 @@ describe('Agent', () => {
         credentials: TESTING_CREDENTIALS.dotcomProUserRateLimited,
     })
 
-    const mockEnhancedContext: ContextItem[] = []
+    const mockContextItems: ContextItem[] = []
 
     // Initialize inside beforeAll so that subsequent tests are skipped if initialization fails.
     beforeAll(async () => {
@@ -101,12 +99,11 @@ describe('Agent', () => {
             'src/ChatColumn.tsx',
             'src/Heading.tsx',
             'src/squirrel.ts',
-            'src/multiple-selections.ts',
         ]) {
             const item = await workspace.loadContextItem(name)
-            // Trim content to the first 20 lines to imitate enhanced context, which only includes file chunks
+            // Trim content to the first 20 lines to imitate our context-fetching, which only includes file chunks
             item.content = item.content?.split('\n').slice(0, 20).join('\n')
-            mockEnhancedContext.push(item)
+            mockContextItems.push(item)
         }
     }, 20_000)
 
@@ -117,14 +114,11 @@ describe('Agent', () => {
     const sumUri = workspace.file('src', 'sum.ts')
     const animalUri = workspace.file('src', 'animal.ts')
     const squirrelUri = workspace.file('src', 'squirrel.ts')
-    const multipleSelectionsUri = workspace.file('src', 'multiple-selections.ts')
 
     // Context files ends with 'Ignored.ts' will be excluded by .cody/ignore
     const ignoredUri = workspace.file('src', 'isIgnored.ts')
 
-    async function setChatModel(
-        model = 'fireworks/accounts/fireworks/models/mixtral-8x7b-instruct'
-    ): Promise<string> {
+    async function setChatModel(model = 'mistral::v1::mixtral-8x7b-instruct'): Promise<string> {
         // Use the same chat model regardless of the server response (in case it changes on the
         // remote endpoint so we don't need to regenerate all the recordings).
         const freshChatID = await client.request('chat/new', null)
@@ -140,7 +134,7 @@ describe('Agent', () => {
         // JetBrains client does and there was a bug where everything worked
         // fine as long as we didn't send the second unauthenticated config
         // change.
-        const initModelName = 'anthropic/claude-3-5-sonnet-20240620'
+        const initModelName = 'anthropic::2023-06-01::claude-3.5-sonnet'
         const { models } = await client.request('chat/models', { modelUsage: ModelUsage.Chat })
         expect(models[0].id).toStrictEqual(initModelName)
 
@@ -219,14 +213,14 @@ describe('Agent', () => {
 
     describe('Chat', () => {
         it('chat/submitMessage (short message)', async () => {
-            await setChatModel('anthropic/claude-3-5-sonnet-20240620')
+            await setChatModel('anthropic::2023-06-01::claude-3.5-sonnet')
             const lastMessage = await client.sendSingleMessageToNewChat('Hello!')
             expect(lastMessage).toMatchInlineSnapshot(
                 `
               {
-                "model": "anthropic/claude-3-5-sonnet-20240620",
+                "model": "anthropic::2023-06-01::claude-3.5-sonnet",
                 "speaker": "assistant",
-                "text": "Hello! I'm Cody, an AI coding assistant from Sourcegraph. How can I help you with your coding or development tasks today? Whether you need help with writing code, debugging, explaining concepts, or any other programming-related questions, I'm here to assist you. What would you like to work on?",
+                "text": "Hello! I'm Cody, an AI coding assistant from Sourcegraph. How can I help you with your coding or development tasks today? Whether you need help with writing code, debugging, explaining concepts, or discussing best practices, I'm here to assist. What would you like to work on?",
               }
             `
             )
@@ -268,7 +262,6 @@ describe('Agent', () => {
                         command: 'submit',
                         text: 'My name is Lars Monsen.',
                         submitType: 'user',
-                        addEnhancedContext: false,
                     },
                 })
             )
@@ -291,12 +284,11 @@ describe('Agent', () => {
                         command: 'submit',
                         text: 'What is my name?',
                         submitType: 'user',
-                        addEnhancedContext: false,
                     },
                 })
             )
             expect(reply2.messages.at(-1)?.text).toMatchInlineSnapshot(
-                `"Your name is Lars Monsen."`,
+                `"Your name is Lars Monsen, as you mentioned in your previous message."`,
                 explainPollyError
             )
             // telemetry assertion, to validate the expected events fired during the test run
@@ -323,7 +315,6 @@ describe('Agent', () => {
                         command: 'submit',
                         text: 'What model are you?',
                         submitType: 'user',
-                        addEnhancedContext: false,
                     },
                 })
             )
@@ -341,7 +332,6 @@ describe('Agent', () => {
                         command: 'submit',
                         text: 'What model are you?',
                         submitType: 'user',
-                        addEnhancedContext: false,
                     },
                 })
             )
@@ -511,8 +501,7 @@ describe('Agent', () => {
             const lastMessage = await client.sendSingleMessageToNewChat(
                 'Write a class Dog that implements the Animal interface in my workspace. Show the code only, no explanation needed.',
                 {
-                    addEnhancedContext: false,
-                    contextFiles: mockEnhancedContext,
+                    contextFiles: mockContextItems,
                 }
             )
             // TODO: make this test return a TypeScript implementation of
@@ -537,8 +526,7 @@ describe('Agent', () => {
                     // Emphasize showing code examples to hit on `chatResponse:hasCode` event.
                     'What is Squirrel? Show me concrete code examples',
                     {
-                        addEnhancedContext: false,
-                        contextFiles: mockEnhancedContext,
+                        contextFiles: mockContextItems,
                     }
                 )
             expect(lastMessage?.text?.toLocaleLowerCase() ?? '').includes('code nav')
@@ -561,7 +549,7 @@ describe('Agent', () => {
         it('webview/receiveMessage (type: chatModel)', async () => {
             const id = await client.request('chat/new', null)
             {
-                await client.request('chat/setModel', { id, model: 'google/gemini-1.5-flash' })
+                await client.request('chat/setModel', { id, model: 'google::v1::gemini-1.5-flash' })
                 const lastMessage = await client.sendMessage(id, 'what color is the sky?')
                 expect(lastMessage?.text?.toLocaleLowerCase().includes('blue')).toBeTruthy()
             }
@@ -580,7 +568,7 @@ describe('Agent', () => {
             const id = await client.request('chat/new', null)
             await client.request('chat/setModel', {
                 id,
-                model: 'fireworks/accounts/fireworks/models/mixtral-8x7b-instruct',
+                model: 'mistral::v1::mixtral-8x7b-instruct',
             })
             await client.sendMessage(
                 id,
@@ -619,7 +607,7 @@ describe('Agent', () => {
                     const id = await client.request('chat/new', null)
                     await client.request('chat/setModel', {
                         id,
-                        model: 'fireworks/accounts/fireworks/models/mixtral-8x7b-instruct',
+                        model: 'mistral::v1::mixtral-8x7b-instruct',
                     })
                     await client.sendMessage(
                         id,
@@ -665,7 +653,7 @@ describe('Agent', () => {
                 const id = await client.request('chat/new', null)
                 await client.request('chat/setModel', {
                     id,
-                    model: 'fireworks/accounts/fireworks/models/mixtral-8x7b-instruct',
+                    model: 'mistral::v1::mixtral-8x7b-instruct',
                 })
                 // edits by index replaces message at index, and erases all subsequent messages
                 await client.sendMessage(
@@ -744,7 +732,7 @@ describe('Agent', () => {
             await client.openFile(ignoredUri)
             const { transcript } = await client.sendSingleMessageToNewChatWithFullTranscript(
                 'What files contain SELECTION_START?',
-                { addEnhancedContext: false, contextFiles: mockEnhancedContext }
+                { contextFiles: mockContextItems }
             )
             decodeURIs(transcript)
             const contextFiles = transcript.messages.flatMap(m => m.contextFiles ?? [])
@@ -824,78 +812,6 @@ describe('Agent', () => {
         }, 10_000)
     })
 
-    describe('Text documents', () => {
-        // Skipping this test because it asserts an outdated behavior.
-        // Previously, the user's selection was added to the context even when
-        // `addEnhancedContext: false`. In the PR
-        // https://github.com/sourcegraph/cody/pull/5060, we change the behavior
-        // so that the user's selection is only added when `addEnhancedContext:
-        // true`.  We can't just set `addEnhancedContext: true` because we have
-        // other assertions that fail the tests when `addEnhancedContext: true`
-        // and symf is disabled. If we remove that assertion, the test still
-        // fails because of other reasons. Most likely, the Right solution is to
-        // remove the concept of `addEnhancedContext` altogether because the
-        // webview-based Chat  UI doesn't even expose a button to control this. We will still
-        // need to figure out how we expose adding the user's selection to the
-        // context when interacting with Cody through the JSON-RPC API.
-        it.skip('chat/submitMessage (understands the selected text)', async () => {
-            await client.openFile(multipleSelectionsUri)
-            await client.changeFile(multipleSelectionsUri)
-            await client.changeFile(multipleSelectionsUri, {
-                selectionName: 'SELECTION_2',
-            })
-            const contextFilesWithoutSelectionFile = mockEnhancedContext.filter(
-                item => item.uri.toString() !== multipleSelectionsUri.toString()
-            )
-
-            const reply = await client.sendSingleMessageToNewChat(
-                'What is the name of the function that I have selected? Only answer with the name of the function, nothing else',
-                // Add context to ensure the LLM can distinguish between the selected code and other context items
-                {
-                    addEnhancedContext: false,
-                    contextFiles: [
-                        ...contextFilesWithoutSelectionFile,
-                        {
-                            type: 'file',
-                            uri: multipleSelectionsUri,
-                            range: {
-                                start: {
-                                    line: 7,
-                                    character: 0,
-                                },
-                                end: {
-                                    line: 8,
-                                    character: 0,
-                                },
-                            },
-                            source: ContextItemSource.Selection,
-                        },
-                    ],
-                }
-            )
-            expect(reply?.text?.trim()).includes('anotherFunction')
-            expect(reply?.text?.trim()).not.includes('inner')
-            await client.changeFile(multipleSelectionsUri)
-            const reply2 = await client.sendSingleMessageToNewChat(
-                'What is the name of the function that I have selected? Only answer with the name of the function, nothing else',
-                // Add context to ensure the LLM can distinguish between the selected code and other context items
-                {
-                    addEnhancedContext: false,
-                    contextFiles: [
-                        ...contextFilesWithoutSelectionFile,
-                        {
-                            type: 'file',
-                            uri: multipleSelectionsUri,
-                            source: ContextItemSource.Selection,
-                        },
-                    ],
-                }
-            )
-            expect(reply2?.text?.trim()).includes('inner')
-            expect(reply2?.text?.trim()).not.includes('anotherFunction')
-        }, 20_000)
-    })
-
     describe('Commands', () => {
         it('commands/explain', async () => {
             await client.openFile(animalUri)
@@ -920,29 +836,6 @@ describe('Agent', () => {
                 ])
             )
         }, 30_000)
-
-        // This test seems extra sensitive on Node v16 for some reason.
-        it.skipIf(isWindows())(
-            'commands/test',
-            async () => {
-                await client.openFile(animalUri)
-                await setChatModel()
-                const id = await client.request('commands/test', null)
-                const lastMessage = await client.firstNonEmptyTranscript(id)
-                expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchSnapshot()
-                // telemetry assertion, to validate the expected events fired during the test run
-                // Do not remove this assertion, and instead update the expectedEvents list above
-                expect(await exportedTelemetryEvents(client)).toEqual(
-                    expect.arrayContaining([
-                        'cody.command.test:executed',
-                        'cody.chat-question:submitted',
-                        'cody.chat-question:executed',
-                        'cody.chatResponse:hasCode',
-                    ])
-                )
-            },
-            30_000
-        )
 
         it('commands/smell', async () => {
             await client.openFile(animalUri)

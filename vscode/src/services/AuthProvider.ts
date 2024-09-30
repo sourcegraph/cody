@@ -3,14 +3,15 @@ import * as vscode from 'vscode'
 import {
     type AuthCredentials,
     type AuthStatus,
-    CodyIDE,
     NEVER,
     type ResolvedConfiguration,
     type Unsubscribable,
     abortableOperation,
     authStatus,
+    clientCapabilities,
     combineLatest,
     currentResolvedConfig,
+    disposableSubscription,
     distinctUntilChanged,
     normalizeServerEndpointURL,
     pluck,
@@ -68,7 +69,7 @@ class AuthProvider implements vscode.Disposable {
             ])
                 .pipe(
                     abortableOperation(async ([config], signal) => {
-                        if (config.configuration.agentIDE === CodyIDE.Web) {
+                        if (clientCapabilities().isCodyWeb) {
                             // Cody Web calls {@link AuthProvider.validateAndStoreCredentials}
                             // explicitly. This early exit prevents duplicate authentications during
                             // the initial load.
@@ -81,6 +82,7 @@ class AuthProvider implements vscode.Disposable {
                         // authentication status.
                         this.status.next({
                             authenticated: false,
+                            pendingValidation: true,
                             endpoint: config.auth.serverEndpoint,
                         })
 
@@ -108,6 +110,12 @@ class AuthProvider implements vscode.Disposable {
 
         // Report auth changes.
         this.subscriptions.push(startAuthTelemetryReporter())
+
+        this.subscriptions.push(
+            disposableSubscription(
+                vscode.commands.registerCommand('cody.auth.refresh', () => this.refresh())
+            )
+        )
     }
 
     private async handleAuthTelemetry(authStatus: AuthStatus, signal?: AbortSignal): Promise<void> {
@@ -175,7 +183,7 @@ class AuthProvider implements vscode.Disposable {
 
     public setAuthPendingToEndpoint(endpoint: string): void {
         // TODO(sqs)#observe: store this pending endpoint in clientState instead of authStatus
-        this.status.next({ authenticated: false, endpoint })
+        this.status.next({ authenticated: false, endpoint, pendingValidation: true })
     }
 
     // Logs a telemetry event if the user has never authenticated to Sourcegraph.
@@ -241,7 +249,6 @@ function toCredentialsOnlyNormalized(
 ): ResolvedConfigurationCredentialsOnly {
     return {
         configuration: {
-            agentIDE: config.configuration.agentIDE,
             customHeaders: config.configuration.customHeaders,
         },
         auth: { ...config.auth, serverEndpoint: normalizeServerEndpointURL(config.auth.serverEndpoint) },

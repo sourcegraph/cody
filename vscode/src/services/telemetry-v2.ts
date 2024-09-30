@@ -1,11 +1,9 @@
 import {
-    type ClientConfiguration,
-    CodyIDE,
-    type ExtensionDetails,
     type LogEventMode,
     MockServerTelemetryRecorderProvider,
     NoOpTelemetryRecorderProvider,
     TelemetryRecorderProvider,
+    clientCapabilities,
     resolvedConfig,
     subscriptionDisposable,
     telemetryRecorder,
@@ -16,24 +14,7 @@ import { TimestampTelemetryProcessor } from '@sourcegraph/telemetry/dist/process
 
 import type { Disposable } from 'vscode'
 import { logDebug } from '../log'
-import { getOSArch } from '../os'
-import { version } from '../version'
 import { localStorage } from './LocalStorageProvider'
-
-const { platform, arch } = getOSArch()
-
-export const getExtensionDetails = (
-    config: Pick<
-        ClientConfiguration,
-        'agentIDE' | 'agentIDEVersion' | 'agentExtensionVersion' | 'telemetryClientName'
-    >
-): ExtensionDetails => ({
-    ide: config.agentIDE ?? CodyIDE.VSCode,
-    telemetryClientName: config.telemetryClientName,
-    arch: arch,
-    platform: platform ?? 'browser',
-    version: config.agentExtensionVersion ?? version,
-})
 
 /**
  * For legacy events export, where we are connected to a pre-5.2.0 instance,
@@ -64,14 +45,12 @@ export function createOrUpdateTelemetryRecorderProvider(
 ): Disposable {
     return subscriptionDisposable(
         resolvedConfig.subscribe(({ configuration, auth, clientState }) => {
-            const extensionDetails = getExtensionDetails(configuration)
-
             // Add timestamp processor for realistic data in output for dev or no-op scenarios
             const defaultNoOpProvider = new NoOpTelemetryRecorderProvider([
                 new TimestampTelemetryProcessor(),
             ])
 
-            if (configuration.telemetryLevel === 'off' || !extensionDetails.ide) {
+            if (configuration.telemetryLevel === 'off') {
                 updateGlobalTelemetryInstances(defaultNoOpProvider)
                 return
             }
@@ -84,7 +63,7 @@ export function createOrUpdateTelemetryRecorderProvider(
             if (process.env.CODY_TESTING === 'true') {
                 logDebug(debugLogLabel, 'using mock exporter')
                 updateGlobalTelemetryInstances(
-                    new MockServerTelemetryRecorderProvider(extensionDetails, {
+                    new MockServerTelemetryRecorderProvider({
                         configuration,
                         clientState,
                     })
@@ -95,21 +74,18 @@ export function createOrUpdateTelemetryRecorderProvider(
             } else {
                 updateGlobalTelemetryInstances(
                     new TelemetryRecorderProvider(
-                        extensionDetails,
                         { configuration, auth, clientState },
                         legacyBackcompatLogEventMode
                     )
                 )
             }
 
-            const isCodyWeb = configuration.agentIDE === CodyIDE.Web
-
             /**
              * On first initialization, also record some initial events.
              * Skip any init events for Cody Web use case.
              */
             const newAnonymousUser = localStorage.checkIfCreatedAnonymousUserID()
-            if (initialize && !isCodyWeb) {
+            if (initialize && !clientCapabilities().isCodyWeb) {
                 if (newAnonymousUser) {
                     /**
                      * New user

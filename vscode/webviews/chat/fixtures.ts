@@ -2,7 +2,6 @@ import { URI } from 'vscode-uri'
 
 import {
     type ChatMessage,
-    CodyIDE,
     ContextItemSource,
     FILE_MENTION_EDITOR_STATE_FIXTURE,
     ps,
@@ -111,6 +110,30 @@ export const FIXTURE_TRANSCRIPT: Record<
                     uri: URI.file('README.md'),
                     range: { start: { line: 1, character: 0 }, end: { line: 8, character: 0 } },
                 },
+                {
+                    source: ContextItemSource.Unified,
+                    type: 'file',
+                    remoteRepositoryName: 'myRepo',
+                    repoName: 'myRepo',
+                    title: 'README.md',
+                    revision: 'main',
+                    uri: URI.parse(
+                        'https://sourcegraph.sourcegraph.com/github.com/sourcegraph/cody/-/blob/vscode/e2e/issues/CODY-2392.test.ts?L21-43'
+                    ),
+                    range: { start: { line: 1, character: 0 }, end: { line: 8, character: 0 } },
+                },
+                {
+                    source: ContextItemSource.Unified,
+                    type: 'file',
+                    remoteRepositoryName: 'myRepo',
+                    repoName: 'myRepo',
+                    title: 'fooDir/file-c-1.py',
+                    revision: 'main',
+                    uri: URI.parse(
+                        'https://sourcegraph.sourcegraph.com/github.com/sourcegraph/cody/-/blob/vscode/e2e/issues/CODY-2392.test.ts?L21-43'
+                    ),
+                    range: { start: { line: 1, character: 0 }, end: { line: 8, character: 0 } },
+                },
             ],
         },
         {
@@ -168,5 +191,4 @@ export const FIXTURE_USER_ACCOUNT_INFO: UserAccountInfo = {
         avatarURL: 'https://avatars.githubusercontent.com/u/1976',
         endpoint: '',
     },
-    ide: CodyIDE.VSCode,
 }

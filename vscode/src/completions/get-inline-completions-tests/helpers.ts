@@ -8,6 +8,7 @@ import {
     AUTH_STATUS_FIXTURE_AUTHED_DOTCOM,
     type AuthenticatedAuthStatus,
     type AutocompleteProviderID,
+    CLIENT_CAPABILITIES_FIXTURE,
     ClientConfigSingleton,
     type CodeCompletionsClient,
     type CodyClientConfig,
@@ -16,7 +17,9 @@ import {
     CompletionStopReason,
     featureFlagProvider,
     mockAuthStatus,
+    mockClientCapabilities,
     mockResolvedConfig,
+    setEditorWindowIsFocused,
     testFileUri,
 } from '@sourcegraph/cody-shared'
 import type {
@@ -144,8 +147,7 @@ export function params(
 
     // TODO: add support for `createProvider` from `vscode/src/completions/providers/shared/create-provider.ts`
     const createProvider =
-        config?.configuration?.autocompleteAdvancedProvider === 'fireworks' &&
-        config?.configuration?.autocompleteAdvancedModel
+        config?.configuration?.autocompleteAdvancedProvider === 'fireworks'
             ? createFireworksProvider
             : createAnthropicProvider
 
@@ -393,7 +395,8 @@ export function initCompletionProviderConfig({
     configuration,
     authStatus,
 }: Partial<Pick<ParamsResult, 'configuration' | 'authStatus'>>): void {
-    vi.spyOn(featureFlagProvider, 'evaluateFeatureFlag').mockResolvedValue(false)
+    setEditorWindowIsFocused(() => true)
+    vi.spyOn(featureFlagProvider, 'evaluateFeatureFlagEphemerally').mockResolvedValue(false)
     vi.spyOn(featureFlagProvider, 'evaluatedFeatureFlag').mockReturnValue(Observable.of(false))
     vi.spyOn(ClientConfigSingleton.getInstance(), 'getConfig').mockResolvedValue({
         autoCompleteEnabled: true,
@@ -405,6 +408,7 @@ export function initCompletionProviderConfig({
         auth: { serverEndpoint: 'https://example.com', ...configuration?.auth },
         clientState: { modelPreferences: {}, ...configuration?.clientState },
     })
+    mockClientCapabilities(CLIENT_CAPABILITIES_FIXTURE)
 }
 
 export function getMockedGenerateCompletionsOptions(): GenerateCompletionsOptions {

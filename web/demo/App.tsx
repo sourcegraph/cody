@@ -11,12 +11,12 @@ const CREATE_AGENT_WORKER = (): Worker => new AgentWorker() as Worker
 import '../../vscode/webviews/utils/highlight.css'
 import styles from './App.module.css'
 
-const DOTCOM_SERVER_ENDPOINT = 'https://sourcegraph.sourcegraph.com'
+const DEFAULT_SERVER_ENDPOINT = 'https://sourcegraph.sourcegraph.com'
 
 // To set:
 //
 // localStorage.setItem('serverEndpoint', 'https://sourcegraph.test:3443')
-const serverEndpoint = localStorage.getItem('serverEndpoint') || DOTCOM_SERVER_ENDPOINT
+const serverEndpoint = localStorage.getItem('serverEndpoint') || DEFAULT_SERVER_ENDPOINT
 
 const accessTokenStorageKey = `accessToken:${serverEndpoint}`
 let accessToken = localStorage.getItem(accessTokenStorageKey)

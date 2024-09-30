@@ -5,14 +5,11 @@ import {
     type Guardrails,
     type SourcegraphCompletionsClient,
     SourcegraphGuardrailsClient,
-    type StoredLastValue,
     currentAuthStatusAuthed,
     graphqlClient,
-    subscriptionDisposable,
 } from '@sourcegraph/cody-shared'
-import { ContextAPIClient } from './chat/context/contextAPIClient'
+import { ChatIntentAPIClient } from './chat/context/chatIntentAPIClient'
 import type { PlatformContext } from './extension.common'
-import type { LocalEmbeddingsController } from './local-context/local-embeddings'
 import type { SymfRunner } from './local-context/symf'
 import { logger } from './log'
 
@@ -20,9 +17,8 @@ interface ExternalServices {
     chatClient: ChatClient
     completionsClient: SourcegraphCompletionsClient
     guardrails: Guardrails
-    localEmbeddings: StoredLastValue<LocalEmbeddingsController | undefined> | undefined
     symfRunner: SymfRunner | undefined
-    contextAPIClient: ContextAPIClient | undefined
+    chatIntentAPIClient: ChatIntentAPIClient | undefined
     dispose(): void
 }
 
@@ -30,7 +26,6 @@ export async function configureExternalServices(
     context: vscode.ExtensionContext,
     platform: Pick<
         PlatformContext,
-        | 'createLocalEmbeddingsController'
         | 'createCompletionsClient'
         | 'createSentryService'
         | 'createOpenTelemetryService'
@@ -50,23 +45,19 @@ export async function configureExternalServices(
     const symfRunner = platform.createSymfRunner?.(context, completionsClient)
     if (symfRunner) disposables.push(symfRunner)
 
-    const localEmbeddings = platform.createLocalEmbeddingsController?.()
-    if (localEmbeddings) disposables.push(subscriptionDisposable(localEmbeddings.subscription))
-
     const chatClient = new ChatClient(completionsClient, () => currentAuthStatusAuthed())
 
     const guardrails = new SourcegraphGuardrailsClient()
 
-    const contextAPIClient = new ContextAPIClient(graphqlClient)
-    disposables.push(contextAPIClient)
+    const chatIntentAPIClient = new ChatIntentAPIClient(graphqlClient)
+    disposables.push(chatIntentAPIClient)
 
     return {
         chatClient,
         completionsClient,
         guardrails,
-        localEmbeddings,
         symfRunner,
-        contextAPIClient,
+        chatIntentAPIClient,
         dispose(): void {
             for (const d of disposables) {
                 d?.dispose()

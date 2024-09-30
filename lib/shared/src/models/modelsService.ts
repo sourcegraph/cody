@@ -31,13 +31,14 @@ type ApiVersionId = string
 type ProviderId = string
 
 export type ModelRefStr = `${ProviderId}::${ApiVersionId}::${ModelId}`
+export type LegacyModelRefStr = `${ProviderId}/${ModelId}`
 export interface ModelRef {
     providerId: ProviderId
     apiVersionId: ApiVersionId
     modelId: ModelId
 }
 
-export type ModelCategory = ModelTag.Power | ModelTag.Balanced | ModelTag.Speed
+export type ModelCategory = ModelTag.Power | ModelTag.Balanced | ModelTag.Speed | 'accuracy' | 'other'
 export type ModelStatus =
     | ModelTag.Experimental
     | ModelTag.EarlyAccess
@@ -45,8 +46,9 @@ export type ModelStatus =
     | ModelTag.Waitlist
     | 'stable'
     | ModelTag.Deprecated
+    | ModelTag.Internal
 export type ModelTier = ModelTag.Free | ModelTag.Pro | ModelTag.Enterprise
-export type ModelCapability = 'chat' | 'autocomplete'
+export type ModelCapability = 'chat' | 'autocomplete' | 'edit' | 'vision'
 
 export interface ContextWindow {
     maxInputTokens: number
@@ -350,9 +352,21 @@ export class ModelsService {
         )
     }
 
+    /**
+     * Gets the default edit model, which is determined by first checking the default edit model,
+     * and if that is not available, falling back to the default chat model.
+     */
     public getDefaultEditModel(): Observable<EditModel | undefined | typeof pendingOperation> {
-        return this.getDefaultModel(ModelUsage.Edit).pipe(
-            map(model => (model === pendingOperation ? pendingOperation : model?.id))
+        return combineLatest([
+            this.getDefaultModel(ModelUsage.Edit),
+            this.getDefaultModel(ModelUsage.Chat),
+        ]).pipe(
+            map(([editModel, chatModel]) => {
+                if (editModel === pendingOperation || chatModel === pendingOperation) {
+                    return pendingOperation
+                }
+                return editModel?.id || chatModel?.id
+            })
         )
     }
 
@@ -366,7 +380,7 @@ export class ModelsService {
         const modelsData = await firstResultFromOperation(this.modelsChanges)
         const resolved = this.resolveModel(modelsData, model)
         if (!resolved) {
-            return
+            throw new Error(`Model not found: ${typeof model === 'string' ? model : model.id}`)
         }
         if (!resolved.usage.includes(type)) {
             throw new Error(`Model "${resolved.id}" is not compatible with usage type "${type}".`)
@@ -448,12 +462,24 @@ export class ModelsService {
     /**
      * Finds the model provider with the given model ID and returns its Context Window.
      */
-    public getContextWindowByID(modelID: string): ModelContextWindow {
+    public getContextWindowByID(modelID: string, models = this.models): ModelContextWindow {
         // TODO(sqs)#observe: remove synchronous access here, return an Observable<ModelContextWindow> instead
-        const model = this.models.find(m => m.id === modelID)
+        const model = models.find(m => m.id === modelID)
         return model
             ? model.contextWindow
             : { input: CHAT_INPUT_TOKEN_BUDGET, output: CHAT_OUTPUT_TOKEN_BUDGET }
+    }
+
+    public observeContextWindowByID(
+        modelID: string
+    ): Observable<ModelContextWindow | typeof pendingOperation> {
+        return this.modelsChanges.pipe(
+            map(data =>
+                data === pendingOperation
+                    ? pendingOperation
+                    : this.getContextWindowByID(modelID, data.primaryModels.concat(data.localModels))
+            )
+        )
     }
 
     public getModelByID(modelID: string): Model | undefined {

@@ -29,6 +29,13 @@ export function subscriptionDisposable(sub: Unsubscribable): { dispose(): void }
 }
 
 /**
+ * Make a VS Code Disposable from an {@link Unsubscribable}.
+ */
+export function disposableSubscription(disposable: { dispose(): void }): Unsubscribable {
+    return { unsubscribe: () => disposable.dispose() }
+}
+
+/**
  * @internal For testing only.
  */
 export function observableOfSequence<T>(...values: T[]): Observable<T> {
@@ -119,10 +126,16 @@ export async function waitUntilComplete(observable: Observable<unknown>): Promis
 export async function allValuesFrom<T>(observable: Observable<T>): Promise<T[]> {
     return new Promise<T[]>((resolve, reject) => {
         const values: T[] = []
-        observable.subscribe({
+        const subscription = observable.subscribe({
             next: value => values.push(value),
-            error: reject,
-            complete: () => resolve(values),
+            error: error => {
+                subscription.unsubscribe()
+                reject(error)
+            },
+            complete: () => {
+                subscription.unsubscribe()
+                resolve(values)
+            },
         })
     })
 }
@@ -359,9 +372,7 @@ export function combineLatest<T>(observables: Array<Observable<T>>): Observable<
         }
     })
 }
-/**
- * Return an Observable that emits the latest value from the given Observable.
- */
+
 export function memoizeLastValue<P extends unknown[], T>(
     factory: (...args: P) => Observable<T>,
     keyFn: (args: P) => string | number
@@ -975,6 +986,7 @@ export function switchMap<T, R>(
 
 export interface StoredLastValue<T> {
     value: { last: undefined; isSet: false } | { last: T; isSet: true }
+    observable: Observable<T>
     subscription: Unsubscribable
 }
 
@@ -987,7 +999,7 @@ export function storeLastValue<T>(observable: Observable<T>): StoredLastValue<T>
     const subscription = observable.subscribe(v => {
         Object.assign(value, { last: v, isSet: true })
     })
-    return { value, subscription }
+    return { value, observable, subscription }
 }
 
 export function debounceTime<T>(duration: number): (source: ObservableLike<T>) => Observable<T> {

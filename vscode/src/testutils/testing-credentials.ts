@@ -3,7 +3,7 @@ import { DOTCOM_URL } from '@sourcegraph/cody-shared'
 
 export interface TestingCredentials {
     readonly token?: string
-    readonly redactedToken: string
+    readonly redactedToken?: string
     readonly serverEndpoint: string
 }
 
@@ -36,6 +36,11 @@ export const DOTCOM_TESTING_CREDENTIALS = {
         redactedToken: 'REDACTED_e2ef220aa0a2f84113dc065a7fd9c7a620f17455d0aca3690d312676518dc48f',
         serverEndpoint: DOTCOM_URL.toString(),
     } satisfies TestingCredentials,
+    dotcomUnauthed: {
+        token: undefined,
+        redactedToken: undefined,
+        serverEndpoint: DOTCOM_URL.toString(),
+    } satisfies TestingCredentials,
 }
 
 export const ENTERPRISE_TESTING_CREDENTIALS = {
@@ -46,7 +51,12 @@ export const ENTERPRISE_TESTING_CREDENTIALS = {
     } satisfies TestingCredentials,
     s2: {
         token: process.env.SRC_S2_ACCESS_TOKEN,
-        redactedToken: 'REDACTED_964f5256e709a8c5c151a63d8696d5c7ac81604d179405864d88ff48a9232364',
+        redactedToken: 'REDACTED_4229eb42e0efa2f15f3e6f8843764c7f92ab8051020cc4e90802f4fc0cc91bfa',
+        serverEndpoint: 'https://sourcegraph.sourcegraph.com/',
+    } satisfies TestingCredentials,
+    s2Unauthed: {
+        token: undefined,
+        redactedToken: undefined,
         serverEndpoint: 'https://sourcegraph.sourcegraph.com/',
     } satisfies TestingCredentials,
 }

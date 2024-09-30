@@ -1,8 +1,8 @@
 import {
     type CodyCommand,
-    CodyIDE,
     FeatureFlag,
     type PromptsResult,
+    clientCapabilities,
     featureFlagProvider,
     graphqlClient,
     isAbortError,
@@ -10,7 +10,6 @@ import {
 } from '@sourcegraph/cody-shared'
 import { FIXTURE_COMMANDS } from '../../webviews/components/promptList/fixtures'
 import { getCodyCommandList } from '../commands/CommandsController'
-import { getConfiguration } from '../configuration'
 
 /**
  * Observe results of querying the prompts from the Prompt Library, (deprecated) built-in commands,
@@ -39,13 +38,13 @@ export async function mergedPromptsAndLegacyCommands(
     }
 
     const queryLower = query.toLowerCase()
-    const isUnifiedPromptsEnabled = await featureFlagProvider.evaluateFeatureFlag(
+    const isUnifiedPromptsEnabled = await featureFlagProvider.evaluateFeatureFlagEphemerally(
         FeatureFlag.CodyUnifiedPrompts
     )
 
     // Ignore commands since with unified prompts vital commands will be replaced by out-of-box
     // commands, see main.ts register cody commands for unified prompts
-    if (isUnifiedPromptsEnabled && getConfiguration().agentIDE !== CodyIDE.Web) {
+    if (isUnifiedPromptsEnabled && !clientCapabilities().isCodyWeb) {
         return {
             query,
             commands: [],

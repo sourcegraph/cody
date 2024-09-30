@@ -18,7 +18,7 @@ import {
     type GitIdentifiersForFile,
     gitMetadataForCurrentEditor,
 } from '../repository/git-metadata-for-editor'
-import { GitHubDotComRepoMetadata } from '../repository/repo-metadata-from-git-api'
+import { GitHubDotComRepoMetadata } from '../repository/githubRepoMetadata'
 import type { ContextMixer } from './context/context-mixer'
 import { insertIntoDocContext } from './get-current-doc-context'
 import * as CompletionLogger from './logger'
@@ -249,10 +249,10 @@ async function doGetInlineCompletions(
 
     const gitIdentifiersForFile =
         isDotComUser === true ? gitMetadataForCurrentEditor.getGitIdentifiersForFile() : undefined
-    if (gitIdentifiersForFile?.gitUrl) {
+    if (gitIdentifiersForFile?.repoName) {
         const repoMetadataInstance = GitHubDotComRepoMetadata.getInstance()
         // Calling this so that it precomputes the `gitRepoUrl` and store in its cache for query later.
-        repoMetadataInstance.getRepoMetadataUsingGitUrl(gitIdentifiersForFile.gitUrl)
+        repoMetadataInstance.getRepoMetadataUsingRepoName(gitIdentifiersForFile.repoName).catch(() => {})
     }
 
     if (
@@ -447,6 +447,7 @@ async function doGetInlineCompletions(
                 abortSignal,
                 maxChars: provider.contextSizeHints.totalChars,
                 lastCandidate,
+                repoName: gitIdentifiersForFile?.repoName,
             })
         ),
         remainingInterval > 0
@@ -461,9 +462,9 @@ async function doGetInlineCompletions(
     tracer?.({ context: contextResult })
 
     let gitContext = undefined
-    if (gitIdentifiersForFile?.gitUrl) {
+    if (gitIdentifiersForFile?.repoName) {
         gitContext = {
-            repoName: gitIdentifiersForFile.gitUrl,
+            repoName: gitIdentifiersForFile.repoName,
         }
     }
 
@@ -519,7 +520,7 @@ async function doGetInlineCompletions(
         requestParams,
         isDotComUser,
         stale,
-        rankedContextCandidates: contextResult?.rankedContextCandidates ?? [],
+        contextLoggingSnippets: contextResult?.contextLoggingSnippets ?? [],
     })
 }
 
@@ -530,7 +531,7 @@ interface ProcessRequestManagerResultParams {
     requestParams: RequestParams
     isDotComUser: boolean
     stale: boolean | undefined
-    rankedContextCandidates?: AutocompleteContextSnippet[]
+    contextLoggingSnippets?: AutocompleteContextSnippet[]
 }
 
 function processRequestManagerResult(
@@ -542,7 +543,7 @@ function processRequestManagerResult(
         requestParams,
         isDotComUser,
         stale,
-        rankedContextCandidates,
+        contextLoggingSnippets,
     } = params
 
     let { logId } = params
@@ -555,20 +556,16 @@ function processRequestManagerResult(
         logId = updatedLogId
     }
 
-    const inlineContextParams = {
-        context: rankedContextCandidates ?? [],
-        filePath: gitIdentifiersForFile?.filePath,
-        gitUrl: gitIdentifiersForFile?.gitUrl,
-        commit: gitIdentifiersForFile?.commit,
-    }
-
     CompletionLogger.loaded({
         logId,
         requestParams,
         completions,
         source,
         isDotComUser,
-        inlineContextParams,
+        inlineContextParams: {
+            context: contextLoggingSnippets ?? [],
+            ...gitIdentifiersForFile,
+        },
         isFuzzyMatch: false,
     })
 

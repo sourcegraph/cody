@@ -10,6 +10,7 @@ export {
     type PerSitePreferences,
     type SitePreferences,
     type ModelRefStr,
+    type LegacyModelRefStr,
     type ModelRef,
     type ModelsData,
     TestLocalStorageForModelPreferences,
@@ -22,6 +23,7 @@ export {
     createModelFromServerModel,
     modelTier,
     parseModelRef,
+    toLegacyModel,
 } from './models/model'
 export {
     type EditModel,
@@ -31,7 +33,7 @@ export {
     ModelUsage,
     type ModelContextWindow,
 } from './models/types'
-export { getDotComDefaultModels } from './models/dotcom'
+export { getMockedDotComClientModels, getMockedDotComServerModels } from './models/dotcom'
 export { ModelTag } from './models/tags'
 export {
     getProviderName,
@@ -74,8 +76,6 @@ export type {
     ContextGroup,
     ContextProvider,
     Disposable,
-    EnhancedContextContextT,
-    LocalEmbeddingsProvider,
     LocalSearchProvider,
     RemoteSearchProvider,
     SearchProvider,
@@ -180,10 +180,7 @@ export {
     type CompletionResponseGenerator,
     type CompletionResponseWithMetaData,
 } from './inferenceClient/misc'
-export type {
-    LocalEmbeddingsFetcher,
-    Result,
-} from './local-context'
+export type { Result } from './local-context'
 export { logDebug, logError, setLogger } from './logger'
 export {
     createOllamaClient,
@@ -256,13 +253,11 @@ export {
     type RepoListResponse,
     type SuggestionsRepo,
     type RepoSuggestionsSearchResponse,
-    type InputContextItem,
     type ChatIntentResult,
 } from './sourcegraph-api/graphql/client'
 export type {
     CodyLLMSiteConfiguration,
     ContextSearchResult,
-    EmbeddingsSearchResult,
     Prompt,
     event,
 } from './sourcegraph-api/graphql/client'
@@ -331,7 +326,6 @@ export {
     GIT_OPENCTX_PROVIDER_URI,
 } from './context/openctx/api'
 export * from './context/openctx/context'
-export { type ClientStateForWebview } from './clientState'
 export * from './lexicalEditor/editorState'
 export * from './lexicalEditor/nodes'
 export {
@@ -354,6 +348,8 @@ export {
 export * from './misc/observable'
 export * from './misc/observableOperation'
 export * from './configuration/resolver'
+export * from './configuration/clientCapabilities'
 export * from './singletons'
 export * from './auth/authStatus'
 export { fetchLocalOllamaModels } from './llm-providers/ollama/utils'
+export * from './editor/editorState'
