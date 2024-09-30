@@ -67,7 +67,7 @@ export class TemplateInputNode extends DecoratorNode<JSX.Element> {
     }
 }
 
-export function $createTemplateInputNode(templateInput: SerializedTemplateInput): TemplateInputNode {
+function $createTemplateInputNode(templateInput: SerializedTemplateInput): TemplateInputNode {
     return $applyNodeReplacement(new TemplateInputNode(templateInput))
 }
 

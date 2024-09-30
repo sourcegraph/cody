@@ -23,9 +23,6 @@ describe(
         }
         const SWITCH_CREDENTIALS: TestingCredentials = {
             ...TESTING_CREDENTIALS.s2,
-            // Needed until https://sourcegraph.slack.com/archives/C05AGQYD528/p1727258121983249 is
-            // fixed, at which point we can re-record this test's output and remove this override.
-            redactedToken: 'REDACTED_22aae6cde0c7152b9a074ca0c38976d7ddaa4b2bd95b1d972752b2f0374e19f7',
         }
         const FIXTURE_MODELS = {
             // Set this to the default chat model on dotcom.

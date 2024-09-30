@@ -5,21 +5,6 @@ import { logDebug, logError } from '../log'
 
 const CODY_ACCESS_TOKEN_SECRET = 'cody.access-token'
 
-export async function getAccessToken(): Promise<string | null> {
-    try {
-        const token = (await secretStorage.get(CODY_ACCESS_TOKEN_SECRET)) || null
-        if (token) {
-            return token
-        }
-        throw new Error('token not found')
-    } catch (error) {
-        logError('VSCodeSecretStorage:getAccessToken', 'failed', { verbose: error })
-        // Remove corrupted token from secret storage
-        await secretStorage.delete(CODY_ACCESS_TOKEN_SECRET)
-        return null
-    }
-}
-
 interface SecretStorage extends vscode.SecretStorage, ClientSecrets {
     get(key: string): Promise<string | undefined>
     store(key: string, value: string): Promise<void>

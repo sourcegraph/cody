@@ -28,7 +28,7 @@ describe('google autocomplete provider', () => {
             timeoutMs: 7000,
             topK: 0,
             topP: 0.95,
-            model: 'gemini-1.5-flash-latest',
+            model: 'google/gemini-1.5-flash-latest',
         },
     } satisfies AutocompleteProviderValuesToAssert
 
@@ -49,8 +49,8 @@ describe('google autocomplete provider', () => {
 
     testAutocompleteProvider('site-config-cody-llm-configuration', starChatAssertion, isDotCom =>
         getAutocompleteProviderFromSiteConfigCodyLLMConfiguration({
-            providerId: 'google',
-            legacyModel: 'gemini-1.5-flash-latest',
+            provider: 'sourcegraph',
+            completionModel: 'google/gemini-1.5-flash-latest',
             isDotCom,
         })
     )

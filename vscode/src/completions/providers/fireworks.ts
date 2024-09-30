@@ -48,8 +48,8 @@ const MODEL_MAP = {
     // Fireworks model identifiers
     'llama-code-13b': 'fireworks/accounts/fireworks/models/llama-v2-13b-code',
 
-    [FIREWORKS_DEEPSEEK_7B_LANG_SPECIFIC_V0]: 'finetuned-fim-lang-specific-model-ds2-v0',
-    [FIREWORKS_DEEPSEEK_7B_LANG_SPECIFIC_V1]: 'finetuned-fim-lang-specific-model-ds2-v1',
+    [FIREWORKS_DEEPSEEK_7B_LANG_SPECIFIC_V0]: 'fireworks/finetuned-fim-lang-specific-model-ds2-v0',
+    [FIREWORKS_DEEPSEEK_7B_LANG_SPECIFIC_V1]: 'fireworks/finetuned-fim-lang-specific-model-ds2-v1',
     [FIREWORKS_DEEPSEEK_7B_LANG_ALL]: 'accounts/sourcegraph/models/finetuned-fim-lang-all-model-ds2-v0',
     [DEEPSEEK_CODER_V2_LITE_BASE]: 'fireworks/deepseek-coder-v2-lite-base',
     [DEEPSEEK_CODER_V2_LITE_BASE_WINDOW_4096]: 'accounts/sourcegraph/models/deepseek-coder-v2-lite-base',
@@ -58,7 +58,7 @@ const MODEL_MAP = {
         'accounts/sourcegraph/models/deepseek-coder-v2-lite-base',
     [DEEPSEEK_CODER_V2_LITE_BASE_WINDOW_32768]:
         'accounts/sourcegraph/models/deepseek-coder-v2-lite-base',
-}
+} as const
 
 type FireworksModel =
     | keyof typeof MODEL_MAP
@@ -103,12 +103,12 @@ class FireworksProvider extends Provider {
         const { multiline, docContext, document, triggerKind, snippets } = options
         const useMultilineModel = multiline || triggerKind !== TriggerKind.Automatic
 
-        const model: string =
+        const model =
             this.legacyModel === 'starcoder-hybrid'
                 ? MODEL_MAP[useMultilineModel ? 'starcoder-16b' : 'starcoder-7b']
                 : MODEL_MAP[this.legacyModel as keyof typeof MODEL_MAP]
 
-        const prompt = this.modelHelper.getPrompt({
+        const messages = this.modelHelper.getMessages({
             snippets,
             docContext,
             document,
@@ -117,7 +117,7 @@ class FireworksProvider extends Provider {
 
         return this.modelHelper.getRequestParams({
             ...this.defaultRequestParams,
-            messages: [{ speaker: 'human', text: prompt }],
+            messages,
             model,
         })
     }

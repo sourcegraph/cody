@@ -18,8 +18,8 @@ import { getModelInfo } from './utils'
  */
 export interface Model {
     /**
-     * The model id that includes the provider name & the model name,
-     * e.g. "anthropic/claude-3-sonnet-20240229"
+     * The model name _without_ the provider ID.
+     * e.g. "claude-3-sonnet-20240229"
      *
      * TODO(PRIME-282): Replace this with a `ModelRefStr` instance and introduce a separate
      * "modelId" that is distinct from the "modelName". (e.g. "claude-3-sonnet" vs. "claude-3-sonnet-20240229")
@@ -97,12 +97,12 @@ export function createModel({
     }
 
     return {
-        id: id,
+        id,
         modelRef,
-        usage: usage,
-        contextWindow: contextWindow,
-        clientSideConfig: clientSideConfig,
-        tags: tags,
+        usage,
+        contextWindow,
+        clientSideConfig,
+        tags,
         provider: modelRef.providerId,
         title: title ?? modelRef.modelId,
     }

@@ -12,9 +12,12 @@ import {
     SYMBOL_CONTEXT_MENTION_PROVIDER,
     combineLatest,
     isAbortError,
+    isError,
     mentionProvidersMetadata,
     openCtx,
+    pendingOperation,
     promiseFactoryToObservable,
+    skipPendingOperation,
     telemetryRecorder,
 } from '@sourcegraph/cody-shared'
 import { Observable, map } from 'observable-fns'
@@ -31,7 +34,7 @@ import {
     fetchRepoMetadataForFolder,
     workspaceReposMonitor,
 } from '../../repository/repo-metadata-from-git-api'
-import type { ChatModel } from '../chat-view/ChatModel'
+import { ChatBuilder } from '../chat-view/ChatBuilder'
 
 interface GetContextItemsTelemetry {
     empty: () => void
@@ -41,7 +44,7 @@ interface GetContextItemsTelemetry {
 export function getMentionMenuData(options: {
     disableProviders: ContextMentionProviderID[]
     query: MentionQuery
-    chatModel: ChatModel
+    chatBuilder: ChatBuilder
 }): Observable<MentionMenuData> {
     const source = 'chat'
 
@@ -77,23 +80,32 @@ export function getMentionMenuData(options: {
 
     const isCodyWeb = getConfiguration().agentIDE === CodyIDE.Web
 
-    const { input, context } = options.chatModel.contextWindow
-
     try {
-        const items = promiseFactoryToObservable(signal =>
-            getChatContextItemsForMention(
-                {
-                    mentionQuery: options.query,
-                    telemetryRecorder: scopedTelemetryRecorder,
-                    rangeFilter: !isCodyWeb,
-                },
-                signal
-            ).then(items =>
-                items.map<ContextItem>(f => ({
-                    ...f,
-                    isTooLarge: f.size ? f.size > (context?.user || input) : undefined,
-                }))
-            )
+        const items = combineLatest([
+            promiseFactoryToObservable(signal =>
+                getChatContextItemsForMention(
+                    {
+                        mentionQuery: options.query,
+                        telemetryRecorder: scopedTelemetryRecorder,
+                        rangeFilter: !isCodyWeb,
+                    },
+                    signal
+                )
+            ),
+            ChatBuilder.contextWindowForChat(options.chatBuilder),
+        ]).pipe(
+            map(([items, contextWindow]) =>
+                contextWindow === pendingOperation
+                    ? pendingOperation
+                    : items.map<ContextItem>(f => ({
+                          ...f,
+                          isTooLarge:
+                              f.size && !isError(contextWindow)
+                                  ? f.size > (contextWindow.context?.user || contextWindow.input)
+                                  : undefined,
+                      }))
+            ),
+            skipPendingOperation()
         )
 
         const queryLower = options.query.text.toLowerCase()

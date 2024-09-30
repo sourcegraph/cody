@@ -46,7 +46,7 @@ export const ENTERPRISE_TESTING_CREDENTIALS = {
     } satisfies TestingCredentials,
     s2: {
         token: process.env.SRC_S2_ACCESS_TOKEN,
-        redactedToken: 'REDACTED_964f5256e709a8c5c151a63d8696d5c7ac81604d179405864d88ff48a9232364',
+        redactedToken: 'REDACTED_4229eb42e0efa2f15f3e6f8843764c7f92ab8051020cc4e90802f4fc0cc91bfa',
         serverEndpoint: 'https://sourcegraph.sourcegraph.com/',
     } satisfies TestingCredentials,
 }

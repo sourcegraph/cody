@@ -18,7 +18,7 @@ class OpenAICompatibleProvider extends Provider {
     public getRequestParams(options: GenerateCompletionsOptions): CodeCompletionsParams {
         const { docContext, document, snippets } = options
 
-        const prompt = this.modelHelper.getPrompt({
+        const messages = this.modelHelper.getMessages({
             snippets,
             docContext,
             document,
@@ -29,8 +29,7 @@ class OpenAICompatibleProvider extends Provider {
 
         return {
             ...this.defaultRequestParams,
-            messages: [{ speaker: 'human', text: prompt }],
-            model: this.legacyModel,
+            messages,
         }
     }
 

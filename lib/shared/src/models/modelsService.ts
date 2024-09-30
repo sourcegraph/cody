@@ -31,6 +31,7 @@ type ApiVersionId = string
 type ProviderId = string
 
 export type ModelRefStr = `${ProviderId}::${ApiVersionId}::${ModelId}`
+export type LegacyModelRefStr = `${ProviderId}/${ModelId}`
 export interface ModelRef {
     providerId: ProviderId
     apiVersionId: ApiVersionId
@@ -448,12 +449,24 @@ export class ModelsService {
     /**
      * Finds the model provider with the given model ID and returns its Context Window.
      */
-    public getContextWindowByID(modelID: string): ModelContextWindow {
+    public getContextWindowByID(modelID: string, models = this.models): ModelContextWindow {
         // TODO(sqs)#observe: remove synchronous access here, return an Observable<ModelContextWindow> instead
-        const model = this.models.find(m => m.id === modelID)
+        const model = models.find(m => m.id === modelID)
         return model
             ? model.contextWindow
             : { input: CHAT_INPUT_TOKEN_BUDGET, output: CHAT_OUTPUT_TOKEN_BUDGET }
+    }
+
+    public observeContextWindowByID(
+        modelID: string
+    ): Observable<ModelContextWindow | typeof pendingOperation> {
+        return this.modelsChanges.pipe(
+            map(data =>
+                data === pendingOperation
+                    ? pendingOperation
+                    : this.getContextWindowByID(modelID, data.primaryModels.concat(data.localModels))
+            )
+        )
     }
 
     public getModelByID(modelID: string): Model | undefined {

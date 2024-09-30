@@ -231,7 +231,7 @@ export const FileContentSearchResult: FC<PropsWithChildren<FileContentSearchResu
     )
 }
 
-export interface ResultContainerProps {
+interface ResultContainerProps {
     title: React.ReactNode
     titleClassName?: string
     resultClassName?: string

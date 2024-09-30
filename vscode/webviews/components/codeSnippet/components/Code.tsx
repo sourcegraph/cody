@@ -7,7 +7,7 @@ import type { ForwardReferenceComponent } from '../utils'
 
 import styles from './Code.module.css'
 
-export enum TYPOGRAPHY_WEIGHTS {
+enum TYPOGRAPHY_WEIGHTS {
     regular = 'regular',
     medium = 'medium',
     bold = 'bold',

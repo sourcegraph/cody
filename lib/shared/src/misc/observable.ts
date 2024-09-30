@@ -29,6 +29,13 @@ export function subscriptionDisposable(sub: Unsubscribable): { dispose(): void }
 }
 
 /**
+ * Make a VS Code Disposable from an {@link Unsubscribable}.
+ */
+export function disposableSubscription(disposable: { dispose(): void }): Unsubscribable {
+    return { unsubscribe: () => disposable.dispose() }
+}
+
+/**
  * @internal For testing only.
  */
 export function observableOfSequence<T>(...values: T[]): Observable<T> {

@@ -24,9 +24,7 @@ import type { Provider } from './provider'
  * Creates autocomplete provider and resolves
  * to the first value emitted by the observable wrapper.
  */
-export async function createProviderForTest(
-    ...args: Parameters<typeof createProvider>
-): Promise<Provider> {
+async function createProviderForTest(...args: Parameters<typeof createProvider>): Promise<Provider> {
     const providerOrError = await firstValueFrom(createProvider(...args).pipe(skipPendingOperation()))
 
     if (providerOrError instanceof Error) {
@@ -103,10 +101,14 @@ export async function getAutocompleteProviderFromServerSideModelConfig({
  * Creates autocomplete provider from the mocked site-config Cody LLM configuration.
  */
 export function getAutocompleteProviderFromSiteConfigCodyLLMConfiguration({
-    providerId,
-    legacyModel,
+    completionModel,
+    provider,
     isDotCom,
-}: { providerId: AutocompleteProviderID; legacyModel: string; isDotCom: boolean }): Promise<Provider> {
+}: {
+    completionModel: string
+    provider: AutocompleteProviderID | 'sourcegraph'
+    isDotCom: boolean
+}): Promise<Provider> {
     const authStatus = isDotCom ? AUTH_STATUS_FIXTURE_AUTHED_DOTCOM : AUTH_STATUS_FIXTURE_AUTHED
 
     vi.spyOn(modelsService, 'modelsChanges', 'get').mockReturnValue(
@@ -127,8 +129,8 @@ export function getAutocompleteProviderFromSiteConfigCodyLLMConfiguration({
         authStatus: {
             ...authStatus,
             configOverwrites: {
-                provider: providerId,
-                completionModel: legacyModel,
+                provider,
+                completionModel,
             },
         },
     })
