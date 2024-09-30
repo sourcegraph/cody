@@ -100,8 +100,8 @@ export const test = base
         expectedV2Events: async ({ preAuthenticate }, use) =>
             await use(
                 preAuthenticate
-                    ? ['cody.extention.installed', 'cody.auth:connected']
-                    : ['cody.extention.installed', 'cody.auth:connected']
+                    ? ['cody.extention:installed', 'cody.auth:connected']
+                    : ['cody.extention:installed', 'cody.auth:connected']
             ),
     })
     .extend<TestDirectories>({

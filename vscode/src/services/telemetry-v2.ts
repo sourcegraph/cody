@@ -84,9 +84,11 @@ export function createOrUpdateTelemetryRecorderProvider(
              * On first initialization, also record some initial events.
              * Skip any init events for Cody Web use case.
              */
-            const newAnonymousUser = localStorage.checkIfCreatedAnonymousUserID()
+            // Makes sure anonymousUserID is set before recording events.
+            const anonymousUserID = localStorage.anonymousUserID()
+            const newAnonymousUserCreated = localStorage.checkIfCreatedAnonymousUserID()
             if (initialize && !clientCapabilities().isCodyWeb) {
-                if (newAnonymousUser) {
+                if (anonymousUserID && newAnonymousUserCreated) {
                     /**
                      * New user
                      */
