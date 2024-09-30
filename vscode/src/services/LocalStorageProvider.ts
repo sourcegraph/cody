@@ -152,14 +152,16 @@ class LocalStorage implements LocalStorageForModelPreferences {
         await this.set(this.CODY_ENDPOINT_HISTORY, [...historySet], fire)
     }
 
-    public getChatHistory(authStatus: AuthenticatedAuthStatus): UserLocalHistory {
+    public getChatHistory(
+        authStatus: Pick<AuthenticatedAuthStatus, 'endpoint' | 'username'>
+    ): UserLocalHistory {
         const history = this.storage.get<AccountKeyedChatHistory | null>(this.KEY_LOCAL_HISTORY, null)
         const accountKey = getKeyForAuthStatus(authStatus)
         return history?.[accountKey] ?? { chat: {} }
     }
 
     public async setChatHistory(
-        authStatus: AuthenticatedAuthStatus,
+        authStatus: Pick<AuthenticatedAuthStatus, 'endpoint' | 'username'>,
         history: UserLocalHistory
     ): Promise<void> {
         try {
@@ -324,7 +326,9 @@ class LocalStorage implements LocalStorageForModelPreferences {
  */
 export const localStorage = new LocalStorage()
 
-function getKeyForAuthStatus(authStatus: AuthenticatedAuthStatus): ChatHistoryKey {
+function getKeyForAuthStatus(
+    authStatus: Pick<AuthenticatedAuthStatus, 'endpoint' | 'username'>
+): ChatHistoryKey {
     return `${authStatus.endpoint}-${authStatus.username}`
 }
 

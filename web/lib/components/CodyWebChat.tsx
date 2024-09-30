@@ -10,7 +10,6 @@ import {
     ContextItemSource,
     PromptString,
     REMOTE_DIRECTORY_PROVIDER_URI,
-    type SerializedChatTranscript,
     isErrorLike,
     setDisplayPathEnvInfo,
 } from '@sourcegraph/cody-shared'
@@ -112,7 +111,6 @@ const CodyWebPanel: FC<CodyWebPanelProps> = props => {
     const [transcript, setTranscript] = useState<ChatMessage[]>([])
     const [config, setConfig] = useState<Config | null>(null)
     const [view, setView] = useState<View | undefined>()
-    const [userHistory, setUserHistory] = useState<SerializedChatTranscript[]>()
 
     useLayoutEffect(() => {
         vscodeAPI.onMessage(message => {
@@ -144,9 +142,6 @@ const CodyWebPanel: FC<CodyWebPanelProps> = props => {
                     break
                 case 'clientAction':
                     dispatchClientAction(message)
-                    break
-                case 'history':
-                    setUserHistory(Object.values(message.localHistory?.chat ?? {}))
                     break
             }
         })
@@ -234,7 +229,7 @@ const CodyWebPanel: FC<CodyWebPanelProps> = props => {
         }
     }, [initialContextData])
 
-    const isLoading = !config || !view || !userHistory
+    const isLoading = !config || !view
 
     return (
         <div className={className} data-cody-web-chat={true}>
@@ -248,7 +243,6 @@ const CodyWebPanel: FC<CodyWebPanelProps> = props => {
                             setErrorMessages={setErrorMessages}
                             attributionEnabled={false}
                             configuration={config}
-                            userHistory={userHistory}
                             chatEnabled={true}
                             showWelcomeMessage={true}
                             showIDESnippetActions={false}

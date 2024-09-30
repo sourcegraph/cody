@@ -1232,7 +1232,10 @@ export class Agent extends MessageHandler implements ExtensionClient {
             modelID ??= (await firstResultFromOperation(modelsService.getDefaultChatModel())) ?? ''
             const chatMessages = messages?.map(PromptString.unsafe_deserializeChatMessage) ?? []
             const chatBuilder = new ChatBuilder(modelID, chatID, chatMessages)
-            await chatHistory.saveChat(authStatus, chatBuilder.toSerializedChatTranscript())
+            const chat = chatBuilder.toSerializedChatTranscript()
+            if (chat) {
+                await chatHistory.saveChat(authStatus, chat)
+            }
             return this.createChatPanel(
                 Promise.resolve({
                     type: 'chat',

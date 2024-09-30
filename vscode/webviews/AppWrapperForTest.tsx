@@ -10,6 +10,7 @@ import {
     type ResolvedConfiguration,
     SYMBOL_CONTEXT_MENTION_PROVIDER,
     type SymbolKind,
+    type UserLocalHistory,
     getMockedDotComClientModels,
     promiseFactoryToObservable,
 } from '@sourcegraph/cody-shared'
@@ -96,6 +97,21 @@ export const AppWrapperForTest: FunctionComponent<{ children: ReactNode }> = ({ 
                         } satisfies Partial<ResolvedConfiguration> as ResolvedConfiguration),
                     authStatus: () => Observable.of(AUTH_STATUS_FIXTURE_AUTHED),
                     transcript: () => Observable.of(FIXTURE_TRANSCRIPT.explainCode),
+                    userHistory: () =>
+                        Observable.of<UserLocalHistory | null>({
+                            chat: {
+                                a: {
+                                    id: 'a',
+                                    lastInteractionTimestamp: '2024-03-29',
+                                    interactions: [
+                                        {
+                                            humanMessage: { speaker: 'human', text: 'Hello, world!' },
+                                            assistantMessage: { speaker: 'assistant', text: 'Hi!' },
+                                        },
+                                    ],
+                                },
+                            },
+                        }),
                 },
             } satisfies Wrapper<ComponentProps<typeof ExtensionAPIProviderForTestsOnly>['value']>,
             {

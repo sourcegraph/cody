@@ -44,23 +44,6 @@ const dummyVSCodeAPI: VSCodeWrapper = {
             workspaceFolderUris: [],
             isDotComUser: true,
         })
-        cb({
-            type: 'history',
-            localHistory: {
-                chat: {
-                    a: {
-                        id: 'a',
-                        lastInteractionTimestamp: '2024-03-29',
-                        interactions: [
-                            {
-                                humanMessage: { speaker: 'human', text: 'Hello, world!' },
-                                assistantMessage: { speaker: 'assistant', text: 'Hi!' },
-                            },
-                        ],
-                    },
-                },
-            },
-        })
         if (firstTime) {
             cb({ type: 'view', view: View.Chat })
             firstTime = false

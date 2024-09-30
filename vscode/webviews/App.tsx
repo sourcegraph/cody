@@ -7,7 +7,6 @@ import {
     type ContextItem,
     GuardrailsPost,
     PromptString,
-    type SerializedChatTranscript,
     type TelemetryRecorder,
 } from '@sourcegraph/cody-shared'
 import type { AuthMethod } from '../src/chat/protocol'
@@ -31,8 +30,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     const [messageInProgress, setMessageInProgress] = useState<ChatMessage | null>(null)
 
     const [transcript, setTranscript] = useState<ChatMessage[]>([])
-
-    const [userHistory, setUserHistory] = useState<SerializedChatTranscript[]>()
 
     const [errorMessages, setErrorMessages] = useState<string[]>([])
 
@@ -81,9 +78,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                         if (view && view !== View.Chat && !message.authStatus?.authenticated) {
                             setView(View.Chat)
                         }
-                        break
-                    case 'history':
-                        setUserHistory(Object.values(message.localHistory?.chat ?? {}))
                         break
                     case 'clientAction':
                         dispatchClientAction(message)
@@ -192,7 +186,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                     transcript={transcript}
                     vscodeAPI={vscodeAPI}
                     guardrails={guardrails}
-                    userHistory={userHistory ?? []}
                     smartApplyEnabled={config.config.smartApply}
                 />
             )}
