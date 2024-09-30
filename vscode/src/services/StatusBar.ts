@@ -5,7 +5,7 @@ import {
     type ClientConfiguration,
     CodyIDE,
     type IsIgnored,
-    ObservableArray,
+    Mutable,
     type ResolvedConfiguration,
     assertUnreachable,
     authStatus,
@@ -19,7 +19,7 @@ import {
     resolvedConfig,
     shareReplay,
 } from '@sourcegraph/cody-shared'
-import dedent from 'dedent'
+
 import { type Subscription, map } from 'observable-fns'
 import type { LiteralUnion, ReadonlyDeep } from 'type-fest'
 import { getGhostHintEnablement } from '../commands/GhostHintDecorator'
@@ -30,10 +30,22 @@ import { enableVerboseDebugMode } from './utils/export-logs'
 
 let singleton: CodyStatusBar | undefined = undefined
 
-// const DEFAULT_TEXT = '$(cody-logo-heavy)'
-// const DEFAULT_TEXT_DISABLED = '$(cody-logo-heavy-slash) File Ignored'
-// const DEFAULT_TOOLTIP = 'Cody Settings'
-// const DEFAULT_TOOLTIP_DISABLED = 'The current file is ignored by Cody'
+/**
+ * These are a set of invisible tags that are used to invisibly indicate
+ * internal state without opening the extension. Primarily used for testing.
+ * This is done because the text of the status bar is considered flaky as
+ * depending on other state the displayed value might change.
+ */
+export enum InvisibleStatusBarTag {
+    IsAuthenticated = '\u200B',
+    HasErrors = '\u200C',
+    HasLoaders = '\u200D',
+    // Unassigned = '\u2060'
+    // Unassigned = '\u2061'
+    // Unassigned = '\u2062'
+    // Unassigned = '\u2063'
+    // Unassigned = '\u2064'
+}
 
 const QUICK_PICK_ITEM_CHECKED_PREFIX = '$(check) '
 const QUICK_PICK_ITEM_EMPTY_INDENT_PREFIX = '\u00A0\u00A0\u00A0\u00A0\u00A0 '
@@ -44,14 +56,16 @@ const STATUS_BAR_INTERACTION_COMMAND = 'cody.status-bar.interacted'
 
 interface StatusBarState {
     text: string
+    icon: 'normal' | 'loading' | 'disabled'
     tooltip: string
     style: 'normal' | 'warning' | 'error' | 'disabled'
+    tags: Set<InvisibleStatusBarTag>
 
     interact: (abortSignal: AbortSignal) => Promise<void> | void
 }
 export class CodyStatusBar {
-    private errors = new ObservableArray<StatusBarError>()
-    private loaders = new ObservableArray<StatusBarLoader>()
+    private errors = new Mutable<Set<StatusBarError>>(new Set())
+    private loaders = new Mutable<Set<StatusBarLoader>>(new Set())
     private renderSubscription: Subscription<any>
     private currentInteraction: AbortController | undefined
 
@@ -61,7 +75,7 @@ export class CodyStatusBar {
     )
     private command = vscode.commands.registerCommand(
         STATUS_BAR_INTERACTION_COMMAND,
-        this.handleInteraction
+        this.handleInteraction.bind(this)
     )
 
     private ignoreStatus = combineLatest(
@@ -69,7 +83,8 @@ export class CodyStatusBar {
             vscode.window.onDidChangeActiveTextEditor,
             () => vscode.window.activeTextEditor
         ).pipe(distinctUntilChanged()),
-        authStatus, // TODO: technically this shouldn't be needed but the contextFilterProvider doesn't update on auth changes yet
+        // TODO: technically this shouldn't be needed but the contextFilterProvider doesn't update on auth changes yet
+        authStatus,
         contextFiltersProvider.changes
     ).pipe(
         map(async ([editor]) => {
@@ -86,7 +101,13 @@ export class CodyStatusBar {
         this.ignoreStatus
     ).pipe(
         map((combined): StatusBarState | undefined => {
-            return this.buildState(...(combined as unknown as [any, any, any, any, any]))
+            return {
+                icon: 'normal',
+                text: '',
+                style: 'normal',
+                tags: new Set(),
+                ...this.buildState(...combined),
+            }
         }),
         shareReplay()
     )
@@ -98,13 +119,6 @@ export class CodyStatusBar {
             this.render(newState, lastState)
         })
     }
-    //     this.disposables.push()
-
-    //     this.disposables.push()
-    //     const renderSubscription = combineLatest(this.errors.changes(), authStatus)
-    //     // this.statusBarItem.command = STATUS_BAR_INTERACTION_COMMAND
-    //     // this.statusBarItem.show()
-    // }
 
     static init(disposables: vscode.Disposable[]): CodyStatusBar {
         if (singleton) {
@@ -122,15 +136,21 @@ export class CodyStatusBar {
         const now = Date.now()
         const ttl = args.timeout !== undefined ? Math.min(ONE_HOUR, args.timeout - now) : ONE_HOUR
 
-        // we create an empty
         const errorHandle = {}
-        const scheduledRemoval = setTimeout(() => {
-            this.errors.remove(errorHandle)
-        }, ttl)
+        const remove = () => {
+            this.errors.mutate(draft => {
+                // this is safe because we'll asign properties to the same
+                // object, maintaining object identity
+                draft.delete(errorHandle as any)
+                return draft
+            })
+        }
+        const scheduledRemoval = setTimeout(remove, ttl)
         const removeFn = () => {
             clearTimeout(scheduledRemoval)
-            this.errors.remove(errorHandle)
+            remove()
         }
+        // we assign so we maintain object identity
         const errorObject = Object.assign(errorHandle, {
             createdAt: now,
             title: args.title,
@@ -145,7 +165,10 @@ export class CodyStatusBar {
             },
         })
 
-        this.errors.push(errorObject)
+        this.errors.mutate(draft => {
+            draft.add(errorObject)
+            return draft
+        })
         return removeFn
     }
 
@@ -153,18 +176,27 @@ export class CodyStatusBar {
         const now = Date.now()
         const ttl = args.timeout !== undefined ? Math.min(ONE_HOUR, args.timeout - now) : ONE_HOUR
         const loaderHandle = {}
-        const scheduledRemoval = setTimeout(() => {
-            this.errors.remove(loaderHandle)
-        }, ttl)
+        const remove = () => {
+            this.loaders.mutate(draft => {
+                // this is safe because we'll asign properties to the same
+                // object, maintaining object identity
+                draft.delete(loaderHandle as any)
+                return draft
+            })
+        }
+        const scheduledRemoval = setTimeout(remove, ttl)
         const removeFn = () => {
             clearTimeout(scheduledRemoval)
-            this.errors.remove(loaderHandle)
+            remove()
         }
         const loaderObject = Object.assign(loaderHandle, {
             createdAt: now,
             title: args.title,
         })
-        this.loaders.push(loaderObject)
+        this.loaders.mutate(draft => {
+            draft.add(loaderObject)
+            return draft
+        })
         return removeFn
     }
 
@@ -173,11 +205,16 @@ export class CodyStatusBar {
             v: Pick<StatusBarError, 'createdAt' | 'description' | 'errorType' | 'title'>
         ) => boolean
     ): boolean {
-        const errors = this.errors.get()
-        if (filterFn) {
-            return errors.some(filterFn)
+        if (!filterFn) {
+            return this.errors.current.size > 0
         }
-        return errors.length > 0
+
+        for (const v of this.errors.current.values()) {
+            if (filterFn(v)) {
+                return true
+            }
+        }
+        return false
     }
     // startLoading
 
@@ -219,12 +256,33 @@ export class CodyStatusBar {
         if (!newState) {
             return
         }
-        this.statusBarItem.text = newState.text
+        const icon =
+            newState.icon === 'disabled'
+                ? '$(cody-logo-heavy-slash)'
+                : newState.icon === 'loading'
+                  ? '$(loading~spin)'
+                  : '$(cody-logo-heavy)'
+        this.statusBarItem.text = `${[...newState.tags.values()].join('')}${icon} ${newState.text}`
         this.statusBarItem.tooltip = newState.tooltip
         switch (newState.style) {
             case 'normal':
+                this.statusBarItem.backgroundColor = new vscode.ThemeColor(
+                    'statusBarItem.activeBackground'
+                )
+                this.statusBarItem.color = new vscode.ThemeColor('statusBar.foreground')
+                break
             case 'disabled':
+                this.statusBarItem.backgroundColor = new vscode.ThemeColor(
+                    'statusBarItem.offlineBackground'
+                )
+                this.statusBarItem.color = new vscode.ThemeColor('statusBar.offlineForeground')
+                break
             case 'warning':
+                this.statusBarItem.backgroundColor = new vscode.ThemeColor(
+                    'statusBarItem.warningBackground'
+                )
+                this.statusBarItem.color = new vscode.ThemeColor('statusBarItem.warningForeground')
+                break
             case 'error':
                 this.statusBarItem.backgroundColor = new vscode.ThemeColor(
                     'statusBarItem.errorBackground'
@@ -239,68 +297,76 @@ export class CodyStatusBar {
     private buildState(
         authStatus: AuthStatus,
         config: ResolvedConfiguration,
-        errors: ReadonlyArray<StatusBarError>,
-        loaders: ReadonlyArray<StatusBarLoader>,
+        errors: ReadonlySet<StatusBarError>,
+        loaders: ReadonlySet<StatusBarLoader>,
         ignoreStatus: IsIgnored
-    ): StatusBarState {
+    ): Partial<StatusBarState> & Pick<StatusBarState, 'interact' | 'tooltip'> {
+        const tags = new Set<InvisibleStatusBarTag>()
+
+        if (authStatus.authenticated) {
+            tags.add(InvisibleStatusBarTag.IsAuthenticated)
+        } else if (authStatus.showInvalidAccessTokenError || authStatus.showNetworkError) {
+            tags.add(InvisibleStatusBarTag.HasErrors)
+        }
+        if (errors.size > 0) {
+            tags.add(InvisibleStatusBarTag.HasErrors)
+        }
+        if (loaders.size > 0) {
+            tags.add(InvisibleStatusBarTag.HasLoaders)
+        }
         if (authStatus.pendingValidation) {
             return {
-                text: '$(loading~spin)',
+                icon: 'loading',
                 tooltip: 'Signing In...',
                 style: 'normal',
+                tags,
                 interact: interactAuth,
             }
         }
         if (!authStatus.authenticated && authStatus.showNetworkError) {
             return {
-                text: '$(cody-logo-heavy-slash)',
+                icon: 'disabled',
                 tooltip: 'Network issues prevented Cody from signing in.',
                 style: 'error',
+                tags,
                 interact: interactAuth,
             }
         }
         if (!authStatus.authenticated && authStatus.showInvalidAccessTokenError) {
             return {
-                text: '$(cody-logo-heavy-slash)',
+                icon: 'disabled',
                 tooltip: 'Your authentication has expired. Sign in again to continue using Cody.',
                 style: 'error',
+                tags,
                 interact: interactAuth,
             }
         }
         if (!authStatus.authenticated) {
             return {
-                text: '$(cody-logo-heavy) Sign In',
+                text: 'Sign In',
                 tooltip: 'Sign in to get started with Cody.',
                 style: 'warning',
+                tags,
                 interact: interactAuth,
             }
         }
 
-        if (errors.length > 0) {
-            const errorDetails = errors
-                .map(error => {
-                    dedent`
-                    **${error.title}**
-
-                    ${error.description}
-                    `
-                })
-                .join('\n\n')
-            const errorContent = dedent`
-                ## Errors:
-                ---
-
-                ${errorDetails}
-                `.trim()
-            const hasDisabilitatingError = errors.some(
+        if (errors.size > 0) {
+            const [firstError, ...otherErrors] = [...errors.values()]
+            const hasDisabilitatingError = [...errors.values()].some(
                 error =>
                     error.errorType in
                     (['AutoCompleteDisabledByAdmin', 'RateLimitError'] satisfies StatusBarErrorType[])
             )
             return {
-                text: hasDisabilitatingError ? '$(cody-logo-heavy-slash)' : '$(cody-logo-heavy)',
-                tooltip: errorContent,
+                text: '',
+                icon: hasDisabilitatingError ? 'disabled' : 'normal',
+                tooltip:
+                    otherErrors.length > 0
+                        ? `(Error 1/${otherErrors.length + 1}): ${firstError.title}`
+                        : firstError.title,
                 style: 'error',
+                tags,
                 interact: interactDefault({
                     config,
                     errors,
@@ -309,25 +375,26 @@ export class CodyStatusBar {
             }
         }
 
-        if (loaders.length > 0) {
+        if (loaders.size > 0) {
             return {
-                text: '$(loading~spin)',
-                tooltip: loaders[0].title,
+                icon: 'loading',
+                tooltip: `Loading: ${loaders.values().next().value.title}`,
                 style: 'normal',
-                interact: () => {
-                    //todo:
-                },
-                // interact: interactDefault({
-                //     isIgnored: ignoreStatus,
-                // }),
+                tags,
+                interact: interactDefault({
+                    config,
+                    errors,
+                    isIgnored: ignoreStatus,
+                }),
             }
         }
 
         if (ignoreStatus !== false) {
             return {
-                text: '$(cody-logo-heavy-slash)',
-                tooltip: ignoreReason(ignoreStatus) ?? 'The current file is ignored by Cody',
+                icon: 'disabled',
+                tooltip: ignoreReason(ignoreStatus)!,
                 style: 'disabled',
+                tags,
                 interact: interactDefault({
                     config,
                     errors,
@@ -337,124 +404,23 @@ export class CodyStatusBar {
         }
 
         return {
-            text: '$(_cody-hidden-state)$(cody-logo-heavy)',
             tooltip: 'Cody Settings',
-            style: 'normal',
             interact: interactDefault({
                 config,
                 errors,
                 isIgnored: ignoreStatus,
             }),
         }
-
-        // const defaultState = {
-        //     text: '$(cody-logo-heavy)',
-        //     tooltip: '',
-        //     interact: interactDefault,
-        //     backgroundColor: 'statusBarItem.activeBackground',
-        // } satisfies StatusBarState
-
-        // if (loadingLeases > 0) {
-        //     defaultState.text = '$(loading~spin)'
-        // } else {
-        //     statusBarItem.text = isCodyIgnoredType ? DEFAULT_TEXT_DISABLED : DEFAULT_TEXT
-        //     statusBarItem.tooltip = isCodyIgnoredType ? DEFAULT_TOOLTIP_DISABLED : DEFAULT_TOOLTIP
-        // }
-
-        // if (ignoreStatus !== false) {
-        //     return {
-        //         text: '$()',
-        //     }
-        // }
-
-        // if (!authStatus.authenticated && authStatus.showNetworkError) {
-        //     statusBarItem.text = '$(cody-logo-heavy) Connection Issues'
-        //     statusBarItem.tooltip = 'Resolve network issues for Cody to work again'
-        //     statusBarItem.backgroundColor = new vscode.ThemeColor('statusBarItem.errorBackground')
-        //     return
-        // }
-        // if (!authStatus.authenticated) {
-        //     statusBarItem.text = '$(cody-logo-heavy) Sign In'
-        //     statusBarItem.tooltip = 'Sign in to get started with Cody'
-        //     statusBarItem.backgroundColor = new vscode.ThemeColor('statusBarItem.warningBackground')
-        //     return
-        // }
-
-        // if (errors.length > 0) {
-        //     statusBarItem.backgroundColor = new vscode.ThemeColor('statusBarItem.warningBackground')
-        //     statusBarItem.tooltip = errors[0].error.title
-        // } else {
-        //     statusBarItem.backgroundColor = new vscode.ThemeColor('statusBarItem.activeBackground')
-        // }
-
-        // return {
-        //     visible: true,
-        // }
     }
 
     private dispose() {
+        this.errors.complete()
+        this.loaders.complete()
         this.statusBarItem.dispose()
         this.command.dispose()
         this.renderSubscription?.unsubscribe()
         singleton = undefined
     }
-
-    // dispose(): void
-    // startLoading(
-    //     label: string,
-    //     params?: {
-    //         // When set, the loading lease will expire after the timeout to avoid getting stuck
-    //         timeoutMs: number
-    //     }
-    // ): () => void
-    // addError(error: StatusBarError): () => void
-    // hasError(error: StatusBarErrorName): boolean
-    // setAuthStatus(newStatus: AuthStatus): void
-
-    // private async handleInteraction() {
-    //     this.pendingInteraction?.abort()
-    //     const interaction = new AbortController()
-    //     this.pendingInteraction = interaction
-
-    //     const currentState = await firstValueFrom(this.state, interaction.signal).catch(e => {
-    //         if (interaction.signal.aborted) {
-    //             return null
-    //         }
-    //         throw e
-    //     })
-    //     if (!currentState) {
-    //         return
-    //     }
-
-    //     telemetryRecorder.recordEvent('cody.statusbarIcon', 'clicked', {
-    //         privateMetadata: { loggedIn: Boolean(currentState.isAuthenticated) },
-    //         billingMetadata: {
-    //             category: 'billable',
-    //             product: 'cody',
-    //         },
-    //     })
-
-    //     const workspaceConfig = vscode.workspace.getConfiguration()
-
-    //     try {
-    //         // const configSnapshot = getConfiguration()
-
-    //         if (!authStatus?.authenticated) {
-    //             // Bring up the sidebar view
-    //             void vscode.commands.executeCommand('cody.chat.focus')
-    //             return
-    //         }
-
-    //         // const workspaceConfig = vscode.workspace.getConfiguration()
-    //         // const config = getConfiguration(workspaceConfig)
-
-    //         if (errors.length > 0) {
-    //             errors.map(error => error.error.onShow?.())
-    //         }
-    //     } finally {
-    //         this.handlingInteraction = false
-    //     }
-    // }
 }
 
 async function interactAuth(abort: AbortSignal) {
@@ -465,7 +431,7 @@ function interactDefault({
     config,
     errors,
     isIgnored,
-}: { config: ResolvedConfiguration; errors: ReadonlyArray<StatusBarError>; isIgnored: IsIgnored }): (
+}: { config: ResolvedConfiguration; errors: ReadonlySet<StatusBarError>; isIgnored: IsIgnored }): (
     abort: AbortSignal
 ) => Promise<void> {
     return async (abort: AbortSignal) => {
@@ -498,10 +464,10 @@ function interactDefault({
 
         quickPick.items = [
             // These description should stay in sync with the settings in package.json
-            ...(errors.length > 0
+            ...(errors.size > 0
                 ? [
                       { label: 'notice', kind: vscode.QuickPickItemKind.Separator },
-                      ...errors.map(error => ({
+                      ...[...errors.values()].map(error => ({
                           label: `$(alert) ${error.title}`,
                           description: '',
                           detail: QUICK_PICK_ITEM_EMPTY_INDENT_PREFIX + error.description,
@@ -672,16 +638,16 @@ function ignoreReason(isIgnore: IsIgnored): string | null {
         case false:
             return null
         case 'non-file-uri':
-            return 'This file is disabled as it does not have a valid file URI.'
+            return 'This current file is ignored as it does not have a valid file URI.'
         case 'no-repo-found':
-            return 'This file is disabled as it is not in known repository.'
+            return 'This current file is ignored as it is not in known git repository.'
         case 'has-ignore-everything-filters':
             return 'Your administrator has disabled Cody for this file.'
         default:
             if (isIgnore.startsWith('repo:')) {
                 return `Your administrator has disabled Cody for '${isIgnore.replace('repo:', '')}'.`
             }
-            return 'Cody is not available for this file.'
+            return 'The current file is ignored by Cody.'
     }
 }
 
@@ -722,140 +688,3 @@ type StatusBarErrorType = 'auth' | 'RateLimitError' | 'AutoCompleteDisabledByAdm
 interface StatusBarItem extends vscode.QuickPickItem {
     onSelect: () => Promise<void>
 }
-
-// export function createStatusBar(): CodyStatusBar {
-//     // const statusBarItem = (statusBarItem.text = DEFAULT_TEXT)
-//     // statusBarItem.tooltip = DEFAULT_TOOLTIP
-//     // statusBarItem.command = STATUS_BAR_INTERACTION_COMMAND
-//     // statusBarItem.show()
-
-//     let isCodyIgnoredType: null | CodyIgnoreType = null
-//     async function updateIgnoreStatus(uri: vscode.Uri | undefined): Promise<void> {
-//         if (!uri) {
-//             isCodyIgnoredType = null
-//             return
-//         }
-//         isCodyIgnoredType = (await contextFiltersProvider.isUriIgnored(uri)) ? 'context-filter' : null
-//         rerender()
-//     }
-//     const onDocumentChange = vscode.window.onDidChangeActiveTextEditor(editor =>
-//         updateIgnoreStatus(editor?.document.uri)
-//     )
-//     // Initial check for the current active editor
-//     updateIgnoreStatus(vscode.window.activeTextEditor?.document?.uri)
-
-//     let authStatus: AuthStatus | undefined
-//     // const command = vscode.commands.registerCommand(STATUS_BAR_INTERACTION_COMMAND, async )
-
-//     // Reference counting to ensure loading states are handled consistently across different
-//     // features
-//     // TODO: Ensure the label is always set to the right value too.
-//     let openLoadingLeases = 0
-
-//     const errors: { error: StatusBarError; createdAt: number }[] = []
-
-//     // function rerender(): void {
-//     //     if (openLoadingLeases > 0) {
-//     //         statusBarItem.text = '$(loading~spin)'
-//     //     } else {
-//     //         statusBarItem.text = isCodyIgnoredType ? DEFAULT_TEXT_DISABLED : DEFAULT_TEXT
-//     //         statusBarItem.tooltip = isCodyIgnoredType ? DEFAULT_TOOLTIP_DISABLED : DEFAULT_TOOLTIP
-//     //     }
-
-//     //     // Only show this if authStatus is present, otherwise you get a flash of
-//     //     // yellow status bar icon when extension first loads but login hasn't
-//     //     // initialized yet
-//     //     if (!authStatus.authenticated && authStatus.showNetworkError) {
-//     //         statusBarItem.text = '$(cody-logo-heavy) Connection Issues'
-//     //         statusBarItem.tooltip = 'Resolve network issues for Cody to work again'
-//     //         statusBarItem.backgroundColor = new vscode.ThemeColor('statusBarItem.errorBackground')
-//     //         return
-//     //     }
-//     //     if (!authStatus.authenticated) {
-//     //         statusBarItem.text = '$(cody-logo-heavy) Sign In'
-//     //         statusBarItem.tooltip = 'Sign in to get started with Cody'
-//     //         statusBarItem.backgroundColor = new vscode.ThemeColor('statusBarItem.warningBackground')
-//     //         return
-//     //     }
-
-//     //     if (errors.length > 0) {
-//     //         statusBarItem.backgroundColor = new vscode.ThemeColor('statusBarItem.warningBackground')
-//     //         statusBarItem.tooltip = errors[0].error.title
-//     //     } else {
-//     //         statusBarItem.backgroundColor = new vscode.ThemeColor('statusBarItem.activeBackground')
-//     //     }
-//     // }
-
-//     // Clean up all errors after a certain time so they don't accumulate forever
-//     function clearOutdatedErrors(): void {
-//         const now = Date.now()
-//         for (let i = errors.length - 1; i >= 0; i--) {
-//             const error = errors[i]
-//             if (
-//                 now - error.createdAt >= ONE_HOUR ||
-//                 (error.error.removeAfterEpoch && now - error.error.removeAfterEpoch >= 0)
-//             ) {
-//                 errors.splice(i, 1)
-//             }
-//         }
-//         rerender()
-//     }
-
-//     return {
-//         startLoading(label: string, params: { timeoutMs?: number } = {}) {
-//             openLoadingLeases++
-//             statusBarItem.tooltip = label
-//             rerender()
-
-//             let didClose = false
-//             const timeoutId = params.timeoutMs ? setTimeout(stopLoading, params.timeoutMs) : null
-//             function stopLoading() {
-//                 if (didClose) {
-//                     return
-//                 }
-//                 didClose = true
-
-//                 openLoadingLeases--
-//                 rerender()
-//                 if (timeoutId) {
-//                     clearTimeout(timeoutId)
-//                 }
-//             }
-
-//             return stopLoading
-//         },
-//         addError(error: StatusBarError) {
-//             const now = Date.now()
-//             const errorObject = { error, createdAt: now }
-//             errors.push(errorObject)
-
-//             if (error.removeAfterEpoch && error.removeAfterEpoch > now) {
-//                 setTimeout(clearOutdatedErrors, Math.min(ONE_HOUR, error.removeAfterEpoch - now))
-//             } else {
-//                 setTimeout(clearOutdatedErrors, ONE_HOUR)
-//             }
-
-//             rerender()
-
-//             return () => {
-//                 const index = errors.indexOf(errorObject)
-//                 if (index !== -1) {
-//                     errors.splice(index, 1)
-//                     rerender()
-//                 }
-//             }
-//         },
-//         hasError(errorName: StatusBarErrorName): boolean {
-//             return errors.some(e => e.error.errorType === errorName)
-//         },
-//         setAuthStatus(newStatus: AuthStatus) {
-//             authStatus = newStatus
-//             rerender()
-//         },
-//         dispose() {
-//             statusBarItem.dispose()
-//             command.dispose()
-//             onDocumentChange.dispose()
-//         },
-//     }
-// }

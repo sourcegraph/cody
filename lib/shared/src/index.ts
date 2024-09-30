@@ -1,75 +1,60 @@
+import {
+    enablePatches as enableImmerJSONPatchSupport,
+    enableMapSet as enableImmerMapSetSupport,
+} from 'immer'
+
+if (false as unknown) {
+    /**
+     * TODO: @sqs Enabeling JSON patches might be a nice way of economically
+     * syncing state to from the extension to the WebView.
+     *
+     * This would be helpful (but not required) to potentially move all current
+     * state and observables into simple `https://mobx-keystone.js.org/` classes
+     * in the webview. By then using the mobx-react binding it makes the UI a
+     * lot more friendly to work with and we remove this massive waterfall of
+     * forwarded props as each component can directly access the state it needs
+     * and re-render on changes. I've done this before in Tauri apps and it
+     * works beautifully!
+     */
+
+    enableImmerJSONPatchSupport()
+}
+enableImmerMapSetSupport()
+
 // Add anything else here that needs to be used outside of this library.
 
-export {
-    modelsService,
-    mockModelsService,
-    ModelsService,
-    type ModelCategory,
-    type ModelTier,
-    type ServerModelConfiguration,
-    type PerSitePreferences,
-    type SitePreferences,
-    type ModelRefStr,
-    type LegacyModelRefStr,
-    type ModelRef,
-    type ModelsData,
-    TestLocalStorageForModelPreferences,
-    type LocalStorageForModelPreferences,
-} from './models/modelsService'
-export {
-    type Model,
-    type ServerModel,
-    createModel,
-    createModelFromServerModel,
-    modelTier,
-    parseModelRef,
-    toLegacyModel,
-} from './models/model'
-export {
-    type EditModel,
-    type EditProvider,
-    type ChatModel,
-    type ChatProvider,
-    ModelUsage,
-    type ModelContextWindow,
-} from './models/types'
-export { getMockedDotComClientModels, getMockedDotComServerModels } from './models/dotcom'
-export { ModelTag } from './models/tags'
-export {
-    getProviderName,
-    getModelInfo,
-    isCodyProModel,
-    isCustomModel,
-    toModelRefStr,
-    isWaitlistModel,
-} from './models/utils'
+export * from './auth/authStatus'
+export * from './auth/referral'
+export * from './auth/tokens'
+export * from './auth/types'
 export { BotResponseMultiplexer } from './chat/bot-response-multiplexer'
 export { ChatClient } from './chat/chat'
 export { getSimplePreamble } from './chat/preamble'
+export * from './chat/sse-iterator'
+export { serializeChatMessage } from './chat/transcript'
 export type {
     SerializedChatInteraction,
     SerializedChatTranscript,
 } from './chat/transcript'
-export { serializeChatMessage } from './chat/transcript'
-export {
-    errorToChatError,
-    DEFAULT_EVENT_SOURCE,
-} from './chat/transcript/messages'
-export type {
-    AccountKeyedChatHistory,
-    ChatHistoryKey,
-    ChatError,
-    EventSource,
-    ChatHistory,
-    ChatMessage,
-    UserLocalHistory,
-    SerializedChatMessage,
-    RankedContext,
-} from './chat/transcript/messages'
 export {
     CODY_PASSTHROUGH_VSCODE_OPEN_COMMAND_ID,
     webviewOpenURIForContextItem,
 } from './chat/transcript/display-text'
+export {
+    DEFAULT_EVENT_SOURCE,
+    errorToChatError,
+} from './chat/transcript/messages'
+export type {
+    AccountKeyedChatHistory,
+    ChatError,
+    ChatHistory,
+    ChatHistoryKey,
+    ChatMessage,
+    EventSource,
+    RankedContext,
+    SerializedChatMessage,
+    UserLocalHistory,
+} from './chat/transcript/messages'
 export { Typewriter } from './chat/typewriter'
 export { reformatBotMessageForChat } from './chat/viewHelpers'
 export type {
@@ -81,68 +66,81 @@ export type {
     SearchProvider,
 } from './codebase-context/context-status'
 export {
-    type ContextItem,
-    type ContextItemFile,
-    type ContextItemOpenCtx,
     ContextItemSource,
-    type ContextItemWithContent,
-    type ContextItemSymbol,
-    type ContextFileType,
-    type ContextMessage,
-    type SymbolKind,
-    type ContextItemTree,
-    type ContextItemRepository,
     FILE_RANGE_TOOLTIP_LABEL,
     GENERAL_HELP_LABEL,
     IGNORED_FILE_WARNING_LABEL,
     LARGE_FILE_WARNING_LABEL,
     NO_SYMBOL_MATCHES_HELP_LABEL,
+    type ContextFileType,
+    type ContextItem,
+    type ContextItemFile,
+    type ContextItemOpenCtx,
+    type ContextItemRepository,
+    type ContextItemSymbol,
+    type ContextItemTree,
+    type ContextItemWithContent,
+    type ContextMessage,
+    type SymbolKind,
 } from './codebase-context/messages'
+export * from './cody-ignore/context-filters-provider'
+export {
+    CustomCommandType,
+    DefaultChatCommands,
+    DefaultEditCommands,
+    type DefaultCodyCommands,
+} from './commands/types'
 export type {
     CodyCommand,
     CodyCommandContext,
-    CodyCommandType,
     CodyCommandMode,
+    CodyCommandType,
     TerminalOutputArguments,
 } from './commands/types'
-export { CustomCommandType } from './commands/types'
-export {
-    type DefaultCodyCommands,
-    DefaultChatCommands,
-    DefaultEditCommands,
-} from './commands/types'
 export { dedupeWith, isDefined, isErrorLike, pluralize } from './common'
+export * from './common/abortController'
 export {
-    type RangeData,
-    toRangeData,
+    extensionForLanguage,
+    languageFromFilename,
+    markdownCodeBlockLanguageIDForFilename,
+    ProgrammingLanguage,
+} from './common/languages'
+export {
+    defaultPathFunctions,
+    pathFunctionsForURI,
+    posixFilePaths,
+} from './common/path'
+export { isMacOS, isWindows } from './common/platform'
+export {
     displayLineRange,
     displayRange,
     expandToLineRange,
+    toRangeData,
+    type RangeData,
 } from './common/range'
-export * from './common/abortController'
-export {
-    ProgrammingLanguage,
-    languageFromFilename,
-    markdownCodeBlockLanguageIDForFilename,
-    extensionForLanguage,
-} from './common/languages'
-export {
-    posixFilePaths,
-    pathFunctionsForURI,
-    defaultPathFunctions,
-} from './common/path'
-export { parseEvents } from './sourcegraph-api/completions/parse'
-export { isWindows, isMacOS } from './common/platform'
 export {
     assertFileURI,
     isFileURI,
+    SUPPORTED_URI_SCHEMAS,
     uriBasename,
     uriDirname,
     uriExtname,
     uriParseNameAndExtension,
-    SUPPORTED_URI_SCHEMAS,
     type FileURI,
 } from './common/uri'
+export * from './completions/types'
+export * from './configuration'
+export * from './configuration/resolver'
+export {
+    GIT_OPENCTX_PROVIDER_URI,
+    openCtx,
+    REMOTE_DIRECTORY_PROVIDER_URI,
+    REMOTE_FILE_PROVIDER_URI,
+    REMOTE_REPOSITORY_PROVIDER_URI,
+    setOpenCtx,
+    WEB_PROVIDER_URI,
+} from './context/openctx/api'
+export * from './context/openctx/context'
 export { NoopEditor } from './editor'
 export type {
     ActiveTextEditor,
@@ -155,19 +153,21 @@ export type {
 export {
     displayPath,
     displayPathBasename,
-    uriHasPrefix,
     displayPathDirname,
     displayPathWithoutWorkspaceFolderPrefix,
     setDisplayPathEnvInfo,
+    uriHasPrefix,
     type DisplayPathEnvInfo,
 } from './editor/displayPath'
+export * from './editor/editorState'
 export { hydrateAfterPostMessage } from './editor/hydrateAfterPostMessage'
 export * from './editor/utils'
 export {
     FeatureFlag,
-    type FeatureFlagProvider,
     featureFlagProvider,
+    type FeatureFlagProvider,
 } from './experimentation/FeatureFlagProvider'
+export * from './fetch'
 export { GuardrailsPost } from './guardrails'
 export type { Attribution, Guardrails } from './guardrails'
 export { SourcegraphGuardrailsClient } from './guardrails/client'
@@ -176,76 +176,163 @@ export {
     CompletionStopReason,
     type CodeCompletionsClient,
     type CodeCompletionsParams,
-    type SerializedCodeCompletionsParams,
     type CompletionResponseGenerator,
     type CompletionResponseWithMetaData,
+    type SerializedCodeCompletionsParams,
 } from './inferenceClient/misc'
+export * from './lexicalEditor/editorState'
+export {
+    FILE_MENTION_EDITOR_STATE_FIXTURE,
+    OLD_TEXT_FILE_MENTION_EDITOR_STATE_FIXTURE,
+    UNKNOWN_NODES_EDITOR_STATE_FIXTURE,
+} from './lexicalEditor/fixtures'
+export * from './lexicalEditor/nodes'
+export * from './llm-providers/google/chat-client'
+export * from './llm-providers/groq/chat-client'
+export {
+    createOllamaClient,
+    OLLAMA_DEFAULT_URL,
+    ollamaChatClient,
+    type OllamaGenerateParams,
+} from './llm-providers/ollama'
+export { fetchLocalOllamaModels } from './llm-providers/ollama/utils'
+export { getCompletionsModelConfig } from './llm-providers/utils'
 export type { Result } from './local-context'
 export { logDebug, logError, setLogger } from './logger'
 export {
-    createOllamaClient,
-    ollamaChatClient,
-    type OllamaGenerateParams,
-    OLLAMA_DEFAULT_URL,
-} from './llm-providers/ollama'
+    FILE_CONTEXT_MENTION_PROVIDER,
+    mentionProvidersMetadata,
+    openCtxProviderMetadata,
+    SYMBOL_CONTEXT_MENTION_PROVIDER,
+    type ContextItemProps,
+    type ContextMentionProviderID,
+    type ContextMentionProviderMetadata,
+} from './mentions/api'
 export {
+    parseMentionQuery,
+    scanForMentionTriggerInUserTextInput,
+    type MentionQuery,
+} from './mentions/query'
+export * from './misc/observable'
+export * from './misc/mutable'
+export * from './misc/observableOperation'
+export {
+    addMessageListenersForExtensionAPI,
+    createMessageAPIForExtension,
+    createMessageAPIForWebview,
+    proxyExtensionAPI,
+    type GenericVSCodeWrapper,
+    type GenericWebviewAPIWrapper,
+    type RequestMessage,
+    type ResponseMessage,
+} from './misc/rpc/rpc'
+export * from './misc/rpc/webviewAPI'
+export { getMockedDotComClientModels, getMockedDotComServerModels } from './models/dotcom'
+export {
+    createModel,
+    createModelFromServerModel,
+    modelTier,
+    parseModelRef,
+    toLegacyModel,
+    type Model,
+    type ServerModel,
+} from './models/model'
+export {
+    mockModelsService,
+    modelsService,
+    ModelsService,
+    TestLocalStorageForModelPreferences,
+    type LegacyModelRefStr,
+    type LocalStorageForModelPreferences,
+    type ModelCategory,
+    type ModelRef,
+    type ModelRefStr,
+    type ModelsData,
+    type ModelTier,
+    type PerSitePreferences,
+    type ServerModelConfiguration,
+    type SitePreferences,
+} from './models/modelsService'
+export { ModelTag } from './models/tags'
+export {
+    ModelUsage,
+    type ChatModel,
+    type ChatProvider,
+    type EditModel,
+    type EditProvider,
+    type ModelContextWindow,
+} from './models/types'
+export {
+    getModelInfo,
+    getProviderName,
+    isCodyProModel,
+    isCustomModel,
+    isWaitlistModel,
+    toModelRefStr,
+} from './models/utils'
+export {
+    ANSWER_TOKENS,
     MAX_BYTES_PER_FILE,
     MAX_CURRENT_FILE_TOKENS,
-    ANSWER_TOKENS,
     NUM_CODE_RESULTS,
     NUM_TEXT_RESULTS,
     SURROUNDING_LINES,
 } from './prompt/constants'
-export { PromptMixin, newPromptMixin } from './prompt/prompt-mixin'
+export { newPromptMixin, PromptMixin } from './prompt/prompt-mixin'
+export * from './prompt/prompt-string'
 export * from './prompt/templates'
 export {
-    truncateTextNearestLine,
-    truncatePromptStringStart,
     truncatePromptString,
+    truncatePromptStringStart,
+    truncateTextNearestLine,
 } from './prompt/truncation'
+export * from './singletons'
 export type { Message } from './sourcegraph-api'
 export {
     addClientInfoParams,
     getClientInfoParams,
     setClientNameVersion,
 } from './sourcegraph-api/client-name-version'
+export { ClientConfigSingleton, type CodyClientConfig } from './sourcegraph-api/clientConfig'
 export { SourcegraphBrowserCompletionsClient } from './sourcegraph-api/completions/browserClient'
 export { SourcegraphCompletionsClient } from './sourcegraph-api/completions/client'
 export type {
     CompletionLogger,
     CompletionRequestParameters,
 } from './sourcegraph-api/completions/client'
+export * from './sourcegraph-api/completions/parse'
+export { parseEvents } from './sourcegraph-api/completions/parse'
 export * from './sourcegraph-api/completions/types'
+export { getSerializedParams } from './sourcegraph-api/completions/utils'
 export {
     DOTCOM_URL,
     isDotCom,
 } from './sourcegraph-api/environments'
 export {
     AbortError,
+    isAbortError,
+    isAbortErrorOrSocketHangUp,
+    isAuthError,
+    isContextWindowLimitError,
+    isNetworkError,
+    isNetworkLikeError,
+    isRateLimitError,
     NetworkError,
     RateLimitError,
     TimeoutError,
     TracedError,
-    isAbortError,
-    isAbortErrorOrSocketHangUp,
-    isContextWindowLimitError,
-    isAuthError,
-    isNetworkError,
-    isNetworkLikeError,
-    isRateLimitError,
 } from './sourcegraph-api/errors'
 export {
-    SourcegraphGraphQLAPIClient,
     graphqlClient,
+    SourcegraphGraphQLAPIClient,
 } from './sourcegraph-api/graphql'
-export { ClientConfigSingleton, type CodyClientConfig } from './sourcegraph-api/clientConfig'
 export {
     addCustomUserAgent,
     customUserAgent,
+    EXCLUDE_EVERYTHING_CONTEXT_FILTERS,
+    INCLUDE_EVERYTHING_CONTEXT_FILTERS,
     isNodeResponse,
     setUserAgent,
-    INCLUDE_EVERYTHING_CONTEXT_FILTERS,
-    EXCLUDE_EVERYTHING_CONTEXT_FILTERS,
     type BrowserOrNodeResponse,
     type LogEventMode,
     type ContextFilters,
@@ -254,35 +341,49 @@ export {
     type SuggestionsRepo,
     type RepoSuggestionsSearchResponse,
     type ChatIntentResult,
+    type CodyContextFilterItem,
+    type ContextFilters,
+    type InputContextItem,
+    type LogEventMode,
+    type RepoListResponse,
+    type RepoSuggestionsSearchResponse,
+    type SuggestionsRepo,
 } from './sourcegraph-api/graphql/client'
 export type {
     CodyLLMSiteConfiguration,
     ContextSearchResult,
-    Prompt,
+    CurrentUserCodySubscription,
     event,
+    Prompt,
 } from './sourcegraph-api/graphql/client'
 export { RestClient } from './sourcegraph-api/rest/client'
 export { GraphQLTelemetryExporter } from './sourcegraph-api/telemetry/GraphQLTelemetryExporter'
+export * from './sourcegraph-api/utils'
 export { type BillingCategory, type BillingProduct } from './telemetry-v2'
+export * from './telemetry-v2/singleton'
 export {
     MockServerTelemetryRecorderProvider,
+    noOpTelemetryRecorder,
     NoOpTelemetryRecorderProvider,
     TelemetryRecorderProvider,
-    noOpTelemetryRecorder,
     type ExtensionDetails,
 } from './telemetry-v2/TelemetryRecorderProvider'
 export type { TelemetryRecorder } from './telemetry-v2/TelemetryRecorderProvider'
-export * from './telemetry-v2/singleton'
 export { testFileUri } from './test/path-helpers'
+export * from './token'
+export * from './token/constants'
+export { CORPUS_CONTEXT_ALLOCATION as ENHANCED_CONTEXT_ALLOCATION } from './token/constants'
+export { getTokenCounterUtils, TokenCounter, TokenCounterUtils } from './token/counter'
+export { charsToTokens, tokensToChars } from './token/utils'
 export * from './tracing'
 export {
+    assertUnreachable,
     convertGitCloneURLToCodebaseName,
     createSubscriber,
     isError,
     nextTick,
-    type ReadonlyDeep,
-    assertUnreachable,
     promise,
+    type ReadonlyDeep,
 } from './utils'
 export type { CurrentUserCodySubscription } from './sourcegraph-api/graphql/client'
 export * from './auth/types'
