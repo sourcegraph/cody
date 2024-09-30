@@ -1,6 +1,45 @@
 import { logError } from './logger'
 
-export const isError = (value: unknown): value is Error => value instanceof Error
+type PromiseResolverFn<T, E> = (value?: T, err?: E) => void
+/**
+ * Creates a promise that can be resolved externally
+ */
+export function promise<T, E = any>(): [PromiseResolverFn<T, E>, Promise<T>] {
+    let resolverFn: PromiseResolverFn<T, E> = undefined as any
+    const internalPromise = new Promise<T>((resolve, reject) => {
+        resolverFn = (value, err) => (err ? reject(err) : resolve(value!))
+    })
+    if (!resolverFn) {
+        throw new Error('Unreachable code')
+    }
+    return [resolverFn!, internalPromise]
+}
+
+export function isError(value: unknown): value is Error {
+    return value instanceof Error
+}
+
+/**
+ * This is a little helper function that can be used to assert that all cases of a switch statement are handled.
+ *
+ * @example
+ * const something : 'foo' | 'bar' | 'buz' = 'foo'
+ * switch (something) {
+ *   case 'foo':
+ *     // ...
+ *     break
+ *   case 'bar':
+ *     // ...
+ *     break
+ *   default:
+ *      // gives a type and runtime error since we're not handling 'buz'
+ *     assertUnreachable(something)
+ * }
+ */
+export function assertUnreachable<T>(v: never): never
+export function assertUnreachable<T>(v: T) {
+    throw new Error(`Unreachable Code Path for <${v}>`)
+}
 
 // Converts a git clone URL to the codebase name that includes the slash-separated code host, owner, and repository name
 // This should captures:

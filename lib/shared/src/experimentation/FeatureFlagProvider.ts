@@ -133,10 +133,10 @@ export class FeatureFlagProviderImpl implements FeatureFlagProvider {
     private cache: Record<string, Record<string, boolean>> = {}
 
     private refreshRequests = new Subject<void>()
-    private refreshes: Observable<void> = combineLatest([
+    private refreshes: Observable<void> = combineLatest(
         this.refreshRequests.pipe(startWith(undefined)),
-        interval(ONE_HOUR).pipe(startWith(undefined)),
-    ]).pipe(map(() => undefined))
+        interval(ONE_HOUR).pipe(startWith(undefined))
+    ).pipe(map(() => undefined))
 
     private relevantAuthStatusChanges: Observable<
         Pick<AuthStatus, 'authenticated' | 'endpoint'> &
@@ -150,10 +150,10 @@ export class FeatureFlagProviderImpl implements FeatureFlagProvider {
         distinctUntilChanged()
     )
 
-    private evaluatedFeatureFlags: Observable<Record<string, boolean>> = combineLatest([
+    private evaluatedFeatureFlags: Observable<Record<string, boolean>> = combineLatest(
         this.relevantAuthStatusChanges,
-        this.refreshes,
-    ]).pipe(
+        this.refreshes
+    ).pipe(
         debounceTime(0),
         switchMap(([authStatus]) =>
             promiseFactoryToObservable(signal =>
@@ -208,7 +208,7 @@ export class FeatureFlagProviderImpl implements FeatureFlagProvider {
             // endpoint, because our endpoint or authentication may have changed, and
             // `getEvaluatedFeatureFlags` only returns the set of recently evaluated feature flags.
             entry = storeLastValue(
-                combineLatest([this.relevantAuthStatusChanges, this.refreshes])
+                combineLatest(this.relevantAuthStatusChanges, this.refreshes)
                     .pipe(
                         // NOTE(sqs): Use switchMap instead of switchMapReplayOperation because we want
                         // to cache the previous value while we are refreshing it. That is a choice that

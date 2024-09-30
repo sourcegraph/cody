@@ -32,10 +32,10 @@ export class OpenTelemetryService {
     private configSubscription: Unsubscribable
 
     constructor() {
-        this.configSubscription = combineLatest([
+        this.configSubscription = combineLatest(
             resolvedConfig,
-            featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyAutocompleteTracing),
-        ]).subscribe(([{ configuration, auth }, codyAutocompleteTracingFlag]) => {
+            featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyAutocompleteTracing)
+        ).subscribe(([{ configuration, auth }, codyAutocompleteTracingFlag]) => {
             this.reconfigurePromiseMutex = this.reconfigurePromiseMutex.then(async () => {
                 this.isTracingEnabled = configuration.experimentalTracing || codyAutocompleteTracingFlag
 

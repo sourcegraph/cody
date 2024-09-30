@@ -90,7 +90,7 @@ import { displayHistoryQuickPick } from './services/HistoryChat'
 import { localStorage } from './services/LocalStorageProvider'
 import { VSCodeSecretStorage, secretStorage } from './services/SecretStorageProvider'
 import { registerSidebarCommands } from './services/SidebarCommands'
-import { type CodyStatusBar, createStatusBar } from './services/StatusBar'
+import { CodyStatusBar } from './services/StatusBar'
 import { createOrUpdateTelemetryRecorderProvider } from './services/telemetry-v2'
 import { onTextDocumentChange } from './services/utils/codeblock-action-tracker'
 import {
@@ -130,7 +130,7 @@ export async function start(
     setClientCapabilitiesFromConfiguration(getConfiguration())
 
     setResolvedConfigurationObservable(
-        combineLatest([
+        combineLatest(
             fromVSCodeEvent(vscode.workspace.onDidChangeConfiguration).pipe(
                 filter(
                     event => event.affectsConfiguration('cody') || event.affectsConfiguration('openctx')
@@ -143,8 +143,8 @@ export async function start(
                 startWith(undefined),
                 map(() => secretStorage)
             ),
-            localStorage.clientStateChanges.pipe(distinctUntilChanged()),
-        ]).pipe(
+            localStorage.clientStateChanges.pipe(distinctUntilChanged())
+        ).pipe(
             map(
                 ([clientConfiguration, clientSecrets, clientState]) =>
                     ({
@@ -219,16 +219,8 @@ const register = async (
     )
     disposables.push(chatsController)
 
-    const statusBar = createStatusBar()
+    const statusBar = CodyStatusBar.init(disposables)
     disposables.push(
-        statusBar,
-        subscriptionDisposable(
-            authStatus.subscribe({
-                next: authStatus => {
-                    statusBar.setAuthStatus(authStatus)
-                },
-            })
-        ),
         subscriptionDisposable(
             exposeOpenCtxClient(context, platform.createOpenCtxController).subscribe({})
         )
@@ -654,7 +646,7 @@ function registerAutocomplete(
 ): void {
     disposables.push(
         subscriptionDisposable(
-            combineLatest([resolvedConfig, authStatus])
+            combineLatest(resolvedConfig, authStatus)
                 .pipe(
                     switchMap(([config, authStatus]) =>
                         createInlineCompletionItemProvider({

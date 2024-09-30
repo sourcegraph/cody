@@ -79,7 +79,7 @@ export function getMentionMenuData(options: {
     }
 
     try {
-        const items = combineLatest([
+        const items = combineLatest(
             promiseFactoryToObservable(signal =>
                 getChatContextItemsForMention(
                     {
@@ -90,8 +90,8 @@ export function getMentionMenuData(options: {
                     signal
                 )
             ),
-            ChatBuilder.contextWindowForChat(options.chatBuilder),
-        ]).pipe(
+            ChatBuilder.contextWindowForChat(options.chatBuilder)
+        ).pipe(
             map(([items, contextWindow]) =>
                 contextWindow === pendingOperation
                     ? pendingOperation
@@ -113,7 +113,8 @@ export function getMentionMenuData(options: {
                 ? mentionProvidersMetadata({ disableProviders: options.disableProviders })
                 : Observable.of([])
         ).pipe(map(providers => providers.filter(p => p.title.toLowerCase().includes(queryLower))))
-        return combineLatest([providers, items]).map(([providers, items]) => ({
+
+        return combineLatest(providers, items).map(([providers, items]) => ({
             providers,
             items,
         }))

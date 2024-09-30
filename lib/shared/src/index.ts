@@ -281,6 +281,8 @@ export {
     isError,
     nextTick,
     type ReadonlyDeep,
+    assertUnreachable,
+    promise,
 } from './utils'
 export type { CurrentUserCodySubscription } from './sourcegraph-api/graphql/client'
 export * from './auth/types'
@@ -347,6 +349,7 @@ export {
 } from './misc/rpc/rpc'
 export * from './misc/observable'
 export * from './misc/observableOperation'
+export * from './misc/observableDataStructures'
 export * from './configuration/resolver'
 export * from './configuration/clientCapabilities'
 export * from './singletons'

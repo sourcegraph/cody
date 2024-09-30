@@ -186,7 +186,7 @@ describe('switchMapReplayOperation', () => {
         const outer = outerSubject.pipe(shareReplay())
         const inner1 = outer.pipe(switchMapReplayOperation(c => observableOfTimedSequence(10, `${c}1`)))
         const inner2 = outer.pipe(switchMapReplayOperation(c => observableOfTimedSequence(10, `${c}2`)))
-        const observable = combineLatest([outer, inner1, inner2]).pipe(debounceTime(0))
+        const observable = combineLatest(outer, inner1, inner2).pipe(debounceTime(0))
 
         const { values, clearValues, done, unsubscribe } = readValuesFrom(observable)
 

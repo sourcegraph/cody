@@ -387,14 +387,14 @@ export class InlineCompletionItemProvider
                     // avoid visual churn.
                     //
                     // We still make the request to find out if the user is still rate limited.
-                    const hasRateLimitError = this.config.statusBar.hasError(RateLimitError.errorName)
+                    const hasRateLimitError = this.config.statusBar.hasError(
+                        e => e.errorType === 'RateLimitError'
+                    )
                     if (!hasRateLimitError) {
-                        stopLoading = this.config.statusBar.startLoading(
-                            'Completions are being generated',
-                            {
-                                timeoutMs: 30_000,
-                            }
-                        )
+                        stopLoading = this.config.statusBar.addLoader({
+                            title: 'Completions are being generated',
+                            timeout: 30_000,
+                        })
                     }
                 } else {
                     stopLoading?.()
@@ -932,7 +932,7 @@ export class InlineCompletionItemProvider
     private onError(error: Error): void {
         if (error instanceof RateLimitError) {
             // If there's already an existing error, don't add another one.
-            const hasRateLimitError = this.config.statusBar.hasError(error.name)
+            const hasRateLimitError = this.config.statusBar.hasError(e => e.title === error.name)
             if (hasRateLimitError) {
                 return
             }
@@ -955,8 +955,8 @@ export class InlineCompletionItemProvider
                 title: errorTitle,
                 description: `${error.userMessage} ${error.retryMessage ?? ''}`.trim(),
                 errorType: error.name,
+                timeout: error.retryAfterDate ? Number(error.retryAfterDate) : undefined,
                 removeAfterSelected: true,
-                removeAfterEpoch: error.retryAfterDate ? Number(error.retryAfterDate) : undefined,
                 onSelect: () => {
                     if (canUpgrade) {
                         telemetryRecorder.recordEvent('cody.upsellUsageLimitCTA', 'clicked', {
@@ -996,7 +996,7 @@ export class InlineCompletionItemProvider
             const errorTitle = 'Cody Autocomplete Disabled by Site Admin'
             // If there's already an existing error, don't add another one.
             const hasAutocompleteDisabledBanner = this.config.statusBar.hasError(
-                'AutoCompleteDisabledByAdmin'
+                e => e.errorType === 'AutoCompleteDisabledByAdmin'
             )
             if (hasAutocompleteDisabledBanner) {
                 return
