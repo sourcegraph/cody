@@ -50,7 +50,11 @@ export interface WebviewToExtensionAPI {
      */
     initialContext(): Observable<ContextItem[]>
 
-    detectIntent(text: string): Observable<ChatMessage['intent']>
+    detectIntent(
+        text: string
+    ): Observable<
+        { intent: ChatMessage['intent']; allScores: { intent: string; score: number }[] } | undefined
+    >
 
     /**
      * Observe the current resolved configuration (same as the global {@link resolvedConfig}
