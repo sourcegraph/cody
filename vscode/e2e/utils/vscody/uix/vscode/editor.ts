@@ -42,7 +42,7 @@ export class Editor extends SessionChild {
                     args.selection.end || args.selection.start || args.selection
                 const fromPosition = new this.vscode.Position(startLine - 1, startCharacter - 1)
                 const toPosition = new this.vscode.Position(endLine - 1, endCharacter - 1)
-                editor.selections = [new this.vscode.Selection(fromPosition, toPosition)]
+                editor.selection = new this.vscode.Selection(fromPosition, toPosition)
                 editor.revealRange(
                     editor.selection,
                     this.vscode.TextEditorRevealType.InCenterIfOutsideViewport

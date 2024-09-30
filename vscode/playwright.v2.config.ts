@@ -27,6 +27,8 @@ if (process.env.CODY_RECORDING_MODE === 'once') {
     process.env.CODY_RECORDING_MODE = 'record'
 }
 
+const isDebugging = process.env.PWDEBUG === '1' || process.env.PWDEBUG === 'console'
+
 export default defineConfig<WorkerOptions & TestOptions & TmpDirOptions>({
     workers: '50%',
     retries: 0, // Flake is not allowed!
@@ -35,9 +37,12 @@ export default defineConfig<WorkerOptions & TestOptions & TmpDirOptions>({
     // global state or switch to serial mode for that file if you absolutely
     // must!
     fullyParallel: true,
-    timeout: isWin || isCI ? 30000 : 20000,
+    // We suspend timeouts when debugging (even from VSCode editor) so that if
+    // you hit a breakpoint within the extension it doesn't cause a
+    // test-failure.
+    timeout: isDebugging ? 0 : isWin || isCI ? 30000 : 20000,
     expect: {
-        timeout: isWin || isCI ? 20000 : 10000,
+        timeout: isDebugging ? 0 : isWin || isCI ? 20000 : 10000,
     },
     // You can override options easily per project/worker/test so they are
     // unlikely to need to be modified here. These are just some sane defaults

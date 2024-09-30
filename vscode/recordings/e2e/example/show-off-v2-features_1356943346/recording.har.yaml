@@ -5,198 +5,6 @@ log:
     name: Polly.JS
     version: 6.0.6
   entries:
-    - _id: 8c2fecc53b8bf0331bcb7496e2833fe3
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 247
-        cookies: []
-        headers:
-          - name: connection
-            value: close
-          - name: host
-            value: sourcegraph.com
-          - name: accept-encoding
-            value: identity
-          - name: user-agent
-            value: node-fetch/1.0 (+https://github.com/bitinn/node-fetch)
-          - name: content-length
-            value: "247"
-          - name: accept
-            value: "*/*"
-          - name: content-type
-            value: application/json; charset=utf-8
-          - name: x-mitm-proxy-name
-            value: sourcegraph.dotcom
-        headersSize: 487
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json; charset=utf-8
-          params: []
-          textJSON:
-            query: |
-              
-              query Repositories($names: [String!]!, $first: Int!) {
-                  repositories(names: $names, first: $first) {
-                    nodes {
-                      name
-                      id
-                    }
-                  }
-                }
-            variables:
-              first: 10
-              names:
-                - github.com/sourcegraph/cody
-        queryString:
-          - name: Repositories
-            value: null
-        url: https://sourcegraph.com/.api/graphql?Repositories
-      response:
-        bodySize: 112
-        content:
-          mimeType: application/json
-          size: 112
-          text: "{\"data\":{\"repositories\":{\"nodes\":[{\"name\":\"github.com/sourcegra\
-            ph/cody\",\"id\":\"UmVwb3NpdG9yeTo2MTMyNTMyOA==\"}]}}}"
-        cookies: []
-        headers:
-          - name: date
-            value: Fri, 27 Sep 2024 10:12:53 GMT
-          - name: content-type
-            value: application/json
-          - name: content-length
-            value: "112"
-          - name: connection
-            value: close
-          - name: retry-after
-            value: "579"
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache, max-age=0
-          - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
-              X-Requested-With,Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1544
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2024-09-27T10:12:52.849Z
-      time: 297
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 297
-    - _id: b73fd2a755e6422dc3e7196dc0a79adc
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 144
-        cookies: []
-        headers:
-          - name: connection
-            value: close
-          - name: host
-            value: sourcegraph.com
-          - name: accept-encoding
-            value: identity
-          - name: user-agent
-            value: node-fetch/1.0 (+https://github.com/bitinn/node-fetch)
-          - name: content-length
-            value: "144"
-          - name: accept
-            value: "*/*"
-          - name: content-type
-            value: application/json; charset=utf-8
-          - name: x-mitm-proxy-name
-            value: sourcegraph.dotcom
-        headersSize: 485
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json; charset=utf-8
-          params: []
-          textJSON:
-            query: |-
-              
-              query Repository($name: String!) {
-              	repository(name: $name) {
-              		id
-              	}
-              }
-            variables:
-              name: github.com/sourcegraph/cody
-        queryString:
-          - name: Repository
-            value: null
-        url: https://sourcegraph.com/.api/graphql?Repository
-      response:
-        bodySize: 61
-        content:
-          mimeType: application/json
-          size: 61
-          text: "{\"data\":{\"repository\":{\"id\":\"UmVwb3NpdG9yeTo2MTMyNTMyOA==\"}}}"
-        cookies: []
-        headers:
-          - name: date
-            value: Fri, 27 Sep 2024 10:12:53 GMT
-          - name: content-type
-            value: application/json
-          - name: content-length
-            value: "61"
-          - name: connection
-            value: close
-          - name: retry-after
-            value: "579"
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache, max-age=0
-          - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
-              X-Requested-With,Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1543
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2024-09-27T10:12:53.154Z
-      time: 243
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 243
     - _id: df9bbe44d51a47ebe6840a3b9fba1c29
       _order: 0
       cache: {}
@@ -244,12 +52,12 @@ log:
         content:
           mimeType: application/json
           size: 73
-          text: "{\"data\":{\"site\":{\"productVersion\":\"292441_2024-09-26_5.7-6dcef87b\
-            0f7c\"}}}"
+          text: "{\"data\":{\"site\":{\"productVersion\":\"293000_2024-09-30_5.7-c38beb7e\
+            16fb\"}}}"
         cookies: []
         headers:
           - name: date
-            value: Fri, 27 Sep 2024 10:12:52 GMT
+            value: Mon, 30 Sep 2024 22:42:39 GMT
           - name: content-type
             value: application/json
           - name: content-length
@@ -257,7 +65,7 @@ log:
           - name: connection
             value: close
           - name: retry-after
-            value: "579"
+            value: "530"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -280,8 +88,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-27T10:12:52.429Z
-      time: 382
+      startedDateTime: 2024-09-30T22:42:39.038Z
+      time: 363
       timings:
         blocked: -1
         connect: -1
@@ -289,6 +97,6 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 382
+        wait: 363
   pages: []
   version: "1.2"

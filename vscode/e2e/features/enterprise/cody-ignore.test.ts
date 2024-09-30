@@ -1,24 +1,21 @@
 import { writeFile } from 'node:fs/promises'
 import path from 'node:path'
-// import { setTimeout } from 'node:timers/promises'
 import { expect } from '@playwright/test'
-// import { stretchTimeout } from '../../utils/helpers'
 import { fixture as test, uix } from '../../utils/vscody'
 import { MITM_AUTH_TOKEN_PLACEHOLDER } from '../../utils/vscody/constants'
-import { gitInit, modifySettings } from '../../utils/vscody/uix/workspace'
 
 test.use({
     templateWorkspaceDir: 'test/fixtures/legacy-polyglot-template',
 })
 
-test.fixme('cody ignore', {}, () => {
+test.describe('cody ignore', {}, () => {
     test('it works', async ({ workspaceDir, page, vscodeUI, mitmProxy, polly }, testInfo) => {
         const session = uix.vscode.Session.pending({ page, vscodeUI, workspaceDir })
         const cody = uix.cody.Extension.with({ page, workspaceDir })
 
         await test.step('setup', async () => {
             mitmProxy.sourcegraph.enterprise.authName = 'enterprise'
-            await modifySettings(
+            await uix.workspace.modifySettings(
                 s => ({
                     ...s,
                     'cody.override.authToken': MITM_AUTH_TOKEN_PLACEHOLDER,
@@ -42,7 +39,10 @@ test.fixme('cody ignore', {}, () => {
                     })
             })
 
-            await gitInit({ origin: 'git@github.com:sourcegraph/sourcegraph.git' }, { workspaceDir })
+            await uix.workspace.gitInit(
+                { origin: 'git@github.com:sourcegraph/sourcegraph.git' },
+                { workspaceDir }
+            )
 
             await session.start()
             await cody.waitUntilReady()
@@ -57,21 +57,25 @@ test.fixme('cody ignore', {}, () => {
         await session.editor.openFile({ workspaceFile: 'foo.ts' })
 
         // Cody icon in the status bar should shows that the file is being ignored
-        await expect(cody.statusBar).toBeVisible()
-        await expect(cody.statusBar).toContainText('File Ignored')
+        await expect(
+            cody.statusBarItem.withTags({ hasIgnoredFile: true }),
+            'Status bar should show ignored state'
+        ).toBeVisible()
 
         // Clicking it shows an error notice
-        await cody.statusBar.click()
-        await expect(session.QuickPick.items({ hasText: 'Cody is disabled in this file' })).toBeVisible()
+        await cody.statusBarItem.locator.click()
+        await expect(
+            session.QuickPick.items({ hasText: 'Cody is disabled in this file' }),
+            'Triggering an autocomplete shows an error'
+        ).toBeVisible()
         await session.QuickPick.dismiss()
 
         // Invoking autocomplete
         await session.editor.select({
-            selection: { start: { line: 2, col: 9999 }, end: { line: 3, col: 9999 } },
+            selection: { start: { line: 2, col: 2 }, end: { line: 3, col: 5 } },
         })
 
         await session.runCommand('cody.autocomplete.manual-trigger')
-
         // Manual autocomplete
         await expect(session.Notifications.toasts.filter({ hasText: 'file is ignored' })).toBeVisible()
         await session.runCommand('notifications.clearAll')

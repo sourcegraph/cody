@@ -214,7 +214,11 @@ test.describe('edit command', {}, () => {
         })
     })
 
+    // TODO: For some reason this has been disabled
     test('can switch models', async ({ workspaceDir, page, vscodeUI, mitmProxy }) => {
+        // locator('.statusbar-item[id="sourcegraph\\.cody-ai\\.extension-status"]')
+        //     .filter({ hasNot: getByRole('button', { name: 'loading~spin' }) })
+        //     .filter({ has: getByRole('button', { name: '​' }) })
         const session = uix.vscode.Session.pending({ page, vscodeUI, workspaceDir })
         const cody = uix.cody.Extension.with({ page, workspaceDir })
         await test.step('setup', async () => {
