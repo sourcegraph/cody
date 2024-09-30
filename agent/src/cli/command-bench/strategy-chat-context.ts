@@ -1,10 +1,5 @@
 import path from 'node:path'
-import {
-    PromptString,
-    SourcegraphCompletionsClient,
-    graphqlClient,
-    isError,
-} from '@sourcegraph/cody-shared'
+import { PromptString, graphqlClient, isError } from '@sourcegraph/cody-shared'
 import { SourcegraphNodeCompletionsClient } from '../../../../vscode/src/completions/nodeClient'
 import { rewriteKeywordQuery } from '../../../../vscode/src/local-context/rewrite-keyword-query'
 import { version } from '../../../package.json'
