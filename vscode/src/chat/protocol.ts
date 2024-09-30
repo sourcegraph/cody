@@ -2,6 +2,7 @@ import type {
     AuthCredentials,
     AuthStatus,
     ChatMessage,
+    ClientCapabilities,
     ClientConfiguration,
     CodyIDE,
     ContextItem,
@@ -135,6 +136,7 @@ export type ExtensionMessage =
     | {
           type: 'config'
           config: ConfigurationSubsetForWebview & LocalEnv
+          clientCapabilities: ClientCapabilities
           authStatus: AuthStatus
           configFeatures: {
               chat: boolean
@@ -216,10 +218,7 @@ export interface ExtensionTranscriptMessage {
  * The subset of configuration that is visible to the webview.
  */
 export interface ConfigurationSubsetForWebview
-    extends Pick<
-            ClientConfiguration,
-            'experimentalNoodle' | 'agentIDE' | 'agentExtensionVersion' | 'internalDebugContext'
-        >,
+    extends Pick<ClientConfiguration, 'experimentalNoodle' | 'internalDebugContext'>,
         Pick<AuthCredentials, 'serverEndpoint'> {
     smartApply: boolean
     // Type/location of the current webview.

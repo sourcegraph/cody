@@ -8,6 +8,7 @@ import {
     AUTH_STATUS_FIXTURE_AUTHED_DOTCOM,
     type AuthenticatedAuthStatus,
     type AutocompleteProviderID,
+    CLIENT_CAPABILITIES_FIXTURE,
     ClientConfigSingleton,
     type CodeCompletionsClient,
     type CodyClientConfig,
@@ -16,6 +17,7 @@ import {
     CompletionStopReason,
     featureFlagProvider,
     mockAuthStatus,
+    mockClientCapabilities,
     mockResolvedConfig,
     setEditorWindowIsFocused,
     testFileUri,
@@ -406,6 +408,7 @@ export function initCompletionProviderConfig({
         auth: { serverEndpoint: 'https://example.com', ...configuration?.auth },
         clientState: { modelPreferences: {}, ...configuration?.clientState },
     })
+    mockClientCapabilities(CLIENT_CAPABILITIES_FIXTURE)
 }
 
 export function getMockedGenerateCompletionsOptions(): GenerateCompletionsOptions {

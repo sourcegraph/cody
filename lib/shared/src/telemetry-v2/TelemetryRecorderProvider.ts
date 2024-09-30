@@ -17,6 +17,7 @@ import { MockServerTelemetryExporter } from '../sourcegraph-api/telemetry/MockSe
 import type { BillingCategory, BillingProduct } from '.'
 import { currentAuthStatusOrNotReadyYet } from '../auth/authStatus'
 import type { AuthStatus } from '../auth/types'
+import { clientCapabilities } from '../configuration/clientCapabilities'
 import type { PickResolvedConfiguration } from '../configuration/resolver'
 import { getTier } from './cody-tier'
 
@@ -59,7 +60,6 @@ export class TelemetryRecorderProvider extends BaseTelemetryRecorderProvider<
     BillingCategory
 > {
     constructor(
-        extensionDetails: ExtensionDetails,
         config: PickResolvedConfiguration<{
             configuration: true
             auth: true
@@ -67,14 +67,13 @@ export class TelemetryRecorderProvider extends BaseTelemetryRecorderProvider<
         }>,
         legacyBackcompatLogEventMode: LogEventMode
     ) {
-        const clientName = extensionDetails.telemetryClientName
-            ? extensionDetails.telemetryClientName
-            : `${extensionDetails.ide || 'unknown'}.Cody`
+        const cap = clientCapabilities()
+        const clientName = cap.telemetryClientName || `${cap.agentIDE}.Cody`
 
         super(
             {
                 client: clientName,
-                clientVersion: extensionDetails.version,
+                clientVersion: cap.agentExtensionVersion,
             },
             process.env.CODY_TELEMETRY_EXPORTER === 'testing'
                 ? TESTING_TELEMETRY_EXPORTER.withAnonymousUserID(config.clientState.anonymousUserID)
@@ -158,13 +157,13 @@ export class MockServerTelemetryRecorderProvider extends BaseTelemetryRecorderPr
     BillingCategory
 > {
     constructor(
-        extensionDetails: ExtensionDetails,
         config: PickResolvedConfiguration<{ configuration: true; clientState: 'anonymousUserID' }>
     ) {
+        const cap = clientCapabilities()
         super(
             {
-                client: `${extensionDetails.ide}.Cody`,
-                clientVersion: extensionDetails.version,
+                client: `${cap.agentIDE}.Cody`,
+                clientVersion: cap.agentExtensionVersion,
             },
             new MockServerTelemetryExporter(config.clientState.anonymousUserID),
             [new ConfigurationMetadataProcessor()]

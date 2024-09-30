@@ -348,6 +348,7 @@ export {
 export * from './misc/observable'
 export * from './misc/observableOperation'
 export * from './configuration/resolver'
+export * from './configuration/clientCapabilities'
 export * from './singletons'
 export * from './auth/authStatus'
 export { fetchLocalOllamaModels } from './llm-providers/ollama/utils'

@@ -3,7 +3,6 @@ import * as vscode from 'vscode'
 import {
     type ChatClient,
     ClientConfigSingleton,
-    CodyIDE,
     type ConfigurationInput,
     type DefaultCodyCommands,
     FeatureFlag,
@@ -13,6 +12,7 @@ import {
     type ResolvedConfiguration,
     authStatus,
     catchError,
+    clientCapabilities,
     combineLatest,
     contextFiltersProvider,
     createDisposables,
@@ -24,6 +24,7 @@ import {
     isDotCom,
     modelsService,
     resolvedConfig,
+    setClientCapabilitiesFromConfiguration,
     setClientNameVersion,
     setEditorWindowIsFocused,
     setLogger,
@@ -125,6 +126,8 @@ export async function start(
     setLogger({ logDebug, logError })
 
     const disposables: vscode.Disposable[] = []
+
+    setClientCapabilitiesFromConfiguration(getConfiguration())
 
     setResolvedConfigurationObservable(
         combineLatest([
@@ -239,7 +242,7 @@ const register = async (
     registerChatCommands(disposables)
     disposables.push(...registerSidebarCommands())
     registerOtherCommands(disposables)
-    if (!getConfiguration().agentIDE) {
+    if (clientCapabilities().isVSCode) {
         registerVSCodeOnlyFeatures(chatClient, disposables)
     }
     if (isExtensionModeDevOrTest) {
@@ -421,7 +424,7 @@ async function registerCodyCommands(
                 .pipe(
                     createDisposables(codyUnifiedPromptsFlag => {
                         const unifiedPromptsEnabled =
-                            codyUnifiedPromptsFlag && getConfiguration().agentIDE !== CodyIDE.Web
+                            codyUnifiedPromptsFlag && !clientCapabilities().isCodyWeb
                         vscode.commands.executeCommand(
                             'setContext',
                             'cody.menu.custom-commands.enable',

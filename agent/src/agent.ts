@@ -1490,9 +1490,6 @@ export class Agent extends MessageHandler implements ExtensionClient {
                 await authProvider.validateAndStoreCredentials(
                     {
                         configuration: {
-                            agentIDE: AgentWorkspaceConfiguration.clientNameToIDE(
-                                this.clientInfo?.name ?? ''
-                            ),
                             customHeaders: config.customHeaders,
                         },
                         auth: {

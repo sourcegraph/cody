@@ -1,6 +1,5 @@
 import type { Mention } from '@openctx/client'
 import {
-    CodyIDE,
     type ContextItem,
     type ContextItemOpenCtx,
     type ContextItemRepository,
@@ -10,6 +9,7 @@ import {
     type MentionQuery,
     REMOTE_REPOSITORY_PROVIDER_URI,
     SYMBOL_CONTEXT_MENTION_PROVIDER,
+    clientCapabilities,
     combineLatest,
     firstResultFromOperation,
     fromVSCodeEvent,
@@ -28,7 +28,6 @@ import { Observable, map } from 'observable-fns'
 import * as vscode from 'vscode'
 import { URI } from 'vscode-uri'
 import { getContextFileFromUri } from '../../commands/context/file-path'
-import { getConfiguration } from '../../configuration'
 import {
     getFileContextFiles,
     getOpenTabsContextFile,
@@ -79,8 +78,6 @@ export function getMentionMenuData(options: {
         },
     }
 
-    const isCodyWeb = getConfiguration().agentIDE === CodyIDE.Web
-
     try {
         const items = combineLatest([
             promiseFactoryToObservable(signal =>
@@ -88,7 +85,7 @@ export function getMentionMenuData(options: {
                     {
                         mentionQuery: options.query,
                         telemetryRecorder: scopedTelemetryRecorder,
-                        rangeFilter: !isCodyWeb,
+                        rangeFilter: !clientCapabilities().isCodyWeb,
                     },
                     signal
                 )

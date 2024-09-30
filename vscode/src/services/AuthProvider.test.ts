@@ -1,7 +1,9 @@
 import {
     type AuthStatus,
     type AuthenticatedAuthStatus,
+    CLIENT_CAPABILITIES_FIXTURE,
     type ResolvedConfiguration,
+    mockClientCapabilities,
     readValuesFrom,
 } from '@sourcegraph/cody-shared'
 import type { PartialDeep } from '@sourcegraph/cody-shared/src/utils'
@@ -18,6 +20,8 @@ function asyncValue<T>(value: T, delay?: number | undefined): Promise<T> {
         setTimeout(() => resolve(value), delay)
     })
 }
+
+mockClientCapabilities(CLIENT_CAPABILITIES_FIXTURE)
 
 describe('AuthProvider', () => {
     beforeAll(() => {

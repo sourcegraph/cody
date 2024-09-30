@@ -6,7 +6,7 @@ import { MESSAGE_CELL_AVATAR_SIZE } from '../chat/cells/messageCell/BaseMessageC
 import { UserAvatar } from '../components/UserAvatar'
 import { Button } from '../components/shadcn/ui/button'
 import { getVSCodeAPI } from '../utils/VSCodeApi'
-import { useUserAccountInfo } from '../utils/useConfig'
+import { useConfig, useUserAccountInfo } from '../utils/useConfig'
 import { View } from './types'
 
 interface AccountAction {
@@ -19,12 +19,13 @@ interface AccountTabProps {
 
 // TODO: Implement the AccountTab component once the design is ready.
 export const AccountTab: React.FC<AccountTabProps> = ({ setView }) => {
+    const config = useConfig()
     const userInfo = useUserAccountInfo()
-    const { user, isCodyProUser, isDotComUser, ide } = userInfo
+    const { user, isCodyProUser, isDotComUser } = userInfo
     const { displayName, username, primaryEmail, endpoint } = user
 
     // We open the native system pop-up for VS Code.
-    if (ide === CodyIDE.VSCode) {
+    if (config.clientCapabilities.isVSCode) {
         return null
     }
 
@@ -68,7 +69,7 @@ export const AccountTab: React.FC<AccountTabProps> = ({ setView }) => {
             // automatically redirected to the Chat tab, rather than the accounts tab.
             // This is only for JB as the signout call is captured by the extension and not
             // passed through to the agent.
-            if (ide === CodyIDE.JetBrains) {
+            if (config.clientCapabilities.agentIDE === CodyIDE.JetBrains) {
                 setView(View.Chat)
             }
         },

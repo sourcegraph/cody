@@ -4,7 +4,6 @@ import styles from './App.module.css'
 
 import {
     type ChatMessage,
-    CodyIDE,
     type ContextItem,
     GuardrailsPost,
     PromptString,
@@ -177,7 +176,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                         simplifiedLoginRedirect={loginRedirect}
                         uiKindIsWeb={config.config.uiKindIsWeb}
                         vscodeAPI={vscodeAPI}
-                        codyIDE={config.config.agentIDE ?? CodyIDE.VSCode}
+                        codyIDE={config.clientCapabilities.agentIDE}
                     />
                 </div>
             ) : (

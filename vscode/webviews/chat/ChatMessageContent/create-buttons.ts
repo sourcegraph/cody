@@ -1,3 +1,5 @@
+import type { FixupTaskID } from '../../../src/non-stop/FixupTask'
+import { CodyTaskState } from '../../../src/non-stop/state'
 import {
     CheckCodeBlockIcon,
     CloseIcon,
@@ -9,12 +11,8 @@ import {
     SyncSpinIcon,
     TickIcon,
 } from '../../icons/CodeBlockActionIcons'
-
-import { CodyIDE } from '@sourcegraph/cody-shared'
-import type { FixupTaskID } from '../../../src/non-stop/FixupTask'
-import { CodyTaskState } from '../../../src/non-stop/state'
-import type { UserAccountInfo } from '../../Chat'
 import { getVSCodeAPI } from '../../utils/VSCodeApi'
+import type { Config } from '../../utils/useConfig'
 import type { PriorHumanMessageInfo } from '../cells/messageCell/assistant/AssistantMessageCell'
 import type { CodeBlockActionsProps } from './ChatMessageContent'
 import styles from './ChatMessageContent.module.css'
@@ -81,7 +79,7 @@ export function createButtons(
 export function createButtonsExperimentalUI(
     preText: string,
     humanMessage: PriorHumanMessageInfo | null,
-    userInfo: UserAccountInfo,
+    config: Config,
     codeBlockName?: string, // The name of the code block, can be file name or 'command'.
     copyButtonOnSubmit?: CodeBlockActionsProps['copyButtonOnSubmit'],
     insertButtonOnSubmit?: CodeBlockActionsProps['insertButtonOnSubmit'],
@@ -94,8 +92,6 @@ export function createButtonsExperimentalUI(
     if (!copyButtonOnSubmit) {
         return container
     }
-
-    const isVSCode = userInfo.ide === CodyIDE.VSCode
 
     const buttons = document.createElement('div')
     buttons.className = styles.buttons
@@ -112,7 +108,7 @@ export function createButtonsExperimentalUI(
             // Execute button is only available in VS Code.
             const isExecutable = codeBlockName === 'command'
             const smartButton =
-                isExecutable && isVSCode
+                isExecutable && config.clientCapabilities.isVSCode
                     ? createExecuteButton(preText)
                     : createApplyButton(
                           preText,
@@ -126,7 +122,7 @@ export function createButtonsExperimentalUI(
             buttons.append(smartButton)
         }
 
-        if (isVSCode) {
+        if (config.clientCapabilities.isVSCode) {
             // VS Code provides additional support for rendering an OS-native dropdown, that has some
             // additional benefits. Mainly that it can "break out" of the webview.
             // TODO: A dropdown would be useful for other clients too, we should consider building

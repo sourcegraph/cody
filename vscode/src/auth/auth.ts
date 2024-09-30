@@ -2,10 +2,10 @@ import * as vscode from 'vscode'
 
 import {
     type AuthStatus,
-    CodyIDE,
     DOTCOM_URL,
     type PickResolvedConfiguration,
     SourcegraphGraphQLAPIClient,
+    clientCapabilities,
     currentAuthStatus,
     getCodyAuthReferralCode,
     isDotCom,
@@ -36,8 +36,7 @@ type AuthMenuType = 'signin' | 'switch'
  */
 export async function showSignInMenu(
     type?: 'enterprise' | 'dotcom' | 'token',
-    uri?: string,
-    agentIDE: CodyIDE = CodyIDE.VSCode
+    uri?: string
 ): Promise<void> {
     const authStatus = currentAuthStatus()
     const mode: AuthMenuType = authStatus.authenticated ? 'switch' : 'signin'
@@ -62,11 +61,11 @@ export async function showSignInMenu(
                 return
             }
             authProvider.setAuthPendingToEndpoint(instanceUrl)
-            redirectToEndpointLogin(instanceUrl, agentIDE)
+            redirectToEndpointLogin(instanceUrl)
             break
         }
         case 'dotcom':
-            redirectToEndpointLogin(DOTCOM_URL.href, agentIDE)
+            redirectToEndpointLogin(DOTCOM_URL.href)
             break
         case 'token': {
             const instanceUrl = await showInstanceURLInputBox(uri || item.uri)
@@ -240,13 +239,13 @@ async function signinMenuForInstanceUrl(instanceUrl: string): Promise<void> {
 }
 
 /** Open callback URL in browser to get token from instance. */
-export function redirectToEndpointLogin(uri: string, agentIDE: CodyIDE = CodyIDE.VSCode): void {
+export function redirectToEndpointLogin(uri: string): void {
     const endpoint = formatURL(uri)
     if (!endpoint) {
         return
     }
 
-    if (agentIDE === CodyIDE.VSCode && vscode.env.uiKind === vscode.UIKind.Web) {
+    if (clientCapabilities().isVSCode && vscode.env.uiKind === vscode.UIKind.Web) {
         // VS Code Web needs a different kind of callback using asExternalUri and changes to our
         // UserSettingsCreateAccessTokenCallbackPage.tsx page in the Sourcegraph web app. So,
         // just require manual token entry for now.
@@ -259,7 +258,7 @@ export function redirectToEndpointLogin(uri: string, agentIDE: CodyIDE = CodyIDE
     const newTokenCallbackUrl = new URL('/user/settings/tokens/new/callback', endpoint)
     newTokenCallbackUrl.searchParams.append(
         'requestFrom',
-        getCodyAuthReferralCode(agentIDE, vscode.env.uriScheme) ?? 'Cody'
+        getCodyAuthReferralCode(vscode.env.uriScheme) ?? 'Cody'
     )
     authProvider.setAuthPendingToEndpoint(endpoint)
     void vscode.env.openExternal(vscode.Uri.parse(newTokenCallbackUrl.href))
@@ -370,7 +369,7 @@ async function signOut(endpoint: string): Promise<void> {
  * The subset of {@link ResolvedConfiguration} that is needed for authentication.
  */
 export type ResolvedConfigurationCredentialsOnly = PickResolvedConfiguration<{
-    configuration: 'agentIDE' | 'customHeaders'
+    configuration: 'customHeaders'
     auth: true
     clientState: 'anonymousUserID'
 }>
@@ -383,8 +382,7 @@ export async function validateCredentials(
     signal?: AbortSignal
 ): Promise<AuthStatus> {
     // An access token is needed except for Cody Web, which uses cookies.
-    const isCodyWeb = config.configuration.agentIDE === CodyIDE.Web
-    if (!config.auth.accessToken && !isCodyWeb) {
+    if (!config.auth.accessToken && !clientCapabilities().isCodyWeb) {
         return { authenticated: false, endpoint: config.auth.serverEndpoint, pendingValidation: false }
     }
 
