@@ -18,7 +18,6 @@ import { useClientActionDispatcher } from './client/clientState'
 
 import { ExtensionAPIProviderFromVSCodeAPI } from '@sourcegraph/prompt-editor'
 import { CodyPanel } from './CodyPanel'
-import { ChatEnvironmentContext, type ChatEnvironmentContextData } from './chat/ChatEnvironmentContext'
 import { View } from './tabs'
 import type { VSCodeWrapper } from './utils/VSCodeApi'
 import { ComposedWrappers, type Wrapper } from './utils/composeWrappers'
@@ -160,13 +159,9 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     // V2 telemetry recorder
     const telemetryRecorder = useMemo(() => createWebviewTelemetryRecorder(vscodeAPI), [vscodeAPI])
 
-    const chatEnvironmentContext = useMemo<ChatEnvironmentContextData>(() => {
-        return { clientType: config?.config?.agentIDE ?? CodyIDE.VSCode }
-    }, [config?.config?.agentIDE])
-
     const wrappers = useMemo<Wrapper[]>(
-        () => getAppWrappers(vscodeAPI, telemetryRecorder, config, undefined, chatEnvironmentContext),
-        [vscodeAPI, telemetryRecorder, config, chatEnvironmentContext]
+        () => getAppWrappers(vscodeAPI, telemetryRecorder, config, undefined),
+        [vscodeAPI, telemetryRecorder, config]
     )
 
     // Wait for all the data to be loaded before rendering Chat View
@@ -210,8 +205,7 @@ export function getAppWrappers(
     vscodeAPI: VSCodeWrapper,
     telemetryRecorder: TelemetryRecorder,
     config: Config | null,
-    staticInitialContext: ContextItem[] | undefined,
-    chatEnvironmentContext: ChatEnvironmentContextData
+    staticInitialContext: ContextItem[] | undefined
 ): Wrapper[] {
     return [
         {
@@ -226,9 +220,5 @@ export function getAppWrappers(
             component: ConfigProvider,
             props: { value: config },
         } satisfies Wrapper<any, ComponentProps<typeof ConfigProvider>>,
-        {
-            provider: ChatEnvironmentContext.Provider,
-            value: chatEnvironmentContext,
-        } satisfies Wrapper<ComponentProps<typeof ChatEnvironmentContext.Provider>['value']>,
     ]
 }
