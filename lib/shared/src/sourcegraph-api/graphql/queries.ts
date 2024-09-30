@@ -204,28 +204,6 @@ query ChatIntent($query: String!, $interactionId: String!) {
     }
 }`
 
-export const RECORD_CONTEXT_QUERY = `
-query RecordContext($interactionId: String!, $usedContextItems: [InputContextItem!]!, $ignoredContextItems: [InputContextItem!]!) {
-    recordContext(interactionId: $interactionId, usedContextItems: $usedContextItems, ignoredContextItems: $ignoredContextItems) {
-        alwaysNil
-    }
-}`
-
-export const RANK_CONTEXT_QUERY = `
-query RankContext($interactionId: String!, $query: String!, $contextItems: [InputContextItem!]!) {
-    rankContext(interactionId: $interactionId, query:$query, contextItems: $contextItems) {
-        ranker
-        used {
-            index
-            score
-        }
-        ignored {
-            index
-            score
-        }
-    }
-}`
-
 export const LEGACY_CONTEXT_SEARCH_QUERY = `
 query GetCodyContext($repos: [ID!]!, $query: String!, $codeResultsCount: Int!, $textResultsCount: Int!) {
 	getCodyContext(repos: $repos, query: $query, codeResultsCount: $codeResultsCount, textResultsCount: $textResultsCount) {

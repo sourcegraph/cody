@@ -134,7 +134,7 @@ const ModelSelectFieldToolbarItem: FunctionComponent<{
         [api.setChatModel, focusEditor]
     )
 
-    const { value: chatModels } = useObservable(useMemo(() => api.models(), [api.models]))
+    const { value: chatModels } = useObservable(useMemo(() => api.chatModels(), [api.chatModels]))
 
     return (
         !!chatModels?.length &&

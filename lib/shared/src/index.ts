@@ -253,7 +253,6 @@ export {
     type RepoListResponse,
     type SuggestionsRepo,
     type RepoSuggestionsSearchResponse,
-    type InputContextItem,
     type ChatIntentResult,
 } from './sourcegraph-api/graphql/client'
 export type {
@@ -349,6 +348,7 @@ export {
 export * from './misc/observable'
 export * from './misc/observableOperation'
 export * from './configuration/resolver'
+export * from './configuration/clientCapabilities'
 export * from './singletons'
 export * from './auth/authStatus'
 export { fetchLocalOllamaModels } from './llm-providers/ollama/utils'

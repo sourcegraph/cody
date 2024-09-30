@@ -1,12 +1,12 @@
 import {
     type AuthStatus,
-    CodyIDE,
     type ContextItem,
     ContextItemSource,
     type ContextItemTree,
     REMOTE_REPOSITORY_PROVIDER_URI,
     abortableOperation,
     authStatus,
+    clientCapabilities,
     combineLatest,
     contextFiltersProvider,
     debounceTime,
@@ -27,7 +27,6 @@ import { Observable, map } from 'observable-fns'
 import * as vscode from 'vscode'
 import { URI } from 'vscode-uri'
 import { getSelectionOrFileContext } from '../commands/context/selection'
-import { getConfiguration } from '../configuration'
 import { createRepositoryMention } from '../context/openctx/common/get-repository-mentions'
 import { remoteReposForAllWorkspaceFolders } from '../repository/remoteRepos'
 import { ChatBuilder } from './chat-view/ChatBuilder'
@@ -164,8 +163,7 @@ export function getCorpusContextItemsForEditorState(): Observable<
                 ({
                     authenticated: authStatus.authenticated,
                     endpoint: authStatus.endpoint,
-                    allowRemoteContext:
-                        getConfiguration().agentIDE === CodyIDE.Web || !isDotCom(authStatus),
+                    allowRemoteContext: clientCapabilities().isCodyWeb || !isDotCom(authStatus),
                 }) satisfies Pick<AuthStatus, 'authenticated' | 'endpoint'> & {
                     allowRemoteContext: boolean
                 }

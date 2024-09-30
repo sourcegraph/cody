@@ -36,7 +36,6 @@ interface TranscriptProps {
 
     guardrails?: Guardrails
     postMessage?: ApiPostMessage
-    isTranscriptError?: boolean
 
     feedbackButtonsOnSubmit: (text: string) => void
     copyButtonOnSubmit: CodeBlockActionsProps['copyButtonOnSubmit']
@@ -53,7 +52,6 @@ export const Transcript: FC<TranscriptProps> = props => {
         messageInProgress,
         guardrails,
         postMessage,
-        isTranscriptError,
         feedbackButtonsOnSubmit,
         copyButtonOnSubmit,
         insertButtonOnSubmit,
@@ -81,7 +79,6 @@ export const Transcript: FC<TranscriptProps> = props => {
                     interaction={interaction}
                     guardrails={guardrails}
                     postMessage={postMessage}
-                    isTranscriptError={isTranscriptError}
                     feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
                     copyButtonOnSubmit={copyButtonOnSubmit}
                     insertButtonOnSubmit={insertButtonOnSubmit}
@@ -172,7 +169,6 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
         isLastInteraction,
         isLastSentInteraction,
         priorAssistantMessageIsLoading,
-        isTranscriptError,
         userInfo,
         chatEnabled,
         feedbackButtonsOnSubmit,
@@ -374,7 +370,6 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                         isLoading={assistantMessage.isLoading}
                         showFeedbackButtons={
                             !assistantMessage.isLoading &&
-                            !isTranscriptError &&
                             !assistantMessage.error &&
                             isLastSentInteraction
                         }

@@ -1,3 +1,4 @@
+import type { ClientCapabilities } from './configuration/clientCapabilities'
 import type { ChatModelProviderConfig } from './models/sync'
 
 import type { PromptString } from './prompt/prompt-string'
@@ -18,7 +19,7 @@ interface RawClientConfiguration {
     debugFilter: RegExp | null
     debugVerbose: boolean
     telemetryLevel: 'all' | 'off' | 'agent'
-    telemetryClientName?: string
+
     serverEndpoint: string
     customHeaders?: Record<string, string>
     chatPreInstruction: PromptString
@@ -67,9 +68,35 @@ interface RawClientConfiguration {
      */
     hasNativeWebview: boolean
     isRunningInsideAgent?: boolean
+
+    /**
+     * @deprecated Do not use directly. Call {@link clientCapabilities} instead
+     * (`clientCapabilities().agentIDE`) and see the docstring on
+     * {@link ClientCapabilities.agentIDE}.
+     */
     agentIDE?: CodyIDE
-    agentIDEVersion?: string
-    agentExtensionVersion?: string
+
+    /**
+     * @deprecated Do not use directly. Call {@link clientCapabilities} instead
+     * (`clientCapabilities().agentIDEVersion`) and see the docstring on
+     * {@link ClientCapabilities.agentIDEVersion}.
+     */
+    agentIDEVersion?: ClientCapabilities['agentIDEVersion']
+
+    /**
+     * @deprecated Do not use directly. Call {@link clientCapabilities} instead
+     * (`clientCapabilities().agentExtensionVersion`) and see the docstring on
+     * {@link ClientCapabilities.agentExtensionVersion}.
+     */
+    agentExtensionVersion?: ClientCapabilities['agentExtensionVersion']
+
+    /**
+     * @deprecated Do not use directly. Call {@link clientCapabilities} instead
+     * (`clientCapabilities().agentIDEVersion`) and see the docstring on
+     * {@link ClientCapabilities.agentIDEVersion}.
+     */
+    telemetryClientName?: string
+
     agentHasPersistentStorage?: boolean
     autocompleteFirstCompletionTimeout: number
     autocompleteAdvancedModel: string | null

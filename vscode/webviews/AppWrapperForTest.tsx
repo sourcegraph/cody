@@ -1,14 +1,17 @@
 import {
     AUTH_STATUS_FIXTURE_AUTHED,
     type AuthStatus,
+    CLIENT_CAPABILITIES_FIXTURE,
     type ClientConfiguration,
     type ContextItem,
     type ContextItemSymbol,
     EMPTY,
     FILE_CONTEXT_MENTION_PROVIDER,
+    type ModelsData,
     type ResolvedConfiguration,
     SYMBOL_CONTEXT_MENTION_PROVIDER,
     type SymbolKind,
+    type UserLocalHistory,
     getMockedDotComClientModels,
     promiseFactoryToObservable,
 } from '@sourcegraph/cody-shared'
@@ -81,7 +84,13 @@ export const AppWrapperForTest: FunctionComponent<{ children: ReactNode }> = ({ 
                         commands: FIXTURE_COMMANDS,
                     }),
                     highlights: () => Observable.of([]),
-                    models: () => Observable.of(getMockedDotComClientModels()),
+                    models: () =>
+                        Observable.of({
+                            localModels: [],
+                            primaryModels: getMockedDotComClientModels(),
+                            preferences: { defaults: {}, selected: {} },
+                        } satisfies ModelsData),
+                    chatModels: () => Observable.of(getMockedDotComClientModels()),
                     setChatModel: () => EMPTY,
                     initialContext: () => Observable.of([]),
                     detectIntent: () => Observable.of(),
@@ -90,12 +99,26 @@ export const AppWrapperForTest: FunctionComponent<{ children: ReactNode }> = ({ 
                             auth: { accessToken: 'abc', serverEndpoint: 'https://example.com' },
                             configuration: {
                                 autocomplete: true,
-                                agentIDEVersion: '1.2.3',
                                 devModels: [{ model: 'my-model', provider: 'my-provider' }],
                             } satisfies Partial<ClientConfiguration> as ClientConfiguration,
                         } satisfies Partial<ResolvedConfiguration> as ResolvedConfiguration),
                     authStatus: () => Observable.of(AUTH_STATUS_FIXTURE_AUTHED),
                     transcript: () => Observable.of(FIXTURE_TRANSCRIPT.explainCode),
+                    userHistory: () =>
+                        Observable.of<UserLocalHistory | null>({
+                            chat: {
+                                a: {
+                                    id: 'a',
+                                    lastInteractionTimestamp: '2024-03-29',
+                                    interactions: [
+                                        {
+                                            humanMessage: { speaker: 'human', text: 'Hello, world!' },
+                                            assistantMessage: { speaker: 'assistant', text: 'Hi!' },
+                                        },
+                                    ],
+                                },
+                            },
+                        }),
                 },
             } satisfies Wrapper<ComponentProps<typeof ExtensionAPIProviderForTestsOnly>['value']>,
             {
@@ -107,6 +130,7 @@ export const AppWrapperForTest: FunctionComponent<{ children: ReactNode }> = ({ 
                             authenticated: true,
                         } satisfies Partial<AuthStatus> as any,
                         config: {} as any,
+                        clientCapabilities: CLIENT_CAPABILITIES_FIXTURE,
                         configFeatures: {
                             chat: true,
                             serverSentModels: true,

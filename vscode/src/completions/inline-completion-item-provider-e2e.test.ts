@@ -1,9 +1,11 @@
 import {
+    CLIENT_CAPABILITIES_FIXTURE,
     type ClientConfiguration,
     type CodeCompletionsParams,
     contextFiltersProvider,
     currentAuthStatus,
     featureFlagProvider,
+    mockClientCapabilities,
     nextTick,
     telemetryRecorder,
 } from '@sourcegraph/cody-shared'
@@ -138,6 +140,7 @@ function getInlineCompletionProvider(
     args: Partial<ConstructorParameters<typeof InlineCompletionItemProvider>[0]> = {}
 ): InlineCompletionItemProvider {
     vi.spyOn(featureFlagProvider, 'evaluatedFeatureFlag').mockReturnValue(Observable.of(false))
+    mockClientCapabilities(CLIENT_CAPABILITIES_FIXTURE)
     return new InlineCompletionItemProvider({
         completeSuggestWidgetSelection: true,
         triggerDelay: 0,

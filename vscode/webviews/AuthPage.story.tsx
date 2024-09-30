@@ -1,8 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/react'
 
 import { CodyIDE } from '@sourcegraph/cody-shared'
-import { LoginSimplified } from './OnboardingExperiment'
-import { VSCodeSidebar } from './storybook/VSCodeStoryDecorator'
+import { AuthPage } from './AuthPage'
+import { VSCodeWebview } from './storybook/VSCodeStoryDecorator'
 import type { VSCodeWrapper } from './utils/VSCodeApi'
 
 const vscodeAPI: VSCodeWrapper = {
@@ -12,10 +12,10 @@ const vscodeAPI: VSCodeWrapper = {
     setState: () => {},
 }
 
-const meta: Meta<typeof LoginSimplified> = {
-    title: 'cody/Onboarding',
-    component: LoginSimplified,
-    decorators: [VSCodeSidebar],
+const meta: Meta<typeof AuthPage> = {
+    title: 'cody/AuthPage',
+    component: AuthPage,
+    decorators: [VSCodeWebview],
     args: {
         simplifiedLoginRedirect: () => {},
         uiKindIsWeb: false,
@@ -26,25 +26,32 @@ const meta: Meta<typeof LoginSimplified> = {
 
 export default meta
 
-type Story = StoryObj<typeof LoginSimplified>
+type Story = StoryObj<typeof AuthPage>
 
-export const Login: Story = {
+export const VSCodeDesktop: Story = {
     args: {
         uiKindIsWeb: false,
         codyIDE: CodyIDE.VSCode,
     },
 }
 
-export const LoginWeb: StoryObj<typeof LoginSimplified> = {
+export const VSCodeWeb: StoryObj<typeof AuthPage> = {
+    args: {
+        uiKindIsWeb: true,
+        codyIDE: CodyIDE.VSCode,
+    },
+}
+
+export const SourcegraphWeb: StoryObj<typeof AuthPage> = {
     args: {
         uiKindIsWeb: true,
         codyIDE: CodyIDE.Web,
     },
 }
 
-export const LoginEditor: StoryObj<typeof LoginSimplified> = {
+export const JetBrainsDesktop: StoryObj<typeof AuthPage> = {
     args: {
-        uiKindIsWeb: true,
-        codyIDE: CodyIDE.VisualStudio,
+        uiKindIsWeb: false,
+        codyIDE: CodyIDE.JetBrains,
     },
 }

@@ -77,12 +77,6 @@ export enum FeatureFlag {
     /** Interactive tutorial, primarily for onboarding */
     CodyInteractiveTutorial = 'cody-interactive-tutorial',
 
-    /** Whether to use generated metadata to power embeddings. */
-    CodyEmbeddingsGenerateMetadata = 'cody-embeddings-generate-metadata',
-
-    /** Whether to use server-side Context API. */
-    CodyServerSideContextAPI = 'cody-server-side-context-api-enabled',
-
     /** Whether to use intent detection API. */
     CodyIntentDetectionAPI = 'cody-intent-detection-api',
 

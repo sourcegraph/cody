@@ -1,10 +1,12 @@
 import {
     type AuthStatus,
+    CLIENT_CAPABILITIES_FIXTURE,
     DOTCOM_URL,
     GIT_OPENCTX_PROVIDER_URI,
     WEB_PROVIDER_URI,
     featureFlagProvider,
     firstValueFrom,
+    mockClientCapabilities,
     mockResolvedConfig,
 } from '@sourcegraph/cody-shared'
 import { Observable } from 'observable-fns'
@@ -18,6 +20,7 @@ vi.mock('../../../lib/shared/src/experimentation')
 
 describe('getOpenCtxProviders', () => {
     beforeAll(() => {
+        mockClientCapabilities(CLIENT_CAPABILITIES_FIXTURE)
         mockResolvedConfig({
             configuration: { experimentalNoodle: false },
             auth: { serverEndpoint: 'https://example.com' },

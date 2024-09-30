@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react'
 
-import { AUTH_STATUS_FIXTURE_AUTHED } from '@sourcegraph/cody-shared'
+import { AUTH_STATUS_FIXTURE_AUTHED, CLIENT_CAPABILITIES_FIXTURE } from '@sourcegraph/cody-shared'
 import { App } from './App'
 import { VSCodeWebview } from './storybook/VSCodeStoryDecorator'
 import { View } from './tabs'
@@ -29,6 +29,7 @@ const dummyVSCodeAPI: VSCodeWrapper = {
                 experimentalNoodle: false,
                 smartApply: false,
             },
+            clientCapabilities: CLIENT_CAPABILITIES_FIXTURE,
             authStatus: {
                 ...AUTH_STATUS_FIXTURE_AUTHED,
                 displayName: 'Tim Lucas',
@@ -42,23 +43,6 @@ const dummyVSCodeAPI: VSCodeWrapper = {
             configFeatures: { attribution: true, chat: true, serverSentModels: true },
             workspaceFolderUris: [],
             isDotComUser: true,
-        })
-        cb({
-            type: 'history',
-            localHistory: {
-                chat: {
-                    a: {
-                        id: 'a',
-                        lastInteractionTimestamp: '2024-03-29',
-                        interactions: [
-                            {
-                                humanMessage: { speaker: 'human', text: 'Hello, world!' },
-                                assistantMessage: { speaker: 'assistant', text: 'Hi!' },
-                            },
-                        ],
-                    },
-                },
-            },
         })
         if (firstTime) {
             cb({ type: 'view', view: View.Chat })

@@ -46,8 +46,6 @@ import {
     LOG_EVENT_MUTATION_DEPRECATED,
     PACKAGE_LIST_QUERY,
     PROMPTS_QUERY,
-    RANK_CONTEXT_QUERY,
-    RECORD_CONTEXT_QUERY,
     RECORD_TELEMETRY_EVENTS_MUTATION,
     REPOSITORY_IDS_QUERY,
     REPOSITORY_ID_QUERY,
@@ -343,16 +341,6 @@ interface ChatIntentResponse {
     }
 }
 
-type RecordContextResponse = unknown
-
-interface RankContextResponse {
-    rankContext: {
-        ranker: string
-        used: { index: number; score: number }[]
-        ignored: { index: number; score: number }[]
-    }
-}
-
 interface ContextSearchResponse {
     getCodyContext: {
         blob: {
@@ -391,12 +379,6 @@ export interface ChatIntentResult {
 /**
  * Experimental API.
  */
-export interface InputContextItem {
-    content: string
-    retriever: string
-    score?: number
-}
-
 export interface ContextSearchResult {
     repoName: string
     commit: string
@@ -961,40 +943,6 @@ export class SourcegraphGraphQLAPIClient {
             }
         )
         return extractDataOrError(response, data => data.chatIntent)
-    }
-
-    /** Experimental API */
-    public async recordContext(
-        interactionID: string,
-        used: InputContextItem[],
-        ignored: InputContextItem[]
-    ): Promise<RecordContextResponse | Error> {
-        const response = await this.fetchSourcegraphAPI<APIResponse<RecordContextResponse>>(
-            RECORD_CONTEXT_QUERY,
-            {
-                interactionId: interactionID,
-                usedContextItems: used,
-                ignoredContextItems: ignored,
-            }
-        )
-        return extractDataOrError(response, data => data)
-    }
-
-    /** Experimental API */
-    public async rankContext(
-        interactionID: string,
-        query: string,
-        context: InputContextItem[]
-    ): Promise<RankContextResponse | Error> {
-        const response = await this.fetchSourcegraphAPI<APIResponse<RankContextResponse>>(
-            RANK_CONTEXT_QUERY,
-            {
-                interactionId: interactionID,
-                query,
-                contextItems: context,
-            }
-        )
-        return extractDataOrError(response, data => data)
     }
 
     /**

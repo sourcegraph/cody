@@ -3,7 +3,6 @@ import * as vscode from 'vscode'
 import {
     type ChatClient,
     ClientConfigSingleton,
-    CodyIDE,
     type ConfigurationInput,
     type DefaultCodyCommands,
     FeatureFlag,
@@ -13,6 +12,7 @@ import {
     type ResolvedConfiguration,
     authStatus,
     catchError,
+    clientCapabilities,
     combineLatest,
     contextFiltersProvider,
     createDisposables,
@@ -24,6 +24,7 @@ import {
     isDotCom,
     modelsService,
     resolvedConfig,
+    setClientCapabilitiesFromConfiguration,
     setClientNameVersion,
     setEditorWindowIsFocused,
     setLogger,
@@ -41,7 +42,7 @@ import { showSignInMenu, showSignOutMenu, tokenCallbackHandler } from './auth/au
 import type { MessageProviderOptions } from './chat/MessageProvider'
 import { ChatsController, CodyChatEditorViewType } from './chat/chat-view/ChatsController'
 import { ContextRetriever } from './chat/chat-view/ContextRetriever'
-import type { ContextAPIClient } from './chat/context/contextAPIClient'
+import type { ChatIntentAPIClient } from './chat/context/chatIntentAPIClient'
 import {
     ACCOUNT_LIMITS_INFO_URL,
     ACCOUNT_UPGRADE_URL,
@@ -126,6 +127,8 @@ export async function start(
 
     const disposables: vscode.Disposable[] = []
 
+    setClientCapabilitiesFromConfiguration(getConfiguration())
+
     setResolvedConfigurationObservable(
         combineLatest([
             fromVSCodeEvent(vscode.workspace.onDidChangeConfiguration).pipe(
@@ -194,7 +197,7 @@ const register = async (
         completionsClient,
         guardrails,
         symfRunner,
-        contextAPIClient,
+        chatIntentAPIClient,
         dispose: disposeExternalServices,
     } = await configureExternalServices(context, platform)
     disposables.push({ dispose: disposeExternalServices })
@@ -209,7 +212,7 @@ const register = async (
             chatClient,
             guardrails,
             editor,
-            contextAPIClient,
+            chatIntentAPIClient,
             contextRetriever,
         },
         disposables
@@ -239,7 +242,7 @@ const register = async (
     registerChatCommands(disposables)
     disposables.push(...registerSidebarCommands())
     registerOtherCommands(disposables)
-    if (!getConfiguration().agentIDE) {
+    if (clientCapabilities().isVSCode) {
         registerVSCodeOnlyFeatures(chatClient, disposables)
     }
     if (isExtensionModeDevOrTest) {
@@ -421,7 +424,7 @@ async function registerCodyCommands(
                 .pipe(
                     createDisposables(codyUnifiedPromptsFlag => {
                         const unifiedPromptsEnabled =
-                            codyUnifiedPromptsFlag && getConfiguration().agentIDE !== CodyIDE.Web
+                            codyUnifiedPromptsFlag && !clientCapabilities().isCodyWeb
                         vscode.commands.executeCommand(
                             'setContext',
                             'cody.menu.custom-commands.enable',
@@ -702,7 +705,7 @@ interface RegisterChatOptions {
     chatClient: ChatClient
     guardrails: Guardrails
     editor: VSCodeEditor
-    contextAPIClient?: ContextAPIClient
+    chatIntentAPIClient?: ChatIntentAPIClient
     contextRetriever: ContextRetriever
 }
 
@@ -713,7 +716,7 @@ function registerChat(
         chatClient,
         guardrails,
         editor,
-        contextAPIClient,
+        chatIntentAPIClient,
         contextRetriever,
     }: RegisterChatOptions,
     disposables: vscode.Disposable[]
@@ -735,7 +738,7 @@ function registerChat(
         chatClient,
         contextRetriever,
         guardrails,
-        contextAPIClient || null,
+        chatIntentAPIClient || null,
         platform.extensionClient
     )
     chatsController.registerViewsAndCommands()

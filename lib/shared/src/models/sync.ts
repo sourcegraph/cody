@@ -1,6 +1,7 @@
 import { Observable, interval, map } from 'observable-fns'
 import type { AuthStatus } from '../auth/types'
-import { type ClientConfiguration, CodyIDE } from '../configuration'
+import type { ClientConfiguration } from '../configuration'
+import { clientCapabilities } from '../configuration/clientCapabilities'
 import type { PickResolvedConfiguration } from '../configuration/resolver'
 import { FeatureFlag, featureFlagProvider } from '../experimentation/FeatureFlagProvider'
 import { fetchLocalOllamaModels } from '../llm-providers/ollama/utils'
@@ -58,13 +59,9 @@ export function syncModels({
             map(
                 config =>
                     ({
-                        agentIDE: config.configuration.agentIDE,
                         autocompleteExperimentalOllamaOptions:
                             config.configuration.autocompleteExperimentalOllamaOptions,
-                    }) satisfies Pick<
-                        ClientConfiguration,
-                        'agentIDE' | 'autocompleteExperimentalOllamaOptions'
-                    >
+                    }) satisfies Pick<ClientConfiguration, 'autocompleteExperimentalOllamaOptions'>
             ),
             distinctUntilChanged()
         ),
@@ -76,12 +73,11 @@ export function syncModels({
             )
         ),
     ]).pipe(
-        switchMap(([{ agentIDE }]) => {
-            const isCodyWeb = agentIDE === CodyIDE.Web
-            return isCodyWeb
+        switchMap(() =>
+            clientCapabilities().isCodyWeb
                 ? Observable.of([]) // disable Ollama local models for Cody Web
                 : promiseFactoryToObservable(signal => fetchLocalOllamaModels().catch(() => []))
-        }),
+        ),
         // Keep the old localModels results while we're fetching the new ones, to avoid UI jitter.
         shareReplay()
     )
