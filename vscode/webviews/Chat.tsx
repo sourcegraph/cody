@@ -20,6 +20,7 @@ import { ScrollDown } from './components/ScrollDown'
 import type { View } from './tabs'
 import { useTelemetryRecorder } from './utils/telemetry'
 import { useUserAccountInfo } from './utils/useConfig'
+import { PromptList } from './components/promptList/PromptList'
 
 interface ChatboxProps {
     chatEnabled: boolean
@@ -229,12 +230,14 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                 smartApplyEnabled={smartApplyEnabled}
             />
             {transcript.length === 0 && showWelcomeMessage && (
-                <WelcomeMessage IDE={userInfo.ide} setView={setView} />
+                <>
+                    <PromptList setView={setView} />
+                    <WelcomeFooter />
+                </>
             )}
             {scrollableParent && (
                 <ScrollDown scrollableParent={scrollableParent} onClick={handleScrollDownClick} />
             )}
-            <WelcomeFooter />
         </>
     )
 }

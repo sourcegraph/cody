@@ -1,3 +1,4 @@
+import clsx from 'clsx'
 import styles from './WelcomeFooter.module.css'
 
 import {
@@ -55,7 +56,7 @@ export default function WelcomeFooter() {
             const Icon = tip.icon
             return (
                 <div key={`tip-${key + 1}`} className={styles.item}>
-                    <Icon className="tw-w-8 tw-h-8" strokeWidth={1.25} />
+                    <Icon className="tw-w-8 tw-h-8 tw-shrink-0" strokeWidth={1.25} />
                     <div className="tw-text-muted-foreground">{tip.message}</div>
                 </div>
             )

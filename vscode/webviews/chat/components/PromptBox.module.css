@@ -9,7 +9,8 @@
     width: 100%;
 }
 .container:hover {
-    background-color: var(--vscode-editorPane-background)
+    background-color: var(--vscode-editorPane-background);
+    cursor: pointer;
 }
 
 .glyph {

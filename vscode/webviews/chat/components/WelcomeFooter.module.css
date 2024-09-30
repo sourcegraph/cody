@@ -1,16 +1,15 @@
-.welcomeFooter {
+.welcome-footer {
     position: fixed;
     bottom: 0;
     left: 0;
     right: 0;
-    padding: 1rem 1.5rem;
+    padding: 1rem 1.0rem;
     display: flex;
     flex-flow: column nowrap;
-    flex-shrink: 0;
     justify-content: space-between;
     align-items: center;
     max-width: 100%;
-    min-width: 336px;
+    /* min-width: 336px; */
     color: var(--vscode-input-placeholderForeground)
 }
 
@@ -20,7 +19,7 @@
     flex-shrink: 0;
     gap: 0.5rem;
     padding: 1.0rem;
-    border-bottom: 0.25px solid var(--vscode-input-placeholderForeground);
+    border-bottom: 0.25px solid var(--vscode-dropdown-border);
 }
 
 .links {

@@ -413,7 +413,7 @@ export interface Prompt {
     }
     url: string
     icon?: any
-    createdBy?: Pick<
+    createdBy: Pick<
         AuthenticatedAuthStatus,
         "username" | "avatarURL" | "displayName" | "primaryEmail"
     >
