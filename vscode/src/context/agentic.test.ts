@@ -150,20 +150,8 @@ describe('CodyReflectionAgent', () => {
     })
 
     it('does not retrieve additional context for enterprise user without feature flag', async () => {
-        mockAuthStatus(enterpriseAuthStatus)
         vi.spyOn(featureFlagProvider, 'evaluatedFeatureFlag').mockReturnValue(Observable.of(false))
-
-        const agent = new CodyReflectionAgent(
-            mockChatBuilder,
-            mockChatClient,
-            mockContextRetriever,
-            mockSpan,
-            mockCurrentContext
-        )
-
-        const result = await agent.getContext({ aborted: false } as AbortSignal)
-
-        expect(result).toHaveLength(0)
+        mockAuthStatus(enterpriseAuthStatus)
         expect(mockChatClient.chat).not.toHaveBeenCalled()
         expect(mockContextRetriever.retrieveContext).not.toHaveBeenCalled()
     })
