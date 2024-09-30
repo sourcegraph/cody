@@ -110,7 +110,7 @@ export const FileContentSearchResult: FC<PropsWithChildren<FileContentSearchResu
     const expandedHighlightCount = countHighlightRanges(expandedGroups)
     const collapsedHighlightCount = countHighlightRanges(collapsedGroups)
     const hiddenMatchesCount = expandedHighlightCount - collapsedHighlightCount
-    const collapsible = !showAllMatches && expandedHighlightCount > collapsedHighlightCount
+    const expandable = !showAllMatches && expandedHighlightCount > collapsedHighlightCount
 
     useEffect(() => setExpanded(allExpanded || defaultExpanded), [allExpanded, defaultExpanded])
 
@@ -147,8 +147,8 @@ export const FileContentSearchResult: FC<PropsWithChildren<FileContentSearchResu
         })
     }, [fetchHighlightedFileLineRanges, hasBeenVisible, unhighlightedGroups, result])
 
-    const toggle = useCallback((): void => {
-        if (collapsible) {
+    const toggleExpand = useCallback((): void => {
+        if (expandable) {
             setExpanded(expanded => !expanded)
         }
 
@@ -163,7 +163,9 @@ export const FileContentSearchResult: FC<PropsWithChildren<FileContentSearchResu
                 })
             }, 0)
         }
-    }, [collapsible, expanded])
+    }, [expandable, expanded])
+
+    const [hidden, setHidden] = useState(false)
 
     const title = (
         <RepoFileLink
@@ -178,6 +180,8 @@ export const FileContentSearchResult: FC<PropsWithChildren<FileContentSearchResu
                     : undefined
             }
             className={styles.titleInner}
+            collapsed={hidden}
+            onToggleCollapse={() => setHidden(current => !current)}
         />
     )
 
@@ -191,6 +195,7 @@ export const FileContentSearchResult: FC<PropsWithChildren<FileContentSearchResu
             className={className}
             rankingDebug={result.debug}
             repoLastFetched={result.repoLastFetched}
+            collapsed={hidden}
         >
             <VisibilitySensor
                 partialVisibility={true}
@@ -203,7 +208,7 @@ export const FileContentSearchResult: FC<PropsWithChildren<FileContentSearchResu
                         result={result}
                         grouped={expanded ? expandedGroups : collapsedGroups}
                     />
-                    {collapsible && (
+                    {expandable && (
                         <button
                             type="button"
                             className={clsx(
@@ -212,7 +217,7 @@ export const FileContentSearchResult: FC<PropsWithChildren<FileContentSearchResu
                                 styles.clickable,
                                 { [styles.toggleMatchesButtonExpanded]: expanded }
                             )}
-                            onClick={toggle}
+                            onClick={toggleExpand}
                         >
                             <span className={styles.toggleMatchesButtonText}>
                                 {expanded
@@ -241,6 +246,7 @@ interface ResultContainerProps {
     rankingDebug?: string
     actions?: ReactElement | boolean
     onResultClicked?: () => void
+    collapsed: boolean
 }
 
 const accessibleResultType: Record<SearchMatch['type'], string> = {
@@ -263,6 +269,7 @@ const ResultContainer: ForwardReferenceExoticComponent<
         actions,
         as: Component = 'div',
         onResultClicked,
+        collapsed,
     } = props
 
     const formattedRepositoryStarCount = formatRepositoryStarCount(repoStars)
@@ -290,7 +297,9 @@ const ResultContainer: ForwardReferenceExoticComponent<
                     )}
                 </header>
                 {rankingDebug && <div>{rankingDebug}</div>}
-                {children && <div className={clsx(styles.result, resultClassName)}>{children}</div>}
+                {children && !collapsed && (
+                    <div className={clsx(styles.result, resultClassName)}>{children}</div>
+                )}
             </article>
         </Component>
     )
