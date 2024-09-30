@@ -57,15 +57,13 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 30 Sep 2024 22:47:47 GMT
+            value: Mon, 30 Sep 2024 23:45:25 GMT
           - name: content-type
             value: application/json
           - name: content-length
             value: "73"
           - name: connection
             value: close
-          - name: retry-after
-            value: "222"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -83,13 +81,13 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1543
+        headersSize: 1436
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-30T22:47:46.997Z
-      time: 432
+      startedDateTime: 2024-09-30T23:45:24.766Z
+      time: 266
       timings:
         blocked: -1
         connect: -1
@@ -97,6 +95,6 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 432
+        wait: 266
   pages: []
   version: "1.2"
