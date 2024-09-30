@@ -1,5 +1,4 @@
-import { type Model, ModelTag, isCodyProModel } from '@sourcegraph/cody-shared'
-import { isWaitlistModel } from '@sourcegraph/cody-shared/src/models/utils'
+import { type Model, ModelTag, isCodyProModel, isWaitlistModel } from '@sourcegraph/cody-shared'
 import { clsx } from 'clsx'
 import { BookOpenIcon, BuildingIcon, ExternalLinkIcon } from 'lucide-react'
 import { type FunctionComponent, type ReactNode, useCallback, useMemo } from 'react'
@@ -77,11 +76,6 @@ export const ModelSelectField: React.FunctionComponent<{
                     command: 'links',
                     value: 'https://sourcegraph.com/cody/subscription',
                 })
-                getVSCodeAPI().postMessage({
-                    command: 'event',
-                    eventName: 'CodyVSCodeExtension:upgradeLLMChoiceCTA:clicked',
-                    properties: { limit_type: 'chat_commands' },
-                })
                 return
             }
             if (isWaitlistModel(model)) {
@@ -101,13 +95,7 @@ export const ModelSelectField: React.FunctionComponent<{
     const onOpenChange = useCallback(
         (open: boolean): void => {
             if (open) {
-                // Trigger `CodyVSCodeExtension:openLLMDropdown:clicked` only when dropdown is about to be opened.
-                getVSCodeAPI().postMessage({
-                    command: 'event',
-                    eventName: 'CodyVSCodeExtension:openLLMDropdown:clicked',
-                    properties: undefined,
-                })
-
+                // Trigger only when dropdown is about to be opened.
                 telemetryRecorder.recordEvent('cody.modelSelector', 'open', {
                     metadata: {
                         isCodyProUser: isCodyProUser ? 1 : 0,

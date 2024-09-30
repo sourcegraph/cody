@@ -1,6 +1,5 @@
 import type { Mention } from '@openctx/client'
 import {
-    CodyIDE,
     type ContextItem,
     type ContextItemOpenCtx,
     type ContextItemRepository,
@@ -10,28 +9,32 @@ import {
     type MentionQuery,
     REMOTE_REPOSITORY_PROVIDER_URI,
     SYMBOL_CONTEXT_MENTION_PROVIDER,
+    clientCapabilities,
     combineLatest,
+    firstResultFromOperation,
+    fromVSCodeEvent,
     isAbortError,
+    isError,
     mentionProvidersMetadata,
     openCtx,
+    pendingOperation,
     promiseFactoryToObservable,
+    skipPendingOperation,
+    startWith,
+    switchMapReplayOperation,
     telemetryRecorder,
 } from '@sourcegraph/cody-shared'
 import { Observable, map } from 'observable-fns'
 import * as vscode from 'vscode'
 import { URI } from 'vscode-uri'
 import { getContextFileFromUri } from '../../commands/context/file-path'
-import { getConfiguration } from '../../configuration'
 import {
     getFileContextFiles,
     getOpenTabsContextFile,
     getSymbolContextFiles,
 } from '../../editor/utils/editor-context'
-import {
-    fetchRepoMetadataForFolder,
-    workspaceReposMonitor,
-} from '../../repository/repo-metadata-from-git-api'
-import type { ChatModel } from '../chat-view/ChatModel'
+import { repoNameResolver } from '../../repository/repo-name-resolver'
+import { ChatBuilder } from '../chat-view/ChatBuilder'
 
 interface GetContextItemsTelemetry {
     empty: () => void
@@ -41,7 +44,7 @@ interface GetContextItemsTelemetry {
 export function getMentionMenuData(options: {
     disableProviders: ContextMentionProviderID[]
     query: MentionQuery
-    chatModel: ChatModel
+    chatBuilder: ChatBuilder
 }): Observable<MentionMenuData> {
     const source = 'chat'
 
@@ -75,25 +78,32 @@ export function getMentionMenuData(options: {
         },
     }
 
-    const isCodyWeb = getConfiguration().agentIDE === CodyIDE.Web
-
-    const { input, context } = options.chatModel.contextWindow
-
     try {
-        const items = promiseFactoryToObservable(signal =>
-            getChatContextItemsForMention(
-                {
-                    mentionQuery: options.query,
-                    telemetryRecorder: scopedTelemetryRecorder,
-                    rangeFilter: !isCodyWeb,
-                },
-                signal
-            ).then(items =>
-                items.map<ContextItem>(f => ({
-                    ...f,
-                    isTooLarge: f.size ? f.size > (context?.user || input) : undefined,
-                }))
-            )
+        const items = combineLatest([
+            promiseFactoryToObservable(signal =>
+                getChatContextItemsForMention(
+                    {
+                        mentionQuery: options.query,
+                        telemetryRecorder: scopedTelemetryRecorder,
+                        rangeFilter: !clientCapabilities().isCodyWeb,
+                    },
+                    signal
+                )
+            ),
+            ChatBuilder.contextWindowForChat(options.chatBuilder),
+        ]).pipe(
+            map(([items, contextWindow]) =>
+                contextWindow === pendingOperation
+                    ? pendingOperation
+                    : items.map<ContextItem>(f => ({
+                          ...f,
+                          isTooLarge:
+                              f.size && !isError(contextWindow)
+                                  ? f.size > (contextWindow.context?.user || contextWindow.input)
+                                  : undefined,
+                      }))
+            ),
+            skipPendingOperation()
         )
 
         const queryLower = options.query.text.toLowerCase()
@@ -176,7 +186,10 @@ export async function getChatContextItemsForMention(
             }
 
             const items = await openCtx.controller.mentions(
-                { query: mentionQuery.text, ...(await getActiveEditorContextForOpenCtxMentions()) },
+                {
+                    query: mentionQuery.text,
+                    ...(await firstResultFromOperation(activeEditorContextForOpenCtxMentions)),
+                },
                 // get mention items for the selected provider only.
                 { providerUri: mentionQuery.provider }
             )
@@ -188,20 +201,46 @@ export async function getChatContextItemsForMention(
     }
 }
 
-export async function getActiveEditorContextForOpenCtxMentions(): Promise<{
+const activeTextEditor: Observable<vscode.TextEditor | undefined> = fromVSCodeEvent(
+    vscode.window.onDidChangeActiveTextEditor
+).pipe(
+    startWith(undefined),
+    map(() => vscode.window.activeTextEditor)
+)
+
+interface ContextForOpenCtxMentions {
     uri: string | undefined
     codebase: string | undefined
-}> {
-    const uri = vscode.window.activeTextEditor?.document.uri?.toString()
-    const activeWorkspaceURI =
-        uri &&
-        workspaceReposMonitor?.getFolderURIs().find(folderURI => uri?.startsWith(folderURI.toString()))
-
-    const codebase =
-        activeWorkspaceURI && (await fetchRepoMetadataForFolder(activeWorkspaceURI))[0]?.repoName
-
-    return { uri, codebase }
 }
+export const activeEditorContextForOpenCtxMentions: Observable<
+    ContextForOpenCtxMentions | typeof pendingOperation | Error
+> = activeTextEditor.pipe(
+    switchMapReplayOperation(
+        (textEditor): Observable<ContextForOpenCtxMentions | typeof pendingOperation> => {
+            const uri = textEditor?.document.uri
+            if (!uri) {
+                return Observable.of({ uri: undefined, codebase: undefined })
+            }
+
+            return repoNameResolver.getRepoNamesContainingUri(uri).pipe(
+                map(repoNames =>
+                    repoNames === pendingOperation
+                        ? pendingOperation
+                        : {
+                              uri: uri.toString(),
+                              codebase: repoNames.at(0),
+                          }
+                ),
+                map(value => {
+                    if (isError(value)) {
+                        return { uri: uri.toString(), codebase: undefined }
+                    }
+                    return value
+                })
+            )
+        }
+    )
+)
 
 export function contextItemMentionFromOpenCtxItem(
     item: Mention & { providerUri: string }

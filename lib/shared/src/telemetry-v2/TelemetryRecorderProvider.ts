@@ -9,7 +9,7 @@ import {
 } from '@sourcegraph/telemetry'
 import { TimestampTelemetryProcessor } from '@sourcegraph/telemetry/dist/processors/timestamp'
 
-import { CONTEXT_SELECTION_ID, type ClientConfiguration, type CodyIDE } from '../configuration'
+import type { CodyIDE } from '../configuration'
 import type { LogEventMode } from '../sourcegraph-api/graphql/client'
 import { GraphQLTelemetryExporter } from '../sourcegraph-api/telemetry/GraphQLTelemetryExporter'
 import { MockServerTelemetryExporter } from '../sourcegraph-api/telemetry/MockServerTelemetryExporter'
@@ -17,6 +17,7 @@ import { MockServerTelemetryExporter } from '../sourcegraph-api/telemetry/MockSe
 import type { BillingCategory, BillingProduct } from '.'
 import { currentAuthStatusOrNotReadyYet } from '../auth/authStatus'
 import type { AuthStatus } from '../auth/types'
+import { clientCapabilities } from '../configuration/clientCapabilities'
 import type { PickResolvedConfiguration } from '../configuration/resolver'
 import { getTier } from './cody-tier'
 
@@ -59,7 +60,6 @@ export class TelemetryRecorderProvider extends BaseTelemetryRecorderProvider<
     BillingCategory
 > {
     constructor(
-        extensionDetails: ExtensionDetails,
         config: PickResolvedConfiguration<{
             configuration: true
             auth: true
@@ -67,20 +67,19 @@ export class TelemetryRecorderProvider extends BaseTelemetryRecorderProvider<
         }>,
         legacyBackcompatLogEventMode: LogEventMode
     ) {
-        const clientName = extensionDetails.telemetryClientName
-            ? extensionDetails.telemetryClientName
-            : `${extensionDetails.ide || 'unknown'}.Cody`
+        const cap = clientCapabilities()
+        const clientName = cap.telemetryClientName || `${cap.agentIDE}.Cody`
 
         super(
             {
                 client: clientName,
-                clientVersion: extensionDetails.version,
+                clientVersion: cap.agentExtensionVersion,
             },
             process.env.CODY_TELEMETRY_EXPORTER === 'testing'
                 ? TESTING_TELEMETRY_EXPORTER.withAnonymousUserID(config.clientState.anonymousUserID)
                 : new GraphQLTelemetryExporter(legacyBackcompatLogEventMode),
             [
-                new ConfigurationMetadataProcessor(config.configuration),
+                new ConfigurationMetadataProcessor(),
                 // Generate timestamps when recording events, instead of serverside
                 new TimestampTelemetryProcessor(),
             ],
@@ -158,16 +157,16 @@ export class MockServerTelemetryRecorderProvider extends BaseTelemetryRecorderPr
     BillingCategory
 > {
     constructor(
-        extensionDetails: ExtensionDetails,
         config: PickResolvedConfiguration<{ configuration: true; clientState: 'anonymousUserID' }>
     ) {
+        const cap = clientCapabilities()
         super(
             {
-                client: `${extensionDetails.ide}.Cody`,
-                clientVersion: extensionDetails.version,
+                client: `${cap.agentIDE}.Cody`,
+                clientVersion: cap.agentExtensionVersion,
             },
             new MockServerTelemetryExporter(config.clientState.anonymousUserID),
-            [new ConfigurationMetadataProcessor(config.configuration)]
+            [new ConfigurationMetadataProcessor()]
         )
     }
 }
@@ -177,17 +176,10 @@ export class MockServerTelemetryRecorderProvider extends BaseTelemetryRecorderPr
  * automatically attached to all events.
  */
 class ConfigurationMetadataProcessor implements TelemetryProcessor {
-    constructor(private config: ClientConfiguration) {}
-
     public processEvent(event: TelemetryEventInput): void {
         if (!event.parameters.metadata) {
             event.parameters.metadata = []
         }
-
-        event.parameters.metadata.push({
-            key: 'contextSelection',
-            value: CONTEXT_SELECTION_ID[this.config.useContext],
-        })
 
         // The tier is not known yet when the user is not authed, and
         // `this.authStatusProvider.status` will throw, so omit it.

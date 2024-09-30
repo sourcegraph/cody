@@ -5,7 +5,13 @@ import { startPollyRecording } from '../testutils/polly'
 
 import { rewriteKeywordQuery } from './rewrite-keyword-query'
 
-import { type PromptString, mockResolvedConfig, ps } from '@sourcegraph/cody-shared'
+import {
+    CLIENT_CAPABILITIES_FIXTURE,
+    type PromptString,
+    mockClientCapabilities,
+    mockResolvedConfig,
+    ps,
+} from '@sourcegraph/cody-shared'
 import { SourcegraphNodeCompletionsClient } from '../completions/nodeClient'
 import { TESTING_CREDENTIALS } from '../testutils/testing-credentials'
 
@@ -29,6 +35,7 @@ describe('rewrite-query', () => {
                 serverEndpoint: TESTING_CREDENTIALS.dotcom.serverEndpoint,
             },
         })
+        mockClientCapabilities(CLIENT_CAPABILITIES_FIXTURE)
     })
 
     function check(query: PromptString, expectedHandler: (expandedTerm: string) => void): void {
@@ -49,7 +56,9 @@ describe('rewrite-query', () => {
         expect(expanded).toMatchInlineSnapshot(`"parse file with tree-sitter"`)
     )
 
-    check(ps`type Zoekt struct {`, expanded => expect(expanded).toMatchInlineSnapshot(`"struct zoekt"`))
+    check(ps`type Zoekt struct {`, expanded =>
+        expect(expanded).toMatchInlineSnapshot(`"definition struct type zoekt"`)
+    )
 
     check(
         ps`type Zoekt struct {
@@ -61,11 +70,11 @@ describe('rewrite-query', () => {
 
 \tmu       sync.RWMute
 `,
-        expanded => expect(expanded).toMatchInlineSnapshot(`"cache sync test zoekt"`)
+        expanded => expect(expanded).toMatchInlineSnapshot(`"cache client mutex struct zoekt"`)
     )
 
     check(ps`C'est ou la logique pour recloner les dépôts?`, expanded =>
-        expect(expanded).toMatchInlineSnapshot(`"clone logic repository"`)
+        expect(expanded).toMatchInlineSnapshot(`"clone git logic repo"`)
     )
 
     check(ps`Wie kann ich eine neue Datenbankmigration definieren?`, expanded =>
@@ -74,13 +83,14 @@ describe('rewrite-query', () => {
 
     check(
         ps`Explain how the context window limit is calculated. how much budget is given to @-mentions vs. search context?`,
-        expanded => expect(expanded).toMatchInlineSnapshot(`"budget context mentions search window"`)
+        expanded =>
+            expect(expanded).toMatchInlineSnapshot(`"budget calculate context limit mention search"`)
     )
 
     check(
         ps`parse file with tree-sitter. follow these rules:\n*use the Google Go style guide\n*panic if parsing fails`,
         expanded =>
-            expect(expanded).toMatchInlineSnapshot(`"go google guide panic parse style tree-sitter"`)
+            expect(expanded).toMatchInlineSnapshot(`"go google panic parser rules style tree-sitter"`)
     )
 
     afterAll(async () => {

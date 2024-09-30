@@ -1,9 +1,5 @@
 import { expect } from '@playwright/test'
-import type {
-    ModelCategory,
-    ModelTier,
-    ServerModelConfiguration,
-} from '@sourcegraph/cody-shared/src/models'
+import type { ModelCategory, ModelTier, ServerModelConfiguration } from '@sourcegraph/cody-shared'
 import { createEmptyChatPanel, sidebarSignin } from './common'
 import { test } from './helpers'
 

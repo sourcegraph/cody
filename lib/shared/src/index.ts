@@ -1,12 +1,30 @@
 // Add anything else here that needs to be used outside of this library.
 
 export {
-    Model,
     modelsService,
     mockModelsService,
-    type ServerModel,
+    ModelsService,
+    type ModelCategory,
+    type ModelTier,
     type ServerModelConfiguration,
-} from './models'
+    type PerSitePreferences,
+    type SitePreferences,
+    type ModelRefStr,
+    type LegacyModelRefStr,
+    type ModelRef,
+    type ModelsData,
+    TestLocalStorageForModelPreferences,
+    type LocalStorageForModelPreferences,
+} from './models/modelsService'
+export {
+    type Model,
+    type ServerModel,
+    createModel,
+    createModelFromServerModel,
+    modelTier,
+    parseModelRef,
+    toLegacyModel,
+} from './models/model'
 export {
     type EditModel,
     type EditProvider,
@@ -15,7 +33,7 @@ export {
     ModelUsage,
     type ModelContextWindow,
 } from './models/types'
-export { getDotComDefaultModels } from './models/dotcom'
+export { getMockedDotComClientModels, getMockedDotComServerModels } from './models/dotcom'
 export { ModelTag } from './models/tags'
 export {
     getProviderName,
@@ -23,6 +41,7 @@ export {
     isCodyProModel,
     isCustomModel,
     toModelRefStr,
+    isWaitlistModel,
 } from './models/utils'
 export { BotResponseMultiplexer } from './chat/bot-response-multiplexer'
 export { ChatClient } from './chat/chat'
@@ -57,8 +76,6 @@ export type {
     ContextGroup,
     ContextProvider,
     Disposable,
-    EnhancedContextContextT,
-    LocalEmbeddingsProvider,
     LocalSearchProvider,
     RemoteSearchProvider,
     SearchProvider,
@@ -163,10 +180,7 @@ export {
     type CompletionResponseGenerator,
     type CompletionResponseWithMetaData,
 } from './inferenceClient/misc'
-export type {
-    LocalEmbeddingsFetcher,
-    Result,
-} from './local-context'
+export type { Result } from './local-context'
 export { logDebug, logError, setLogger } from './logger'
 export {
     createOllamaClient,
@@ -224,8 +238,8 @@ export {
     SourcegraphGraphQLAPIClient,
     graphqlClient,
 } from './sourcegraph-api/graphql'
+export { ClientConfigSingleton, type CodyClientConfig } from './sourcegraph-api/clientConfig'
 export {
-    ClientConfigSingleton,
     addCustomUserAgent,
     customUserAgent,
     isNodeResponse,
@@ -239,13 +253,11 @@ export {
     type RepoListResponse,
     type SuggestionsRepo,
     type RepoSuggestionsSearchResponse,
-    type InputContextItem,
     type ChatIntentResult,
 } from './sourcegraph-api/graphql/client'
 export type {
     CodyLLMSiteConfiguration,
     ContextSearchResult,
-    EmbeddingsSearchResult,
     Prompt,
     event,
 } from './sourcegraph-api/graphql/client'
@@ -314,7 +326,6 @@ export {
     GIT_OPENCTX_PROVIDER_URI,
 } from './context/openctx/api'
 export * from './context/openctx/context'
-export { type ClientStateForWebview } from './clientState'
 export * from './lexicalEditor/editorState'
 export * from './lexicalEditor/nodes'
 export {
@@ -335,6 +346,10 @@ export {
     createMessageAPIForExtension,
 } from './misc/rpc/rpc'
 export * from './misc/observable'
+export * from './misc/observableOperation'
 export * from './configuration/resolver'
+export * from './configuration/clientCapabilities'
 export * from './singletons'
 export * from './auth/authStatus'
+export { fetchLocalOllamaModels } from './llm-providers/ollama/utils'
+export * from './editor/editorState'

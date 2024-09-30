@@ -7,7 +7,7 @@ import path from 'node:path'
 import { localStorage } from '../../../vscode/src/services/LocalStorageProvider'
 import migrate from './migrations/migrate'
 
-export type GlobalStateManager = 'client' | 'server'
+type GlobalStateManager = 'client' | 'server'
 
 export class AgentGlobalState implements vscode.Memento {
     private db: DB

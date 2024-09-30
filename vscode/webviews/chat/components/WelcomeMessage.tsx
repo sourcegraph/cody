@@ -1,4 +1,4 @@
-import { CodyIDE } from '@sourcegraph/cody-shared'
+import { FeatureFlag } from '@sourcegraph/cody-shared'
 import {
     AtSignIcon,
     type LucideProps,
@@ -14,6 +14,8 @@ import { Kbd } from '../../components/Kbd'
 import { PromptListSuitedForNonPopover } from '../../components/promptList/PromptList'
 import { onPromptSelectInPanel, onPromptSelectInPanelActionLabels } from '../../prompts/PromptsTab'
 import type { View } from '../../tabs'
+import { useConfig } from '../../utils/useConfig'
+import { useFeatureFlag } from '../../utils/useFeatureFlags'
 
 const MenuExample: FunctionComponent<{ children: React.ReactNode }> = ({ children }) => (
     <span className="tw-p-1 tw-rounded tw-text-keybinding-foreground tw-border tw-border-keybinding-border tw-bg-keybinding-background tw-whitespace-nowrap">
@@ -43,20 +45,25 @@ const FeatureRow: FunctionComponent<{
 
 const localStorageKey = 'chat.welcome-message-dismissed'
 
-export const WelcomeMessage: FunctionComponent<{ IDE: CodyIDE; setView: (view: View) => void }> = ({
-    IDE,
-    setView,
-}) => {
+interface WelcomeMessageProps {
+    setView: (view: View) => void
+}
+
+export const WelcomeMessage: FunctionComponent<WelcomeMessageProps> = ({ setView }) => {
     // Remove the old welcome message dismissal key that is no longer used.
     localStorage.removeItem(localStorageKey)
 
     const dispatchClientAction = useClientActionDispatcher()
 
+    const isUnifiedPromptsAvailable = useFeatureFlag(FeatureFlag.CodyUnifiedPrompts)
+
+    const config = useConfig()
+
     return (
         <div className="tw-flex-1 tw-flex tw-flex-col tw-items-start tw-w-full tw-px-6 tw-gap-6 tw-transition-all">
             <CollapsiblePanel
                 storageKey="prompts"
-                title="Prompts & Commands"
+                title={isUnifiedPromptsAvailable ? 'Prompts' : 'Prompts & Commands'}
                 className="tw-mb-6"
                 contentClassName="!tw-p-0 tw-overflow-clip"
                 initialOpen={true}
@@ -80,7 +87,7 @@ export const WelcomeMessage: FunctionComponent<{ IDE: CodyIDE; setView: (view: V
                 <FeatureRow icon={AtSignIcon}>
                     Type <Kbd macOS="@" linuxAndWindows="@" /> to add context to your chat
                 </FeatureRow>
-                {IDE === CodyIDE.VSCode && (
+                {config.clientCapabilities.isVSCode && (
                     <>
                         <FeatureRow icon={TextIcon}>
                             To add code context from an editor, right click and use{' '}

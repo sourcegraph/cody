@@ -5,14 +5,13 @@ import {
     distinctUntilChanged,
     featureFlagProvider,
     isDotCom,
-    mergeMap,
+    switchMap,
 } from '@sourcegraph/cody-shared'
 
 import { Observable, map } from 'observable-fns'
 import * as vscode from 'vscode'
 import {
     DEEPSEEK_CODER_V2_LITE_BASE,
-    DEEPSEEK_CODER_V2_LITE_BASE_DIRECT_ROUTE,
     DEEPSEEK_CODER_V2_LITE_BASE_WINDOW_4096,
     FIREWORKS_DEEPSEEK_7B_LANG_ALL,
     FIREWORKS_DEEPSEEK_7B_LANG_SPECIFIC_V0,
@@ -42,7 +41,7 @@ export function getDotComExperimentModel({
         ),
         featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyAutocompleteDeepseekV2LiteBase),
     ]).pipe(
-        mergeMap(([starCoderHybrid, claude3, fimModelExperimentFlag, deepseekV2LiteBase]) => {
+        switchMap(([starCoderHybrid, claude3, fimModelExperimentFlag, deepseekV2LiteBase]) => {
             // We run fine tuning experiment for VSC client only.
             // We disable for all agent clients like the JetBrains plugin.
             const isFinetuningExperimentDisabled = vscode.workspace
@@ -106,7 +105,7 @@ function resolveFIMModelExperimentFromFeatureFlags(): ReturnType<typeof getDotCo
                 fimModelCurrentBest,
             ]) => {
                 if (fimModelVariant1) {
-                    return { provider: 'fireworks', model: DEEPSEEK_CODER_V2_LITE_BASE_DIRECT_ROUTE }
+                    return { provider: 'fireworks', model: DEEPSEEK_CODER_V2_LITE_BASE }
                 }
                 if (fimModelVariant2) {
                     return { provider: 'fireworks', model: FIREWORKS_DEEPSEEK_7B_LANG_SPECIFIC_V0 }

@@ -67,7 +67,6 @@
       ".github/PULL_REQUEST_TEMPLATE.md",
       "vscode/src/testutils/vscode/",
       "agent/bindings/",
-      "agent/src/bfg/__tests__/",
       "agent/src/__tests__/",
       "agent/recordings/",
       "agent/src/cli/scip-codegen/scip.ts",

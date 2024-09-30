@@ -18,14 +18,11 @@ importers:
   .:
     dependencies:
       '@openctx/client':
-        specifier: ^0.0.28
-        version: 0.0.28
+        specifier: ^0.0.29
+        version: 0.0.29
       '@sourcegraph/telemetry':
         specifier: ^0.18.0
         version: 0.18.0
-      ignore:
-        specifier: ^5.3.1
-        version: 5.3.1
       observable-fns:
         specifier: ^0.6.1
         version: 0.6.1
@@ -424,8 +421,8 @@ importers:
         specifier: ^0.0.9
         version: 0.0.9
       '@openctx/vscode-lib':
-        specifier: ^0.0.24
-        version: 0.0.24
+        specifier: ^0.0.25
+        version: 0.0.25
       '@opentelemetry/api':
         specifier: ^1.7.0
         version: 1.7.0
@@ -827,8 +824,8 @@ importers:
   web:
     devDependencies:
       '@openctx/vscode-lib':
-        specifier: ^0.0.24
-        version: 0.0.24
+        specifier: ^0.0.25
+        version: 0.0.25
       '@sourcegraph/cody':
         specifier: workspace:*
         version: link:../agent
@@ -3363,8 +3360,8 @@ packages:
       which: 4.0.0
     dev: true
 
-  /@openctx/client@0.0.28:
-    resolution: {integrity: sha512-XXaWo/Oa9XZYzhVzSntVV+LRhp/arZc3fnu2JZfVTsZeHgKXhXzKEynWxRaK6eZGI7SNnZMjc0UZUCmMAii28A==}
+  /@openctx/client@0.0.29:
+    resolution: {integrity: sha512-KTY6pPjVQ89ZLNU/DxngzNrvH08y/sk9HRYgAhohPmjjD5tEJp+t60/7QI1bjLVu0RT9ZLF3kI8Jb4OIPXJv5Q==}
     dependencies:
       '@openctx/protocol': 0.0.19
       '@openctx/provider': 0.0.18
@@ -3424,10 +3421,10 @@ packages:
       sanitize-html: 2.13.0
       xss: 1.0.15
 
-  /@openctx/vscode-lib@0.0.24:
-    resolution: {integrity: sha512-CN/Flz+hDsPAnyKWiHdQLz8yUwKHTVyMgupe16s/JZdVCEb0YbWlIJrXe2CM8Ve+wVQfuyM0TEb/Wj8mi5Ligg==}
+  /@openctx/vscode-lib@0.0.25:
+    resolution: {integrity: sha512-DrhUBdiYXh+3JkuqkASept1vAD6GPvS4S+3X2725rDImtpdvrmTpWI2YYJtj6Fa33UpHxe7sch13DitV56Qe1Q==}
     dependencies:
-      '@openctx/client': 0.0.28
+      '@openctx/client': 0.0.29
       '@openctx/ui-common': 0.0.14
       observable-fns: 0.6.1
 

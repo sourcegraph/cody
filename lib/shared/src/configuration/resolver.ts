@@ -1,9 +1,16 @@
 import { Observable, map } from 'observable-fns'
 import type { AuthCredentials, ClientConfiguration } from '../configuration'
 import { logError } from '../logger'
-import { distinctUntilChanged, firstValueFrom, fromLateSetSource, shareReplay } from '../misc/observable'
+import {
+    distinctUntilChanged,
+    firstValueFrom,
+    fromLateSetSource,
+    promiseToObservable,
+} from '../misc/observable'
+import { skipPendingOperation, switchMapReplayOperation } from '../misc/observableOperation'
+import type { PerSitePreferences } from '../models/modelsService'
 import { DOTCOM_URL } from '../sourcegraph-api/environments'
-import type { PartialDeep, ReadonlyDeep } from '../utils'
+import { type PartialDeep, type ReadonlyDeep, isError } from '../utils'
 
 /**
  * The input from various sources that is needed to compute the {@link ResolvedConfiguration}.
@@ -22,6 +29,8 @@ export interface ClientState {
     lastUsedEndpoint: string | null
     anonymousUserID: string | null
     lastUsedChatModality: 'sidebar' | 'editor'
+    modelPreferences: PerSitePreferences
+    waitlist_o1: boolean | null
 }
 
 /**
@@ -59,7 +68,9 @@ export type PickResolvedConfiguration<Keys extends KeysSpec> = {
 }
 
 async function resolveConfiguration(input: ConfigurationInput): Promise<ResolvedConfiguration> {
-    const serverEndpoint = input.clientState.lastUsedEndpoint ?? DOTCOM_URL.toString()
+    const serverEndpoint = normalizeServerEndpointURL(
+        input.clientState.lastUsedEndpoint ?? DOTCOM_URL.toString()
+    )
 
     // We must not throw here, because that would result in the `resolvedConfig` observable
     // terminating and all callers receiving no further config updates.
@@ -78,6 +89,10 @@ async function resolveConfiguration(input: ConfigurationInput): Promise<Resolved
     }
 }
 
+export function normalizeServerEndpointURL(url: string): string {
+    return url.endsWith('/') ? url : `${url}/`
+}
+
 const _resolvedConfig = fromLateSetSource<ResolvedConfiguration>()
 
 /**
@@ -85,7 +100,20 @@ const _resolvedConfig = fromLateSetSource<ResolvedConfiguration>()
  * set exactly once (except in tests).
  */
 export function setResolvedConfigurationObservable(input: Observable<ConfigurationInput>): void {
-    _resolvedConfig.setSource(input.pipe(map(resolveConfiguration), distinctUntilChanged()), false)
+    _resolvedConfig.setSource(
+        input.pipe(
+            switchMapReplayOperation(input => promiseToObservable(resolveConfiguration(input))),
+            skipPendingOperation(),
+            map(value => {
+                if (isError(value)) {
+                    throw value
+                }
+                return value
+            }),
+            distinctUntilChanged()
+        ),
+        false
+    )
 }
 
 /**
@@ -93,8 +121,10 @@ export function setResolvedConfigurationObservable(input: Observable<Configurati
  * only from clients that can guarantee the configuration will not change during execution (such as
  * simple CLI commands).
  */
-export function setStaticResolvedConfigurationValue(input: ResolvedConfiguration): void {
-    _resolvedConfig.setSource(Observable.of(input), false)
+export function setStaticResolvedConfigurationValue(
+    input: ResolvedConfiguration | Observable<ResolvedConfiguration>
+): void {
+    _resolvedConfig.setSource(input instanceof Observable ? input : Observable.of(input), false)
 }
 
 /**
@@ -112,9 +142,7 @@ export function setStaticResolvedConfigurationValue(input: ResolvedConfiguration
  * It is OK to access this before {@link setResolvedConfigurationObservable} is called, but it will
  * not emit any values before then.
  */
-export const resolvedConfig: Observable<ResolvedConfiguration> = _resolvedConfig.observable.pipe(
-    shareReplay()
-)
+export const resolvedConfig: Observable<ResolvedConfiguration> = _resolvedConfig.observable
 
 /**
  * The current resolved configuration. Callers should use {@link resolvedConfig} instead so that
@@ -142,7 +170,7 @@ export function mockResolvedConfig(value: PartialDeep<ResolvedConfiguration>): v
         Observable.of({
             configuration: {},
             auth: {},
-            clientState: {},
+            clientState: { modelPreferences: {} },
             ...value,
         } as ResolvedConfiguration),
         false

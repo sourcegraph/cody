@@ -7,7 +7,7 @@ import { type ContextItem, ModelUsage, TokenCounterUtils, isDotCom } from '@sour
 import { Command } from 'commander'
 
 import Table from 'easy-table'
-import { isError } from 'lodash'
+import isError from 'lodash/isError'
 import * as vscode from 'vscode'
 import type { ExtensionTranscriptMessage } from '../../../vscode/src/chat/protocol'
 import { activate } from '../../../vscode/src/extension.node'
@@ -109,6 +109,22 @@ Enterprise Only:
             process.exit(exitCode)
         })
 
+let agentClient: ReturnType<typeof newEmbeddedAgentClient> | undefined
+function getOrCreateEmbeddedAgentClient(
+    ...args: Parameters<typeof newEmbeddedAgentClient>
+): ReturnType<typeof newEmbeddedAgentClient> {
+    // Reuse the agent client because only one can be running in any given process due to the use of
+    // global singletons such as modelsService. If you create multiple, then modelsService will hang
+    // because of competing processes trying to overwrite the globals.
+    //
+    // This assumes that the args are the same for each call. If that is not true, this will
+    // silently break.
+    if (!agentClient) {
+        agentClient = newEmbeddedAgentClient(...args)
+    }
+    return agentClient
+}
+
 export async function chatAction(options: ChatOptions): Promise<number> {
     const streams = options.streams ?? Streams.default()
     const spinner = ora({
@@ -142,7 +158,10 @@ export async function chatAction(options: ChatOptions): Promise<number> {
         },
     }
     spinner.text = 'Initializing...'
-    const { serverInfo, client, messageHandler } = await newEmbeddedAgentClient(clientInfo, activate)
+    const { serverInfo, client, messageHandler } = await getOrCreateEmbeddedAgentClient(
+        clientInfo,
+        activate
+    )
     if (!serverInfo.authStatus?.authenticated) {
         notAuthenticated(spinner)
         return 1
@@ -188,7 +207,7 @@ export async function chatAction(options: ChatOptions): Promise<number> {
     const id = await client.request('chat/new', null)
 
     if (options.model) {
-        client.request('chat/setModel', { id, model: options.model })
+        await client.request('chat/setModel', { id, model: options.model })
     }
 
     const contextItems: ContextItem[] = []
@@ -261,7 +280,6 @@ export async function chatAction(options: ChatOptions): Promise<number> {
                 command: 'submit',
                 submitType: 'user',
                 text: messageText,
-                addEnhancedContext: false,
                 contextItems,
             },
         },

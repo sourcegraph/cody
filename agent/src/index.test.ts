@@ -2,15 +2,13 @@ import assert from 'node:assert'
 import { spawnSync } from 'node:child_process'
 import path from 'node:path'
 
-import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest'
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
 import {
     type ContextItem,
-    ContextItemSource,
     DOTCOM_URL,
     ModelUsage,
     type SerializedChatTranscript,
-    isWindows,
 } from '@sourcegraph/cody-shared'
 
 import * as uuid from 'uuid'
@@ -30,6 +28,28 @@ const workspace = new TestWorkspace(path.join(__dirname, '__tests__', 'example-t
 const mayRecord =
     process.env.CODY_RECORDING_MODE === 'record' || process.env.CODY_RECORD_IF_MISSING === 'true'
 
+async function exportedTelemetryEvents(currentClient: TestClient) {
+    const response = await currentClient.request('testing/exportedTelemetryEvents', null)
+
+    // send data to testing pub/sub topic
+    // for each request in response, send to logtest
+    const testRunId = uuid.v4()
+    for (const event of response.events) {
+        // Assuming logTestingData is defined elsewhere in the codebase
+        logTestingData(
+            JSON.stringify(event),
+            'v2-agent-e2e',
+            expect.getState().currentTestName,
+            testRunId
+        )
+    }
+    // Equality check to ensure all expected events(feature:action) were fired
+    const loggedTelemetryEventsV2 = response.events.map(
+        (event: { feature: string; action: string }) => `${event.feature}:${event.action}`
+    )
+    return loggedTelemetryEventsV2
+}
+
 describe('Agent', () => {
     const client = TestClient.create({
         workspaceRootUri: workspace.rootUri,
@@ -43,7 +63,7 @@ describe('Agent', () => {
         credentials: TESTING_CREDENTIALS.dotcomProUserRateLimited,
     })
 
-    const mockEnhancedContext: ContextItem[] = []
+    const mockContextItems: ContextItem[] = []
 
     // Initialize inside beforeAll so that subsequent tests are skipped if initialization fails.
     beforeAll(async () => {
@@ -68,7 +88,6 @@ describe('Agent', () => {
         // Log in so test cases are authenticated by default
         const valid = await client.request('extensionConfiguration/change', {
             ...client.info.extensionConfiguration,
-            anonymousUserID: 'abcde1234',
             accessToken: client.info.extensionConfiguration?.accessToken ?? 'invalid',
             serverEndpoint: client.info.extensionConfiguration?.serverEndpoint ?? DOTCOM_URL.toString(),
             customHeaders: {},
@@ -80,12 +99,11 @@ describe('Agent', () => {
             'src/ChatColumn.tsx',
             'src/Heading.tsx',
             'src/squirrel.ts',
-            'src/multiple-selections.ts',
         ]) {
             const item = await workspace.loadContextItem(name)
-            // Trim content to the first 20 lines to imitate enhanced context, which only includes file chunks
+            // Trim content to the first 20 lines to imitate our context-fetching, which only includes file chunks
             item.content = item.content?.split('\n').slice(0, 20).join('\n')
-            mockEnhancedContext.push(item)
+            mockContextItems.push(item)
         }
     }, 20_000)
 
@@ -93,66 +111,35 @@ describe('Agent', () => {
         await client.request('testing/reset', null)
     })
 
-    afterEach(async () => {
-        // declare enterprise client
-        let currentClient: TestClient
-        const testName = expect.getState().currentTestName ?? 'NoTestName'
-        // Choose client based on test name
-        if (testName.includes('RateLimitedAgent')) {
-            currentClient = rateLimitedClient
-        } else {
-            currentClient = client // Default client
-        }
-
-        const response = await currentClient.request('testing/exportedTelemetryEvents', null)
-
-        // send data to testing pub/sub topic
-        // for each request in response, send to logtest
-        const testRunId = uuid.v4()
-        for (const event of response.events) {
-            // Assuming logTestingData is defined elsewhere in the codebase
-            logTestingData(
-                JSON.stringify(event),
-                'v2-agent-e2e',
-                expect.getState().currentTestName,
-                testRunId
-            )
-        }
-        // Equality check to ensure all expected events(feature:action) were fired
-        const loggedTelemetryEventsV2 = response.events.map(event => `${event.feature}:${event.action}`)
-        expect(loggedTelemetryEventsV2).toEqual(expect.arrayContaining(currentClient.expectedEvents))
-    })
-
     const sumUri = workspace.file('src', 'sum.ts')
     const animalUri = workspace.file('src', 'animal.ts')
     const squirrelUri = workspace.file('src', 'squirrel.ts')
-    const multipleSelectionsUri = workspace.file('src', 'multiple-selections.ts')
 
     // Context files ends with 'Ignored.ts' will be excluded by .cody/ignore
     const ignoredUri = workspace.file('src', 'isIgnored.ts')
 
+    async function setChatModel(model = 'mistral::v1::mixtral-8x7b-instruct'): Promise<string> {
+        // Use the same chat model regardless of the server response (in case it changes on the
+        // remote endpoint so we don't need to regenerate all the recordings).
+        const freshChatID = await client.request('chat/new', null)
+        await client.request('chat/setModel', {
+            id: freshChatID,
+            model,
+        })
+        return freshChatID
+    }
+
     it('extensionConfiguration/change & chat/models (handle errors)', async () => {
-        // list of v2 events we expect to fire during the test run (feature:action). Add to this list as needed.
-        client.expectedEvents = [
-            'cody.auth:failed',
-            'cody.auth:connected',
-            'cody.auth.login:firstEver',
-            'cody.interactiveTutorial:attemptingStart',
-            'cody.experiment.interactiveTutorial:enrolled',
-        ]
         // Send two config change notifications because this is what the
         // JetBrains client does and there was a bug where everything worked
         // fine as long as we didn't send the second unauthenticated config
         // change.
-        const initModelName = 'anthropic/claude-3-5-sonnet-20240620'
-        const {
-            models: [initModel],
-        } = await client.request('chat/models', { modelUsage: ModelUsage.Chat })
-        expect(initModel.id).toStrictEqual(initModelName)
+        const initModelName = 'anthropic::2023-06-01::claude-3.5-sonnet'
+        const { models } = await client.request('chat/models', { modelUsage: ModelUsage.Chat })
+        expect(models[0].id).toStrictEqual(initModelName)
 
         const invalid = await client.request('extensionConfiguration/change', {
             ...client.info.extensionConfiguration,
-            anonymousUserID: 'abcde1234',
             // Redacted format of an invalid access token (just random string). Tests fail in replay mode
             // if we don't use the redacted format here.
             accessToken: 'REDACTED_0ba08837494d00e3943c46999589eb29a210ba8063f084fff511c8e4d1503909',
@@ -166,7 +153,6 @@ describe('Agent', () => {
 
         const valid = await client.request('extensionConfiguration/change', {
             ...client.info.extensionConfiguration,
-            anonymousUserID: 'abcde1234',
             accessToken: client.info.extensionConfiguration?.accessToken ?? 'invalid',
             serverEndpoint: client.info.extensionConfiguration?.serverEndpoint ?? DOTCOM_URL.toString(),
             customHeaders: {},
@@ -192,11 +178,21 @@ describe('Agent', () => {
         //
         // If you don't have access to this private file then you need to ask
         expect(valid?.username).toStrictEqual('sourcegraphbot9k-fnwmu')
+
+        // telemetry assertion, to validate the expected events fired during the test run
+        // Do not remove this assertion, and instead update the expectedEvents list above
+        expect(await exportedTelemetryEvents(client)).toEqual(
+            expect.arrayContaining([
+                'cody.auth:failed',
+                'cody.auth:connected',
+                'cody.auth.login:firstEver',
+                'cody.interactiveTutorial:attemptingStart',
+                'cody.experiment.interactiveTutorial:enrolled',
+            ])
+        )
     }, 10_000)
 
     it('graphql/getCurrentUserCodySubscription', async () => {
-        // list of v2 events we expect to fire during the test run (feature:action). Add to this list as needed.
-        client.expectedEvents = []
         const currentUserCodySubscription = await client.request(
             'graphql/getCurrentUserCodySubscription',
             null
@@ -204,58 +200,59 @@ describe('Agent', () => {
         expect(currentUserCodySubscription).toMatchInlineSnapshot(`
           {
             "applyProRateLimits": true,
-            "currentPeriodEndAt": "2024-09-14T22:11:32Z",
-            "currentPeriodStartAt": "2024-08-14T22:11:32Z",
+            "currentPeriodEndAt": "2024-10-14T22:11:32Z",
+            "currentPeriodStartAt": "2024-09-14T22:11:32Z",
             "plan": "PRO",
             "status": "ACTIVE",
           }
         `)
+        // telemetry assertion, to validate the expected events fired during the test run
+        // Do not remove this assertion, and instead update the expectedEvents list above
+        expect(await exportedTelemetryEvents(client)).toEqual(expect.arrayContaining([]))
     }, 10_000)
 
     describe('Chat', () => {
         it('chat/submitMessage (short message)', async () => {
-            // list of v2 events we expect to fire during the test run (feature:action). Add to this list as needed.
-            client.expectedEvents = [
-                'cody.chat-question:submitted',
-                'cody.chat-question:executed',
-                'cody.chatResponse:noCode',
-            ]
+            await setChatModel('anthropic::2023-06-01::claude-3.5-sonnet')
             const lastMessage = await client.sendSingleMessageToNewChat('Hello!')
             expect(lastMessage).toMatchInlineSnapshot(
                 `
               {
-                "model": "anthropic/claude-3-5-sonnet-20240620",
+                "model": "anthropic::2023-06-01::claude-3.5-sonnet",
                 "speaker": "assistant",
-                "text": "Hello! I'm Cody, an AI coding assistant from Sourcegraph. How can I help you with your coding tasks today? Whether you need assistance with writing code, debugging, explaining concepts, or discussing best practices, I'm here to help. What would you like to work on?",
+                "text": "Hello! I'm Cody, an AI coding assistant from Sourcegraph. How can I help you with your coding or development tasks today? Whether you need help with writing code, debugging, explaining concepts, or discussing best practices, I'm here to assist. What would you like to work on?",
               }
             `
+            )
+            // telemetry assertion, to validate the expected events fired during the test run
+            // Do not remove this assertion, and instead update the expectedEvents list above
+            expect(await exportedTelemetryEvents(client)).toEqual(
+                expect.arrayContaining([
+                    'cody.chat-question:submitted',
+                    'cody.chat-question:executed',
+                    'cody.chatResponse:noCode',
+                ])
             )
         }, 30_000)
 
         it('chat/submitMessage (long message)', async () => {
-            // list of v2 events we expect to fire during the test run (feature:action). Add to this list as needed.
-            client.expectedEvents = [
-                'cody.chat-question:submitted',
-                'cody.chat-question:executed',
-                'cody.chatResponse:hasCode',
-            ]
             const lastMessage = await client.sendSingleMessageToNewChat(
                 'Generate simple hello world function in java!'
             )
             const trimmedMessage = trimEndOfLine(lastMessage?.text ?? '')
             expect(trimmedMessage).toMatchSnapshot()
+            // telemetry assertion, to validate the expected events fired during the test run
+            // Do not remove this assertion, and instead update the expectedEvents list above
+            expect(await exportedTelemetryEvents(client)).toEqual(
+                expect.arrayContaining([
+                    'cody.chat-question:submitted',
+                    'cody.chat-question:executed',
+                    'cody.chatResponse:hasCode',
+                ])
+            )
         }, 30_000)
 
         it('chat/restore', async () => {
-            // list of v2 events we expect to fire during the test run (feature:action). Add to this list as needed.
-            client.expectedEvents = [
-                'cody.chat-question:submitted',
-                'cody.chat-question:executed',
-                'cody.chatResponse:noCode',
-                'cody.chat-question:submitted',
-                'cody.chat-question:executed',
-                'cody.chatResponse:noCode',
-            ]
             // Step 1: create a chat session where I share my name.
             const id1 = await client.request('chat/new', null)
             const reply1 = asTranscriptMessage(
@@ -265,7 +262,6 @@ describe('Agent', () => {
                         command: 'submit',
                         text: 'My name is Lars Monsen.',
                         submitType: 'user',
-                        addEnhancedContext: false,
                     },
                 })
             )
@@ -288,7 +284,6 @@ describe('Agent', () => {
                         command: 'submit',
                         text: 'What is my name?',
                         submitType: 'user',
-                        addEnhancedContext: false,
                     },
                 })
             )
@@ -296,18 +291,21 @@ describe('Agent', () => {
                 `"Your name is Lars Monsen, as you mentioned in your previous message."`,
                 explainPollyError
             )
+            // telemetry assertion, to validate the expected events fired during the test run
+            // Do not remove this assertion, and instead update the expectedEvents list above
+            expect(await exportedTelemetryEvents(client)).toEqual(
+                expect.arrayContaining([
+                    'cody.chat-question:submitted',
+                    'cody.chat-question:executed',
+                    'cody.chatResponse:noCode',
+                    'cody.chat-question:submitted',
+                    'cody.chat-question:executed',
+                    'cody.chatResponse:noCode',
+                ])
+            )
         }, 30_000)
 
         it('chat/restore (With null model)', async () => {
-            // list of v2 events we expect to fire during the test run (feature:action). Add to this list as needed.
-            client.expectedEvents = [
-                'cody.chat-question:submitted',
-                'cody.chat-question:executed',
-                'cody.chatResponse:noCode',
-                'cody.chat-question:submitted',
-                'cody.chat-question:executed',
-                'cody.chatResponse:noCode',
-            ]
             // Step 1: Create a chat session asking what model is used.
             const id1 = await client.request('chat/new', null)
             const reply1 = asTranscriptMessage(
@@ -317,7 +315,6 @@ describe('Agent', () => {
                         command: 'submit',
                         text: 'What model are you?',
                         submitType: 'user',
-                        addEnhancedContext: false,
                     },
                 })
             )
@@ -335,16 +332,25 @@ describe('Agent', () => {
                         command: 'submit',
                         text: 'What model are you?',
                         submitType: 'user',
-                        addEnhancedContext: false,
                     },
                 })
             )
             expect(reply2.messages.at(-1)?.text).toMatchSnapshot()
+            // telemetry assertion, to validate the expected events fired during the test run
+            // Do not remove this assertion, and instead update the expectedEvents list above
+            expect(await exportedTelemetryEvents(client)).toEqual(
+                expect.arrayContaining([
+                    'cody.chat-question:submitted',
+                    'cody.chat-question:executed',
+                    'cody.chatResponse:noCode',
+                    'cody.chat-question:submitted',
+                    'cody.chat-question:executed',
+                    'cody.chatResponse:noCode',
+                ])
+            )
         }, 30_000)
 
         it('chat/restore (multiple) & export', async () => {
-            // list of v2 events we expect to fire during the test run (feature:action). Add to this list as needed.
-            client.expectedEvents = []
             const date = new Date(1997, 7, 2, 12, 0, 0, 0)
 
             // Step 1: Restore multiple chats
@@ -390,6 +396,9 @@ describe('Agent', () => {
   "lastInteractionTimestamp": "${myDate}",
 }`)
             })
+            // telemetry assertion, to validate the expected events fired during the test run
+            // Do not remove this assertion, and instead update the expectedEvents list above
+            expect(await exportedTelemetryEvents(client)).toEqual(expect.arrayContaining([]))
         }, 30_000)
 
         it('chat/import allows importing a chat transcript from an external source', async () => {
@@ -488,41 +497,36 @@ describe('Agent', () => {
         })
 
         it('chat/submitMessage (with mock context)', async () => {
-            // list of v2 events we expect to fire during the test run (feature:action). Add to this list as needed.
-            client.expectedEvents = [
-                'cody.chat-question:submitted',
-                'cody.chat-question:executed',
-                'cody.chatResponse:hasCode',
-            ]
             await client.openFile(animalUri)
             const lastMessage = await client.sendSingleMessageToNewChat(
                 'Write a class Dog that implements the Animal interface in my workspace. Show the code only, no explanation needed.',
                 {
-                    addEnhancedContext: false,
-                    contextFiles: mockEnhancedContext,
+                    contextFiles: mockContextItems,
                 }
             )
             // TODO: make this test return a TypeScript implementation of
             // `animal.ts`. It currently doesn't do this because the workspace root
             // is not a git directory and symf reports some git-related error.
             expect(trimEndOfLine(lastMessage?.text ?? '')).toMatchSnapshot()
+            // telemetry assertion, to validate the expected events fired during the test run
+            // Do not remove this assertion, and instead update the expectedEvents list above
+            expect(await exportedTelemetryEvents(client)).toEqual(
+                expect.arrayContaining([
+                    'cody.chat-question:submitted',
+                    'cody.chat-question:executed',
+                    'cody.chatResponse:hasCode',
+                ])
+            )
         }, 30_000)
 
         it('chat/submitMessage (squirrel test)', async () => {
-            // list of v2 events we expect to fire during the test run (feature:action). Add to this list as needed.
-            client.expectedEvents = [
-                'cody.chat-question:submitted',
-                'cody.chat-question:executed',
-                'cody.chatResponse:hasCode',
-            ]
             await client.openFile(squirrelUri)
             const { lastMessage, transcript } =
                 await client.sendSingleMessageToNewChatWithFullTranscript(
                     // Emphasize showing code examples to hit on `chatResponse:hasCode` event.
                     'What is Squirrel? Show me concrete code examples',
                     {
-                        addEnhancedContext: false,
-                        contextFiles: mockEnhancedContext,
+                        contextFiles: mockContextItems,
                     }
                 )
             expect(lastMessage?.text?.toLocaleLowerCase() ?? '').includes('code nav')
@@ -531,41 +535,40 @@ describe('Agent', () => {
             const contextFiles = transcript.messages.flatMap(m => m.contextFiles ?? [])
             expect(contextFiles).not.toHaveLength(0)
             expect(contextFiles.map(file => file.uri.toString())).includes(squirrelUri.toString())
+            // telemetry assertion, to validate the expected events fired during the test run
+            // Do not remove this assertion, and instead update the expectedEvents list above
+            expect(await exportedTelemetryEvents(client)).toEqual(
+                expect.arrayContaining([
+                    'cody.chat-question:submitted',
+                    'cody.chat-question:executed',
+                    'cody.chatResponse:hasCode',
+                ])
+            )
         }, 30_000)
 
         it('webview/receiveMessage (type: chatModel)', async () => {
-            // list of v2 events we expect to fire during the test run (feature:action). Add to this list as needed.
-            client.expectedEvents = [
-                'cody.chat-question:submitted',
-                'cody.chat-question:executed',
-                'cody.chatResponse:noCode',
-            ]
             const id = await client.request('chat/new', null)
             {
-                await client.request('chat/setModel', { id, model: 'google/gemini-1.5-flash' })
+                await client.request('chat/setModel', { id, model: 'google::v1::gemini-1.5-flash' })
                 const lastMessage = await client.sendMessage(id, 'what color is the sky?')
-                console.log(lastMessage, 'lastMessage')
                 expect(lastMessage?.text?.toLocaleLowerCase().includes('blue')).toBeTruthy()
             }
+            // telemetry assertion, to validate the expected events fired during the test run
+            // Do not remove this assertion, and instead update the expectedEvents list above
+            expect(await exportedTelemetryEvents(client)).toEqual(
+                expect.arrayContaining([
+                    'cody.chat-question:submitted',
+                    'cody.chat-question:executed',
+                    'cody.chatResponse:noCode',
+                ])
+            )
         }, 30_000)
 
         it('webview/receiveMessage (type: reset)', async () => {
-            // list of v2 events we expect to fire during the test run (feature:action). Add to this list as needed.
-            client.expectedEvents = [
-                'cody.chat-question:submitted',
-                'cody.chat-question:executed',
-                'cody.chatResponse:noCode',
-                'cody.chat-question:submitted',
-                'cody.chat-question:executed',
-                'cody.chatResponse:noCode',
-                'cody.chat-question:submitted',
-                'cody.chat-question:executed',
-                'cody.chatResponse:noCode',
-            ]
             const id = await client.request('chat/new', null)
             await client.request('chat/setModel', {
                 id,
-                model: 'fireworks/accounts/fireworks/models/mixtral-8x7b-instruct',
+                model: 'mistral::v1::mixtral-8x7b-instruct',
             })
             await client.sendMessage(
                 id,
@@ -580,32 +583,31 @@ describe('Agent', () => {
                 const lastMessage = await client.sendMessage(id, 'kramer')
                 expect(lastMessage?.text?.toLocaleLowerCase().includes('quone')).toBeFalsy()
             }
+            // telemetry assertion, to validate the expected events fired during the test run
+            // Do not remove this assertion, and instead update the expectedEvents list above
+            expect(await exportedTelemetryEvents(client)).toEqual(
+                expect.arrayContaining([
+                    'cody.chat-question:submitted',
+                    'cody.chat-question:executed',
+                    'cody.chatResponse:noCode',
+                    'cody.chat-question:submitted',
+                    'cody.chat-question:executed',
+                    'cody.chatResponse:noCode',
+                    'cody.chat-question:submitted',
+                    'cody.chat-question:executed',
+                    'cody.chatResponse:noCode',
+                ])
+            )
         })
 
         describe('chat/editMessage', () => {
             it(
                 'edits the last human chat message',
                 async () => {
-                    client.expectedEvents = [
-                        'cody.chat-question:submitted',
-                        'cody.chat-question:executed',
-                        'cody.chatResponse:noCode',
-                        'cody.chat-question:submitted',
-                        'cody.chat-question:executed',
-                        'cody.editChatButton:clicked',
-                        'cody.chatResponse:noCode',
-                        'cody.editChatButton:clicked',
-                        'cody.chat-question:submitted',
-                        'cody.chat-question:executed',
-                        'cody.chatResponse:noCode',
-                        'cody.chat-question:submitted',
-                        'cody.chat-question:executed',
-                        'cody.chatResponse:noCode',
-                    ]
                     const id = await client.request('chat/new', null)
                     await client.request('chat/setModel', {
                         id,
-                        model: 'fireworks/accounts/fireworks/models/mixtral-8x7b-instruct',
+                        model: 'mistral::v1::mixtral-8x7b-instruct',
                     })
                     await client.sendMessage(
                         id,
@@ -623,24 +625,35 @@ describe('Agent', () => {
                         const lastMessage = await client.sendMessage(id, 'georgey')
                         expect(lastMessage?.text?.toLocaleLowerCase().includes('festivus')).toBeTruthy()
                     }
+                    // telemetry assertion, to validate the expected events fired during the test run
+                    // Do not remove this assertion, and instead update the expectedEvents list above
+                    expect(await exportedTelemetryEvents(client)).toEqual(
+                        expect.arrayContaining([
+                            'cody.chat-question:submitted',
+                            'cody.chat-question:executed',
+                            'cody.chatResponse:noCode',
+                            'cody.chat-question:submitted',
+                            'cody.chat-question:executed',
+                            'cody.editChatButton:clicked',
+                            'cody.chatResponse:noCode',
+                            'cody.editChatButton:clicked',
+                            'cody.chat-question:submitted',
+                            'cody.chat-question:executed',
+                            'cody.chatResponse:noCode',
+                            'cody.chat-question:submitted',
+                            'cody.chat-question:executed',
+                            'cody.chatResponse:noCode',
+                        ])
+                    )
                 },
                 { timeout: mayRecord ? 10_000 : undefined }
             )
 
             it('edits messages by index', async () => {
-                // list of v2 events we expect to fire during the test run (feature:action). Add to this list as needed.
-                client.expectedEvents = [
-                    'cody.chat-question:submitted',
-                    'cody.chat-question:executed',
-                    'cody.chatResponse:noCode',
-                    'cody.chat-question:submitted',
-                    'cody.chat-question:executed',
-                    'cody.chatResponse:noCode',
-                ]
                 const id = await client.request('chat/new', null)
                 await client.request('chat/setModel', {
                     id,
-                    model: 'fireworks/accounts/fireworks/models/mixtral-8x7b-instruct',
+                    model: 'mistral::v1::mixtral-8x7b-instruct',
                 })
                 // edits by index replaces message at index, and erases all subsequent messages
                 await client.sendMessage(
@@ -668,6 +681,18 @@ describe('Agent', () => {
                     expect(answer?.includes('bird')).toBeFalsy()
                     expect(answer?.includes('dog')).toBeFalsy()
                 }
+                // telemetry assertion, to validate the expected events fired during the test run
+                // Do not remove this assertion, and instead update the expectedEvents list above
+                expect(await exportedTelemetryEvents(client)).toEqual(
+                    expect.arrayContaining([
+                        'cody.chat-question:submitted',
+                        'cody.chat-question:executed',
+                        'cody.chatResponse:noCode',
+                        'cody.chat-question:submitted',
+                        'cody.chat-question:executed',
+                        'cody.chatResponse:noCode',
+                    ])
+                )
             }, 30_000)
         })
     })
@@ -707,7 +732,7 @@ describe('Agent', () => {
             await client.openFile(ignoredUri)
             const { transcript } = await client.sendSingleMessageToNewChatWithFullTranscript(
                 'What files contain SELECTION_START?',
-                { addEnhancedContext: false, contextFiles: mockEnhancedContext }
+                { contextFiles: mockContextItems }
             )
             decodeURIs(transcript)
             const contextFiles = transcript.messages.flatMap(m => m.contextFiles ?? [])
@@ -787,89 +812,10 @@ describe('Agent', () => {
         }, 10_000)
     })
 
-    describe('Text documents', () => {
-        // Skipping this test because it asserts an outdated behavior.
-        // Previously, the user's selection was added to the context even when
-        // `addEnhancedContext: false`. In the PR
-        // https://github.com/sourcegraph/cody/pull/5060, we change the behavior
-        // so that the user's selection is only added when `addEnhancedContext:
-        // true`.  We can't just set `addEnhancedContext: true` because we have
-        // other assertions that fail the tests when `addEnhancedContext: true`
-        // and symf is disabled. If we remove that assertion, the test still
-        // fails because of other reasons. Most likely, the Right solution is to
-        // remove the concept of `addEnhancedContext` altogether because the
-        // webview-based Chat  UI doesn't even expose a button to control this. We will still
-        // need to figure out how we expose adding the user's selection to the
-        // context when interacting with Cody through the JSON-RPC API.
-        it.skip('chat/submitMessage (understands the selected text)', async () => {
-            await client.openFile(multipleSelectionsUri)
-            await client.changeFile(multipleSelectionsUri)
-            await client.changeFile(multipleSelectionsUri, {
-                selectionName: 'SELECTION_2',
-            })
-            const contextFilesWithoutSelectionFile = mockEnhancedContext.filter(
-                item => item.uri.toString() !== multipleSelectionsUri.toString()
-            )
-
-            const reply = await client.sendSingleMessageToNewChat(
-                'What is the name of the function that I have selected? Only answer with the name of the function, nothing else',
-                // Add context to ensure the LLM can distinguish between the selected code and other context items
-                {
-                    addEnhancedContext: false,
-                    contextFiles: [
-                        ...contextFilesWithoutSelectionFile,
-                        {
-                            type: 'file',
-                            uri: multipleSelectionsUri,
-                            range: {
-                                start: {
-                                    line: 7,
-                                    character: 0,
-                                },
-                                end: {
-                                    line: 8,
-                                    character: 0,
-                                },
-                            },
-                            source: ContextItemSource.Selection,
-                        },
-                    ],
-                }
-            )
-            expect(reply?.text?.trim()).includes('anotherFunction')
-            expect(reply?.text?.trim()).not.includes('inner')
-            await client.changeFile(multipleSelectionsUri)
-            const reply2 = await client.sendSingleMessageToNewChat(
-                'What is the name of the function that I have selected? Only answer with the name of the function, nothing else',
-                // Add context to ensure the LLM can distinguish between the selected code and other context items
-                {
-                    addEnhancedContext: false,
-                    contextFiles: [
-                        ...contextFilesWithoutSelectionFile,
-                        {
-                            type: 'file',
-                            uri: multipleSelectionsUri,
-                            source: ContextItemSource.Selection,
-                        },
-                    ],
-                }
-            )
-            expect(reply2?.text?.trim()).includes('inner')
-            expect(reply2?.text?.trim()).not.includes('anotherFunction')
-        }, 20_000)
-    })
-
     describe('Commands', () => {
         it('commands/explain', async () => {
-            // list of v2 events we expect to fire during the test run (feature:action). Add to this list as needed.
-            client.expectedEvents = [
-                'cody.command.explain:executed',
-                'cody.chat-question:submitted',
-                'cody.chat-question:executed',
-                'cody.chatResponse:noCode',
-            ]
             await client.openFile(animalUri)
-            const freshChatID = await client.request('chat/new', null)
+            const freshChatID = await setChatModel()
             const id = await client.request('commands/explain', null)
 
             // Assert that the server is not using IDs between `chat/new` and
@@ -879,47 +825,40 @@ describe('Agent', () => {
 
             const lastMessage = await client.firstNonEmptyTranscript(id)
             expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchSnapshot()
-        }, 30_000)
-
-        // This test seems extra sensitive on Node v16 for some reason.
-        it.skipIf(isWindows())(
-            'commands/test',
-            async () => {
-                // list of v2 events we expect to fire during the test run (feature:action). Add to this list as needed.
-                client.expectedEvents = [
-                    'cody.command.test:executed',
+            // telemetry assertion, to validate the expected events fired during the test run
+            // Do not remove this assertion, and instead update the expectedEvents list above
+            expect(await exportedTelemetryEvents(client)).toEqual(
+                expect.arrayContaining([
+                    'cody.command.explain:executed',
                     'cody.chat-question:submitted',
                     'cody.chat-question:executed',
-                    'cody.chatResponse:hasCode',
-                ]
-                await client.openFile(animalUri)
-                const id = await client.request('commands/test', null)
-                const lastMessage = await client.firstNonEmptyTranscript(id)
-                expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchSnapshot()
-            },
-            30_000
-        )
+                    'cody.chatResponse:noCode',
+                ])
+            )
+        }, 30_000)
 
         it('commands/smell', async () => {
-            // list of v2 events we expect to fire during the test run (feature:action). Add to this list as needed.
-            client.expectedEvents = [
-                'cody.command.smell:executed',
-                'cody.chat-question:submitted',
-                'cody.chat-question:executed',
-                'cody.chatResponse:hasCode',
-            ]
             await client.openFile(animalUri)
+            await setChatModel()
             const id = await client.request('commands/smell', null)
             const lastMessage = await client.firstNonEmptyTranscript(id)
 
             expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchSnapshot()
+            // telemetry assertion, to validate the expected events fired during the test run
+            // Do not remove this assertion, and instead update the expectedEvents list above
+            expect(await exportedTelemetryEvents(client)).toEqual(
+                expect.arrayContaining([
+                    'cody.command.smell:executed',
+                    'cody.chat-question:submitted',
+                    'cody.chat-question:executed',
+                    'cody.chatResponse:hasCode',
+                ])
+            )
         }, 30_000)
     })
 
     describe('Progress bars', () => {
         it('progress/report', async () => {
-            // list of v2 events we expect to fire during the test run (feature:action). Add to this list as needed.
-            client.expectedEvents = []
             const { result } = await client.request('testing/progress', {
                 title: 'Susan',
             })
@@ -980,11 +919,12 @@ describe('Agent', () => {
                 ],
               ]
             `)
+            // telemetry assertion, to validate the expected events fired during the test run
+            // Do not remove this assertion, and instead update the expectedEvents list above
+            expect(await exportedTelemetryEvents(client)).toEqual(expect.arrayContaining([]))
         })
 
         it('progress/cancel', async () => {
-            // list of v2 events we expect to fire during the test run (feature:action). Add to this list as needed.
-            client.expectedEvents = []
             const disposable = client.progressStartEvents.event(params => {
                 if (params.options.title === 'testing/progressCancelation') {
                     client.notify('progress/cancel', { id: params.id })
@@ -998,6 +938,9 @@ describe('Agent', () => {
             } finally {
                 disposable.dispose()
             }
+            // telemetry assertion, to validate the expected events fired during the test run
+            // Do not remove this assertion, and instead update the expectedEvents list above
+            expect(await exportedTelemetryEvents(client)).toEqual(expect.arrayContaining([]))
         })
     })
 

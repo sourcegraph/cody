@@ -1,24 +1,25 @@
 import {
     type AuthStatus,
     type ClientConfiguration,
-    CodyIDE,
     FeatureFlag,
     GIT_OPENCTX_PROVIDER_URI,
     WEB_PROVIDER_URI,
     authStatus,
+    clientCapabilities,
     combineLatest,
     createDisposables,
+    debounceTime,
     distinctUntilChanged,
     featureFlagProvider,
     graphqlClient,
     isDotCom,
     isError,
     logError,
-    mergeMap,
     pluck,
     promiseFactoryToObservable,
     resolvedConfig,
     setOpenCtx,
+    switchMap,
 } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 
@@ -28,7 +29,7 @@ import type {
 } from '@openctx/client'
 import type { createController } from '@openctx/vscode-lib'
 import { Observable, map } from 'observable-fns'
-import { logDebug, outputChannel } from '../log'
+import { logDebug } from '../log'
 import { gitMentionsProvider } from './openctx/git'
 import LinearIssuesProvider from './openctx/linear-issues'
 import RemoteDirectoryProvider, { createRemoteDirectoryProvider } from './openctx/remoteDirectorySearch'
@@ -44,15 +45,15 @@ export function exposeOpenCtxClient(
 
     return combineLatest([
         resolvedConfig.pipe(
-            map(({ configuration: { agentIDE, experimentalNoodle } }) => ({
-                agentIDE,
+            map(({ configuration: { experimentalNoodle } }) => ({
                 experimentalNoodle,
             })),
             distinctUntilChanged()
         ),
         authStatus.pipe(
             distinctUntilChanged(),
-            mergeMap(auth =>
+            debounceTime(0),
+            switchMap(auth =>
                 auth.authenticated
                     ? promiseFactoryToObservable(signal =>
                           graphqlClient.isValidSiteVersion(
@@ -69,21 +70,25 @@ export function exposeOpenCtxClient(
             async () => createOpenCtxController ?? (await import('@openctx/vscode-lib')).createController
         ),
     ]).pipe(
-        createDisposables(([{ agentIDE, experimentalNoodle }, isValidSiteVersion, createController]) => {
+        createDisposables(([{ experimentalNoodle }, isValidSiteVersion, createController]) => {
             try {
-                const isCodyWeb = agentIDE === CodyIDE.Web
-
                 // Enable fetching of openctx configuration from Sourcegraph instance
                 const mergeConfiguration = experimentalNoodle
                     ? getMergeConfigurationFunction()
                     : undefined
 
+                if (!openctxOutputChannel) {
+                    // Don't dispose this, so that it stays around for easier debugging even if the
+                    // controller (or the whole extension) is disposed.
+                    openctxOutputChannel = vscode.window.createOutputChannel('OpenCtx')
+                }
+
                 const controller = createController({
                     extensionId: context.extension.id,
                     secrets: context.secrets,
-                    outputChannel,
-                    features: isCodyWeb ? {} : { annotations: true, statusBar: true },
-                    providers: isCodyWeb
+                    outputChannel: openctxOutputChannel!,
+                    features: clientCapabilities().isVSCode ? { annotations: true } : {},
+                    providers: clientCapabilities().isCodyWeb
                         ? Observable.of(getCodyWebOpenCtxProviders())
                         : getOpenCtxProviders(authStatus, isValidSiteVersion),
                     mergeConfiguration,
@@ -101,6 +106,8 @@ export function exposeOpenCtxClient(
         map(() => undefined)
     )
 }
+
+let openctxOutputChannel: vscode.OutputChannel | undefined
 
 export function getOpenCtxProviders(
     authStatusChanges: Observable<Pick<AuthStatus, 'endpoint'>>,

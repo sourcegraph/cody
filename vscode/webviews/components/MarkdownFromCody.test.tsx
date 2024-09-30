@@ -1,7 +1,12 @@
 import { render as render_ } from '@testing-library/react'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 
+import { CodyIDE } from '@sourcegraph/cody-shared'
 import { MarkdownFromCody } from './MarkdownFromCody'
+
+vi.mock('../utils/useConfig', () => ({
+    useConfig: () => ({ clientCapabilities: { agentIDE: CodyIDE.VSCode } }),
+}))
 
 const complicatedMarkdown = [
     '# This is a heading',

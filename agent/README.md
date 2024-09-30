@@ -132,6 +132,15 @@ pnpm update-agent-recordings                  # run tests to update recordings
 pnpm run test agent/src/index.test.ts         # validate that tests are passing successfully in replay mode
 ```
 
+On Windows, install `gcloud` and the Sourcegraph client `src`, then:
+
+```powershell
+gcloud auth login  # log in to Sourcegraph
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass  # allow running scripts
+& .\agent\scripts\export-cody-http-recording-tokens.ps1
+pnpm update-agent-recordings-windows
+```
+
 Please post in #wg-cody-agent if you have problems getting the agent tests to
 pass after recording. Worst case, feel free to disable the agent tests by
 uncommenting the block of code in `index.test.ts`. See comment in the code for

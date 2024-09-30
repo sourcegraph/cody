@@ -10,17 +10,14 @@ import {
 import * as vscode from 'vscode'
 import { startTokenReceiver } from './auth/token-receiver'
 import { CommandsProvider } from './commands/services/provider'
-import { BfgRetriever } from './completions/context/retrievers/bfg/bfg-retriever'
 import { SourcegraphNodeCompletionsClient } from './completions/nodeClient'
 import type { ExtensionApi } from './extension-api'
 import { type ExtensionClient, defaultVSCodeExtensionClient } from './extension-client'
 import { activate as activateCommon } from './extension.common'
 import { initializeNetworkAgent, setCustomAgent } from './fetch.node'
-import { createLocalEmbeddingsController } from './local-context/local-embeddings'
 import { SymfRunner } from './local-context/symf'
 import { localStorage } from './services/LocalStorageProvider'
 import { OpenTelemetryService } from './services/open-telemetry/OpenTelemetryService.node'
-import { getExtensionDetails } from './services/telemetry-v2'
 import { serializeConfigSnapshot } from './uninstall/serializeConfig'
 
 /**
@@ -46,11 +43,9 @@ export function activate(
         .get<boolean>('cody.experimental.telemetry.enabled', true)
 
     return activateCommon(context, {
-        createLocalEmbeddingsController: () => createLocalEmbeddingsController(context),
         createCompletionsClient: (...args) => new SourcegraphNodeCompletionsClient(...args),
         createCommandsProvider: () => new CommandsProvider(),
         createSymfRunner: isSymfEnabled ? (...args) => new SymfRunner(...args) : undefined,
-        createBfgRetriever: () => new BfgRetriever(context),
         createSentryService: (...args) => new NodeSentryService(...args),
         createOpenTelemetryService: isTelemetryEnabled
             ? (...args) => new OpenTelemetryService(...args)
@@ -74,6 +69,5 @@ export async function deactivate(): Promise<void> {
     serializeConfigSnapshot({
         config,
         authStatus,
-        extensionDetails: getExtensionDetails(config.configuration),
     })
 }

@@ -16,6 +16,8 @@ import {
 } from './default'
 
 export class OpenAI extends DefaultModel {
+    public stopSequences = [CLOSING_CODE_TAG.toString()]
+
     private instructions =
         ps`You are a code completion AI designed to take the surrounding code and shared context into account in order to predict and suggest high-quality code to complete the code enclosed in ${OPENING_CODE_TAG} tags.  You only respond with code that works and fits seamlessly with surrounding code. Do not include anything else beyond the code.`
 

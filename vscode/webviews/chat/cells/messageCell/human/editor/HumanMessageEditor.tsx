@@ -10,8 +10,8 @@ import {
 import {
     PromptEditor,
     type PromptEditorRefAPI,
-    useClientState,
     useExtensionAPI,
+    useInitialContextForChat,
     useObservable,
 } from '@sourcegraph/prompt-editor'
 import clsx from 'clsx'
@@ -66,8 +66,6 @@ export const HumanMessageEditor: FunctionComponent<{
 
     /** For use in storybooks only. */
     __storybook__focus?: boolean
-
-    experimentalOneBoxEnabled?: boolean
 }> = ({
     userInfo,
     initialEditorState,
@@ -85,7 +83,6 @@ export const HumanMessageEditor: FunctionComponent<{
     className,
     editorRef: parentEditorRef,
     __storybook__focus,
-    experimentalOneBoxEnabled,
     onEditorFocusChange: parentOnEditorFocusChange,
 }) => {
     const telemetryRecorder = useTelemetryRecorder()
@@ -231,13 +228,6 @@ export const HumanMessageEditor: FunctionComponent<{
         [onGapClick]
     )
 
-    const appendTextToEditor = useCallback((text: string): void => {
-        if (!editorRef.current) {
-            throw new Error('No editorRef')
-        }
-        editorRef.current.appendText(text)
-    }, [])
-
     const onMentionClick = useCallback((): void => {
         if (!editorRef.current) {
             throw new Error('No editorRef')
@@ -307,9 +297,9 @@ export const HumanMessageEditor: FunctionComponent<{
 
     const model = useCurrentChatModel()
 
-    let initialContext = useClientState().initialContext
+    let initialContext = useInitialContextForChat()
     useEffect(() => {
-        if (initialContext && !isSent && isFirstMessage) {
+        if (!isSent && isFirstMessage) {
             const editor = editorRef.current
             if (editor) {
                 // Don't show the initial codebase context if the model doesn't support streaming
@@ -376,10 +366,8 @@ export const HumanMessageEditor: FunctionComponent<{
                     submitState={submitState}
                     onGapClick={onGapClick}
                     focusEditor={focusEditor}
-                    appendTextToEditor={appendTextToEditor}
                     hidden={!focused && isSent}
                     className={styles.toolbar}
-                    experimentalOneBoxEnabled={experimentalOneBoxEnabled}
                 />
             )}
         </div>
@@ -387,6 +375,6 @@ export const HumanMessageEditor: FunctionComponent<{
 }
 
 function useCurrentChatModel(): Model | undefined {
-    const models = useExtensionAPI().models
+    const models = useExtensionAPI().chatModels
     return useObservable(useMemo(() => models(), [models])).value?.at(0)
 }

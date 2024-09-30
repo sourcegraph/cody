@@ -1,6 +1,6 @@
 import * as child_process from 'node:child_process'
-import { promises as fs, type PathLike, type RmOptions, mkdtempSync, rmSync, writeFile } from 'node:fs'
-import { mkdir } from 'node:fs/promises'
+import { promises as fs, type PathLike, type RmOptions, mkdtempSync, rmSync } from 'node:fs'
+import { mkdir, writeFile } from 'node:fs/promises'
 import * as os from 'node:os'
 import * as path from 'node:path'
 
@@ -164,6 +164,7 @@ export const test = base
 
             const tmpLogFile = path.join(testAssetsTmpDir(testInfo.title, 'log'), 'logger.log')
             await mkdir(path.dirname(tmpLogFile), { recursive: true })
+            await writeFile(tmpLogFile, '')
             console.error('Cody output channel:', tmpLogFile)
 
             //pre authenticated can ensure that a token is already set in the secret storage
@@ -383,15 +384,7 @@ async function buildWorkSpaceSettings(
     const workspaceSettingsPath = path.join(workspaceDirectory, '.vscode', 'settings.json')
     const workspaceSettingsDirectory = path.join(workspaceDirectory, '.vscode')
     await mkdir(workspaceSettingsDirectory, { recursive: true })
-    await new Promise<void>((resolve, reject) => {
-        writeFile(workspaceSettingsPath, JSON.stringify(settings), error => {
-            if (error) {
-                reject(error)
-            } else {
-                resolve()
-            }
-        })
-    })
+    await writeFile(workspaceSettingsPath, JSON.stringify(settings))
 }
 
 export async function signOut(page: Page): Promise<void> {

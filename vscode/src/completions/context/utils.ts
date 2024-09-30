@@ -15,11 +15,13 @@ const htmlFamily = new Set([
 ])
 
 export enum RetrieverIdentifier {
-    BfgRetriever = 'bfg',
     RecentEditsRetriever = 'recent-edits',
     JaccardSimilarityRetriever = 'jaccard-similarity',
     TscRetriever = 'tsc',
     LspLightRetriever = 'lsp-light',
+    RecentCopyRetriever = 'recent-copy',
+    DiagnosticsRetriever = 'diagnostics',
+    RecentViewPortRetriever = 'recent-view-port',
 }
 
 export interface ShouldUseContextParams {

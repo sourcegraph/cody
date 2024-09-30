@@ -1,6 +1,5 @@
 import { logDebug } from '../log'
 import type { CompletionIntent } from '../tree-sitter/queries'
-
 export interface LatencyFeatureFlags {
     user?: boolean
 }
@@ -39,22 +38,37 @@ let userMetrics = {
     uri: '',
 }
 
-// Adjust the minimum latency based on user actions and env Start when the last 5 suggestions were
-// not accepted Increment latency by 200ms linearly up to max latency Reset every 5 minutes, or on
-// file change, or on accepting a suggestion
-export function getArtificialDelay(
-    featureFlags: LatencyFeatureFlags,
-    uri: string,
-    languageId: string,
+/**
+ * Calculates the artificial delay to be added to code completion suggestions based on various factors.
+ *
+ * The delay is calculated based on the following:
+ * - A baseline delay for low-performance languages or completion intents
+ * - The user's current latency, which increases linearly up to a maximum after 5 rejected suggestions
+ * - The session timestamp, which is reset every 5 minutes or on file change
+ *
+ * The function returns the total delay to be added, which is capped at a maximum value.
+ */
+export function getArtificialDelay(params: {
+    featureFlags: LatencyFeatureFlags
+    uri: string
+    languageId: string
+    codyAutocompleteDisableLowPerfLangDelay: boolean
     completionIntent?: CompletionIntent
-): number {
+}): number {
+    const { featureFlags, uri, languageId, codyAutocompleteDisableLowPerfLangDelay, completionIntent } =
+        params
+
     let baseline = 0
 
     const isLowPerformanceLanguageId = lowPerformanceLanguageIds.has(languageId)
     const isLowPerformanceCompletionIntent =
         completionIntent && lowPerformanceCompletionIntents.has(completionIntent)
+    // Add a baseline latency for low performance languages
     if (isLowPerformanceLanguageId || isLowPerformanceCompletionIntent) {
-        baseline = defaultLatencies.lowPerformance
+        // if user has disabled low performace language delay, then don't add latency
+        if (!codyAutocompleteDisableLowPerfLangDelay) {
+            baseline = defaultLatencies.lowPerformance
+        }
     }
 
     const timestamp = Date.now()

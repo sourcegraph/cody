@@ -5,6 +5,7 @@ data class TestingTelemetryEvent(
   val feature: String,
   val action: String,
   val source: SourceParams,
+  val parameters: ParametersParams,
   val timestamp: String,
   val testOnlyAnonymousUserID: String? = null,
 )

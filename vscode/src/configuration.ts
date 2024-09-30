@@ -3,7 +3,6 @@ import * as vscode from 'vscode'
 import {
     type ClientConfiguration,
     type CodyIDE,
-    type ConfigurationUseContext,
     OLLAMA_DEFAULT_URL,
     type PickResolvedConfiguration,
     PromptString,
@@ -11,7 +10,7 @@ import {
     setStaticResolvedConfigurationValue,
 } from '@sourcegraph/cody-shared'
 
-import { URI } from 'vscode-uri'
+import type { ChatModelProviderConfig } from '@sourcegraph/cody-shared/src/models/sync'
 import { CONFIG_KEY, type ConfigKeys } from './configuration-keys'
 import { localStorage } from './services/LocalStorageProvider'
 
@@ -49,23 +48,13 @@ export function getConfiguration(
         debugRegex = /.*/
     }
 
-    function hasValidLocalEmbeddingsConfig(): boolean {
-        return (
-            [
-                'testing.localEmbeddings.model',
-                'testing.localEmbeddings.endpoint',
-                'testing.localEmbeddings.indexLibraryPath',
-            ].every(key => !!getHiddenSetting<string | undefined>(key, undefined)) &&
-            !!getHiddenSetting<number | undefined>('testing.localEmbeddings.dimension', undefined)
-        )
-    }
     const vsCodeConfig = vscode.workspace.getConfiguration()
 
     return {
         proxy: vsCodeConfig.get<string>('http.proxy'),
         codebase: sanitizeCodebase(config.get(CONFIG_KEY.codebase)),
+        serverEndpoint: config.get<string>(CONFIG_KEY.serverEndpoint, 'https://sourcegraph.com'),
         customHeaders: config.get<Record<string, string>>(CONFIG_KEY.customHeaders),
-        useContext: config.get<ConfigurationUseContext>(CONFIG_KEY.useContext) || 'embeddings',
         debugVerbose: config.get<boolean>(CONFIG_KEY.debugVerbose, false),
         debugFilter: debugRegex,
         telemetryLevel: config.get<'all' | 'off'>(CONFIG_KEY.telemetryLevel, 'all'),
@@ -98,6 +87,7 @@ export function getConfiguration(
 
         internalUnstable: getHiddenSetting('internal.unstable', isTesting),
         internalDebugContext: getHiddenSetting('internal.debug.context', false),
+        internalDebugState: getHiddenSetting('internal.debug.state', false),
 
         autocompleteAdvancedModel: getHiddenSetting('autocomplete.advanced.model', null),
         autocompleteExperimentalGraphContext: getHiddenSetting<
@@ -143,20 +133,10 @@ export function getConfiguration(
             'autocomplete.advanced.timeout.firstCompletion',
             3_500
         ),
+        providerLimitPrompt: getHiddenSetting<number | undefined>('provider.limit.prompt', undefined),
+        devModels: getHiddenSetting<ChatModelProviderConfig[] | undefined>('dev.models', undefined),
 
         telemetryClientName: getHiddenSetting<string | undefined>('telemetry.clientName'),
-        testingModelConfig:
-            isTesting && hasValidLocalEmbeddingsConfig()
-                ? {
-                      model: getHiddenSetting<string>('testing.localEmbeddings.model'),
-                      dimension: getHiddenSetting<number>('testing.localEmbeddings.dimension'),
-                      endpoint: getHiddenSetting<string>('testing.localEmbeddings.endpoint'),
-                      indexPath: URI.file(
-                          getHiddenSetting<string>('testing.localEmbeddings.indexLibraryPath')
-                      ),
-                      provider: 'sourcegraph',
-                  }
-                : undefined,
     }
 }
 

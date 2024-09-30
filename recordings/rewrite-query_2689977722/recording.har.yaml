@@ -5,7 +5,7 @@ log:
     name: Polly.JS
     version: 6.0.6
   entries:
-    - _id: f98845b6ad95d06c1407cfaafd841d99
+    - _id: 06b98fbda098f42e0a64bd3ca7c8552c
       _order: 0
       cache: {}
       request:
@@ -18,7 +18,7 @@ log:
             value: gzip;q=0
           - name: authorization
             value: token
-              REDACTED_d5e0f0a37c9821e856b923fe14e67a605e3f6c0a517d5a4f46a4e35943ee0f6d
+              REDACTED_3dd704711f82a44ff6aba261b53b61a03fb8edba658774639148630d838c2d1d
           - name: connection
             value: keep-alive
           - name: host
@@ -54,14 +54,14 @@ log:
         queryString: []
         url: https://sourcegraph.com/.api/completions/stream
       response:
-        bodySize: 20175
+        bodySize: 20215
         content:
           mimeType: text/event-stream
-          size: 20175
+          size: 20215
           text: >+
             event: completion
 
-            data: {"completion":"\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ezoekt\u003c/value\u003e\n\u003cvariants\u003esearch search_engine indexer\u003c/variants\u003e\n\u003cweight\u003e1.0\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003estruct\u003c/value\u003e\n\u003cvariants\u003etype class object\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003c/keywords\u003e","stopReason":"end_turn"}
+            data: {"completion":"<keywords>\n<keyword><value>zoekt</value><variants>zoekt zoekt.go zoekt_struct zoekt_type</variants><weight>1.0</weight></keyword>\n<keyword><value>struct</value><variants>struct structure type</variants><weight>0.9</weight></keyword>\n<keyword><value>type</value><variants>type typedef</variants><weight>0.8</weight></keyword>\n<keyword><value>definition</value><variants>def define defined declaration</variants><weight>0.7</weight></keyword>\n</keywords>","stopReason":"end_turn"}
 
 
             event: done
@@ -71,7 +71,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Wed, 12 Jun 2024 20:48:37 GMT
+            value: Wed, 25 Sep 2024 19:33:06 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -100,7 +100,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-06-12T20:48:36.682Z
+      startedDateTime: 2024-09-25T19:33:05.009Z
       time: 0
       timings:
         blocked: -1
@@ -110,7 +110,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: f42bcd7555c52ebf71f77931afb473ea
+    - _id: abad2ce01beaa4ccf7be59271d4bfcdc
       _order: 0
       cache: {}
       request:
@@ -123,7 +123,7 @@ log:
             value: gzip;q=0
           - name: authorization
             value: token
-              REDACTED_d5e0f0a37c9821e856b923fe14e67a605e3f6c0a517d5a4f46a4e35943ee0f6d
+              REDACTED_3dd704711f82a44ff6aba261b53b61a03fb8edba658774639148630d838c2d1d
           - name: connection
             value: keep-alive
           - name: host
@@ -168,14 +168,14 @@ log:
         queryString: []
         url: https://sourcegraph.com/.api/completions/stream
       response:
-        bodySize: 60650
+        bodySize: 33227
         content:
           mimeType: text/event-stream
-          size: 60650
+          size: 33227
           text: >+
             event: completion
 
-            data: {"completion":"\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ezoekt\u003c/value\u003e\n\u003cvariants\u003esearch search_engine searcher\u003c/variants\u003e\n\u003cweight\u003e1.0\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ecache\u003c/value\u003e\n\u003cvariants\u003ecaching cached\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003esync\u003c/value\u003e\n\u003cvariants\u003esynchronization mutex\u003c/variants\u003e\n\u003cweight\u003e0.7\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003etest\u003c/value\u003e\n\u003cvariants\u003etesting\u003c/variants\u003e\n\u003cweight\u003e0.6\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003c/keywords\u003e","stopReason":"end_turn"}
+            data: {"completion":"<keywords>\n<keyword><value>zoekt</value><variants>zoekt zoekt.go zoekt.searcher zoekt.client</variants><weight>1.0</weight></keyword>\n<keyword><value>struct</value><variants>struct definition struct type</variants><weight>0.9</weight></keyword>\n<keyword><value>client</value><variants>client zoekt.client</variants><weight>0.8</weight></keyword>\n<keyword><value>cache</value><variants>cache caching disable.cache</variants><weight>0.7</weight></keyword>\n<keyword><value>mutex</value><variants>mutex mu sync.mutex sync.rwmutex</variants><weight>0.6</weight></keyword>\n</keywords>","stopReason":"end_turn"}
 
 
             event: done
@@ -185,7 +185,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Wed, 12 Jun 2024 20:48:38 GMT
+            value: Wed, 25 Sep 2024 19:33:09 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -214,7 +214,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-06-12T20:48:38.244Z
+      startedDateTime: 2024-09-25T19:33:07.942Z
       time: 0
       timings:
         blocked: -1
@@ -224,7 +224,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 536201c4d6e189932cdd1c86d892c41b
+    - _id: 468945e08447accc3c816215915fb729
       _order: 0
       cache: {}
       request:
@@ -237,7 +237,7 @@ log:
             value: gzip;q=0
           - name: authorization
             value: token
-              REDACTED_d5e0f0a37c9821e856b923fe14e67a605e3f6c0a517d5a4f46a4e35943ee0f6d
+              REDACTED_3dd704711f82a44ff6aba261b53b61a03fb8edba658774639148630d838c2d1d
           - name: connection
             value: keep-alive
           - name: host
@@ -274,14 +274,14 @@ log:
         queryString: []
         url: https://sourcegraph.com/.api/completions/stream
       response:
-        bodySize: 38218
+        bodySize: 19489
         content:
           mimeType: text/event-stream
-          size: 38218
+          size: 19489
           text: >+
             event: completion
 
-            data: {"completion":"\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eclone\u003c/value\u003e\n\u003cvariants\u003ereclone replication repository\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003elogic\u003c/value\u003e\n\u003cvariants\u003ealgorithm workflow process\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003erepository\u003c/value\u003e\n\u003cvariants\u003erepo git\u003c/variants\u003e\n\u003cweight\u003e0.7\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003c/keywords\u003e","stopReason":"end_turn"}
+            data: {"completion":"<keywords>\n<keyword><value>clone</value><variants>git clone repo repository</variants><weight>0.9</weight></keyword>\n<keyword><value>repo</value><variants>repository repositories repos</variants><weight>0.8</weight></keyword>\n<keyword><value>git</value><variants>vcs version control</variants><weight>0.7</weight></keyword>\n<keyword><value>logic</value><variants>code implementation function method</variants><weight>0.6</weight></keyword>\n</keywords>","stopReason":"end_turn"}
 
 
             event: done
@@ -291,7 +291,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Wed, 12 Jun 2024 20:48:40 GMT
+            value: Wed, 25 Sep 2024 19:33:12 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -320,7 +320,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-06-12T20:48:39.691Z
+      startedDateTime: 2024-09-25T19:33:11.325Z
       time: 0
       timings:
         blocked: -1
@@ -330,7 +330,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: df00693c4c73379913f4d6f83d9b8220
+    - _id: a613383045da052ce4dc44c2c0227012
       _order: 0
       cache: {}
       request:
@@ -343,7 +343,7 @@ log:
             value: gzip;q=0
           - name: authorization
             value: token
-              REDACTED_d5e0f0a37c9821e856b923fe14e67a605e3f6c0a517d5a4f46a4e35943ee0f6d
+              REDACTED_3dd704711f82a44ff6aba261b53b61a03fb8edba658774639148630d838c2d1d
           - name: connection
             value: keep-alive
           - name: host
@@ -380,14 +380,14 @@ log:
         queryString: []
         url: https://sourcegraph.com/.api/completions/stream
       response:
-        bodySize: 22643
+        bodySize: 10724
         content:
           mimeType: text/event-stream
-          size: 22643
+          size: 10724
           text: >+
             event: completion
 
-            data: {"completion":"\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003edatabase migration\u003c/value\u003e\n\u003cvariants\u003edb migration database migration schema migration\u003c/variants\u003e\n\u003cweight\u003e1.0\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003edefine\u003c/value\u003e\n\u003cvariants\u003ecreate new configure setup\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003c/keywords\u003e","stopReason":"end_turn"}
+            data: {"completion":"<keywords>\n<keyword><value>migration</value><variants>migrate db database schema</variants><weight>1.0</weight></keyword>\n<keyword><value>define</value><variants>create new add</variants><weight>0.8</weight></keyword>\n<keyword><value>database</value><variants>db</variants><weight>0.9</weight></keyword>\n</keywords>","stopReason":"end_turn"}
 
 
             event: done
@@ -397,7 +397,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Wed, 12 Jun 2024 20:48:41 GMT
+            value: Wed, 25 Sep 2024 19:33:15 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -426,7 +426,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-06-12T20:48:41.068Z
+      startedDateTime: 2024-09-25T19:33:13.776Z
       time: 0
       timings:
         blocked: -1
@@ -436,7 +436,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 3952aea674fc7435f8c444789ab7ec66
+    - _id: fd5d718518693ab26c45faa2cb028296
       _order: 0
       cache: {}
       request:
@@ -449,7 +449,7 @@ log:
             value: gzip;q=0
           - name: authorization
             value: token
-              REDACTED_d5e0f0a37c9821e856b923fe14e67a605e3f6c0a517d5a4f46a4e35943ee0f6d
+              REDACTED_3dd704711f82a44ff6aba261b53b61a03fb8edba658774639148630d838c2d1d
           - name: connection
             value: keep-alive
           - name: host
@@ -487,14 +487,14 @@ log:
         queryString: []
         url: https://sourcegraph.com/.api/completions/stream
       response:
-        bodySize: 72582
+        bodySize: 43631
         content:
           mimeType: text/event-stream
-          size: 72582
+          size: 43631
           text: >+
             event: completion
 
-            data: {"completion":"\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003econtext window\u003c/value\u003e\n\u003cvariants\u003econtext window limit context-window context_window\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ebudget\u003c/value\u003e\n\u003cvariants\u003ebudget allocation resource allocation\u003c/variants\u003e\n\u003cweight\u003e0.7\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003ementions\u003c/value\u003e\n\u003cvariants\u003e@-mentions mentions\u003c/variants\u003e\n\u003cweight\u003e0.6\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003esearch context\u003c/value\u003e\n\u003cvariants\u003esearch context search-context\u003c/variants\u003e\n\u003cweight\u003e0.7\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003c/keywords\u003e","stopReason":"end_turn"}
+            data: {"completion":"<keywords>\n<keyword><value>context</value><variants>ctx window limit budget scope</variants><weight>0.9</weight></keyword>\n<keyword><value>mention</value><variants>@-mention at-mention notification</variants><weight>0.7</weight></keyword>\n<keyword><value>search</value><variants>query lookup find</variants><weight>0.6</weight></keyword>\n<keyword><value>calculate</value><variants>compute determine evaluate</variants><weight>0.8</weight></keyword>\n<keyword><value>limit</value><variants>bound threshold max maximum constraint</variants><weight>0.7</weight></keyword>\n<keyword><value>budget</value><variants>allocation allowance quota</variants><weight>0.6</weight></keyword>\n</keywords>","stopReason":"end_turn"}
 
 
             event: done
@@ -504,7 +504,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Wed, 12 Jun 2024 20:48:43 GMT
+            value: Wed, 25 Sep 2024 19:33:17 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -533,7 +533,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-06-12T20:48:42.490Z
+      startedDateTime: 2024-09-25T19:33:15.931Z
       time: 0
       timings:
         blocked: -1
@@ -543,7 +543,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: ddd9affd8ee48f782d139f409313826d
+    - _id: 29afc0c01533044c0c84c8c0d4ace666
       _order: 0
       cache: {}
       request:
@@ -556,7 +556,7 @@ log:
             value: gzip;q=0
           - name: authorization
             value: token
-              REDACTED_d5e0f0a37c9821e856b923fe14e67a605e3f6c0a517d5a4f46a4e35943ee0f6d
+              REDACTED_3dd704711f82a44ff6aba261b53b61a03fb8edba658774639148630d838c2d1d
           - name: connection
             value: keep-alive
           - name: host
@@ -598,14 +598,14 @@ log:
         queryString: []
         url: https://sourcegraph.com/.api/completions/stream
       response:
-        bodySize: 84854
+        bodySize: 50665
         content:
           mimeType: text/event-stream
-          size: 84854
+          size: 50665
           text: >+
             event: completion
 
-            data: {"completion":"\u003ckeywords\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003eparse\u003c/value\u003e\n\u003cvariants\u003eparsing parse_file parse_tree parse_code\u003c/variants\u003e\n\u003cweight\u003e1.0\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003etree-sitter\u003c/value\u003e\n\u003cvariants\u003etree_sitter treesitter tree-parser\u003c/variants\u003e\n\u003cweight\u003e1.0\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003egoogle go style guide\u003c/value\u003e\n\u003cvariants\u003ego_style_guide google_style_guide golang_style_guide\u003c/variants\u003e\n\u003cweight\u003e0.8\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003ckeyword\u003e\n\u003cvalue\u003epanic\u003c/value\u003e\n\u003cvariants\u003eerror_handling exception_handling\u003c/variants\u003e\n\u003cweight\u003e0.9\u003c/weight\u003e\n\u003c/keyword\u003e\n\u003c/keywords\u003e","stopReason":"end_turn"}
+            data: {"completion":"<keywords>\n<keyword><value>parser</value><variants>parse parse_tree parsing tree-sitter</variants><weight>1.0</weight></keyword>\n<keyword><value>tree-sitter</value><variants>treesitter tree_sitter</variants><weight>1.0</weight></keyword>\n<keyword><value>go</value><variants>golang</variants><weight>0.9</weight></keyword>\n<keyword><value>style</value><variants>styleguide coding_style</variants><weight>0.8</weight></keyword>\n<keyword><value>google</value><variants></variants><weight>0.8</weight></keyword>\n<keyword><value>panic</value><variants>error_handling</variants><weight>0.7</weight></keyword>\n<keyword><value>rules</value><variants>guidelines</variants><weight>0.6</weight></keyword>\n</keywords>","stopReason":"end_turn"}
 
 
             event: done
@@ -615,7 +615,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Wed, 12 Jun 2024 20:48:45 GMT
+            value: Wed, 25 Sep 2024 19:33:20 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -644,7 +644,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-06-12T20:48:44.378Z
+      startedDateTime: 2024-09-25T19:33:19.512Z
       time: 0
       timings:
         blocked: -1

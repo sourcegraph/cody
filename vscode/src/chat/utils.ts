@@ -16,7 +16,6 @@ type NewAuthStatusOptions = { endpoint: string } & (
           | 'displayName'
           | 'avatarURL'
           | 'userCanUpgrade'
-          | 'isOfflineMode'
       > & {
           userOrganizations?: CurrentUserInfo['organizations']
           primaryEmail?:
@@ -30,21 +29,15 @@ type NewAuthStatusOptions = { endpoint: string } & (
 
 export function newAuthStatus(options: NewAuthStatusOptions): AuthStatus {
     if (!options.authenticated) {
-        return { authenticated: false, endpoint: options.endpoint, showInvalidAccessTokenError: true }
-    }
-
-    const { isOfflineMode, username, endpoint, siteVersion, userOrganizations } = options
-
-    if (isOfflineMode) {
         return {
-            authenticated: true,
-            endpoint,
-            username,
-            codyApiVersion: 0,
-            siteVersion: 'offline',
-            isOfflineMode: true,
+            authenticated: false,
+            endpoint: options.endpoint,
+            showInvalidAccessTokenError: true,
+            pendingValidation: false,
         }
     }
+
+    const { endpoint, siteVersion, userOrganizations } = options
 
     const isDotCom_ = isDotCom(endpoint)
     const primaryEmail =
@@ -59,6 +52,7 @@ export function newAuthStatus(options: NewAuthStatusOptions): AuthStatus {
         requiresVerifiedEmail,
         hasVerifiedEmail,
         codyApiVersion,
+        pendingValidation: false,
         isFireworksTracingEnabled:
             isDotCom_ && !!userOrganizations?.nodes.find(org => org.name === 'sourcegraph'),
     }

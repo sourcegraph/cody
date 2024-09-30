@@ -1,5 +1,5 @@
 import path from 'node:path'
-import { type ContextItem, PromptString, isDefined } from '@sourcegraph/cody-shared'
+import { type ContextItem, PromptString } from '@sourcegraph/cody-shared'
 import { glob } from 'glob'
 import * as vscode from 'vscode'
 import YAML from 'yaml'
@@ -54,7 +54,6 @@ export async function evaluateChatStrategy(
                 submitType: 'user',
                 text: task.question,
                 contextItems,
-                addEnhancedContext: isDefined(options.context),
             },
         })
         const range = new vscode.Range(0, 0, 0, 0)

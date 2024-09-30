@@ -1,8 +1,11 @@
 import {
+    CLIENT_CAPABILITIES_FIXTURE,
     type ClientConfiguration,
+    type CodeCompletionsParams,
     contextFiltersProvider,
     currentAuthStatus,
     featureFlagProvider,
+    mockClientCapabilities,
     nextTick,
     telemetryRecorder,
 } from '@sourcegraph/cody-shared'
@@ -10,7 +13,7 @@ import { Observable } from 'observable-fns'
 import { type MockInstance, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import type * as vscode from 'vscode'
 import { mockLocalStorage } from '../services/LocalStorageProvider'
-import { DEFAULT_VSCODE_SETTINGS, Disposable, vsCodeMocks } from '../testutils/mocks'
+import { DEFAULT_VSCODE_SETTINGS, vsCodeMocks } from '../testutils/mocks'
 import { getCurrentDocContext } from './get-current-doc-context'
 import { TriggerKind } from './get-inline-completions'
 import { initCompletionProviderConfig, params } from './get-inline-completions-tests/helpers'
@@ -29,10 +32,10 @@ import type { InlineCompletionItemWithAnalytics } from './text-processing/proces
 import { sleep } from './utils'
 
 vi.mock('vscode', async () => {
-    const vscodeMocks = (await import('../testutils/mocks')).vsCodeMocks
+    const { vsCodeMocks, Disposable } = await import('../testutils/mocks')
     return {
-        ...vscodeMocks,
-        Disposable: Disposable,
+        ...vsCodeMocks,
+        Disposable,
         workspace: {
             ...vsCodeMocks.workspace,
             onDidChangeTextDocument() {
@@ -98,10 +101,21 @@ class MockRequestProvider extends Provider {
         this.next()
     }
 
-    public async *generateCompletions(
-        options: GenerateCompletionsOptions,
+    public getRequestParams(options: GenerateCompletionsOptions): CodeCompletionsParams {
+        return {} as any as CodeCompletionsParams
+    }
+
+    public async generateCompletions(
+        generateOptions: GenerateCompletionsOptions,
         abortSignal: AbortSignal
-    ): AsyncGenerator<FetchCompletionResult[]> {
+    ): Promise<AsyncGenerator<FetchCompletionResult[]>> {
+        return this.responseGenerator(generateOptions, abortSignal)
+    }
+
+    public async *responseGenerator(
+        generateOptions: GenerateCompletionsOptions,
+        abortSignal: AbortSignal
+    ) {
         abortSignal.addEventListener('abort', () => {
             this.didAbort = true
         })
@@ -126,6 +140,7 @@ function getInlineCompletionProvider(
     args: Partial<ConstructorParameters<typeof InlineCompletionItemProvider>[0]> = {}
 ): InlineCompletionItemProvider {
     vi.spyOn(featureFlagProvider, 'evaluatedFeatureFlag').mockReturnValue(Observable.of(false))
+    mockClientCapabilities(CLIENT_CAPABILITIES_FIXTURE)
     return new InlineCompletionItemProvider({
         completeSuggestWidgetSelection: true,
         triggerDelay: 0,
@@ -151,6 +166,7 @@ function createNetworkProvider(params: RequestParams): MockRequestProvider {
         firstCompletionTimeout: 1500,
         triggerKind: TriggerKind.Automatic,
         completionLogId: 'mock-log-id' as CompletionLogger.CompletionLogID,
+        snippets: [],
     }
 
     return new MockRequestProvider(

@@ -1,7 +1,7 @@
 import dedent from 'dedent'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { nextTick } from '@sourcegraph/cody-shared'
+import { type CodeCompletionsParams, nextTick } from '@sourcegraph/cody-shared'
 import type { PartialDeep } from '@sourcegraph/cody-shared/src/utils'
 import { mockLocalStorage } from '../services/LocalStorageProvider'
 import { getCurrentDocContext } from './get-current-doc-context'
@@ -25,18 +25,18 @@ class MockProvider extends Provider {
     public didAbort = false
     protected next: () => void = () => {}
     protected responseQueue: FetchCompletionResult[][] = []
-    public providerOptions: GenerateCompletionsOptions | null = null
+    public generateOptions: GenerateCompletionsOptions | null = null
 
     public yield(completions: string[] | InlineCompletionItemWithAnalytics[], keepAlive = false) {
         const result = completions.map(content =>
             typeof content === 'string'
                 ? {
                       completion: { insertText: content, stopReason: 'test' },
-                      docContext: this.providerOptions!.docContext,
+                      docContext: this.generateOptions!.docContext,
                   }
                 : {
                       completion: content,
-                      docContext: this.providerOptions!.docContext,
+                      docContext: this.generateOptions!.docContext,
                   }
         )
 
@@ -45,11 +45,22 @@ class MockProvider extends Provider {
         this.next()
     }
 
-    public async *generateCompletions(
-        providerOptions: GenerateCompletionsOptions,
+    public getRequestParams(options: GenerateCompletionsOptions): CodeCompletionsParams {
+        return {} as any as CodeCompletionsParams
+    }
+
+    public async generateCompletions(
+        options: GenerateCompletionsOptions,
         abortSignal: AbortSignal
-    ): AsyncGenerator<FetchCompletionResult[]> {
-        this.providerOptions = providerOptions
+    ): Promise<AsyncGenerator<FetchCompletionResult[]>> {
+        return this.responseGenerator(options, abortSignal)
+    }
+
+    public async *responseGenerator(
+        generateOptions: GenerateCompletionsOptions,
+        abortSignal: AbortSignal
+    ) {
+        this.generateOptions = generateOptions
 
         abortSignal.addEventListener('abort', () => {
             this.didAbort = true
@@ -123,7 +134,7 @@ describe('RequestManager', () => {
 
             return requestManager.request({
                 requestParams: docState(prefix, suffix),
-                providerOptions: {
+                generateOptions: {
                     docContext,
                     document,
                     position,
@@ -132,9 +143,9 @@ describe('RequestManager', () => {
                     firstCompletionTimeout: 1500,
                     triggerKind: TriggerKind.Automatic,
                     completionLogId: 'mock-log-id' as CompletionLogID,
+                    snippets: [],
                 },
                 provider,
-                context: [],
                 isCacheEnabled: true,
                 isPreloadRequest: false,
                 logId: '1' as CompletionLogID,

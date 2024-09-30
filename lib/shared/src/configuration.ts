@@ -1,5 +1,5 @@
-import type { EmbeddingsProvider } from './codebase-context/context-status'
-import type { FileURI } from './common/uri'
+import type { ClientCapabilities } from './configuration/clientCapabilities'
+import type { ChatModelProviderConfig } from './models/sync'
 
 import type { PromptString } from './prompt/prompt-string'
 import type { ReadonlyDeep } from './utils'
@@ -13,27 +13,14 @@ export interface AuthCredentials {
     accessToken: string | null
 }
 
-export type ConfigurationUseContext = 'embeddings' | 'keyword' | 'none' | 'blended' | 'unified'
-
-/**
- * Get the numeric ID corresponding to the ConfigurationUseContext mode.
- */
-export const CONTEXT_SELECTION_ID: Record<ConfigurationUseContext, number> = {
-    none: 0,
-    embeddings: 1,
-    keyword: 2,
-    blended: 10,
-    unified: 11,
-}
-
 interface RawClientConfiguration {
     proxy?: string | null
     codebase?: string
     debugFilter: RegExp | null
     debugVerbose: boolean
     telemetryLevel: 'all' | 'off' | 'agent'
-    telemetryClientName?: string
-    useContext: ConfigurationUseContext
+
+    serverEndpoint: string
     customHeaders?: Record<string, string>
     chatPreInstruction: PromptString
     editPreInstruction: PromptString
@@ -66,11 +53,12 @@ interface RawClientConfiguration {
      */
     internalUnstable: boolean
     internalDebugContext?: boolean
+    internalDebugState?: boolean
 
     /**
      * Experimental autocomplete
      */
-    autocompleteExperimentalGraphContext: 'lsp-light' | 'bfg' | 'bfg-mixed' | 'tsc' | 'tsc-mixed' | null
+    autocompleteExperimentalGraphContext: 'lsp-light' | 'tsc' | 'tsc-mixed' | null
     autocompleteExperimentalOllamaOptions: OllamaOptions
     autocompleteExperimentalFireworksOptions?: ExperimentalFireworksConfig
     autocompleteExperimentalPreloadDebounceInterval?: number
@@ -80,14 +68,40 @@ interface RawClientConfiguration {
      */
     hasNativeWebview: boolean
     isRunningInsideAgent?: boolean
+
+    /**
+     * @deprecated Do not use directly. Call {@link clientCapabilities} instead
+     * (`clientCapabilities().agentIDE`) and see the docstring on
+     * {@link ClientCapabilities.agentIDE}.
+     */
     agentIDE?: CodyIDE
-    agentIDEVersion?: string
-    agentExtensionVersion?: string
+
+    /**
+     * @deprecated Do not use directly. Call {@link clientCapabilities} instead
+     * (`clientCapabilities().agentIDEVersion`) and see the docstring on
+     * {@link ClientCapabilities.agentIDEVersion}.
+     */
+    agentIDEVersion?: ClientCapabilities['agentIDEVersion']
+
+    /**
+     * @deprecated Do not use directly. Call {@link clientCapabilities} instead
+     * (`clientCapabilities().agentExtensionVersion`) and see the docstring on
+     * {@link ClientCapabilities.agentExtensionVersion}.
+     */
+    agentExtensionVersion?: ClientCapabilities['agentExtensionVersion']
+
+    /**
+     * @deprecated Do not use directly. Call {@link clientCapabilities} instead
+     * (`clientCapabilities().agentIDEVersion`) and see the docstring on
+     * {@link ClientCapabilities.agentIDEVersion}.
+     */
+    telemetryClientName?: string
+
     agentHasPersistentStorage?: boolean
     autocompleteFirstCompletionTimeout: number
     autocompleteAdvancedModel: string | null
-
-    testingModelConfig: EmbeddingsModelConfig | undefined
+    providerLimitPrompt?: number
+    devModels?: ChatModelProviderConfig[]
 }
 
 /**
@@ -346,14 +360,6 @@ export interface ExperimentalFireworksConfig {
         top_p?: number
         stop?: string[]
     }
-}
-
-export interface EmbeddingsModelConfig {
-    model: string
-    dimension: number
-    provider: EmbeddingsProvider
-    endpoint: string
-    indexPath: FileURI
 }
 
 /**

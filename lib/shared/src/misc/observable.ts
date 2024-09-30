@@ -1,4 +1,5 @@
 import { diffJson } from 'diff'
+import isEqual from 'lodash/isEqual'
 import {
     Observable,
     type ObservableLike,
@@ -9,6 +10,7 @@ import {
     unsubscribe,
 } from 'observable-fns'
 import { AsyncSerialScheduler } from 'observable-fns/dist/_scheduler'
+import type { VitestUtils } from 'vitest'
 
 /**
  * A type helper to get the value type of an {@link Observable} (i.e., what it emits from `next`).
@@ -24,6 +26,13 @@ export interface Unsubscribable {
  */
 export function subscriptionDisposable(sub: Unsubscribable): { dispose(): void } {
     return { dispose: sub.unsubscribe.bind(sub) }
+}
+
+/**
+ * Make a VS Code Disposable from an {@link Unsubscribable}.
+ */
+export function disposableSubscription(disposable: { dispose(): void }): Unsubscribable {
+    return { unsubscribe: () => disposable.dispose() }
 }
 
 /**
@@ -43,6 +52,7 @@ export function observableOfSequence<T>(...values: T[]): Observable<T> {
  */
 export function observableOfTimedSequence<T>(...values: (T | number)[]): Observable<T> {
     return new Observable<T>(observer => {
+        const scheduler = new AsyncSerialScheduler<T>(observer)
         let unsubscribed = false
         ;(async () => {
             for (const value of values) {
@@ -52,10 +62,10 @@ export function observableOfTimedSequence<T>(...values: (T | number)[]): Observa
                 if (typeof value === 'number') {
                     await new Promise(resolve => setTimeout(resolve, value))
                 } else {
-                    observer.next(value)
+                    scheduler.schedule(async next => next(value))
                 }
             }
-            observer.complete()
+            scheduler.complete()
         })()
         return () => {
             unsubscribed = true
@@ -67,7 +77,7 @@ export function observableOfTimedSequence<T>(...values: (T | number)[]): Observa
  * Return the first value emitted by an {@link Observable}, or throw an error if the observable
  * completes without emitting a value.
  */
-export async function firstValueFrom<T>(observable: Observable<T>): Promise<T> {
+export async function firstValueFrom<T>(observable: Observable<T>, signal?: AbortSignal): Promise<T> {
     return new Promise<T>((resolve, reject) => {
         const subscription = observable.subscribe({
             next: value => {
@@ -79,6 +89,17 @@ export async function firstValueFrom<T>(observable: Observable<T>): Promise<T> {
                 reject('Observable completed without emitting a value')
             },
         })
+
+        if (signal) {
+            signal.addEventListener(
+                'abort',
+                () => {
+                    subscription.unsubscribe()
+                    reject(new DOMException('Aborted', 'AbortError'))
+                },
+                { once: true }
+            )
+        }
     })
 }
 
@@ -105,10 +126,16 @@ export async function waitUntilComplete(observable: Observable<unknown>): Promis
 export async function allValuesFrom<T>(observable: Observable<T>): Promise<T[]> {
     return new Promise<T[]>((resolve, reject) => {
         const values: T[] = []
-        observable.subscribe({
+        const subscription = observable.subscribe({
             next: value => values.push(value),
-            error: reject,
-            complete: () => resolve(values),
+            error: error => {
+                subscription.unsubscribe()
+                reject(error)
+            },
+            complete: () => {
+                subscription.unsubscribe()
+                resolve(values)
+            },
         })
     })
 }
@@ -131,12 +158,13 @@ function promiseWithResolvers<T>(): {
 /**
  * @internal For testing only.
  */
-export function readValuesFrom<T>(observable: Observable<T>): {
-    values: T[]
+export function readValuesFrom<T>(observable: Observable<T>): Readonly<{
+    values: ReadonlyArray<T>
+    clearValues(): void
     done: Promise<void>
     unsubscribe(): void
     status: () => 'pending' | 'complete' | 'error' | 'unsubscribed'
-} {
+}> {
     const values: T[] = []
     const { promise, resolve, reject } = promiseWithResolvers<void>()
     let status: ReturnType<ReturnType<typeof readValuesFrom<T>>['status']> = 'pending'
@@ -153,6 +181,9 @@ export function readValuesFrom<T>(observable: Observable<T>): {
     })
     const result: ReturnType<typeof readValuesFrom<T>> = {
         values,
+        clearValues: () => {
+            values.length = 0
+        },
         done: promise,
         unsubscribe: () => {
             subscription.unsubscribe()
@@ -197,7 +228,9 @@ export function promiseFactoryToObservable<T>(
 
         const run = async () => {
             try {
+                signal?.throwIfAborted()
                 const value = await factory(signal)
+                signal?.throwIfAborted()
                 if (!unsubscribed) {
                     observer.next(value)
                     observer.complete()
@@ -255,6 +288,8 @@ export function fromLateSetSource<T>(): {
         source = input
         for (const entry of observers) {
             entry.subscription?.unsubscribe()
+        }
+        for (const entry of observers) {
             entry.subscription = source.subscribe(entry.observer)
         }
     }
@@ -294,9 +329,11 @@ export function combineLatest<T>(observables: Array<Observable<T>>): Observable<
     }
     return new Observable<T[]>(observer => {
         const latestValues: T[] = new Array(observables.length)
+        const latestSeq: number[] = new Array(observables.length).fill(0)
         const hasValue: boolean[] = new Array(observables.length).fill(false)
         let completed = 0
         const subscriptions: Subscription<T>[] = []
+        const scheduler = new AsyncSerialScheduler<T[]>(observer)
 
         for (let index = 0; index < observables.length; index++) {
             const observable = observables[index]
@@ -305,17 +342,25 @@ export function combineLatest<T>(observables: Array<Observable<T>>): Observable<
                     next(value: T) {
                         latestValues[index] = value
                         hasValue[index] = true
+                        const seq = ++latestSeq[index]
                         if (hasValue.every(Boolean)) {
-                            observer.next([...latestValues])
+                            scheduler.schedule(async next => {
+                                // If our latestSeq changed in between when we scheduled this task
+                                // and when we're running, then this emission was already emitted by
+                                // another task and we can skip it.
+                                if (latestSeq[index] === seq) {
+                                    next([...latestValues])
+                                }
+                            })
                         }
                     },
                     error(err: any) {
-                        observer.error(err)
+                        scheduler.error(err)
                     },
                     complete() {
                         completed++
                         if (completed === observables.length) {
-                            observer.complete()
+                            scheduler.complete()
                         }
                     },
                 })
@@ -323,16 +368,11 @@ export function combineLatest<T>(observables: Array<Observable<T>>): Observable<
         }
 
         return () => {
-            for (const subscription of subscriptions) {
-                subscription.unsubscribe()
-            }
+            unsubscribeAll(subscriptions)
         }
     })
 }
 
-/**
- * Return an Observable that emits the latest value from the given Observable.
- */
 export function memoizeLastValue<P extends unknown[], T>(
     factory: (...args: P) => Observable<T>,
     keyFn: (args: P) => string | number
@@ -496,6 +536,10 @@ export function pluck<T, K1 extends keyof T, K2 extends keyof T[K1]>(
     key1: K1,
     key2: K2
 ): (input: ObservableLike<T>) => Observable<T[K1][K2]>
+export function pluck<T, K1 extends keyof T, K2 extends keyof T[K1]>(
+    key1: K1,
+    key2: K2
+): (input: ObservableLike<T>) => Observable<T[K1][K2]>
 export function pluck<T>(...keyPath: any[]): (input: ObservableLike<T>) => Observable<any> {
     return map(value => {
         let valueToReturn = value
@@ -520,7 +564,15 @@ export function pick<T, K extends keyof T>(
 // biome-ignore lint/suspicious/noConfusingVoidType:
 export type UnsubscribableLike = Unsubscribable | (() => void) | void | null
 
+let shareReplaySeq = 0
 export function shareReplay<T>(): (observable: ObservableLike<T>) => Observable<T> {
+    // NOTE(sqs): This is helpful for debugging why shareReplay does not have a buffered value.
+    const shouldLog = false
+    const logID = shareReplaySeq++
+    function logDebug(msg: string, ...args: any[]): void {
+        if (shouldLog) console.debug(`shareReplay#${logID}:`, msg, ...args)
+    }
+
     return (observable: ObservableLike<T>): Observable<T> => {
         const subject = new Subject<T>()
         let subscription: UnsubscribableLike = null
@@ -531,7 +583,10 @@ export function shareReplay<T>(): (observable: ObservableLike<T>) => Observable<
         return new Observable<T>(observer => {
             refCount++
             if (hasValue) {
+                logDebug('new subscriber, emitting buffered value', latestValue)
                 observer.next(latestValue)
+            } else {
+                logDebug('new subscriber, no buffered value to emit')
             }
             if (!subscription) {
                 subscription = observable.subscribe({
@@ -560,15 +615,70 @@ export function shareReplay<T>(): (observable: ObservableLike<T>) => Observable<
     }
 }
 
+function unsubscribeAll(subscriptions: UnsubscribableLike[]): void {
+    for (const subscription of subscriptions) {
+        if (subscription) {
+            unsubscribe(subscription)
+        }
+    }
+}
+
+/**
+ * Create an observable that emits values from the source observable until the `notifier`
+ * observable emits a value.
+ *
+ * @param notifier - An observable that, when it emits a value, causes the output observable to
+ * complete.
+ */
+export function takeUntil<T>(notifier: Observable<unknown>): (source: Observable<T>) => Observable<T> {
+    return (source: Observable<T>) => {
+        return new Observable<T>(observer => {
+            const sourceSubscription = source.subscribe({
+                next: value => observer.next(value),
+                error: err => observer.error(err),
+                complete: () => observer.complete(),
+            })
+
+            const notifierSubscription = notifier.subscribe({
+                next: () => {
+                    observer.complete()
+                    sourceSubscription.unsubscribe()
+                    notifierSubscription.unsubscribe()
+                },
+                error: err => {
+                    observer.error(err)
+                    sourceSubscription.unsubscribe()
+                },
+            })
+
+            return () => {
+                sourceSubscription.unsubscribe()
+                notifierSubscription.unsubscribe()
+            }
+        })
+    }
+}
+
+export function finalize<T>(fn: () => void): (source: Observable<T>) => Observable<T> {
+    return (source: Observable<T>) => {
+        return new Observable(observer => {
+            const subscription = source.subscribe(observer)
+            return () => {
+                unsubscribe(subscription)
+                fn()
+            }
+        })
+    }
+}
+
 export function distinctUntilChanged<T>(
-    isEqualFn: (a: T, b: T) => boolean = isEqualJSON
+    isEqualFn: (a: T, b: T) => boolean = isEqual
 ): (observable: ObservableLike<T>) => Observable<T> {
     return (observable: ObservableLike<T>): Observable<T> => {
         return new Observable<T>(observer => {
             let lastInput: T | typeof NO_VALUES_YET = NO_VALUES_YET
 
-            const scheduler = new AsyncSerialScheduler(observer)
-
+            const scheduler = new AsyncSerialScheduler<T>(observer)
             const subscription = observable.subscribe({
                 complete() {
                     scheduler.complete()
@@ -589,20 +699,25 @@ export function distinctUntilChanged<T>(
         })
     }
 }
-
 export function tap<T>(
     observerOrNext: Partial<SubscriptionObserver<T>> | ((value: T) => void)
 ): (input: ObservableLike<T>) => Observable<T> {
+    return tapWith<T>(typeof observerOrNext === 'function' ? { next: observerOrNext } : observerOrNext)
+}
+
+function tapWith<T>(
+    tapperInput: Partial<SubscriptionObserver<T>> | (() => Partial<SubscriptionObserver<T>>)
+): (input: ObservableLike<T>) => Observable<T> {
     return (input: ObservableLike<T>) =>
         new Observable<T>(observer => {
-            const tapObserver: Partial<SubscriptionObserver<T>> =
-                typeof observerOrNext === 'function' ? { next: observerOrNext } : observerOrNext
+            const tapper: Partial<SubscriptionObserver<T>> =
+                typeof tapperInput === 'function' ? tapperInput() : tapperInput
 
             const subscription = input.subscribe({
                 next(value) {
-                    if (tapObserver.next) {
+                    if (tapper.next) {
                         try {
-                            tapObserver.next(value)
+                            tapper.next(value)
                         } catch (err) {
                             observer.error(err)
                             return
@@ -611,9 +726,9 @@ export function tap<T>(
                     observer.next(value)
                 },
                 error(err) {
-                    if (tapObserver.error) {
+                    if (tapper.error) {
                         try {
-                            tapObserver.error(err)
+                            tapper.error(err)
                         } catch (err) {
                             observer.error(err)
                             return
@@ -622,9 +737,9 @@ export function tap<T>(
                     observer.error(err)
                 },
                 complete() {
-                    if (tapObserver.complete) {
+                    if (tapper.complete) {
                         try {
-                            tapObserver.complete()
+                            tapper.complete()
                         } catch (err) {
                             observer.error(err)
                             return
@@ -636,6 +751,25 @@ export function tap<T>(
             return () => unsubscribe(subscription)
         })
 }
+
+export function tapLog<T>(
+    label: string,
+    mapValue?: (value: T) => unknown
+): (input: ObservableLike<T>) => Observable<T> {
+    let subscriptions = 0
+    return tapWith(() => {
+        function log(event: string, ...args: any[]): void {
+            console.debug(`█ ${label}#${subscriptions++}(${event}):`, ...args)
+        }
+        let emissions = 0
+        return {
+            next: value => log(`next#${emissions++}`, mapValue ? mapValue(value) : value),
+            error: error => log('error', error),
+            complete: () => log('complete'),
+        }
+    })
+}
+
 export function printDiff<T extends object>(): (input: ObservableLike<T>) => Observable<T> {
     let lastValue: T | typeof NO_VALUES_YET = NO_VALUES_YET
     return map(value => {
@@ -655,10 +789,6 @@ export function printDiff<T extends object>(): (input: ObservableLike<T>) => Obs
 
 /** Sentinel value. */
 const NO_VALUES_YET: Record<string, never> = {}
-
-function isEqualJSON(a: unknown, b: unknown): boolean {
-    return JSON.stringify(a) === JSON.stringify(b)
-}
 
 export function startWith<T, R>(value: R): (source: ObservableLike<T>) => Observable<R | T> {
     return (source: ObservableLike<T>) =>
@@ -704,6 +834,32 @@ export function take<T>(count: number): (source: ObservableLike<T>) => Observabl
                             observer.complete()
                             unsubscribe(sourceSubscription)
                         }
+                    }
+                },
+                error(err) {
+                    observer.error(err)
+                },
+                complete() {
+                    observer.complete()
+                },
+            })
+
+            return () => {
+                unsubscribe(sourceSubscription)
+            }
+        })
+}
+
+export function skip<T>(count: number): (source: ObservableLike<T>) => Observable<T> {
+    return (source: ObservableLike<T>) =>
+        new Observable<T>(observer => {
+            let skipped = 0
+            const sourceSubscription = source.subscribe({
+                next(value) {
+                    if (skipped >= count) {
+                        observer.next(value)
+                    } else {
+                        skipped++
                     }
                 },
                 error(err) {
@@ -773,8 +929,64 @@ export function mergeMap<T, R>(
     }
 }
 
+export function switchMap<T, R>(
+    project: (value: T, index: number) => ObservableLike<R>
+): (source: ObservableLike<T>) => Observable<R> {
+    return (source: ObservableLike<T>): Observable<R> => {
+        return new Observable<R>(observer => {
+            let index = 0
+            let innerSubscription: UnsubscribableLike | null = null
+            let outerCompleted = false
+
+            const checkComplete = () => {
+                if (outerCompleted && !innerSubscription) {
+                    observer.complete()
+                }
+            }
+
+            const outerSubscription = source.subscribe({
+                next(value) {
+                    if (innerSubscription) {
+                        unsubscribe(innerSubscription)
+                        innerSubscription = null
+                    }
+
+                    const innerObservable = project(value, index++)
+                    innerSubscription = innerObservable.subscribe({
+                        next(innerValue) {
+                            observer.next(innerValue)
+                        },
+                        error(err) {
+                            observer.error(err)
+                        },
+                        complete() {
+                            innerSubscription = null
+                            checkComplete()
+                        },
+                    })
+                },
+                error(err) {
+                    observer.error(err)
+                },
+                complete() {
+                    outerCompleted = true
+                    checkComplete()
+                },
+            })
+
+            return () => {
+                unsubscribe(outerSubscription)
+                if (innerSubscription) {
+                    unsubscribe(innerSubscription)
+                }
+            }
+        })
+    }
+}
+
 export interface StoredLastValue<T> {
     value: { last: undefined; isSet: false } | { last: T; isSet: true }
+    observable: Observable<T>
     subscription: Unsubscribable
 }
 
@@ -787,7 +999,7 @@ export function storeLastValue<T>(observable: Observable<T>): StoredLastValue<T>
     const subscription = observable.subscribe(v => {
         Object.assign(value, { last: v, isSet: true })
     })
-    return { value, subscription }
+    return { value, observable, subscription }
 }
 
 export function debounceTime<T>(duration: number): (source: ObservableLike<T>) => Observable<T> {
@@ -946,7 +1158,7 @@ export function abortableOperation<T, R>(
 ): (source: ObservableLike<T>) => Observable<R> {
     return (source: ObservableLike<T>): Observable<R> =>
         Observable.from(source).pipe(
-            mergeMap(input => promiseFactoryToObservable(signal => operation(input, signal)))
+            switchMap(input => promiseFactoryToObservable(signal => operation(input, signal)))
         )
 }
 
@@ -990,4 +1202,128 @@ export function catchError<T, R>(
                 }
             }
         })
+}
+
+export function withLatestFrom<T, R>(
+    other: ObservableLike<R>
+): (source: ObservableLike<T>) => Observable<[T, R]> {
+    return (source: ObservableLike<T>): Observable<[T, R]> =>
+        new Observable<[T, R]>(observer => {
+            let latest: R | undefined
+            let hasLatest = false
+            const otherSubscription = other.subscribe({
+                next(value) {
+                    latest = value
+                    hasLatest = true
+                },
+                error(err) {
+                    observer.error(err)
+                },
+            })
+
+            const scheduler = new AsyncSerialScheduler(observer)
+            const sourceSubscription = source.subscribe({
+                next(value) {
+                    scheduler.schedule(async next => {
+                        if (hasLatest) {
+                            next([value, latest!])
+                        }
+                    })
+                },
+                error(err) {
+                    scheduler.error(err)
+                },
+                complete() {
+                    scheduler.complete()
+                },
+            })
+
+            return () => {
+                unsubscribe(sourceSubscription)
+                unsubscribe(otherSubscription)
+            }
+        })
+}
+
+export function defer<T>(observableFactory: () => ObservableLike<T>): Observable<T> {
+    return new Observable<T>(observer => {
+        let subscription: UnsubscribableLike | undefined
+
+        try {
+            const source = observableFactory()
+            subscription = source.subscribe(observer)
+        } catch (err) {
+            observer.error(err)
+        }
+
+        return () => {
+            if (subscription) {
+                unsubscribe(subscription)
+            }
+        }
+    })
+}
+
+export function filter<T, R extends T = T>(
+    predicate: (value: T) => value is R
+): (source: Observable<T>) => Observable<R> {
+    // This is better than observable-fn's `filter` because it uses simple types.
+    return (source: Observable<T>) => {
+        return new Observable<R>(observer => {
+            return source.subscribe({
+                next(value) {
+                    if (predicate(value)) {
+                        observer.next(value)
+                    }
+                },
+                error(err) {
+                    observer.error(err)
+                },
+                complete() {
+                    observer.complete()
+                },
+            })
+        })
+    }
+}
+
+/**
+ * Returns the value, if any, that the observable emits within the given timeout.
+ *
+ * @internal For testing only.
+ */
+export async function testing__firstValueFromWithinTime<T>(
+    observable: Observable<T>,
+    ms: number | 'allPendingTimers',
+    vi: VitestUtils
+): Promise<T | undefined> {
+    let result: T | undefined = undefined
+    let error: Error | undefined
+    const subscription = observable.subscribe({
+        next: value => {
+            if (value === undefined) {
+                throw new Error(
+                    'firstValueFromWithinTime: do not use with `undefined` emissions because those can\'t be distinguished from this helper function\'s "no emissions" return value'
+                )
+            }
+            result = value
+            subscription.unsubscribe()
+        },
+        error: e => {
+            error = e
+        },
+        complete: () => {
+            error = new Error('firstValueFromWithinTime: promise completed without emitting any values')
+        },
+    })
+    if (ms === 'allPendingTimers') {
+        await vi.runOnlyPendingTimersAsync()
+    } else {
+        await vi.advanceTimersByTimeAsync(ms)
+    }
+    subscription.unsubscribe()
+    if (error) {
+        throw error
+    }
+    return result
 }

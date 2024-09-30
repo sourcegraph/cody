@@ -8,6 +8,7 @@ import {
     FeatureFlag,
     type ResolvedConfiguration,
     type Unsubscribable,
+    combineLatest,
     featureFlagProvider,
     resolvedConfig,
 } from '@sourcegraph/cody-shared'
@@ -31,11 +32,12 @@ export class OpenTelemetryService {
     private configSubscription: Unsubscribable
 
     constructor() {
-        this.configSubscription = resolvedConfig.subscribe(({ configuration, auth }) => {
+        this.configSubscription = combineLatest([
+            resolvedConfig,
+            featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyAutocompleteTracing),
+        ]).subscribe(([{ configuration, auth }, codyAutocompleteTracingFlag]) => {
             this.reconfigurePromiseMutex = this.reconfigurePromiseMutex.then(async () => {
-                this.isTracingEnabled =
-                    configuration.experimentalTracing ||
-                    (await featureFlagProvider.evaluateFeatureFlag(FeatureFlag.CodyAutocompleteTracing))
+                this.isTracingEnabled = configuration.experimentalTracing || codyAutocompleteTracingFlag
 
                 const traceUrl = new URL('/-/debug/otlp/v1/traces', auth.serverEndpoint).toString()
                 if (this.lastTraceUrl === traceUrl) {

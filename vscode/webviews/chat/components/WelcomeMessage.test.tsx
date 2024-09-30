@@ -1,9 +1,10 @@
-import { CodyIDE } from '@sourcegraph/cody-shared'
+import { AUTH_STATUS_FIXTURE_AUTHED, type ClientCapabilities } from '@sourcegraph/cody-shared'
 import { fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, test, vi } from 'vitest'
 import { AppWrapperForTest } from '../../AppWrapperForTest'
 import { usePromptsQuery } from '../../components/promptList/usePromptsQuery'
 import { FIXTURE_PROMPTS } from '../../components/promptSelectField/fixtures'
+import * as useConfigModule from '../../utils/useConfig'
 import { WelcomeMessage } from './WelcomeMessage'
 
 vi.mock('../../components/promptList/usePromptsQuery')
@@ -25,7 +26,13 @@ describe('WelcomeMessage', () => {
         }
     }
     test('renders for CodyIDE.VSCode', () => {
-        render(<WelcomeMessage IDE={CodyIDE.VSCode} setView={() => {}} />, {
+        vi.spyOn(useConfigModule, 'useConfig').mockReturnValue({
+            clientCapabilities: {
+                isVSCode: true,
+            } satisfies Partial<ClientCapabilities> as ClientCapabilities,
+            authStatus: AUTH_STATUS_FIXTURE_AUTHED,
+        } satisfies Partial<useConfigModule.Config> as useConfigModule.Config)
+        render(<WelcomeMessage setView={() => {}} />, {
             wrapper: AppWrapperForTest,
         })
         openCollapsiblePanels()
@@ -41,7 +48,13 @@ describe('WelcomeMessage', () => {
     })
 
     test('renders for CodyIDE.JetBrains', () => {
-        render(<WelcomeMessage IDE={CodyIDE.JetBrains} setView={() => {}} />, {
+        vi.spyOn(useConfigModule, 'useConfig').mockReturnValue({
+            clientCapabilities: {
+                isVSCode: false,
+            } satisfies Partial<ClientCapabilities> as ClientCapabilities,
+            authStatus: AUTH_STATUS_FIXTURE_AUTHED,
+        } satisfies Partial<useConfigModule.Config> as useConfigModule.Config)
+        render(<WelcomeMessage setView={() => {}} />, {
             wrapper: AppWrapperForTest,
         })
         openCollapsiblePanels()

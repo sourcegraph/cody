@@ -7,9 +7,13 @@ import {
     type CodeCompletionsClient,
     type CodeCompletionsParams,
     type CompletionParameters,
+    type CompletionResponseGenerator,
     type DocumentContext,
     type GitContext,
+    type LegacyModelRefStr,
     type Model,
+    currentAuthStatusAuthed,
+    toLegacyModel,
     tokensToChars,
 } from '@sourcegraph/cody-shared'
 
@@ -18,9 +22,13 @@ import type { TriggerKind } from '../../get-inline-completions'
 import type * as CompletionLogger from '../../logger'
 import { type DefaultModel, getModelHelpers } from '../../model-helpers'
 import type { InlineCompletionItemWithAnalytics } from '../../text-processing/process-inline-completions'
+import { forkSignal, generatorWithErrorObserver, generatorWithTimeout, zipGenerators } from '../../utils'
 
 import type { AutocompleteProviderConfigSource } from './create-provider'
-import type { FetchCompletionResult } from './fetch-and-process-completions'
+import {
+    type FetchCompletionResult,
+    fetchAndProcessDynamicMultilineCompletions,
+} from './fetch-and-process-completions'
 
 export const MAX_RESPONSE_TOKENS = 256
 
@@ -41,6 +49,7 @@ export interface GenerateCompletionsOptions {
     docContext: DocumentContext
     multiline: boolean
     triggerKind: TriggerKind
+    snippets: AutocompleteContextSnippet[]
     /**
      * Number of parallel LLM requests per completion.
      */
@@ -59,6 +68,14 @@ export interface GenerateCompletionsOptions {
 }
 
 const DEFAULT_MAX_CONTEXT_TOKENS = 2048
+/**
+ * Used as `ProviderOptions.legacyModel` fallback value when model ID is unknown otherwise.
+ *
+ * This most likely indicates that this autocomplete provider is used exclusively by BYOK customers,
+ * and clients do not send a model ID in such cases. The model is selected by the Sourcegraph backend
+ * based on the current site configuration.
+ */
+export const BYOK_MODEL_ID_FOR_LOGS = 'model-will-be-picked-by-sourcegraph-backend-based-on-site-config'
 
 type ProviderModelOptions = {
     model: Model
@@ -67,6 +84,10 @@ type ProviderModelOptions = {
 // TODO: drop this in favor of `ProviderModelOptions` once we migrate to
 // the new model ref syntax everywhere.
 type ProviderLegacyModelOptions = {
+    /**
+     * The model name _without_ the provider ID.
+     * e.g. "claude-3-sonnet-20240229", not "anthropic/claude-3-sonnet-20240229".
+     */
     legacyModel: string
 }
 
@@ -86,9 +107,12 @@ export type ProviderFactoryParams = {
      */
     model?: Model
     /**
-     * Model string ID kept here for backward compatibility. Should be replaced fully by `model`.
+     * The model name _without_ the provider ID.
+     * e.g. "claude-3-sonnet-20240229", not "anthropic/claude-3-sonnet-20240229".
+     *
+     * Kept here for backward compatibility. Should be replaced fully by `model`.
      */
-    legacyModel?: string
+    legacyModel?: Provider['legacyModel']
     /**
      * Client provider ID.
      */
@@ -118,30 +142,28 @@ export abstract class Provider {
     public model?: Model
 
     /**
-     * Either `provider/model-name` or `model-name` depending on the provider implementation.
-     * TODO: migrate to one syntax.
+     * The model name _without_ the provider ID.
+     * e.g. "claude-3-sonnet-20240229", not "anthropic/claude-3-sonnet-20240229".
      */
     public legacyModel: string
     public contextSizeHints: ProviderContextSizeHints
     public client: CodeCompletionsClient = defaultCodeCompletionsClient.instance!
     public configSource: AutocompleteProviderConfigSource
+    public mayUseOnDeviceInference: boolean
 
     protected maxContextTokens: number
-
     protected promptChars: number
     protected modelHelper: DefaultModel
 
-    public mayUseOnDeviceInference: boolean
-
-    public stopSequences: string[] = ['\n\n', '\n\r\n']
-
     protected defaultRequestParams = {
         timeoutMs: 7_000,
-        stopSequences: this.stopSequences,
+        stopSequences: ['\n\n', '\n\r\n'],
         maxTokensToSample: MAX_RESPONSE_TOKENS,
         temperature: 0.2,
         topK: 0,
     } as const satisfies Omit<CodeCompletionsParams, 'messages'>
+
+    private isModernSourcegraphInstanceWithoutModelAllowlist = true
 
     constructor(public readonly options: Readonly<ProviderOptions>) {
         const {
@@ -153,9 +175,9 @@ export abstract class Provider {
 
         if ('model' in options) {
             this.model = options.model
-            this.legacyModel = options.model.id
+            this.legacyModel = toLegacyModel(options.model.id)
         } else {
-            this.legacyModel = options.legacyModel
+            this.legacyModel = toLegacyModel(options.legacyModel)
         }
 
         this.id = id
@@ -172,12 +194,112 @@ export abstract class Provider {
         }
     }
 
-    public abstract generateCompletions(
-        options: GenerateCompletionsOptions,
+    public abstract getRequestParams(options: GenerateCompletionsOptions): object
+
+    /**
+     * Returns the passed model ID only if we're using Cody Gateway (not BYOK) and
+     * the model ID is resolved on the client.
+     */
+    protected maybeFilterOutModel(
+        model?: typeof BYOK_MODEL_ID_FOR_LOGS | LegacyModelRefStr
+    ): LegacyModelRefStr | undefined {
+        if (
+            model === BYOK_MODEL_ID_FOR_LOGS ||
+            !model ||
+            !this.isModernSourcegraphInstanceWithoutModelAllowlist
+        ) {
+            return undefined
+        }
+
+        const { configOverwrites } = currentAuthStatusAuthed()
+
+        // The model ID is ignored by BYOK clients (configOverwrites?.provider !== 'sourcegraph')
+        // so we can remove it from the request params we send to the backend.
+        return configOverwrites?.provider === 'sourcegraph' ? model : undefined
+    }
+
+    protected getCompletionResponseGenerator(
+        generateOptions: GenerateCompletionsOptions,
+        requestParams: CodeCompletionsParams,
+        abortController: AbortController
+    ): Promise<CompletionResponseGenerator> {
+        return Promise.resolve(this.client.complete(requestParams, abortController))
+    }
+
+    public async generateCompletions(
+        generateOptions: GenerateCompletionsOptions,
         abortSignal: AbortSignal,
-        snippets: AutocompleteContextSnippet[],
         tracer?: CompletionProviderTracer
-    ): AsyncGenerator<FetchCompletionResult[]> | Promise<AsyncGenerator<FetchCompletionResult[]>>
+    ): Promise<AsyncGenerator<FetchCompletionResult[]>> {
+        const { docContext, numberOfCompletionsToGenerate } = generateOptions
+
+        const requestParams = this.getRequestParams(generateOptions) as CodeCompletionsParams
+        tracer?.params(requestParams)
+
+        const completionsGenerators = Array.from({ length: numberOfCompletionsToGenerate }).map(
+            async () => {
+                const abortController = forkSignal(abortSignal)
+
+                const completionResponseGenerator = generatorWithErrorObserver(
+                    generatorWithTimeout(
+                        await this.getCompletionResponseGenerator(
+                            generateOptions,
+                            requestParams,
+                            abortController
+                        ),
+                        requestParams.timeoutMs,
+                        abortController
+                    ),
+                    error => {
+                        if (error instanceof Error) {
+                            // If an "unsupported code completion model" error is thrown,
+                            // it's most likely because we started adding the `model` identifier to
+                            // requests to ensure the clients does not crash when the default site
+                            // config value changes.
+                            //
+                            // Older instances do not allow for the `model` to be set, even to
+                            // identifiers it supports and thus the error.
+                            //
+                            // If it happens once, we disable the behavior where the client includes a
+                            // `model` parameter.
+                            if (
+                                error.message.includes('Unsupported code completion model') ||
+                                error.message.includes('Unsupported chat model') ||
+                                error.message.includes('Unsupported custom model')
+                            ) {
+                                this.isModernSourcegraphInstanceWithoutModelAllowlist = false
+                            }
+                        }
+                    }
+                )
+
+                return fetchAndProcessDynamicMultilineCompletions({
+                    completionResponseGenerator,
+                    abortController,
+                    generateOptions,
+                    providerSpecificPostProcess: content =>
+                        this.modelHelper.postProcess(content, docContext),
+                })
+            }
+        )
+
+        /**
+         * This implementation waits for all generators to yield values
+         * before passing them to the consumer (request-manager). While this may appear
+         * as a performance bottleneck, it's necessary for the current design.
+         *
+         * The consumer operates on promises, allowing only a single resolve call
+         * from `requestManager.request`. Therefore, we must wait for the initial
+         * batch of completions before returning them collectively, ensuring all
+         * are included as suggested completions.
+         *
+         * To circumvent this performance issue, a method for adding completions to
+         * the existing suggestion list is needed. Presently, this feature is not
+         * available, and the switch to async generators maintains the same behavior
+         * as with promises.
+         */
+        return zipGenerators(await Promise.all(completionsGenerators))
+    }
 }
 
 /**

@@ -2,6 +2,7 @@ import * as AccordionPrimitive from '@radix-ui/react-accordion'
 import { ChevronRight } from 'lucide-react'
 import * as React from 'react'
 
+import { clsx } from 'clsx'
 import { cn } from '../utils'
 
 const Accordion = AccordionPrimitive.Root
@@ -34,13 +35,21 @@ const AccordionTrigger = React.forwardRef<
 ))
 AccordionTrigger.displayName = AccordionPrimitive.Trigger.displayName
 
+interface AccordionContentProps
+    extends React.ComponentPropsWithoutRef<typeof AccordionPrimitive.Content> {
+    overflow?: boolean
+}
+
 const AccordionContent = React.forwardRef<
     React.ElementRef<typeof AccordionPrimitive.Content>,
-    React.ComponentPropsWithoutRef<typeof AccordionPrimitive.Content>
->(({ className, children, ...props }, ref) => (
+    AccordionContentProps
+>(({ className, overflow, children, ...props }, ref) => (
     <AccordionPrimitive.Content
         ref={ref}
-        className="tw-transition-all data-[state=closed]:tw-animate-accordion-up data-[state=open]:tw-animate-accordion-down"
+        className={clsx(
+            'tw-transition-all data-[state=closed]:tw-animate-accordion-up data-[state=open]:tw-animate-accordion-down',
+            { 'tw-overflow-hidden': !overflow }
+        )}
         {...props}
     >
         <div className={className}>{children}</div>

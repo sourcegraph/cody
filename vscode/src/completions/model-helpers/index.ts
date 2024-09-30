@@ -1,7 +1,9 @@
+import { Claude } from './claude'
 import { CodeGemma } from './codegemma'
 import { CodeLlama } from './codellama'
 import { DeepseekCoder } from './deepseek'
 import { DefaultModel } from './default'
+import { Gemini } from './gemini'
 import { Mistral } from './mistral'
 import { StarCoder } from './starcoder'
 
@@ -30,6 +32,14 @@ export function getModelHelpers(model: string): DefaultModel {
 
     if (model.includes('codegemma')) {
         return new CodeGemma()
+    }
+
+    if (model.includes('gemini')) {
+        return new Gemini()
+    }
+
+    if (model.includes('claude')) {
+        return new Claude()
     }
 
     return new DefaultModel()

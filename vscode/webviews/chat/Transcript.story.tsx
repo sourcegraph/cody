@@ -125,7 +125,6 @@ export const WithError: StoryObj<typeof meta> = {
             { speaker: 'human', text: ps`What color is the sky?'`, contextFiles: [] },
             { speaker: 'assistant', error: errorToChatError(new Error('some error')) },
         ]),
-        isTranscriptError: true,
     },
 }
 
@@ -141,7 +140,6 @@ export const WithRateLimitError: StoryObj<typeof meta> = {
                 ),
             },
         ]),
-        isTranscriptError: true,
     },
 }
 
@@ -152,7 +150,6 @@ export const abortedBeforeResponse: StoryObj<typeof meta> = {
             { speaker: 'human', text: ps`What color is the sky?'`, contextFiles: [] },
             { speaker: 'assistant', error: errorToChatError(new Error('aborted')) },
         ]),
-        isTranscriptError: true,
     },
 }
 
@@ -167,7 +164,6 @@ export const abortedWithPartialResponse: StoryObj<typeof meta> = {
             },
             { speaker: 'assistant', text: ps`Bl`, error: errorToChatError(new Error('aborted')) },
         ]),
-        isTranscriptError: true,
     },
 }
 
@@ -185,7 +181,6 @@ export const TextWrapping: StoryObj<typeof meta> = {
                 text: ps`The sky is blueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblue.\n\n\`\`\`\nconst color = 'blueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblue'\n\`\`\`\n\nMore info:\n\n- Color of sky: blueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblue`,
             },
         ]),
-        isTranscriptError: true,
     },
 }
 

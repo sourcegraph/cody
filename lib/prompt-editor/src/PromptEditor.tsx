@@ -16,7 +16,7 @@ import {
     type LexicalEditor,
 } from 'lexical'
 import type { EditorState, SerializedEditorState, SerializedLexicalNode } from 'lexical'
-import { isEqual } from 'lodash'
+import isEqual from 'lodash/isEqual'
 import { type FunctionComponent, useCallback, useEffect, useImperativeHandle, useRef } from 'react'
 import { BaseEditor } from './BaseEditor'
 import styles from './PromptEditor.module.css'

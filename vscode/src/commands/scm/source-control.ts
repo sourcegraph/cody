@@ -8,11 +8,10 @@ import {
     type ModelContextWindow,
     ModelUsage,
     Typewriter,
-    getDotComDefaultModels,
     getSimplePreamble,
     modelsService,
     pluralize,
-    startWith,
+    skipPendingOperation,
     subscriptionDisposable,
     telemetryRecorder,
 } from '@sourcegraph/cody-shared'
@@ -26,7 +25,7 @@ export class CodySourceControl implements vscode.Disposable {
     private disposables: vscode.Disposable[] = []
     private gitAPI: API | undefined
     private abortController: AbortController | undefined
-    private model: Model = getDotComDefaultModels()[0]
+    private model: Model | undefined
 
     private commitTemplate?: string
 
@@ -36,11 +35,13 @@ export class CodySourceControl implements vscode.Disposable {
             vscode.commands.registerCommand('cody.command.generate-commit', scm => this.generate(scm)),
             vscode.commands.registerCommand('cody.command.abort-commit', () => this.statusUpdate()),
             subscriptionDisposable(
-                modelsService.changes.pipe(startWith(undefined)).subscribe(() => {
-                    const models = modelsService.getModels(ModelUsage.Chat)
-                    const preferredModel = models.find(p => p.id.includes('claude-3-haiku'))
-                    this.model = preferredModel ?? models[0]
-                })
+                modelsService
+                    .getModels(ModelUsage.Chat)
+                    .pipe(skipPendingOperation())
+                    .subscribe(models => {
+                        const preferredModel = models.find(p => p.id.includes('claude-3-haiku'))
+                        this.model = preferredModel ?? models.at(0)
+                    })
             )
         )
         this.initializeGitAPI()
@@ -158,6 +159,10 @@ export class CodySourceControl implements vscode.Disposable {
                 progress.report({ message: 'Aborted' })
                 this.statusUpdate()
             })
+
+            if (!this.model) {
+                throw new Error('No models available')
+            }
 
             const { id: model, contextWindow } = this.model
             const { prompt, ignoredContext } = await this.buildPrompt(
