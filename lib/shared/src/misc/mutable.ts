@@ -2,6 +2,7 @@ import { produce } from 'immer'
 import { Observable, Subject } from 'observable-fns'
 import type { ReadonlyDeep } from 'type-fest'
 import { distinctUntilChanged, shareReplay, startWith } from './observable'
+
 /**
  * Mutable is a class that helps you mutate an immutable state in such a way that changes are observable. It uses ImmerJS under the hood to ensure to ensure mutations are immutable...🤔
  * @example
