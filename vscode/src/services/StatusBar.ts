@@ -311,8 +311,8 @@ export class CodyStatusBar {
         if (!authStatus.authenticated && authStatus.showInvalidAccessTokenError) {
             return {
                 icon: 'disabled',
-                tooltip: 'Your authentication has expired. Sign in again to continue using Cody.',
-                style: 'error',
+                tooltip: 'Your authentication has expired.\nSign in again to continue using Cody.',
+                style: 'warning',
                 tags,
                 interact: interactAuth,
             }
@@ -340,7 +340,7 @@ export class CodyStatusBar {
                 tooltip:
                     otherErrors.length > 0
                         ? `(Error 1/${otherErrors.length + 1}): ${firstError.title}`
-                        : firstError.title,
+                        : `Error: ${firstError.title}`,
                 style: 'error',
                 tags,
                 interact: interactDefault({
