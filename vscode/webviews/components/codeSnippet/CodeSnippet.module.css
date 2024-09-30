@@ -1,6 +1,6 @@
 :root {
     --cody-chat-code-background: var(--code-background);
-    --cody-chat-code-header-background: var(--vscode-titleBar-inactiveBackground);
+    --cody-chat-code-header-background: var(--vscode-editorGroupHeader-tabsBackground);
     --cody-chat-code-subtle-background: var(--vscode-titleBar-inactiveBackground);
     --cody-chat-code-border-color: var(--vscode-widget-border);
     --cody-chat-code-text-muted: var(--vscode-input-placeholderForeground);
@@ -51,7 +51,7 @@
 .result {
     border-radius: 4px;
     border: solid 1px var(--cody-chat-code-border-color);
-    background-color: var(--coyd-chat-code-background) !important;
+    background-color: var(--cody-chat-code-background);
 
     code {
         padding: 0 !important;

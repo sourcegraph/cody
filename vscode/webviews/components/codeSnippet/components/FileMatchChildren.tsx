@@ -40,6 +40,7 @@ export const FileMatchChildren: FC<PropsWithChildren<FileMatchProps>> = props =>
 
     const navigateToFile = useCallback(
         (line: number) => {
+            // TODO: this does not work on web as opening links from within a web worker does not work.
             getVSCodeAPI().postMessage({
                 command: 'links',
                 value: `${getFileMatchUrl(serverEndpoint, result)}?L${line}`,
