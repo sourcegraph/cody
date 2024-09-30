@@ -32,6 +32,7 @@ import {
     CURRENT_USER_CODY_SUBSCRIPTION_QUERY,
     CURRENT_USER_ID_QUERY,
     CURRENT_USER_INFO_QUERY,
+    DELETE_ACCESS_TOKEN_MUTATION,
     EVALUATE_FEATURE_FLAG_QUERY,
     FILE_CONTENTS_QUERY,
     FILE_MATCH_SEARCH_QUERY,
@@ -1249,7 +1250,16 @@ export class SourcegraphGraphQLAPIClient {
         }
         return {}
     }
-
+    // Deletes an access token, if it exists on the server
+    public async DeleteAccessToken(token: string): Promise<unknown | Error> {
+        const initialResponse = await this.fetchSourcegraphAPI<APIResponse<unknown>>(
+            DELETE_ACCESS_TOKEN_MUTATION,
+            {
+                token,
+            }
+        )
+        return extractDataOrError(initialResponse, data => data)
+    }
     private anonymizeTelemetryEventInput(event: TelemetryEventInput): void {
         if (this.isAgentTesting) {
             event.timestamp = undefined
