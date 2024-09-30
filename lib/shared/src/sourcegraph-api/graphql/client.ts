@@ -41,6 +41,7 @@ import {
     GET_REMOTE_FILE_QUERY,
     GET_URL_CONTENT_QUERY,
     HIGHLIGHTED_FILE_QUERY,
+    LEGACY_CHAT_INTENT_QUERY,
     LEGACY_CONTEXT_SEARCH_QUERY,
     LOG_EVENT_MUTATION,
     LOG_EVENT_MUTATION_DEPRECATED,
@@ -338,6 +339,10 @@ interface ChatIntentResponse {
     chatIntent: {
         intent: string
         score: number
+        allScores?: {
+            intent: string
+            score: number
+        }[]
     }
 }
 
@@ -374,6 +379,10 @@ export interface Range {
 export interface ChatIntentResult {
     intent: string
     score: number
+    allScores?: {
+        intent: string
+        score: number
+    }[]
 }
 
 /**
@@ -935,8 +944,13 @@ export class SourcegraphGraphQLAPIClient {
 
     /** Experimental API */
     public async chatIntent(interactionID: string, query: string): Promise<ChatIntentResult | Error> {
+        const hasAllScoresField = await this.isValidSiteVersion({
+            minimumVersion: '5.9.0',
+            insider: true,
+        })
+
         const response = await this.fetchSourcegraphAPI<APIResponse<ChatIntentResponse>>(
-            CHAT_INTENT_QUERY,
+            hasAllScoresField ? CHAT_INTENT_QUERY : LEGACY_CHAT_INTENT_QUERY,
             {
                 query: query,
                 interactionId: interactionID,
