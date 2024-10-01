@@ -63,6 +63,7 @@ import {
 } from './commands/execute'
 import { executeAutoEditCommand } from './commands/execute/auto-edit'
 import { executeDocChatCommand } from './commands/execute/doc'
+import { executeTestChatCommand } from './commands/execute/test-chat'
 import { CodySourceControl } from './commands/scm/source-control'
 import type { CodyCommandArgs } from './commands/types'
 import { newCodyCommandArgs } from './commands/utils/get-commands'
@@ -451,8 +452,13 @@ async function registerCodyCommands(
                             vscode.commands.registerCommand('cody.command.document-code', a =>
                                 executeDocCommand(a)
                             ),
+                        ]
+
+                        const unitTestCommand = [
                             vscode.commands.registerCommand('cody.command.unit-tests', a =>
-                                executeTestEditCommand(a)
+                                unifiedPromptsEnabled
+                                    ? executeTestChatCommand(a)
+                                    : executeTestEditCommand(a)
                             ),
                         ]
 
@@ -465,8 +471,13 @@ async function registerCodyCommands(
 
                         // Register prompt-like command if unified prompts feature is available.
                         return unifiedPromptsEnabled
-                            ? [...chatCommands, ...editCommands, ...unifiedPromptsCommands]
-                            : [...chatCommands, ...editCommands]
+                            ? [
+                                  ...chatCommands,
+                                  ...editCommands,
+                                  ...unitTestCommand,
+                                  ...unifiedPromptsCommands,
+                              ]
+                            : [...chatCommands, ...editCommands, ...unitTestCommand]
                     })
                 )
                 .subscribe({})
