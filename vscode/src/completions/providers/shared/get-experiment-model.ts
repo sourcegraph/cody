@@ -11,11 +11,9 @@ import {
 import { Observable, map } from 'observable-fns'
 import * as vscode from 'vscode'
 import {
+    CODE_QWEN_7B_V2P5,
     DEEPSEEK_CODER_V2_LITE_BASE,
     DEEPSEEK_CODER_V2_LITE_BASE_WINDOW_4096,
-    FIREWORKS_DEEPSEEK_7B_LANG_ALL,
-    FIREWORKS_DEEPSEEK_7B_LANG_SPECIFIC_V0,
-    FIREWORKS_DEEPSEEK_7B_LANG_SPECIFIC_V1,
 } from '../fireworks'
 
 interface ProviderConfigFromFeatureFlags {
@@ -88,46 +86,22 @@ function resolveFIMModelExperimentFromFeatureFlags(): ReturnType<typeof getDotCo
     return combineLatest(
         featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyAutocompleteFIMModelExperimentControl),
         featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyAutocompleteFIMModelExperimentVariant1),
-        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyAutocompleteFIMModelExperimentVariant2),
-        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyAutocompleteFIMModelExperimentVariant3),
-        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyAutocompleteFIMModelExperimentVariant4),
-        featureFlagProvider.evaluatedFeatureFlag(
-            FeatureFlag.CodyAutocompleteFIMModelExperimentCurrentBest
-        )
+        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyAutocompleteFIMModelExperimentVariant2)
     ).pipe(
-        map(
-            ([
-                fimModelControl,
-                fimModelVariant1,
-                fimModelVariant2,
-                fimModelVariant3,
-                fimModelVariant4,
-                fimModelCurrentBest,
-            ]) => {
-                if (fimModelVariant1) {
-                    return { provider: 'fireworks', model: DEEPSEEK_CODER_V2_LITE_BASE }
-                }
-                if (fimModelVariant2) {
-                    return { provider: 'fireworks', model: FIREWORKS_DEEPSEEK_7B_LANG_SPECIFIC_V0 }
-                }
-                if (fimModelVariant3) {
-                    return { provider: 'fireworks', model: FIREWORKS_DEEPSEEK_7B_LANG_SPECIFIC_V1 }
-                }
-                if (fimModelVariant4) {
-                    return { provider: 'fireworks', model: FIREWORKS_DEEPSEEK_7B_LANG_ALL }
-                }
-                if (fimModelCurrentBest) {
-                    return { provider: 'fireworks', model: DEEPSEEK_CODER_V2_LITE_BASE_WINDOW_4096 }
-                }
-                if (fimModelControl) {
-                    // Current production model
-                    return { provider: 'fireworks', model: DEEPSEEK_CODER_V2_LITE_BASE }
-                }
-
-                // Extra free traffic - redirect to the current production model which could be different than control
+        map(([fimModelControl, fimModelVariant1, fimModelVariant2]) => {
+            if (fimModelVariant1) {
+                return { provider: 'fireworks', model: DEEPSEEK_CODER_V2_LITE_BASE_WINDOW_4096 }
+            }
+            if (fimModelVariant2) {
+                return { provider: 'fireworks', model: CODE_QWEN_7B_V2P5 }
+            }
+            if (fimModelControl) {
+                // Current production model
                 return { provider: 'fireworks', model: DEEPSEEK_CODER_V2_LITE_BASE }
             }
-        ),
+            // Extra free traffic - redirect to the current production model which could be different than control
+            return { provider: 'fireworks', model: DEEPSEEK_CODER_V2_LITE_BASE }
+        }),
         distinctUntilChanged()
     )
 }
