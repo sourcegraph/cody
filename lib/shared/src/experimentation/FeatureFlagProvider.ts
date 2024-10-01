@@ -48,8 +48,6 @@ export enum FeatureFlag {
     CodyAutocompleteDisableLowPerfLangDelay = 'cody-autocomplete-disable-low-perf-lang-delay',
     // Enables Claude 3 if the user is in our holdout group
     CodyAutocompleteClaude3 = 'cody-autocomplete-claude-3',
-    // Enable latency adjustments based on accept/reject streaks
-    CodyAutocompleteUserLatency = 'cody-autocomplete-user-latency',
 
     CodyAutocompletePreloadingExperimentBaseFeatureFlag = 'cody-autocomplete-preloading-experiment-flag',
     CodyAutocompletePreloadingExperimentVariant1 = 'cody-autocomplete-preloading-experiment-variant-1',
