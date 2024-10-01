@@ -1,9 +1,11 @@
 import {
+    CLIENT_CAPABILITIES_FIXTURE,
     type ClientConfiguration,
     type CodeCompletionsParams,
     contextFiltersProvider,
     currentAuthStatus,
     featureFlagProvider,
+    mockClientCapabilities,
     nextTick,
     telemetryRecorder,
 } from '@sourcegraph/cody-shared'
@@ -103,10 +105,17 @@ class MockRequestProvider extends Provider {
         return {} as any as CodeCompletionsParams
     }
 
-    public async *generateCompletions(
-        options: GenerateCompletionsOptions,
+    public async generateCompletions(
+        generateOptions: GenerateCompletionsOptions,
         abortSignal: AbortSignal
-    ): AsyncGenerator<FetchCompletionResult[]> {
+    ): Promise<AsyncGenerator<FetchCompletionResult[]>> {
+        return this.responseGenerator(generateOptions, abortSignal)
+    }
+
+    public async *responseGenerator(
+        generateOptions: GenerateCompletionsOptions,
+        abortSignal: AbortSignal
+    ) {
         abortSignal.addEventListener('abort', () => {
             this.didAbort = true
         })
@@ -131,6 +140,7 @@ function getInlineCompletionProvider(
     args: Partial<ConstructorParameters<typeof InlineCompletionItemProvider>[0]> = {}
 ): InlineCompletionItemProvider {
     vi.spyOn(featureFlagProvider, 'evaluatedFeatureFlag').mockReturnValue(Observable.of(false))
+    mockClientCapabilities(CLIENT_CAPABILITIES_FIXTURE)
     return new InlineCompletionItemProvider({
         completeSuggestWidgetSelection: true,
         triggerDelay: 0,

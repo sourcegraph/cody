@@ -8,7 +8,7 @@ import {
     currentAuthStatusAuthed,
     graphqlClient,
 } from '@sourcegraph/cody-shared'
-import { ContextAPIClient } from './chat/context/contextAPIClient'
+import { ChatIntentAPIClient } from './chat/context/chatIntentAPIClient'
 import type { PlatformContext } from './extension.common'
 import type { SymfRunner } from './local-context/symf'
 import { logger } from './log'
@@ -18,7 +18,7 @@ interface ExternalServices {
     completionsClient: SourcegraphCompletionsClient
     guardrails: Guardrails
     symfRunner: SymfRunner | undefined
-    contextAPIClient: ContextAPIClient | undefined
+    chatIntentAPIClient: ChatIntentAPIClient | undefined
     dispose(): void
 }
 
@@ -49,15 +49,15 @@ export async function configureExternalServices(
 
     const guardrails = new SourcegraphGuardrailsClient()
 
-    const contextAPIClient = new ContextAPIClient(graphqlClient)
-    disposables.push(contextAPIClient)
+    const chatIntentAPIClient = new ChatIntentAPIClient(graphqlClient)
+    disposables.push(chatIntentAPIClient)
 
     return {
         chatClient,
         completionsClient,
         guardrails,
         symfRunner,
-        contextAPIClient,
+        chatIntentAPIClient,
         dispose(): void {
             for (const d of disposables) {
                 d?.dispose()

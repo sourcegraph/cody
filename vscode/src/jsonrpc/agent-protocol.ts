@@ -635,7 +635,7 @@ export interface ServerInfo {
 export interface ExtensionConfiguration {
     serverEndpoint: string
     proxy?: string | undefined | null
-    accessToken: string
+    accessToken?: string | undefined | null
     customHeaders: Record<string, string>
 
     /**

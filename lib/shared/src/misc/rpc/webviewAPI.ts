@@ -1,6 +1,6 @@
-import type { Observable } from 'observable-fns'
-import type { AuthStatus, ResolvedConfiguration } from '../..'
-import type { ChatMessage } from '../../chat/transcript/messages'
+import { Observable } from 'observable-fns'
+import type { AuthStatus, ModelsData, ResolvedConfiguration } from '../..'
+import type { ChatMessage, UserLocalHistory } from '../../chat/transcript/messages'
 import type { ContextItem } from '../../codebase-context/messages'
 import type { CodyCommand } from '../../commands/types'
 import type { FeatureFlag } from '../../experimentation/FeatureFlagProvider'
@@ -29,9 +29,14 @@ export interface WebviewToExtensionAPI {
     prompts(query: string): Observable<PromptsResult>
 
     /**
-     * Observe the list of available models.
+     * The models data, including all available models, site defaults, and user preferences.
      */
-    models(): Observable<Model[]>
+    models(): Observable<ModelsData | null>
+
+    /**
+     * Observe the list of available chat models.
+     */
+    chatModels(): Observable<Model[]>
 
     highlights(query: FetchHighlightFileParameters): Observable<string[][]>
 
@@ -40,7 +45,16 @@ export interface WebviewToExtensionAPI {
      */
     setChatModel(model: Model['id']): Observable<void>
 
-    detectIntent(text: string): Observable<ChatMessage['intent']>
+    /**
+     * Observe the initial context that should be populated in the chat message input field.
+     */
+    initialContext(): Observable<ContextItem[]>
+
+    detectIntent(
+        text: string
+    ): Observable<
+        { intent: ChatMessage['intent']; allScores: { intent: string; score: number }[] } | undefined
+    >
 
     /**
      * Observe the current resolved configuration (same as the global {@link resolvedConfig}
@@ -57,22 +71,35 @@ export interface WebviewToExtensionAPI {
      * Observe the current transcript.
      */
     transcript(): Observable<readonly ChatMessage[]>
+
+    /**
+     * The current user's chat history.
+     */
+    userHistory(): Observable<UserLocalHistory | null>
 }
 
 export function createExtensionAPI(
-    messageAPI: ReturnType<typeof createMessageAPIForWebview>
+    messageAPI: ReturnType<typeof createMessageAPIForWebview>,
+
+    // As a workaround for Cody Web, support providing static initial context.
+    staticInitialContext?: ContextItem[]
 ): WebviewToExtensionAPI {
     return {
         mentionMenuData: proxyExtensionAPI(messageAPI, 'mentionMenuData'),
         evaluatedFeatureFlag: proxyExtensionAPI(messageAPI, 'evaluatedFeatureFlag'),
         prompts: proxyExtensionAPI(messageAPI, 'prompts'),
         models: proxyExtensionAPI(messageAPI, 'models'),
+        chatModels: proxyExtensionAPI(messageAPI, 'chatModels'),
         highlights: proxyExtensionAPI(messageAPI, 'highlights'),
         setChatModel: proxyExtensionAPI(messageAPI, 'setChatModel'),
+        initialContext: staticInitialContext
+            ? () => Observable.of(staticInitialContext)
+            : proxyExtensionAPI(messageAPI, 'initialContext'),
         detectIntent: proxyExtensionAPI(messageAPI, 'detectIntent'),
         resolvedConfig: proxyExtensionAPI(messageAPI, 'resolvedConfig'),
         authStatus: proxyExtensionAPI(messageAPI, 'authStatus'),
         transcript: proxyExtensionAPI(messageAPI, 'transcript'),
+        userHistory: proxyExtensionAPI(messageAPI, 'userHistory'),
     }
 }
 

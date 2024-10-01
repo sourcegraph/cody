@@ -118,9 +118,7 @@ describe('Agent', () => {
     // Context files ends with 'Ignored.ts' will be excluded by .cody/ignore
     const ignoredUri = workspace.file('src', 'isIgnored.ts')
 
-    async function setChatModel(
-        model = 'fireworks/accounts/fireworks/models/mixtral-8x7b-instruct'
-    ): Promise<string> {
+    async function setChatModel(model = 'mistral::v1::mixtral-8x7b-instruct'): Promise<string> {
         // Use the same chat model regardless of the server response (in case it changes on the
         // remote endpoint so we don't need to regenerate all the recordings).
         const freshChatID = await client.request('chat/new', null)
@@ -136,7 +134,7 @@ describe('Agent', () => {
         // JetBrains client does and there was a bug where everything worked
         // fine as long as we didn't send the second unauthenticated config
         // change.
-        const initModelName = 'anthropic/claude-3-5-sonnet-20240620'
+        const initModelName = 'anthropic::2023-06-01::claude-3.5-sonnet'
         const { models } = await client.request('chat/models', { modelUsage: ModelUsage.Chat })
         expect(models[0].id).toStrictEqual(initModelName)
 
@@ -215,14 +213,14 @@ describe('Agent', () => {
 
     describe('Chat', () => {
         it('chat/submitMessage (short message)', async () => {
-            await setChatModel('anthropic/claude-3-5-sonnet-20240620')
+            await setChatModel('anthropic::2023-06-01::claude-3.5-sonnet')
             const lastMessage = await client.sendSingleMessageToNewChat('Hello!')
             expect(lastMessage).toMatchInlineSnapshot(
                 `
               {
-                "model": "anthropic/claude-3-5-sonnet-20240620",
+                "model": "anthropic::2023-06-01::claude-3.5-sonnet",
                 "speaker": "assistant",
-                "text": "Hello! I'm Cody, an AI coding assistant from Sourcegraph. How can I help you with your coding or development tasks today? Whether you need help with writing code, debugging, explaining concepts, or any other programming-related questions, I'm here to assist you. What would you like to work on?",
+                "text": "Hello! I'm Cody, an AI coding assistant from Sourcegraph. How can I help you with your coding or development tasks today? Whether you need help with writing code, debugging, explaining concepts, or discussing best practices, I'm here to assist. What would you like to work on?",
               }
             `
             )
@@ -290,7 +288,7 @@ describe('Agent', () => {
                 })
             )
             expect(reply2.messages.at(-1)?.text).toMatchInlineSnapshot(
-                `"Your name is Lars Monsen."`,
+                `"Your name is Lars Monsen, as you mentioned in your previous message."`,
                 explainPollyError
             )
             // telemetry assertion, to validate the expected events fired during the test run
@@ -551,7 +549,7 @@ describe('Agent', () => {
         it('webview/receiveMessage (type: chatModel)', async () => {
             const id = await client.request('chat/new', null)
             {
-                await client.request('chat/setModel', { id, model: 'google/gemini-1.5-flash' })
+                await client.request('chat/setModel', { id, model: 'google::v1::gemini-1.5-flash' })
                 const lastMessage = await client.sendMessage(id, 'what color is the sky?')
                 expect(lastMessage?.text?.toLocaleLowerCase().includes('blue')).toBeTruthy()
             }
@@ -570,7 +568,7 @@ describe('Agent', () => {
             const id = await client.request('chat/new', null)
             await client.request('chat/setModel', {
                 id,
-                model: 'fireworks/accounts/fireworks/models/mixtral-8x7b-instruct',
+                model: 'mistral::v1::mixtral-8x7b-instruct',
             })
             await client.sendMessage(
                 id,
@@ -609,7 +607,7 @@ describe('Agent', () => {
                     const id = await client.request('chat/new', null)
                     await client.request('chat/setModel', {
                         id,
-                        model: 'fireworks/accounts/fireworks/models/mixtral-8x7b-instruct',
+                        model: 'mistral::v1::mixtral-8x7b-instruct',
                     })
                     await client.sendMessage(
                         id,
@@ -655,7 +653,7 @@ describe('Agent', () => {
                 const id = await client.request('chat/new', null)
                 await client.request('chat/setModel', {
                     id,
-                    model: 'fireworks/accounts/fireworks/models/mixtral-8x7b-instruct',
+                    model: 'mistral::v1::mixtral-8x7b-instruct',
                 })
                 // edits by index replaces message at index, and erases all subsequent messages
                 await client.sendMessage(

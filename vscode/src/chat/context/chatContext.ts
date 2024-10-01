@@ -1,6 +1,5 @@
 import type { Mention } from '@openctx/client'
 import {
-    CodyIDE,
     type ContextItem,
     type ContextItemOpenCtx,
     type ContextItemRepository,
@@ -10,7 +9,10 @@ import {
     type MentionQuery,
     REMOTE_REPOSITORY_PROVIDER_URI,
     SYMBOL_CONTEXT_MENTION_PROVIDER,
+    clientCapabilities,
     combineLatest,
+    firstResultFromOperation,
+    fromVSCodeEvent,
     isAbortError,
     isError,
     mentionProvidersMetadata,
@@ -18,22 +20,20 @@ import {
     pendingOperation,
     promiseFactoryToObservable,
     skipPendingOperation,
+    startWith,
+    switchMapReplayOperation,
     telemetryRecorder,
 } from '@sourcegraph/cody-shared'
 import { Observable, map } from 'observable-fns'
 import * as vscode from 'vscode'
 import { URI } from 'vscode-uri'
 import { getContextFileFromUri } from '../../commands/context/file-path'
-import { getConfiguration } from '../../configuration'
 import {
     getFileContextFiles,
     getOpenTabsContextFile,
     getSymbolContextFiles,
 } from '../../editor/utils/editor-context'
-import {
-    fetchRepoMetadataForFolder,
-    workspaceReposMonitor,
-} from '../../repository/repo-metadata-from-git-api'
+import { repoNameResolver } from '../../repository/repo-name-resolver'
 import { ChatBuilder } from '../chat-view/ChatBuilder'
 
 interface GetContextItemsTelemetry {
@@ -78,22 +78,20 @@ export function getMentionMenuData(options: {
         },
     }
 
-    const isCodyWeb = getConfiguration().agentIDE === CodyIDE.Web
-
     try {
-        const items = combineLatest([
+        const items = combineLatest(
             promiseFactoryToObservable(signal =>
                 getChatContextItemsForMention(
                     {
                         mentionQuery: options.query,
                         telemetryRecorder: scopedTelemetryRecorder,
-                        rangeFilter: !isCodyWeb,
+                        rangeFilter: !clientCapabilities().isCodyWeb,
                     },
                     signal
                 )
             ),
-            ChatBuilder.contextWindowForChat(options.chatBuilder),
-        ]).pipe(
+            ChatBuilder.contextWindowForChat(options.chatBuilder)
+        ).pipe(
             map(([items, contextWindow]) =>
                 contextWindow === pendingOperation
                     ? pendingOperation
@@ -115,7 +113,8 @@ export function getMentionMenuData(options: {
                 ? mentionProvidersMetadata({ disableProviders: options.disableProviders })
                 : Observable.of([])
         ).pipe(map(providers => providers.filter(p => p.title.toLowerCase().includes(queryLower))))
-        return combineLatest([providers, items]).map(([providers, items]) => ({
+
+        return combineLatest(providers, items).map(([providers, items]) => ({
             providers,
             items,
         }))
@@ -188,7 +187,10 @@ export async function getChatContextItemsForMention(
             }
 
             const items = await openCtx.controller.mentions(
-                { query: mentionQuery.text, ...(await getActiveEditorContextForOpenCtxMentions()) },
+                {
+                    query: mentionQuery.text,
+                    ...(await firstResultFromOperation(activeEditorContextForOpenCtxMentions)),
+                },
                 // get mention items for the selected provider only.
                 { providerUri: mentionQuery.provider }
             )
@@ -200,20 +202,46 @@ export async function getChatContextItemsForMention(
     }
 }
 
-export async function getActiveEditorContextForOpenCtxMentions(): Promise<{
+const activeTextEditor: Observable<vscode.TextEditor | undefined> = fromVSCodeEvent(
+    vscode.window.onDidChangeActiveTextEditor
+).pipe(
+    startWith(undefined),
+    map(() => vscode.window.activeTextEditor)
+)
+
+interface ContextForOpenCtxMentions {
     uri: string | undefined
     codebase: string | undefined
-}> {
-    const uri = vscode.window.activeTextEditor?.document.uri?.toString()
-    const activeWorkspaceURI =
-        uri &&
-        workspaceReposMonitor?.getFolderURIs().find(folderURI => uri?.startsWith(folderURI.toString()))
-
-    const codebase =
-        activeWorkspaceURI && (await fetchRepoMetadataForFolder(activeWorkspaceURI))[0]?.repoName
-
-    return { uri, codebase }
 }
+export const activeEditorContextForOpenCtxMentions: Observable<
+    ContextForOpenCtxMentions | typeof pendingOperation | Error
+> = activeTextEditor.pipe(
+    switchMapReplayOperation(
+        (textEditor): Observable<ContextForOpenCtxMentions | typeof pendingOperation> => {
+            const uri = textEditor?.document.uri
+            if (!uri) {
+                return Observable.of({ uri: undefined, codebase: undefined })
+            }
+
+            return repoNameResolver.getRepoNamesContainingUri(uri).pipe(
+                map(repoNames =>
+                    repoNames === pendingOperation
+                        ? pendingOperation
+                        : {
+                              uri: uri.toString(),
+                              codebase: repoNames.at(0),
+                          }
+                ),
+                map(value => {
+                    if (isError(value)) {
+                        return { uri: uri.toString(), codebase: undefined }
+                    }
+                    return value
+                })
+            )
+        }
+    )
+)
 
 export function contextItemMentionFromOpenCtxItem(
     item: Mention & { providerUri: string }

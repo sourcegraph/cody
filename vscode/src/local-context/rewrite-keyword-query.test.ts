@@ -5,7 +5,13 @@ import { startPollyRecording } from '../testutils/polly'
 
 import { rewriteKeywordQuery } from './rewrite-keyword-query'
 
-import { type PromptString, mockResolvedConfig, ps } from '@sourcegraph/cody-shared'
+import {
+    CLIENT_CAPABILITIES_FIXTURE,
+    type PromptString,
+    mockClientCapabilities,
+    mockResolvedConfig,
+    ps,
+} from '@sourcegraph/cody-shared'
 import { SourcegraphNodeCompletionsClient } from '../completions/nodeClient'
 import { TESTING_CREDENTIALS } from '../testutils/testing-credentials'
 
@@ -29,6 +35,7 @@ describe('rewrite-query', () => {
                 serverEndpoint: TESTING_CREDENTIALS.dotcom.serverEndpoint,
             },
         })
+        mockClientCapabilities(CLIENT_CAPABILITIES_FIXTURE)
     })
 
     function check(query: PromptString, expectedHandler: (expandedTerm: string) => void): void {

@@ -161,8 +161,8 @@ export class TestClient extends MessageHandler {
                 CODY_RECORDING_MODE: 'replay', // can be overwritten with process.env.CODY_RECORDING_MODE
                 CODY_RECORDING_DIRECTORY: recordingDirectory,
                 CODY_RECORDING_NAME: params.name,
-                SRC_ACCESS_TOKEN: params.credentials.token,
-                REDACTED_SRC_ACCESS_TOKEN: params.credentials.redactedToken,
+                SRC_ACCESS_TOKEN: params.credentials?.token ?? '',
+                REDACTED_SRC_ACCESS_TOKEN: params.credentials?.redactedToken ?? '',
                 CODY_TELEMETRY_EXPORTER: params.telemetryExporter ?? 'testing',
                 DISABLE_FEATURE_FLAGS: 'true',
                 DISABLE_UPSTREAM_HEALTH_PINGS: 'true',
@@ -879,9 +879,12 @@ ${patch}`
         }
     }
 
-    public async beforeAll(additionalConfig?: Partial<ExtensionConfiguration>) {
+    public async beforeAll(
+        additionalConfig?: Partial<ExtensionConfiguration>,
+        { expectAuthenticated = true }: { expectAuthenticated?: boolean } = {}
+    ) {
         const info = await this.initialize(additionalConfig)
-        if (!info.authStatus?.authenticated) {
+        if (expectAuthenticated && !info.authStatus?.authenticated) {
             throw new Error('Could not log in')
         }
     }

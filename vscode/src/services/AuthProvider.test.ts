@@ -1,7 +1,9 @@
 import {
     type AuthStatus,
     type AuthenticatedAuthStatus,
+    CLIENT_CAPABILITIES_FIXTURE,
     type ResolvedConfiguration,
+    mockClientCapabilities,
     readValuesFrom,
 } from '@sourcegraph/cody-shared'
 import type { PartialDeep } from '@sourcegraph/cody-shared/src/utils'
@@ -18,6 +20,8 @@ function asyncValue<T>(value: T, delay?: number | undefined): Promise<T> {
         setTimeout(() => resolve(value), delay)
     })
 }
+
+mockClientCapabilities(CLIENT_CAPABILITIES_FIXTURE)
 
 describe('AuthProvider', () => {
     beforeAll(() => {
@@ -87,7 +91,7 @@ describe('AuthProvider', () => {
         // Initial emission.
         await vi.advanceTimersByTimeAsync(1)
         expect(values).toStrictEqual<typeof values>([
-            { authenticated: false, endpoint: 'https://example.com/' },
+            { authenticated: false, endpoint: 'https://example.com/', pendingValidation: true },
         ])
         clearValues()
         expect(validateCredentialsMock).toHaveBeenCalledTimes(1)
@@ -109,7 +113,7 @@ describe('AuthProvider', () => {
         } satisfies PartialDeep<ResolvedConfiguration> as ResolvedConfiguration)
         await vi.advanceTimersByTimeAsync(1)
         expect(values).toStrictEqual<typeof values>([
-            { authenticated: false, endpoint: 'https://other.example.com/' },
+            { authenticated: false, endpoint: 'https://other.example.com/', pendingValidation: true },
         ])
         clearValues()
         expect(validateCredentialsMock).toHaveBeenCalledTimes(2)
@@ -155,7 +159,7 @@ describe('AuthProvider', () => {
         // Initial emission.
         await vi.advanceTimersByTimeAsync(10)
         expect(values).toStrictEqual<typeof values>([
-            { authenticated: false, endpoint: 'https://example.com/' },
+            { authenticated: false, endpoint: 'https://example.com/', pendingValidation: true },
             authedAuthStatusAlice,
         ])
         clearValues()
@@ -208,7 +212,7 @@ describe('AuthProvider', () => {
         // Initial authentication.
         await vi.advanceTimersByTimeAsync(11)
         expect(values).toStrictEqual<typeof values>([
-            { authenticated: false, endpoint: 'https://example.com/' },
+            { authenticated: false, endpoint: 'https://example.com/', pendingValidation: true },
             authedAuthStatus,
         ])
         clearValues()
@@ -219,8 +223,9 @@ describe('AuthProvider', () => {
         authProvider.refresh()
         await vi.advanceTimersByTimeAsync(1)
         expect(values).toStrictEqual<typeof values>([
-            { authenticated: false, endpoint: 'https://example.com/' },
+            { authenticated: false, endpoint: 'https://example.com/', pendingValidation: true },
         ])
+
         clearValues()
 
         await vi.advanceTimersByTimeAsync(10)

@@ -7,8 +7,6 @@ import { document } from '../../../test-helpers'
 import type { ContextRetrieverOptions } from '../../../types'
 import { RecentViewPortRetriever } from './recent-view-port'
 
-const MAX_TRACKED_FILES = 2
-
 const documentList = [
     document(
         dedent`
@@ -79,11 +77,14 @@ describe('RecentViewPortRetriever', () => {
             }
             return Promise.resolve(documentList[0])
         }) as any)
-
-        retriever = new RecentViewPortRetriever(MAX_TRACKED_FILES, {
-            onDidChangeTextEditorVisibleRanges: (_onDidChangeTextEditorVisibleRanges: any) => {
-                onDidChangeTextEditorVisibleRanges = _onDidChangeTextEditorVisibleRanges
-                return { dispose: () => {} }
+        retriever = new RecentViewPortRetriever({
+            maxTrackedViewPorts: 2,
+            maxRetrievedViewPorts: 2,
+            window: {
+                onDidChangeTextEditorVisibleRanges: (_onDidChangeTextEditorVisibleRanges: any) => {
+                    onDidChangeTextEditorVisibleRanges = _onDidChangeTextEditorVisibleRanges
+                    return { dispose: () => {} }
+                },
             },
         })
     })

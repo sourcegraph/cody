@@ -12,6 +12,7 @@ import {
     type FileURI,
     type PromptString,
     type SourcegraphCompletionsClient,
+    firstResultFromOperation,
     graphqlClient,
     isFileURI,
 } from '@sourcegraph/cody-shared'
@@ -108,7 +109,10 @@ async function codebaseRootsFromMentions(
     const treesToRepoNames = await Promise.all(
         trees.map(async tree => ({
             tree,
-            names: await repoNameResolver.getRepoNamesFromWorkspaceUri(tree.uri, signal),
+            names: await firstResultFromOperation(
+                repoNameResolver.getRepoNamesContainingUri(tree.uri),
+                signal
+            ),
         }))
     )
     const localRepoNames = treesToRepoNames.flatMap(t => t.names)
@@ -347,9 +351,8 @@ export class ContextRetriever implements vscode.Disposable {
             return []
         }
 
-        const remoteResultPromise = graphqlClient.contextSearch({ repoIDs, query, signal })
+        const remoteResult = await graphqlClient.contextSearch({ repoIDs, query, signal })
 
-        const remoteResult = await remoteResultPromise
         if (isError(remoteResult)) {
             throw remoteResult
         }
@@ -385,7 +388,7 @@ export class ContextRetriever implements vscode.Disposable {
     }
 }
 
-function contextSearchResultToContextItem(result: ContextSearchResult): ContextItem | undefined {
+function contextSearchResultToContextItem(result: ContextSearchResult): ContextItemFile | undefined {
     if (result.startLine < 0 || result.endLine < 0) {
         logDebug(
             'ContextRetriever',
@@ -404,6 +407,7 @@ function contextSearchResultToContextItem(result: ContextSearchResult): ContextI
         repoName: result.repoName,
         title: result.path,
         revision: result.commit,
+        ranges: result.ranges,
     }
 }
 

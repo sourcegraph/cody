@@ -1,3 +1,26 @@
+import {
+    enablePatches as enableImmerJSONPatchSupport,
+    enableMapSet as enableImmerMapSetSupport,
+} from 'immer'
+
+if (false as unknown) {
+    /**
+     * TODO: @sqs Enabeling JSON patches might be a nice way of economically
+     * syncing state to from the extension to the WebView.
+     *
+     * This would be helpful (but not required) to potentially move all current
+     * state and observables into simple `https://mobx-keystone.js.org/` classes
+     * in the webview. By then using the mobx-react binding it makes the UI a
+     * lot more friendly to work with and we remove this massive waterfall of
+     * forwarded props as each component can directly access the state it needs
+     * and re-render on changes. I've done this before in Tauri apps and it
+     * works beautifully!
+     */
+
+    enableImmerJSONPatchSupport()
+}
+enableImmerMapSetSupport()
+
 // Add anything else here that needs to be used outside of this library.
 
 export {
@@ -23,6 +46,7 @@ export {
     createModelFromServerModel,
     modelTier,
     parseModelRef,
+    toLegacyModel,
 } from './models/model'
 export {
     type EditModel,
@@ -32,7 +56,7 @@ export {
     ModelUsage,
     type ModelContextWindow,
 } from './models/types'
-export { getDotComDefaultModels } from './models/dotcom'
+export { getMockedDotComClientModels, getMockedDotComServerModels } from './models/dotcom'
 export { ModelTag } from './models/tags'
 export {
     getProviderName,
@@ -252,7 +276,6 @@ export {
     type RepoListResponse,
     type SuggestionsRepo,
     type RepoSuggestionsSearchResponse,
-    type InputContextItem,
     type ChatIntentResult,
 } from './sourcegraph-api/graphql/client'
 export type {
@@ -274,12 +297,15 @@ export {
 export type { TelemetryRecorder } from './telemetry-v2/TelemetryRecorderProvider'
 export * from './telemetry-v2/singleton'
 export { testFileUri } from './test/path-helpers'
+export * from './test/constants'
 export * from './tracing'
 export {
+    assertUnreachable,
     convertGitCloneURLToCodebaseName,
     createSubscriber,
     isError,
     nextTick,
+    promise,
     type ReadonlyDeep,
 } from './utils'
 export type { CurrentUserCodySubscription } from './sourcegraph-api/graphql/client'
@@ -326,7 +352,6 @@ export {
     GIT_OPENCTX_PROVIDER_URI,
 } from './context/openctx/api'
 export * from './context/openctx/context'
-export { type ClientStateForWebview } from './clientState'
 export * from './lexicalEditor/editorState'
 export * from './lexicalEditor/nodes'
 export {
@@ -348,7 +373,9 @@ export {
 } from './misc/rpc/rpc'
 export * from './misc/observable'
 export * from './misc/observableOperation'
+export * from './misc/mutable'
 export * from './configuration/resolver'
+export * from './configuration/clientCapabilities'
 export * from './singletons'
 export * from './auth/authStatus'
 export { fetchLocalOllamaModels } from './llm-providers/ollama/utils'

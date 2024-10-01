@@ -105,7 +105,7 @@ export function getAutocompleteProviderFromSiteConfigCodyLLMConfiguration({
     provider,
     isDotCom,
 }: {
-    completionModel: string
+    completionModel: string | undefined
     provider: AutocompleteProviderID | 'sourcegraph'
     isDotCom: boolean
 }): Promise<Provider> {
@@ -161,12 +161,18 @@ export function testAutocompleteProvider(
 ) {
     it.each(['dotcom', 'enterprise'])(`[%s] ${label}`, async instanceType => {
         const provider = await getProvider(instanceType === 'dotcom')
-        const { providerId, legacyModel, requestParams } = valuesToAssert
-
-        expect(provider.id).toBe(providerId)
-        expect(provider.legacyModel).toBe(legacyModel)
-        expect(getRequestParamsWithoutMessages(provider)).toStrictEqual(requestParams)
+        assertProviderValues(provider, valuesToAssert)
     })
+}
+
+export function assertProviderValues(
+    provider: Provider,
+    valuesToAssert: AutocompleteProviderValuesToAssert
+): void {
+    const { providerId, legacyModel, requestParams } = valuesToAssert
+    expect(provider.id).toBe(providerId)
+    expect(provider.legacyModel).toBe(legacyModel)
+    expect(getRequestParamsWithoutMessages(provider)).toStrictEqual(requestParams)
 }
 
 export function getRequestParamsWithoutMessages(

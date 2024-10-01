@@ -26,7 +26,6 @@ const meta: Meta<typeof Chat> = {
             postMessage: () => {},
             onMessage: () => () => {},
         },
-        isTranscriptError: false,
         setView: () => {},
     } satisfies React.ComponentProps<typeof Chat>,
 

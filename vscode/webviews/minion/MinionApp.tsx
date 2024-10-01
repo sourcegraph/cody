@@ -10,13 +10,12 @@ import type {
 
 import './MinionApp.css'
 import {
-    type ClientStateForWebview,
     type GenericVSCodeWrapper,
     type RangeData,
     type SerializedPromptEditorValue,
     markdownCodeBlockLanguageIDForFilename,
 } from '@sourcegraph/cody-shared'
-import { ClientStateContextProvider, PromptEditor } from '@sourcegraph/prompt-editor'
+import { PromptEditor } from '@sourcegraph/prompt-editor'
 import type { URI } from 'vscode-uri'
 import { FileLink } from '../components/FileLink'
 import { MarkdownFromCody } from '../components/MarkdownFromCody'
@@ -418,9 +417,6 @@ export const MinionApp: React.FunctionComponent<{
     const [sessionIds, setSessionIds] = useState<string[]>([])
     const [currentSessionId, setCurrentSessionId] = useState<string | undefined>()
     const [planStepsStatus, setPlanStepsStatus] = useState<{ [blockid: string]: PlanStepsStatus }>({})
-    const [clientState] = useState<ClientStateForWebview>({
-        initialContext: [],
-    })
 
     useEffect(() => {
         vscodeAPI.onMessage(message => {
@@ -494,58 +490,56 @@ export const MinionApp: React.FunctionComponent<{
     )
 
     return (
-        <ClientStateContextProvider value={clientState}>
-            <div className="app">
-                <div className="controls">
-                    <button type="button">
-                        <i className="codicon codicon-add" />
-                    </button>
+        <div className="app">
+            <div className="controls">
+                <button type="button">
+                    <i className="codicon codicon-add" />
+                </button>
 
-                    <button type="button" onClick={clearHistory}>
-                        <i className="codicon codicon-clear-all" />
-                    </button>
+                <button type="button" onClick={clearHistory}>
+                    <i className="codicon codicon-clear-all" />
+                </button>
 
-                    <select
-                        className="controls-session-selector"
-                        onChange={onSelectSession}
-                        value={currentSessionId}
-                    >
-                        {sessionIds.map(id => (
-                            <option key={id} value={id}>
-                                {id}
-                            </option>
-                        ))}
-                    </select>
-                </div>
-                <div className="transcript">
-                    {transcript.map((item, i) => (
-                        <div key={`${item.type}-${i}`}>
-                            {item.type === 'event' ? (
-                                renderEvent(item.event, `${i}`, planStepsStatus, {
-                                    updateStep: updatePlanStep,
-                                })
-                            ) : (
-                                <BlockItem
-                                    state={item.status}
-                                    title={item.block.nodeid}
-                                    onReplay={() => replayFromBlock(i)}
-                                    onCancelCurrent={() => cancelCurrentBlock()}
-                                />
-                            )}
-                        </div>
+                <select
+                    className="controls-session-selector"
+                    onChange={onSelectSession}
+                    value={currentSessionId}
+                >
+                    {sessionIds.map(id => (
+                        <option key={id} value={id}>
+                            {id}
+                        </option>
                     ))}
-                </div>
-                {transcript.length === 0 && (
-                    <div className="user-input">
-                        <UserInput
-                            mode={'start'}
-                            onSubmit={text => {
-                                vscodeAPI.postMessage({ type: 'start', description: text })
-                            }}
-                        />
-                    </div>
-                )}
+                </select>
             </div>
-        </ClientStateContextProvider>
+            <div className="transcript">
+                {transcript.map((item, i) => (
+                    <div key={`${item.type}-${i}`}>
+                        {item.type === 'event' ? (
+                            renderEvent(item.event, `${i}`, planStepsStatus, {
+                                updateStep: updatePlanStep,
+                            })
+                        ) : (
+                            <BlockItem
+                                state={item.status}
+                                title={item.block.nodeid}
+                                onReplay={() => replayFromBlock(i)}
+                                onCancelCurrent={() => cancelCurrentBlock()}
+                            />
+                        )}
+                    </div>
+                ))}
+            </div>
+            {transcript.length === 0 && (
+                <div className="user-input">
+                    <UserInput
+                        mode={'start'}
+                        onSubmit={text => {
+                            vscodeAPI.postMessage({ type: 'start', description: text })
+                        }}
+                    />
+                </div>
+            )}
+        </div>
     )
 }

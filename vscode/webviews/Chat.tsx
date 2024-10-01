@@ -4,7 +4,6 @@ import { useCallback, useEffect, useMemo, useRef } from 'react'
 import type {
     AuthenticatedAuthStatus,
     ChatMessage,
-    CodyIDE,
     Guardrails,
     PromptString,
 } from '@sourcegraph/cody-shared'
@@ -25,7 +24,6 @@ interface ChatboxProps {
     messageInProgress: ChatMessage | null
     transcript: ChatMessage[]
     vscodeAPI: Pick<VSCodeWrapper, 'postMessage' | 'onMessage'>
-    isTranscriptError: boolean
     guardrails?: Guardrails
     scrollableParent?: HTMLElement | null
     showWelcomeMessage?: boolean
@@ -38,7 +36,6 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     messageInProgress,
     transcript,
     vscodeAPI,
-    isTranscriptError,
     chatEnabled = true,
     guardrails,
     scrollableParent,
@@ -220,16 +217,13 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                 copyButtonOnSubmit={copyButtonOnSubmit}
                 insertButtonOnSubmit={insertButtonOnSubmit}
                 smartApply={smartApply}
-                isTranscriptError={isTranscriptError}
                 userInfo={userInfo}
                 chatEnabled={chatEnabled}
                 postMessage={postMessage}
                 guardrails={guardrails}
                 smartApplyEnabled={smartApplyEnabled}
             />
-            {transcript.length === 0 && showWelcomeMessage && (
-                <WelcomeMessage IDE={userInfo.ide} setView={setView} />
-            )}
+            {transcript.length === 0 && showWelcomeMessage && <WelcomeMessage setView={setView} />}
             {scrollableParent && (
                 <ScrollDown scrollableParent={scrollableParent} onClick={handleScrollDownClick} />
             )}
@@ -244,7 +238,6 @@ export interface UserAccountInfo {
         AuthenticatedAuthStatus,
         'username' | 'displayName' | 'avatarURL' | 'endpoint' | 'primaryEmail'
     >
-    ide: CodyIDE
 }
 
 export type ApiPostMessage = (message: any) => void

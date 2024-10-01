@@ -14,7 +14,6 @@ import {
     subscriptionDisposable,
     telemetryRecorder,
 } from '@sourcegraph/cody-shared'
-import type { SymfRunner } from '../../local-context/symf'
 import { logDebug, logError } from '../../log'
 import type { MessageProviderOptions } from '../MessageProvider'
 
@@ -28,10 +27,9 @@ import {
     handleCodeFromInsertAtCursor,
     handleCodeFromSaveToNewFile,
 } from '../../services/utils/codeblock-action-tracker'
-import type { ContextAPIClient } from '../context/contextAPIClient'
+import type { ChatIntentAPIClient } from '../context/chatIntentAPIClient'
 import type { SmartApplyResult } from '../protocol'
 import {
-    AuthDependentRetrievers,
     ChatController,
     type ChatSession,
     disposeWebviewViewOrPanel,
@@ -68,12 +66,10 @@ export class ChatsController implements vscode.Disposable {
         private options: Options,
         private chatClient: ChatClient,
 
-        private readonly symf: SymfRunner | null,
-
         private readonly contextRetriever: ContextRetriever,
 
         private readonly guardrails: Guardrails,
-        private readonly contextAPIClient: ContextAPIClient | null,
+        private readonly chatIntentAPIClient: ChatIntentAPIClient | null,
         private readonly extensionClient: ExtensionClient
     ) {
         logDebug('ChatsController:constructor', 'init')
@@ -480,10 +476,9 @@ export class ChatsController implements vscode.Disposable {
         return new ChatController({
             ...this.options,
             chatClient: this.chatClient,
-            retrievers: new AuthDependentRetrievers(this.symf),
             guardrails: this.guardrails,
             startTokenReceiver: this.options.startTokenReceiver,
-            contextAPIClient: this.contextAPIClient,
+            chatIntentAPIClient: this.chatIntentAPIClient,
             contextRetriever: this.contextRetriever,
             extensionClient: this.extensionClient,
         })

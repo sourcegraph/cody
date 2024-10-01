@@ -10,6 +10,7 @@ import {
     ModelUsage,
     currentAuthStatus,
     currentAuthStatusAuthed,
+    currentAuthStatusOrNotReadyYet,
     firstResultFromOperation,
     telemetryRecorder,
     waitUntilComplete,
@@ -433,7 +434,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
                         ? new AgentClientManagedSecretStorage(this, this.secretsDidChange.event)
                         : new AgentStatelessSecretStorage({
                               [formatURL(clientInfo.extensionConfiguration?.serverEndpoint ?? '') ?? '']:
-                                  clientInfo.extensionConfiguration?.accessToken,
+                                  clientInfo.extensionConfiguration?.accessToken ?? undefined,
                           })
 
                 await initializeVscodeExtension(
@@ -472,10 +473,10 @@ export class Agent extends MessageHandler implements ExtensionClient {
                     this.registerWebviewHandlers()
                 }
 
-                const authStatus = currentAuthStatus()
+                const authStatus = currentAuthStatusOrNotReadyYet()
                 return {
                     name: 'cody-agent',
-                    authenticated: authStatus?.authenticated,
+                    authenticated: authStatus?.authenticated ?? false,
                     codyVersion: authStatus?.authenticated ? authStatus.siteVersion : undefined,
                     authStatus,
                 }
@@ -1232,7 +1233,10 @@ export class Agent extends MessageHandler implements ExtensionClient {
             modelID ??= (await firstResultFromOperation(modelsService.getDefaultChatModel())) ?? ''
             const chatMessages = messages?.map(PromptString.unsafe_deserializeChatMessage) ?? []
             const chatBuilder = new ChatBuilder(modelID, chatID, chatMessages)
-            await chatHistory.saveChat(authStatus, chatBuilder.toSerializedChatTranscript())
+            const chat = chatBuilder.toSerializedChatTranscript()
+            if (chat) {
+                await chatHistory.saveChat(authStatus, chat)
+            }
             return this.createChatPanel(
                 Promise.resolve({
                     type: 'chat',
@@ -1490,14 +1494,11 @@ export class Agent extends MessageHandler implements ExtensionClient {
                 await authProvider.validateAndStoreCredentials(
                     {
                         configuration: {
-                            agentIDE: AgentWorkspaceConfiguration.clientNameToIDE(
-                                this.clientInfo?.name ?? ''
-                            ),
                             customHeaders: config.customHeaders,
                         },
                         auth: {
                             serverEndpoint: config.serverEndpoint,
-                            accessToken: config.accessToken,
+                            accessToken: config.accessToken ?? null,
                         },
                         clientState: {
                             anonymousUserID: config.anonymousUserID ?? null,

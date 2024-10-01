@@ -12,13 +12,7 @@ import {
 import { defaultCodeCompletionsClient } from '../default-client'
 import { createFastPathClient } from '../fast-path-client'
 import { TriggerKind } from '../get-inline-completions'
-import { forkSignal, generatorWithTimeout, zipGenerators } from '../utils'
 import {
-    type FetchCompletionResult,
-    fetchAndProcessDynamicMultilineCompletions,
-} from './shared/fetch-and-process-completions'
-import {
-    type CompletionProviderTracer,
     type GenerateCompletionsOptions,
     MAX_RESPONSE_TOKENS,
     Provider,
@@ -121,67 +115,12 @@ class FireworksProvider extends Provider {
             model,
         })
     }
-    public async generateCompletions(
-        generateOptions: GenerateCompletionsOptions,
-        abortSignal: AbortSignal,
-        tracer?: CompletionProviderTracer
-    ): Promise<AsyncGenerator<FetchCompletionResult[]>> {
-        const { docContext, numberOfCompletionsToGenerate } = generateOptions
 
-        const requestParams = this.getRequestParams(generateOptions)
-        tracer?.params(requestParams)
-
-        const completionsGenerators = Array.from({ length: numberOfCompletionsToGenerate }).map(
-            async () => {
-                const abortController = forkSignal(abortSignal)
-
-                const completionResponseGenerator = generatorWithTimeout(
-                    await this.createClient(generateOptions, requestParams, abortController),
-                    requestParams.timeoutMs,
-                    abortController
-                )
-
-                return fetchAndProcessDynamicMultilineCompletions({
-                    completionResponseGenerator,
-                    abortController,
-                    generateOptions,
-                    providerSpecificPostProcess: content =>
-                        this.modelHelper.postProcess(content, docContext),
-                })
-            }
-        )
-
-        /**
-         * This implementation waits for all generators to yield values
-         * before passing them to the consumer (request-manager). While this may appear
-         * as a performance bottleneck, it's necessary for the current design.
-         *
-         * The consumer operates on promises, allowing only a single resolve call
-         * from `requestManager.request`. Therefore, we must wait for the initial
-         * batch of completions before returning them collectively, ensuring all
-         * are included as suggested completions.
-         *
-         * To circumvent this performance issue, a method for adding completions to
-         * the existing suggestion list is needed. Presently, this feature is not
-         * available, and the switch to async generators maintains the same behavior
-         * as with promises.
-         */
-        return zipGenerators(await Promise.all(completionsGenerators))
-    }
-
-    private getCustomHeaders(isFireworksTracingEnabled?: boolean): Record<string, string> {
-        // Enabled Fireworks tracing for Sourcegraph teammates.
-        // https://readme.fireworks.ai/docs/enabling-tracing
-        const customHeaders: Record<string, string> = {}
-
-        if (isFireworksTracingEnabled) {
-            customHeaders['X-Fireworks-Genie'] = 'true'
-        }
-
-        return customHeaders
-    }
-
-    private async createClient(
+    /**
+     * Switches to fast-path for DotCom users, where we skip the Sourcegraph instance backend
+     * and go directly to Cody Gateway and Fireworks.
+     */
+    protected async getCompletionResponseGenerator(
         options: GenerateCompletionsOptions,
         requestParams: CodeCompletionsParams,
         abortController: AbortController
@@ -194,42 +133,51 @@ class FireworksProvider extends Provider {
                 authStatus.endpoint?.includes('localhost')
         )
 
-        const isNode = typeof process !== 'undefined'
-        let fastPathAccessToken =
-            config.auth.accessToken &&
+        const canFastPathBeUsed =
             // Require the upstream to be dotcom
             (isDotComAuthed() || isLocalInstance) &&
-            process.env.CODY_DISABLE_FASTPATH !== 'true' && // Used for testing
+            // Used for testing
+            process.env.CODY_DISABLE_FASTPATH !== 'true' &&
             // The fast path client only supports Node.js style response streams
-            isNode
-                ? dotcomTokenToGatewayToken(config.auth.accessToken)
-                : undefined
+            typeof process !== 'undefined'
 
-        if (fastPathAccessToken) {
-            const useExperimentalFireworksConfig =
-                process.env.NODE_ENV === 'development' &&
-                config.configuration.autocompleteExperimentalFireworksOptions?.token
+        if (canFastPathBeUsed) {
+            const fastPathAccessToken = dotcomTokenToGatewayToken(config.auth.accessToken)
 
-            if (useExperimentalFireworksConfig) {
-                fastPathAccessToken =
-                    config.configuration.autocompleteExperimentalFireworksOptions?.token
+            const localFastPathAccessToken =
+                process.env.NODE_ENV === 'development'
+                    ? config.configuration.autocompleteExperimentalFireworksOptions?.token
+                    : undefined
+
+            if (fastPathAccessToken || localFastPathAccessToken) {
+                return createFastPathClient(requestParams, abortController, {
+                    isLocalInstance,
+                    fireworksConfig: localFastPathAccessToken
+                        ? config.configuration.autocompleteExperimentalFireworksOptions
+                        : undefined,
+                    logger: defaultCodeCompletionsClient.instance!.logger,
+                    providerOptions: options,
+                    fastPathAccessToken: localFastPathAccessToken || fastPathAccessToken,
+                    fireworksCustomHeaders: this.getCustomHeaders(authStatus.isFireworksTracingEnabled),
+                })
             }
-
-            return createFastPathClient(requestParams, abortController, {
-                isLocalInstance,
-                fireworksConfig: useExperimentalFireworksConfig
-                    ? config.configuration.autocompleteExperimentalFireworksOptions
-                    : undefined,
-                logger: defaultCodeCompletionsClient.instance!.logger,
-                providerOptions: options,
-                fastPathAccessToken,
-                fireworksCustomHeaders: this.getCustomHeaders(authStatus.isFireworksTracingEnabled),
-            })
         }
 
-        return await this.client.complete(requestParams, abortController, {
+        return this.client.complete(requestParams, abortController, {
             customHeaders: this.getCustomHeaders(authStatus.isFireworksTracingEnabled),
         })
+    }
+
+    private getCustomHeaders(isFireworksTracingEnabled?: boolean): Record<string, string> {
+        // Enabled Fireworks tracing for Sourcegraph teammates.
+        // https://readme.fireworks.ai/docs/enabling-tracing
+        const customHeaders: Record<string, string> = {}
+
+        if (isFireworksTracingEnabled) {
+            customHeaders['X-Fireworks-Genie'] = 'true'
+        }
+
+        return customHeaders
     }
 }
 
@@ -245,7 +193,7 @@ function getClientModel(
         return model as FireworksModel
     }
 
-    throw new Error(`Unknown model: \`${model}\``)
+    throw new Error(`Unknown model: '${model}'`)
 }
 
 export function createProvider({ legacyModel, source, authStatus }: ProviderFactoryParams): Provider {

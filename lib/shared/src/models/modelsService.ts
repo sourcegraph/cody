@@ -38,7 +38,7 @@ export interface ModelRef {
     modelId: ModelId
 }
 
-export type ModelCategory = ModelTag.Power | ModelTag.Balanced | ModelTag.Speed
+export type ModelCategory = ModelTag.Power | ModelTag.Balanced | ModelTag.Speed | 'accuracy' | 'other'
 export type ModelStatus =
     | ModelTag.Experimental
     | ModelTag.EarlyAccess
@@ -46,8 +46,9 @@ export type ModelStatus =
     | ModelTag.Waitlist
     | 'stable'
     | ModelTag.Deprecated
+    | ModelTag.Internal
 export type ModelTier = ModelTag.Free | ModelTag.Pro | ModelTag.Enterprise
-export type ModelCapability = 'chat' | 'autocomplete'
+export type ModelCapability = 'chat' | 'autocomplete' | 'edit' | 'vision'
 
 export interface ContextWindow {
     maxInputTokens: number
@@ -303,7 +304,7 @@ export class ModelsService {
      * @returns An Observable that emits an array of models, with the default model first.
      */
     public getModels(type: ModelUsage): Observable<Model[] | typeof pendingOperation> {
-        return combineLatest([this.modelsChanges, this.getDefaultModel(type)]).pipe(
+        return combineLatest(this.modelsChanges, this.getDefaultModel(type)).pipe(
             map(([data, currentModel]) => {
                 if (data === pendingOperation || currentModel === pendingOperation) {
                     return pendingOperation
@@ -322,7 +323,7 @@ export class ModelsService {
     }
 
     public getDefaultModel(type: ModelUsage): Observable<Model | undefined | typeof pendingOperation> {
-        return combineLatest([this.getModelsByType(type), this.modelsChanges, authStatus]).pipe(
+        return combineLatest(this.getModelsByType(type), this.modelsChanges, authStatus).pipe(
             map(([models, modelsData, authStatus]) => {
                 if (models === pendingOperation || modelsData === pendingOperation) {
                     return pendingOperation
@@ -351,9 +352,21 @@ export class ModelsService {
         )
     }
 
+    /**
+     * Gets the default edit model, which is determined by first checking the default edit model,
+     * and if that is not available, falling back to the default chat model.
+     */
     public getDefaultEditModel(): Observable<EditModel | undefined | typeof pendingOperation> {
-        return this.getDefaultModel(ModelUsage.Edit).pipe(
-            map(model => (model === pendingOperation ? pendingOperation : model?.id))
+        return combineLatest(
+            this.getDefaultModel(ModelUsage.Edit),
+            this.getDefaultModel(ModelUsage.Chat)
+        ).pipe(
+            map(([editModel, chatModel]) => {
+                if (editModel === pendingOperation || chatModel === pendingOperation) {
+                    return pendingOperation
+                }
+                return editModel?.id || chatModel?.id
+            })
         )
     }
 
@@ -389,7 +402,7 @@ export class ModelsService {
     }
 
     public isModelAvailable(model: string | Model): Observable<boolean | typeof pendingOperation> {
-        return combineLatest([authStatus, this.modelsChanges]).pipe(
+        return combineLatest(authStatus, this.modelsChanges).pipe(
             map(([authStatus, modelsData]) =>
                 modelsData === pendingOperation
                     ? pendingOperation

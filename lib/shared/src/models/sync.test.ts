@@ -2,6 +2,7 @@ import { Observable, Subject } from 'observable-fns'
 import { describe, expect, it, vi } from 'vitest'
 import { mockAuthStatus } from '../auth/authStatus'
 import { AUTH_STATUS_FIXTURE_AUTHED, type AuthStatus } from '../auth/types'
+import { CLIENT_CAPABILITIES_FIXTURE, mockClientCapabilities } from '../configuration/clientCapabilities'
 import type { ResolvedConfiguration } from '../configuration/resolver'
 import { featureFlagProvider } from '../experimentation/FeatureFlagProvider'
 import {
@@ -35,6 +36,8 @@ import { ModelUsage } from './types'
 vi.mock('graphqlClient')
 vi.mock('../services/LocalStorageProvider')
 vi.mock('../experimentation/FeatureFlagProvider')
+
+mockClientCapabilities(CLIENT_CAPABILITIES_FIXTURE)
 
 describe('maybeAdjustContextWindows', () => {
     it('works', () => {
@@ -203,7 +206,7 @@ describe('server sent models', async () => {
     vi.spyOn(modelsService, 'modelsChanges', 'get').mockReturnValue(Observable.of(result))
 
     it('constructs from server models', () => {
-        expect(opus.id).toBe(serverOpus.modelName)
+        expect(opus.id).toBe(serverOpus.modelRef)
         expect(opus.title).toBe(serverOpus.displayName)
         expect(opus.provider).toBe('anthropic')
         expect(opus.contextWindow).toEqual({ input: 9000, output: 4000 })
@@ -368,9 +371,9 @@ describe('syncModels', () => {
                 primaryModels: [createModelFromServerModel(quxModel)],
                 preferences: {
                     defaults: {
-                        autocomplete: 'a',
-                        chat: 'a',
-                        edit: 'a',
+                        autocomplete: 'qux::a::a',
+                        chat: 'qux::a::a',
+                        edit: 'qux::a::a',
                     },
                     selected: {},
                 },
@@ -433,9 +436,9 @@ describe('syncModels', () => {
                     primaryModels: [createModelFromServerModel(zzzModel)],
                     preferences: {
                         defaults: {
-                            autocomplete: 'a',
-                            chat: 'a',
-                            edit: 'a',
+                            autocomplete: 'zzz::a::a',
+                            chat: 'zzz::a::a',
+                            edit: 'zzz::a::a',
                         },
                         selected: {},
                     },

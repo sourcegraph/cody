@@ -13,7 +13,6 @@ import {
 } from '../../../components/shadcn/ui/accordion'
 import { Tooltip, TooltipContent, TooltipTrigger } from '../../../components/shadcn/ui/tooltip'
 import { SourcegraphLogo } from '../../../icons/SourcegraphLogo'
-import { getVSCodeAPI } from '../../../utils/VSCodeApi'
 import { useTelemetryRecorder } from '../../../utils/telemetry'
 import { useConfig } from '../../../utils/useConfig'
 import { useExperimentalOneBox } from '../../../utils/useExperimentalOneBox'
@@ -80,10 +79,8 @@ export const ContextCell: FunctionComponent<{
         )
 
         const logContextOpening = useCallback(() => {
-            getVSCodeAPI().postMessage({
-                command: 'event',
-                eventName: 'CodyVSCodeExtension:chat:context:opened',
-                properties: {
+            telemetryRecorder.recordEvent('cody.contextCell', 'opened', {
+                metadata: {
                     fileCount: new Set(usedContext.map(file => file.uri.toString())).size,
                     excludedAtContext: excludedContext.length,
                 },

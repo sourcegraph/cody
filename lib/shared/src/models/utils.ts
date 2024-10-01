@@ -1,17 +1,17 @@
+import type { ClientConfiguration } from '../configuration'
+import { logDebug } from '../logger'
+import { ANSWER_TOKENS } from '../prompt/constants'
+import type { CodyLLMSiteConfiguration } from '../sourcegraph-api/graphql/client'
 import {
-    ANSWER_TOKENS,
     CHAT_INPUT_TOKEN_BUDGET,
     CHAT_OUTPUT_TOKEN_BUDGET,
-    type ClientConfiguration,
-    type CodyLLMSiteConfiguration,
     EXTENDED_CHAT_INPUT_TOKEN_BUDGET,
     EXTENDED_USER_CONTEXT_TOKEN_BUDGET,
-    type ModelContextWindow,
-    ModelTag,
-    logDebug,
-} from '..'
+} from '../token/constants'
 import type { Model } from './model'
 import type { ModelRef, ModelRefStr } from './modelsService'
+import { ModelTag } from './tags'
+import type { ModelContextWindow } from './types'
 
 export function getProviderName(name: string): string {
     const providerName = name.toLowerCase()

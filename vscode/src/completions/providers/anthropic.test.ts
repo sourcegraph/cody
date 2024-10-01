@@ -108,6 +108,17 @@ describe('anthropic autocomplete provider', () => {
         })
     )
 
+    testAutocompleteProvider(
+        'site-config-cody-llm-configuration special case for google hosted models',
+        claudeInstantAssertion,
+        isDotCom =>
+            getAutocompleteProviderFromSiteConfigCodyLLMConfiguration({
+                completionModel: 'google/claude-instant-1.2',
+                provider: 'sourcegraph',
+                isDotCom,
+            })
+    )
+
     it('throws if the wrong "completionModel" separator is used', async () => {
         const createCall = getAutocompleteProviderFromSiteConfigCodyLLMConfiguration({
             completionModel: 'anthropic.claude-instant-1.2',

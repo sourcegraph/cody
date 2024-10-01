@@ -1,20 +1,16 @@
-import type { URI } from 'vscode-uri'
-
 import type {
     AuthCredentials,
     AuthStatus,
     ChatMessage,
+    ClientCapabilities,
     ClientConfiguration,
-    ClientStateForWebview,
     CodyIDE,
     ContextItem,
     ContextItemSource,
-    MentionQuery,
     RangeData,
     RequestMessage,
     ResponseMessage,
     SerializedChatMessage,
-    UserLocalHistory,
 } from '@sourcegraph/cody-shared'
 
 import type { BillingCategory, BillingProduct } from '@sourcegraph/cody-shared/src/telemetry-v2'
@@ -43,21 +39,6 @@ export type WebviewRecordEventParameters = TelemetryEventParameters<
 >
 
 /**
- * @deprecated v1 telemetry event properties format - use 'recordEvent' instead
- */
-interface TelemetryEventProperties {
-    [key: string]:
-        | string
-        | number
-        | boolean
-        | null
-        | undefined
-        | string[]
-        | TelemetryEventProperties[]
-        | TelemetryEventProperties
-}
-
-/**
  * The location of where the webview is displayed.
  */
 export type WebviewType = 'sidebar' | 'editor'
@@ -68,14 +49,6 @@ export type WebviewType = 'sidebar' | 'editor'
 export type WebviewMessage =
     | { command: 'ready' }
     | { command: 'initialized' }
-    | {
-          /**
-           * @deprecated v1 telemetry RPC - use 'recordEvent' instead
-           */
-          command: 'event'
-          eventName: string
-          properties?: TelemetryEventProperties | undefined | null
-      }
     | {
           /**
            * DO NOT USE DIRECTLY - ALWAYS USE a TelemetryRecorder from
@@ -93,9 +66,7 @@ export type WebviewMessage =
           parameters: WebviewRecordEventParameters
       }
     | ({ command: 'submit' } & WebviewSubmitMessage)
-    | { command: 'history'; action: 'clear' | 'export' }
     | { command: 'restoreHistory'; chatID: string }
-    | { command: 'deleteHistory'; chatID: string }
     | { command: 'links'; value: string }
     | { command: 'openURI'; uri: Uri }
     | {
@@ -109,18 +80,6 @@ export type WebviewMessage =
           page: string
       }
     | { command: 'command'; id: string; arg?: string | undefined | null }
-    | {
-          command: 'openFile'
-          uri: URI
-          range?: RangeData | undefined | null
-      }
-    | {
-          command: 'openLocalFileWithRange'
-          filePath: string
-          // Note: we're not using vscode.Range objects or nesting here, as the protocol
-          // tends to munge the type in a weird way (nested fields become array indices).
-          range?: RangeData | undefined | null
-      }
     | ({ command: 'edit' } & WebviewEditMessage)
     | { command: 'insert'; text: string }
     | { command: 'newFile'; text: string }
@@ -157,15 +116,6 @@ export type WebviewMessage =
           onboardingKind: 'web-sign-in-token'
       }
     | {
-          command: 'getUserContext'
-          /** @deprecated Use the `queryContextItems` message instead. */
-          query: string
-      }
-    | {
-          command: 'queryContextItems'
-          query: MentionQuery
-      }
-    | {
           command: 'attribution-search'
           snippet: string
       }
@@ -185,6 +135,7 @@ export type ExtensionMessage =
     | {
           type: 'config'
           config: ConfigurationSubsetForWebview & LocalEnv
+          clientCapabilities: ClientCapabilities
           authStatus: AuthStatus
           configFeatures: {
               chat: boolean
@@ -194,20 +145,15 @@ export type ExtensionMessage =
           isDotComUser: boolean
           workspaceFolderUris: string[]
       }
-    | { type: 'ui/theme'; agentIDE: CodyIDE; cssVariables: CodyIDECssVariables }
-    | { type: 'history'; localHistory?: UserLocalHistory | undefined | null }
+    | {
+          /** Used by JetBrains and not VS Code. */
+          type: 'ui/theme'
+          agentIDE: CodyIDE
+          cssVariables: CodyIDECssVariables
+      }
     | ({ type: 'transcript' } & ExtensionTranscriptMessage)
     | { type: 'view'; view: View }
     | { type: 'errors'; errors: string }
-    | { type: 'transcript-errors'; isTranscriptError: boolean }
-    /**
-     * Context files returned from a @-mention search
-     */
-    | {
-          type: 'userContextFiles'
-          userContextFiles?: ContextItem[] | undefined | null
-      }
-    | { type: 'clientState'; value: ClientStateForWebview }
     | {
           type: 'clientAction'
           addContextItemsToLastHumanInput?: ContextItem[] | null | undefined
@@ -243,6 +189,7 @@ export interface WebviewSubmitMessage extends WebviewContextMessage {
     /** An opaque value representing the text editor's state. @see {ChatMessage.editorState} */
     editorState?: unknown | undefined | null
     intent?: ChatMessage['intent'] | undefined | null
+    intentScores?: { intent: string; score: number }[] | undefined | null
     manuallySelectedIntent?: boolean | undefined | null
 }
 
@@ -253,6 +200,7 @@ interface WebviewEditMessage extends WebviewContextMessage {
     /** An opaque value representing the text editor's state. @see {ChatMessage.editorState} */
     editorState?: unknown | undefined | null
     intent?: ChatMessage['intent'] | undefined | null
+    intentScores?: { intent: string; score: number }[] | undefined | null
     manuallySelectedIntent?: boolean | undefined | null
 }
 
@@ -270,10 +218,7 @@ export interface ExtensionTranscriptMessage {
  * The subset of configuration that is visible to the webview.
  */
 export interface ConfigurationSubsetForWebview
-    extends Pick<
-            ClientConfiguration,
-            'experimentalNoodle' | 'agentIDE' | 'agentExtensionVersion' | 'internalDebugContext'
-        >,
+    extends Pick<ClientConfiguration, 'experimentalNoodle' | 'internalDebugContext'>,
         Pick<AuthCredentials, 'serverEndpoint'> {
     smartApply: boolean
     // Type/location of the current webview.

@@ -1,8 +1,12 @@
-import { type CodyCommand, CodyIDE, type ContextItem, isFileURI } from '@sourcegraph/cody-shared'
+import {
+    type CodyCommand,
+    type ContextItem,
+    clientCapabilities,
+    isFileURI,
+} from '@sourcegraph/cody-shared'
 
 import * as vscode from 'vscode'
 import { CodyCommandMenuItems } from '..'
-import { getConfiguration } from '../../configuration'
 import { executeExplainHistoryCommand } from '../execute/explain-history'
 import { showCommandMenu } from '../menus'
 import type { CodyCommandArgs } from '../types'
@@ -33,15 +37,14 @@ export class CommandsProvider implements vscode.Disposable {
     protected customCommandsStore: CustomCommandsManager | undefined
 
     constructor() {
-        const agentIDE = getConfiguration().agentIDE
-        if (agentIDE !== CodyIDE.Web) {
+        if (!clientCapabilities().isCodyWeb) {
             for (const c of vscodeDefaultCommands) {
                 this.commands.set(c.key, c)
             }
         }
 
         // Only initialize custom commands store in VS Code.
-        if (!agentIDE || agentIDE === CodyIDE.VSCode) {
+        if (clientCapabilities().isVSCode) {
             this.customCommandsStoreInit()
         }
 

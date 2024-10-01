@@ -1,5 +1,5 @@
 import { Observable, Subject } from 'observable-fns'
-import { afterEach, describe, expect, test, vi } from 'vitest'
+import { afterAll, afterEach, describe, expect, test, vi } from 'vitest'
 import {
     NEVER,
     NO_INITIAL_VALUE,
@@ -13,6 +13,7 @@ import {
     firstValueFrom,
     fromLateSetSource,
     fromVSCodeEvent,
+    lifecycle,
     memoizeLastValue,
     observableOfSequence,
     observableOfTimedSequence,
@@ -22,15 +23,102 @@ import {
     startWith,
     storeLastValue,
     switchMap,
-    take,
     withLatestFrom,
 } from './observable'
 import { pendingOperation } from './observableOperation'
 
+// This is a leak detector to ensure that there are 0 net subscriptions (i.e., leaked subscriptions
+// that have not been unsubscribed) after all the tests finish. It should be safe to run with
+// `DETECT_LEAKS = true` at all times during testing.
+const DETECT_LEAKS = true
+const LEAK_STATS: {
+    subscribes: number
+    subscribesInTests: string[]
+    unsubscribes: number
+    unsubscribesInTests: string[]
+} = {
+    subscribes: 0,
+    subscribesInTests: [],
+    unsubscribes: 0,
+    unsubscribesInTests: [],
+}
+if (DETECT_LEAKS) {
+    function currentTestName(): string {
+        const testName = expect.getState().currentTestName?.trim()
+        if (!testName) {
+            throw new Error('No current test name')
+        }
+        return testName
+    }
+
+    const observableMod = await import('observable-fns')
+    const origSubscribe = observableMod.Observable.prototype.subscribe
+    observableMod.Observable.prototype.subscribe = function <T>(
+        this: Observable<T>,
+        ...args: Parameters<typeof this.subscribe>
+    ) {
+        // Hook into subscriptions.
+        LEAK_STATS.subscribes++
+        LEAK_STATS.subscribesInTests.push(currentTestName())
+
+        const subscription = origSubscribe.apply(this, args)
+
+        // Hook into unsubscriptions. This is more reliable than hooking
+        // `Subscription.prototype.unsubscribe` because sometimes just this field is set.
+        let _stateValue: string = subscription._state
+        Object.defineProperty(subscription, '_state', {
+            get() {
+                return _stateValue
+            },
+            set(value) {
+                if (value === 'closed') {
+                    LEAK_STATS.unsubscribes++
+                    LEAK_STATS.unsubscribesInTests.push(currentTestName())
+                }
+                _stateValue = value
+            },
+        })
+
+        return subscription
+    } as any
+
+    afterAll(() => {
+        if (LEAK_STATS.subscribes !== LEAK_STATS.unsubscribes) {
+            const leaksPerTest = new Map<string, number>()
+            for (const testName of LEAK_STATS.subscribesInTests) {
+                leaksPerTest.set(testName, (leaksPerTest.get(testName) ?? 0) + 1)
+            }
+            for (const testName of LEAK_STATS.unsubscribesInTests) {
+                const netSubscriptions = (leaksPerTest.get(testName) ?? 0) - 1
+                if (netSubscriptions === 0) {
+                    leaksPerTest.delete(testName)
+                } else {
+                    leaksPerTest.set(testName, netSubscriptions)
+                }
+            }
+
+            expect.fail(
+                [
+                    `Observable subscription leak detected: ${LEAK_STATS.subscribes} subscribes, ${LEAK_STATS.unsubscribes} unsubscribes`,
+                    `Tests with leaks:\n\n${[...leaksPerTest.entries()]
+                        .map(([testName, netSubscriptions]) => `- ${testName}: ${netSubscriptions}`)
+                        .join('\n')}`,
+                ].join('\n\n')
+            )
+        }
+    })
+}
+function expectNetSubscriptions(n: number): void {
+    if (DETECT_LEAKS) {
+        const netSubscriptions = LEAK_STATS.subscribes - LEAK_STATS.unsubscribes
+        expect(`${netSubscriptions} active subscriptions`).toBe(`${n} active subscriptions`)
+    }
+}
+
 describe('firstValueFrom', () => {
     test('gets first value', async () => {
-        const observable = observableOfSequence(1, 2)
-        expect(await firstValueFrom(observable)).toBe(1)
+        const observable = observableOfTimedSequence(1, 'a', 2)
+        expect(await firstValueFrom(observable)).toBe('a')
     })
 
     test('aborts with AbortSignal', async () => {
@@ -50,7 +138,7 @@ describe('firstValueFrom', () => {
 })
 
 describe('allValuesFrom', () => {
-    test('gets first value', async () => {
+    test('gets all values', async () => {
         const observable = observableOfSequence(1, 2)
         expect(await allValuesFrom(observable)).toStrictEqual([1, 2])
     })
@@ -100,14 +188,15 @@ describe('abortableOperation', () => {
     })
 
     test('emits error when operation rejects', async () => {
-        const source = observableOfSequence(1)
+        vi.useFakeTimers()
+        const source = observableOfTimedSequence('a', 10)
         const operation = vi.fn(() => Promise.reject(new Error('test error')))
         const observable = source.pipe(abortableOperation(operation))
         await expect(allValuesFrom(observable)).rejects.toThrow('test error')
     })
 
     test('emits error when operation throws', async () => {
-        const source = observableOfSequence(1)
+        const source = observableOfTimedSequence('a', 10)
         const operation = vi.fn(() => {
             throw new Error('test error')
         })
@@ -237,20 +326,17 @@ describe('combineLatest', { timeout: 500 }, () => {
     })
 
     test('combines latest values (sync)', async () => {
-        const observable = combineLatest([
-            observableOfSequence('A', 'B'),
-            observableOfSequence('x', 'y'),
-        ])
+        const observable = combineLatest(observableOfSequence('A', 'B'), observableOfSequence('x', 'y'))
         expect(await allValuesFrom(observable)).toEqual<ObservableValue<typeof observable>[]>([
             ['B', 'y'],
         ])
     })
 
     test('combines latest values (async)', async () => {
-        const observable = combineLatest([
+        const observable = combineLatest(
             observableOfTimedSequence(0, 'A', 0, 'B'),
-            observableOfTimedSequence(0, 'x', 0, 'y'),
-        ])
+            observableOfTimedSequence(0, 'x', 0, 'y')
+        )
         expect(await allValuesFrom(observable)).toEqual<ObservableValue<typeof observable>[]>([
             ['A', 'x'],
             ['B', 'x'],
@@ -259,33 +345,106 @@ describe('combineLatest', { timeout: 500 }, () => {
     })
 
     test('handles undefined value', async () => {
-        const observable = combineLatest([
+        const observable = combineLatest(
             observableOfSequence(undefined),
-            observableOfSequence(1, undefined),
-        ])
+            observableOfSequence(1, undefined)
+        )
         expect(await allValuesFrom(observable)).toEqual<ObservableValue<typeof observable>[]>([
             [undefined, undefined],
         ])
     })
 
     test('handles empty input', async () => {
-        expect(await allValuesFrom(combineLatest([] as any))).toEqual([])
+        expect(await allValuesFrom(combineLatest())).toEqual([])
     })
 
     test('keeps going after one completes', async () => {
-        const completesAfterC = observableOfTimedSequence(0, 'A', 0, 'B', 0, 'C')
-        const completesAfterX = observableOfTimedSequence(0, 'X')
-        const observable = combineLatest([completesAfterC, completesAfterX])
-        expect(await allValuesFrom(observable)).toEqual<ObservableValue<typeof observable>[]>([
+        vi.useFakeTimers()
+        const unsubscribed = { c: false, x: false }
+        const completesAfterC = observableOfTimedSequence(0, 'A', 10, 'B', 10, 'C').pipe(
+            lifecycle({
+                onUnsubscribe: () => {
+                    unsubscribed.c = true
+                },
+            })
+        )
+        const completesAfterX = observableOfTimedSequence(0, 'X').pipe(
+            lifecycle({
+                onUnsubscribe: () => {
+                    unsubscribed.x = true
+                },
+            })
+        )
+
+        const { values, clearValues, done, status } = readValuesFrom(
+            combineLatest(completesAfterC, completesAfterX)
+        )
+        expect(values).toStrictEqual<typeof values>([])
+
+        await vi.advanceTimersByTimeAsync(10)
+        expect(values).toStrictEqual<typeof values>([
             ['A', 'X'],
             ['B', 'X'],
-            ['C', 'X'],
         ])
+        expect(unsubscribed).toStrictEqual<typeof unsubscribed>({ c: false, x: true })
+        clearValues()
+
+        await vi.advanceTimersByTimeAsync(10)
+        expect(values).toStrictEqual<typeof values>([['C', 'X']])
+        expect(unsubscribed).toStrictEqual<typeof unsubscribed>({ c: true, x: true })
+
+        expect(status()).toBe('complete')
+        await done
+    })
+
+    test('immediately emits any input error and unsubscribes all', async () => {
+        vi.useFakeTimers()
+
+        const unsubscribed = { a: false, b: false, c: false }
+        const inputA = observableOfTimedSequence(0, 'A', 100).pipe(
+            lifecycle({
+                onUnsubscribe: () => {
+                    unsubscribed.a = true
+                },
+            })
+        )
+        const inputB = new Observable<string>(observer => {
+            observer.next('B')
+            setTimeout(() => observer.error(new Error('my-error')), 20)
+            return () => {
+                unsubscribed.b = true
+            }
+        })
+        const inputC = observableOfTimedSequence(10, 'C', 100).pipe(
+            lifecycle({
+                onUnsubscribe: () => {
+                    unsubscribed.c = true
+                },
+            })
+        )
+
+        const { values, clearValues, done, status } = readValuesFrom(
+            combineLatest(inputA, inputB, inputC)
+        )
+        done.catch(() => {})
+        expect(values).toStrictEqual<typeof values>([])
+
+        await vi.advanceTimersByTimeAsync(10)
+        expect(values).toStrictEqual<typeof values>([['A', 'B', 'C']])
+        expect(unsubscribed).toStrictEqual<typeof unsubscribed>({ a: false, b: false, c: false })
+        clearValues()
+
+        await vi.advanceTimersByTimeAsync(10)
+        expect(values).toStrictEqual<typeof values>([])
+        clearValues()
+        expect(status()).toBe('error')
+        expect(unsubscribed).toStrictEqual<typeof unsubscribed>({ a: true, b: true, c: true })
+        await expect(done).rejects.toThrow('my-error')
     })
 
     test('propagates unsubscription', async () => {
         vi.useFakeTimers()
-        const observable = combineLatest([observableOfTimedSequence(10, 'A', 10, 'B')])
+        const observable = combineLatest(observableOfTimedSequence(10, 'A', 10, 'B'))
         const { values, done, unsubscribe } = readValuesFrom(observable)
         await vi.advanceTimersByTimeAsync(10)
         unsubscribe()
@@ -477,11 +636,7 @@ describe('distinctUntilChanged', () => {
 })
 
 describe('shareReplay', () => {
-    afterEach(() => {
-        vi.useRealTimers()
-    })
-
-    test('late subscriber gets previous value', { timeout: 500 }, async () => {
+    test('late subscriber gets previous value', { timeout: 500 }, async ({ onTestFinished }) => {
         vi.useFakeTimers()
         let called = 0
         const observable = new Observable(observer => {
@@ -491,13 +646,21 @@ describe('shareReplay', () => {
                 observer.next('a')
                 await new Promise(resolve => setTimeout(resolve, 10))
                 observer.next('b')
-                observer.complete()
             })()
         }).pipe(shareReplay())
 
         const reader1 = readValuesFrom(observable)
+        onTestFinished(async () => {
+            reader1.unsubscribe()
+            await reader1.done
+        })
         await vi.advanceTimersByTimeAsync(10)
         const reader2 = readValuesFrom(observable)
+        onTestFinished(async () => {
+            reader2.unsubscribe()
+            await reader2.done
+        })
+        expectNetSubscriptions(5)
         await vi.runAllTimersAsync()
         reader1.unsubscribe()
         reader2.unsubscribe()
@@ -516,13 +679,21 @@ describe('createDisposables', () => {
         dispose(): void
     }
 
-    test('creates', async () => {
+    test('creates', async ({ onTestFinished }) => {
+        vi.useFakeTimers()
         const create = vi.fn()
-        const values = await allValuesFrom(
-            observableOfSequence('a', 'b').pipe(createDisposables(create), take(2))
+        const { values, unsubscribe, done } = readValuesFrom(
+            observableOfTimedSequence('a', 'b', 10).pipe(createDisposables(create))
         )
+        onTestFinished(async () => {
+            unsubscribe()
+            await done
+            expectNetSubscriptions(0)
+        })
+        await vi.advanceTimersByTimeAsync(0)
         expect(create).toHaveBeenCalledTimes(2)
         expect(values).toStrictEqual<typeof values>(['a', 'b'])
+        expectNetSubscriptions(2)
     })
 
     test('handles errors in create', async () => {
@@ -536,7 +707,7 @@ describe('createDisposables', () => {
         done.catch(() => {})
         await vi.runOnlyPendingTimersAsync()
         expect(create).toHaveBeenCalledTimes(1)
-        expect(done).rejects.toThrow('foo')
+        await expect(done).rejects.toThrow('foo')
         expect(values).toStrictEqual<typeof values>([])
     })
 

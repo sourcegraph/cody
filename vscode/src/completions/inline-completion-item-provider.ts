@@ -22,7 +22,7 @@ import { type CodyIgnoreType, showCodyIgnoreNotification } from '../cody-ignore/
 import { autocompleteStageCounterLogger } from '../services/autocomplete-stage-counter-logger'
 import { recordExposedExperimentsToSpan } from '../services/open-telemetry/utils'
 import { isInTutorial } from '../tutorial/helpers'
-import { type LatencyFeatureFlags, getArtificialDelay, resetArtificialDelay } from './artificial-delay'
+import { getArtificialDelay } from './artificial-delay'
 import { completionProviderConfig } from './completion-provider-config'
 import { ContextMixer } from './context/context-mixer'
 import { DefaultContextStrategyFactory } from './context/context-strategy'
@@ -209,6 +209,7 @@ export class InlineCompletionItemProvider
         this.disposables.push(strategyFactory)
 
         this.contextMixer = new ContextMixer(strategyFactory)
+        this.disposables.push(this.contextMixer)
 
         this.smartThrottleService = new SmartThrottleService()
         this.disposables.push(this.smartThrottleService)
@@ -386,14 +387,14 @@ export class InlineCompletionItemProvider
                     // avoid visual churn.
                     //
                     // We still make the request to find out if the user is still rate limited.
-                    const hasRateLimitError = this.config.statusBar.hasError(RateLimitError.errorName)
+                    const hasRateLimitError = this.config.statusBar.hasError(
+                        e => e.errorType === 'RateLimitError'
+                    )
                     if (!hasRateLimitError) {
-                        stopLoading = this.config.statusBar.startLoading(
-                            'Completions are being generated',
-                            {
-                                timeoutMs: 30_000,
-                            }
-                        )
+                        stopLoading = this.config.statusBar.addLoader({
+                            title: 'Completions are being generated',
+                            timeout: 30_000,
+                        })
                     }
                 } else {
                     stopLoading?.()
@@ -452,14 +453,7 @@ export class InlineCompletionItemProvider
                 return null
             }
 
-            const latencyFeatureFlags: LatencyFeatureFlags = {
-                user: await featureFlagProvider.evaluateFeatureFlagEphemerally(
-                    FeatureFlag.CodyAutocompleteUserLatency
-                ),
-            }
             const artificialDelay = getArtificialDelay({
-                featureFlags: latencyFeatureFlags,
-                uri: document.uri.toString(),
                 languageId: document.languageId,
                 codyAutocompleteDisableLowPerfLangDelay: this.disableLowPerfLangDelay,
                 completionIntent,
@@ -693,8 +687,6 @@ export class InlineCompletionItemProvider
         if (this.config.formatOnAccept && !this.config.isRunningInsideAgent) {
             await formatCompletion(completion as AutocompleteItem)
         }
-
-        resetArtificialDelay()
 
         // When a completion is accepted, the lastCandidate should be cleared. This makes sure the
         // log id is never reused if the completion is accepted.
@@ -931,7 +923,7 @@ export class InlineCompletionItemProvider
     private onError(error: Error): void {
         if (error instanceof RateLimitError) {
             // If there's already an existing error, don't add another one.
-            const hasRateLimitError = this.config.statusBar.hasError(error.name)
+            const hasRateLimitError = this.config.statusBar.hasError(e => e.title === error.name)
             if (hasRateLimitError) {
                 return
             }
@@ -954,8 +946,8 @@ export class InlineCompletionItemProvider
                 title: errorTitle,
                 description: `${error.userMessage} ${error.retryMessage ?? ''}`.trim(),
                 errorType: error.name,
+                timeout: error.retryAfterDate ? Number(error.retryAfterDate) : undefined,
                 removeAfterSelected: true,
-                removeAfterEpoch: error.retryAfterDate ? Number(error.retryAfterDate) : undefined,
                 onSelect: () => {
                     if (canUpgrade) {
                         telemetryRecorder.recordEvent('cody.upsellUsageLimitCTA', 'clicked', {
@@ -995,7 +987,7 @@ export class InlineCompletionItemProvider
             const errorTitle = 'Cody Autocomplete Disabled by Site Admin'
             // If there's already an existing error, don't add another one.
             const hasAutocompleteDisabledBanner = this.config.statusBar.hasError(
-                'AutoCompleteDisabledByAdmin'
+                e => e.errorType === 'AutoCompleteDisabledByAdmin'
             )
             if (hasAutocompleteDisabledBanner) {
                 return

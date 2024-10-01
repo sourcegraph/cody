@@ -2,10 +2,10 @@ import * as vscode from 'vscode'
 
 import {
     type AuthStatus,
-    CodyIDE,
     DOTCOM_URL,
     type PickResolvedConfiguration,
     SourcegraphGraphQLAPIClient,
+    clientCapabilities,
     currentAuthStatus,
     getCodyAuthReferralCode,
     isDotCom,
@@ -21,16 +21,25 @@ import { localStorage } from '../services/LocalStorageProvider'
 import { secretStorage } from '../services/SecretStorageProvider'
 import { closeAuthProgressIndicator } from './auth-progress-indicator'
 
+interface LoginMenuItem {
+    id: string
+    label: string
+    description: string
+    totalSteps: number
+    uri: string
+}
+
+type AuthMenuType = 'signin' | 'switch'
+
 /**
  * Show a quickpick to select the endpoint to sign into.
  */
 export async function showSignInMenu(
     type?: 'enterprise' | 'dotcom' | 'token',
-    uri?: string,
-    agentIDE: CodyIDE = CodyIDE.VSCode
+    uri?: string
 ): Promise<void> {
     const authStatus = currentAuthStatus()
-    const mode = authStatus.authenticated ? 'switch' : 'signin'
+    const mode: AuthMenuType = authStatus.authenticated ? 'switch' : 'signin'
     logDebug('AuthProvider:signinMenu', mode)
     telemetryRecorder.recordEvent('cody.auth.login', 'clicked')
     const item = await showAuthMenu(mode)
@@ -52,11 +61,11 @@ export async function showSignInMenu(
                 return
             }
             authProvider.setAuthPendingToEndpoint(instanceUrl)
-            redirectToEndpointLogin(instanceUrl, agentIDE)
+            redirectToEndpointLogin(instanceUrl)
             break
         }
         case 'dotcom':
-            redirectToEndpointLogin(DOTCOM_URL.href, agentIDE)
+            redirectToEndpointLogin(DOTCOM_URL.href)
             break
         case 'token': {
             const instanceUrl = await showInstanceURLInputBox(uri || item.uri)
@@ -94,47 +103,30 @@ export async function showSignInMenu(
     }
 }
 
-interface LoginMenuItem {
-    id: string
-    label: string
-    description: string
-    totalSteps: number
-    uri: string
-}
-
-type AuthMenuType = 'signin' | 'switch'
-
-function getItemLabel(uri: string, isSwitch: boolean): string {
-    const icon = isSwitch && currentAuthStatus().endpoint === uri ? '$(check) ' : ''
-    if (isDotCom(uri)) {
-        return `${icon}Sourcegraph.com`
-    }
-    return `${icon}${uri}`
+function getEndpointItemLabel(uri: string, isAuthenticated: boolean): string {
+    const icon = isAuthenticated ? '$(check) ' : ''
+    return isDotCom(uri) ? `${icon}Sourcegraph.com` : `${icon}${uri}`
 }
 
 async function showAuthMenu(type: AuthMenuType): Promise<LoginMenuItem | null> {
+    const { endpoint: currentEndpoint } = currentAuthStatus()
     const endpointHistory = localStorage.getEndpointHistory() ?? []
 
-    // Create option items
-    const historySize = endpointHistory?.length
-    const history =
-        historySize > 0
-            ? endpointHistory
-                  ?.map((uri, i) => ({
-                      id: uri,
-                      label: getItemLabel(uri, type === 'switch'),
-                      description: '',
-                      uri,
-                  }))
-                  .reverse()
-            : []
-    const separator = [{ label: type === 'signin' ? 'previously used' : 'current', kind: -1 }]
-    const optionItems = [...LoginMenuOptionItems, ...separator, ...history]
-    const option = (await vscode.window.showQuickPick(
-        optionItems,
-        AuthMenuOptions[type]
-    )) as LoginMenuItem
-    return option
+    const historyItems = endpointHistory.reverse().map(uri => ({
+        id: uri,
+        label: getEndpointItemLabel(uri, currentEndpoint === uri),
+        description: '',
+        totalSteps: 1,
+        uri,
+    }))
+
+    const optionItems: vscode.QuickPickItem[] = [
+        ...LoginMenuOptionItems,
+        { label: 'account history', kind: vscode.QuickPickItemKind.Separator },
+        ...historyItems,
+    ]
+
+    return vscode.window.showQuickPick(optionItems, AuthMenuOptions[type]) as Promise<LoginMenuItem>
 }
 
 /**
@@ -247,13 +239,13 @@ async function signinMenuForInstanceUrl(instanceUrl: string): Promise<void> {
 }
 
 /** Open callback URL in browser to get token from instance. */
-export function redirectToEndpointLogin(uri: string, agentIDE: CodyIDE = CodyIDE.VSCode): void {
+export function redirectToEndpointLogin(uri: string): void {
     const endpoint = formatURL(uri)
     if (!endpoint) {
         return
     }
 
-    if (agentIDE === CodyIDE.VSCode && vscode.env.uiKind === vscode.UIKind.Web) {
+    if (clientCapabilities().isVSCode && vscode.env.uiKind === vscode.UIKind.Web) {
         // VS Code Web needs a different kind of callback using asExternalUri and changes to our
         // UserSettingsCreateAccessTokenCallbackPage.tsx page in the Sourcegraph web app. So,
         // just require manual token entry for now.
@@ -266,7 +258,7 @@ export function redirectToEndpointLogin(uri: string, agentIDE: CodyIDE = CodyIDE
     const newTokenCallbackUrl = new URL('/user/settings/tokens/new/callback', endpoint)
     newTokenCallbackUrl.searchParams.append(
         'requestFrom',
-        getCodyAuthReferralCode(agentIDE, vscode.env.uriScheme) ?? 'Cody'
+        getCodyAuthReferralCode(vscode.env.uriScheme) ?? 'Cody'
     )
     authProvider.setAuthPendingToEndpoint(endpoint)
     void vscode.env.openExternal(vscode.Uri.parse(newTokenCallbackUrl.href))
@@ -377,7 +369,7 @@ async function signOut(endpoint: string): Promise<void> {
  * The subset of {@link ResolvedConfiguration} that is needed for authentication.
  */
 export type ResolvedConfigurationCredentialsOnly = PickResolvedConfiguration<{
-    configuration: 'agentIDE' | 'customHeaders'
+    configuration: 'customHeaders'
     auth: true
     clientState: 'anonymousUserID'
 }>
@@ -390,9 +382,8 @@ export async function validateCredentials(
     signal?: AbortSignal
 ): Promise<AuthStatus> {
     // An access token is needed except for Cody Web, which uses cookies.
-    const isCodyWeb = config.configuration.agentIDE === CodyIDE.Web
-    if (!config.auth.accessToken && !isCodyWeb) {
-        return { authenticated: false, endpoint: config.auth.serverEndpoint }
+    if (!config.auth.accessToken && !clientCapabilities().isCodyWeb) {
+        return { authenticated: false, endpoint: config.auth.serverEndpoint, pendingValidation: false }
     }
 
     // Check if credentials are valid and if Cody is enabled for the credentials and endpoint.
@@ -417,20 +408,26 @@ export async function validateCredentials(
         JSON.stringify({ siteHasCodyEnabled, siteVersion, codyLLMConfiguration, userInfo })
     )
     if (isError(userInfo) && isNetworkLikeError(userInfo)) {
-        return { authenticated: false, showNetworkError: true, endpoint: config.auth.serverEndpoint }
+        return {
+            authenticated: false,
+            showNetworkError: true,
+            endpoint: config.auth.serverEndpoint,
+            pendingValidation: false,
+        }
     }
     if (!userInfo || isError(userInfo)) {
         return {
             authenticated: false,
             endpoint: config.auth.serverEndpoint,
             showInvalidAccessTokenError: true,
+            pendingValidation: false,
         }
     }
     if (!siteHasCodyEnabled) {
         vscode.window.showErrorMessage(
             `Cody is not enabled on this Sourcegraph instance (${config.auth.serverEndpoint}). Ask a site administrator to enable it.`
         )
-        return { authenticated: false, endpoint: config.auth.serverEndpoint }
+        return { authenticated: false, endpoint: config.auth.serverEndpoint, pendingValidation: false }
     }
 
     const configOverwrites = isError(codyLLMConfiguration) ? undefined : codyLLMConfiguration

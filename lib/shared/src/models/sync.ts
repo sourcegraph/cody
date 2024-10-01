@@ -1,6 +1,7 @@
 import { Observable, interval, map } from 'observable-fns'
 import type { AuthStatus } from '../auth/types'
-import { type ClientConfiguration, CodyIDE } from '../configuration'
+import type { ClientConfiguration } from '../configuration'
+import { clientCapabilities } from '../configuration/clientCapabilities'
 import type { PickResolvedConfiguration } from '../configuration/resolver'
 import { FeatureFlag, featureFlagProvider } from '../experimentation/FeatureFlagProvider'
 import { fetchLocalOllamaModels } from '../llm-providers/ollama/utils'
@@ -22,14 +23,7 @@ import { isDotCom } from '../sourcegraph-api/environments'
 import { RestClient } from '../sourcegraph-api/rest/client'
 import { CHAT_INPUT_TOKEN_BUDGET } from '../token/constants'
 import { isError } from '../utils'
-import { getDotComDefaultModels } from './dotcom'
-import {
-    type Model,
-    type ServerModel,
-    createModel,
-    createModelFromServerModel,
-    parseModelRef,
-} from './model'
+import { type Model, type ServerModel, createModel, createModelFromServerModel } from './model'
 import type { ModelsData, ServerModelConfiguration, SitePreferences } from './modelsService'
 import { ModelTag } from './tags'
 import { ModelUsage } from './types'
@@ -58,18 +52,14 @@ export function syncModels({
     fetchServerSideModels_?: typeof fetchServerSideModels
 }): Observable<ModelsData | typeof pendingOperation> {
     // Refresh Ollama models when Ollama-related config changes and periodically.
-    const localModels = combineLatest([
+    const localModels = combineLatest(
         resolvedConfig.pipe(
             map(
                 config =>
                     ({
-                        agentIDE: config.configuration.agentIDE,
                         autocompleteExperimentalOllamaOptions:
                             config.configuration.autocompleteExperimentalOllamaOptions,
-                    }) satisfies Pick<
-                        ClientConfiguration,
-                        'agentIDE' | 'autocompleteExperimentalOllamaOptions'
-                    >
+                    }) satisfies Pick<ClientConfiguration, 'autocompleteExperimentalOllamaOptions'>
             ),
             distinctUntilChanged()
         ),
@@ -79,14 +69,13 @@ export function syncModels({
                 // Use only a limited number of timers when running in Vitest so that `vi.runAllTimersAsync()` doesn't get into an infinite loop.
                 process.env.VITEST ? 10 : Number.MAX_SAFE_INTEGER
             )
-        ),
-    ]).pipe(
-        switchMap(([{ agentIDE }]) => {
-            const isCodyWeb = agentIDE === CodyIDE.Web
-            return isCodyWeb
+        )
+    ).pipe(
+        switchMap(() =>
+            clientCapabilities().isCodyWeb
                 ? Observable.of([]) // disable Ollama local models for Cody Web
                 : promiseFactoryToObservable(signal => fetchLocalOllamaModels().catch(() => []))
-        }),
+        ),
         // Keep the old localModels results while we're fetching the new ones, to avoid UI jitter.
         shareReplay()
     )
@@ -113,13 +102,13 @@ export function syncModels({
         distinctUntilChanged()
     )
 
-    const userModelPreferences = combineLatest([
+    const userModelPreferences = combineLatest(
         resolvedConfig.pipe(
             map(config => config.clientState.modelPreferences),
             distinctUntilChanged()
         ),
-        authStatus,
-    ]).pipe(
+        authStatus
+    ).pipe(
         map(([modelPreferences, authStatus]) => {
             // Deep clone so it's not readonly and we can mutate it, for convenience.
             const prevPreferences = modelPreferences[authStatus.endpoint] as SitePreferences | undefined
@@ -138,22 +127,27 @@ export function syncModels({
         preferences: Pick<ModelsData['preferences'], 'defaults'> | null
     }
     const remoteModelsData: Observable<RemoteModelsData | Error | typeof pendingOperation> =
-        combineLatest([relevantConfig, authStatus]).pipe(
+        combineLatest(relevantConfig, authStatus).pipe(
             switchMapReplayOperation(([config, authStatus]) => {
                 if (!authStatus.authenticated) {
                     return Observable.of<RemoteModelsData>({ primaryModels: [], preferences: null })
                 }
 
+                const isDotComUser = isDotCom(authStatus)
+
                 const serverModelsConfig: Observable<
                     RemoteModelsData | Error | typeof pendingOperation
                 > = clientConfig.pipe(
                     switchMapReplayOperation(maybeClientConfig => {
-                        if (maybeClientConfig?.modelsAPIEnabled) {
+                        // NOTE: isDotComUser to enable server-side models for DotCom users,
+                        // as the modelsAPIEnabled is default to return false on DotCom to avoid older clients
+                        // that also share the same check from breaking.
+                        if (isDotComUser || maybeClientConfig?.modelsAPIEnabled) {
                             logDebug('ModelsService', 'new models API enabled')
                             return promiseFactoryToObservable(signal =>
                                 fetchServerSideModels_(config, signal)
                             ).pipe(
-                                map(serverModelsConfig => {
+                                switchMap(serverModelsConfig => {
                                     const data: RemoteModelsData = {
                                         preferences: { defaults: {} },
                                         primaryModels: [],
@@ -161,8 +155,14 @@ export function syncModels({
 
                                     // If the request failed, fall back to using the default models
                                     if (serverModelsConfig) {
+                                        // Remove deprecated models from the list, filter out waitlisted models for Enterprise.
+                                        const filteredModels = serverModelsConfig?.models.filter(
+                                            m =>
+                                                m.status !== 'deprecated' &&
+                                                (isDotComUser || m.status !== 'waitlist')
+                                        )
                                         data.primaryModels.push(
-                                            ...maybeAdjustContextWindows(serverModelsConfig.models).map(
+                                            ...maybeAdjustContextWindows(filteredModels).map(
                                                 createModelFromServerModel
                                             )
                                         )
@@ -182,48 +182,40 @@ export function syncModels({
                                         )
                                     }
 
-                                    return data
+                                    if (!isDotComUser) {
+                                        return Observable.of(data)
+                                    }
+
+                                    // For DotCom users with early access or on the waitlist, replace the waitlist tag with the appropriate tags.
+                                    return featureFlagProvider
+                                        .evaluatedFeatureFlag(FeatureFlag.CodyEarlyAccess)
+                                        .pipe(
+                                            switchMap(hasEarlyAccess => {
+                                                const isOnWaitlist = config.clientState.waitlist_o1
+                                                if (hasEarlyAccess || isOnWaitlist) {
+                                                    data.primaryModels = data.primaryModels.map(
+                                                        model => {
+                                                            if (model.tags.includes(ModelTag.Waitlist)) {
+                                                                const newTags = model.tags.filter(
+                                                                    tag => tag !== ModelTag.Waitlist
+                                                                )
+                                                                newTags.push(
+                                                                    hasEarlyAccess
+                                                                        ? ModelTag.EarlyAccess
+                                                                        : ModelTag.OnWaitlist
+                                                                )
+                                                                return { ...model, tags: newTags }
+                                                            }
+                                                            return model
+                                                        }
+                                                    )
+                                                    // TODO(sqs): remove waitlist from localStorage when user has access
+                                                }
+                                                return Observable.of(data)
+                                            })
+                                        )
                                 })
                             )
-                        }
-
-                        // If you are connecting to Sourcegraph.com, we use the Cody Pro set of models. (Only
-                        // some of them may not be available if you are on the Cody Free plan.)
-                        if (isDotCom(authStatus)) {
-                            let defaultModels = getDotComDefaultModels()
-                            // For users with early access or on the waitlist, replace the waitlist tag with the
-                            // appropriate tags.
-                            return featureFlagProvider
-                                .evaluatedFeatureFlag(FeatureFlag.CodyEarlyAccess)
-                                .pipe(
-                                    switchMap(hasEarlyAccess => {
-                                        const isOnWaitlist = config.clientState.waitlist_o1
-                                        if (hasEarlyAccess || isOnWaitlist) {
-                                            defaultModels = defaultModels.map(model => {
-                                                if (model.tags.includes(ModelTag.Waitlist)) {
-                                                    const newTags = model.tags.filter(
-                                                        tag => tag !== ModelTag.Waitlist
-                                                    )
-                                                    newTags.push(
-                                                        hasEarlyAccess
-                                                            ? ModelTag.EarlyAccess
-                                                            : ModelTag.OnWaitlist
-                                                    )
-                                                    return { ...model, tags: newTags }
-                                                }
-                                                return model
-                                            })
-                                            // TODO(sqs): remove waitlist from localStorage when user has access
-                                        }
-                                        return Observable.of<RemoteModelsData>({
-                                            preferences: null,
-                                            primaryModels: [
-                                                ...defaultModels,
-                                                ...getModelsFromVSCodeConfiguration(config),
-                                            ],
-                                        })
-                                    })
-                                )
                         }
 
                         // In enterprise mode, we let the sg instance dictate the token limits and allow users
@@ -267,7 +259,7 @@ export function syncModels({
             })
         )
 
-    return combineLatest([localModels, remoteModelsData, userModelPreferences]).pipe(
+    return combineLatest(localModels, remoteModelsData, userModelPreferences).pipe(
         map(
             ([localModels, remoteModelsData, userModelPreferences]):
                 | ModelsData
@@ -438,8 +430,8 @@ export function defaultModelPreferencesFromServerModelsConfig(
     config: ServerModelConfiguration
 ): SitePreferences['defaults'] {
     return {
-        autocomplete: parseModelRef(config.defaultModels.codeCompletion).modelId,
-        chat: parseModelRef(config.defaultModels.chat).modelId,
-        edit: parseModelRef(config.defaultModels.chat).modelId,
+        autocomplete: config.defaultModels.codeCompletion,
+        chat: config.defaultModels.chat,
+        edit: config.defaultModels.chat,
     }
 }

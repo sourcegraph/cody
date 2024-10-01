@@ -4,6 +4,25 @@ import { parse } from 'csv-parse/sync'
 import { createObjectCsvWriter } from 'csv-writer'
 import { mkdirp } from 'fs-extra'
 import isError from 'lodash/isError'
+import { stringify as yamlStringify } from 'yaml'
+
+export interface ClientOptions {
+    rewrite: boolean
+}
+
+export interface EvalOutput {
+    evaluatedAt: string
+    codyClientVersion: string
+    clientOptions: ClientOptions
+    siteUserMetadata: {
+        url: string
+        sourcegraphVersion: string
+        username: string
+        userId: string
+        evaluatedFeatureFlags: Record<string, boolean>
+    }
+    examples: ExampleOutput[]
+}
 
 export interface EvalContextItem {
     repoName: string
@@ -157,6 +176,21 @@ export async function readExamplesFromCSV(filePath: string): Promise<{
         examples,
         ignoredRecords,
     }
+}
+
+/**
+ * Note: this mutates evalOutput to remove the content field from actualContext context items.
+ */
+export async function writeYAMLMetadata(outputFile: string, evalOutput: EvalOutput): Promise<void> {
+    await mkdirp(path.dirname(outputFile))
+
+    for (const example of evalOutput.examples) {
+        for (const contextItem of example.actualContext) {
+            contextItem.content = undefined
+        }
+    }
+
+    await fs.writeFile(outputFile, yamlStringify(evalOutput))
 }
 
 export async function writeExamplesToCSV(outputFile: string, examples: ExampleOutput[]): Promise<void> {

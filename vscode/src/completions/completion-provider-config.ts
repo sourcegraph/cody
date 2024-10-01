@@ -36,10 +36,11 @@ class CompletionProviderConfig {
             FeatureFlag.CodyAutocompletePreloadingExperimentVariant2,
             FeatureFlag.CodyAutocompletePreloadingExperimentVariant3,
             FeatureFlag.CodyAutocompleteDisableLowPerfLangDelay,
+            FeatureFlag.CodyAutocompleteDataCollectionFlag,
             FeatureFlag.CodyAutocompleteTracing,
         ]
         this.prefetchSubscription = combineLatest(
-            featureFlagsUsed.map(flag => featureFlagProvider.evaluatedFeatureFlag(flag))
+            ...featureFlagsUsed.map(flag => featureFlagProvider.evaluatedFeatureFlag(flag))
         ).subscribe({})
     }
 
@@ -85,7 +86,7 @@ class CompletionProviderConfig {
                         return Observable.of(defaultContextStrategy)
                     }
 
-                    return combineLatest([
+                    return combineLatest(
                         featureFlagProvider.evaluatedFeatureFlag(
                             FeatureFlag.CodyAutocompleteContextExperimentVariant1
                         ),
@@ -100,8 +101,8 @@ class CompletionProviderConfig {
                         ),
                         featureFlagProvider.evaluatedFeatureFlag(
                             FeatureFlag.CodyAutocompleteContextExperimentControl
-                        ),
-                    ]).pipe(
+                        )
+                    ).pipe(
                         map(([variant1, variant2, variant3, variant4, control]) => {
                             if (variant1) {
                                 return 'recent-edits-1m'
@@ -140,7 +141,7 @@ class CompletionProviderConfig {
         // - CodyAutocompleteVariant1 33%
         // - CodyAutocompleteVariant2 100%
         // - CodyAutocompleteVariant3 50%
-        return combineLatest([
+        return combineLatest(
             featureFlagProvider.evaluatedFeatureFlag(
                 FeatureFlag.CodyAutocompletePreloadingExperimentBaseFeatureFlag
             ),
@@ -152,8 +153,8 @@ class CompletionProviderConfig {
             ),
             featureFlagProvider.evaluatedFeatureFlag(
                 FeatureFlag.CodyAutocompletePreloadingExperimentVariant3
-            ),
-        ]).pipe(
+            )
+        ).pipe(
             map(([isContextExperimentFlagEnabled, variant1, variant2, variant3]) => {
                 if (isContextExperimentFlagEnabled) {
                     if (variant1) {
@@ -205,6 +206,12 @@ class CompletionProviderConfig {
     public get completionDisableLowPerfLangDelay(): Observable<boolean> {
         return featureFlagProvider
             .evaluatedFeatureFlag(FeatureFlag.CodyAutocompleteDisableLowPerfLangDelay)
+            .pipe(distinctUntilChanged())
+    }
+
+    public get completionDataCollectionFlag(): Observable<boolean> {
+        return featureFlagProvider
+            .evaluatedFeatureFlag(FeatureFlag.CodyAutocompleteDataCollectionFlag)
             .pipe(distinctUntilChanged())
     }
 }
