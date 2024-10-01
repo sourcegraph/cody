@@ -326,20 +326,17 @@ describe('combineLatest', { timeout: 500 }, () => {
     })
 
     test('combines latest values (sync)', async () => {
-        const observable = combineLatest([
-            observableOfSequence('A', 'B'),
-            observableOfSequence('x', 'y'),
-        ])
+        const observable = combineLatest(observableOfSequence('A', 'B'), observableOfSequence('x', 'y'))
         expect(await allValuesFrom(observable)).toEqual<ObservableValue<typeof observable>[]>([
             ['B', 'y'],
         ])
     })
 
     test('combines latest values (async)', async () => {
-        const observable = combineLatest([
+        const observable = combineLatest(
             observableOfTimedSequence(0, 'A', 0, 'B'),
-            observableOfTimedSequence(0, 'x', 0, 'y'),
-        ])
+            observableOfTimedSequence(0, 'x', 0, 'y')
+        )
         expect(await allValuesFrom(observable)).toEqual<ObservableValue<typeof observable>[]>([
             ['A', 'x'],
             ['B', 'x'],
@@ -348,17 +345,17 @@ describe('combineLatest', { timeout: 500 }, () => {
     })
 
     test('handles undefined value', async () => {
-        const observable = combineLatest([
+        const observable = combineLatest(
             observableOfSequence(undefined),
-            observableOfSequence(1, undefined),
-        ])
+            observableOfSequence(1, undefined)
+        )
         expect(await allValuesFrom(observable)).toEqual<ObservableValue<typeof observable>[]>([
             [undefined, undefined],
         ])
     })
 
     test('handles empty input', async () => {
-        expect(await allValuesFrom(combineLatest([] as any))).toEqual([])
+        expect(await allValuesFrom(combineLatest())).toEqual([])
     })
 
     test('keeps going after one completes', async () => {
@@ -380,7 +377,7 @@ describe('combineLatest', { timeout: 500 }, () => {
         )
 
         const { values, clearValues, done, status } = readValuesFrom(
-            combineLatest([completesAfterC, completesAfterX])
+            combineLatest(completesAfterC, completesAfterX)
         )
         expect(values).toStrictEqual<typeof values>([])
 
@@ -427,7 +424,7 @@ describe('combineLatest', { timeout: 500 }, () => {
         )
 
         const { values, clearValues, done, status } = readValuesFrom(
-            combineLatest([inputA, inputB, inputC])
+            combineLatest(inputA, inputB, inputC)
         )
         done.catch(() => {})
         expect(values).toStrictEqual<typeof values>([])
@@ -447,7 +444,7 @@ describe('combineLatest', { timeout: 500 }, () => {
 
     test('propagates unsubscription', async () => {
         vi.useFakeTimers()
-        const observable = combineLatest([observableOfTimedSequence(10, 'A', 10, 'B')])
+        const observable = combineLatest(observableOfTimedSequence(10, 'A', 10, 'B'))
         const { values, done, unsubscribe } = readValuesFrom(observable)
         await vi.advanceTimersByTimeAsync(10)
         unsubscribe()

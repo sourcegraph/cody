@@ -54,7 +54,7 @@ export function syncModels({
     fetchServerSideModels_?: typeof fetchServerSideModels
 }): Observable<ModelsData | typeof pendingOperation> {
     // Refresh Ollama models when Ollama-related config changes and periodically.
-    const localModels = combineLatest([
+    const localModels = combineLatest(
         resolvedConfig.pipe(
             map(
                 config =>
@@ -71,8 +71,8 @@ export function syncModels({
                 // Use only a limited number of timers when running in Vitest so that `vi.runAllTimersAsync()` doesn't get into an infinite loop.
                 process.env.VITEST ? 10 : Number.MAX_SAFE_INTEGER
             )
-        ),
-    ]).pipe(
+        )
+    ).pipe(
         switchMap(() =>
             clientCapabilities().isCodyWeb
                 ? Observable.of([]) // disable Ollama local models for Cody Web
@@ -104,13 +104,13 @@ export function syncModels({
         distinctUntilChanged()
     )
 
-    const userModelPreferences = combineLatest([
+    const userModelPreferences = combineLatest(
         resolvedConfig.pipe(
             map(config => config.clientState.modelPreferences),
             distinctUntilChanged()
         ),
-        authStatus,
-    ]).pipe(
+        authStatus
+    ).pipe(
         map(([modelPreferences, authStatus]) => {
             // Deep clone so it's not readonly and we can mutate it, for convenience.
             const prevPreferences = modelPreferences[authStatus.endpoint] as SitePreferences | undefined
@@ -129,7 +129,7 @@ export function syncModels({
         preferences: Pick<ModelsData['preferences'], 'defaults'> | null
     }
     const remoteModelsData: Observable<RemoteModelsData | Error | typeof pendingOperation> =
-        combineLatest([relevantConfig, authStatus]).pipe(
+        combineLatest(relevantConfig, authStatus).pipe(
             switchMapReplayOperation(([config, authStatus]) => {
                 if (!authStatus.authenticated) {
                     return Observable.of<RemoteModelsData>({ primaryModels: [], preferences: null })
@@ -275,7 +275,7 @@ export function syncModels({
             })
         )
 
-    return combineLatest([localModels, remoteModelsData, userModelPreferences]).pipe(
+    return combineLatest(localModels, remoteModelsData, userModelPreferences).pipe(
         map(
             ([localModels, remoteModelsData, userModelPreferences]):
                 | ModelsData

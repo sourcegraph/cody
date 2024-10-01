@@ -43,7 +43,7 @@ export function exposeOpenCtxClient(
 ): Observable<void> {
     void warnIfOpenCtxExtensionConflict()
 
-    return combineLatest([
+    return combineLatest(
         resolvedConfig.pipe(
             map(({ configuration: { experimentalNoodle } }) => ({
                 experimentalNoodle,
@@ -68,8 +68,8 @@ export function exposeOpenCtxClient(
         ),
         promiseFactoryToObservable(
             async () => createOpenCtxController ?? (await import('@openctx/vscode-lib')).createController
-        ),
-    ]).pipe(
+        )
+    ).pipe(
         createDisposables(([{ experimentalNoodle }, isValidSiteVersion, createController]) => {
             try {
                 // Enable fetching of openctx configuration from Sourcegraph instance
@@ -113,11 +113,11 @@ export function getOpenCtxProviders(
     authStatusChanges: Observable<Pick<AuthStatus, 'endpoint'>>,
     isValidSiteVersion: boolean
 ): Observable<ImportedProviderConfiguration[]> {
-    return combineLatest([
+    return combineLatest(
         resolvedConfig.pipe(pluck('configuration'), distinctUntilChanged()),
         authStatusChanges,
-        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.GitMentionProvider),
-    ]).map(
+        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.GitMentionProvider)
+    ).map(
         ([config, authStatus, gitMentionProvider]: [
             ClientConfiguration,
             Pick<AuthStatus, 'endpoint'>,

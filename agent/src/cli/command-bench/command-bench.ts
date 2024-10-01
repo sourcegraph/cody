@@ -14,6 +14,7 @@ import { isDefined, modelsService } from '@sourcegraph/cody-shared'
 import { sleep } from '../../../../vscode/src/completions/utils'
 import { setStaticResolvedConfigurationWithAuthCredentials } from '../../../../vscode/src/configuration'
 import { localStorage } from '../../../../vscode/src/services/LocalStorageProvider'
+import { createOrUpdateTelemetryRecorderProvider } from '../../../../vscode/src/services/telemetry-v2'
 import { startPollyRecording } from '../../../../vscode/src/testutils/polly'
 import { dotcomCredentials } from '../../../../vscode/src/testutils/testing-credentials'
 import { allClientCapabilitiesEnabled } from '../../allClientCapabilitiesEnabled'
@@ -351,6 +352,8 @@ export const benchCommand = new commander.Command('bench')
 
 async function evaluateWorkspace(options: CodyBenchOptions, recordingDirectory: string): Promise<void> {
     console.log(`starting evaluation: fixture=${options.fixture.name} workspace=${options.workspace}`)
+
+    createOrUpdateTelemetryRecorderProvider(true)
 
     const workspaceRootUri = vscode.Uri.from({ scheme: 'file', path: options.workspace })
 

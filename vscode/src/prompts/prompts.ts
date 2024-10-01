@@ -54,7 +54,7 @@ export async function mergedPromptsAndLegacyCommands(
                     key: 'doc',
                     description: 'Document Code',
                     prompt: '',
-                    slashCommand: 'cody.command.document-code',
+                    slashCommand: 'cody.command.prompt-document-code',
                     mode: 'ask',
                     type: 'default',
                 },

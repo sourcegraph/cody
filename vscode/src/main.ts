@@ -35,6 +35,7 @@ import {
     take,
     telemetryRecorder,
 } from '@sourcegraph/cody-shared'
+import { isEqual } from 'lodash'
 import { filter, map } from 'observable-fns'
 import type { CommandResult } from './CommandResult'
 import { showAccountMenu } from './auth/account-menu'
@@ -62,6 +63,7 @@ import {
 } from './commands/execute'
 import { executeAutoEditCommand } from './commands/execute/auto-edit'
 import { executeDocChatCommand } from './commands/execute/doc'
+import { executeTestChatCommand } from './commands/execute/test-chat'
 import { CodySourceControl } from './commands/scm/source-control'
 import type { CodyCommandArgs } from './commands/types'
 import { newCodyCommandArgs } from './commands/utils/get-commands'
@@ -90,7 +92,7 @@ import { displayHistoryQuickPick } from './services/HistoryChat'
 import { localStorage } from './services/LocalStorageProvider'
 import { VSCodeSecretStorage, secretStorage } from './services/SecretStorageProvider'
 import { registerSidebarCommands } from './services/SidebarCommands'
-import { type CodyStatusBar, createStatusBar } from './services/StatusBar'
+import { CodyStatusBar } from './services/StatusBar'
 import { createOrUpdateTelemetryRecorderProvider } from './services/telemetry-v2'
 import { onTextDocumentChange } from './services/utils/codeblock-action-tracker'
 import {
@@ -130,7 +132,7 @@ export async function start(
     setClientCapabilitiesFromConfiguration(getConfiguration())
 
     setResolvedConfigurationObservable(
-        combineLatest([
+        combineLatest(
             fromVSCodeEvent(vscode.workspace.onDidChangeConfiguration).pipe(
                 filter(
                     event => event.affectsConfiguration('cody') || event.affectsConfiguration('openctx')
@@ -143,8 +145,8 @@ export async function start(
                 startWith(undefined),
                 map(() => secretStorage)
             ),
-            localStorage.clientStateChanges.pipe(distinctUntilChanged()),
-        ]).pipe(
+            localStorage.clientStateChanges.pipe(distinctUntilChanged())
+        ).pipe(
             map(
                 ([clientConfiguration, clientSecrets, clientState]) =>
                     ({
@@ -219,16 +221,8 @@ const register = async (
     )
     disposables.push(chatsController)
 
-    const statusBar = createStatusBar()
+    const statusBar = CodyStatusBar.init(disposables)
     disposables.push(
-        statusBar,
-        subscriptionDisposable(
-            authStatus.subscribe({
-                next: authStatus => {
-                    statusBar.setAuthStatus(authStatus)
-                },
-            })
-        ),
         subscriptionDisposable(
             exposeOpenCtxClient(context, platform.createOpenCtxController).subscribe({})
         )
@@ -392,7 +386,6 @@ async function registerCodyCommands(
             return undefined
         })
     }
-
     const executeCommandUnsafe = async (
         id: DefaultCodyCommands | PromptString,
         args?: Partial<CodyCommandArgs>
@@ -409,6 +402,11 @@ async function registerCodyCommands(
         return await executeCodyCommand(id, newCodyCommandArgs(args))
     }
 
+    // Register the execution command from above.
+    disposables.push(
+        vscode.commands.registerCommand('cody.action.command', (id, a) => executeCommand(id, a))
+    )
+
     // Initialize supercompletion provider if experimental feature is enabled
     disposables.push(
         enableFeature(
@@ -417,63 +415,69 @@ async function registerCodyCommands(
         )
     )
 
+    // Experimental Command: Auto Edit
+    disposables.push(
+        vscode.commands.registerCommand('cody.command.auto-edit', a => executeAutoEditCommand(a))
+    )
+
     disposables.push(
         subscriptionDisposable(
             featureFlagProvider
                 .evaluatedFeatureFlag(FeatureFlag.CodyUnifiedPrompts)
                 .pipe(
                     createDisposables(codyUnifiedPromptsFlag => {
+                        // Commands that are available only if unified prompts feature is enabled.
                         const unifiedPromptsEnabled =
                             codyUnifiedPromptsFlag && !clientCapabilities().isCodyWeb
+
                         vscode.commands.executeCommand(
                             'setContext',
                             'cody.menu.custom-commands.enable',
                             !unifiedPromptsEnabled
                         )
 
+                        // NOTE: Soon to be deprecated and replaced by unified prompts.
+                        const chatCommands = [
+                            // Register prompt-like command if unified prompts feature is available.
+                            vscode.commands.registerCommand('cody.command.explain-code', a =>
+                                executeExplainCommand(a)
+                            ),
+                            vscode.commands.registerCommand('cody.command.smell-code', a =>
+                                executeSmellCommand(a)
+                            ),
+                        ]
+
+                        // NOTE: Soon to be deprecated and replaced by unified prompts.
+                        const editCommands = [
+                            vscode.commands.registerCommand('cody.command.document-code', a =>
+                                executeDocCommand(a)
+                            ),
+                        ]
+
+                        const unitTestCommand = [
+                            vscode.commands.registerCommand('cody.command.unit-tests', a =>
+                                unifiedPromptsEnabled
+                                    ? executeTestChatCommand(a)
+                                    : executeTestEditCommand(a)
+                            ),
+                        ]
+
+                        // Prompt-like commands.
+                        const unifiedPromptsCommands = [
+                            vscode.commands.registerCommand('cody.command.prompt-document-code', a =>
+                                executeDocChatCommand(a)
+                            ),
+                        ]
+
+                        // Register prompt-like command if unified prompts feature is available.
                         return unifiedPromptsEnabled
                             ? [
-                                  // Register prompt-like command if unified prompts feature is available.
-                                  vscode.commands.registerCommand('cody.action.command', (id, a) =>
-                                      executeCommand(id, a)
-                                  ),
-                                  vscode.commands.registerCommand('cody.command.explain-code', a =>
-                                      executeExplainCommand(a)
-                                  ),
-                                  vscode.commands.registerCommand('cody.command.smell-code', a =>
-                                      executeSmellCommand(a)
-                                  ),
-                                  vscode.commands.registerCommand('cody.command.document-code', a =>
-                                      executeDocChatCommand(a)
-                                  ),
+                                  ...chatCommands,
+                                  ...editCommands,
+                                  ...unitTestCommand,
+                                  ...unifiedPromptsCommands,
                               ]
-                            : [
-                                  // Otherwise register old-style commands.
-                                  vscode.commands.registerCommand('cody.action.command', (id, a) =>
-                                      executeCommand(id, a)
-                                  ),
-                                  vscode.commands.registerCommand('cody.command.explain-code', a =>
-                                      executeExplainCommand(a)
-                                  ),
-                                  vscode.commands.registerCommand('cody.command.smell-code', a =>
-                                      executeSmellCommand(a)
-                                  ),
-                                  vscode.commands.registerCommand('cody.command.document-code', a =>
-                                      executeDocCommand(a)
-                                  ),
-                                  vscode.commands.registerCommand('cody.command.unit-tests', a =>
-                                      executeTestEditCommand(a)
-                                  ),
-                                  vscode.commands.registerCommand('cody.command.tests-cases', a =>
-                                      executeTestCaseEditCommand(a)
-                                  ),
-                                  vscode.commands.registerCommand('cody.command.explain-output', a =>
-                                      executeExplainOutput(a)
-                                  ),
-                                  vscode.commands.registerCommand('cody.command.auto-edit', a =>
-                                      executeAutoEditCommand(a)
-                                  ),
-                              ]
+                            : [...chatCommands, ...editCommands, ...unitTestCommand]
                     })
                 )
                 .subscribe({})
@@ -485,10 +489,17 @@ async function registerCodyCommands(
  * Features that are currently available only in VS Code.
  */
 function registerVSCodeOnlyFeatures(chatClient: ChatClient, disposable: vscode.Disposable[]): void {
-    // Source Control Panel for generating commit message command.
+    // Generating commit message command in the VS Code Source Control Panel.
     disposable.push(new CodySourceControl(chatClient))
-    // Command for executing CLI commands in the VS Code terminal.
+    // Command for executing CLI commands in the Terminal panel used by Smart Apply.
     disposable.push(new CodyTerminal())
+
+    disposable.push(
+        // Command that sends the selected output from the Terminal panel to Cody Chat for explanation.
+        vscode.commands.registerCommand('cody.command.explain-output', a => executeExplainOutput(a)),
+        // Internal Experimental: Command to generate additional test cases through Code Lenses in test files.
+        vscode.commands.registerCommand('cody.command.tests-cases', a => executeTestCaseEditCommand(a))
+    )
 }
 
 function enableFeature(
@@ -652,19 +663,46 @@ function registerAutocomplete(
     statusBar: CodyStatusBar,
     disposables: vscode.Disposable[]
 ): void {
+    //@ts-ignore
+    let statusBarLoader: undefined | (() => void) = statusBar.addLoader({
+        title: 'Completion Provider is starting',
+        kind: 'startup',
+    })
+    const finishLoading = () => {
+        statusBarLoader?.()
+        statusBarLoader = undefined
+    }
     disposables.push(
         subscriptionDisposable(
-            combineLatest([resolvedConfig, authStatus])
+            combineLatest(resolvedConfig, authStatus)
                 .pipe(
-                    switchMap(([config, authStatus]) =>
-                        createInlineCompletionItemProvider({
+                    //TODO(@rnauta -> @sqs): It feels yuk to handle the invalidation outside of
+                    //where the state is picked. It's also very tedious
+                    distinctUntilChanged((a, b) => {
+                        return isEqual(a[0].configuration, b[0].configuration) && isEqual(a[1], b[1])
+                    }),
+                    switchMap(([config, authStatus]) => {
+                        if (!authStatus.pendingValidation && !statusBarLoader) {
+                            statusBarLoader = statusBar.addLoader({
+                                title: 'Completion Provider is starting',
+                            })
+                        }
+                        const res = createInlineCompletionItemProvider({
                             config,
                             authStatus,
                             platform,
                             statusBar,
                         })
-                    ),
+                        if (res === NEVER && !authStatus.pendingValidation) {
+                            finishLoading()
+                        }
+                        return res.tap(res => {
+                            finishLoading()
+                        })
+                    }),
                     catchError(error => {
+                        finishLoading()
+                        //TODO: We could show something in the statusbar
                         logError('registerAutocomplete', 'Error', error)
                         return NEVER
                     })

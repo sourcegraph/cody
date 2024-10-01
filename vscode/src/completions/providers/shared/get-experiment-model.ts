@@ -33,14 +33,14 @@ export function getDotComExperimentModel({
         return Observable.of(null)
     }
 
-    return combineLatest([
+    return combineLatest(
         featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyAutocompleteStarCoderHybrid),
         featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyAutocompleteClaude3),
         featureFlagProvider.evaluatedFeatureFlag(
             FeatureFlag.CodyAutocompleteFIMModelExperimentBaseFeatureFlag
         ),
-        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyAutocompleteDeepseekV2LiteBase),
-    ]).pipe(
+        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyAutocompleteDeepseekV2LiteBase)
+    ).pipe(
         switchMap(([starCoderHybrid, claude3, fimModelExperimentFlag, deepseekV2LiteBase]) => {
             // We run fine tuning experiment for VSC client only.
             // We disable for all agent clients like the JetBrains plugin.
@@ -85,7 +85,7 @@ export function getDotComExperimentModel({
  * feature flag in this function.
  */
 function resolveFIMModelExperimentFromFeatureFlags(): ReturnType<typeof getDotComExperimentModel> {
-    return combineLatest([
+    return combineLatest(
         featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyAutocompleteFIMModelExperimentControl),
         featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyAutocompleteFIMModelExperimentVariant1),
         featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyAutocompleteFIMModelExperimentVariant2),
@@ -93,8 +93,8 @@ function resolveFIMModelExperimentFromFeatureFlags(): ReturnType<typeof getDotCo
         featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyAutocompleteFIMModelExperimentVariant4),
         featureFlagProvider.evaluatedFeatureFlag(
             FeatureFlag.CodyAutocompleteFIMModelExperimentCurrentBest
-        ),
-    ]).pipe(
+        )
+    ).pipe(
         map(
             ([
                 fimModelControl,

@@ -32,10 +32,10 @@ export class RepoNameResolver {
      * conversion function. ❗️
      */
     public getRepoNamesContainingUri(uri: vscode.Uri): Observable<string[] | typeof pendingOperation> {
-        return combineLatest([
+        return combineLatest(
             promiseFactoryToObservable(signal => this.getUniqueRemoteUrlsCached(uri, signal)),
-            authStatus,
-        ]).pipe(
+            authStatus
+        ).pipe(
             switchMapReplayOperation(
                 ([uniqueRemoteUrls, authStatus]): Observable<string[] | typeof pendingOperation> => {
                     // Use local conversion function for non-enterprise accounts.
@@ -46,7 +46,7 @@ export class RepoNameResolver {
                     }
 
                     return combineLatest(
-                        uniqueRemoteUrls.map(remoteUrl => this.getRepoNameCached(remoteUrl))
+                        ...uniqueRemoteUrls.map(remoteUrl => this.getRepoNameCached(remoteUrl))
                     ).pipe(
                         map(repoNames =>
                             repoNames.includes(pendingOperation)

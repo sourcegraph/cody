@@ -196,11 +196,23 @@ query Repositories($names: [String!]!, $first: Int!) {
   }
 `
 
+export const LEGACY_CHAT_INTENT_QUERY = `
+query ChatIntent($query: String!, $interactionId: String!) {
+    chatIntent(query: $query, interactionId: $interactionId) {
+        intent
+        score
+    }
+}`
+
 export const CHAT_INTENT_QUERY = `
 query ChatIntent($query: String!, $interactionId: String!) {
     chatIntent(query: $query, interactionId: $interactionId) {
         intent
         score
+        allScores {
+            intent
+            score
+        }
     }
 }`
 

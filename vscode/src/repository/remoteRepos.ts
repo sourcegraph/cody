@@ -37,13 +37,13 @@ const workspaceFolders: Observable<readonly vscode.WorkspaceFolder[] | undefined
  */
 export const remoteReposForAllWorkspaceFolders: Observable<
     RemoteRepo[] | typeof pendingOperation | Error
-> = combineLatest([
+> = combineLatest(
     workspaceFolders.pipe(
         // The vscode.git extension has a delay before we can fetch a workspace folder's remote.
         debounceTime(vscodeGitAPI ? 2000 : 0)
     ),
-    authStatus,
-]).pipe(
+    authStatus
+).pipe(
     switchMapReplayOperation(
         ([workspaceFolders]): Observable<RemoteRepo[] | typeof pendingOperation> => {
             if (!workspaceFolders) {
@@ -58,7 +58,7 @@ export const remoteReposForAllWorkspaceFolders: Observable<
             }
 
             return combineLatest(
-                workspaceFolders.map(folder => repoNameResolver.getRepoNamesContainingUri(folder.uri))
+                ...workspaceFolders.map(folder => repoNameResolver.getRepoNamesContainingUri(folder.uri))
             ).pipe(
                 map(repoNamesLists => {
                     const repoNames = repoNamesLists.flat()

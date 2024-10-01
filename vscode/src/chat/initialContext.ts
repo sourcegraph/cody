@@ -43,11 +43,11 @@ export function observeInitialContext({
 }: {
     chatBuilder: Observable<ChatBuilder>
 }): Observable<ContextItem[] | typeof pendingOperation> {
-    return combineLatest([
+    return combineLatest(
         getCurrentFileOrSelection({ chatBuilder }).pipe(distinctUntilChanged()),
         getCorpusContextItemsForEditorState().pipe(distinctUntilChanged()),
-        getOpenCtxContextItems().pipe(distinctUntilChanged()),
-    ]).pipe(
+        getOpenCtxContextItems().pipe(distinctUntilChanged())
+    ).pipe(
         debounceTime(50),
         switchMap(
             ([currentFileOrSelectionContext, corpusContext, openctxContext]): Observable<
@@ -96,7 +96,7 @@ function getCurrentFileOrSelection({
         abortableOperation(() => getSelectionOrFileContext())
     )
 
-    return combineLatest([selectionOrFileContext, ChatBuilder.contextWindowForChat(chatBuilder)]).pipe(
+    return combineLatest(selectionOrFileContext, ChatBuilder.contextWindowForChat(chatBuilder)).pipe(
         switchMap(
             ([selectionOrFileContext, contextWindow]): Observable<
                 ContextItem[] | typeof pendingOperation
@@ -171,7 +171,7 @@ export function getCorpusContextItemsForEditorState(): Observable<
         distinctUntilChanged()
     )
 
-    return combineLatest([relevantAuthStatus, remoteReposForAllWorkspaceFolders]).pipe(
+    return combineLatest(relevantAuthStatus, remoteReposForAllWorkspaceFolders).pipe(
         abortableOperation(async ([authStatus, remoteReposForAllWorkspaceFolders], signal) => {
             const items: ContextItem[] = []
 
@@ -257,7 +257,7 @@ function getOpenCtxContextItems(): Observable<ContextItem[] | typeof pendingOper
                         return Observable.of([])
                     }
                     return combineLatest(
-                        providersWithAutoInclude.map(provider =>
+                        ...providersWithAutoInclude.map(provider =>
                             openctxController.mentionsChanges(
                                 { ...activeEditorContext, autoInclude: true },
                                 provider
