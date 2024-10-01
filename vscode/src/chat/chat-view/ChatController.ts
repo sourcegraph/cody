@@ -710,6 +710,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     return this.clearAndRestartSession()
                 }
 
+                // If submitType is 'user-newchat', we want to clear the chat
                 if (submitType === 'user-newchat' && !this.chatBuilder.isEmpty()) {
                     span.addEvent('clearAndRestartSession')
                     await this.clearAndRestartSession()
