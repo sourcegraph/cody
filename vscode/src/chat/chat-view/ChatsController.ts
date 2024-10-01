@@ -312,7 +312,7 @@ export class ChatsController implements vscode.Disposable {
     }: ExecuteChatArguments): Promise<ChatSession | undefined> {
         let provider: ChatController
         // If the active editor is visible, use it instead of creating a new panel
-        if (submitType === 'user-newchat' && this.activeEditor?.webviewPanelOrView?.visible) {
+        if (submitType === 'user' && this.activeEditor?.webviewPanelOrView?.visible) {
             // If this.panel is visible, then use it. If not, use this.activeEditor.
             // If this.panel is visible AND this.activeEditor is visible, we're going to assume
             // the user prefers using this.panel.
