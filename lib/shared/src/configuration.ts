@@ -20,7 +20,7 @@ interface RawClientConfiguration {
     debugVerbose: boolean
     telemetryLevel: 'all' | 'off' | 'agent'
 
-    serverEndpoint: string
+    serverEndpoint?: string
     customHeaders?: Record<string, string>
     chatPreInstruction: PromptString
     editPreInstruction: PromptString

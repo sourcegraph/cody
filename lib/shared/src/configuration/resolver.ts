@@ -70,10 +70,11 @@ export type PickResolvedConfiguration<Keys extends KeysSpec> = {
 async function resolveConfiguration(input: ConfigurationInput): Promise<ResolvedConfiguration> {
     // we allow for overriding the server endpoint from config if we haven't
     // manually signed in somewhere else
+
     const rawServerEndpoint =
-        input.clientState.lastUsedEndpoint ??
-        input.clientConfiguration.overrideServerEndpoint ??
-        (input.clientConfiguration.serverEndpoint || DOTCOM_URL.toString())
+        input.clientState.lastUsedEndpoint ||
+        (input.clientConfiguration.overrideServerEndpoint ??
+            (input.clientConfiguration.serverEndpoint || DOTCOM_URL.toString()))
     const serverEndpoint = normalizeServerEndpointURL(rawServerEndpoint)
 
     // We must not throw here, because that would result in the `resolvedConfig` observable

@@ -871,7 +871,7 @@ export const vsCodeMocks = {
 export const DEFAULT_VSCODE_SETTINGS = {
     proxy: undefined,
     codebase: '',
-    serverEndpoint: 'https://sourcegraph.com',
+    serverEndpoint: undefined,
     customHeaders: undefined,
     chatPreInstruction: ps``,
     editPreInstruction: ps``,
@@ -910,7 +910,6 @@ export const DEFAULT_VSCODE_SETTINGS = {
     autocompleteFirstCompletionTimeout: 3500,
     autocompleteExperimentalPreloadDebounceInterval: 0,
     experimentalGuardrailsTimeoutSeconds: undefined,
-
     overrideAuthToken: undefined,
     overrideServerEndpoint: undefined,
 } satisfies ClientConfiguration

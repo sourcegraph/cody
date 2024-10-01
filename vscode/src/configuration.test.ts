@@ -111,6 +111,10 @@ describe('getConfiguration', () => {
                         return 123
                     case 'cody.dev.models':
                         return [{ model: 'm', provider: 'p' }] satisfies ChatModelProviderConfig[]
+                    case 'cody.override.authToken':
+                        return undefined
+                    case 'cody.override.serverEndpoint':
+                        return undefined
                     default:
                         throw new Error(`unexpected key: ${key}`)
                 }
