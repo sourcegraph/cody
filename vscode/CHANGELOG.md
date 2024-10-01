@@ -16,7 +16,6 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 - Chat: Fixed feedback buttons not working in chat. [pull/5509](https://github.com/sourcegraph/cody/pull/5509)
 - Command: Removed duplicated default commands from the Cody Commands menu that were incorrectly listed as custom commands.
 - Enterprise: Smart context window is now correctly set for all Claude Sonnet models configured on the server side. [pull/5677](https://github.com/sourcegraph/cody/pull/5677)
-- Command: Fixed an issue where some commands (`Auto-Edit` and `Cody Explain Terminal Output`) were not registered when the unified prompt feature flag is enabled.
 
 ### Changed
 
