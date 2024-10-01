@@ -111,23 +111,21 @@ export function getMentionOperations(
     existing: SerializedContextItem[],
     toAdd: SerializedContextItem[]
 ): Operations {
-    const results: OperationResult[] = []
+    const groups = Array.from(
+        new Set([
+            ...existing.map(e => `${e.uri}|${e.source}`),
+            ...toAdd.map(a => `${a.uri}|${a.source}`),
+        ])
+    )
 
-    // Process each URI separately
+    // Process each URI+source separately
+    const results = groups.flatMap(group => {
+        const [uri, source] = group.split('|')
+        const existingForGroup = existing.filter(e => e.uri === uri && e.source === source)
+        const toAddForGroup = toAdd.filter(e => e.uri === uri && e.source === source)
 
-    for (const group of new Set([
-        ...existing.map(e => `${e.uri}|${e.source}`),
-        ...toAdd.map(a => `${a.uri}|${a.source}`),
-    ])) {
-        const [uriValue, sourceValue] = group.split('|')
-        const existingForUriAndSource = existing.filter(
-            e => e.uri === uriValue && e.source === sourceValue
-        )
-        const toAddForUriAndSource = toAdd.filter(e => e.uri === uriValue && e.source === sourceValue)
-
-        const uriAndSourceResults = processGroupedMentions(existingForUriAndSource, toAddForUriAndSource)
-        results.push(...uriAndSourceResults)
-    }
+        return processGroupedMentions(existingForGroup, toAddForGroup)
+    })
 
     return {
         modify: results.reduce((m, r) => {
