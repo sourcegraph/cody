@@ -59,6 +59,7 @@ import {
     executeExplainOutput,
     executeSmellCommand,
     executeTestCaseEditCommand,
+    executeTestChatCommand,
     executeTestEditCommand,
 } from './commands/execute'
 import { executeAutoEditCommand } from './commands/execute/auto-edit'
@@ -439,6 +440,9 @@ async function registerCodyCommands(
                                   vscode.commands.registerCommand('cody.command.document-code', a =>
                                       executeDocChatCommand(a)
                                   ),
+                                  vscode.commands.registerCommand('cody.command.unit-tests', a =>
+                                      executeTestChatCommand(a)
+                                  ),
                               ]
                             : [
                                   // Otherwise register old-style commands.
@@ -453,6 +457,9 @@ async function registerCodyCommands(
                                   ),
                                   vscode.commands.registerCommand('cody.command.document-code', a =>
                                       executeDocCommand(a)
+                                  ),
+                                  vscode.commands.registerCommand('cody.command.generate-tests', a =>
+                                      executeTestChatCommand(a)
                                   ),
                                   vscode.commands.registerCommand('cody.command.unit-tests', a =>
                                       executeTestEditCommand(a)

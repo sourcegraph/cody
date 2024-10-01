@@ -5,6 +5,7 @@ export type DefaultCodyCommands = DefaultChatCommands | DefaultEditCommands
 export enum DefaultChatCommands {
     Doc = 'doc', // Generate documentation in Chat
     Explain = 'explain', // Explain code
+    Unit = 'unit', // Generate unit tests in Chat
     Smell = 'smell', // Generate code smell report in Chat
     Custom = 'custom-chat', // Run custom command in Chat
 }

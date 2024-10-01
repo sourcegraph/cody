@@ -9,6 +9,7 @@ import {
     DOTCOM_URL,
     ModelUsage,
     type SerializedChatTranscript,
+    isWindows,
 } from '@sourcegraph/cody-shared'
 
 import * as uuid from 'uuid'
@@ -836,6 +837,29 @@ describe('Agent', () => {
                 ])
             )
         }, 30_000)
+
+        // This test seems extra sensitive on Node v16 for some reason.
+        it.skipIf(isWindows())(
+            'commands/test',
+            async () => {
+                await client.openFile(animalUri)
+                await setChatModel()
+                const id = await client.request('commands/test', null)
+                const lastMessage = await client.firstNonEmptyTranscript(id)
+                expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchSnapshot()
+                // telemetry assertion, to validate the expected events fired during the test run
+                // Do not remove this assertion, and instead update the expectedEvents list above
+                expect(await exportedTelemetryEvents(client)).toEqual(
+                    expect.arrayContaining([
+                        'cody.command.test:executed',
+                        'cody.chat-question:submitted',
+                        'cody.chat-question:executed',
+                        'cody.chatResponse:hasCode',
+                    ])
+                )
+            },
+            30_000
+        )
 
         it('commands/smell', async () => {
             await client.openFile(animalUri)
