@@ -12,7 +12,6 @@ import {
     promiseFactoryToObservable,
     shareReplay,
     startWith,
-    storeLastValue,
     switchMap,
     take,
     tap,
@@ -24,7 +23,7 @@ import { isDotCom } from '../sourcegraph-api/environments'
 import { RestClient } from '../sourcegraph-api/rest/client'
 import { CHAT_INPUT_TOKEN_BUDGET } from '../token/constants'
 import { isError } from '../utils'
-import { getExperimentalModels } from './client'
+import { getExperimentalClientModels } from './client'
 import { type Model, type ServerModel, createModel, createModelFromServerModel } from './model'
 import type { ModelsData, ServerModelConfiguration, SitePreferences } from './modelsService'
 import { ModelTag } from './tags'
@@ -155,7 +154,6 @@ export function syncModels({
                                         primaryModels: [],
                                     }
 
-                                    // If the request failed, fall back to using the default models
                                     if (serverModelsConfig) {
                                         // Remove deprecated models from the list, filter out waitlisted models for Enterprise.
                                         const filteredModels = serverModelsConfig?.models.filter(
@@ -172,64 +170,56 @@ export function syncModels({
                                             defaultModelPreferencesFromServerModelsConfig(
                                                 serverModelsConfig
                                             )
-
-                                        // NOTE: Calling `registerModelsFromVSCodeConfiguration()` doesn't
-                                        // entirely make sense in a world where LLM models are managed
-                                        // server-side. However, this is how Cody can be extended to use locally
-                                        // running LLMs such as Ollama. (Though some more testing is needed.)
-                                        // See:
-                                        // https://sourcegraph.com/blog/local-code-completion-with-ollama-and-cody
-                                        data.primaryModels.push(
-                                            ...getModelsFromVSCodeConfiguration(config)
-                                        )
                                     }
 
-                                    if (
-                                        storeLastValue(
-                                            featureFlagProvider.evaluatedFeatureFlag(
-                                                FeatureFlag.CodyReflection
-                                            )
-                                        )
-                                    ) {
-                                        data.primaryModels.push(
-                                            ...maybeAdjustContextWindows(getExperimentalModels()).map(
-                                                createModelFromServerModel
-                                            )
-                                        )
-                                    }
-
-                                    if (!isDotComUser) {
-                                        return Observable.of(data)
-                                    }
+                                    // NOTE: Calling `registerModelsFromVSCodeConfiguration()` doesn't
+                                    // entirely make sense in a world where LLM models are managed
+                                    // server-side. However, this is how Cody can be extended to use locally
+                                    // running LLMs such as Ollama. (Though some more testing is needed.)
+                                    // See:
+                                    // https://sourcegraph.com/blog/local-code-completion-with-ollama-and-cody
+                                    data.primaryModels.push(...getModelsFromVSCodeConfiguration(config))
 
                                     // For DotCom users with early access or on the waitlist, replace the waitlist tag with the appropriate tags.
-                                    return featureFlagProvider
-                                        .evaluatedFeatureFlag(FeatureFlag.CodyEarlyAccess)
-                                        .pipe(
-                                            switchMap(hasEarlyAccess => {
-                                                const isOnWaitlist = config.clientState.waitlist_o1
-                                                if (hasEarlyAccess || isOnWaitlist) {
-                                                    data.primaryModels = data.primaryModels.map(
-                                                        model => {
-                                                            if (model.tags.includes(ModelTag.Waitlist)) {
-                                                                const newTags = model.tags.filter(
-                                                                    tag => tag !== ModelTag.Waitlist
-                                                                )
-                                                                newTags.push(
-                                                                    hasEarlyAccess
-                                                                        ? ModelTag.EarlyAccess
-                                                                        : ModelTag.OnWaitlist
-                                                                )
-                                                                return { ...model, tags: newTags }
-                                                            }
-                                                            return model
-                                                        }
-                                                    )
-                                                    // TODO(sqs): remove waitlist from localStorage when user has access
-                                                }
-                                                return Observable.of(data)
-                                            })
+                                    return combineLatest(
+                                        featureFlagProvider.evaluatedFeatureFlag(
+                                            FeatureFlag.CodyEarlyAccess
+                                        ),
+                                        featureFlagProvider.evaluatedFeatureFlag(
+                                            FeatureFlag.CodyReflection
                                         )
+                                    ).pipe(
+                                        switchMap(([hasEarlyAccess, codyReflectionEnabled]) => {
+                                            if (codyReflectionEnabled) {
+                                                data.primaryModels.push(
+                                                    ...maybeAdjustContextWindows(
+                                                        getExperimentalClientModels()
+                                                    ).map(createModelFromServerModel)
+                                                )
+                                            }
+
+                                            // TODO(sqs): remove waitlist from localStorage when user has access
+                                            const isOnWaitlist = config.clientState.waitlist_o1
+                                            if (isDotComUser && (hasEarlyAccess || isOnWaitlist)) {
+                                                data.primaryModels = data.primaryModels.map(model => {
+                                                    if (model.tags.includes(ModelTag.Waitlist)) {
+                                                        const newTags = model.tags.filter(
+                                                            tag => tag !== ModelTag.Waitlist
+                                                        )
+                                                        newTags.push(
+                                                            hasEarlyAccess
+                                                                ? ModelTag.EarlyAccess
+                                                                : ModelTag.OnWaitlist
+                                                        )
+                                                        return { ...model, tags: newTags }
+                                                    }
+                                                    return model
+                                                })
+                                            }
+
+                                            return Observable.of(data)
+                                        })
+                                    )
                                 })
                             )
                         }

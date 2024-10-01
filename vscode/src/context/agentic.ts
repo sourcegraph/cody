@@ -74,7 +74,6 @@ export class CodyReflectionAgent {
     }
 
     private async initializeAgent(): Promise<void> {
-        console.log(this.chatBuilder.selectedModel, 'this.chatBuilder.selectedModel?')
         this.isEnabled = isBoolean(this.chatBuilder.selectedModel?.includes('cody-reflection'))
         if (this.isEnabled) {
             this.initializeMultiplexer()

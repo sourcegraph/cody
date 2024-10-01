@@ -17,6 +17,6 @@ const CLIENT_EXPERIMENTAL_MODELS = [
     },
 ] as const satisfies ServerModel[]
 
-export function getExperimentalModels(): ServerModel[] {
+export function getExperimentalClientModels(): ServerModel[] {
     return CLIENT_EXPERIMENTAL_MODELS
 }

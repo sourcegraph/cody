@@ -37,6 +37,9 @@ vi.mock('graphqlClient')
 vi.mock('../services/LocalStorageProvider')
 vi.mock('../experimentation/FeatureFlagProvider')
 
+// Returns true for all feature flags enabled during synctests.
+vi.spyOn(featureFlagProvider, 'evaluatedFeatureFlag').mockReturnValue(Observable.of(true))
+
 mockClientCapabilities(CLIENT_CAPABILITIES_FIXTURE)
 
 describe('maybeAdjustContextWindows', () => {
