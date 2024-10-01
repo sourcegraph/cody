@@ -76,7 +76,12 @@ describe('logger', () => {
             isDotComUser: false,
         })
         const suggestionEvent = CompletionLogger.prepareSuggestionEvent({ id })
-        suggestionEvent?.markAsRead({ document, position })
+        suggestionEvent?.markAsRead({
+            document,
+            position,
+            docPrefix: defaultRequestParams.docContext.completePrefix,
+            docSuffix: defaultRequestParams.docContext.completeSuffix,
+        })
         CompletionLogger.accepted(id, document, item, range(0, 0, 0, 0), false)
 
         expect(recordSpy).toHaveBeenCalledWith('cody.completion', 'suggested', {
@@ -111,7 +116,12 @@ describe('logger', () => {
             isDotComUser: false,
         })
         const firstSuggestionEvent = CompletionLogger.prepareSuggestionEvent({ id: id1 })
-        firstSuggestionEvent?.markAsRead({ document, position })
+        firstSuggestionEvent?.markAsRead({
+            document,
+            position,
+            docPrefix: defaultRequestParams.docContext.completePrefix,
+            docSuffix: defaultRequestParams.docContext.completeSuffix,
+        })
 
         const loggerItem = CompletionLogger.getCompletionEvent(id1)
         const completionId = loggerItem?.params.id
@@ -129,7 +139,12 @@ describe('logger', () => {
             isDotComUser: false,
         })
         const secondSuggestionEvent = CompletionLogger.prepareSuggestionEvent({ id: id2 })
-        secondSuggestionEvent?.markAsRead({ document, position })
+        secondSuggestionEvent?.markAsRead({
+            document,
+            position,
+            docPrefix: defaultRequestParams.docContext.completePrefix,
+            docSuffix: defaultRequestParams.docContext.completeSuffix,
+        })
         CompletionLogger.accepted(id2, document, item, range(0, 0, 0, 0), false)
 
         const loggerItem2 = CompletionLogger.getCompletionEvent(id2)
@@ -154,7 +169,12 @@ describe('logger', () => {
             isDotComUser: false,
         })
         const thirdSuggestionEvent = CompletionLogger.prepareSuggestionEvent({ id: id3 })
-        thirdSuggestionEvent?.markAsRead({ document, position })
+        thirdSuggestionEvent?.markAsRead({
+            document,
+            position,
+            docPrefix: defaultRequestParams.docContext.completePrefix,
+            docSuffix: defaultRequestParams.docContext.completeSuffix,
+        })
 
         const loggerItem3 = CompletionLogger.getCompletionEvent(id3)
         expect(loggerItem3?.params.id).not.toBe(completionId)

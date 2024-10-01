@@ -843,10 +843,13 @@ export class InlineCompletionItemProvider
                 takeSuggestWidgetSelectionIntoAccount,
                 undefined
             )
+            completion.requestParams.docContext.position
             if (isStillVisible) {
                 suggestionEvent.markAsRead({
                     document: invokedDocument,
                     position: invokedPosition,
+                    docPrefix: completion.requestParams.docContext.completePrefix,
+                    docSuffix: completion.requestParams.docContext.completeSuffix,
                 })
             }
         }, this.COMPLETION_VISIBLE_DELAY_MS)
