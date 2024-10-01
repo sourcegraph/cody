@@ -54,7 +54,7 @@ export class CodeQwen extends DefaultModel {
     }
 
     formatIntroSnippets(params: FormatIntroSnippetsParams): PromptString {
-        let introPrompt = ps`${PromptString.join(params.intro, ps`\n`)}`
+        let introPrompt = ps`${PromptString.join(params.intro, ps`\n\n`)}`
         if (introPrompt.length > 0) {
             introPrompt = ps`${introPrompt}\n`
         }
@@ -73,7 +73,7 @@ export class CodeQwen extends DefaultModel {
         if (intro.length > 0) {
             introPrefix = ps`${intro}\n`
         }
-        const prompt = ps`${intro}<|file_sep|>${fileName}\n<|fim_prefix|>${prefix}<|fim_suffix|>${suffix}<|fim_middle|>`
+        const prompt = ps`${introPrefix}<|file_sep|>${fileName}\n<|fim_prefix|>${prefix}<|fim_suffix|>${suffix}<|fim_middle|>`
         if (repoName) {
             return ps`<|repo_name|>${repoName}\n${prompt}`
         }

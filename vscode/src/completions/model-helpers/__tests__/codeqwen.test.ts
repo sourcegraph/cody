@@ -25,10 +25,13 @@ describe('CodeQwen', () => {
                   "speaker": "human",
                   "text": "<|file_sep|>codebase/context1.ts
               function contextSnippetOne() {}
+
               <|file_sep|>codebase/context2.ts
               const contextSnippet2 = {}
+
               Additional documentation for \`ContextParams\`:
               interface ContextParams {}
+
               <|file_sep|>codebase/test.ts
               <|fim_prefix|>console.log(prefix line: 1)
               console.log(prefix line: 2)
