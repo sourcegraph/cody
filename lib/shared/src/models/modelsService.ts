@@ -304,7 +304,7 @@ export class ModelsService {
      * @returns An Observable that emits an array of models, with the default model first.
      */
     public getModels(type: ModelUsage): Observable<Model[] | typeof pendingOperation> {
-        return combineLatest([this.modelsChanges, this.getDefaultModel(type)]).pipe(
+        return combineLatest(this.modelsChanges, this.getDefaultModel(type)).pipe(
             map(([data, currentModel]) => {
                 if (data === pendingOperation || currentModel === pendingOperation) {
                     return pendingOperation
@@ -323,7 +323,7 @@ export class ModelsService {
     }
 
     public getDefaultModel(type: ModelUsage): Observable<Model | undefined | typeof pendingOperation> {
-        return combineLatest([this.getModelsByType(type), this.modelsChanges, authStatus]).pipe(
+        return combineLatest(this.getModelsByType(type), this.modelsChanges, authStatus).pipe(
             map(([models, modelsData, authStatus]) => {
                 if (models === pendingOperation || modelsData === pendingOperation) {
                     return pendingOperation
@@ -357,10 +357,10 @@ export class ModelsService {
      * and if that is not available, falling back to the default chat model.
      */
     public getDefaultEditModel(): Observable<EditModel | undefined | typeof pendingOperation> {
-        return combineLatest([
+        return combineLatest(
             this.getDefaultModel(ModelUsage.Edit),
-            this.getDefaultModel(ModelUsage.Chat),
-        ]).pipe(
+            this.getDefaultModel(ModelUsage.Chat)
+        ).pipe(
             map(([editModel, chatModel]) => {
                 if (editModel === pendingOperation || chatModel === pendingOperation) {
                     return pendingOperation
@@ -402,7 +402,7 @@ export class ModelsService {
     }
 
     public isModelAvailable(model: string | Model): Observable<boolean | typeof pendingOperation> {
-        return combineLatest([authStatus, this.modelsChanges]).pipe(
+        return combineLatest(authStatus, this.modelsChanges).pipe(
             map(([authStatus, modelsData]) =>
                 modelsData === pendingOperation
                     ? pendingOperation

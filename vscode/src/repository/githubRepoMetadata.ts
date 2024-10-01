@@ -128,7 +128,7 @@ export const publicRepoMetadataIfAllWorkspaceReposArePublic: Observable<
             return Observable.of(NO_PUBLIC_METADATA)
         }
         return combineLatest(
-            remoteRepos.map(remoteRepo =>
+            ...remoteRepos.map(remoteRepo =>
                 promiseFactoryToObservable(signal =>
                     // This is cached, so it's fast.
                     GitHubDotComRepoMetadata.getInstance().getRepoMetadataUsingRepoName(
