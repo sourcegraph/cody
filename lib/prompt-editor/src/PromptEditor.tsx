@@ -2,7 +2,7 @@ import {
     type ContextItem,
     type SerializedPromptEditorState,
     type SerializedPromptEditorValue,
-    areSerializedContextItemsEqual,
+    getMentionOperations,
     serializeContextItem,
     toSerializedPromptEditorValue,
 } from '@sourcegraph/cody-shared'
@@ -15,14 +15,20 @@ import {
     $setSelection,
     type LexicalEditor,
 } from 'lexical'
-import type { EditorState, SerializedEditorState, SerializedLexicalNode } from 'lexical'
+import type { EditorState, RootNode, SerializedEditorState, SerializedLexicalNode } from 'lexical'
 import isEqual from 'lodash/isEqual'
 import { type FunctionComponent, useCallback, useEffect, useImperativeHandle, useRef } from 'react'
 import { BaseEditor } from './BaseEditor'
 import styles from './PromptEditor.module.css'
 import { useSetGlobalPromptEditorConfig } from './config'
 import { isEditorContentOnlyInitialContext, lexicalNodesForContextItems } from './initialContext'
-import { $selectAfter, $selectEnd, getContextItemMentionNodes } from './lexicalUtils'
+import {
+    $selectAfter,
+    $selectEnd,
+    getContextItemsForEditor,
+    visitContextItemsForEditor,
+} from './lexicalUtils'
+import { $createContextItemMentionNode } from './nodes/ContextItemMentionNode'
 import type { KeyboardEventPluginProps } from './plugins/keyboardEvent'
 
 interface Props extends KeyboardEventPluginProps {
@@ -127,13 +133,8 @@ export const PromptEditor: FunctionComponent<Props> = ({
             appendText(text: string, ensureWhitespaceBefore?: boolean): void {
                 editorRef.current?.update(() => {
                     const root = $getRoot()
-                    const needsWhitespaceBefore = !/(^|\s)$/.test(root.getTextContent())
                     root.selectEnd()
-                    $insertNodes([
-                        $createTextNode(
-                            `${ensureWhitespaceBefore && needsWhitespaceBefore ? ' ' : ''}${text}`
-                        ),
-                    ])
+                    $insertNodes([$createTextNode(`${getWhitespace(root)}${text}`)])
                     root.selectEnd()
                 })
             },
@@ -142,25 +143,32 @@ export const PromptEditor: FunctionComponent<Props> = ({
                 if (!editor) {
                     return
                 }
-                const existingMentions = getContextItemMentionNodes(editor)
-                const newContextItems = items
-                    .map(serializeContextItem)
-                    .filter(
-                        item =>
-                            !existingMentions.some(mention =>
-                                areSerializedContextItemsEqual(mention, item)
-                            )
-                    )
 
-                if (newContextItems.length === 0) {
+                const newContextItems = items.map(serializeContextItem)
+                const existingMentions = getContextItemsForEditor(editor)
+                const ops = getMentionOperations(existingMentions, newContextItems)
+
+                if (ops.modify.size + ops.delete.size > 0) {
+                    visitContextItemsForEditor(editor, existing => {
+                        const update = ops.modify.get(existing.contextItem)
+                        if (update) {
+                            // replace the existing mention inline with the new one
+                            existing.replace($createContextItemMentionNode(update))
+                        }
+                        if (ops.delete.has(existing.contextItem)) {
+                            existing.remove()
+                        }
+                    })
+                }
+                if (ops.create.length === 0) {
                     return
                 }
 
                 editorRef.current?.update(() => {
-                    const nodesToInsert = lexicalNodesForContextItems(newContextItems, {
+                    const nodesToInsert = lexicalNodesForContextItems(ops.create, {
                         isFromInitialContext: false,
                     })
-                    $insertNodes([$createTextNode(' '), ...nodesToInsert])
+                    $insertNodes([$createTextNode(getWhitespace($getRoot())), ...nodesToInsert])
                     const lastNode = nodesToInsert.at(-1)
                     if (lastNode) {
                         $selectAfter(lastNode)
@@ -245,4 +253,9 @@ function normalizeEditorStateJSON(
     value: SerializedEditorState<SerializedLexicalNode>
 ): SerializedEditorState<SerializedLexicalNode> {
     return JSON.parse(JSON.stringify(value))
+}
+
+function getWhitespace(root: RootNode): string {
+    const needsWhitespaceBefore = !/(^|\s)$/.test(root.getTextContent())
+    return needsWhitespaceBefore ? ' ' : ''
 }

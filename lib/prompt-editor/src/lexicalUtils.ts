@@ -60,16 +60,29 @@ export function walkLexicalNodes(node: LexicalNode, fn: (node: LexicalNode) => b
     return
 }
 
-export function getContextItemMentionNodes(editor: LexicalEditor): SerializedContextItem[] {
+export function getContextItemsForEditor(editor: LexicalEditor): SerializedContextItem[] {
     return editor.getEditorState().read(() => {
         const nodes: SerializedContextItem[] = []
-        const root = $getRoot()
-        walkLexicalNodes(root, node => {
+        walkLexicalNodes($getRoot(), node => {
             if (node instanceof ContextItemMentionNode) {
                 nodes.push(node.contextItem)
             }
             return true
         })
         return nodes
+    })
+}
+
+export function visitContextItemsForEditor(
+    editor: LexicalEditor,
+    visit: (mention: ContextItemMentionNode) => void
+): void {
+    editor.update(() => {
+        walkLexicalNodes($getRoot(), node => {
+            if (node instanceof ContextItemMentionNode) {
+                visit(node)
+            }
+            return true
+        })
     })
 }
