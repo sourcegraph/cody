@@ -63,6 +63,7 @@ import {
 } from './commands/execute'
 import { executeAutoEditCommand } from './commands/execute/auto-edit'
 import { executeDocChatCommand } from './commands/execute/doc'
+import { executeTestChatCommand } from './commands/execute/test-chat'
 import { CodySourceControl } from './commands/scm/source-control'
 import type { CodyCommandArgs } from './commands/types'
 import { newCodyCommandArgs } from './commands/utils/get-commands'
@@ -385,7 +386,6 @@ async function registerCodyCommands(
             return undefined
         })
     }
-
     const executeCommandUnsafe = async (
         id: DefaultCodyCommands | PromptString,
         args?: Partial<CodyCommandArgs>
@@ -402,6 +402,11 @@ async function registerCodyCommands(
         return await executeCodyCommand(id, newCodyCommandArgs(args))
     }
 
+    // Register the execution command from above.
+    disposables.push(
+        vscode.commands.registerCommand('cody.action.command', (id, a) => executeCommand(id, a))
+    )
+
     // Initialize supercompletion provider if experimental feature is enabled
     disposables.push(
         enableFeature(
@@ -410,67 +415,69 @@ async function registerCodyCommands(
         )
     )
 
+    // Experimental Command: Auto Edit
+    disposables.push(
+        vscode.commands.registerCommand('cody.command.auto-edit', a => executeAutoEditCommand(a))
+    )
+
     disposables.push(
         subscriptionDisposable(
             featureFlagProvider
                 .evaluatedFeatureFlag(FeatureFlag.CodyUnifiedPrompts)
                 .pipe(
                     createDisposables(codyUnifiedPromptsFlag => {
+                        // Commands that are available only if unified prompts feature is enabled.
                         const unifiedPromptsEnabled =
                             codyUnifiedPromptsFlag && !clientCapabilities().isCodyWeb
+
                         vscode.commands.executeCommand(
                             'setContext',
                             'cody.menu.custom-commands.enable',
                             !unifiedPromptsEnabled
                         )
 
+                        // NOTE: Soon to be deprecated and replaced by unified prompts.
+                        const chatCommands = [
+                            // Register prompt-like command if unified prompts feature is available.
+                            vscode.commands.registerCommand('cody.command.explain-code', a =>
+                                executeExplainCommand(a)
+                            ),
+                            vscode.commands.registerCommand('cody.command.smell-code', a =>
+                                executeSmellCommand(a)
+                            ),
+                        ]
+
+                        // NOTE: Soon to be deprecated and replaced by unified prompts.
+                        const editCommands = [
+                            vscode.commands.registerCommand('cody.command.document-code', a =>
+                                executeDocCommand(a)
+                            ),
+                        ]
+
+                        const unitTestCommand = [
+                            vscode.commands.registerCommand('cody.command.unit-tests', a =>
+                                unifiedPromptsEnabled
+                                    ? executeTestChatCommand(a)
+                                    : executeTestEditCommand(a)
+                            ),
+                        ]
+
+                        // Prompt-like commands.
+                        const unifiedPromptsCommands = [
+                            vscode.commands.registerCommand('cody.command.prompt-document-code', a =>
+                                executeDocChatCommand(a)
+                            ),
+                        ]
+
+                        // Register prompt-like command if unified prompts feature is available.
                         return unifiedPromptsEnabled
                             ? [
-                                  // Register prompt-like command if unified prompts feature is available.
-                                  vscode.commands.registerCommand('cody.action.command', (id, a) =>
-                                      executeCommand(id, a)
-                                  ),
-                                  vscode.commands.registerCommand('cody.command.explain-code', a =>
-                                      executeExplainCommand(a)
-                                  ),
-                                  vscode.commands.registerCommand('cody.command.smell-code', a =>
-                                      executeSmellCommand(a)
-                                  ),
-                                  vscode.commands.registerCommand('cody.command.document-code', a =>
-                                      executeDocCommand(a)
-                                  ),
-                                  vscode.commands.registerCommand(
-                                      'cody.command.prompt-document-code',
-                                      a => executeDocChatCommand(a)
-                                  ),
+                                  ...chatCommands,
+                                  ...editCommands,
+                                  ...unitTestCommand,
+                                  ...unifiedPromptsCommands,
                               ]
-                            : [
-                                  // Otherwise register old-style commands.
-                                  vscode.commands.registerCommand('cody.action.command', (id, a) =>
-                                      executeCommand(id, a)
-                                  ),
-                                  vscode.commands.registerCommand('cody.command.explain-code', a =>
-                                      executeExplainCommand(a)
-                                  ),
-                                  vscode.commands.registerCommand('cody.command.smell-code', a =>
-                                      executeSmellCommand(a)
-                                  ),
-                                  vscode.commands.registerCommand('cody.command.document-code', a =>
-                                      executeDocCommand(a)
-                                  ),
-                                  vscode.commands.registerCommand('cody.command.unit-tests', a =>
-                                      executeTestEditCommand(a)
-                                  ),
-                                  vscode.commands.registerCommand('cody.command.tests-cases', a =>
-                                      executeTestCaseEditCommand(a)
-                                  ),
-                                  vscode.commands.registerCommand('cody.command.explain-output', a =>
-                                      executeExplainOutput(a)
-                                  ),
-                                  vscode.commands.registerCommand('cody.command.auto-edit', a =>
-                                      executeAutoEditCommand(a)
-                                  ),
-                              ]
+                            : [...chatCommands, ...editCommands, ...unitTestCommand]
                     })
                 )
                 .subscribe({})
@@ -482,10 +489,17 @@ async function registerCodyCommands(
  * Features that are currently available only in VS Code.
  */
 function registerVSCodeOnlyFeatures(chatClient: ChatClient, disposable: vscode.Disposable[]): void {
-    // Source Control Panel for generating commit message command.
+    // Generating commit message command in the VS Code Source Control Panel.
     disposable.push(new CodySourceControl(chatClient))
-    // Command for executing CLI commands in the VS Code terminal.
+    // Command for executing CLI commands in the Terminal panel used by Smart Apply.
     disposable.push(new CodyTerminal())
+
+    disposable.push(
+        // Command that sends the selected output from the Terminal panel to Cody Chat for explanation.
+        vscode.commands.registerCommand('cody.command.explain-output', a => executeExplainOutput(a)),
+        // Internal Experimental: Command to generate additional test cases through Code Lenses in test files.
+        vscode.commands.registerCommand('cody.command.tests-cases', a => executeTestCaseEditCommand(a))
+    )
 }
 
 function enableFeature(
