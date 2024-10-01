@@ -437,7 +437,11 @@ async function registerCodyCommands(
                                       executeSmellCommand(a)
                                   ),
                                   vscode.commands.registerCommand('cody.command.document-code', a =>
-                                      executeDocChatCommand(a)
+                                      executeDocCommand(a)
+                                  ),
+                                  vscode.commands.registerCommand(
+                                      'cody.command.prompt-document-code',
+                                      a => executeDocChatCommand(a)
                                   ),
                               ]
                             : [
