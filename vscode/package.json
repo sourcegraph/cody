@@ -1444,6 +1444,7 @@
     "postcss": "^8.4.38",
     "postcss-nested": "^6.0.1",
     "react-head": "^3.4.2",
+    "type-fest": "^4.26.1",
     "typescript-language-server": "^4.3.3",
     "ulidx": "^2.3.0",
     "vite-plugin-svgr": "^4.2.0",
