@@ -220,7 +220,7 @@ export function newAuthProviderForTest(
 
 function startAuthTelemetryReporter(): Unsubscribable {
     return authStatus.subscribe(authStatus => {
-        // no-op
+        reportAuthTelemetryEvent(authStatus)
     })
 }
 
