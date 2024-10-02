@@ -4,17 +4,16 @@ import {
     type ChatClient,
     type CompletionParameters,
     type ContextItem,
-    PromptMixin,
     firstResultFromOperation,
     logDebug,
     modelsService,
     newPromptMixin,
     ps,
 } from '@sourcegraph/cody-shared'
-import { isBoolean } from 'lodash'
 import { ChatBuilder } from '../../chat/chat-view/ChatBuilder'
 import type { ContextRetriever } from '../../chat/chat-view/ContextRetriever'
 import { DefaultPrompter } from '../../chat/chat-view/prompt'
+import { getOSPromptString } from '../../os'
 import { getCategorizedMentions } from '../../prompt-builder/utils'
 import { CodyTools } from './CodyTools'
 
@@ -43,6 +42,7 @@ Notes:
 - Only use the above action tags when you need additional information.
 - You can request multiple pieces of information in a single response.
 - When replying to a question with a shell command, enclose the command in a Markdown code block.
+- My dev environment is on ${getOSPromptString()}.
 - If you don't require additional context to answer the question, reply with a single word: "Reviewed".`
 
 /**
@@ -50,7 +50,6 @@ Notes:
  * It is responsible for reviewing the retrieved context, and perform agentic context retrieval for the chat request.
  */
 export class DeepCodyAgent {
-    private isEnabled = false
     private readonly tools: CodyTools
     private readonly multiplexer = new BotResponseMultiplexer()
     private responses: Record<string, string>
@@ -64,14 +63,6 @@ export class DeepCodyAgent {
     ) {
         this.tools = new CodyTools(contextRetriever, span)
         this.responses = { CODYTOOLCLI: '', CODYTOOLFILE: '', CODYTOOLSEARCH: '' }
-        this.initializeAgent()
-    }
-
-    private async initializeAgent(): Promise<void> {
-        this.isEnabled = isBoolean(this.chatBuilder.selectedModel?.includes('deep-cody'))
-        if (this.isEnabled) {
-            this.initializeMultiplexer()
-        }
     }
 
     private initializeMultiplexer(): void {
@@ -85,10 +76,11 @@ export class DeepCodyAgent {
         }
     }
 
-    public async getContext(abortSignal: AbortSignal): Promise<ContextItem[]> {
-        if (!this.isEnabled) {
+    public async getContext(model: string, abortSignal: AbortSignal): Promise<ContextItem[]> {
+        if (!model.includes('deep-cody')) {
             return []
         }
+        this.initializeMultiplexer()
         const agenticContext = await this.review(abortSignal)
         // TODO: Run this in a loop to review the context?
         // If we have retrieved more context from the search query response,
@@ -117,11 +109,11 @@ export class DeepCodyAgent {
 
         const { explicitMentions, implicitMentions } = getCategorizedMentions(this.currentContext)
 
-        PromptMixin.add(newPromptMixin(DEEP_CODY_AGENT_PROMPT))
-
         // Limit the number of implicit mentions to 20 items.
         const prompter = new DefaultPrompter(explicitMentions, implicitMentions.slice(-20))
-        const { prompt } = await prompter.makePrompt(this.chatBuilder, 1)
+        const { prompt } = await prompter.makePrompt(this.chatBuilder, 1, [
+            newPromptMixin(DEEP_CODY_AGENT_PROMPT),
+        ])
 
         const model = this.chatBuilder.selectedModel
         const contextWindow = await firstResultFromOperation(

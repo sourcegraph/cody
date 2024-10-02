@@ -742,13 +742,14 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
 
                 // Additional context retrived from the experimental Deep Cody feature
                 // Currently, all agentic context are marked as user-explicit mentions to be ranked higher during prompt building.
-                const agenticContext = await new DeepCodyAgent(
+                const deepCody = new DeepCodyAgent(
                     this.chatBuilder,
                     this.chatClient,
                     this.contextRetriever,
                     span,
                     corpusContext
-                ).getContext(signal)
+                )
+                const agenticContext = await deepCody.getContext(model, signal)
                 corpusContext.push(...agenticContext)
 
                 const { explicitMentions, implicitMentions } = getCategorizedMentions(corpusContext)

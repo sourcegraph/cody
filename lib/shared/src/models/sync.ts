@@ -188,7 +188,7 @@ export function syncModels({
                                         featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.DeepCody)
                                     ).pipe(
                                         switchMap(([hasEarlyAccess, deepCodyEnabled]) => {
-                                            if (deepCodyEnabled) {
+                                            if (deepCodyEnabled && serverModelsConfig) {
                                                 data.primaryModels.push(
                                                     ...maybeAdjustContextWindows(
                                                         getExperimentalClientModels()

@@ -21,8 +21,7 @@ const DEEP_CODY = ps`Give step-by-step instruction for how-to questions. Keep an
  */
 export class PromptMixin {
     /**
-     * A list of mixins to be prepended to the next human message.
-     * This list gets reset after each use.
+     * A list of default mixins to be prepended to the next human message.
      */
     private static mixins: PromptMixin[] = []
     private static hedging: PromptMixin = new PromptMixin(HEDGES_PREVENTION)
@@ -31,9 +30,13 @@ export class PromptMixin {
      * Prepends all mixins to `humanMessage`. Modifies and returns `humanMessage`.
      * Add hedging prevention prompt to specific models who need this.
      */
-    public static mixInto(humanMessage: ChatMessage, modelID: ChatModel | undefined): ChatMessage {
-        // Default Mixin is added at the end so that it cannot be overriden by other mixins.
+    public static mixInto(
+        humanMessage: ChatMessage,
+        modelID: ChatModel | undefined,
+        newMixins: PromptMixin[] = []
+    ): ChatMessage {
         const mixins = [...PromptMixin.mixins]
+
         // Prevents known models like Claude 3.5 Sonnet from apologizing constantly.
         const apologiticModels = ['3-5-sonnet', '3.5-sonnet', 'deep-cody']
         if (modelID && apologiticModels.some(model => modelID.includes(model))) {
@@ -41,18 +44,18 @@ export class PromptMixin {
         }
 
         // Add prompt that provides answer guidelines for the Deep Cody model.
-        if (modelID?.includes('deep-cody') && !PromptMixin.mixins.length) {
+        if (modelID?.includes('deep-cody') && !newMixins.length) {
             mixins.push(new PromptMixin(DEEP_CODY))
         }
+
+        // Add new mixins to the list of mixins to be prepended to the next human message.
+        mixins.push(...newMixins)
 
         // Construct the prompt by joining all the mixins.
         const prompt = PromptString.join(
             mixins.map(m => m.prompt),
             ps`\n\n`
         ).trim()
-
-        // Reset the prompt mixins after use to avoid mixing into the next message.
-        PromptMixin.reset()
 
         // Stuff the prompt mixins at the start of the human text.
         // Note we do not reflect them in `text`.
@@ -64,8 +67,8 @@ export class PromptMixin {
             : humanMessage
     }
 
-    public static addContextMixin(): void {
-        PromptMixin.mixins.push(new PromptMixin(CONTEXT_PREAMBLE))
+    public static getContextMixin(): PromptMixin {
+        return new PromptMixin(CONTEXT_PREAMBLE)
     }
     /**
      * Add prompt to the list of mixins to be prepended to the next human message.
@@ -73,10 +76,6 @@ export class PromptMixin {
      */
     public static add(mixin: PromptMixin): void {
         PromptMixin.mixins.push(mixin)
-    }
-
-    private static reset(): void {
-        PromptMixin.mixins = []
     }
 
     /**

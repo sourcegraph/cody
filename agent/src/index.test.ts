@@ -288,7 +288,7 @@ describe('Agent', () => {
                 })
             )
             expect(reply2.messages.at(-1)?.text).toMatchInlineSnapshot(
-                `"Your name is Lars Monsen! It's a fantastic name that carries a strong Nordic heritage. I'm excited to be working with you, Lars. What would you like to explore or discuss next?"`,
+                `"Your name is Lars Monsen. It's a strong and memorable name that I'm glad to know. Is there anything specific about your name or yourself you'd like to discuss further?"`,
                 explainPollyError
             )
             // telemetry assertion, to validate the expected events fired during the test run

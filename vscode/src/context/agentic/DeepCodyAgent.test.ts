@@ -18,6 +18,8 @@ import type { ContextRetriever } from '../../chat/chat-view/ContextRetriever'
 import * as initialContext from '../../chat/initialContext'
 import { DeepCodyAgent } from './DeepCodyAgent'
 
+const DeepCodyModelRef = 'sourcegraph::2023-06-01::deep-cody'
+
 describe('DeepCodyAgent', () => {
     const codyProAuthStatus: AuthenticatedAuthStatus = {
         ...AUTH_STATUS_FIXTURE_AUTHED,
@@ -141,7 +143,9 @@ describe('DeepCodyAgent', () => {
             mockCurrentContext
         )
 
-        const result = await agent.getContext({ aborted: false } as AbortSignal)
+        const result = await agent.getContext(DeepCodyModelRef, {
+            aborted: false,
+        } as AbortSignal)
 
         expect(mockChatClient.chat).toHaveBeenCalled()
         expect(mockContextRetriever.retrieveContext).toHaveBeenCalled()

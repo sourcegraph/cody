@@ -1,4 +1,5 @@
 import os from 'node:os'
+import { ps } from '@sourcegraph/cody-shared'
 
 export enum Platform {
     Linux = 'linux',
@@ -49,5 +50,17 @@ export function getOSArch(): {
     return {
         platform,
         arch,
+    }
+}
+
+const platform = os.platform()
+export function getOSPromptString() {
+    switch (platform) {
+        case 'win32':
+            return ps`Windows`
+        case 'darwin':
+            return ps`MacOS`
+        default:
+            return ps`Linux`
     }
 }
