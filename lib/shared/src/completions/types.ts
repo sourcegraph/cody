@@ -51,6 +51,9 @@ export interface DocumentDependentContext {
      * suggestion widget and injects the item into the prefix.
      */
     injectedPrefix: string | null
+
+    completePrefix: string
+    completeSuffix: string
 }
 
 export interface LinesContext {

@@ -1,20 +1,24 @@
 import {
+    type ContextItem,
     type GenericVSCodeWrapper,
+    type Model,
     type WebviewToExtensionAPI,
     createExtensionAPI,
     createMessageAPIForWebview,
 } from '@sourcegraph/cody-shared'
+import { Observable } from 'observable-fns'
 import { type FunctionComponent, type ReactNode, createContext, useContext, useMemo } from 'react'
 
 const context = createContext<WebviewToExtensionAPI | undefined>(undefined)
 
 export const ExtensionAPIProviderFromVSCodeAPI: FunctionComponent<{
     vscodeAPI: GenericVSCodeWrapper<any, any>
+    staticInitialContext?: ContextItem[]
     children: ReactNode
-}> = ({ vscodeAPI, children }) => {
+}> = ({ vscodeAPI, staticInitialContext, children }) => {
     const extensionAPI = useMemo<WebviewToExtensionAPI>(
-        () => createExtensionAPI(createMessageAPIForWebview(vscodeAPI)),
-        [vscodeAPI]
+        () => createExtensionAPI(createMessageAPIForWebview(vscodeAPI), staticInitialContext),
+        [vscodeAPI, staticInitialContext]
     )
     return <context.Provider value={extensionAPI}>{children}</context.Provider>
 }
@@ -37,10 +41,16 @@ export function useExtensionAPI<M extends keyof WebviewToExtensionAPI>(): Pick<
     return extensionAPI
 }
 
-export const MOCK_API = new Proxy(
-    {},
+export const MOCK_API = new Proxy<Partial<WebviewToExtensionAPI>>(
     {
-        get: (_, property) => {
+        chatModels: () => Observable.of<Model[]>([]),
+        evaluatedFeatureFlag: () => Observable.of<boolean | undefined>(false),
+    },
+    {
+        get: (obj, property) => {
+            if (Object.hasOwn(obj, property)) {
+                return (obj as any)[property]
+            }
             return () => {
                 throw new Error(`${String(property)} is not implemented on MOCK_API`)
             }

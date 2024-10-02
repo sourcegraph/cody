@@ -3,6 +3,8 @@ import { RE2JS as RE2 } from 're2js'
 import { type Mock, afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { URI } from 'vscode-uri'
 
+import { mockAuthStatus } from '../auth/authStatus'
+import { AUTH_STATUS_FIXTURE_AUTHED, AUTH_STATUS_FIXTURE_AUTHED_DOTCOM } from '../auth/types'
 import { isDefined } from '../common'
 import { mockResolvedConfig } from '../configuration/resolver'
 import { DOTCOM_URL } from '../sourcegraph-api/environments'
@@ -11,17 +13,18 @@ import {
     EXCLUDE_EVERYTHING_CONTEXT_FILTERS,
     graphqlClient,
 } from '../sourcegraph-api/graphql/client'
-import { ContextFiltersProvider, type GetRepoNamesFromWorkspaceUri } from './context-filters-provider'
+import { ContextFiltersProvider, type GetRepoNamesContainingUri } from './context-filters-provider'
 
 describe('ContextFiltersProvider', () => {
     let provider: ContextFiltersProvider
 
-    let getRepoNamesFromWorkspaceUri: Mock<GetRepoNamesFromWorkspaceUri>
+    let getRepoNamesContainingUri: Mock<GetRepoNamesContainingUri>
 
     beforeEach(() => {
         mockResolvedConfig({ configuration: {}, auth: { serverEndpoint: 'https://example.com' } })
-        getRepoNamesFromWorkspaceUri = vi.fn()
-        ContextFiltersProvider.repoNameResolver = { getRepoNamesFromWorkspaceUri }
+        mockAuthStatus(AUTH_STATUS_FIXTURE_AUTHED)
+        getRepoNamesContainingUri = vi.fn()
+        ContextFiltersProvider.repoNameResolver = { getRepoNamesContainingUri }
 
         provider = new ContextFiltersProvider()
         vi.useFakeTimers()
@@ -289,7 +292,7 @@ describe('ContextFiltersProvider', () => {
         function getTestURI(params: TestUriParams): URI {
             const { repoName, filePath } = params
 
-            getRepoNamesFromWorkspaceUri.mockResolvedValue([`github.com/sourcegraph/${repoName}`])
+            getRepoNamesContainingUri.mockResolvedValue([`github.com/sourcegraph/${repoName}`])
 
             return URI.file(`/${repoName}/${filePath}`)
         }
@@ -316,15 +319,13 @@ describe('ContextFiltersProvider', () => {
 
             const includedURI = getTestURI({ repoName: 'cody', filePath: 'foo/bar.ts' })
             expect(includedURI.fsPath.replaceAll('\\', '/')).toBe('/cody/foo/bar.ts')
-            expect(await getRepoNamesFromWorkspaceUri(includedURI)).toEqual([
-                'github.com/sourcegraph/cody',
-            ])
+            expect(await getRepoNamesContainingUri(includedURI)).toEqual(['github.com/sourcegraph/cody'])
 
             expect(await provider.isUriIgnored(includedURI)).toBe(false)
 
             const excludedURI = getTestURI({ repoName: 'sourcegraph', filePath: 'src/main.tsx' })
             expect(excludedURI.fsPath.replaceAll('\\', '/')).toBe('/sourcegraph/src/main.tsx')
-            expect(await getRepoNamesFromWorkspaceUri(excludedURI)).toEqual([
+            expect(await getRepoNamesContainingUri(excludedURI)).toEqual([
                 'github.com/sourcegraph/sourcegraph',
             ])
 
@@ -340,7 +341,7 @@ describe('ContextFiltersProvider', () => {
             })
 
             const uri = getTestURI({ repoName: 'cody', filePath: 'foo/bar.ts' })
-            getRepoNamesFromWorkspaceUri.mockResolvedValue(null)
+            getRepoNamesContainingUri.mockResolvedValue(null)
             expect(await provider.isUriIgnored(uri)).toBe('no-repo-found')
         })
 
@@ -351,7 +352,7 @@ describe('ContextFiltersProvider', () => {
             })
 
             const uri = getTestURI({ repoName: 'cody', filePath: 'foo/bar.ts' })
-            getRepoNamesFromWorkspaceUri.mockResolvedValue([])
+            getRepoNamesContainingUri.mockResolvedValue([])
             expect(await provider.isUriIgnored(uri)).toBe('no-repo-found')
         })
 
@@ -362,7 +363,7 @@ describe('ContextFiltersProvider', () => {
             })
 
             const uri = getTestURI({ repoName: 'cody', filePath: 'foo/bar.ts' })
-            getRepoNamesFromWorkspaceUri.mockResolvedValue([])
+            getRepoNamesContainingUri.mockResolvedValue([])
             expect(await provider.isUriIgnored(uri)).toBe(false)
         })
 
@@ -383,8 +384,8 @@ describe('ContextFiltersProvider', () => {
                     configuration: {},
                     auth: { serverEndpoint: DOTCOM_URL.toString() },
                 })
+                mockAuthStatus(AUTH_STATUS_FIXTURE_AUTHED_DOTCOM)
                 provider = new ContextFiltersProvider()
-                ;(provider as any).isDotCom = true
                 await vi.runOnlyPendingTimersAsync()
                 await provider.isRepoNameIgnored('anything')
 

@@ -4,8 +4,6 @@ import { describe, expect, test } from 'vitest'
 
 describe('protocol null/undefined robustness', () => {
     testProtocolDefinitionIsRobustToNullUndefinedEquivalence(__dirname + '/agent-protocol.ts')
-    testProtocolDefinitionIsRobustToNullUndefinedEquivalence(__dirname + '/bfg-protocol.ts')
-    testProtocolDefinitionIsRobustToNullUndefinedEquivalence(__dirname + '/embeddings-protocol.ts')
     testProtocolDefinitionIsRobustToNullUndefinedEquivalence(__dirname + '/../chat/protocol.ts')
 })
 

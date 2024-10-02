@@ -1,36 +1,29 @@
 import {
-    type ClientConfiguration,
     FeatureFlag,
+    type Unsubscribable,
     combineLatest,
     distinctUntilChanged,
     featureFlagProvider,
-    mergeMap,
+    resolvedConfig,
+    switchMap,
 } from '@sourcegraph/cody-shared'
 import { Observable, map } from 'observable-fns'
 import { isRunningInsideAgent } from '../jsonrpc/isRunningInsideAgent'
 import type { ContextStrategy } from './context/context-strategy'
 
 class CompletionProviderConfig {
-    private _config?: ClientConfiguration
-
-    private get config() {
-        if (!this._config) {
-            throw new Error('CompletionProviderConfig is not initialized')
-        }
-
-        return this._config
-    }
+    private prefetchSubscription: Unsubscribable | undefined
 
     /**
-     * Should be called before `InlineCompletionItemProvider` instance is created, so that the singleton
-     * with resolved values is ready for downstream use.
+     * Pre-fetch the feature flags we need so they are cached and immediately available when the
+     * user performs their first autocomplete, and so that our performance metrics are not skewed by
+     * the 1st autocomplete's feature flag evaluation time.
      */
-    public async init(config: ClientConfiguration): Promise<void> {
-        this._config = config
-
-        // Pre-fetch the feature flags we need so they are cached and immediately available when the
-        // user performs their first autocomplete, and so that our performance metrics are not
-        // skewed by the 1st autocomplete's feature flag evaluation time.
+    public async prefetch(): Promise<void> {
+        if (this.prefetchSubscription) {
+            // Only one prefetch subscription is needed.
+            return
+        }
         const featureFlagsUsed: FeatureFlag[] = [
             FeatureFlag.CodyAutocompleteContextExperimentBaseFeatureFlag,
             FeatureFlag.CodyAutocompleteContextExperimentVariant1,
@@ -42,12 +35,17 @@ class CompletionProviderConfig {
             FeatureFlag.CodyAutocompletePreloadingExperimentVariant1,
             FeatureFlag.CodyAutocompletePreloadingExperimentVariant2,
             FeatureFlag.CodyAutocompletePreloadingExperimentVariant3,
+            FeatureFlag.CodyAutocompleteDisableLowPerfLangDelay,
+            FeatureFlag.CodyAutocompleteDataCollectionFlag,
+            FeatureFlag.CodyAutocompleteTracing,
         ]
-        await Promise.all(featureFlagsUsed.map(flag => featureFlagProvider.evaluateFeatureFlag(flag)))
+        this.prefetchSubscription = combineLatest(
+            ...featureFlagsUsed.map(flag => featureFlagProvider.evaluatedFeatureFlag(flag))
+        ).subscribe({})
     }
 
-    public setConfig(config: ClientConfiguration) {
-        this._config = config
+    public dispose(): void {
+        this.prefetchSubscription?.unsubscribe()
     }
 
     public get contextStrategy(): Observable<ContextStrategy> {
@@ -55,19 +53,26 @@ class CompletionProviderConfig {
             'lsp-light',
             'tsc-mixed',
             'tsc',
-            'bfg',
-            'bfg-mixed',
             'jaccard-similarity',
             'new-jaccard-similarity',
             'recent-edits',
             'recent-edits-1m',
             'recent-edits-5m',
             'recent-edits-mixed',
+            'recent-copy',
+            'diagnostics',
+            'recent-view-port',
         ]
-        if (knownValues.includes(this.config.autocompleteExperimentalGraphContext as string)) {
-            return Observable.of(this.config.autocompleteExperimentalGraphContext as ContextStrategy)
-        }
-        return this.experimentBasedContextStrategy()
+        return resolvedConfig.pipe(
+            switchMap(({ configuration }) => {
+                if (knownValues.includes(configuration.autocompleteExperimentalGraphContext as string)) {
+                    return Observable.of(
+                        configuration.autocompleteExperimentalGraphContext as ContextStrategy
+                    )
+                }
+                return this.experimentBasedContextStrategy()
+            })
+        )
     }
 
     private experimentBasedContextStrategy(): Observable<ContextStrategy> {
@@ -76,12 +81,12 @@ class CompletionProviderConfig {
         return featureFlagProvider
             .evaluatedFeatureFlag(FeatureFlag.CodyAutocompleteContextExperimentBaseFeatureFlag)
             .pipe(
-                mergeMap(isContextExperimentFlagEnabled => {
+                switchMap(isContextExperimentFlagEnabled => {
                     if (isRunningInsideAgent() || !isContextExperimentFlagEnabled) {
                         return Observable.of(defaultContextStrategy)
                     }
 
-                    return combineLatest([
+                    return combineLatest(
                         featureFlagProvider.evaluatedFeatureFlag(
                             FeatureFlag.CodyAutocompleteContextExperimentVariant1
                         ),
@@ -96,8 +101,8 @@ class CompletionProviderConfig {
                         ),
                         featureFlagProvider.evaluatedFeatureFlag(
                             FeatureFlag.CodyAutocompleteContextExperimentControl
-                        ),
-                    ]).pipe(
+                        )
+                    ).pipe(
                         map(([variant1, variant2, variant3, variant4, control]) => {
                             if (variant1) {
                                 return 'recent-edits-1m'
@@ -136,7 +141,7 @@ class CompletionProviderConfig {
         // - CodyAutocompleteVariant1 33%
         // - CodyAutocompleteVariant2 100%
         // - CodyAutocompleteVariant3 50%
-        return combineLatest([
+        return combineLatest(
             featureFlagProvider.evaluatedFeatureFlag(
                 FeatureFlag.CodyAutocompletePreloadingExperimentBaseFeatureFlag
             ),
@@ -148,8 +153,8 @@ class CompletionProviderConfig {
             ),
             featureFlagProvider.evaluatedFeatureFlag(
                 FeatureFlag.CodyAutocompletePreloadingExperimentVariant3
-            ),
-        ]).pipe(
+            )
+        ).pipe(
             map(([isContextExperimentFlagEnabled, variant1, variant2, variant3]) => {
                 if (isContextExperimentFlagEnabled) {
                     if (variant1) {
@@ -171,27 +176,43 @@ class CompletionProviderConfig {
     }
 
     public get autocompletePreloadDebounceInterval(): Observable<number> {
-        const localInterval = this.config.autocompleteExperimentalPreloadDebounceInterval
+        return resolvedConfig.pipe(
+            switchMap(({ configuration }) => {
+                const localInterval = configuration.autocompleteExperimentalPreloadDebounceInterval
 
-        if (localInterval !== undefined && localInterval > 0) {
-            return Observable.of(localInterval)
-        }
-
-        return this.getPreloadingExperimentGroup().pipe(
-            map(preloadingExperimentGroup => {
-                switch (preloadingExperimentGroup) {
-                    case 'variant1':
-                        return 150
-                    case 'variant2':
-                        return 250
-                    case 'variant3':
-                        return 350
-                    default:
-                        return 0
+                if (localInterval !== undefined && localInterval > 0) {
+                    return Observable.of(localInterval)
                 }
-            }),
-            distinctUntilChanged()
+
+                return this.getPreloadingExperimentGroup().pipe(
+                    map(preloadingExperimentGroup => {
+                        switch (preloadingExperimentGroup) {
+                            case 'variant1':
+                                return 150
+                            case 'variant2':
+                                return 250
+                            case 'variant3':
+                                return 350
+                            default:
+                                return 0
+                        }
+                    }),
+                    distinctUntilChanged()
+                )
+            })
         )
+    }
+
+    public get completionDisableLowPerfLangDelay(): Observable<boolean> {
+        return featureFlagProvider
+            .evaluatedFeatureFlag(FeatureFlag.CodyAutocompleteDisableLowPerfLangDelay)
+            .pipe(distinctUntilChanged())
+    }
+
+    public get completionDataCollectionFlag(): Observable<boolean> {
+        return featureFlagProvider
+            .evaluatedFeatureFlag(FeatureFlag.CodyAutocompleteDataCollectionFlag)
+            .pipe(distinctUntilChanged())
     }
 }
 

@@ -7,12 +7,12 @@ import { completionParams, contextSnippets } from './test-data'
 import { Mistral } from '../mistral'
 
 describe('Mistral', () => {
-    describe.skipIf(isWindows())('getPrompt', () => {
+    describe.skipIf(isWindows())('getMessages', () => {
         it('returns the prompt with the correct intro snippets', () => {
             const model = new Mistral()
             const { docContext, document, provider } = completionParams
 
-            const result = model.getPrompt({
+            const result = model.getMessages({
                 document,
                 docContext,
                 snippets: contextSnippets,
@@ -20,7 +20,10 @@ describe('Mistral', () => {
             })
 
             expect(result).toMatchInlineSnapshot(`
-              "<s>[INST] Below is the code from file path codebase/test.ts. Review the code outside the XML tags to detect the functionality, formats, style, patterns, and logics in use. Then, use what you detect and reuse methods/libraries to complete and enclose completed code only inside XML tags precisely without duplicating existing implementations. Here is the code:
+              [
+                {
+                  "speaker": "human",
+                  "text": "<s>[INST] Below is the code from file path codebase/test.ts. Review the code outside the XML tags to detect the functionality, formats, style, patterns, and logics in use. Then, use what you detect and reuse methods/libraries to complete and enclose completed code only inside XML tags precisely without duplicating existing implementations. Here is the code:
               \`\`\`
               // Here is a reference snippet of code from codebase/context1.ts:
               // function contextSnippetOne() {}
@@ -164,7 +167,9 @@ describe('Mistral', () => {
               \`\`\`[/INST]
                <CODE5711>console.log(3)
                   console.log(4)
-              "
+              ",
+                },
+              ]
             `)
         })
     })

@@ -7,6 +7,12 @@ import {
 } from './utils'
 
 describe('convertGitCloneURLToCodebaseName', () => {
+    it('fails to converts repo names that are not valid URLs', () => {
+        expect(convertGitCloneURLToCodebaseName('github.com/foo/bar')).toEqual(null)
+        expect(convertGitCloneURLToCodebaseName('example.com/foo')).toEqual(null)
+        expect(convertGitCloneURLToCodebaseName('gitlab.com/foo/bar/baz')).toEqual(null)
+    })
+
     it('converts Azure DevOps URL', () => {
         expect(
             convertGitCloneURLToCodebaseName(

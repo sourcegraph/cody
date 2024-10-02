@@ -40,8 +40,7 @@ export interface AuthenticatedAuthStatus {
      * buttons in the UI.
      */
     userCanUpgrade?: boolean
-
-    isOfflineMode?: boolean
+    pendingValidation: boolean
 }
 
 /**
@@ -53,6 +52,7 @@ export interface UnauthenticatedAuthStatus {
     authenticated: false
     showNetworkError?: boolean
     showInvalidAccessTokenError?: boolean
+    pendingValidation: boolean
 }
 
 export const AUTH_STATUS_FIXTURE_AUTHED: AuthenticatedAuthStatus = {
@@ -61,23 +61,22 @@ export const AUTH_STATUS_FIXTURE_AUTHED: AuthenticatedAuthStatus = {
     username: 'alice',
     codyApiVersion: 1,
     siteVersion: '9999',
+    pendingValidation: false,
 }
 
 export const AUTH_STATUS_FIXTURE_UNAUTHED: AuthStatus & { authenticated: false } = {
     endpoint: 'https://example.com',
     authenticated: false,
+    pendingValidation: false,
 }
 
 export const AUTH_STATUS_FIXTURE_AUTHED_DOTCOM: AuthenticatedAuthStatus = {
     ...AUTH_STATUS_FIXTURE_AUTHED,
     endpoint: 'https://sourcegraph.com',
-}
-
-export const AUTH_STATUS_FIXTURE_OFFLINE: Omit<AuthenticatedAuthStatus, 'isOfflineMode'> & {
-    isOfflineMode: true
-} = {
-    ...AUTH_STATUS_FIXTURE_AUTHED,
-    isOfflineMode: true,
+    configOverwrites: {
+        provider: 'sourcegraph',
+        completionModel: 'fireworks/starcoder-hybrid',
+    },
 }
 
 export function isCodyProUser(authStatus: AuthStatus): boolean {

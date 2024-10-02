@@ -1,13 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi, vitest } from 'vitest'
-import { localStorage } from '../services/LocalStorageProvider'
+import { mockLocalStorage } from '../services/LocalStorageProvider'
 
 import {
     AUTH_STATUS_FIXTURE_AUTHED,
     type AuthStatus,
     DOTCOM_URL,
     FeatureFlag,
-    type GraphQLAPIClientConfig,
-    type SourcegraphGraphQLAPIClient,
     authStatus,
     featureFlagProvider,
     graphqlClient,
@@ -20,7 +18,6 @@ vi.mock('../services/AuthProvider')
 
 describe('Cody Pro expiration notifications', () => {
     let notifier: CodyProExpirationNotifications
-    let apiClient: SourcegraphGraphQLAPIClient
     let authStatus_: AuthStatus
     let authChangeListener = () => {}
     let codyPlan: string
@@ -33,7 +30,7 @@ describe('Cody Pro expiration notifications', () => {
 
     // Set up local storage backed by an object.
     let localStorageData: { [key: string]: unknown } = {}
-    localStorage.setStorage({
+    mockLocalStorage({
         get: (key: string) => localStorageData[key],
         update: (key: string, value: unknown) => {
             localStorageData[key] = value
@@ -48,17 +45,16 @@ describe('Cody Pro expiration notifications', () => {
         enabledFeatureFlags.clear()
         enabledFeatureFlags.add(FeatureFlag.UseSscForCodySubscription)
         enabledFeatureFlags.add(FeatureFlag.CodyProTrialEnded)
-        vi.spyOn(featureFlagProvider, 'evaluateFeatureFlag').mockImplementation((flag: FeatureFlag) =>
-            Promise.resolve(enabledFeatureFlags.has(flag))
+        vi.spyOn(featureFlagProvider, 'evaluateFeatureFlagEphemerally').mockImplementation(
+            (flag: FeatureFlag) => Promise.resolve(enabledFeatureFlags.has(flag))
         )
-        vi.spyOn(featureFlagProvider, 'refresh').mockImplementation(() => Promise.resolve())
-        graphqlClient.setConfig({} as unknown as GraphQLAPIClientConfig)
-        apiClient = {
-            getCurrentUserCodySubscription: () => ({
-                status: codyStatus,
-                plan: codyPlan,
-            }),
-        } as unknown as SourcegraphGraphQLAPIClient
+        vi.spyOn(graphqlClient, 'getCurrentUserCodySubscription').mockImplementation(async () => ({
+            status: codyStatus,
+            plan: codyPlan,
+            applyProRateLimits: false,
+            currentPeriodEndAt: new Date(2022, 1, 1),
+            currentPeriodStartAt: new Date(2021, 1, 1),
+        }))
         vi.spyOn(authStatus, 'subscribe').mockImplementation((f: any): any => {
             authChangeListener = f
             // (return an object that simulates the unsubscribe
@@ -80,7 +76,7 @@ describe('Cody Pro expiration notifications', () => {
 
     function createNotifier() {
         return new CodyProExpirationNotifications(
-            apiClient,
+            graphqlClient,
             showInformationMessage,
             openExternal,
             10,

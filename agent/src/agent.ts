@@ -6,7 +6,12 @@ import {
     type AccountKeyedChatHistory,
     type ChatHistoryKey,
     type CodyCommand,
+    CodyIDE,
     ModelUsage,
+    currentAuthStatus,
+    currentAuthStatusAuthed,
+    currentAuthStatusOrNotReadyYet,
+    firstResultFromOperation,
     telemetryRecorder,
     waitUntilComplete,
 } from '@sourcegraph/cody-shared'
@@ -33,8 +38,8 @@ import {
     setUserAgent,
 } from '@sourcegraph/cody-shared'
 
+import { ChatBuilder } from '../../vscode/src/chat/chat-view/ChatBuilder'
 import { chatHistory } from '../../vscode/src/chat/chat-view/ChatHistoryManager'
-import { ChatModel } from '../../vscode/src/chat/chat-view/ChatModel'
 import type { ExtensionMessage, WebviewMessage } from '../../vscode/src/chat/protocol'
 import { ProtocolTextDocumentWithUri } from '../../vscode/src/jsonrpc/TextDocumentWithUri'
 import type * as agent_protocol from '../../vscode/src/jsonrpc/agent-protocol'
@@ -49,6 +54,7 @@ import levenshtein from 'js-levenshtein'
 import * as uuid from 'uuid'
 import type { MessageConnection } from 'vscode-jsonrpc'
 import type { CommandResult } from '../../vscode/src/CommandResult'
+import { formatURL } from '../../vscode/src/auth/auth'
 import { loadTscRetriever } from '../../vscode/src/completions/context/retrievers/tsc/load-tsc-retriever'
 import { supportedTscLanguages } from '../../vscode/src/completions/context/retrievers/tsc/supportedTscLanguages'
 import type { CompletionItemID } from '../../vscode/src/completions/logger'
@@ -60,12 +66,14 @@ import type { ExtensionClient } from '../../vscode/src/extension-client'
 import { IndentationBasedFoldingRangeProvider } from '../../vscode/src/lsp/foldingRanges'
 import type { FixupActor, FixupFileCollection } from '../../vscode/src/non-stop/roles'
 import type { FixupControlApplicator } from '../../vscode/src/non-stop/strategies'
+import { authProvider } from '../../vscode/src/services/AuthProvider'
 import { AgentWorkspaceEdit } from '../../vscode/src/testutils/AgentWorkspaceEdit'
 import { AgentAuthHandler } from './AgentAuthHandler'
 import { AgentFixupControls } from './AgentFixupControls'
 import { AgentProviders } from './AgentProviders'
 import { AgentClientManagedSecretStorage, AgentStatelessSecretStorage } from './AgentSecretStorage'
 import { AgentWebviewPanel, AgentWebviewPanels } from './AgentWebviewPanel'
+import { AgentWorkspaceConfiguration } from './AgentWorkspaceConfiguration'
 import { AgentWorkspaceDocuments } from './AgentWorkspaceDocuments'
 import { registerNativeWebviewHandlers, resolveWebviewView } from './NativeWebview'
 import type { PollyRequestError } from './cli/command-jsonrpc-stdio'
@@ -135,7 +143,7 @@ function copyExtensionRelativeResources(extensionPath: string, extensionClient: 
     }
 }
 
-export async function initializeVscodeExtension(
+async function initializeVscodeExtension(
     workspaceRoot: vscode.Uri,
     extensionActivate: ExtensionActivate,
     extensionClient: ExtensionClient,
@@ -341,7 +349,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
     public webviewViewProviders = new Map<string, vscode.WebviewViewProvider>()
 
     public authenticationHandler: AgentAuthHandler | null = null
-    private authenticationPromise: Promise<AuthStatus | undefined> = Promise.resolve(undefined)
+    private authenticationPromise: Promise<void> = Promise.resolve()
 
     private clientInfo: ClientInfo | null = null
 
@@ -424,7 +432,10 @@ export class Agent extends MessageHandler implements ExtensionClient {
                 const secrets =
                     clientInfo.capabilities?.secrets === 'client-managed'
                         ? new AgentClientManagedSecretStorage(this, this.secretsDidChange.event)
-                        : new AgentStatelessSecretStorage()
+                        : new AgentStatelessSecretStorage({
+                              [formatURL(clientInfo.extensionConfiguration?.serverEndpoint ?? '') ?? '']:
+                                  clientInfo.extensionConfiguration?.accessToken ?? undefined,
+                          })
 
                 await initializeVscodeExtension(
                     this.workspace.workspaceRootUri,
@@ -434,13 +445,16 @@ export class Agent extends MessageHandler implements ExtensionClient {
                     secrets
                 )
 
-                this.authenticationPromise = clientInfo.extensionConfiguration?.accessToken
-                    ? this.handleConfigChanges(clientInfo.extensionConfiguration, {
-                          forceAuthentication: true,
-                      })
-                    : this.authStatus()
+                const ideType = AgentWorkspaceConfiguration.clientNameToIDE(this.clientInfo?.name ?? '')
 
-                const authStatus = await this.authenticationPromise
+                this.authenticationPromise =
+                    clientInfo.extensionConfiguration &&
+                    (clientInfo.extensionConfiguration?.accessToken || ideType === CodyIDE.Web)
+                        ? this.handleConfigChanges(clientInfo.extensionConfiguration, {
+                              forceAuthentication: true,
+                          })
+                        : Promise.resolve()
+                await this.authenticationPromise
 
                 const webviewKind = clientInfo.capabilities?.webview || 'agentic'
                 const nativeWebviewConfig = clientInfo.capabilities?.webviewNativeConfig
@@ -452,18 +466,17 @@ export class Agent extends MessageHandler implements ExtensionClient {
                     }
                     registerNativeWebviewHandlers(
                         this,
-                        nativeWebviewConfig.rootDir
-                            ? vscode.Uri.parse(nativeWebviewConfig.rootDir, true)
-                            : vscode.Uri.file(codyPaths().config + '/dist'),
+                        vscode.Uri.file(codyPaths().config + '/dist'),
                         nativeWebviewConfig
                     )
                 } else {
                     this.registerWebviewHandlers()
                 }
 
+                const authStatus = currentAuthStatusOrNotReadyYet()
                 return {
                     name: 'cody-agent',
-                    authenticated: authStatus?.authenticated,
+                    authenticated: authStatus?.authenticated ?? false,
                     codyVersion: authStatus?.authenticated ? authStatus.siteVersion : undefined,
                     authStatus,
                 }
@@ -558,13 +571,13 @@ export class Agent extends MessageHandler implements ExtensionClient {
 
         this.registerRequest('extensionConfiguration/change', async config => {
             this.authenticationPromise = this.handleConfigChanges(config)
-            const result = await this.authenticationPromise
-            return result ?? null
+            await this.authenticationPromise
+            return currentAuthStatus()
         })
 
         this.registerRequest('extensionConfiguration/status', async () => {
-            const result = await this.authenticationPromise
-            return result ?? null
+            await this.authenticationPromise
+            return currentAuthStatus()
         })
 
         this.registerRequest('extensionConfiguration/getSettingsSchema', async () => {
@@ -757,7 +770,14 @@ export class Agent extends MessageHandler implements ExtensionClient {
                         clientVersion: event.source.clientVersion ?? '',
                     },
                     timestamp: event.timestamp,
-                    // TODO add parameters (metadata, privateMetadata, billingMetadata)
+                    parameters: {
+                        metadata: event.parameters.metadata ?? {},
+                        privateMetadata: event.parameters.privateMetadata ?? {},
+                        billingMetadata: {
+                            product: event.parameters.billingMetadata?.product ?? '',
+                            category: event.parameters.billingMetadata?.category ?? '',
+                        },
+                    },
                     testOnlyAnonymousUserID: event.testOnlyAnonymousUserID,
                 })),
             }
@@ -1070,18 +1090,6 @@ export class Agent extends MessageHandler implements ExtensionClient {
             )
         })
 
-        this.registerAuthenticatedRequest('commands/test', () => {
-            return this.createChatPanel(
-                vscode.commands.executeCommand('cody.command.generate-tests', commandArgs)
-            )
-        })
-
-        this.registerAuthenticatedRequest('editCommands/test', () => {
-            return this.createEditTask(
-                vscode.commands.executeCommand<CommandResult | undefined>('cody.command.unit-tests')
-            )
-        })
-
         this.registerAuthenticatedRequest('editTask/accept', async ({ id }) => {
             this.fixups?.accept(id)
             return null
@@ -1106,9 +1114,12 @@ export class Agent extends MessageHandler implements ExtensionClient {
             return Promise.reject(`No task with id ${id}`)
         })
 
-        this.registerAuthenticatedRequest('editTask/retry', params => {
+        this.registerAuthenticatedRequest('editTask/retry', async params => {
             const instruction = PromptString.unsafe_fromUserQuery(params.instruction)
-            const models = getModelOptionItems(modelsService.instance!.getModels(ModelUsage.Edit), true)
+            const models = getModelOptionItems(
+                await firstResultFromOperation(modelsService.getModels(ModelUsage.Edit)),
+                true
+            )
             const previousInput: QuickPickInput = {
                 instruction: instruction,
                 userContextFiles: [],
@@ -1218,14 +1229,14 @@ export class Agent extends MessageHandler implements ExtensionClient {
 
         // TODO: JetBrains no longer uses this, consider deleting it.
         this.registerAuthenticatedRequest('chat/restore', async ({ modelID, messages, chatID }) => {
-            const authStatus = await vscode.commands.executeCommand<AuthStatus>('cody.auth.status')
-            if (!authStatus.authenticated) {
-                throw new Error('Not authenticated')
-            }
-            modelID ??= modelsService.instance!.getDefaultChatModel() ?? ''
+            const authStatus = currentAuthStatusAuthed()
+            modelID ??= (await firstResultFromOperation(modelsService.getDefaultChatModel())) ?? ''
             const chatMessages = messages?.map(PromptString.unsafe_deserializeChatMessage) ?? []
-            const chatModel = new ChatModel(modelID, chatID, chatMessages)
-            await chatHistory.saveChat(authStatus, chatModel.toSerializedChatTranscript())
+            const chatBuilder = new ChatBuilder(modelID, chatID, chatMessages)
+            const chat = chatBuilder.toSerializedChatTranscript()
+            if (chat) {
+                await chatHistory.saveChat(authStatus, chat)
+            }
             return this.createChatPanel(
                 Promise.resolve({
                     type: 'chat',
@@ -1235,16 +1246,14 @@ export class Agent extends MessageHandler implements ExtensionClient {
         })
 
         this.registerAuthenticatedRequest('chat/models', async ({ modelUsage }) => {
-            const models = modelsService.instance!.getModels(modelUsage)
-            return { models }
+            return {
+                models: await firstResultFromOperation(modelsService.getModels(modelUsage)),
+            }
         })
 
         this.registerAuthenticatedRequest('chat/export', async input => {
             const { fullHistory = false } = input ?? {}
-            const authStatus = await vscode.commands.executeCommand<AuthStatus>('cody.auth.status')
-            if (!authStatus.authenticated) {
-                throw new Error('Not authenticated')
-            }
+            const authStatus = currentAuthStatusAuthed()
             const localHistory = chatHistory.getLocalHistory(authStatus)
 
             if (localHistory != null) {
@@ -1266,13 +1275,11 @@ export class Agent extends MessageHandler implements ExtensionClient {
             return []
         })
         this.registerAuthenticatedRequest('chat/import', async ({ history, merge }) => {
-            const authStatus = await vscode.commands.executeCommand<AuthStatus>('cody.auth.status')
-
             const accountKeyedChatHistory: AccountKeyedChatHistory = {}
             for (const [account, chats] of Object.entries(history)) {
                 accountKeyedChatHistory[account as ChatHistoryKey] = { chat: chats }
             }
-            await chatHistory.importChatHistory(accountKeyedChatHistory, merge, authStatus)
+            await chatHistory.importChatHistory(accountKeyedChatHistory, merge, currentAuthStatus())
             return null
         })
 
@@ -1281,12 +1288,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
                 id: params.chatId,
             })
 
-            const authStatus = await vscode.commands.executeCommand<AuthStatus>('cody.auth.status')
-            if (!authStatus.authenticated) {
-                throw new Error('Not authenticated')
-            }
-            const localHistory = await chatHistory.getLocalHistory(authStatus)
-
+            const localHistory = chatHistory.getLocalHistory(currentAuthStatusAuthed())
             if (localHistory != null) {
                 return Object.entries(localHistory?.chat).map(([chatID, chatTranscript]) => ({
                     chatID: chatID,
@@ -1377,7 +1379,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
         })
 
         this.registerAuthenticatedRequest('featureFlags/getFeatureFlag', async ({ flagName }) => {
-            return featureFlagProvider.evaluateFeatureFlag(
+            return featureFlagProvider.evaluateFeatureFlagEphemerally(
                 FeatureFlag[flagName as keyof typeof FeatureFlag]
             )
         })
@@ -1482,17 +1484,29 @@ export class Agent extends MessageHandler implements ExtensionClient {
     private async handleConfigChanges(
         config: ExtensionConfiguration,
         params?: { forceAuthentication: boolean }
-    ): Promise<AuthStatus | undefined> {
+    ): Promise<void> {
         const isAuthChange = vscode_shim.isAuthenticationChange(config)
         vscode_shim.setExtensionConfiguration(config)
         // If this is an authentication change we need to reauthenticate prior to firing events
         // that update the clients
         if (isAuthChange || params?.forceAuthentication) {
             try {
-                const authStatus = await vscode_shim.commands.executeCommand<AuthStatus | undefined>(
-                    'cody.agent.auth.authenticate',
-                    [config]
+                await authProvider.validateAndStoreCredentials(
+                    {
+                        configuration: {
+                            customHeaders: config.customHeaders,
+                        },
+                        auth: {
+                            serverEndpoint: config.serverEndpoint,
+                            accessToken: config.accessToken ?? null,
+                        },
+                        clientState: {
+                            anonymousUserID: config.anonymousUserID ?? null,
+                        },
+                    },
+                    'always-store'
                 )
+
                 // Critical: we need to await for the handling of `onDidChangeConfiguration` to
                 // let the new credentials propagate. If we remove the statement below, then
                 // autocomplete may return empty results because we can't await for the updated
@@ -1503,24 +1517,10 @@ export class Agent extends MessageHandler implements ExtensionClient {
                         // functionality), we return true to always triggger the callback.
                         true,
                 })
-                // await new Promise<void>(resolve => setTimeout(resolve, 3_000))
-                // TODO(#56621): JetBrains: persistent chat history:
-                // This is a temporary workaround to ensure that a new chat panel is created and properly initialized after the auth change.
-                this.webPanels.panels.clear()
-                return authStatus
             } catch (error) {
                 console.log('Authentication failed', error)
             }
         }
-        return this.authStatus()
-    }
-
-    private async authStatus(): Promise<AuthStatus | undefined> {
-        // Do explicit `await` because `executeCommand()` returns `Thenable`.
-        const result = await vscode_shim.commands.executeCommand<AuthStatus | undefined>(
-            'cody.auth.status'
-        )
-        return result
     }
 
     private async handleDocumentChange(document: ProtocolTextDocument) {

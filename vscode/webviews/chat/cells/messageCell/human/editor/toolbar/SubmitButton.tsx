@@ -7,6 +7,7 @@ import { Button } from '../../../../../../components/shadcn/ui/button'
 import { Command, CommandItem, CommandList } from '../../../../../../components/shadcn/ui/command'
 import { ToolbarPopoverItem } from '../../../../../../components/shadcn/ui/toolbar'
 import { Tooltip, TooltipContent, TooltipTrigger } from '../../../../../../components/shadcn/ui/tooltip'
+import { useExperimentalOneBox } from '../../../../../../utils/useExperimentalOneBox'
 import { CodyIcon } from '../../../../../components/CodyIcon'
 
 export type SubmitButtonState = 'submittable' | 'emptyEditorValue' | 'waitingResponseComplete'
@@ -16,8 +17,9 @@ export const SubmitButton: FunctionComponent<{
     isEditorFocused?: boolean
     state?: SubmitButtonState
     className?: string
-    experimentalOneBoxEnabled?: boolean
-}> = ({ onClick, state = 'submittable', className, experimentalOneBoxEnabled }) => {
+}> = ({ onClick, state = 'submittable', className }) => {
+    const experimentalOneBoxEnabled = useExperimentalOneBox()
+
     if (state === 'waitingResponseComplete') {
         return (
             <Tooltip>

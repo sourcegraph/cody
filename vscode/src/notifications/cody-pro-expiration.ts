@@ -3,7 +3,7 @@ import {
     type SourcegraphGraphQLAPIClient,
     type Unsubscribable,
     authStatus,
-    currentAuthStatus,
+    currentAuthStatusOrNotReadyYet,
     featureFlagProvider,
     isDotCom,
 } from '@sourcegraph/cody-shared'
@@ -90,10 +90,10 @@ export class CodyProExpirationNotifications implements vscode.Disposable {
         }
 
         // Not logged in or not DotCom, don't show.
-        const authStatus_ = currentAuthStatus()
-        if (!authStatus_.authenticated || !isDotCom(authStatus_)) return
+        const authStatus_ = currentAuthStatusOrNotReadyYet()
+        if (!authStatus_?.authenticated || !isDotCom(authStatus_)) return
 
-        const useSscForCodySubscription = await featureFlagProvider.evaluateFeatureFlag(
+        const useSscForCodySubscription = await featureFlagProvider.evaluateFeatureFlagEphemerally(
             FeatureFlag.UseSscForCodySubscription
         )
         if (this.shouldSuppressNotifications()) return // Status may have changed during await
@@ -122,7 +122,7 @@ export class CodyProExpirationNotifications implements vscode.Disposable {
     }
 
     private async showNotification(): Promise<void> {
-        const codyProTrialEnded = await featureFlagProvider.evaluateFeatureFlag(
+        const codyProTrialEnded = await featureFlagProvider.evaluateFeatureFlagEphemerally(
             FeatureFlag.CodyProTrialEnded
         )
         if (this.shouldSuppressNotifications()) return // Status may have changed during await

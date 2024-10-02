@@ -1,4 +1,4 @@
-import { omit } from 'lodash'
+import omit from 'lodash/omit'
 import * as uuid from 'uuid'
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 
@@ -7,7 +7,7 @@ import * as CompletionLogger from '../logger'
 import type { CompletionBookkeepingEvent } from '../logger'
 import { initTreeSitterParser } from '../test-helpers'
 
-import { DOTCOM_URL } from '@sourcegraph/cody-shared'
+import { AUTH_STATUS_FIXTURE_AUTHED, AUTH_STATUS_FIXTURE_AUTHED_DOTCOM } from '@sourcegraph/cody-shared'
 import { Response } from 'node-fetch'
 import { getInlineCompletions, params } from './helpers'
 
@@ -51,12 +51,14 @@ describe('[getInlineCompletions] completion event', () => {
                     },
                 ],
                 {
-                    authStatus: {
-                        authenticated: true,
-                        endpoint: additionalParams.isDotComUser
-                            ? DOTCOM_URL.toString()
-                            : 'https://example.com',
+                    configuration: {
+                        configuration: {
+                            autocompleteAdvancedProvider: 'fireworks',
+                        },
                     },
+                    authStatus: additionalParams.isDotComUser
+                        ? AUTH_STATUS_FIXTURE_AUTHED_DOTCOM
+                        : AUTH_STATUS_FIXTURE_AUTHED,
                 }
             )
         )
@@ -145,8 +147,8 @@ describe('[getInlineCompletions] completion event', () => {
                   "languageId": "typescript",
                   "multiline": true,
                   "multilineMode": "block",
-                  "providerIdentifier": "anthropic",
-                  "providerModel": "anthropic/claude-instant-1.2",
+                  "providerIdentifier": "fireworks",
+                  "providerModel": "starcoder-hybrid",
                   "resolvedModel": "sourcegraph/gateway-model",
                   "responseHeaders": {
                     "fireworks-speculation-matched-tokens": "100",
@@ -217,8 +219,8 @@ describe('[getInlineCompletions] completion event', () => {
                   "languageId": "typescript",
                   "multiline": false,
                   "multilineMode": null,
-                  "providerIdentifier": "anthropic",
-                  "providerModel": "anthropic/claude-instant-1.2",
+                  "providerIdentifier": "fireworks",
+                  "providerModel": "starcoder-hybrid",
                   "resolvedModel": "sourcegraph/gateway-model",
                   "responseHeaders": {
                     "fireworks-speculation-matched-tokens": "100",
@@ -233,13 +235,13 @@ describe('[getInlineCompletions] completion event', () => {
             `)
         })
 
-        it('logs `insertText` only for DotCom users', async () => {
+        it('does not log `insertText` for enterprise users', async () => {
             const event = await getAnalyticsEvent('function foo() {\n  return█}', '"foo"')
 
             expect(event.items?.some(item => item.insertText)).toBe(false)
         })
 
-        it('does not log `insertText` for enterprise users', async () => {
+        it('logs `insertText` only for DotCom users', async () => {
             const event = await getAnalyticsEvent('function foo() {\n  return█}', '"foo"', {
                 isDotComUser: true,
             })

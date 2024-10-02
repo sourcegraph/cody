@@ -12,15 +12,16 @@ import {
     memoizeLastValue,
     parseMentionQuery,
 } from '@sourcegraph/cody-shared'
-import { debounce } from 'lodash'
+import debounce from 'lodash/debounce'
 import { useCallback, useContext, useMemo, useState } from 'react'
-import { useClientState } from '../../clientState'
 import { ChatMentionContext } from '../../plugins/atMentions/useChatContextItems'
 import { useExtensionAPI } from '../../useExtensionAPI'
+import { useInitialContextForChat } from '../../useInitialContext'
 import { type UseObservableResult, useObservable } from '../../useObservable'
 
 export interface MentionMenuParams {
     query: string | null
+    interactionID?: number | null | undefined
     parentItem: ContextMentionProviderMetadata | null
 }
 
@@ -30,7 +31,11 @@ export function useMentionMenuParams(): {
     updateMentionMenuParams: MentionMenuContextValue['updateMentionMenuParams']
 } {
     const mentionSettings = useContext(ChatMentionContext)
-    const [params, setParams] = useState<MentionMenuParams>({ query: null, parentItem: null })
+    const [params, setParams] = useState<MentionMenuParams>({
+        query: null,
+        parentItem: null,
+        interactionID: null,
+    })
 
     const isRemoteLikeProviderActive =
         mentionSettings.resolutionMode === 'remote' ||
@@ -74,7 +79,9 @@ export function useMentionMenuParams(): {
 }
 
 interface MentionMenuContextValue {
-    updateMentionMenuParams: (update: Partial<Pick<MentionMenuParams, 'parentItem'>>) => void
+    updateMentionMenuParams: (
+        update: Partial<Pick<MentionMenuParams, 'parentItem' | 'interactionID'>>
+    ) => void
     setEditorQuery: (query: string) => void
 }
 
@@ -85,14 +92,13 @@ export function useMentionMenuData(
     const { value, error } = useCallMentionMenuData(params)
     const queryLower = params.query?.toLowerCase()?.trim() ?? null
 
-    const clientState = useClientState()
-
     const isInProvider = !!params.parentItem
 
     // Initial context items aren't filtered when we receive them, so we need to filter them here.
+    const initialContext = useInitialContextForChat()
     const filteredInitialContextItems = isInProvider
         ? []
-        : clientState.initialContext.filter(item =>
+        : initialContext.filter(item =>
               queryLower
                   ? item.title?.toLowerCase().includes(queryLower) ||
                     item.uri.toString().toLowerCase().includes(queryLower) ||
@@ -141,6 +147,7 @@ function prepareUserContextItem(item: ContextItem, remainingTokenBudget: number)
 export function useCallMentionMenuData({
     query,
     parentItem: provider,
+    interactionID,
 }: MentionMenuParams): UseObservableResult<MentionMenuData> {
     const mentionSettings = useContext(ChatMentionContext)
     const unmemoizedCall = useExtensionAPI().mentionMenuData
@@ -155,9 +162,10 @@ export function useCallMentionMenuData({
     const mentionQuery: MentionQuery = useMemo(
         () => ({
             ...parseMentionQuery(query ?? '', provider),
+            interactionID: interactionID ?? undefined,
             contextRemoteRepositoriesNames: mentionSettings.remoteRepositoriesNames,
         }),
-        [query, provider, mentionSettings]
+        [query, provider, interactionID, mentionSettings]
     )
 
     return useObservable(

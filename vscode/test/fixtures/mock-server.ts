@@ -4,8 +4,9 @@ import { PubSub } from "@google-cloud/pubsub";
 import express from "express";
 import * as uuid from "uuid";
 
-import type { ServerModelConfiguration } from "@sourcegraph/cody-shared/src/models";
+import { type ServerModelConfiguration } from "@sourcegraph/cody-shared";
 import type { TelemetryEventInput } from "@sourcegraph/telemetry";
+import { getServerSentModelsMock } from '../../src/completions/providers/shared/__mocks__/create-provider-mocks'
 
 // create interface for the request
 interface MockRequest {
@@ -154,7 +155,7 @@ class GraphQlMock {
 // Lets the test change the behavior of the mock server.
 export class MockServer {
     graphQlMocks: Map<string, GraphQlMock> = new Map();
-    availableLLMs: ServerModelConfiguration | undefined;
+    availableLLMs: ServerModelConfiguration | undefined = getServerSentModelsMock()
 
     constructor(public readonly express: express.Express) {}
 
@@ -234,6 +235,7 @@ export class MockServer {
         /** Whether the user is Pro (true), Free (false) or not a dotCom user (undefined) */
         let chatRateLimitPro: boolean | undefined;
         app.post("/.api/completions/stream", (req, res) => {
+            const apiVersion = Number.parseInt(req?.query?.["api-version"] as string ?? '1', 10)
             if (chatRateLimited) {
                 res.set({
                     "retry-after": new Date().toString(),
@@ -288,8 +290,9 @@ export class MockServer {
             }
 
             function sendCompletionResponse(res: express.Response, response: string): void {
+                const propertyName = apiVersion <= 1 ? 'completion' : 'deltaText'
                 res.send(
-                    `event: completion\ndata: {"completion": ${JSON.stringify(
+                    `event: completion\ndata: {"${propertyName}": ${JSON.stringify(
                         response,
                     )}}\n\nevent: done\ndata: {}\n\n`,
                 );

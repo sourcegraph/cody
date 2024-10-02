@@ -22,7 +22,7 @@ data class ClientCapabilities(
   val globalState: GlobalStateEnum? = null, // Oneof: stateless, server-managed, client-managed
   val secrets: SecretsEnum? = null, // Oneof: stateless, client-managed
   val webview: WebviewEnum? = null, // Oneof: agentic, native
-  val webviewNativeConfig: WebviewNativeConfigParams? = null,
+  val webviewNativeConfig: WebviewNativeConfig? = null,
 ) {
 
   enum class AuthenticationEnum {

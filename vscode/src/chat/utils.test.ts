@@ -14,6 +14,7 @@ describe('validateAuthStatus', () => {
             endpoint: DOTCOM_URL.toString(),
             authenticated: false,
             showInvalidAccessTokenError: true,
+            pendingValidation: false,
         })
     })
 
@@ -33,9 +34,10 @@ describe('validateAuthStatus', () => {
             username: 'alice',
             hasVerifiedEmail: true,
             requiresVerifiedEmail: true,
-            codyApiVersion: 1,
+            codyApiVersion: 2,
             siteVersion: '999',
             isFireworksTracingEnabled: false,
+            pendingValidation: false,
             primaryEmail: 'alice@example.com',
         })
     })
@@ -56,6 +58,7 @@ describe('validateAuthStatus', () => {
             isFireworksTracingEnabled: false,
             primaryEmail: undefined,
             requiresVerifiedEmail: false,
+            pendingValidation: false,
             siteVersion: '999',
             username: 'alice',
         })
@@ -70,6 +73,7 @@ describe('validateAuthStatus', () => {
         ).toStrictEqual<AuthStatus>({
             authenticated: false,
             endpoint: 'https://example.com',
+            pendingValidation: false,
             showInvalidAccessTokenError: true,
         })
     })
@@ -91,6 +95,7 @@ describe('validateAuthStatus', () => {
             username: 'alice',
             requiresVerifiedEmail: false,
             isFireworksTracingEnabled: false,
+            pendingValidation: false,
             primaryEmail: undefined,
         })
     })

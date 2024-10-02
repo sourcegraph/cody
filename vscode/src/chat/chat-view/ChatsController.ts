@@ -2,7 +2,6 @@ import * as uuid from 'uuid'
 import * as vscode from 'vscode'
 
 import {
-    type AuthStatus,
     type AuthenticatedAuthStatus,
     CODY_PASSTHROUGH_VSCODE_OPEN_COMMAND_ID,
     type ChatClient,
@@ -15,8 +14,6 @@ import {
     subscriptionDisposable,
     telemetryRecorder,
 } from '@sourcegraph/cody-shared'
-import type { LocalEmbeddingsController } from '../../local-context/local-embeddings'
-import type { SymfRunner } from '../../local-context/symf'
 import { logDebug, logError } from '../../log'
 import type { MessageProviderOptions } from '../MessageProvider'
 
@@ -30,10 +27,9 @@ import {
     handleCodeFromInsertAtCursor,
     handleCodeFromSaveToNewFile,
 } from '../../services/utils/codeblock-action-tracker'
-import type { ContextAPIClient } from '../context/contextAPIClient'
+import type { ChatIntentAPIClient } from '../context/chatIntentAPIClient'
 import type { SmartApplyResult } from '../protocol'
 import {
-    AuthDependentRetrievers,
     ChatController,
     type ChatSession,
     disposeWebviewViewOrPanel,
@@ -70,33 +66,30 @@ export class ChatsController implements vscode.Disposable {
         private options: Options,
         private chatClient: ChatClient,
 
-        private readonly localEmbeddings: LocalEmbeddingsController | null,
-        private readonly symf: SymfRunner | null,
-
         private readonly contextRetriever: ContextRetriever,
 
         private readonly guardrails: Guardrails,
-        private readonly contextAPIClient: ContextAPIClient | null,
+        private readonly chatIntentAPIClient: ChatIntentAPIClient | null,
         private readonly extensionClient: ExtensionClient
     ) {
         logDebug('ChatsController:constructor', 'init')
         this.panel = this.createChatController()
 
         this.disposables.push(
-            subscriptionDisposable(authStatus.subscribe(authStatus => this.setAuthStatus(authStatus)))
+            subscriptionDisposable(
+                authStatus.subscribe(authStatus => {
+                    const hasLoggedOut = !authStatus.authenticated
+                    const hasSwitchedAccount =
+                        this.currentAuthAccount &&
+                        this.currentAuthAccount.endpoint !== authStatus.endpoint
+                    if (hasLoggedOut || hasSwitchedAccount) {
+                        this.disposeAllChats()
+                    }
+
+                    this.currentAuthAccount = authStatus.authenticated ? { ...authStatus } : undefined
+                })
+            )
         )
-    }
-
-    private async setAuthStatus(authStatus: AuthStatus): Promise<void> {
-        const hasLoggedOut = !authStatus.authenticated
-        const hasSwitchedAccount =
-            this.currentAuthAccount && this.currentAuthAccount.endpoint !== authStatus.endpoint
-        if (hasLoggedOut || hasSwitchedAccount) {
-            this.disposeAllChats()
-        }
-
-        this.currentAuthAccount = authStatus.authenticated ? { ...authStatus } : undefined
-        this.panel.setAuthStatus(authStatus)
     }
 
     public async restoreToPanel(panel: vscode.WebviewPanel, chatID: string): Promise<void> {
@@ -314,7 +307,6 @@ export class ChatsController implements vscode.Disposable {
         text,
         submitType,
         contextItems,
-        addEnhancedContext,
         source = DEFAULT_EVENT_SOURCE,
         command,
     }: ExecuteChatArguments): Promise<ChatSession | undefined> {
@@ -333,7 +325,6 @@ export class ChatsController implements vscode.Disposable {
             submitType,
             mentions: contextItems ?? [],
             editorState,
-            legacyAddEnhancedContext: addEnhancedContext ?? true,
             signal: abortSignal,
             source,
             command,
@@ -356,6 +347,7 @@ export class ChatsController implements vscode.Disposable {
             try {
                 const historyJson = chatHistory.getLocalHistory(authStatus)
                 const exportPath = await vscode.window.showSaveDialog({
+                    title: 'Cody: Export Chat History',
                     filters: { 'Chat History': ['json'] },
                 })
                 if (!exportPath || !historyJson) {
@@ -442,7 +434,7 @@ export class ChatsController implements vscode.Disposable {
     ): Promise<ChatController> {
         const chatController = this.createChatController()
         if (chatID) {
-            await chatController.restoreSession(chatID)
+            chatController.restoreSession(chatID)
         }
 
         if (panel) {
@@ -480,10 +472,9 @@ export class ChatsController implements vscode.Disposable {
         return new ChatController({
             ...this.options,
             chatClient: this.chatClient,
-            retrievers: new AuthDependentRetrievers(this.localEmbeddings, this.symf),
             guardrails: this.guardrails,
             startTokenReceiver: this.options.startTokenReceiver,
-            contextAPIClient: this.contextAPIClient,
+            chatIntentAPIClient: this.chatIntentAPIClient,
             contextRetriever: this.contextRetriever,
             extensionClient: this.extensionClient,
         })

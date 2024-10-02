@@ -121,10 +121,10 @@ async function loginAction(
         isCliLogin && options.endpoint && options.accessToken
             ? options.accessToken
             : await captureAccessTokenViaBrowserRedirect(serverEndpoint, spinner)
-    const client = new SourcegraphGraphQLAPIClient({
-        accessToken: token,
-        serverEndpoint: serverEndpoint,
-        customHeaders: {},
+    const client = SourcegraphGraphQLAPIClient.withStaticConfig({
+        configuration: { telemetryLevel: 'agent' },
+        auth: { accessToken: token, serverEndpoint: serverEndpoint },
+        clientState: { anonymousUserID: null },
     })
     const userInfo = await client.getCurrentUserInfo()
     if (isError(userInfo)) {
@@ -254,10 +254,10 @@ async function promptUserAboutLoginMethod(spinner: Ora, options: LoginOptions): 
         return 'web-login'
     }
     try {
-        const client = new SourcegraphGraphQLAPIClient({
-            accessToken: options.accessToken,
-            serverEndpoint: options.endpoint,
-            customHeaders: {},
+        const client = SourcegraphGraphQLAPIClient.withStaticConfig({
+            configuration: { telemetryLevel: 'agent' },
+            auth: { accessToken: options.accessToken, serverEndpoint: options.endpoint },
+            clientState: { anonymousUserID: null },
         })
         const userInfo = await client.getCurrentUserInfo()
         const isValidAccessToken = userInfo && !isError(userInfo)

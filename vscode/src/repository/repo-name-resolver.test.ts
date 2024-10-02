@@ -2,27 +2,29 @@ import { describe, expect, it, vi } from 'vitest'
 
 import {
     AUTH_STATUS_FIXTURE_AUTHED,
-    DOTCOM_URL,
+    AUTH_STATUS_FIXTURE_AUTHED_DOTCOM,
+    CLIENT_CAPABILITIES_FIXTURE,
+    firstResultFromOperation,
     graphqlClient,
     mockAuthStatus,
+    mockClientCapabilities,
+    mockResolvedConfig,
 } from '@sourcegraph/cody-shared'
 
-import * as gitExtensionAPI from './git-extension-api'
+import * as remoteUrlsFromParentDirs from './remote-urls-from-parent-dirs'
 import { RepoNameResolver } from './repo-name-resolver'
 import { mockFsCalls } from './test-helpers'
 
 vi.mock('../services/AuthProvider')
 
-describe('getRepoNamesFromWorkspaceUri', () => {
+describe('getRepoNamesContainingUri', () => {
     it('resolves the repo name using graphql for enterprise accounts', async () => {
         const repoNameResolver = new RepoNameResolver()
-        mockAuthStatus({
-            ...AUTH_STATUS_FIXTURE_AUTHED,
-            authenticated: true,
-            endpoint: 'https://example.com',
-        })
+        mockAuthStatus(AUTH_STATUS_FIXTURE_AUTHED)
+        mockResolvedConfig({ auth: {} })
+        mockClientCapabilities(CLIENT_CAPABILITIES_FIXTURE)
 
-        vi.spyOn(gitExtensionAPI, 'gitRemoteUrlsFromGitExtension').mockReturnValue([
+        vi.spyOn(remoteUrlsFromParentDirs, 'gitRemoteUrlsForUri').mockResolvedValue([
             'git@github.com:sourcegraph/cody.git',
         ])
 
@@ -43,21 +45,17 @@ describe('getRepoNamesFromWorkspaceUri', () => {
             .spyOn(graphqlClient, 'getRepoName')
             .mockResolvedValue('sourcegraph/cody')
 
-        expect(await repoNameResolver.getRepoNamesFromWorkspaceUri(fileUri)).toEqual([
-            'sourcegraph/cody',
-        ])
+        expect(
+            await firstResultFromOperation(repoNameResolver.getRepoNamesContainingUri(fileUri))
+        ).toEqual(['sourcegraph/cody'])
         expect(getRepoNameGraphQLMock).toBeCalledTimes(1)
     })
 
     it('resolves the repo name using local conversion function for PLG accounts', async () => {
         const repoNameResolver = new RepoNameResolver()
-        mockAuthStatus({
-            ...AUTH_STATUS_FIXTURE_AUTHED,
-            authenticated: true,
-            endpoint: DOTCOM_URL.toString(),
-        })
+        mockAuthStatus(AUTH_STATUS_FIXTURE_AUTHED_DOTCOM)
 
-        vi.spyOn(gitExtensionAPI, 'gitRemoteUrlsFromGitExtension').mockReturnValue([
+        vi.spyOn(remoteUrlsFromParentDirs, 'gitRemoteUrlsForUri').mockResolvedValue([
             'git@github.com:sourcegraph/cody.git',
         ])
 
@@ -78,9 +76,9 @@ describe('getRepoNamesFromWorkspaceUri', () => {
             .spyOn(graphqlClient, 'getRepoName')
             .mockResolvedValue('sourcegraph/cody')
 
-        expect(await repoNameResolver.getRepoNamesFromWorkspaceUri(fileUri)).toEqual([
-            'github.com/sourcegraph/cody',
-        ])
+        expect(
+            await firstResultFromOperation(repoNameResolver.getRepoNamesContainingUri(fileUri))
+        ).toEqual(['github.com/sourcegraph/cody'])
         expect(getRepoNameGraphQLMock).not.toBeCalled()
     })
 })

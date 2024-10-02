@@ -6,20 +6,30 @@ import { MESSAGE_CELL_AVATAR_SIZE } from '../chat/cells/messageCell/BaseMessageC
 import { UserAvatar } from '../components/UserAvatar'
 import { Button } from '../components/shadcn/ui/button'
 import { getVSCodeAPI } from '../utils/VSCodeApi'
-import { useUserAccountInfo } from '../utils/useConfig'
+import { useConfig, useUserAccountInfo } from '../utils/useConfig'
+import { View } from './types'
+
+interface AccountAction {
+    text: string
+    onClick: () => void
+}
+interface AccountTabProps {
+    setView: (view: View) => void
+}
 
 // TODO: Implement the AccountTab component once the design is ready.
-export const AccountTab: React.FC = () => {
+export const AccountTab: React.FC<AccountTabProps> = ({ setView }) => {
+    const config = useConfig()
     const userInfo = useUserAccountInfo()
-    const { user, isCodyProUser, isDotComUser, ide } = userInfo
+    const { user, isCodyProUser, isDotComUser } = userInfo
     const { displayName, username, primaryEmail, endpoint } = user
 
     // We open the native system pop-up for VS Code.
-    if (ide === CodyIDE.VSCode) {
+    if (config.clientCapabilities.isVSCode) {
         return null
     }
 
-    const actions: any[] = []
+    const actions: AccountAction[] = []
 
     if (isDotComUser && !isCodyProUser) {
         actions.push({
@@ -52,7 +62,17 @@ export const AccountTab: React.FC = () => {
     })
     actions.push({
         text: 'Sign Out',
-        onClick: () => getVSCodeAPI().postMessage({ command: 'auth', authKind: 'signout' }),
+        onClick: () => {
+            getVSCodeAPI().postMessage({ command: 'auth', authKind: 'signout' })
+            // TODO: Remove when JB moves to agent based auth
+            // Set the view to the Chat tab so that if the user signs back in, they will be
+            // automatically redirected to the Chat tab, rather than the accounts tab.
+            // This is only for JB as the signout call is captured by the extension and not
+            // passed through to the agent.
+            if (config.clientCapabilities.agentIDE === CodyIDE.JetBrains) {
+                setView(View.Chat)
+            }
+        },
     })
 
     return (

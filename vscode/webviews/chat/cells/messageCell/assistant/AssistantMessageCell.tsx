@@ -3,6 +3,7 @@ import {
     ContextItemSource,
     type Guardrails,
     type Model,
+    ModelTag,
     type PromptString,
     contextItemsFromPromptEditorValue,
     filterContextItemsFromPromptEditorValue,
@@ -76,6 +77,8 @@ export const AssistantMessageCell: FunctionComponent<{
         const ModelIcon = chatModel ? chatModelIconComponent(chatModel.id) : null
         const isAborted = isAbortErrorOrSocketHangUp(message.error)
 
+        const hasLongerResponseTime = chatModel?.tags?.includes(ModelTag.StreamDisabled)
+
         return (
             <BaseMessageCell
                 speakerIcon={ModelIcon ? <ModelIcon size={NON_HUMAN_CELL_AVATAR_SIZE} /> : null}
@@ -109,10 +112,19 @@ export const AssistantMessageCell: FunctionComponent<{
                                 humanMessage={humanMessage}
                                 smartApplyEnabled={smartApplyEnabled}
                                 smartApply={smartApply}
-                                userInfo={userInfo}
                             />
                         ) : (
-                            isLoading && <LoadingDots />
+                            isLoading && (
+                                <div>
+                                    {hasLongerResponseTime && (
+                                        <p className="tw-m-4 tw-mt-0 tw-text-muted-foreground">
+                                            This model may take longer to respond because it takes time
+                                            to "think". Recommended for complex reasoning & coding tasks.
+                                        </p>
+                                    )}
+                                    <LoadingDots />
+                                </div>
+                            )
                         )}
                     </>
                 }
@@ -135,6 +147,7 @@ export const AssistantMessageCell: FunctionComponent<{
                                 {!isLoading && (!message.error || isAborted) && (
                                     <ContextFocusActions
                                         humanMessage={humanMessage}
+                                        longResponseTime={hasLongerResponseTime}
                                         className={
                                             showFeedbackButtons && feedbackButtonsOnSubmit
                                                 ? 'tw-pl-5'
@@ -202,7 +215,11 @@ export function makeHumanMessageInfo(
                             withInitialContext.repositories) ||
                         (item.type === 'file' && withInitialContext.files)
                 )
-                editHumanMessage(assistantMessage.index - 1, newEditorValue)
+                editHumanMessage({
+                    messageIndexInTranscript: assistantMessage.index - 1,
+                    editorValue: newEditorValue,
+                    intent: humanMessage.intent,
+                })
             }
         },
         hasExplicitMentions: Boolean(contextItems.some(item => item.source === ContextItemSource.User)),
@@ -218,8 +235,8 @@ export function makeHumanMessageInfo(
 
 function useChatModelByID(
     model: string | undefined
-): Pick<Model, 'id' | 'title' | 'provider'> | undefined {
-    const models = useExtensionAPI().models
+): Pick<Model, 'id' | 'title' | 'provider' | 'tags'> | undefined {
+    const models = useExtensionAPI().chatModels
     const chatModels = useObservable(useMemo(() => models(), [models])).value
     return (
         chatModels?.find(m => m.id === model) ??
@@ -228,6 +245,7 @@ function useChatModelByID(
                   id: model,
                   title: model,
                   provider: 'unknown',
+                  tags: [],
               }
             : undefined)
     )

@@ -25,6 +25,14 @@ query CurrentUserCodySubscription {
     }
 }`
 
+export const DELETE_ACCESS_TOKEN_MUTATION = `
+mutation DeleteAccessToken($token: String!) {
+    deleteAccessToken(byToken: $token) {
+        alwaysNil
+    }
+}
+`
+
 export const CURRENT_USER_INFO_QUERY = `
 query CurrentUser {
     currentUser {
@@ -196,7 +204,7 @@ query Repositories($names: [String!]!, $first: Int!) {
   }
 `
 
-export const CHAT_INTENT_QUERY = `
+export const LEGACY_CHAT_INTENT_QUERY = `
 query ChatIntent($query: String!, $interactionId: String!) {
     chatIntent(query: $query, interactionId: $interactionId) {
         intent
@@ -204,23 +212,13 @@ query ChatIntent($query: String!, $interactionId: String!) {
     }
 }`
 
-export const RECORD_CONTEXT_QUERY = `
-query RecordContext($interactionId: String!, $usedContextItems: [InputContextItem!]!, $ignoredContextItems: [InputContextItem!]!) {
-    recordContext(interactionId: $interactionId, usedContextItems: $usedContextItems, ignoredContextItems: $ignoredContextItems) {
-        alwaysNil
-    }
-}`
-
-export const RANK_CONTEXT_QUERY = `
-query RankContext($interactionId: String!, $query: String!, $contextItems: [InputContextItem!]!) {
-    rankContext(interactionId: $interactionId, query:$query, contextItems: $contextItems) {
-        ranker
-        used {
-            index
-            score
-        }
-        ignored {
-            index
+export const CHAT_INTENT_QUERY = `
+query ChatIntent($query: String!, $interactionId: String!) {
+    chatIntent(query: $query, interactionId: $interactionId) {
+        intent
+        score
+        allScores {
+            intent
             score
         }
     }
@@ -270,6 +268,38 @@ query GetCodyContext($repos: [ID!]!, $query: String!, $codeResultsCount: Int!, $
     }
 }`
 
+export const CONTEXT_SEARCH_QUERY_WITH_RANGES = `
+query GetCodyContext($repos: [ID!]!, $query: String!, $codeResultsCount: Int!, $textResultsCount: Int!, $filePatterns: [String!]) {
+	getCodyContext(repos: $repos, query: $query, codeResultsCount: $codeResultsCount, textResultsCount: $textResultsCount, filePatterns: $filePatterns) {
+        ...on FileChunkContext {
+            blob {
+                path
+                repository {
+                  id
+                  name
+                }
+                commit {
+                  oid
+                }
+                url
+              }
+              startLine
+              endLine
+              chunkContent
+              matchedRanges {
+                start {
+                  line
+                  column: character
+                }
+                end {
+                  line
+                  column: character
+                }
+              }
+        }
+    }
+}`
+
 export const CONTEXT_FILTERS_QUERY = `
 query ContextFilters {
     site {
@@ -281,7 +311,7 @@ query ContextFilters {
 
 export const PROMPTS_QUERY = `
 query ViewerPrompts($query: String!) {
-    prompts(query: $query, first: 100, viewerIsAffiliated: true, orderBy: PROMPT_NAME_WITH_OWNER) {
+    prompts(query: $query, first: 100, includeDrafts: false, viewerIsAffiliated: true, orderBy: PROMPT_UPDATED_AT) {
         nodes {
             id
             name
@@ -295,6 +325,12 @@ query ViewerPrompts($query: String!) {
                 text
             }
             url
+            createdBy {
+                id
+                username
+                displayName
+                avatarURL
+            }
         }
         totalCount
         pageInfo {

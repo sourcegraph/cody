@@ -4,12 +4,13 @@ import { fetch } from '../../fetch'
 
 import type { TelemetryEventInput } from '@sourcegraph/telemetry'
 
-import { escapeRegExp } from 'lodash'
+import escapeRegExp from 'lodash/escapeRegExp'
+import { Observable } from 'observable-fns'
 import semver from 'semver'
-import type { AuthStatus } from '../../auth/types'
 import { dependentAbortController, onAbort } from '../../common/abortController'
-import type { ClientConfiguration, ClientConfigurationWithAccessToken } from '../../configuration'
+import { type PickResolvedConfiguration, resolvedConfig } from '../../configuration/resolver'
 import { logDebug, logError } from '../../logger'
+import { firstValueFrom } from '../../misc/observable'
 import { addTraceparent, wrapInActiveSpan } from '../../tracing'
 import { isError } from '../../utils'
 import { DOTCOM_URL, isDotCom } from '../environments'
@@ -18,6 +19,7 @@ import {
     CHAT_INTENT_QUERY,
     CONTEXT_FILTERS_QUERY,
     CONTEXT_SEARCH_QUERY,
+    CONTEXT_SEARCH_QUERY_WITH_RANGES,
     CURRENT_SITE_CODY_CONFIG_FEATURES,
     CURRENT_SITE_CODY_LLM_CONFIGURATION,
     CURRENT_SITE_CODY_LLM_CONFIGURATION_SMART_CONTEXT,
@@ -30,6 +32,7 @@ import {
     CURRENT_USER_CODY_SUBSCRIPTION_QUERY,
     CURRENT_USER_ID_QUERY,
     CURRENT_USER_INFO_QUERY,
+    DELETE_ACCESS_TOKEN_MUTATION,
     EVALUATE_FEATURE_FLAG_QUERY,
     FILE_CONTENTS_QUERY,
     FILE_MATCH_SEARCH_QUERY,
@@ -39,13 +42,12 @@ import {
     GET_REMOTE_FILE_QUERY,
     GET_URL_CONTENT_QUERY,
     HIGHLIGHTED_FILE_QUERY,
+    LEGACY_CHAT_INTENT_QUERY,
     LEGACY_CONTEXT_SEARCH_QUERY,
     LOG_EVENT_MUTATION,
     LOG_EVENT_MUTATION_DEPRECATED,
     PACKAGE_LIST_QUERY,
     PROMPTS_QUERY,
-    RANK_CONTEXT_QUERY,
-    RECORD_CONTEXT_QUERY,
     RECORD_TELEMETRY_EVENTS_MUTATION,
     REPOSITORY_IDS_QUERY,
     REPOSITORY_ID_QUERY,
@@ -193,34 +195,7 @@ interface CurrentUserInfoResponse {
     } | null
 }
 
-// The client configuration describing all of the features that are currently available.
-//
-// This is fetched from the Sourcegraph instance and is specific to the current user.
-//
-// For the canonical type definition, see https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/internal/clientconfig/types.go
-interface CodyClientConfig {
-    // Whether the site admin allows this user to make use of the Cody chat feature.
-    chatEnabled: boolean
-
-    // Whether the site admin allows this user to make use of the Cody autocomplete feature.
-    autoCompleteEnabled: boolean
-
-    // Whether the site admin allows the user to make use of the **custom** Cody commands feature.
-    customCommandsEnabled: boolean
-
-    // Whether the site admin allows this user to make use of the Cody attribution feature.
-    attributionEnabled: boolean
-
-    // Whether the 'smart context window' feature should be enabled, and whether the Sourcegraph
-    // instance supports various new GraphQL APIs needed to make it work.
-    smartContextWindowEnabled: boolean
-
-    // Whether the new Sourcegraph backend LLM models API endpoint should be used to query which
-    // models are available.
-    modelsAPIEnabled: boolean
-}
-
-interface CodyConfigFeatures {
+export interface CodyConfigFeatures {
     chat: boolean
     autoComplete: boolean
     commands: boolean
@@ -365,16 +340,10 @@ interface ChatIntentResponse {
     chatIntent: {
         intent: string
         score: number
-    }
-}
-
-type RecordContextResponse = unknown
-
-interface RankContextResponse {
-    rankContext: {
-        ranker: string
-        used: { index: number; score: number }[]
-        ignored: { index: number; score: number }[]
+        allScores?: {
+            intent: string
+            score: number
+        }[]
     }
 }
 
@@ -394,32 +363,32 @@ interface ContextSearchResponse {
         startLine: number
         endLine: number
         chunkContent: string
+        matchedRanges: Range[]
     }[]
 }
 
-export interface EmbeddingsSearchResult {
-    repoName?: string
-    revision?: string
-    uri: URI
-    startLine: number
-    endLine: number
-    content: string
+interface Location {
+    line: number
+    column: number
+}
+
+export interface Range {
+    start: Location
+    end: Location
 }
 
 export interface ChatIntentResult {
     intent: string
     score: number
+    allScores?: {
+        intent: string
+        score: number
+    }[]
 }
 
 /**
  * Experimental API.
  */
-export interface InputContextItem {
-    content: string
-    retriever: string
-    score?: number
-}
-
 export interface ContextSearchResult {
     repoName: string
     commit: string
@@ -428,6 +397,7 @@ export interface ContextSearchResult {
     startLine: number
     endLine: number
     content: string
+    ranges: Range[]
 }
 
 /**
@@ -446,6 +416,12 @@ export interface Prompt {
         text: string
     }
     url: string
+    createdBy: {
+        id: string
+        username: string
+        displayName: string
+        avatarURL: string
+    }
 }
 
 interface ContextFiltersResponse {
@@ -574,7 +550,7 @@ export interface FetchHighlightFileParameters {
 }
 
 /** A specific highlighted line range to fetch. */
-export interface HighlightLineRange {
+interface HighlightLineRange {
     /**
      * The last line to fetch (0-indexed, inclusive). Values outside the bounds of the file will
      * automatically be clamped within the valid range.
@@ -587,11 +563,11 @@ export interface HighlightLineRange {
     startLine: number
 }
 
-export type GraphQLAPIClientConfig = Pick<
-    ClientConfigurationWithAccessToken,
-    'serverEndpoint' | 'accessToken' | 'customHeaders'
-> &
-    Pick<Partial<ClientConfiguration>, 'telemetryLevel'>
+type GraphQLAPIClientConfig = PickResolvedConfiguration<{
+    auth: true
+    configuration: 'telemetryLevel' | 'customHeaders'
+    clientState: 'anonymousUserID'
+}>
 
 export let customUserAgent: string | undefined
 export function addCustomUserAgent(headers: Headers): void {
@@ -607,50 +583,29 @@ const QUERY_TO_NAME_REGEXP = /^\s*(?:query|mutation)\s+(\w+)/m
 
 export class SourcegraphGraphQLAPIClient {
     private dotcomUrl = DOTCOM_URL
-    private anonymousUserID: string | undefined
-
-    /**
-     * Should be set on extension activation via `localStorage.onConfigurationChange(config)`
-     * Done to avoid passing the graphql client around as a parameter and instead
-     * access it as a singleton via the module import.
-     */
-    private _config: GraphQLAPIClientConfig | null = null
-
-    private get config(): GraphQLAPIClientConfig {
-        if (!this._config) {
-            throw new Error('GraphQLAPIClientConfig is not set')
-        }
-
-        return this._config
-    }
 
     private isAgentTesting = process.env.CODY_SHIM_TESTING === 'true'
 
-    constructor(config: GraphQLAPIClientConfig | null = null) {
-        this._config = config
-    }
-
-    public setConfig(newConfig: GraphQLAPIClientConfig): void {
-        this._config = newConfig
+    public static withGlobalConfig(): SourcegraphGraphQLAPIClient {
+        return new SourcegraphGraphQLAPIClient(resolvedConfig)
     }
 
     /**
-     * If set, anonymousUID is transmitted as 'X-Sourcegraph-Actor-Anonymous-UID'
-     * which is automatically picked up by Sourcegraph backends 5.2+
+     * Create a GraphQL client with the given configuration. Only use this for testing and API
+     * client usage outside of the normal extension lifecycle where it is not possible or desirable
+     * to use the currently active configuration.
      */
-    public setAnonymousUserID(anonymousUID: string): void {
-        this.anonymousUserID = anonymousUID
+    public static withStaticConfig(config: GraphQLAPIClientConfig): SourcegraphGraphQLAPIClient {
+        return new SourcegraphGraphQLAPIClient(Observable.of(config))
     }
 
-    // Gets the server endpoint for this client.
-    public get endpoint(): string {
-        return this.config.serverEndpoint
-    }
+    private constructor(private readonly config: Observable<GraphQLAPIClientConfig>) {}
 
-    public async getSiteVersion(): Promise<string | Error> {
+    public async getSiteVersion(signal?: AbortSignal): Promise<string | Error> {
         return this.fetchSourcegraphAPI<APIResponse<SiteVersionResponse>>(
             CURRENT_SITE_VERSION_QUERY,
-            {}
+            {},
+            signal
         ).then(response =>
             extractDataOrError(
                 response,
@@ -769,10 +724,11 @@ export class SourcegraphGraphQLAPIClient {
         )
     }
 
-    public async getSiteHasIsCodyEnabledField(): Promise<boolean | Error> {
+    public async getSiteHasIsCodyEnabledField(signal?: AbortSignal): Promise<boolean | Error> {
         return this.fetchSourcegraphAPI<APIResponse<SiteGraphqlFieldsResponse>>(
             CURRENT_SITE_GRAPHQL_FIELDS_QUERY,
-            {}
+            {},
+            signal
         ).then(response =>
             extractDataOrError(
                 response,
@@ -781,10 +737,11 @@ export class SourcegraphGraphQLAPIClient {
         )
     }
 
-    public async getSiteHasCodyEnabled(): Promise<boolean | Error> {
+    public async getSiteHasCodyEnabled(signal?: AbortSignal): Promise<boolean | Error> {
         return this.fetchSourcegraphAPI<APIResponse<SiteHasCodyEnabledResponse>>(
             CURRENT_SITE_HAS_CODY_ENABLED_QUERY,
-            {}
+            {},
+            signal
         ).then(response => extractDataOrError(response, data => data.site?.isCodyEnabled ?? false))
     }
 
@@ -815,10 +772,11 @@ export class SourcegraphGraphQLAPIClient {
         )
     }
 
-    public async getCurrentUserInfo(): Promise<CurrentUserInfo | null | Error> {
+    public async getCurrentUserInfo(signal?: AbortSignal): Promise<CurrentUserInfo | null | Error> {
         return this.fetchSourcegraphAPI<APIResponse<CurrentUserInfoResponse>>(
             CURRENT_USER_INFO_QUERY,
-            {}
+            {},
+            signal
         ).then(response =>
             extractDataOrError(response, data => (data.currentUser ? { ...data.currentUser } : null))
         )
@@ -827,10 +785,11 @@ export class SourcegraphGraphQLAPIClient {
     /**
      * Fetches the Site Admin enabled/disable Cody config features for the current instance.
      */
-    public async getCodyConfigFeatures(): Promise<CodyConfigFeatures | Error> {
+    public async getCodyConfigFeatures(signal?: AbortSignal): Promise<CodyConfigFeatures | Error> {
         const response = await this.fetchSourcegraphAPI<APIResponse<CodyConfigFeaturesResponse>>(
             CURRENT_SITE_CODY_CONFIG_FEATURES,
-            {}
+            {},
+            signal
         )
         return extractDataOrError(
             response,
@@ -838,16 +797,22 @@ export class SourcegraphGraphQLAPIClient {
         )
     }
 
-    public async getCodyLLMConfiguration(): Promise<undefined | CodyLLMSiteConfiguration | Error> {
+    public async getCodyLLMConfiguration(
+        signal?: AbortSignal
+    ): Promise<undefined | CodyLLMSiteConfiguration | Error> {
         // fetch Cody LLM provider separately for backward compatibility
         const [configResponse, providerResponse, smartContextWindow] = await Promise.all([
             this.fetchSourcegraphAPI<APIResponse<CodyLLMSiteConfigurationResponse>>(
-                CURRENT_SITE_CODY_LLM_CONFIGURATION
+                CURRENT_SITE_CODY_LLM_CONFIGURATION,
+                undefined,
+                signal
             ),
             this.fetchSourcegraphAPI<APIResponse<CodyLLMSiteConfigurationProviderResponse>>(
-                CURRENT_SITE_CODY_LLM_PROVIDER
+                CURRENT_SITE_CODY_LLM_PROVIDER,
+                undefined,
+                signal
             ),
-            this.getCodyLLMConfigurationSmartContext(),
+            this.getCodyLLMConfigurationSmartContext(signal),
         ])
 
         const config = extractDataOrError(
@@ -870,11 +835,12 @@ export class SourcegraphGraphQLAPIClient {
         return { ...config, provider, smartContextWindow }
     }
 
-    async getCodyLLMConfigurationSmartContext(): Promise<boolean> {
+    async getCodyLLMConfigurationSmartContext(signal?: AbortSignal): Promise<boolean> {
         return (
             this.fetchSourcegraphAPI<APIResponse<CodyEnterpriseConfigSmartContextResponse>>(
                 CURRENT_SITE_CODY_LLM_CONFIGURATION_SMART_CONTEXT,
-                {}
+                {},
+                signal
             )
                 .then(response => {
                     const smartContextResponse = extractDataOrError(
@@ -970,12 +936,13 @@ export class SourcegraphGraphQLAPIClient {
         ).then(response => extractDataOrError(response, data => data.repositories?.nodes || []))
     }
 
-    public async getRepoName(cloneURL: string): Promise<string | null> {
+    public async getRepoName(cloneURL: string, signal?: AbortSignal): Promise<string | null> {
         const response = await this.fetchSourcegraphAPI<APIResponse<RepositoryNameResponse>>(
             REPO_NAME_QUERY,
             {
                 cloneURL,
-            }
+            },
+            signal
         )
 
         const result = extractDataOrError(response, data => data.repository?.name ?? null)
@@ -984,48 +951,19 @@ export class SourcegraphGraphQLAPIClient {
 
     /** Experimental API */
     public async chatIntent(interactionID: string, query: string): Promise<ChatIntentResult | Error> {
+        const hasAllScoresField = await this.isValidSiteVersion({
+            minimumVersion: '5.9.0',
+            insider: true,
+        })
+
         const response = await this.fetchSourcegraphAPI<APIResponse<ChatIntentResponse>>(
-            CHAT_INTENT_QUERY,
+            hasAllScoresField ? CHAT_INTENT_QUERY : LEGACY_CHAT_INTENT_QUERY,
             {
                 query: query,
                 interactionId: interactionID,
             }
         )
         return extractDataOrError(response, data => data.chatIntent)
-    }
-
-    /** Experimental API */
-    public async recordContext(
-        interactionID: string,
-        used: InputContextItem[],
-        ignored: InputContextItem[]
-    ): Promise<RecordContextResponse | Error> {
-        const response = await this.fetchSourcegraphAPI<APIResponse<RecordContextResponse>>(
-            RECORD_CONTEXT_QUERY,
-            {
-                interactionId: interactionID,
-                usedContextItems: used,
-                ignoredContextItems: ignored,
-            }
-        )
-        return extractDataOrError(response, data => data)
-    }
-
-    /** Experimental API */
-    public async rankContext(
-        interactionID: string,
-        query: string,
-        context: InputContextItem[]
-    ): Promise<RankContextResponse | Error> {
-        const response = await this.fetchSourcegraphAPI<APIResponse<RankContextResponse>>(
-            RANK_CONTEXT_QUERY,
-            {
-                interactionId: interactionID,
-                query,
-                contextItems: context,
-            }
-        )
-        return extractDataOrError(response, data => data)
     }
 
     /**
@@ -1036,14 +974,15 @@ export class SourcegraphGraphQLAPIClient {
      * @param options.insider - Whether to consider insider builds as valid. Defaults to true.
      * @returns A promise that resolves to a boolean indicating if the version is valid.
      */
-    public async isValidSiteVersion({
-        minimumVersion,
-        insider = true,
-    }: { minimumVersion: string; insider?: boolean }): Promise<boolean> {
-        const version = await this.getSiteVersion()
+    public async isValidSiteVersion(
+        { minimumVersion, insider = true }: { minimumVersion: string; insider?: boolean },
+        signal?: AbortSignal
+    ): Promise<boolean> {
+        const version = await this.getSiteVersion(signal)
         if (isError(version)) {
             return false
         }
+        signal?.throwIfAborted()
 
         const isInsiderBuild = version.length > 12 || version.includes('dev')
 
@@ -1061,16 +1000,24 @@ export class SourcegraphGraphQLAPIClient {
         signal?: AbortSignal
         filePatterns?: string[]
     }): Promise<ContextSearchResult[] | null | Error> {
-        const isValidVersion = await this.isValidSiteVersion({ minimumVersion: '5.7.0' })
+        const hasContextMatchingSupport = await this.isValidSiteVersion({ minimumVersion: '5.8.0' })
+        const hasFilePathSupport =
+            hasContextMatchingSupport || (await this.isValidSiteVersion({ minimumVersion: '5.7.0' }))
+        const config = await firstValueFrom(this.config!)
+        signal?.throwIfAborted()
 
         return this.fetchSourcegraphAPI<APIResponse<ContextSearchResponse>>(
-            isValidVersion ? CONTEXT_SEARCH_QUERY : LEGACY_CONTEXT_SEARCH_QUERY,
+            hasContextMatchingSupport
+                ? CONTEXT_SEARCH_QUERY_WITH_RANGES
+                : hasFilePathSupport
+                  ? CONTEXT_SEARCH_QUERY
+                  : LEGACY_CONTEXT_SEARCH_QUERY,
             {
                 repos: repoIDs,
                 query,
                 codeResultsCount: 15,
                 textResultsCount: 5,
-                ...(isValidVersion ? { filePatterns } : {}),
+                ...(hasFilePathSupport ? { filePatterns } : {}),
             },
             signal
         ).then(response =>
@@ -1080,13 +1027,14 @@ export class SourcegraphGraphQLAPIClient {
                     repoName: item.blob.repository.name,
                     path: item.blob.path,
                     uri: URI.parse(
-                        `${this.endpoint}${item.blob.repository.name}/-/blob/${item.blob.path}?L${
-                            item.startLine + 1
-                        }-${item.endLine}`
+                        `${config.auth.serverEndpoint}${item.blob.repository.name}/-/blob/${
+                            item.blob.path
+                        }?L${item.startLine + 1}-${item.endLine}`
                     ),
                     startLine: item.startLine,
                     endLine: item.endLine,
                     content: item.chunkContent,
+                    ranges: item.matchedRanges ?? [],
                 }))
             )
         )
@@ -1180,15 +1128,16 @@ export class SourcegraphGraphQLAPIClient {
      * If the field exists, it calls `getSiteHasCodyEnabled()` to check its value.
      * If the field does not exist, Cody is assumed to be enabled for versions between 5.0.0 - 5.1.0.
      */
-    public async isCodyEnabled(): Promise<{
+    public async isCodyEnabled(signal?: AbortSignal): Promise<{
         enabled: boolean
         version: string
     }> {
         // Check site version.
-        const siteVersion = await this.getSiteVersion()
+        const siteVersion = await this.getSiteVersion(signal)
         if (isError(siteVersion)) {
             return { enabled: false, version: 'unknown' }
         }
+        signal?.throwIfAborted()
         const insiderBuild = siteVersion.length > 12 || siteVersion.includes('dev')
         if (insiderBuild) {
             return { enabled: true, version: siteVersion }
@@ -1200,10 +1149,12 @@ export class SourcegraphGraphQLAPIClient {
         }
         // Beta version is betwewen 5.0.0 - 5.1.0 and does not have isCodyEnabled field
         const betaVersion = semver.gte(siteVersion, '5.0.0') && semver.lt(siteVersion, '5.1.0')
-        const hasIsCodyEnabledField = await this.getSiteHasIsCodyEnabledField()
+        const hasIsCodyEnabledField = await this.getSiteHasIsCodyEnabledField(signal)
+        signal?.throwIfAborted()
         // The isCodyEnabled field does not exist before version 5.1.0
         if (!betaVersion && !isError(hasIsCodyEnabledField) && hasIsCodyEnabledField) {
-            const siteHasCodyEnabled = await this.getSiteHasCodyEnabled()
+            const siteHasCodyEnabled = await this.getSiteHasCodyEnabled(signal)
+            signal?.throwIfAborted()
             return {
                 enabled: !isError(siteHasCodyEnabled) && siteHasCodyEnabled,
                 version: siteVersion,
@@ -1246,14 +1197,15 @@ export class SourcegraphGraphQLAPIClient {
         if (this.isAgentTesting) {
             return {}
         }
-        if (this.config?.telemetryLevel === 'off') {
+        const config = await firstValueFrom(this.config!)
+        if (config.configuration?.telemetryLevel === 'off') {
             return {}
         }
         /**
          * If connected to dotcom, just log events to the instance, as it means
          * the same thing.
          */
-        if (isDotCom(this.config.serverEndpoint)) {
+        if (isDotCom(config.auth.serverEndpoint)) {
             return this.sendEventLogRequestToAPI(event)
         }
 
@@ -1317,6 +1269,16 @@ export class SourcegraphGraphQLAPIClient {
             return responses[1]
         }
         return {}
+    }
+    // Deletes an access token, if it exists on the server
+    public async DeleteAccessToken(token: string): Promise<unknown | Error> {
+        const initialResponse = await this.fetchSourcegraphAPI<APIResponse<unknown>>(
+            DELETE_ACCESS_TOKEN_MUTATION,
+            {
+                token,
+            }
+        )
+        return extractDataOrError(initialResponse, data => data)
     }
 
     private anonymizeTelemetryEventInput(event: TelemetryEventInput): void {
@@ -1394,10 +1356,13 @@ export class SourcegraphGraphQLAPIClient {
         ).then(response => extractDataOrError(response, data => data.snippetAttribution))
     }
 
-    public async getEvaluatedFeatureFlags(): Promise<Record<string, boolean> | Error> {
+    public async getEvaluatedFeatureFlags(
+        signal?: AbortSignal
+    ): Promise<Record<string, boolean> | Error> {
         return this.fetchSourcegraphAPI<APIResponse<EvaluatedFeatureFlagsResponse>>(
             GET_FEATURE_FLAGS_QUERY,
-            {}
+            {},
+            signal
         ).then(response => {
             return extractDataOrError(response, data =>
                 data.evaluatedFeatureFlags.reduce((acc: Record<string, boolean>, { name, value }) => {
@@ -1408,12 +1373,16 @@ export class SourcegraphGraphQLAPIClient {
         })
     }
 
-    public async evaluateFeatureFlag(flagName: string): Promise<boolean | null | Error> {
+    public async evaluateFeatureFlag(
+        flagName: string,
+        signal?: AbortSignal
+    ): Promise<boolean | null | Error> {
         return this.fetchSourcegraphAPI<APIResponse<EvaluateFeatureFlagResponse>>(
             EVALUATE_FEATURE_FLAG_QUERY,
             {
                 flagName,
-            }
+            },
+            signal
         ).then(response => extractDataOrError(response, data => data.evaluateFeatureFlag))
     }
 
@@ -1430,13 +1399,21 @@ export class SourcegraphGraphQLAPIClient {
         variables: Record<string, any> = {},
         signalOrTimeout?: AbortSignal | number
     ): Promise<T | Error> {
-        const headers = new Headers(this.config.customHeaders as HeadersInit)
-        headers.set('Content-Type', 'application/json; charset=utf-8')
-        if (this.config.accessToken) {
-            headers.set('Authorization', `token ${this.config.accessToken}`)
+        if (!this.config) {
+            throw new Error('SourcegraphGraphQLAPIClient config not set')
         }
-        if (this.anonymousUserID && !process.env.CODY_WEB_DONT_SET_SOME_HEADERS) {
-            headers.set('X-Sourcegraph-Actor-Anonymous-UID', this.anonymousUserID)
+        const config = await firstValueFrom(this.config)
+        if (signalOrTimeout instanceof AbortSignal) {
+            signalOrTimeout.throwIfAborted()
+        }
+
+        const headers = new Headers(config.configuration?.customHeaders as HeadersInit | undefined)
+        headers.set('Content-Type', 'application/json; charset=utf-8')
+        if (config.auth.accessToken) {
+            headers.set('Authorization', `token ${config.auth.accessToken}`)
+        }
+        if (config.clientState.anonymousUserID && !process.env.CODY_WEB_DONT_SET_SOME_HEADERS) {
+            headers.set('X-Sourcegraph-Actor-Anonymous-UID', config.clientState.anonymousUserID)
         }
 
         addTraceparent(headers)
@@ -1446,7 +1423,7 @@ export class SourcegraphGraphQLAPIClient {
 
         const url = buildGraphQLUrl({
             request: query,
-            baseUrl: this.config.serverEndpoint,
+            baseUrl: config.auth.serverEndpoint,
         })
 
         // Default timeout of 6 seconds.
@@ -1526,35 +1503,45 @@ export class SourcegraphGraphQLAPIClient {
     }
 
     // Performs an authenticated request to our non-GraphQL HTTP / REST API.
-    public fetchHTTP<T>(
+    public async fetchHTTP<T>(
         queryName: string,
         method: string,
         urlPath: string,
-        body?: string
+        body?: string,
+        signal?: AbortSignal
     ): Promise<T | Error> {
-        const headers = new Headers(this.config.customHeaders as HeadersInit)
-        headers.set('Content-Type', 'application/json; charset=utf-8')
-        if (this.config.accessToken) {
-            headers.set('Authorization', `token ${this.config.accessToken}`)
+        if (!this.config) {
+            throw new Error('SourcegraphGraphQLAPIClient config not set')
         }
-        if (this.anonymousUserID && !process.env.CODY_WEB_DONT_SET_SOME_HEADERS) {
-            headers.set('X-Sourcegraph-Actor-Anonymous-UID', this.anonymousUserID)
+        const config = await firstValueFrom(this.config)
+        signal?.throwIfAborted()
+
+        const headers = new Headers(config.configuration?.customHeaders as HeadersInit | undefined)
+        headers.set('Content-Type', 'application/json; charset=utf-8')
+        if (config.auth.accessToken) {
+            headers.set('Authorization', `token ${config.auth.accessToken}`)
+        }
+        if (config.clientState.anonymousUserID && !process.env.CODY_WEB_DONT_SET_SOME_HEADERS) {
+            headers.set('X-Sourcegraph-Actor-Anonymous-UID', config.clientState.anonymousUserID)
         }
 
         addTraceparent(headers)
         addCustomUserAgent(headers)
 
         // Timeout of 6 seconds.
-        const signal = AbortSignal.timeout(6000)
+        const timeoutSignal = AbortSignal.timeout(6000)
 
-        const url = new URL(urlPath, this.config.serverEndpoint).href
+        const abortController = dependentAbortController(signal)
+        onAbort(timeoutSignal, () => abortController.abort())
+
+        const url = new URL(urlPath, config.auth.serverEndpoint).href
 
         return wrapInActiveSpan(`httpapi.fetch${queryName ? `.${queryName}` : ''}`, () =>
             fetch(url, {
                 method: method,
                 body: body,
                 headers,
-                signal,
+                signal: abortController.signal,
             })
                 .then(verifyResponseCode)
                 .then(response => response.json() as T)
@@ -1570,187 +1557,8 @@ export class SourcegraphGraphQLAPIClient {
 
 /**
  * Singleton instance of the graphql client.
- * Should be configured on the extension activation via `graphqlClient.onConfigurationChange(config)`.
  */
-export const graphqlClient = new SourcegraphGraphQLAPIClient()
-
-/**
- * ClientConfigSingleton is a class that manages the retrieval
- * and caching of configuration features from GraphQL endpoints.
- */
-export class ClientConfigSingleton {
-    private static instance: ClientConfigSingleton
-    private cachedClientConfig?: CodyClientConfig
-    private cachedAt = 0
-    private isSignedIn = false
-
-    // Default values for the legacy GraphQL features API, used when a Sourcegraph instance
-    // does not support even the legacy GraphQL API.
-    private featuresLegacy: CodyConfigFeatures = {
-        chat: true,
-        autoComplete: true,
-        commands: true,
-        attribution: false,
-    }
-
-    // Constructor is private to prevent creating new instances outside of the class
-    private constructor() {}
-
-    // Static method to get the singleton instance
-    public static getInstance(): ClientConfigSingleton {
-        if (!ClientConfigSingleton.instance) {
-            ClientConfigSingleton.instance = new ClientConfigSingleton()
-        }
-        return ClientConfigSingleton.instance
-    }
-
-    public async setAuthStatus(authStatus: AuthStatus): Promise<void> {
-        this.isSignedIn = authStatus.authenticated
-        if (this.isSignedIn) {
-            await this.refreshConfig()
-        } else {
-            this.cachedClientConfig = undefined
-            this.cachedAt = 0
-        }
-    }
-
-    public async getConfig(): Promise<CodyClientConfig | undefined> {
-        try {
-            switch (this.shouldFetch()) {
-                case 'sync':
-                    return this.refreshConfig()
-                // biome-ignore lint/suspicious/noFallthroughSwitchClause: This is intentional
-                case 'async':
-                    this.refreshConfig()
-                case false:
-                    return this.cachedClientConfig
-            }
-        } catch {
-            return
-        }
-    }
-
-    // Refetch the config if the user is signed in and it's not cached or it's older than 60 seconds
-    // If the cached config is >60s old, then we will refresh it async now. In the meantime, we will
-    // continue using the old version.
-    //
-    // Note that this means the time allowance between 'site admin disabled <chat,autocomplete,commands,etc.>
-    // functionality but users can still make use of it' is double this (120s.)
-    private shouldFetch(): 'sync' | 'async' | false {
-        // If the user is not logged in, we will not fetch as it will fail
-        if (!this.isSignedIn) {
-            return false
-        }
-
-        // If they are logged in but not cached, fetch the config synchronously
-        if (!this.cachedClientConfig) {
-            return 'sync'
-        }
-
-        // If the config is cached and greater than 60 seconds old, we can use the cached version
-        // but should asyncronously fetch the new config
-        if (Date.now() - this.cachedAt > 60000) {
-            return 'async'
-        }
-
-        // Otherwise, we have a cache hit!
-        return false
-    }
-
-    // Refreshes the config features by fetching them from the server and caching the result
-    private async refreshConfig(): Promise<CodyClientConfig> {
-        logDebug('ClientConfigSingleton', 'refreshing configuration')
-
-        // Determine based on the site version if /.api/client-config is available.
-        return graphqlClient
-            .getSiteVersion()
-            .then(siteVersion => {
-                if (isError(siteVersion)) {
-                    logError(
-                        'ClientConfigSingleton',
-                        'Failed to determine site version, GraphQL error',
-                        siteVersion
-                    )
-                    return false // assume /.api/client-config is not supported
-                }
-
-                // Insiders and dev builds support the new /.api/client-config endpoint
-                const insiderBuild = siteVersion.length > 12 || siteVersion.includes('dev')
-                if (insiderBuild) {
-                    return true
-                }
-
-                // Sourcegraph instances before 5.5.0 do not support the new /.api/client-config endpoint.
-                if (semver.lt(siteVersion, '5.5.0')) {
-                    return false
-                }
-                return true
-            })
-            .then(supportsClientConfig => {
-                // If /.api/client-config is not available, fallback to the myriad of GraphQL
-                // requests that we previously used to determine the client configuration
-                if (!supportsClientConfig) {
-                    return this.fetchClientConfigLegacy()
-                }
-
-                return graphqlClient
-                    .fetchHTTP<CodyClientConfig>('client-config', 'GET', '/.api/client-config')
-                    .then(clientConfig => {
-                        if (isError(clientConfig)) {
-                            logError('ClientConfigSingleton', 'refresh client config', clientConfig)
-                            throw clientConfig
-                        }
-                        return clientConfig
-                    })
-                    .catch(e => {
-                        logError('ClientConfigSingleton', 'refresh client config', e)
-                        throw e
-                    })
-            })
-            .then(clientConfig => {
-                logDebug('ClientConfigSingleton', 'refreshed', JSON.stringify(clientConfig))
-                this.cachedClientConfig = clientConfig
-                this.cachedAt = Date.now()
-                return clientConfig
-            })
-            .catch(e => {
-                logError('ClientConfigSingleton', 'failed to refresh client config', e)
-                throw e
-            })
-    }
-
-    private async fetchClientConfigLegacy(): Promise<CodyClientConfig> {
-        // Note: all of these promises are written carefully to not throw errors internally, but
-        // rather to return sane defaults, and so we do not catch() here.
-        const smartContextWindow = await graphqlClient.getCodyLLMConfigurationSmartContext()
-        const features = await this.fetchConfigFeaturesLegacy(this.featuresLegacy)
-
-        return graphqlClient.isCodyEnabled().then(isCodyEnabled => ({
-            chatEnabled: features.chat,
-            autoCompleteEnabled: features.autoComplete,
-            customCommandsEnabled: features.commands,
-            attributionEnabled: features.attribution,
-            smartContextWindowEnabled: smartContextWindow,
-
-            // Things that did not exist before logically default to disabled.
-            modelsAPIEnabled: false,
-        }))
-    }
-
-    // Fetches the config features from the server and handles errors, using the old/legacy GraphQL API.
-    private async fetchConfigFeaturesLegacy(
-        defaultErrorValue: CodyConfigFeatures
-    ): Promise<CodyConfigFeatures> {
-        const features = await graphqlClient.getCodyConfigFeatures()
-        if (features instanceof Error) {
-            // An error here most likely indicates the Sourcegraph instance is so old that it doesn't
-            // even support this legacy GraphQL API.
-            logError('ClientConfigSingleton', 'refreshConfig', features)
-            return defaultErrorValue
-        }
-        return features
-    }
-}
+export const graphqlClient = SourcegraphGraphQLAPIClient.withGlobalConfig()
 
 export async function verifyResponseCode(
     response: BrowserOrNodeResponse

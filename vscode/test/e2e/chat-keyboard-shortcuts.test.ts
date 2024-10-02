@@ -1,6 +1,8 @@
 import { expect } from '@playwright/test'
 import {
+    chatInputMentions,
     clickEditorTab,
+    createEmptyChatPanel,
     getChatInputs,
     getChatSidebarPanel,
     openFileInEditorTab,
@@ -28,4 +30,25 @@ test('chat keyboard shortcuts for sidebar chat', async ({ page, sidebar }) => {
     await selectLineRangeInEditorTab(page, 3, 5)
     await page.keyboard.press('Alt+/')
     await expect(chatSidebarInput).toContainText('buzz.ts:3-5 ')
+})
+
+test('re-opening chat adds selection', async ({ page, sidebar }) => {
+    await sidebarSignin(page, sidebar)
+
+    await openFileInEditorTab(page, 'buzz.ts')
+
+    const [, lastChatInput] = await createEmptyChatPanel(page)
+    await lastChatInput.fill('Hello')
+    await lastChatInput.press('Enter')
+
+    await clickEditorTab(page, 'buzz.ts')
+    await selectLineRangeInEditorTab(page, 2, 4)
+    await page.keyboard.press('Alt+l')
+    await expect(chatInputMentions(lastChatInput)).toHaveText(/^buzz.ts:2-4$/)
+
+    // Re-opening chat does not add duplicate selection
+    await openFileInEditorTab(page, 'buzz.ts')
+    await selectLineRangeInEditorTab(page, 2, 4)
+    await page.keyboard.press('Alt+l')
+    await expect(chatInputMentions(lastChatInput)).toHaveText(/^buzz.ts:2-4$/)
 })

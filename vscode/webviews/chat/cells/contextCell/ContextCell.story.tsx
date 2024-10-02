@@ -72,6 +72,21 @@ export const Default: Story = {
                 source: ContextItemSource.User,
             },
             {
+                type: 'file',
+                uri: URI.file('README.md'),
+                range: { start: { line: 1, character: 2 }, end: { line: 5, character: 0 } },
+            },
+            {
+                type: 'file',
+                uri: URI.file('C:\\windows\\style\\path\\file.go'),
+                range: { start: { line: 1, character: 2 }, end: { line: 5, character: 0 } },
+            },
+            {
+                type: 'file',
+                uri: URI.file('\\\\remote\\server\\README.md'),
+                range: { start: { line: 1, character: 2 }, end: { line: 5, character: 0 } },
+            },
+            {
                 type: 'symbol',
                 uri: URI.file('/util/urlParser.php'),
                 kind: 'function',
@@ -93,5 +108,40 @@ export const Loading: Story = {
     args: {
         contextItems: undefined,
         isForFirstMessage: false,
+    },
+}
+
+export const ExcludedContext: Story = {
+    args: {
+        contextItems: [
+            { type: 'file', uri: URI.file('/foo/bar.go') },
+            { type: 'file', uri: URI.file('/foo/qux.go') },
+            {
+                type: 'file',
+                uri: URI.file('/internal/large.go'),
+                isTooLarge: true,
+                source: ContextItemSource.User,
+            },
+            {
+                type: 'file',
+                uri: URI.file('/internal/ignored1.go'),
+                isIgnored: true,
+                source: ContextItemSource.User,
+            },
+            {
+                type: 'file',
+                uri: URI.file('/internal/ignored2.go'),
+                isIgnored: true,
+                source: ContextItemSource.User,
+            },
+            {
+                type: 'file',
+                uri: URI.file('/internal/large2.go'),
+                isTooLarge: true,
+                source: ContextItemSource.User,
+            },
+        ],
+        isForFirstMessage: true,
+        __storybook__initialOpen: true,
     },
 }

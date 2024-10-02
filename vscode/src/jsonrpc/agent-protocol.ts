@@ -103,7 +103,6 @@ export type ClientRequests = {
     // of these commands is the same as `chat/new`, an ID to reference to the
     // webview panel where the reply from this command appears.
     'commands/explain': [null, string] // TODO: rename to chatCommands/{explain,test,smell}
-    'commands/test': [null, string]
     'commands/smell': [null, string]
 
     // Trigger custom commands that could be a chat-based command or an edit command.
@@ -608,21 +607,22 @@ export interface ClientCapabilities {
     // Defaults to 'agentic'.
     webview?: 'agentic' | 'native' | undefined | null
     // If webview === 'native', describes how the client has configured webview resources.
+    webviewNativeConfig?: WebviewNativeConfig | undefined | null
+}
+
+export interface WebviewNativeConfig {
+    // Set the view to 'single' when client only support single chat view, e.g. sidebar chat.
+    view: 'multiple' | 'single'
     // cspSource is passed to the extension as the Webview cspSource property.
+    cspSource: string
     // webviewBundleServingPrefix is prepended to resource paths under 'dist' in
     // asWebviewUri (note, multiple prefixes are not yet implemented.)
-    // Set the view to 'single' when client only support single chat view, e.g. sidebar chat.
-    webviewNativeConfig?:
-        | {
-              view: 'multiple' | 'single'
-              cspSource: string
-              webviewBundleServingPrefix: string
-              rootDir?: string | undefined | null
-              injectScript?: string | undefined | null
-              injectStyle?: string | undefined | null
-          }
-        | undefined
-        | null
+    webviewBundleServingPrefix?: string | undefined | null
+    // when true, resource paths are not relativized, and the client must
+    // handle serving the resources relative to the webview.
+    skipResourceRelativization?: boolean | undefined | null
+    injectScript?: string | undefined | null
+    injectStyle?: string | undefined | null
 }
 
 export interface ServerInfo {
@@ -635,7 +635,7 @@ export interface ServerInfo {
 export interface ExtensionConfiguration {
     serverEndpoint: string
     proxy?: string | undefined | null
-    accessToken: string
+    accessToken?: string | undefined | null
     customHeaders: Record<string, string>
 
     /**
@@ -958,8 +958,16 @@ export interface TestingTelemetryEvent {
         client: string
         clientVersion: string
     }
+    parameters: {
+        metadata: Record<string, number>
+        privateMetadata: Record<string, any>
+        billingMetadata: {
+            product: string
+            category: string
+        }
+    }
     timestamp: string
-    testOnlyAnonymousUserID: string
+    testOnlyAnonymousUserID?: string | null | undefined
 }
 export interface NetworkRequest {
     url: string

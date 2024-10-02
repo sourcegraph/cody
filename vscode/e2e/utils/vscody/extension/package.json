@@ -1,0 +1,27 @@
+{
+  "name": "vscody-test-utils",
+  "private": true,
+  "displayName": "VSCody Test Utils",
+  "description": "Ability to run arbitrary scripts in VSCode triggered as actions",
+  "version": "0.0.1",
+  "publisher": "sourcegraph",
+  "extensionKind": ["workspace"],
+  "engines": {
+    "vscode": "^1.79.0",
+    "node": ">=18.16.0"
+  },
+  "activationEvents": ["*"],
+  "main": "./main.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "vscody.eval",
+        "title": "VSCody: Eval JS",
+        "category": "VSCody Test Utils",
+        "description": "Pass in the js to run as the first argument"
+      }
+    ]
+  },
+  "dependencies": {},
+  "devDependencies": {}
+}

@@ -1,17 +1,31 @@
 import type { RangeData } from '../common/range'
-import { getTokenCounterUtils } from '../token/counter'
+import { type TokenCounterUtils, getTokenCounterUtils } from '../token/counter'
 
 import type { PromptString } from './prompt-string'
 
-export async function truncatePromptString(
+export function truncatePromptString(
     text: PromptString,
-    maxTokens: number
-): Promise<PromptString> {
-    const tokenCounterUtils = await getTokenCounterUtils()
-    const encoded = tokenCounterUtils.encode(text.toString())
-    return encoded.length <= maxTokens
-        ? text
-        : text.slice(0, tokenCounterUtils.decode(encoded.slice(0, maxTokens))?.length).trim()
+    maxTokens: number,
+    utils: TokenCounterUtils
+): PromptString
+export function truncatePromptString(
+    text: PromptString,
+    maxTokens: number,
+    utils?: never
+): Promise<PromptString>
+export function truncatePromptString(text: PromptString, maxTokens: number, utils?: TokenCounterUtils) {
+    const exec = (rutils: TokenCounterUtils) => {
+        const encoded = rutils.encode(text.toString())
+        return encoded.length <= maxTokens
+            ? text
+            : text.slice(0, rutils.decode(encoded.slice(0, maxTokens))?.length).trim()
+    }
+
+    if (utils) {
+        return exec(utils)
+    }
+
+    return getTokenCounterUtils().then(exec)
 }
 
 /**

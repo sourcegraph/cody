@@ -1,17 +1,17 @@
 import dedent from 'dedent'
-import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import * as vscode from 'vscode'
 
 import {
     AUTH_STATUS_FIXTURE_AUTHED,
-    type GraphQLAPIClientConfig,
     RateLimitError,
     contextFiltersProvider,
-    graphqlClient,
+    currentAuthStatusAuthed,
+    mockAuthStatus,
 } from '@sourcegraph/cody-shared'
 
 import { telemetryRecorder } from '@sourcegraph/cody-shared'
-import { localStorage } from '../services/LocalStorageProvider'
+import { mockLocalStorage } from '../services/LocalStorageProvider'
 import { DEFAULT_VSCODE_SETTINGS } from '../testutils/mocks'
 import { withPosixPaths } from '../testutils/textDocument'
 import { SupportedLanguage } from '../tree-sitter/grammars'
@@ -33,8 +33,6 @@ const DUMMY_CONTEXT: vscode.InlineCompletionContext = {
     triggerKind: vscode.InlineCompletionTriggerKind.Automatic,
 }
 
-graphqlClient.setConfig({} as unknown as GraphQLAPIClientConfig)
-
 class MockableInlineCompletionItemProvider extends InlineCompletionItemProvider {
     constructor(
         mockGetInlineCompletions: typeof getInlineCompletions,
@@ -47,9 +45,10 @@ class MockableInlineCompletionItemProvider extends InlineCompletionItemProvider 
             // we can just make them `null`.
             statusBar: null as any,
             provider: createProvider({
-                authStatus: AUTH_STATUS_FIXTURE_AUTHED,
-            } as any),
-            config: {} as any,
+                provider: 'anthropic',
+                source: 'local-editor-settings',
+                authStatus: currentAuthStatusAuthed(),
+            }),
             firstCompletionTimeout:
                 superArgs?.firstCompletionTimeout ??
                 DEFAULT_VSCODE_SETTINGS.autocompleteFirstCompletionTimeout,
@@ -62,16 +61,10 @@ class MockableInlineCompletionItemProvider extends InlineCompletionItemProvider 
 }
 
 describe('InlineCompletionItemProvider', () => {
-    beforeAll(async () => {
-        await initCompletionProviderConfig({})
-
-        // Dummy noop implementation of localStorage.
-        localStorage.setStorage({
-            get: () => null,
-            update: () => {},
-        } as any as vscode.Memento)
-    })
     beforeEach(() => {
+        mockAuthStatus(AUTH_STATUS_FIXTURE_AUTHED)
+        initCompletionProviderConfig({})
+        mockLocalStorage()
         vi.spyOn(contextFiltersProvider, 'isUriIgnored').mockResolvedValue(false)
         CompletionLogger.reset_testOnly()
     })
@@ -211,6 +204,8 @@ describe('InlineCompletionItemProvider', () => {
         expect(withPosixPaths(provider.lastCandidate!)).toMatchInlineSnapshot(`
           {
             "lastTriggerDocContext": {
+              "completePrefix": "const foo = ",
+              "completeSuffix": "\nconsole.log(1)\nconsole.log(2)",
               "currentLinePrefix": "const foo = ",
               "currentLineSuffix": "",
               "injectedPrefix": null,

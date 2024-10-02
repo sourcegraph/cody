@@ -7,6 +7,7 @@ import {
     type BillingCategory,
     type BillingProduct,
     currentAuthStatusAuthed,
+    displayPathWithoutWorkspaceFolderPrefix,
     isDotCom,
     isNetworkError,
     telemetryRecorder,
@@ -23,7 +24,8 @@ import type {
     PersistencePresentEventPayload,
     PersistenceRemovedEventPayload,
 } from '../common/persistence-tracker/types'
-import { GitHubDotComRepoMetadata } from '../repository/repo-metadata-from-git-api'
+import type { GitIdentifiersForFile } from '../repository/git-metadata-for-editor'
+import { GitHubDotComRepoMetadata } from '../repository/githubRepoMetadata'
 import { upstreamHealthProvider } from '../services/UpstreamHealthProvider'
 import {
     AUTOCOMPLETE_STAGE_COUNTER_INITIAL_STATE,
@@ -72,17 +74,13 @@ interface InlineCompletionItemRetrievedContext {
     endLine: number
 }
 
-interface InlineContextItemsParams {
+interface InlineContextItemsParams extends GitIdentifiersForFile {
     context: AutocompleteContextSnippet[]
-    filePath: string | undefined
-    gitUrl: string | undefined
-    commit: string | undefined
 }
 
-export interface InlineCompletionItemContext {
-    gitUrl: string
-    commit?: string
-    filePath?: string
+export interface InlineCompletionItemContext
+    extends Omit<GitIdentifiersForFile, 'repoName'>,
+        Required<Pick<GitIdentifiersForFile, 'repoName'>> {
     prefix?: string
     suffix?: string
     triggerLine?: number
@@ -720,48 +718,67 @@ export function loaded(params: LoadedParams): void {
     if (!event.params.responseHeaders && completions[0]?.responseHeaders) {
         event.params.responseHeaders = completions[0]?.responseHeaders
     }
-
-    // 🚨 SECURITY: included only for DotCom users & Public github Repos.
-    if (
-        isDotComUser &&
-        inlineContextParams?.gitUrl &&
-        event.params.inlineCompletionItemContext === undefined
-    ) {
-        const instance = GitHubDotComRepoMetadata.getInstance()
-        // Get the metadata only if already cached, We don't wait for the network call here.
-        const gitRepoMetadata = instance.getRepoMetadataIfCached(inlineContextParams.gitUrl)
-        if (gitRepoMetadata === undefined || !gitRepoMetadata.isPublic) {
-            // 🚨 SECURITY: For Non-Public git Repos, We cannot log any code related information, just git url and commit.
-            event.params.inlineCompletionItemContext = {
-                gitUrl: inlineContextParams.gitUrl,
-                commit: inlineContextParams.commit,
-                isRepoPublic: gitRepoMetadata?.isPublic,
-            }
-            return
-        }
-        event.params.inlineCompletionItemContext = {
-            gitUrl: inlineContextParams.gitUrl,
-            commit: inlineContextParams.commit,
-            isRepoPublic: gitRepoMetadata?.isPublic,
-            filePath: inlineContextParams.filePath,
-            prefix: requestParams.docContext.prefix,
-            suffix: requestParams.docContext.suffix,
-            triggerLine: requestParams.position.line,
-            triggerCharacter: requestParams.position.character,
-            context: inlineContextParams.context.map(snippet => ({
-                identifier: snippet.identifier,
-                content: snippet.content,
-                startLine: snippet.startLine,
-                endLine: snippet.endLine,
-                filePath: snippet.uri.fsPath,
-            })),
-        }
+    const inlineCompletionContext = getInlineContextItemContext(
+        requestParams,
+        isDotComUser,
+        inlineContextParams
+    )
+    if (inlineCompletionContext) {
+        event.params.inlineCompletionItemContext = inlineCompletionContext
     }
 }
-export function suggestionDocumentDiffTracker(
+
+function getInlineContextItemContext(
+    requestParams: RequestParams,
+    isDotComUser: boolean,
+    inlineContextParams?: InlineContextItemsParams
+): InlineCompletionItemContext | undefined {
+    // 🚨 SECURITY: included only for DotCom users & Public github Repos.
+    if (!isDotComUser || !inlineContextParams?.repoName) {
+        return undefined
+    }
+
+    const gitRepoMetadata = GitHubDotComRepoMetadata.getInstance().getRepoMetadataIfCached(
+        inlineContextParams.repoName
+    )
+
+    const baseContext: InlineCompletionItemContext = {
+        repoName: inlineContextParams.repoName,
+        commit: inlineContextParams.commit,
+        isRepoPublic: gitRepoMetadata?.isPublic,
+    }
+
+    if (!gitRepoMetadata?.isPublic) {
+        // 🚨 SECURITY: For Non-Public git Repos, We cannot log any code related information, just git url and commit.
+        return baseContext
+    }
+
+    const MAX_PREFIX_SUFFIX_SIZE_BYTES = 1024 * 32
+    const { position, docContext } = requestParams
+
+    return {
+        ...baseContext,
+        filePath: inlineContextParams.filePath,
+        prefix: docContext.completePrefix.slice(-MAX_PREFIX_SUFFIX_SIZE_BYTES),
+        suffix: docContext.completeSuffix.slice(0, MAX_PREFIX_SUFFIX_SIZE_BYTES),
+        triggerLine: position.line,
+        triggerCharacter: position.character,
+        context: inlineContextParams.context.map(({ identifier, content, startLine, endLine, uri }) => ({
+            identifier,
+            content,
+            startLine,
+            endLine,
+            filePath: displayPathWithoutWorkspaceFolderPrefix(uri),
+        })),
+    }
+}
+
+function suggestionDocumentDiffTracker(
     interactionId: CompletionAnalyticsID,
     document: vscode.TextDocument,
-    position: vscode.Position
+    position: vscode.Position,
+    completePrefix: string,
+    completeSuffix: string
 ): void {
     // If user is not in the same document, we don't track the diff.
     if (document.uri.scheme !== 'file') {
@@ -772,14 +789,17 @@ export function suggestionDocumentDiffTracker(
     }
     // Offset around the current cursor position to track the diff
     const offsetBytes = 1024 * 128
+
     const startPosition = document.positionAt(Math.max(0, document.offsetAt(position) - offsetBytes))
     const endPosition = document.positionAt(
         Math.min(document.getText().length, document.offsetAt(position) + offsetBytes)
     )
     const trackingRange = new vscode.Range(startPosition, endPosition)
-    const documentText = document.getText(trackingRange)
+    const documentText = completePrefix.slice(-offsetBytes) + completeSuffix.slice(0, offsetBytes)
 
     const persistenceTimeoutList = [
+        15 * 1000, // 15 seconds
+        30 * 1000, // 30 seconds
         60 * 1000, // 60 seconds
     ]
     persistenceTracker.track({
@@ -797,9 +817,11 @@ export function suggestionDocumentDiffTracker(
     })
 }
 
-export type SuggestionMarkReadParam = {
+type SuggestionMarkReadParam = {
     document: vscode.TextDocument
     position: vscode.Position
+    completePrefix: string
+    completeSuffix: string
 }
 
 // Suggested completions will not be logged immediately. Instead, we log them when we either hide
@@ -857,7 +879,13 @@ export function prepareSuggestionEvent({
                     isDotCom(authStatus.endpoint || '') &&
                     event.params.inlineCompletionItemContext?.isRepoPublic
                 ) {
-                    suggestionDocumentDiffTracker(event.params.id, param.document, param.position)
+                    suggestionDocumentDiffTracker(
+                        event.params.id,
+                        param.document,
+                        param.position,
+                        param.completePrefix,
+                        param.completeSuffix
+                    )
                 }
             },
         }
@@ -1170,8 +1198,8 @@ function getSharedParams(event: CompletionBookkeepingEvent): SharedEventPayload 
         items: event.items.map(i => ({ ...i })),
         otherCompletionProviderEnabled: otherCompletionProviders.length > 0,
         otherCompletionProviders,
-        upstreamLatency: upstreamHealthProvider.instance!.getUpstreamLatency(),
-        gatewayLatency: upstreamHealthProvider.instance!.getGatewayLatency(),
+        upstreamLatency: upstreamHealthProvider.getUpstreamLatency(),
+        gatewayLatency: upstreamHealthProvider.getGatewayLatency(),
 
         // 🚨 SECURITY: Do not include any context by default
         inlineCompletionItemContext: undefined,

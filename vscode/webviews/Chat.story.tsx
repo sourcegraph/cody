@@ -26,7 +26,6 @@ const meta: Meta<typeof Chat> = {
             postMessage: () => {},
             onMessage: () => () => {},
         },
-        isTranscriptError: false,
         setView: () => {},
     } satisfies React.ComponentProps<typeof Chat>,
 
@@ -46,7 +45,8 @@ export const EmptyWithPromptLibraryUnsupported: StoryObj<typeof meta> = {
             value={{
                 ...MOCK_API,
                 prompts: makePromptsAPIWithData({
-                    prompts: { type: 'unsupported' },
+                    arePromptsSupported: false,
+                    prompts: [],
                     commands: FIXTURE_COMMANDS,
                 }),
                 evaluatedFeatureFlag: _flag => Observable.of(true),
@@ -64,7 +64,7 @@ export const EmptyWithNoPrompts: StoryObj<typeof meta> = {
             value={{
                 ...MOCK_API,
                 prompts: makePromptsAPIWithData({
-                    prompts: { type: 'results', results: [] },
+                    prompts: [],
                     commands: FIXTURE_COMMANDS,
                 }),
                 evaluatedFeatureFlag: _flag => Observable.of(true),

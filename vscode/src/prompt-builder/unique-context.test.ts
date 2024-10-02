@@ -44,7 +44,7 @@ describe('Unique Context Items', () => {
                     start: { line: 0, character: 0 },
                     end: { line: 10, character: 10 },
                 },
-                source: ContextItemSource.Embeddings,
+                source: ContextItemSource.User,
             }
             const small: ContextItem = {
                 ...baseFile,
@@ -52,7 +52,7 @@ describe('Unique Context Items', () => {
                     start: { line: 2, character: 0 },
                     end: { line: 5, character: 10 },
                 },
-                source: ContextItemSource.Embeddings,
+                source: ContextItemSource.User,
             }
 
             expect(getUniqueContextItems([large, small])).toStrictEqual([large])
@@ -121,7 +121,7 @@ describe('Unique Context Items', () => {
                     start: { line: 1, character: 0 },
                     end: { line: 10, character: 0 },
                 },
-                source: ContextItemSource.Embeddings,
+                source: ContextItemSource.Terminal,
             }
 
             expect(getUniqueContextItems([user, search, overlap, search])).toStrictEqual([user, search])
@@ -191,7 +191,7 @@ describe('Unique Context Items', () => {
         })
 
         it('should return the first item when duplicated items are added after except user-added items', () => {
-            const user: ContextItem = {
+            const item1: ContextItem = {
                 ...baseFile,
                 range: {
                     start: { line: 0, character: 0 },
@@ -199,19 +199,19 @@ describe('Unique Context Items', () => {
                 },
                 source: ContextItemSource.User,
             }
-            const embeddings: ContextItem = {
+            const item2: ContextItem = {
                 ...baseFile,
                 range: {
                     start: { line: 0, character: 0 },
                     end: { line: 10, character: 0 },
                 },
-                source: ContextItemSource.Embeddings,
+                source: ContextItemSource.Terminal,
             }
 
-            expect(getUniqueContextItems([user])).toStrictEqual([user])
-            expect(getUniqueContextItems([user, embeddings, embeddings])).toStrictEqual([user])
+            expect(getUniqueContextItems([item1])).toStrictEqual([item1])
+            expect(getUniqueContextItems([item1, item2, item2])).toStrictEqual([item1])
             // User-added items should always have the highest priority.
-            expect(getUniqueContextItems([embeddings, user])).toStrictEqual([user])
+            expect(getUniqueContextItems([item2, item1])).toStrictEqual([item1])
         })
 
         it('should return the item with the largest outer range', () => {

@@ -1,11 +1,14 @@
-import { CodyIDE } from '@sourcegraph/cody-shared'
+import { type AuthStatus, type ClientCapabilities, CodyIDE } from '@sourcegraph/cody-shared'
 import type React from 'react'
-import { type ComponentProps, type FunctionComponent, useCallback, useRef } from 'react'
+import { type ComponentProps, type FunctionComponent, useMemo, useRef } from 'react'
 import type { ConfigurationSubsetForWebview, LocalEnv } from '../src/chat/protocol'
 import styles from './App.module.css'
 import { Chat } from './Chat'
+import { ConnectivityStatusBanner } from './components/ConnectivityStatusBanner'
+import { StateDebugOverlay } from './components/StateDebugOverlay'
 import { TabContainer, TabRoot } from './components/shadcn/ui/tabs'
 import { AccountTab, HistoryTab, PromptsTab, SettingsTab, TabsBar, View } from './tabs'
+import { TabViewContext } from './utils/useTabView'
 
 /**
  * The Cody tab panel, with tabs for chat, history, prompts, etc.
@@ -14,7 +17,11 @@ export const CodyPanel: FunctionComponent<
     {
         view: View
         setView: (view: View) => void
-        config: LocalEnv & ConfigurationSubsetForWebview
+        configuration: {
+            config: LocalEnv & ConfigurationSubsetForWebview
+            clientCapabilities: ClientCapabilities
+            authStatus: AuthStatus
+        }
         errorMessages: string[]
         setErrorMessages: (errors: string[]) => void
         attributionEnabled: boolean
@@ -24,18 +31,15 @@ export const CodyPanel: FunctionComponent<
         | 'messageInProgress'
         | 'transcript'
         | 'vscodeAPI'
-        | 'isTranscriptError'
         | 'guardrails'
         | 'showWelcomeMessage'
         | 'showIDESnippetActions'
         | 'smartApplyEnabled'
-        | 'experimentalOneBoxEnabled'
-    > &
-        Pick<ComponentProps<typeof HistoryTab>, 'userHistory'>
+    >
 > = ({
     view,
     setView,
-    config,
+    configuration: { config, clientCapabilities, authStatus },
     errorMessages,
     setErrorMessages,
     attributionEnabled,
@@ -43,77 +47,60 @@ export const CodyPanel: FunctionComponent<
     messageInProgress,
     transcript,
     vscodeAPI,
-    isTranscriptError,
     guardrails,
     showIDESnippetActions,
     showWelcomeMessage,
-    userHistory,
     smartApplyEnabled,
-    experimentalOneBoxEnabled,
 }) => {
     const tabContainerRef = useRef<HTMLDivElement>(null)
 
-    // Use native browser download dialog to download chat history as a JSON file.
-    const onDownloadChatClick = useCallback(() => {
-        const json = JSON.stringify(userHistory, null, 2)
-        const blob = new Blob([json], { type: 'application/json' })
-        const url = URL.createObjectURL(blob)
-        const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5) // Format: YYYY-MM-DDTHH-mm
-        const a = document.createElement('a') // a temporary anchor element
-        a.href = url
-        a.download = `cody-chat-history-${timestamp}.json`
-        a.target = '_blank'
-        a.click()
-    }, [userHistory])
-
     return (
-        <TabRoot
-            defaultValue={View.Chat}
-            value={view}
-            orientation="vertical"
-            className={styles.outerContainer}
-        >
-            {/* Hide tab bar in editor chat panels. */}
-            {(config.agentIDE === CodyIDE.Web || config.webviewType !== 'editor') && (
-                <TabsBar
-                    currentView={view}
-                    setView={setView}
-                    IDE={config.agentIDE || CodyIDE.VSCode}
-                    onDownloadChatClick={onDownloadChatClick}
-                />
-            )}
-            {errorMessages && <ErrorBanner errors={errorMessages} setErrors={setErrorMessages} />}
-            <TabContainer value={view} ref={tabContainerRef}>
-                {view === View.Chat && (
-                    <Chat
-                        chatEnabled={chatEnabled}
-                        messageInProgress={messageInProgress}
-                        transcript={transcript}
-                        vscodeAPI={vscodeAPI}
-                        isTranscriptError={isTranscriptError}
-                        guardrails={attributionEnabled ? guardrails : undefined}
-                        showIDESnippetActions={showIDESnippetActions}
-                        showWelcomeMessage={showWelcomeMessage}
-                        scrollableParent={tabContainerRef.current}
-                        smartApplyEnabled={smartApplyEnabled}
-                        experimentalOneBoxEnabled={experimentalOneBoxEnabled}
-                        setView={setView}
-                    />
+        <TabViewContext.Provider value={useMemo(() => ({ view, setView }), [view, setView])}>
+            <TabRoot
+                defaultValue={View.Chat}
+                value={view}
+                orientation="vertical"
+                className={styles.outerContainer}
+            >
+                {!authStatus.authenticated && authStatus.showNetworkError && (
+                    <ConnectivityStatusBanner />
                 )}
-                {view === View.History && (
-                    <HistoryTab
-                        IDE={config.agentIDE || CodyIDE.VSCode}
-                        setView={setView}
-                        webviewType={config.webviewType}
-                        multipleWebviewsEnabled={config.multipleWebviewsEnabled}
-                        userHistory={userHistory}
-                    />
+
+                {/* Hide tab bar in editor chat panels. */}
+                {(clientCapabilities.agentIDE === CodyIDE.Web || config.webviewType !== 'editor') && (
+                    <TabsBar currentView={view} setView={setView} IDE={clientCapabilities.agentIDE} />
                 )}
-                {view === View.Prompts && <PromptsTab setView={setView} />}
-                {view === View.Account && <AccountTab />}
-                {view === View.Settings && <SettingsTab />}
-            </TabContainer>
-        </TabRoot>
+                {errorMessages && <ErrorBanner errors={errorMessages} setErrors={setErrorMessages} />}
+                <TabContainer value={view} ref={tabContainerRef}>
+                    {view === View.Chat && (
+                        <Chat
+                            chatEnabled={chatEnabled}
+                            messageInProgress={messageInProgress}
+                            transcript={transcript}
+                            vscodeAPI={vscodeAPI}
+                            guardrails={attributionEnabled ? guardrails : undefined}
+                            showIDESnippetActions={showIDESnippetActions}
+                            showWelcomeMessage={showWelcomeMessage}
+                            scrollableParent={tabContainerRef.current}
+                            smartApplyEnabled={smartApplyEnabled}
+                            setView={setView}
+                        />
+                    )}
+                    {view === View.History && (
+                        <HistoryTab
+                            IDE={clientCapabilities.agentIDE}
+                            setView={setView}
+                            webviewType={config.webviewType}
+                            multipleWebviewsEnabled={config.multipleWebviewsEnabled}
+                        />
+                    )}
+                    {view === View.Prompts && <PromptsTab setView={setView} />}
+                    {view === View.Account && <AccountTab setView={setView} />}
+                    {view === View.Settings && <SettingsTab />}
+                </TabContainer>
+                <StateDebugOverlay />
+            </TabRoot>
+        </TabViewContext.Provider>
     )
 }
 

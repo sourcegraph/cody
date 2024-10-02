@@ -2,6 +2,8 @@ import {
     type ContextItem,
     type SerializedPromptEditorState,
     type SerializedPromptEditorValue,
+    getMentionOperations,
+    serializeContextItem,
     toSerializedPromptEditorValue,
 } from '@sourcegraph/cody-shared'
 import { clsx } from 'clsx'
@@ -13,14 +15,20 @@ import {
     $setSelection,
     type LexicalEditor,
 } from 'lexical'
-import type { EditorState, SerializedEditorState, SerializedLexicalNode } from 'lexical'
-import { isEqual } from 'lodash'
+import type { EditorState, RootNode, SerializedEditorState, SerializedLexicalNode } from 'lexical'
+import isEqual from 'lodash/isEqual'
 import { type FunctionComponent, useCallback, useEffect, useImperativeHandle, useRef } from 'react'
 import { BaseEditor } from './BaseEditor'
 import styles from './PromptEditor.module.css'
 import { useSetGlobalPromptEditorConfig } from './config'
 import { isEditorContentOnlyInitialContext, lexicalNodesForContextItems } from './initialContext'
-import { $selectAfter, $selectEnd } from './lexicalUtils'
+import {
+    $selectAfter,
+    $selectEnd,
+    getContextItemsForEditor,
+    visitContextItemsForEditor,
+} from './lexicalUtils'
+import { $createContextItemMentionNode } from './nodes/ContextItemMentionNode'
 import type { KeyboardEventPluginProps } from './plugins/keyboardEvent'
 
 interface Props extends KeyboardEventPluginProps {
@@ -125,22 +133,42 @@ export const PromptEditor: FunctionComponent<Props> = ({
             appendText(text: string, ensureWhitespaceBefore?: boolean): void {
                 editorRef.current?.update(() => {
                     const root = $getRoot()
-                    const needsWhitespaceBefore = !/(^|\s)$/.test(root.getTextContent())
                     root.selectEnd()
-                    $insertNodes([
-                        $createTextNode(
-                            `${ensureWhitespaceBefore && needsWhitespaceBefore ? ' ' : ''}${text}`
-                        ),
-                    ])
+                    $insertNodes([$createTextNode(`${getWhitespace(root)}${text}`)])
                     root.selectEnd()
                 })
             },
             addMentions(items: ContextItem[]) {
+                const editor = editorRef.current
+                if (!editor) {
+                    return
+                }
+
+                const newContextItems = items.map(serializeContextItem)
+                const existingMentions = getContextItemsForEditor(editor)
+                const ops = getMentionOperations(existingMentions, newContextItems)
+
+                if (ops.modify.size + ops.delete.size > 0) {
+                    visitContextItemsForEditor(editor, existing => {
+                        const update = ops.modify.get(existing.contextItem)
+                        if (update) {
+                            // replace the existing mention inline with the new one
+                            existing.replace($createContextItemMentionNode(update))
+                        }
+                        if (ops.delete.has(existing.contextItem)) {
+                            existing.remove()
+                        }
+                    })
+                }
+                if (ops.create.length === 0) {
+                    return
+                }
+
                 editorRef.current?.update(() => {
-                    const nodesToInsert = lexicalNodesForContextItems(items, {
+                    const nodesToInsert = lexicalNodesForContextItems(ops.create, {
                         isFromInitialContext: false,
                     })
-                    $insertNodes([$createTextNode(' '), ...nodesToInsert])
+                    $insertNodes([$createTextNode(getWhitespace($getRoot())), ...nodesToInsert])
                     const lastNode = nodesToInsert.at(-1)
                     if (lastNode) {
                         $selectAfter(lastNode)
@@ -197,7 +225,6 @@ export const PromptEditor: FunctionComponent<Props> = ({
             }
         }
     }, [initialEditorState])
-
     return (
         <BaseEditor
             className={clsx(styles.editor, editorClassName, {
@@ -226,4 +253,9 @@ function normalizeEditorStateJSON(
     value: SerializedEditorState<SerializedLexicalNode>
 ): SerializedEditorState<SerializedLexicalNode> {
     return JSON.parse(JSON.stringify(value))
+}
+
+function getWhitespace(root: RootNode): string {
+    const needsWhitespaceBefore = !/(^|\s)$/.test(root.getTextContent())
+    return needsWhitespaceBefore ? ' ' : ''
 }

@@ -1,10 +1,8 @@
 import * as uuid from 'uuid'
 import * as vscode from 'vscode'
 import type { Agent } from './agent'
-import type { DefiniteWebviewOptions } from './protocol-alias'
+import type { DefiniteWebviewOptions, WebviewNativeConfig } from './protocol-alias'
 import * as vscode_shim from './vscode-shim'
-
-type NativeWebviewConfig = { cspSource: string; webviewBundleServingPrefix: string }
 
 type NativeWebviewHandle = string
 
@@ -12,11 +10,9 @@ type NativeWebviewHandle = string
  * A delegate for adapting the VSCode Webview, WebviewPanel and WebviewView API
  * to a client which has a native webview implementation.
  */
-interface WebviewProtocolDelegate {
+interface WebviewProtocolDelegate extends WebviewNativeConfig {
     // CSP, resource-related
     readonly webviewBundleLocalPrefix: vscode.Uri
-    readonly webviewBundleServingPrefix: string
-    readonly cspSource: string
 
     // WebviewPanel
     createWebviewPanel(
@@ -88,15 +84,14 @@ export function resolveWebviewView(
 export function registerNativeWebviewHandlers(
     agent: Agent,
     webviewBundleLocalPrefix: vscode.Uri,
-    config: NativeWebviewConfig
+    config: WebviewNativeConfig
 ): void {
     webviewProtocolDelegate = {
+        ...config,
         // TODO: When we want to serve resources outside dist/, make Agent
         // include 'dist' in its bundle paths, and simply set this to
         // extensionUri.
         webviewBundleLocalPrefix,
-        webviewBundleServingPrefix: config.webviewBundleServingPrefix,
-        cspSource: config.cspSource,
         createWebviewPanel: (handle, viewType, title, showOptions, options) => {
             agent.notify('webview/createWebviewPanel', {
                 handle,

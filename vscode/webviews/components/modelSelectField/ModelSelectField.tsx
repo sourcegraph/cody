@@ -1,4 +1,4 @@
-import { type Model, ModelTag, isCodyProModel } from '@sourcegraph/cody-shared'
+import { type Model, ModelTag, isCodyProModel, isWaitlistModel } from '@sourcegraph/cody-shared'
 import { clsx } from 'clsx'
 import { BookOpenIcon, BuildingIcon, ExternalLinkIcon } from 'lucide-react'
 import { type FunctionComponent, type ReactNode, useCallback, useMemo } from 'react'
@@ -76,18 +76,14 @@ export const ModelSelectField: React.FunctionComponent<{
                     command: 'links',
                     value: 'https://sourcegraph.com/cody/subscription',
                 })
-                getVSCodeAPI().postMessage({
-                    command: 'event',
-                    eventName: 'CodyVSCodeExtension:upgradeLLMChoiceCTA:clicked',
-                    properties: { limit_type: 'chat_commands' },
-                })
                 return
             }
-            getVSCodeAPI().postMessage({
-                command: 'event',
-                eventName: 'CodyVSCodeExtension:chooseLLM:clicked',
-                properties: { LLM_provider: model.id },
-            })
+            if (isWaitlistModel(model)) {
+                getVSCodeAPI().postMessage({
+                    command: 'links',
+                    value: 'waitlist',
+                })
+            }
             parentOnModelSelect(model)
         },
         [telemetryRecorder.recordEvent, showCodyProBadge, parentOnModelSelect, isCodyProUser]
@@ -99,13 +95,7 @@ export const ModelSelectField: React.FunctionComponent<{
     const onOpenChange = useCallback(
         (open: boolean): void => {
             if (open) {
-                // Trigger `CodyVSCodeExtension:openLLMDropdown:clicked` only when dropdown is about to be opened.
-                getVSCodeAPI().postMessage({
-                    command: 'event',
-                    eventName: 'CodyVSCodeExtension:openLLMDropdown:clicked',
-                    properties: undefined,
-                })
-
+                // Trigger only when dropdown is about to be opened.
                 telemetryRecorder.recordEvent('cody.modelSelector', 'open', {
                     metadata: {
                         isCodyProUser: isCodyProUser ? 1 : 0,
@@ -139,12 +129,7 @@ export const ModelSelectField: React.FunctionComponent<{
                     // be taken to the upgrade page.
                     disabled: !['available', 'needs-cody-pro'].includes(availability),
                     group: getModelDropDownUIGroup(m),
-                    tooltip:
-                        availability === 'not-selectable-on-enterprise'
-                            ? 'Chat model set by your Sourcegraph Enterprise admin'
-                            : availability === 'needs-cody-pro'
-                              ? `Upgrade to Cody Pro to use ${m.title} by ${m.provider}`
-                              : `${m.title} by ${m.provider}`,
+                    tooltip: getTooltip(m, availability),
                 } satisfies SelectListOption
             }),
         [models, userInfo, serverSentModelsEnabled]
@@ -299,36 +284,61 @@ function modelAvailability(
     return 'available'
 }
 
+function getTooltip(model: Model, availability: string): string {
+    if (model.tags.includes(ModelTag.Waitlist)) {
+        return 'Request access to this new model'
+    }
+    if (model.tags.includes(ModelTag.OnWaitlist)) {
+        return 'Request received, we will reach out with next steps'
+    }
+
+    switch (availability) {
+        case 'not-selectable-on-enterprise':
+            return 'Chat model set by your Sourcegraph Enterprise admin'
+        case 'needs-cody-pro':
+            return `Upgrade to Cody Pro to use ${model.title} by ${model.provider}`
+        default:
+            return `${model.title} by ${model.provider}`
+    }
+}
+
 const ModelTitleWithIcon: FunctionComponent<{
     model: Model
     showIcon?: boolean
     showProvider?: boolean
     modelAvailability?: ModelAvailability
-}> = ({ model, showIcon, modelAvailability }) => (
-    <span
-        className={clsx(styles.modelTitleWithIcon, {
-            [styles.disabled]: modelAvailability !== 'available',
-        })}
-    >
-        {showIcon && <ChatModelIcon model={model.provider} className={styles.modelIcon} />}
-        <span className={clsx('tw-flex-grow', styles.modelName)}>{model.title}</span>
-        {modelAvailability === 'needs-cody-pro' && (
-            <Badge variant="secondary" className={clsx(styles.badge, 'tw-opacity-75')}>
-                Cody Pro
-            </Badge>
-        )}
-        {model.tags.includes(ModelTag.Experimental) && (
-            <Badge variant="secondary" className={styles.badge}>
-                Experimental
-            </Badge>
-        )}
-        {model.tags.includes(ModelTag.Recommended) && modelAvailability !== 'needs-cody-pro' ? (
-            <Badge variant="secondary" className={styles.badge}>
-                Recommended
-            </Badge>
-        ) : null}
-    </span>
-)
+}> = ({ model, showIcon, modelAvailability }) => {
+    const getBadgeText = (model: Model, modelAvailability?: ModelAvailability): string | null => {
+        if (modelAvailability === 'needs-cody-pro') return 'Cody Pro'
+        if (model.tags.includes(ModelTag.Experimental)) return 'Experimental'
+        if (model.tags.includes(ModelTag.Waitlist)) return 'Join Waitlist'
+        if (model.tags.includes(ModelTag.OnWaitlist)) return 'On Waitlist'
+        if (model.tags.includes(ModelTag.EarlyAccess)) return 'Early Access'
+        if (model.tags.includes(ModelTag.Recommended)) return 'Recommended'
+        return null
+    }
+
+    return (
+        <span
+            className={clsx(styles.modelTitleWithIcon, {
+                [styles.disabled]: modelAvailability !== 'available',
+            })}
+        >
+            {showIcon && <ChatModelIcon model={model.provider} className={styles.modelIcon} />}
+            <span className={clsx('tw-flex-grow', styles.modelName)}>{model.title}</span>
+            {getBadgeText(model, modelAvailability) && (
+                <Badge
+                    variant="secondary"
+                    className={clsx(styles.badge, {
+                        'tw-opacity-75': modelAvailability === 'needs-cody-pro',
+                    })}
+                >
+                    {getBadgeText(model, modelAvailability)}
+                </Badge>
+            )}
+        </span>
+    )
+}
 
 const ChatModelIcon: FunctionComponent<{ model: string; className?: string }> = ({
     model,

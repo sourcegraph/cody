@@ -1,4 +1,4 @@
-import { CodyIDE, isCodyProUser } from '@sourcegraph/cody-shared'
+import { isCodyProUser } from '@sourcegraph/cody-shared'
 import {
     type ComponentProps,
     type FunctionComponent,
@@ -12,7 +12,7 @@ import type { UserAccountInfo } from '../Chat'
 export interface Config
     extends Pick<
         Extract<ExtensionMessage, { type: 'config' }>,
-        'config' | 'authStatus' | 'configFeatures' | 'isDotComUser'
+        'config' | 'clientCapabilities' | 'authStatus' | 'configFeatures' | 'isDotComUser'
     > {}
 
 const ConfigContext = createContext<Config | null>(null)
@@ -50,6 +50,5 @@ export function useUserAccountInfo(): UserAccountInfo {
         // with E2E tests where change the DOTCOM_URL via the env variable TESTING_DOTCOM_URL.
         isDotComUser: value.isDotComUser,
         user: value.authStatus,
-        ide: value.config.agentIDE ?? CodyIDE.VSCode,
     }
 }

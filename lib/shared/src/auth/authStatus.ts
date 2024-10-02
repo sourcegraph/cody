@@ -1,7 +1,12 @@
 import { Observable } from 'observable-fns'
 import { distinctUntilChanged, fromLateSetSource, shareReplay, storeLastValue } from '../misc/observable'
+import { isDotCom } from '../sourcegraph-api/environments'
 import type { PartialDeep } from '../utils'
-import type { AuthStatus, AuthenticatedAuthStatus } from './types'
+import {
+    AUTH_STATUS_FIXTURE_AUTHED_DOTCOM,
+    type AuthStatus,
+    type AuthenticatedAuthStatus,
+} from './types'
 
 const _authStatus = fromLateSetSource<AuthStatus>()
 
@@ -66,11 +71,26 @@ export function currentAuthStatusOrNotReadyYet(): AuthStatus | undefined {
 }
 
 /**
+ * Whether a user is authenticated on DotCom.
+ */
+export function isDotComAuthed(): boolean {
+    const authStatus = currentAuthStatusOrNotReadyYet()
+    return Boolean(authStatus?.authenticated && isDotCom(authStatus))
+}
+
+/**
  * Mock the {@link authStatus} and {@link currentAuthStatus} values.
+ * Uses {@link AUTH_STATUS_FIXTURE_AUTHED_DOTCOM} as an auth status by default.
  *
  * For use in tests only.
  */
-export function mockAuthStatus(value: PartialDeep<AuthStatus>): void {
+export function mockAuthStatus(
+    value: PartialDeep<AuthStatus> | Observable<AuthStatus> = AUTH_STATUS_FIXTURE_AUTHED_DOTCOM
+): void {
+    if (value instanceof Observable) {
+        _authStatus.setSource(value, false)
+        return
+    }
     _authStatus.setSource(Observable.of(value as AuthStatus), false)
     Object.assign(syncValue, { last: value, isSet: true })
     syncValueSubscription.unsubscribe()

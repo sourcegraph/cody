@@ -1,3 +1,4 @@
+//@ts-nocheck
 import { describe, expect, test } from 'vitest'
 
 import { FILE_CONTEXT_MENTION_PROVIDER, SYMBOL_CONTEXT_MENTION_PROVIDER } from './api'

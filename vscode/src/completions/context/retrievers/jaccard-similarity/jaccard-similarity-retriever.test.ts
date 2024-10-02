@@ -58,8 +58,8 @@ describe('JaccardSimilarityRetriever', () => {
         'typescript',
         testFileUri('unrelated.ts').toString()
     )
-    beforeAll(async () => {
-        await initCompletionProviderConfig({})
+    beforeAll(() => {
+        initCompletionProviderConfig({})
     })
     beforeEach(() => {
         vi.spyOn(vscode.window, 'visibleTextEditors', 'get').mockReturnValue([

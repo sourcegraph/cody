@@ -1,5 +1,4 @@
 import {
-    type AuthStatus,
     type ChatClient,
     type ChatMessage,
     type CompletionGeneratorValue,
@@ -9,10 +8,11 @@ import {
     type ModelContextWindow,
     ModelUsage,
     Typewriter,
-    getDotComDefaultModels,
     getSimplePreamble,
     modelsService,
     pluralize,
+    skipPendingOperation,
+    subscriptionDisposable,
     telemetryRecorder,
 } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
@@ -25,7 +25,7 @@ export class CodySourceControl implements vscode.Disposable {
     private disposables: vscode.Disposable[] = []
     private gitAPI: API | undefined
     private abortController: AbortController | undefined
-    private model: Model = getDotComDefaultModels()[0]
+    private model: Model | undefined
 
     private commitTemplate?: string
 
@@ -33,7 +33,16 @@ export class CodySourceControl implements vscode.Disposable {
         // Register commands
         this.disposables.push(
             vscode.commands.registerCommand('cody.command.generate-commit', scm => this.generate(scm)),
-            vscode.commands.registerCommand('cody.command.abort-commit', () => this.statusUpdate())
+            vscode.commands.registerCommand('cody.command.abort-commit', () => this.statusUpdate()),
+            subscriptionDisposable(
+                modelsService
+                    .getModels(ModelUsage.Chat)
+                    .pipe(skipPendingOperation())
+                    .subscribe(models => {
+                        const preferredModel = models.find(p => p.id.includes('claude-3-haiku'))
+                        this.model = preferredModel ?? models.at(0)
+                    })
+            )
         )
         this.initializeGitAPI()
     }
@@ -151,6 +160,10 @@ export class CodySourceControl implements vscode.Disposable {
                 this.statusUpdate()
             })
 
+            if (!this.model) {
+                throw new Error('No models available')
+            }
+
             const { id: model, contextWindow } = this.model
             const { prompt, ignoredContext } = await this.buildPrompt(
                 contextWindow,
@@ -234,12 +247,6 @@ export class CodySourceControl implements vscode.Disposable {
 
         this.abortController?.abort()
         this.abortController = abortController
-    }
-
-    public setAuthStatus(_: AuthStatus): void {
-        const models = modelsService.instance!.getModels(ModelUsage.Chat)
-        const preferredModel = models.find(p => p.id.includes('claude-3-haiku'))
-        this.model = preferredModel ?? models[0]
     }
 
     public dispose(): void {

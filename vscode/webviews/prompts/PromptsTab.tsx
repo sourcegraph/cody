@@ -1,66 +1,76 @@
-import type { ComponentProps } from 'react'
+import type { Action } from '@sourcegraph/cody-shared'
 import { useClientActionDispatcher } from '../client/clientState'
-import {
-    type PromptList,
-    PromptListSuitedForNonPopover,
-    type PromptOrDeprecatedCommand,
-} from '../components/promptList/PromptList'
+import { useLocalStorage } from '../components/hooks'
+import { PromptList } from '../components/promptList/PromptList'
 import { View } from '../tabs/types'
 import { getVSCodeAPI } from '../utils/VSCodeApi'
 
 export const PromptsTab: React.FC<{
     setView: (view: View) => void
 }> = ({ setView }) => {
-    const dispatchClientAction = useClientActionDispatcher()
+    const runAction = useActionSelect()
+
     return (
-        <div className="tw-overflow-auto tw-p-8">
-            <PromptListSuitedForNonPopover
-                onSelect={item => onPromptSelectInPanel(item, setView, dispatchClientAction)}
-                onSelectActionLabels={onPromptSelectInPanelActionLabels}
+        <div className="tw-overflow-auto">
+            <PromptList
+                showSearch={true}
                 showCommandOrigins={true}
+                paddingLevels="big"
+                telemetryLocation="PromptsTab"
                 showPromptLibraryUnsupportedMessage={true}
                 showOnlyPromptInsertableCommands={false}
-                telemetryLocation="PromptsTab"
-                className="tw-border tw-border-border"
+                onSelect={item => runAction(item, setView)}
             />
         </div>
     )
 }
 
-export function onPromptSelectInPanel(
-    item: PromptOrDeprecatedCommand,
-    setView: (view: View) => void,
-    dispatchClientAction: ReturnType<typeof useClientActionDispatcher>
-): void {
-    switch (item.type) {
-        case 'prompt': {
-            setView(View.Chat)
-            dispatchClientAction(
-                { appendTextToLastPromptEditor: item.value.definition.text },
-                // Buffer because PromptEditor is not guaranteed to be mounted after the `setView`
-                // call above, and it needs to be mounted to receive the action.
-                { buffer: true }
-            )
-            break
+export function useActionSelect() {
+    const dispatchClientAction = useClientActionDispatcher()
+    const [lastUsedActions = {}, persistValue] = useLocalStorage<Record<string, number>>(
+        'last-used-actions',
+        {}
+    )
+
+    return (action: Action, setView: (view: View) => void) => {
+        try {
+            const actionKey = action.actionType === 'prompt' ? action.id : action.key
+            const lastUsedActionCount = lastUsedActions[actionKey] ?? 0
+            persistValue({ ...lastUsedActions, [actionKey]: lastUsedActionCount + 1 })
+        } catch {
+            console.error('Failed to persist last used action count')
         }
-        case 'command': {
-            getVSCodeAPI().postMessage({
-                command: 'command',
-                id: 'cody.action.command',
-                arg: item.value.key,
-            })
-            if (item.value.mode === 'ask' && item.value.type === 'default') {
-                // Chat response will show up in the same panel, so make the chat view visible.
+
+        switch (action.actionType) {
+            case 'prompt': {
                 setView(View.Chat)
+                dispatchClientAction(
+                    { appendTextToLastPromptEditor: action.definition.text },
+                    // Buffer because PromptEditor is not guaranteed to be mounted after the `setView`
+                    // call above, and it needs to be mounted to receive the action.
+                    { buffer: true }
+                )
+                break
             }
-            break
+            case 'command': {
+                if (action.slashCommand) {
+                    getVSCodeAPI().postMessage({
+                        command: 'command',
+                        id: action.slashCommand,
+                    })
+                } else {
+                    getVSCodeAPI().postMessage({
+                        command: 'command',
+                        id: 'cody.action.command',
+                        arg: action.key,
+                    })
+                }
+                if (action.mode === 'ask' && action.type === 'default') {
+                    // Chat response will show up in the same panel, so make the chat view visible.
+                    setView(View.Chat)
+                }
+                break
+            }
         }
     }
-}
-
-export const onPromptSelectInPanelActionLabels: NonNullable<
-    ComponentProps<typeof PromptList>['onSelectActionLabels']
-> = {
-    command: 'run',
-    prompt: 'insert',
 }

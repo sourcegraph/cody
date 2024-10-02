@@ -9,13 +9,7 @@ import type {
     Range as VSCodeRange,
 } from 'vscode'
 
-import {
-    type ClientConfiguration,
-    type FeatureFlag,
-    FeatureFlagProvider,
-    OLLAMA_DEFAULT_URL,
-    ps,
-} from '@sourcegraph/cody-shared'
+import { type ClientConfiguration, OLLAMA_DEFAULT_URL, ps } from '@sourcegraph/cody-shared'
 
 import path from 'node:path'
 import { AgentEventEmitter as EventEmitter } from './AgentEventEmitter'
@@ -802,6 +796,8 @@ export const vsCodeMocks = {
         },
         onDidChangeActiveTextEditor() {},
         onDidChangeTextEditorSelection() {},
+        onDidChangeWindowState() {},
+        state: { focused: false },
         createTextEditorDecorationType: () => ({
             key: 'foo',
             dispose: () => {},
@@ -850,6 +846,8 @@ export const vsCodeMocks = {
         onDidRenameFiles() {},
         onDidDeleteFiles() {},
         textDocuments: vscodeWorkspaceTextDocuments,
+        workspaceFolders: undefined,
+        onDidChangeWorkspaceFolders: () => {},
     },
     ConfigurationTarget: {
         Global: undefined,
@@ -870,29 +868,13 @@ export const vsCodeMocks = {
     ProgressLocation,
 } as const
 
-export class MockFeatureFlagProvider extends FeatureFlagProvider {
-    constructor(private readonly enabledFlags: Set<FeatureFlag>) {
-        super()
-    }
-
-    public evaluateFeatureFlag(flag: FeatureFlag): Promise<boolean> {
-        return Promise.resolve(this.enabledFlags.has(flag))
-    }
-
-    public refresh(): Promise<void> {
-        return Promise.resolve()
-    }
-}
-
-export const emptyMockFeatureFlagProvider = new MockFeatureFlagProvider(new Set<FeatureFlag>())
-
 export const DEFAULT_VSCODE_SETTINGS = {
     proxy: undefined,
     codebase: '',
-    customHeaders: {},
+    serverEndpoint: undefined,
+    customHeaders: undefined,
     chatPreInstruction: ps``,
     editPreInstruction: ps``,
-    useContext: 'embeddings',
     autocomplete: true,
     autocompleteLanguages: {
         '*': true,
@@ -914,7 +896,8 @@ export const DEFAULT_VSCODE_SETTINGS = {
     telemetryLevel: 'all',
     internalUnstable: false,
     internalDebugContext: false,
-    autocompleteAdvancedProvider: null,
+    internalDebugState: false,
+    autocompleteAdvancedProvider: 'default',
     autocompleteAdvancedModel: null,
     autocompleteCompleteSuggestWidgetSelection: true,
     autocompleteFormatOnAccept: true,
@@ -926,6 +909,7 @@ export const DEFAULT_VSCODE_SETTINGS = {
     },
     autocompleteFirstCompletionTimeout: 3500,
     autocompleteExperimentalPreloadDebounceInterval: 0,
-    testingModelConfig: undefined,
     experimentalGuardrailsTimeoutSeconds: undefined,
+    overrideAuthToken: undefined,
+    overrideServerEndpoint: undefined,
 } satisfies ClientConfiguration

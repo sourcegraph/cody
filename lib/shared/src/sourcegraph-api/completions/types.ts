@@ -24,7 +24,7 @@ export interface Message {
 
 export interface CompletionResponse {
     completion: string
-    stopReason: string
+    stopReason?: string
 }
 
 export interface CompletionParameters {
@@ -36,6 +36,7 @@ export interface CompletionParameters {
     topK?: number
     topP?: number
     model?: string
+    stream?: boolean
 }
 
 export interface SerializedCompletionParameters extends Omit<CompletionParameters, 'messages'> {

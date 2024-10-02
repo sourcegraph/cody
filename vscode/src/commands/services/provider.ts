@@ -1,14 +1,12 @@
 import {
     type CodyCommand,
-    CodyIDE,
     type ContextItem,
-    CustomCommandType,
+    clientCapabilities,
     isFileURI,
 } from '@sourcegraph/cody-shared'
 
 import * as vscode from 'vscode'
 import { CodyCommandMenuItems } from '..'
-import { getConfiguration } from '../../configuration'
 import { executeExplainHistoryCommand } from '../execute/explain-history'
 import { showCommandMenu } from '../menus'
 import type { CodyCommandArgs } from '../types'
@@ -36,15 +34,18 @@ const vscodeDefaultCommands: CodyCommand[] = CodyCommandMenuItems.filter(
 export class CommandsProvider implements vscode.Disposable {
     private disposables: vscode.Disposable[] = []
     protected readonly commands = new Map<string, CodyCommand>()
-    protected customCommandsStore = new CustomCommandsManager()
+    protected customCommandsStore: CustomCommandsManager | undefined
 
     constructor() {
-        this.disposables.push(this.customCommandsStore)
-
-        if (getConfiguration().agentIDE !== CodyIDE.Web) {
+        if (!clientCapabilities().isCodyWeb) {
             for (const c of vscodeDefaultCommands) {
                 this.commands.set(c.key, c)
             }
+        }
+
+        // Only initialize custom commands store in VS Code.
+        if (clientCapabilities().isVSCode) {
+            this.customCommandsStoreInit()
         }
 
         // Cody Command Menus
@@ -60,34 +61,36 @@ export class CommandsProvider implements vscode.Disposable {
                 executeExplainHistoryCommand(this, a)
             )
         )
+    }
 
+    public customCommandsStoreInit(): void {
+        this.customCommandsStore = new CustomCommandsManager()
+        this.disposables.push(this.customCommandsStore)
         this.customCommandsStore.init()
         void this.customCommandsStore.refresh()
     }
 
     private async menu(type: 'custom' | 'config' | 'default', args?: CodyCommandArgs): Promise<void> {
-        const commandArray = this.list().filter(
-            c =>
-                type !== 'custom' ||
-                c.type === CustomCommandType.User ||
-                c.type === CustomCommandType.Workspace
-        )
-        if (type === 'custom' && !commandArray.length) {
-            return showCommandMenu('config', commandArray, args)
+        const customCommands = [...(this.customCommandsStore?.commands.values() ?? [])]
+        // Display the configuration menu if there is no custom command.
+        if (type === 'custom' && !customCommands.length) {
+            return showCommandMenu('config', customCommands, args)
         }
-
-        await showCommandMenu(type, commandArray, args)
+        await showCommandMenu(type, customCommands, args)
     }
 
+    /**
+     * A list of all available commands.
+     */
     public list(): CodyCommand[] {
-        return [...this.customCommandsStore.commands.values(), ...this.commands.values()]
+        return [...(this.customCommandsStore?.commands.values() ?? []), ...this.commands.values()]
     }
 
     /**
      * Find a command by its id
      */
     public get(id: string): CodyCommand | undefined {
-        return this.commands.get(id) ?? this.customCommandsStore.commands.get(id)
+        return this.commands.get(id) ?? this.customCommandsStore?.commands.get(id)
     }
 
     /**

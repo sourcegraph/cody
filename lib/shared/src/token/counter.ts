@@ -5,7 +5,7 @@ import type { ModelContextWindow } from '..'
 import type { Message, PromptString } from '..'
 import { CORPUS_CONTEXT_ALLOCATION } from './constants'
 
-interface TokenCounterUtils {
+export interface TokenCounterUtils {
     encode(text: string): number[]
     decode(encoded: number[]): string
     countTokens(text: string): number
