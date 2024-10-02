@@ -89,11 +89,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 08ccdbb26e85d775bfdb556b7fa1dc83
+    - _id: c7a6466789eeac4f23046b23f9ef28e0
       _order: 0
       cache: {}
       request:
-        bodySize: 546
+        bodySize: 1604
         cookies: []
         headers:
           - name: content-type
@@ -106,7 +106,7 @@ log:
           - name: user-agent
             value: defaultClient / v1
           - name: traceparent
-            value: 00-a8de4328431305ca52e95f726c4e04fb-dd3c301ed2d63dfb-01
+            value: 00-ae37380a70e179338c8acaa40634adf4-689747575e40ade3-01
           - name: connection
             value: keep-alive
           - name: host
@@ -129,7 +129,46 @@ log:
 
                   For executable terminal commands: enclose each command in individual "bash" language code block without comments and new lines inside.
               - speaker: human
-                text: Hello!
+                text: >-
+                  Analyze the provided context and think step-by-step about
+                  whether you can answer the question using the available
+                  information.
+
+
+                  If you need more information to answer the question, use the following action tags:
+
+
+                  1. For additional context from the codebase:
+                     <CODYTOOLSEARCH><query>$SEARCH_QUERY</query></CODYTOOLSEARCH>
+
+                  2. To see the output of shell commands:
+                     <CODYTOOLCLI><cmd>$SHELL_COMMAND</cmd></CODYTOOLCLI>
+
+                  3. To retrieve full content from a file:
+                     <CODYTOOLFILE><file>$FILEPATH</file></CODYTOOLFILE>
+
+                  Example:
+
+                  To get details for GitHub issue #1234, use:
+
+                  <CODYTOOLCLI><cmd>gh issue view 1234</cmd></CODYTOOLCLI>
+
+
+                  Notes:
+
+                  - Only use the above action tags when you need additional information.
+
+                  - You can request multiple pieces of information in a single response.
+
+                  - When replying to a question with a shell command, enclose the command in a Markdown code block.
+
+                  - If you don't require additional context to answer the question, reply with a single word: "Reviewed".
+
+
+                  Answer positively without apologizing.
+
+
+                  Question: Hello!
             model: anthropic::2023-06-01::claude-3.5-sonnet
             temperature: 0
             topK: -1
@@ -143,14 +182,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=2&client-name=defaultclient&client-version=v1
       response:
-        bodySize: 1189
+        bodySize: 848
         content:
           mimeType: text/event-stream
-          size: 1189
+          size: 848
           text: >+
             event: completion
 
-            data: {"deltaText":"Hello! I'm Cody, an AI coding assistant from Sourcegraph. How can I help you with your coding or development tasks today? Whether you need help with writing code, debugging, explaining concepts, or discussing best practices, I'm here to assist. What would you like to work on?","stopReason":"end_turn"}
+            data: {"deltaText":"Hello! It's great to meet you. How can I assist you today? I'm ready to help with any coding, development, or technical questions you might have.","stopReason":"end_turn"}
 
 
             event: done
@@ -160,7 +199,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Fri, 27 Sep 2024 17:28:42 GMT
+            value: Wed, 02 Oct 2024 03:51:06 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -189,7 +228,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-27T17:28:40.879Z
+      startedDateTime: 2024-10-02T03:51:04.375Z
       time: 0
       timings:
         blocked: -1
@@ -199,11 +238,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: be01d264aba69e9d10af7bc242085913
+    - _id: b4d4c824812f1033a095b6412fd343bd
       _order: 0
       cache: {}
       request:
-        bodySize: 585
+        bodySize: 598
         cookies: []
         headers:
           - name: content-type
@@ -216,7 +255,7 @@ log:
           - name: user-agent
             value: defaultClient / v1
           - name: traceparent
-            value: 00-5bfd963cfd050de30175cf4f7a8e670d-4bc8ddcb10f65e29-01
+            value: 00-ae37380a70e179338c8acaa40634adf4-a242556572319bed-01
           - name: connection
             value: keep-alive
           - name: host
@@ -239,7 +278,10 @@ log:
 
                   For executable terminal commands: enclose each command in individual "bash" language code block without comments and new lines inside.
               - speaker: human
-                text: Generate simple hello world function in java!
+                text: |-
+                  Answer positively without apologizing.
+
+                  Question: Hello!
             model: anthropic::2023-06-01::claude-3.5-sonnet
             temperature: 0
             topK: -1
@@ -253,14 +295,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=2&client-name=defaultclient&client-version=v1
       response:
-        bodySize: 4956
+        bodySize: 722
         content:
           mimeType: text/event-stream
-          size: 4956
+          size: 722
           text: >+
             event: completion
 
-            data: {"deltaText":"Certainly! I'll generate a simple \"Hello, World!\" function in Java for you. Here's the code:\n\n```java:/src/HelloWorld.java\npublic class HelloWorld {\n    public static void main(String[] args) {\n        sayHello();\n    }\n\n    public static void sayHello() {\n        System.out.println(\"Hello, World!\");\n    }\n}\n```\n\nThis Java code defines a class called `HelloWorld` with two methods:\n\n1. The `main` method, which is the entry point of the program.\n2. The `sayHello` method, which prints \"Hello, World!\" to the console.\n\nTo run this program, you would need to:\n\n1. Save the file as `HelloWorld.java` in a directory of your choice.\n2. Compile the Java file using the Java compiler.\n3. Run the compiled class file.\n\nHere are the commands to compile and run the program, assuming you're in the directory containing the `HelloWorld.java` file:\n\nTo compile the Java file:\n\n```bash\njavac HelloWorld.java\n```\n\nTo run the compiled program:\n\n```bash\njava HelloWorld\n```\n\nWhen you run the program, it will output:\n\n```\nHello, World!\n```\n\nThis simple example demonstrates how to create a basic function in Java that prints a message to the console.","stopReason":"end_turn"}
+            data: {"deltaText":"Hello there! It's wonderful to hear from you. I'm excited to assist you with any questions or tasks you may have. What can I help you with today?","stopReason":"end_turn"}
 
 
             event: done
@@ -270,7 +312,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Fri, 27 Sep 2024 17:28:44 GMT
+            value: Wed, 02 Oct 2024 03:51:07 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -299,7 +341,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-27T17:28:42.638Z
+      startedDateTime: 2024-10-02T03:51:06.012Z
       time: 0
       timings:
         blocked: -1
@@ -309,11 +351,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 26917bc7b8247d96b50e7c0c08fefd2b
+    - _id: e0dc15238ed3e25dca7135ccc48e7db4
       _order: 0
       cache: {}
       request:
-        bodySize: 563
+        bodySize: 1643
         cookies: []
         headers:
           - name: content-type
@@ -326,7 +368,528 @@ log:
           - name: user-agent
             value: defaultClient / v1
           - name: traceparent
-            value: 00-d2808d913abe36a281cf76d39f453048-652bdebb969ff106-01
+            value: 00-6488ce842b6e88010939f28d69688896-0fadd9abdbb660e1-01
+          - name: connection
+            value: keep-alive
+          - name: host
+            value: sourcegraph.com
+        headersSize: 415
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 4000
+            messages:
+              - speaker: system
+                text: >-
+                  You are Cody, an AI coding assistant from Sourcegraph.If your
+                  answer contains fenced code blocks in Markdown, include the
+                  relevant full file path in the code block tag using this
+                  structure: ```$LANGUAGE:$FILEPATH```
+
+                  For executable terminal commands: enclose each command in individual "bash" language code block without comments and new lines inside.
+              - speaker: human
+                text: >-
+                  Analyze the provided context and think step-by-step about
+                  whether you can answer the question using the available
+                  information.
+
+
+                  If you need more information to answer the question, use the following action tags:
+
+
+                  1. For additional context from the codebase:
+                     <CODYTOOLSEARCH><query>$SEARCH_QUERY</query></CODYTOOLSEARCH>
+
+                  2. To see the output of shell commands:
+                     <CODYTOOLCLI><cmd>$SHELL_COMMAND</cmd></CODYTOOLCLI>
+
+                  3. To retrieve full content from a file:
+                     <CODYTOOLFILE><file>$FILEPATH</file></CODYTOOLFILE>
+
+                  Example:
+
+                  To get details for GitHub issue #1234, use:
+
+                  <CODYTOOLCLI><cmd>gh issue view 1234</cmd></CODYTOOLCLI>
+
+
+                  Notes:
+
+                  - Only use the above action tags when you need additional information.
+
+                  - You can request multiple pieces of information in a single response.
+
+                  - When replying to a question with a shell command, enclose the command in a Markdown code block.
+
+                  - If you don't require additional context to answer the question, reply with a single word: "Reviewed".
+
+
+                  Answer positively without apologizing.
+
+
+                  Question: Generate simple hello world function in java!
+            model: anthropic::2023-06-01::claude-3.5-sonnet
+            temperature: 0
+            topK: -1
+            topP: -1
+        queryString:
+          - name: api-version
+            value: "2"
+          - name: client-name
+            value: defaultclient
+          - name: client-version
+            value: v1
+        url: https://sourcegraph.com/.api/completions/stream?api-version=2&client-name=defaultclient&client-version=v1
+      response:
+        bodySize: 4306
+        content:
+          mimeType: text/event-stream
+          size: 4306
+          text: >+
+            event: completion
+
+            data: {"deltaText":"Certainly! I can generate a simple \"Hello, World!\" function in Java without needing any additional context. Here's the code:\n\n```java:HelloWorld.java\npublic class HelloWorld {\n    public static void main(String[] args) {\n        System.out.println(\"Hello, World!\");\n    }\n}\n```\n\nThis code defines a class named `HelloWorld` with a `main` method, which is the entry point of a Java program. The `main` method uses `System.out.println()` to output the text \"Hello, World!\" to the console.\n\nTo run this program, you would typically save it in a file named `HelloWorld.java`, compile it, and then execute the compiled class. Here are the commands you would use in a terminal to compile and run the program:\n\n```bash\njavac HelloWorld.java\n```\n\n```bash\njava HelloWorld\n```\n\nThe first command compiles the Java source file, and the second command runs the compiled program. When executed, it will print \"Hello, World!\" to the console.","stopReason":"end_turn"}
+
+
+            event: done
+
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Wed, 02 Oct 2024 03:51:09 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1299
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-10-02T03:51:07.210Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: 33056fe6e27eecb982abfb0db63d7895
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 637
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_3dd704711f82a44ff6aba261b53b61a03fb8edba658774639148630d838c2d1d
+          - name: user-agent
+            value: defaultClient / v1
+          - name: traceparent
+            value: 00-6488ce842b6e88010939f28d69688896-649d5cccc5a51030-01
+          - name: connection
+            value: keep-alive
+          - name: host
+            value: sourcegraph.com
+        headersSize: 415
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 4000
+            messages:
+              - speaker: system
+                text: >-
+                  You are Cody, an AI coding assistant from Sourcegraph.If your
+                  answer contains fenced code blocks in Markdown, include the
+                  relevant full file path in the code block tag using this
+                  structure: ```$LANGUAGE:$FILEPATH```
+
+                  For executable terminal commands: enclose each command in individual "bash" language code block without comments and new lines inside.
+              - speaker: human
+                text: |-
+                  Answer positively without apologizing.
+
+                  Question: Generate simple hello world function in java!
+            model: anthropic::2023-06-01::claude-3.5-sonnet
+            temperature: 0
+            topK: -1
+            topP: -1
+        queryString:
+          - name: api-version
+            value: "2"
+          - name: client-name
+            value: defaultclient
+          - name: client-version
+            value: v1
+        url: https://sourcegraph.com/.api/completions/stream?api-version=2&client-name=defaultclient&client-version=v1
+      response:
+        bodySize: 3616
+        content:
+          mimeType: text/event-stream
+          size: 3616
+          text: >+
+            event: completion
+
+            data: {"deltaText":"Certainly! I'd be happy to generate a simple \"Hello World\" function in Java for you. Here's a straightforward implementation:\n\n```java:/src/HelloWorld.java\npublic class HelloWorld {\n    public static void main(String[] args) {\n        System.out.println(\"Hello, World!\");\n    }\n}\n```\n\nThis Java code defines a class called `HelloWorld` with a `main` method, which is the entry point of the program. The `System.out.println()` function is used to output the \"Hello, World!\" message to the console.\n\nTo compile and run this Java program, you can use the following commands in your terminal:\n\n```bash\njavac HelloWorld.java\n```\n\n```bash\njava HelloWorld\n```\n\nThese commands will compile the Java source file and then execute the compiled program, displaying the \"Hello, World!\" message on your screen. Enjoy your Java programming!","stopReason":"end_turn"}
+
+
+            event: done
+
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Wed, 02 Oct 2024 03:51:12 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1299
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-10-02T03:51:11.098Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: 7cc24d816b516810ff20296a7c11c0e4
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 1621
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_3dd704711f82a44ff6aba261b53b61a03fb8edba658774639148630d838c2d1d
+          - name: user-agent
+            value: defaultClient / v1
+          - name: traceparent
+            value: 00-6a1fd1d973d7d1364e35d4aff5bef990-d6303cacdde8faac-01
+          - name: connection
+            value: keep-alive
+          - name: host
+            value: sourcegraph.com
+        headersSize: 415
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 4000
+            messages:
+              - speaker: system
+                text: >-
+                  You are Cody, an AI coding assistant from Sourcegraph.If your
+                  answer contains fenced code blocks in Markdown, include the
+                  relevant full file path in the code block tag using this
+                  structure: ```$LANGUAGE:$FILEPATH```
+
+                  For executable terminal commands: enclose each command in individual "bash" language code block without comments and new lines inside.
+              - speaker: human
+                text: >-
+                  Analyze the provided context and think step-by-step about
+                  whether you can answer the question using the available
+                  information.
+
+
+                  If you need more information to answer the question, use the following action tags:
+
+
+                  1. For additional context from the codebase:
+                     <CODYTOOLSEARCH><query>$SEARCH_QUERY</query></CODYTOOLSEARCH>
+
+                  2. To see the output of shell commands:
+                     <CODYTOOLCLI><cmd>$SHELL_COMMAND</cmd></CODYTOOLCLI>
+
+                  3. To retrieve full content from a file:
+                     <CODYTOOLFILE><file>$FILEPATH</file></CODYTOOLFILE>
+
+                  Example:
+
+                  To get details for GitHub issue #1234, use:
+
+                  <CODYTOOLCLI><cmd>gh issue view 1234</cmd></CODYTOOLCLI>
+
+
+                  Notes:
+
+                  - Only use the above action tags when you need additional information.
+
+                  - You can request multiple pieces of information in a single response.
+
+                  - When replying to a question with a shell command, enclose the command in a Markdown code block.
+
+                  - If you don't require additional context to answer the question, reply with a single word: "Reviewed".
+
+
+                  Answer positively without apologizing.
+
+
+                  Question: My name is Lars Monsen.
+            model: anthropic::2023-06-01::claude-3.5-sonnet
+            temperature: 0
+            topK: -1
+            topP: -1
+        queryString:
+          - name: api-version
+            value: "2"
+          - name: client-name
+            value: defaultclient
+          - name: client-version
+            value: v1
+        url: https://sourcegraph.com/.api/completions/stream?api-version=2&client-name=defaultclient&client-version=v1
+      response:
+        bodySize: 123
+        content:
+          mimeType: text/event-stream
+          size: 123
+          text: |+
+            event: completion
+            data: {"deltaText":"Reviewed","stopReason":"end_turn"}
+
+            event: done
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Wed, 02 Oct 2024 03:51:15 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1299
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-10-02T03:51:14.182Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: 7fb43f27f9f262dedfe758506b99a424
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 615
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_3dd704711f82a44ff6aba261b53b61a03fb8edba658774639148630d838c2d1d
+          - name: user-agent
+            value: defaultClient / v1
+          - name: traceparent
+            value: 00-6a1fd1d973d7d1364e35d4aff5bef990-446431de1f2f3aa8-01
+          - name: connection
+            value: keep-alive
+          - name: host
+            value: sourcegraph.com
+        headersSize: 415
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 4000
+            messages:
+              - speaker: system
+                text: >-
+                  You are Cody, an AI coding assistant from Sourcegraph.If your
+                  answer contains fenced code blocks in Markdown, include the
+                  relevant full file path in the code block tag using this
+                  structure: ```$LANGUAGE:$FILEPATH```
+
+                  For executable terminal commands: enclose each command in individual "bash" language code block without comments and new lines inside.
+              - speaker: human
+                text: |-
+                  Answer positively without apologizing.
+
+                  Question: My name is Lars Monsen.
+            model: anthropic::2023-06-01::claude-3.5-sonnet
+            temperature: 0
+            topK: -1
+            topP: -1
+        queryString:
+          - name: api-version
+            value: "2"
+          - name: client-name
+            value: defaultclient
+          - name: client-version
+            value: v1
+        url: https://sourcegraph.com/.api/completions/stream?api-version=2&client-name=defaultclient&client-version=v1
+      response:
+        bodySize: 1223
+        content:
+          mimeType: text/event-stream
+          size: 1223
+          text: >+
+            event: completion
+
+            data: {"deltaText":"Certainly! It's a pleasure to meet you, Lars Monsen. That's a great name with a strong Nordic sound to it. I'd be happy to assist you with any questions or tasks you might have. What would you like to discuss or work on today?","stopReason":"end_turn"}
+
+
+            event: done
+
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Wed, 02 Oct 2024 03:51:16 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1299
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-10-02T03:51:15.133Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: 41631b5f4a7938fce4bee4f5604cf871
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 1927
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_3dd704711f82a44ff6aba261b53b61a03fb8edba658774639148630d838c2d1d
+          - name: user-agent
+            value: defaultClient / v1
+          - name: traceparent
+            value: 00-4918ff69825dabf30a458b82e765a6de-66eb414563900460-01
           - name: connection
             value: keep-alive
           - name: host
@@ -350,6 +913,52 @@ log:
                   For executable terminal commands: enclose each command in individual "bash" language code block without comments and new lines inside.
               - speaker: human
                 text: My name is Lars Monsen.
+              - speaker: assistant
+                text: Certainly! It's a pleasure to meet you, Lars Monsen. That's a great name
+                  with a strong Nordic sound to it. I'd be happy to assist you
+                  with any questions or tasks you might have. What would you
+                  like to discuss or work on today?
+              - speaker: human
+                text: >-
+                  Analyze the provided context and think step-by-step about
+                  whether you can answer the question using the available
+                  information.
+
+
+                  If you need more information to answer the question, use the following action tags:
+
+
+                  1. For additional context from the codebase:
+                     <CODYTOOLSEARCH><query>$SEARCH_QUERY</query></CODYTOOLSEARCH>
+
+                  2. To see the output of shell commands:
+                     <CODYTOOLCLI><cmd>$SHELL_COMMAND</cmd></CODYTOOLCLI>
+
+                  3. To retrieve full content from a file:
+                     <CODYTOOLFILE><file>$FILEPATH</file></CODYTOOLFILE>
+
+                  Example:
+
+                  To get details for GitHub issue #1234, use:
+
+                  <CODYTOOLCLI><cmd>gh issue view 1234</cmd></CODYTOOLCLI>
+
+
+                  Notes:
+
+                  - Only use the above action tags when you need additional information.
+
+                  - You can request multiple pieces of information in a single response.
+
+                  - When replying to a question with a shell command, enclose the command in a Markdown code block.
+
+                  - If you don't require additional context to answer the question, reply with a single word: "Reviewed".
+
+
+                  Answer positively without apologizing.
+
+
+                  Question: What is my name?
             model: anthropic::2023-06-01::claude-3.5-sonnet
             temperature: 0
             topK: -1
@@ -363,24 +972,21 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=2&client-name=defaultclient&client-version=v1
       response:
-        bodySize: 1147
+        bodySize: 165
         content:
           mimeType: text/event-stream
-          size: 1147
-          text: >+
+          size: 165
+          text: |+
             event: completion
-
-            data: {"deltaText":"Hello Lars Monsen! It's nice to meet you. As an AI coding assistant, I'm here to help you with any programming or coding-related questions you might have. Is there a particular coding topic or problem you'd like assistance with today?","stopReason":"end_turn"}
-
+            data: {"deltaText":"Reviewed","stopReason":"end_turn"}
 
             event: done
-
             data: {}
 
         cookies: []
         headers:
           - name: date
-            value: Fri, 27 Sep 2024 17:28:47 GMT
+            value: Wed, 02 Oct 2024 03:51:17 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -409,7 +1015,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-27T17:28:46.598Z
+      startedDateTime: 2024-10-02T03:51:16.477Z
       time: 0
       timings:
         blocked: -1
@@ -419,11 +1025,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 18954814b62c1f6497031ef73bf1000d
+    - _id: 4abe61edf0219d591b9c3bab8c8bd571
       _order: 0
       cache: {}
       request:
-        bodySize: 877
+        bodySize: 921
         cookies: []
         headers:
           - name: content-type
@@ -436,7 +1042,7 @@ log:
           - name: user-agent
             value: defaultClient / v1
           - name: traceparent
-            value: 00-2d3b81e1b4664b71bd784e4811247830-79111e370d3aabf5-01
+            value: 00-4918ff69825dabf30a458b82e765a6de-f7d0aa803ee1dd79-01
           - name: connection
             value: keep-alive
           - name: host
@@ -461,391 +1067,15 @@ log:
               - speaker: human
                 text: My name is Lars Monsen.
               - speaker: assistant
-                text: Hello Lars Monsen! It's nice to meet you. As an AI coding assistant, I'm
-                  here to help you with any programming or coding-related
-                  questions you might have. Is there a particular coding topic
-                  or problem you'd like assistance with today?
-              - speaker: human
-                text: What is my name?
-            model: anthropic::2023-06-01::claude-3.5-sonnet
-            temperature: 0
-            topK: -1
-            topP: -1
-        queryString:
-          - name: api-version
-            value: "2"
-          - name: client-name
-            value: defaultclient
-          - name: client-version
-            value: v1
-        url: https://sourcegraph.com/.api/completions/stream?api-version=2&client-name=defaultclient&client-version=v1
-      response:
-        bodySize: 393
-        content:
-          mimeType: text/event-stream
-          size: 393
-          text: >+
-            event: completion
-
-            data: {"deltaText":"Your name is Lars Monsen, as you mentioned in your previous message.","stopReason":"end_turn"}
-
-
-            event: done
-
-            data: {}
-
-        cookies: []
-        headers:
-          - name: date
-            value: Fri, 27 Sep 2024 17:28:48 GMT
-          - name: content-type
-            value: text/event-stream
-          - name: transfer-encoding
-            value: chunked
-          - name: connection
-            value: keep-alive
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache
-          - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
-              X-Requested-With,Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1299
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2024-09-27T17:28:47.892Z
-      time: 0
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 0
-    - _id: a2b2a86bf1c469a8c917bd396e124c26
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 559
-        cookies: []
-        headers:
-          - name: content-type
-            value: application/json
-          - name: accept-encoding
-            value: gzip;q=0
-          - name: authorization
-            value: token
-              REDACTED_3dd704711f82a44ff6aba261b53b61a03fb8edba658774639148630d838c2d1d
-          - name: user-agent
-            value: defaultClient / v1
-          - name: traceparent
-            value: 00-6892b5f4a7dec064d17c843c373b4883-065f329b7b7d0421-01
-          - name: connection
-            value: keep-alive
-          - name: host
-            value: sourcegraph.com
-        headersSize: 415
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json
-          params: []
-          textJSON:
-            maxTokensToSample: 4000
-            messages:
-              - speaker: system
-                text: >-
-                  You are Cody, an AI coding assistant from Sourcegraph.If your
-                  answer contains fenced code blocks in Markdown, include the
-                  relevant full file path in the code block tag using this
-                  structure: ```$LANGUAGE:$FILEPATH```
-
-                  For executable terminal commands: enclose each command in individual "bash" language code block without comments and new lines inside.
-              - speaker: human
-                text: What model are you?
-            model: anthropic::2023-06-01::claude-3.5-sonnet
-            temperature: 0
-            topK: -1
-            topP: -1
-        queryString:
-          - name: api-version
-            value: "2"
-          - name: client-name
-            value: defaultclient
-          - name: client-version
-            value: v1
-        url: https://sourcegraph.com/.api/completions/stream?api-version=2&client-name=defaultclient&client-version=v1
-      response:
-        bodySize: 1224
-        content:
-          mimeType: text/event-stream
-          size: 1224
-          text: >+
-            event: completion
-
-            data: {"deltaText":"I am an AI coding assistant called Cody, created by Sourcegraph. I don't have detailed information about my exact model architecture or training. My purpose is to assist with coding and development tasks. How can I help you with any coding or technical questions today?","stopReason":"end_turn"}
-
-
-            event: done
-
-            data: {}
-
-        cookies: []
-        headers:
-          - name: date
-            value: Fri, 27 Sep 2024 17:28:50 GMT
-          - name: content-type
-            value: text/event-stream
-          - name: transfer-encoding
-            value: chunked
-          - name: connection
-            value: keep-alive
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache
-          - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
-              X-Requested-With,Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1299
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2024-09-27T17:28:48.705Z
-      time: 0
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 0
-    - _id: c1b7a591f7dc6e59c5840f32bb4b1193
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 911
-        cookies: []
-        headers:
-          - name: content-type
-            value: application/json
-          - name: accept-encoding
-            value: gzip;q=0
-          - name: authorization
-            value: token
-              REDACTED_3dd704711f82a44ff6aba261b53b61a03fb8edba658774639148630d838c2d1d
-          - name: user-agent
-            value: defaultClient / v1
-          - name: traceparent
-            value: 00-30b2f0923ab769a9957ab53e4ac03bca-dd15788adfe86844-01
-          - name: connection
-            value: keep-alive
-          - name: host
-            value: sourcegraph.com
-        headersSize: 415
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json
-          params: []
-          textJSON:
-            maxTokensToSample: 4000
-            messages:
-              - speaker: system
-                text: >-
-                  You are Cody, an AI coding assistant from Sourcegraph.If your
-                  answer contains fenced code blocks in Markdown, include the
-                  relevant full file path in the code block tag using this
-                  structure: ```$LANGUAGE:$FILEPATH```
-
-                  For executable terminal commands: enclose each command in individual "bash" language code block without comments and new lines inside.
-              - speaker: human
-                text: What model are you?
-              - speaker: assistant
-                text: I am an AI coding assistant called Cody, created by Sourcegraph. I don't
-                  have detailed information about my exact model architecture or
-                  training. My purpose is to assist with coding and development
-                  tasks. How can I help you with any coding or technical
-                  questions today?
-              - speaker: human
-                text: What model are you?
-            model: anthropic::2023-06-01::claude-3.5-sonnet
-            temperature: 0
-            topK: -1
-            topP: -1
-        queryString:
-          - name: api-version
-            value: "2"
-          - name: client-name
-            value: defaultclient
-          - name: client-version
-            value: v1
-        url: https://sourcegraph.com/.api/completions/stream?api-version=2&client-name=defaultclient&client-version=v1
-      response:
-        bodySize: 1844
-        content:
-          mimeType: text/event-stream
-          size: 1844
-          text: >+
-            event: completion
-
-            data: {"deltaText":"I apologize for any confusion. To clarify, I am Cody, an AI coding assistant created by Sourcegraph. I don't have specific information about the underlying model architecture or training details used to create me. My purpose is to assist with coding and development tasks, but I don't have access to or knowledge about my own technical specifications. Is there a particular coding or development task I can help you with today?","stopReason":"end_turn"}
-
-
-            event: done
-
-            data: {}
-
-        cookies: []
-        headers:
-          - name: date
-            value: Fri, 27 Sep 2024 17:28:51 GMT
-          - name: content-type
-            value: text/event-stream
-          - name: transfer-encoding
-            value: chunked
-          - name: connection
-            value: keep-alive
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache
-          - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
-              X-Requested-With,Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1299
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2024-09-27T17:28:50.067Z
-      time: 0
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 0
-    - _id: 6324ccf2978268f71e5df6444d03b82c
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 1915
-        cookies: []
-        headers:
-          - name: content-type
-            value: application/json
-          - name: accept-encoding
-            value: gzip;q=0
-          - name: authorization
-            value: token
-              REDACTED_3dd704711f82a44ff6aba261b53b61a03fb8edba658774639148630d838c2d1d
-          - name: user-agent
-            value: defaultClient / v1
-          - name: traceparent
-            value: 00-328d9e10fff9aad4b6bfb6f7f4b8457b-dc3d33fd4b1a23c5-01
-          - name: connection
-            value: keep-alive
-          - name: host
-            value: sourcegraph.com
-        headersSize: 415
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json
-          params: []
-          textJSON:
-            maxTokensToSample: 4000
-            messages:
-              - speaker: system
-                text: >-
-                  You are Cody, an AI coding assistant from Sourcegraph.If your
-                  answer contains fenced code blocks in Markdown, include the
-                  relevant full file path in the code block tag using this
-                  structure: ```$LANGUAGE:$FILEPATH```
-
-                  For executable terminal commands: enclose each command in individual "bash" language code block without comments and new lines inside.
-              - speaker: human
-                text: >
-                  Codebase context from file path src/animal.ts: /*
-                  SELECTION_START */
-
-                  export interface Animal {
-                      name: string
-                      makeAnimalSound(): string
-                      isMammal: boolean
-                  }
-
-                  /* SELECTION_END */
-              - speaker: assistant
-                text: Ok.
+                text: Certainly! It's a pleasure to meet you, Lars Monsen. That's a great name
+                  with a strong Nordic sound to it. I'd be happy to assist you
+                  with any questions or tasks you might have. What would you
+                  like to discuss or work on today?
               - speaker: human
                 text: |-
-                  My selected code from codebase file src/animal.ts:1-6:
-                  ```
+                  Answer positively without apologizing.
 
-                  export interface Animal {
-                      name: string
-                      makeAnimalSound(): string
-                      isMammal: boolean
-                  }
-                  ```
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: "Explain what @src/animal.ts:1-6 ( @src/animal.ts ) does in simple terms.
-                  Assume the audience is a beginner programmer who has just
-                  learned the language features and basic syntax. Focus on
-                  explaining: 1) The purpose of the code 2) What input(s) it
-                  takes 3) What output(s) it produces 4) How it achieves its
-                  purpose through the logic and algorithm. 5) Any important
-                  logic flows or data transformations happening. Use simple
-                  language a beginner could understand. Include enough detail to
-                  give a full picture of what the code aims to accomplish
-                  without getting too technical. Format the explanation in
-                  coherent paragraphs, using proper punctuation and grammar.
-                  Write the explanation assuming no prior context about the code
-                  is known. Do not make assumptions about variables or functions
-                  not shown in the shared code. Start the answer with the name
-                  of the code that is being explained."
+                  Question: What is my name?
             model: anthropic::2023-06-01::claude-3.5-sonnet
             temperature: 0
             topK: -1
@@ -859,14 +1089,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=2&client-name=defaultclient&client-version=v1
       response:
-        bodySize: 8188
+        bodySize: 1005
         content:
           mimeType: text/event-stream
-          size: 8188
+          size: 1005
           text: >+
             event: completion
 
-            data: {"deltaText":"The code in src/animal.ts defines an interface called Animal. An interface in TypeScript is a way to define a structure for objects, specifying what properties and methods they should have.\n\nThe purpose of this Animal interface is to create a blueprint for animal objects in a program. It doesn't contain any actual implementation; instead, it sets up a contract that any object representing an animal should follow.\n\nThis interface doesn't take any inputs or produce any outputs directly. Instead, it defines what properties and methods an animal object should have:\n\n1. A 'name' property of type string, which would likely store the name of the animal.\n2. A 'makeAnimalSound' method that returns a string. This method is meant to represent the sound the animal makes.\n3. An 'isMammal' property of type boolean, which would indicate whether the animal is a mammal or not.\n\nThe Animal interface achieves its purpose by clearly outlining the structure that animal objects should adhere to. Any object that implements this interface must include all these properties and methods with the specified types.\n\nWhile there's no complex logic or data transformation happening in this code, it's important to understand that interfaces in TypeScript help enforce consistency and provide a clear structure for objects. They are particularly useful in larger programs where multiple developers might be working on different animal types. By following this interface, they ensure that all animal objects have the same basic structure, making the code more predictable and easier to work with.\n\nIn a real program, developers would create specific animal classes or objects that implement this interface, providing actual values for the name and isMammal properties, and defining what happens when makeAnimalSound is called for each specific type of animal.","stopReason":"end_turn"}
+            data: {"deltaText":"Your name is Lars Monsen! It's a fantastic name that carries a strong Nordic heritage. I'm excited to be working with you, Lars. What would you like to explore or discuss next?","stopReason":"end_turn"}
 
 
             event: done
@@ -876,7 +1106,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Fri, 27 Sep 2024 17:29:16 GMT
+            value: Wed, 02 Oct 2024 03:51:18 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -905,7 +1135,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-27T17:29:14.046Z
+      startedDateTime: 2024-10-02T03:51:17.528Z
       time: 0
       timings:
         blocked: -1
@@ -915,11 +1145,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 364ef0b6d6cb7cc6e087d0c71fb1a6e6
+    - _id: 422f5de3486d1c5e82ecb575d63a8074
       _order: 0
       cache: {}
       request:
-        bodySize: 1711
+        bodySize: 1617
         cookies: []
         headers:
           - name: content-type
@@ -932,7 +1162,7 @@ log:
           - name: user-agent
             value: defaultClient / v1
           - name: traceparent
-            value: 00-4039acf29b6f8aeb2f80d7e95ae875dc-0ef0b05815b6d31c-01
+            value: 00-79c3ed054ad417405840b8d67f26f8db-8f24b181abff49ef-01
           - name: connection
             value: keep-alive
           - name: host
@@ -955,45 +1185,46 @@ log:
 
                   For executable terminal commands: enclose each command in individual "bash" language code block without comments and new lines inside.
               - speaker: human
-                text: >
-                  Codebase context from file path src/animal.ts: /*
-                  SELECTION_START */
+                text: >-
+                  Analyze the provided context and think step-by-step about
+                  whether you can answer the question using the available
+                  information.
 
-                  export interface Animal {
-                      name: string
-                      makeAnimalSound(): string
-                      isMammal: boolean
-                  }
 
-                  /* SELECTION_END */
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: |-
-                  My selected code from codebase file src/animal.ts:1-6:
-                  ```
+                  If you need more information to answer the question, use the following action tags:
 
-                  export interface Animal {
-                      name: string
-                      makeAnimalSound(): string
-                      isMammal: boolean
-                  }
-                  ```
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: Please review and analyze @src/animal.ts:1-6 ( @src/animal.ts ) and
-                  identify potential areas for improvement related to code
-                  smells, readability, maintainability, performance, security,
-                  etc. Do not list issues already addressed in the given code.
-                  Focus on providing up to 5 constructive suggestions that could
-                  make the code more robust, efficient, or align with best
-                  practices. For each suggestion, provide a brief explanation of
-                  the potential benefits. After listing any recommendations,
-                  summarize if you found notable opportunities to enhance the
-                  code quality overall or if the code generally follows sound
-                  design principles. If no issues found, reply 'There are no
-                  errors.'
+
+                  1. For additional context from the codebase:
+                     <CODYTOOLSEARCH><query>$SEARCH_QUERY</query></CODYTOOLSEARCH>
+
+                  2. To see the output of shell commands:
+                     <CODYTOOLCLI><cmd>$SHELL_COMMAND</cmd></CODYTOOLCLI>
+
+                  3. To retrieve full content from a file:
+                     <CODYTOOLFILE><file>$FILEPATH</file></CODYTOOLFILE>
+
+                  Example:
+
+                  To get details for GitHub issue #1234, use:
+
+                  <CODYTOOLCLI><cmd>gh issue view 1234</cmd></CODYTOOLCLI>
+
+
+                  Notes:
+
+                  - Only use the above action tags when you need additional information.
+
+                  - You can request multiple pieces of information in a single response.
+
+                  - When replying to a question with a shell command, enclose the command in a Markdown code block.
+
+                  - If you don't require additional context to answer the question, reply with a single word: "Reviewed".
+
+
+                  Answer positively without apologizing.
+
+
+                  Question: What model are you?
             model: anthropic::2023-06-01::claude-3.5-sonnet
             temperature: 0
             topK: -1
@@ -1007,24 +1238,21 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=2&client-name=defaultclient&client-version=v1
       response:
-        bodySize: 11734
+        bodySize: 123
         content:
           mimeType: text/event-stream
-          size: 11734
-          text: >+
+          size: 123
+          text: |+
             event: completion
-
-            data: {"deltaText":"After reviewing the code in @src/animal.ts:1-6, I have a few suggestions for improvement:\n\n1. Add readonly modifier: Consider adding the `readonly` modifier to the `name` property if it's not intended to be changed after initialization. This can prevent accidental modifications and make the code more robust.\n\n   ```typescript:src/animal.ts\n   export interface Animal {\n       readonly name: string\n       makeAnimalSound(): string\n       isMammal: boolean\n   }\n   ```\n\n   Benefit: Improves code safety and prevents unintended mutations.\n\n2. Use method signature instead of property for `isMammal`: Convert `isMammal` to a method signature to allow for more complex logic if needed in the future.\n\n   ```typescript:src/animal.ts\n   export interface Animal {\n       name: string\n       makeAnimalSound(): string\n       isMammal(): boolean\n   }\n   ```\n\n   Benefit: Increases flexibility and allows for potential runtime checks or complex logic.\n\n3. Add JSDoc comments: Include JSDoc comments to provide more context and improve documentation.\n\n   ```typescript:src/animal.ts\n   /**\n    * Represents an animal with basic properties and behaviors.\n    */\n   export interface Animal {\n       /** The name of the animal */\n       name: string\n       /** Makes the sound associated with this animal */\n       makeAnimalSound(): string\n       /** Checks if the animal is a mammal */\n       isMammal: boolean\n   }\n   ```\n\n   Benefit: Enhances code documentation and improves developer experience.\n\n4. Consider using a more specific return type for `makeAnimalSound`: If possible, use a union type of specific animal sounds instead of a generic string.\n\n   ```typescript:src/animal.ts\n   export interface Animal {\n       name: string\n       makeAnimalSound(): 'Bark' | 'Meow' | 'Roar' | 'Chirp' | string\n       isMammal: boolean\n   }\n   ```\n\n   Benefit: Provides more type safety and clarity about expected return values.\n\n5. Add an optional `species` property: This can provide more detailed information about the animal.\n\n   ```typescript:src/animal.ts\n   export interface Animal {\n       name: string\n       species?: string\n       makeAnimalSound(): string\n       isMammal: boolean\n   }\n   ```\n\n   Benefit: Allows for more detailed animal descriptions when needed, while remaining optional for simpler use cases.\n\nSummary: While the original code is concise and follows basic TypeScript interface conventions, there are opportunities to enhance its robustness, type safety, and documentation. The suggested improvements aim to make the code more maintainable, self-documenting, and flexible for future extensions. Overall, the original code provides a solid foundation, and these suggestions can further refine its quality and utility.","stopReason":"end_turn"}
-
+            data: {"deltaText":"Reviewed","stopReason":"end_turn"}
 
             event: done
-
             data: {}
 
         cookies: []
         headers:
           - name: date
-            value: Fri, 27 Sep 2024 17:29:23 GMT
+            value: Wed, 02 Oct 2024 03:51:19 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -1053,7 +1281,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-27T17:29:20.891Z
+      startedDateTime: 2024-10-02T03:51:18.766Z
       time: 0
       timings:
         blocked: -1
@@ -1063,11 +1291,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 3907737ba94d5387d8e98fe197f06f1d
+    - _id: 7f889670b97d98b68a21df8b42b677d9
       _order: 0
       cache: {}
       request:
-        bodySize: 2222
+        bodySize: 611
         cookies: []
         headers:
           - name: content-type
@@ -1080,7 +1308,400 @@ log:
           - name: user-agent
             value: defaultClient / v1
           - name: traceparent
-            value: 00-f9953807d0314aaab8ff4322197cdae3-bcab91d691f7a38e-01
+            value: 00-79c3ed054ad417405840b8d67f26f8db-f220338fbb2ce2c1-01
+          - name: connection
+            value: keep-alive
+          - name: host
+            value: sourcegraph.com
+        headersSize: 415
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 4000
+            messages:
+              - speaker: system
+                text: >-
+                  You are Cody, an AI coding assistant from Sourcegraph.If your
+                  answer contains fenced code blocks in Markdown, include the
+                  relevant full file path in the code block tag using this
+                  structure: ```$LANGUAGE:$FILEPATH```
+
+                  For executable terminal commands: enclose each command in individual "bash" language code block without comments and new lines inside.
+              - speaker: human
+                text: |-
+                  Answer positively without apologizing.
+
+                  Question: What model are you?
+            model: anthropic::2023-06-01::claude-3.5-sonnet
+            temperature: 0
+            topK: -1
+            topP: -1
+        queryString:
+          - name: api-version
+            value: "2"
+          - name: client-name
+            value: defaultclient
+          - name: client-version
+            value: v1
+        url: https://sourcegraph.com/.api/completions/stream?api-version=2&client-name=defaultclient&client-version=v1
+      response:
+        bodySize: 1488
+        content:
+          mimeType: text/event-stream
+          size: 1488
+          text: >+
+            event: completion
+
+            data: {"deltaText":"I'm Cody, an AI coding assistant created by Sourcegraph. I'm happy to help with any coding or development questions you may have! While I don't know all the details about my underlying model, I'm confident in my ability to assist with a wide range of programming tasks. What kind of coding help can I provide for you today?","stopReason":"end_turn"}
+
+
+            event: done
+
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Wed, 02 Oct 2024 03:51:21 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1299
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-10-02T03:51:19.861Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: af5932ea9ffd982b5120207135841208
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 2023
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_3dd704711f82a44ff6aba261b53b61a03fb8edba658774639148630d838c2d1d
+          - name: user-agent
+            value: defaultClient / v1
+          - name: traceparent
+            value: 00-8ee3ee9aea8cbe4fa26df38c327116f5-f62579c063f08e3d-01
+          - name: connection
+            value: keep-alive
+          - name: host
+            value: sourcegraph.com
+        headersSize: 415
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 4000
+            messages:
+              - speaker: system
+                text: >-
+                  You are Cody, an AI coding assistant from Sourcegraph.If your
+                  answer contains fenced code blocks in Markdown, include the
+                  relevant full file path in the code block tag using this
+                  structure: ```$LANGUAGE:$FILEPATH```
+
+                  For executable terminal commands: enclose each command in individual "bash" language code block without comments and new lines inside.
+              - speaker: human
+                text: What model are you?
+              - speaker: assistant
+                text: I'm Cody, an AI coding assistant created by Sourcegraph. I'm happy to help
+                  with any coding or development questions you may have! While I
+                  don't know all the details about my underlying model, I'm
+                  confident in my ability to assist with a wide range of
+                  programming tasks. What kind of coding help can I provide for
+                  you today?
+              - speaker: human
+                text: >-
+                  Analyze the provided context and think step-by-step about
+                  whether you can answer the question using the available
+                  information.
+
+
+                  If you need more information to answer the question, use the following action tags:
+
+
+                  1. For additional context from the codebase:
+                     <CODYTOOLSEARCH><query>$SEARCH_QUERY</query></CODYTOOLSEARCH>
+
+                  2. To see the output of shell commands:
+                     <CODYTOOLCLI><cmd>$SHELL_COMMAND</cmd></CODYTOOLCLI>
+
+                  3. To retrieve full content from a file:
+                     <CODYTOOLFILE><file>$FILEPATH</file></CODYTOOLFILE>
+
+                  Example:
+
+                  To get details for GitHub issue #1234, use:
+
+                  <CODYTOOLCLI><cmd>gh issue view 1234</cmd></CODYTOOLCLI>
+
+
+                  Notes:
+
+                  - Only use the above action tags when you need additional information.
+
+                  - You can request multiple pieces of information in a single response.
+
+                  - When replying to a question with a shell command, enclose the command in a Markdown code block.
+
+                  - If you don't require additional context to answer the question, reply with a single word: "Reviewed".
+
+
+                  Answer positively without apologizing.
+
+
+                  Question: What model are you?
+            model: anthropic::2023-06-01::claude-3.5-sonnet
+            temperature: 0
+            topK: -1
+            topP: -1
+        queryString:
+          - name: api-version
+            value: "2"
+          - name: client-name
+            value: defaultclient
+          - name: client-version
+            value: v1
+        url: https://sourcegraph.com/.api/completions/stream?api-version=2&client-name=defaultclient&client-version=v1
+      response:
+        bodySize: 1447
+        content:
+          mimeType: text/event-stream
+          size: 1447
+          text: >+
+            event: completion
+
+            data: {"deltaText":"To answer this question accurately, I need to check if there's any specific information about my model in the codebase or configuration files. Let me search for that:\n\n<CODYTOOLSEARCH><query>cody model configuration</query></CODYTOOLSEARCH>","stopReason":"end_turn"}
+
+
+            event: done
+
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Wed, 02 Oct 2024 03:51:23 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1299
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-10-02T03:51:21.453Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: aa5510d2540a901c6614ea4c2530cbe9
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 1017
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_3dd704711f82a44ff6aba261b53b61a03fb8edba658774639148630d838c2d1d
+          - name: user-agent
+            value: defaultClient / v1
+          - name: traceparent
+            value: 00-8ee3ee9aea8cbe4fa26df38c327116f5-afc43e8a8d88606f-01
+          - name: connection
+            value: keep-alive
+          - name: host
+            value: sourcegraph.com
+        headersSize: 415
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 4000
+            messages:
+              - speaker: system
+                text: >-
+                  You are Cody, an AI coding assistant from Sourcegraph.If your
+                  answer contains fenced code blocks in Markdown, include the
+                  relevant full file path in the code block tag using this
+                  structure: ```$LANGUAGE:$FILEPATH```
+
+                  For executable terminal commands: enclose each command in individual "bash" language code block without comments and new lines inside.
+              - speaker: human
+                text: What model are you?
+              - speaker: assistant
+                text: I'm Cody, an AI coding assistant created by Sourcegraph. I'm happy to help
+                  with any coding or development questions you may have! While I
+                  don't know all the details about my underlying model, I'm
+                  confident in my ability to assist with a wide range of
+                  programming tasks. What kind of coding help can I provide for
+                  you today?
+              - speaker: human
+                text: |-
+                  Answer positively without apologizing.
+
+                  Question: What model are you?
+            model: anthropic::2023-06-01::claude-3.5-sonnet
+            temperature: 0
+            topK: -1
+            topP: -1
+        queryString:
+          - name: api-version
+            value: "2"
+          - name: client-name
+            value: defaultclient
+          - name: client-version
+            value: v1
+        url: https://sourcegraph.com/.api/completions/stream?api-version=2&client-name=defaultclient&client-version=v1
+      response:
+        bodySize: 2389
+        content:
+          mimeType: text/event-stream
+          size: 2389
+          text: >+
+            event: completion
+
+            data: {"deltaText":"I am Cody, an advanced AI coding assistant developed by Sourcegraph. I'm designed to provide expert assistance on a wide range of programming and development tasks. My capabilities span numerous programming languages, frameworks, and tools. While I don't have specific information about my underlying model architecture, I'm highly capable and always ready to tackle complex coding challenges. I'm here to offer valuable insights, suggest solutions, and help streamline your development process. How can I put my coding expertise to work for you today?","stopReason":"end_turn"}
+
+
+            event: done
+
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Wed, 02 Oct 2024 03:51:28 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1299
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-10-02T03:51:27.059Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: b9c00b0830f316859dfa3a83d5bdf433
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 3271
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_3dd704711f82a44ff6aba261b53b61a03fb8edba658774639148630d838c2d1d
+          - name: user-agent
+            value: defaultClient / v1
+          - name: traceparent
+            value: 00-63c21cc30345957f1b01c6e05b294e86-aaf96d10c2a837e9-01
           - name: connection
             value: keep-alive
           - name: host
@@ -1174,7 +1795,45 @@ log:
                 text: Ok.
               - speaker: human
                 text: >-
-                  You have access to the provided codebase context.
+                  Analyze the provided context and think step-by-step about
+                  whether you can answer the question using the available
+                  information.
+
+
+                  If you need more information to answer the question, use the following action tags:
+
+
+                  1. For additional context from the codebase:
+                     <CODYTOOLSEARCH><query>$SEARCH_QUERY</query></CODYTOOLSEARCH>
+
+                  2. To see the output of shell commands:
+                     <CODYTOOLCLI><cmd>$SHELL_COMMAND</cmd></CODYTOOLCLI>
+
+                  3. To retrieve full content from a file:
+                     <CODYTOOLFILE><file>$FILEPATH</file></CODYTOOLFILE>
+
+                  Example:
+
+                  To get details for GitHub issue #1234, use:
+
+                  <CODYTOOLCLI><cmd>gh issue view 1234</cmd></CODYTOOLCLI>
+
+
+                  Notes:
+
+                  - Only use the above action tags when you need additional information.
+
+                  - You can request multiple pieces of information in a single response.
+
+                  - When replying to a question with a shell command, enclose the command in a Markdown code block.
+
+                  - If you don't require additional context to answer the question, reply with a single word: "Reviewed".
+
+
+                  You have access to the provided codebase context. 
+
+
+                  Answer positively without apologizing.
 
 
                   Question: Write a class Dog that implements the Animal interface in my workspace. Show the code only, no explanation needed.
@@ -1191,14 +1850,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=2&client-name=defaultclient&client-version=v1
       response:
-        bodySize: 1297
+        bodySize: 2873
         content:
           mimeType: text/event-stream
-          size: 1297
+          size: 2873
           text: >+
             event: completion
 
-            data: {"deltaText":"Here's the implementation of the Dog class that implements the Animal interface:\n\n```typescript:src/dog.ts\nexport class Dog implements Animal {\n    name: string;\n    isMammal: boolean = true;\n\n    constructor(name: string) {\n        this.name = name;\n    }\n\n    makeAnimalSound(): string {\n        return \"Woof!\";\n    }\n}\n```","stopReason":"end_turn"}
+            data: {"deltaText":"To implement the Dog class that implements the Animal interface, I'll need to create a new file for the Dog class. Based on the existing codebase structure, it would be appropriate to create a new file named `dog.ts` in the `src` directory. Here's the implementation:\n\n```typescript:src/dog.ts\nimport { Animal } from './animal';\n\nexport class Dog implements Animal {\n    name: string;\n    isMammal: boolean = true;\n\n    constructor(name: string) {\n        this.name = name;\n    }\n\n    makeAnimalSound(): string {\n        return \"Woof!\";\n    }\n}\n```\n\nThis implementation creates a Dog class that fully implements the Animal interface, including the required properties and method.","stopReason":"end_turn"}
 
 
             event: done
@@ -1208,7 +1867,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Fri, 27 Sep 2024 21:59:58 GMT
+            value: Wed, 02 Oct 2024 03:51:31 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -1237,7 +1896,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-27T21:59:56.684Z
+      startedDateTime: 2024-10-02T03:51:29.549Z
       time: 0
       timings:
         blocked: -1
@@ -1247,11 +1906,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 2080b59219ba40fba05a47b2504f3d98
+    - _id: 753e268b59d7c3eac7c260b0c3426112
       _order: 0
       cache: {}
       request:
-        bodySize: 2156
+        bodySize: 2265
         cookies: []
         headers:
           - name: content-type
@@ -1264,7 +1923,416 @@ log:
           - name: user-agent
             value: defaultClient / v1
           - name: traceparent
-            value: 00-882b5a0781664cefc880338325b166d8-68f830ae4dad173b-01
+            value: 00-63c21cc30345957f1b01c6e05b294e86-09b9d1a5c6c5e68b-01
+          - name: connection
+            value: keep-alive
+          - name: host
+            value: sourcegraph.com
+        headersSize: 415
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 4000
+            messages:
+              - speaker: system
+                text: >-
+                  You are Cody, an AI coding assistant from Sourcegraph.If your
+                  answer contains fenced code blocks in Markdown, include the
+                  relevant full file path in the code block tag using this
+                  structure: ```$LANGUAGE:$FILEPATH```
+
+                  For executable terminal commands: enclose each command in individual "bash" language code block without comments and new lines inside.
+              - speaker: human
+                text: >-
+                  Codebase context from file src/squirrel.ts:
+
+                  ```typescript:src/squirrel.ts
+
+                  /**
+                   * Squirrel is an interface that mocks something completely unrelated to squirrels.
+                   * It is related to the implementation of precise code navigation in Sourcegraph.
+                   */
+                  export interface Squirrel {}
+
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: |-
+                  Codebase context from file src/Heading.tsx:
+                  ```typescript:src/Heading.tsx
+                  import React = require("react");
+
+                  interface HeadingProps {
+                      text: string;
+                      level?: number;
+                  }
+
+                  /* CURSOR */
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: |-
+                  Codebase context from file src/ChatColumn.tsx:
+                  ```typescript:src/ChatColumn.tsx
+                  import { useEffect } from "react";
+                  import React = require("react");
+
+                  /* SELECTION_START */ export default function ChatColumn({
+                  	messages,
+                  	setChatID,
+                  	isLoading,
+                  }) {
+                  	/* SELECTION_END */
+                  	useEffect(() => {
+                  		if (!isLoading) {
+                  			setChatID(messages[0].chatID);
+                  		}
+                  	}, [messages]);
+                  	return (
+                  		<>
+                  			<h1>Messages</h1>
+                  			<ul>
+                  				{messages.map((message) => (
+                  					<li>{message.text}</li>```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: |-
+                  Codebase context from file src/animal.ts:
+                  ```typescript:src/animal.ts
+                  /* SELECTION_START */
+                  export interface Animal {
+                      name: string
+                      makeAnimalSound(): string
+                      isMammal: boolean
+                  }
+                  /* SELECTION_END */
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >-
+                  You have access to the provided codebase context. 
+
+
+                  Answer positively without apologizing.
+
+
+                  Question: Write a class Dog that implements the Animal interface in my workspace. Show the code only, no explanation needed.
+            model: anthropic::2023-06-01::claude-3.5-sonnet
+            temperature: 0
+            topK: -1
+            topP: -1
+        queryString:
+          - name: api-version
+            value: "2"
+          - name: client-name
+            value: defaultclient
+          - name: client-version
+            value: v1
+        url: https://sourcegraph.com/.api/completions/stream?api-version=2&client-name=defaultclient&client-version=v1
+      response:
+        bodySize: 1592
+        content:
+          mimeType: text/event-stream
+          size: 1592
+          text: >+
+            event: completion
+
+            data: {"deltaText":"Certainly! Here's the Dog class that implements the Animal interface:\n\n```typescript:src/dog.ts\nexport class Dog implements Animal {\n    name: string;\n    isMammal: boolean = true;\n\n    constructor(name: string) {\n        this.name = name;\n    }\n\n    makeAnimalSound(): string {\n        return \"Woof!\";\n    }\n}\n```\n\nThis implementation fulfills all the requirements of the Animal interface in your workspace.","stopReason":"end_turn"}
+
+
+            event: done
+
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Wed, 02 Oct 2024 03:51:34 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1299
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-10-02T03:51:32.514Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: ef446d6b512fef6dc208b436af0f245f
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 3205
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_3dd704711f82a44ff6aba261b53b61a03fb8edba658774639148630d838c2d1d
+          - name: user-agent
+            value: defaultClient / v1
+          - name: traceparent
+            value: 00-99cd84bdf628443fe73fdb11effd7bfd-d96643ee70f07c25-01
+          - name: connection
+            value: keep-alive
+          - name: host
+            value: sourcegraph.com
+        headersSize: 415
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 4000
+            messages:
+              - speaker: system
+                text: >-
+                  You are Cody, an AI coding assistant from Sourcegraph.If your
+                  answer contains fenced code blocks in Markdown, include the
+                  relevant full file path in the code block tag using this
+                  structure: ```$LANGUAGE:$FILEPATH```
+
+                  For executable terminal commands: enclose each command in individual "bash" language code block without comments and new lines inside.
+              - speaker: human
+                text: >-
+                  Codebase context from file src/squirrel.ts:
+
+                  ```typescript:src/squirrel.ts
+
+                  /**
+                   * Squirrel is an interface that mocks something completely unrelated to squirrels.
+                   * It is related to the implementation of precise code navigation in Sourcegraph.
+                   */
+                  export interface Squirrel {}
+
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: |-
+                  Codebase context from file src/Heading.tsx:
+                  ```typescript:src/Heading.tsx
+                  import React = require("react");
+
+                  interface HeadingProps {
+                      text: string;
+                      level?: number;
+                  }
+
+                  /* CURSOR */
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: |-
+                  Codebase context from file src/ChatColumn.tsx:
+                  ```typescript:src/ChatColumn.tsx
+                  import { useEffect } from "react";
+                  import React = require("react");
+
+                  /* SELECTION_START */ export default function ChatColumn({
+                  	messages,
+                  	setChatID,
+                  	isLoading,
+                  }) {
+                  	/* SELECTION_END */
+                  	useEffect(() => {
+                  		if (!isLoading) {
+                  			setChatID(messages[0].chatID);
+                  		}
+                  	}, [messages]);
+                  	return (
+                  		<>
+                  			<h1>Messages</h1>
+                  			<ul>
+                  				{messages.map((message) => (
+                  					<li>{message.text}</li>```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: |-
+                  Codebase context from file src/animal.ts:
+                  ```typescript:src/animal.ts
+                  /* SELECTION_START */
+                  export interface Animal {
+                      name: string
+                      makeAnimalSound(): string
+                      isMammal: boolean
+                  }
+                  /* SELECTION_END */
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >-
+                  Analyze the provided context and think step-by-step about
+                  whether you can answer the question using the available
+                  information.
+
+
+                  If you need more information to answer the question, use the following action tags:
+
+
+                  1. For additional context from the codebase:
+                     <CODYTOOLSEARCH><query>$SEARCH_QUERY</query></CODYTOOLSEARCH>
+
+                  2. To see the output of shell commands:
+                     <CODYTOOLCLI><cmd>$SHELL_COMMAND</cmd></CODYTOOLCLI>
+
+                  3. To retrieve full content from a file:
+                     <CODYTOOLFILE><file>$FILEPATH</file></CODYTOOLFILE>
+
+                  Example:
+
+                  To get details for GitHub issue #1234, use:
+
+                  <CODYTOOLCLI><cmd>gh issue view 1234</cmd></CODYTOOLCLI>
+
+
+                  Notes:
+
+                  - Only use the above action tags when you need additional information.
+
+                  - You can request multiple pieces of information in a single response.
+
+                  - When replying to a question with a shell command, enclose the command in a Markdown code block.
+
+                  - If you don't require additional context to answer the question, reply with a single word: "Reviewed".
+
+
+                  You have access to the provided codebase context. 
+
+
+                  Answer positively without apologizing.
+
+
+                  Question: What is Squirrel? Show me concrete code examples
+            model: anthropic::2023-06-01::claude-3.5-sonnet
+            temperature: 0
+            topK: -1
+            topP: -1
+        queryString:
+          - name: api-version
+            value: "2"
+          - name: client-name
+            value: defaultclient
+          - name: client-version
+            value: v1
+        url: https://sourcegraph.com/.api/completions/stream?api-version=2&client-name=defaultclient&client-version=v1
+      response:
+        bodySize: 1831
+        content:
+          mimeType: text/event-stream
+          size: 1831
+          text: >+
+            event: completion
+
+            data: {"deltaText":"To answer this question comprehensively, I'll need to gather more information about the Squirrel interface and its usage in the codebase. Let's start by searching for implementations or uses of the Squirrel interface.\n\n<CODYTOOLSEARCH><query>implements Squirrel OR \"extends Squirrel\" OR \"new Squirrel\"</query></CODYTOOLSEARCH>","stopReason":"end_turn"}
+
+
+            event: done
+
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Wed, 02 Oct 2024 03:51:36 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1299
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-10-02T03:51:34.904Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: bc5ea4255e86d4112cc5cb0478a51a3c
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 2199
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_3dd704711f82a44ff6aba261b53b61a03fb8edba658774639148630d838c2d1d
+          - name: user-agent
+            value: defaultClient / v1
+          - name: traceparent
+            value: 00-99cd84bdf628443fe73fdb11effd7bfd-5dfe9c50d0290336-01
           - name: connection
             value: keep-alive
           - name: host
@@ -1358,7 +2426,9 @@ log:
                 text: Ok.
               - speaker: human
                 text: |-
-                  You have access to the provided codebase context.
+                  You have access to the provided codebase context. 
+
+                  Answer positively without apologizing.
 
                   Question: What is Squirrel? Show me concrete code examples
             model: anthropic::2023-06-01::claude-3.5-sonnet
@@ -1374,14 +2444,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=2&client-name=defaultclient&client-version=v1
       response:
-        bodySize: 6869
+        bodySize: 6714
         content:
           mimeType: text/event-stream
-          size: 6869
+          size: 6714
           text: >+
             event: completion
 
-            data: {"deltaText":"Based on the provided codebase context, the Squirrel is actually an interface defined in the `src/squirrel.ts` file. However, it's important to note that this interface is not actually related to real squirrels. Let me explain and show you the concrete code example:\n\n```typescript:src/squirrel.ts\n/**\n * Squirrel is an interface that mocks something completely unrelated to squirrels.\n * It is related to the implementation of precise code navigation in Sourcegraph.\n */\nexport interface Squirrel {}\n```\n\nKey points about the Squirrel interface:\n\n1. It's an empty interface, which means it doesn't define any properties or methods.\n2. The comment above the interface explicitly states that it's not related to actual squirrels.\n3. Its purpose is related to the implementation of precise code navigation in Sourcegraph.\n\nSince the interface is empty, there aren't any concrete implementations or usage examples in the provided codebase context. The interface might be used as a placeholder or a marker for some internal functionality in Sourcegraph's code navigation system.\n\nTo contrast this with a more concrete example of an interface from the provided codebase, we can look at the Animal interface:\n\n```typescript:src/animal.ts\nexport interface Animal {\n    name: string\n    makeAnimalSound(): string\n    isMammal: boolean\n}\n```\n\nThis Animal interface is more typical, defining properties and methods that implementations would need to provide. However, we don't have any concrete implementations of either Squirrel or Animal in the given codebase context.","stopReason":"end_turn"}
+            data: {"deltaText":"Certainly! I'd be happy to explain Squirrel and provide concrete code examples based on the codebase context.\n\nSquirrel is an interface defined in the codebase, specifically in the file `src/squirrel.ts`. While its name might suggest something related to the animal, it's actually used for a different purpose. According to the comment, it's related to the implementation of precise code navigation in Sourcegraph.\n\nHere's the concrete code example of the Squirrel interface:\n\n```typescript:src/squirrel.ts\nexport interface Squirrel {}\n```\n\nAs you can see, the Squirrel interface is currently empty. This could mean it's a placeholder for future implementation or it's used as a marker interface for type-checking purposes.\n\nWhile we don't have direct usage examples of Squirrel in the provided codebase context, we can imagine how it might be used in a larger Sourcegraph project. For instance, it could be implemented or extended like this:\n\n```typescript:src/squirrel-implementation.ts\nimport { Squirrel } from './squirrel';\n\nclass PreciseNavigation implements Squirrel {\n    navigate(file: string, position: number): void {\n        // Implementation for precise code navigation\n    }\n}\n```\n\nThis is a hypothetical example of how the Squirrel interface might be used in the context of precise code navigation. The actual implementation would depend on Sourcegraph's specific requirements and architecture.\n\nRemember, the purpose of Squirrel is not related to the animal, but rather to code navigation functionality in Sourcegraph.","stopReason":"end_turn"}
 
 
             event: done
@@ -1391,7 +2461,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Fri, 27 Sep 2024 22:00:00 GMT
+            value: Wed, 02 Oct 2024 03:51:39 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -1420,7 +2490,647 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-27T21:59:58.764Z
+      startedDateTime: 2024-10-02T03:51:37.404Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: fa8d5e6e7c0ca85adabbe1a40e6f6e90
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 3027
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_3dd704711f82a44ff6aba261b53b61a03fb8edba658774639148630d838c2d1d
+          - name: user-agent
+            value: defaultClient / v1
+          - name: traceparent
+            value: 00-ab4925a3fa25a2e95e05361e9a628c7c-c5343739aee34a4d-01
+          - name: connection
+            value: keep-alive
+          - name: host
+            value: sourcegraph.com
+        headersSize: 415
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 4000
+            messages:
+              - speaker: system
+                text: >-
+                  You are Cody, an AI coding assistant from Sourcegraph.If your
+                  answer contains fenced code blocks in Markdown, include the
+                  relevant full file path in the code block tag using this
+                  structure: ```$LANGUAGE:$FILEPATH```
+
+                  For executable terminal commands: enclose each command in individual "bash" language code block without comments and new lines inside.
+              - speaker: human
+                text: >
+                  Codebase context from file path src/animal.ts: /*
+                  SELECTION_START */
+
+                  export interface Animal {
+                      name: string
+                      makeAnimalSound(): string
+                      isMammal: boolean
+                  }
+
+                  /* SELECTION_END */
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: |-
+                  My selected code from codebase file src/animal.ts:1-6:
+                  ```
+
+                  export interface Animal {
+                      name: string
+                      makeAnimalSound(): string
+                      isMammal: boolean
+                  }
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >-
+                  Analyze the provided context and think step-by-step about
+                  whether you can answer the question using the available
+                  information.
+
+
+                  If you need more information to answer the question, use the following action tags:
+
+
+                  1. For additional context from the codebase:
+                     <CODYTOOLSEARCH><query>$SEARCH_QUERY</query></CODYTOOLSEARCH>
+
+                  2. To see the output of shell commands:
+                     <CODYTOOLCLI><cmd>$SHELL_COMMAND</cmd></CODYTOOLCLI>
+
+                  3. To retrieve full content from a file:
+                     <CODYTOOLFILE><file>$FILEPATH</file></CODYTOOLFILE>
+
+                  Example:
+
+                  To get details for GitHub issue #1234, use:
+
+                  <CODYTOOLCLI><cmd>gh issue view 1234</cmd></CODYTOOLCLI>
+
+
+                  Notes:
+
+                  - Only use the above action tags when you need additional information.
+
+                  - You can request multiple pieces of information in a single response.
+
+                  - When replying to a question with a shell command, enclose the command in a Markdown code block.
+
+                  - If you don't require additional context to answer the question, reply with a single word: "Reviewed".
+
+
+                  You have access to the provided codebase context. 
+
+
+                  Answer positively without apologizing.
+
+
+                  Question: Explain what @src/animal.ts:1-6 ( @src/animal.ts ) does in simple terms. Assume the audience is a beginner programmer who has just learned the language features and basic syntax. Focus on explaining: 1) The purpose of the code 2) What input(s) it takes 3) What output(s) it produces 4) How it achieves its purpose through the logic and algorithm. 5) Any important logic flows or data transformations happening. Use simple language a beginner could understand. Include enough detail to give a full picture of what the code aims to accomplish without getting too technical. Format the explanation in coherent paragraphs, using proper punctuation and grammar. Write the explanation assuming no prior context about the code is known. Do not make assumptions about variables or functions not shown in the shared code. Start the answer with the name of the code that is being explained.
+            model: anthropic::2023-06-01::claude-3.5-sonnet
+            temperature: 0
+            topK: -1
+            topP: -1
+        queryString:
+          - name: api-version
+            value: "2"
+          - name: client-name
+            value: defaultclient
+          - name: client-version
+            value: v1
+        url: https://sourcegraph.com/.api/completions/stream?api-version=2&client-name=defaultclient&client-version=v1
+      response:
+        bodySize: 8307
+        content:
+          mimeType: text/event-stream
+          size: 8307
+          text: >+
+            event: completion
+
+            data: {"deltaText":"Reviewed.\n\nThe code in @src/animal.ts:1-6 defines an interface called `Animal`. Here's a simple explanation of what this code does:\n\n1) Purpose of the code:\nThis code creates a blueprint for what an Animal object should look like in the program. It sets up a structure that other parts of the code can use to ensure they're working with a proper Animal object.\n\n2) Inputs:\nThe interface itself doesn't take any inputs. It's a definition, not a function that runs. However, any object that wants to be considered an Animal will need to provide values for the properties defined in this interface.\n\n3) Outputs:\nThe interface doesn't produce any direct outputs. Instead, it defines what an Animal object should be capable of doing or what properties it should have.\n\n4) How it achieves its purpose:\nThe interface achieves its purpose by declaring three key aspects of an Animal:\n- It should have a `name` property that's a string.\n- It should have a `makeAnimalSound()` method that returns a string.\n- It should have an `isMammal` property that's a boolean (true or false).\n\n5) Important logic flows or data transformations:\nThere aren't any logic flows or data transformations in this code because it's an interface definition. It's setting up a structure for other parts of the code to follow, rather than performing any actions itself.\n\nIn simpler terms, think of this interface as a checklist for what makes something an Animal in this program. If you want to create an Animal, you need to make sure it has a name, can make a sound, and specify whether it's a mammal or not. This helps keep the code organized and ensures that all Animals in the program have the same basic structure, which can be very helpful when writing more complex code that deals with different types of animals.","stopReason":"end_turn"}
+
+
+            event: done
+
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Wed, 02 Oct 2024 03:51:45 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1299
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-10-02T03:51:43.158Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: 268f59c18b5882cd7d0ff054be1eb61e
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 1967
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_3dd704711f82a44ff6aba261b53b61a03fb8edba658774639148630d838c2d1d
+          - name: user-agent
+            value: defaultClient / v1
+          - name: traceparent
+            value: 00-ab4925a3fa25a2e95e05361e9a628c7c-9f01147ba494c426-01
+          - name: connection
+            value: keep-alive
+          - name: host
+            value: sourcegraph.com
+        headersSize: 415
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 4000
+            messages:
+              - speaker: system
+                text: >-
+                  You are Cody, an AI coding assistant from Sourcegraph.If your
+                  answer contains fenced code blocks in Markdown, include the
+                  relevant full file path in the code block tag using this
+                  structure: ```$LANGUAGE:$FILEPATH```
+
+                  For executable terminal commands: enclose each command in individual "bash" language code block without comments and new lines inside.
+              - speaker: human
+                text: >
+                  Codebase context from file path src/animal.ts: /*
+                  SELECTION_START */
+
+                  export interface Animal {
+                      name: string
+                      makeAnimalSound(): string
+                      isMammal: boolean
+                  }
+
+                  /* SELECTION_END */
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: |-
+                  My selected code from codebase file src/animal.ts:1-6:
+                  ```
+
+                  export interface Animal {
+                      name: string
+                      makeAnimalSound(): string
+                      isMammal: boolean
+                  }
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >-
+                  Answer positively without apologizing.
+
+
+                  Question: Explain what @src/animal.ts:1-6 ( @src/animal.ts ) does in simple terms. Assume the audience is a beginner programmer who has just learned the language features and basic syntax. Focus on explaining: 1) The purpose of the code 2) What input(s) it takes 3) What output(s) it produces 4) How it achieves its purpose through the logic and algorithm. 5) Any important logic flows or data transformations happening. Use simple language a beginner could understand. Include enough detail to give a full picture of what the code aims to accomplish without getting too technical. Format the explanation in coherent paragraphs, using proper punctuation and grammar. Write the explanation assuming no prior context about the code is known. Do not make assumptions about variables or functions not shown in the shared code. Start the answer with the name of the code that is being explained.
+            model: anthropic::2023-06-01::claude-3.5-sonnet
+            temperature: 0
+            topK: -1
+            topP: -1
+        queryString:
+          - name: api-version
+            value: "2"
+          - name: client-name
+            value: defaultclient
+          - name: client-version
+            value: v1
+        url: https://sourcegraph.com/.api/completions/stream?api-version=2&client-name=defaultclient&client-version=v1
+      response:
+        bodySize: 8520
+        content:
+          mimeType: text/event-stream
+          size: 8520
+          text: >+
+            event: completion
+
+            data: {"deltaText":"The code in @src/animal.ts:1-6 defines an interface called Animal. This interface serves as a blueprint for creating animal objects in a TypeScript program. Let's break down what this code does in simple terms:\n\n1) The purpose of this code is to establish a standard structure for animal objects in the program. It defines what properties and methods any animal object should have.\n\n2) This interface doesn't take any inputs directly. Instead, it specifies what information and behaviors should be included when creating an animal object.\n\n3) The interface itself doesn't produce any outputs. However, it ensures that any object implementing this interface will have specific properties and methods that can be used to get information about the animal or make it perform certain actions.\n\n4) The Animal interface achieves its purpose by declaring three key elements that any animal object should have:\n   - A 'name' property of type string, which would store the animal's name.\n   - A 'makeAnimalSound' method that returns a string, which would represent the sound the animal makes.\n   - An 'isMammal' property of type boolean, which indicates whether the animal is a mammal or not.\n\n5) While there's no complex logic or data transformation happening in this interface, it sets up a structure that ensures consistency across different animal objects in the program. By using this interface, developers can create various animal objects that all share these common characteristics, making it easier to work with different types of animals in a uniform way.\n\nThis interface acts as a contract, stating that any object representing an animal in the program must have a name, be able to make a sound, and specify whether it's a mammal. This structure helps organize code and ensures that all animal objects in the program have the same basic set of properties and behaviors, which can be very useful when working with multiple types of animals in a larger application.","stopReason":"end_turn"}
+
+
+            event: done
+
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Wed, 02 Oct 2024 03:51:51 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1299
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-10-02T03:51:49.842Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: e439a2dcfedb49b27b3a324afe5638ea
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 2823
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_3dd704711f82a44ff6aba261b53b61a03fb8edba658774639148630d838c2d1d
+          - name: user-agent
+            value: defaultClient / v1
+          - name: traceparent
+            value: 00-820d97926586f4323d72c3b55f2f400f-7622edee9377b98f-01
+          - name: connection
+            value: keep-alive
+          - name: host
+            value: sourcegraph.com
+        headersSize: 415
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 4000
+            messages:
+              - speaker: system
+                text: >-
+                  You are Cody, an AI coding assistant from Sourcegraph.If your
+                  answer contains fenced code blocks in Markdown, include the
+                  relevant full file path in the code block tag using this
+                  structure: ```$LANGUAGE:$FILEPATH```
+
+                  For executable terminal commands: enclose each command in individual "bash" language code block without comments and new lines inside.
+              - speaker: human
+                text: >
+                  Codebase context from file path src/animal.ts: /*
+                  SELECTION_START */
+
+                  export interface Animal {
+                      name: string
+                      makeAnimalSound(): string
+                      isMammal: boolean
+                  }
+
+                  /* SELECTION_END */
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: |-
+                  My selected code from codebase file src/animal.ts:1-6:
+                  ```
+
+                  export interface Animal {
+                      name: string
+                      makeAnimalSound(): string
+                      isMammal: boolean
+                  }
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >-
+                  Analyze the provided context and think step-by-step about
+                  whether you can answer the question using the available
+                  information.
+
+
+                  If you need more information to answer the question, use the following action tags:
+
+
+                  1. For additional context from the codebase:
+                     <CODYTOOLSEARCH><query>$SEARCH_QUERY</query></CODYTOOLSEARCH>
+
+                  2. To see the output of shell commands:
+                     <CODYTOOLCLI><cmd>$SHELL_COMMAND</cmd></CODYTOOLCLI>
+
+                  3. To retrieve full content from a file:
+                     <CODYTOOLFILE><file>$FILEPATH</file></CODYTOOLFILE>
+
+                  Example:
+
+                  To get details for GitHub issue #1234, use:
+
+                  <CODYTOOLCLI><cmd>gh issue view 1234</cmd></CODYTOOLCLI>
+
+
+                  Notes:
+
+                  - Only use the above action tags when you need additional information.
+
+                  - You can request multiple pieces of information in a single response.
+
+                  - When replying to a question with a shell command, enclose the command in a Markdown code block.
+
+                  - If you don't require additional context to answer the question, reply with a single word: "Reviewed".
+
+
+                  You have access to the provided codebase context. 
+
+
+                  Answer positively without apologizing.
+
+
+                  Question: Please review and analyze @src/animal.ts:1-6 ( @src/animal.ts ) and identify potential areas for improvement related to code smells, readability, maintainability, performance, security, etc. Do not list issues already addressed in the given code. Focus on providing up to 5 constructive suggestions that could make the code more robust, efficient, or align with best practices. For each suggestion, provide a brief explanation of the potential benefits. After listing any recommendations, summarize if you found notable opportunities to enhance the code quality overall or if the code generally follows sound design principles. If no issues found, reply 'There are no errors.'
+            model: anthropic::2023-06-01::claude-3.5-sonnet
+            temperature: 0
+            topK: -1
+            topP: -1
+        queryString:
+          - name: api-version
+            value: "2"
+          - name: client-name
+            value: defaultclient
+          - name: client-version
+            value: v1
+        url: https://sourcegraph.com/.api/completions/stream?api-version=2&client-name=defaultclient&client-version=v1
+      response:
+        bodySize: 9998
+        content:
+          mimeType: text/event-stream
+          size: 9998
+          text: >+
+            event: completion
+
+            data: {"deltaText":"Reviewed.\n\nBased on the provided code snippet from src/animal.ts, here are some potential areas for improvement:\n\n1. Type for makeAnimalSound(): The method `makeAnimalSound()` returns a string, but it might be more appropriate to use a specific type or union type if there are predefined sound options. For example:\n\n```typescript:src/animal.ts\nmakeAnimalSound(): 'bark' | 'meow' | 'roar' | string;\n```\n\nThis change would provide better type safety and make the interface more self-documenting.\n\n2. Optional properties: Depending on the use case, some properties might be optional. If that's the case, you could use the optional property syntax:\n\n```typescript:src/animal.ts\nname?: string;\n```\n\nThis allows for more flexibility in implementing the interface.\n\n3. Readonly properties: If the `name` and `isMammal` properties are not meant to be changed after initialization, consider making them readonly:\n\n```typescript:src/animal.ts\nreadonly name: string;\nreadonly isMammal: boolean;\n```\n\nThis ensures immutability and can prevent accidental modifications.\n\n4. Method naming: The method name `makeAnimalSound()` could be simplified to just `makeSound()` since it's already in the context of an Animal interface:\n\n```typescript:src/animal.ts\nmakeSound(): string;\n```\n\nThis makes the code more concise without losing clarity.\n\n5. Documentation: Adding JSDoc comments to describe the interface and its properties/methods can improve code readability and provide better IDE support:\n\n```typescript:src/animal.ts\n/**\n * Represents an animal with basic properties and behaviors.\n */\nexport interface Animal {\n    /** The name of the animal */\n    name: string;\n    /** Produces the sound made by the animal */\n    makeAnimalSound(): string;\n    /** Indicates whether the animal is a mammal */\n    isMammal: boolean;\n}\n```\n\nSummary:\nWhile the current code is concise and follows basic TypeScript interface conventions, there are opportunities to enhance its robustness, type safety, and documentation. The suggested improvements focus on making the interface more self-documenting, type-safe, and aligned with best practices for TypeScript development. Overall, the original code provides a solid foundation, and these recommendations aim to refine and strengthen its design.","stopReason":"end_turn"}
+
+
+            event: done
+
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Wed, 02 Oct 2024 03:51:58 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1299
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-10-02T03:51:56.469Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: a800cd4fe1c845febcf3dc1bac34af2b
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 1763
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_3dd704711f82a44ff6aba261b53b61a03fb8edba658774639148630d838c2d1d
+          - name: user-agent
+            value: defaultClient / v1
+          - name: traceparent
+            value: 00-820d97926586f4323d72c3b55f2f400f-315ba78b25b13543-01
+          - name: connection
+            value: keep-alive
+          - name: host
+            value: sourcegraph.com
+        headersSize: 415
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 4000
+            messages:
+              - speaker: system
+                text: >-
+                  You are Cody, an AI coding assistant from Sourcegraph.If your
+                  answer contains fenced code blocks in Markdown, include the
+                  relevant full file path in the code block tag using this
+                  structure: ```$LANGUAGE:$FILEPATH```
+
+                  For executable terminal commands: enclose each command in individual "bash" language code block without comments and new lines inside.
+              - speaker: human
+                text: >
+                  Codebase context from file path src/animal.ts: /*
+                  SELECTION_START */
+
+                  export interface Animal {
+                      name: string
+                      makeAnimalSound(): string
+                      isMammal: boolean
+                  }
+
+                  /* SELECTION_END */
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: |-
+                  My selected code from codebase file src/animal.ts:1-6:
+                  ```
+
+                  export interface Animal {
+                      name: string
+                      makeAnimalSound(): string
+                      isMammal: boolean
+                  }
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >-
+                  Answer positively without apologizing.
+
+
+                  Question: Please review and analyze @src/animal.ts:1-6 ( @src/animal.ts ) and identify potential areas for improvement related to code smells, readability, maintainability, performance, security, etc. Do not list issues already addressed in the given code. Focus on providing up to 5 constructive suggestions that could make the code more robust, efficient, or align with best practices. For each suggestion, provide a brief explanation of the potential benefits. After listing any recommendations, summarize if you found notable opportunities to enhance the code quality overall or if the code generally follows sound design principles. If no issues found, reply 'There are no errors.'
+            model: anthropic::2023-06-01::claude-3.5-sonnet
+            temperature: 0
+            topK: -1
+            topP: -1
+        queryString:
+          - name: api-version
+            value: "2"
+          - name: client-name
+            value: defaultclient
+          - name: client-version
+            value: v1
+        url: https://sourcegraph.com/.api/completions/stream?api-version=2&client-name=defaultclient&client-version=v1
+      response:
+        bodySize: 13511
+        content:
+          mimeType: text/event-stream
+          size: 13511
+          text: >+
+            event: completion
+
+            data: {"deltaText":"Certainly! I'll review the code and provide constructive suggestions for improvement. Here's the analysis of the `Animal` interface in `src/animal.ts`:\n\n1. Consider adding readonly modifiers:\n   Adding `readonly` to properties that shouldn't change after initialization can prevent accidental modifications.\n\n   ```typescript:src/animal.ts\n   export interface Animal {\n       readonly name: string\n       makeAnimalSound(): string\n       readonly isMammal: boolean\n   }\n   ```\n\n   This change ensures that `name` and `isMammal` cannot be modified after an object is created, enhancing type safety.\n\n2. Use method signature consistency:\n   For consistency, consider using the same style for method declarations. You could change `makeAnimalSound()` to a property with a function type.\n\n   ```typescript:src/animal.ts\n   export interface Animal {\n       name: string\n       makeAnimalSound: () => string\n       isMammal: boolean\n   }\n   ```\n\n   This approach makes all members consistent in style and can be beneficial when working with React components or other frameworks that prefer this syntax.\n\n3. Add JSDoc comments:\n   Including JSDoc comments can improve code documentation and provide better intellisense in IDEs.\n\n   ```typescript:src/animal.ts\n   /**\n    * Represents an animal with basic properties and behaviors.\n    */\n   export interface Animal {\n       /** The name of the animal */\n       name: string\n       /** Makes the sound associated with this animal */\n       makeAnimalSound(): string\n       /** Indicates whether the animal is a mammal */\n       isMammal: boolean\n   }\n   ```\n\n   This addition enhances code readability and self-documentation.\n\n4. Consider using a type alias for the sound:\n   If the animal sound is always a specific type (e.g., onomatopoeia), you could create a type alias for it.\n\n   ```typescript:src/animal.ts\n   type AnimalSound = string\n\n   export interface Animal {\n       name: string\n       makeAnimalSound(): AnimalSound\n       isMammal: boolean\n   }\n   ```\n\n   This change adds semantic meaning to the return type of `makeAnimalSound()` and allows for easy expansion if needed in the future.\n\n5. Add an optional species property:\n   Including an optional species property could make the interface more flexible for various use cases.\n\n   ```typescript:src/animal.ts\n   export interface Animal {\n       name: string\n       makeAnimalSound(): string\n       isMammal: boolean\n       species?: string\n   }\n   ```\n\n   This addition allows for more detailed animal representations when needed, without making it mandatory for all cases.\n\nSummary:\nThe given code follows sound design principles and provides a clear, concise interface for an Animal. The suggestions provided aim to enhance type safety, consistency, documentation, and flexibility. While these improvements could make the code more robust and maintainable, the original implementation is already well-structured and doesn't contain any significant issues or code smells.","stopReason":"end_turn"}
+
+
+            event: done
+
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Wed, 02 Oct 2024 03:52:06 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1299
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-10-02T03:52:04.866Z
       time: 0
       timings:
         blocked: -1
@@ -4618,6 +6328,119 @@ log:
         send: 0
         ssl: -1
         wait: 0
+    - _id: 066488f5e9584070fc66b8d8d68f6ec6
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 891
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_3dd704711f82a44ff6aba261b53b61a03fb8edba658774639148630d838c2d1d
+          - name: user-agent
+            value: defaultClient / v1
+          - name: traceparent
+            value: 00-8ee3ee9aea8cbe4fa26df38c327116f5-41527dc6a7680160-01
+          - name: connection
+            value: keep-alive
+          - name: host
+            value: sourcegraph.com
+        headersSize: 401
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            fast: true
+            maxTokensToSample: 400
+            messages:
+              - speaker: human
+                text: You are Cody, an AI coding assistant from Sourcegraph.
+              - speaker: assistant
+                text: I am Cody, an AI coding assistant from Sourcegraph.
+              - speaker: human
+                text: "You are helping the user search over a codebase. List some filename
+                  fragments that would match files relevant to read to answer
+                  the user's query. Present your results in a *single* XML list
+                  in the following format: <keywords><keyword><value>a single
+                  keyword</value><variants>a space separated list of synonyms
+                  and variants of the keyword, including acronyms,
+                  abbreviations, and expansions</variants><weight>a numerical
+                  weight between 0.0 and 1.0 that indicates the importance of
+                  the keyword</weight></keyword></keywords>. Here is the user
+                  query: <userQuery>cody model configuration</userQuery>"
+              - speaker: assistant
+            temperature: 0
+            topK: 1
+        queryString:
+          - name: client-name
+            value: defaultclient
+          - name: client-version
+            value: v1
+        url: https://sourcegraph.com/.api/completions/stream?client-name=defaultclient&client-version=v1
+      response:
+        bodySize: 54057
+        content:
+          mimeType: text/event-stream
+          size: 54057
+          text: >+
+            event: completion
+
+            data: {"completion":"Here's a list of filename fragments that would be relevant for searching files related to \"cody model configuration\":\n\n<keywords>\n  <keyword>\n    <value>cody</value>\n    <variants>cody-assistant codyai</variants>\n    <weight>1.0</weight>\n  </keyword>\n  <keyword>\n    <value>model</value>\n    <variants>ai-model language-model llm</variants>\n    <weight>0.9</weight>\n  </keyword>\n  <keyword>\n    <value>config</value>\n    <variants>configuration settings options</variants>\n    <weight>0.9</weight>\n  </keyword>\n  <keyword>\n    <value>params</value>\n    <variants>parameters hyperparameters</variants>\n    <weight>0.8</weight>\n  </keyword>\n  <keyword>\n    <value>setup</value>\n    <variants>init initialize</variants>\n    <weight>0.7</weight>\n  </keyword>\n  <keyword>\n    <value>ai</value>\n    <variants>artificial-intelligence machine-learning ml</variants>\n    <weight>0.6</weight>\n  </keyword>\n</keywords>","stopReason":"end_turn"}
+
+
+            event: done
+
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Wed, 02 Oct 2024 03:51:24 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1299
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-10-02T03:51:23.658Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
     - _id: 593703b9e8dae3048fc259cb22a25a4f
       _order: 0
       cache: {}
@@ -5986,6 +7809,121 @@ log:
         status: 200
         statusText: OK
       startedDateTime: 2024-09-19T04:38:48.788Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: 7f763bcc46333f518a4cf13241ddf367
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 246
+        cookies: []
+        headers:
+          - _fromType: array
+            name: authorization
+            value: token
+              REDACTED_3dd704711f82a44ff6aba261b53b61a03fb8edba658774639148630d838c2d1d
+          - _fromType: array
+            name: content-type
+            value: application/json; charset=utf-8
+          - _fromType: array
+            name: traceparent
+            value: 00-8ee3ee9aea8cbe4fa26df38c327116f5-22353f64fea205dd-01
+          - _fromType: array
+            name: user-agent
+            value: defaultClient / v1
+          - _fromType: array
+            name: accept
+            value: "*/*"
+          - _fromType: array
+            name: content-length
+            value: "246"
+          - _fromType: array
+            name: accept-encoding
+            value: gzip,deflate
+          - name: host
+            value: sourcegraph.com
+        headersSize: 447
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json; charset=utf-8
+          params: []
+          textJSON:
+            query: |
+              
+              query Repositories($names: [String!]!, $first: Int!) {
+                  repositories(names: $names, first: $first) {
+                    nodes {
+                      name
+                      id
+                    }
+                  }
+                }
+            variables:
+              first: 1
+              names:
+                - github.com/sourcegraph/cody
+        queryString:
+          - name: Repositories
+            value: null
+        url: https://sourcegraph.com/.api/graphql?Repositories
+      response:
+        bodySize: 180
+        content:
+          encoding: base64
+          mimeType: application/json
+          size: 180
+          text: "[\"H4sIAAAAAAAAAxTHsQ7CIBQF0H+5s7GJTpJ0cHKiLuhiHCjvpWWgjwCNIYR/N93OaSBbL\
+            FRD4ijZF0me8/FN6MCnYbOBobD4su7z2UkYsuzJ8ZJsXAcnVHGCJyi8wvs3X6dIj1tl\
+            IxdtdJ2Mrs/7OKJ/e+9/AAAA//8DAE12uGxwAAAA\"]"
+          textDecoded:
+            data:
+              repositories:
+                nodes:
+                  - id: UmVwb3NpdG9yeTo2MTMyNTMyOA==
+                    name: github.com/sourcegraph/cody
+        cookies: []
+        headers:
+          - name: date
+            value: Wed, 02 Oct 2024 03:51:23 GMT
+          - name: content-type
+            value: application/json
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache, max-age=0
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+          - name: content-encoding
+            value: gzip
+        headersSize: 1473
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-10-02T03:51:23.480Z
       time: 0
       timings:
         blocked: -1

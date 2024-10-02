@@ -414,11 +414,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: b59ea82b0f24299dc941ee310563d4d3
+    - _id: 46d121d9e82397fa4b65c448990ff09a
       _order: 0
       cache: {}
       request:
-        bodySize: 1256
+        bodySize: 2368
         cookies: []
         headers:
           - name: content-type
@@ -431,7 +431,7 @@ log:
           - name: user-agent
             value: customCommandsClient / v1
           - name: traceparent
-            value: 00-3adf229090878a9a6e35b188339a0d9a-8752c6f9286f5fe5-01
+            value: 00-9cbb281bfbaad188ad758d94b50d99c7-469d07b6f5a2d414-01
           - name: connection
             value: keep-alive
           - name: host
@@ -480,9 +480,49 @@ log:
               - speaker: assistant
                 text: Ok.
               - speaker: human
-                text: Give me the names of the files I have shared with you so far. Format the
-                  response as a bulleted list. Only include the raw filename, no
-                  extra formatting like quotes.
+                text: >-
+                  Analyze the provided context and think step-by-step about
+                  whether you can answer the question using the available
+                  information.
+
+
+                  If you need more information to answer the question, use the following action tags:
+
+
+                  1. For additional context from the codebase:
+                     <CODYTOOLSEARCH><query>$SEARCH_QUERY</query></CODYTOOLSEARCH>
+
+                  2. To see the output of shell commands:
+                     <CODYTOOLCLI><cmd>$SHELL_COMMAND</cmd></CODYTOOLCLI>
+
+                  3. To retrieve full content from a file:
+                     <CODYTOOLFILE><file>$FILEPATH</file></CODYTOOLFILE>
+
+                  Example:
+
+                  To get details for GitHub issue #1234, use:
+
+                  <CODYTOOLCLI><cmd>gh issue view 1234</cmd></CODYTOOLCLI>
+
+
+                  Notes:
+
+                  - Only use the above action tags when you need additional information.
+
+                  - You can request multiple pieces of information in a single response.
+
+                  - When replying to a question with a shell command, enclose the command in a Markdown code block.
+
+                  - If you don't require additional context to answer the question, reply with a single word: "Reviewed".
+
+
+                  You have access to the provided codebase context. 
+
+
+                  Answer positively without apologizing.
+
+
+                  Question: Give me the names of the files I have shared with you so far. Format the response as a bulleted list. Only include the raw filename, no extra formatting like quotes.
             model: anthropic::2023-06-01::claude-3.5-sonnet
             temperature: 0
             topK: -1
@@ -496,14 +536,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=2&client-name=customcommandsclient&client-version=v1
       response:
-        bodySize: 699
+        bodySize: 718
         content:
           mimeType: text/event-stream
-          size: 699
+          size: 718
           text: >+
             event: completion
 
-            data: {"deltaText":"Here's a bulleted list of the filenames you've shared with me so far:\n\n• example3.ts\n• example2.ts\n• example1.ts","stopReason":"end_turn"}
+            data: {"deltaText":"Reviewed.\n\nHere's a bulleted list of the filenames you've shared with me so far:\n\n- src/example3.ts\n- src/example2.ts\n- src/example1.ts","stopReason":"end_turn"}
 
 
             event: done
@@ -513,7 +553,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Fri, 27 Sep 2024 17:28:46 GMT
+            value: Wed, 02 Oct 2024 03:51:10 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -542,7 +582,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-27T17:28:45.771Z
+      startedDateTime: 2024-10-02T03:51:08.900Z
       time: 0
       timings:
         blocked: -1
@@ -552,11 +592,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 24ed74efe3e1c78b973ab613f117f2fd
+    - _id: be3e678db83df966dc4e882ba427f433
       _order: 0
       cache: {}
       request:
-        bodySize: 624
+        bodySize: 1308
         cookies: []
         headers:
           - name: content-type
@@ -569,7 +609,7 @@ log:
           - name: user-agent
             value: customCommandsClient / v1
           - name: traceparent
-            value: 00-26fb9de3d38aab3b3cd42b93244ac196-4502d6fc8ee55b9e-01
+            value: 00-9cbb281bfbaad188ad758d94b50d99c7-48143791bf07c0e6-01
           - name: connection
             value: keep-alive
           - name: host
@@ -592,8 +632,186 @@ log:
 
                   For executable terminal commands: enclose each command in individual "bash" language code block without comments and new lines inside.
               - speaker: human
-                text: Did I share any code with you? If yes, reply single word 'yes'. If none,
-                  reply 'no'.
+                text: >
+                  Codebase context from file path src/example3.ts: export
+                  function example(): string {
+                      return 'example'
+                  }
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >
+                  Codebase context from file path src/example2.ts: export
+                  function example(): string {
+                      return 'example'
+                  }
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: |-
+                  My selected code from codebase file src/example1.ts:1-3:
+                  ```
+                  export function example(): string {
+                      return 'example'
+                  }
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >-
+                  Answer positively without apologizing.
+
+
+                  Question: Give me the names of the files I have shared with you so far. Format the response as a bulleted list. Only include the raw filename, no extra formatting like quotes.
+            model: anthropic::2023-06-01::claude-3.5-sonnet
+            temperature: 0
+            topK: -1
+            topP: -1
+        queryString:
+          - name: api-version
+            value: "2"
+          - name: client-name
+            value: customcommandsclient
+          - name: client-version
+            value: v1
+        url: https://sourcegraph.com/.api/completions/stream?api-version=2&client-name=customcommandsclient&client-version=v1
+      response:
+        bodySize: 1004
+        content:
+          mimeType: text/event-stream
+          size: 1004
+          text: >+
+            event: completion
+
+            data: {"deltaText":"Certainly! Here's a bulleted list of the filenames you've shared with me so far:\n\n• example3.ts\n• example2.ts\n• example1.ts\n\nThese are the three files you've provided information about in our conversation.","stopReason":"end_turn"}
+
+
+            event: done
+
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Wed, 02 Oct 2024 03:51:11 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1299
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-10-02T03:51:10.293Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: ce11e10eb93b6b5196948009298f3fa3
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 1682
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_3dd704711f82a44ff6aba261b53b61a03fb8edba658774639148630d838c2d1d
+          - name: user-agent
+            value: customCommandsClient / v1
+          - name: traceparent
+            value: 00-7bd1f0d86f262097c3f1f7ae4838c1c9-d8fd06aa7392224f-01
+          - name: connection
+            value: keep-alive
+          - name: host
+            value: sourcegraph.com
+        headersSize: 429
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 4000
+            messages:
+              - speaker: system
+                text: >-
+                  You are Cody, an AI coding assistant from Sourcegraph.If your
+                  answer contains fenced code blocks in Markdown, include the
+                  relevant full file path in the code block tag using this
+                  structure: ```$LANGUAGE:$FILEPATH```
+
+                  For executable terminal commands: enclose each command in individual "bash" language code block without comments and new lines inside.
+              - speaker: human
+                text: >-
+                  Analyze the provided context and think step-by-step about
+                  whether you can answer the question using the available
+                  information.
+
+
+                  If you need more information to answer the question, use the following action tags:
+
+
+                  1. For additional context from the codebase:
+                     <CODYTOOLSEARCH><query>$SEARCH_QUERY</query></CODYTOOLSEARCH>
+
+                  2. To see the output of shell commands:
+                     <CODYTOOLCLI><cmd>$SHELL_COMMAND</cmd></CODYTOOLCLI>
+
+                  3. To retrieve full content from a file:
+                     <CODYTOOLFILE><file>$FILEPATH</file></CODYTOOLFILE>
+
+                  Example:
+
+                  To get details for GitHub issue #1234, use:
+
+                  <CODYTOOLCLI><cmd>gh issue view 1234</cmd></CODYTOOLCLI>
+
+
+                  Notes:
+
+                  - Only use the above action tags when you need additional information.
+
+                  - You can request multiple pieces of information in a single response.
+
+                  - When replying to a question with a shell command, enclose the command in a Markdown code block.
+
+                  - If you don't require additional context to answer the question, reply with a single word: "Reviewed".
+
+
+                  Answer positively without apologizing.
+
+
+                  Question: Did I share any code with you? If yes, reply single word 'yes'. If none, reply 'no'.
             model: anthropic::2023-06-01::claude-3.5-sonnet
             temperature: 0
             topK: -1
@@ -621,7 +839,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Fri, 27 Sep 2024 17:28:47 GMT
+            value: Wed, 02 Oct 2024 03:51:12 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -650,7 +868,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-27T17:28:47.033Z
+      startedDateTime: 2024-10-02T03:51:11.631Z
       time: 0
       timings:
         blocked: -1
@@ -660,11 +878,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: f76f88602508ad8fee9290a1c7a53094
+    - _id: 35373d98674d062ce232d9d153445ee8
       _order: 0
       cache: {}
       request:
-        bodySize: 2368
+        bodySize: 676
         cookies: []
         headers:
           - name: content-type
@@ -677,7 +895,118 @@ log:
           - name: user-agent
             value: customCommandsClient / v1
           - name: traceparent
-            value: 00-b43df7f6d0d10b418bdadbde8c1f93ae-8d9acb629a561b98-01
+            value: 00-7bd1f0d86f262097c3f1f7ae4838c1c9-6e20c0b5864e6bd5-01
+          - name: connection
+            value: keep-alive
+          - name: host
+            value: sourcegraph.com
+        headersSize: 429
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 4000
+            messages:
+              - speaker: system
+                text: >-
+                  You are Cody, an AI coding assistant from Sourcegraph.If your
+                  answer contains fenced code blocks in Markdown, include the
+                  relevant full file path in the code block tag using this
+                  structure: ```$LANGUAGE:$FILEPATH```
+
+                  For executable terminal commands: enclose each command in individual "bash" language code block without comments and new lines inside.
+              - speaker: human
+                text: >-
+                  Answer positively without apologizing.
+
+
+                  Question: Did I share any code with you? If yes, reply single word 'yes'. If none, reply 'no'.
+            model: anthropic::2023-06-01::claude-3.5-sonnet
+            temperature: 0
+            topK: -1
+            topP: -1
+        queryString:
+          - name: api-version
+            value: "2"
+          - name: client-name
+            value: customcommandsclient
+          - name: client-version
+            value: v1
+        url: https://sourcegraph.com/.api/completions/stream?api-version=2&client-name=customcommandsclient&client-version=v1
+      response:
+        bodySize: 117
+        content:
+          mimeType: text/event-stream
+          size: 117
+          text: |+
+            event: completion
+            data: {"deltaText":"No","stopReason":"end_turn"}
+
+            event: done
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Wed, 02 Oct 2024 03:51:13 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1299
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-10-02T03:51:12.628Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: eca75886dacaa6beb033fb820adcd2d5
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 3480
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_3dd704711f82a44ff6aba261b53b61a03fb8edba658774639148630d838c2d1d
+          - name: user-agent
+            value: customCommandsClient / v1
+          - name: traceparent
+            value: 00-b7afe65c1f9192c30095e951a2ae8b7b-4706dc3d01b8576a-01
           - name: connection
             value: keep-alive
           - name: host
@@ -780,8 +1109,49 @@ log:
               - speaker: assistant
                 text: Ok.
               - speaker: human
-                text: How many file context have I shared with you? Reply single number. Skip
-                  preamble.
+                text: >-
+                  Analyze the provided context and think step-by-step about
+                  whether you can answer the question using the available
+                  information.
+
+
+                  If you need more information to answer the question, use the following action tags:
+
+
+                  1. For additional context from the codebase:
+                     <CODYTOOLSEARCH><query>$SEARCH_QUERY</query></CODYTOOLSEARCH>
+
+                  2. To see the output of shell commands:
+                     <CODYTOOLCLI><cmd>$SHELL_COMMAND</cmd></CODYTOOLCLI>
+
+                  3. To retrieve full content from a file:
+                     <CODYTOOLFILE><file>$FILEPATH</file></CODYTOOLFILE>
+
+                  Example:
+
+                  To get details for GitHub issue #1234, use:
+
+                  <CODYTOOLCLI><cmd>gh issue view 1234</cmd></CODYTOOLCLI>
+
+
+                  Notes:
+
+                  - Only use the above action tags when you need additional information.
+
+                  - You can request multiple pieces of information in a single response.
+
+                  - When replying to a question with a shell command, enclose the command in a Markdown code block.
+
+                  - If you don't require additional context to answer the question, reply with a single word: "Reviewed".
+
+
+                  You have access to the provided codebase context. 
+
+
+                  Answer positively without apologizing.
+
+
+                  Question: How many file context have I shared with you? Reply single number. Skip preamble.
             model: anthropic::2023-06-01::claude-3.5-sonnet
             temperature: 0
             topK: -1
@@ -809,7 +1179,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Fri, 27 Sep 2024 17:28:48 GMT
+            value: Wed, 02 Oct 2024 03:51:14 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -838,7 +1208,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-27T17:28:47.857Z
+      startedDateTime: 2024-10-02T03:51:13.224Z
       time: 0
       timings:
         blocked: -1
@@ -848,11 +1218,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 9770a01996412d8957a010c901b260b9
+    - _id: 490a57ff4b2ea7a020fe38c9d0336f17
       _order: 0
       cache: {}
       request:
-        bodySize: 1115
+        bodySize: 2420
         cookies: []
         headers:
           - name: content-type
@@ -865,7 +1235,7 @@ log:
           - name: user-agent
             value: customCommandsClient / v1
           - name: traceparent
-            value: 00-f15b89ed3202e2796cf0595fbc11ddc5-63ab36cfd082bde8-01
+            value: 00-b7afe65c1f9192c30095e951a2ae8b7b-9dd220f85a366476-01
           - name: connection
             value: keep-alive
           - name: host
@@ -880,250 +1250,13 @@ log:
             maxTokensToSample: 4000
             messages:
               - speaker: system
-                text: "You are Cody, an AI coding assistant from Sourcegraph.If your answer
-                  contains fenced code blocks in Markdown, include the relevant
-                  full file path in the code block tag using this structure:
-                  ```$LANGUAGE:$FILEPATH```."
-              - speaker: human
-                text: >
-                  Codebase context from file path src/example3.ts: export
-                  function example(): string {
-                      return 'example'
-                  }
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: >
-                  Codebase context from file path src/example2.ts: export
-                  function example(): string {
-                      return 'example'
-                  }
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: |-
-                  My selected code from codebase file src/example1.ts:1-3:
-                  ```
-                  export function example(): string {
-                      return 'example'
-                  }
-                  ```
-              - speaker: assistant
-                text: Ok.
-              - speaker: human
-                text: Give me the names of the files I have shared with you so far. Format the
-                  response as a bulleted list. Only include the raw filename, no
-                  extra formatting like quotes.
-            model: anthropic/claude-3-5-sonnet-20240620
-            temperature: 0
-            topK: -1
-            topP: -1
-        queryString:
-          - name: api-version
-            value: "2"
-          - name: client-name
-            value: customcommandsclient
-          - name: client-version
-            value: v1
-        url: https://sourcegraph.com/.api/completions/stream?api-version=2&client-name=customcommandsclient&client-version=v1
-      response:
-        bodySize: 699
-        content:
-          mimeType: text/event-stream
-          size: 699
-          text: >+
-            event: completion
+                text: >-
+                  You are Cody, an AI coding assistant from Sourcegraph.If your
+                  answer contains fenced code blocks in Markdown, include the
+                  relevant full file path in the code block tag using this
+                  structure: ```$LANGUAGE:$FILEPATH```
 
-            data: {"deltaText":"Here's a bulleted list of the filenames you've shared with me so far:\n\n• example3.ts\n• example2.ts\n• example1.ts","stopReason":"end_turn"}
-
-
-            event: done
-
-            data: {}
-
-        cookies: []
-        headers:
-          - name: date
-            value: Wed, 25 Sep 2024 22:38:23 GMT
-          - name: content-type
-            value: text/event-stream
-          - name: transfer-encoding
-            value: chunked
-          - name: connection
-            value: keep-alive
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache
-          - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
-              X-Requested-With,Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1299
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2024-09-25T22:38:21.896Z
-      time: 0
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 0
-    - _id: c61c807642c00401db65857da9d48925
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 483
-        cookies: []
-        headers:
-          - name: content-type
-            value: application/json
-          - name: accept-encoding
-            value: gzip;q=0
-          - name: authorization
-            value: token
-              REDACTED_3dd704711f82a44ff6aba261b53b61a03fb8edba658774639148630d838c2d1d
-          - name: user-agent
-            value: customCommandsClient / v1
-          - name: traceparent
-            value: 00-d671d40cf07aa35182158348562f2848-02342858cb706dff-01
-          - name: connection
-            value: keep-alive
-          - name: host
-            value: sourcegraph.com
-        headersSize: 429
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json
-          params: []
-          textJSON:
-            maxTokensToSample: 4000
-            messages:
-              - speaker: system
-                text: "You are Cody, an AI coding assistant from Sourcegraph.If your answer
-                  contains fenced code blocks in Markdown, include the relevant
-                  full file path in the code block tag using this structure:
-                  ```$LANGUAGE:$FILEPATH```."
-              - speaker: human
-                text: Did I share any code with you? If yes, reply single word 'yes'. If none,
-                  reply 'no'.
-            model: anthropic/claude-3-5-sonnet-20240620
-            temperature: 0
-            topK: -1
-            topP: -1
-        queryString:
-          - name: api-version
-            value: "2"
-          - name: client-name
-            value: customcommandsclient
-          - name: client-version
-            value: v1
-        url: https://sourcegraph.com/.api/completions/stream?api-version=2&client-name=customcommandsclient&client-version=v1
-      response:
-        bodySize: 117
-        content:
-          mimeType: text/event-stream
-          size: 117
-          text: |+
-            event: completion
-            data: {"deltaText":"No","stopReason":"end_turn"}
-
-            event: done
-            data: {}
-
-        cookies: []
-        headers:
-          - name: date
-            value: Wed, 25 Sep 2024 22:38:23 GMT
-          - name: content-type
-            value: text/event-stream
-          - name: transfer-encoding
-            value: chunked
-          - name: connection
-            value: keep-alive
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache
-          - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
-              X-Requested-With,Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1299
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2024-09-25T22:38:23.092Z
-      time: 0
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 0
-    - _id: a4cd3b2f572cd62233548215c5a8e477
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 2227
-        cookies: []
-        headers:
-          - name: content-type
-            value: application/json
-          - name: accept-encoding
-            value: gzip;q=0
-          - name: authorization
-            value: token
-              REDACTED_3dd704711f82a44ff6aba261b53b61a03fb8edba658774639148630d838c2d1d
-          - name: user-agent
-            value: customCommandsClient / v1
-          - name: traceparent
-            value: 00-ddf331dc6615351817153b5973f11e05-ed3e47bc776865a6-01
-          - name: connection
-            value: keep-alive
-          - name: host
-            value: sourcegraph.com
-        headersSize: 429
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json
-          params: []
-          textJSON:
-            maxTokensToSample: 4000
-            messages:
-              - speaker: system
-                text: "You are Cody, an AI coding assistant from Sourcegraph.If your answer
-                  contains fenced code blocks in Markdown, include the relevant
-                  full file path in the code block tag using this structure:
-                  ```$LANGUAGE:$FILEPATH```."
+                  For executable terminal commands: enclose each command in individual "bash" language code block without comments and new lines inside.
               - speaker: human
                 text: >
                   Codebase context from file path src/sum.ts: export function
@@ -1205,9 +1338,12 @@ log:
               - speaker: assistant
                 text: Ok.
               - speaker: human
-                text: How many file context have I shared with you? Reply single number. Skip
-                  preamble.
-            model: anthropic/claude-3-5-sonnet-20240620
+                text: >-
+                  Answer positively without apologizing.
+
+
+                  Question: How many file context have I shared with you? Reply single number. Skip preamble.
+            model: anthropic::2023-06-01::claude-3.5-sonnet
             temperature: 0
             topK: -1
             topP: -1
@@ -1234,7 +1370,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Wed, 25 Sep 2024 22:38:24 GMT
+            value: Wed, 02 Oct 2024 03:51:15 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -1263,7 +1399,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-25T22:38:23.676Z
+      startedDateTime: 2024-10-02T03:51:14.258Z
       time: 0
       timings:
         blocked: -1

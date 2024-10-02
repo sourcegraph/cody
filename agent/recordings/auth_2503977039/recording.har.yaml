@@ -199,6 +199,152 @@ log:
         send: 0
         ssl: -1
         wait: 0
+    - _id: 46721cce8f0c913904b2271a143ae8ac
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 1581
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_3dd704711f82a44ff6aba261b53b61a03fb8edba658774639148630d838c2d1d
+          - name: user-agent
+            value: auth / v1
+          - name: traceparent
+            value: 00-33e30ff6f06b1d5589585a95854b61f8-f9855e2ab6383aed-01
+          - name: connection
+            value: keep-alive
+          - name: host
+            value: sourcegraph.com
+        headersSize: 397
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 4000
+            messages:
+              - speaker: system
+                text: >-
+                  You are Cody, an AI coding assistant from Sourcegraph.If your
+                  answer contains fenced code blocks in Markdown, include the
+                  relevant full file path in the code block tag using this
+                  structure: ```$LANGUAGE:$FILEPATH```
+
+                  For executable terminal commands: enclose each command in individual "bash" language code block without comments and new lines inside.
+              - speaker: human
+                text: >-
+                  Analyze the provided context and think step-by-step about
+                  whether you can answer the question using the available
+                  information.
+
+
+                  If you need more information to answer the question, use the following action tags:
+
+
+                  1. For additional context from the codebase:
+                     <CODYTOOLSEARCH><query>$SEARCH_QUERY</query></CODYTOOLSEARCH>
+
+                  2. To see the output of shell commands:
+                     <CODYTOOLCLI><cmd>$SHELL_COMMAND</cmd></CODYTOOLCLI>
+
+                  3. To retrieve full content from a file:
+                     <CODYTOOLFILE><file>$FILEPATH</file></CODYTOOLFILE>
+
+                  Example:
+
+                  To get details for GitHub issue #1234, use:
+
+                  <CODYTOOLCLI><cmd>gh issue view 1234</cmd></CODYTOOLCLI>
+
+
+                  Notes:
+
+                  - Only use the above action tags when you need additional information.
+
+                  - You can request multiple pieces of information in a single response.
+
+                  - When replying to a question with a shell command, enclose the command in a Markdown code block.
+
+                  - If you don't require additional context to answer the question, reply with a single word: "Reviewed".
+
+
+                  Question: hello after reauthentication
+            model: anthropic::2023-06-01::claude-3-haiku
+            temperature: 0
+            topK: -1
+            topP: -1
+        queryString:
+          - name: api-version
+            value: "2"
+          - name: client-name
+            value: auth
+          - name: client-version
+            value: v1
+        url: https://sourcegraph.com/.api/completions/stream?api-version=2&client-name=auth&client-version=v1
+      response:
+        bodySize: 4530
+        content:
+          mimeType: text/event-stream
+          size: 4530
+          text: >+
+            event: completion
+
+            data: {"deltaText":"Hmm, let me think through this step-by-step:\n\nThe provided context does not contain any code or other information that would allow me to determine what the question is asking about. Without more details, I do not have enough information to provide a meaningful answer.\n\n<CODYTOOLSEARCH><query>hello after reauthentication</query></CODYTOOLSEARCH>\n\nTo better understand the context and answer the question, I would need more information, such as:\n\n- What is the specific scenario or use case where this \"hello after reauthentication\" is happening?\n- Is this related to a web application, mobile app, or some other system?\n- What is the expected behavior or desired outcome when this \"hello after reauthentication\" occurs?\n\nWithout additional context, I'm unable to provide a clear answer. Could you please provide more details about the problem you're trying to solve? That would help me understand the situation better and formulate a more helpful response.","stopReason":"end_turn"}
+
+
+            event: done
+
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Wed, 02 Oct 2024 03:51:05 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1299
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-10-02T03:51:04.654Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
     - _id: e91b84ea768b5eed28380699acd05fc6
       _order: 0
       cache: {}
@@ -1548,11 +1694,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 9b9152f0377dec9ed637889dbf8ddfe5
+    - _id: 1b1e65084ef4c99501a0c797ea553ea2
       _order: 0
       cache: {}
       request:
-        bodySize: 570
+        bodySize: 1628
         cookies: []
         headers:
           - name: content-type
@@ -1565,7 +1711,7 @@ log:
           - name: user-agent
             value: auth / v1
           - name: traceparent
-            value: 00-34de8606d62cb93bff6d663b17d64a7d-0898b03bd6648012-01
+            value: 00-e1604fd5bb4017737d27a64e96d408a1-c9f844fd3b52504a-01
           - name: connection
             value: keep-alive
           - name: host
@@ -1588,7 +1734,46 @@ log:
 
                   For executable terminal commands: enclose each command in individual "bash" language code block without comments and new lines inside.
               - speaker: human
-                text: hello after switching accounts
+                text: >-
+                  Analyze the provided context and think step-by-step about
+                  whether you can answer the question using the available
+                  information.
+
+
+                  If you need more information to answer the question, use the following action tags:
+
+
+                  1. For additional context from the codebase:
+                     <CODYTOOLSEARCH><query>$SEARCH_QUERY</query></CODYTOOLSEARCH>
+
+                  2. To see the output of shell commands:
+                     <CODYTOOLCLI><cmd>$SHELL_COMMAND</cmd></CODYTOOLCLI>
+
+                  3. To retrieve full content from a file:
+                     <CODYTOOLFILE><file>$FILEPATH</file></CODYTOOLFILE>
+
+                  Example:
+
+                  To get details for GitHub issue #1234, use:
+
+                  <CODYTOOLCLI><cmd>gh issue view 1234</cmd></CODYTOOLCLI>
+
+
+                  Notes:
+
+                  - Only use the above action tags when you need additional information.
+
+                  - You can request multiple pieces of information in a single response.
+
+                  - When replying to a question with a shell command, enclose the command in a Markdown code block.
+
+                  - If you don't require additional context to answer the question, reply with a single word: "Reviewed".
+
+
+                  Answer positively without apologizing.
+
+
+                  Question: hello after switching accounts
             model: anthropic::2023-06-01::claude-3.5-sonnet
             temperature: 0
             topK: -1
@@ -1602,14 +1787,14 @@ log:
             value: v1
         url: https://sourcegraph.sourcegraph.com/.api/completions/stream?api-version=2&client-name=auth&client-version=v1
       response:
-        bodySize: 1531
+        bodySize: 1493
         content:
           mimeType: text/event-stream
-          size: 1531
+          size: 1493
           text: >+
             event: completion
 
-            data: {"deltaText":"Hello! It's nice to meet you. I'm Cody, an AI coding assistant from Sourcegraph. How can I help you today? Whether you have questions about coding, need help with a programming task, or want to discuss software development topics, I'm here to assist. What would you like to work on?","stopReason":"end_turn"}
+            data: {"deltaText":"Hello! It seems you've switched accounts. How can I assist you today? Is there a specific coding task or question you'd like help with? I'm here to provide support on a wide range of programming topics, so feel free to ask anything related to code, development, or software engineering.","stopReason":"end_turn"}
 
 
             event: done
@@ -1619,7 +1804,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Fri, 27 Sep 2024 17:28:53 GMT
+            value: Wed, 02 Oct 2024 03:51:26 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -1648,7 +1833,120 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-27T17:28:51.566Z
+      startedDateTime: 2024-10-02T03:51:24.852Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: efcea9325c02ab43fe2a2ec1446e679f
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 622
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_4229eb42e0efa2f15f3e6f8843764c7f92ab8051020cc4e90802f4fc0cc91bfa
+          - name: user-agent
+            value: auth / v1
+          - name: traceparent
+            value: 00-e1604fd5bb4017737d27a64e96d408a1-3d3bfc7d654fc3ab-01
+          - name: connection
+            value: keep-alive
+          - name: host
+            value: sourcegraph.sourcegraph.com
+        headersSize: 421
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 4000
+            messages:
+              - speaker: system
+                text: >-
+                  You are Cody, an AI coding assistant from Sourcegraph.If your
+                  answer contains fenced code blocks in Markdown, include the
+                  relevant full file path in the code block tag using this
+                  structure: ```$LANGUAGE:$FILEPATH```
+
+                  For executable terminal commands: enclose each command in individual "bash" language code block without comments and new lines inside.
+              - speaker: human
+                text: |-
+                  Answer positively without apologizing.
+
+                  Question: hello after switching accounts
+            model: anthropic::2023-06-01::claude-3.5-sonnet
+            temperature: 0
+            topK: -1
+            topP: -1
+        queryString:
+          - name: api-version
+            value: "2"
+          - name: client-name
+            value: auth
+          - name: client-version
+            value: v1
+        url: https://sourcegraph.sourcegraph.com/.api/completions/stream?api-version=2&client-name=auth&client-version=v1
+      response:
+        bodySize: 932
+        content:
+          mimeType: text/event-stream
+          size: 932
+          text: >+
+            event: completion
+
+            data: {"deltaText":"Hello there! It's great to see you after switching accounts. Welcome back! I'm here and ready to assist you with any questions or tasks you may have. What would you like to work on today?","stopReason":"end_turn"}
+
+
+            event: done
+
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Wed, 02 Oct 2024 03:51:28 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
+              Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1215
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-10-02T03:51:26.716Z
       time: 0
       timings:
         blocked: -1

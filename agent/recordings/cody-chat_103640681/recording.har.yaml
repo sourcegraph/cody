@@ -89,11 +89,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: b789e742db8bc977e50cd181bc632b9a
+    - _id: 9206dc9559c96fbe4b4d4c15590607dd
       _order: 0
       cache: {}
       request:
-        bodySize: 581
+        bodySize: 1639
         cookies: []
         headers:
           - name: content-type
@@ -127,7 +127,46 @@ log:
 
                   For executable terminal commands: enclose each command in individual "bash" language code block without comments and new lines inside.
               - speaker: human
-                text: respond with "hello" and nothing else
+                text: >-
+                  Analyze the provided context and think step-by-step about
+                  whether you can answer the question using the available
+                  information.
+
+
+                  If you need more information to answer the question, use the following action tags:
+
+
+                  1. For additional context from the codebase:
+                     <CODYTOOLSEARCH><query>$SEARCH_QUERY</query></CODYTOOLSEARCH>
+
+                  2. To see the output of shell commands:
+                     <CODYTOOLCLI><cmd>$SHELL_COMMAND</cmd></CODYTOOLCLI>
+
+                  3. To retrieve full content from a file:
+                     <CODYTOOLFILE><file>$FILEPATH</file></CODYTOOLFILE>
+
+                  Example:
+
+                  To get details for GitHub issue #1234, use:
+
+                  <CODYTOOLCLI><cmd>gh issue view 1234</cmd></CODYTOOLCLI>
+
+
+                  Notes:
+
+                  - Only use the above action tags when you need additional information.
+
+                  - You can request multiple pieces of information in a single response.
+
+                  - When replying to a question with a shell command, enclose the command in a Markdown code block.
+
+                  - If you don't require additional context to answer the question, reply with a single word: "Reviewed".
+
+
+                  Answer positively without apologizing.
+
+
+                  Question: respond with "hello" and nothing else
             model: anthropic::2023-06-01::claude-3.5-sonnet
             temperature: 0.2
             topK: -1
@@ -141,24 +180,21 @@ log:
             value: 6.0.0-SNAPSHOT
         url: https://sourcegraph.sourcegraph.com/.api/completions/stream?api-version=2&client-name=jetbrains&client-version=6.0.0-SNAPSHOT
       response:
-        bodySize: 227
+        bodySize: 120
         content:
           mimeType: text/event-stream
-          size: 227
-          text: >+
+          size: 120
+          text: |+
             event: completion
-
-            data: {"deltaText":"```bash\necho \"hello\"\n```","stopReason":"end_turn"}
-
+            data: {"deltaText":"hello","stopReason":"end_turn"}
 
             event: done
-
             data: {}
 
         cookies: []
         headers:
           - name: date
-            value: Fri, 27 Sep 2024 17:28:46 GMT
+            value: Wed, 02 Oct 2024 03:51:09 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -187,7 +223,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-27T17:28:45.110Z
+      startedDateTime: 2024-10-02T03:51:08.472Z
       time: 0
       timings:
         blocked: -1
@@ -197,11 +233,119 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: f87119efb12a2f1fb24bc666fd2a060e
+    - _id: 23a44d4c520153097bf7b1d3e60681ab
       _order: 0
       cache: {}
       request:
-        bodySize: 863
+        bodySize: 633
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_4229eb42e0efa2f15f3e6f8843764c7f92ab8051020cc4e90802f4fc0cc91bfa
+          - name: user-agent
+            value: cody-cli / 6.0.0-SNAPSHOT
+          - name: connection
+            value: keep-alive
+          - name: host
+            value: sourcegraph.sourcegraph.com
+        headersSize: 384
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 4000
+            messages:
+              - speaker: system
+                text: >-
+                  You are Cody, an AI coding assistant from Sourcegraph.If your
+                  answer contains fenced code blocks in Markdown, include the
+                  relevant full file path in the code block tag using this
+                  structure: ```$LANGUAGE:$FILEPATH```
+
+                  For executable terminal commands: enclose each command in individual "bash" language code block without comments and new lines inside.
+              - speaker: human
+                text: |-
+                  Answer positively without apologizing.
+
+                  Question: respond with "hello" and nothing else
+            model: anthropic::2023-06-01::claude-3.5-sonnet
+            temperature: 0.2
+            topK: -1
+            topP: -1
+        queryString:
+          - name: api-version
+            value: "2"
+          - name: client-name
+            value: jetbrains
+          - name: client-version
+            value: 6.0.0-SNAPSHOT
+        url: https://sourcegraph.sourcegraph.com/.api/completions/stream?api-version=2&client-name=jetbrains&client-version=6.0.0-SNAPSHOT
+      response:
+        bodySize: 120
+        content:
+          mimeType: text/event-stream
+          size: 120
+          text: |+
+            event: completion
+            data: {"deltaText":"Hello","stopReason":"end_turn"}
+
+            event: done
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Wed, 02 Oct 2024 03:51:10 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
+              Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1215
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-10-02T03:51:09.773Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: 1c2356a6a95898e711845ed6526d63c7
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 1912
         cookies: []
         headers:
           - name: content-type
@@ -246,7 +390,45 @@ log:
                 text: Ok.
               - speaker: human
                 text: >-
-                  You have access to the provided codebase context.
+                  Analyze the provided context and think step-by-step about
+                  whether you can answer the question using the available
+                  information.
+
+
+                  If you need more information to answer the question, use the following action tags:
+
+
+                  1. For additional context from the codebase:
+                     <CODYTOOLSEARCH><query>$SEARCH_QUERY</query></CODYTOOLSEARCH>
+
+                  2. To see the output of shell commands:
+                     <CODYTOOLCLI><cmd>$SHELL_COMMAND</cmd></CODYTOOLCLI>
+
+                  3. To retrieve full content from a file:
+                     <CODYTOOLFILE><file>$FILEPATH</file></CODYTOOLFILE>
+
+                  Example:
+
+                  To get details for GitHub issue #1234, use:
+
+                  <CODYTOOLCLI><cmd>gh issue view 1234</cmd></CODYTOOLCLI>
+
+
+                  Notes:
+
+                  - Only use the above action tags when you need additional information.
+
+                  - You can request multiple pieces of information in a single response.
+
+                  - When replying to a question with a shell command, enclose the command in a Markdown code block.
+
+                  - If you don't require additional context to answer the question, reply with a single word: "Reviewed".
+
+
+                  You have access to the provided codebase context. 
+
+
+                  Answer positively without apologizing.
 
 
                   Question: implement a cow. Only print the code without any explanation.
@@ -263,14 +445,14 @@ log:
             value: 6.0.0-SNAPSHOT
         url: https://sourcegraph.sourcegraph.com/.api/completions/stream?api-version=2&client-name=jetbrains&client-version=6.0.0-SNAPSHOT
       response:
-        bodySize: 1092
+        bodySize: 2661
         content:
           mimeType: text/event-stream
-          size: 1092
+          size: 2661
           text: >+
             event: completion
 
-            data: {"deltaText":"Here's the implementation of a cow based on the provided `StrangeAnimal` interface:\n\n```typescript:animal.ts\nclass Cow implements StrangeAnimal {\n    makesSound(): 'coo' | 'moo' {\n        return 'moo';\n    }\n}\n```","stopReason":"end_turn"}
+            data: {"deltaText":"To implement a cow based on the provided `StrangeAnimal` interface, I can create a new class. However, I'll need to create a new file for this implementation. Let's call it `cow.ts`. Here's the implementation:\n\n```typescript:cow.ts\nimport { StrangeAnimal } from './animal';\n\nclass Cow implements StrangeAnimal {\n    makesSound(): 'coo' | 'moo' {\n        return 'moo';\n    }\n}\n\nexport default Cow;\n```\n\nThis implementation creates a `Cow` class that implements the `StrangeAnimal` interface, with the `makesSound` method returning 'moo' as required for a cow.","stopReason":"end_turn"}
 
 
             event: done
@@ -280,7 +462,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Fri, 27 Sep 2024 22:00:02 GMT
+            value: Wed, 02 Oct 2024 03:51:14 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -309,7 +491,132 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-27T22:00:00.568Z
+      startedDateTime: 2024-10-02T03:51:13.058Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: 56594b01930b420d51d91017d4c1bab7
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 906
+        cookies: []
+        headers:
+          - name: content-type
+            value: application/json
+          - name: accept-encoding
+            value: gzip;q=0
+          - name: authorization
+            value: token
+              REDACTED_4229eb42e0efa2f15f3e6f8843764c7f92ab8051020cc4e90802f4fc0cc91bfa
+          - name: user-agent
+            value: cody-cli / 6.0.0-SNAPSHOT
+          - name: connection
+            value: keep-alive
+          - name: host
+            value: sourcegraph.sourcegraph.com
+        headersSize: 384
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json
+          params: []
+          textJSON:
+            maxTokensToSample: 4000
+            messages:
+              - speaker: system
+                text: >-
+                  You are Cody, an AI coding assistant from Sourcegraph.If your
+                  answer contains fenced code blocks in Markdown, include the
+                  relevant full file path in the code block tag using this
+                  structure: ```$LANGUAGE:$FILEPATH```
+
+                  For executable terminal commands: enclose each command in individual "bash" language code block without comments and new lines inside.
+              - speaker: human
+                text: |-
+                  Codebase context from file animal.ts:
+                  ```typescript:animal.ts
+                  interface StrangeAnimal {
+                      makesSound(): 'coo' | 'moo'
+                  }
+                  ```
+              - speaker: assistant
+                text: Ok.
+              - speaker: human
+                text: >-
+                  You have access to the provided codebase context. 
+
+
+                  Answer positively without apologizing.
+
+
+                  Question: implement a cow. Only print the code without any explanation.
+            model: anthropic::2023-06-01::claude-3.5-sonnet
+            temperature: 0.2
+            topK: -1
+            topP: -1
+        queryString:
+          - name: api-version
+            value: "2"
+          - name: client-name
+            value: jetbrains
+          - name: client-version
+            value: 6.0.0-SNAPSHOT
+        url: https://sourcegraph.sourcegraph.com/.api/completions/stream?api-version=2&client-name=jetbrains&client-version=6.0.0-SNAPSHOT
+      response:
+        bodySize: 948
+        content:
+          mimeType: text/event-stream
+          size: 948
+          text: >+
+            event: completion
+
+            data: {"deltaText":"Here's the implementation of a cow based on the provided context:\n\n```typescript:animal.ts\nclass Cow implements StrangeAnimal {\n    makesSound(): 'coo' | 'moo' {\n        return 'moo';\n    }\n}\n```","stopReason":"end_turn"}
+
+
+            event: done
+
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Wed, 02 Oct 2024 03:51:16 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
+              Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1215
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-10-02T03:51:15.610Z
       time: 0
       timings:
         blocked: -1
@@ -1034,6 +1341,71 @@ log:
         status: 200
         statusText: OK
       startedDateTime: 2024-09-25T17:46:26.850Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: 10275f6e98e5e43a8a69d487a759f45e
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 0
+        cookies: []
+        headers:
+          - _fromType: array
+            name: authorization
+            value: token
+              REDACTED_4229eb42e0efa2f15f3e6f8843764c7f92ab8051020cc4e90802f4fc0cc91bfa
+          - _fromType: array
+            name: content-type
+            value: application/json; charset=utf-8
+          - _fromType: array
+            name: user-agent
+            value: cody-cli / 6.0.0-SNAPSHOT
+          - _fromType: array
+            name: accept
+            value: "*/*"
+          - _fromType: array
+            name: accept-encoding
+            value: gzip,deflate
+          - name: host
+            value: sourcegraph.sourcegraph.com
+        headersSize: 309
+        httpVersion: HTTP/1.1
+        method: GET
+        queryString: []
+        url: https://sourcegraph.sourcegraph.com/healthz
+      response:
+        bodySize: 34
+        content:
+          mimeType: text/plain; charset=utf-8
+          size: 34
+          text: 293309_2024-10-01_5.7-665d59524c0f
+        cookies: []
+        headers:
+          - name: date
+            value: Wed, 02 Oct 2024 03:51:18 GMT
+          - name: content-type
+            value: text/plain; charset=utf-8
+          - name: content-length
+            value: "34"
+          - name: connection
+            value: keep-alive
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+          - name: x-content-type-options
+            value: nosniff
+        headersSize: 976
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-10-02T03:51:18.285Z
       time: 0
       timings:
         blocked: -1

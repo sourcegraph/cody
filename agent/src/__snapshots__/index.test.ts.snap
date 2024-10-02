@@ -1,58 +1,35 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`Agent > Chat > chat/restore (With null model) 1`] = `"I apologize for any confusion. To clarify, I am Cody, an AI coding assistant created by Sourcegraph. I don't have specific information about the underlying model architecture or training details used to create me. My purpose is to assist with coding and development tasks, but I don't have access to or knowledge about my own technical specifications. Is there a particular coding or development task I can help you with today?"`;
+exports[`Agent > Chat > chat/restore (With null model) 1`] = `"I am Cody, an advanced AI coding assistant developed by Sourcegraph. I'm designed to provide expert assistance on a wide range of programming and development tasks. My capabilities span numerous programming languages, frameworks, and tools. While I don't have specific information about my underlying model architecture, I'm highly capable and always ready to tackle complex coding challenges. I'm here to offer valuable insights, suggest solutions, and help streamline your development process. How can I put my coding expertise to work for you today?"`;
 
 exports[`Agent > Chat > chat/submitMessage (long message) 1`] = `
-"Certainly! I'll generate a simple "Hello, World!" function in Java for you. Here's the code:
+"Certainly! I'd be happy to generate a simple "Hello World" function in Java for you. Here's a straightforward implementation:
 
 \`\`\`java:/src/HelloWorld.java
 public class HelloWorld {
     public static void main(String[] args) {
-        sayHello();
-    }
-
-    public static void sayHello() {
         System.out.println("Hello, World!");
     }
 }
 \`\`\`
 
-This Java code defines a class called \`HelloWorld\` with two methods:
+This Java code defines a class called \`HelloWorld\` with a \`main\` method, which is the entry point of the program. The \`System.out.println()\` function is used to output the "Hello, World!" message to the console.
 
-1. The \`main\` method, which is the entry point of the program.
-2. The \`sayHello\` method, which prints "Hello, World!" to the console.
-
-To run this program, you would need to:
-
-1. Save the file as \`HelloWorld.java\` in a directory of your choice.
-2. Compile the Java file using the Java compiler.
-3. Run the compiled class file.
-
-Here are the commands to compile and run the program, assuming you're in the directory containing the \`HelloWorld.java\` file:
-
-To compile the Java file:
+To compile and run this Java program, you can use the following commands in your terminal:
 
 \`\`\`bash
 javac HelloWorld.java
 \`\`\`
 
-To run the compiled program:
-
 \`\`\`bash
 java HelloWorld
 \`\`\`
 
-When you run the program, it will output:
-
-\`\`\`
-Hello, World!
-\`\`\`
-
-This simple example demonstrates how to create a basic function in Java that prints a message to the console."
+These commands will compile the Java source file and then execute the compiled program, displaying the "Hello, World!" message on your screen. Enjoy your Java programming!"
 `;
 
 exports[`Agent > Chat > chat/submitMessage (with mock context) 1`] = `
-"Here's the implementation of the Dog class that implements the Animal interface:
+"Certainly! Here's the Dog class that implements the Animal interface:
 
 \`\`\`typescript:src/dog.ts
 export class Dog implements Animal {
@@ -67,55 +44,61 @@ export class Dog implements Animal {
         return "Woof!";
     }
 }
-\`\`\`"
+\`\`\`
+
+This implementation fulfills all the requirements of the Animal interface in your workspace."
 `;
 
 exports[`Agent > Commands > commands/explain 1`] = `
-"The code in src/animal.ts defines an interface called Animal. An interface in TypeScript is a way to define a structure for objects, specifying what properties and methods they should have.
+"The code in @src/animal.ts:1-6 defines an interface called Animal. This interface serves as a blueprint for creating animal objects in a TypeScript program. Let's break down what this code does in simple terms:
 
-The purpose of this Animal interface is to create a blueprint for animal objects in a program. It doesn't contain any actual implementation; instead, it sets up a contract that any object representing an animal should follow.
+1) The purpose of this code is to establish a standard structure for animal objects in the program. It defines what properties and methods any animal object should have.
 
-This interface doesn't take any inputs or produce any outputs directly. Instead, it defines what properties and methods an animal object should have:
+2) This interface doesn't take any inputs directly. Instead, it specifies what information and behaviors should be included when creating an animal object.
 
-1. A 'name' property of type string, which would likely store the name of the animal.
-2. A 'makeAnimalSound' method that returns a string. This method is meant to represent the sound the animal makes.
-3. An 'isMammal' property of type boolean, which would indicate whether the animal is a mammal or not.
+3) The interface itself doesn't produce any outputs. However, it ensures that any object implementing this interface will have specific properties and methods that can be used to get information about the animal or make it perform certain actions.
 
-The Animal interface achieves its purpose by clearly outlining the structure that animal objects should adhere to. Any object that implements this interface must include all these properties and methods with the specified types.
+4) The Animal interface achieves its purpose by declaring three key elements that any animal object should have:
+   - A 'name' property of type string, which would store the animal's name.
+   - A 'makeAnimalSound' method that returns a string, which would represent the sound the animal makes.
+   - An 'isMammal' property of type boolean, which indicates whether the animal is a mammal or not.
 
-While there's no complex logic or data transformation happening in this code, it's important to understand that interfaces in TypeScript help enforce consistency and provide a clear structure for objects. They are particularly useful in larger programs where multiple developers might be working on different animal types. By following this interface, they ensure that all animal objects have the same basic structure, making the code more predictable and easier to work with.
+5) While there's no complex logic or data transformation happening in this interface, it sets up a structure that ensures consistency across different animal objects in the program. By using this interface, developers can create various animal objects that all share these common characteristics, making it easier to work with different types of animals in a uniform way.
 
-In a real program, developers would create specific animal classes or objects that implement this interface, providing actual values for the name and isMammal properties, and defining what happens when makeAnimalSound is called for each specific type of animal."
+This interface acts as a contract, stating that any object representing an animal in the program must have a name, be able to make a sound, and specify whether it's a mammal. This structure helps organize code and ensures that all animal objects in the program have the same basic set of properties and behaviors, which can be very useful when working with multiple types of animals in a larger application."
 `;
 
 exports[`Agent > Commands > commands/smell 1`] = `
-"After reviewing the code in @src/animal.ts:1-6, I have a few suggestions for improvement:
+"Certainly! I'll review the code and provide constructive suggestions for improvement. Here's the analysis of the \`Animal\` interface in \`src/animal.ts\`:
 
-1. Add readonly modifier: Consider adding the \`readonly\` modifier to the \`name\` property if it's not intended to be changed after initialization. This can prevent accidental modifications and make the code more robust.
+1. Consider adding readonly modifiers:
+   Adding \`readonly\` to properties that shouldn't change after initialization can prevent accidental modifications.
 
    \`\`\`typescript:src/animal.ts
    export interface Animal {
        readonly name: string
        makeAnimalSound(): string
-       isMammal: boolean
+       readonly isMammal: boolean
    }
    \`\`\`
 
-   Benefit: Improves code safety and prevents unintended mutations.
+   This change ensures that \`name\` and \`isMammal\` cannot be modified after an object is created, enhancing type safety.
 
-2. Use method signature instead of property for \`isMammal\`: Convert \`isMammal\` to a method signature to allow for more complex logic if needed in the future.
+2. Use method signature consistency:
+   For consistency, consider using the same style for method declarations. You could change \`makeAnimalSound()\` to a property with a function type.
 
    \`\`\`typescript:src/animal.ts
    export interface Animal {
        name: string
-       makeAnimalSound(): string
-       isMammal(): boolean
+       makeAnimalSound: () => string
+       isMammal: boolean
    }
    \`\`\`
 
-   Benefit: Increases flexibility and allows for potential runtime checks or complex logic.
+   This approach makes all members consistent in style and can be beneficial when working with React components or other frameworks that prefer this syntax.
 
-3. Add JSDoc comments: Include JSDoc comments to provide more context and improve documentation.
+3. Add JSDoc comments:
+   Including JSDoc comments can improve code documentation and provide better intellisense in IDEs.
 
    \`\`\`typescript:src/animal.ts
    /**
@@ -126,37 +109,42 @@ exports[`Agent > Commands > commands/smell 1`] = `
        name: string
        /** Makes the sound associated with this animal */
        makeAnimalSound(): string
-       /** Checks if the animal is a mammal */
+       /** Indicates whether the animal is a mammal */
        isMammal: boolean
    }
    \`\`\`
 
-   Benefit: Enhances code documentation and improves developer experience.
+   This addition enhances code readability and self-documentation.
 
-4. Consider using a more specific return type for \`makeAnimalSound\`: If possible, use a union type of specific animal sounds instead of a generic string.
+4. Consider using a type alias for the sound:
+   If the animal sound is always a specific type (e.g., onomatopoeia), you could create a type alias for it.
 
    \`\`\`typescript:src/animal.ts
+   type AnimalSound = string
+
    export interface Animal {
        name: string
-       makeAnimalSound(): 'Bark' | 'Meow' | 'Roar' | 'Chirp' | string
+       makeAnimalSound(): AnimalSound
        isMammal: boolean
    }
    \`\`\`
 
-   Benefit: Provides more type safety and clarity about expected return values.
+   This change adds semantic meaning to the return type of \`makeAnimalSound()\` and allows for easy expansion if needed in the future.
 
-5. Add an optional \`species\` property: This can provide more detailed information about the animal.
+5. Add an optional species property:
+   Including an optional species property could make the interface more flexible for various use cases.
 
    \`\`\`typescript:src/animal.ts
    export interface Animal {
        name: string
-       species?: string
        makeAnimalSound(): string
        isMammal: boolean
+       species?: string
    }
    \`\`\`
 
-   Benefit: Allows for more detailed animal descriptions when needed, while remaining optional for simpler use cases.
+   This addition allows for more detailed animal representations when needed, without making it mandatory for all cases.
 
-Summary: While the original code is concise and follows basic TypeScript interface conventions, there are opportunities to enhance its robustness, type safety, and documentation. The suggested improvements aim to make the code more maintainable, self-documenting, and flexible for future extensions. Overall, the original code provides a solid foundation, and these suggestions can further refine its quality and utility."
+Summary:
+The given code follows sound design principles and provides a clear, concise interface for an Animal. The suggestions provided aim to enhance type safety, consistency, documentation, and flexibility. While these improvements could make the code more robust and maintainable, the original implementation is already well-structured and doesn't contain any significant issues or code smells."
 `;
