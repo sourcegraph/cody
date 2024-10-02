@@ -16,7 +16,7 @@ jobs:
       - name: Fetch JetBrains Source
         uses: actions/checkout@v4
         with:
-          repository: sourcegraph/jetbrains.git
+          repository: sourcegraph/jetbrains
           path: jetbrains
       - name: Fetch Cody Source
         uses: actions/checkout@v4
