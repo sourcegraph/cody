@@ -17,12 +17,11 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: sourcegraph/jetbrains
-          path: jetbrains
           ref: main
       - name: Fetch Cody Source
         uses: actions/checkout@v4
         with:
-          path: cody
+          path: sourcegraph-cody
       - run: yarn global add pnpm@8.6.7
       - run: echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
         shell: bash
@@ -57,5 +56,5 @@ jobs:
       # Skip Code Search build in CI because it's slow
       - run: echo "SKIP_CODE_SEARCH_BUILD=true" >> $GITHUB_ENV
       - name: Build plugin
-        run: CODY_DIR=$PWD/../cody ./gradlew buildPlugin -PforceAgentBuild=true
+        run: CODY_DIR=$PWD/sourcegraph-cody ./gradlew buildPlugin -PforceAgentBuild=true
       - run: ./gradlew --stop
