@@ -69,13 +69,27 @@ export const WelcomeMessage: FunctionComponent<WelcomeMessageProps> = ({ setView
                     onSelect={item => runAction(item, setView)}
                 />
 
-                <Button
-                    variant="text"
-                    className="tw-justify-center"
-                    onClick={() => setView(View.Prompts)}
-                >
-                    All Prompts
-                </Button>
+                <div className="tw-flex tw-gap-8">
+                    <Button
+                        variant="text"
+                        className="tw-justify-center"
+                        onClick={() =>
+                            document
+                                .querySelector<HTMLButtonElement>("button[aria-label='Insert prompt']")
+                                ?.click()
+                        }
+                    >
+                        Recently used
+                    </Button>
+
+                    <Button
+                        variant="text"
+                        className="tw-justify-center"
+                        onClick={() => setView(View.Prompts)}
+                    >
+                        All Prompts
+                    </Button>
+                </div>
             </div>
 
             <CollapsiblePanel
