@@ -25,6 +25,14 @@ query CurrentUserCodySubscription {
     }
 }`
 
+export const DELETE_ACCESS_TOKEN_MUTATION = `
+mutation DeleteAccessToken($token: String!) {
+    deleteAccessToken(byToken: $token) {
+        alwaysNil
+    }
+}
+`
+
 export const CURRENT_USER_INFO_QUERY = `
 query CurrentUser {
     currentUser {
