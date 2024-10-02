@@ -644,6 +644,11 @@
       },
       {
         "command": "cody.mention.selection",
+        "key": "alt+l",
+        "when": "cody.activated && editorTextFocus && editorHasSelection"
+      },
+      {
+        "command": "cody.mention.selection",
         "key": "alt+/",
         "when": "cody.activated && editorTextFocus && editorHasSelection"
       },
