@@ -17,6 +17,15 @@ const USE_CUSTOM_COMMANDS_FIXTURE = false
 
 const STANDARD_PROMPTS_LIKE_COMMAND: CommandAction[] = [
     {
+        key: 'edit',
+        type: 'default',
+        mode: 'ask',
+        description: 'Edit Code',
+        prompt: 'Start a code edit',
+        slashCommand: 'cody.command.edit-code',
+        actionType: 'command',
+    },
+    {
         key: 'doc',
         type: 'default',
         mode: 'ask',
