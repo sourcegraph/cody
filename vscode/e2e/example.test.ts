@@ -3,40 +3,47 @@ import { fixture as test, uix } from './utils/vscody'
 
 test.describe('Demonstrations', () => {
     test.use({
-        templateWorkspaceDir: 'test/fixtures/workspace',
+        templateWorkspaceDir: 'test/fixtures/legacy-polyglot-template',
     })
     test('Show off v2 features', async ({
         page,
         mitmProxy,
         vscodeUI,
         polly,
-        executeCommand,
         workspaceDir,
-    }) => {
+    }, testInof) => {
+        const session = uix.vscode.Session.pending({ page, vscodeUI, workspaceDir })
+        const cody = uix.cody.Extension.with({ page, workspaceDir })
+
         polly.server.host(mitmProxy.sourcegraph.dotcom.proxyTarget, () => {
             polly.server
                 .post('/.api/graphql')
                 .filter(req => 'RecordTelemetryEvents' in req.query)
                 .intercept((req, res, interceptor) => {
-                    console.log('Custom interceptor')
+                    // just to show a custom interceptor in action
                     res.sendStatus(500)
                 })
         })
         await uix.workspace.modifySettings(
-            existing => ({ ...existing, 'workbench.colorTheme': 'Default Light Modern' }),
+            existing => ({
+                ...existing,
+                'workbench.colorTheme': 'Default Light Modern',
+                // 'cody.override.authToken': MITM_AUTH_TOKEN_PLACEHOLDER,
+                // 'cody.override.serverEndpoint': mitmProxy.sourcegraph.dotcom.endpoint,
+            }),
             { workspaceDir }
         )
-        await uix.vscode.startSession({ page, vscodeUI, executeCommand, workspaceDir })
-        await uix.cody.waitForStartup()
 
-        await executeCommand('workbench.action.closeAllEditors')
-        await executeCommand('workbench.action.showRuntimeExtensions')
+        await session.start()
+        await cody.waitUntilReady()
 
-        await page.click('[aria-label="Cody"]')
-
-        await executeCommand('workbench.explorer.fileView.focus')
+        await session.runCommand('workbench.action.closeAllEditors')
+        await session.runCommand('workbench.explorer.fileView.focus')
 
         await page.click('[aria-label="Cody"]')
+
+        await session.runCommand('workbench.explorer.fileView.focus')
+        await session.runCommand('workbench.view.extension.cody')
 
         const [signInView, ...otherWebviews] = await uix.cody.WebView.all({ page }, { atLeast: 1 })
 
@@ -49,9 +56,5 @@ test.describe('Demonstrations', () => {
         await expect(
             signInView.content.getByRole('button', { name: 'Sign In to Your Enterprise Instance' })
         ).toBeVisible()
-    })
-
-    test('also works', async ({ page, mitmProxy, vscodeUI, executeCommand }) => {
-        await uix.cody.dummy()
     })
 })

@@ -53,7 +53,7 @@ export function getConfiguration(
     return {
         proxy: vsCodeConfig.get<string>('http.proxy'),
         codebase: sanitizeCodebase(config.get(CONFIG_KEY.codebase)),
-        serverEndpoint: config.get<string>(CONFIG_KEY.serverEndpoint, 'https://sourcegraph.com'),
+        serverEndpoint: config.get<string>(CONFIG_KEY.serverEndpoint),
         customHeaders: config.get<Record<string, string>>(CONFIG_KEY.customHeaders),
         debugVerbose: config.get<boolean>(CONFIG_KEY.debugVerbose, false),
         debugFilter: debugRegex,
@@ -137,6 +137,15 @@ export function getConfiguration(
         devModels: getHiddenSetting<ChatModelProviderConfig[] | undefined>('dev.models', undefined),
 
         telemetryClientName: getHiddenSetting<string | undefined>('telemetry.clientName'),
+
+        /**
+         * Overrides always take precedence over other configuration. Specific
+         * override flags should be preferred over opaque blanket settings /
+         * environment variables such as TESTING_MODE which can make it
+         * difficult to understand the broad impact such a setting can have.
+         */
+        overrideAuthToken: getHiddenSetting<string | undefined>('override.authToken'),
+        overrideServerEndpoint: getHiddenSetting<string | undefined>('override.serverEndpoint'),
     }
 }
 

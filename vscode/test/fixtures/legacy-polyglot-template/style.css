@@ -1,0 +1,6 @@
+/* NOTE: This is used for testing .cody/ignore */
+/* All .css files in the fixtures workspace are ignored by Cody */
+.ignore-me-cody {
+    color: red;
+    cursor: not-allowed;
+}
