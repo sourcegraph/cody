@@ -11,6 +11,7 @@
 
     <incompatible-with>com.intellij.jetbrains.client</incompatible-with>
 
+    <depends>com.intellij.modules.json</depends>
     <depends>com.intellij.modules.lang</depends>
     <depends>com.intellij.modules.platform</depends>
     <depends optional="true" config-file="plugin-git.xml">Git4Idea</depends>

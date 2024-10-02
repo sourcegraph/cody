@@ -80,9 +80,8 @@ jobs:
           plugin-location: '*.zip'
           ide-versions: |
             ideaIC:2023.2
-            ideaIC:2024.2
+            ideaIC:2024.2.3
           failure-levels: |
-            COMPATIBILITY_WARNINGS
             OVERRIDE_ONLY_API_USAGES
             NON_EXTENDABLE_API_USAGES
             PLUGIN_STRUCTURE_WARNINGS
