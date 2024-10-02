@@ -13,7 +13,7 @@ import { Badge } from '../../components/shadcn/ui/badge'
 import { CommandItem } from '../../components/shadcn/ui/command'
 import { commandRowValue } from './utils'
 
-import { BookOpen, FileQuestion, Hammer, PencilLine, PencilRuler } from 'lucide-react'
+import { BookOpen, FileQuestion, Hammer, PencilLine, PencilRuler, TextSearch } from 'lucide-react'
 import styles from './ActionItem.module.css'
 
 interface ActionItemProps {
@@ -50,7 +50,7 @@ const ActionPrompt: FC<ActionPromptProps> = props => {
     return (
         <div className={styles.prompt}>
             <UserAvatar
-                size={26}
+                size={22}
                 user={{ ...prompt.createdBy, endpoint: '' }}
                 className={styles.promptAvatar}
             />
@@ -66,7 +66,7 @@ const ActionPrompt: FC<ActionPromptProps> = props => {
                 </div>
 
                 <span className={styles.promptDescription}>
-                    {prompt.description ?? 'No description provided'}
+                    {prompt.description ?? '(No description provided)'}
                 </span>
             </div>
         </div>
@@ -85,6 +85,7 @@ const COMMAND_ICONS: Record<
     explain: FileQuestion,
     doc: BookOpen,
     test: Hammer,
+    smell: TextSearch,
 }
 
 const COMMAND_DESCRIPTIONS: Record<string, string> = {
@@ -109,7 +110,7 @@ const ActionCommand: FC<ActionCommandProps> = props => {
     return (
         <div className={styles.prompt}>
             <div className={styles.promptAvatar}>
-                <Icon size={20} strokeWidth={1.5} className={styles.promptIcon} />
+                <Icon size={16} strokeWidth={1.5} className={styles.promptIcon} />
             </div>
 
             <div className={styles.promptContent}>
@@ -131,7 +132,7 @@ const ActionCommand: FC<ActionCommandProps> = props => {
                 </div>
 
                 <span className={styles.promptDescription}>
-                    {description ?? 'No description provided'}
+                    {description ?? '(No description provided)'}
                 </span>
             </div>
         </div>

@@ -31,6 +31,8 @@ interface PromptListProps {
     className?: string
     paddingLevels?: 'none' | 'middle' | 'big'
     appearanceMode?: 'flat-list' | 'chips-list'
+    lastUsedSorting?: boolean
+    includeEditCommandOnTop?: boolean
     onSelect: (item: Action) => void
 }
 
@@ -52,6 +54,8 @@ export const PromptList: FC<PromptListProps> = props => {
         className,
         paddingLevels = 'none',
         appearanceMode = 'flat-list',
+        lastUsedSorting,
+        includeEditCommandOnTop,
         onSelect: parentOnSelect,
     } = props
 
@@ -129,7 +133,17 @@ export const PromptList: FC<PromptListProps> = props => {
         ? result?.actions.filter(action => action.actionType === 'prompt' || action.mode === 'ask') ?? []
         : result?.actions ?? []
 
-    const sortedActions = getSortedActions(allActions, lastUsedActions)
+    const sortedActions = lastUsedSorting ? getSortedActions(allActions, lastUsedActions) : allActions
+
+    const editCommandIndex = sortedActions.findIndex(
+        action => action.actionType === 'command' && action.key === 'edit'
+    )
+
+    // Bring Edit command on top of the command list
+    if (includeEditCommandOnTop && editCommandIndex !== -1) {
+        sortedActions.unshift(sortedActions.splice(editCommandIndex, 1)[0])
+    }
+
     const actions = showFirstNItems ? sortedActions.slice(0, showFirstNItems) : sortedActions
 
     const inputPaddingClass =

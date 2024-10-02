@@ -92,15 +92,6 @@ export async function mergedPromptsAndLegacyCommands(
     const actions =
         customPrompts !== 'unsupported' ? [...customPrompts, ...matchingCommands] : matchingCommands
 
-    const editCommandIndex = actions.findIndex(
-        action => action.actionType === 'command' && action.key === 'edit'
-    )
-
-    // Bring Edit command on top of the command list
-    if (editCommandIndex !== -1) {
-        actions.unshift(actions.splice(editCommandIndex, 1)[0])
-    }
-
     return {
         query,
         actions,

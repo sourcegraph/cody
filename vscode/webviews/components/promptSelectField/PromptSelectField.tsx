@@ -52,6 +52,7 @@ export const PromptSelectField: React.FunctionComponent<{
                     telemetryLocation="PromptSelectField"
                     showOnlyPromptInsertableCommands={true}
                     showPromptLibraryUnsupportedMessage={true}
+                    lastUsedSorting={true}
                 />
             )}
             popoverRootProps={{ onOpenChange }}

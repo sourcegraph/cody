@@ -30,8 +30,8 @@
 
     &--avatar {
         flex-shrink: 0;
-        width: 26px;
-        height: 26px;
+        width: 22px;
+        height: 22px;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -57,6 +57,7 @@
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
+        font-weight: 500;
     }
 
     &--description {
