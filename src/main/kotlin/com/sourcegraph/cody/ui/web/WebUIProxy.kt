@@ -155,10 +155,6 @@ internal class WebUIProxy(private val host: WebUIHost, private val browser: JBCe
       delete window.parent;
       delete window.top;
       delete window.frameElement;
-
-      document.addEventListener('DOMContentLoaded', () => {
-        ${viewToHost.inject("JSON.stringify({what:'DOMContentLoaded'})")}
-      });
     """
               .trimIndent()
 
@@ -219,6 +215,8 @@ internal class WebUIProxy(private val host: WebUIHost, private val browser: JBCe
 
     when (queryWhat) {
       "postMessage" -> {
+        // These are hooks which observe and respond to messages from webview to host.
+        // See sourcegraph/cody vscode/src/chat/protocol.ts for details.
         val queryValue = queryObject["value"] ?: return
         host.postMessageWebviewToHost(queryValue.toString())
 
@@ -227,20 +225,21 @@ internal class WebUIProxy(private val host: WebUIHost, private val browser: JBCe
             messageObject["text"]?.asString != null) {
           val textToCopy = messageObject["text"].asString
           CopyPasteManager.getInstance().setContents(StringSelection(textToCopy))
+        } else if (messageObject["command"]?.asString == "ready") {
+          onReady()
         }
       }
       "setState" -> {
         val queryValue = queryObject["value"] ?: return
         host.stateAsJSONString = queryValue.toString()
       }
-      "DOMContentLoaded" -> onDOMContentLoaded()
       else -> {
         logger.warn("unhandled query from Webview to host: $query")
       }
     }
   }
 
-  private var isDOMContentLoaded = false
+  private var isReady = false
   private val logger = Logger.getInstance(WebUIProxy::class.java)
   private var theme: WebTheme? = null
 
@@ -285,16 +284,16 @@ internal class WebUIProxy(private val host: WebUIHost, private val browser: JBCe
     browser.cefBrowser.executeJavaScript(code, "cody://postMessage", 0)
   }
 
-  private fun onDOMContentLoaded() {
-    isDOMContentLoaded = true
+  private fun onReady() {
+    isReady = true
     theme?.let { updateTheme(it) }
   }
 
   fun updateTheme(theme: WebTheme) {
     val gson = GsonBuilder().create()
     this.theme = theme
-    if (!this.isDOMContentLoaded) {
-      logger.info("not updating WebView theme before DOMContentLoaded")
+    if (!this.isReady) {
+      logger.info("not updating WebView theme before 'ready' event")
       return
     }
     val code =
