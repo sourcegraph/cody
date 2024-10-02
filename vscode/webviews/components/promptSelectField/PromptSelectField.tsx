@@ -61,7 +61,7 @@ export const PromptSelectField: React.FunctionComponent<{
                         lastUsedSorting={true}
                     />
 
-                    <footer className="tw-px-2 tw-py-2 tw-border-t tw-border-border tw-bg-button-secondary-background">
+                    <footer className="tw-px-2 tw-py-2 tw-border-t tw-border-border tw-bg-muted">
                         <Button variant="text" onClick={() => setView(View.Prompts)}>
                             <BookText size={16} /> Browse library
                         </Button>
