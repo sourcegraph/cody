@@ -70,17 +70,7 @@ export const MentionsPlugin: FunctionComponent<{ contextWindowSizeInTokens?: num
          */
         const [tokenAdded, setTokenAdded] = useState<number>(0)
 
-        const remainingTokenBudget =
-            contextWindowSizeInTokens === undefined
-                ? Number.MAX_SAFE_INTEGER
-                : contextWindowSizeInTokens - tokenAdded
-
         const { params, updateQuery, updateMentionMenuParams } = useMentionMenuParams()
-
-        const data = useMentionMenuData(params, {
-            remainingTokenBudget,
-            limit: SUGGESTION_LIST_LENGTH_LIMIT,
-        })
 
         const setEditorQuery = useCallback<setEditorQuery>(
             getNewQuery => {
@@ -197,21 +187,37 @@ export const MentionsPlugin: FunctionComponent<{ contextWindowSizeInTokens?: num
             )
         }, [editor])
 
+        // We use the interaction ID to differentiate between different
+        // invocations of the mention-menu. That way upstream we don't trigger
+        // duplicate telemetry events for the same view
+        const interactionID = useRef(0)
         const onClose = useCallback(() => {
-            updateMentionMenuParams({ parentItem: null })
+            updateMentionMenuParams({ parentItem: null, interactionID: null })
         }, [updateMentionMenuParams])
-
+        const onOpen = useCallback(() => {
+            updateMentionMenuParams({ interactionID: interactionID.current++ })
+        }, [updateMentionMenuParams])
         return (
             <LexicalTypeaheadMenuPlugin<MentionMenuOption>
                 onQueryChange={updateQuery}
                 onSelectOption={onSelectOption}
                 onClose={onClose}
+                onOpen={onOpen}
                 triggerFn={scanForMentionTriggerInLexicalInput}
                 options={DUMMY_OPTIONS}
                 commandPriority={
                     COMMAND_PRIORITY_NORMAL /* so Enter keypress selects option and doesn't submit form */
                 }
                 menuRenderFn={(anchorElementRef, itemProps) => {
+                    const remainingTokenBudget =
+                        contextWindowSizeInTokens === undefined
+                            ? Number.MAX_SAFE_INTEGER
+                            : contextWindowSizeInTokens - tokenAdded
+                    const data = useMentionMenuData(params, {
+                        remainingTokenBudget,
+                        limit: SUGGESTION_LIST_LENGTH_LIMIT,
+                    })
+
                     const { selectOptionAndCleanUp } = itemProps
                     anchorElementRef2.current = anchorElementRef.current ?? undefined
                     return (

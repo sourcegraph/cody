@@ -225,6 +225,9 @@ function startAuthTelemetryReporter(): Unsubscribable {
 }
 
 function reportAuthTelemetryEvent(authStatus: AuthStatus): void {
+    if (authStatus.pendingValidation) {
+        return // Not a valid event to report.
+    }
     let eventValue: 'disconnected' | 'connected' | 'failed'
     if (
         !authStatus.authenticated &&

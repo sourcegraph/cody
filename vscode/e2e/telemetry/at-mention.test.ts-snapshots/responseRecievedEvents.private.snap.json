@@ -1,0 +1,159 @@
+[
+  {
+    "event": {
+      "action": "submitted",
+      "feature": "cody.chat-question",
+      "parameters": {
+        "billingMetadata": {
+          "category": "billable",
+          "product": "cody"
+        },
+        "metadata": [
+          {
+            "key": "isPublicRepo",
+            "value": 1
+          },
+          {
+            "key": "recordsPrivateMetadataTranscript",
+            "value": 1
+          },
+          {
+            "key": "tier",
+            "value": 1
+          }
+        ],
+        "privateMetadata": {
+          "chatModel": "<string>",
+          "gitMetadata": "<Object>",
+          "promptText": "<string>",
+          "requestID": "<string>",
+          "sessionID": "<string>",
+          "traceId": "<string>"
+        },
+        "version": 0
+      },
+      "signature": "cody.chat-question/submitted",
+      "source": {
+        "client": "VSCode.Cody",
+        "clientVersion": "<string>"
+      },
+      "timestamp": "<string>"
+    },
+    "proxyName": "sourcegraph.dotcom"
+  },
+  {
+    "event": {
+      "action": "executed",
+      "feature": "cody.chat-question",
+      "parameters": {
+        "billingMetadata": {
+          "category": "billable",
+          "product": "cody"
+        },
+        "metadata": [
+          {
+            "key": "context.used.URIs",
+            "value": 1
+          },
+          {
+            "key": "context.used.bySource.user.types.file",
+            "value": 1
+          },
+          {
+            "key": "context.used.byType.file.URIs",
+            "value": 1
+          },
+          {
+            "key": "context.used.byType.file.hasRange",
+            "value": 0
+          },
+          {
+            "key": "context.used.byType.file.isIgnored",
+            "value": 0
+          },
+          {
+            "key": "context.used.byType.file.isTooLarge",
+            "value": 0
+          },
+          {
+            "key": "context.used.byType.file.size.avg",
+            "value": 86
+          },
+          {
+            "key": "context.used.byType.file.size.max",
+            "value": 86
+          },
+          {
+            "key": "context.used.byType.file.size.median",
+            "value": 86
+          },
+          {
+            "key": "context.used.byType.file.size.min",
+            "value": 86
+          },
+          {
+            "key": "context.used.byType.file.sources.user",
+            "value": 1
+          },
+          {
+            "key": "context.used.byType.file.total",
+            "value": 1
+          },
+          {
+            "key": "context.used.hasRange",
+            "value": 0
+          },
+          {
+            "key": "context.used.isIgnored",
+            "value": 0
+          },
+          {
+            "key": "context.used.isTooLarge",
+            "value": 0
+          },
+          {
+            "key": "context.used.size.avg",
+            "value": 86
+          },
+          {
+            "key": "context.used.size.max",
+            "value": 86
+          },
+          {
+            "key": "context.used.size.median",
+            "value": 86
+          },
+          {
+            "key": "context.used.size.min",
+            "value": 86
+          },
+          {
+            "key": "context.used.total",
+            "value": 1
+          },
+          {
+            "key": "tier",
+            "value": 1
+          },
+          {
+            "key": "userSpecifiedIntent",
+            "value": 1
+          }
+        ],
+        "privateMetadata": {
+          "gitMetadata": "<Object>",
+          "traceId": "<string>",
+          "userSpecifiedIntent": "auto"
+        },
+        "version": 0
+      },
+      "signature": "cody.chat-question/executed",
+      "source": {
+        "client": "VSCode.Cody",
+        "clientVersion": "<string>"
+      },
+      "timestamp": "<string>"
+    },
+    "proxyName": "sourcegraph.dotcom"
+  }
+]
