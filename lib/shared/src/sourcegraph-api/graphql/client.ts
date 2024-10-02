@@ -1260,6 +1260,7 @@ export class SourcegraphGraphQLAPIClient {
         )
         return extractDataOrError(initialResponse, data => data)
     }
+
     private anonymizeTelemetryEventInput(event: TelemetryEventInput): void {
         if (this.isAgentTesting) {
             event.timestamp = undefined

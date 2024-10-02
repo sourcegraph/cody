@@ -5,11 +5,11 @@ import type { PromptString } from './prompt/prompt-string'
 import type { ReadonlyDeep } from './utils'
 
 /**
- * Represents the source of an authentication token generation, either a redirect or non-redirect flow.
- * A redirect flow is initiated by the user clicking a link in the browser, while a non-redirect flow is initiated by the user
+ * Represents the source of an authentication token generation, either a redirect or paste flow.
+ * A redirect flow is initiated by the user clicking a link in the browser, while a paste flow is initiated by the user
  * manually entering the access from into the VsCode App.
  */
-export type TokenSource = 'redirect' | 'nonredirect'
+export type TokenSource = 'redirect' | 'paste'
 
 /**
  * The user's authentication credentials, which are stored separately from the rest of the

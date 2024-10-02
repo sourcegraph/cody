@@ -83,7 +83,7 @@ export async function showSignInMenu(
             const tokenSource = await secretStorage.getTokenSource(selectedEndpoint)
             let { authStatus } = token
                 ? await authProvider.validateAndStoreCredentials(
-                      { serverEndpoint: selectedEndpoint, accessToken: token, tokenSource: tokenSource },
+                      { serverEndpoint: selectedEndpoint, accessToken: token, tokenSource },
                       'store-if-valid'
                   )
                 : { authStatus: undefined }
@@ -97,7 +97,7 @@ export async function showSignInMenu(
                         {
                             serverEndpoint: selectedEndpoint,
                             accessToken: newToken,
-                            tokenSource: 'nonredirect',
+                            tokenSource: 'paste',
                         },
                         'store-if-valid'
                     )
@@ -229,7 +229,7 @@ async function signinMenuForInstanceUrl(instanceUrl: string): Promise<void> {
         return
     }
     const { authStatus } = await authProvider.validateAndStoreCredentials(
-        { serverEndpoint: instanceUrl, accessToken: accessToken, tokenSource: 'nonredirect' },
+        { serverEndpoint: instanceUrl, accessToken: accessToken, tokenSource: 'paste' },
         'store-if-valid'
     )
     telemetryRecorder.recordEvent('cody.auth.signin.token', 'clicked', {
