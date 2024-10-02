@@ -13,6 +13,7 @@ import type { VSCodeWrapper } from './utils/VSCodeApi'
 import { truncateTextStart } from '@sourcegraph/cody-shared/src/prompt/truncation'
 import { CHAT_INPUT_TOKEN_BUDGET } from '@sourcegraph/cody-shared/src/token/constants'
 import styles from './Chat.module.css'
+import WelcomeFooter from './chat/components/WelcomeFooter'
 import { WelcomeMessage } from './chat/components/WelcomeMessage'
 import { ScrollDown } from './components/ScrollDown'
 import type { View } from './tabs'
@@ -223,7 +224,13 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                 guardrails={guardrails}
                 smartApplyEnabled={smartApplyEnabled}
             />
-            {transcript.length === 0 && showWelcomeMessage && <WelcomeMessage setView={setView} />}
+            {transcript.length === 0 && showWelcomeMessage && (
+                <>
+                    <WelcomeMessage setView={setView} />
+                    <WelcomeFooter />
+                </>
+            )}
+
             {scrollableParent && (
                 <ScrollDown scrollableParent={scrollableParent} onClick={handleScrollDownClick} />
             )}

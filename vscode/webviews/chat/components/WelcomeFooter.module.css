@@ -1,0 +1,43 @@
+.welcome-footer {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 1rem 1.0rem;
+    display: flex;
+    flex-flow: column nowrap;
+    justify-content: space-between;
+    align-items: center;
+    max-width: 100%;
+    color: var(--vscode-input-placeholderForeground)
+}
+
+.tips {
+    display: flex;
+    flex-flow: column nowrap;
+    flex-shrink: 0;
+    gap: 0.5rem;
+    padding: 1.0rem;
+    border-bottom: 0.25px solid var(--vscode-dropdown-border);
+}
+
+.links {
+    display: flex;
+    flex-shrink: none;
+    flex-flow: row nowrap;
+    padding: 1.0rem 1.5rem;
+    gap: 0.5rem;
+    flex-shrink: 0;
+    justify-content: space-around;
+    align-items: center;
+    min-width: 325px;
+}
+
+.item {
+    display: flex;
+    flex-flow: row nowrap;
+    flex-shrink: 0;
+    gap: 0.5rem;
+    align-items: center;
+}
+

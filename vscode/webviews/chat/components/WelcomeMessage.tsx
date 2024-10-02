@@ -1,14 +1,6 @@
-import {
-    AtSignIcon,
-    type LucideProps,
-    MessageSquarePlusIcon,
-    SettingsIcon,
-    TextIcon,
-} from 'lucide-react'
+import type { LucideProps } from 'lucide-react'
 import type { FunctionComponent } from 'react'
 import type React from 'react'
-import { CollapsiblePanel } from '../../components/CollapsiblePanel'
-import { Kbd } from '../../components/Kbd'
 import { PromptList } from '../../components/promptList/PromptList'
 import { Button } from '../../components/shadcn/ui/button'
 import { useActionSelect } from '../../prompts/PromptsTab'
@@ -91,33 +83,6 @@ export const WelcomeMessage: FunctionComponent<WelcomeMessageProps> = ({ setView
                     </Button>
                 </div>
             </div>
-
-            <CollapsiblePanel
-                storageKey="chat-help"
-                title="Chat Help"
-                className="tw-mb-6 tw-mt-2"
-                initialOpen={true}
-            >
-                <FeatureRow icon={AtSignIcon}>
-                    Type <Kbd macOS="@" linuxAndWindows="@" /> to add context to your chat
-                </FeatureRow>
-                {config.clientCapabilities.isVSCode && (
-                    <>
-                        <FeatureRow icon={TextIcon}>
-                            To add code context from an editor, right click and use{' '}
-                            <MenuExample>Cody &gt; Add File/Selection to Cody Chat</MenuExample>
-                        </FeatureRow>
-                        <FeatureRow icon={MessageSquarePlusIcon}>
-                            Start a new chat using <Kbd macOS="opt+L" linuxAndWindows="alt+L" />
-                        </FeatureRow>
-                        <FeatureRow icon={SettingsIcon}>
-                            Customize chat settings with the <FeatureRowInlineIcon Icon={SettingsIcon} />{' '}
-                            button, or see the{' '}
-                            <a href="https://sourcegraph.com/docs/cody">documentation</a>
-                        </FeatureRow>
-                    </>
-                )}
-            </CollapsiblePanel>
         </div>
     )
 }
