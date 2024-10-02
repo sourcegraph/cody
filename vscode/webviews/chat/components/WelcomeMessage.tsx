@@ -75,7 +75,7 @@ export const WelcomeMessage: FunctionComponent<WelcomeMessageProps> = ({ setView
                     className="tw-justify-center"
                     onClick={() => setView(View.Prompts)}
                 >
-                    Prompt Library
+                    All Prompts
                 </Button>
             </div>
 
