@@ -119,7 +119,10 @@ const ActionCommand: FC<ActionCommandProps> = props => {
                     </strong>
 
                     {command.type !== 'default' && (
-                        <Badge variant="secondary" className="tw-text-xxs tw-mt-0.5">
+                        <Badge
+                            variant="secondary"
+                            className="tw-text-xxs tw-mt-0.5 tw-whitespace-nowrap"
+                        >
                             {command.type === CustomCommandType.User
                                 ? 'Local User Settings'
                                 : 'Workspace Settings'}
