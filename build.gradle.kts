@@ -21,12 +21,8 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile
 
 fun properties(key: String) = project.findProperty(key)?.toString()
 
-val isForceBuild = properties("forceBuild") == "true"
-val isForceAgentBuild =
-    isForceBuild ||
-        properties("forceCodyBuild") == "true" ||
-        properties("forceAgentBuild") == "true"
-val isForceCodeSearchBuild = isForceBuild || properties("forceCodeSearchBuild") == "true"
+val isForceAgentBuild = properties("forceAgentBuild") == "true"
+val isForceCodeSearchBuild = properties("forceCodeSearchBuild") == "true"
 
 // As https://www.jetbrains.com/updates/updates.xml adds a new "IntelliJ IDEA" YYYY.N version, add
 // it to this list.
