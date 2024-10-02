@@ -9,6 +9,7 @@ import {
     OLLAMA_DEFAULT_URL,
     type PickResolvedConfiguration,
     PromptString,
+    logError,
     ps,
     setStaticResolvedConfigurationValue,
 } from '@sourcegraph/cody-shared'
@@ -70,6 +71,10 @@ export function getConfiguration(
                 fs.accessSync(path, fs.constants.R_OK | fs.constants.W_OK)
                 return path
             } catch (error) {
+                logError(
+                    'vscode.configuration',
+                    `Cannot read ${CONFIG_KEY.proxyPath}: ${path}:\n${error}`
+                )
                 void vscode.window.showErrorMessage(
                     `Cannot verify ${CONFIG_KEY.proxyPath}: ${path}:\n${error}`
                 )
@@ -88,6 +93,10 @@ export function getConfiguration(
             try {
                 return fs.readFileSync(path, { encoding: 'utf-8' })
             } catch (error) {
+                logError(
+                    'vscode.configuration',
+                    `Cannot read ${CONFIG_KEY.proxyCacert}: ${path}:\n${error}`
+                )
                 void vscode.window.showErrorMessage(
                     `Error reading ${CONFIG_KEY.proxyCacert} from ${path}:\n${error}`
                 )
