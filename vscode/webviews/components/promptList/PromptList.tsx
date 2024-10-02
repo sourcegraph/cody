@@ -162,7 +162,7 @@ export const PromptList: FC<PromptListProps> = props => {
                 {!result && !error && (
                     <CommandLoading className={itemPaddingClass}>Loading...</CommandLoading>
                 )}
-                {result && actions.filter(action => action.actionType === 'prompt').length === 0 && (
+                {result && allActions.filter(action => action.actionType === 'prompt').length === 0 && (
                     <CommandLoading className={itemPaddingClass}>
                         {result?.query === '' ? (
                             <>

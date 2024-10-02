@@ -50,7 +50,7 @@ const ActionPrompt: FC<ActionPromptProps> = props => {
     return (
         <div className={styles.prompt}>
             <UserAvatar
-                size={30}
+                size={26}
                 user={{ ...prompt.createdBy, endpoint: '' }}
                 className={styles.promptAvatar}
             />
@@ -109,7 +109,7 @@ const ActionCommand: FC<ActionCommandProps> = props => {
     return (
         <div className={styles.prompt}>
             <div className={styles.promptAvatar}>
-                <Icon size={24} strokeWidth={1.5} className={styles.promptIcon} />
+                <Icon size={20} strokeWidth={1.5} className={styles.promptIcon} />
             </div>
 
             <div className={styles.promptContent}>
