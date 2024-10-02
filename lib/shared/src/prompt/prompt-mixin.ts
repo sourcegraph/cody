@@ -38,14 +38,14 @@ export class PromptMixin {
         const mixins = [...PromptMixin.mixins]
 
         // Prevents known models like Claude 3.5 Sonnet from apologizing constantly.
-        const apologiticModels = ['3-5-sonnet', '3.5-sonnet', 'deep-cody']
+        const apologiticModels = ['3-5-sonnet', '3.5-sonnet']
         if (modelID && apologiticModels.some(model => modelID.includes(model))) {
             mixins.push(PromptMixin.hedging)
         }
 
         // Add prompt that provides answer guidelines for the Deep Cody model.
         if (modelID?.includes('deep-cody') && !newMixins.length) {
-            mixins.push(new PromptMixin(DEEP_CODY))
+            mixins.push(newMixins.length ? PromptMixin.hedging : new PromptMixin(DEEP_CODY))
         }
 
         // Add new mixins to the list of mixins to be prepended to the next human message.

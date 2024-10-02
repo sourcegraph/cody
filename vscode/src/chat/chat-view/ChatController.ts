@@ -87,7 +87,6 @@ import {
 import type { startTokenReceiver } from '../../auth/token-receiver'
 import { getContextFileFromUri } from '../../commands/context/file-path'
 import { getContextFileFromCursor } from '../../commands/context/selection'
-import { DeepCodyAgent } from '../../context/agentic/DeepCodyAgent'
 import { resolveContextItems } from '../../editor/utils/editor-context'
 import type { VSCodeEditor } from '../../editor/vscode-editor'
 import type { ExtensionClient } from '../../extension-client'
@@ -109,6 +108,8 @@ import {
 import { openExternalLinks } from '../../services/utils/workspace-action'
 import { TestSupport } from '../../test-support'
 import type { MessageErrorType } from '../MessageProvider'
+import { getCodyTools } from '../agents/CodyTool'
+import { DeepCodyAgent } from '../agents/DeepCody'
 import { getMentionMenuData } from '../context/chatContext'
 import type { ChatIntentAPIClient } from '../context/chatIntentAPIClient'
 import { observeInitialContext } from '../initialContext'
@@ -750,15 +751,13 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 }
 
                 // Additional context retrived from the experimental Deep Cody feature
-                // Currently, all agentic context are marked as user-explicit mentions to be ranked higher during prompt building.
-                const deepCody = new DeepCodyAgent(
+                const agenticContext = await new DeepCodyAgent(
                     this.chatBuilder,
                     this.chatClient,
-                    this.contextRetriever,
-                    span,
+                    getCodyTools(this.contextRetriever, span),
                     corpusContext
-                )
-                const agenticContext = await deepCody.getContext(model, signal)
+                ).getContext(model, signal)
+                // All agentic context are marked as user-explicit mentions to be ranked higher during prompt building.
                 corpusContext.push(...agenticContext)
 
                 const { explicitMentions, implicitMentions } = getCategorizedMentions(corpusContext)

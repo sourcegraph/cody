@@ -19,7 +19,7 @@ const CLIENT_EXPERIMENTAL_MODELS = [
     // This modelRef does not exist in the backend and is used to identify the model in the client.
     {
         modelRef: 'sourcegraph::2023-06-01::deep-cody',
-        displayName: 'Deep Cody',
+        displayName: '🧠 Deep Cody',
         modelName: 'deep-cody',
         capabilities: ['chat'],
         category: 'accuracy',

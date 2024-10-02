@@ -306,7 +306,7 @@ const getBadgeText = (model: Model, modelAvailability?: ModelAvailability): stri
     if (modelAvailability === 'needs-cody-pro') return 'Cody Pro'
 
     const tagToText: Record<string, string> = {
-        [ModelTag.Internal]: 'Sourcegraph',
+        [ModelTag.Internal]: 'Internal',
         [ModelTag.Experimental]: 'Experimental',
         [ModelTag.Waitlist]: 'Join Waitlist',
         [ModelTag.OnWaitlist]: 'On Waitlist',
@@ -327,7 +327,6 @@ const ModelTitleWithIcon: React.FC<{
 }> = ({ model, showIcon, modelAvailability }) => {
     const modelBadge = getBadgeText(model, modelAvailability)
     const isDisabled = modelAvailability !== 'available'
-    const isInternalModel = modelBadge === 'Internal'
 
     return (
         <span className={clsx(styles.modelTitleWithIcon, { [styles.disabled]: isDisabled })}>
@@ -335,7 +334,7 @@ const ModelTitleWithIcon: React.FC<{
             <span className={clsx('tw-flex-grow', styles.modelName)}>{model.title}</span>
             {modelBadge && (
                 <Badge
-                    variant={isInternalModel ? 'success' : 'secondary'}
+                    variant="secondary"
                     className={clsx(styles.badge, {
                         'tw-opacity-75': modelAvailability === 'needs-cody-pro',
                     })}

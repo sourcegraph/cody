@@ -16,11 +16,12 @@ import { URI } from 'vscode-uri'
 import { ChatBuilder } from '../../chat/chat-view/ChatBuilder'
 import type { ContextRetriever } from '../../chat/chat-view/ContextRetriever'
 import * as initialContext from '../../chat/initialContext'
-import { DeepCodyAgent } from './DeepCodyAgent'
+import { getCodyTools } from './CodyTool'
+import { DeepCodyAgent } from './DeepCody'
 
-const DeepCodyModelRef = 'sourcegraph::2023-06-01::deep-cody'
+const DeepCodyModel = DeepCodyAgent.ModelRef
 
-describe('DeepCodyAgent', () => {
+describe('DeepCody', () => {
     const codyProAuthStatus: AuthenticatedAuthStatus = {
         ...AUTH_STATUS_FIXTURE_AUTHED,
         endpoint: DOTCOM_URL.toString(),
@@ -81,9 +82,7 @@ describe('DeepCodyAgent', () => {
 
         vi.spyOn(featureFlagProvider, 'evaluatedFeatureFlag').mockReturnValue(Observable.of(false))
         vi.spyOn(modelsService, 'isStreamDisabled').mockReturnValue(false)
-        vi.spyOn(ChatBuilder, 'resolvedModelForChat').mockReturnValue(
-            Observable.of('anthropic::2023-06-01::deep-cody')
-        )
+        vi.spyOn(ChatBuilder, 'resolvedModelForChat').mockReturnValue(Observable.of(DeepCodyModel))
         vi.spyOn(ChatBuilder, 'contextWindowForChat').mockReturnValue(
             Observable.of({ input: 10000, output: 1000 })
         )
@@ -98,8 +97,7 @@ describe('DeepCodyAgent', () => {
         const agent = new DeepCodyAgent(
             mockChatBuilder,
             mockChatClient,
-            mockContextRetriever,
-            mockSpan,
+            getCodyTools(mockContextRetriever, mockSpan),
             mockCurrentContext
         )
 
@@ -138,12 +136,11 @@ describe('DeepCodyAgent', () => {
         const agent = new DeepCodyAgent(
             mockChatBuilder,
             mockChatClient,
-            mockContextRetriever,
-            mockSpan,
+            getCodyTools(mockContextRetriever, mockSpan),
             mockCurrentContext
         )
 
-        const result = await agent.getContext(DeepCodyModelRef, {
+        const result = await agent.getContext(DeepCodyModel, {
             aborted: false,
         } as AbortSignal)
 

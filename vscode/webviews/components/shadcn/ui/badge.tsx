@@ -9,7 +9,6 @@ const badgeVariants = cva(
             variant: {
                 secondary: 'tw-bg-badge-background tw-text-badge-foreground',
                 outline: 'tw-border tw-border-muted-transparent tw-bg-[unset] tw-text-muted-foreground',
-                success: 'tw-bg-emerald-800 tw-text-emerald-100',
             },
         },
         defaultVariants: {
