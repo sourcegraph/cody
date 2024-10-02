@@ -1,7 +1,7 @@
 
 .list {
     outline: none;
-    background-color: transparent !important;
+    background-color: transparent;
     max-height: unset !important;
 
     &--input {
@@ -12,7 +12,6 @@
         color: var(--vscode-input-foreground);
 
         &:focus {
-            //border-color: var(--vscode-focusBorder);
             box-shadow: 0 0 0 0.125rem var(--vscode-focusBorder)
         }
     }

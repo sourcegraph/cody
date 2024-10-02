@@ -42,7 +42,7 @@ export const WithOnlyCommands: Story = {
             value={{
                 ...MOCK_API,
                 prompts: makePromptsAPIWithData({
-                    isPromptsSupported: false,
+                    arePromptsSupported: false,
                     prompts: [],
                     commands: FIXTURE_COMMANDS,
                 }),

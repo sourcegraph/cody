@@ -62,13 +62,13 @@ export const FIXTURE_COMMANDS: CodyCommand[] = [
  * For testing only.
  */
 export function makePromptsAPIWithData(data: {
-    isPromptsSupported?: boolean
+    arePromptsSupported?: boolean
     prompts: Prompt[]
     commands?: CodyCommand[]
 }): WebviewToExtensionAPI['prompts'] {
     return query =>
         promiseFactoryToObservable<PromptsResult>(async () => {
-            const { isPromptsSupported = true, prompts, commands = [] } = data
+            const { arePromptsSupported = true, prompts, commands = [] } = data
             await new Promise<void>(resolve => setTimeout(resolve, 500))
 
             const queryLower = query.toLowerCase()
@@ -78,7 +78,7 @@ export function makePromptsAPIWithData(data: {
 
             return {
                 query,
-                isPromptsSupported: isPromptsSupported,
+                arePromptsSupported,
                 actions: [
                     ...prompts
                         .filter(prompt => matchQuery(prompt.name))

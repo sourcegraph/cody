@@ -55,7 +55,7 @@ const STANDARD_PROMPTS_LIKE_COMMAND: CommandAction[] = [
 ]
 
 /**
- * Observe results of querying the prompts from the Prompt Library, (deprecated) built-in commands,
+ * Merges results  of querying the prompts from the Prompt Library, (deprecated) built-in commands,
  * and (deprecated) custom commands. Commands are deprecated in favor of prompts in the Prompt
  * Library.
  */
@@ -79,7 +79,7 @@ export async function mergedPromptsAndLegacyCommands(
                   ...c,
                   actionType: 'command',
               }))
-        : // Ignore any commands for Cody Web since none commands are supported there
+        : // Ignore any commands for Cody Web since no commands are supported
           []
 
     const matchingCommands = allCommands.filter(
@@ -90,12 +90,12 @@ export async function mergedPromptsAndLegacyCommands(
     )
 
     const actions =
-        customPrompts !== 'unsupported' ? [...customPrompts, ...matchingCommands] : matchingCommands
+        customPrompts === 'unsupported' ? matchingCommands : [...customPrompts, ...matchingCommands]
 
     return {
         query,
         actions,
-        isPromptsSupported: customPrompts !== 'unsupported',
+        arePromptsSupported: customPrompts !== 'unsupported',
     }
 }
 

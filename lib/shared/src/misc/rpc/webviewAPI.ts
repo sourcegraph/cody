@@ -125,28 +125,8 @@ export interface CommandAction extends CodyCommand {
 export type Action = PromptAction | CommandAction
 
 export interface PromptsResult {
-    // /**
-    //  * `undefined` means the Sourcegraph endpoint is an older Sourcegraph version that doesn't
-    //  * support the Prompt Library.
-    //  */
-    // prompts:
-    //     | { type: 'results'; results: Prompt[] }
-    //     | { type: 'error'; error: string }
-    //     | { type: 'unsupported' }
-    //
-    // /**
-    //  * Provides previously built-in commands which became prompt-like actions (explain code,
-    //  * generate unit tests, document symbol, etc.) Currently, is used behind feature flag.
-    //  */
-    // standardPrompts?: CodyCommand[]
-    //
-    // /**
-    //  * `undefined` means that commands should not be shown at all (not even as an empty
-    //  * list). Builtin and custom commands are deprecated in favor of the Prompt Library.
-    //  */
-    // commands: CodyCommand[]
 
-    isPromptsSupported: boolean
+    arePromptsSupported: boolean
 
     /** List of all available actions (prompts and/or commands) */
     actions: Action[]

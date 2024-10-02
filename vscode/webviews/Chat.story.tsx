@@ -45,7 +45,7 @@ export const EmptyWithPromptLibraryUnsupported: StoryObj<typeof meta> = {
             value={{
                 ...MOCK_API,
                 prompts: makePromptsAPIWithData({
-                    isPromptsSupported: false,
+                    arePromptsSupported: false,
                     prompts: [],
                     commands: FIXTURE_COMMANDS,
                 }),

@@ -11,7 +11,7 @@ vi.mock('../../components/promptList/usePromptsQuery')
 vi.mocked(usePromptsQuery).mockReturnValue({
     value: {
         query: '',
-        isPromptsSupported: true,
+        arePromptsSupported: true,
         actions: [{ ...FIXTURE_PROMPTS[0], actionType: 'prompt' }],
     },
     done: false,
