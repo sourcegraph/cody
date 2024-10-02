@@ -185,12 +185,10 @@ export function syncModels({
                                         featureFlagProvider.evaluatedFeatureFlag(
                                             FeatureFlag.CodyEarlyAccess
                                         ),
-                                        featureFlagProvider.evaluatedFeatureFlag(
-                                            FeatureFlag.CodyReflection
-                                        )
+                                        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.DeepCody)
                                     ).pipe(
-                                        switchMap(([hasEarlyAccess, codyReflectionEnabled]) => {
-                                            if (codyReflectionEnabled) {
+                                        switchMap(([hasEarlyAccess, deepCodyEnabled]) => {
+                                            if (deepCodyEnabled) {
                                                 data.primaryModels.push(
                                                     ...maybeAdjustContextWindows(
                                                         getExperimentalClientModels()

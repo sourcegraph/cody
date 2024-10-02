@@ -87,7 +87,7 @@ import {
 import type { startTokenReceiver } from '../../auth/token-receiver'
 import { getContextFileFromUri } from '../../commands/context/file-path'
 import { getContextFileFromCursor } from '../../commands/context/selection'
-import { CodyReflectionAgent } from '../../context/agentic'
+import { DeepCodyAgent } from '../../context/agentic'
 import { resolveContextItems } from '../../editor/utils/editor-context'
 import type { VSCodeEditor } from '../../editor/vscode-editor'
 import type { ExtensionClient } from '../../extension-client'
@@ -738,9 +738,9 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     }
                 }
 
-                // Additional context retrived from the experimental Cody Reflection feature
+                // Additional context retrived from the experimental Deep Cody feature
                 // Currently, all agentic context are marked as user-explicit mentions to be ranked higher during prompt building.
-                const agenticContext = await new CodyReflectionAgent(
+                const agenticContext = await new DeepCodyAgent(
                     this.chatBuilder,
                     this.chatClient,
                     this.contextRetriever,

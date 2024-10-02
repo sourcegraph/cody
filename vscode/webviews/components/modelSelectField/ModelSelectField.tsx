@@ -310,7 +310,7 @@ const ModelTitleWithIcon: FunctionComponent<{
 }> = ({ model, showIcon, modelAvailability }) => {
     const getBadgeText = (model: Model, modelAvailability?: ModelAvailability): string | null => {
         if (modelAvailability === 'needs-cody-pro') return 'Cody Pro'
-        if (model.tags.includes(ModelTag.Internal)) return 'Internal'
+        if (model.tags.includes(ModelTag.Internal)) return '✨ Internal'
         if (model.tags.includes(ModelTag.Experimental)) return 'Experimental'
         if (model.tags.includes(ModelTag.Waitlist)) return 'Join Waitlist'
         if (model.tags.includes(ModelTag.OnWaitlist)) return 'On Waitlist'

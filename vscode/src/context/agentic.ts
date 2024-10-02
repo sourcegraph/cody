@@ -24,7 +24,7 @@ import { getContextFileFromShell } from '../commands/context/shell'
 import { getCategorizedMentions } from '../prompt-builder/utils'
 
 /**
- * This prompt is used by the Cody Reflection model for reviewing current context,
+ * This prompt is used by the Deep Cody model for reviewing current context,
  * with instructions for the LLM on how to request additional context.
  */
 const REFLECTION_AGENT_PROMPT = ps`Analyze the provided context and think step-by-step about whether you can answer the question using the available information.
@@ -51,11 +51,11 @@ Notes:
 - If you don't require additional context to answer the question, reply with a single word: "Reviewed".`
 
 /**
- * A CodyReflectionAgent is created for each chat submitted by the user.
+ * A DeepCodyAgent is created for each chat submitted by the user.
  * It is responsible for reviewing the retrieved context,
  * and perform agentic context retrieval for the chat request.
  */
-export class CodyReflectionAgent {
+export class DeepCodyAgent {
     private isEnabled = false
     private readonly actions: CodyActions
     private readonly multiplexer = new BotResponseMultiplexer()
@@ -74,7 +74,7 @@ export class CodyReflectionAgent {
     }
 
     private async initializeAgent(): Promise<void> {
-        this.isEnabled = isBoolean(this.chatBuilder.selectedModel?.includes('cody-reflection'))
+        this.isEnabled = isBoolean(this.chatBuilder.selectedModel?.includes('deep-cody'))
         if (this.isEnabled) {
             this.initializeMultiplexer()
         }
@@ -103,7 +103,7 @@ export class CodyReflectionAgent {
             this.currentContext.push(...agenticContext)
             agenticContext.push(...(await this.review(abortSignal)))
         }
-        logDebug('CodyReflectionAgent', 'agenticContext', { verbose: { agenticContext } })
+        logDebug('DeepCodyAgent', 'agenticContext', { verbose: { agenticContext } })
         return agenticContext
     }
 
@@ -154,7 +154,7 @@ export class CodyReflectionAgent {
             }
         } catch (error: unknown) {
             await this.multiplexer.notifyTurnComplete()
-            logDebug('CodyReflectionAgent', `failed: ${error}`, { verbose: { prompt, responseText } })
+            logDebug('DeepCodyAgent', `failed: ${error}`, { verbose: { prompt, responseText } })
         }
 
         return await this.getAgenticContext()
@@ -216,7 +216,7 @@ class CodyActions {
         // Store the search query to avoid running the same query again.
         this.performedSearch.add(query)
         // Limit the number of the new context items to 20 items to avoid long processing time
-        // during the next reflection process.
+        // during the next thinking / reflection process.
         return context.slice(-20)
     }
 

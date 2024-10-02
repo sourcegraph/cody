@@ -11,9 +11,9 @@ const CONTEXT_PREAMBLE = ps`You have access to the provided codebase context. `
  */
 const HEDGES_PREVENTION = ps`Answer positively without apologizing. `
 /**
- * Answer guidelines for the Cody Reflection model.
+ * Answer guidelines for the Deep Cody model.
  */
-const CODY_REFLECTION = ps`Give step-by-step instruction for how-to questions. Keep answer for general questions concise and informative. `
+const DEEP_CODY = ps`Give step-by-step instruction for how-to questions. Keep answer for general questions concise and informative. `
 
 /**
  * Prompt mixins elaborate every prompt presented to the LLM.
@@ -26,7 +26,7 @@ export class PromptMixin {
      */
     private static mixins: PromptMixin[] = []
     private static hedging: PromptMixin = new PromptMixin(HEDGES_PREVENTION)
-    private static reflection: PromptMixin = new PromptMixin(CODY_REFLECTION)
+    private static reflection: PromptMixin = new PromptMixin(DEEP_CODY)
 
     /**
      * Prepends all mixins to `humanMessage`. Modifies and returns `humanMessage`.
@@ -36,13 +36,13 @@ export class PromptMixin {
         // Default Mixin is added at the end so that it cannot be overriden by other mixins.
         const mixins = [...PromptMixin.mixins]
         // Prevents known models like Claude 3.5 Sonnet from apologizing constantly.
-        const apologiticModels = ['3-5-sonnet', '3.5-sonnet', 'cody-reflection']
+        const apologiticModels = ['3-5-sonnet', '3.5-sonnet', 'deep-cody']
         if (modelID && apologiticModels.some(model => modelID.includes(model))) {
             mixins.push(PromptMixin.hedging)
         }
 
-        // Add prompt that provides answer guidelines for the Cody Reflection model.
-        if (modelID?.includes('cody-reflection') && !PromptMixin.mixins.length) {
+        // Add prompt that provides answer guidelines for the Deep Cody model.
+        if (modelID?.includes('deep-cody') && !PromptMixin.mixins.length) {
             mixins.push(PromptMixin.reflection)
         }
 

@@ -3,9 +3,9 @@ import type { ModelTag } from './tags'
 
 const CLIENT_EXPERIMENTAL_MODELS = [
     {
-        modelRef: 'anthropic::2023-06-01::cody-reflection',
-        displayName: 'Cody Reflection',
-        modelName: 'cody-reflection',
+        modelRef: 'sourcegraph::2023-06-01::deep-cody',
+        displayName: 'Deep Cody',
+        modelName: 'deep-cody',
         capabilities: ['chat'],
         category: 'accuracy',
         status: 'internal' as ModelTag.Internal,

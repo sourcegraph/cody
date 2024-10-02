@@ -16,9 +16,9 @@ import { URI } from 'vscode-uri'
 import { ChatBuilder } from '../chat/chat-view/ChatBuilder'
 import type { ContextRetriever } from '../chat/chat-view/ContextRetriever'
 import * as initialContext from '../chat/initialContext'
-import { CodyReflectionAgent } from './agentic'
+import { DeepCodyAgent } from './agentic'
 
-describe('CodyReflectionAgent', () => {
+describe('DeepCodyAgent', () => {
     const codyProAuthStatus: AuthenticatedAuthStatus = {
         ...AUTH_STATUS_FIXTURE_AUTHED,
         endpoint: DOTCOM_URL.toString(),
@@ -41,11 +41,11 @@ describe('CodyReflectionAgent', () => {
     beforeEach(() => {
         mockAuthStatus(codyProAuthStatus)
         mockChatBuilder = {
-            selectedModel: 'anthropic::2023-06-01::cody-reflection',
+            selectedModel: 'anthropic::2023-06-01::deep-cody',
             changes: {
                 pipe: vi.fn(),
             },
-            resolvedModelForChat: vi.fn().mockReturnValue('anthropic::2023-06-01::cody-reflection'),
+            resolvedModelForChat: vi.fn().mockReturnValue('anthropic::2023-06-01::deep-cody'),
             addHumanMessage: vi.fn(),
             addBotMessage: vi.fn(),
             contextWindowForChat: vi.fn().mockReturnValue({ input: 10000, output: 1000 }),
@@ -80,7 +80,7 @@ describe('CodyReflectionAgent', () => {
         vi.spyOn(featureFlagProvider, 'evaluatedFeatureFlag').mockReturnValue(Observable.of(false))
         vi.spyOn(modelsService, 'isStreamDisabled').mockReturnValue(false)
         vi.spyOn(ChatBuilder, 'resolvedModelForChat').mockReturnValue(
-            Observable.of('anthropic::2023-06-01::cody-reflection')
+            Observable.of('anthropic::2023-06-01::deep-cody')
         )
         vi.spyOn(ChatBuilder, 'contextWindowForChat').mockReturnValue(
             Observable.of({ input: 10000, output: 1000 })
@@ -93,7 +93,7 @@ describe('CodyReflectionAgent', () => {
     })
 
     it('initializes correctly for dotcom user', async () => {
-        const agent = new CodyReflectionAgent(
+        const agent = new DeepCodyAgent(
             mockChatBuilder,
             mockChatClient,
             mockContextRetriever,
@@ -133,7 +133,7 @@ describe('CodyReflectionAgent', () => {
             ])
         )
 
-        const agent = new CodyReflectionAgent(
+        const agent = new DeepCodyAgent(
             mockChatBuilder,
             mockChatClient,
             mockContextRetriever,

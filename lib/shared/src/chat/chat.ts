@@ -35,7 +35,10 @@ export class ChatClient {
         const authStatus = this.getAuthStatus()
 
         // Replace internal models used for wrapper models with the actual model ID.
-        params.model = params.model?.replace('cody-reflection', 'claude-3.5-sonnet')
+        params.model = params.model?.replace(
+            'sourcegraph::2023-06-01::deep-cody',
+            'anthropic::2023-06-01::claude-3.5-sonnet'
+        )
 
         const useApiV1 = authStatus.codyApiVersion >= 1 && params.model?.includes('claude-3')
         const isLastMessageFromHuman = messages.length > 0 && messages.at(-1)!.speaker === 'human'
