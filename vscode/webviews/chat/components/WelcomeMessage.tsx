@@ -65,7 +65,6 @@ export const WelcomeMessage: FunctionComponent<WelcomeMessageProps> = ({ setView
                     showCommandOrigins={true}
                     showPromptLibraryUnsupportedMessage={false}
                     showOnlyPromptInsertableCommands={false}
-                    lastUsedSorting={true}
                     includeEditCommandOnTop={true}
                     onSelect={item => runAction(item, setView)}
                 />
