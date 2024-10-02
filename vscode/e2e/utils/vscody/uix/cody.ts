@@ -1,11 +1,10 @@
-import fs from 'node:fs/promises'
-import path from 'node:path'
 import { expect, test as t } from '@playwright/test'
+import { InvisibleStatusBarTag } from '@sourcegraph/cody-shared'
 import type { UIXContextFnContext } from '.'
-import { workspace } from '.'
-import { MITM_AUTH_TOKEN_PLACEHOLDER } from '../constants'
+
 type WebViewCtx = Pick<UIXContextFnContext, 'page'>
 
+//TODO: Refactor this to be a ExtensionChild
 /**
  * A web view can be positioned anywhere
  */
@@ -44,10 +43,9 @@ export class WebView {
     ) {
         return t.step('Cody.WebView.all', async () => {
             const excludedIds = opts.ignoring?.map(id => (typeof id === 'string' ? id : id.id)) ?? []
-            const nots = excludedIds.map(id => `:not([name="${id}"`).join('')
-            const validOptions = ctx.page.locator(
-                `iframe.webview[src*="extensionId=sourcegraph.cody-ai"]${nots}`
-            )
+            const nots = excludedIds.map(id => `:not([name="${id}"])`).join('')
+            const selectorString = `iframe.webview[src*="extensionId=sourcegraph.cody-ai"]${nots}`
+            const validOptions = ctx.page.locator(selectorString)
 
             if (opts.atLeast) {
                 await expect(validOptions.nth(opts.atLeast - 1)).toBeAttached({ timeout: opts.timeout })
@@ -61,38 +59,100 @@ export class WebView {
     }
 }
 
-export async function dummy() {
-    console.log('DUMMY')
+export class StatusBarItem {
+    private constructor(private ctx: Pick<UIXContextFnContext, 'page' | 'workspaceDir'>) {}
+
+    static with(init: Pick<UIXContextFnContext, 'page' | 'workspaceDir'>) {
+        return new StatusBarItem(init)
+    }
+    get locator() {
+        return this.ctx.page.locator('.statusbar-item[id="sourcegraph\\.cody-ai\\.extension-status"]')
+    }
+
+    withTags(tags: {
+        loading?: boolean
+        hasErrors?: boolean
+        hasIgnoredFile?: boolean
+        isAuthenticated?: boolean
+    }) {
+        // let targetStatus = this.statusBar.filter({
+        //     hasNot:
+        // })
+        let locator = this.locator
+        if (tags.loading !== undefined) {
+            const filterLocator = this.ctx.page.getByRole('button', {
+                name: 'loading~spin',
+            })
+            locator = locator.filter(tags.loading ? { has: filterLocator } : { hasNot: filterLocator })
+        }
+        if (tags.hasErrors !== undefined) {
+            const filterLocator = this.ctx.page.getByRole('button', {
+                name: InvisibleStatusBarTag.HasErrors,
+            })
+            locator = locator.filter(tags.hasErrors ? { has: filterLocator } : { hasNot: filterLocator })
+        }
+        if (tags.hasIgnoredFile !== undefined) {
+            const filterLocator = this.ctx.page.getByRole('button', {
+                name: InvisibleStatusBarTag.IsIgnored,
+            })
+            locator = locator.filter(
+                tags.hasIgnoredFile ? { has: filterLocator } : { hasNot: filterLocator }
+            )
+        }
+        if (tags.isAuthenticated !== undefined) {
+            const filterLocator = this.ctx.page.getByRole('button', {
+                name: InvisibleStatusBarTag.IsAuthenticated,
+            })
+            locator = locator.filter(
+                tags.isAuthenticated ? { has: filterLocator } : { hasNot: filterLocator }
+            )
+        }
+        return locator
+    }
+}
+
+export class Extension {
+    private constructor(private ctx: Pick<UIXContextFnContext, 'page' | 'workspaceDir'>) {}
+
+    static with(init: Pick<UIXContextFnContext, 'page' | 'workspaceDir'>) {
+        return new Extension(init)
+    }
+
+    get statusBarItem() {
+        return StatusBarItem.with(this.ctx)
+    }
+
+    get progressNotifications() {
+        const toasts = this.ctx.page.locator('.notification-toast')
+        return toasts.filter({
+            has: this.ctx.page
+                .getByLabel(/source: Cody/)
+                .locator('div.monaco-progress-container.active'),
+        })
+    }
+
+    async waitUntilReady(
+        additionalChecks: { isAuthenticated?: boolean; hasErrors?: boolean } = {
+            isAuthenticated: true,
+            hasErrors: false,
+        }
+    ) {
+        return await t.step('Extension.waitUntilReady', async () => {
+            const targetStatus = this.statusBarItem.withTags({
+                loading: false,
+                hasErrors: additionalChecks.hasErrors,
+                isAuthenticated: additionalChecks.isAuthenticated,
+            })
+            await expect(targetStatus).toBeVisible({ visible: true })
+            //TODO: Convert this to binaryDownload and indexingSpecific waits
+            //TODO: We probably want to also allow shifting of timeouts as download might take some time
+            await expect(this.progressNotifications).toHaveCount(0)
+
+            await Promise.all([waitForBinaryDownloads(), waitForIndexing()])
+        })
+    }
 }
 
 async function waitForBinaryDownloads() {}
 
 async function waitForIndexing() {}
-
-export async function waitForStartup() {
-    //TODO: Implement this
-    //TODO: make sure we can shift the timeout
-    await Promise.all([waitForBinaryDownloads(), waitForIndexing()])
-}
-
-/**
- * This ensures the user is already authenticated on the mock endpoint
- */
-export function preAuthenticate(ctx: Pick<UIXContextFnContext, 'workspaceDir'>) {
-    return t.step('preAuthenticate', async () => {
-        const secretFilePath = path.join(ctx.workspaceDir, '.vscode/cody_secrets.json')
-        await fs.mkdir(path.dirname(secretFilePath), { recursive: true })
-        await fs.writeFile(
-            secretFilePath,
-            JSON.stringify({
-                token: MITM_AUTH_TOKEN_PLACEHOLDER,
-            })
-        )
-        await workspace.modifySettings(
-            s => ({ ...s, 'cody.experimental.localTokenPath': secretFilePath }),
-            ctx
-        )
-    })
-}
-
-export namespace Config {}

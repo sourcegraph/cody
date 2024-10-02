@@ -7,15 +7,9 @@ import type {
 } from '@sourcegraph/cody-shared'
 import { useExtensionAPI, useInitialContextForChat, useObservable } from '@sourcegraph/prompt-editor'
 import clsx from 'clsx'
-import React, {
-    type Dispatch,
-    type FunctionComponent,
-    type SetStateAction,
-    useCallback,
-    useMemo,
-    useState,
-} from 'react'
+import React, { type FunctionComponent, useMemo } from 'react'
 import { getVSCodeAPI } from '../utils/VSCodeApi'
+import { useLocalStorage } from './hooks'
 import { Button } from './shadcn/ui/button'
 import { TabContainer, TabRoot } from './shadcn/ui/tabs'
 
@@ -197,25 +191,4 @@ const DebugActions: FunctionComponent<{ className?: string }> = ({ className }) 
             </li>
         </ul>
     )
-}
-
-function useLocalStorage<T>(
-    key: string,
-    defaultValue?: T
-): [T | undefined, Dispatch<SetStateAction<T>>] {
-    const [value, setValue] = useState<T>(() => {
-        const json = localStorage.getItem(key)
-        return json ? JSON.parse(json) : defaultValue
-    })
-    const persistValue = useCallback(
-        (value: T | Dispatch<T>) => {
-            setValue(current => {
-                const newValue = typeof value === 'function' ? (value as (prev: T) => T)(current) : value
-                localStorage.setItem(key, JSON.stringify(newValue))
-                return newValue
-            })
-        },
-        [key]
-    )
-    return [value, persistValue]
 }

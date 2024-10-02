@@ -1,6 +1,8 @@
 import {
+    type Action,
     type CodyCommand,
     CustomCommandType,
+    type Prompt,
     type PromptsResult,
     type WebviewToExtensionAPI,
     promiseFactoryToObservable,
@@ -59,11 +61,14 @@ export const FIXTURE_COMMANDS: CodyCommand[] = [
 /**
  * For testing only.
  */
-export function makePromptsAPIWithData(
-    data: Omit<PromptsResult, 'query'>
-): WebviewToExtensionAPI['prompts'] {
+export function makePromptsAPIWithData(data: {
+    arePromptsSupported?: boolean
+    prompts: Prompt[]
+    commands?: CodyCommand[]
+}): WebviewToExtensionAPI['prompts'] {
     return query =>
         promiseFactoryToObservable<PromptsResult>(async () => {
+            const { arePromptsSupported = true, prompts, commands = [] } = data
             await new Promise<void>(resolve => setTimeout(resolve, 500))
 
             const queryLower = query.toLowerCase()
@@ -72,15 +77,17 @@ export function makePromptsAPIWithData(
             }
 
             return {
-                prompts:
-                    data.prompts.type === 'results'
-                        ? {
-                              type: 'results',
-                              results: data.prompts.results.filter(prompt => matchQuery(prompt.name)),
-                          }
-                        : data.prompts,
-                commands: data.commands?.filter(c => matchQuery(c.key)),
                 query,
+                arePromptsSupported,
+                actions: [
+                    ...prompts
+                        .filter(prompt => matchQuery(prompt.name))
+                        .map<Action>(prompt => ({ ...prompt, actionType: 'prompt' })),
+
+                    ...commands
+                        .filter(c => matchQuery(c.key))
+                        .map<Action>(prompt => ({ ...prompt, actionType: 'command' })),
+                ],
             } satisfies PromptsResult
         })
 }

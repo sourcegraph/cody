@@ -2,6 +2,7 @@ import { Observable, interval, map } from 'observable-fns'
 import type { AuthStatus } from '../auth/types'
 import type { ClientConfiguration } from '../configuration'
 import { clientCapabilities } from '../configuration/clientCapabilities'
+import { cenv } from '../configuration/environment'
 import type { PickResolvedConfiguration } from '../configuration/resolver'
 import { FeatureFlag, featureFlagProvider } from '../experimentation/FeatureFlagProvider'
 import { fetchLocalOllamaModels } from '../llm-providers/ollama/utils'
@@ -67,7 +68,7 @@ export function syncModels({
             startWith(undefined),
             take(
                 // Use only a limited number of timers when running in Vitest so that `vi.runAllTimersAsync()` doesn't get into an infinite loop.
-                process.env.VITEST ? 10 : Number.MAX_SAFE_INTEGER
+                cenv.CODY_TESTING_LIMIT_MAX_TIMERS ? 10 : Number.MAX_SAFE_INTEGER
             )
         )
     ).pipe(

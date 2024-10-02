@@ -22,11 +22,11 @@ const CommandInput = React.forwardRef<
     React.ElementRef<typeof CommandPrimitive.Input>,
     React.ComponentPropsWithoutRef<typeof CommandPrimitive.Input>
 >(({ className, ...props }, ref) => (
-    <div className="tw-flex tw-items-center tw-border-b tw-border-b-border" cmdk-input-wrapper="">
+    <div className="tw-flex tw-items-center" cmdk-input-wrapper="">
         <CommandPrimitive.Input
             ref={ref}
             className={cn(
-                'tw-flex tw-w-full tw-border-solid tw-border tw-border-transparent tw-bg-transparent tw-pt-4 tw-pb-3 tw-px-3 tw-text-md tw-leading-none placeholder:tw-text-muted-foreground disabled:tw-cursor-not-allowed disabled:tw-opacity-50 focus:tw-outline-none',
+                'tw-flex tw-w-full tw-border-solid tw-border tw-border-transparent tw-text-md tw-leading-none placeholder:tw-text-muted-foreground disabled:tw-cursor-not-allowed disabled:tw-opacity-50 focus:tw-outline-none',
                 className
             )}
             inputMode="search"
@@ -43,7 +43,7 @@ const CommandList = React.forwardRef<
 >(({ className, ...props }, ref) => (
     <CommandPrimitive.List
         ref={ref}
-        className={cn('tw-max-h-[500px] tw-overflow-y-auto tw-overflow-x-hidden', className)}
+        className={cn('tw-overflow-y-auto tw-overflow-x-hidden', className)}
         {...props}
     />
 ))

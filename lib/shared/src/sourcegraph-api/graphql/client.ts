@@ -415,6 +415,12 @@ export interface Prompt {
         text: string
     }
     url: string
+    createdBy: {
+        id: string
+        username: string
+        displayName: string
+        avatarURL: string
+    }
 }
 
 interface ContextFiltersResponse {

@@ -7,6 +7,7 @@ import {
     expectContextCellCounts,
     focusChatInputAtEnd,
     getContextCell,
+    mentionMenu,
     openContextCell,
     openFileInEditorTab,
     openMentionsForProvider,
@@ -45,7 +46,7 @@ test.extend<ExpectedV2Events>({
     await chatInput.dblclick()
     await chatInput.focus()
     await page.keyboard.type('@')
-    await expect(chatPanelFrame.getByRole('option', { selected: true })).toHaveText('Files')
+    await expect(mentionMenu(chatPanelFrame).getByRole('option', { selected: true })).toHaveText('Files')
     await page.keyboard.press('Backspace')
 
     // No results

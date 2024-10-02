@@ -158,6 +158,10 @@ export async function openMentionsForProvider(
     await frame.getByRole('option', { name: provider }).click()
 }
 
+export function mentionMenu(chatFrame: FrameLocator): Locator {
+    return chatFrame.locator('[cmdk-root][data-testid="mention-menu"]')
+}
+
 export function mentionMenuItems(chatFrame: FrameLocator): Locator {
     return chatFrame.locator('[cmdk-root][data-testid="mention-menu"] [role="option"]')
 }

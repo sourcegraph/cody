@@ -5,6 +5,7 @@ import {
     DOTCOM_URL,
     type PickResolvedConfiguration,
     SourcegraphGraphQLAPIClient,
+    cenv,
     clientCapabilities,
     currentAuthStatus,
     getCodyAuthReferralCode,
@@ -245,7 +246,10 @@ export function redirectToEndpointLogin(uri: string): void {
         return
     }
 
-    if (clientCapabilities().isVSCode && vscode.env.uiKind === vscode.UIKind.Web) {
+    if (
+        clientCapabilities().isVSCode &&
+        (cenv.CODY_OVERRIDE_UI_KIND ?? vscode.env.uiKind) === vscode.UIKind.Web
+    ) {
         // VS Code Web needs a different kind of callback using asExternalUri and changes to our
         // UserSettingsCreateAccessTokenCallbackPage.tsx page in the Sourcegraph web app. So,
         // just require manual token entry for now.
@@ -363,6 +367,7 @@ export async function showSignOutMenu(): Promise<void> {
 async function signOut(endpoint: string): Promise<void> {
     await secretStorage.deleteToken(endpoint)
     await localStorage.deleteEndpoint()
+    authProvider.refresh()
 }
 
 /**
@@ -395,6 +400,7 @@ export async function validateCredentials(
         auth: config.auth,
         clientState: config.clientState,
     })
+
     const [{ enabled: siteHasCodyEnabled, version: siteVersion }, codyLLMConfiguration, userInfo] =
         await Promise.all([
             client.isCodyEnabled(signal),
