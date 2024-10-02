@@ -5,7 +5,6 @@ import type { OnProxyEvent } from 'http-proxy-middleware/dist/types'
 import 'node:http'
 import type { Server as HTTPServer, IncomingMessage, ServerResponse } from 'node:http'
 import 'node:https'
-import { EventEmitter } from 'node:stream'
 import { setTimeout as setPromiseTimeout } from 'node:timers/promises'
 import onHeaders from 'on-headers'
 import type { TestContext, WorkerContext } from '.'
@@ -112,22 +111,32 @@ export const mitmProxyFixture = _test.extend<TestContext, WorkerContext>({
                 },
             }
 
-            // Proxy Middleware has some internal Try/Catch wrapping so not all
-            // errors make it out into the test. By creating a manual signal we
-            // can ensure that errors inside the middleware always bubble up to
-            // a failed test.
-            const testFailureSignal = new EventEmitter<{ error: [Error] }>()
-            testFailureSignal.on('error', err => {
+            const handleError = (err: Error) => {
                 if (err.name === 'PollyError') {
                     if (err.message.includes('`recordIfMissing` is `false`')) {
-                        missingRecordingTriggered = true
-                        console.error('Missing recording')
+                        if (!missingRecordingTriggered) {
+                            void page
+                                .goto('about:blank')
+                                .then(() =>
+                                    page.setContent(
+                                        errorPage(
+                                            'Recording Missing',
+                                            'Try enabeling CODY_RECORD_IF_MISSING=true in your .env file or setting the recordMissing playwright setting.'
+                                        )
+                                    )
+                                )
+                                .then(() =>
+                                    // @ts-ignore: This is a hacky way to ensure that we cancel any pending timeouts.
+                                    // Since the test is already set as a failure this should now exit early!
+                                    testInfo._interrupt()
+                                )
+                            missingRecordingTriggered = true
+                        }
                     }
-                } else {
-                    console.error('Error inside MitM proxy', err.message)
                 }
-                throw err
-            })
+                testInfo.status = 'failed'
+                testInfo.errors.push(err)
+            }
 
             const proxyReqHandlers = [
                 sourcegraphProxyReqHandler('dotcom', config),
@@ -152,25 +161,30 @@ export const mitmProxyFixture = _test.extend<TestContext, WorkerContext>({
                         }
                         throw new Error('Unknown host prefix')
                     } catch (err) {
-                        testFailureSignal.emit('error', err as Error)
-                        return undefined
+                        handleError(err as Error)
                     }
+                    return undefined
                 },
                 on: {
                     error: err => {
-                        testFailureSignal.emit('error', err as Error)
+                        handleError(err)
                     },
                     proxyReq: (proxyReq, req, res, options) => {
                         try {
                             for (const handler of proxyReqHandlers) {
                                 const handlerRes = handler(proxyReq, req, res, options)
                                 if (handlerRes) {
+                                    if (validWorkerOptions.debugMode) {
+                                        console.debug(
+                                            `(mitmProxy) Proxy Request: {method: '${req.method}', url: '${req.url}', handler: '${handler.name}' }`
+                                        )
+                                    }
                                     return
                                 }
                             }
                             throw new Error('No proxy request handler found')
                         } catch (err) {
-                            testFailureSignal.emit('error', err as Error)
+                            handleError(err as Error)
                         }
                     },
                 },
@@ -298,7 +312,7 @@ function sourcegraphProxyReqHandler(
     variant: 'enterprise' | 'dotcom',
     config: MitMProxy
 ): ProxyReqHandler {
-    return (proxyReq, req, res, options) => {
+    const handler: ProxyReqHandler = (proxyReq, req, res, options) => {
         if (config.sourcegraph[variant].proxyTarget.startsWith((options.target as URL).origin)) {
             const name = `sourcegraph.${variant}`
             proxyReq.setHeader('accept-encoding', 'identity') //makes it easier to debug
@@ -336,6 +350,7 @@ function sourcegraphProxyReqHandler(
         }
         return false
     }
+    return Object.defineProperty(handler, 'name', { value: `sourcegraph.${variant}`, writable: false })
 }
 
 /**
@@ -354,3 +369,65 @@ export const floorResponseDelayFn =
         }
     }
 // TODO: fuzzy/random responseDelayFn
+
+const errorPage = (title: string, details: string) => `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Error</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+            background: #fff;
+            color: #000;
+            height: 100vh;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        .error {
+            max-width: 700px;
+            text-align: left;
+            padding: 0 20px;
+        }
+        h1 {
+            border-right: 1px solid rgba(0, 0, 0, .3);
+            display: inline-block;
+            margin: 0;
+            margin-right: 20px;
+            padding: 10px 23px 10px 0;
+            font-size: 24px;
+            font-weight: 500;
+            vertical-align: top;
+        }
+        .message {
+            display: inline-block;
+            text-align: left;
+            line-height: 49px;
+            height: 49px;
+            vertical-align: middle;
+        }
+        pre {
+            text-align: left;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            background: #f6f8fa;
+            padding: 20px;
+            border-radius: 5px;
+            overflow: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="error">
+        <h1>Error</h1>
+        <div class="message">${title}</div>
+    </div>
+    <pre id="errorDetails">${details}</pre>
+</body>
+</html>
+`

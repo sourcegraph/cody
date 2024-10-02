@@ -110,6 +110,16 @@
                     }
                 }
             }
+        },
+        {
+            "include": ["**/*.test.ts"],
+            "linter": {
+                "rules": {
+                    "suspicious": {
+                        "noFocusedTests": "warn"
+                    }
+                }
+            }
         }
     ],
     "vcs": {

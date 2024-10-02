@@ -1,6 +1,7 @@
 import {
     type ChatModel,
     TokenCounterUtils,
+    cenv,
     clientCapabilities,
     distinctUntilChanged,
     firstResultFromOperation,
@@ -496,9 +497,9 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         const sidebarViewOnly = this.extensionClient.capabilities?.webviewNativeConfig?.view === 'single'
         const isEditorViewType = this.webviewPanelOrView?.viewType === 'cody.editorPanel'
         const webviewType = isEditorViewType && !sidebarViewOnly ? 'editor' : 'sidebar'
-
+        const uiKindIsWeb = (cenv.CODY_OVERRIDE_UI_KIND ?? vscode.env.uiKind) === vscode.UIKind.Web
         return {
-            uiKindIsWeb: vscode.env.uiKind === vscode.UIKind.Web,
+            uiKindIsWeb,
             serverEndpoint: auth.serverEndpoint,
             experimentalNoodle: configuration.experimentalNoodle,
             smartApply: this.isSmartApplyEnabled(),

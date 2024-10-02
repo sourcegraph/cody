@@ -8,12 +8,6 @@ import type { TestContext, WorkerContext } from '.'
 import { CODY_VSCODE_ROOT_DIR, retry } from '../../helpers'
 
 export const kitchensinkFixture = _test.extend<TestContext, WorkerContext>({
-    debugMode: [
-        async ({}, use) => {
-            use(!!process.env.PWDEBUG)
-        },
-        { scope: 'worker' },
-    ],
     workspaceDir: [
         async ({ validOptions }, use, testInfo) => {
             const dir = await fs.mkdtemp(path.resolve(validOptions.globalTmpDir, 'test-workspace-'))

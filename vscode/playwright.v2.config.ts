@@ -27,7 +27,8 @@ if (process.env.CODY_RECORDING_MODE === 'once') {
     process.env.CODY_RECORDING_MODE = 'record'
 }
 
-const isDebugging = process.env.PWDEBUG === '1' || process.env.PWDEBUG === 'console'
+const debugMode =
+    process.env.PWDEBUG === '1' || process.env.PWDEBUG === 'console' || process.env.VSCDEBUG === '1'
 
 export default defineConfig<WorkerOptions & TestOptions & TmpDirOptions>({
     workers: '50%',
@@ -40,16 +41,18 @@ export default defineConfig<WorkerOptions & TestOptions & TmpDirOptions>({
     // We suspend timeouts when debugging (even from VSCode editor) so that if
     // you hit a breakpoint within the extension it doesn't cause a
     // test-failure.
-    timeout: isDebugging ? 0 : isWin || isCI ? 30000 : 20000,
+    timeout: debugMode ? 0 : isWin || isCI ? 30000 : 20000,
     expect: {
-        timeout: isDebugging ? 0 : isWin || isCI ? 20000 : 10000,
+        timeout: debugMode ? 0 : isWin || isCI ? 20000 : 10000,
     },
     // You can override options easily per project/worker/test so they are
     // unlikely to need to be modified here. These are just some sane defaults
     use: {
         //#region Recording
+        debugMode,
         forbidNonPlayback: isCI,
         recordingExpiryStrategy: isCI ? 'error' : 'record',
+        keepFinishedTestRunning: !isCI && debugMode,
         // we have a bi-weekly SourceGraph release so it makes sense to
         // re-record them around that cadence. Eventually we'll move to fully
         // local instance recordings so we're always testing against a specific
@@ -139,17 +142,27 @@ export default defineConfig<WorkerOptions & TestOptions & TmpDirOptions>({
         },
     ],
     reporter: [
-        // ['line', { printSteps: true, includeProjectInTestName: true }],
-        ['list', {}],
-        ['html', { outputFolder: '.test-reports', fileName: 'report.html', open: 'never' }],
         ['json', { outputFile: '.test-reports/report.json', open: 'never' }],
         ...(isCI
-            ? [
-                  ['github', {}] satisfies ReporterDescription,
-                  ['buildkite-test-collector/playwright/reporter'] satisfies ReporterDescription,
-              ]
-            : []),
+            ? ([
+                  ['github', {}],
+                  ['buildkite-test-collector/playwright/reporter'],
+              ] satisfies Array<ReporterDescription>)
+            : ([
+                  debugMode
+                      ? ['line', { printSteps: true, includeProjectInTestName: true }]
+                      : ['list', { open: 'never' }],
+                  [
+                      'html',
+                      {
+                          outputFolder: '.test-reports',
+                          fileName: 'report.html',
+                          open: 'never',
+                      },
+                  ],
+              ] satisfies Array<ReporterDescription>)),
     ],
-    globalSetup: require.resolve(path.resolve(CODY_VSCODE_ROOT_DIR, './e2e/utils/global.setup')),
-    globalTeardown: require.resolve(path.resolve(CODY_VSCODE_ROOT_DIR, './e2e/utils/global.teardown')),
+    // Disabled until https://github.com/microsoft/playwright/issues/32387 is resolved
+    // globalSetup: require.resolve(path.resolve(CODY_VSCODE_ROOT_DIR, './e2e/utils/global.setup')),
+    // globalTeardown: require.resolve(path.resolve(CODY_VSCODE_ROOT_DIR, './e2e/utils/global.teardown')),
 })

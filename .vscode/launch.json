@@ -70,14 +70,6 @@
       "type": "node"
     },
     {
-      "name": "Attach to E2Ev2 Debug",
-      "port": 33101,
-      "request": "attach",
-      "skipFiles": ["<node_internals>/**"],
-      "type": "node",
-      "sourceMaps": true,
-    },
-    {
       "type": "node",
       "request": "launch",
       "name": "Launch Agent port 3113",
@@ -104,6 +96,40 @@
       // (the implementation, not the test) will run the correct tests.
       "args": ["run", "${fileBasenameNoExtension}", "--disable-console-intercept", "--no-file-parallelism", "--no-isolate", "--testTimeout=86400", "--hookTimeout=86400"],
       "smartStep": true
+    },
+    {
+      "name": "Cody E2Ev2 - Attach",
+      "port": 33101,
+      "request": "attach",
+      "skipFiles": ["<node_internals>/**", ".test/global/vscode-server/**"],
+      "type": "node",
+      "cwd": "${workspaceFolder}",
+      "sourceMaps": true,
+    },
+    {
+      // TODO: For some reason the Playwright VSCode Extension is really slow when debugging.
+      // For now this can provide an alternative.
+      "type": "node",
+      "request": "launch",
+      "name": "Cody E2E - Build & Debug",
+      "preLaunchTask": "Build VS Code Extension (Desktop)",
+      "autoAttachChildProcesses": true,
+      "skipFiles": ["<node_internals>/**", ".test/global/vscode-server/**"],
+      "program": "${workspaceFolder}/vscode/node_modules/playwright/cli.js",
+      "env": {
+        "VSCDEBUG": "1",
+        "FORCE_COLOR": "true"
+      },
+      "cwd": "${workspaceFolder}",
+      // TODO: this doesn't quite seem to be working right yet.
+      // "sourceMaps": true,
+      // "outFiles": [
+      //   "${workspaceRoot}/vscode/dist/**/*.js",
+      //   "${workspaceRoot}/vscode/",
+      // ],
+      "args": ["test", "-c", "${workspaceFolder}/vscode/playwright.v2.config.ts", "--timeout=0", "--workers=1", "--headed"],
+      "smartStep": true,
+      "outputCapture": "std",
     }
-  ]
+  ],
 }

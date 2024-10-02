@@ -12,6 +12,7 @@ import os from 'node:os'
 import path from 'node:path'
 import { onExit } from 'signal-exit'
 import symlinkDir from 'symlink-dir'
+import type { UIKind } from 'vscode'
 import type { TestContext, WorkerContext } from '.'
 import { downloadFile } from '../../../../src/local-context/utils'
 import { waitForLock } from '../../../../src/lockfile'
@@ -63,7 +64,7 @@ export const vscodeFixture = _test.extend<TestContext, WorkerContext>({
     ],
     vscodeUI: [
         async (
-            { validOptions, debugMode, serverRootDir, mitmProxy, page, polly, telemetryRecorder },
+            { validOptions, serverRootDir, mitmProxy, page, polly, telemetryRecorder },
             use,
             testInfo
         ) => {
@@ -158,13 +159,16 @@ export const vscodeFixture = _test.extend<TestContext, WorkerContext>({
                 `--server-data-dir=${serverRootDir}`,
                 `--extensions-dir=${extensionsDir}`,
             ]
-            const extensionHostDebugPort = debugMode ? reservedExtensionHostDebugPort : null
+            const extensionHostDebugPort = validOptions.debugMode ? reservedExtensionHostDebugPort : null
             const env = {
+                PW: '1', //indicate a playwright test
                 ...process.env,
+                CODY_OVERRIDE_UI_KIND: `${1 satisfies UIKind.Desktop}`,
                 TESTING_DOTCOM_URL: mitmProxy.sourcegraph.dotcom.endpoint,
                 CODY_TESTING_BFG_DIR: path.resolve(CODY_VSCODE_ROOT_DIR, validOptions.binaryTmpDir),
                 CODY_TESTING_SYMF_DIR: path.resolve(CODY_VSCODE_ROOT_DIR, validOptions.binaryTmpDir),
             }
+            Object.assign(env, validOptions.codyEnvVariables)
             // payload is injected into the extension host when it's started
             const payload = []
             if (extensionHostDebugPort) {
@@ -192,33 +196,42 @@ export const vscodeFixture = _test.extend<TestContext, WorkerContext>({
                 env,
             })
 
+            page.addInitScript(targetURL => {
+                // we make sure to remove logging when we navigate away from the page
+                // as to not pollute the test logs
+                if (window.location.href.startsWith(targetURL)) {
+                    window.addEventListener('beforeunload', () => {
+                        console.log = () => {}
+                        console.info = () => {}
+                        console.warn = () => {}
+                        console.error = () => {}
+                        window.onerror = () => {}
+                    })
+                }
+            }, config.url)
+
             polly.play()
 
             await use(config)
 
-            polly.pause()
-            // Turn of logging browser logging and navigate away from the UI
-            // Otherwise we needlessly add a bunch of noisy error logs
-            if (!page.isClosed() && page.url().startsWith(config.url)) {
-                await page.evaluate(() => {
-                    console.log = () => {}
-                    console.info = () => {}
-                    console.warn = () => {}
-                    console.error = () => {}
-                    window.onerror = () => {}
-                })
-                if (mitmProxy.missingRecording) {
-                    await page.goto('about:blank')
-                    await page.setContent(
-                        errorPage(
-                            'Recording Missing',
-                            'Try enabeling CODY_RECORD_IF_MISSING=true in your .env file or setting the recordMissing playwright setting.'
-                        )
-                    )
-                }
-                //TODO: Add error / success overlay
-                //TODO: Add a way to keep the servers alive when debugging so that you can manually continue
+            // if the test failed and we're debugging we might want to keep the browser open so we can manually continue
+            if (validOptions.keepFinishedTestRunning) {
+                // we'll keep the browser open a bit longer
+                try {
+                    testInfo.status === 'failed'
+                        ? console.error(
+                              '❌ Test failed. Keeping the browser open for debugging purposes.'
+                          )
+                        : console.error(
+                              '✅ Test succeeded. Keeping the browser open for debugging purposes.'
+                          )
+                    await page.bringToFront()
+                    await page.locator('__never__').waitFor({ state: 'visible', timeout: 0 })
+                } catch {}
             }
+
+            polly.pause()
+
             if (serverProcess.pid) {
                 killChildrenSync(serverProcess.pid, 'SIGTERM')
                 killSync(serverProcess.pid, 'SIGTERM')
@@ -498,65 +511,3 @@ function getVSCodeArtifactName(platform: NodeJS.Platform, arch: string): string 
             throw new Error(`Unsupported platform: ${platform}/${arch}`)
     }
 }
-
-const errorPage = (title: string, details: string) => `
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Error</title>
-    <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
-            background: #fff;
-            color: #000;
-            height: 100vh;
-            text-align: center;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-        }
-        .error {
-            max-width: 700px;
-            text-align: left;
-            padding: 0 20px;
-        }
-        h1 {
-            border-right: 1px solid rgba(0, 0, 0, .3);
-            display: inline-block;
-            margin: 0;
-            margin-right: 20px;
-            padding: 10px 23px 10px 0;
-            font-size: 24px;
-            font-weight: 500;
-            vertical-align: top;
-        }
-        .message {
-            display: inline-block;
-            text-align: left;
-            line-height: 49px;
-            height: 49px;
-            vertical-align: middle;
-        }
-        pre {
-            text-align: left;
-            white-space: pre-wrap;
-            word-wrap: break-word;
-            background: #f6f8fa;
-            padding: 20px;
-            border-radius: 5px;
-            overflow: auto;
-        }
-    </style>
-</head>
-<body>
-    <div class="error">
-        <h1>Error</h1>
-        <div class="message">${title}</div>
-    </div>
-    <pre id="errorDetails">${details}</pre>
-</body>
-</html>
-`

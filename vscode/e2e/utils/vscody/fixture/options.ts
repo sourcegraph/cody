@@ -4,11 +4,16 @@ import type { ArrayContainsAll } from '@sourcegraph/cody-shared/src/utils'
 import 'node:http'
 import 'node:https'
 import path from 'node:path'
+import { cenv } from '@sourcegraph/cody-shared'
 import zod from 'zod'
 import type { TestContext, WorkerContext } from '.'
 import { CODY_VSCODE_ROOT_DIR } from '../../helpers'
 
 const zAbsPath = () => zod.string().transform(p => path.resolve(CODY_VSCODE_ROOT_DIR, p))
+
+type CenvKeys = keyof typeof cenv
+type CodyEnvTuple = typeof cenv extends { [K in CenvKeys]: any } ? [CenvKeys, ...CenvKeys[]] : never
+
 const workerOptionsSchema = zod.object({
     forbidNonPlayback: zod
         .boolean()
@@ -23,6 +28,13 @@ const workerOptionsSchema = zod.object({
     vscodeServerTmpDir: zAbsPath(),
     binaryTmpDir: zAbsPath(),
     pollyRecordingDir: zAbsPath(),
+    debugMode: zod.boolean().default(false),
+    keepFinishedTestRunning: zod
+        .boolean()
+        .default(false)
+        .describe(
+            'Keeps the UI and browser running after a completed test so you can manually continue interacting'
+        ),
     vscodeServerPortRange: zod.tuple([zod.number(), zod.number()]).default([33100, 33200]),
     mitmServerPortRange: zod.tuple([zod.number(), zod.number()]).default([34100, 34200]),
     keepRuntimeDirs: zod.enum(['all', 'failed', 'none']).default('none'),
@@ -43,6 +55,9 @@ const onlyTestOptionsSchema = zod.object({
         .enum(['record', 'warn', 'error'] satisfies ArrayContainsAll<EXPIRY_STRATEGY>)
         .default('error'),
     recordingExpiresIn: zod.string().nullable().default(null),
+    codyEnvVariables: zod
+        .record(zod.enum(Object.keys(cenv) as CodyEnvTuple), zod.string().optional())
+        .default({}),
 })
 
 const combinedOptionsSchema = zod
@@ -92,6 +107,8 @@ export const optionsFixture: ReturnType<
         async (
             {
                 binaryTmpDir,
+                keepFinishedTestRunning,
+                debugMode,
                 pollyRecordingDir,
                 globalTmpDir,
                 vscodeTmpDir,
@@ -109,6 +126,8 @@ export const optionsFixture: ReturnType<
             const validOptionsWithDefaults = await workerOptionsSchema.safeParseAsync(
                 {
                     binaryTmpDir,
+                    keepFinishedTestRunning,
+                    debugMode,
                     pollyRecordingDir,
                     globalTmpDir,
                     vscodeCommitSha,
@@ -139,6 +158,7 @@ export const optionsFixture: ReturnType<
     validOptions: [
         async (
             {
+                codyEnvVariables,
                 vscodeExtensions,
                 symlinkExtensions,
                 vscodeVersion,
@@ -154,6 +174,7 @@ export const optionsFixture: ReturnType<
         ) => {
             const validOptionsWithDefaults = await combinedOptionsSchema.safeParseAsync(
                 {
+                    codyEnvVariables,
                     vscodeExtensions,
                     symlinkExtensions,
                     vscodeVersion,

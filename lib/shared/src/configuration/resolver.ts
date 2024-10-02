@@ -70,25 +70,22 @@ export type PickResolvedConfiguration<Keys extends KeysSpec> = {
 async function resolveConfiguration(input: ConfigurationInput): Promise<ResolvedConfiguration> {
     // we allow for overriding the server endpoint from config if we haven't
     // manually signed in somewhere else
-
-    const rawServerEndpoint =
-        input.clientState.lastUsedEndpoint ||
-        (input.clientConfiguration.overrideServerEndpoint ??
-            (input.clientConfiguration.serverEndpoint || DOTCOM_URL.toString()))
-    const serverEndpoint = normalizeServerEndpointURL(rawServerEndpoint)
+    const serverEndpoint = normalizeServerEndpointURL(
+        input.clientConfiguration.overrideServerEndpoint ||
+            (input.clientState.lastUsedEndpoint ?? DOTCOM_URL.toString())
+    )
 
     // We must not throw here, because that would result in the `resolvedConfig` observable
     // terminating and all callers receiving no further config updates.
-    const accessToken =
-        input.clientConfiguration.overrideAuthToken ??
-        (await input.clientSecrets.getToken(serverEndpoint).catch(error => {
+    const loadTokenFn = () =>
+        input.clientSecrets.getToken(serverEndpoint).catch(error => {
             logError(
                 'resolveConfiguration',
                 `Failed to get access token for endpoint ${serverEndpoint}: ${error}`
             )
             return null
-        })) ??
-        null
+        })
+    const accessToken = input.clientConfiguration.overrideAuthToken || ((await loadTokenFn()) ?? null)
     return {
         configuration: input.clientConfiguration,
         clientState: input.clientState,

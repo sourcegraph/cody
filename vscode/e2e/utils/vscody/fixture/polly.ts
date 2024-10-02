@@ -3,17 +3,21 @@ import { Polly, Timing } from '@pollyjs/core'
 import jsonStableStringify from 'fast-json-stable-stringify'
 import 'node:http'
 import 'node:https'
+import * as path from 'node:path'
+import NodeHttpAdapter from '@pollyjs/adapter-node-http'
 import normalizeUrl from 'normalize-url'
 import type { TestContext, WorkerContext } from '.'
 import { redactAuthorizationHeader } from '../../../../src/testutils/CodyPersisterV2'
-
-import path from 'node:path'
+import { CodyPersister } from '../../../../src/testutils/CodyPersisterV2'
 import {
     MITM_PROXY_AUTH_AVAILABLE_HEADER,
     MITM_PROXY_AUTH_TOKEN_NAME_HEADER,
     MITM_PROXY_SERVICE_NAME_HEADER,
 } from '../constants'
 import { getFirstOrValue } from './util'
+
+Polly.register(NodeHttpAdapter)
+Polly.register(CodyPersister)
 
 export const pollyFixture = _test.extend<TestContext, WorkerContext>({
     polly: [
