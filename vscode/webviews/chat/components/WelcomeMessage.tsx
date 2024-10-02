@@ -1,4 +1,3 @@
-import { FeatureFlag } from '@sourcegraph/cody-shared'
 import {
     AtSignIcon,
     type LucideProps,
@@ -8,14 +7,13 @@ import {
 } from 'lucide-react'
 import type { FunctionComponent } from 'react'
 import type React from 'react'
-import { useClientActionDispatcher } from '../../client/clientState'
 import { CollapsiblePanel } from '../../components/CollapsiblePanel'
 import { Kbd } from '../../components/Kbd'
-import { PromptListSuitedForNonPopover } from '../../components/promptList/PromptList'
-import { onPromptSelectInPanel, onPromptSelectInPanelActionLabels } from '../../prompts/PromptsTab'
-import type { View } from '../../tabs'
+import { PromptList } from '../../components/promptList/PromptList'
+import { Button } from '../../components/shadcn/ui/button'
+import { useActionSelect } from '../../prompts/PromptsTab'
+import { View } from '../../tabs'
 import { useConfig } from '../../utils/useConfig'
-import { useFeatureFlag } from '../../utils/useFeatureFlags'
 
 const MenuExample: FunctionComponent<{ children: React.ReactNode }> = ({ children }) => (
     <span className="tw-p-1 tw-rounded tw-text-keybinding-foreground tw-border tw-border-keybinding-border tw-bg-keybinding-background tw-whitespace-nowrap">
@@ -53,31 +51,47 @@ export const WelcomeMessage: FunctionComponent<WelcomeMessageProps> = ({ setView
     // Remove the old welcome message dismissal key that is no longer used.
     localStorage.removeItem(localStorageKey)
 
-    const dispatchClientAction = useClientActionDispatcher()
-
-    const isUnifiedPromptsAvailable = useFeatureFlag(FeatureFlag.CodyUnifiedPrompts)
-
     const config = useConfig()
+    const runAction = useActionSelect()
 
     return (
         <div className="tw-flex-1 tw-flex tw-flex-col tw-items-start tw-w-full tw-px-6 tw-gap-6 tw-transition-all">
-            <CollapsiblePanel
-                storageKey="prompts"
-                title={isUnifiedPromptsAvailable ? 'Prompts' : 'Prompts & Commands'}
-                className="tw-mb-6"
-                contentClassName="!tw-p-0 tw-overflow-clip"
-                initialOpen={true}
-            >
-                <PromptListSuitedForNonPopover
-                    onSelect={item => onPromptSelectInPanel(item, setView, dispatchClientAction)}
-                    onSelectActionLabels={onPromptSelectInPanelActionLabels}
+            <div className="tw-flex tw-flex-col tw-gap-4 tw-w-full">
+                <PromptList
+                    showSearch={false}
+                    showFirstNItems={4}
+                    appearanceMode="chips-list"
                     telemetryLocation="PromptsTab"
                     showCommandOrigins={true}
                     showPromptLibraryUnsupportedMessage={false}
                     showOnlyPromptInsertableCommands={false}
-                    className="tw-rounded-none"
+                    includeEditCommandOnTop={true}
+                    onSelect={item => runAction(item, setView)}
                 />
-            </CollapsiblePanel>
+
+                <div className="tw-flex tw-gap-8">
+                    <Button
+                        variant="text"
+                        className="tw-justify-center"
+                        onClick={() =>
+                            document
+                                .querySelector<HTMLButtonElement>("button[aria-label='Insert prompt']")
+                                ?.click()
+                        }
+                    >
+                        Recently used
+                    </Button>
+
+                    <Button
+                        variant="text"
+                        className="tw-justify-center"
+                        onClick={() => setView(View.Prompts)}
+                    >
+                        All Prompts
+                    </Button>
+                </div>
+            </div>
+
             <CollapsiblePanel
                 storageKey="chat-help"
                 title="Chat Help"
