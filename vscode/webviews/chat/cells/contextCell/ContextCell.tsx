@@ -125,6 +125,7 @@ export const ContextCell: FunctionComponent<{
                                         onKeyUp={logContextOpening}
                                         title={itemCountLabel}
                                         className="tw-flex tw-items-center tw-gap-4"
+                                        disabled={isContextLoading}
                                     >
                                         <SourcegraphLogo
                                             width={NON_HUMAN_CELL_AVATAR_SIZE}
@@ -135,7 +136,10 @@ export const ContextCell: FunctionComponent<{
                                             <span className="tw-opacity-60 tw-text-sm tw-ml-2">
                                                 &mdash;{' '}
                                                 {isContextLoading
-                                                    ? 'Retrieving codebase files…'
+                                                    ? // TODO: Removes hardcoded model.
+                                                      model?.includes('deep-cody')
+                                                        ? 'Thinking...'
+                                                        : 'Retrieving codebase files…'
                                                     : itemCountLabel}
                                             </span>
                                         </span>

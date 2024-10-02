@@ -302,39 +302,45 @@ function getTooltip(model: Model, availability: string): string {
     }
 }
 
-const ModelTitleWithIcon: FunctionComponent<{
+const getBadgeText = (model: Model, modelAvailability?: ModelAvailability): string | null => {
+    if (modelAvailability === 'needs-cody-pro') return 'Cody Pro'
+
+    const tagToText: Record<string, string> = {
+        [ModelTag.Internal]: 'Sourcegraph',
+        [ModelTag.Experimental]: 'Experimental',
+        [ModelTag.Waitlist]: 'Join Waitlist',
+        [ModelTag.OnWaitlist]: 'On Waitlist',
+        [ModelTag.EarlyAccess]: 'Early Access',
+        [ModelTag.Recommended]: 'Recommended',
+        [ModelTag.Deprecated]: 'Deprecated',
+        [ModelTag.Dev]: 'Preview',
+    }
+
+    return model.tags.reduce((text, tag) => text || tagToText[tag] || '', null as string | null)
+}
+
+const ModelTitleWithIcon: React.FC<{
     model: Model
     showIcon?: boolean
     showProvider?: boolean
     modelAvailability?: ModelAvailability
 }> = ({ model, showIcon, modelAvailability }) => {
-    const getBadgeText = (model: Model, modelAvailability?: ModelAvailability): string | null => {
-        if (modelAvailability === 'needs-cody-pro') return 'Cody Pro'
-        if (model.tags.includes(ModelTag.Internal)) return '✨ Internal'
-        if (model.tags.includes(ModelTag.Experimental)) return 'Experimental'
-        if (model.tags.includes(ModelTag.Waitlist)) return 'Join Waitlist'
-        if (model.tags.includes(ModelTag.OnWaitlist)) return 'On Waitlist'
-        if (model.tags.includes(ModelTag.EarlyAccess)) return 'Early Access'
-        if (model.tags.includes(ModelTag.Recommended)) return 'Recommended'
-        return null
-    }
+    const modelBadge = getBadgeText(model, modelAvailability)
+    const isDisabled = modelAvailability !== 'available'
+    const isInternalModel = modelBadge === 'Internal'
 
     return (
-        <span
-            className={clsx(styles.modelTitleWithIcon, {
-                [styles.disabled]: modelAvailability !== 'available',
-            })}
-        >
+        <span className={clsx(styles.modelTitleWithIcon, { [styles.disabled]: isDisabled })}>
             {showIcon && <ChatModelIcon model={model.provider} className={styles.modelIcon} />}
             <span className={clsx('tw-flex-grow', styles.modelName)}>{model.title}</span>
-            {getBadgeText(model, modelAvailability) && (
+            {modelBadge && (
                 <Badge
-                    variant="secondary"
+                    variant={isInternalModel ? 'success' : 'secondary'}
                     className={clsx(styles.badge, {
                         'tw-opacity-75': modelAvailability === 'needs-cody-pro',
                     })}
                 >
-                    {getBadgeText(model, modelAvailability)}
+                    {modelBadge}
                 </Badge>
             )}
         </span>
