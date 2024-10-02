@@ -303,7 +303,7 @@ query ContextFilters {
 
 export const PROMPTS_QUERY = `
 query ViewerPrompts($query: String!) {
-    prompts(query: $query, first: 100, viewerIsAffiliated: true, orderBy: PROMPT_NAME_WITH_OWNER) {
+    prompts(query: $query, first: 100, includeDrafts: false, viewerIsAffiliated: true, orderBy: PROMPT_UPDATED_AT) {
         nodes {
             id
             name
