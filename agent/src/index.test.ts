@@ -183,7 +183,6 @@ describe('Agent', () => {
         // Do not remove this assertion, and instead update the expectedEvents list above
         expect(await exportedTelemetryEvents(client)).toEqual(
             expect.arrayContaining([
-                'cody.auth:failed',
                 'cody.auth:connected',
                 'cody.auth.login:firstEver',
                 'cody.interactiveTutorial:attemptingStart',

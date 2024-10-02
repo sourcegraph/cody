@@ -141,6 +141,7 @@ const RESPONSE_HEADERS_TO_SAVE = [
     'fireworks-prompt-tokens',
     'fireworks-server-time-to-first-token',
     'fireworks-speculation-matched-tokens',
+    'x-upstream-time-to-first-token',
 ] as const
 
 type ResponseHeaderName = (typeof RESPONSE_HEADERS_TO_SAVE)[number]

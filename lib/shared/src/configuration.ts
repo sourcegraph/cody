@@ -5,12 +5,20 @@ import type { PromptString } from './prompt/prompt-string'
 import type { ReadonlyDeep } from './utils'
 
 /**
+ * Represents the source of an authentication token generation, either a redirect or paste flow.
+ * A redirect flow is initiated by the user clicking a link in the browser, while a paste flow is initiated by the user
+ * manually entering the access from into the VsCode App.
+ */
+export type TokenSource = 'redirect' | 'paste'
+
+/**
  * The user's authentication credentials, which are stored separately from the rest of the
  * configuration.
  */
 export interface AuthCredentials {
     serverEndpoint: string
     accessToken: string | null
+    tokenSource?: TokenSource | undefined
 }
 
 interface RawClientConfiguration {
@@ -20,7 +28,7 @@ interface RawClientConfiguration {
     debugVerbose: boolean
     telemetryLevel: 'all' | 'off' | 'agent'
 
-    serverEndpoint: string
+    serverEndpoint?: string
     customHeaders?: Record<string, string>
     chatPreInstruction: PromptString
     editPreInstruction: PromptString
@@ -28,9 +36,7 @@ interface RawClientConfiguration {
     commandHints: boolean
     commandCodeLenses: boolean
 
-    /**
-     * Autocomplete
-     */
+    //#region Autocomplete
     autocomplete: boolean
     autocompleteLanguages: Record<string, boolean>
     autocompleteAdvancedProvider: AutocompleteProviderID | string
@@ -38,9 +44,12 @@ interface RawClientConfiguration {
     autocompleteFormatOnAccept?: boolean
     autocompleteDisableInsideComments: boolean
 
-    /**
-     * Experimental
-     */
+    //#region Experimental
+    autocompleteExperimentalGraphContext: 'lsp-light' | 'tsc' | 'tsc-mixed' | null
+    autocompleteExperimentalOllamaOptions: OllamaOptions
+    autocompleteExperimentalFireworksOptions?: ExperimentalFireworksConfig
+    autocompleteExperimentalPreloadDebounceInterval?: number
+
     experimentalTracing: boolean
     experimentalSupercompletions: boolean
     experimentalCommitMessage: boolean
@@ -48,24 +57,12 @@ interface RawClientConfiguration {
     experimentalMinionAnthropicKey: string | undefined
     experimentalGuardrailsTimeoutSeconds: number | undefined
 
-    /**
-     * Unstable Features for internal testing only
-     */
+    //#region Unstable
     internalUnstable: boolean
     internalDebugContext?: boolean
     internalDebugState?: boolean
 
-    /**
-     * Experimental autocomplete
-     */
-    autocompleteExperimentalGraphContext: 'lsp-light' | 'tsc' | 'tsc-mixed' | null
-    autocompleteExperimentalOllamaOptions: OllamaOptions
-    autocompleteExperimentalFireworksOptions?: ExperimentalFireworksConfig
-    autocompleteExperimentalPreloadDebounceInterval?: number
-
-    /**
-     * Hidden settings
-     */
+    //#region Hidden Settings
     hasNativeWebview: boolean
     isRunningInsideAgent?: boolean
 
@@ -102,6 +99,16 @@ interface RawClientConfiguration {
     autocompleteAdvancedModel: string | null
     providerLimitPrompt?: number
     devModels?: ChatModelProviderConfig[]
+
+    //#region Forced Overrides
+    /**
+     * Overrides always take precedence over other configuration. Specific
+     * override flags should be preferred over opaque broad settings /
+     * environment variables such as TESTING_MODE which can make it difficult to
+     * understand the broad implications such a setting can have.
+     */
+    overrideServerEndpoint: string | undefined
+    overrideAuthToken: string | undefined
 }
 
 /**

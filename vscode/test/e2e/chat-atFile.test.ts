@@ -7,6 +7,7 @@ import {
     expectContextCellCounts,
     focusChatInputAtEnd,
     getContextCell,
+    mentionMenu,
     openContextCell,
     openFileInEditorTab,
     openMentionsForProvider,
@@ -27,8 +28,6 @@ test.extend<ExpectedV2Events>({
         'cody.auth.login:firstEver',
         'cody.auth.signin.token:clicked',
         'cody.auth:connected',
-        'cody.at-mention:executed',
-        'cody.at-mention.file:executed',
         'cody.chat-question:submitted',
         'cody.chat-question:executed',
         'cody.chatResponse:noCode',
@@ -45,7 +44,7 @@ test.extend<ExpectedV2Events>({
     await chatInput.dblclick()
     await chatInput.focus()
     await page.keyboard.type('@')
-    await expect(chatPanelFrame.getByRole('option', { selected: true })).toHaveText('Files')
+    await expect(mentionMenu(chatPanelFrame).getByRole('option', { selected: true })).toHaveText('Files')
     await page.keyboard.press('Backspace')
 
     // No results
@@ -211,8 +210,6 @@ test.extend<ExpectedV2Events>({
         'cody.auth.signin.token:clicked',
         'cody.auth:connected',
         'cody.auth:connected',
-        'cody.at-mention:executed',
-        'cody.at-mention.file:executed',
         'cody.chat-question:submitted',
         'cody.chat-question:executed',
         'cody.editChatButton:clicked',
@@ -257,7 +254,6 @@ test.extend<ExpectedV2Events>({
         'cody.auth.login:firstEver',
         'cody.auth.signin.token:clicked',
         'cody.auth:connected',
-        'cody.at-mention.file:executed',
         'cody.chat-question:submitted',
         'cody.chat-question:executed',
         'cody.chatResponse:noCode',
@@ -298,8 +294,6 @@ test.extend<ExpectedV2Events>({
         'cody.auth.login:firstEver',
         'cody.auth.signin.token:clicked',
         'cody.auth:connected',
-        'cody.at-mention:executed',
-        'cody.at-mention.symbol:executed',
         'cody.chat-question:submitted',
         'cody.chat-question:executed',
         'cody.chatResponse:noCode',

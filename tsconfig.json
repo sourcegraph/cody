@@ -18,7 +18,7 @@
     "rootDir": "."
   },
   "include": [".config/*.ts"],
-  "exclude": ["dist", "node_modules", "typehacks"],
+  "exclude": ["dist", "node_modules", "typehacks", ".test"],
   "watchOptions": {
     "watchFile": "useFsEvents",
     "watchDirectory": "useFsEvents",

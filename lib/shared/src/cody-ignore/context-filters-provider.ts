@@ -5,6 +5,7 @@ import { RE2JS as RE2 } from 're2js'
 import type * as vscode from 'vscode'
 import { currentAuthStatus } from '../auth/authStatus'
 import { isFileURI } from '../common/uri'
+import { cenv } from '../configuration/environment'
 import { logDebug, logError } from '../logger'
 import { fromVSCodeEvent } from '../misc/observable'
 import { isDotCom } from '../sourcegraph-api/environments'
@@ -142,7 +143,7 @@ export class ContextFiltersProvider implements vscode.Disposable {
         this.lastContextFiltersResponse = canonicalizeContextFilters(contextFilters)
 
         // Disable logging for unit tests. Retain for manual debugging of enterprise issues.
-        if (!process.env.VITEST) {
+        if (!cenv.CODY_TESTING_LOG_SUPRESS_VERBOSE) {
             logDebug('ContextFiltersProvider', 'setContextFilters', {
                 verbose: contextFilters,
             })

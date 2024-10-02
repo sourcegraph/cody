@@ -25,6 +25,14 @@ query CurrentUserCodySubscription {
     }
 }`
 
+export const DELETE_ACCESS_TOKEN_MUTATION = `
+mutation DeleteAccessToken($token: String!) {
+    deleteAccessToken(byToken: $token) {
+        alwaysNil
+    }
+}
+`
+
 export const CURRENT_USER_INFO_QUERY = `
 query CurrentUser {
     currentUser {
@@ -303,7 +311,7 @@ query ContextFilters {
 
 export const PROMPTS_QUERY = `
 query ViewerPrompts($query: String!) {
-    prompts(query: $query, first: 100, viewerIsAffiliated: true, orderBy: PROMPT_NAME_WITH_OWNER) {
+    prompts(query: $query, first: 100, includeDrafts: false, viewerIsAffiliated: true, orderBy: PROMPT_UPDATED_AT) {
         nodes {
             id
             name
@@ -317,6 +325,12 @@ query ViewerPrompts($query: String!) {
                 text
             }
             url
+            createdBy {
+                id
+                username
+                displayName
+                avatarURL
+            }
         }
         totalCount
         pageInfo {
