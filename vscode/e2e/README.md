@@ -200,9 +200,9 @@ VSCode Web runs the extension host (where Cody is executed) in the browser,
 which limits access to Node.js APIs. In contrast, VSCode Server runs actual
 for-realsies VSCode with only the UI displayed in a normal browser. This allows
 Cody to run in a proper Node.js extension host with full API access. This
-approach is functionally equivalen to running the VSCode electron application.
-But with significantly less overhead and the magic ability to run in headless
-mode 🔥.
+approach is functionally equivalent to running the VSCode Electron application.
+However with significantly reduced performance overhead as well as the fantastic
+ability to to run in headless mode 🔥.
 
 
 #### 2.3 MitM Server / PollyJS
@@ -444,11 +444,17 @@ await cody.statusBar.filter({hasText: 'Cody is disabled'}).click() // 3. Clicks 
 ```
 
 When a test fails you can always look at the trace recording to get a
-visualization of where the locator was pointing.
+visualization of where the locator was pointing. A path to to the test report
+containing the trace views will be printed to the console after the test
+completes, just follow the instructions:
 
-It is also best to reseve clicks when part of the actual behaviour being tested.
-For instance, don't use clicks to open a file or prepare other test conditions.
-We have much more powerfull and flake-free alternatives to do so...
+> To open last HTML report run:
+>
+>  `pnpm exec playwright show-report .test-reports`
+
+It is also best to reserve clicks when part of the actual behaviour being
+tested. For instance, don't use clicks to open a file or prepare other test
+conditions. We have much more powerfull and flake-free alternatives to do so...
 
 #### Commands > Clicks
 
@@ -877,9 +883,15 @@ look at what is being sent.
 
 #### Freeze...in the Name of Tests
 
-Building on the previous one. When running a test in debug/headed mode it's great to be able to use the Chrome DevTools (`Cmd + Shift + I`) or Playwright Inspector to be able to find or debug locators. That is, until you find yourself needing to inspect something that's not there unless it's hovered! Which you can't do when also trying to use the Inspector.
+Building on the previous one. When running a test in debug/headed mode it's
+great to be able to use the Chrome DevTools (`Cmd + Shift + I`) or Playwright
+Inspector to be able to find or debug locators. That is, until you find yourself
+needing to inspect something that's not there unless it's hovered! Which you
+can't do when also trying to use the Inspector.
 
-Although Chrome does have some burried settings for freezing the UI state there's usually a much easier way of temporarily keeping those ephemeral menus open. Simply open the Chrome Devtools and type
+Although Chrome does have some burried settings for freezing the UI state
+there's usually a much easier way of temporarily keeping those ephemeral menus
+open. Simply open the Chrome Devtools and type
 
 ```
 setTimeout(() => {
@@ -887,7 +899,10 @@ setTimeout(() => {
 }, 5 * 1000);
 ```
 
-After you hit `Enter` you now have 5 seconds to put the UI into the hover state you're interested in before the debugger suspends the application. Giving you plenty of time to poke and prod at the UI with the inspector until you resume the execution.
+After you hit `Enter` you now have 5 seconds to put the UI into the hover state
+you're interested in before the debugger suspends the application. Giving you
+plenty of time to poke and prod at the UI with the inspector until you resume
+the execution.
 
 ```ts
 test('complicate test', async ({page}, testInfo) => {
@@ -920,7 +935,8 @@ await page.getByRole('link', { name: 'next page' }).click();
 ```
 
 ## Next Steps
-- Migrate remaining existing E2E / integration tests. List of [priorities](https://buildkite.com/organizations/sourcegraph/analytics/suites/cody/tests?branch=main&filter=reliability&period=7days)
+- Migrate remaining existing E2E / integration tests. List of
+  [priorities](https://buildkite.com/organizations/sourcegraph/analytics/suites/cody/tests?branch=main&filter=reliability&period=7days)
 - Allowing a user to "record" their issue as a test in a production build.
 - Full local-only end-to-end tests including locally runing backend instances.
   This would allow us to more easily develop and verify fullstack changes.

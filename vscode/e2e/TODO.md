@@ -1,0 +1,5 @@
+- Safe UI action wrapper; ensuring a pre-and-post locator to verify action completed correctly.
+- Handle telemetry delays & asserts in snapshotter
+- Streamline pre-auth DX
+- Fix windows minor issues
+- Enable CI
