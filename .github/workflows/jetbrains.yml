@@ -18,6 +18,7 @@ jobs:
         with:
           repository: sourcegraph/jetbrains
           path: jetbrains
+          ref: main
       - name: Fetch Cody Source
         uses: actions/checkout@v4
         with:
