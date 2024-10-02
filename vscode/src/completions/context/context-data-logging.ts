@@ -27,6 +27,7 @@ export class ContextRetrieverDataCollection implements vscode.Disposable {
     private disposables: vscode.Disposable[] = []
     private static readonly MAX_PAYLOAD_SIZE_BYTES = 1024 * 1024 // 1 MB
     private dataCollectionFlagState = false
+    private gitMetadataInstance = GitHubDotComRepoMetadata.getInstance()
 
     private readonly retrieverConfigs: RetrieverConfig[] = [
         { identifier: RetrieverIdentifier.RecentCopyRetriever, maxSnippets: 1 },
@@ -96,7 +97,7 @@ export class ContextRetrieverDataCollection implements vscode.Disposable {
         if (!repoName || !isDotComAuthed() || this.dataCollectionRetrievers.length === 0) {
             return false
         }
-        const gitRepoMetadata = GitHubDotComRepoMetadata.getInstance().getRepoMetadataIfCached(repoName)
+        const gitRepoMetadata = this.gitMetadataInstance.getRepoMetadataIfCached(repoName)
         return gitRepoMetadata?.isPublic ?? false
     }
 

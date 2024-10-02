@@ -848,8 +848,8 @@ export class InlineCompletionItemProvider
                 suggestionEvent.markAsRead({
                     document: invokedDocument,
                     position: invokedPosition,
-                    docPrefix: completion.requestParams.docContext.completePrefix,
-                    docSuffix: completion.requestParams.docContext.completeSuffix,
+                    completePrefix: completion.requestParams.docContext.completePrefix,
+                    completeSuffix: completion.requestParams.docContext.completeSuffix,
                 })
             }
         }, this.COMPLETION_VISIBLE_DELAY_MS)

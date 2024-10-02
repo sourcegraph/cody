@@ -31,7 +31,6 @@ describe('CodeQwen', () => {
 
               Additional documentation for \`ContextParams\`:
               interface ContextParams {}
-
               <|file_sep|>codebase/test.ts
               <|fim_prefix|>console.log(prefix line: 1)
               console.log(prefix line: 2)
