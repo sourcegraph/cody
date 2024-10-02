@@ -69,10 +69,10 @@ export const WelcomeMessage: FunctionComponent<WelcomeMessageProps> = ({ setView
                     onSelect={item => runAction(item, setView)}
                 />
 
-                <div className="tw-flex tw-gap-8">
+                <div className="tw-flex tw-gap-8 tw-justify-center">
                     <Button
                         variant="text"
-                        className="tw-justify-center"
+                        className="tw-justify-center tw-basis-0 tw-whitespace-nowrap"
                         onClick={() =>
                             document
                                 .querySelector<HTMLButtonElement>("button[aria-label='Insert prompt']")
@@ -84,7 +84,7 @@ export const WelcomeMessage: FunctionComponent<WelcomeMessageProps> = ({ setView
 
                     <Button
                         variant="text"
-                        className="tw-justify-center"
+                        className="tw-justify-center tw-basis-0 tw-whitespace-nowrap"
                         onClick={() => setView(View.Prompts)}
                     >
                         All Prompts
