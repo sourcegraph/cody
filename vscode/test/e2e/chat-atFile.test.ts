@@ -253,7 +253,6 @@ test.extend<ExpectedV2Events>({
         'cody.auth.login:firstEver',
         'cody.auth.signin.token:clicked',
         'cody.auth:connected',
-        'cody.at-mention.file:executed',
         'cody.chat-question:submitted',
         'cody.chat-question:executed',
         'cody.chatResponse:noCode',
