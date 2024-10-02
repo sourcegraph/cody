@@ -288,7 +288,6 @@ private constructor(
                   // emit `null` instead of leaving fields undefined because Cody
                   // VSC has many `=== null` checks that return false for undefined fields.
                   .serializeNulls()
-                  .registerTypeAdapter(ContextItem::class.java, ContextItem.deserializer)
                   .registerTypeAdapter(CompletionItemID::class.java, CompletionItemIDSerializer)
                   // TODO: Once all protocols have migrated we can remove these legacy enum
                   // conversions

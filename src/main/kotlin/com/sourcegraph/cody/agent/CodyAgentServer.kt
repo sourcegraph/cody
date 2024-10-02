@@ -4,7 +4,6 @@ package com.sourcegraph.cody.agent
 
 import com.sourcegraph.cody.agent.protocol.AutocompleteParams
 import com.sourcegraph.cody.agent.protocol.AutocompleteResult
-import com.sourcegraph.cody.agent.protocol.ChatHistoryResponse
 import com.sourcegraph.cody.agent.protocol.CompletionItemParams
 import com.sourcegraph.cody.agent.protocol.CurrentUserCodySubscription
 import com.sourcegraph.cody.agent.protocol.GetFeatureFlag
@@ -15,7 +14,24 @@ import com.sourcegraph.cody.agent.protocol.InlineEditParams
 import com.sourcegraph.cody.agent.protocol.NetworkRequest
 import com.sourcegraph.cody.agent.protocol.ProtocolTextDocument
 import com.sourcegraph.cody.agent.protocol.TelemetryEvent
-import com.sourcegraph.cody.agent.protocol_generated.*
+import com.sourcegraph.cody.agent.protocol_generated.Chat_ImportParams
+import com.sourcegraph.cody.agent.protocol_generated.Chat_ModelsParams
+import com.sourcegraph.cody.agent.protocol_generated.Chat_ModelsResult
+import com.sourcegraph.cody.agent.protocol_generated.ClientInfo
+import com.sourcegraph.cody.agent.protocol_generated.CodeActions_ProvideParams
+import com.sourcegraph.cody.agent.protocol_generated.CodeActions_ProvideResult
+import com.sourcegraph.cody.agent.protocol_generated.CodeActions_TriggerParams
+import com.sourcegraph.cody.agent.protocol_generated.Diagnostics_PublishParams
+import com.sourcegraph.cody.agent.protocol_generated.EditTask
+import com.sourcegraph.cody.agent.protocol_generated.EditTask_AcceptParams
+import com.sourcegraph.cody.agent.protocol_generated.EditTask_CancelParams
+import com.sourcegraph.cody.agent.protocol_generated.EditTask_GetTaskDetailsParams
+import com.sourcegraph.cody.agent.protocol_generated.EditTask_RetryParams
+import com.sourcegraph.cody.agent.protocol_generated.EditTask_UndoParams
+import com.sourcegraph.cody.agent.protocol_generated.ExecuteCommandParams
+import com.sourcegraph.cody.agent.protocol_generated.ExtensionConfiguration
+import com.sourcegraph.cody.agent.protocol_generated.Null
+import com.sourcegraph.cody.agent.protocol_generated.ServerInfo
 import java.util.concurrent.CompletableFuture
 import org.eclipse.lsp4j.jsonrpc.services.JsonNotification
 import org.eclipse.lsp4j.jsonrpc.services.JsonRequest
@@ -39,6 +55,9 @@ interface _SubsetGeneratedCodyAgentServer {
 
   @JsonRequest("diagnostics/publish")
   fun diagnostics_publish(params: Diagnostics_PublishParams): CompletableFuture<Null?>
+
+  @JsonRequest("command/execute")
+  fun command_execute(params: ExecuteCommandParams): CompletableFuture<Any>
 
   @JsonRequest("codeActions/provide")
   fun codeActions_provide(
@@ -104,8 +123,6 @@ interface _LegacyAgentServer {
   @JsonNotification("textDocument/didClose")
   fun textDocumentDidClose(document: ProtocolTextDocument)
 
-  @JsonNotification("textDocument/didSave") fun textDocumentDidSave(document: ProtocolTextDocument)
-
   @JsonNotification("autocomplete/clearLastCandidate") fun autocompleteClearLastCandidate()
 
   @JsonNotification("autocomplete/completionSuggested")
@@ -122,9 +139,6 @@ interface _LegacyAgentServer {
 
   @JsonRequest("editTask/cancel")
   fun cancelEditTask(params: EditTask_CancelParams): CompletableFuture<Void?>
-
-  @JsonRequest("command/execute")
-  fun commandExecute(params: CommandExecuteParams): CompletableFuture<Any?>
 
   @JsonRequest("editCommands/document") fun commandsDocument(): CompletableFuture<EditTask>
 
@@ -145,8 +159,6 @@ interface _LegacyAgentServer {
 
   @JsonRequest("webview/resolveWebviewView")
   fun webviewResolveWebviewView(params: WebviewResolveWebviewViewParams): CompletableFuture<Any>
-
-  @JsonRequest("chat/export") fun chatExport(): CompletableFuture<List<ChatHistoryResponse>>
 
   @JsonRequest("chat/import") fun chat_import(params: Chat_ImportParams): CompletableFuture<Null?>
 

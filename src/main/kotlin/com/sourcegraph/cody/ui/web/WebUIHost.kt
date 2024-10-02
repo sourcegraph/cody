@@ -10,8 +10,11 @@ import com.intellij.openapi.actionSystem.impl.SimpleDataContext
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.options.ShowSettingsUtil
 import com.intellij.openapi.project.Project
-import com.sourcegraph.cody.agent.*
+import com.sourcegraph.cody.agent.CodyAgentService
+import com.sourcegraph.cody.agent.WebviewDidDisposeParams
+import com.sourcegraph.cody.agent.WebviewReceiveMessageStringEncodedParams
 import com.sourcegraph.cody.agent.protocol.WebviewOptions
+import com.sourcegraph.cody.agent.protocol_generated.ExecuteCommandParams
 import com.sourcegraph.cody.config.CodyAuthenticationManager
 import com.sourcegraph.cody.config.ui.AccountConfigurable
 import com.sourcegraph.cody.config.ui.CodyConfigurable
@@ -133,7 +136,7 @@ internal class WebUIHostImpl(
     if (_options.enableCommandUris == true ||
         (_options.enableCommandUris as List<*>).contains(commandName)) {
       CodyAgentService.withAgent(project) {
-        it.server.commandExecute(CommandExecuteParams(commandName, arguments))
+        it.server.command_execute(ExecuteCommandParams(commandName, arguments))
       }
     }
   }

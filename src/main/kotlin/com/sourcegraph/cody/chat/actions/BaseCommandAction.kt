@@ -8,8 +8,8 @@ import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.project.Project
 import com.intellij.util.concurrency.AppExecutorUtil
 import com.sourcegraph.cody.agent.CodyAgentService
-import com.sourcegraph.cody.agent.CommandExecuteParams
 import com.sourcegraph.cody.agent.protocol.ProtocolTextDocument
+import com.sourcegraph.cody.agent.protocol_generated.ExecuteCommandParams
 import com.sourcegraph.cody.commands.CommandId
 import com.sourcegraph.cody.ignore.ActionInIgnoredFileNotification
 import com.sourcegraph.cody.ignore.IgnoreOracle
@@ -40,8 +40,8 @@ abstract class BaseCommandAction : DumbAwareEDTAction() {
             when (it) {
               IgnorePolicy.USE -> {
                 CodyAgentService.withAgent(project) { agent ->
-                  agent.server.commandExecute(
-                      CommandExecuteParams(
+                  agent.server.command_execute(
+                      ExecuteCommandParams(
                           command =
                               when (myCommandId) {
                                 CommandId.Explain -> "cody.command.explain-code"
