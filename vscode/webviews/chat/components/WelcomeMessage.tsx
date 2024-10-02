@@ -71,7 +71,7 @@ export const WelcomeMessage: FunctionComponent<WelcomeMessageProps> = ({ setView
 
                 <div className="tw-flex tw-gap-8 tw-justify-center">
                     <Button
-                        variant="text"
+                        variant="ghost"
                         className="tw-justify-center tw-basis-0 tw-whitespace-nowrap"
                         onClick={() =>
                             document
@@ -83,7 +83,7 @@ export const WelcomeMessage: FunctionComponent<WelcomeMessageProps> = ({ setView
                     </Button>
 
                     <Button
-                        variant="text"
+                        variant="ghost"
                         className="tw-justify-center tw-basis-0 tw-whitespace-nowrap"
                         onClick={() => setView(View.Prompts)}
                     >
