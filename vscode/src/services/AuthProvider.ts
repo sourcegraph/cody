@@ -220,11 +220,14 @@ export function newAuthProviderForTest(
 
 function startAuthTelemetryReporter(): Unsubscribable {
     return authStatus.subscribe(authStatus => {
-        reportAuthTelemetryEvent(authStatus)
+        // no-op
     })
 }
 
 function reportAuthTelemetryEvent(authStatus: AuthStatus): void {
+    if (authStatus.pendingValidation) {
+        return // Not a valid event to report.
+    }
     let eventValue: 'disconnected' | 'connected' | 'failed'
     if (
         !authStatus.authenticated &&
