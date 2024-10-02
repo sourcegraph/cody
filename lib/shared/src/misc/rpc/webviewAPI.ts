@@ -125,7 +125,6 @@ export interface CommandAction extends CodyCommand {
 export type Action = PromptAction | CommandAction
 
 export interface PromptsResult {
-
     arePromptsSupported: boolean
 
     /** List of all available actions (prompts and/or commands) */
