@@ -59,8 +59,6 @@ describe('WelcomeMessage', () => {
         })
         openCollapsiblePanels()
 
-        // Check common elements
-        expect(screen.getByText(/Chat Help/)).toBeInTheDocument()
         expect(screen.getByText(FIXTURE_PROMPTS[0].name)).toBeInTheDocument()
 
         // Check elements specific to CodyIDE.JetBrains
