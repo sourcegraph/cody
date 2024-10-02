@@ -45,7 +45,8 @@ export const EmptyWithPromptLibraryUnsupported: StoryObj<typeof meta> = {
             value={{
                 ...MOCK_API,
                 prompts: makePromptsAPIWithData({
-                    prompts: { type: 'unsupported' },
+                    isPromptsSupported: false,
+                    prompts: [],
                     commands: FIXTURE_COMMANDS,
                 }),
                 evaluatedFeatureFlag: _flag => Observable.of(true),
@@ -63,7 +64,7 @@ export const EmptyWithNoPrompts: StoryObj<typeof meta> = {
             value={{
                 ...MOCK_API,
                 prompts: makePromptsAPIWithData({
-                    prompts: { type: 'results', results: [] },
+                    prompts: [],
                     commands: FIXTURE_COMMANDS,
                 }),
                 evaluatedFeatureFlag: _flag => Observable.of(true),

@@ -1,13 +1,11 @@
-import type { ChatMessage, Model } from '@sourcegraph/cody-shared'
+import type { Action, ChatMessage, Model } from '@sourcegraph/cody-shared'
 import { useExtensionAPI, useObservable } from '@sourcegraph/prompt-editor'
 import clsx from 'clsx'
 import { type FunctionComponent, useCallback, useMemo } from 'react'
 import type { UserAccountInfo } from '../../../../../../Chat'
-import { useClientActionDispatcher } from '../../../../../../client/clientState'
 import { ModelSelectField } from '../../../../../../components/modelSelectField/ModelSelectField'
-import type { PromptOrDeprecatedCommand } from '../../../../../../components/promptList/PromptList'
 import { PromptSelectField } from '../../../../../../components/promptSelectField/PromptSelectField'
-import { onPromptSelectInPanel } from '../../../../../../prompts/PromptsTab'
+import { useActionSelect } from '../../../../../../prompts/PromptsTab'
 import { useConfig } from '../../../../../../utils/useConfig'
 import { AddContextButton } from './AddContextButton'
 import { SubmitButton, type SubmitButtonState } from './SubmitButton'
@@ -102,14 +100,14 @@ const PromptSelectFieldToolbarItem: FunctionComponent<{
     focusEditor?: () => void
     className?: string
 }> = ({ focusEditor, className }) => {
-    const dispatchClientAction = useClientActionDispatcher()
+    const runAction = useActionSelect()
 
     const onSelect = useCallback(
-        (item: PromptOrDeprecatedCommand) => {
-            onPromptSelectInPanel(item, () => {}, dispatchClientAction)
+        (item: Action) => {
+            runAction(item, () => {})
             focusEditor?.()
         },
-        [focusEditor, dispatchClientAction]
+        [focusEditor, runAction]
     )
 
     return <PromptSelectField onSelect={onSelect} onCloseByEscape={focusEditor} className={className} />

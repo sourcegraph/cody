@@ -114,27 +114,42 @@ export interface MentionMenuData {
     error?: string
 }
 
+export interface PromptAction extends Prompt {
+    actionType: 'prompt'
+}
+
+export interface CommandAction extends CodyCommand {
+    actionType: 'command'
+}
+
+export type Action = PromptAction | CommandAction
+
 export interface PromptsResult {
-    /**
-     * `undefined` means the Sourcegraph endpoint is an older Sourcegraph version that doesn't
-     * support the Prompt Library.
-     */
-    prompts:
-        | { type: 'results'; results: Prompt[] }
-        | { type: 'error'; error: string }
-        | { type: 'unsupported' }
+    // /**
+    //  * `undefined` means the Sourcegraph endpoint is an older Sourcegraph version that doesn't
+    //  * support the Prompt Library.
+    //  */
+    // prompts:
+    //     | { type: 'results'; results: Prompt[] }
+    //     | { type: 'error'; error: string }
+    //     | { type: 'unsupported' }
+    //
+    // /**
+    //  * Provides previously built-in commands which became prompt-like actions (explain code,
+    //  * generate unit tests, document symbol, etc.) Currently, is used behind feature flag.
+    //  */
+    // standardPrompts?: CodyCommand[]
+    //
+    // /**
+    //  * `undefined` means that commands should not be shown at all (not even as an empty
+    //  * list). Builtin and custom commands are deprecated in favor of the Prompt Library.
+    //  */
+    // commands: CodyCommand[]
 
-    /**
-     * Provides previously built-in commands which became prompt-like actions (explain code,
-     * generate unit tests, document symbol, etc.) Currently, is used behind feature flag.
-     */
-    standardPrompts?: CodyCommand[]
+    isPromptsSupported: boolean
 
-    /**
-     * `undefined` means that commands should not be shown at all (not even as an empty
-     * list). Builtin and custom commands are deprecated in favor of the Prompt Library.
-     */
-    commands: CodyCommand[]
+    /** List of all available actions (prompts and/or commands) */
+    actions: Action[]
 
     /** The original query used to fetch this result. */
     query: string

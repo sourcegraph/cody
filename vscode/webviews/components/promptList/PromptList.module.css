@@ -1,0 +1,40 @@
+
+.list {
+    outline: none;
+    background-color: transparent !important;
+    max-height: unset !important;
+
+    &--input {
+        margin: 0.5rem;
+        padding: 0.5rem;
+        border-radius: 3px;
+        background-color: var(--vscode-input-background);
+        color: var(--vscode-input-foreground);
+
+        &:focus {
+            //border-color: var(--vscode-focusBorder);
+            box-shadow: 0 0 0 0.125rem var(--vscode-focusBorder)
+        }
+    }
+
+    &-chips {
+       [cmdk-list-sizer] {
+           display: flex;
+           flex-direction: column;
+           gap: 0.5rem
+       }
+
+        .list--item {
+            border-radius: 3px;
+            border: 1px solid var(--vscode-dropdown-border, transparent);
+
+            &[aria-selected="true"] {
+                border-color: var(--vscode-list-activeSelectionBackground);
+            }
+
+            &:not([aria-selected="true"]) {
+                background-color: var(--vscode-dropdown-background);
+            }
+        }
+    }
+}

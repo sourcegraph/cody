@@ -80,7 +80,7 @@ export const AppWrapperForTest: FunctionComponent<{ children: ReactNode }> = ({ 
                         }),
                     evaluatedFeatureFlag: _flag => Observable.of(true),
                     prompts: makePromptsAPIWithData({
-                        prompts: { type: 'results', results: FIXTURE_PROMPTS },
+                        prompts: FIXTURE_PROMPTS,
                         commands: FIXTURE_COMMANDS,
                     }),
                     highlights: () => Observable.of([]),
