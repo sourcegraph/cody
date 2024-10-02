@@ -87,7 +87,7 @@ import {
 import type { startTokenReceiver } from '../../auth/token-receiver'
 import { getContextFileFromUri } from '../../commands/context/file-path'
 import { getContextFileFromCursor } from '../../commands/context/selection'
-import { DeepCodyAgent } from '../../context/agentic'
+import { DeepCodyAgent } from '../../context/agentic/DeepCodyAgent'
 import { resolveContextItems } from '../../editor/utils/editor-context'
 import type { VSCodeEditor } from '../../editor/vscode-editor'
 import type { ExtensionClient } from '../../extension-client'
@@ -623,6 +623,8 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             if (!model) {
                 throw new Error('No model selected, and no default chat model is available')
             }
+
+            this.chatBuilder.setSelectedModel(model)
 
             const sharedProperties = {
                 requestID,

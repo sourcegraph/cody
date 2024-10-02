@@ -5,29 +5,24 @@ import {
     type CompletionParameters,
     type ContextItem,
     PromptMixin,
-    PromptString,
     firstResultFromOperation,
-    firstValueFrom,
     logDebug,
     modelsService,
     newPromptMixin,
-    pendingOperation,
     ps,
 } from '@sourcegraph/cody-shared'
 import { isBoolean } from 'lodash'
-import { ChatBuilder } from '../chat/chat-view/ChatBuilder'
-import { type ContextRetriever, toStructuredMentions } from '../chat/chat-view/ContextRetriever'
-import { DefaultPrompter } from '../chat/chat-view/prompt'
-import { getCorpusContextItemsForEditorState } from '../chat/initialContext'
-import { getContextFromRelativePath } from '../commands/context/file-path'
-import { getContextFileFromShell } from '../commands/context/shell'
-import { getCategorizedMentions } from '../prompt-builder/utils'
+import { ChatBuilder } from '../../chat/chat-view/ChatBuilder'
+import type { ContextRetriever } from '../../chat/chat-view/ContextRetriever'
+import { DefaultPrompter } from '../../chat/chat-view/prompt'
+import { getCategorizedMentions } from '../../prompt-builder/utils'
+import { CodyTools } from './CodyTools'
 
 /**
  * This prompt is used by the Deep Cody model for reviewing current context,
  * with instructions for the LLM on how to request additional context.
  */
-const REFLECTION_AGENT_PROMPT = ps`Analyze the provided context and think step-by-step about whether you can answer the question using the available information.
+const DEEP_CODY_AGENT_PROMPT = ps`Analyze the provided context and think step-by-step about whether you can answer the question using the available information.
 
 If you need more information to answer the question, use the following action tags:
 
@@ -52,12 +47,11 @@ Notes:
 
 /**
  * A DeepCodyAgent is created for each chat submitted by the user.
- * It is responsible for reviewing the retrieved context,
- * and perform agentic context retrieval for the chat request.
+ * It is responsible for reviewing the retrieved context, and perform agentic context retrieval for the chat request.
  */
 export class DeepCodyAgent {
     private isEnabled = false
-    private readonly actions: CodyActions
+    private readonly tools: CodyTools
     private readonly multiplexer = new BotResponseMultiplexer()
     private responses: Record<string, string>
 
@@ -68,7 +62,7 @@ export class DeepCodyAgent {
         span: Span,
         private currentContext: ContextItem[]
     ) {
-        this.actions = new CodyActions(contextRetriever, span)
+        this.tools = new CodyTools(contextRetriever, span)
         this.responses = { CODYTOOLCLI: '', CODYTOOLFILE: '', CODYTOOLSEARCH: '' }
         this.initializeAgent()
     }
@@ -123,7 +117,7 @@ export class DeepCodyAgent {
 
         const { explicitMentions, implicitMentions } = getCategorizedMentions(this.currentContext)
 
-        PromptMixin.add(newPromptMixin(REFLECTION_AGENT_PROMPT))
+        PromptMixin.add(newPromptMixin(DEEP_CODY_AGENT_PROMPT))
 
         // Limit the number of implicit mentions to 20 items.
         const prompter = new DefaultPrompter(explicitMentions, implicitMentions.slice(-20))
@@ -162,9 +156,9 @@ export class DeepCodyAgent {
 
     private async getAgenticContext(): Promise<ContextItem[]> {
         const [cliContext, fileContext, searchContext] = await Promise.all([
-            this.actions.cli(this.getItems('CODYTOOLCLI', 'cmd')),
-            this.actions.file(this.getItems('CODYTOOLFILE', 'file')),
-            this.actions.search(this.getItems('CODYTOOLSEARCH', 'query')),
+            this.tools.cli(this.getItems('CODYTOOLCLI', 'cmd')),
+            this.tools.file(this.getItems('CODYTOOLFILE', 'file')),
+            this.tools.search(this.getItems('CODYTOOLSEARCH', 'query')),
         ])
         return [...cliContext, ...fileContext, ...searchContext]
     }
@@ -179,60 +173,5 @@ export class DeepCodyAgent {
 
     private reset(): void {
         this.responses = { CODYTOOLCLI: '', CODYTOOLFILE: '', CODYTOOLSEARCH: '' }
-    }
-}
-
-class CodyActions {
-    constructor(
-        private readonly contextRetriever: ContextRetriever,
-        private readonly span: Span
-    ) {}
-
-    private performedSearch = new Set<string>()
-
-    /**
-     * Get the context items from the codebase using the search query provided by Cody.
-     */
-    async search(queries: string[]): Promise<ContextItem[]> {
-        const query = queries[0] // There should only be one query.
-        if (!this.contextRetriever || !query || this.performedSearch.has(query)) {
-            return []
-        }
-        // Get the latest corpus context items
-        const corpusItems = await firstValueFrom(getCorpusContextItemsForEditorState())
-        if (corpusItems === pendingOperation || corpusItems.length === 0) {
-            return []
-        }
-        // Find the first item that represents a repository
-        const repo = corpusItems.find(i => i.type === 'tree' || i.type === 'repository')
-        if (!repo) {
-            return []
-        }
-        const context = await this.contextRetriever.retrieveContext(
-            toStructuredMentions([repo]),
-            PromptString.unsafe_fromLLMResponse(query),
-            this.span
-        )
-        // Store the search query to avoid running the same query again.
-        this.performedSearch.add(query)
-        // Limit the number of the new context items to 20 items to avoid long processing time
-        // during the next thinking / reflection process.
-        return context.slice(-20)
-    }
-
-    /**
-     * Get the local context items from the current codebase using the file paths requested by Cody.
-     */
-    async file(filePaths: string[]): Promise<ContextItem[]> {
-        return Promise.all(filePaths.map(getContextFromRelativePath)).then(results =>
-            results.filter((item): item is ContextItem => item !== null)
-        )
-    }
-
-    /**
-     * Get the output of the commands provided by Cody as context items.
-     */
-    async cli(commands: string[]): Promise<ContextItem[]> {
-        return Promise.all(commands.map(getContextFileFromShell)).then(results => results.flat())
     }
 }

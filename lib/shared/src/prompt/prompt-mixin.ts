@@ -26,7 +26,6 @@ export class PromptMixin {
      */
     private static mixins: PromptMixin[] = []
     private static hedging: PromptMixin = new PromptMixin(HEDGES_PREVENTION)
-    private static reflection: PromptMixin = new PromptMixin(DEEP_CODY)
 
     /**
      * Prepends all mixins to `humanMessage`. Modifies and returns `humanMessage`.
@@ -43,7 +42,7 @@ export class PromptMixin {
 
         // Add prompt that provides answer guidelines for the Deep Cody model.
         if (modelID?.includes('deep-cody') && !PromptMixin.mixins.length) {
-            mixins.push(PromptMixin.reflection)
+            mixins.push(new PromptMixin(DEEP_CODY))
         }
 
         // Construct the prompt by joining all the mixins.

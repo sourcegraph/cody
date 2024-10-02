@@ -13,10 +13,10 @@ import {
 import { Observable } from 'observable-fns'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { URI } from 'vscode-uri'
-import { ChatBuilder } from '../chat/chat-view/ChatBuilder'
-import type { ContextRetriever } from '../chat/chat-view/ContextRetriever'
-import * as initialContext from '../chat/initialContext'
-import { DeepCodyAgent } from './agentic'
+import { ChatBuilder } from '../../chat/chat-view/ChatBuilder'
+import type { ContextRetriever } from '../../chat/chat-view/ContextRetriever'
+import * as initialContext from '../../chat/initialContext'
+import { DeepCodyAgent } from './DeepCodyAgent'
 
 describe('DeepCodyAgent', () => {
     const codyProAuthStatus: AuthenticatedAuthStatus = {
