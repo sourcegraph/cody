@@ -581,8 +581,6 @@ export function setUserAgent(newUseragent: string): void {
 
 const QUERY_TO_NAME_REGEXP = /^\s*(?:query|mutation)\s+(\w+)/m
 
-const DEFAULT_TIMEOUT_MSEC = 20000
-
 export class SourcegraphGraphQLAPIClient {
     private dotcomUrl = DOTCOM_URL
 
@@ -1530,6 +1528,8 @@ export class SourcegraphGraphQLAPIClient {
     }
 }
 
+const DEFAULT_TIMEOUT_MSEC = 20000
+
 /**
  * Create an {@link AbortController} that aborts when the {@link signal} aborts or when the timeout
  * elapses.
@@ -1539,8 +1539,11 @@ function dependentAbortControllerWithTimeout(signal?: AbortSignal): {
     timeoutSignal: Pick<AbortSignal, 'aborted'>
 } {
     const abortController = dependentAbortController(signal)
+
     const timeoutSignal = AbortSignal.timeout(DEFAULT_TIMEOUT_MSEC)
-    onAbort(timeoutSignal, () => abortController.abort())
+    onAbort(timeoutSignal, () =>
+        abortController.abort({ message: `timed out after ${DEFAULT_TIMEOUT_MSEC}ms` })
+    )
     return { abortController, timeoutSignal }
 }
 
@@ -1552,8 +1555,11 @@ function catchHTTPError(
         // Throw the plain AbortError for intentional aborts so we handle them with call
         // flow, but treat timeout aborts as a network error (below) and include the
         // URL.
-        if (isAbortError(error) && !timeoutSignal.aborted) {
-            return error
+        if (isAbortError(error)) {
+            if (!timeoutSignal.aborted) {
+                throw error
+            }
+            error = `ETIMEDOUT: timed out after ${DEFAULT_TIMEOUT_MSEC}ms`
         }
         return new Error(`accessing Sourcegraph HTTP API: ${error} (${url})`)
     }
