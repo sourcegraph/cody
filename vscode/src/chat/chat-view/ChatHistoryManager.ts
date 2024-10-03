@@ -7,8 +7,11 @@ import {
     type UserLocalHistory,
     authStatus,
     combineLatest,
+    currentAuthStatus,
     distinctUntilChanged,
+    logError,
     startWith,
+    telemetryRecorder,
 } from '@sourcegraph/cody-shared'
 import { type Observable, Subject, map } from 'observable-fns'
 import * as vscode from 'vscode'
@@ -99,3 +102,40 @@ class ChatHistoryManager implements vscode.Disposable {
 }
 
 export const chatHistory = new ChatHistoryManager()
+
+/**
+ * Export chat history to file system
+ */
+export async function exportHistory(): Promise<void> {
+    telemetryRecorder.recordEvent('cody.exportChatHistoryButton', 'clicked', {
+        billingMetadata: {
+            product: 'cody',
+            category: 'billable',
+        },
+    })
+    const authStatus = currentAuthStatus()
+    if (authStatus.authenticated) {
+        try {
+            const historyJson = chatHistory.getLocalHistory(authStatus)
+            const exportPath = await vscode.window.showSaveDialog({
+                title: 'Cody: Export Chat History',
+                filters: { 'Chat History': ['json'] },
+            })
+            if (!exportPath || !historyJson) {
+                return
+            }
+            const logContent = new TextEncoder().encode(JSON.stringify(historyJson))
+            await vscode.workspace.fs.writeFile(exportPath, logContent)
+            // Display message and ask if user wants to open file
+            void vscode.window
+                .showInformationMessage('Chat history exported successfully.', 'Open')
+                .then(choice => {
+                    if (choice === 'Open') {
+                        void vscode.commands.executeCommand('vscode.open', exportPath)
+                    }
+                })
+        } catch (error) {
+            logError('ChatsController:exportHistory', 'Failed to export chat history', error)
+        }
+    }
+}

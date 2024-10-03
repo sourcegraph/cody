@@ -8,14 +8,13 @@ import {
     DEFAULT_EVENT_SOURCE,
     type Guardrails,
     authStatus,
-    currentAuthStatus,
     currentAuthStatusAuthed,
     distinctUntilChanged,
     editorStateFromPromptString,
     subscriptionDisposable,
     telemetryRecorder,
 } from '@sourcegraph/cody-shared'
-import { logDebug, logError } from '../../log'
+import { logDebug } from '../../log'
 import type { MessageProviderOptions } from '../MessageProvider'
 
 import { map } from 'observable-fns'
@@ -39,7 +38,7 @@ import {
     webviewViewOrPanelOnDidChangeViewState,
     webviewViewOrPanelViewColumn,
 } from './ChatController'
-import { chatHistory } from './ChatHistoryManager'
+import { chatHistory, exportHistory } from './ChatHistoryManager'
 import type { ContextRetriever } from './ContextRetriever'
 
 export const CodyChatEditorViewType = 'cody.editorPanel'
@@ -78,7 +77,6 @@ export class ChatsController implements vscode.Disposable {
         private readonly chatIntentAPIClient: ChatIntentAPIClient | null,
         private readonly extensionClient: ExtensionClient
     ) {
-        logDebug('ChatsController:constructor', 'init')
         this.panel = this.createChatController()
 
         this.disposables.push(
@@ -123,13 +121,62 @@ export class ChatsController implements vscode.Disposable {
         this.disposables.push(
             vscode.commands.registerCommand('cody.chat.moveToEditor', async () => {
                 localStorage.setLastUsedChatModality('editor')
-                return await this.moveChatFromPanelToEditor()
+
+                const sessionID = this.panel.sessionID
+                await Promise.all([
+                    this.getOrCreateEditorChatController(sessionID),
+                    this.panel.clearAndRestartSession(),
+                ])
             }),
             vscode.commands.registerCommand('cody.chat.moveFromEditor', async () => {
                 localStorage.setLastUsedChatModality('sidebar')
-                return await this.moveChatFromEditorToPanel()
+
+                const sessionID = this.activeView?.sessionID
+                if (!sessionID) {
+                    return
+                }
+                await Promise.all([
+                    this.panel.restoreSession(sessionID),
+                    vscode.commands.executeCommand('workbench.action.closeActiveEditor'),
+                ])
+                await vscode.commands.executeCommand('cody.chat.focus')
             }),
-            vscode.commands.registerCommand('cody.action.chat', args => this.submitChat(args)),
+
+            /**
+             * Execute a chat request in a new chat panel or the sidebar chat panel.
+             */
+            vscode.commands.registerCommand(
+                'cody.action.chat',
+                async ({
+                    text,
+                    contextItems,
+                    source = DEFAULT_EVENT_SOURCE,
+                    command,
+                }: ExecuteChatArguments): Promise<ChatSession | undefined> => {
+                    let provider: ChatController
+                    // If the sidebar panel is visible and empty, use it instead of creating a new panel
+                    if (this.panel.isVisible() && this.panel.isEmpty()) {
+                        provider = this.panel
+                    } else {
+                        provider = await this.getOrCreateEditorChatController()
+                    }
+                    const abortSignal = provider.startNewSubmitOrEditOperation()
+                    const editorState = editorStateFromPromptString(text)
+                    provider.clearAndRestartSession()
+                    await provider.handleUserMessageSubmission({
+                        requestID: uuid.v4(),
+                        addHumanMessage: {
+                            text: text,
+                            contextItems: contextItems ?? [],
+                            editorState,
+                        },
+                        signal: abortSignal,
+                        source,
+                        command,
+                    })
+                    return provider
+                }
+            ),
             vscode.commands.registerCommand('cody.chat.signIn', () =>
                 vscode.commands.executeCommand('cody.chat.focus')
             ),
@@ -182,14 +229,14 @@ export class ChatsController implements vscode.Disposable {
                     }
                 }
             ),
-            vscode.commands.registerCommand('cody.chat.history.export', () => this.exportHistory()),
+            vscode.commands.registerCommand('cody.chat.history.export', () => exportHistory()),
             vscode.commands.registerCommand('cody.chat.history.clear', arg => this.clearHistory(arg)),
             vscode.commands.registerCommand('cody.chat.history.delete', item => this.clearHistory(item)),
             vscode.commands.registerCommand('cody.chat.panel.restore', chatID =>
                 this.getOrCreateEditorChatController(chatID)
             ),
             vscode.commands.registerCommand(CODY_PASSTHROUGH_VSCODE_OPEN_COMMAND_ID, (...args) =>
-                this.passthroughVsCodeOpen(...args)
+                passthroughVsCodeOpen(...args)
             ),
 
             // Mention selection/file commands
@@ -203,7 +250,10 @@ export class ChatsController implements vscode.Disposable {
             // Codeblock commands
             vscode.commands.registerCommand(
                 'cody.command.markSmartApplyApplied',
-                (result: SmartApplyResult) => this.sendSmartApplyResultToChat(result)
+                async (result: SmartApplyResult) => {
+                    const provider = await this.getActiveChatController()
+                    await provider.handleSmartApplyResult(result)
+                }
             ),
             vscode.commands.registerCommand(
                 'cody.command.insertCodeToCursor',
@@ -214,26 +264,6 @@ export class ChatsController implements vscode.Disposable {
                 (args: { text: string }) => handleCodeFromSaveToNewFile(args.text, this.options.editor)
             )
         )
-    }
-
-    private async moveChatFromPanelToEditor(): Promise<void> {
-        const sessionID = this.panel.sessionID
-        await Promise.all([
-            this.getOrCreateEditorChatController(sessionID),
-            this.panel.clearAndRestartSession(),
-        ])
-    }
-
-    private async moveChatFromEditorToPanel(): Promise<void> {
-        const sessionID = this.activeView?.sessionID
-        if (!sessionID) {
-            return
-        }
-        await Promise.all([
-            this.panel.restoreSession(sessionID),
-            vscode.commands.executeCommand('workbench.action.closeActiveEditor'),
-        ])
-        await vscode.commands.executeCommand('cody.chat.focus')
     }
 
     private async sendEditorContextToChat(uri?: URI): Promise<void> {
@@ -248,11 +278,6 @@ export class ChatsController implements vscode.Disposable {
             await vscode.commands.executeCommand('cody.chat.focus')
         }
         await provider.handleGetUserEditorContext(uri)
-    }
-
-    private async sendSmartApplyResultToChat(result: SmartApplyResult): Promise<void> {
-        const provider = await this.getActiveChatController()
-        await provider.handleSmartApplyResult(result)
     }
 
     /**
@@ -273,100 +298,6 @@ export class ChatsController implements vscode.Disposable {
             return this.activeView
         }
         return this.panel
-    }
-
-    /**
-     * See docstring for {@link CODY_PASSTHROUGH_VSCODE_OPEN_COMMAND_ID}.
-     */
-    private async passthroughVsCodeOpen(...args: unknown[]): Promise<void> {
-        if (args[1] && (args[1] as any).viewColumn === vscode.ViewColumn.Beside) {
-            // Make vscode.ViewColumn.Beside work as expected from a webview: open it to the side,
-            // instead of always opening a new editor to the right.
-            //
-            // If the active editor is undefined, that means the chat panel is the active editor, so
-            // we will open the file in the first visible editor instead.
-            const textEditor = vscode.window.activeTextEditor || vscode.window.visibleTextEditors[0]
-            ;(args[1] as any).viewColumn = textEditor ? textEditor.viewColumn : vscode.ViewColumn.Beside
-        }
-        if (args[1] && Array.isArray((args[1] as any).selection)) {
-            // Fix a weird issue where the selection was getting encoded as a JSON array, not an
-            // object.
-            ;(args[1] as any).selection = new vscode.Selection(
-                (args[1] as any).selection[0],
-                (args[1] as any).selection[1]
-            )
-        }
-        await vscode.commands.executeCommand('vscode.open', ...args)
-    }
-
-    /**
-     * Execute a chat request in a new chat panel or the sidebar chat panel.
-     */
-    private async submitChat({
-        text,
-        contextItems,
-        source = DEFAULT_EVENT_SOURCE,
-        command,
-    }: ExecuteChatArguments): Promise<ChatSession | undefined> {
-        let provider: ChatController
-        // If the sidebar panel is visible and empty, use it instead of creating a new panel
-        if (this.panel.isVisible() && this.panel.isEmpty()) {
-            provider = this.panel
-        } else {
-            provider = await this.getOrCreateEditorChatController()
-        }
-        const abortSignal = provider.startNewSubmitOrEditOperation()
-        const editorState = editorStateFromPromptString(text)
-        provider.clearAndRestartSession()
-        await provider.handleUserMessageSubmission({
-            requestID: uuid.v4(),
-            addHumanMessage: {
-                text: text,
-                contextItems: contextItems ?? [],
-                editorState,
-            },
-            signal: abortSignal,
-            source,
-            command,
-        })
-        return provider
-    }
-
-    /**
-     * Export chat history to file system
-     */
-    private async exportHistory(): Promise<void> {
-        telemetryRecorder.recordEvent('cody.exportChatHistoryButton', 'clicked', {
-            billingMetadata: {
-                product: 'cody',
-                category: 'billable',
-            },
-        })
-        const authStatus = currentAuthStatus()
-        if (authStatus.authenticated) {
-            try {
-                const historyJson = chatHistory.getLocalHistory(authStatus)
-                const exportPath = await vscode.window.showSaveDialog({
-                    title: 'Cody: Export Chat History',
-                    filters: { 'Chat History': ['json'] },
-                })
-                if (!exportPath || !historyJson) {
-                    return
-                }
-                const logContent = new TextEncoder().encode(JSON.stringify(historyJson))
-                await vscode.workspace.fs.writeFile(exportPath, logContent)
-                // Display message and ask if user wants to open file
-                void vscode.window
-                    .showInformationMessage('Chat history exported successfully.', 'Open')
-                    .then(choice => {
-                        if (choice === 'Open') {
-                            void vscode.commands.executeCommand('vscode.open', exportPath)
-                        }
-                    })
-            } catch (error) {
-                logError('ChatsController:exportHistory', 'Failed to export chat history', error)
-            }
-        }
     }
 
     private async clearHistory(chatID?: string): Promise<void> {
@@ -522,4 +453,28 @@ function getNewChatLocation(): ChatLocation {
         return localStorage.getLastUsedChatModality()
     }
     return chatDefaultLocation
+}
+
+/**
+ * See docstring for {@link CODY_PASSTHROUGH_VSCODE_OPEN_COMMAND_ID}.
+ */
+async function passthroughVsCodeOpen(...args: unknown[]): Promise<void> {
+    if (args[1] && (args[1] as any).viewColumn === vscode.ViewColumn.Beside) {
+        // Make vscode.ViewColumn.Beside work as expected from a webview: open it to the side,
+        // instead of always opening a new editor to the right.
+        //
+        // If the active editor is undefined, that means the chat panel is the active editor, so
+        // we will open the file in the first visible editor instead.
+        const textEditor = vscode.window.activeTextEditor || vscode.window.visibleTextEditors[0]
+        ;(args[1] as any).viewColumn = textEditor ? textEditor.viewColumn : vscode.ViewColumn.Beside
+    }
+    if (args[1] && Array.isArray((args[1] as any).selection)) {
+        // Fix a weird issue where the selection was getting encoded as a JSON array, not an
+        // object.
+        ;(args[1] as any).selection = new vscode.Selection(
+            (args[1] as any).selection[0],
+            (args[1] as any).selection[1]
+        )
+    }
+    await vscode.commands.executeCommand('vscode.open', ...args)
 }
