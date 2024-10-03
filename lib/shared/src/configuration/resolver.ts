@@ -1,11 +1,12 @@
 import { Observable, map } from 'observable-fns'
 import type { AuthCredentials, ClientConfiguration } from '../configuration'
-import { logError } from '../logger'
+import { logDebug, logError } from '../logger'
 import {
     distinctUntilChanged,
     firstValueFrom,
     fromLateSetSource,
     promiseToObservable,
+    tap,
 } from '../misc/observable'
 import { skipPendingOperation, switchMapReplayOperation } from '../misc/observableOperation'
 import type { PerSitePreferences } from '../models/modelsService'
@@ -19,12 +20,14 @@ export interface ConfigurationInput {
     clientConfiguration: ClientConfiguration
     clientSecrets: ClientSecrets
     clientState: ClientState
-    isReinstalling: boolean
+    reinstall: {
+        isReinstalling(): Promise<boolean>
+        onReinstall(): Promise<void>
+    }
 }
 
 export interface ClientSecrets {
     getToken(endpoint: string): Promise<string | undefined>
-    deleteToken(endpoint: string): Promise<void>
 }
 
 export interface ClientState {
@@ -44,7 +47,7 @@ export type ResolvedConfiguration = ReadonlyDeep<{
     configuration: ClientConfiguration
     auth: AuthCredentials
     clientState: ClientState
-    isReinstalling: boolean
+    isReinstall: boolean
 }>
 
 /**
@@ -74,32 +77,23 @@ async function resolveConfiguration({
     clientConfiguration,
     clientSecrets,
     clientState,
-    isReinstalling,
+    reinstall: { isReinstalling, onReinstall },
 }: ConfigurationInput): Promise<ResolvedConfiguration> {
+    const isReinstall = await isReinstalling()
+    if (isReinstall) {
+        await onReinstall()
+    }
     // we allow for overriding the server endpoint from config if we haven't
     // manually signed in somewhere else
     const serverEndpoint = normalizeServerEndpointURL(
         clientConfiguration.overrideServerEndpoint ||
             // If we are reinstalling, we ignore previous state
-            ((isReinstalling ? undefined : clientState.lastUsedEndpoint) ?? DOTCOM_URL.toString())
+            (clientState.lastUsedEndpoint ?? DOTCOM_URL.toString())
     )
 
     // We must not throw here, because that would result in the `resolvedConfig` observable
     // terminating and all callers receiving no further config updates.
     const loadTokenFn = async () => {
-        // When the user is reinstalling, we want to clear the cached credentials
-        if (isReinstalling) {
-            await Promise.all([
-                clientSecrets.deleteToken(serverEndpoint),
-                clientConfiguration.overrideServerEndpoint
-                    ? clientSecrets.deleteToken(clientConfiguration.overrideServerEndpoint)
-                    : Promise.resolve(undefined),
-                clientState.lastUsedEndpoint
-                    ? clientSecrets.deleteToken(clientState.lastUsedEndpoint)
-                    : Promise.resolve(undefined),
-            ])
-            return null
-        }
         return clientSecrets.getToken(serverEndpoint).catch(error => {
             logError(
                 'resolveConfiguration',
@@ -113,7 +107,7 @@ async function resolveConfiguration({
         configuration: clientConfiguration,
         clientState,
         auth: { accessToken, serverEndpoint },
-        isReinstalling,
+        isReinstall,
     }
 }
 
@@ -138,7 +132,10 @@ export function setResolvedConfigurationObservable(input: Observable<Configurati
                 }
                 return value
             }),
-            distinctUntilChanged()
+            distinctUntilChanged(),
+            tap(value => {
+                logDebug('resolvedConfig', JSON.stringify(value))
+            })
         ),
         false
     )

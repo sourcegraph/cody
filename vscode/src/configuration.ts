@@ -173,6 +173,6 @@ export function setStaticResolvedConfigurationWithAuthCredentials({
         configuration: { ...getConfiguration(), customHeaders: configuration.customHeaders },
         auth,
         clientState: localStorage.getClientState(),
-        isReinstalling: false,
+        isReinstall: false,
     })
 }

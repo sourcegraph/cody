@@ -44,7 +44,7 @@ export function createOrUpdateTelemetryRecorderProvider(
     isExtensionModeDevOrTest: boolean
 ): Disposable {
     return subscriptionDisposable(
-        resolvedConfig.subscribe(({ configuration, auth, clientState, isReinstalling }) => {
+        resolvedConfig.subscribe(({ configuration, auth, clientState, isReinstall }) => {
             // Add timestamp processor for realistic data in output for dev or no-op scenarios
             const defaultNoOpProvider = new NoOpTelemetryRecorderProvider([
                 new TimestampTelemetryProcessor(),
@@ -92,7 +92,7 @@ export function createOrUpdateTelemetryRecorderProvider(
                      */
                     telemetryRecorder.recordEvent(
                         'cody.extension',
-                        isReinstalling ? 'reinstalled' : 'installed',
+                        isReinstall ? 'reinstalled' : 'installed',
                         {
                             billingMetadata: {
                                 product: 'cody',

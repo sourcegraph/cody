@@ -4,6 +4,7 @@ import {
     type ChatClient,
     ClientConfigSingleton,
     type ConfigurationInput,
+    DOTCOM_URL,
     type DefaultCodyCommands,
     FeatureFlag,
     type Guardrails,
@@ -23,7 +24,6 @@ import {
     graphqlClient,
     isDotCom,
     modelsService,
-    promiseFactoryToObservable,
     resolvedConfig,
     setClientCapabilitiesFromConfiguration,
     setClientNameVersion,
@@ -36,6 +36,7 @@ import {
     take,
     telemetryRecorder,
 } from '@sourcegraph/cody-shared'
+import _ from 'lodash'
 import { isEqual } from 'lodash'
 import { filter, map } from 'observable-fns'
 import { isReinstalling } from '../uninstall/reinstall'
@@ -140,23 +141,42 @@ export async function start(
                     event => event.affectsConfiguration('cody') || event.affectsConfiguration('openctx')
                 ),
                 startWith(undefined),
-                map(() => getConfiguration()),
+                map(getConfiguration),
                 distinctUntilChanged()
             ),
             fromVSCodeEvent(secretStorage.onDidChange.bind(secretStorage)).pipe(
                 startWith(undefined),
                 map(() => secretStorage)
             ),
-            localStorage.clientStateChanges.pipe(distinctUntilChanged()),
-            promiseFactoryToObservable(isReinstalling)
+            localStorage.clientStateChanges.pipe(distinctUntilChanged())
         ).pipe(
             map(
-                ([clientConfiguration, clientSecrets, clientState, isReinstalling]) =>
+                ([clientConfiguration, clientSecrets, clientState]) =>
                     ({
                         clientConfiguration,
                         clientSecrets,
                         clientState,
-                        isReinstalling,
+                        reinstall: {
+                            isReinstalling,
+                            onReinstall: async () => {
+                                logDebug('start', 'Reinstalling Cody')
+                                // VSCode does not provide a way to simply clear all secrets
+                                // associated with the extension (https://github.com/microsoft/vscode/issues/123817)
+                                // So we have to build a list of all endpoints we'd expect to have been populated
+                                // and clear them individually.
+                                const history = await localStorage.deleteEndpointHistory()
+                                const additionalEndpointsToClear = [
+                                    clientConfiguration.overrideServerEndpoint,
+                                    clientState.lastUsedEndpoint,
+                                    DOTCOM_URL.toString(),
+                                ].filter(_.isString)
+                                await Promise.all(
+                                    history
+                                        .concat(additionalEndpointsToClear)
+                                        .map(clientSecrets.deleteToken.bind(clientSecrets))
+                                )
+                            },
+                        },
                     }) satisfies ConfigurationInput
             )
         )
@@ -707,7 +727,7 @@ function registerAutocomplete(
                     catchError(error => {
                         finishLoading()
                         //TODO: We could show something in the statusbar
-                        logError('registerAutocomplete', 'Error', error)
+                        logError('registerAutocomplete', 'Error', JSON.stringify(error))
                         return NEVER
                     })
                 )
