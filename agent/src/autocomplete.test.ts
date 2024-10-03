@@ -28,7 +28,7 @@ describe('Autocomplete', () => {
         await client.openFile(uri)
 
         // Set a small visibility delay for testing purposes.
-        const visibilityDelay = 20
+        const visibilityDelay = 100
         await client.request('testing/autocomplete/setCompletionVisibilityDelay', {
             delay: visibilityDelay,
         })
