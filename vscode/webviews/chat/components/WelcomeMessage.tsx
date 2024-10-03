@@ -3,6 +3,7 @@ import { PromptList } from '../../components/promptList/PromptList'
 import { Button } from '../../components/shadcn/ui/button'
 import { useActionSelect } from '../../prompts/PromptsTab'
 import { View } from '../../tabs'
+import { useUserAccountInfo } from '@/utils/useConfig'
 
 const localStorageKey = 'chat.welcome-message-dismissed'
 

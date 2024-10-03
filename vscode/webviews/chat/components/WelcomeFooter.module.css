@@ -1,8 +1,4 @@
 .welcome-footer {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
     padding: 1rem 1.0rem;
     display: flex;
     flex-flow: column nowrap;
@@ -24,13 +20,12 @@
 .links {
     display: flex;
     flex-shrink: none;
-    flex-flow: row nowrap;
+    flex-direction: row;
     padding: 1.0rem 1.5rem;
     gap: 0.5rem;
     flex-shrink: 0;
     justify-content: space-around;
     align-items: center;
-    min-width: 325px;
 }
 
 .item {

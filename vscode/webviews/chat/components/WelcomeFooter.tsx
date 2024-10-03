@@ -1,3 +1,4 @@
+import { CodyIDE } from '@sourcegraph/cody-shared'
 import styles from './WelcomeFooter.module.css'
 
 import {
@@ -78,7 +79,7 @@ export default function WelcomeFooter() {
 
     return (
         <div className={styles.welcomeFooter}>
-            <div className={styles.tips}>{tips()}</div>
+            {CodyIDE.VSCode && <div className={styles.tips}>{tips()}</div>}
             <div className={styles.links}>{links()}</div>
         </div>
     )
