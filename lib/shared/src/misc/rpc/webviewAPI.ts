@@ -1,5 +1,5 @@
 import { Observable } from 'observable-fns'
-import type { AuthStatus, ModelsData, ResolvedConfiguration } from '../..'
+import type { AuthStatus, ModelsData, ResolvedConfiguration, UserProductSubscription } from '../..'
 import type { ChatMessage, UserLocalHistory } from '../../chat/transcript/messages'
 import type { ContextItem } from '../../codebase-context/messages'
 import type { CodyCommand } from '../../commands/types'
@@ -76,6 +76,11 @@ export interface WebviewToExtensionAPI {
      * The current user's chat history.
      */
     userHistory(): Observable<UserLocalHistory | null>
+
+    /**
+     * The current user's product subscription information (Cody Free/Pro).
+     */
+    userProductSubscription(): Observable<UserProductSubscription | null>
 }
 
 export function createExtensionAPI(
@@ -100,6 +105,7 @@ export function createExtensionAPI(
         authStatus: proxyExtensionAPI(messageAPI, 'authStatus'),
         transcript: proxyExtensionAPI(messageAPI, 'transcript'),
         userHistory: proxyExtensionAPI(messageAPI, 'userHistory'),
+        userProductSubscription: proxyExtensionAPI(messageAPI, 'userProductSubscription'),
     }
 }
 

@@ -45,6 +45,7 @@ import {
     currentAuthStatus,
     currentAuthStatusAuthed,
     currentResolvedConfig,
+    currentUserProductSubscription,
     featureFlagProvider,
     getContextForChatMessage,
     graphqlClient,
@@ -70,6 +71,7 @@ import {
     telemetryRecorder,
     tracer,
     truncatePromptString,
+    userProductSubscription,
 } from '@sourcegraph/cody-shared'
 
 import type { Span } from '@opentelemetry/api'
@@ -550,6 +552,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             config: configForWebview,
             clientCapabilities: clientCapabilities(),
             authStatus: authStatus,
+            userProductSubscription: await currentUserProductSubscription(),
             workspaceFolderUris,
             configFeatures: {
                 // If clientConfig is undefined means we were unable to fetch the client configuration -
@@ -1614,6 +1617,10 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     transcript: () =>
                         this.chatBuilder.changes.pipe(map(chat => chat.getDehydratedMessages())),
                     userHistory: () => chatHistory.changes,
+                    userProductSubscription: () =>
+                        userProductSubscription.pipe(
+                            map(value => (value === pendingOperation ? null : value))
+                        ),
                 }
             )
         )

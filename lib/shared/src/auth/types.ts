@@ -1,5 +1,6 @@
 import { isDotCom } from '../sourcegraph-api/environments'
 import type { CodyLLMSiteConfiguration } from '../sourcegraph-api/graphql/client'
+import type { UserProductSubscription } from '../sourcegraph-api/userProductSubscription'
 
 /**
  * The authentication status, which includes representing the state when authentication failed or
@@ -32,14 +33,7 @@ export interface AuthenticatedAuthStatus {
     primaryEmail?: string
     displayName?: string
     avatarURL?: string
-    /**
-     * Whether the users account can be upgraded.
-     *
-     * This is `true` if the user is on dotCom and has not already upgraded. It
-     * is used to customize rate limit messages and show additional upgrade
-     * buttons in the UI.
-     */
-    userCanUpgrade?: boolean
+
     pendingValidation: boolean
 
     /**
@@ -84,12 +78,12 @@ export const AUTH_STATUS_FIXTURE_AUTHED_DOTCOM: AuthenticatedAuthStatus = {
     },
 }
 
-export function isCodyProUser(authStatus: AuthStatus): boolean {
-    return isDotCom(authStatus) && authStatus.authenticated && !authStatus.userCanUpgrade
+export function isCodyProUser(authStatus: AuthStatus, sub: UserProductSubscription | null): boolean {
+    return isDotCom(authStatus) && authStatus.authenticated && sub !== null && !sub.userCanUpgrade
 }
 
-export function isFreeUser(authStatus: AuthStatus): boolean {
-    return isDotCom(authStatus) && authStatus.authenticated && !!authStatus.userCanUpgrade
+export function isFreeUser(authStatus: AuthStatus, sub: UserProductSubscription | null): boolean {
+    return isDotCom(authStatus) && authStatus.authenticated && sub !== null && !!sub.userCanUpgrade
 }
 
 export function isEnterpriseUser(authStatus: AuthStatus): boolean {

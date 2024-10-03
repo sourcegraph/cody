@@ -12,7 +12,12 @@ import type { UserAccountInfo } from '../Chat'
 export interface Config
     extends Pick<
         Extract<ExtensionMessage, { type: 'config' }>,
-        'config' | 'clientCapabilities' | 'authStatus' | 'configFeatures' | 'isDotComUser'
+        | 'config'
+        | 'clientCapabilities'
+        | 'authStatus'
+        | 'configFeatures'
+        | 'isDotComUser'
+        | 'userProductSubscription'
     > {}
 
 const ConfigContext = createContext<Config | null>(null)
@@ -45,7 +50,7 @@ export function useUserAccountInfo(): UserAccountInfo {
         )
     }
     return {
-        isCodyProUser: isCodyProUser(value.authStatus),
+        isCodyProUser: isCodyProUser(value.authStatus, value.userProductSubscription ?? null),
         // Receive this value from the extension backend to make it work
         // with E2E tests where change the DOTCOM_URL via the env variable TESTING_DOTCOM_URL.
         isDotComUser: value.isDotComUser,

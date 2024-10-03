@@ -13,6 +13,7 @@ import {
 } from '../misc/observable'
 import { pendingOperation, skipPendingOperation } from '../misc/observableOperation'
 import type { CodyClientConfig } from '../sourcegraph-api/clientConfig'
+import * as userProductSubscriptionModule from '../sourcegraph-api/userProductSubscription'
 import type { PartialDeep } from '../utils'
 import {
     type Model,
@@ -218,6 +219,9 @@ describe('server sent models', async () => {
     })
 
     it("sets server models and default models if they're not already set", async () => {
+        vi.spyOn(userProductSubscriptionModule, 'userProductSubscription', 'get').mockReturnValue(
+            Observable.of({ userCanUpgrade: true })
+        )
         // expect all defaults to be set
         expect(await firstValueFrom(modelsService.getDefaultChatModel())).toBe(opus.id)
         expect(await firstValueFrom(modelsService.getDefaultEditModel())).toBe(opus.id)

@@ -20,6 +20,10 @@ import {
     skipPendingOperation,
 } from '../misc/observableOperation'
 import { ClientConfigSingleton } from '../sourcegraph-api/clientConfig'
+import {
+    type UserProductSubscription,
+    userProductSubscription,
+} from '../sourcegraph-api/userProductSubscription'
 import { CHAT_INPUT_TOKEN_BUDGET, CHAT_OUTPUT_TOKEN_BUDGET } from '../token/constants'
 import { type Model, type ServerModel, modelTier } from './model'
 import { syncModels } from './sync'
@@ -339,15 +343,26 @@ export class ModelsService {
     }
 
     public getDefaultModel(type: ModelUsage): Observable<Model | undefined | typeof pendingOperation> {
-        return combineLatest(this.getModelsByType(type), this.modelsChanges, authStatus).pipe(
-            map(([models, modelsData, authStatus]) => {
-                if (models === pendingOperation || modelsData === pendingOperation) {
+        return combineLatest(
+            this.getModelsByType(type),
+            this.modelsChanges,
+            authStatus,
+            userProductSubscription
+        ).pipe(
+            map(([models, modelsData, authStatus, userProductSubscription]) => {
+                if (
+                    models === pendingOperation ||
+                    modelsData === pendingOperation ||
+                    userProductSubscription === pendingOperation
+                ) {
                     return pendingOperation
                 }
 
                 // Free users can only use the default free model, so we just find the first model they can use
                 const firstModelUserCanUse = models.find(
-                    m => this._isModelAvailable(modelsData, authStatus, m) === true
+                    m =>
+                        this._isModelAvailable(modelsData, authStatus, userProductSubscription, m) ===
+                        true
                 )
 
                 if (modelsData.preferences) {
@@ -357,7 +372,15 @@ export class ModelsService {
                         modelsData,
                         modelsData.preferences.selected[type] ?? modelsData.preferences.defaults[type]
                     )
-                    if (selected && this._isModelAvailable(modelsData, authStatus, selected) === true) {
+                    if (
+                        selected &&
+                        this._isModelAvailable(
+                            modelsData,
+                            authStatus,
+                            userProductSubscription,
+                            selected
+                        ) === true
+                    ) {
                         return selected
                     }
                 }
@@ -418,11 +441,11 @@ export class ModelsService {
     }
 
     public isModelAvailable(model: string | Model): Observable<boolean | typeof pendingOperation> {
-        return combineLatest(authStatus, this.modelsChanges).pipe(
-            map(([authStatus, modelsData]) =>
-                modelsData === pendingOperation
+        return combineLatest(authStatus, this.modelsChanges, userProductSubscription).pipe(
+            map(([authStatus, modelsData, userProductSubscription]) =>
+                modelsData === pendingOperation || userProductSubscription === pendingOperation
                     ? pendingOperation
-                    : this._isModelAvailable(modelsData, authStatus, model)
+                    : this._isModelAvailable(modelsData, authStatus, userProductSubscription, model)
             ),
             distinctUntilChanged()
         )
@@ -431,6 +454,7 @@ export class ModelsService {
     private _isModelAvailable(
         modelsData: ModelsData,
         authStatus: AuthStatus,
+        sub: UserProductSubscription | null,
         model: string | Model
     ): boolean {
         const resolved = this.resolveModel(modelsData, model)
@@ -446,7 +470,7 @@ export class ModelsService {
         // A Cody Pro user can use any Free or Pro model, but not Enterprise.
         // (But in reality, Sourcegraph.com wouldn't serve any Enterprise-only models to
         // Cody Pro users anyways.)
-        if (isCodyProUser(authStatus)) {
+        if (isCodyProUser(authStatus, sub)) {
             return (
                 tier !== 'enterprise' &&
                 !resolved.tags.includes(ModelTag.Waitlist) &&

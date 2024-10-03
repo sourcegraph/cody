@@ -8,7 +8,7 @@ import {
     ModelUsage,
     PromptString,
     SYMBOL_CONTEXT_MENTION_PROVIDER,
-    currentAuthStatusAuthed,
+    currentUserProductSubscription,
     displayLineRange,
     firstResultFromOperation,
     modelsService,
@@ -96,8 +96,8 @@ export const getInput = async (
               ? EXPANDED_RANGE_ITEM
               : SELECTION_RANGE_ITEM
 
-    const authStatus = currentAuthStatusAuthed()
-    const isCodyPro = !authStatus.userCanUpgrade
+    const sub = await currentUserProductSubscription()
+    const isCodyPro = Boolean(sub && !sub.userCanUpgrade)
     const modelOptions = await firstResultFromOperation(modelsService.getModels(ModelUsage.Edit))
     const modelItems = getModelOptionItems(modelOptions, isCodyPro)
     const showModelSelector = modelOptions.length > 1

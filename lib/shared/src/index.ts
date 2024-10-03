@@ -382,3 +382,9 @@ export * from './singletons'
 export * from './auth/authStatus'
 export { fetchLocalOllamaModels } from './llm-providers/ollama/utils'
 export * from './editor/editorState'
+export {
+    currentUserProductSubscription,
+    type UserProductSubscription,
+    cachedUserProductSubscription,
+    userProductSubscription,
+} from './sourcegraph-api/userProductSubscription'

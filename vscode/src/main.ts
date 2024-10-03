@@ -17,6 +17,7 @@ import {
     contextFiltersProvider,
     createDisposables,
     currentAuthStatus,
+    currentUserProductSubscription,
     distinctUntilChanged,
     featureFlagProvider,
     fromVSCodeEvent,
@@ -574,6 +575,7 @@ function registerUpgradeHandlers(disposables: vscode.Disposable[]): void {
         // Check if user has just moved back from a browser window to upgrade cody pro
         vscode.window.onDidChangeWindowState(async ws => {
             const authStatus = currentAuthStatus()
+            const sub = await currentUserProductSubscription()
             if (ws.focused && isDotCom(authStatus) && authStatus.authenticated) {
                 const res = await graphqlClient.getCurrentUserCodyProEnabled()
                 if (res instanceof Error) {
@@ -581,7 +583,7 @@ function registerUpgradeHandlers(disposables: vscode.Disposable[]): void {
                     return
                 }
                 // Re-auth if user's cody pro status has changed
-                const isCurrentCodyProUser = !authStatus.userCanUpgrade
+                const isCurrentCodyProUser = sub && !sub.userCanUpgrade
                 if (res && res.codyProEnabled !== isCurrentCodyProUser) {
                     authProvider.refresh()
                 }

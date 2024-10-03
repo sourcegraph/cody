@@ -19,11 +19,7 @@ export class ChatClient {
         private completions: SourcegraphCompletionsClient,
         private getAuthStatus: () => Pick<
             AuthenticatedAuthStatus,
-            | 'authenticated'
-            | 'userCanUpgrade'
-            | 'endpoint'
-            | 'codyApiVersion'
-            | 'isFireworksTracingEnabled'
+            'authenticated' | 'endpoint' | 'codyApiVersion' | 'isFireworksTracingEnabled'
         >
     ) {}
 
