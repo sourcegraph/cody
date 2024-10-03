@@ -457,6 +457,11 @@ export type ServerNotifications = {
     'window/didChangeContext': [{ key: string; value?: string | undefined | null }]
     // Client should move the focus to the sidebar.
     'window/focusSidebar': [null]
+
+    'globalStorage/didChange': [{
+        key: string;
+        value: string
+    }, null];
 }
 
 export interface WebviewCreateWebviewPanelOptions {

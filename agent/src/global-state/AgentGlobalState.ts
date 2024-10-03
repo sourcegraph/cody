@@ -6,14 +6,15 @@ import * as vscode_shim from '../vscode-shim'
 import path from 'node:path'
 import { localStorage } from '../../../vscode/src/services/LocalStorageProvider'
 import migrate from './migrations/migrate'
+import type {MessageHandler} from "../../../vscode/src/jsonrpc/jsonrpc";
 
 type GlobalStateManager = 'client' | 'server'
 
 export class AgentGlobalState implements vscode.Memento {
     private db: DB
 
-    static async initialize(ide: string, dir?: string): Promise<AgentGlobalState> {
-        const globalState = new AgentGlobalState(ide, dir ? 'server' : 'client', dir)
+    static async initialize(ide: string, dir?: string, agent?: MessageHandler,): Promise<AgentGlobalState> {
+        const globalState = new AgentGlobalState(ide, dir ? 'server' : 'client', dir, agent)
         if (globalState.db instanceof LocalStorageDB) {
             await migrate(globalState)
         }
@@ -23,7 +24,8 @@ export class AgentGlobalState implements vscode.Memento {
     private constructor(
         ide: string,
         private manager: GlobalStateManager,
-        dir?: string
+        dir?: string,
+        private agent?: MessageHandler
     ) {
         // If not provided, will default to an in-memory database
         if (dir) {
@@ -40,8 +42,11 @@ export class AgentGlobalState implements vscode.Memento {
         }
     }
 
-    private set(key: string, value: any): void {
+    private set(key: string, value: any) {
         this.db.set(key, value)
+        if (this.agent) {
+            this.agent.notify('globalStorage/didChange', { key, value: JSON.stringify(value) })
+        }
     }
 
     public reset(): void {
