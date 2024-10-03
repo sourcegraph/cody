@@ -295,7 +295,7 @@ const ClientSignInForm: React.FC<ClientSignInFormProps> = ({
     )
 }
 
-const EndpointSelection: React.FunctionComponent<
+export const EndpointSelection: React.FunctionComponent<
     React.PropsWithoutRef<{
         authStatus?: AuthStatus
         endpointHistory: string[]

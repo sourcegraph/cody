@@ -2,6 +2,7 @@ import { CodyIDE } from '@sourcegraph/cody-shared'
 import { useCallback } from 'react'
 import { URI } from 'vscode-uri'
 import { ACCOUNT_UPGRADE_URL, ACCOUNT_USAGE_URL } from '../../src/chat/protocol'
+import { EndpointSelection } from '../AuthPage'
 import { MESSAGE_CELL_AVATAR_SIZE } from '../chat/cells/messageCell/BaseMessageCell'
 import { UserAvatar } from '../components/UserAvatar'
 import { Button } from '../components/shadcn/ui/button'
@@ -15,17 +16,18 @@ interface AccountAction {
 }
 interface AccountTabProps {
     setView: (view: View) => void
+    endpointHistory: string[]
 }
 
 // TODO: Implement the AccountTab component once the design is ready.
-export const AccountTab: React.FC<AccountTabProps> = ({ setView }) => {
+export const AccountTab: React.FC<AccountTabProps> = ({ setView, endpointHistory }) => {
     const config = useConfig()
     const userInfo = useUserAccountInfo()
     const { user, isCodyProUser, isDotComUser } = userInfo
     const { displayName, username, primaryEmail, endpoint } = user
 
     // We open the native system pop-up for VS Code.
-    if (config.clientCapabilities.isVSCode) {
+    if (!config.clientCapabilities.isVSCode) {
         return null
     }
 
@@ -38,10 +40,6 @@ export const AccountTab: React.FC<AccountTabProps> = ({ setView }) => {
                 getVSCodeAPI().postMessage({ command: 'links', value: ACCOUNT_UPGRADE_URL.toString() }),
         })
     }
-    actions.push({
-        text: 'Switch Account...',
-        onClick: () => getVSCodeAPI().postMessage({ command: 'command', id: 'cody.auth.switchAccount' }),
-    })
     if (isDotComUser) {
         actions.push({
             text: 'Manage Account',
@@ -97,6 +95,11 @@ export const AccountTab: React.FC<AccountTabProps> = ({ setView }) => {
                     <div className="tw-text-muted-foreground tw-col-span-4">{endpoint}</div>
                 </div>
             </div>
+            {endpointHistory.length && (
+                <div className="tw-w-full tw-bg-popover tw-border tw-border-border">
+                    <EndpointSelection endpointHistory={endpointHistory} />
+                </div>
+            )}
             {actions.map(a => (
                 <Button
                     key={a.text}
