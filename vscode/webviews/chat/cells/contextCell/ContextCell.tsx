@@ -29,6 +29,7 @@ import styles from './ContextCell.module.css'
 export const ContextCell: FunctionComponent<{
     contextItems: ContextItem[] | undefined
     contextAlternatives?: RankedContext[]
+    isContextLoading: boolean
     model?: Model['id']
     isForFirstMessage: boolean
     className?: string
@@ -49,6 +50,7 @@ export const ContextCell: FunctionComponent<{
         __storybook__initialOpen,
         reSubmitWithChatIntent,
         showSnippets = false,
+        isContextLoading,
     }) => {
         const [selectedAlternative, setSelectedAlternative] = useState<number | undefined>(undefined)
         const incrementSelectedAlternative = useCallback(
@@ -138,7 +140,10 @@ export const ContextCell: FunctionComponent<{
                                         <span className="tw-flex tw-items-baseline">
                                             Context
                                             <span className="tw-opacity-60 tw-text-sm tw-ml-2">
-                                                &mdash; {itemCountLabel}
+                                                &mdash;{' '}
+                                                {isContextLoading
+                                                    ? 'Retrieving codebase files…'
+                                                    : itemCountLabel}
                                             </span>
                                         </span>
                                     </AccordionTrigger>

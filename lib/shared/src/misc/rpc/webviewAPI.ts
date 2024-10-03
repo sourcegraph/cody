@@ -50,7 +50,11 @@ export interface WebviewToExtensionAPI {
      */
     initialContext(): Observable<ContextItem[]>
 
-    detectIntent(text: string): Observable<ChatMessage['intent']>
+    detectIntent(
+        text: string
+    ): Observable<
+        { intent: ChatMessage['intent']; allScores: { intent: string; score: number }[] } | undefined
+    >
 
     /**
      * Observe the current resolved configuration (same as the global {@link resolvedConfig}
@@ -110,27 +114,21 @@ export interface MentionMenuData {
     error?: string
 }
 
+export interface PromptAction extends Prompt {
+    actionType: 'prompt'
+}
+
+export interface CommandAction extends CodyCommand {
+    actionType: 'command'
+}
+
+export type Action = PromptAction | CommandAction
+
 export interface PromptsResult {
-    /**
-     * `undefined` means the Sourcegraph endpoint is an older Sourcegraph version that doesn't
-     * support the Prompt Library.
-     */
-    prompts:
-        | { type: 'results'; results: Prompt[] }
-        | { type: 'error'; error: string }
-        | { type: 'unsupported' }
+    arePromptsSupported: boolean
 
-    /**
-     * Provides previously built-in commands which became prompt-like actions (explain code,
-     * generate unit tests, document symbol, etc.) Currently, is used behind feature flag.
-     */
-    standardPrompts?: CodyCommand[]
-
-    /**
-     * `undefined` means that commands should not be shown at all (not even as an empty
-     * list). Builtin and custom commands are deprecated in favor of the Prompt Library.
-     */
-    commands: CodyCommand[]
+    /** List of all available actions (prompts and/or commands) */
+    actions: Action[]
 
     /** The original query used to fetch this result. */
     query: string

@@ -1,8 +1,12 @@
 import path from 'node:path'
-import { graphqlClient, isError } from '@sourcegraph/cody-shared'
+import { PromptString, graphqlClient, isError } from '@sourcegraph/cody-shared'
+import { SourcegraphNodeCompletionsClient } from '../../../../vscode/src/completions/nodeClient'
+import { rewriteKeywordQuery } from '../../../../vscode/src/local-context/rewrite-keyword-query'
+import { version } from '../../../package.json'
 import type { RpcMessageHandler } from '../../jsonrpc-alias'
 import type { CodyBenchOptions } from './command-bench'
 import {
+    type ClientOptions,
     type EvalContextItem,
     type Example,
     type ExampleOutput,
@@ -10,6 +14,7 @@ import {
     contextItemToString,
     readExamplesFromCSV,
     writeExamplesToCSV,
+    writeYAMLMetadata,
 } from './strategy-chat-context-types'
 
 export async function evaluateChatContextStrategy(
@@ -17,39 +22,80 @@ export async function evaluateChatContextStrategy(
     options: CodyBenchOptions
 ): Promise<void> {
     const inputFilename = options.fixture.customConfiguration?.['cody-bench.chatContext.inputFile']
+    if (options.insecureTls) {
+        process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'
+    }
     if (!inputFilename) {
         throw new Error(
             'Missing cody-bench.chatContext.inputFile. To fix this problem, add "customConfiguration": { "cody-bench.chatContext.inputFile": "examples.csv" } to the cody-bench JSON config.'
         )
     }
-    const outputFilename = options.fixture.customConfiguration?.['cody-bench.chatContext.outputFile']
-    if (!outputFilename) {
-        throw new Error(
-            'Missing cody-bench.chatContext.outputFile. To fix this problem, add "customConfiguration": { "cody-bench.chatContext.outputFile": "output.csv" } to the cody-bench JSON config.'
-        )
-    }
-    const inputFile = path.join(options.workspace, inputFilename)
-    const outputFile = path.join(options.snapshotDirectory, outputFilename)
+    const inputBasename = path.basename(inputFilename).replace(/\.csv$/, '')
 
-    if (options.insecureTls) {
-        process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'
+    const clientOptions: ClientOptions = options.fixture.customConfiguration?.[
+        'cody-bench.chatContext.clientOptions'
+    ] ?? {
+        rewrite: false,
     }
+
+    const siteVersion = await graphqlClient.getSiteVersion()
+    if (isError(siteVersion)) {
+        throw siteVersion
+    }
+    const userInfo = await graphqlClient.getCurrentUserInfo()
+    if (isError(userInfo)) {
+        throw userInfo
+    }
+    const evaluatedFeatureFlags = await graphqlClient.getEvaluatedFeatureFlags()
+    if (isError(evaluatedFeatureFlags)) {
+        throw evaluatedFeatureFlags
+    }
+    const shortSiteVersion = siteVersion.match(/-[0-9a-f]{7,40}$/)
+        ? siteVersion.match(/-([0-9a-f]{7,40})$/)?.[1]
+        : siteVersion
+    const currentTimestamp = new Date().toISOString()
+
+    const outputBase = `${inputBasename}__${shortSiteVersion}`
+    const outputCSVFilename = `${outputBase}.csv`
+    const outputYAMLFilename = `${outputBase}.yaml`
+
+    const inputFile = path.join(options.workspace, inputFilename)
+    const outputCSVFile = path.join(options.snapshotDirectory, outputCSVFilename)
+    const outputYAMLFile = path.join(options.snapshotDirectory, outputYAMLFilename)
 
     const { examples, ignoredRecords } = await readExamplesFromCSV(inputFile)
 
-    console.error(`ignoring ${ignoredRecords.length} malformed rows`)
-    if (!outputFile) {
-        throw new Error('no output file specified')
+    if (ignoredRecords.length > 0) {
+        console.log(`⚠ ignoring ${ignoredRecords.length} malformed rows`)
     }
 
-    await runContextCommand(examples, outputFile)
+    const outputs = await runContextCommand({ rewrite: clientOptions.rewrite }, examples)
+    const codyClientVersion = process.env.CODY_COMMIT ?? version
+    await writeExamplesToCSV(outputCSVFile, outputs)
+    await writeYAMLMetadata(outputYAMLFile, {
+        evaluatedAt: currentTimestamp,
+        clientOptions,
+        codyClientVersion,
+        siteUserMetadata: {
+            url: options.srcEndpoint,
+            sourcegraphVersion: siteVersion,
+            username: userInfo?.username ?? '[none]',
+            userId: userInfo?.id ?? '[none]',
+            evaluatedFeatureFlags,
+        },
+        examples: outputs,
+    })
 }
 
-async function runContextCommand(examples: Example[], outputFile: string): Promise<void> {
+async function runContextCommand(
+    clientOps: ClientOptions,
+    examples: Example[]
+): Promise<ExampleOutput[]> {
+    const completionsClient = new SourcegraphNodeCompletionsClient()
     const exampleOutputs: ExampleOutput[] = []
 
     for (const example of examples) {
-        const { targetRepoRevs, query, essentialContext } = example
+        const { targetRepoRevs, query: origQuery, essentialContext } = example
         const repoNames = targetRepoRevs.map(repoRev => repoRev.repoName)
         const repoIDNames = await graphqlClient.getRepoIds(repoNames, repoNames.length + 10)
         if (isError(repoIDNames)) {
@@ -63,6 +109,15 @@ async function runContextCommand(examples: Example[], outputFile: string): Promi
             )
         }
         const repoIDs = repoIDNames.map(repoIDName => repoIDName.id)
+
+        let query = origQuery
+        if (clientOps.rewrite) {
+            query = await rewriteKeywordQuery(
+                completionsClient,
+                PromptString.unsafe_fromUserQuery(origQuery)
+            )
+        }
+
         const resultsResp = await graphqlClient.contextSearch({
             repoIDs,
             query,
@@ -94,7 +149,7 @@ async function runContextCommand(examples: Example[], outputFile: string): Promi
         })
     }
 
-    await writeExamplesToCSV(outputFile, exampleOutputs)
+    return exampleOutputs
 }
 
 function contextOverlaps(

@@ -127,6 +127,7 @@ function convertDefaultCommandsToPromptString(input: DefaultCodyCommands | Promp
             return ps`explain`
         case DefaultChatCommands.Smell:
             return ps`smell`
+        case DefaultChatCommands.Test:
         case DefaultEditCommands.Test:
             return ps`test`
         case DefaultChatCommands.Doc:

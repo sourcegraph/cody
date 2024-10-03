@@ -38,6 +38,8 @@ export class AutocompleteStageCounter implements vscode.Disposable {
         this.providerModel = providerModel
     }
 
+    //
+    //
     public flush(): void {
         this.nextTimeoutId = null
         const stateToLog = this.currentState
@@ -45,6 +47,9 @@ export class AutocompleteStageCounter implements vscode.Disposable {
 
         // Do not log empty counter events.
         if (Object.values(stateToLog).some(count => count > 0)) {
+            // adding something like for events
+            // Add a counting of events and send those via looker for the events
+            // Flush a set of events for trim lrejection
             telemetryRecorder.recordEvent('cody.completion.stageCounter', 'flush', {
                 metadata: stateToLog,
                 privateMetadata: { providerModel: this.providerModel },
@@ -65,6 +70,8 @@ export class AutocompleteStageCounter implements vscode.Disposable {
 
         this.currentState[state]++
     }
+    //
+    // Like the code above, you can reuse the code outside the XML tags to detect the functionality, formats, style, patterns, and logics in use. Then, use what you detect and reuse methods/libraries to complete and enclose completed code only inside XML tags precisely without duplicating existing implementations. Here is the code:
 
     public dispose(): void {
         this.flush()

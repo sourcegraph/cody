@@ -38,18 +38,16 @@ export enum FeatureFlag {
     CodyAutocompleteDataCollectionFlag = 'cody-autocomplete-data-collection-flag',
 
     // Enable various feature flags to experiment with FIM trained fine-tuned models via Fireworks
-    CodyAutocompleteFIMModelExperimentBaseFeatureFlag = 'cody-autocomplete-fim-model-experiment-flag-v2',
-    CodyAutocompleteFIMModelExperimentControl = 'cody-autocomplete-fim-model-experiment-control-v2',
-    CodyAutocompleteFIMModelExperimentCurrentBest = 'cody-autocomplete-fim-model-experiment-current-best-v2',
-    CodyAutocompleteFIMModelExperimentVariant1 = 'cody-autocomplete-fim-model-experiment-variant-1-v2',
-    CodyAutocompleteFIMModelExperimentVariant2 = 'cody-autocomplete-fim-model-experiment-variant-2-v2',
-    CodyAutocompleteFIMModelExperimentVariant3 = 'cody-autocomplete-fim-model-experiment-variant-3-v2',
-    CodyAutocompleteFIMModelExperimentVariant4 = 'cody-autocomplete-fim-model-experiment-variant-4-v2',
+    CodyAutocompleteFIMModelExperimentBaseFeatureFlag = 'cody-autocomplete-fim-model-experiment-flag',
+    CodyAutocompleteFIMModelExperimentControl = 'cody-autocomplete-fim-model-experiment-control',
+    CodyAutocompleteFIMModelExperimentCurrentBest = 'cody-autocomplete-fim-model-experiment-current-best',
+    CodyAutocompleteFIMModelExperimentVariant1 = 'cody-autocomplete-fim-model-experiment-variant-1',
+    CodyAutocompleteFIMModelExperimentVariant2 = 'cody-autocomplete-fim-model-experiment-variant-2',
+    CodyAutocompleteFIMModelExperimentVariant3 = 'cody-autocomplete-fim-model-experiment-variant-3',
+    CodyAutocompleteFIMModelExperimentVariant4 = 'cody-autocomplete-fim-model-experiment-variant-4',
     CodyAutocompleteDisableLowPerfLangDelay = 'cody-autocomplete-disable-low-perf-lang-delay',
     // Enables Claude 3 if the user is in our holdout group
     CodyAutocompleteClaude3 = 'cody-autocomplete-claude-3',
-    // Enable latency adjustments based on accept/reject streaks
-    CodyAutocompleteUserLatency = 'cody-autocomplete-user-latency',
 
     CodyAutocompletePreloadingExperimentBaseFeatureFlag = 'cody-autocomplete-preloading-experiment-flag',
     CodyAutocompletePreloadingExperimentVariant1 = 'cody-autocomplete-preloading-experiment-variant-1',
@@ -133,10 +131,10 @@ export class FeatureFlagProviderImpl implements FeatureFlagProvider {
     private cache: Record<string, Record<string, boolean>> = {}
 
     private refreshRequests = new Subject<void>()
-    private refreshes: Observable<void> = combineLatest([
+    private refreshes: Observable<void> = combineLatest(
         this.refreshRequests.pipe(startWith(undefined)),
-        interval(ONE_HOUR).pipe(startWith(undefined)),
-    ]).pipe(map(() => undefined))
+        interval(ONE_HOUR).pipe(startWith(undefined))
+    ).pipe(map(() => undefined))
 
     private relevantAuthStatusChanges: Observable<
         Pick<AuthStatus, 'authenticated' | 'endpoint'> &
@@ -150,10 +148,10 @@ export class FeatureFlagProviderImpl implements FeatureFlagProvider {
         distinctUntilChanged()
     )
 
-    private evaluatedFeatureFlags: Observable<Record<string, boolean>> = combineLatest([
+    private evaluatedFeatureFlags: Observable<Record<string, boolean>> = combineLatest(
         this.relevantAuthStatusChanges,
-        this.refreshes,
-    ]).pipe(
+        this.refreshes
+    ).pipe(
         debounceTime(0),
         switchMap(([authStatus]) =>
             promiseFactoryToObservable(signal =>
@@ -208,7 +206,7 @@ export class FeatureFlagProviderImpl implements FeatureFlagProvider {
             // endpoint, because our endpoint or authentication may have changed, and
             // `getEvaluatedFeatureFlags` only returns the set of recently evaluated feature flags.
             entry = storeLastValue(
-                combineLatest([this.relevantAuthStatusChanges, this.refreshes])
+                combineLatest(this.relevantAuthStatusChanges, this.refreshes)
                     .pipe(
                         // NOTE(sqs): Use switchMap instead of switchMapReplayOperation because we want
                         // to cache the previous value while we are refreshing it. That is a choice that

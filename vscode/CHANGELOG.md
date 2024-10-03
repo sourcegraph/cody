@@ -6,6 +6,14 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 ### Added
 
+### Fixed
+
+### Changed
+
+## 1.36.0
+
+### Added
+
 - The [new OpenAI models (OpenAI o1-preview & OpenAI o1-mini)](https://sourcegraph.com/blog/openai-o1-for-cody) are now available to selected Cody Pro users for early access. [pull/5508](https://github.com/sourcegraph/cody/pull/5508)
 - Cody Pro users can join the waitlist for the new models by clicking the "Join Waitlist" button. [pull/5508](https://github.com/sourcegraph/cody/pull/5508)
 - Chat: Support non-streaming requests. [pull/5565](https://github.com/sourcegraph/cody/pull/5565)
@@ -16,6 +24,7 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 - Chat: Fixed feedback buttons not working in chat. [pull/5509](https://github.com/sourcegraph/cody/pull/5509)
 - Command: Removed duplicated default commands from the Cody Commands menu that were incorrectly listed as custom commands.
 - Enterprise: Smart context window is now correctly set for all Claude Sonnet models configured on the server side. [pull/5677](https://github.com/sourcegraph/cody/pull/5677)
+- Chat: Display the correct loading state during codebase context retrieval instead of 0 item by default. [pull/5761](https://github.com/sourcegraph/cody/pull/5761)
 
 ### Changed
 

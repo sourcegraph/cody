@@ -11,6 +11,14 @@ import {
  */
 export interface MentionQuery {
     /**
+     * Interaction ID is used to indicate for what view instance this data will
+     * be used. This is primarily used to record telemetry events. If no
+     * Interaction ID is specified it is assumed that the data is not shown to
+     * the user.
+     */
+    interactionID?: string | number | undefined | null
+
+    /**
      * The type of context item to search for, or null to find suggested items across (possibly) all
      * providers.
      */

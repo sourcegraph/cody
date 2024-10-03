@@ -53,7 +53,7 @@ export class SupercompletionProvider implements vscode.Disposable {
         document: vscode.TextDocument,
         abortController: AbortController
     ): Promise<void> {
-        const cancel = this.config.statusBar.startLoading('Loading supercompletions...')
+        const cancel = this.config.statusBar.addLoader({ title: 'Loading supercompletions...' })
         try {
             for await (const supercompletion of getSupercompletions({
                 document,

@@ -1,5 +1,9 @@
+import path from 'node:path'
 import type { TestInfo } from '@playwright/test'
 
+export const CODY_ROOT_DIR = process.env.CODY_ROOT_DIR ?? path.resolve(__dirname, '..', '..', '..')
+export const CODY_VSCODE_ROOT_DIR =
+    process.env.CODY_VSCODE_ROOT_DIR ?? path.resolve(__dirname, '..', '..')
 /**
  * Stretches the test with at most the `max` amount of ms but never more than
  * needed to finish the operation. This way you can effectively nullify the time

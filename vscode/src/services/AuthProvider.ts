@@ -63,10 +63,10 @@ class AuthProvider implements vscode.Disposable {
 
         // Perform auth as config changes.
         this.subscriptions.push(
-            combineLatest([
+            combineLatest(
                 credentialsChangesNeedingValidation,
-                this.refreshRequests.pipe(startWith(undefined)),
-            ])
+                this.refreshRequests.pipe(startWith(undefined))
+            )
                 .pipe(
                     abortableOperation(async ([config], signal) => {
                         if (clientCapabilities().isCodyWeb) {
@@ -225,6 +225,9 @@ function startAuthTelemetryReporter(): Unsubscribable {
 }
 
 function reportAuthTelemetryEvent(authStatus: AuthStatus): void {
+    if (authStatus.pendingValidation) {
+        return // Not a valid event to report.
+    }
     let eventValue: 'disconnected' | 'connected' | 'failed'
     if (
         !authStatus.authenticated &&

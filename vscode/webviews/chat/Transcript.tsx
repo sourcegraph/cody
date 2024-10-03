@@ -180,7 +180,11 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
         smartApplyEnabled,
     } = props
 
-    const [intent, setIntent] = useState<ChatMessage['intent']>()
+    const [intentResults, setIntentResults] = useState<
+        | { intent: ChatMessage['intent']; allScores?: { intent: string; score: number }[] }
+        | undefined
+        | null
+    >()
 
     const humanEditorRef = useRef<PromptEditorRefAPI | null>(null)
 
@@ -189,22 +193,24 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
             editHumanMessage({
                 messageIndexInTranscript: humanMessage.index,
                 editorValue,
-                intent: intentFromSubmit || intent,
+                intent: intentFromSubmit || intentResults?.intent,
+                intentScores: intentFromSubmit ? undefined : intentResults?.allScores,
                 manuallySelectedIntent: !!intentFromSubmit,
             })
         },
-        [humanMessage, intent]
+        [humanMessage, intentResults]
     )
 
     const onFollowupSubmit = useCallback(
         (editorValue: SerializedPromptEditorValue, intentFromSubmit?: ChatMessage['intent']): void => {
             submitHumanMessage({
                 editorValue,
-                intent: intentFromSubmit || intent,
+                intent: intentFromSubmit || intentResults?.intent,
+                intentScores: intentFromSubmit ? undefined : intentResults?.allScores,
                 manuallySelectedIntent: !!intentFromSubmit,
             })
         },
-        [intent]
+        [intentResults]
     )
 
     const extensionAPI = useExtensionAPI()
@@ -213,7 +219,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
 
     const onChange = useMemo(() => {
         return debounce(async (editorValue: SerializedPromptEditorValue) => {
-            setIntent(undefined)
+            setIntentResults(undefined)
 
             if (!experimentalOneBoxEnabled) {
                 return
@@ -230,7 +236,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                         inputTextWithoutContextChipsFromPromptEditorState(editorValue.editorState)
                     )
                     .subscribe(value => {
-                        setIntent(value)
+                        setIntentResults(value)
                     })
             }
         }, 300)
@@ -284,7 +290,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
         [reSubmitWithIntent]
     )
 
-    const resetIntent = useCallback(() => setIntent(undefined), [])
+    const resetIntent = useCallback(() => setIntentResults(undefined), [])
 
     return (
         <>
@@ -352,6 +358,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                     showSnippets={experimentalOneBoxEnabled && humanMessage.intent === 'search'}
                     defaultOpen={experimentalOneBoxEnabled && humanMessage.intent === 'search'}
                     reSubmitWithChatIntent={reSubmitWithChatIntent}
+                    isContextLoading={isContextLoading}
                 />
             )}
             {(!experimentalOneBoxEnabled || humanMessage.intent !== 'search') &&
@@ -394,11 +401,13 @@ export function editHumanMessage({
     messageIndexInTranscript,
     editorValue,
     intent,
+    intentScores,
     manuallySelectedIntent,
 }: {
     messageIndexInTranscript: number
     editorValue: SerializedPromptEditorValue
     intent?: ChatMessage['intent']
+    intentScores?: { intent: string; score: number }[]
     manuallySelectedIntent?: boolean
 }): void {
     getVSCodeAPI().postMessage({
@@ -408,6 +417,7 @@ export function editHumanMessage({
         editorState: editorValue.editorState,
         contextItems: editorValue.contextItems.map(deserializeContextItem),
         intent,
+        intentScores,
         manuallySelectedIntent,
     })
     focusLastHumanMessageEditor()
@@ -416,10 +426,12 @@ export function editHumanMessage({
 function submitHumanMessage({
     editorValue,
     intent,
+    intentScores,
     manuallySelectedIntent,
 }: {
     editorValue: SerializedPromptEditorValue
     intent?: ChatMessage['intent']
+    intentScores?: { intent: string; score: number }[]
     manuallySelectedIntent?: boolean
 }): void {
     getVSCodeAPI().postMessage({
@@ -429,6 +441,7 @@ function submitHumanMessage({
         editorState: editorValue.editorState,
         contextItems: editorValue.contextItems.map(deserializeContextItem),
         intent,
+        intentScores,
         manuallySelectedIntent,
     })
     focusLastHumanMessageEditor()

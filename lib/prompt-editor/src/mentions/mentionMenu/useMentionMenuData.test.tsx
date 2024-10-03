@@ -141,7 +141,9 @@ describe('useCallMentionMenuData', () => {
             mentionMenuData: () => promiseToObservable(dataPromise),
         })
 
-        const { result } = renderHook(() => useCallMentionMenuData({ query: 'q', parentItem: null }))
+        const { result } = renderHook(() =>
+            useCallMentionMenuData({ query: 'q', parentItem: null, interactionID: null })
+        )
 
         expect(result.current).toEqual<typeof result.current>({
             done: false,

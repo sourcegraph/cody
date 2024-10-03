@@ -32,6 +32,7 @@ import {
     CURRENT_USER_CODY_SUBSCRIPTION_QUERY,
     CURRENT_USER_ID_QUERY,
     CURRENT_USER_INFO_QUERY,
+    DELETE_ACCESS_TOKEN_MUTATION,
     EVALUATE_FEATURE_FLAG_QUERY,
     FILE_CONTENTS_QUERY,
     FILE_MATCH_SEARCH_QUERY,
@@ -41,6 +42,7 @@ import {
     GET_REMOTE_FILE_QUERY,
     GET_URL_CONTENT_QUERY,
     HIGHLIGHTED_FILE_QUERY,
+    LEGACY_CHAT_INTENT_QUERY,
     LEGACY_CONTEXT_SEARCH_QUERY,
     LOG_EVENT_MUTATION,
     LOG_EVENT_MUTATION_DEPRECATED,
@@ -338,6 +340,10 @@ interface ChatIntentResponse {
     chatIntent: {
         intent: string
         score: number
+        allScores?: {
+            intent: string
+            score: number
+        }[]
     }
 }
 
@@ -374,6 +380,10 @@ export interface Range {
 export interface ChatIntentResult {
     intent: string
     score: number
+    allScores?: {
+        intent: string
+        score: number
+    }[]
 }
 
 /**
@@ -406,6 +416,12 @@ export interface Prompt {
         text: string
     }
     url: string
+    createdBy: {
+        id: string
+        username: string
+        displayName: string
+        avatarURL: string
+    }
 }
 
 interface ContextFiltersResponse {
@@ -935,8 +951,13 @@ export class SourcegraphGraphQLAPIClient {
 
     /** Experimental API */
     public async chatIntent(interactionID: string, query: string): Promise<ChatIntentResult | Error> {
+        const hasAllScoresField = await this.isValidSiteVersion({
+            minimumVersion: '5.9.0',
+            insider: true,
+        })
+
         const response = await this.fetchSourcegraphAPI<APIResponse<ChatIntentResponse>>(
-            CHAT_INTENT_QUERY,
+            hasAllScoresField ? CHAT_INTENT_QUERY : LEGACY_CHAT_INTENT_QUERY,
             {
                 query: query,
                 interactionId: interactionID,
@@ -1248,6 +1269,16 @@ export class SourcegraphGraphQLAPIClient {
             return responses[1]
         }
         return {}
+    }
+    // Deletes an access token, if it exists on the server
+    public async DeleteAccessToken(token: string): Promise<unknown | Error> {
+        const initialResponse = await this.fetchSourcegraphAPI<APIResponse<unknown>>(
+            DELETE_ACCESS_TOKEN_MUTATION,
+            {
+                token,
+            }
+        )
+        return extractDataOrError(initialResponse, data => data)
     }
 
     private anonymizeTelemetryEventInput(event: TelemetryEventInput): void {
