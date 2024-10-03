@@ -581,6 +581,8 @@ export function setUserAgent(newUseragent: string): void {
 
 const QUERY_TO_NAME_REGEXP = /^\s*(?:query|mutation)\s+(\w+)/m
 
+const DEFAULT_TIMEOUT_MSEC = 20000
+
 export class SourcegraphGraphQLAPIClient {
     private dotcomUrl = DOTCOM_URL
 
@@ -1426,8 +1428,7 @@ export class SourcegraphGraphQLAPIClient {
             baseUrl: config.auth.serverEndpoint,
         })
 
-        // Default timeout of 6 seconds.
-        const timeoutMs = typeof signalOrTimeout === 'number' ? signalOrTimeout : 6000
+        const timeoutMs = typeof signalOrTimeout === 'number' ? signalOrTimeout : DEFAULT_TIMEOUT_MSEC
         const timeoutSignal = AbortSignal.timeout(timeoutMs)
 
         const abortController = dependentAbortController(
@@ -1529,7 +1530,7 @@ export class SourcegraphGraphQLAPIClient {
         addCustomUserAgent(headers)
 
         // Timeout of 6 seconds.
-        const timeoutSignal = AbortSignal.timeout(6000)
+        const timeoutSignal = AbortSignal.timeout(DEFAULT_TIMEOUT_MSEC)
 
         const abortController = dependentAbortController(signal)
         onAbort(timeoutSignal, () => abortController.abort())
