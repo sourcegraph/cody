@@ -120,8 +120,8 @@ export const FileLink: React.FunctionComponent<
         const external = uri.scheme === 'http' || uri.scheme === 'https'
         telemetryRecorder.recordEvent('onebox.searchResult', 'clicked', {
             metadata: {
-                is_local: external ? 0 : 1,
-                is_remote: external ? 1 : 0,
+                isLocal: external ? 0 : 1,
+                isRemote: external ? 1 : 0,
             },
             privateMetadata: {
                 filename: displayPath(uri),
