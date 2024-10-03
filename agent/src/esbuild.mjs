@@ -13,9 +13,7 @@ main().catch(err => {
 
 async function main() {
     await verifyShim()
-
-    const minify = process.argv.includes('--minify')
-    await buildAgent(minify)
+    await buildAgent()
 }
 
 async function verifyShim() {
@@ -46,10 +44,9 @@ async function verifyShim() {
 
 /**
  * Builds the Cody agent using esbuild.
- * @param {boolean} minify - Whether to minify the output or not.
  * @returns {Promise<void>} - A promise that resolves when the build process is complete.
  */
-async function buildAgent(minify) {
+async function buildAgent() {
     /** @type {import('esbuild').BuildOptions} */
     const esbuildOptions = {
         entryPoints: ['./src/index.ts'],
@@ -59,7 +56,6 @@ async function buildAgent(minify) {
         sourcemap: true,
         logLevel: 'error',
         external: ['typescript'],
-        minify: minify,
 
         alias: {
             vscode: path.resolve(process.cwd(), 'src', 'vscode-shim.ts'),

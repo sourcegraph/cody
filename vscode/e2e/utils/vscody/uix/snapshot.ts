@@ -77,6 +77,8 @@ export const expect = {
             }
         }
 
+        await fse.unlink(newSnapshotPath).catch(() => {}) // we don't care
+
         return {
             message: () => 'Snapshot matches',
             pass: true,
@@ -110,6 +112,9 @@ export namespace Normalizers {
                         _.set(draft, path, value > 0 ? 1 : value < 0 ? -1 : 0)
                         break
                     case 'object':
+                        if (value === null || value === undefined) {
+                            break
+                        }
                         _.set(draft, path, '<Object>')
                         break
                 }

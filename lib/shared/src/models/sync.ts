@@ -282,7 +282,7 @@ export function syncModels({
         ),
         distinctUntilChanged(),
         tap(modelsData => {
-            if (modelsData !== pendingOperation) {
+            if (modelsData !== pendingOperation && modelsData.primaryModels.length > 0) {
                 logDebug(
                     'ModelsService',
                     'ModelsData changed',

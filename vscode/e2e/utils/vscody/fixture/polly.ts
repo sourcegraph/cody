@@ -22,8 +22,11 @@ Polly.register(CodyPersister)
 export const pollyFixture = _test.extend<TestContext, WorkerContext>({
     polly: [
         async ({ validOptions }, use, testInfo) => {
-            const id = `${testInfo.title.slice(0, 200).replaceAll(/[\\/]/g, '_').toLowerCase()}`
-
+            const id = `${testInfo.title
+                .slice(0, 200)
+                .replaceAll(/[\\/]/g, '_') // we replace all slashes with underscores
+                .replaceAll(/[^a-zA-Z0-9_]/g, '') // we remove all non ascii characters
+                .toLowerCase()}`
             const polly = new Polly(id, {
                 flushRequestsOnStop: true,
                 recordIfMissing: validOptions.recordIfMissing ?? validOptions.recordingMode === 'record',
