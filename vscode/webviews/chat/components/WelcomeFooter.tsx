@@ -14,6 +14,7 @@ import type { ForwardRefExoticComponent } from 'react'
 interface ChatViewTip {
     message: string
     icon: ForwardRefExoticComponent<Omit<LucideProps, 'ref'>>
+    vsCodeOnly: boolean
 }
 
 interface ChatViewLink {
@@ -26,14 +27,17 @@ const chatTips: ChatViewTip[] = [
     {
         message: 'Type @ to add context to your chat',
         icon: AtSignIcon,
+        vsCodeOnly: true,
     },
     {
         message: 'Start a new chat using ⌥ / or the New Chat button',
         icon: MessageSquarePlus,
+        vsCodeOnly: false,
     },
     {
         message: 'To add code context from an editor, right click and use Add to Cody Chat',
         icon: TextSelect,
+        vsCodeOnly: true,
     },
 ]
 
@@ -54,6 +58,9 @@ export default function WelcomeFooter({ IDE }: { IDE: CodyIDE }) {
     function tips() {
         return chatTips.map((tip, key) => {
             const Icon = tip.icon
+            if (tip.vsCodeOnly && IDE !== CodyIDE.VSCode) {
+                return null
+            }
             return (
                 <div key={`tip-${key + 1}`} className={styles.item}>
                     <Icon className="tw-w-8 tw-h-8 tw-shrink-0" strokeWidth={1.25} />
@@ -79,7 +86,7 @@ export default function WelcomeFooter({ IDE }: { IDE: CodyIDE }) {
 
     return (
         <div className={styles.welcomeFooter}>
-            {IDE === CodyIDE.VSCode && <div className={styles.tips}>{tips()}</div>}
+            <div className={styles.tips}>{tips()}</div>
             <div className={styles.links}>{links()}</div>
         </div>
     )
