@@ -421,7 +421,9 @@ export class ChatsController implements vscode.Disposable {
         }
     }
 
-    // Dispose all open chat panels
+    /**
+     * Dispose all open chat views and restart the panel view.
+     */
     private disposeAllChats(): void {
         this.activeView = undefined
 
