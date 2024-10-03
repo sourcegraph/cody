@@ -843,7 +843,7 @@ export class InlineCompletionItemProvider
                 takeSuggestWidgetSelectionIntoAccount,
                 undefined
             )
-            completion.requestParams.docContext.position
+
             if (isStillVisible) {
                 suggestionEvent.markAsRead({
                     document: invokedDocument,
