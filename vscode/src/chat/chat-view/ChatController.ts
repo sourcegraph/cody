@@ -590,7 +590,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
     public async handleUserMessageSubmission({
         requestID,
         inputText,
-        isEdit,
         mentions,
         editorState,
         signal,
@@ -602,7 +601,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
     }: {
         requestID: string
         inputText: PromptString
-        isEdit?: boolean
         mentions: ContextItem[]
         editorState: SerializedPromptEditorState | null
         signal: AbortSignal
@@ -657,12 +655,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     span.addEvent('clearAndRestartSession')
                     span.end()
                     return this.clearAndRestartSession()
-                }
-
-                if (!isEdit && !this.chatBuilder.isEmpty()) {
-                    span.addEvent('clearAndRestartSession')
-                    await this.clearAndRestartSession()
-                    signal.throwIfAborted()
                 }
 
                 this.chatBuilder.addHumanMessage({
@@ -990,7 +982,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             return await this.handleUserMessageSubmission({
                 requestID,
                 inputText: text,
-                isEdit: true,
                 mentions: contextFiles,
                 editorState,
                 signal: abortSignal,

@@ -279,7 +279,6 @@ export async function chatAction(options: ChatOptions): Promise<number> {
             id,
             message: {
                 command: 'submit',
-                submitType: 'user-newchat',
                 text: messageText,
                 contextItems,
             },
