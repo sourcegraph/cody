@@ -48,12 +48,21 @@ interface Options extends MessageProviderOptions {
 }
 
 export class ChatsController implements vscode.Disposable {
-    // Chat view in the panel (typically in the sidebar)
+    /**
+     * The chat view in the panel (typically in the sidebar). There is only one panel view at any
+     * time, and there can be any number of editor views.
+     */
     private panel: ChatController
 
-    // Chat views in editor panels
-    private editors: ChatController[] = []
-    private activeEditor: ChatController | undefined = undefined
+    /**
+     * All chat views (panels and editors).
+     */
+    private views: ChatController[] = []
+
+    /**
+     * The last-active chat view.
+     */
+    private activeView: ChatController | undefined = undefined
 
     // We keep track of the currently authenticated account and dispose open chats when it changes
     private currentAuthAccount:
@@ -155,7 +164,7 @@ export class ChatsController implements vscode.Disposable {
                         if (modality === 'sidebar') {
                             await vscode.commands.executeCommand('cody.chat.focus')
                         } else {
-                            const editorView = this.activeEditor?.webviewPanelOrView
+                            const editorView = this.activeView?.webviewPanelOrView
                             if (editorView) {
                                 revealWebviewViewOrPanel(editorView)
                             } else {
@@ -216,7 +225,7 @@ export class ChatsController implements vscode.Disposable {
     }
 
     private async moveChatFromEditorToPanel(): Promise<void> {
-        const sessionID = this.activeEditor?.sessionID
+        const sessionID = this.activeView?.sessionID
         if (!sessionID) {
             return
         }
@@ -255,13 +264,13 @@ export class ChatsController implements vscode.Disposable {
      */
     private async getActiveChatController(): Promise<ChatController> {
         // Check if any existing panel is available
-        if (this.activeEditor) {
+        if (this.activeView) {
             // NOTE: Never reuse webviews when running inside the agent without native webviews
             // TODO: Find out, document why we don't reuse webviews when running inside agent without native webviews
             if (!getConfiguration().hasNativeWebview) {
                 return await this.getOrCreateEditorChatController()
             }
-            return this.activeEditor
+            return this.activeView
         }
         return this.panel
     }
@@ -404,11 +413,11 @@ export class ChatsController implements vscode.Disposable {
         }
 
         // Look for an existing editor with the same chatID (if given).
-        if (chatID && this.editors.map(p => p.sessionID).includes(chatID)) {
-            const provider = this.editors.find(p => p.sessionID === chatID)
+        if (chatID && this.views.map(p => p.sessionID).includes(chatID)) {
+            const provider = this.views.find(p => p.sessionID === chatID)
             if (provider?.webviewPanelOrView) {
                 revealWebviewViewOrPanel(provider.webviewPanelOrView)
-                this.activeEditor = provider
+                this.activeView = provider
                 return provider
             }
         }
@@ -421,22 +430,22 @@ export class ChatsController implements vscode.Disposable {
 
         if (panel) {
             // Connect the controller with the existing editor panel
-            this.activeEditor = chatController
+            this.activeView = chatController
             await chatController.revive(panel)
         } else {
             // Create a new editor panel on top of an existing one
-            const activePanelViewColumn = this.activeEditor?.webviewPanelOrView
-                ? webviewViewOrPanelViewColumn(this.activeEditor?.webviewPanelOrView)
+            const activePanelViewColumn = this.activeView?.webviewPanelOrView
+                ? webviewViewOrPanelViewColumn(this.activeView?.webviewPanelOrView)
                 : undefined
             await chatController.createWebviewViewOrPanel(activePanelViewColumn)
         }
 
-        this.activeEditor = chatController
-        this.editors.push(chatController)
+        this.activeView = chatController
+        this.views.push(chatController)
         if (chatController.webviewPanelOrView) {
             webviewViewOrPanelOnDidChangeViewState(chatController.webviewPanelOrView)(e => {
                 if (e.webviewPanel.visible && e.webviewPanel.active) {
-                    this.activeEditor = chatController
+                    this.activeView = chatController
                 }
             })
             chatController.webviewPanelOrView.onDidDispose(() => {
@@ -463,13 +472,13 @@ export class ChatsController implements vscode.Disposable {
     }
 
     private disposeChat(chatID: string, includePanel: boolean): void {
-        if (chatID === this.activeEditor?.sessionID) {
-            this.activeEditor = undefined
+        if (chatID === this.activeView?.sessionID) {
+            this.activeView = undefined
         }
 
-        const providerIndex = this.editors.findIndex(p => p.sessionID === chatID)
+        const providerIndex = this.views.findIndex(p => p.sessionID === chatID)
         if (providerIndex !== -1) {
-            const removedProvider = this.editors.splice(providerIndex, 1)[0]
+            const removedProvider = this.views.splice(providerIndex, 1)[0]
             if (removedProvider.webviewPanelOrView) {
                 disposeWebviewViewOrPanel(removedProvider.webviewPanelOrView)
             }
@@ -483,16 +492,15 @@ export class ChatsController implements vscode.Disposable {
 
     // Dispose all open chat panels
     private disposeAllChats(): void {
-        this.activeEditor = undefined
+        this.activeView = undefined
 
-        // loop through the panel provider map
-        const oldEditors = this.editors
-        this.editors = []
-        for (const editor of oldEditors) {
-            if (editor.webviewPanelOrView) {
-                disposeWebviewViewOrPanel(editor.webviewPanelOrView)
+        const oldViews = this.views
+        this.views = []
+        for (const view of oldViews) {
+            if (view.webviewPanelOrView) {
+                disposeWebviewViewOrPanel(view.webviewPanelOrView)
             }
-            editor.dispose()
+            view.dispose()
         }
 
         this.panel.clearAndRestartSession()
