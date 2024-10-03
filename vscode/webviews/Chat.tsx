@@ -227,7 +227,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             {transcript.length === 0 && showWelcomeMessage && (
                 <>
                     <WelcomeMessage setView={setView} />
-                    <WelcomeFooter />
+                    <WelcomeFooter IDE={userInfo.IDE} />
                 </>
             )}
 

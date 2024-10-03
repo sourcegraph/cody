@@ -50,7 +50,7 @@ const chatLinks: ChatViewLink[] = [
     },
 ]
 
-export default function WelcomeFooter() {
+export default function WelcomeFooter({ IDE }: { IDE: CodyIDE }) {
     function tips() {
         return chatTips.map((tip, key) => {
             const Icon = tip.icon
@@ -79,7 +79,7 @@ export default function WelcomeFooter() {
 
     return (
         <div className={styles.welcomeFooter}>
-            {CodyIDE.VSCode && <div className={styles.tips}>{tips()}</div>}
+            {IDE === CodyIDE.VSCode && <div className={styles.tips}>{tips()}</div>}
             <div className={styles.links}>{links()}</div>
         </div>
     )
