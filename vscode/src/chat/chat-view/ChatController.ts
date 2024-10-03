@@ -11,6 +11,7 @@ import {
     shareReplay,
     skip,
     skipPendingOperation,
+    switchMap,
 } from '@sourcegraph/cody-shared'
 import * as uuid from 'uuid'
 import * as vscode from 'vscode'
@@ -75,7 +76,7 @@ import type { Span } from '@opentelemetry/api'
 import { captureException } from '@sentry/core'
 import { getTokenCounterUtils } from '@sourcegraph/cody-shared/src/token/counter'
 import type { TelemetryEventParameters } from '@sourcegraph/telemetry'
-import { map } from 'observable-fns'
+import { Subject, map } from 'observable-fns'
 import type { URI } from 'vscode-uri'
 import { View } from '../../../webviews/tabs/types'
 import { redirectToEndpointLogin, showSignOutMenu } from '../../auth/auth'
@@ -176,6 +177,7 @@ export interface ChatSession {
  */
 export class ChatController implements vscode.Disposable, vscode.WebviewViewProvider, ChatSession {
     private chatBuilder: ChatBuilder
+    private chatBuilderResetNotifications = new Subject<void>()
 
     private readonly chatClient: ChatClient
 
@@ -245,10 +247,15 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                         skip(1)
                     )
                     .subscribe(() => {
-                        this.chatBuilder = new ChatBuilder(undefined)
+                        this.resetChatBuilder()
                     })
             )
         )
+    }
+
+    private resetChatBuilder(newChatBuilder?: ChatBuilder): void {
+        this.chatBuilder = newChatBuilder ?? new ChatBuilder(this.chatBuilder.selectedModel)
+        this.chatBuilderResetNotifications.next()
     }
 
     /**
@@ -1374,8 +1381,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             return
         }
         this.cancelSubmitOrEditOperation()
-        const newModel = newChatModelFromSerializedChatTranscript(oldTranscript, undefined)
-        this.chatBuilder = newModel
+        this.resetChatBuilder(newChatModelFromSerializedChatTranscript(oldTranscript, undefined))
 
         this.postViewTranscript()
     }
@@ -1398,10 +1404,12 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             return
         }
         // Assign a new session ID to the duplicated session
-        this.chatBuilder = newChatModelFromSerializedChatTranscript(
-            transcript,
-            this.chatBuilder.selectedModel,
-            new Date(Date.now()).toUTCString()
+        this.resetChatBuilder(
+            newChatModelFromSerializedChatTranscript(
+                transcript,
+                this.chatBuilder.selectedModel,
+                new Date(Date.now()).toUTCString()
+            )
         )
         this.postViewTranscript()
         await this.saveSession()
@@ -1422,7 +1430,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         }
 
         await this.saveSession()
-        this.chatBuilder = new ChatBuilder(this.chatBuilder.selectedModel)
+        this.resetChatBuilder()
         this.postViewTranscript()
     }
 
@@ -1599,7 +1607,12 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     resolvedConfig: () => resolvedConfig,
                     authStatus: () => authStatus,
                     transcript: () =>
-                        this.chatBuilder.changes.pipe(map(chat => chat.getDehydratedMessages())),
+                        this.chatBuilderResetNotifications.pipe(
+                            startWith(undefined),
+                            switchMap(() =>
+                                this.chatBuilder.changes.pipe(map(chat => chat.getDehydratedMessages()))
+                            )
+                        ),
                     userHistory: () => chatHistory.changes,
                 }
             )
