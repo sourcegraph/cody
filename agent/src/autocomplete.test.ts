@@ -24,42 +24,7 @@ describe('Autocomplete', () => {
     })
 
     // TODO: use `vi.useFakeTimers()` instead of `sleep()` once it's supported by the agent tests.
-    it.skip('autocomplete/execute multiline (non-empty result)', async () => {
-        const uri = workspace.file('src', 'bubbleSort.ts')
-        await client.openFile(uri)
-
-        const completions = await client.request('autocomplete/execute', {
-            uri: uri.toString(),
-            position: { line: 1, character: 4 },
-            triggerKind: 'Invoke',
-        })
-
-        const completionID = completions.items[0].id
-        const texts = completions.items.map(item => item.insertText)
-
-        await client.notify('autocomplete/completionSuggested', { completionID })
-        await sleep(800) // Wait for the completion visibility timeout (750ms) to elapse
-        await client.notify('autocomplete/completionAccepted', { completionID })
-
-        const completionEvent = await client.request('testing/autocomplete/completionEvent', {
-            completionID,
-        })
-
-        expect(completionEvent?.read).toBe(true)
-        expect(completionEvent?.acceptedAt).toBeTruthy()
-
-        expect(completions.items.length).toBeGreaterThan(0)
-        expect(texts).toMatchInlineSnapshot(
-            `
-          [
-            "    return nums;",
-          ]
-        `
-        )
-    }, 10_000)
-
-    // TODO: use `vi.useFakeTimers()` instead of `sleep()` once it's supported by the agent tests.
-    it.skip('autocomplete/execute (non-empty result)', async () => {
+    it('autocomplete/execute (non-empty result)', async () => {
         const uri = workspace.file('src', 'sum.ts')
         await client.openFile(uri)
         const completions = await client.request('autocomplete/execute', {
@@ -97,6 +62,57 @@ describe('Autocomplete', () => {
             `
           [
             "    return a + b;",
+          ]
+        `
+        )
+    }, 10_000)
+
+    // TODO: use `vi.useFakeTimers()` instead of `sleep()` once it's supported by the agent tests.
+    it('autocomplete/execute multiline (non-empty result)', async () => {
+        // const authStatus = await client.request('extensionConfiguration/status', null)
+        // console.log('authStatus', authStatus)
+        // expect(authStatus?.authenticated).toBe(true)
+
+        const uri1 = workspace.file('src', 'mergeSort.ts')
+        await client.openFile(uri1)
+        const uri = workspace.file('src', 'bubbleSort.ts')
+        await client.openFile(uri)
+
+        const completions = await client.request('autocomplete/execute', {
+            uri: uri.toString(),
+            position: { line: 1, character: 4 },
+            triggerKind: 'Invoke',
+        })
+
+        const completionID = completions.items[0].id
+        const texts = completions.items.map(item => item.insertText)
+
+        await client.notify('autocomplete/completionSuggested', { completionID })
+        await sleep(800) // Wait for the completion visibility timeout (750ms) to elapse
+        await client.notify('autocomplete/completionAccepted', { completionID })
+
+        const completionEvent = await client.request('testing/autocomplete/completionEvent', {
+            completionID,
+        })
+
+        expect(completionEvent?.read).toBe(true)
+        expect(completionEvent?.acceptedAt).toBeTruthy()
+
+        expect(completions.items.length).toBeGreaterThan(0)
+        expect(texts).toMatchInlineSnapshot(
+            `
+          [
+            "    const n = arr.length
+              for (let i = 0; i < n - 1; i++) {
+                  for (let j = 0; j < n - i - 1; j++) {
+                      if (arr[j] > arr[j + 1]) {
+                          const temp = arr[j]
+                          arr[j] = arr[j + 1]
+                          arr[j + 1] = temp
+                      }
+                  }
+              }
+              return arr",
           ]
         `
         )
