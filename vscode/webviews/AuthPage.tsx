@@ -305,14 +305,21 @@ export const EndpointSelection: React.FunctionComponent<
         authStatus?.endpoint ?? endpointHistory?.[0]
     )
 
-    const onChange = useCallback((endpoint: string) => {
-        setSelectedEndpoint(endpoint)
-        getVSCodeAPI().postMessage({
-            command: 'auth',
-            authKind: 'signin',
-            endpoint: endpoint,
-        })
-    }, [])
+    const onChange = useCallback(
+        (endpoint: string) => {
+            setSelectedEndpoint(endpoint)
+            // The user was already authenticated with an invalid token. Let's not send another auth request.
+            if (endpoint === authStatus?.endpoint && !authStatus.authenticated) {
+                return
+            }
+            getVSCodeAPI().postMessage({
+                command: 'auth',
+                authKind: 'signin',
+                endpoint: endpoint,
+            })
+        },
+        [authStatus]
+    )
 
     // No endpoint history to show.
     if (!endpointHistory.length) {
