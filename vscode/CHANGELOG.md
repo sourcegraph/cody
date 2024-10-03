@@ -10,6 +10,13 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 ### Changed
 
+
+## 1.36.1
+
+### Fixed
+
+- Autocomplete: The PR fixes the slowness in vscode because because of completions by using local cache instead of querying vscode localStorage. [pull/5798](https://github.com/sourcegraph/cody/pull/5798)
+
 ## 1.36.0
 
 ### Added
