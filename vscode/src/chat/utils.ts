@@ -1,6 +1,3 @@
-import semver from 'semver'
-import * as vscode from 'vscode'
-
 import { type AuthStatus, type AuthenticatedAuthStatus, isDotCom } from '@sourcegraph/cody-shared'
 import type { CurrentUserInfo } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
 
@@ -10,7 +7,6 @@ type NewAuthStatusOptions = { endpoint: string } & (
           AuthenticatedAuthStatus,
           | 'authenticated'
           | 'username'
-          | 'siteVersion'
           | 'configOverwrites'
           | 'hasVerifiedEmail'
           | 'displayName'
@@ -36,21 +32,19 @@ export function newAuthStatus(options: NewAuthStatusOptions): AuthStatus {
         }
     }
 
-    const { endpoint, siteVersion, organizations } = options
+    const { endpoint, organizations } = options
 
     const isDotCom_ = isDotCom(endpoint)
     const primaryEmail =
         typeof options.primaryEmail === 'string' ? options.primaryEmail : options.primaryEmail?.email
     const requiresVerifiedEmail = isDotCom_
     const hasVerifiedEmail = requiresVerifiedEmail && options.authenticated && options.hasVerifiedEmail
-    const codyApiVersion = inferCodyApiVersion(siteVersion, isDotCom_)
     return {
         ...options,
         endpoint,
         primaryEmail,
         requiresVerifiedEmail,
         hasVerifiedEmail,
-        codyApiVersion,
         pendingValidation: false,
         isFireworksTracingEnabled:
             isDotCom_ && !!organizations?.nodes.find(org => org.name === 'sourcegraph'),
@@ -83,69 +77,4 @@ export const countGeneratedCode = (text: string): { lineCount: number; charCount
         count.lineCount += lineCount
     }
     return count
-}
-
-type CodyApiVersion = 0 | 1 | 2
-// This is an advanced developer setting so it's OK to only read this once and
-// require users to reload their windows to debug a problem.
-const overriddenApiVersion = vscode.workspace
-    .getConfiguration()
-    .get<CodyApiVersion | undefined>('cody.advanced.completions-api-version', undefined)
-
-function inferCodyApiVersion(version: string, isDotCom: boolean): CodyApiVersion {
-    if (overriddenApiVersion !== undefined) {
-        // No need to validate the config, just let it crash. This is an
-        // internal setting.
-        return overriddenApiVersion
-    }
-    const parsedVersion = semver.valid(version)
-    const isLocalBuild = parsedVersion === '0.0.0'
-
-    if (isDotCom || isLocalBuild) {
-        // The most recent version is api-version=2, which was merged on 2024-09-11
-        // https://github.com/sourcegraph/sourcegraph/pull/470
-        return 2
-    }
-
-    // On Cloud deployments from main, the version identifier will use a format
-    // like "2024-09-11_5.7-4992e874aee2", which does not parse as SemVer.  We
-    // make a best effort go parse the date from the version identifier
-    // allowing us to selectively enable new API versions on instances like SG02
-    // (that deploy frequently) without crashing on other Cloud deployments that
-    // release less frequently.
-    const isCloudBuildFromMain = parsedVersion === null
-    if (isCloudBuildFromMain) {
-        const date = parseDateFromPreReleaseVersion(version)
-        if (date && date >= new Date('2024-09-11')) {
-            return 2
-        }
-        // It's safe to bump this up to api-version=2 after the 5.8 release
-        return 1
-    }
-
-    // 5.8.0+ is the first version to support api-version=2.
-    if (semver.gte(parsedVersion, '5.8.0')) {
-        return 2
-    }
-
-    // 5.4.0+ is the first version to support api-version=1.
-    if (semver.gte(parsedVersion, '5.4.0')) {
-        return 1
-    }
-
-    return 0 // zero refers to the legacy, unversioned, Cody API
-}
-
-// Pre-release versions have a format like this "2024-09-11_5.7-4992e874aee2".
-// This function return undefined for stable Enterprise releases like "5.7.0".
-function parseDateFromPreReleaseVersion(version: string): Date | undefined {
-    try {
-        const dateString = version.split('_').at(1)
-        if (!dateString) {
-            return undefined
-        }
-        return new Date(dateString)
-    } catch {
-        return undefined
-    }
 }

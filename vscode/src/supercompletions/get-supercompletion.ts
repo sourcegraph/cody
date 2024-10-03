@@ -69,7 +69,7 @@ async function* generateRawChanges(
     messages: Message[],
     abortSignal: AbortSignal
 ): AsyncGenerator<RawChange> {
-    const stream = chat.chat(
+    const stream = await chat.chat(
         messages,
         { model: MODEL, temperature: 0.1, maxTokensToSample: 1000 },
         abortSignal

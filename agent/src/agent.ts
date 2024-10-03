@@ -477,7 +477,6 @@ export class Agent extends MessageHandler implements ExtensionClient {
                 return {
                     name: 'cody-agent',
                     authenticated: authStatus?.authenticated ?? false,
-                    codyVersion: authStatus?.authenticated ? authStatus.siteVersion : undefined,
                     authStatus,
                 }
             } catch (error) {

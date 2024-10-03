@@ -6,6 +6,7 @@ import {
     type Guardrails,
     PromptString,
     errorToChatError,
+    graphqlClient,
     mockAuthStatus,
     mockClientCapabilities,
     mockResolvedConfig,
@@ -54,6 +55,8 @@ describe('ChatController', () => {
         'publicRepoMetadataIfAllWorkspaceReposArePublic',
         'get'
     ).mockReturnValue(Observable.of({ isPublic: false, repoMetadata: undefined }))
+
+    vi.spyOn(graphqlClient, 'getSiteVersion').mockResolvedValue('1.2.3')
 
     const mockNowDate = new Date(123456)
 

@@ -115,7 +115,7 @@ export class DeepCodyAgent {
         const agentAbortController = new AbortController()
 
         try {
-            const stream = this.chatClient.chat(
+            const stream = await this.chatClient.chat(
                 promptData.prompt,
                 { model: DeepCodyAgent.ModelRef, maxTokensToSample: 2000 },
                 agentAbortController.signal

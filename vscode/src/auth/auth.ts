@@ -417,12 +417,10 @@ export async function validateCredentials(
         clientState: config.clientState,
     })
 
-    const [{ enabled: siteHasCodyEnabled, version: siteVersion }, codyLLMConfiguration, userInfo] =
-        await Promise.all([
-            client.isCodyEnabled(signal),
-            client.getCodyLLMConfiguration(signal),
-            client.getCurrentUserInfo(signal),
-        ])
+    const [codyLLMConfiguration, userInfo] = await Promise.all([
+        client.getCodyLLMConfiguration(signal),
+        client.getCurrentUserInfo(signal),
+    ])
     signal?.throwIfAborted()
 
     if (isError(userInfo) && isNetworkLikeError(userInfo)) {
@@ -451,16 +449,6 @@ export async function validateCredentials(
             pendingValidation: false,
         }
     }
-    if (!siteHasCodyEnabled) {
-        logDebug(
-            'auth',
-            `Authentication succeeded, but endpoint ${config.auth.serverEndpoint} reports Cody is not enabled`
-        )
-        vscode.window.showErrorMessage(
-            `Cody is not enabled on this Sourcegraph instance (${config.auth.serverEndpoint}). Ask a site administrator to enable it.`
-        )
-        return { authenticated: false, endpoint: config.auth.serverEndpoint, pendingValidation: false }
-    }
 
     logDebug('auth', `Authentication succeeed to endpoint ${config.auth.serverEndpoint}`)
     const configOverwrites = isError(codyLLMConfiguration) ? undefined : codyLLMConfiguration
@@ -468,7 +456,6 @@ export async function validateCredentials(
     return newAuthStatus({
         ...userInfo,
         endpoint: config.auth.serverEndpoint,
-        siteVersion,
         configOverwrites,
         authenticated: true,
         hasVerifiedEmail: false,

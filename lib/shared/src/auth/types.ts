@@ -26,8 +26,6 @@ export interface AuthenticatedAuthStatus {
 
     hasVerifiedEmail?: boolean
     requiresVerifiedEmail?: boolean
-    siteVersion: string
-    codyApiVersion: number
     configOverwrites?: CodyLLMSiteConfiguration
 
     primaryEmail?: string
@@ -58,8 +56,6 @@ export const AUTH_STATUS_FIXTURE_AUTHED: AuthenticatedAuthStatus = {
     endpoint: 'https://example.com',
     authenticated: true,
     username: 'alice',
-    codyApiVersion: 1,
-    siteVersion: '9999',
     pendingValidation: false,
 }
 

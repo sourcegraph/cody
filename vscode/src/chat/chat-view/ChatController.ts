@@ -2,6 +2,7 @@ import {
     type ChatModel,
     cenv,
     clientCapabilities,
+    currentSiteVersion,
     distinctUntilChanged,
     firstResultFromOperation,
     pendingOperation,
@@ -771,11 +772,15 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     )
 
                     try {
+                        const versions = await currentSiteVersion()
+                        if (!versions) {
+                            throw new Error('unable to determine site version')
+                        }
                         const { prompt, context } = await this.buildPrompt(
                             prompter,
                             signal,
                             requestID,
-                            authStatus.codyApiVersion,
+                            versions.codyAPIVersion,
                             contextAlternatives
                         )
 
@@ -1303,7 +1308,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 params.stream = false
             }
 
-            const stream = this.chatClient.chat(prompt, params, abortSignal)
+            const stream = await this.chatClient.chat(prompt, params, abortSignal)
             for await (const message of stream) {
                 switch (message.type) {
                     case 'change': {

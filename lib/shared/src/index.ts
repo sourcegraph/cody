@@ -379,3 +379,4 @@ export {
     cachedUserProductSubscription,
     userProductSubscription,
 } from './sourcegraph-api/userProductSubscription'
+export { siteVersion, currentSiteVersion } from './sourcegraph-api/siteVersion'

@@ -131,7 +131,7 @@ async function promptModelForOriginalCode(
         model,
         codyApiVersion
     )
-    const stream = client.chat(
+    const stream = await client.chat(
         messages,
         {
             model,
