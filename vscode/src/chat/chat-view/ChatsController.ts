@@ -322,7 +322,6 @@ export class ChatsController implements vscode.Disposable {
         await provider.handleUserMessageSubmission({
             requestID: uuid.v4(),
             inputText: text,
-            submitType,
             mentions: contextItems ?? [],
             editorState,
             signal: abortSignal,

@@ -115,7 +115,6 @@ import type { ChatIntentAPIClient } from '../context/chatIntentAPIClient'
 import { observeInitialContext } from '../initialContext'
 import {
     CODY_BLOG_URL_o1_WAITLIST,
-    type ChatSubmitType,
     type ConfigurationSubsetForWebview,
     type ExtensionMessage,
     type LocalEnv,
@@ -272,7 +271,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 await this.handleUserMessageSubmission({
                     requestID: uuid.v4(),
                     inputText: PromptString.unsafe_fromUserQuery(message.text),
-                    submitType: message.submitType,
                     mentions: message.contextItems ?? [],
                     editorState: message.editorState as SerializedPromptEditorState,
                     signal: this.startNewSubmitOrEditOperation(),
@@ -592,7 +590,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
     public async handleUserMessageSubmission({
         requestID,
         inputText,
-        submitType,
+        isEdit,
         mentions,
         editorState,
         signal,
@@ -604,7 +602,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
     }: {
         requestID: string
         inputText: PromptString
-        submitType: ChatSubmitType
+        isEdit?: boolean
         mentions: ContextItem[]
         editorState: SerializedPromptEditorState | null
         signal: AbortSignal
@@ -661,7 +659,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     return this.clearAndRestartSession()
                 }
 
-                if (submitType === 'user-newchat' && !this.chatBuilder.isEmpty()) {
+                if (!isEdit && !this.chatBuilder.isEmpty()) {
                     span.addEvent('clearAndRestartSession')
                     await this.clearAndRestartSession()
                     signal.throwIfAborted()
@@ -992,7 +990,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             return await this.handleUserMessageSubmission({
                 requestID,
                 inputText: text,
-                submitType: 'user',
+                isEdit: true,
                 mentions: contextFiles,
                 editorState,
                 signal: abortSignal,

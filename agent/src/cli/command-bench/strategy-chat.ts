@@ -51,7 +51,7 @@ export async function evaluateChatStrategy(
             id,
             message: {
                 command: 'submit',
-                submitType: 'user',
+                submitType: 'user-newchat',
                 text: task.question,
                 contextItems,
             },

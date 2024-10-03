@@ -262,7 +262,7 @@ describe('Agent', () => {
                     message: {
                         command: 'submit',
                         text: 'My name is Lars Monsen.',
-                        submitType: 'user',
+                        submitType: 'user-newchat',
                     },
                 })
             )
@@ -284,7 +284,7 @@ describe('Agent', () => {
                     message: {
                         command: 'submit',
                         text: 'What is my name?',
-                        submitType: 'user',
+                        submitType: 'user-newchat',
                     },
                 })
             )
@@ -315,7 +315,7 @@ describe('Agent', () => {
                     message: {
                         command: 'submit',
                         text: 'What model are you?',
-                        submitType: 'user',
+                        submitType: 'user-newchat',
                     },
                 })
             )
@@ -332,7 +332,7 @@ describe('Agent', () => {
                     message: {
                         command: 'submit',
                         text: 'What model are you?',
-                        submitType: 'user',
+                        submitType: 'user-newchat',
                     },
                 })
             )

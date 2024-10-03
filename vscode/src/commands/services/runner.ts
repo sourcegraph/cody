@@ -123,7 +123,7 @@ export class CommandRunner implements vscode.Disposable {
             type: 'chat',
             session: await executeChat({
                 text: prompt,
-                submitType: 'user',
+                submitType: 'user-newchat',
                 contextItems,
                 source: 'custom-commands',
                 command: DefaultChatCommands.Custom,

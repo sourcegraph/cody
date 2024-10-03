@@ -184,7 +184,7 @@ export type ChatSubmitType = 'user' | 'user-newchat'
 
 export interface WebviewSubmitMessage extends WebviewContextMessage {
     text: string
-    submitType: ChatSubmitType
+    submitType: Extract<ChatSubmitType, 'user-newchat'>
 
     /** An opaque value representing the text editor's state. @see {ChatMessage.editorState} */
     editorState?: unknown | undefined | null
