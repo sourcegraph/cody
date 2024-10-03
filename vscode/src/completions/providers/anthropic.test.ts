@@ -141,11 +141,7 @@ describe('anthropic autocomplete provider', () => {
 
         expect(provider.id).toBe(providerId)
         expect(provider.legacyModel).toBe(legacyModel)
-        expect(getRequestParamsWithoutMessages(provider)).toStrictEqual({
-            ...requestParams,
-            // The model ID is ignored by BYOK clients
-            model: undefined,
-        })
+        expect(getRequestParamsWithoutMessages(provider)).toStrictEqual(requestParams)
     })
 
     it('[dotcom] site-config-cody-llm-configuration special case for google hosted models', async () => {
@@ -169,11 +165,7 @@ describe('anthropic autocomplete provider', () => {
 
         expect(provider.id).toBe(providerId)
         expect(provider.legacyModel).toBe(legacyModel)
-        expect(getRequestParamsWithoutMessages(provider)).toStrictEqual({
-            ...requestParams,
-            // The model ID is ignored by BYOK clients
-            model: undefined,
-        })
+        expect(getRequestParamsWithoutMessages(provider)).toStrictEqual(requestParams)
     })
 
     it('throws if the wrong "completionModel" separator is used', async () => {
@@ -252,7 +244,14 @@ describe('anthropic/aws-bedrock autocomplete provider', () => {
             isDotCom: true,
         })
 
-        assertProviderValues(provider, claudeInstantAssertion)
+        assertProviderValues(provider, {
+            ...claudeInstantAssertion,
+            requestParams: {
+                ...claudeInstantAssertion.requestParams,
+                // The model ID is ignored by BYOK clients
+                model: undefined,
+            },
+        })
     })
 
     it('[enterprise] site-config-cody-llm-configuration', async () => {

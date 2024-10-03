@@ -48,6 +48,7 @@ class MockableInlineCompletionItemProvider extends InlineCompletionItemProvider 
                 provider: 'anthropic',
                 source: 'local-editor-settings',
                 authStatus: currentAuthStatusAuthed(),
+                configOverwrites: null,
             }),
             firstCompletionTimeout:
                 superArgs?.firstCompletionTimeout ??

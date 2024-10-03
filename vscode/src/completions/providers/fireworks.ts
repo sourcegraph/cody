@@ -182,7 +182,12 @@ function getClientModel(
     throw new Error(`Unknown model: '${model}'`)
 }
 
-export function createProvider({ legacyModel, source, authStatus }: ProviderFactoryParams): Provider {
+export function createProvider({
+    legacyModel,
+    source,
+    authStatus,
+    configOverwrites,
+}: ProviderFactoryParams): Provider {
     const clientModel = getClientModel(legacyModel, authStatus)
 
     return new FireworksProvider({
@@ -190,5 +195,6 @@ export function createProvider({ legacyModel, source, authStatus }: ProviderFact
         legacyModel: clientModel,
         maxContextTokens: getMaxContextTokens(clientModel),
         source,
+        configOverwrites,
     })
 }

@@ -6,13 +6,13 @@ import {
     type AutocompleteProviderID,
     type CodeCompletionsClient,
     type CodeCompletionsParams,
+    type CodyLLMSiteConfiguration,
     type CompletionParameters,
     type CompletionResponseGenerator,
     type DocumentContext,
     type GitContext,
     type LegacyModelRefStr,
     type Model,
-    currentAuthStatusAuthed,
     toLegacyModel,
     tokensToChars,
 } from '@sourcegraph/cody-shared'
@@ -99,6 +99,8 @@ export type ProviderOptions = (ProviderModelOptions | ProviderLegacyModelOptions
     maxContextTokens?: number
     mayUseOnDeviceInference?: boolean
     source: AutocompleteProviderConfigSource
+
+    configOverwrites?: CodyLLMSiteConfiguration | null
 }
 
 export type ProviderFactoryParams = {
@@ -125,7 +127,8 @@ export type ProviderFactoryParams = {
 
     mayUseOnDeviceInference?: boolean
 
-    authStatus: Pick<AuthenticatedAuthStatus, 'endpoint' | 'configOverwrites'>
+    authStatus: Pick<AuthenticatedAuthStatus, 'endpoint'>
+    configOverwrites: CodyLLMSiteConfiguration | null
 }
 
 export type ProviderFactory = (params: ProviderFactoryParams) => Provider
@@ -155,6 +158,8 @@ export abstract class Provider {
     protected promptChars: number
     protected modelHelper: DefaultModel
 
+    private configOverwrites: CodyLLMSiteConfiguration | null
+
     protected defaultRequestParams = {
         timeoutMs: 7_000,
         stopSequences: ['\n\n', '\n\r\n'],
@@ -171,6 +176,7 @@ export abstract class Provider {
             maxContextTokens = DEFAULT_MAX_CONTEXT_TOKENS,
             mayUseOnDeviceInference = false,
             source,
+            configOverwrites,
         } = options
 
         if ('model' in options) {
@@ -192,6 +198,8 @@ export abstract class Provider {
             prefixChars: Math.floor(tokensToChars(0.6 * this.maxContextTokens)),
             suffixChars: Math.floor(tokensToChars(0.1 * this.maxContextTokens)),
         }
+
+        this.configOverwrites = configOverwrites ?? null
     }
 
     public abstract getRequestParams(options: GenerateCompletionsOptions): object
@@ -211,11 +219,9 @@ export abstract class Provider {
             return undefined
         }
 
-        const { configOverwrites } = currentAuthStatusAuthed()
-
-        // The model ID is ignored by BYOK clients (configOverwrites?.provider !== 'sourcegraph')
-        // so we can remove it from the request params we send to the backend.
-        return configOverwrites?.provider === 'sourcegraph' ? model : undefined
+        // The model ID is ignored by BYOK clients (configOverwrites?.provider !== 'sourcegraph') so
+        // we can remove it from the request params we send to the backend.
+        return this.configOverwrites?.provider === 'sourcegraph' ? model : undefined
     }
 
     protected getCompletionResponseGenerator(

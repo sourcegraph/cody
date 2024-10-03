@@ -6,6 +6,7 @@ import {
     NEVER,
     type PickResolvedConfiguration,
     type UnauthenticatedAuthStatus,
+    configOverwrites,
     createDisposables,
     promiseFactoryToObservable,
     skipPendingOperation,
@@ -22,9 +23,7 @@ import { registerAutocompleteTraceView } from './tracer/traceView'
 
 interface InlineCompletionItemProviderArgs {
     config: PickResolvedConfiguration<{ configuration: true }>
-    authStatus:
-        | UnauthenticatedAuthStatus
-        | Pick<AuthenticatedAuthStatus, 'authenticated' | 'endpoint' | 'configOverwrites'>
+    authStatus: UnauthenticatedAuthStatus | Pick<AuthenticatedAuthStatus, 'authenticated' | 'endpoint'>
     platform: Pick<PlatformContext, 'extensionClient'>
     statusBar: CodyStatusBar
 }
@@ -61,7 +60,7 @@ export function createInlineCompletionItemProvider({
         return await getInlineCompletionItemProviderFilters(configuration.autocompleteLanguages)
     }).pipe(
         switchMap(documentFilters =>
-            createProvider({ config: { configuration }, authStatus }).pipe(
+            createProvider({ config: { configuration }, authStatus, configOverwrites }).pipe(
                 skipPendingOperation(),
                 createDisposables(providerOrError => {
                     if (providerOrError instanceof Error) {
