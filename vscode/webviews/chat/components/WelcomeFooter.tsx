@@ -69,7 +69,7 @@ export default function WelcomeFooter() {
             return (
                 <div className={styles.item} key={`link-${key + 1}`}>
                     <Icon className="tw-w-8 tw-h-8" strokeWidth={1.25} />
-                    <a href={link.url} rel="noreferrer" target="_blank">
+                    <a href={link.url} className={styles.link} rel="noreferrer" target="_blank">
                         {link.text}
                     </a>
                 </div>

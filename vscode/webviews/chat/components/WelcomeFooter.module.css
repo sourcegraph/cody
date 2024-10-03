@@ -1,5 +1,5 @@
 .welcome-footer {
-    padding: 1rem 1.0rem;
+    padding: 1rem 1rem;
     display: flex;
     flex-flow: column nowrap;
     justify-content: space-between;
@@ -36,3 +36,8 @@
     align-items: center;
 }
 
+.link {
+    color: inherit;
+    text-decoration: none;
+
+}
