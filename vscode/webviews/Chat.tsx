@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef } from 'react'
 import type {
     AuthenticatedAuthStatus,
     ChatMessage,
+    CodyIDE,
     Guardrails,
     PromptString,
 } from '@sourcegraph/cody-shared'
@@ -245,6 +246,7 @@ export interface UserAccountInfo {
         AuthenticatedAuthStatus,
         'username' | 'displayName' | 'avatarURL' | 'endpoint' | 'primaryEmail'
     >
+    IDE: CodyIDE
 }
 
 export type ApiPostMessage = (message: any) => void
