@@ -12,6 +12,14 @@ import { GlobeIcon, LockKeyholeIcon } from 'lucide-react'
 import { useCallback, useState } from 'react'
 import { Button } from './components/shadcn/ui/button'
 import { Form, FormControl, FormField, FormLabel, FormMessage } from './components/shadcn/ui/form'
+import {
+    Select,
+    SelectContent,
+    SelectGroup,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from './components/shadcn/ui/select'
 import { useTelemetryRecorder } from './utils/telemetry'
 import { useConfig } from './utils/useConfig'
 
@@ -23,6 +31,7 @@ export const AuthPage: React.FunctionComponent<React.PropsWithoutRef<LoginProps>
     uiKindIsWeb,
     vscodeAPI,
     codyIDE,
+    endpointHistory,
 }) => {
     const authStatus = useConfig().authStatus
     const telemetryRecorder = useTelemetryRecorder()
@@ -90,17 +99,29 @@ export const AuthPage: React.FunctionComponent<React.PropsWithoutRef<LoginProps>
             </section>
             <section className="tw-bg-sidebar-background tw-text-sidebar-foreground tw-border tw-border-border tw-rounded-lg tw-p-6 tw-w-full tw-max-w-md">
                 <h2 className="tw-font-semibold tw-text-lg tw-mb-4">Cody Enterprise</h2>
-                {isCodyWebUI || codyIDE === CodyIDE.VSCode ? (
-                    <div className="tw-flex tw-flex-col tw-gap-6 tw-w-full">
+                <div className="tw-flex tw-flex-col tw-gap-6 tw-w-full">
+                    {isNonVSCodeIDE ? (
+                        <ClientSignInForm
+                            authStatus={authStatus}
+                            vscodeAPI={vscodeAPI}
+                            endpointHistory={endpointHistory}
+                        />
+                    ) : (
                         <Button onClick={otherSignInClick}>Sign In to Your Enterprise Instance</Button>
-                    </div>
-                ) : (
-                    <ClientSignInForm authStatus={authStatus} vscodeAPI={vscodeAPI} />
-                )}
+                    )}
+                </div>
                 <p className="tw-mt-4 tw-mb-0 tw-text-muted-foreground">
                     Learn more about <a href="https://sourcegraph.com/cloud">Sourcegraph Enterprise</a>.
                 </p>
             </section>
+            {endpointHistory?.length && (
+                <section className="tw-bg-sidebar-background tw-text-sidebar-foreground tw-border tw-border-border tw-rounded-lg tw-p-6 tw-w-full tw-max-w-md">
+                    <h2 className="tw-font-semibold tw-text-lg tw-mb-4">Account History</h2>
+                    <div className="tw-flex tw-flex-col tw-gap-6 tw-w-full">
+                        <EndpointSelection authStatus={authStatus} endpointHistory={endpointHistory} />
+                    </div>
+                </section>
+            )}
             <footer className="tw-text-sm tw-text-muted-foreground">
                 Cody is proudly built by Sourcegraph. By signing in to Cody, you agree to our{' '}
                 <a target="_blank" rel="noopener noreferrer" href="https://about.sourcegraph.com/terms">
@@ -125,6 +146,7 @@ interface LoginProps {
     uiKindIsWeb: boolean
     vscodeAPI: VSCodeWrapper
     codyIDE: CodyIDE
+    endpointHistory: string[]
 }
 
 const WebLogin: React.FunctionComponent<
@@ -171,6 +193,7 @@ const WebLogin: React.FunctionComponent<
 
 interface ClientSignInFormProps {
     vscodeAPI: VSCodeWrapper
+    endpointHistory: string[]
     authStatus?: AuthStatus
     className?: string
 }
@@ -182,9 +205,13 @@ interface ClientSignInFormProps {
  * It validates the input and sends the authentication information to the VSCode extension
  * when the user clicks the "Sign In with Access Token" button.
  */
-const ClientSignInForm: React.FC<ClientSignInFormProps> = ({ className, authStatus }) => {
+const ClientSignInForm: React.FC<ClientSignInFormProps> = ({
+    className,
+    authStatus,
+    endpointHistory,
+}) => {
     const [formData, setFormData] = useState({
-        endpoint: authStatus?.endpoint ?? '',
+        endpoint: authStatus?.endpoint ?? endpointHistory?.[0] ?? '',
         accessToken: '',
     })
 
@@ -265,5 +292,57 @@ const ClientSignInForm: React.FC<ClientSignInFormProps> = ({ className, authStat
                 <LockKeyholeIcon size={16} /> Sign In with Access Token
             </Button>
         </Form>
+    )
+}
+
+const EndpointSelection: React.FunctionComponent<
+    React.PropsWithoutRef<{
+        authStatus?: AuthStatus
+        endpointHistory: string[]
+    }>
+> = ({ authStatus, endpointHistory }) => {
+    const [selectedEndpoint, setSelectedEndpoint] = useState(
+        authStatus?.endpoint ?? endpointHistory?.[0]
+    )
+
+    const onChange = useCallback((endpoint: string) => {
+        setSelectedEndpoint(endpoint)
+        getVSCodeAPI().postMessage({
+            command: 'auth',
+            authKind: 'signin',
+            endpoint: endpoint,
+        })
+    }, [])
+
+    // No endpoint history to show.
+    if (!endpointHistory.length) {
+        return null
+    }
+
+    const isCurrentSelectedEndpointValidated =
+        authStatus?.endpoint === selectedEndpoint && !authStatus.authenticated
+
+    return (
+        <div className="tw-flex tw-flex-col tw-gap-6 tw-w-full">
+            <Select onValueChange={(v: string) => onChange(v)} value="">
+                <SelectTrigger className="tw-w-full">
+                    <SelectValue className="tw-w-full" placeholder={selectedEndpoint} />
+                </SelectTrigger>
+                <SelectContent position="item-aligned" className="tw-w-full tw-m-2 tw-bg-muted">
+                    <SelectGroup className="tw-w-full" key="instances">
+                        {endpointHistory?.map(endpoint => (
+                            <SelectItem key={endpoint} value={endpoint} className="tw-w-full tw-p-3">
+                                {endpoint}
+                            </SelectItem>
+                        ))}
+                    </SelectGroup>
+                </SelectContent>
+            </Select>
+            {isCurrentSelectedEndpointValidated && (
+                <p className="tw-mt-2 tw-mb-0 tw-text-red-500">
+                    Sign in failed. Try re-authenticate again with the forms above.
+                </p>
+            )}
+        </div>
     )
 }
