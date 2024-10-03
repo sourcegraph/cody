@@ -19,10 +19,12 @@ export interface ConfigurationInput {
     clientConfiguration: ClientConfiguration
     clientSecrets: ClientSecrets
     clientState: ClientState
+    isReinstalling: boolean
 }
 
 export interface ClientSecrets {
     getToken(endpoint: string): Promise<string | undefined>
+    deleteToken(endpoint: string): Promise<void>
 }
 
 export interface ClientState {
@@ -42,6 +44,7 @@ export type ResolvedConfiguration = ReadonlyDeep<{
     configuration: ClientConfiguration
     auth: AuthCredentials
     clientState: ClientState
+    isReinstalling: boolean
 }>
 
 /**
@@ -67,29 +70,50 @@ export type PickResolvedConfiguration<Keys extends KeysSpec> = {
           : undefined
 }
 
-async function resolveConfiguration(input: ConfigurationInput): Promise<ResolvedConfiguration> {
+async function resolveConfiguration({
+    clientConfiguration,
+    clientSecrets,
+    clientState,
+    isReinstalling,
+}: ConfigurationInput): Promise<ResolvedConfiguration> {
     // we allow for overriding the server endpoint from config if we haven't
     // manually signed in somewhere else
     const serverEndpoint = normalizeServerEndpointURL(
-        input.clientConfiguration.overrideServerEndpoint ||
-            (input.clientState.lastUsedEndpoint ?? DOTCOM_URL.toString())
+        clientConfiguration.overrideServerEndpoint ||
+            // If we are reinstalling, we ignore previous state
+            ((isReinstalling ? undefined : clientState.lastUsedEndpoint) ?? DOTCOM_URL.toString())
     )
 
     // We must not throw here, because that would result in the `resolvedConfig` observable
     // terminating and all callers receiving no further config updates.
-    const loadTokenFn = () =>
-        input.clientSecrets.getToken(serverEndpoint).catch(error => {
+    const loadTokenFn = async () => {
+        // When the user is reinstalling, we want to clear the cached credentials
+        if (isReinstalling) {
+            await Promise.all([
+                clientSecrets.deleteToken(serverEndpoint),
+                clientConfiguration.overrideServerEndpoint
+                    ? clientSecrets.deleteToken(clientConfiguration.overrideServerEndpoint)
+                    : Promise.resolve(undefined),
+                clientState.lastUsedEndpoint
+                    ? clientSecrets.deleteToken(clientState.lastUsedEndpoint)
+                    : Promise.resolve(undefined),
+            ])
+            return null
+        }
+        return clientSecrets.getToken(serverEndpoint).catch(error => {
             logError(
                 'resolveConfiguration',
                 `Failed to get access token for endpoint ${serverEndpoint}: ${error}`
             )
             return null
         })
-    const accessToken = input.clientConfiguration.overrideAuthToken || ((await loadTokenFn()) ?? null)
+    }
+    const accessToken = clientConfiguration.overrideAuthToken || ((await loadTokenFn()) ?? null)
     return {
-        configuration: input.clientConfiguration,
-        clientState: input.clientState,
+        configuration: clientConfiguration,
+        clientState,
         auth: { accessToken, serverEndpoint },
+        isReinstalling,
     }
 }
 

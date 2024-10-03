@@ -22,7 +22,8 @@
     "e2e",
     "webviews",
     "webviews/*.d.ts",
-    "package.json"
+    "package.json",
+    "uninstall"
   ],
   "exclude": [
     "typehacks",

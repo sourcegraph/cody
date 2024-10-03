@@ -44,7 +44,7 @@ export function createOrUpdateTelemetryRecorderProvider(
     isExtensionModeDevOrTest: boolean
 ): Disposable {
     return subscriptionDisposable(
-        resolvedConfig.subscribe(({ configuration, auth, clientState }) => {
+        resolvedConfig.subscribe(({ configuration, auth, clientState, isReinstalling }) => {
             // Add timestamp processor for realistic data in output for dev or no-op scenarios
             const defaultNoOpProvider = new NoOpTelemetryRecorderProvider([
                 new TimestampTelemetryProcessor(),
@@ -90,12 +90,16 @@ export function createOrUpdateTelemetryRecorderProvider(
                     /**
                      * New user
                      */
-                    telemetryRecorder.recordEvent('cody.extension', 'installed', {
-                        billingMetadata: {
-                            product: 'cody',
-                            category: 'billable',
-                        },
-                    })
+                    telemetryRecorder.recordEvent(
+                        'cody.extension',
+                        isReinstalling ? 'reinstalled' : 'installed',
+                        {
+                            billingMetadata: {
+                                product: 'cody',
+                                category: 'billable',
+                            },
+                        }
+                    )
                 } else if (
                     !configuration.isRunningInsideAgent ||
                     configuration.agentHasPersistentStorage

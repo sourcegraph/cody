@@ -2,12 +2,15 @@
 import { NodeSentryService } from './services/sentry/sentry.node'
 
 import {
+    type ClientCapabilities,
     currentAuthStatus,
     currentResolvedConfig,
+    clientCapabilities as getClientCapabilities,
     resolvedConfig,
     subscriptionDisposable,
 } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
+import { serializeConfigSnapshot } from '../uninstall/serializeConfig'
 import { startTokenReceiver } from './auth/token-receiver'
 import { CommandsProvider } from './commands/services/provider'
 import { SourcegraphNodeCompletionsClient } from './completions/nodeClient'
@@ -18,7 +21,7 @@ import { initializeNetworkAgent, setCustomAgent } from './fetch.node'
 import { SymfRunner } from './local-context/symf'
 import { localStorage } from './services/LocalStorageProvider'
 import { OpenTelemetryService } from './services/open-telemetry/OpenTelemetryService.node'
-import { serializeConfigSnapshot } from './uninstall/serializeConfig'
+import { version } from './version'
 
 /**
  * Activation entrypoint for the VS Code extension when running VS Code as a desktop app
@@ -66,8 +69,17 @@ export function activate(
 export async function deactivate(): Promise<void> {
     const config = localStorage.getConfig() ?? (await currentResolvedConfig())
     const authStatus = currentAuthStatus()
-    serializeConfigSnapshot({
+    let clientCapabilities: ClientCapabilities | undefined
+    try {
+        clientCapabilities = getClientCapabilities()
+    } catch {
+        // If client capabilities cannot be retrieved, we will just synthesize
+        // them from defaults in the post-uninstall script.
+    }
+    await serializeConfigSnapshot({
         config,
         authStatus,
+        clientCapabilities,
+        version,
     })
 }

@@ -23,6 +23,7 @@ import {
     graphqlClient,
     isDotCom,
     modelsService,
+    promiseFactoryToObservable,
     resolvedConfig,
     setClientCapabilitiesFromConfiguration,
     setClientNameVersion,
@@ -37,6 +38,7 @@ import {
 } from '@sourcegraph/cody-shared'
 import { isEqual } from 'lodash'
 import { filter, map } from 'observable-fns'
+import { isReinstalling } from '../uninstall/reinstall'
 import type { CommandResult } from './CommandResult'
 import { showAccountMenu } from './auth/account-menu'
 import { showSignInMenu, showSignOutMenu, tokenCallbackHandler } from './auth/auth'
@@ -145,14 +147,16 @@ export async function start(
                 startWith(undefined),
                 map(() => secretStorage)
             ),
-            localStorage.clientStateChanges.pipe(distinctUntilChanged())
+            localStorage.clientStateChanges.pipe(distinctUntilChanged()),
+            promiseFactoryToObservable(isReinstalling)
         ).pipe(
             map(
-                ([clientConfiguration, clientSecrets, clientState]) =>
+                ([clientConfiguration, clientSecrets, clientState, isReinstalling]) =>
                     ({
                         clientConfiguration,
                         clientSecrets,
                         clientState,
+                        isReinstalling,
                     }) satisfies ConfigurationInput
             )
         )
