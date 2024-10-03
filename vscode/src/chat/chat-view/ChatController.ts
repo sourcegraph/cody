@@ -601,6 +601,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
     }): Promise<void> {
         return tracer.startActiveSpan('chat.submit', async (span): Promise<void> => {
             if (addHumanMessage?.text.toString().match(/^\/reset$/)) {
+                // For testing only.
                 span.addEvent('clearAndRestartSession')
                 span.end()
                 return this.clearAndRestartSession()
