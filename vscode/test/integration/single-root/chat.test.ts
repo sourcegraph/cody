@@ -34,9 +34,11 @@ suite('Chat', function () {
         const chatView = await getChatViewProvider()
         await chatView.handleUserMessageSubmission({
             requestID: 'test',
-            inputText: getPs()`hello from the human`,
-            mentions: [],
-            editorState: null,
+            addHumanMessage: {
+                text: getPs()`hello from the human`,
+                contextItems: [],
+                editorState: null,
+            },
             signal: new AbortController().signal,
         })
 
@@ -53,9 +55,11 @@ suite('Chat', function () {
         const chatView = await getChatViewProvider()
         await chatView.handleUserMessageSubmission({
             requestID: 'test',
-            inputText: getPs()`hello from the human`,
-            mentions: [],
-            editorState: null,
+            addHumanMessage: {
+                text: getPs()`hello from the human`,
+                contextItems: [],
+                editorState: null,
+            },
             signal: new AbortController().signal,
         })
 

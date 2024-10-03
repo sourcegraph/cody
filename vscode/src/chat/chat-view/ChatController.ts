@@ -3,6 +3,7 @@ import {
     cenv,
     clientCapabilities,
     distinctUntilChanged,
+    editorStateFromPromptString,
     firstResultFromOperation,
     pendingOperation,
     ps,
@@ -27,8 +28,6 @@ import {
     type ContextItemOpenCtx,
     ContextItemSource,
     DOTCOM_URL,
-    type DefaultChatCommands,
-    type EventSource,
     FeatureFlag,
     type Guardrails,
     type Message,
@@ -87,6 +86,7 @@ import {
 import type { startTokenReceiver } from '../../auth/token-receiver'
 import { getContextFileFromUri } from '../../commands/context/file-path'
 import { getContextFileFromCursor } from '../../commands/context/selection'
+import type { ExecuteChatArguments } from '../../commands/execute/ask'
 import { resolveContextItems } from '../../editor/utils/editor-context'
 import type { VSCodeEditor } from '../../editor/vscode-editor'
 import type { ExtensionClient } from '../../extension-client'
@@ -267,12 +267,14 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             case 'submit': {
                 await this.handleUserMessageSubmission({
                     requestID: uuid.v4(),
-                    inputText: PromptString.unsafe_fromUserQuery(message.text),
-                    mentions: message.contextItems ?? [],
-                    editorState: message.editorState as SerializedPromptEditorState,
+                    addHumanMessage: {
+                        text: PromptString.unsafe_fromUserQuery(message.text),
+                        editorState: message.editorState as SerializedPromptEditorState,
+                        contextItems: message.contextItems ?? [],
+                        intent: message.intent,
+                    },
                     signal: this.startNewSubmitOrEditOperation(),
                     source: 'chat',
-                    intent: message.intent,
                     intentScores: message.intentScores,
                     manuallySelectedIntent: message.manuallySelectedIntent,
                 })
@@ -582,28 +584,51 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
      */
     public async handleUserMessageSubmission({
         requestID,
-        inputText,
-        mentions,
-        editorState,
         signal,
         source,
         command,
-        intent: detectedIntent,
         intentScores: detectedIntentScores,
         manuallySelectedIntent,
-    }: {
+        addHumanMessage,
+    }: Pick<ExecuteChatArguments, 'source' | 'command' | 'intentScores' | 'manuallySelectedIntent'> & {
         requestID: string
-        inputText: PromptString
-        mentions: ContextItem[]
-        editorState: SerializedPromptEditorState | null
+        addHumanMessage:
+            | (Pick<ExecuteChatArguments, 'text' | 'contextItems' | 'intent'> & {
+                  editorState: SerializedPromptEditorState | null
+              })
+            | null
         signal: AbortSignal
-        source?: EventSource
-        command?: DefaultChatCommands
-        intent?: ChatMessage['intent'] | undefined | null
-        intentScores?: { intent: string; score: number }[] | undefined | null
-        manuallySelectedIntent?: boolean | undefined | null
     }): Promise<void> {
         return tracer.startActiveSpan('chat.submit', async (span): Promise<void> => {
+            if (addHumanMessage?.text.toString().match(/^\/reset$/)) {
+                span.addEvent('clearAndRestartSession')
+                span.end()
+                return this.clearAndRestartSession()
+            }
+
+            if (addHumanMessage) {
+                this.chatBuilder.addHumanMessage({
+                    text: addHumanMessage.text,
+                    editorState: addHumanMessage.editorState,
+                    intent: addHumanMessage.intent,
+                })
+            }
+            const humanMessage = this.chatBuilder.getLastHumanMessage()
+            if (!humanMessage) {
+                throw new Error('No human message to submit')
+            }
+            const { text, intent: detectedIntent } = humanMessage
+            if (!text) {
+                throw new Error('No text to submit')
+            }
+            const editorState =
+                (humanMessage.editorState as SerializedPromptEditorState) ??
+                editorStateFromPromptString(text)
+            let contextItems = humanMessage.contextFiles ?? []
+
+            await this.saveSession()
+            signal.throwIfAborted()
+
             span.setAttribute('sampled', true)
             const authStatus = currentAuthStatusAuthed()
 
@@ -628,41 +653,29 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 repoMetadata,
                 repoIsPublic,
                 traceId: span.spanContext().traceId,
-                promptText: inputText,
+                promptText: text,
             } as const
             const tokenCounterUtils = await getTokenCounterUtils()
 
             telemetryEvents['cody.chat-question/submitted'].record(
                 {
                     ...telemetryProperties,
-                    mentions,
+                    mentions: contextItems ?? [],
                 },
                 tokenCounterUtils
             )
 
             tracer.startActiveSpan('chat.submit.firstToken', async (firstTokenSpan): Promise<void> => {
-                if (inputText.toString().match(/^\/reset$/)) {
-                    span.addEvent('clearAndRestartSession')
-                    span.end()
-                    return this.clearAndRestartSession()
-                }
-
-                this.chatBuilder.addHumanMessage({
-                    text: inputText,
-                    editorState,
-                    intent: detectedIntent,
-                })
-                await this.saveSession()
-                signal.throwIfAborted()
-
                 this.postEmptyMessageInProgress(model)
 
                 // All mentions we receive are either source=initial or source=user. If the caller
                 // forgot to set the source, assume it's from the user.
-                mentions = mentions.map(m => (m.source ? m : { ...m, source: ContextItemSource.User }))
+                contextItems =
+                    contextItems?.map(m => (m.source ? m : { ...m, source: ContextItemSource.User })) ??
+                    []
 
                 const contextAlternatives = await this.computeContext(
-                    { text: inputText, mentions },
+                    { text: text, mentions: contextItems },
                     requestID,
                     editorState,
                     span,
@@ -671,7 +684,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 signal.throwIfAborted()
                 const corpusContext = contextAlternatives[0].items
 
-                const repositoryMentioned = mentions.find(contextItem =>
+                const repositoryMentioned = contextItems.find(contextItem =>
                     ['repository', 'tree'].includes(contextItem.type)
                 )
 
@@ -696,7 +709,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                         ? PromptString.unsafe_fromUserQuery(
                               inputTextWithoutContextChipsFromPromptEditorState(editorState)
                           )
-                        : inputText
+                        : text
 
                     const finalIntentDetectionResponse = detectedIntent
                         ? { intent: detectedIntent, allScores: detectedIntentScores }
@@ -961,13 +974,15 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             this.chatBuilder.removeMessagesFromIndex(humanMessage, 'human')
             return await this.handleUserMessageSubmission({
                 requestID,
-                inputText: text,
-                mentions: contextFiles,
-                editorState,
+                addHumanMessage: {
+                    text: text,
+                    editorState,
+                    contextItems: contextFiles,
+                    intent,
+                },
                 signal: abortSignal,
                 source: 'chat',
-                intent,
-                intentScores,
+                intentScores: intentScores,
                 manuallySelectedIntent,
             })
         } catch {
