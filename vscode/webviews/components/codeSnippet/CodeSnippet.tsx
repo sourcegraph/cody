@@ -326,9 +326,9 @@ function matchesToMatchGroups(result: ContentMatch): MatchGroup[] {
 function chunkToMatchGroup(chunk: ChunkMatch): MatchGroup {
     const matches = chunk.ranges.map(range => ({
         startLine: range.start.line,
-        startCharacter: range.start.column,
+        startCharacter: range.start.character,
         endLine: range.end.line,
-        endCharacter: range.end.column,
+        endCharacter: range.end.character,
     }))
     const plaintextLines = chunk.content.replace(/\r?\n$/, '').split(/\r?\n/)
     return {

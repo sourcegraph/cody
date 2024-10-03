@@ -39,7 +39,7 @@ export const FileSnippet: FC<FileSnippetProps> = props => {
             chunkMatches: [
                 {
                     content: item.content ?? '',
-                    contentStart: { line: Math.max(startLine - 1, 0), column: 0 },
+                    contentStart: { line: Math.max(startLine - 1, 0), character: 0 },
                     ranges: item.ranges ?? [],
                 },
             ],
