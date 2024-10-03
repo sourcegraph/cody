@@ -1335,7 +1335,7 @@
     "@radix-ui/react-slot": "^1.0.2",
     "@radix-ui/react-tabs": "^1.1.0",
     "@radix-ui/react-tooltip": "^1.0.7",
-    "@sentry/browser": "^7.107.0",
+    "@sentry/browser": "^8.0.0",
     "@sentry/core": "^7.107.0",
     "@sentry/node": "^7.107.0",
     "@sourcegraph/cody-shared": "workspace:*",
