@@ -9,7 +9,6 @@ import {
     OLLAMA_DEFAULT_URL,
     type PickResolvedConfiguration,
     PromptString,
-    logError,
     setStaticResolvedConfigurationValue,
 } from '@sourcegraph/cody-shared'
 
@@ -20,6 +19,15 @@ import { localStorage } from './services/LocalStorageProvider'
 interface ConfigGetter {
     get<T>(section: (typeof CONFIG_KEY)[ConfigKeys], defaultValue?: T): T
 }
+
+let lastProxyConfig: {
+    host?: string
+    port?: number
+    path?: string
+    cacert?: string
+} | null = null
+let cachedProxyPath: string | undefined
+let cachedProxyCACert: string | undefined
 
 /**
  * All configuration values, with some sanitization performed.
@@ -60,58 +68,89 @@ export function getConfiguration(
         return filePath
     }
 
-    function readProxyPath(): string | undefined {
-        const path = resolveHomedir(config.get<string>(CONFIG_KEY.proxyPath))
-        if (path) {
-            try {
-                if (!fs.statSync(path).isSocket()) {
-                    throw new Error('Not a socket')
+    function readProxyPath(filePath: string | undefined): string | undefined {
+        if (filePath !== lastProxyConfig?.path) {
+            const path = resolveHomedir(filePath)
+            cachedProxyPath = undefined
+            if (path) {
+                try {
+                    if (!fs.statSync(path).isSocket()) {
+                        throw new Error('Not a socket')
+                    }
+                    fs.accessSync(path, fs.constants.R_OK | fs.constants.W_OK)
+                    cachedProxyPath = path
+                } catch (error) {
+                    // `logError` caused repeated calls of this code
+                    console.error(`Cannot verify ${CONFIG_KEY.proxy}.path: ${path}: ${error}`)
+                    void vscode.window.showErrorMessage(
+                        `Cannot verify ${CONFIG_KEY.proxy}.path: ${path}:\n${error}`
+                    )
                 }
-                fs.accessSync(path, fs.constants.R_OK | fs.constants.W_OK)
-                return path
-            } catch (error) {
-                logError(
-                    'vscode.configuration',
-                    `Cannot read ${CONFIG_KEY.proxyPath}: ${path}:\n${error}`
-                )
-                void vscode.window.showErrorMessage(
-                    `Cannot verify ${CONFIG_KEY.proxyPath}: ${path}:\n${error}`
-                )
             }
         }
-        return undefined
+        return cachedProxyPath
     }
 
-    function readProxyCACert(): string | undefined {
-        const path = resolveHomedir(config.get<string>(CONFIG_KEY.proxyCacert))
-        if (path) {
-            // support directly embedding a CA cert in the settings
-            if (path.startsWith('-----BEGIN CERTIFICATE-----')) {
-                return path
-            }
-            try {
-                return fs.readFileSync(path, { encoding: 'utf-8' })
-            } catch (error) {
-                logError(
-                    'vscode.configuration',
-                    `Cannot read ${CONFIG_KEY.proxyCacert}: ${path}:\n${error}`
-                )
-                void vscode.window.showErrorMessage(
-                    `Error reading ${CONFIG_KEY.proxyCacert} from ${path}:\n${error}`
-                )
+    function readProxyCACert(filePath: string | undefined): string | undefined {
+        if (filePath !== lastProxyConfig?.cacert) {
+            const path = resolveHomedir(filePath)
+            cachedProxyCACert = undefined
+            if (path) {
+                // support directly embedding a CA cert in the settings
+                if (path.startsWith('-----BEGIN CERTIFICATE-----')) {
+                    cachedProxyCACert = path
+                } else {
+                    try {
+                        cachedProxyCACert = fs.readFileSync(path, { encoding: 'utf-8' })
+                    } catch (error) {
+                        // `logError` caused repeated calls of this code
+                        console.error(`Cannot read ${CONFIG_KEY.proxy}.cacert: ${path}:\n${error}`)
+                        void vscode.window.showErrorMessage(
+                            `Error reading ${CONFIG_KEY.proxy}.cacert from ${path}:\n${error}`
+                        )
+                    }
+                }
             }
         }
-        return undefined
+        return cachedProxyCACert
     }
 
     const vsCodeConfig = vscode.workspace.getConfiguration()
 
+    const proxyConfig = config.get<{
+        host?: string
+        port?: number
+        path?: string
+        cacert?: string
+    } | null>(CONFIG_KEY.proxy, null)
+
+    let proxyHost = proxyConfig?.host
+    let proxyPort = proxyConfig?.port
+
+    if (
+        (lastProxyConfig?.host !== proxyHost || lastProxyConfig?.port !== proxyPort) &&
+        ((proxyHost && !proxyPort) || (!proxyHost && proxyPort))
+    ) {
+        // `logError` caused repeated calls of this code
+        console.error(`${CONFIG_KEY.proxy}.host and ${CONFIG_KEY.proxy}.port must be set together`)
+        void vscode.window.showErrorMessage(
+            `${CONFIG_KEY.proxy}.host and ${CONFIG_KEY.proxy}.port must be set together`
+        )
+        proxyHost = undefined
+        proxyPort = undefined
+    }
+
+    const proxyPath = readProxyPath(proxyConfig?.path)
+    const proxyCACert = readProxyCACert(proxyConfig?.cacert)
+
+    lastProxyConfig = proxyConfig
+
     return {
         proxy: vsCodeConfig.get<string>('http.proxy'),
-        proxyHost: config.get<string>(CONFIG_KEY.proxyHost),
-        proxyPort: config.get<number>(CONFIG_KEY.proxyPort),
-        proxyPath: readProxyPath(),
-        proxyCACert: readProxyCACert(),
+        proxyHost: proxyHost,
+        proxyPort: proxyPort,
+        proxyPath: proxyPath,
+        proxyCACert: proxyCACert,
         codebase: sanitizeCodebase(config.get(CONFIG_KEY.codebase)),
         serverEndpoint: config.get<string>(CONFIG_KEY.serverEndpoint),
         customHeaders: config.get<Record<string, string>>(CONFIG_KEY.customHeaders),

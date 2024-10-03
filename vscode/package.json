@@ -1233,32 +1233,48 @@
           "markdownDescription": "[INTERNAL ONLY] Enable all unstable experimental features.",
           "default": false
         },
-        "cody.proxy.host": {
-          "description": "The host to use when proxying requests to the Sourcegraph instance. It shouldn't include a protocol (like \"http://\") or a port (like \":7080\"). When this is set, port must be set as well.",
-          "type": "string",
-          "default": "",
-          "examples": ["localhost", "1.2.3.4"]
-        },
-        "cody.proxy.port": {
-          "description": "The port to use when proxying requests to the Sourcegraph instance. When this is set, host must be set as well.",
-          "type": "number",
-          "default": 0,
-          "examples": [80, 443, 7080, 9090]
-        },
-        "cody.proxy.path": {
-          "description": "The full path to a file when proxying requests to the Sourcegraph instance via a UNIX domain socket.",
-          "type": "string",
-          "default": "",
-          "examples": ["/home/user/mitm-proxy.sock"]
-        },
-        "cody.proxy.cacert": {
-          "description": "Either the PEM-encoded CA certificate the proxy uses (replace newlines with `\n`), or the path to the file containing that certificate.",
-          "type": "string",
-          "default": "",
-          "examples": [
-            "/home/user/.mitmproxy/mitmproxy-ca-cert.pem",
-            "-----BEGIN CERTIFICATE-----\n...\n-----END CERTIFICATE-----"
-          ]
+        "cody.proxy": {
+          "type": ["null", "object"],
+          "description": "Configure the proxy to use when connecting to the Sourcegraph instance.",
+          "default": null,
+          "oneOf": [
+            {
+              "properties": {
+                "host": {
+                  "description": "The host to use when proxying requests to the Sourcegraph instance. It shouldn't include a protocol (like \"http://\") or a port (like \":7080\"). When this is set, port must be set as well.",
+                  "type": "string",
+                  "examples": ["localhost", "1.2.3.4"]
+                },
+                "port": {
+                  "description": "The port to use when proxying requests to the Sourcegraph instance. When this is set, host must be set as well.",
+                  "type": "number",
+                  "examples": [80, 443, 7080, 9090]
+                }
+              },
+              "required": ["host", "port"]
+            },
+            {
+              "properties": {
+                "path": {
+                  "description": "The full path to a file when proxying requests to the Sourcegraph instance via a UNIX domain socket.",
+                  "type": "string",
+                  "examples": ["/home/user/mitm-proxy.sock"]
+                }
+              },
+              "required": ["path"]
+            }
+          ],
+          "properties": {
+            "cacert": {
+              "description": "Either the PEM-encoded CA certificate the proxy uses (replace newlines with `\n`), or the path to the file containing that certificate.",
+              "type": "string",
+              "default": "",
+              "examples": [
+                "/home/user/.mitmproxy/mitmproxy-ca-cert.pem",
+                "-----BEGIN CERTIFICATE-----\n...\n-----END CERTIFICATE-----"
+              ]
+            }
+          }
         }
       }
     },
