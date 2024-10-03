@@ -50,7 +50,6 @@ async function smellCommand(
 
     return {
         text: prompt,
-        submitType: 'user-newchat',
         contextItems,
         source: args?.source,
         command: DefaultChatCommands.Smell,

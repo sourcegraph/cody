@@ -6,16 +6,14 @@ import {
 } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 import type { ChatSession } from '../../chat/chat-view/ChatController'
-import type { ChatSubmitType, WebviewSubmitMessage } from '../../chat/protocol'
+import type { WebviewSubmitMessage } from '../../chat/protocol'
 import { isUriIgnoredByContextFilterWithNotification } from '../../cody-ignore/context-filter'
 import { getEditor } from '../../editor/active-editor'
 
-export interface ExecuteChatArguments
-    extends Omit<WebviewSubmitMessage, 'text' | 'editorState' | 'submitType'> {
+export interface ExecuteChatArguments extends Omit<WebviewSubmitMessage, 'text' | 'editorState'> {
     source?: EventSource
     command?: DefaultChatCommands
     text: PromptString
-    submitType: Extract<ChatSubmitType, 'user-newchat'>
 }
 
 /**

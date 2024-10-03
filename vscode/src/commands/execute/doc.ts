@@ -157,7 +157,6 @@ async function docChatCommand(
 
     return {
         text: prompt,
-        submitType: 'user-newchat',
         contextItems,
         source: args?.source,
         command: DefaultChatCommands.Doc,
