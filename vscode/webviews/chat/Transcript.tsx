@@ -357,6 +357,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                     isForFirstMessage={humanMessage.index === 0}
                     showSnippets={experimentalOneBoxEnabled && humanMessage.intent === 'search'}
                     defaultOpen={experimentalOneBoxEnabled && humanMessage.intent === 'search'}
+                    reSubmitWithChatIntent={reSubmitWithChatIntent}
                     isContextLoading={isContextLoading}
                 />
             )}

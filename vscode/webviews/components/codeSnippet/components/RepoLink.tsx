@@ -1,6 +1,7 @@
 import type * as React from 'react'
 import { useEffect, useRef } from 'react'
 
+import { ChevronDown, ChevronUp } from 'lucide-react'
 import { highlightNode } from '../highlights'
 import type { Range } from '../types'
 
@@ -13,6 +14,8 @@ interface Props {
     repoDisplayName?: string
     className?: string
     isKeyboardSelectable?: boolean
+    collapsed: boolean
+    onToggleCollapse: () => void
 }
 
 /**
@@ -29,6 +32,8 @@ export const RepoFileLink: React.FunctionComponent<React.PropsWithChildren<Props
         fileURL,
         className,
         isKeyboardSelectable,
+        collapsed,
+        onToggleCollapse,
     } = props
 
     const [fileBase, fileName] = splitPath(filePath)
@@ -49,6 +54,19 @@ export const RepoFileLink: React.FunctionComponent<React.PropsWithChildren<Props
     return (
         <span className={className}>
             <span>
+                {collapsed ? (
+                    <ChevronDown
+                        size={16}
+                        className="tw-inline-block tw-mr-2 tw-cursor-pointer"
+                        onClick={onToggleCollapse}
+                    />
+                ) : (
+                    <ChevronUp
+                        size={16}
+                        className="tw-inline-block tw-mr-2 tw-cursor-pointer"
+                        onClick={onToggleCollapse}
+                    />
+                )}
                 <a href={repoURL} target="_blank" rel="noreferrer">
                     {repoDisplayName || displayRepoName(repoName)}
                 </a>
