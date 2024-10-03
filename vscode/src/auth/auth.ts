@@ -405,6 +405,8 @@ export async function validateCredentials(
         return { authenticated: false, endpoint: config.auth.serverEndpoint, pendingValidation: false }
     }
 
+    logDebug('auth', `Authenticating to ${config.auth.serverEndpoint}...`)
+
     // Check if credentials are valid and if Cody is enabled for the credentials and endpoint.
     const client = SourcegraphGraphQLAPIClient.withStaticConfig({
         configuration: {
@@ -423,11 +425,12 @@ export async function validateCredentials(
         ])
     signal?.throwIfAborted()
 
-    logDebug(
-        'CodyLLMConfiguration',
-        JSON.stringify({ siteHasCodyEnabled, siteVersion, codyLLMConfiguration, userInfo })
-    )
     if (isError(userInfo) && isNetworkLikeError(userInfo)) {
+        logDebug(
+            'auth',
+            `Failed to authenticate to ${config.auth.serverEndpoint} due to likely network error`,
+            userInfo.message
+        )
         return {
             authenticated: false,
             showNetworkError: true,
@@ -436,6 +439,11 @@ export async function validateCredentials(
         }
     }
     if (!userInfo || isError(userInfo)) {
+        logDebug(
+            'auth',
+            `Failed to authenticate to ${config.auth.serverEndpoint} due to invalid credentials or other endpoint error`,
+            userInfo?.message
+        )
         return {
             authenticated: false,
             endpoint: config.auth.serverEndpoint,
@@ -444,11 +452,17 @@ export async function validateCredentials(
         }
     }
     if (!siteHasCodyEnabled) {
+        logDebug(
+            'auth',
+            `Authentication succeeded, but endpoint ${config.auth.serverEndpoint} reports Cody is not enabled`
+        )
         vscode.window.showErrorMessage(
             `Cody is not enabled on this Sourcegraph instance (${config.auth.serverEndpoint}). Ask a site administrator to enable it.`
         )
         return { authenticated: false, endpoint: config.auth.serverEndpoint, pendingValidation: false }
     }
+
+    logDebug('auth', `Authentication succeeed to endpoint ${config.auth.serverEndpoint}`)
 
     const configOverwrites = isError(codyLLMConfiguration) ? undefined : codyLLMConfiguration
 
@@ -464,13 +478,21 @@ export async function validateCredentials(
         })
     }
 
-    const proStatus = await client.getCurrentUserCodySubscription()
+    logDebug('auth', `Checking Cody subscription status for user ${userInfo.username}`)
+    const proStatus = await client.getCurrentUserCodySubscription(signal)
     signal?.throwIfAborted()
+    if (isError(proStatus)) {
+        logDebug('auth', 'Error checking Cody subscription status', proStatus.message)
+    }
     const isActiveProUser =
         proStatus !== null &&
         'plan' in proStatus &&
         proStatus.plan === 'PRO' &&
         proStatus.status !== 'PENDING'
+    logDebug(
+        'auth',
+        `Checked Cody subscription status for user ${userInfo.username}: isActiveProUser=${isActiveProUser}`
+    )
     return newAuthStatus({
         ...userInfo,
         authenticated: true,

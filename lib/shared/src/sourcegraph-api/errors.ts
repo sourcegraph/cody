@@ -102,6 +102,7 @@ export function isAbortError(error: unknown): error is AbortError {
         // custom abort error
         ((error instanceof AbortError && error.isAbortError) ||
             error.name === 'AbortError' ||
+            ('type' in error && error.type === 'aborted') ||
             // http module
             error.message === 'aborted' ||
             // fetch
