@@ -1415,8 +1415,13 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
 
     public async clearAndRestartSession(): Promise<void> {
         this.cancelSubmitOrEditOperation()
-        await this.saveSession()
 
+        if (this.chatBuilder.isEmpty()) {
+            // Nothing to do.
+            return
+        }
+
+        await this.saveSession()
         this.chatBuilder = new ChatBuilder(this.chatBuilder.selectedModel)
         this.postViewTranscript()
     }

@@ -2,7 +2,7 @@ import * as uuid from 'uuid'
 import * as vscode from 'vscode'
 
 import {
-    type AuthenticatedAuthStatus,
+    type AuthStatus,
     CODY_PASSTHROUGH_VSCODE_OPEN_COMMAND_ID,
     type ChatClient,
     DEFAULT_EVENT_SOURCE,
@@ -10,6 +10,7 @@ import {
     authStatus,
     currentAuthStatus,
     currentAuthStatusAuthed,
+    distinctUntilChanged,
     editorStateFromPromptString,
     subscriptionDisposable,
     telemetryRecorder,
@@ -17,6 +18,7 @@ import {
 import { logDebug, logError } from '../../log'
 import type { MessageProviderOptions } from '../MessageProvider'
 
+import { map } from 'observable-fns'
 import type { URI } from 'vscode-uri'
 import type { startTokenReceiver } from '../../auth/token-receiver'
 import type { ExecuteChatArguments } from '../../commands/execute/ask'
@@ -64,11 +66,6 @@ export class ChatsController implements vscode.Disposable {
      */
     private activeView: ChatController | undefined = undefined
 
-    // We keep track of the currently authenticated account and dispose open chats when it changes
-    private currentAuthAccount:
-        | undefined
-        | Pick<AuthenticatedAuthStatus, 'endpoint' | 'primaryEmail' | 'username'>
-
     protected disposables: vscode.Disposable[] = []
 
     constructor(
@@ -86,17 +83,20 @@ export class ChatsController implements vscode.Disposable {
 
         this.disposables.push(
             subscriptionDisposable(
-                authStatus.subscribe(authStatus => {
-                    const hasLoggedOut = !authStatus.authenticated
-                    const hasSwitchedAccount =
-                        this.currentAuthAccount &&
-                        this.currentAuthAccount.endpoint !== authStatus.endpoint
-                    if (hasLoggedOut || hasSwitchedAccount) {
+                authStatus
+                    .pipe(
+                        map(
+                            ({ authenticated, endpoint }) =>
+                                ({ authenticated, endpoint }) satisfies Pick<
+                                    AuthStatus,
+                                    'authenticated' | 'endpoint'
+                                >
+                        ),
+                        distinctUntilChanged()
+                    )
+                    .subscribe(() => {
                         this.disposeAllChats()
-                    }
-
-                    this.currentAuthAccount = authStatus.authenticated ? { ...authStatus } : undefined
-                })
+                    })
             )
         )
     }
