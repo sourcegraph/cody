@@ -35,7 +35,6 @@ suite('Chat', function () {
         await chatView.handleUserMessageSubmission({
             requestID: 'test',
             inputText: getPs()`hello from the human`,
-            submitType: 'user',
             mentions: [],
             editorState: null,
             signal: new AbortController().signal,
@@ -55,7 +54,6 @@ suite('Chat', function () {
         await chatView.handleUserMessageSubmission({
             requestID: 'test',
             inputText: getPs()`hello from the human`,
-            submitType: 'user',
             mentions: [],
             editorState: null,
             signal: new AbortController().signal,

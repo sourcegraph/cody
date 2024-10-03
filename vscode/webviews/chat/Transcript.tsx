@@ -436,7 +436,7 @@ function submitHumanMessage({
 }): void {
     getVSCodeAPI().postMessage({
         command: 'submit',
-        submitType: 'user',
+        submitType: 'user-newchat',
         text: editorValue.text,
         editorState: editorValue.editorState,
         contextItems: editorValue.contextItems.map(deserializeContextItem),
