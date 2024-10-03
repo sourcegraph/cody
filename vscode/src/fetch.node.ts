@@ -72,21 +72,19 @@ function getCustomAgent({
             return httpsProxyAgent
         }
 
-        if (proxyHost && !proxyPort) {
-            console.error(
-                'proxyHost is set but proxyPort is not. These two settings must be set together.'
-            )
-            return protocol === 'http:' ? httpAgent : httpsAgent
-        }
-
-        if (proxyPort && !proxyHost) {
-            console.error(
-                'proxyPort is set but proxyHost is not. These two settings must be set together.'
-            )
-            return protocol === 'http:' ? httpAgent : httpsAgent
-        }
-
-        if (proxyHost || proxyPort || proxyPath) {
+        if ((proxyHost && proxyPort) || proxyPath) {
+            // Combine the CA certs from the global options with the one(s) defined in settings,
+            // otherwise the CA cert in the settings overrides all of the global agent options
+            // (or the other way around, depending on the order of the options).
+            const caCerts = (() => {
+                if (proxyCACert) {
+                    if (Array.isArray(https.globalAgent.options.ca)) {
+                        return [...https.globalAgent.options.ca, proxyCACert]
+                    }
+                    return [https.globalAgent.options.ca, proxyCACert]
+                }
+                return undefined
+            })()
             const agent = new ProxyAgent({
                 protocol: protocol || 'https:',
                 ...(proxyHost ? { host: proxyHost } : null),
@@ -95,7 +93,8 @@ function getCustomAgent({
                 keepAlive: true,
                 keepAliveMsecs: 60000,
                 ...https.globalAgent.options,
-                ...(proxyCACert ? { ca: proxyCACert } : null),
+                // Being at the end, this will override https.globalAgent.options.ca
+                ...(caCerts ? { ca: caCerts } : null),
             })
             return agent
         }
