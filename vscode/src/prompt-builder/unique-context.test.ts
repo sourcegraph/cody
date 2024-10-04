@@ -205,7 +205,7 @@ describe('Unique Context Items', () => {
                     start: { line: 0, character: 0 },
                     end: { line: 10, character: 0 },
                 },
-                source: ContextItemSource.Terminal,
+                source: ContextItemSource.Search,
             }
 
             expect(getUniqueContextItems([item1])).toStrictEqual([item1])
