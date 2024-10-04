@@ -6,7 +6,7 @@
     color: var(--vscode-inputOption-activeForeground);
     align-items: center;
     justify-content: center;
-    height: fit-content;
+    height: 100%;
 }
 
 .sourcegraph-gradient-border {
