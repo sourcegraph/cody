@@ -154,7 +154,9 @@ function getCurrentFileOrSelection({
     )
 }
 
-function getCorpusContextItemsForEditorState(): Observable<ContextItem[] | typeof pendingOperation> {
+export function getCorpusContextItemsForEditorState(): Observable<
+    ContextItem[] | typeof pendingOperation
+> {
     const relevantAuthStatus = authStatus.pipe(
         map(
             authStatus =>

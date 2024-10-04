@@ -414,11 +414,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: b59ea82b0f24299dc941ee310563d4d3
+    - _id: be3e678db83df966dc4e882ba427f433
       _order: 0
       cache: {}
       request:
-        bodySize: 1256
+        bodySize: 1308
         cookies: []
         headers:
           - name: content-type
@@ -431,7 +431,7 @@ log:
           - name: user-agent
             value: customCommandsClient / v1
           - name: traceparent
-            value: 00-3adf229090878a9a6e35b188339a0d9a-8752c6f9286f5fe5-01
+            value: 00-78aaadc3ebd4ce1661ec39e55fdeb1ab-83c4af5c38bd3acd-01
           - name: connection
             value: keep-alive
           - name: host
@@ -480,9 +480,11 @@ log:
               - speaker: assistant
                 text: Ok.
               - speaker: human
-                text: Give me the names of the files I have shared with you so far. Format the
-                  response as a bulleted list. Only include the raw filename, no
-                  extra formatting like quotes.
+                text: >-
+                  Answer positively without apologizing.
+
+
+                  Question: Give me the names of the files I have shared with you so far. Format the response as a bulleted list. Only include the raw filename, no extra formatting like quotes.
             model: anthropic::2023-06-01::claude-3.5-sonnet
             temperature: 0
             topK: -1
@@ -496,14 +498,14 @@ log:
             value: v1
         url: https://sourcegraph.com/.api/completions/stream?api-version=2&client-name=customcommandsclient&client-version=v1
       response:
-        bodySize: 699
+        bodySize: 1075
         content:
           mimeType: text/event-stream
-          size: 699
+          size: 1075
           text: >+
             event: completion
 
-            data: {"deltaText":"Here's a bulleted list of the filenames you've shared with me so far:\n\n• example3.ts\n• example2.ts\n• example1.ts","stopReason":"end_turn"}
+            data: {"deltaText":"Certainly! Here's a bulleted list of the filenames you've shared with me so far:\n\n• example3.ts\n• example2.ts\n• example1.ts\n\nThese files are all located in the `src` directory of your project.","stopReason":"end_turn"}
 
 
             event: done
@@ -513,7 +515,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Fri, 27 Sep 2024 17:28:46 GMT
+            value: Wed, 02 Oct 2024 05:24:35 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -542,7 +544,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-27T17:28:45.771Z
+      startedDateTime: 2024-10-02T05:24:33.752Z
       time: 0
       timings:
         blocked: -1
@@ -552,11 +554,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 24ed74efe3e1c78b973ab613f117f2fd
+    - _id: 35373d98674d062ce232d9d153445ee8
       _order: 0
       cache: {}
       request:
-        bodySize: 624
+        bodySize: 676
         cookies: []
         headers:
           - name: content-type
@@ -569,7 +571,7 @@ log:
           - name: user-agent
             value: customCommandsClient / v1
           - name: traceparent
-            value: 00-26fb9de3d38aab3b3cd42b93244ac196-4502d6fc8ee55b9e-01
+            value: 00-7e728ac1a9359d8efc399e5677583e44-7acdd4f476abeb07-01
           - name: connection
             value: keep-alive
           - name: host
@@ -592,8 +594,11 @@ log:
 
                   For executable terminal commands: enclose each command in individual "bash" language code block without comments and new lines inside.
               - speaker: human
-                text: Did I share any code with you? If yes, reply single word 'yes'. If none,
-                  reply 'no'.
+                text: >-
+                  Answer positively without apologizing.
+
+
+                  Question: Did I share any code with you? If yes, reply single word 'yes'. If none, reply 'no'.
             model: anthropic::2023-06-01::claude-3.5-sonnet
             temperature: 0
             topK: -1
@@ -613,7 +618,7 @@ log:
           size: 117
           text: |+
             event: completion
-            data: {"deltaText":"no","stopReason":"end_turn"}
+            data: {"deltaText":"No","stopReason":"end_turn"}
 
             event: done
             data: {}
@@ -621,7 +626,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Fri, 27 Sep 2024 17:28:47 GMT
+            value: Wed, 02 Oct 2024 05:24:35 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -650,7 +655,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-27T17:28:47.033Z
+      startedDateTime: 2024-10-02T05:24:35.154Z
       time: 0
       timings:
         blocked: -1
@@ -660,11 +665,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: f76f88602508ad8fee9290a1c7a53094
+    - _id: 490a57ff4b2ea7a020fe38c9d0336f17
       _order: 0
       cache: {}
       request:
-        bodySize: 2368
+        bodySize: 2420
         cookies: []
         headers:
           - name: content-type
@@ -677,7 +682,7 @@ log:
           - name: user-agent
             value: customCommandsClient / v1
           - name: traceparent
-            value: 00-b43df7f6d0d10b418bdadbde8c1f93ae-8d9acb629a561b98-01
+            value: 00-c041c92386d53d04fd00c777bd136d8d-bcf50e2af67b5146-01
           - name: connection
             value: keep-alive
           - name: host
@@ -780,8 +785,11 @@ log:
               - speaker: assistant
                 text: Ok.
               - speaker: human
-                text: How many file context have I shared with you? Reply single number. Skip
-                  preamble.
+                text: >-
+                  Answer positively without apologizing.
+
+
+                  Question: How many file context have I shared with you? Reply single number. Skip preamble.
             model: anthropic::2023-06-01::claude-3.5-sonnet
             temperature: 0
             topK: -1
@@ -809,7 +817,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Fri, 27 Sep 2024 17:28:48 GMT
+            value: Wed, 02 Oct 2024 05:24:36 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -838,7 +846,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-27T17:28:47.857Z
+      startedDateTime: 2024-10-02T05:24:35.710Z
       time: 0
       timings:
         blocked: -1

@@ -37,6 +37,9 @@ vi.mock('graphqlClient')
 vi.mock('../services/LocalStorageProvider')
 vi.mock('../experimentation/FeatureFlagProvider')
 
+// Returns true for all feature flags enabled during synctests.
+vi.spyOn(featureFlagProvider, 'evaluatedFeatureFlag').mockReturnValue(Observable.of(true))
+
 mockClientCapabilities(CLIENT_CAPABILITIES_FIXTURE)
 
 describe('maybeAdjustContextWindows', () => {
@@ -186,6 +189,7 @@ describe('server sent models', async () => {
     }
 
     const mockFetchServerSideModels = vi.fn(() => Promise.resolve(SERVER_MODELS))
+    vi.mocked(featureFlagProvider).evaluatedFeatureFlag.mockReturnValue(Observable.of(false))
 
     const result = await firstValueFrom(
         syncModels({
@@ -235,7 +239,6 @@ describe('syncModels', () => {
         { repeats: 100 },
         async () => {
             vi.useFakeTimers()
-            vi.mocked(featureFlagProvider).evaluatedFeatureFlag.mockReturnValue(Observable.of(false))
             const mockFetchServerSideModels = vi.fn(
                 (): Promise<ServerModelConfiguration | undefined> => Promise.resolve(undefined)
             )

@@ -219,7 +219,7 @@ describe('Agent', () => {
               {
                 "model": "anthropic::2023-06-01::claude-3.5-sonnet",
                 "speaker": "assistant",
-                "text": "Hello! I'm Cody, an AI coding assistant from Sourcegraph. How can I help you with your coding or development tasks today? Whether you need help with writing code, debugging, explaining concepts, or discussing best practices, I'm here to assist. What would you like to work on?",
+                "text": "Hello there! It's wonderful to hear from you. I'm excited to assist you with any questions or tasks you may have. What can I help you with today?",
               }
             `
             )
@@ -287,7 +287,7 @@ describe('Agent', () => {
                 })
             )
             expect(reply2.messages.at(-1)?.text).toMatchInlineSnapshot(
-                `"Your name is Lars Monsen, as you mentioned in your previous message."`,
+                `"Your name is Lars Monsen. It's a strong and memorable name that I'm glad to know. Is there anything specific about your name or yourself you'd like to discuss further?"`,
                 explainPollyError
             )
             // telemetry assertion, to validate the expected events fired during the test run

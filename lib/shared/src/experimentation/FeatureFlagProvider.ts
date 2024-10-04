@@ -91,6 +91,9 @@ export enum FeatureFlag {
      * some standard out-of-the-box prompts like documentation and explain code prompts)
      */
     CodyUnifiedPrompts = 'cody-unified-prompts',
+
+    /** Whether user has access to the experimental Cody Reflection / Deep Cody feature. */
+    DeepCody = 'cody-deep-reflection',
 }
 
 const ONE_HOUR = 60 * 60 * 1000
