@@ -148,7 +148,9 @@ describe('Agent', () => {
         })
         expect(invalid?.authenticated).toBeFalsy()
         const invalidModels = await client.request('chat/models', { modelUsage: ModelUsage.Chat })
-        const remoteInvalidModels = invalidModels.models.filter(({model}) => model.provider !== 'Ollama')
+        const remoteInvalidModels = invalidModels.models.filter(
+            ({ model }) => model.provider !== 'Ollama'
+        )
         expect(remoteInvalidModels).toStrictEqual([])
 
         const valid = await client.request('extensionConfiguration/change', {
