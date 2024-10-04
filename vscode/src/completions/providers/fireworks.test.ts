@@ -90,6 +90,7 @@ describe('fireworks autocomplete provider', () => {
         getAutocompleteProviderFromServerSideModelConfig({
             modelRef: 'fireworks::v1::deepseek-coder-v2-lite-base',
             isDotCom,
+            isBYOK: !isDotCom,
         })
     )
 
