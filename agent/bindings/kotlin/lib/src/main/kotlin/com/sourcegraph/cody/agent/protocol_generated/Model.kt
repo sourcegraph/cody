@@ -8,7 +8,7 @@ data class Model(
   val clientSideConfig: ClientSideConfig? = null,
   val provider: String,
   val title: String,
-  val tags: List<ModelTag>,
+  val tags: List<ModelTag>? = null,
   val modelRef: ModelRef? = null,
 )
 

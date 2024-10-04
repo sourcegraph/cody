@@ -1,8 +1,7 @@
 @file:Suppress("FunctionName", "ClassName", "unused", "EnumEntryName", "UnusedImport")
 package com.sourcegraph.cody.agent.protocol_generated;
 
-data class SelectedReposParams(
-  val id: String,
-  val name: String,
+data class Testing_Autocomplete_SetCompletionVisibilityDelayParams(
+  val delay: Long,
 )
 
