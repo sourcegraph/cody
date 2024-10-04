@@ -78,23 +78,28 @@ export class DeepCodyAgent {
      */
     public async getContext(
         chatAbortSignal: AbortSignal,
+        // TODO (bee) investigate on the right numbers for these params.
+        // Currently limiting to these numbers to avoid long processing time during reviewing step.
         loop = 2,
-        maxNewItems = 20
+        // Keep the last n amount of the search items to override old items with new ones.
+        maxSearchItems = 30
     ): Promise<ContextItem[]> {
+        const start = performance.now()
         const count = { context: 0, loop: 0 }
-        const initialCount = this.context.implicit.length
 
         for (let i = 0; i < loop && !chatAbortSignal.aborted; i++) {
             const newContext = await this.review(chatAbortSignal)
             this.sort(newContext)
             count.context += newContext.length
             count.loop++
-            if (!newContext.length || count.context < maxNewItems + initialCount) {
+            if (!newContext.length || count.context) {
                 break
             }
         }
-        logDebug('DeepCody', 'Aagentic context retrieval completed', { verbose: { count } })
-        return [...this.context.implicit, ...this.context.explicit]
+
+        const duration = performance.now() - start
+        logDebug('DeepCody', 'Aagentic context retrieval completed', { verbose: { count, duration } })
+        return [...this.context.implicit.slice(-maxSearchItems), ...this.context.explicit]
     }
 
     private async review(chatAbortSignal: AbortSignal): Promise<ContextItem[]> {
@@ -145,17 +150,31 @@ export class DeepCodyAgent {
     private buildPrompt(): PromptString {
         const join = (prompts: PromptString[]) => PromptString.join(prompts, ps`\n- `)
 
-        return ps`Your task is to review all shared context, then think step-by-step about whether you can provide me with a helpful answer for the "Question:" based on the shared context. If more information from my codebase is needed for the answer, you can request the following context using these action tags:
+        return ps`Your task is to review the shared context and think step-by-step to determine if you can answer the "Question:" at the end.
+        [INSTRUCTIONS]
+        1. Analyze the shared context thoroughly.
+        2. Decide if you have enough information to answer the question.
+        3. Respond with ONLY ONE of the following:
+            a) The word "CONTEXT_SUFFICIENT" if you can answer the question with the current context.
+            b) One or more <TOOL*> tags to request additional information if needed.
+
+        [TOOLS]
         ${join(this.tools.map(t => t.getInstruction()))}
 
-        Examples:
-        ${join(this.tools.map(t => t.getInstruction()))}
+        [TOOL USAGE EXAMPLES]
+        ${join(this.tools.map(t => t.prompt.example))}
+        - To see the full content of a codebase file and context of how the Controller class is use: \`<TOOLFILE><name>path/to/file.ts</name></TOOLFILE><TOOLSEARCH><query>class Controller</query></TOOLSEARCH>\`
 
-        Notes:
-        - If you can answer my question without extra codebase context, reply me with a single word: "Review".
-        - Only reply with <TOOL*> tags if additional context is required for someone to provide a helpful answer.
-        - Do not request sensitive information such as password or API keys from any source.
-        - You can include multiple action tags in a single response.
-        - I am working with ${getOSPromptString()}.`
+        [RESPONSE FORMAT]
+        - If you can answer the question fully, respond with ONLY the word "CONTEXT_SUFFICIENT".
+        - If you need more information, use ONLY the appropriate <TOOL*> tag(s) in your response.
+
+        [NOTES]
+        1. Only use <TOOL*> tags when additional context is necessary to answer the question.
+        2. You may use multiple <TOOL*> tags in a single response if needed.
+        3. Never request sensitive information such as passwords or API keys.
+        4. The user is working with ${getOSPromptString()}.
+
+        [GOAL] Determine if you can answer the question with the given context or if you need more information. Do not provide the actual answer in this step.`
     }
 }

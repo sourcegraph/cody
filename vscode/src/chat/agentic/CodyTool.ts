@@ -129,9 +129,7 @@ class SearchTool extends CodyTool {
         // Store the search query to avoid running the same query again.
         this.performedSearch.add(query)
         logDebug('CodyTool', `searching codebase for ${query}`)
-        // Limit the number of the new context items to 20 items to avoid long processing time
-        // during the next thinking / reflection process.
-        return context.slice(-20)
+        return context
     }
 }
 
