@@ -109,10 +109,6 @@ import { SupercompletionProvider } from './supercompletions/supercompletion-prov
 import { parseAllVisibleDocuments, updateParseTreeOnEdit } from './tree-sitter/parse-tree-cache'
 import { version } from './version'
 
-import { proxySettings } from './configuration-proxy'
-
-import { setCustomAgent } from './fetch.node'
-
 /**
  * Start the extension, watching all relevant configuration and secrets for changes.
  */
@@ -194,8 +190,6 @@ export async function start(
             )
         )
     )
-
-    proxySettings.subscribe(setCustomAgent)
 
     setEditorWindowIsFocused(() => vscode.window.state.focused)
 

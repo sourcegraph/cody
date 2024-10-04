@@ -3,6 +3,8 @@ import * as os from 'node:os'
 import * as path from 'node:path'
 import * as vscode from 'vscode'
 
+import { setCustomAgent } from './fetch.node'
+
 import {
     type ClientConfiguration,
     type ResolvedConfiguration,
@@ -27,6 +29,13 @@ export const proxySettings: Observable<ClientConfiguration> = resolvedConfig.pip
         )
     })
 )
+
+// set up the subscription here instead of in main.ts => start() because adding it to main.ts
+// introduced fetch.node.ts as a dependency, which pulled in transitive dependencies that are not
+// available for browser builds, which breaks the "_build:esbuild:web" target.
+// We handled a similar issue with the Search extension by using aliases in a build script,
+// but there's no build script here and `esbuild --alias` doesn't like `./` prefixes.
+proxySettings.subscribe(setCustomAgent)
 
 let cachedProxyPath: string | undefined
 
