@@ -1,3 +1,6 @@
+import { type Observable, map } from 'observable-fns'
+import * as vscode from 'vscode'
+
 import {
     type AuthenticatedAuthStatus,
     NEVER,
@@ -7,14 +10,11 @@ import {
     promiseFactoryToObservable,
     skipPendingOperation,
     switchMap,
-    vscodeResource,
 } from '@sourcegraph/cody-shared'
-import * as vscode from 'vscode'
 
 import { logDebug } from '../log'
 import type { CodyStatusBar } from '../services/StatusBar'
 
-import { type Observable, map } from 'observable-fns'
 import type { PlatformContext } from '../extension.common'
 import { InlineCompletionItemProvider } from './inline-completion-item-provider'
 import { createProvider } from './providers/shared/create-provider'
@@ -27,22 +27,6 @@ interface InlineCompletionItemProviderArgs {
         | Pick<AuthenticatedAuthStatus, 'authenticated' | 'endpoint' | 'configOverwrites'>
     platform: Pick<PlatformContext, 'extensionClient'>
     statusBar: CodyStatusBar
-}
-
-/**
- * Inline completion item providers that always returns an empty reply.
- * Implemented as a class instead of anonymous function so that you can identify
- * it with `console.log()` debugging.
- */
-class NoopCompletionItemProvider implements vscode.InlineCompletionItemProvider {
-    public provideInlineCompletionItems(
-        _document: vscode.TextDocument,
-        _position: vscode.Position,
-        _context: vscode.InlineCompletionContext,
-        _token: vscode.CancellationToken
-    ): vscode.ProviderResult<vscode.InlineCompletionItem[] | vscode.InlineCompletionList> {
-        return { items: [] }
-    }
 }
 
 export function createInlineCompletionItemProvider({
@@ -66,18 +50,6 @@ export function createInlineCompletionItemProvider({
 
     if (!authStatus.authenticated) {
         logDebug('AutocompleteProvider:notSignedIn', 'You are not signed in.')
-
-        if (configuration.isRunningInsideAgent) {
-            // Register an empty completion provider when running inside the
-            // agent to avoid timeouts because it awaits for an
-            // `InlineCompletionItemProvider` to be registered.
-            return vscodeResource(() =>
-                vscode.languages.registerInlineCompletionItemProvider(
-                    '*',
-                    new NoopCompletionItemProvider()
-                )
-            )
-        }
 
         return NEVER
     }

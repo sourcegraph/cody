@@ -2,7 +2,7 @@
 package com.sourcegraph.cody.agent.protocol_generated;
 
 data class Range(
-  val start: Position,
-  val end: Position,
+  val start: Location,
+  val end: Location,
 )
 
