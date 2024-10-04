@@ -13,8 +13,8 @@ import * as vscode from 'vscode'
 import { logError } from '../../log'
 
 const execAsync = promisify(exec)
-
-const isDisabled = vscode.workspace.getConfiguration('cody').has('cody.context.shell.disabled')
+const config = vscode.workspace.getConfiguration('cody')
+const isDisabled = Boolean(config.get('context.shell.disabled'))
 
 const OUTPUT_WRAPPER = `
 Terminal output from the \`{command}\` command enclosed between <OUTPUT0412> tags:

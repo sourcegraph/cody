@@ -189,6 +189,7 @@ describe('server sent models', async () => {
     }
 
     const mockFetchServerSideModels = vi.fn(() => Promise.resolve(SERVER_MODELS))
+    vi.mocked(featureFlagProvider).evaluatedFeatureFlag.mockReturnValue(Observable.of(false))
 
     const result = await firstValueFrom(
         syncModels({
@@ -238,7 +239,6 @@ describe('syncModels', () => {
         { repeats: 100 },
         async () => {
             vi.useFakeTimers()
-            vi.mocked(featureFlagProvider).evaluatedFeatureFlag.mockReturnValue(Observable.of(false))
             const mockFetchServerSideModels = vi.fn(
                 (): Promise<ServerModelConfiguration | undefined> => Promise.resolve(undefined)
             )
