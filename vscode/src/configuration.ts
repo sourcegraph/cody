@@ -1,4 +1,3 @@
-import * as fs from 'node:fs'
 import * as os from 'node:os'
 import * as path from 'node:path'
 import * as vscode from 'vscode'
@@ -19,15 +18,6 @@ import { localStorage } from './services/LocalStorageProvider'
 interface ConfigGetter {
     get<T>(section: (typeof CONFIG_KEY)[ConfigKeys], defaultValue?: T): T
 }
-
-let lastProxyConfig: {
-    host?: string
-    port?: number
-    path?: string
-    cacert?: string
-} | null = null
-let cachedProxyPath: string | undefined
-let cachedProxyCACert: string | undefined
 
 /**
  * All configuration values, with some sanitization performed.
@@ -59,98 +49,28 @@ export function getConfiguration(
         debugRegex = /.*/
     }
 
-    function resolveHomedir(filePath?: string): string | undefined {
+    const vsCodeConfig = vscode.workspace.getConfiguration()
+
+    const proxyConfig = config.get<{
+        server?: string
+        path?: string
+        cacert?: string
+    } | null>(CONFIG_KEY.proxy, null)
+
+    function resolveHomedir(filePath: string | null | undefined): string | undefined {
         for (const homeDir of ['~/', '%USERPROFILE%\\']) {
             if (filePath?.startsWith(homeDir)) {
                 return `${os.homedir()}${path.sep}${filePath.slice(homeDir.length)}`
             }
         }
-        return filePath
+        return filePath ? filePath : undefined
     }
-
-    function readProxyPath(filePath: string | undefined): string | undefined {
-        if (filePath !== lastProxyConfig?.path) {
-            const path = resolveHomedir(filePath)
-            cachedProxyPath = undefined
-            if (path) {
-                try {
-                    if (!fs.statSync(path).isSocket()) {
-                        throw new Error('Not a socket')
-                    }
-                    fs.accessSync(path, fs.constants.R_OK | fs.constants.W_OK)
-                    cachedProxyPath = path
-                } catch (error) {
-                    // `logError` caused repeated calls of this code
-                    console.error(`Cannot verify ${CONFIG_KEY.proxy}.path: ${path}: ${error}`)
-                    void vscode.window.showErrorMessage(
-                        `Cannot verify ${CONFIG_KEY.proxy}.path: ${path}:\n${error}`
-                    )
-                }
-            }
-        }
-        return cachedProxyPath
-    }
-
-    function readProxyCACert(filePath: string | undefined): string | undefined {
-        if (filePath !== lastProxyConfig?.cacert) {
-            const path = resolveHomedir(filePath)
-            cachedProxyCACert = undefined
-            if (path) {
-                // support directly embedding a CA cert in the settings
-                if (path.startsWith('-----BEGIN CERTIFICATE-----')) {
-                    cachedProxyCACert = path
-                } else {
-                    try {
-                        cachedProxyCACert = fs.readFileSync(path, { encoding: 'utf-8' })
-                    } catch (error) {
-                        // `logError` caused repeated calls of this code
-                        console.error(`Cannot read ${CONFIG_KEY.proxy}.cacert: ${path}:\n${error}`)
-                        void vscode.window.showErrorMessage(
-                            `Error reading ${CONFIG_KEY.proxy}.cacert from ${path}:\n${error}`
-                        )
-                    }
-                }
-            }
-        }
-        return cachedProxyCACert
-    }
-
-    const vsCodeConfig = vscode.workspace.getConfiguration()
-
-    const proxyConfig = config.get<{
-        host?: string
-        port?: number
-        path?: string
-        cacert?: string
-    } | null>(CONFIG_KEY.proxy, null)
-
-    let proxyHost = proxyConfig?.host
-    let proxyPort = proxyConfig?.port
-
-    if (
-        (lastProxyConfig?.host !== proxyHost || lastProxyConfig?.port !== proxyPort) &&
-        ((proxyHost && !proxyPort) || (!proxyHost && proxyPort))
-    ) {
-        // `logError` caused repeated calls of this code
-        console.error(`${CONFIG_KEY.proxy}.host and ${CONFIG_KEY.proxy}.port must be set together`)
-        void vscode.window.showErrorMessage(
-            `${CONFIG_KEY.proxy}.host and ${CONFIG_KEY.proxy}.port must be set together`
-        )
-        proxyHost = undefined
-        proxyPort = undefined
-    }
-
-    const proxyPath = readProxyPath(proxyConfig?.path)
-    const proxyCACert = readProxyCACert(proxyConfig?.cacert)
-
-    lastProxyConfig = proxyConfig
 
     return {
         proxy: vsCodeConfig.get<string>('http.proxy'),
-        proxyHost: proxyHost,
-        proxyPort: proxyPort,
-        proxyPath: proxyPath,
-        proxyCACert: proxyCACert,
+        proxyServer: proxyConfig?.server,
+        proxyPath: resolveHomedir(proxyConfig?.path),
+        proxyCACert: resolveHomedir(proxyConfig?.cacert),
         codebase: sanitizeCodebase(config.get(CONFIG_KEY.codebase)),
         serverEndpoint: config.get<string>(CONFIG_KEY.serverEndpoint),
         customHeaders: config.get<Record<string, string>>(CONFIG_KEY.customHeaders),

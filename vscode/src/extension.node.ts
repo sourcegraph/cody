@@ -1,7 +1,7 @@
 // Sentry should be imported first
 import { NodeSentryService } from './services/sentry/sentry.node'
 
-import { resolvedConfig, subscriptionDisposable } from '@sourcegraph/cody-shared'
+import { subscriptionDisposable } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 import { startTokenReceiver } from './auth/token-receiver'
 import { CommandsProvider } from './commands/services/provider'
@@ -12,6 +12,8 @@ import { activate as activateCommon } from './extension.common'
 import { initializeNetworkAgent, setCustomAgent } from './fetch.node'
 import { SymfRunner } from './local-context/symf'
 import { OpenTelemetryService } from './services/open-telemetry/OpenTelemetryService.node'
+
+import { proxySettings } from './configuration-proxy'
 
 /**
  * Activation entrypoint for the VS Code extension when running VS Code as a desktop app
@@ -45,9 +47,7 @@ export function activate(
             : undefined,
         startTokenReceiver: (...args) => startTokenReceiver(...args),
         otherInitialization: () => {
-            return subscriptionDisposable(
-                resolvedConfig.subscribe(config => setCustomAgent(config.configuration))
-            )
+            return subscriptionDisposable(proxySettings.subscribe(setCustomAgent))
         },
         extensionClient,
     })

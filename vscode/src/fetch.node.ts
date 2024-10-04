@@ -2,7 +2,7 @@ import http from 'node:http'
 import https from 'node:https'
 import { parse as parseUrl } from 'node:url'
 import { agent } from '@sourcegraph/cody-shared'
-import type { ClientConfiguration } from '@sourcegraph/cody-shared'
+import type { AuthCredentials, ClientConfiguration, ClientState } from '@sourcegraph/cody-shared'
 import { HttpProxyAgent } from 'http-proxy-agent'
 import { HttpsProxyAgent } from 'https-proxy-agent'
 import { ProxyAgent } from 'proxy-agent'
@@ -11,6 +11,8 @@ import type * as vscode from 'vscode'
 // @ts-ignore
 import { registerLocalCertificates } from './certs'
 import { getConfiguration } from './configuration'
+
+import { validateProxySettings } from './configuration-proxy'
 
 // The path to the exported class can be found in the npm contents
 // https://www.npmjs.com/package/@vscode/proxy-agent?activeTab=code
@@ -29,8 +31,7 @@ let httpsProxyAgent: HttpsProxyAgent<string>
 
 function getCustomAgent({
     proxy,
-    proxyHost,
-    proxyPort,
+    proxyServer,
     proxyPath,
     proxyCACert,
 }: ClientConfiguration): ({ protocol }: Pick<URL, 'protocol'>) => http.Agent {
@@ -72,23 +73,25 @@ function getCustomAgent({
             return httpsProxyAgent
         }
 
-        if ((proxyHost && proxyPort) || proxyPath) {
+        if (proxyServer || proxyPath) {
+            const [proxyHost, proxyPort] = proxyServer ? proxyServer.split(':') : [undefined, undefined]
+
             // Combine the CA certs from the global options with the one(s) defined in settings,
             // otherwise the CA cert in the settings overrides all of the global agent options
             // (or the other way around, depending on the order of the options).
             const caCerts = (() => {
                 if (proxyCACert) {
-                    if (Array.isArray(https.globalAgent.options.ca)) {
-                        return [...https.globalAgent.options.ca, proxyCACert]
-                    }
-                    return [https.globalAgent.options.ca, proxyCACert]
+                    return [proxyCACert]
+                    // if (Array.isArray(https.globalAgent.options.ca)) {
+                    //     return [...https.globalAgent.options.ca, proxyCACert]
+                    // }
+                    // return [https.globalAgent.options.ca, proxyCACert]
                 }
                 return undefined
             })()
             const agent = new ProxyAgent({
                 protocol: protocol || 'https:',
-                ...(proxyHost ? { host: proxyHost } : null),
-                ...(proxyPort ? { port: proxyPort } : null),
+                ...(proxyServer ? { host: proxyHost, port: Number(proxyPort) } : null),
                 ...(proxyPath ? { socketPath: proxyPath } : null),
                 keepAlive: true,
                 keepAliveMsecs: 60000,
@@ -133,7 +136,13 @@ export function initializeNetworkAgent(context: Pick<vscode.ExtensionContext, 'e
         keepAliveMsecs: 60000,
     })
 
-    const customAgent = setCustomAgent(getConfiguration())
+    const customAgent = setCustomAgent(
+        validateProxySettings({
+            configuration: getConfiguration(),
+            auth: {} as AuthCredentials,
+            clientState: {} as ClientState,
+        })
+    )
 
     /**
      * This works around an issue in the default VS Code proxy agent code. When `http.proxySupport`

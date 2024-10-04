@@ -1240,18 +1240,14 @@
           "oneOf": [
             {
               "properties": {
-                "host": {
-                  "description": "The host to use when proxying requests to the Sourcegraph instance. It shouldn't include a protocol (like \"http://\") or a port (like \":7080\"). When this is set, port must be set as well.",
+                "server": {
+                  "description": "Hostname/IP address and port of the server to use when proxying requests to the Sourcegraph instance. Do not include a protocol (like \"http://\")",
                   "type": "string",
-                  "examples": ["localhost", "1.2.3.4"]
-                },
-                "port": {
-                  "description": "The port to use when proxying requests to the Sourcegraph instance. When this is set, host must be set as well.",
-                  "type": "number",
-                  "examples": [80, 443, 7080, 9090]
+                  "pattern": "^[^:]+:\\d+$",
+                  "examples": ["localhost:7080", "1.2.3.4:8080"]
                 }
               },
-              "required": ["host", "port"]
+              "required": ["server"]
             },
             {
               "properties": {
