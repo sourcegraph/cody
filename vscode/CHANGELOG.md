@@ -8,6 +8,8 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 ### Fixed
 
+Chat: Fix an issue in repository name resolution for workspaces that caused Chat to hang. [pull/5808](https://github.com/sourcegraph/cody/pull/5808)
+
 ### Changed
 
 ## 1.36.2
