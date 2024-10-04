@@ -137,7 +137,7 @@ describe(
             // Listing models should work.
             const { models } = await client.request('chat/models', { modelUsage: ModelUsage.Chat })
             expect(models.length).toBeGreaterThanOrEqual(2)
-            expect(models.map(model => model.id)).toContain('openai::2024-02-01::gpt-4o') // arbitrary model that we expect to be included
+            expect(models.map(({ model }) => model.id)).toContain('openai::2024-02-01::gpt-4o') // arbitrary model that we expect to be included
         })
 
         it('switches to a different account', async ({ task }) => {
@@ -177,7 +177,9 @@ describe(
 
             // Enterprise models should not contain models with the waitlist tag.
             const enterpriseModels = await client.request('chat/models', { modelUsage: ModelUsage.Chat })
-            expect(enterpriseModels.models?.some(m => m.tags.includes(ModelTag.Waitlist))).toBeFalsy()
+            expect(
+                enterpriseModels.models?.some(({ model }) => model.tags.includes(ModelTag.Waitlist))
+            ).toBeFalsy()
 
             // The chat that we started before switching accounts should not be usable from the new
             // account.
@@ -198,7 +200,7 @@ describe(
             // Listing models should work.
             const { models } = await client.request('chat/models', { modelUsage: ModelUsage.Chat })
             expect(models.length).toBeGreaterThanOrEqual(2)
-            expect(models.map(model => toModelRefStr(model.modelRef!))).toContain(
+            expect(models.map(({ model }) => toModelRefStr(model.modelRef!))).toContain(
                 'openai::2024-02-01::gpt-4o' // arbitrary model that we expect to be included
             )
         })

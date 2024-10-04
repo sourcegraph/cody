@@ -207,6 +207,11 @@ export interface LocalStorageForModelPreferences {
     setModelPreferences(preferences: PerSitePreferences): Promise<void>
 }
 
+export interface ModelAvailabilityStatus {
+    model: Model
+    isModelAvailable: boolean
+}
+
 /**
  * ModelsService is the component responsible for keeping track of which models
  * are supported on the backend, which ones are available based on the user's
@@ -320,6 +325,16 @@ export class ModelsService {
             }),
             distinctUntilChanged(),
             shareReplay()
+        )
+    }
+
+    public async getModelsAvailabilityStatus(type: ModelUsage): Promise<ModelAvailabilityStatus[]> {
+        const models = await firstResultFromOperation(modelsService.getModels(type))
+        return Promise.all(
+            models.map(async model => {
+                const isModelAvailable = await firstResultFromOperation(this.isModelAvailable(model))
+                return { model, isModelAvailable }
+            })
         )
     }
 

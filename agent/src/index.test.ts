@@ -136,7 +136,7 @@ describe('Agent', () => {
         // change.
         const initModelName = 'anthropic::2023-06-01::claude-3.5-sonnet'
         const { models } = await client.request('chat/models', { modelUsage: ModelUsage.Chat })
-        expect(models[0].id).toStrictEqual(initModelName)
+        expect(models[0].model.id).toStrictEqual(initModelName)
 
         const invalid = await client.request('extensionConfiguration/change', {
             ...client.info.extensionConfiguration,
@@ -148,7 +148,9 @@ describe('Agent', () => {
         })
         expect(invalid?.authenticated).toBeFalsy()
         const invalidModels = await client.request('chat/models', { modelUsage: ModelUsage.Chat })
-        const remoteInvalidModels = invalidModels.models.filter(model => model.provider !== 'Ollama')
+        const remoteInvalidModels = invalidModels.models.filter(
+            ({ model }) => model.provider !== 'Ollama'
+        )
         expect(remoteInvalidModels).toStrictEqual([])
 
         const valid = await client.request('extensionConfiguration/change', {
@@ -166,7 +168,7 @@ describe('Agent', () => {
             modelUsage: ModelUsage.Chat,
         })
         expect(reauthenticatedModels.models).not.toStrictEqual([])
-        expect(reauthenticatedModels.models[0].id).toStrictEqual(initModelName)
+        expect(reauthenticatedModels.models[0].model.id).toStrictEqual(initModelName)
 
         // Please don't update the recordings to use a different account without consulting #team-cody-core.
         // When changing an account, you also need to update the REDACTED_ hash above.
@@ -272,7 +274,7 @@ describe('Agent', () => {
             } = await client.request('chat/models', { modelUsage: ModelUsage.Chat })
 
             const id2 = await client.request('chat/restore', {
-                modelID: model.id,
+                modelID: model.model.id,
                 messages: reply1.messages,
                 chatID: new Date().toISOString(), // Create new Chat ID with a different timestamp
             })

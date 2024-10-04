@@ -20,6 +20,7 @@ import type {
 } from '@sourcegraph/telemetry'
 import type * as vscode from 'vscode'
 
+import type { ModelAvailabilityStatus } from '@sourcegraph/cody-shared/dist/models/modelsService'
 import type { ExtensionMessage, WebviewMessage } from '../chat/protocol'
 import type { CompletionBookkeepingEvent, CompletionItemID } from '../completions/logger'
 import type { FixupTaskID } from '../non-stop/FixupTask'
@@ -78,7 +79,7 @@ export type ClientRequests = {
         string,
     ]
 
-    'chat/models': [{ modelUsage: ModelUsage }, { models: Model[] }]
+    'chat/models': [{ modelUsage: ModelUsage }, { models: ModelAvailabilityStatus[] }]
     'chat/export': [null | { fullHistory: boolean }, ChatExportResult[]]
 
     // history is Map of {endpoint}-{username} to chat transcripts by date
