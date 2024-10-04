@@ -1,24 +1,26 @@
 import {
     BotResponseMultiplexer,
     type ChatClient,
-    type CompletionParameters,
     type ContextItem,
     FeatureFlag,
     type Model,
+    type PromptMixin,
     PromptString,
-    firstResultFromOperation,
     logDebug,
-    modelsService,
     newPromptMixin,
     ps,
 } from '@sourcegraph/cody-shared'
 import { getOSPromptString } from '../../os'
 import { getCategorizedMentions } from '../../prompt-builder/utils'
 import { logFirstEnrollmentEvent } from '../../services/utils/enrollment-event'
-import { ChatBuilder } from '../chat-view/ChatBuilder'
+import type { ChatBuilder } from '../chat-view/ChatBuilder'
 import { DefaultPrompter } from '../chat-view/prompt'
 import type { CodyTool } from './CodyTool'
-import { multiplexerStream } from './utils'
+
+type AgenticContext = {
+    explicit: ContextItem[]
+    implicit: ContextItem[]
+}
 
 /**
  * A DeepCodyAgent is created for each chat submitted by the user.
@@ -26,32 +28,33 @@ import { multiplexerStream } from './utils'
  */
 export class DeepCodyAgent {
     public static readonly ModelRef = 'sourcegraph::2023-06-01::deep-cody'
+
     private static hasEnrolled = false
-    /**
-     * Return modelRef for first time enrollment of Deep Cody.
-     */
     public static isEnrolled(models: Model[]): string | undefined {
         // Only enrolled user has access to the Deep Cody model.
         const hasAccess = models.some(m => m.id === DeepCodyAgent.ModelRef)
         const enrolled = DeepCodyAgent.hasEnrolled || logFirstEnrollmentEvent(FeatureFlag.DeepCody, true)
-        // Is first time enrollment.
+        //Return modelRef for first time enrollment of Deep Cody.
         if (hasAccess && !enrolled) {
             DeepCodyAgent.hasEnrolled = true
-            logDebug('DeepCody', 'First time enrollment detected.')
-            return 'sourcegraph::2023-06-01::deep-cody'
+            return DeepCodyAgent.ModelRef
         }
         // Does not have access or not enrolled.
         return undefined
     }
 
+    private readonly promptMixins: PromptMixin[] = []
     private readonly multiplexer = new BotResponseMultiplexer()
+    private context: AgenticContext = { explicit: [], implicit: [] }
 
     constructor(
         private readonly chatBuilder: ChatBuilder,
         private readonly chatClient: ChatClient,
         private readonly tools: CodyTool[],
-        private currentContext: ContextItem[]
+        mentions: ContextItem[] = []
     ) {
+        this.sort(mentions)
+        this.promptMixins.push(newPromptMixin(this.buildPrompt()))
         this.initializeMultiplexer()
     }
 
@@ -59,92 +62,119 @@ export class DeepCodyAgent {
         for (const tool of this.tools) {
             this.multiplexer.sub(tool.tag.toString(), {
                 onResponse: async (c: string) => {
-                    tool.process(c)
+                    tool.stream(c)
                 },
-                onTurnComplete: async () => Promise.resolve(),
+                onTurnComplete: async () => tool.stream(''),
             })
         }
     }
 
     /**
-     * Retrieves the context for the specified model, with additional agentic context retrieval
-     * if the last requested context contains codebase search results.
-     *
+     * Start the context retrieval process for the loop count.
      * @param userAbortSignal - An AbortSignal to cancel the operation.
+     * @param loop - The number of times to review the context.
+     * @param maxItem - The maximum number of codebase context items to retrieve.
      * @returns The context items for the specified model.
      */
-    public async getContext(chatAbortSignal: AbortSignal): Promise<ContextItem[]> {
-        // Review current chat and context to get the agentic context.
-        const agenticContext = await this.review(chatAbortSignal)
-        // Run review again if the last requested context contains codebase search results.
-        if (agenticContext?.some(c => c.type === 'file')) {
-            this.currentContext.push(...agenticContext)
-            const additionalContext = await this.review(chatAbortSignal)
-            agenticContext.push(...additionalContext)
+    public async getContext(
+        chatAbortSignal: AbortSignal,
+        // TODO (bee) investigate on the right numbers for these params.
+        // Currently limiting to these numbers to avoid long processing time during reviewing step.
+        loop = 2,
+        // Keep the last n amount of the search items to override old items with new ones.
+        maxSearchItems = 30
+    ): Promise<ContextItem[]> {
+        const start = performance.now()
+        const count = { context: 0, loop: 0 }
+
+        for (let i = 0; i < loop && !chatAbortSignal.aborted; i++) {
+            const newContext = await this.review(chatAbortSignal)
+            this.sort(newContext)
+            count.context += newContext.length
+            count.loop++
+            if (!newContext.length || count.context) {
+                break
+            }
         }
-        logDebug('DeepCody', 'getContext', { verbose: { agenticContext } })
-        return agenticContext
+
+        const duration = performance.now() - start
+        logDebug('DeepCody', 'Aagentic context retrieval completed', { verbose: { count, duration } })
+        return [...this.context.implicit.slice(-maxSearchItems), ...this.context.explicit]
     }
 
     private async review(chatAbortSignal: AbortSignal): Promise<ContextItem[]> {
-        if (chatAbortSignal.aborted) {
-            return []
+        if (chatAbortSignal.aborted) return []
+
+        const prompter = new DefaultPrompter(this.context.explicit, this.context.implicit)
+        const promptData = await prompter.makePrompt(this.chatBuilder, 1, this.promptMixins)
+
+        if (promptData.context.ignored.length) {
+            // TODO: Decide if Cody needs more context.
         }
-        // Create a seperate AbortController to ensure this process will not affect the original chat request.
+
         const agentAbortController = new AbortController()
 
-        const { explicitMentions, implicitMentions } = getCategorizedMentions(this.currentContext)
-
-        const prompter = new DefaultPrompter(explicitMentions, implicitMentions.slice(-20))
-        const promptText = this.buildPrompt()
-        const { prompt } = await prompter.makePrompt(this.chatBuilder, 1, [newPromptMixin(promptText)])
-
-        const model = this.chatBuilder.selectedModel
-        const contextWindow = await firstResultFromOperation(
-            ChatBuilder.contextWindowForChat(this.chatBuilder)
-        )
-        const params = { model, maxTokensToSample: contextWindow.output } as CompletionParameters
-        if (model && modelsService.isStreamDisabled(model)) {
-            params.stream = false
-        }
-
-        logDebug('DeepCody', 'reviewing...')
-
         try {
-            const stream = this.chatClient.chat(prompt, params, agentAbortController.signal)
-            await multiplexerStream(stream, this.multiplexer, agentAbortController.signal)
+            const stream = this.chatClient.chat(
+                promptData.prompt,
+                { model: DeepCodyAgent.ModelRef, maxTokensToSample: 2000 },
+                agentAbortController.signal
+            )
 
-            const context = await Promise.all(this.tools.map(t => t.execute()))
-            return context.flat()
-        } catch (error: unknown) {
-            logDebug('DeepCody', `failed: ${error}`, { verbose: { prompt, error } })
-            return []
+            let streamedText = ''
+            for await (const message of stream) {
+                if (message.type === 'change') {
+                    const text = message.text.slice(streamedText.length)
+                    streamedText += text
+                    await this.multiplexer.publish(text)
+                } else if (message.type === 'complete' || message.type === 'error') {
+                    if (message.type === 'error') throw new Error('Error while streaming')
+                    await this.multiplexer.notifyTurnComplete()
+                    break
+                }
+            }
+        } catch (error) {
+            await this.multiplexer.notifyTurnComplete()
+            logDebug('DeepCody', `review failed: ${error}`, { verbose: { prompt, error } })
         }
+
+        return (await Promise.all(this.tools.map(t => t.execute()))).flat()
+    }
+
+    private sort(items: ContextItem[]): void {
+        const sorted = getCategorizedMentions(items)
+        this.context.explicit.push(...sorted.explicitMentions)
+        this.context.implicit.push(...sorted.implicitMentions)
     }
 
     private buildPrompt(): PromptString {
-        const tools = PromptString.join(
-            this.tools.map(t => t.getInstruction()),
-            ps`\n- `
-        )
-        const examples = PromptString.join(
-            this.tools.map(t => t.prompt.example),
-            ps`\n- `
-        )
+        const join = (prompts: PromptString[]) => PromptString.join(prompts, ps`\n- `)
 
-        return PROMPT.replace('{{CODY_TOOL_LIST}}', tools).replace('{{CODY_TOOL_EXAMPLE}}', examples)
+        return ps`Your task is to review the shared context and think step-by-step to determine if you can answer the "Question:" at the end.
+        [INSTRUCTIONS]
+        1. Analyze the shared context thoroughly.
+        2. Decide if you have enough information to answer the question.
+        3. Respond with ONLY ONE of the following:
+            a) The word "CONTEXT_SUFFICIENT" if you can answer the question with the current context.
+            b) One or more <TOOL*> tags to request additional information if needed.
+
+        [TOOLS]
+        ${join(this.tools.map(t => t.getInstruction()))}
+
+        [TOOL USAGE EXAMPLES]
+        ${join(this.tools.map(t => t.prompt.example))}
+        - To see the full content of a codebase file and context of how the Controller class is use: \`<TOOLFILE><name>path/to/file.ts</name></TOOLFILE><TOOLSEARCH><query>class Controller</query></TOOLSEARCH>\`
+
+        [RESPONSE FORMAT]
+        - If you can answer the question fully, respond with ONLY the word "CONTEXT_SUFFICIENT".
+        - If you need more information, use ONLY the appropriate <TOOL*> tag(s) in your response.
+
+        [NOTES]
+        1. Only use <TOOL*> tags when additional context is necessary to answer the question.
+        2. You may use multiple <TOOL*> tags in a single response if needed.
+        3. Never request sensitive information such as passwords or API keys.
+        4. The user is working with ${getOSPromptString()}.
+
+        [GOAL] Determine if you can answer the question with the given context or if you need more information. Do not provide the actual answer in this step.`
     }
 }
-
-const PROMPT = ps`Your task is to review all shared context, then think step-by-step about whether you can provide me with a helpful answer for the "Question:" based on the shared context. If more information from my codebase is needed for the answer, you can request the following context using these action tags:
-- {{CODY_TOOL_LIST}}
-
-Examples:
-- {{CODY_TOOL_EXAMPLE}}
-
-Notes:
-- If you can answer my question without extra codebase context, reply me with a single word: "Review".
-- Only reply with <TOOL*> tags if additional context is required for someone to provide a helpful answer.
-- Do not request sensitive information such as password or API keys from any source.
-- You can include multiple action tags in a single response.
-- I am working with ${getOSPromptString()}.`

@@ -144,7 +144,7 @@ describe('DeepCody', () => {
 
         expect(mockChatClient.chat).toHaveBeenCalled()
         expect(mockContextRetriever.retrieveContext).toHaveBeenCalled()
-        expect(result).toHaveLength(1)
+        expect(result).toHaveLength(2)
         expect(result[0].content).toBe('const newExample = "test result";')
     })
 
