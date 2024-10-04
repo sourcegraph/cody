@@ -11,9 +11,9 @@ stdout: |+
 
 
 
-  Here's the implementation of a cow based on the provided interface:
+  Here's the implementation of a cow based on the provided codebase context:
 
-  \`\`\`typescript:animal.ts
+  \`\`\`typescript:cow.ts
   class Cow implements StrangeAnimal {
       makesSound(): 'coo' | 'moo' {
           return 'moo';
@@ -36,9 +36,9 @@ stdout: |+
 
 
 
-  Here's the implementation of a cow based on the provided interface:
+  Here's the implementation of a cow based on the provided codebase context:
 
-  \`\`\`typescript:animal.ts
+  \`\`\`typescript:cow.ts
   class Cow implements StrangeAnimal {
       makesSound(): 'coo' | 'moo' {
           return 'moo';
@@ -61,9 +61,9 @@ stdout: |+
 
 
 
-  Here's the implementation of a cow based on the provided interface:
+  Here's the implementation of a cow based on the provided codebase context:
 
-  \`\`\`typescript:animal.ts
+  \`\`\`typescript:cow.ts
   class Cow implements StrangeAnimal {
       makesSound(): 'coo' | 'moo' {
           return 'moo';

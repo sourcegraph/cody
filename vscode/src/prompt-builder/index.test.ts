@@ -5,7 +5,6 @@ import {
     type ChatMessage,
     ContextItemSource,
     contextFiltersProvider,
-    displayPath,
     ps,
 } from '@sourcegraph/cody-shared'
 import { URI } from 'vscode-uri'
@@ -230,7 +229,7 @@ describe('PromptBuilder', () => {
         })
 
         it('should not contain context that is too large', async () => {
-            const builder = await PromptBuilder.create({ input: 50, output: 50 })
+            const builder = await PromptBuilder.create({ input: 30, output: 30 })
             builder.tryAddToPrefix(preamble)
             builder.tryAddMessages([...chatTranscript].reverse())
 
@@ -375,8 +374,8 @@ describe('PromptBuilder', () => {
             expect(builder.contextItems.length).toBe(1)
             expect(promptContent).toMatchInlineSnapshot(`
               "preamble
-              Codebase context from file ${displayPath(file.uri)}:
-              \`\`\`go:${displayPath(file.uri)}
+              Codebase context:
+              \`\`\`go:foo/bar.go
               foo\`\`\`
               Ok.
               Hi!

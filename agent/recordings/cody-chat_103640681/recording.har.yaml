@@ -197,11 +197,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 1fa3fc31a4e1b350a35d9f91acf5cf65
+    - _id: 2f9c9d129470c9e38d28d3e986aa3a9b
       _order: 0
       cache: {}
       request:
-        bodySize: 903
+        bodySize: 883
         cookies: []
         headers:
           - name: content-type
@@ -236,7 +236,7 @@ log:
                   For executable terminal commands: enclose each command in individual "bash" language code block without comments and new lines inside.
               - speaker: human
                 text: |-
-                  Codebase context from file animal.ts:
+                  Codebase context:
                   ```typescript:animal.ts
                   interface StrangeAnimal {
                       makesSound(): 'coo' | 'moo'
@@ -264,14 +264,14 @@ log:
             value: 6.0.0-SNAPSHOT
         url: https://sourcegraph.sourcegraph.com/.api/completions/stream?api-version=2&client-name=jetbrains&client-version=6.0.0-SNAPSHOT
       response:
-        bodySize: 950
+        bodySize: 1038
         content:
           mimeType: text/event-stream
-          size: 950
+          size: 1038
           text: >+
             event: completion
 
-            data: {"deltaText":"Here's the implementation of a cow based on the provided interface:\n\n```typescript:animal.ts\nclass Cow implements StrangeAnimal {\n    makesSound(): 'coo' | 'moo' {\n        return 'moo';\n    }\n}\n```","stopReason":"end_turn"}
+            data: {"deltaText":"Here's the implementation of a cow based on the provided codebase context:\n\n```typescript:cow.ts\nclass Cow implements StrangeAnimal {\n    makesSound(): 'coo' | 'moo' {\n        return 'moo';\n    }\n}\n```","stopReason":"end_turn"}
 
 
             event: done
@@ -281,7 +281,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Fri, 27 Sep 2024 17:28:48 GMT
+            value: Mon, 30 Sep 2024 20:15:40 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -310,7 +310,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-27T17:28:47.215Z
+      startedDateTime: 2024-09-30T20:15:38.740Z
       time: 0
       timings:
         blocked: -1
