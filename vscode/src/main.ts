@@ -38,6 +38,7 @@ import {
 import { isEqual } from 'lodash'
 import { filter, map } from 'observable-fns'
 import type { CommandResult } from './CommandResult'
+import { Completer } from './Completer'
 import { showAccountMenu } from './auth/account-menu'
 import { showSignInMenu, showSignOutMenu, tokenCallbackHandler } from './auth/auth'
 import type { MessageProviderOptions } from './chat/MessageProvider'
@@ -245,6 +246,18 @@ const register = async (
     registerDebugCommands(context, disposables)
     registerUpgradeHandlers(disposables)
     disposables.push(new CharactersLogger())
+
+    // Register multiline trigger
+    resolvedConfig.pipe(take(1)).subscribe(({ configuration: config }) => {
+        if (config.experimentalMinionAnthropicKey) {
+            const completer = new Completer(config.experimentalMinionAnthropicKey)
+            disposables.push(
+                vscode.commands.registerCommand('cody.experimental.suggest', () => {
+                    completer.triggerComplete()
+                })
+            )
+        }
+    })
 
     // INC-267 do NOT await on this promise. This promise triggers
     // `vscode.window.showInformationMessage()`, which only resolves after the

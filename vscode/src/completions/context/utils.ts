@@ -26,7 +26,7 @@ export enum RetrieverIdentifier {
 
 export interface ShouldUseContextParams {
     enableExtendedLanguagePool: boolean
-    baseLanguageId: string
+    baseLanguageId?: string
     languageId: string
 }
 
@@ -39,6 +39,10 @@ export function shouldBeUsedAsContext({
     baseLanguageId,
     languageId,
 }: ShouldUseContextParams): boolean {
+    if (!baseLanguageId) {
+        return true
+    }
+
     if (baseLanguageId === languageId) {
         return true
     }

@@ -8,7 +8,17 @@ export function mustExtractXML(text: string, tag: string): string {
     return r
 }
 
-function extractXML(text: string, tag: string): string | null {
+interface ExtractXMLOptions {
+    trimPrefix: 'newline' | 'whitespace' | 'none'
+    trimSuffix: 'newline' | 'whitespace' | 'none'
+}
+
+const defaultExtractXMLOptions: ExtractXMLOptions = {
+    trimPrefix: 'whitespace',
+    trimSuffix: 'whitespace',
+}
+
+export function extractXML(text: string, tag: string, ops = defaultExtractXMLOptions): string | null {
     const startTag = `<${tag}>`
     const endTag = `</${tag}>`
     const startIndex = text.indexOf(startTag)
@@ -16,7 +26,28 @@ function extractXML(text: string, tag: string): string | null {
     if (startIndex === -1 || endIndex === -1) {
         return null
     }
-    return text.slice(startIndex + startTag.length, endIndex).trim()
+    let extracted = text.slice(startIndex + startTag.length, endIndex)
+    switch (ops.trimPrefix) {
+        case 'newline':
+            if (extracted.startsWith('\n')) {
+                extracted = extracted.slice(1)
+            }
+            break
+        case 'whitespace':
+            extracted = extracted.trimStart()
+            break
+    }
+    switch (ops.trimSuffix) {
+        case 'newline':
+            if (extracted.endsWith('\n')) {
+                extracted = extracted.slice(0, -1)
+            }
+            break
+        case 'whitespace':
+            extracted = extracted.trimEnd()
+            break
+    }
+    return extracted
 }
 
 function anthropicMessageToText(message: Message): string {
@@ -28,9 +59,13 @@ function anthropicMessageToText(message: Message): string {
     return message.content[0].text
 }
 
-export function extractXMLFromAnthropicResponse(message: Message, tag: string): string {
+export function extractXMLFromAnthropicResponse(
+    message: Message,
+    tag: string,
+    ops = defaultExtractXMLOptions
+): string {
     const text = anthropicMessageToText(message)
-    const extracted = extractXML(text, tag)
+    const extracted = extractXML(text, tag, ops)
     if (extracted === null) {
         throw new Error(`could not find tag ${tag} in claude response:\n${text}`)
     }
