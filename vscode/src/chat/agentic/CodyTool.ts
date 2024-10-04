@@ -3,6 +3,7 @@ import {
     type ContextItem,
     PromptString,
     firstValueFrom,
+    logDebug,
     pendingOperation,
     ps,
 } from '@sourcegraph/cody-shared'
@@ -20,10 +21,9 @@ export interface PromptConfig {
 export abstract class CodyTool {
     abstract readonly tag: PromptString
     abstract readonly subTag: PromptString
-
     abstract readonly prompt: PromptConfig
 
-    protected content = ''
+    protected rawText = ''
 
     public getInstruction(): PromptString {
         const { instruction, placeholder } = this.prompt
@@ -33,13 +33,18 @@ export abstract class CodyTool {
 
     public parse(): string[] {
         const regex = new RegExp(`<${this.subTag}>(.+?)</?${this.subTag}>`, 's')
-        return (this.content.match(new RegExp(regex, 'g')) || [])
+        const parsed = (this.rawText.match(new RegExp(regex, 'g')) || [])
             .map(match => regex.exec(match)?.[1].trim())
             .filter(Boolean) as string[]
+        if (parsed.length) {
+            logDebug('CodyTool', this.tag.toString(), { verbose: parsed })
+        }
+        this.rawText = ''
+        return parsed
     }
 
-    public process(content: string): void {
-        this.content += content
+    public stream(text: string): void {
+        this.rawText += text
     }
 
     abstract execute(): Promise<ContextItem[]>
@@ -57,7 +62,7 @@ class CliTool extends CodyTool {
 
     async execute(): Promise<ContextItem[]> {
         const commands = this.parse()
-        this.content = ''
+        logDebug('CodyTool', `executing ${commands.length} commands`)
         return Promise.all(commands.map(getContextFileFromShell)).then(results => results.flat())
     }
 }
@@ -68,13 +73,13 @@ class FileTool extends CodyTool {
 
     public readonly prompt = {
         instruction: ps`To retrieve full content of a codebase file`,
-        placeholder: ps`FILEPATH`,
+        placeholder: ps`FILENAME`,
         example: ps`See the content of different files: <TOOLFILE><name>path/foo.ts</name><name>path/bar.ts</name></TOOLFILE>`,
     }
 
     async execute(): Promise<ContextItem[]> {
         const filePaths = this.parse()
-        this.content = ''
+        logDebug('CodyTool', `requesting ${filePaths.length} files`)
         return Promise.all(filePaths.map(getContextFromRelativePath)).then(results =>
             results.filter((item): item is ContextItem => item !== null)
         )
@@ -102,7 +107,6 @@ class SearchTool extends CodyTool {
 
     async execute(): Promise<ContextItem[]> {
         const queries = this.parse()
-        this.content = ''
         const query = queries[0] // There should only be one query.
         if (!this.contextRetriever || !query || this.performedSearch.has(query)) {
             return []
@@ -124,6 +128,7 @@ class SearchTool extends CodyTool {
         )
         // Store the search query to avoid running the same query again.
         this.performedSearch.add(query)
+        logDebug('CodyTool', `searching codebase for ${query}`)
         // Limit the number of the new context items to 20 items to avoid long processing time
         // during the next thinking / reflection process.
         return context.slice(-20)
