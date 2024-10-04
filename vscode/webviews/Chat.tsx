@@ -244,7 +244,7 @@ export interface UserAccountInfo {
     isCodyProUser: boolean
     user: Pick<
         AuthenticatedAuthStatus,
-        'username' | 'displayName' | 'avatarURL' | 'endpoint' | 'primaryEmail'
+        'username' | 'displayName' | 'avatarURL' | 'endpoint' | 'primaryEmail' | 'organizations'
     >
     IDE: CodyIDE
 }

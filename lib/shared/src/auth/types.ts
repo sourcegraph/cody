@@ -41,6 +41,11 @@ export interface AuthenticatedAuthStatus {
      */
     userCanUpgrade?: boolean
     pendingValidation: boolean
+
+    /**
+     * Organizations on the instance that the user is a member of.
+     */
+    organizations?: { name: string; id: string }[]
 }
 
 /**

@@ -17,7 +17,7 @@ type NewAuthStatusOptions = { endpoint: string } & (
           | 'avatarURL'
           | 'userCanUpgrade'
       > & {
-          userOrganizations?: CurrentUserInfo['organizations']
+          organizations?: CurrentUserInfo['organizations']
           primaryEmail?:
               | string
               | {
@@ -37,7 +37,7 @@ export function newAuthStatus(options: NewAuthStatusOptions): AuthStatus {
         }
     }
 
-    const { endpoint, siteVersion, userOrganizations } = options
+    const { endpoint, siteVersion, organizations } = options
 
     const isDotCom_ = isDotCom(endpoint)
     const primaryEmail =
@@ -54,7 +54,8 @@ export function newAuthStatus(options: NewAuthStatusOptions): AuthStatus {
         codyApiVersion,
         pendingValidation: false,
         isFireworksTracingEnabled:
-            isDotCom_ && !!userOrganizations?.nodes.find(org => org.name === 'sourcegraph'),
+            isDotCom_ && !!organizations?.nodes.find(org => org.name === 'sourcegraph'),
+        organizations: organizations?.nodes,
     }
 }
 

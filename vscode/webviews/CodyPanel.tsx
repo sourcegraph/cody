@@ -5,6 +5,7 @@ import type { ConfigurationSubsetForWebview, LocalEnv } from '../src/chat/protoc
 import styles from './App.module.css'
 import { Chat } from './Chat'
 import { ConnectivityStatusBanner } from './components/ConnectivityStatusBanner'
+import { Notices } from './components/Notices'
 import { StateDebugOverlay } from './components/StateDebugOverlay'
 import { TabContainer, TabRoot } from './components/shadcn/ui/tabs'
 import { AccountTab, HistoryTab, PromptsTab, SettingsTab, TabsBar, View } from './tabs'
@@ -71,6 +72,7 @@ export const CodyPanel: FunctionComponent<
                     <TabsBar currentView={view} setView={setView} IDE={clientCapabilities.agentIDE} />
                 )}
                 {errorMessages && <ErrorBanner errors={errorMessages} setErrors={setErrorMessages} />}
+                <Notices />
                 <TabContainer value={view} ref={tabContainerRef}>
                     {view === View.Chat && (
                         <Chat
