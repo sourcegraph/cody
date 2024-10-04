@@ -79,6 +79,8 @@ describe('logger', () => {
         suggestionEvent?.markAsRead({
             document,
             position,
+            completePrefix: defaultRequestParams.docContext.completePrefix,
+            completeSuffix: defaultRequestParams.docContext.completeSuffix,
         })
         CompletionLogger.accepted(id, document, item, range(0, 0, 0, 0), false)
 
@@ -117,6 +119,8 @@ describe('logger', () => {
         firstSuggestionEvent?.markAsRead({
             document,
             position,
+            completePrefix: defaultRequestParams.docContext.completePrefix,
+            completeSuffix: defaultRequestParams.docContext.completeSuffix,
         })
 
         const loggerItem = CompletionLogger.getCompletionEvent(id1)
@@ -138,6 +142,8 @@ describe('logger', () => {
         secondSuggestionEvent?.markAsRead({
             document,
             position,
+            completePrefix: defaultRequestParams.docContext.completePrefix,
+            completeSuffix: defaultRequestParams.docContext.completeSuffix,
         })
         CompletionLogger.accepted(id2, document, item, range(0, 0, 0, 0), false)
 
@@ -166,6 +172,8 @@ describe('logger', () => {
         thirdSuggestionEvent?.markAsRead({
             document,
             position,
+            completePrefix: defaultRequestParams.docContext.completePrefix,
+            completeSuffix: defaultRequestParams.docContext.completeSuffix,
         })
 
         const loggerItem3 = CompletionLogger.getCompletionEvent(id3)
