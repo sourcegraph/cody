@@ -776,9 +776,7 @@ function getInlineContextItemContext(
 function suggestionDocumentDiffTracker(
     interactionId: CompletionAnalyticsID,
     document: vscode.TextDocument,
-    position: vscode.Position,
-    completePrefix: string,
-    completeSuffix: string
+    position: vscode.Position
 ): void {
     // If user is not in the same document, we don't track the diff.
     if (document.uri.scheme !== 'file') {
@@ -795,12 +793,12 @@ function suggestionDocumentDiffTracker(
         Math.min(document.getText().length, document.offsetAt(position) + offsetBytes)
     )
     const trackingRange = new vscode.Range(startPosition, endPosition)
-    const documentText = completePrefix.slice(-offsetBytes) + completeSuffix.slice(0, offsetBytes)
+    const documentText = document.getText(trackingRange)
 
     const persistenceTimeoutList = [
-        15 * 1000, // 15 seconds
-        30 * 1000, // 30 seconds
+        20 * 1000, // 20 seconds
         60 * 1000, // 60 seconds
+        120 * 1000, // 120 seconds
     ]
     persistenceTracker.track({
         id: interactionId,
@@ -820,8 +818,6 @@ function suggestionDocumentDiffTracker(
 type SuggestionMarkReadParam = {
     document: vscode.TextDocument
     position: vscode.Position
-    completePrefix: string
-    completeSuffix: string
 }
 
 // Suggested completions will not be logged immediately. Instead, we log them when we either hide
@@ -879,13 +875,7 @@ export function prepareSuggestionEvent({
                     isDotCom(authStatus.endpoint || '') &&
                     event.params.inlineCompletionItemContext?.isRepoPublic
                 ) {
-                    suggestionDocumentDiffTracker(
-                        event.params.id,
-                        param.document,
-                        param.position,
-                        param.completePrefix,
-                        param.completeSuffix
-                    )
+                    suggestionDocumentDiffTracker(event.params.id, param.document, param.position)
                 }
             },
         }
