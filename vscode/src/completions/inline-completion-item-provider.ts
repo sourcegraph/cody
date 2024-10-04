@@ -861,8 +861,6 @@ export class InlineCompletionItemProvider
                     suggestionEvent.markAsRead({
                         document: invokedDocument,
                         position: invokedPosition,
-                        completePrefix: completion.requestParams.docContext.completePrefix,
-                        completeSuffix: completion.requestParams.docContext.completeSuffix,
                     })
                 }
             }, this.COMPLETION_VISIBLE_DELAY_MS)
