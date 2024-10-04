@@ -24,7 +24,7 @@ import { isDotCom } from '../sourcegraph-api/environments'
 import { RestClient } from '../sourcegraph-api/rest/client'
 import { CHAT_INPUT_TOKEN_BUDGET } from '../token/constants'
 import { isError } from '../utils'
-import { getExperimentalClientModels } from './client'
+import { getExperimentalClientModelByFeatureFlag } from './client'
 import { type Model, type ServerModel, createModel, createModelFromServerModel } from './model'
 import type { ModelsData, ServerModelConfiguration, SitePreferences } from './modelsService'
 import { ModelTag } from './tags'
@@ -189,12 +189,17 @@ export function syncModels({
                                         featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.DeepCody)
                                     ).pipe(
                                         switchMap(([hasEarlyAccess, deepCodyEnabled]) => {
+                                            // TODO(bee): remove once deepCody is enabled for all users.
                                             if (deepCodyEnabled && serverModelsConfig) {
+                                                const DeepCody = getExperimentalClientModelByFeatureFlag(
+                                                    FeatureFlag.DeepCody
+                                                )!
                                                 data.primaryModels.push(
-                                                    ...maybeAdjustContextWindows(
-                                                        getExperimentalClientModels()
-                                                    ).map(createModelFromServerModel)
+                                                    ...maybeAdjustContextWindows([DeepCody]).map(
+                                                        createModelFromServerModel
+                                                    )
                                                 )
+                                                data.preferences!.defaults.chat = DeepCody.modelRef
                                             }
 
                                             // TODO(sqs): remove waitlist from localStorage when user has access

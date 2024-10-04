@@ -108,8 +108,8 @@ import {
 import { openExternalLinks } from '../../services/utils/workspace-action'
 import { TestSupport } from '../../test-support'
 import type { MessageErrorType } from '../MessageProvider'
-import { getCodyTools } from '../agents/CodyTool'
-import { DeepCodyAgent } from '../agents/DeepCody'
+import { getCodyTools } from '../agentic/CodyTool'
+import { DeepCodyAgent } from '../agentic/DeepCody'
 import { getMentionMenuData } from '../context/chatContext'
 import type { ChatIntentAPIClient } from '../context/chatIntentAPIClient'
 import { observeInitialContext } from '../initialContext'
@@ -750,15 +750,16 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     }
                 }
 
-                // Additional context retrived from the experimental Deep Cody feature
-                const agenticContext = await new DeepCodyAgent(
-                    this.chatBuilder,
-                    this.chatClient,
-                    getCodyTools(this.contextRetriever, span),
-                    corpusContext
-                ).getContext(model, signal)
-                // All agentic context are marked as user-explicit mentions to be ranked higher during prompt building.
-                corpusContext.push(...agenticContext)
+                // Experimental Feature: Deep Cody
+                if (model === DeepCodyAgent.ModelRef) {
+                    const agenticContext = await new DeepCodyAgent(
+                        this.chatBuilder,
+                        this.chatClient,
+                        getCodyTools(this.contextRetriever, span),
+                        corpusContext
+                    ).getContext(signal)
+                    corpusContext.push(...agenticContext)
+                }
 
                 const { explicitMentions, implicitMentions } = getCategorizedMentions(corpusContext)
 
@@ -1570,7 +1571,21 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     chatModels: () =>
                         modelsService.getModels(ModelUsage.Chat).pipe(
                             startWith([]),
-                            map(models => (models === pendingOperation ? [] : models))
+                            map(models => {
+                                if (models === pendingOperation) {
+                                    return []
+                                }
+                                // If Deep Cody is available but the user has not enrolled before,
+                                // enroll the user and set the model as the default for chat.
+                                if (DeepCodyAgent.isEnrolled(models)) {
+                                    this.chatBuilder.setSelectedModel(DeepCodyAgent.ModelRef)
+                                    modelsService.setSelectedModel(
+                                        ModelUsage.Chat,
+                                        DeepCodyAgent.ModelRef
+                                    )
+                                }
+                                return models
+                            })
                         ),
                     highlights: parameters =>
                         promiseFactoryToObservable(() =>

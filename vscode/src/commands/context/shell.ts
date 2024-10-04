@@ -8,10 +8,13 @@ import {
     TokenCounterUtils,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
+import { filter } from 'lodash'
 import * as vscode from 'vscode'
 import { logError } from '../../log'
 
 const execAsync = promisify(exec)
+
+const isDisabled = vscode.workspace.getConfiguration('cody').has('cody.context.shell.disabled')
 
 const OUTPUT_WRAPPER = `
 Terminal output from the \`{command}\` command enclosed between <OUTPUT0412> tags:
@@ -21,7 +24,7 @@ Terminal output from the \`{command}\` command enclosed between <OUTPUT0412> tag
 
 export async function getContextFileFromShell(command: string): Promise<ContextItem[]> {
     return wrapInActiveSpan('commands.context.command', async () => {
-        if (!vscode.env.shell) {
+        if (!vscode.env.shell || isDisabled) {
             void vscode.window.showErrorMessage(
                 'Shell command is not supported in your current workspace.'
             )
@@ -32,10 +35,14 @@ export async function getContextFileFromShell(command: string): Promise<ContextI
         const cwd = vscode.workspace.workspaceFolders?.[0]?.uri?.fsPath
         const filteredCommand = command.replaceAll(/(\s~\/)/g, ` ${homeDir}${path.sep}`)
 
+        if (filter(commandsNotAllowed, cmd => filteredCommand.startsWith(cmd)).length > 0) {
+            throw new Error('Cody cannot execute this command')
+        }
+
         try {
             const { stdout, stderr } = await execAsync(filteredCommand, { cwd, encoding: 'utf8' })
             const output = JSON.stringify(stdout || stderr).trim()
-            if (!output) {
+            if (!output || output === '""') {
                 throw new Error('Empty output')
             }
 
@@ -70,3 +77,31 @@ export async function getContextFileFromShell(command: string): Promise<ContextI
         }
     })
 }
+
+// TODO(bee): allows users to configure the allow list.
+const commandsNotAllowed = [
+    'rm',
+    'chmod',
+    'shutdown',
+    'history',
+    'user',
+    'sudo',
+    'su',
+    'passwd',
+    'chown',
+    'chgrp',
+    'kill',
+    'reboot',
+    'poweroff',
+    'init',
+    'systemctl',
+    'journalctl',
+    'dmesg',
+    'lsblk',
+    'lsmod',
+    'modprobe',
+    'insmod',
+    'rmmod',
+    'lsusb',
+    'lspci',
+]

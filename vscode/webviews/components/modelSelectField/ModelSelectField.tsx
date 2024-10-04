@@ -55,6 +55,12 @@ export const ModelSelectField: React.FunctionComponent<{
 
     const onModelSelect = useCallback(
         (model: Model): void => {
+            // Log event when user switches to a different model from Deep Cody.
+            if (selectedModel.id.includes('deep-cody') && selectedModel.id !== model.id) {
+                // TODO (bee) remove after testing has been completed.
+                telemetryRecorder.recordEvent('cody.deepCody', 'switch')
+            }
+
             telemetryRecorder.recordEvent('cody.modelSelector', 'select', {
                 metadata: {
                     modelIsCodyProOnly: isCodyProModel(model) ? 1 : 0,
@@ -86,7 +92,13 @@ export const ModelSelectField: React.FunctionComponent<{
             }
             parentOnModelSelect(model)
         },
-        [telemetryRecorder.recordEvent, showCodyProBadge, parentOnModelSelect, isCodyProUser]
+        [
+            selectedModel,
+            telemetryRecorder.recordEvent,
+            showCodyProBadge,
+            parentOnModelSelect,
+            isCodyProUser,
+        ]
     )
 
     // Readonly if they are an enterprise user that does not support server-sent models

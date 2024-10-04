@@ -28,11 +28,11 @@ export abstract class CodyTool {
     public getInstruction(): PromptString {
         const { instruction, placeholder } = this.prompt
         return ps`${instruction}:
-   <${this.tag}><${this.subTag}>${placeholder}</${this.subTag}></${this.tag}>`
+   <${this.tag}><${this.subTag}>$${placeholder}</${this.subTag}></${this.tag}>`
     }
 
     public parse(): string[] {
-        const regex = new RegExp(`<${this.subTag}>(.+?)</${this.subTag}>`, 's')
+        const regex = new RegExp(`<${this.subTag}>(.+?)</?${this.subTag}>`, 's')
         return (this.content.match(new RegExp(regex, 'g')) || [])
             .map(match => regex.exec(match)?.[1].trim())
             .filter(Boolean) as string[]
@@ -46,15 +46,13 @@ export abstract class CodyTool {
 }
 
 class CliTool extends CodyTool {
-    public readonly tag = ps`CODYTOOLCLI`
+    public readonly tag = ps`TOOLCLI`
     public readonly subTag = ps`cmd`
 
     public readonly prompt = {
         instruction: ps`To see the output of shell commands`,
         placeholder: ps`SHELL_COMMAND`,
-        example: ps`
-        To get details for GitHub issue #1234, use:
-        <CODYTOOLCLI><cmd>gh issue view 1234</cmd></CODYTOOLCLI>`,
+        example: ps`Details about GitHub issue#1234: <TOOLCLI><cmd>gh issue view 1234</cmd></TOOLCLI>`,
     }
 
     async execute(): Promise<ContextItem[]> {
@@ -65,13 +63,13 @@ class CliTool extends CodyTool {
 }
 
 class FileTool extends CodyTool {
-    public readonly tag = ps`CODYTOOLFILE`
-    public readonly subTag = ps`file`
+    public readonly tag = ps`TOOLFILE`
+    public readonly subTag = ps`name`
 
     public readonly prompt = {
-        instruction: ps`To retrieve full content from a file`,
+        instruction: ps`To retrieve full content of a codebase file`,
         placeholder: ps`FILEPATH`,
-        example: ps`<CODYTOOLFILE><file>.gitignore</file></CODYTOOLFILE>`,
+        example: ps`See the content of different files: <TOOLFILE><name>path/foo.ts</name><name>path/bar.ts</name></TOOLFILE>`,
     }
 
     async execute(): Promise<ContextItem[]> {
@@ -84,13 +82,13 @@ class FileTool extends CodyTool {
 }
 
 class SearchTool extends CodyTool {
-    public readonly tag = ps`CODYTOOLSEARCH`
+    public readonly tag = ps`TOOLSEARCH`
     public readonly subTag = ps`query`
 
     public readonly prompt = {
-        instruction: ps`For additional context from the codebase`,
+        instruction: ps`To search for context in the codebase`,
         placeholder: ps`SEARCH_QUERY`,
-        example: ps``,
+        example: ps`Find usage of "node:fetch" in my codebase: <TOOLSEARCH><query>node:fetch</query></TOOLSEARCH>`,
     }
 
     constructor(

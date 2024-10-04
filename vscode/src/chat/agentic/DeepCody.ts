@@ -3,6 +3,8 @@ import {
     type ChatClient,
     type CompletionParameters,
     type ContextItem,
+    FeatureFlag,
+    type Model,
     PromptString,
     firstResultFromOperation,
     logDebug,
@@ -12,6 +14,7 @@ import {
 } from '@sourcegraph/cody-shared'
 import { getOSPromptString } from '../../os'
 import { getCategorizedMentions } from '../../prompt-builder/utils'
+import { logFirstEnrollmentEvent } from '../../services/utils/enrollment-event'
 import { ChatBuilder } from '../chat-view/ChatBuilder'
 import { DefaultPrompter } from '../chat-view/prompt'
 import type { CodyTool } from './CodyTool'
@@ -23,6 +26,20 @@ import { multiplexerStream } from './utils'
  */
 export class DeepCodyAgent {
     public static readonly ModelRef = 'sourcegraph::2023-06-01::deep-cody'
+    /**
+     * Return modelRef for first time enrollment of Deep Cody.
+     */
+    public static isEnrolled(models: Model[]): string | undefined {
+        // Only enrolled user has access to the Deep Cody model.
+        const hasAccess = models.some(m => m.id === DeepCodyAgent.ModelRef)
+        const enrolled = logFirstEnrollmentEvent(FeatureFlag.DeepCody, true)
+        if (hasAccess && !enrolled) {
+            logDebug('DeepCody', 'First time enrollment detected.')
+            return 'sourcegraph::2023-06-01::deep-cody'
+        }
+        // Does not have access or not enrolled.
+        return undefined
+    }
 
     private readonly multiplexer = new BotResponseMultiplexer()
 
@@ -50,28 +67,29 @@ export class DeepCodyAgent {
      * Retrieves the context for the specified model, with additional agentic context retrieval
      * if the last requested context contains codebase search results.
      *
-     * @param model - The model to retrieve the context for.
-     * @param abortSignal - An AbortSignal to cancel the operation.
+     * @param userAbortSignal - An AbortSignal to cancel the operation.
      * @returns The context items for the specified model.
      */
-    public async getContext(model: string, abortSignal: AbortSignal): Promise<ContextItem[]> {
-        // Only users with the DeepCody flag can access this model.
-        if (!model.includes('deep-cody')) {
-            return []
-        }
+    public async getContext(chatAbortSignal: AbortSignal): Promise<ContextItem[]> {
         // Review current chat and context to get the agentic context.
-        const agenticContext = await this.review(abortSignal)
+        const agenticContext = await this.review(chatAbortSignal)
         // Run review again if the last requested context contains codebase search results.
         if (agenticContext?.some(c => c.type === 'file')) {
             this.currentContext.push(...agenticContext)
-            const additionalContext = await this.review(abortSignal)
+            const additionalContext = await this.review(chatAbortSignal)
             agenticContext.push(...additionalContext)
         }
-        logDebug('DeepCody', 'agenticContext', { verbose: { agenticContext } })
+        logDebug('DeepCody', 'getContext', { verbose: { agenticContext } })
         return agenticContext
     }
 
-    private async review(abortSignal: AbortSignal): Promise<ContextItem[]> {
+    private async review(chatAbortSignal: AbortSignal): Promise<ContextItem[]> {
+        if (chatAbortSignal.aborted) {
+            return []
+        }
+        // Create a seperate AbortController to ensure this process will not affect the original chat request.
+        const agentAbortController = new AbortController()
+
         const { explicitMentions, implicitMentions } = getCategorizedMentions(this.currentContext)
 
         const prompter = new DefaultPrompter(explicitMentions, implicitMentions.slice(-20))
@@ -87,9 +105,11 @@ export class DeepCodyAgent {
             params.stream = false
         }
 
+        logDebug('DeepCody', 'reviewing...')
+
         try {
-            const stream = this.chatClient.chat(prompt, params, abortSignal)
-            await multiplexerStream(stream, this.multiplexer, abortSignal)
+            const stream = this.chatClient.chat(prompt, params, agentAbortController.signal)
+            await multiplexerStream(stream, this.multiplexer, agentAbortController.signal)
 
             const context = await Promise.all(this.tools.map(t => t.execute()))
             return context.flat()
@@ -106,25 +126,22 @@ export class DeepCodyAgent {
         )
         const examples = PromptString.join(
             this.tools.map(t => t.prompt.example),
-            ps`\n`
+            ps`\n- `
         )
 
         return PROMPT.replace('{{CODY_TOOL_LIST}}', tools).replace('{{CODY_TOOL_EXAMPLE}}', examples)
     }
 }
 
-const PROMPT = ps`Analyze the provided context and think step-by-step about whether you can answer the Question below using the available information.
-
-If you need more information to answer the question, use the following action tags:
-
-{{CODY_TOOL_LIST}}
+const PROMPT = ps`Your task is to review all shared context, then think step-by-step about whether you can provide me with a helpful answer for the "Question:" based on the shared context. If more information from my codebase is needed for the answer, you can request the following context using these action tags:
+- {{CODY_TOOL_LIST}}
 
 Examples:
-{{CODY_TOOL_EXAMPLE}}
+- {{CODY_TOOL_EXAMPLE}}
 
 Notes:
-- Only use the above action tags when you need additional information.
-- You can request multiple pieces of information in a single response.
-- When replying to a question with a shell command, enclose the command in a Markdown code block.
-- My dev environment is on ${getOSPromptString()}.
-- If you don't require additional context to answer the question, reply with a single word: "Reviewed".`
+- If you can answer my question without extra codebase context, reply me with a single word: "Review".
+- Only reply with <TOOL*> tags if additional context is required for someone to provide a helpful answer.
+- Do not request sensitive information such as password or API keys from any source.
+- You can include multiple action tags in a single response.
+- I am working with ${getOSPromptString()}.`

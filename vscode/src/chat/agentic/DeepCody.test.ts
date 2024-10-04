@@ -13,9 +13,9 @@ import {
 import { Observable } from 'observable-fns'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { URI } from 'vscode-uri'
-import { ChatBuilder } from '../../chat/chat-view/ChatBuilder'
-import type { ContextRetriever } from '../../chat/chat-view/ContextRetriever'
-import * as initialContext from '../../chat/initialContext'
+import { ChatBuilder } from '../chat-view/ChatBuilder'
+import type { ContextRetriever } from '../chat-view/ContextRetriever'
+import * as initialContext from '../initialContext'
 import { getCodyTools } from './CodyTool'
 import { DeepCodyAgent } from './DeepCody'
 
@@ -140,9 +140,7 @@ describe('DeepCody', () => {
             mockCurrentContext
         )
 
-        const result = await agent.getContext(DeepCodyModel, {
-            aborted: false,
-        } as AbortSignal)
+        const result = await agent.getContext({ aborted: false } as AbortSignal)
 
         expect(mockChatClient.chat).toHaveBeenCalled()
         expect(mockContextRetriever.retrieveContext).toHaveBeenCalled()
