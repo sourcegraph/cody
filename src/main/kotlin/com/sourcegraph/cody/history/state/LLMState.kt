@@ -23,7 +23,7 @@ class LLMState : BaseState() {
         it.model = chatModel.id
         it.title = chatModel.title
         it.provider = chatModel.provider
-        it.tags = chatModel.tags.toMutableList()
+        it.tags = chatModel.tags?.toMutableList() ?: mutableListOf()
         it.usage = chatModel.usage.toMutableList()
       }
     }

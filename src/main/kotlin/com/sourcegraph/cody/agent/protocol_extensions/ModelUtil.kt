@@ -19,6 +19,6 @@ fun Model.displayName(): String = buildString {
   append(" by $provider")
 }
 
-fun Model.isCodyProOnly(): Boolean = tags.contains("pro")
+fun Model.isCodyProOnly(): Boolean = tags?.contains("pro") == true
 
-fun Model.isDeprecated(): Boolean = tags.contains("deprecated")
+fun Model.isDeprecated(): Boolean = tags?.contains("deprecated") == true

@@ -30,7 +30,7 @@ import com.sourcegraph.cody.agent.protocol.InlineEditParams
 import com.sourcegraph.cody.agent.protocol.ModelUsage
 import com.sourcegraph.cody.agent.protocol_generated.EditTask
 import com.sourcegraph.cody.agent.protocol_generated.EditTask_RetryParams
-import com.sourcegraph.cody.agent.protocol_generated.Model
+import com.sourcegraph.cody.agent.protocol_generated.ModelAvailabilityStatus
 import com.sourcegraph.cody.chat.PromptHistory
 import com.sourcegraph.cody.chat.ui.LlmDropdown
 import com.sourcegraph.cody.edit.EditUtil.namedButton
@@ -150,12 +150,12 @@ class EditCommandPrompt(
                   }
                 })
             renderer =
-                object : ListCellRenderer<Model> {
+                object : ListCellRenderer<ModelAvailabilityStatus> {
                   private val defaultRenderer = renderer
 
                   override fun getListCellRendererComponent(
-                      list: JList<out Model>?,
-                      value: Model?,
+                      list: JList<out ModelAvailabilityStatus>?,
+                      value: ModelAvailabilityStatus?,
                       index: Int,
                       isSelected: Boolean,
                       cellHasFocus: Boolean

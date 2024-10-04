@@ -14,8 +14,7 @@ import com.sourcegraph.cody.agent.protocol_extensions.isCodyProOnly
 import com.sourcegraph.cody.agent.protocol_extensions.isDeprecated
 import com.sourcegraph.cody.agent.protocol_generated.Chat_ModelsParams
 import com.sourcegraph.cody.agent.protocol_generated.Model
-import com.sourcegraph.cody.config.AccountTier
-import com.sourcegraph.cody.config.CodyAuthenticationManager
+import com.sourcegraph.cody.agent.protocol_generated.ModelAvailabilityStatus
 import com.sourcegraph.cody.edit.EditCommandPrompt
 import com.sourcegraph.cody.history.HistoryService
 import com.sourcegraph.cody.history.state.LLMState
@@ -30,7 +29,7 @@ class LlmDropdown(
     val parentDialog: EditCommandPrompt?,
     private val chatModelFromState: Model?,
     private val model: String? = null
-) : ComboBox<Model>(MutableCollectionComboBoxModel()) {
+) : ComboBox<ModelAvailabilityStatus>(MutableCollectionComboBoxModel()) {
   private var hasServerSentModels = project.service<CurrentConfigFeatures>().get().serverSentModels
 
   init {
@@ -67,59 +66,52 @@ class LlmDropdown(
   }
 
   @RequiresEdt
-  private fun updateModelsInUI(models: List<Model>) {
+  private fun updateModelsInUI(models: List<ModelAvailabilityStatus>) {
     if (project.isDisposed) return
     this.removeAllItems()
 
-    val availableModels = models.filterNot { it.isDeprecated() }
-    availableModels.sortedBy { it.isCodyProOnly() }.forEach(::addItem)
+    val availableModels = models.map { it }.filterNot { it.model.isDeprecated() }
+    availableModels.sortedBy { it.model.isCodyProOnly() }.forEach { addItem(it) }
 
     val selectedFromChatState = chatModelFromState
     val selectedFromHistory = HistoryService.getInstance(project).getDefaultLlm()
 
     selectedItem =
-        models.find {
-          it.id == model ||
-              it.id == selectedFromHistory?.model ||
-              it.id == selectedFromChatState?.id
-        } ?: models.firstOrNull()
-
-    val isEnterpriseAccount =
-        CodyAuthenticationManager.getInstance().account?.isEnterpriseAccount() ?: false
+        availableModels
+            .map { it.model }
+            .find {
+              it.id == model ||
+                  it.id == selectedFromHistory?.model ||
+                  it.id == selectedFromChatState?.id
+            } ?: models.firstOrNull()
 
     // If the dropdown is already disabled, don't change it. It can happen
     // in the case of the legacy commands (updateAfterFirstMessage happens before this call).
     isEnabled = isEnabled && chatModelFromState == null
-
-    isVisible = !isEnterpriseAccount || hasServerSentModels
+    isVisible = selectedItem != null
     setMaximumRowCount(15)
 
     revalidate()
   }
 
-  override fun getModel(): MutableCollectionComboBoxModel<Model> {
+  override fun getModel(): MutableCollectionComboBoxModel<ModelAvailabilityStatus> {
     return super.getModel() as MutableCollectionComboBoxModel
   }
 
   @RequiresEdt
   override fun setSelectedItem(anObject: Any?) {
     if (project.isDisposed) return
-    val modelProvider = anObject as? Model
+    val modelProvider = anObject as? ModelAvailabilityStatus
     if (modelProvider != null) {
-      if (modelProvider.isCodyProOnly() && isCurrentUserFree()) {
+      if (!modelProvider.isModelAvailable) {
         BrowserOpener.openInBrowser(project, "https://sourcegraph.com/cody/subscription")
         return
       }
 
-      HistoryService.getInstance(project).setDefaultLlm(LLMState.fromChatModel(modelProvider))
+      HistoryService.getInstance(project).setDefaultLlm(LLMState.fromChatModel(modelProvider.model))
 
       super.setSelectedItem(anObject)
-      onSetSelectedItem(modelProvider)
+      onSetSelectedItem(modelProvider.model)
     }
   }
-
-  fun isCurrentUserFree(): Boolean =
-      CodyAuthenticationManager.getInstance()
-          .getActiveAccountTier()
-          .getNow(AccountTier.DOTCOM_FREE) == AccountTier.DOTCOM_FREE
 }

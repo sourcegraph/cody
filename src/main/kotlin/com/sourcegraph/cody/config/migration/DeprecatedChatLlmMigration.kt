@@ -29,7 +29,7 @@ object DeprecatedChatLlmMigration {
 
       migrateHistory(
           HistoryService.getInstance(project).state.accountData,
-          models,
+          models.map { it.model },
           this::showLlmUpgradeNotification)
     }
   }

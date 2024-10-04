@@ -20,7 +20,7 @@ object ChatTagsLlmMigration {
       val models =
           chatModels.completeOnTimeout(null, 10, TimeUnit.SECONDS).get()?.models ?: return@withAgent
 
-      migrateHistory(HistoryService.getInstance(project).state.accountData, models)
+      migrateHistory(HistoryService.getInstance(project).state.accountData, models.map { it.model })
     }
   }
 

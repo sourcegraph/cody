@@ -5,8 +5,7 @@ import com.intellij.util.ui.JBUI
 import com.sourcegraph.cody.Icons
 import com.sourcegraph.cody.agent.protocol_extensions.displayName
 import com.sourcegraph.cody.agent.protocol_extensions.getIcon
-import com.sourcegraph.cody.agent.protocol_extensions.isCodyProOnly
-import com.sourcegraph.cody.agent.protocol_generated.Model
+import com.sourcegraph.cody.agent.protocol_generated.ModelAvailabilityStatus
 import com.sourcegraph.cody.chat.ui.LlmDropdown
 import com.sourcegraph.cody.edit.EditCommandPrompt
 import java.awt.BorderLayout
@@ -21,15 +20,18 @@ class LlmComboBoxRenderer(private val llmDropdown: LlmDropdown) : DefaultListCel
 
   override fun getListCellRendererComponent(
       list: JList<*>?,
-      model: Any?,
+      modelAvailabilityStatus: Any?,
       index: Int,
       isSelected: Boolean,
       cellHasFocus: Boolean
   ): Component {
-    val component = super.getListCellRendererComponent(list, model, index, isSelected, cellHasFocus)
-    if (model !is Model) {
+    val component =
+        super.getListCellRendererComponent(
+            list, modelAvailabilityStatus, index, isSelected, cellHasFocus)
+    if (modelAvailabilityStatus !is ModelAvailabilityStatus) {
       return this
     }
+    val model = modelAvailabilityStatus.model
     val panel = CellRendererPanel(BorderLayout())
     val iconLabel = JLabel(model.getIcon())
     panel.add(iconLabel, BorderLayout.WEST)
@@ -38,7 +40,7 @@ class LlmComboBoxRenderer(private val llmDropdown: LlmDropdown) : DefaultListCel
     val displayNameLabel = JLabel(model.displayName())
     textBadgePanel.add(displayNameLabel, BorderLayout.CENTER)
     textBadgePanel.border = BorderFactory.createEmptyBorder(0, 5, 0, 0)
-    if (model.isCodyProOnly() && llmDropdown.isCurrentUserFree()) {
+    if (!modelAvailabilityStatus.isModelAvailable) {
       textBadgePanel.add(JLabel(Icons.LLM.ProSticker), BorderLayout.EAST)
     }
     val isInline = llmDropdown.parentDialog != null
