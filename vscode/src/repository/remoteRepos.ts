@@ -80,7 +80,7 @@ export const remoteReposForAllWorkspaceFolders: Observable<
                         // because it would think that argument is not set.
                         return []
                     }
-                    // Proess the validated results without checking for pendingOperation that
+                    // Process the validated results without checking for pendingOperation that
                     // would cause the abortableOperation to hang indefinitely.
                     const reposOrError = await graphqlClient.getRepoIds(
                         repoNames,
