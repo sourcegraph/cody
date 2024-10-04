@@ -1,0 +1,60 @@
+name: JetBrains FYI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    types: [opened, reopened, synchronize, ready_for_review]
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build JetBrains plugin
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fetch JetBrains Source
+        uses: actions/checkout@v4
+        with:
+          repository: sourcegraph/jetbrains
+          ref: main
+      - name: Fetch Cody Source
+        uses: actions/checkout@v4
+        with:
+          path: sourcegraph-cody
+      - run: yarn global add pnpm@8.6.7
+      - run: echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
+        shell: bash
+        id: pnpm-cache
+      - name: Cache pnpm store
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+          key: ${{ runner.os }}-${{ matrix.node }}-pnpm-store-
+          restore-keys: ${{ runner.os }}-${{ matrix.node }}-pnpm-store-k
+      - name: Cache gradle and sourcegraph stores
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+            ~/.sourcegraph/caches
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties', 'gradle.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+      - name: Gradle Wrapper Validation
+        uses: gradle/actions/wrapper-validation@v3
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: zulu
+          java-version: 17
+          cache: gradle
+      # Skip Code Search build in CI because it's slow
+      - run: echo "SKIP_CODE_SEARCH_BUILD=true" >> $GITHUB_ENV
+      - name: Build plugin
+        run: CODY_DIR=$PWD/sourcegraph-cody ./gradlew buildPlugin -PforceAgentBuild=true
+      - run: ./gradlew --stop
