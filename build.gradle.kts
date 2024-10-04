@@ -152,7 +152,7 @@ spotless {
     ktfmt()
     trimTrailingWhitespace()
     target("src/**/*.kt")
-    targetExclude("src/main/kotlin/com/sourcegraph/cody/agent/protocol_generated/**/*.kt")
+    targetExclude("src/main/kotlin/com/sourcegraph/cody/agent/protocol_generated/**")
     toggleOffOn()
   }
 }
@@ -499,6 +499,7 @@ tasks {
 
   buildPlugin {
     dependsOn(project.tasks.getByPath("buildCody"))
+    composedJar.get().exclude("com/intellij/codeInsight/inline/completion/**")
     from(
         fileTree(buildCodyDir) {
           include("*")
@@ -579,11 +580,6 @@ tasks {
   }
 
   test { dependsOn(project.tasks.getByPath("buildCody")) }
-
-  configurations {
-    create("integrationTestImplementation") { extendsFrom(configurations.testImplementation.get()) }
-    create("integrationTestRuntimeClasspath") { extendsFrom(configurations.testRuntimeOnly.get()) }
-  }
 
   sourceSets {
     create("integrationTest") {
