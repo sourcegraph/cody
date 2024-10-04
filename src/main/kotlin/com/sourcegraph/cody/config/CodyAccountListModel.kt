@@ -5,6 +5,10 @@ import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.JBPopupMenu
 import com.intellij.ui.awt.RelativePoint
+import com.sourcegraph.cody.agent.protocol.BillingCategory
+import com.sourcegraph.cody.agent.protocol.BillingMetadata
+import com.sourcegraph.cody.agent.protocol.BillingProduct
+import com.sourcegraph.cody.agent.protocol.TelemetryEventParameters
 import com.sourcegraph.cody.auth.ui.AccountsListModel
 import com.sourcegraph.cody.auth.ui.AccountsListModelBase
 import com.sourcegraph.cody.telemetry.TelemetryV2
@@ -63,7 +67,12 @@ class CodyAccountListModel(private val project: Project) :
       token: String,
       id: String
   ) {
-    TelemetryV2.sendTelemetryEvent(project, "auth.signin.token", "clicked")
+    TelemetryV2.sendTelemetryEvent(
+        project,
+        "auth.signin.token",
+        "clicked",
+        TelemetryEventParameters(
+            billingMetadata = BillingMetadata(BillingProduct.CODY, BillingCategory.BILLABLE)))
 
     val account = CodyAccount(login, displayName, server, id)
     if (accountsListModel.isEmpty) {

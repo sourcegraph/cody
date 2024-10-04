@@ -5,6 +5,9 @@ import com.intellij.openapi.editor.event.BulkAwareDocumentListener
 import com.intellij.openapi.editor.event.DocumentEvent
 import com.intellij.openapi.project.Project
 import com.sourcegraph.cody.agent.CodyAgentService
+import com.sourcegraph.cody.agent.protocol.BillingCategory
+import com.sourcegraph.cody.agent.protocol.BillingMetadata
+import com.sourcegraph.cody.agent.protocol.BillingProduct
 import com.sourcegraph.cody.agent.protocol.CompletionItemParams
 import com.sourcegraph.cody.agent.protocol.ProtocolTextDocument
 import com.sourcegraph.cody.autocomplete.CodyAutocompleteManager
@@ -21,7 +24,11 @@ class CodyDocumentListener(val project: Project) : BulkAwareDocumentListener {
     if (pastedCode.isNotBlank() && CodeEditorFactory.lastCopiedText == pastedCode) {
       CodeEditorFactory.lastCopiedText = null
       TelemetryV2.sendCodeGenerationEvent(
-          project, feature = "keyDown", action = "paste", pastedCode)
+          project,
+          feature = "keyDown",
+          action = "paste",
+          pastedCode,
+          billingMetadata = BillingMetadata(BillingProduct.CODY, BillingCategory.CORE))
     }
   }
 

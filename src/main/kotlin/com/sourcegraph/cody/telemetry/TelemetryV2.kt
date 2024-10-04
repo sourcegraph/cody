@@ -3,6 +3,7 @@ package com.sourcegraph.cody.telemetry
 import com.intellij.openapi.application.ApplicationInfo
 import com.intellij.openapi.project.Project
 import com.sourcegraph.cody.agent.CodyAgentService
+import com.sourcegraph.cody.agent.protocol.BillingMetadata
 import com.sourcegraph.cody.agent.protocol.TelemetryEvent
 import com.sourcegraph.cody.agent.protocol.TelemetryEventParameters
 
@@ -46,7 +47,13 @@ class TelemetryV2 {
       }
     }
 
-    fun sendCodeGenerationEvent(project: Project, feature: String, action: String, code: String) {
+    fun sendCodeGenerationEvent(
+        project: Project,
+        feature: String,
+        action: String,
+        code: String,
+        billingMetadata: BillingMetadata? = null
+    ) {
       val op =
           if (action.startsWith("copy")) "copy"
           else if (action.startsWith("insert")) "insert" else "save"
@@ -61,7 +68,10 @@ class TelemetryV2 {
           feature = feature,
           action = action,
           parameters =
-              TelemetryEventParameters(metadata = metadata, privateMetadata = privateMetadata))
+              TelemetryEventParameters(
+                  metadata = metadata,
+                  privateMetadata = privateMetadata,
+                  billingMetadata = billingMetadata))
     }
   }
 }

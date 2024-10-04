@@ -53,6 +53,6 @@ class PostStartupActivity : ProjectActivity {
         .connect(disposable)
         .subscribe(AppTopics.FILE_DOCUMENT_SYNC, CodySettingsChangeListener(project))
 
-    TelemetryV2.sendTelemetryEvent(project, "cody.extension", "started")
+    TelemetryV2.sendTelemetryEvent(project, "extension", "started")
   }
 }
