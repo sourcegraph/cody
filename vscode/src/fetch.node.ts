@@ -81,11 +81,10 @@ function getCustomAgent({
             // (or the other way around, depending on the order of the options).
             const caCerts = (() => {
                 if (proxyCACert) {
-                    return [proxyCACert]
-                    // if (Array.isArray(https.globalAgent.options.ca)) {
-                    //     return [...https.globalAgent.options.ca, proxyCACert]
-                    // }
-                    // return [https.globalAgent.options.ca, proxyCACert]
+                    if (Array.isArray(https.globalAgent.options.ca)) {
+                        return [...https.globalAgent.options.ca, proxyCACert]
+                    }
+                    return [https.globalAgent.options.ca, proxyCACert]
                 }
                 return undefined
             })()
