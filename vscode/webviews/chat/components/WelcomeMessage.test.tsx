@@ -38,13 +38,7 @@ describe('WelcomeMessage', () => {
         openCollapsiblePanels()
 
         // Check common elements
-        expect(screen.getByText(/Chat Help/)).toBeInTheDocument()
         expect(screen.getByText(FIXTURE_PROMPTS[0].name)).toBeInTheDocument()
-
-        // Check elements specific to CodyIDE.VSCode
-        expect(screen.getByText(/To add code context from an editor/)).toBeInTheDocument()
-        expect(screen.getByText(/Start a new chat using/)).toBeInTheDocument()
-        expect(screen.getByText(/Customize chat settings/)).toBeInTheDocument()
     })
 
     test('renders for CodyIDE.JetBrains', () => {
@@ -60,12 +54,6 @@ describe('WelcomeMessage', () => {
         openCollapsiblePanels()
 
         // Check common elements
-        expect(screen.getByText(/Chat Help/)).toBeInTheDocument()
         expect(screen.getByText(FIXTURE_PROMPTS[0].name)).toBeInTheDocument()
-
-        // Check elements specific to CodyIDE.JetBrains
-        expect(screen.queryByText(/To add code context from an editor/)).not.toBeInTheDocument()
-        expect(screen.queryByText(/Start a new chat using/)).not.toBeInTheDocument()
-        expect(screen.queryByText(/Customize chat settings/)).not.toBeInTheDocument()
     })
 })

@@ -79,7 +79,7 @@ import type { TelemetryEventParameters } from '@sourcegraph/telemetry'
 import { map } from 'observable-fns'
 import type { URI } from 'vscode-uri'
 import { View } from '../../../webviews/tabs/types'
-import { redirectToEndpointLogin, showSignOutMenu } from '../../auth/auth'
+import { redirectToEndpointLogin, showSignInMenu, showSignOutMenu } from '../../auth/auth'
 import {
     closeAuthProgressIndicator,
     startAuthProgressIndicator,
@@ -442,6 +442,10 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 }
                 if (message.authKind === 'signout') {
                     await showSignOutMenu()
+                    break
+                }
+                if (message.authKind === 'switch') {
+                    await showSignInMenu()
                     break
                 }
                 // cody.auth.signin or cody.auth.signout
