@@ -58,6 +58,7 @@ describe('openaicompatible autocomplete provider', () => {
         const provider = await getAutocompleteProviderFromServerSideModelConfig({
             modelRef: 'groq::v1::llama-3.1-70b-versatile',
             isDotCom: true,
+            isBYOK: false,
         })
 
         // Switches to the first available model, because `llama-3.1-70b-versatile` is
@@ -73,6 +74,7 @@ describe('openaicompatible autocomplete provider', () => {
         const provider = await getAutocompleteProviderFromServerSideModelConfig({
             modelRef: 'groq::v1::llama-3.1-70b-versatile',
             isDotCom: false,
+            isBYOK: true,
         })
         const { providerId, legacyModel, requestParams } = openaicompatibleParams
 

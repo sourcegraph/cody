@@ -15,6 +15,7 @@ import {
     type CompletionParameters,
     type CompletionResponse,
     CompletionStopReason,
+    currentAuthStatusOrNotReadyYet,
     featureFlagProvider,
     mockAuthStatus,
     mockClientCapabilities,
@@ -95,10 +96,18 @@ export function params(
         takeSuggestWidgetSelectionIntoAccount,
         configuration: config,
         documentUri = testFileUri('test.ts'),
-        authStatus = AUTH_STATUS_FIXTURE_AUTHED_DOTCOM,
         ...restParams
     }: Params = {}
 ): ParamsResult {
+    const currentAuthStatus = currentAuthStatusOrNotReadyYet()
+
+    const authStatus =
+        // If authStatus is not explicitly provided, check the current value, which
+        // might be mocked prior to calling this function.
+        restParams.authStatus || currentAuthStatus?.authenticated
+            ? (currentAuthStatus! as AuthenticatedAuthStatus)
+            : AUTH_STATUS_FIXTURE_AUTHED_DOTCOM
+
     mockAuthStatus(authStatus)
 
     let requestCounter = 0
