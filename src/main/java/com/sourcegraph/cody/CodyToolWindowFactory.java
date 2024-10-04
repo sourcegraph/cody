@@ -33,6 +33,11 @@ public class CodyToolWindowFactory implements ToolWindowFactory, DumbAware {
           customCodySettings.add(new OpenPluginSettingsAction("Cody Settings..."));
           customCodySettings.add(new OpenCodySettingsEditorAction());
           customCodySettings.addSeparator();
+
+          if (ConfigUtil.isFeatureFlagEnabled("cody.feature.internals-menu")) {
+            customCodySettings.add(new OpenWebviewDevToolsAction(toolWindowContent));
+          }
+
           toolWindow.setAdditionalGearActions(customCodySettings);
           return null;
         });

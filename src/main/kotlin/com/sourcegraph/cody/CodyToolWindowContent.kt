@@ -11,6 +11,7 @@ import com.sourcegraph.cody.chat.ui.CodyOnboardingGuidancePanel
 import com.sourcegraph.cody.config.CodyAccount
 import com.sourcegraph.cody.config.CodyApplicationSettings
 import com.sourcegraph.cody.config.CodyAuthenticationManager
+import com.sourcegraph.cody.ui.web.CodyToolWindowContentWebviewHost
 import com.sourcegraph.cody.ui.web.WebUIService
 import java.awt.CardLayout
 import java.awt.GridBagConstraints
@@ -24,7 +25,7 @@ class CodyToolWindowContent(project: Project) {
   private val cardLayout = CardLayout()
   private val cardPanel = JPanel(cardLayout)
   val allContentPanel: JComponent = JPanel(GridLayout(1, 1))
-  private var webviewPanel: JComponent? = null
+  private var webview: CodyToolWindowContentWebviewHost? = null
 
   init {
     cardPanel.add(SignInWithSourcegraphPanel(project), SIGN_IN_PANEL, SIGN_IN_PANEL_INDEX)
@@ -67,7 +68,7 @@ class CodyToolWindowContent(project: Project) {
       return
     }
     cardLayout.show(cardPanel, LOADING_PANEL)
-    showView(webviewPanel ?: cardPanel)
+    showView(webview?.proxy?.component ?: cardPanel)
   }
 
   // Flips the sidebar view to the specified top level component. We do it this way
@@ -82,13 +83,22 @@ class CodyToolWindowContent(project: Project) {
 
   /** Sets the webview component to display, if any. */
   @RequiresEdt
-  fun setWebviewComponent(component: JComponent?) {
-    webviewPanel = component
-    if (component == null) {
+  internal fun setWebviewComponent(host: CodyToolWindowContentWebviewHost?) {
+    webview = host
+    if (webview == null) {
       refreshPanelsVisibility()
     } else {
-      showView(component)
+      val component = host?.proxy?.component
+      if (component == null) {
+        logger.warn("expected browser component to be created, but was null")
+      } else {
+        showView(component)
+      }
     }
+  }
+
+  fun openDevTools() {
+    webview?.proxy?.openDevTools()
   }
 
   companion object {

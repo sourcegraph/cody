@@ -58,7 +58,6 @@ private const val MAIN_RESOURCE_URL = "${PSEUDO_HOST_URL_PREFIX}main-resource-no
 
 internal class WebUIProxy(private val host: WebUIHost, private val browser: JBCefBrowserBase) {
   companion object {
-
     /**
      * TODO: Hopefully this can be removed when JetBrains will patch focus handler implementation
      *   https://youtrack.jetbrains.com/issue/IJPL-158952/Focus-issue-when-using-multiple-JCEF-instances
@@ -110,8 +109,6 @@ internal class WebUIProxy(private val host: WebUIHost, private val browser: JBCe
           JBCefBrowserBuilder()
               .apply {
                 setOffScreenRendering(CodyApplicationSettings.instance.isOffScreenRenderingEnabled)
-                // TODO: Make this conditional on running in a debug configuration.
-                setEnableOpenDevToolsMenuItem(true)
               }
               .build()
 
@@ -207,6 +204,10 @@ internal class WebUIProxy(private val host: WebUIHost, private val browser: JBCe
           browser.cefBrowser)
       return proxy
     }
+  }
+
+  fun openDevTools() {
+    browser.openDevtools()
   }
 
   private fun handleCefQuery(query: String) {

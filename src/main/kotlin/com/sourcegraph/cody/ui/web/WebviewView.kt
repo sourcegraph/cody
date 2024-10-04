@@ -20,11 +20,12 @@ private interface WebviewHost {
   fun reset()
 }
 
-private class CodyToolWindowContentWebviewHost(private val owner: CodyToolWindowContent) :
+internal class CodyToolWindowContentWebviewHost(private val owner: CodyToolWindowContent) :
     WebviewHost {
   override val id = "cody.chat"
 
   var proxy: WebUIProxy? = null
+    private set
 
   override val viewDelegate =
       object : WebviewViewDelegate {
@@ -37,11 +38,10 @@ private class CodyToolWindowContentWebviewHost(private val owner: CodyToolWindow
     runInEdt {
       assert(this.proxy == null)
       this.proxy = proxy
-      val component = proxy.component
-      if (component == null) {
+      if (proxy.component == null) {
         thisLogger().warn("expected browser component to be created, but was null")
       }
-      owner.setWebviewComponent(component)
+      owner.setWebviewComponent(this)
     }
   }
 
