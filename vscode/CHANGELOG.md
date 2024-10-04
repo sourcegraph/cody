@@ -10,6 +10,12 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 ### Changed
 
+## 1.36.2
+
+### Added
+
+- Autocomplete: Change the feature flag names for experiment to prevent older client quering deprecated models. [pull/5805](https://github.com/sourcegraph/cody/pull/5805)
+
 ## 1.36.1
 
 ### Fixed
