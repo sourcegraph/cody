@@ -106,7 +106,7 @@ describe('DeepCody', () => {
 
     it('retrieves additional context when enabled', async () => {
         const mockStreamResponse = [
-            { type: 'change', text: '<CODYTOOLSEARCH><query>test query</query></CODYTOOLSEARCH>' },
+            { type: 'change', text: '<TOOLSEARCH><query>test query</query></TOOLSEARCH>' },
             { type: 'complete' },
         ]
 
