@@ -21,7 +21,7 @@ import type {
 import type * as vscode from 'vscode'
 
 import type { ExtensionMessage, WebviewMessage } from '../chat/protocol'
-import type { CompletionBookkeepingEvent } from '../completions/logger'
+import type { CompletionBookkeepingEvent, CompletionItemID } from '../completions/logger'
 import type { FixupTaskID } from '../non-stop/FixupTask'
 import type { CodyTaskState } from '../non-stop/state'
 
@@ -241,6 +241,14 @@ export type ClientRequests = {
         CompletionItemParams,
         CompletionBookkeepingEvent | undefined | null,
     ]
+
+    // For testing a short delay we give users for reading the completion
+    // and deciding whether to accept it.
+    'testing/autocomplete/awaitPendingVisibilityTimeout': [null, CompletionItemID | undefined]
+
+    // For testing purposes, sets the minimum time given to users for reading and deciding
+    // whether to accept a completion.
+    'testing/autocomplete/setCompletionVisibilityDelay': [{ delay: number }, null]
 
     // Updates the extension configuration and returns the new
     // authentication status, which indicates whether the provided credentials are

@@ -763,10 +763,13 @@ export class SourcegraphGraphQLAPIClient {
         )
     }
 
-    public async getCurrentUserCodySubscription(): Promise<CurrentUserCodySubscription | null | Error> {
+    public async getCurrentUserCodySubscription(
+        signal?: AbortSignal
+    ): Promise<CurrentUserCodySubscription | null | Error> {
         return this.fetchSourcegraphAPI<APIResponse<CurrentUserCodySubscriptionResponse>>(
             CURRENT_USER_CODY_SUBSCRIPTION_QUERY,
-            {}
+            {},
+            signal
         ).then(response =>
             extractDataOrError(response, data => data.currentUser?.codySubscription ?? null)
         )
@@ -1397,15 +1400,13 @@ export class SourcegraphGraphQLAPIClient {
     public async fetchSourcegraphAPI<T>(
         query: string,
         variables: Record<string, any> = {},
-        signalOrTimeout?: AbortSignal | number
+        signal?: AbortSignal
     ): Promise<T | Error> {
         if (!this.config) {
             throw new Error('SourcegraphGraphQLAPIClient config not set')
         }
         const config = await firstValueFrom(this.config)
-        if (signalOrTimeout instanceof AbortSignal) {
-            signalOrTimeout.throwIfAborted()
-        }
+        signal?.throwIfAborted()
 
         const headers = new Headers(config.configuration?.customHeaders as HeadersInit | undefined)
         headers.set('Content-Type', 'application/json; charset=utf-8')
@@ -1426,15 +1427,7 @@ export class SourcegraphGraphQLAPIClient {
             baseUrl: config.auth.serverEndpoint,
         })
 
-        // Default timeout of 6 seconds.
-        const timeoutMs = typeof signalOrTimeout === 'number' ? signalOrTimeout : 6000
-        const timeoutSignal = AbortSignal.timeout(timeoutMs)
-
-        const abortController = dependentAbortController(
-            typeof signalOrTimeout !== 'number' ? signalOrTimeout : undefined
-        )
-        onAbort(timeoutSignal, () => abortController.abort())
-
+        const { abortController, timeoutSignal } = dependentAbortControllerWithTimeout(signal)
         return wrapInActiveSpan(`graphql.fetch${queryName ? `.${queryName}` : ''}`, () =>
             fetch(url, {
                 method: 'POST',
@@ -1444,17 +1437,7 @@ export class SourcegraphGraphQLAPIClient {
             })
                 .then(verifyResponseCode)
                 .then(response => response.json() as T)
-                .catch(error => {
-                    if (isAbortError(error)) {
-                        if (timeoutSignal.aborted) {
-                            return new Error(
-                                `ETIMEDOUT: Request timed out after ${timeoutMs}ms (${url})`
-                            )
-                        }
-                        return error
-                    }
-                    return new Error(`accessing Sourcegraph GraphQL API: ${error} (${url})`)
-                })
+                .catch(catchHTTPError(url, timeoutSignal))
         )
     }
     // make an anonymous request to the dotcom API
@@ -1528,14 +1511,9 @@ export class SourcegraphGraphQLAPIClient {
         addTraceparent(headers)
         addCustomUserAgent(headers)
 
-        // Timeout of 6 seconds.
-        const timeoutSignal = AbortSignal.timeout(6000)
-
-        const abortController = dependentAbortController(signal)
-        onAbort(timeoutSignal, () => abortController.abort())
-
         const url = new URL(urlPath, config.auth.serverEndpoint).href
 
+        const { abortController, timeoutSignal } = dependentAbortControllerWithTimeout(signal)
         return wrapInActiveSpan(`httpapi.fetch${queryName ? `.${queryName}` : ''}`, () =>
             fetch(url, {
                 method: method,
@@ -1545,13 +1523,45 @@ export class SourcegraphGraphQLAPIClient {
             })
                 .then(verifyResponseCode)
                 .then(response => response.json() as T)
-                .catch(error => {
-                    if (isAbortError(error)) {
-                        return error
-                    }
-                    return new Error(`accessing Sourcegraph HTTP API: ${error} (${url})`)
-                })
+                .catch(catchHTTPError(url, timeoutSignal))
         )
+    }
+}
+
+const DEFAULT_TIMEOUT_MSEC = 20000
+
+/**
+ * Create an {@link AbortController} that aborts when the {@link signal} aborts or when the timeout
+ * elapses.
+ */
+function dependentAbortControllerWithTimeout(signal?: AbortSignal): {
+    abortController: AbortController
+    timeoutSignal: Pick<AbortSignal, 'aborted'>
+} {
+    const abortController = dependentAbortController(signal)
+
+    const timeoutSignal = AbortSignal.timeout(DEFAULT_TIMEOUT_MSEC)
+    onAbort(timeoutSignal, () =>
+        abortController.abort({ message: `timed out after ${DEFAULT_TIMEOUT_MSEC}ms` })
+    )
+    return { abortController, timeoutSignal }
+}
+
+function catchHTTPError(
+    url: string,
+    timeoutSignal: Pick<AbortSignal, 'aborted'>
+): (error: any) => Error {
+    return (error: any) => {
+        // Throw the plain AbortError for intentional aborts so we handle them with call
+        // flow, but treat timeout aborts as a network error (below) and include the
+        // URL.
+        if (isAbortError(error)) {
+            if (!timeoutSignal.aborted) {
+                throw error
+            }
+            error = `ETIMEDOUT: timed out after ${DEFAULT_TIMEOUT_MSEC}ms`
+        }
+        return new Error(`accessing Sourcegraph HTTP API: ${error} (${url})`)
     }
 }
 

@@ -34,8 +34,6 @@ interface CodyAgentServer {
   fun chat_setModel(params: Chat_SetModelParams): CompletableFuture<Null?>
   @JsonRequest("commands/explain")
   fun commands_explain(params: Null?): CompletableFuture<String>
-  @JsonRequest("commands/test")
-  fun commands_test(params: Null?): CompletableFuture<String>
   @JsonRequest("commands/smell")
   fun commands_smell(params: Null?): CompletableFuture<String>
   @JsonRequest("commands/custom")
@@ -120,6 +118,10 @@ interface CodyAgentServer {
   fun testing_reset(params: Null?): CompletableFuture<Null?>
   @JsonRequest("testing/autocomplete/completionEvent")
   fun testing_autocomplete_completionEvent(params: CompletionItemParams): CompletableFuture<CompletionBookkeepingEvent?>
+  @JsonRequest("testing/autocomplete/awaitPendingVisibilityTimeout")
+  fun testing_autocomplete_awaitPendingVisibilityTimeout(params: Null?): CompletableFuture<CompletionItemID?>
+  @JsonRequest("testing/autocomplete/setCompletionVisibilityDelay")
+  fun testing_autocomplete_setCompletionVisibilityDelay(params: Testing_Autocomplete_SetCompletionVisibilityDelayParams): CompletableFuture<Null?>
   @JsonRequest("extensionConfiguration/change")
   fun extensionConfiguration_change(params: ExtensionConfiguration): CompletableFuture<AuthStatus?>
   @JsonRequest("extensionConfiguration/status")

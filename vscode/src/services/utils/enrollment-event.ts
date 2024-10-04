@@ -2,8 +2,6 @@ import { FeatureFlag } from '@sourcegraph/cody-shared'
 import { telemetryRecorder } from '@sourcegraph/cody-shared'
 import { localStorage } from '../LocalStorageProvider'
 
-const enrollmentHistoryCache = new Set<FeatureFlag>()
-
 /**
  * Logs the enrollment event for the given feature flag ONCE in user's lifetime
  * based on the feature flag key stored in the local storage.
@@ -15,7 +13,7 @@ const enrollmentHistoryCache = new Set<FeatureFlag>()
  */
 export function logFirstEnrollmentEvent(key: FeatureFlag, isEnabled: boolean): boolean {
     // Check if the user is already enrolled in the experiment or not
-    const isEnrolled = hasEnrolled(key)
+    const isEnrolled = localStorage.getEnrollmentHistory(key)
     // We only want to log the enrollment event once in the user's lifetime.
     if (!isEnrolled) {
         const eventName = getFeatureFlagEventName(key)
@@ -41,12 +39,4 @@ export function getFeatureFlagEventName(key: FeatureFlag): string {
         default:
             return 'UnregisteredFeature'
     }
-}
-
-function hasEnrolled(key: FeatureFlag): boolean {
-    if (enrollmentHistoryCache.has(key)) {
-        return true
-    }
-    enrollmentHistoryCache.add(key)
-    return localStorage.getEnrollmentHistory(key)
 }

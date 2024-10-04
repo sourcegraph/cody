@@ -274,9 +274,9 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                         recordsPrivateMetadataTranscript: 1,
                     },
                     privateMetadata: {
-                        initial_intent: humanMessage.intent,
-                        user_selected_intent: intent,
-                        query: editorState.text,
+                        initialIntent: humanMessage.intent,
+                        userSpecifiedIntent: intent,
+                        promptText: editorState.text,
                     },
                 })
             }
@@ -357,6 +357,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                     isForFirstMessage={humanMessage.index === 0}
                     showSnippets={experimentalOneBoxEnabled && humanMessage.intent === 'search'}
                     defaultOpen={experimentalOneBoxEnabled && humanMessage.intent === 'search'}
+                    reSubmitWithChatIntent={reSubmitWithChatIntent}
                     isContextLoading={isContextLoading}
                 />
             )}

@@ -1,3 +1,3 @@
-export function bubbleSort(nums: number[]) {
+function bubbleSort(arr: number[]): number[] {
     /* CURSOR */
 }

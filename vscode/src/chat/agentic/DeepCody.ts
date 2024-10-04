@@ -26,14 +26,17 @@ import { multiplexerStream } from './utils'
  */
 export class DeepCodyAgent {
     public static readonly ModelRef = 'sourcegraph::2023-06-01::deep-cody'
+    private static hasEnrolled = false
     /**
      * Return modelRef for first time enrollment of Deep Cody.
      */
     public static isEnrolled(models: Model[]): string | undefined {
         // Only enrolled user has access to the Deep Cody model.
         const hasAccess = models.some(m => m.id === DeepCodyAgent.ModelRef)
-        const enrolled = logFirstEnrollmentEvent(FeatureFlag.DeepCody, true)
+        const enrolled = DeepCodyAgent.hasEnrolled || logFirstEnrollmentEvent(FeatureFlag.DeepCody, true)
+        // Is first time enrollment.
         if (hasAccess && !enrolled) {
+            DeepCodyAgent.hasEnrolled = true
             logDebug('DeepCody', 'First time enrollment detected.')
             return 'sourcegraph::2023-06-01::deep-cody'
         }

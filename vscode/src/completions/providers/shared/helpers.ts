@@ -10,6 +10,7 @@ import {
     firstValueFrom,
     mockAuthStatus,
     modelsService,
+    parseModelRef,
     skipPendingOperation,
 } from '@sourcegraph/cody-shared'
 
@@ -46,6 +47,9 @@ export function getAutocompleteProviderFromLocalSettings({
     legacyModel: string | null
     isDotCom: boolean
 }): Promise<Provider> {
+    const authStatus = isDotCom ? AUTH_STATUS_FIXTURE_AUTHED_DOTCOM : AUTH_STATUS_FIXTURE_AUTHED
+    mockAuthStatus(authStatus)
+
     return createProviderForTest({
         config: {
             configuration: {
@@ -53,7 +57,7 @@ export function getAutocompleteProviderFromLocalSettings({
                 autocompleteAdvancedModel: legacyModel,
             },
         },
-        authStatus: isDotCom ? AUTH_STATUS_FIXTURE_AUTHED_DOTCOM : AUTH_STATUS_FIXTURE_AUTHED,
+        authStatus,
     })
 }
 
@@ -64,13 +68,12 @@ export function getAutocompleteProviderFromLocalSettings({
 export async function getAutocompleteProviderFromServerSideModelConfig({
     modelRef,
     isDotCom,
+    isBYOK,
 }: {
     modelRef: ServerSentModelsMock['models'][number]['modelRef']
     isDotCom: boolean
+    isBYOK: boolean
 }): Promise<Provider> {
-    const authStatus = isDotCom ? AUTH_STATUS_FIXTURE_AUTHED_DOTCOM : AUTH_STATUS_FIXTURE_AUTHED
-    mockAuthStatus(authStatus)
-
     const mockedConfig = getServerSentModelsMock()
     const newDefaultModel = mockedConfig.models.find(model => model.modelRef === modelRef)!
     mockedConfig.defaultModels.codeCompletion = newDefaultModel.modelRef
@@ -85,6 +88,18 @@ export async function getAutocompleteProviderFromServerSideModelConfig({
             },
         } satisfies Partial<ModelsData> as ModelsData)
     )
+
+    const authStatus = isDotCom
+        ? AUTH_STATUS_FIXTURE_AUTHED_DOTCOM
+        : {
+              ...AUTH_STATUS_FIXTURE_AUTHED,
+              // TODO: stop using the `configOverwrites` in combination with server-side model config.
+              configOverwrites: {
+                  provider: isBYOK ? parseModelRef(modelRef).providerId : 'sourcegraph',
+              },
+          }
+
+    mockAuthStatus(authStatus)
 
     return createProviderForTest({
         config: {
@@ -110,6 +125,7 @@ export function getAutocompleteProviderFromSiteConfigCodyLLMConfiguration({
     isDotCom: boolean
 }): Promise<Provider> {
     const authStatus = isDotCom ? AUTH_STATUS_FIXTURE_AUTHED_DOTCOM : AUTH_STATUS_FIXTURE_AUTHED
+    mockAuthStatus(authStatus)
 
     vi.spyOn(modelsService, 'modelsChanges', 'get').mockReturnValue(
         Observable.of({

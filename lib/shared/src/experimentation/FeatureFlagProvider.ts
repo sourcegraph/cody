@@ -35,7 +35,7 @@ export enum FeatureFlag {
     CodyAutocompleteDeepseekV2LiteBase = 'cody-autocomplete-deepseek-v2-lite-base',
 
     // Data collection variants used for completions and next edit completions
-    CodyAutocompleteDataCollectionFlag = 'cody-autocomplete-data-collection-flag',
+    CodyAutocompleteDataCollectionFlag = 'cody-autocomplete-logs-collection-flag',
 
     // Enable various feature flags to experiment with FIM trained fine-tuned models via Fireworks
     CodyAutocompleteFIMModelExperimentBaseFeatureFlag = 'cody-autocomplete-fim-model-experiment-flag',

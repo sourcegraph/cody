@@ -722,7 +722,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Wed, 02 Oct 2024 05:24:41 GMT
+            value: Wed, 02 Oct 2024 01:38:28 GMT
           - name: content-type
             value: text/plain; charset=utf-8
           - name: transfer-encoding
@@ -753,7 +753,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-10-02T05:24:41.146Z
+      startedDateTime: 2024-10-02T01:38:28.361Z
       time: 0
       timings:
         blocked: -1
