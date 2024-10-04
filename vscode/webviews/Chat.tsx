@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef } from 'react'
 import type {
     AuthenticatedAuthStatus,
     ChatMessage,
+    CodyIDE,
     Guardrails,
     PromptString,
 } from '@sourcegraph/cody-shared'
@@ -13,6 +14,7 @@ import type { VSCodeWrapper } from './utils/VSCodeApi'
 import { truncateTextStart } from '@sourcegraph/cody-shared/src/prompt/truncation'
 import { CHAT_INPUT_TOKEN_BUDGET } from '@sourcegraph/cody-shared/src/token/constants'
 import styles from './Chat.module.css'
+import WelcomeFooter from './chat/components/WelcomeFooter'
 import { WelcomeMessage } from './chat/components/WelcomeMessage'
 import { ScrollDown } from './components/ScrollDown'
 import type { View } from './tabs'
@@ -223,7 +225,13 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                 guardrails={guardrails}
                 smartApplyEnabled={smartApplyEnabled}
             />
-            {transcript.length === 0 && showWelcomeMessage && <WelcomeMessage setView={setView} />}
+            {transcript.length === 0 && showWelcomeMessage && (
+                <>
+                    <WelcomeMessage setView={setView} />
+                    <WelcomeFooter IDE={userInfo.IDE} />
+                </>
+            )}
+
             {scrollableParent && (
                 <ScrollDown scrollableParent={scrollableParent} onClick={handleScrollDownClick} />
             )}
@@ -238,6 +246,7 @@ export interface UserAccountInfo {
         AuthenticatedAuthStatus,
         'username' | 'displayName' | 'avatarURL' | 'endpoint' | 'primaryEmail'
     >
+    IDE: CodyIDE
 }
 
 export type ApiPostMessage = (message: any) => void

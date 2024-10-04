@@ -2,6 +2,7 @@ import { URI } from 'vscode-uri'
 
 import {
     type ChatMessage,
+    CodyIDE,
     ContextItemSource,
     FILE_MENTION_EDITOR_STATE_FIXTURE,
     ps,
@@ -191,4 +192,5 @@ export const FIXTURE_USER_ACCOUNT_INFO: UserAccountInfo = {
         avatarURL: 'https://avatars.githubusercontent.com/u/1976',
         endpoint: '',
     },
+    IDE: CodyIDE.VSCode,
 }

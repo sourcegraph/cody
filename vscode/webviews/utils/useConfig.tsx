@@ -50,5 +50,6 @@ export function useUserAccountInfo(): UserAccountInfo {
         // with E2E tests where change the DOTCOM_URL via the env variable TESTING_DOTCOM_URL.
         isDotComUser: value.isDotComUser,
         user: value.authStatus,
+        IDE: value.clientCapabilities.agentIDE,
     }
 }
