@@ -18,8 +18,8 @@ import com.google.gson.JsonDeserializer;
 import com.google.gson.JsonElement;
 import java.lang.reflect.Type;
 
-// TODO: This was edited manually due to definiencies in the codegen.
-// Please re-generated after CODY-3809 is done
+// TODO (CODY-3089 ): This was edited manually due to deficiencies in the codegen.
+// Please re-generate after CODY-3809 is done
 sealed class AuthStatus {
     companion object {
         val deserializer: JsonDeserializer<AuthStatus> =
