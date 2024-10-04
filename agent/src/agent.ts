@@ -1264,7 +1264,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
 
         this.registerAuthenticatedRequest('chat/models', async ({ modelUsage }) => {
             return {
-                models: await firstResultFromOperation(modelsService.getModels(modelUsage)),
+                models: await modelsService.getModelsAvailabilityStatus(modelUsage),
             }
         })
 
