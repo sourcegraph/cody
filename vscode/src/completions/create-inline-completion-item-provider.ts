@@ -49,7 +49,9 @@ export function createInlineCompletionItemProvider({
     }
 
     if (!authStatus.authenticated) {
-        logDebug('AutocompleteProvider:notSignedIn', 'You are not signed in.')
+        if (!authStatus.pendingValidation) {
+            logDebug('AutocompleteProvider:notSignedIn', 'You are not signed in.')
+        }
 
         return NEVER
     }

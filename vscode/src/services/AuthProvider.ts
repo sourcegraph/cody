@@ -13,6 +13,7 @@ import {
     currentResolvedConfig,
     disposableSubscription,
     distinctUntilChanged,
+    isAbortError,
     normalizeServerEndpointURL,
     pluck,
     resolvedConfig as resolvedConfig_,
@@ -92,7 +93,13 @@ class AuthProvider implements vscode.Disposable {
                             this.status.next(authStatus)
                             await this.handleAuthTelemetry(authStatus, signal)
                         } catch (error) {
-                            logError('AuthProvider', 'Unexpected error validating credentials', error)
+                            if (!isAbortError(error)) {
+                                logError(
+                                    'AuthProvider',
+                                    'Unexpected error validating credentials',
+                                    error
+                                )
+                            }
                         }
                     })
                 )
