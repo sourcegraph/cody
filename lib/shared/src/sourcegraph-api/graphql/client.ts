@@ -367,14 +367,14 @@ interface ContextSearchResponse {
     }[]
 }
 
-interface Location {
+interface Position {
     line: number
-    column: number
+    character: number
 }
 
 export interface Range {
-    start: Location
-    end: Location
+    start: Position
+    end: Position
 }
 
 export interface ChatIntentResult {

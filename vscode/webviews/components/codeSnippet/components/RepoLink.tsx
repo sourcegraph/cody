@@ -44,8 +44,8 @@ export const RepoFileLink: React.FunctionComponent<React.PropsWithChildren<Props
             for (const range of pathMatchRanges) {
                 highlightNode(
                     containerElement.current as HTMLElement,
-                    range.start.column,
-                    range.end.column - range.start.column
+                    range.start.character,
+                    range.end.character - range.start.character
                 )
             }
         }
