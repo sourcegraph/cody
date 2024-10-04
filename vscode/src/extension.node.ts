@@ -4,7 +4,6 @@ import { NodeSentryService } from './services/sentry/sentry.node'
 import {
     currentAuthStatus,
     currentResolvedConfig,
-    resolvedConfig,
     subscriptionDisposable,
 } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
@@ -19,6 +18,8 @@ import { SymfRunner } from './local-context/symf'
 import { localStorage } from './services/LocalStorageProvider'
 import { OpenTelemetryService } from './services/open-telemetry/OpenTelemetryService.node'
 import { serializeConfigSnapshot } from './uninstall/serializeConfig'
+
+import { proxySettings } from './configuration-proxy'
 
 /**
  * Activation entrypoint for the VS Code extension when running VS Code as a desktop app
@@ -52,9 +53,7 @@ export function activate(
             : undefined,
         startTokenReceiver: (...args) => startTokenReceiver(...args),
         otherInitialization: () => {
-            return subscriptionDisposable(
-                resolvedConfig.subscribe(config => setCustomAgent(config.configuration))
-            )
+            return subscriptionDisposable(proxySettings.subscribe(setCustomAgent))
         },
         extensionClient,
     })
