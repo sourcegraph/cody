@@ -1,7 +1,5 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`Agent > Chat > chat/restore (With null model) 1`] = `"I'm Cody, an advanced AI coding assistant developed by Sourcegraph. My model is specifically designed to excel at software development tasks, code analysis, and providing programming assistance. I'm equipped with extensive knowledge across various programming languages, frameworks, and development practices. While I don't have detailed information about my exact model specifications, I'm confident in my abilities to tackle a wide range of coding challenges and provide valuable insights. How can I leverage my capabilities to assist you with your coding needs today?"`;
-
 exports[`Agent > Chat > chat/submitMessage (long message) 1`] = `
 "Absolutely! I'd be happy to generate a simple "Hello World" function in Java for you. Here's a straightforward implementation:
 

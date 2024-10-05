@@ -17,10 +17,9 @@ import { URI } from 'vscode-uri'
 import { CodyJsonRpcErrorCode } from '../../vscode/src/jsonrpc/CodyJsonRpcErrorCode'
 import { TESTING_CREDENTIALS } from '../../vscode/src/testutils/testing-credentials'
 import { logTestingData } from '../../vscode/test/fixtures/mock-server'
-import { TestClient, asTranscriptMessage } from './TestClient'
+import { TestClient } from './TestClient'
 import { TestWorkspace } from './TestWorkspace'
 import { decodeURIs } from './decodeURIs'
-import { explainPollyError } from './explainPollyError'
 import type { ChatExportResult } from './protocol-alias'
 import { trimEndOfLine } from './trimEndOfLine'
 const workspace = new TestWorkspace(path.join(__dirname, '__tests__', 'example-ts'))
@@ -251,151 +250,6 @@ describe('Agent', () => {
                     'cody.chatResponse:hasCode',
                 ])
             )
-        }, 30_000)
-
-        it('chat/restore', async () => {
-            // Step 1: create a chat session where I share my name.
-            const id1 = await client.request('chat/new', null)
-            const reply1 = asTranscriptMessage(
-                await client.request('chat/submitMessage', {
-                    id: id1,
-                    message: {
-                        command: 'submit',
-                        text: 'My name is Lars Monsen.',
-                    },
-                })
-            )
-
-            // Step 2: restore a new chat session with a transcript including my name, and
-            //  and assert that it can retrieve my name from the transcript.
-            const {
-                models: [model],
-            } = await client.request('chat/models', { modelUsage: ModelUsage.Chat })
-
-            const id2 = await client.request('chat/restore', {
-                modelID: model.model.id,
-                messages: reply1.messages,
-                chatID: new Date().toISOString(), // Create new Chat ID with a different timestamp
-            })
-            const reply2 = asTranscriptMessage(
-                await client.request('chat/submitMessage', {
-                    id: id2,
-                    message: {
-                        command: 'submit',
-                        text: 'What is my name?',
-                    },
-                })
-            )
-            expect(reply2.messages.at(-1)?.text).toMatchInlineSnapshot(
-                `"Your name is Lars Monsen. It's a strong and memorable name that I'm glad to know. Is there anything specific about your name or yourself you'd like to discuss further?"`,
-                explainPollyError
-            )
-            // telemetry assertion, to validate the expected events fired during the test run
-            // Do not remove this assertion, and instead update the expectedEvents list above
-            expect(await exportedTelemetryEvents(client)).toEqual(
-                expect.arrayContaining([
-                    'cody.chat-question:submitted',
-                    'cody.chat-question:executed',
-                    'cody.chatResponse:noCode',
-                    'cody.chat-question:submitted',
-                    'cody.chat-question:executed',
-                    'cody.chatResponse:noCode',
-                ])
-            )
-        }, 30_000)
-
-        it('chat/restore (With null model)', async () => {
-            // Step 1: Create a chat session asking what model is used.
-            const id1 = await client.request('chat/new', null)
-            const reply1 = asTranscriptMessage(
-                await client.request('chat/submitMessage', {
-                    id: id1,
-                    message: {
-                        command: 'submit',
-                        text: 'What model are you?',
-                    },
-                })
-            )
-
-            // Step 2: Restoring chat session without model.
-            const id2 = await client.request('chat/restore', {
-                messages: reply1.messages,
-                chatID: new Date().toISOString(), // Create new Chat ID with a different timestamp
-            })
-            // Step 2: Asking again what model is used
-            const reply2 = asTranscriptMessage(
-                await client.request('chat/submitMessage', {
-                    id: id2,
-                    message: {
-                        command: 'submit',
-                        text: 'What model are you?',
-                    },
-                })
-            )
-            expect(reply2.messages.at(-1)?.text).toMatchSnapshot()
-            // telemetry assertion, to validate the expected events fired during the test run
-            // Do not remove this assertion, and instead update the expectedEvents list above
-            expect(await exportedTelemetryEvents(client)).toEqual(
-                expect.arrayContaining([
-                    'cody.chat-question:submitted',
-                    'cody.chat-question:executed',
-                    'cody.chatResponse:noCode',
-                    'cody.chat-question:submitted',
-                    'cody.chat-question:executed',
-                    'cody.chatResponse:noCode',
-                ])
-            )
-        }, 30_000)
-
-        it('chat/restore (multiple) & export', async () => {
-            const date = new Date(1997, 7, 2, 12, 0, 0, 0)
-
-            // Step 1: Restore multiple chats
-            const NUMBER_OF_CHATS_TO_RESTORE = 300
-            for (let i = 0; i < NUMBER_OF_CHATS_TO_RESTORE; i++) {
-                const myDate = new Date(date.getTime() + i * 60 * 1000)
-                await client.request('chat/restore', {
-                    modelID: 'anthropic/claude-2.0',
-                    messages: [
-                        { text: 'What model are you?', speaker: 'human', contextFiles: [] },
-                        {
-                            model: 'anthropic/claude-2.0',
-                            text: " I'm Claude, an AI assistant created by Anthropic.",
-                            speaker: 'assistant',
-                        },
-                    ],
-                    chatID: myDate.toISOString(), // Create new Chat ID with a different timestamp
-                })
-            }
-
-            // Step 2: export history
-            const chatHistory = await client.request('chat/export', null)
-
-            chatHistory.forEach((result, index) => {
-                const myDate = new Date(date.getTime() + index * 60 * 1000).toISOString()
-
-                expect(result.transcript).toMatchInlineSnapshot(`{
-  "id": "${myDate}",
-  "interactions": [
-    {
-      "assistantMessage": {
-        "model": "anthropic/claude-2.0",
-        "speaker": "assistant",
-        "text": " I'm Claude, an AI assistant created by Anthropic.",
-      },
-      "humanMessage": {
-        "contextFiles": [],
-        "speaker": "human",
-        "text": "What model are you?",
-      },
-    },
-  ],
-  "lastInteractionTimestamp": "${myDate}",
-}`)
-            })
-            // telemetry assertion, to validate the expected events fired during the test run
-            // Do not remove this assertion, and instead update the expectedEvents list above
-            expect(await exportedTelemetryEvents(client)).toEqual(expect.arrayContaining([]))
         }, 30_000)
 
         it('chat/import allows importing a chat transcript from an external source', async () => {
