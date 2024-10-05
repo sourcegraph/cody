@@ -5,7 +5,7 @@ import { ACCOUNT_UPGRADE_URL, ACCOUNT_USAGE_URL } from '../../src/chat/protocol'
 import { UserAvatar } from '../components/UserAvatar'
 import { Button } from '../components/shadcn/ui/button'
 import { getVSCodeAPI } from '../utils/VSCodeApi'
-import { useConfig, useUserAccountInfo } from '../utils/useConfig'
+import { useLegacyWebviewConfig, useUserAccountInfo } from '../utils/useLegacyWebviewConfig'
 import { View } from './types'
 
 interface AccountAction {
@@ -18,7 +18,7 @@ interface AccountTabProps {
 
 // TODO: Implement the AccountTab component once the design is ready.
 export const AccountTab: React.FC<AccountTabProps> = ({ setView }) => {
-    const config = useConfig()
+    const config = useLegacyWebviewConfig()
     const userInfo = useUserAccountInfo()
     const { user, isCodyProUser, isDotComUser } = userInfo
     const { displayName, username, primaryEmail, endpoint } = user

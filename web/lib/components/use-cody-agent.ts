@@ -4,7 +4,6 @@ import { type VSCodeWrapper, setVSCodeWrapper } from 'cody-ai/webviews/utils/VSC
 import {
     type DependencyList,
     type EffectCallback,
-    type MutableRefObject,
     useCallback,
     useEffect,
     useMemo,
@@ -54,7 +53,7 @@ interface UseCodyWebAgentResult {
 export function useCodyWebAgent(input: UseCodyWebAgentInput): UseCodyWebAgentResult {
     const { serverEndpoint, accessToken, telemetryClientName, customHeaders, createAgentWorker } = input
 
-    const activeWebviewPanelIDRef = useRef<string>('')
+    const [panelId, setPanelId] = useState<string>()
     const [client, setClient] = useState<AgentClient | Error | null>(null)
 
     useEffectOnce(() => {
@@ -84,17 +83,16 @@ export function useCodyWebAgent(input: UseCodyWebAgentInput): UseCodyWebAgentRes
             panelId: string
             chatId: string
         }>('chat/web/new', null)
-
-        activeWebviewPanelIDRef.current = panelId
+        setPanelId(panelId)
 
         await agent.rpc.sendRequest('webview/receiveMessage', {
-            id: activeWebviewPanelIDRef.current,
+            id: panelId,
             message: { chatID: chatId, command: 'restoreHistory' },
         })
     }, [])
 
     const isInitRef = useRef(false)
-    const vscodeAPI = useVSCodeAPI({ activeWebviewPanelIDRef, createNewChat, client })
+    const vscodeAPI = useVSCodeAPI({ panelId, createNewChat, client })
 
     // Always create new chat when Cody Web is opened for the first time
     useEffect(() => {
@@ -114,12 +112,12 @@ export function useCodyWebAgent(input: UseCodyWebAgentInput): UseCodyWebAgentRes
 
 interface useVSCodeAPIInput {
     client: AgentClient | Error | null
-    activeWebviewPanelIDRef: MutableRefObject<string>
+    panelId: string | undefined
     createNewChat: (client: AgentClient | Error | null) => Promise<void>
 }
 
 function useVSCodeAPI(input: useVSCodeAPIInput): VSCodeWrapper | null {
-    const { client, activeWebviewPanelIDRef, createNewChat } = input
+    const { client, panelId, createNewChat } = input
 
     const onMessageCallbacksRef = useRef<((message: ExtensionMessage) => void)[]>([])
 
@@ -131,16 +129,16 @@ function useVSCodeAPI(input: useVSCodeAPIInput): VSCodeWrapper | null {
             client.rpc.onNotification(
                 'webview/postMessage',
                 ({ id, message }: { id: string; message: ExtensionMessage }) => {
-                    if (
-                        activeWebviewPanelIDRef.current === id ||
-                        GLOBAL_MESSAGE_TYPES.includes(message.type)
-                    ) {
+                    if (panelId === id || GLOBAL_MESSAGE_TYPES.includes(message.type)) {
                         for (const callback of onMessageCallbacksRef.current) {
                             callback(hydrateAfterPostMessage(message, uri => URI.from(uri as any)))
                         }
                     }
                 }
             )
+        }
+        if (!panelId) {
+            return null
         }
 
         const vscodeAPI: VSCodeWrapper = {
@@ -151,8 +149,13 @@ function useVSCodeAPI(input: useVSCodeAPIInput): VSCodeWrapper | null {
                         void createNewChat(client)
                         return
                     }
+                    if (!panelId) {
+                        throw new Error(
+                            `No active webview panel ID found (to send ${message.command} message)`
+                        )
+                    }
                     void client.rpc.sendRequest('webview/receiveMessage', {
-                        id: activeWebviewPanelIDRef.current,
+                        id: panelId,
                         message: forceHydration(message),
                     })
                 }
@@ -182,7 +185,7 @@ function useVSCodeAPI(input: useVSCodeAPIInput): VSCodeWrapper | null {
         // components will have access to the mocked/synthetic VSCode API
         setVSCodeWrapper(vscodeAPI)
         return vscodeAPI
-    }, [client, createNewChat, activeWebviewPanelIDRef])
+    }, [client, createNewChat, panelId])
 }
 
 function useEffectOnce(effect: EffectCallback, deps?: DependencyList) {

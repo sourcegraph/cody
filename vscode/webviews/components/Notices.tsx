@@ -2,7 +2,7 @@ import { CodyIDE, isDotCom } from '@sourcegraph/cody-shared'
 import { BuildingIcon, EyeIcon, HeartIcon } from 'lucide-react'
 import { type FunctionComponent, useState } from 'react'
 import { getVSCodeAPI } from '../utils/VSCodeApi'
-import { useUserAccountInfo } from '../utils/useConfig'
+import { useUserAccountInfo } from '../utils/useLegacyWebviewConfig'
 import { Button } from './shadcn/ui/button'
 
 /**

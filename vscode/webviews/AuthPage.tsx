@@ -13,7 +13,7 @@ import { useCallback, useState } from 'react'
 import { Button } from './components/shadcn/ui/button'
 import { Form, FormControl, FormField, FormLabel, FormMessage } from './components/shadcn/ui/form'
 import { useTelemetryRecorder } from './utils/telemetry'
-import { useConfig } from './utils/useConfig'
+import { useLegacyWebviewConfig } from './utils/useLegacyWebviewConfig'
 
 /**
  * A component that shows the available ways for the user to sign in or sign up.
@@ -22,15 +22,15 @@ export const AuthPage: React.FunctionComponent<React.PropsWithoutRef<LoginProps>
     simplifiedLoginRedirect,
     uiKindIsWeb,
     vscodeAPI,
-    codyIDE,
 }) => {
-    const authStatus = useConfig().authStatus
+    const authStatus = useLegacyWebviewConfig().authStatus
     const telemetryRecorder = useTelemetryRecorder()
     const otherSignInClick = (): void => {
         vscodeAPI.postMessage({ command: 'auth', authKind: 'signin' })
     }
-    const isNonVSCodeIDE = codyIDE !== CodyIDE.Web && codyIDE !== CodyIDE.VSCode
-    const isCodyWebUI = (uiKindIsWeb || codyIDE === CodyIDE.Web) && !isNonVSCodeIDE
+    const cap = useLegacyWebviewConfig().clientCapabilities
+    const isNonVSCodeIDE = cap.agentIDE !== CodyIDE.Web && cap.agentIDE !== CodyIDE.VSCode
+    const isCodyWebUI = (uiKindIsWeb || cap.agentIDE === CodyIDE.Web) && !isNonVSCodeIDE
     return (
         <div className="tw-flex tw-flex-col tw-items-center tw-gap-8 tw-h-full tw-py-10 tw-px-8">
             <div className="tw-w-full tw-max-w-md tw-flex tw-justify-center">
@@ -38,7 +38,7 @@ export const AuthPage: React.FunctionComponent<React.PropsWithoutRef<LoginProps>
             </div>
             <section className="tw-bg-sidebar-background tw-text-sidebar-foreground tw-border tw-border-border tw-rounded-lg tw-p-6 tw-w-full tw-max-w-md">
                 <h2 className="tw-font-semibold tw-text-lg tw-mb-4">Cody Enterprise</h2>
-                {isCodyWebUI || codyIDE === CodyIDE.VSCode ? (
+                {isCodyWebUI || cap.isVSCode ? (
                     <div className="tw-flex tw-flex-col tw-gap-6 tw-w-full">
                         <Button onClick={otherSignInClick}>Sign In to Your Enterprise Instance</Button>
                     </div>
@@ -123,15 +123,14 @@ export const AuthPage: React.FunctionComponent<React.PropsWithoutRef<LoginProps>
 interface LoginProps {
     simplifiedLoginRedirect: (method: AuthMethod) => void
     uiKindIsWeb: boolean
-    vscodeAPI: VSCodeWrapper
-    codyIDE: CodyIDE
+    vscodeAPI: Pick<VSCodeWrapper, 'postMessage'>
 }
 
 const WebLogin: React.FunctionComponent<
     React.PropsWithoutRef<{
         isCodyWeb: boolean
         telemetryRecorder: TelemetryRecorder
-        vscodeAPI: VSCodeWrapper
+        vscodeAPI: Pick<VSCodeWrapper, 'postMessage'>
     }>
 > = ({ vscodeAPI, isCodyWeb }) => {
     const telemetryRecorder = useTelemetryRecorder()
@@ -170,7 +169,7 @@ const WebLogin: React.FunctionComponent<
 }
 
 interface ClientSignInFormProps {
-    vscodeAPI: VSCodeWrapper
+    vscodeAPI: Pick<VSCodeWrapper, 'postMessage'>
     authStatus?: AuthStatus
     className?: string
 }
