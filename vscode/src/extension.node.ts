@@ -23,6 +23,7 @@ export function activate(
     context: vscode.ExtensionContext,
     extensionClient?: ExtensionClient
 ): Promise<ExtensionApi> {
+    proxySettings.subscribe(setCustomAgent)
     initializeNetworkAgent(context)
 
     // When activated by VSCode, we are only passed the extension context.
@@ -38,6 +39,7 @@ export function activate(
         .get<boolean>('cody.experimental.telemetry.enabled', true)
 
     return activateCommon(context, {
+        intializeConfigurationProxy: () => {},
         createCompletionsClient: (...args) => new SourcegraphNodeCompletionsClient(...args),
         createCommandsProvider: () => new CommandsProvider(),
         createSymfRunner: isSymfEnabled ? (...args) => new SymfRunner(...args) : undefined,

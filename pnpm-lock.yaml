@@ -519,6 +519,9 @@ importers:
       '@vscode/webview-ui-toolkit':
         specifier: ^1.2.2
         version: 1.2.2(react@18.2.0)
+      agent-base:
+        specifier: ^7.1.1
+        version: 7.1.1
       async-mutex:
         specifier: ^0.4.0
         version: 0.4.0

@@ -1,4 +1,4 @@
-import type { Agent } from 'node:http'
+import type { Agent, ClientRequest, RequestOptions } from 'node:http'
 
 /**
  * By hard-requiring isomorphic-fetch, we ensure that even in newer Node environments that include
@@ -18,7 +18,12 @@ import type { BrowserOrNodeResponse } from './sourcegraph-api/graphql/client'
  *
  * Agent is a mutable ref so that we can override it from `fetch.node.ts`
  */
-export const agent: { current: ((url: URL) => Agent) | undefined } = { current: undefined }
+export const agent:
+    | { current: undefined; _forceCodyProxy?: undefined }
+    | {
+          current: (req?: Partial<ClientRequest>, opts?: Partial<RequestOptions>) => Agent
+          _forceCodyProxy?: boolean | undefined
+      } = { current: undefined }
 
 export function fetch(input: RequestInfo | URL, init?: RequestInit): Promise<BrowserOrNodeResponse> {
     init = init ?? {}
