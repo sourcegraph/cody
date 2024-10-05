@@ -36,11 +36,8 @@ export async function getContextFileFromShell(command: string): Promise<ContextI
         const filteredCommand = command.replaceAll(/(\s~\/)/g, ` ${homeDir}${path.sep}`)
 
         try {
-
             if (filter(commandsNotAllowed, cmd => filteredCommand.startsWith(cmd)).length > 0) {
-                void vscode.window.showErrorMessage(
-                    `Cody cannot execute this command`
-                )
+                void vscode.window.showErrorMessage('Cody cannot execute this command')
                 throw new Error('Cody cannot execute this command')
             }
 
