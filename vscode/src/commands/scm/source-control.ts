@@ -174,7 +174,7 @@ export class CodySourceControl implements vscode.Disposable {
                 throw new Error()
             })
 
-            const stream = this.chatClient.chat(
+            const stream = await this.chatClient.chat(
                 prompt,
                 { model, maxTokensToSample: contextWindow.output },
                 abortController?.signal

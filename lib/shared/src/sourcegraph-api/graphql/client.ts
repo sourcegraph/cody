@@ -1049,10 +1049,23 @@ export class SourcegraphGraphQLAPIClient {
     }> {
         // CONTEXT FILTERS are only available on Sourcegraph 5.3.3 and later.
         const minimumVersion = '5.3.3'
-        const { enabled, version } = await this.isCodyEnabled()
+        const version = await this.getSiteVersion()
+        if (isError(version)) {
+            logError(
+                'SourcegraphGraphQLAPIClient',
+                'contextFilters getSiteVersion failed',
+                version.message
+            )
+
+            // Exclude everything in case of an unexpected error.
+            return {
+                filters: EXCLUDE_EVERYTHING_CONTEXT_FILTERS,
+                transient: true,
+            }
+        }
         const insiderBuild = version.length > 12 || version.includes('dev')
         const isValidVersion = insiderBuild || semver.gte(version, minimumVersion)
-        if (!enabled || !isValidVersion) {
+        if (!isValidVersion) {
             return {
                 filters: INCLUDE_EVERYTHING_CONTEXT_FILTERS,
                 transient: false,
@@ -1117,53 +1130,6 @@ export class SourcegraphGraphQLAPIClient {
             throw result
         }
         return result
-    }
-
-    /**
-     * Checks if Cody is enabled on the current Sourcegraph instance.
-     * @returns
-     * enabled: Whether Cody is enabled.
-     * version: The Sourcegraph version.
-     *
-     * This method first checks the Sourcegraph version using `getSiteVersion()`.
-     * If the version is before 5.0.0, Cody is disabled.
-     * If the version is 5.0.0 or newer, it checks for the existence of the `isCodyEnabled` field using `getSiteHasIsCodyEnabledField()`.
-     * If the field exists, it calls `getSiteHasCodyEnabled()` to check its value.
-     * If the field does not exist, Cody is assumed to be enabled for versions between 5.0.0 - 5.1.0.
-     */
-    public async isCodyEnabled(signal?: AbortSignal): Promise<{
-        enabled: boolean
-        version: string
-    }> {
-        // Check site version.
-        const siteVersion = await this.getSiteVersion(signal)
-        if (isError(siteVersion)) {
-            return { enabled: false, version: 'unknown' }
-        }
-        signal?.throwIfAborted()
-        const insiderBuild = siteVersion.length > 12 || siteVersion.includes('dev')
-        if (insiderBuild) {
-            return { enabled: true, version: siteVersion }
-        }
-        // NOTE: Cody does not work on version later than 5.0
-        const versionBeforeCody = semver.lt(siteVersion, '5.0.0')
-        if (versionBeforeCody) {
-            return { enabled: false, version: siteVersion }
-        }
-        // Beta version is betwewen 5.0.0 - 5.1.0 and does not have isCodyEnabled field
-        const betaVersion = semver.gte(siteVersion, '5.0.0') && semver.lt(siteVersion, '5.1.0')
-        const hasIsCodyEnabledField = await this.getSiteHasIsCodyEnabledField(signal)
-        signal?.throwIfAborted()
-        // The isCodyEnabled field does not exist before version 5.1.0
-        if (!betaVersion && !isError(hasIsCodyEnabledField) && hasIsCodyEnabledField) {
-            const siteHasCodyEnabled = await this.getSiteHasCodyEnabled(signal)
-            signal?.throwIfAborted()
-            return {
-                enabled: !isError(siteHasCodyEnabled) && siteHasCodyEnabled,
-                version: siteVersion,
-            }
-        }
-        return { enabled: insiderBuild || betaVersion, version: siteVersion }
     }
 
     /**

@@ -37,8 +37,6 @@ data class AuthenticatedAuthStatus(
   val isFireworksTracingEnabled: Boolean? = null,
   val hasVerifiedEmail: Boolean? = null,
   val requiresVerifiedEmail: Boolean? = null,
-  val siteVersion: String,
-  val codyApiVersion: Long,
   val configOverwrites: CodyLLMSiteConfiguration? = null,
   val primaryEmail: String? = null,
   val displayName: String? = null,

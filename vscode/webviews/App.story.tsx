@@ -37,7 +37,6 @@ const dummyVSCodeAPI: VSCodeWrapper = {
                 authenticated: true,
                 hasVerifiedEmail: true,
                 requiresVerifiedEmail: false,
-                siteVersion: '5.1.0',
                 endpoint: 'https://example.com',
             },
             userProductSubscription: null,
