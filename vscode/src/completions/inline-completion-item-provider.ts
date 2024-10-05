@@ -755,6 +755,15 @@ export class InlineCompletionItemProvider
     private completionSuggestedTimeoutId: NodeJS.Timeout | undefined
 
     /**
+     * Added for testing async code in the agent integration tests where we don't have access
+     * to the vitest fakeTimers API.
+     */
+    public testing_completionSuggestedPromise: Promise<CompletionItemID> | undefined
+    public testing_setCompletionVisibilityDelay(delay: number): void {
+        this.COMPLETION_VISIBLE_DELAY_MS = delay
+    }
+
+    /**
      * Given a completion, fire a suggestion event after a short delay to give the user time to
      * read the completion and decide whether to accept it.
      *
@@ -772,87 +781,90 @@ export class InlineCompletionItemProvider
         // Clear any existing timeouts, only one completion can be shown at a time
         clearTimeout(this.completionSuggestedTimeoutId)
 
-        this.completionSuggestedTimeoutId = setTimeout(() => {
-            const event = suggestionEvent.getEvent()
-            if (!event) {
-                return
-            }
+        this.testing_completionSuggestedPromise = new Promise(resolve => {
+            this.completionSuggestedTimeoutId = setTimeout(() => {
+                resolve(completion.id)
+                this.testing_completionSuggestedPromise = undefined
 
-            if (
-                event.suggestedAt === null ||
-                event.suggestionAnalyticsLoggedAt !== null ||
-                event.suggestionLoggedAt !== null
-            ) {
-                // Completion was already logged, we do not need to mark it as read
-                return
-            }
+                const event = suggestionEvent.getEvent()
+                if (!event) {
+                    return
+                }
 
-            const { activeTextEditor } = vscode.window
-            const { document: invokedDocument, position: invokedPosition } = completion.requestParams
+                if (
+                    event.suggestedAt === null ||
+                    event.suggestionAnalyticsLoggedAt !== null ||
+                    event.suggestionLoggedAt !== null
+                ) {
+                    // Completion was already logged, we do not need to mark it as read
+                    return
+                }
 
-            if (
-                !activeTextEditor ||
-                activeTextEditor.document.uri.toString() !== invokedDocument.uri.toString()
-            ) {
-                // User is no longer in the same document as the completion
-                return
-            }
+                const { activeTextEditor } = vscode.window
+                const { document: invokedDocument, position: invokedPosition } = completion.requestParams
 
-            const latestCursorPosition = activeTextEditor.selection.active
+                if (
+                    !activeTextEditor ||
+                    activeTextEditor.document.uri.toString() !== invokedDocument.uri.toString()
+                ) {
+                    // User is no longer in the same document as the completion
+                    return
+                }
 
-            // If the cursor position is the same as the position of the completion request, re-use the
-            // completion context. This ensures that we still use the suggestion widget to determine if the
-            // completion is still visible.
-            // We don't have a way of determining the contents of the suggestion widget if the cursor position is different,
-            // as this is only provided with `provideInlineCompletionItems` is called.
-            const latestContext = latestCursorPosition.isEqual(invokedPosition)
-                ? completion.context
-                : undefined
+                const latestCursorPosition = activeTextEditor.selection.active
 
-            const takeSuggestWidgetSelectionIntoAccount = latestContext
-                ? this.shouldTakeSuggestWidgetSelectionIntoAccount(
-                      {
-                          document: invokedDocument,
-                          position: invokedPosition,
-                          context: completion.context,
-                      },
-                      {
-                          document: activeTextEditor.document,
-                          position: latestCursorPosition,
-                          context: latestContext,
-                      }
-                  )
-                : false
+                // If the cursor position is the same as the position of the completion request, re-use the
+                // completion context. This ensures that we still use the suggestion widget to determine if the
+                // completion is still visible.
+                // We don't have a way of determining the contents of the suggestion widget if the cursor position is different,
+                // as this is only provided with `provideInlineCompletionItems` is called.
+                const latestContext = latestCursorPosition.isEqual(invokedPosition)
+                    ? completion.context
+                    : undefined
 
-            // Confirm that the completion is still visible for the user given the latest
-            // cursor position, document and associated values.
-            const isStillVisible = isCompletionVisible(
-                completion,
-                activeTextEditor.document,
-                {
-                    invokedPosition,
-                    latestPosition: activeTextEditor.selection.active,
-                },
-                this.getDocContext(
+                const takeSuggestWidgetSelectionIntoAccount = latestContext
+                    ? this.shouldTakeSuggestWidgetSelectionIntoAccount(
+                          {
+                              document: invokedDocument,
+                              position: invokedPosition,
+                              context: completion.context,
+                          },
+                          {
+                              document: activeTextEditor.document,
+                              position: latestCursorPosition,
+                              context: latestContext,
+                          }
+                      )
+                    : false
+
+                // Confirm that the completion is still visible for the user given the latest
+                // cursor position, document and associated values.
+                const isStillVisible = isCompletionVisible(
+                    completion,
                     activeTextEditor.document,
-                    activeTextEditor.selection.active,
+                    {
+                        invokedPosition,
+                        latestPosition: activeTextEditor.selection.active,
+                    },
+                    this.getDocContext(
+                        activeTextEditor.document,
+                        activeTextEditor.selection.active,
+                        latestContext,
+                        takeSuggestWidgetSelectionIntoAccount
+                    ),
                     latestContext,
-                    takeSuggestWidgetSelectionIntoAccount
-                ),
-                latestContext,
-                takeSuggestWidgetSelectionIntoAccount,
-                undefined
-            )
+                    takeSuggestWidgetSelectionIntoAccount,
+                    undefined
+                )
 
-            if (isStillVisible) {
-                suggestionEvent.markAsRead({
-                    document: invokedDocument,
-                    position: invokedPosition,
-                    completePrefix: completion.requestParams.docContext.completePrefix,
-                    completeSuffix: completion.requestParams.docContext.completeSuffix,
-                })
-            }
-        }, this.COMPLETION_VISIBLE_DELAY_MS)
+                if (isStillVisible) {
+                    suggestionEvent.markAsRead({
+                        document: invokedDocument,
+                        position: invokedPosition,
+                    })
+                }
+            }, this.COMPLETION_VISIBLE_DELAY_MS)
+        })
     }
 
     /**

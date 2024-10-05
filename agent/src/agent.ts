@@ -976,6 +976,23 @@ export class Agent extends MessageHandler implements ExtensionClient {
             provider.unstable_handleDidShowCompletionItem(completionID as CompletionItemID)
         })
 
+        this.registerAuthenticatedRequest(
+            'testing/autocomplete/awaitPendingVisibilityTimeout',
+            async () => {
+                const provider = await vscode_shim.completionProvider()
+                return provider.testing_completionSuggestedPromise
+            }
+        )
+
+        this.registerAuthenticatedRequest(
+            'testing/autocomplete/setCompletionVisibilityDelay',
+            async ({ delay }) => {
+                const provider = await vscode_shim.completionProvider()
+                provider.testing_setCompletionVisibilityDelay(delay)
+                return null
+            }
+        )
+
         this.registerAuthenticatedRequest('graphql/getRepoIds', async ({ names, first }) => {
             const repos = await graphqlClient.getRepoIds(names, first)
             if (isError(repos)) {
