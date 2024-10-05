@@ -1,12 +1,12 @@
 import {
     AUTH_STATUS_FIXTURE_AUTHED,
-    type AuthStatus,
     CLIENT_CAPABILITIES_FIXTURE,
     type ClientConfiguration,
     type ContextItem,
     type ContextItemSymbol,
     EMPTY,
     FILE_CONTEXT_MENTION_PROVIDER,
+    type LegacyWebviewConfig,
     type ModelsData,
     type ResolvedConfiguration,
     SYMBOL_CONTEXT_MENTION_PROVIDER,
@@ -25,7 +25,30 @@ import { FIXTURE_COMMANDS, makePromptsAPIWithData } from './components/promptLis
 import { FIXTURE_PROMPTS } from './components/promptSelectField/fixtures'
 import { ComposedWrappers, type Wrapper } from './utils/composeWrappers'
 import { TelemetryRecorderContext } from './utils/telemetry'
-import { ConfigProvider } from './utils/useConfig'
+import { LegacyWebviewConfigProviderForTestsOnly } from './utils/useLegacyWebviewConfig'
+
+export const LEGACY_WEBVIEW_CONFIG_FIXTURE: LegacyWebviewConfig = {
+    config: {
+        serverEndpoint: 'https://example.com',
+        uiKindIsWeb: false,
+        experimentalNoodle: false,
+        smartApply: false,
+    },
+    clientCapabilities: CLIENT_CAPABILITIES_FIXTURE,
+    authStatus: {
+        ...AUTH_STATUS_FIXTURE_AUTHED,
+        displayName: 'Tim Lucas',
+        avatarURL: 'https://avatars.githubusercontent.com/u/153?v=4',
+        authenticated: true,
+        hasVerifiedEmail: true,
+        requiresVerifiedEmail: false,
+        endpoint: 'https://example.com',
+    },
+    userProductSubscription: null,
+    configFeatures: { attribution: true, chat: true, serverSentModels: true },
+    workspaceFolderUris: [],
+    isDotComUser: true,
+}
 
 /**
  * For use in tests only.
@@ -41,8 +64,14 @@ export const AppWrapperForTest: FunctionComponent<{ children: ReactNode }> = ({ 
                 },
             } satisfies Wrapper<ComponentProps<typeof TelemetryRecorderContext.Provider>['value']>,
             {
+                provider: LegacyWebviewConfigProviderForTestsOnly,
+                value: LEGACY_WEBVIEW_CONFIG_FIXTURE,
+            } satisfies Wrapper<ComponentProps<typeof LegacyWebviewConfigProviderForTestsOnly>['value']>,
+            {
                 provider: ExtensionAPIProviderForTestsOnly,
                 value: {
+                    legacyConfig: () =>
+                        Observable.of<LegacyWebviewConfig>(LEGACY_WEBVIEW_CONFIG_FIXTURE),
                     mentionMenuData: query =>
                         promiseFactoryToObservable(async () => {
                             await new Promise<void>(resolve => setTimeout(resolve, 250))
@@ -122,26 +151,6 @@ export const AppWrapperForTest: FunctionComponent<{ children: ReactNode }> = ({ 
                     userProductSubscription: () => Observable.of(null),
                 },
             } satisfies Wrapper<ComponentProps<typeof ExtensionAPIProviderForTestsOnly>['value']>,
-            {
-                component: ConfigProvider,
-                props: {
-                    value: {
-                        authStatus: {
-                            endpoint: 'https://sourcegraph.example.com',
-                            authenticated: true,
-                        } satisfies Partial<AuthStatus> as any,
-                        userProductSubscription: null,
-                        config: {} as any,
-                        clientCapabilities: CLIENT_CAPABILITIES_FIXTURE,
-                        configFeatures: {
-                            chat: true,
-                            serverSentModels: true,
-                            attribution: true,
-                        },
-                        isDotComUser: true,
-                    },
-                },
-            } satisfies Wrapper<any, ComponentProps<typeof ConfigProvider>>,
         ],
         []
     )

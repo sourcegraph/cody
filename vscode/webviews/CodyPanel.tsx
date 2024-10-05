@@ -1,7 +1,6 @@
-import { type AuthStatus, type ClientCapabilities, CodyIDE } from '@sourcegraph/cody-shared'
+import { CodyIDE } from '@sourcegraph/cody-shared'
 import type React from 'react'
 import { type ComponentProps, type FunctionComponent, useMemo, useRef } from 'react'
-import type { ConfigurationSubsetForWebview, LocalEnv } from '../src/chat/protocol'
 import styles from './App.module.css'
 import { Chat } from './Chat'
 import { ConnectivityStatusBanner } from './components/ConnectivityStatusBanner'
@@ -9,6 +8,7 @@ import { Notices } from './components/Notices'
 import { StateDebugOverlay } from './components/StateDebugOverlay'
 import { TabContainer, TabRoot } from './components/shadcn/ui/tabs'
 import { AccountTab, HistoryTab, PromptsTab, SettingsTab, TabsBar, View } from './tabs'
+import { useLegacyWebviewConfig } from './utils/useLegacyWebviewConfig'
 import { TabViewContext } from './utils/useTabView'
 
 /**
@@ -18,11 +18,6 @@ export const CodyPanel: FunctionComponent<
     {
         view: View
         setView: (view: View) => void
-        configuration: {
-            config: LocalEnv & ConfigurationSubsetForWebview
-            clientCapabilities: ClientCapabilities
-            authStatus: AuthStatus
-        }
         errorMessages: string[]
         setErrorMessages: (errors: string[]) => void
         attributionEnabled: boolean
@@ -40,7 +35,6 @@ export const CodyPanel: FunctionComponent<
 > = ({
     view,
     setView,
-    configuration: { config, clientCapabilities, authStatus },
     errorMessages,
     setErrorMessages,
     attributionEnabled,
@@ -54,6 +48,8 @@ export const CodyPanel: FunctionComponent<
     smartApplyEnabled,
 }) => {
     const tabContainerRef = useRef<HTMLDivElement>(null)
+
+    const { config, clientCapabilities, authStatus } = useLegacyWebviewConfig()
 
     return (
         <TabViewContext.Provider value={useMemo(() => ({ view, setView }), [view, setView])}>

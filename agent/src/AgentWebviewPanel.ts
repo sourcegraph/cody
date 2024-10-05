@@ -79,7 +79,6 @@ export class AgentWebviewPanel implements vscode.WebviewPanel {
 
     public initialize(): void {
         if (!this.isInitialized) {
-            this.receiveMessage.fire({ command: 'ready' })
             this.receiveMessage.fire({ command: 'initialized' })
             this.isInitialized = true
         }

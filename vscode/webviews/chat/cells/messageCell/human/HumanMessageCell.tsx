@@ -14,7 +14,7 @@ import { HumanMessageEditor } from './editor/HumanMessageEditor'
 
 import { Tooltip, TooltipContent, TooltipTrigger } from '../../../../components/shadcn/ui/tooltip'
 import { getVSCodeAPI } from '../../../../utils/VSCodeApi'
-import { useConfig } from '../../../../utils/useConfig'
+import { useLegacyWebviewConfig } from '../../../../utils/useLegacyWebviewConfig'
 
 /**
  * A component that displays a chat message from the human.
@@ -113,7 +113,7 @@ export const HumanMessageCell: FunctionComponent<{
 const OpenInNewEditorAction = () => {
     const {
         config: { multipleWebviewsEnabled },
-    } = useConfig()
+    } = useLegacyWebviewConfig()
 
     if (!multipleWebviewsEnabled) {
         return null

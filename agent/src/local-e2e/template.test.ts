@@ -41,7 +41,7 @@ describe.runIf(isLocal)('E2E-local', () => {
         // which is undesireable for agent clients.
         expect(id).not.toStrictEqual(freshChatID)
 
-        const lastMessage = await client.firstNonEmptyTranscript(id)
+        const lastMessage = await client.firstTranscriptWithAssistantMessage(id)
         console.log(lastMessage)
         for (const m of lastMessage.messages) {
             console.log(m)

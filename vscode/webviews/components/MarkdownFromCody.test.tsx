@@ -4,8 +4,8 @@ import { describe, expect, it, vi } from 'vitest'
 import { CodyIDE } from '@sourcegraph/cody-shared'
 import { MarkdownFromCody } from './MarkdownFromCody'
 
-vi.mock('../utils/useConfig', () => ({
-    useConfig: () => ({ clientCapabilities: { agentIDE: CodyIDE.VSCode } }),
+vi.mock('../utils/useLegacyWebviewConfig', () => ({
+    useLegacyWebviewConfig: () => ({ clientCapabilities: { agentIDE: CodyIDE.VSCode } }),
 }))
 
 const complicatedMarkdown = [

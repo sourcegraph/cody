@@ -669,7 +669,7 @@ export class TestClient extends MessageHandler {
 
     /**
      * Returns a promise of the first `type: 'transcript'` message where
-     * `isMessageInProgress: false` and messages is non-empty. This is a helper
+     * `isMessageInProgress: false` and message has an assistant message. This is a helper
      * function you may need to re-implement if you are writing a Cody client to
      * write tests. The tricky bit is that we don't have full control over when
      * the server starts streaming messages to the client, it may start before
@@ -679,7 +679,7 @@ export class TestClient extends MessageHandler {
      * implement a similar helper that deals with both cases where the first message
      * has already been sent and when it hasn't been sent.
      */
-    public firstNonEmptyTranscript(id: string): Promise<ExtensionTranscriptMessage> {
+    public firstTranscriptWithAssistantMessage(id: string): Promise<ExtensionTranscriptMessage> {
         const disposables: vscode.Disposable[] = []
         return new Promise<ExtensionTranscriptMessage>((resolve, reject) => {
             const onMessage = (message: WebviewPostMessageParams): void => {
@@ -689,7 +689,8 @@ export class TestClient extends MessageHandler {
                 if (
                     message.message.type === 'transcript' &&
                     message.message.messages.length > 0 &&
-                    !message.message.isMessageInProgress
+                    !message.message.isMessageInProgress &&
+                    message.message.messages.some(message => message.speaker === 'assistant')
                 ) {
                     resolve(message.message)
                 } else if (message.message.type === 'errors') {

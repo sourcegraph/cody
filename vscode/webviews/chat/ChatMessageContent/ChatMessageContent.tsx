@@ -7,7 +7,7 @@ import type { FixupTaskID } from '../../../src/non-stop/FixupTask'
 import { CodyTaskState } from '../../../src/non-stop/state'
 import { type ClientActionListener, useClientActionListener } from '../../client/clientState'
 import { MarkdownFromCody } from '../../components/MarkdownFromCody'
-import { useConfig } from '../../utils/useConfig'
+import { useLegacyWebviewConfig } from '../../utils/useLegacyWebviewConfig'
 import type { PriorHumanMessageInfo } from '../cells/messageCell/assistant/AssistantMessageCell'
 import styles from './ChatMessageContent.module.css'
 import { GuardrailsStatusController } from './GuardRailStatusController'
@@ -54,7 +54,7 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
     smartApply,
 }) => {
     const rootRef = useRef<HTMLDivElement>(null)
-    const config = useConfig()
+    const config = useLegacyWebviewConfig()
 
     const [smartApplyStates, setSmartApplyStates] = useState<Record<FixupTaskID, CodyTaskState>>({})
     const smartApplyInterceptor = useMemo<CodeBlockActionsProps['smartApply'] | undefined>(() => {
