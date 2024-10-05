@@ -31,6 +31,7 @@ import type { ChatIntentAPIClient } from '../context/chatIntentAPIClient'
 import type { SmartApplyResult } from '../protocol'
 import {
     ChatController,
+    type ChatControllerOptions,
     type ChatSession,
     disposeWebviewViewOrPanel,
     revealWebviewViewOrPanel,
@@ -314,9 +315,11 @@ export class ChatsController implements vscode.Disposable {
         if (this.panel.isVisible() && this.panel.isEmpty()) {
             provider = this.panel
         } else {
-            provider = await this.getOrCreateEditorChatController()
+            provider = await this.getOrCreateEditorChatController(undefined, undefined, undefined, {
+                initialMessage: text,
+            })
         }
-        await provider.clearAndRestartSession()
+        await provider.clearAndRestartSession(false)
         const abortSignal = provider.startNewSubmitOrEditOperation()
         const editorState = editorStateFromPromptString(text)
         await provider.handleUserMessageSubmission({
@@ -404,7 +407,8 @@ export class ChatsController implements vscode.Disposable {
     private async getOrCreateEditorChatController(
         chatID?: string,
         chatQuestion?: string,
-        panel?: vscode.WebviewPanel
+        panel?: vscode.WebviewPanel,
+        options?: Pick<ChatControllerOptions, 'initialMessage'>
     ): Promise<ChatController> {
         // For clients without editor chat panels support, always use the sidebar panel.
         const isSidebarOnly = this.extensionClient.capabilities?.webviewNativeConfig?.view === 'single'
@@ -420,7 +424,7 @@ export class ChatsController implements vscode.Disposable {
                 return provider
             }
         }
-        return this.createEditorChatController(chatID, chatQuestion, panel)
+        return this.createEditorChatController(chatID, chatQuestion, panel, options)
     }
 
     /**
@@ -429,9 +433,10 @@ export class ChatsController implements vscode.Disposable {
     private async createEditorChatController(
         chatID?: string,
         chatQuestion?: string,
-        panel?: vscode.WebviewPanel
+        panel?: vscode.WebviewPanel,
+        options?: Pick<ChatControllerOptions, 'initialMessage'>
     ): Promise<ChatController> {
-        const chatController = this.createChatController()
+        const chatController = this.createChatController(options)
         if (chatID) {
             chatController.restoreSession(chatID)
         }
@@ -467,7 +472,9 @@ export class ChatsController implements vscode.Disposable {
     /**
      * Creates a provider for a chat view.
      */
-    private createChatController(): ChatController {
+    private createChatController(
+        options?: Pick<ChatControllerOptions, 'initialMessage'>
+    ): ChatController {
         return new ChatController({
             ...this.options,
             chatClient: this.chatClient,
@@ -476,6 +483,7 @@ export class ChatsController implements vscode.Disposable {
             chatIntentAPIClient: this.chatIntentAPIClient,
             contextRetriever: this.contextRetriever,
             extensionClient: this.extensionClient,
+            ...options,
         })
     }
 

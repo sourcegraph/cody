@@ -269,6 +269,9 @@ export class ChatBuilder {
                 messageToSerializedChatInteraction(humanMessage, assistantMessage, this.messages)
             )
         }
+        if (interactions.length === 0) {
+            return undefined
+        }
         const result: SerializedChatTranscript = {
             id: this.sessionID,
             chatTitle: undefined,

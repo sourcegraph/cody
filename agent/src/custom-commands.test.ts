@@ -44,7 +44,9 @@ describe('Custom Commands', () => {
             key: '/countTabs',
         })) as CustomChatCommandResult
         expect(result.type).toBe('chat')
-        const lastMessage = await client.firstNonEmptyTranscript(result?.chatResult as string)
+        const lastMessage = await client.firstTranscriptWithAssistantMessage(
+            result?.chatResult as string
+        )
         expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchSnapshot()
     }, 30_000)
 
@@ -55,7 +57,9 @@ describe('Custom Commands', () => {
             key: '/translate Python',
         })) as CustomChatCommandResult
         expect(result.type).toBe('chat')
-        const lastMessage = await client.firstNonEmptyTranscript(result?.chatResult as string)
+        const lastMessage = await client.firstTranscriptWithAssistantMessage(
+            result?.chatResult as string
+        )
         expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchSnapshot()
     }, 30_000)
 
@@ -65,7 +69,7 @@ describe('Custom Commands', () => {
             key: '/none',
         })) as CustomChatCommandResult
         expect(result.type).toBe('chat')
-        const lastMessage = await client.firstNonEmptyTranscript(result.chatResult as string)
+        const lastMessage = await client.firstTranscriptWithAssistantMessage(result.chatResult as string)
         expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchInlineSnapshot(
             `"No"`,
             explainPollyError
@@ -80,7 +84,7 @@ describe('Custom Commands', () => {
             key: '/countDirFiles',
         })) as CustomChatCommandResult
         expect(result.type).toBe('chat')
-        const lastMessage = await client.firstNonEmptyTranscript(result.chatResult as string)
+        const lastMessage = await client.firstTranscriptWithAssistantMessage(result.chatResult as string)
         const reply = trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')
         expect(reply).toMatchInlineSnapshot(`"6"`, explainPollyError)
     }, 30_000)

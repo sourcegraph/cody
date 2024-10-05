@@ -4,8 +4,8 @@ import { type FC, useCallback, useMemo } from 'react'
 import type { ContextItemFile } from '@sourcegraph/cody-shared'
 import type { Observable } from 'observable-fns'
 import { useTelemetryRecorder } from '../utils/telemetry'
-import { useConfig } from '../utils/useConfig'
 import { useExperimentalOneBox } from '../utils/useExperimentalOneBox'
+import { useLegacyWebviewConfig } from '../utils/useLegacyWebviewConfig'
 import { type FetchFileParameters, FileContentSearchResult } from './codeSnippet/CodeSnippet'
 import type { ContentMatch } from './codeSnippet/types'
 
@@ -20,7 +20,7 @@ export const FileSnippet: FC<FileSnippetProps> = props => {
     const highlights = useExtensionAPI().highlights
     const {
         config: { serverEndpoint },
-    } = useConfig()
+    } = useLegacyWebviewConfig()
 
     const fetchHighlights = useCallback<(parameters: FetchFileParameters) => Observable<string[][]>>(
         parameters => highlights(parameters),

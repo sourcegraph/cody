@@ -7,7 +7,7 @@ import { initTreeSitterParser } from '../test-helpers'
 import { nextTick } from '@sourcegraph/cody-shared'
 import { getInlineCompletionsWithInlinedChunks } from './helpers'
 
-describe('[getInlineCompletions] hot streak', () => {
+describe('[getInlineCompletions] hot streak', { timeout: 1000 }, () => {
     beforeAll(async () => {
         await initTreeSitterParser()
     })

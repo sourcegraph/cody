@@ -1,6 +1,4 @@
 import type { Meta, StoryObj } from '@storybook/react'
-
-import { AUTH_STATUS_FIXTURE_AUTHED, CLIENT_CAPABILITIES_FIXTURE } from '@sourcegraph/cody-shared'
 import { App } from './App'
 import { VSCodeWebview } from './storybook/VSCodeStoryDecorator'
 import { View } from './tabs'
@@ -21,29 +19,6 @@ export const Simple: StoryObj<typeof meta> = {
 const dummyVSCodeAPI: VSCodeWrapper = {
     onMessage: cb => {
         // Send initial message so that the component is fully rendered.
-        cb({
-            type: 'config',
-            config: {
-                serverEndpoint: 'https://example.com',
-                uiKindIsWeb: false,
-                experimentalNoodle: false,
-                smartApply: false,
-            },
-            clientCapabilities: CLIENT_CAPABILITIES_FIXTURE,
-            authStatus: {
-                ...AUTH_STATUS_FIXTURE_AUTHED,
-                displayName: 'Tim Lucas',
-                avatarURL: 'https://avatars.githubusercontent.com/u/153?v=4',
-                authenticated: true,
-                hasVerifiedEmail: true,
-                requiresVerifiedEmail: false,
-                endpoint: 'https://example.com',
-            },
-            userProductSubscription: null,
-            configFeatures: { attribution: true, chat: true, serverSentModels: true },
-            workspaceFolderUris: [],
-            isDotComUser: true,
-        })
         if (firstTime) {
             cb({ type: 'view', view: View.Chat })
             firstTime = false

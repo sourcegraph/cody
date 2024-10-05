@@ -1,8 +1,11 @@
 import {
     type ChatModel,
-    type CodyClientConfig,
+    type ConfigurationSubsetForWebview,
+    type LegacyWebviewConfig,
+    type LocalEnv,
     cenv,
     clientCapabilities,
+    combineLatest,
     currentSiteVersion,
     distinctUntilChanged,
     firstResultFromOperation,
@@ -13,6 +16,7 @@ import {
     shareReplay,
     skip,
     skipPendingOperation,
+    switchMap,
 } from '@sourcegraph/cody-shared'
 import * as uuid from 'uuid'
 import * as vscode from 'vscode'
@@ -46,14 +50,11 @@ import {
     createMessageAPIForExtension,
     currentAuthStatus,
     currentAuthStatusAuthed,
-    currentResolvedConfig,
-    currentUserProductSubscription,
     featureFlagProvider,
     getContextForChatMessage,
     graphqlClient,
     hydrateAfterPostMessage,
     inputTextWithoutContextChipsFromPromptEditorState,
-    isAbortError,
     isAbortErrorOrSocketHangUp,
     isContextWindowLimitError,
     isDefined,
@@ -80,7 +81,7 @@ import type { Span } from '@opentelemetry/api'
 import { captureException } from '@sentry/core'
 import { getTokenCounterUtils } from '@sourcegraph/cody-shared/src/token/counter'
 import type { TelemetryEventParameters } from '@sourcegraph/telemetry'
-import { map } from 'observable-fns'
+import { Observable, map } from 'observable-fns'
 import type { URI } from 'vscode-uri'
 import { View } from '../../../webviews/tabs/types'
 import { redirectToEndpointLogin, showSignInMenu, showSignOutMenu } from '../../auth/auth'
@@ -99,6 +100,7 @@ import { logDebug } from '../../output-channel-logger'
 import { getCategorizedMentions } from '../../prompt-builder/utils'
 import { mergedPromptsAndLegacyCommands } from '../../prompts/prompts'
 import { publicRepoMetadataIfAllWorkspaceReposArePublic } from '../../repository/githubRepoMetadata'
+import { workspaceFolders } from '../../repository/remoteRepos'
 import { authProvider } from '../../services/AuthProvider'
 import { AuthProviderSimplified } from '../../services/AuthProviderSimplified'
 import { localStorage } from '../../services/LocalStorageProvider'
@@ -119,9 +121,7 @@ import type { ChatIntentAPIClient } from '../context/chatIntentAPIClient'
 import { observeInitialContext } from '../initialContext'
 import {
     CODY_BLOG_URL_o1_WAITLIST,
-    type ConfigurationSubsetForWebview,
     type ExtensionMessage,
-    type LocalEnv,
     type SmartApplyResult,
     type WebviewMessage,
 } from '../protocol'
@@ -130,7 +130,6 @@ import { ChatBuilder, prepareChatMessage } from './ChatBuilder'
 import { chatHistory } from './ChatHistoryManager'
 import { CodyChatEditorViewType } from './ChatsController'
 import { type ContextRetriever, toStructuredMentions } from './ContextRetriever'
-import { InitDoer } from './InitDoer'
 import { getChatPanelTitle } from './chat-helpers'
 import { type HumanInput, getPriorityContext } from './context'
 import { DefaultPrompter, type PromptInfo } from './prompt'
@@ -147,6 +146,8 @@ export interface ChatControllerOptions {
     editor: VSCodeEditor
     guardrails: Guardrails
     startTokenReceiver?: typeof startTokenReceiver
+
+    initialMessage?: PromptString
 }
 
 export interface ChatSession {
@@ -195,6 +196,8 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
     private readonly startTokenReceiver: typeof startTokenReceiver | undefined
     private readonly chatIntentAPIClient: ChatIntentAPIClient | null
 
+    private readonly initialMessage: ChatControllerOptions['initialMessage']
+
     private disposables: vscode.Disposable[] = []
 
     public dispose(): void {
@@ -212,6 +215,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         chatIntentAPIClient,
         contextRetriever,
         extensionClient,
+        initialMessage,
     }: ChatControllerOptions) {
         this.extensionUri = extensionUri
         this.chatClient = chatClient
@@ -220,6 +224,11 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         this.contextRetriever = contextRetriever
 
         this.chatBuilder = new ChatBuilder(undefined)
+
+        this.initialMessage = initialMessage
+        if (initialMessage !== undefined) {
+            this.chatBuilder.addHumanMessage({ text: initialMessage })
+        }
 
         this.guardrails = guardrails
         this.startTokenReceiver = startTokenReceiver
@@ -230,14 +239,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         }
 
         this.disposables.push(
-            subscriptionDisposable(
-                authStatus.subscribe(() => {
-                    // Run this async because this method may be called during initialization
-                    // and awaiting on this.postMessage may result in a deadlock
-                    void this.sendConfig()
-                })
-            ),
-
             // Reset the chat when the endpoint changes so that we don't try to use old models.
             subscriptionDisposable(
                 authStatus
@@ -264,12 +265,14 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
      */
     private async onDidReceiveMessage(message: WebviewMessage): Promise<void> {
         switch (message.command) {
-            case 'ready':
-                await this.handleReady()
-                break
             case 'initialized':
-                await this.handleInitialized()
-                this.setWebviewToChat()
+                await this.setWebviewToChat()
+                // HACK: this call is necessary to get the webview to set the chatID state,
+                // which is necessary on deserialization. It should be invoked before the
+                // other initializers run (otherwise, it might interfere with other view
+                // state)
+                this.postViewTranscript()
+                await this.saveSession()
                 break
             case 'submit': {
                 await this.handleUserMessageSubmission({
@@ -497,97 +500,73 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyExperimentalOneBox)
     )
 
-    private async getConfigForWebview(): Promise<ConfigurationSubsetForWebview & LocalEnv> {
-        const { configuration, auth } = await currentResolvedConfig()
-        const sidebarViewOnly = this.extensionClient.capabilities?.webviewNativeConfig?.view === 'single'
-        const isEditorViewType = this.webviewPanelOrView?.viewType === 'cody.editorPanel'
-        const webviewType = isEditorViewType && !sidebarViewOnly ? 'editor' : 'sidebar'
-        const uiKindIsWeb = (cenv.CODY_OVERRIDE_UI_KIND ?? vscode.env.uiKind) === vscode.UIKind.Web
-        return {
-            uiKindIsWeb,
-            serverEndpoint: auth.serverEndpoint,
-            experimentalNoodle: configuration.experimentalNoodle,
-            smartApply: this.isSmartApplyEnabled(),
-            webviewType,
-            multipleWebviewsEnabled: !sidebarViewOnly,
-            internalDebugContext: configuration.internalDebugContext,
-        }
-    }
-
     // =======================================================================
     // #region top-level view action handlers
     // =======================================================================
 
-    // When the webview sends the 'ready' message, respond by posting the view config
-    private async handleReady(): Promise<void> {
-        await this.sendConfig()
-    }
+    private legacyConfig: Observable<LegacyWebviewConfig | typeof pendingOperation> = combineLatest(
+        authStatus,
+        resolvedConfig,
+        workspaceFolders,
+        ClientConfigSingleton.getInstance().changes,
+        userProductSubscription
+    ).pipe(
+        switchMap(
+            ([
+                authStatus,
+                { configuration },
+                workspaceFolders,
+                clientConfig,
+                userProductSubscription,
+            ]): Observable<LegacyWebviewConfig | typeof pendingOperation> => {
+                // Don't emit config if we're verifying auth status to avoid UI auth flashes on the client
+                if (authStatus.pendingValidation) {
+                    return Observable.of(pendingOperation)
+                }
 
-    private async sendConfig(): Promise<void> {
-        const authStatus = currentAuthStatus()
+                if (clientConfig === pendingOperation || userProductSubscription === pendingOperation) {
+                    return Observable.of(pendingOperation)
+                }
 
-        // Don't emit config if we're verifying auth status to avoid UI auth flashes on the client
-        if (authStatus.pendingValidation) {
-            return
-        }
+                const sidebarViewOnly =
+                    this.extensionClient.capabilities?.webviewNativeConfig?.view === 'single'
+                const uiKindIsWeb =
+                    (cenv.CODY_OVERRIDE_UI_KIND ?? vscode.env.uiKind) === vscode.UIKind.Web
+                const configForWebview: ConfigurationSubsetForWebview & LocalEnv = {
+                    uiKindIsWeb,
+                    serverEndpoint: authStatus.endpoint,
+                    experimentalNoodle: configuration.experimentalNoodle,
+                    smartApply: this.isSmartApplyEnabled(),
+                    webviewType:
+                        this.webviewPanelOrView?.viewType === 'cody.editorPanel' && !sidebarViewOnly
+                            ? 'editor'
+                            : 'sidebar',
+                    multipleWebviewsEnabled: !sidebarViewOnly,
+                    internalDebugContext: configuration.internalDebugContext,
+                }
 
-        const configForWebview = await this.getConfigForWebview()
-        const workspaceFolderUris =
-            vscode.workspace.workspaceFolders?.map(folder => folder.uri.toString()) ?? []
+                const workspaceFolderUris = workspaceFolders?.map(folder => folder.uri.toString()) ?? []
 
-        const abortController = new AbortController()
-        let clientConfig: CodyClientConfig | undefined
-        try {
-            clientConfig = await ClientConfigSingleton.getInstance().getConfig(abortController.signal)
-            if (abortController.signal.aborted) {
-                return
+                return Observable.of<LegacyWebviewConfig>({
+                    config: configForWebview,
+                    clientCapabilities: clientCapabilities(),
+                    authStatus,
+                    userProductSubscription,
+                    workspaceFolderUris,
+                    configFeatures: {
+                        // If clientConfig is undefined means we were unable to fetch the client configuration -
+                        // most likely because we are not authenticated yet. We need to be able to display the
+                        // chat panel (which is where all login functionality is) in this case, so we fallback
+                        // to some default values:
+                        chat: clientConfig?.chatEnabled ?? true,
+                        attribution: clientConfig?.attributionEnabled ?? false,
+                        serverSentModels: clientConfig?.modelsAPIEnabled ?? false,
+                    },
+                    isDotComUser: isDotCom(authStatus),
+                })
             }
-        } catch (error) {
-            if (isAbortError(error) || abortController.signal.aborted) {
-                return
-            }
-            throw error
-        }
-
-        await this.postMessage({
-            type: 'config',
-            config: configForWebview,
-            clientCapabilities: clientCapabilities(),
-            authStatus: authStatus,
-            userProductSubscription: await currentUserProductSubscription(),
-            workspaceFolderUris,
-            configFeatures: {
-                // If clientConfig is undefined means we were unable to fetch the client configuration -
-                // most likely because we are not authenticated yet. We need to be able to display the
-                // chat panel (which is where all login functionality is) in this case, so we fallback
-                // to some default values:
-                chat: clientConfig?.chatEnabled ?? true,
-                attribution: clientConfig?.attributionEnabled ?? false,
-                serverSentModels: clientConfig?.modelsAPIEnabled ?? false,
-            },
-            isDotComUser: isDotCom(authStatus),
-        })
-        logDebug('ChatController', 'updateViewConfig', {
-            verbose: configForWebview,
-        })
-    }
-
-    private initDoer = new InitDoer<boolean | undefined>()
-    private async handleInitialized(): Promise<void> {
-        // HACK: this call is necessary to get the webview to set the chatID state,
-        // which is necessary on deserialization. It should be invoked before the
-        // other initializers run (otherwise, it might interfere with other view
-        // state)
-        await this.webviewPanelOrView?.webview.postMessage({
-            type: 'transcript',
-            messages: [],
-            isMessageInProgress: false,
-            chatID: this.chatBuilder.sessionID,
-        })
-
-        await this.saveSession()
-        this.initDoer.signalInitialized()
-    }
+        )
+    )
 
     /**
      * Handles user input text for both new and edit submissions
@@ -1185,15 +1164,16 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
     }
 
     /**
-     * Low-level utility to post a message to the webview, pending initialization.
+     * Low-level utility to post a message to the webview.
      *
      * cody-invariant: this.webview.postMessage should never be invoked directly
      * except within this method.
      */
-    private postMessage(message: ExtensionMessage): Thenable<boolean | undefined> {
-        return this.initDoer.do(() =>
-            this.webviewPanelOrView?.webview.postMessage(forceHydration(message))
-        )
+    private postMessage(message: ExtensionMessage): Promise<boolean | undefined> {
+        if (!this.webviewPanelOrView) {
+            throw new Error('postMessage called before webviewPanelOrView was set')
+        }
+        return Promise.resolve(this.webviewPanelOrView.webview.postMessage(forceHydration(message)))
     }
 
     // #endregion
@@ -1462,11 +1442,19 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         telemetryRecorder.recordEvent('cody.duplicateSession', 'clicked')
     }
 
-    public async clearAndRestartSession(): Promise<void> {
+    public async clearAndRestartSession(addInitialMessage = true): Promise<void> {
         this.cancelSubmitOrEditOperation()
-        await this.saveSession()
 
+        if (this.chatBuilder.isEmpty()) {
+            // Nothing to do.
+            return
+        }
+
+        await this.saveSession()
         this.chatBuilder = new ChatBuilder()
+        if (this.initialMessage && addInitialMessage) {
+            this.chatBuilder.addHumanMessage({ text: this.initialMessage })
+        }
         this.postViewTranscript()
     }
 
@@ -1589,14 +1577,14 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     },
                 }),
                 {
-                    mentionMenuData: query => {
-                        return getMentionMenuData({
+                    legacyConfig: () => this.legacyConfig.pipe(skipPendingOperation()),
+                    mentionMenuData: query =>
+                        getMentionMenuData({
                             disableProviders:
                                 this.extensionClient.capabilities?.disabledMentionsProviders || [],
                             query: query,
                             chatBuilder: this.chatBuilder,
-                        })
-                    },
+                        }),
                     evaluatedFeatureFlag: flag => featureFlagProvider.evaluatedFeatureFlag(flag),
                     prompts: query =>
                         promiseFactoryToObservable(signal =>

@@ -1,5 +1,4 @@
-import { CodyIDE } from '@sourcegraph/cody-shared'
-import type { WebviewType } from '../../src/chat/protocol'
+import { CodyIDE, type WebviewType } from '@sourcegraph/cody-shared'
 
 interface NewChatCommandInput {
     IDE: CodyIDE

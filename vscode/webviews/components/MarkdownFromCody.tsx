@@ -8,7 +8,7 @@ import rehypeHighlight, { type Options as RehypeHighlightOptions } from 'rehype-
 import rehypeSanitize, { type Options as RehypeSanitizeOptions, defaultSchema } from 'rehype-sanitize'
 import remarkGFM from 'remark-gfm'
 import { remarkAttachFilePathToCodeBlocks } from '../chat/extract-file-path'
-import { useConfig } from '../utils/useConfig'
+import { useLegacyWebviewConfig } from '../utils/useLegacyWebviewConfig'
 
 /**
  * Supported URIs to render as links in outputted markdown.
@@ -91,7 +91,7 @@ export const MarkdownFromCody: FunctionComponent<{ className?: string; children:
     className,
     children,
 }) => {
-    const clientType = useConfig().clientCapabilities.agentIDE
+    const clientType = useLegacyWebviewConfig().clientCapabilities.agentIDE
     const urlTransform = useMemo(() => URL_PROCESSORS[clientType], [clientType])
 
     return (
