@@ -8,7 +8,6 @@ import {
     TokenCounterUtils,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
-import { filter } from 'lodash'
 import * as vscode from 'vscode'
 import { logError } from '../../log'
 
