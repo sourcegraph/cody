@@ -9,7 +9,7 @@ import { TestWorkspace } from './TestWorkspace'
 
 // Enterprise tests are run at demo instance, which is at a recent release version.
 // Use this section if you need to run against S2 which is released continuously.
-describe('Enterprise - S2 (close main branch)', () => {
+describe('Enterprise - S2 (close main branch)', { timeout: 5000 }, () => {
     const workspace = new TestWorkspace(path.join(__dirname, '__tests__', 'example-ts'))
     const s2EnterpriseClient = TestClient.create({
         workspaceRootUri: workspace.rootUri,
