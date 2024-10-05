@@ -26,12 +26,16 @@ import { CHAT_INPUT_TOKEN_BUDGET } from '../token/constants'
 import { isError } from '../utils'
 import { getExperimentalClientModelByFeatureFlag } from './client'
 import { type Model, type ServerModel, createModel, createModelFromServerModel } from './model'
-import type { ModelsData, ServerModelConfiguration, SitePreferences } from './modelsService'
+import type {
+    DefaultsAndUserPreferencesForEndpoint,
+    ModelsData,
+    ServerModelConfiguration,
+} from './modelsService'
 import { ModelTag } from './tags'
 import { ModelUsage } from './types'
 import { getEnterpriseContextWindow } from './utils'
 
-const EMPTY_PREFERENCES: SitePreferences = { defaults: {}, selected: {} }
+const EMPTY_PREFERENCES: DefaultsAndUserPreferencesForEndpoint = { defaults: {}, selected: {} }
 
 /**
  * Observe the list of all available models.
@@ -104,7 +108,7 @@ export function syncModels({
         distinctUntilChanged()
     )
 
-    const userModelPreferences = combineLatest(
+    const userModelPreferences: Observable<DefaultsAndUserPreferencesForEndpoint> = combineLatest(
         resolvedConfig.pipe(
             map(config => config.clientState.modelPreferences),
             distinctUntilChanged()
@@ -113,10 +117,8 @@ export function syncModels({
     ).pipe(
         map(([modelPreferences, authStatus]) => {
             // Deep clone so it's not readonly and we can mutate it, for convenience.
-            const prevPreferences = modelPreferences[authStatus.endpoint] as SitePreferences | undefined
-            return deepClone(
-                (prevPreferences ?? EMPTY_PREFERENCES) satisfies SitePreferences as SitePreferences
-            )
+            const prevPreferences = modelPreferences[authStatus.endpoint]
+            return deepClone(prevPreferences ?? EMPTY_PREFERENCES)
         }),
         distinctUntilChanged(),
         tap(preferences => {
@@ -131,6 +133,10 @@ export function syncModels({
     const remoteModelsData: Observable<RemoteModelsData | Error | typeof pendingOperation> =
         combineLatest(relevantConfig, authStatus).pipe(
             switchMapReplayOperation(([config, authStatus]) => {
+                if (authStatus.pendingValidation) {
+                    return Observable.of(pendingOperation)
+                }
+
                 if (!authStatus.authenticated) {
                     return Observable.of<RemoteModelsData>({ primaryModels: [], preferences: null })
                 }
@@ -304,9 +310,9 @@ export function syncModels({
 }
 
 function resolveModelPreferences(
-    remote: Pick<SitePreferences, 'defaults'> | null,
-    user: SitePreferences
-): SitePreferences {
+    remote: Pick<DefaultsAndUserPreferencesForEndpoint, 'defaults'> | null,
+    user: DefaultsAndUserPreferencesForEndpoint
+): DefaultsAndUserPreferencesForEndpoint {
     user = deepClone(user)
 
     function setDefaultModel(usage: ModelUsage, newDefaultModelId: string | undefined): void {
@@ -438,7 +444,7 @@ function deepClone<T>(value: T): T {
 
 export function defaultModelPreferencesFromServerModelsConfig(
     config: ServerModelConfiguration
-): SitePreferences['defaults'] {
+): DefaultsAndUserPreferencesForEndpoint['defaults'] {
     return {
         autocomplete: config.defaultModels.codeCompletion,
         chat: config.defaultModels.chat,

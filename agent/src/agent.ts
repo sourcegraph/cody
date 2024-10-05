@@ -845,7 +845,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
 
         this.registerAuthenticatedRequest('testing/reset', async () => {
             await this.workspace.reset()
-            this.globalState?.reset()
+            await this.globalState?.reset()
             // reset the telemetry recorded events
             TESTING_TELEMETRY_EXPORTER.reset()
             return null

@@ -172,14 +172,24 @@ export interface ServerModelConfiguration {
     defaultModels: DefaultModels
 }
 
-export interface PerSitePreferences {
-    [endpoint: string]: SitePreferences
+export interface DefaultsAndUserPreferencesByEndpoint {
+    [endpoint: string]: DefaultsAndUserPreferencesForEndpoint
 }
 
-export interface SitePreferences {
+/**
+ * The endpoint defaults and user preferences for a single endpoint.
+ */
+export interface DefaultsAndUserPreferencesForEndpoint {
+    /**
+     * The server's default models for each usage.
+     */
     defaults: {
         [usage in ModelUsage]?: string
     }
+
+    /**
+     * The user's selected models for each usage, which take precedence over the defaults.
+     */
     selected: {
         [usage in ModelUsage]?: string
     }
@@ -193,7 +203,7 @@ export interface ModelsData {
     localModels: Model[]
 
     /** Preferences for the current endpoint. */
-    preferences: SitePreferences
+    preferences: DefaultsAndUserPreferencesForEndpoint
 }
 
 const EMPTY_MODELS_DATA: ModelsData = {
@@ -203,8 +213,8 @@ const EMPTY_MODELS_DATA: ModelsData = {
 }
 
 export interface LocalStorageForModelPreferences {
-    getModelPreferences(): PerSitePreferences
-    setModelPreferences(preferences: PerSitePreferences): Promise<void>
+    getModelPreferences(): DefaultsAndUserPreferencesByEndpoint
+    setModelPreferences(preferences: DefaultsAndUserPreferencesByEndpoint): Promise<void>
 }
 
 export interface ModelAvailabilityStatus {
@@ -243,7 +253,7 @@ export class ModelsService {
                 tap(data => {
                     if (this.storage) {
                         const allSitePrefs = this.storage.getModelPreferences()
-                        const updated: PerSitePreferences = {
+                        const updated: DefaultsAndUserPreferencesByEndpoint = {
                             ...allSitePrefs,
                             [currentAuthStatus().endpoint]: data.preferences,
                         }
@@ -408,10 +418,7 @@ export class ModelsService {
         const serverEndpoint = currentAuthStatus().endpoint
         const currentPrefs = deepClone(this.storage.getModelPreferences())
         if (!currentPrefs[serverEndpoint]) {
-            currentPrefs[serverEndpoint] = {
-                defaults: {},
-                selected: {},
-            }
+            currentPrefs[serverEndpoint] = modelsData.preferences
         }
         currentPrefs[serverEndpoint].selected[type] = resolved.id
         await this.storage.setModelPreferences(currentPrefs)
@@ -532,13 +539,13 @@ interface MockModelsServiceResult {
 }
 
 export class TestLocalStorageForModelPreferences implements LocalStorageForModelPreferences {
-    constructor(public data: PerSitePreferences | null = null) {}
+    constructor(public data: DefaultsAndUserPreferencesByEndpoint | null = null) {}
 
-    getModelPreferences(): PerSitePreferences {
+    getModelPreferences(): DefaultsAndUserPreferencesByEndpoint {
         return this.data || {}
     }
 
-    async setModelPreferences(preferences: PerSitePreferences): Promise<void> {
+    async setModelPreferences(preferences: DefaultsAndUserPreferencesByEndpoint): Promise<void> {
         this.data = preferences
     }
 }

@@ -683,7 +683,7 @@ describe('Agent', () => {
                     'cody.command.explain:executed',
                     'cody.chat-question:submitted',
                     'cody.chat-question:executed',
-                    'cody.chatResponse:noCode',
+                    'cody.chatResponse:hasCode',
                 ])
             )
         }, 30_000)

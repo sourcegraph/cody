@@ -1421,7 +1421,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         this.cancelSubmitOrEditOperation()
         await this.saveSession()
 
-        this.chatBuilder = new ChatBuilder(this.chatBuilder.selectedModel)
+        this.chatBuilder = new ChatBuilder()
         this.postViewTranscript()
     }
 

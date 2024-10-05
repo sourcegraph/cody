@@ -23,22 +23,7 @@ enableImmerMapSetSupport()
 
 // Add anything else here that needs to be used outside of this library.
 
-export {
-    modelsService,
-    mockModelsService,
-    ModelsService,
-    type ModelCategory,
-    type ModelTier,
-    type ServerModelConfiguration,
-    type PerSitePreferences,
-    type SitePreferences,
-    type ModelRefStr,
-    type LegacyModelRefStr,
-    type ModelRef,
-    type ModelsData,
-    TestLocalStorageForModelPreferences,
-    type LocalStorageForModelPreferences,
-} from './models/modelsService'
+export * from './models/modelsService'
 export {
     type Model,
     type ServerModel,
