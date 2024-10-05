@@ -242,3 +242,9 @@ export function getServerModelTags(
     }
     return tags
 }
+
+export const FIXTURE_MODEL = createModel({
+    id: 'my-model',
+    usage: [ModelUsage.Chat],
+    tags: [ModelTag.Enterprise],
+})

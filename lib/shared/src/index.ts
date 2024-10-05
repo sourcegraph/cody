@@ -47,6 +47,7 @@ export {
     modelTier,
     parseModelRef,
     toLegacyModel,
+    FIXTURE_MODEL,
 } from './models/model'
 export {
     type EditModel,
@@ -328,7 +329,12 @@ export {
     type ContextMentionProviderID,
     type ContextMentionProviderMetadata,
 } from './mentions/api'
-export { TokenCounter, getTokenCounterUtils, TokenCounterUtils } from './token/counter'
+export {
+    TokenCounter,
+    getTokenCounterUtils,
+    TokenCounterUtils,
+    useFakeTokenCounterUtils,
+} from './token/counter'
 export { CORPUS_CONTEXT_ALLOCATION as ENHANCED_CONTEXT_ALLOCATION } from './token/constants'
 export { tokensToChars, charsToTokens } from './token/utils'
 export * from './prompt/prompt-string'
