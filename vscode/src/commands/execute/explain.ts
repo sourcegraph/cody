@@ -50,7 +50,7 @@ export async function explainCommand(
 
     return {
         text: prompt,
-        submitType: 'user-newchat',
+        submitType: 'user',
         contextItems,
         source: args?.source,
         command: DefaultChatCommands.Explain,
