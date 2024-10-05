@@ -11,6 +11,7 @@ import type {
     RequestMessage,
     ResponseMessage,
     SerializedChatMessage,
+    UserProductSubscription,
 } from '@sourcegraph/cody-shared'
 
 import type { BillingCategory, BillingProduct } from '@sourcegraph/cody-shared/src/telemetry-v2'
@@ -137,6 +138,7 @@ export type ExtensionMessage =
           config: ConfigurationSubsetForWebview & LocalEnv
           clientCapabilities: ClientCapabilities
           authStatus: AuthStatus
+          userProductSubscription?: UserProductSubscription | null | undefined
           configFeatures: {
               chat: boolean
               attribution: boolean

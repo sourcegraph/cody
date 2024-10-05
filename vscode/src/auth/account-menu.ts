@@ -1,6 +1,8 @@
 import {
     type AuthenticatedAuthStatus,
+    type UserProductSubscription,
     currentAuthStatusAuthed,
+    currentUserProductSubscription,
     isDotCom,
 } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
@@ -9,7 +11,8 @@ import { showSignInMenu, showSignOutMenu } from './auth'
 
 export async function showAccountMenu(): Promise<void> {
     const authStatus = currentAuthStatusAuthed()
-    const selected = await openAccountMenuFirstStep(authStatus)
+    const sub = await currentUserProductSubscription()
+    const selected = await openAccountMenuFirstStep(authStatus, sub)
     if (selected === undefined) {
         return
     }
@@ -39,14 +42,15 @@ enum AccountMenuOptions {
 }
 
 async function openAccountMenuFirstStep(
-    authStatus: AuthenticatedAuthStatus
+    authStatus: AuthenticatedAuthStatus,
+    sub: UserProductSubscription | null
 ): Promise<AccountMenuOptions | undefined> {
     const isDotComInstance = isDotCom(authStatus.endpoint)
 
     const displayName = authStatus.displayName || authStatus.username
     const email = authStatus.primaryEmail || 'No Email'
     const username = authStatus.username || authStatus.displayName
-    const planDetail = `Plan: ${authStatus.userCanUpgrade ? 'Cody Free' : 'Cody Pro'}`
+    const planDetail = sub ? `Plan: ${sub.userCanUpgrade ? 'Cody Free' : 'Cody Pro'}` : ''
     const enterpriseDetail = `Enterprise Instance:\n${authStatus.endpoint}`
 
     const options = isDotComInstance ? [AccountMenuOptions.Manage] : []

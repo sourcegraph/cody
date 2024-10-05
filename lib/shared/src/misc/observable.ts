@@ -546,13 +546,16 @@ export function pluck<T>(...keyPath: any[]): (input: ObservableLike<T>) => Obser
 }
 
 export function pick<T, K extends keyof T>(
-    key: K
+    ...keys: K[]
 ): (input: ObservableLike<T>) => Observable<Pick<T, K>> {
-    return map(
-        value =>
-            ({
-                [key]: value[key],
-            }) as Pick<T, K>
+    return map(value =>
+        keys.reduce(
+            (acc, key) => {
+                acc[key] = value[key]
+                return acc
+            },
+            {} as Pick<T, K>
+        )
     )
 }
 

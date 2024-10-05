@@ -15,7 +15,6 @@ type NewAuthStatusOptions = { endpoint: string } & (
           | 'hasVerifiedEmail'
           | 'displayName'
           | 'avatarURL'
-          | 'userCanUpgrade'
       > & {
           organizations?: CurrentUserInfo['organizations']
           primaryEmail?:

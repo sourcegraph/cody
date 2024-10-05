@@ -26,13 +26,11 @@ describe('DeepCody', () => {
         ...AUTH_STATUS_FIXTURE_AUTHED,
         endpoint: DOTCOM_URL.toString(),
         authenticated: true,
-        userCanUpgrade: false,
     }
     const enterpriseAuthStatus: AuthenticatedAuthStatus = {
         ...AUTH_STATUS_FIXTURE_AUTHED,
         endpoint: 'https://example.sourcegraph.com',
         authenticated: true,
-        userCanUpgrade: false,
     }
 
     let mockChatBuilder: ChatBuilder

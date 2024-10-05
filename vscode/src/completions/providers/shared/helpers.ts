@@ -6,6 +6,7 @@ import {
     type AutocompleteProviderID,
     type CodeCompletionsParams,
     type ModelsData,
+    type UserProductSubscription,
     createModelFromServerModel,
     firstValueFrom,
     mockAuthStatus,
@@ -16,6 +17,7 @@ import {
 
 import { defaultModelPreferencesFromServerModelsConfig } from '@sourcegraph/cody-shared/src/models/sync'
 import { Observable } from 'observable-fns'
+import * as userProductSubscriptionModule from '../../../../../lib/shared/src/sourcegraph-api/userProductSubscription'
 import { getMockedGenerateCompletionsOptions } from '../../get-inline-completions-tests/helpers'
 import { type ServerSentModelsMock, getServerSentModelsMock } from './__mocks__/create-provider-mocks'
 import { createProvider } from './create-provider'
@@ -26,6 +28,9 @@ import type { Provider } from './provider'
  * to the first value emitted by the observable wrapper.
  */
 async function createProviderForTest(...args: Parameters<typeof createProvider>): Promise<Provider> {
+    vi.spyOn(userProductSubscriptionModule, 'userProductSubscription', 'get').mockReturnValue(
+        Observable.of<UserProductSubscription | null>({ userCanUpgrade: false })
+    )
     const providerOrError = await firstValueFrom(createProvider(...args).pipe(skipPendingOperation()))
 
     if (providerOrError instanceof Error) {
@@ -175,7 +180,7 @@ export function testAutocompleteProvider(
     valuesToAssert: AutocompleteProviderValuesToAssert,
     getProvider: (isDotCom: boolean) => Promise<Provider>
 ) {
-    it.each(['dotcom', 'enterprise'])(`[%s] ${label}`, async instanceType => {
+    it.each(['dotcom', 'enterprise'])(`[%s] ${label}`, { timeout: 500 }, async instanceType => {
         const provider = await getProvider(instanceType === 'dotcom')
         assertProviderValues(provider, valuesToAssert)
     })

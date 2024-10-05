@@ -43,7 +43,6 @@ data class AuthenticatedAuthStatus(
   val primaryEmail: String? = null,
   val displayName: String? = null,
   val avatarURL: String? = null,
-  val userCanUpgrade: Boolean? = null,
   val pendingValidation: Boolean,
 ) : AuthStatus() {
 }
