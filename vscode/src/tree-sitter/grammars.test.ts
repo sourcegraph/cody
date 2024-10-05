@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { SupportedLanguage } from './grammars'
 import { initTreeSitterParser } from './test-helpers'
 
-describe('tree-sitter grammars', () => {
+describe('tree-sitter grammars', { timeout: 5000 }, () => {
     const testCases: {
         language: SupportedLanguage
         code: string
