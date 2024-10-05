@@ -753,8 +753,9 @@ export function tapLog<T>(
 ): (input: ObservableLike<T>) => Observable<T> {
     let subscriptions = 0
     return tapWith(() => {
+        const subscriptionSeq = subscriptions++
         function log(event: string, ...args: any[]): void {
-            console.debug(`█ ${label}#${subscriptions++}(${event}):`, ...args)
+            console.log(`█ ${label}#${subscriptionSeq}(${event}):`, ...args)
         }
         let emissions = 0
         return {

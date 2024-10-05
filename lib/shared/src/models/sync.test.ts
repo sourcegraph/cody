@@ -229,7 +229,7 @@ describe('server sent models', async () => {
     it('allows updating the selected model', async () => {
         vi.spyOn(modelsService, 'modelsChanges', 'get').mockReturnValue(Observable.of(result))
         await modelsService.setSelectedModel(ModelUsage.Chat, titan)
-        expect(storage.data?.[AUTH_STATUS_FIXTURE_AUTHED.endpoint].selected.chat).toBe(titan.id)
+        expect(storage.data?.[AUTH_STATUS_FIXTURE_AUTHED.endpoint]!.selected.chat).toBe(titan.id)
     })
 })
 

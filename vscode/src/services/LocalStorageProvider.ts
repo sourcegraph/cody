@@ -9,8 +9,8 @@ import {
     type AuthenticatedAuthStatus,
     type ChatHistoryKey,
     type ClientState,
+    type DefaultsAndUserPreferencesByEndpoint,
     type LocalStorageForModelPreferences,
-    type PerSitePreferences,
     type ResolvedConfiguration,
     type UserLocalHistory,
     distinctUntilChanged,
@@ -295,11 +295,11 @@ class LocalStorage implements LocalStorageForModelPreferences {
         return this.get(this.LAST_USED_CHAT_MODALITY) ?? 'sidebar'
     }
 
-    public getModelPreferences(): PerSitePreferences {
-        return this.get<PerSitePreferences>(this.MODEL_PREFERENCES_KEY) ?? {}
+    public getModelPreferences(): DefaultsAndUserPreferencesByEndpoint {
+        return this.get<DefaultsAndUserPreferencesByEndpoint>(this.MODEL_PREFERENCES_KEY) ?? {}
     }
 
-    public async setModelPreferences(preferences: PerSitePreferences): Promise<void> {
+    public async setModelPreferences(preferences: DefaultsAndUserPreferencesByEndpoint): Promise<void> {
         await this.set(this.MODEL_PREFERENCES_KEY, preferences)
     }
 
