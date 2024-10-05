@@ -37,8 +37,6 @@ import {
     modelsService,
     setUserAgent,
 } from '@sourcegraph/cody-shared'
-
-import { ChatBuilder } from '../../vscode/src/chat/chat-view/ChatBuilder'
 import { chatHistory } from '../../vscode/src/chat/chat-view/ChatHistoryManager'
 import type { ExtensionMessage, WebviewMessage } from '../../vscode/src/chat/protocol'
 import { ProtocolTextDocumentWithUri } from '../../vscode/src/jsonrpc/TextDocumentWithUri'
@@ -1240,24 +1238,6 @@ export class Agent extends MessageHandler implements ExtensionClient {
 
             const chatId = this.webPanels.panels.get(panelId)?.chatID ?? ''
             return { panelId, chatId }
-        })
-
-        // TODO: JetBrains no longer uses this, consider deleting it.
-        this.registerAuthenticatedRequest('chat/restore', async ({ modelID, messages, chatID }) => {
-            const authStatus = currentAuthStatusAuthed()
-            modelID ??= (await firstResultFromOperation(modelsService.getDefaultChatModel())) ?? ''
-            const chatMessages = messages?.map(PromptString.unsafe_deserializeChatMessage) ?? []
-            const chatBuilder = new ChatBuilder(modelID, chatID, chatMessages)
-            const chat = chatBuilder.toSerializedChatTranscript()
-            if (chat) {
-                await chatHistory.saveChat(authStatus, chat)
-            }
-            return this.createChatPanel(
-                Promise.resolve({
-                    type: 'chat',
-                    session: await vscode.commands.executeCommand('cody.chat.panel.restore', [chatID]),
-                })
-            )
         })
 
         this.registerAuthenticatedRequest('chat/models', async ({ modelUsage }) => {

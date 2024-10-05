@@ -8,7 +8,6 @@ import type {
     CurrentUserCodySubscription,
     Model,
     ModelUsage,
-    SerializedChatMessage,
     SerializedChatTranscript,
     event,
 } from '@sourcegraph/cody-shared'
@@ -63,21 +62,6 @@ export type ClientRequests = {
     // Deletes chat by its ID and returns newly updated chat history list
     // Primary is used only in cody web client
     'chat/delete': [{ chatId: string }, ChatExportResult[]]
-
-    // TODO: JetBrains no longer uses this, consider deleting it.
-    // Similar to `chat/new` except it starts a new chat session from an
-    // existing transcript. The chatID matches the `chatID` property of the
-    // `type: 'transcript'` ExtensionMessage that is sent via
-    // `webview/postMessage`. Returns a new *panel* ID, which can be used to
-    // send a chat message via `chat/submitMessage`.
-    'chat/restore': [
-        {
-            modelID?: string | undefined | null
-            messages: SerializedChatMessage[]
-            chatID: string
-        },
-        string,
-    ]
 
     'chat/models': [{ modelUsage: ModelUsage }, { models: ModelAvailabilityStatus[] }]
     'chat/export': [null | { fullHistory: boolean }, ChatExportResult[]]

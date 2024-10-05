@@ -22,8 +22,6 @@ interface CodyAgentServer {
   fun chat_sidebar_new(params: Null?): CompletableFuture<Chat_Sidebar_NewResult>
   @JsonRequest("chat/delete")
   fun chat_delete(params: Chat_DeleteParams): CompletableFuture<List<ChatExportResult>>
-  @JsonRequest("chat/restore")
-  fun chat_restore(params: Chat_RestoreParams): CompletableFuture<String>
   @JsonRequest("chat/models")
   fun chat_models(params: Chat_ModelsParams): CompletableFuture<Chat_ModelsResult>
   @JsonRequest("chat/export")
