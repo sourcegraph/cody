@@ -1,5 +1,6 @@
 import {
     CodyIDE,
+    MockServerTelemetryRecorderProvider,
     TelemetryRecorderProvider,
     mockClientCapabilities,
     nextTick,
@@ -11,11 +12,6 @@ import { createUninstallMarker } from './reinstall'
 import { deleteUninstallerConfig, readConfig } from './serializeConfig'
 
 async function main() {
-    // Do not record telemetry events during testing
-    if (process.env.CODY_TESTING) {
-        return
-    }
-
     const uninstaller = await readConfig()
     if (uninstaller) {
         const { config, authStatus, version, clientCapabilities } = uninstaller
@@ -44,7 +40,9 @@ async function main() {
                 }
             )
 
-            const provider = new TelemetryRecorderProvider(config, 'connected-instance-only')
+            const provider = process.env.CODY_TESTING
+                ? new MockServerTelemetryRecorderProvider(config)
+                : new TelemetryRecorderProvider(config, 'connected-instance-only')
             const recorder = provider.getRecorder()
             recorder.recordEvent('cody.extension', 'uninstalled', {
                 billingMetadata: {

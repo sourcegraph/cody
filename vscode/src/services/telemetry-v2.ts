@@ -86,7 +86,7 @@ export function createOrUpdateTelemetryRecorderProvider(
              */
             const newAnonymousUser = localStorage.checkIfCreatedAnonymousUserID()
             if (initialize && !clientCapabilities().isCodyWeb) {
-                if (newAnonymousUser) {
+                if (newAnonymousUser || isReinstall) {
                     /**
                      * New user
                      */

@@ -27,6 +27,7 @@ import {
 
 import type { RepoListResponse } from '@sourcegraph/cody-shared'
 import type { RepositoryIdResponse } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
+import { resolveCliArgsFromVSCodeExecutablePath } from '@vscode/test-electron'
 import { closeSidebar, expectAuthenticated, focusSidebar } from './common'
 import { installVsCode } from './install-deps'
 import { buildCustomCommandConfigFile } from './utils/buildCustomCommands'
@@ -72,6 +73,17 @@ export const getAssetsDir = (testName: string): string =>
 
 export const testAssetsTmpDir = (testName: string, label: string): string =>
     path.join(getAssetsDir(testName), `temp-${label}`)
+
+export interface OpenVSCodeOptions {
+    // A list of extensions to install or uninstall before starting VSCode. These can
+    // be extensions that are already published to the VSCode Marketplace, or they can
+    // be local paths to a VSIX package. Useful if you want to behavior related to setup / teardown
+    installExtensions?: string[]
+    uninstallExtensions?: string[]
+    // Whether or not the code in the current git tree will be installed int the VSCode
+    // instance. Defaults to true.
+    skipLocalInstall?: boolean
+}
 
 export const test = base
     // By default, use ../../test/fixtures/workspace as the workspace.
@@ -137,9 +149,9 @@ export const test = base
             { auto: true },
         ],
     })
-    .extend<{ app: ElectronApplication }>({
+    .extend<{ openVSCode: (opts?: OpenVSCodeOptions) => Promise<ElectronApplication> }>({
         // starts a new instance of vscode with the given workspace settings
-        app: async (
+        openVSCode: async (
             {
                 workspaceDirectory,
                 extraWorkspaceSettings,
@@ -174,37 +186,70 @@ export const test = base
                     TESTING_SECRET_STORAGE_TOKEN: JSON.stringify([SERVER_URL, VALID_TOKEN]),
                 }
             }
-            // See: https://github.com/microsoft/vscode-test/blob/main/lib/runTest.ts
-            const app = await electron.launch({
-                executablePath: vscodeExecutablePath,
-                env: {
-                    ...process.env,
-                    ...dotcomUrlOverride,
-                    ...secretStorageState,
-                    CODY_TESTING: 'true',
-                    CODY_LOG_FILE: tmpLogFile,
-                },
-                args: [
-                    // https://github.com/microsoft/vscode/issues/84238
-                    '--no-sandbox',
-                    // https://github.com/microsoft/vscode-test/issues/120
-                    '--disable-updates',
-                    '--skip-welcome',
-                    '--skip-release-notes',
-                    '--disable-workspace-trust',
-                    `--extensionDevelopmentPath=${extensionDevelopmentPath}`,
-                    `--user-data-dir=${userDataDirectory}`,
-                    `--extensions-dir=${extensionsDirectory}`,
-                    workspaceDirectory,
-                ],
-                recordVideo: {
-                    // All running tests will be recorded to a temp video file.
-                    // successful runs will be deleted, failures will be kept
-                    dir: testAssetsTmpDir(testInfo.title, 'videos'),
-                },
-            })
+            const args = [
+                // https://github.com/microsoft/vscode/issues/84238
+                '--no-sandbox',
+                // https://github.com/microsoft/vscode-test/issues/120
+                '--disable-updates',
+                '--skip-welcome',
+                '--skip-release-notes',
+                '--disable-workspace-trust',
+                `--user-data-dir=${userDataDirectory}`,
+                `--extensions-dir=${extensionsDirectory}`,
+            ]
 
-            await waitUntil(() => app.windows().length > 0)
+            async function runVSCodeCommand(cmd: string): Promise<void> {
+                const [cli, ...additionalArgs] =
+                    resolveCliArgsFromVSCodeExecutablePath(vscodeExecutablePath)
+
+                await spawn(cli, [...additionalArgs, ...args, cmd], {
+                    stdio: 'ignore',
+                    shell: process.platform === 'win32',
+                })
+            }
+
+            // See: https://github.com/microsoft/vscode-test/blob/main/lib/runTest.ts
+            use(async (opts: OpenVSCodeOptions = {}) => {
+                if (opts.installExtensions?.length) {
+                    runVSCodeCommand(
+                        opts.installExtensions.map(ext => `--install-extension=${ext}`).join(' ')
+                    )
+                }
+                if (opts.uninstallExtensions?.length) {
+                    runVSCodeCommand(
+                        opts.uninstallExtensions.map(ext => `--uninstall-extension=${ext}`).join(' ')
+                    )
+                }
+                if (!opts.skipLocalInstall) {
+                    args.push(`--extensionDevelopmentPath=${extensionDevelopmentPath}`)
+                }
+
+                args.push(workspaceDirectory)
+
+                const app = await electron.launch({
+                    executablePath: vscodeExecutablePath,
+                    env: {
+                        ...process.env,
+                        ...dotcomUrlOverride,
+                        ...secretStorageState,
+                        CODY_TESTING: 'true',
+                        CODY_LOG_FILE: tmpLogFile,
+                    },
+                    args,
+                    recordVideo: {
+                        // All running tests will be recorded to a temp video file.
+                        // successful runs will be deleted, failures will be kept
+                        dir: testAssetsTmpDir(testInfo.title, 'videos'),
+                    },
+                })
+                await waitUntil(() => app.windows().length > 0)
+                return app
+            })
+        },
+    })
+    .extend<{ app: ElectronApplication }>({
+        app: async ({ openVSCode, userDataDirectory, extensionsDirectory }, use) => {
+            const app = await openVSCode()
 
             await use(app)
 
@@ -337,7 +382,7 @@ export async function rmSyncWithRetries(path: PathLike, options?: RmOptions): Pr
     }
 }
 
-async function getCodySidebar(page: Page): Promise<Frame> {
+export async function getCodySidebar(page: Page): Promise<Frame> {
     async function findCodySidebarFrame(): Promise<null | Frame> {
         for (const frame of page.frames()) {
             try {
@@ -347,9 +392,13 @@ async function getCodySidebar(page: Page): Promise<Frame> {
                 }
             } catch (error: any) {
                 // Skip over frames that were detached in the meantime.
-                if (error.message.indexOf('Frame was detached') === -1) {
-                    throw error
+                if (
+                    error.message.includes('Frame was detached') ||
+                    error.message.includes('because of a navigation')
+                ) {
+                    continue
                 }
+                throw error
             }
         }
         return null
@@ -412,7 +461,7 @@ export async function executeCommandInPalette(page: Page, commandName: string): 
 /**
  * Verifies that loggedEvents contain all of expectedEvents (in any order).
  */
-const expect = baseExpect.extend({
+export const expect = baseExpect.extend({
     async toContainEvents(
         received: string[],
         expected: string[],
@@ -424,11 +473,9 @@ const expect = baseExpect.extend({
 
         try {
             await baseExpect
-                .poll(() => received, { timeout: 3000, ...options })
+                .poll(() => received, { timeout: options?.timeout ?? 3000, ...options })
                 .toEqual(baseExpect.arrayContaining(expected))
         } catch (e: any) {
-            // const missingEvents = new Set()
-            // const extraEvents = new Set()
             const receivedSet = new Set(received)
             for (const event of expected) {
                 if (!receivedSet.has(event)) {

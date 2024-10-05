@@ -134,6 +134,8 @@ export async function start(
 
     setClientCapabilitiesFromConfiguration(getConfiguration())
 
+    let hasReinstallCleanupRun = false
+
     setResolvedConfigurationObservable(
         combineLatest(
             fromVSCodeEvent(vscode.workspace.onDidChangeConfiguration).pipe(
@@ -159,6 +161,7 @@ export async function start(
                         reinstall: {
                             isReinstalling,
                             onReinstall: async () => {
+                                if (hasReinstallCleanupRun) return
                                 logDebug('start', 'Reinstalling Cody')
                                 // VSCode does not provide a way to simply clear all secrets
                                 // associated with the extension (https://github.com/microsoft/vscode/issues/123817)
@@ -175,6 +178,7 @@ export async function start(
                                         .concat(additionalEndpointsToClear)
                                         .map(clientSecrets.deleteToken.bind(clientSecrets))
                                 )
+                                hasReinstallCleanupRun = true
                             },
                         },
                     }) satisfies ConfigurationInput
