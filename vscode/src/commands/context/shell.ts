@@ -8,7 +8,6 @@ import {
     TokenCounterUtils,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
-import { filter } from 'lodash'
 import * as vscode from 'vscode'
 import { logError } from '../../log'
 
@@ -35,11 +34,12 @@ export async function getContextFileFromShell(command: string): Promise<ContextI
         const cwd = vscode.workspace.workspaceFolders?.[0]?.uri?.fsPath
         const filteredCommand = command.replaceAll(/(\s~\/)/g, ` ${homeDir}${path.sep}`)
 
-        if (filter(commandsNotAllowed, cmd => filteredCommand.startsWith(cmd)).length > 0) {
-            throw new Error('Cody cannot execute this command')
-        }
-
         try {
+            if (commandsNotAllowed.some(cmd => filteredCommand.startsWith(cmd))) {
+                void vscode.window.showErrorMessage('Cody cannot execute this command')
+                throw new Error('Cody cannot execute this command')
+            }
+
             const { stdout, stderr } = await execAsync(filteredCommand, { cwd, encoding: 'utf8' })
             const output = JSON.stringify(stdout || stderr).trim()
             if (!output || output === '""') {
