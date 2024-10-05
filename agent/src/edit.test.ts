@@ -7,7 +7,7 @@ import { TestWorkspace } from './TestWorkspace'
 import { explainPollyError } from './explainPollyError'
 import { trimEndOfLine } from './trimEndOfLine'
 
-describe('Edit', () => {
+describe('Edit', { timeout: 5000 }, () => {
     const workspace = new TestWorkspace(path.join(__dirname, '__tests__', 'edit-code'))
     const client = TestClient.create({
         workspaceRootUri: workspace.rootUri,

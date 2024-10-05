@@ -22,6 +22,7 @@ const defaultProjectConfig: UserWorkspaceConfig = {
         fakeTimers: {
             toFake: [...configDefaults.fakeTimers.toFake, 'performance'],
         },
+        testTimeout: 500,
     },
 }
 
