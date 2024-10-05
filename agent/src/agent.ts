@@ -55,6 +55,8 @@ import * as uuid from 'uuid'
 import type { MessageConnection } from 'vscode-jsonrpc'
 import type { CommandResult } from '../../vscode/src/CommandResult'
 import { formatURL } from '../../vscode/src/auth/auth'
+import { executeExplainCommand, executeSmellCommand } from '../../vscode/src/commands/execute'
+import type { CodyCommandArgs } from '../../vscode/src/commands/types'
 import { loadTscRetriever } from '../../vscode/src/completions/context/retrievers/tsc/load-tsc-retriever'
 import { supportedTscLanguages } from '../../vscode/src/completions/context/retrievers/tsc/supportedTscLanguages'
 import type { CompletionItemID } from '../../vscode/src/completions/logger'
@@ -1099,12 +1101,10 @@ export class Agent extends MessageHandler implements ExtensionClient {
         })
 
         // The arguments to pass to the command to make sure edit commands would also run in chat mode
-        const commandArgs = [{ source: 'editor' }]
+        const commandArgs: Partial<CodyCommandArgs> = { source: 'editor' }
 
         this.registerAuthenticatedRequest('commands/explain', () => {
-            return this.createChatPanel(
-                vscode.commands.executeCommand('cody.command.explain-code', commandArgs)
-            )
+            return this.createChatPanel(executeExplainCommand(commandArgs))
         })
 
         this.registerAuthenticatedRequest('editTask/accept', async ({ id }) => {
@@ -1196,9 +1196,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
         })
 
         this.registerAuthenticatedRequest('commands/smell', () => {
-            return this.createChatPanel(
-                vscode.commands.executeCommand('cody.command.smell-code', commandArgs)
-            )
+            return this.createChatPanel(executeSmellCommand(commandArgs))
         })
 
         this.registerAuthenticatedRequest('commands/custom', ({ key }) => {

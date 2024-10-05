@@ -805,7 +805,6 @@ export class TestClient extends MessageHandler {
                 message: {
                     command: 'submit',
                     text,
-                    submitType: 'user',
                     contextItems: params?.contextFiles,
                 },
             })
