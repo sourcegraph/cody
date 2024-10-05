@@ -1,7 +1,7 @@
 import path from 'node:path'
 import type { Page } from 'playwright'
 import { loggedV2Events } from '../fixtures/mock-server'
-import { focusSidebar, sidebarSignin } from './common'
+import { expectAuthenticated, focusSidebar, sidebarSignin } from './common'
 import { expect, getCodySidebar, test } from './helpers'
 
 test('uninstall extension', async ({ openVSCode }) => {
@@ -25,14 +25,10 @@ test('uninstall extension', async ({ openVSCode }) => {
         skipLocalInstall: true,
     })
     // Allow the uninstaller to finish
-    try {
-        await expect(loggedV2Events).toContainEvents(['cody.extension:uninstalled'], { timeout: 5000 })
-    } catch (error) {
-        await sleep(100000)
-    }
+    await expect(loggedV2Events).toContainEvents(['cody.extension:uninstalled'], { timeout: 5000 })
     await app.close()
 
-    // Finally, we re-install the extension, and re-open VSCode. This will trigger the
+    // we re-install the extension, and re-open VSCode. This will trigger the
     // the reinstall flow which will trigger telemetry events but will clear out secret storage
     app = await openVSCode({
         installExtensions: [customExtensionVSIX],
@@ -43,19 +39,19 @@ test('uninstall extension', async ({ openVSCode }) => {
     // This will fail if the credentials are saved because the login screen will still be
     // visible, thus it acts as an implicit test that credentials were cleared out
     await signin(page)
-    try {
-        await expect(loggedV2Events).toContainEvents(['cody.extension:reinstalled'], { timeout: 5000 })
-    } catch (error) {
-        await sleep(100000)
-    }
+    await expect(loggedV2Events).toContainEvents(['cody.extension:reinstalled'], { timeout: 5000 })
+    await app.close()
+
+    // Finally, re-open the VSCode and ensure that we are still logged in
+    app = await openVSCode({
+        skipLocalInstall: true,
+    })
+    page = await app.firstWindow()
+    await expectAuthenticated(page)
 })
 
 async function signin(page: Page): Promise<void> {
     await focusSidebar(page)
     const sidebar = await getCodySidebar(page)
     await sidebarSignin(page, sidebar)
-}
-
-async function sleep(ms: number): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, ms))
 }
