@@ -1,12 +1,11 @@
 import { Observable, map } from 'observable-fns'
 import type { AuthCredentials, ClientConfiguration } from '../configuration'
-import { logDebug, logError } from '../logger'
+import { logError } from '../logger'
 import {
     distinctUntilChanged,
     firstValueFrom,
     fromLateSetSource,
     promiseToObservable,
-    tap,
 } from '../misc/observable'
 import { skipPendingOperation, switchMapReplayOperation } from '../misc/observableOperation'
 import type { PerSitePreferences } from '../models/modelsService'
@@ -87,21 +86,19 @@ async function resolveConfiguration({
     // manually signed in somewhere else
     const serverEndpoint = normalizeServerEndpointURL(
         clientConfiguration.overrideServerEndpoint ||
-            // If we are reinstalling, we ignore previous state
             (clientState.lastUsedEndpoint ?? DOTCOM_URL.toString())
     )
 
     // We must not throw here, because that would result in the `resolvedConfig` observable
     // terminating and all callers receiving no further config updates.
-    const loadTokenFn = async () => {
-        return clientSecrets.getToken(serverEndpoint).catch(error => {
+    const loadTokenFn = () =>
+        clientSecrets.getToken(serverEndpoint).catch(error => {
             logError(
                 'resolveConfiguration',
                 `Failed to get access token for endpoint ${serverEndpoint}: ${error}`
             )
             return null
         })
-    }
     const accessToken = clientConfiguration.overrideAuthToken || ((await loadTokenFn()) ?? null)
     return {
         configuration: clientConfiguration,
@@ -132,10 +129,7 @@ export function setResolvedConfigurationObservable(input: Observable<Configurati
                 }
                 return value
             }),
-            distinctUntilChanged(),
-            tap(value => {
-                logDebug('resolvedConfig', JSON.stringify(value))
-            })
+            distinctUntilChanged()
         ),
         false
     )

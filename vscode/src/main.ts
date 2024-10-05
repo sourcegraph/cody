@@ -161,6 +161,7 @@ export async function start(
                         reinstall: {
                             isReinstalling,
                             onReinstall: async () => {
+                                // short circuit so that we only run this cleanup once, not every time the config updates
                                 if (hasReinstallCleanupRun) return
                                 logDebug('start', 'Reinstalling Cody')
                                 // VSCode does not provide a way to simply clear all secrets
@@ -731,7 +732,7 @@ function registerAutocomplete(
                     catchError(error => {
                         finishLoading()
                         //TODO: We could show something in the statusbar
-                        logError('registerAutocomplete', 'Error', JSON.stringify(error))
+                        logError('registerAutocomplete', 'Error', error)
                         return NEVER
                     })
                 )
