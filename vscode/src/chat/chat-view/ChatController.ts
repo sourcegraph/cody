@@ -131,14 +131,14 @@ import { getChatPanelTitle } from './chat-helpers'
 import { type HumanInput, getPriorityContext } from './context'
 import { DefaultPrompter, type PromptInfo } from './prompt'
 
-interface ChatControllerOptions {
+export interface ChatControllerOptions {
     extensionUri: vscode.Uri
-    chatClient: ChatClient
+    chatClient: Pick<ChatClient, 'chat'>
 
-    contextRetriever: ContextRetriever
+    contextRetriever: Pick<ContextRetriever, 'retrieveContext'>
     chatIntentAPIClient: ChatIntentAPIClient | null
 
-    extensionClient: ExtensionClient
+    extensionClient: Pick<ExtensionClient, 'capabilities'>
 
     editor: VSCodeEditor
     guardrails: Guardrails
@@ -180,12 +180,12 @@ export interface ChatSession {
 export class ChatController implements vscode.Disposable, vscode.WebviewViewProvider, ChatSession {
     private chatBuilder: ChatBuilder
 
-    private readonly chatClient: ChatClient
+    private readonly chatClient: ChatControllerOptions['chatClient']
 
-    private readonly contextRetriever: ContextRetriever
+    private readonly contextRetriever: ChatControllerOptions['contextRetriever']
 
-    private readonly editor: VSCodeEditor
-    private readonly extensionClient: ExtensionClient
+    private readonly editor: ChatControllerOptions['editor']
+    private readonly extensionClient: ChatControllerOptions['extensionClient']
     private readonly guardrails: Guardrails
 
     private readonly startTokenReceiver: typeof startTokenReceiver | undefined
@@ -650,161 +650,173 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 tokenCounterUtils
             )
 
-            tracer.startActiveSpan('chat.submit.firstToken', async (firstTokenSpan): Promise<void> => {
-                if (inputText.toString().match(/^\/reset$/)) {
-                    span.addEvent('clearAndRestartSession')
-                    span.end()
-                    return this.clearAndRestartSession()
-                }
+            await tracer.startActiveSpan(
+                'chat.submit.firstToken',
+                async (firstTokenSpan): Promise<void> => {
+                    if (inputText.toString().match(/^\/reset$/)) {
+                        span.addEvent('clearAndRestartSession')
+                        span.end()
+                        return this.clearAndRestartSession()
+                    }
 
-                this.chatBuilder.addHumanMessage({
-                    text: inputText,
-                    editorState,
-                    intent: detectedIntent,
-                })
-                await this.saveSession()
-                signal.throwIfAborted()
-
-                this.postEmptyMessageInProgress(model)
-
-                // All mentions we receive are either source=initial or source=user. If the caller
-                // forgot to set the source, assume it's from the user.
-                mentions = mentions.map(m => (m.source ? m : { ...m, source: ContextItemSource.User }))
-
-                const contextAlternatives = await this.computeContext(
-                    { text: inputText, mentions },
-                    requestID,
-                    editorState,
-                    span,
-                    signal
-                )
-                signal.throwIfAborted()
-                const corpusContext = contextAlternatives[0].items
-
-                const repositoryMentioned = mentions.find(contextItem =>
-                    ['repository', 'tree'].includes(contextItem.type)
-                )
-
-                // We are checking the feature flag here to log non-undefined intent only if the feature flag is on
-                let intent: ChatMessage['intent'] | undefined = this.featureCodyExperimentalOneBox
-                    ? detectedIntent
-                    : undefined
-
-                let intentScores: { intent: string; score: number }[] | undefined | null = this
-                    .featureCodyExperimentalOneBox
-                    ? detectedIntentScores
-                    : undefined
-
-                const userSpecifiedIntent = this.featureCodyExperimentalOneBox
-                    ? manuallySelectedIntent && detectedIntent
-                        ? detectedIntent
-                        : 'auto'
-                    : undefined
-
-                if (this.featureCodyExperimentalOneBox && repositoryMentioned) {
-                    const inputTextWithoutContextChips = editorState
-                        ? PromptString.unsafe_fromUserQuery(
-                              inputTextWithoutContextChipsFromPromptEditorState(editorState)
-                          )
-                        : inputText
-
-                    const finalIntentDetectionResponse = detectedIntent
-                        ? { intent: detectedIntent, allScores: detectedIntentScores }
-                        : await this.detectChatIntent({
-                              requestID,
-                              text: inputTextWithoutContextChips.toString(),
-                          })
-                              .then(async response => {
-                                  signal.throwIfAborted()
-                                  this.chatBuilder.setLastMessageIntent(response?.intent)
-                                  this.postViewTranscript()
-                                  return response
-                              })
-                              .catch(() => undefined)
-                    intent = finalIntentDetectionResponse?.intent
-                    intentScores = finalIntentDetectionResponse?.allScores
+                    this.chatBuilder.addHumanMessage({
+                        text: inputText,
+                        editorState,
+                        intent: detectedIntent,
+                    })
+                    await this.saveSession()
                     signal.throwIfAborted()
-                    if (intent === 'search') {
+
+                    this.postEmptyMessageInProgress(model)
+
+                    // All mentions we receive are either source=initial or source=user. If the caller
+                    // forgot to set the source, assume it's from the user.
+                    mentions = mentions.map(m =>
+                        m.source ? m : { ...m, source: ContextItemSource.User }
+                    )
+
+                    const contextAlternatives = await this.computeContext(
+                        { text: inputText, mentions },
+                        requestID,
+                        editorState,
+                        span,
+                        signal
+                    )
+                    signal.throwIfAborted()
+                    const corpusContext = contextAlternatives[0].items
+
+                    const repositoryMentioned = mentions.find(contextItem =>
+                        ['repository', 'tree'].includes(contextItem.type)
+                    )
+
+                    // We are checking the feature flag here to log non-undefined intent only if the feature flag is on
+                    let intent: ChatMessage['intent'] | undefined = this.featureCodyExperimentalOneBox
+                        ? detectedIntent
+                        : undefined
+
+                    let intentScores: { intent: string; score: number }[] | undefined | null = this
+                        .featureCodyExperimentalOneBox
+                        ? detectedIntentScores
+                        : undefined
+
+                    const userSpecifiedIntent = this.featureCodyExperimentalOneBox
+                        ? manuallySelectedIntent && detectedIntent
+                            ? detectedIntent
+                            : 'auto'
+                        : undefined
+
+                    if (this.featureCodyExperimentalOneBox && repositoryMentioned) {
+                        const inputTextWithoutContextChips = editorState
+                            ? PromptString.unsafe_fromUserQuery(
+                                  inputTextWithoutContextChipsFromPromptEditorState(editorState)
+                              )
+                            : inputText
+
+                        const finalIntentDetectionResponse = detectedIntent
+                            ? { intent: detectedIntent, allScores: detectedIntentScores }
+                            : await this.detectChatIntent({
+                                  requestID,
+                                  text: inputTextWithoutContextChips.toString(),
+                              })
+                                  .then(async response => {
+                                      signal.throwIfAborted()
+                                      this.chatBuilder.setLastMessageIntent(response?.intent)
+                                      this.postViewTranscript()
+                                      return response
+                                  })
+                                  .catch(() => undefined)
+                        intent = finalIntentDetectionResponse?.intent
+                        intentScores = finalIntentDetectionResponse?.allScores
+                        signal.throwIfAborted()
+                        if (intent === 'search') {
+                            telemetryEvents['cody.chat-question/executed'].record(
+                                {
+                                    ...telemetryProperties,
+                                    context: corpusContext,
+                                    userSpecifiedIntent,
+                                    detectedIntent: intent,
+                                    detectedIntentScores: intentScores,
+                                },
+                                { current: span, firstToken: firstTokenSpan, addMetadata: true }
+                            )
+
+                            return await this.handleSearchIntent({
+                                context: corpusContext,
+                                signal,
+                                contextAlternatives,
+                            })
+                        }
+                    }
+
+                    // Experimental Feature: Deep Cody
+                    if (model === DeepCodyAgent.ModelRef) {
+                        const agenticContext = await new DeepCodyAgent(
+                            this.chatBuilder,
+                            this.chatClient,
+                            getCodyTools(this.contextRetriever, span),
+                            corpusContext
+                        ).getContext(signal)
+                        corpusContext.push(...agenticContext)
+                    }
+
+                    const { explicitMentions, implicitMentions } = getCategorizedMentions(corpusContext)
+
+                    const prompter = new DefaultPrompter(
+                        explicitMentions,
+                        implicitMentions,
+                        command !== undefined
+                    )
+
+                    try {
+                        const { prompt, context } = await this.buildPrompt(
+                            prompter,
+                            signal,
+                            requestID,
+                            authStatus.codyApiVersion,
+                            contextAlternatives
+                        )
+
                         telemetryEvents['cody.chat-question/executed'].record(
                             {
                                 ...telemetryProperties,
-                                context: corpusContext,
+                                context,
                                 userSpecifiedIntent,
                                 detectedIntent: intent,
                                 detectedIntentScores: intentScores,
                             },
-                            { current: span, firstToken: firstTokenSpan, addMetadata: true }
+                            {
+                                addMetadata: true,
+                                current: span,
+                                firstToken: firstTokenSpan,
+                            }
                         )
 
-                        return await this.handleSearchIntent({
-                            context: corpusContext,
-                            signal,
-                            contextAlternatives,
-                        })
-                    }
-                }
-
-                // Experimental Feature: Deep Cody
-                if (model === DeepCodyAgent.ModelRef) {
-                    const agenticContext = await new DeepCodyAgent(
-                        this.chatBuilder,
-                        this.chatClient,
-                        getCodyTools(this.contextRetriever, span),
-                        corpusContext
-                    ).getContext(signal)
-                    corpusContext.push(...agenticContext)
-                }
-
-                const { explicitMentions, implicitMentions } = getCategorizedMentions(corpusContext)
-
-                const prompter = new DefaultPrompter(
-                    explicitMentions,
-                    implicitMentions,
-                    command !== undefined
-                )
-
-                try {
-                    const { prompt, context } = await this.buildPrompt(
-                        prompter,
-                        signal,
-                        requestID,
-                        authStatus.codyApiVersion,
-                        contextAlternatives
-                    )
-
-                    telemetryEvents['cody.chat-question/executed'].record(
-                        {
-                            ...telemetryProperties,
-                            context,
-                            userSpecifiedIntent,
-                            detectedIntent: intent,
-                            detectedIntentScores: intentScores,
-                        },
-                        {
-                            addMetadata: true,
-                            current: span,
-                            firstToken: firstTokenSpan,
+                        signal.throwIfAborted()
+                        this.streamAssistantResponse(
+                            requestID,
+                            prompt,
+                            model,
+                            span,
+                            firstTokenSpan,
+                            signal
+                        )
+                    } catch (error) {
+                        if (isAbortErrorOrSocketHangUp(error as Error)) {
+                            return
                         }
-                    )
-
-                    signal.throwIfAborted()
-                    this.streamAssistantResponse(requestID, prompt, model, span, firstTokenSpan, signal)
-                } catch (error) {
-                    if (isAbortErrorOrSocketHangUp(error as Error)) {
-                        return
+                        if (isRateLimitError(error) || isContextWindowLimitError(error)) {
+                            this.postError(error, 'transcript')
+                        } else {
+                            this.postError(
+                                isError(error)
+                                    ? error
+                                    : new Error(`Error generating assistant response: ${error}`)
+                            )
+                        }
+                        recordErrorToSpan(span, error as Error)
                     }
-                    if (isRateLimitError(error) || isContextWindowLimitError(error)) {
-                        this.postError(error, 'transcript')
-                    } else {
-                        this.postError(
-                            isError(error)
-                                ? error
-                                : new Error(`Error generating assistant response: ${error}`)
-                        )
-                    }
-                    recordErrorToSpan(span, error as Error)
                 }
-            })
+            )
         })
     }
 
@@ -944,8 +956,10 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
      * Removes any existing messages from the provided index,
      * before submitting the replacement text as a new question.
      * When no index is provided, default to the last human message.
+     *
+     * @internal Public for testing only.
      */
-    private async handleEdit({
+    public async handleEdit({
         requestID,
         text,
         index,
@@ -1713,7 +1727,7 @@ export function revealWebviewViewOrPanel(viewOrPanel: vscode.WebviewView | vscod
  * Set HTML for webview (panel) & webview view (sidebar)
  */
 async function addWebviewViewHTML(
-    extensionClient: ExtensionClient,
+    extensionClient: Pick<ExtensionClient, 'capabilities'>,
     extensionUri: vscode.Uri,
     view: vscode.WebviewView | vscode.WebviewPanel
 ): Promise<void> {

@@ -97,7 +97,7 @@ class SearchTool extends CodyTool {
     }
 
     constructor(
-        private contextRetriever: ContextRetriever,
+        private contextRetriever: Pick<ContextRetriever, 'retrieveContext'>,
         private span: Span
     ) {
         super()
@@ -133,6 +133,9 @@ class SearchTool extends CodyTool {
     }
 }
 
-export function getCodyTools(contextRetriever: ContextRetriever, span: Span): CodyTool[] {
+export function getCodyTools(
+    contextRetriever: Pick<ContextRetriever, 'retrieveContext'>,
+    span: Span
+): CodyTool[] {
     return [new SearchTool(contextRetriever, span), new CliTool(), new FileTool()]
 }

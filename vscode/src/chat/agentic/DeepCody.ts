@@ -49,7 +49,7 @@ export class DeepCodyAgent {
 
     constructor(
         private readonly chatBuilder: ChatBuilder,
-        private readonly chatClient: ChatClient,
+        private readonly chatClient: Pick<ChatClient, 'chat'>,
         private readonly tools: CodyTool[],
         mentions: ContextItem[] = []
     ) {
