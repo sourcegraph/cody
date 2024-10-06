@@ -84,7 +84,9 @@ describe('ChatController', () => {
     })
 
     test('send, followup, and edit', async () => {
-        const postMessageSpy = vi.spyOn(chatController as any, 'postMessage')
+        const postMessageSpy = vi
+            .spyOn(chatController as any, 'postMessage')
+            .mockImplementation(() => {})
         const addBotMessageSpy = vi.spyOn(chatController as any, 'addBotMessage')
 
         mockChatClient.chat.mockReturnValue(
@@ -104,7 +106,7 @@ describe('ChatController', () => {
             signal: new AbortController().signal,
             source: 'chat',
         })
-        expect(postMessageSpy.mock.calls.at(0)?.at(0)).toStrictEqual<
+        expect(postMessageSpy.mock.calls.at(2)?.at(0)).toStrictEqual<
             Extract<ExtensionMessage, { type: 'transcript' }>
         >({
             type: 'transcript',
@@ -117,7 +119,7 @@ describe('ChatController', () => {
                     model: undefined,
                     error: undefined,
                     editorState: null,
-                    contextFiles: undefined,
+                    contextFiles: [],
                 },
                 {
                     speaker: 'assistant',
@@ -134,11 +136,11 @@ describe('ChatController', () => {
         await vi.runOnlyPendingTimersAsync()
         expect(mockChatClient.chat).toBeCalledTimes(1)
         expect(addBotMessageSpy).toHaveBeenCalledWith('1', ps`Test reply 1`, 'my-model')
-        expect(postMessageSpy.mock.calls.at(3)?.at(0)).toStrictEqual<
+        expect(postMessageSpy.mock.calls.at(4)?.at(0)).toStrictEqual<
             Extract<ExtensionMessage, { type: 'transcript' }>
         >({
             type: 'transcript',
-            isMessageInProgress: true,
+            isMessageInProgress: false,
             chatID: mockNowDate.toUTCString(),
             messages: [
                 {
@@ -283,11 +285,14 @@ describe('ChatController', () => {
     })
 
     test('send error', async () => {
-        const postMessageSpy = vi.spyOn(chatController as any, 'postMessage')
+        const postMessageSpy = vi
+            .spyOn(chatController as any, 'postMessage')
+            .mockImplementation(() => {})
         const addBotMessageSpy = vi.spyOn(chatController as any, 'addBotMessage')
 
         mockChatClient.chat.mockReturnValue(
             (async function* () {
+                yield { type: 'change', text: 'Test partial reply' }
                 yield { type: 'error', error: new Error('my-error') }
             })() satisfies AsyncGenerator<CompletionGeneratorValue>
         )
@@ -304,8 +309,8 @@ describe('ChatController', () => {
         })
         await vi.runOnlyPendingTimersAsync()
         expect(mockChatClient.chat).toBeCalledTimes(1)
-        expect(addBotMessageSpy).toHaveBeenCalledWith('1', ps``, 'my-model')
-        expect(postMessageSpy.mock.calls.at(3)?.at(0)).toStrictEqual<
+        expect(addBotMessageSpy).toHaveBeenCalledWith('1', ps`Test partial reply`, 'my-model')
+        expect(postMessageSpy.mock.calls.at(4)?.at(0)).toStrictEqual<
             Extract<ExtensionMessage, { type: 'transcript' }>
         >({
             type: 'transcript',

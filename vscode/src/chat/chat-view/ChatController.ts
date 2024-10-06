@@ -1,5 +1,6 @@
 import {
     type ChatModel,
+    type CodyClientConfig,
     cenv,
     clientCapabilities,
     currentSiteVersion,
@@ -22,7 +23,6 @@ import {
     type ChatClient,
     type ChatMessage,
     ClientConfigSingleton,
-    type CodyClientConfig,
     type CompletionParameters,
     type ContextItem,
     type ContextItemOpenCtx,
@@ -616,215 +616,233 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
     }): Promise<void> {
         return tracer.startActiveSpan('chat.submit', async (span): Promise<void> => {
             span.setAttribute('sampled', true)
-            const authStatus = currentAuthStatusAuthed()
 
-            // Use default model if no model is selected.
-            const model = await firstResultFromOperation(
-                ChatBuilder.resolvedModelForChat(this.chatBuilder)
-            )
-            if (!model) {
-                throw new Error('No model selected, and no default chat model is available')
+            if (inputText.toString().match(/^\/reset$/)) {
+                span.addEvent('clearAndRestartSession')
+                span.end()
+                return this.clearAndRestartSession()
             }
 
-            this.chatBuilder.setSelectedModel(model)
+            this.chatBuilder.addHumanMessage({
+                text: inputText,
+                editorState,
+                intent: detectedIntent,
+            })
+            await this.saveSession()
+            signal.throwIfAborted()
 
-            const { isPublic: repoIsPublic, repoMetadata } = await firstResultFromOperation(
-                publicRepoMetadataIfAllWorkspaceReposArePublic
-            )
-
-            const telemetryProperties = {
-                requestID,
-                chatModel: model,
-                authStatus,
-                source,
-                command,
-                sessionID: this.chatBuilder.sessionID,
-                repoMetadata,
-                repoIsPublic,
-                traceId: span.spanContext().traceId,
-                promptText: inputText,
-            } as const
-            const tokenCounterUtils = await getTokenCounterUtils()
-
-            telemetryEvents['cody.chat-question/submitted'].record(
+            return this.sendChat(
                 {
-                    ...telemetryProperties,
+                    requestID,
+                    inputText,
                     mentions,
+                    editorState,
+                    signal,
+                    source,
+                    command,
+                    intent: detectedIntent,
+                    intentScores: detectedIntentScores,
+                    manuallySelectedIntent,
                 },
-                tokenCounterUtils
+                span
+            )
+        })
+    }
+
+    public async sendChat(
+        {
+            requestID,
+            inputText,
+            mentions,
+            editorState,
+            signal,
+            source,
+            command,
+            intent: detectedIntent,
+            intentScores: detectedIntentScores,
+            manuallySelectedIntent,
+        }: Parameters<typeof this.handleUserMessageSubmission>[0],
+        span: Span
+    ): Promise<void> {
+        const authStatus = currentAuthStatusAuthed()
+
+        // Use default model if no model is selected.
+        const model = await firstResultFromOperation(ChatBuilder.resolvedModelForChat(this.chatBuilder))
+        if (!model) {
+            throw new Error('No model selected, and no default chat model is available')
+        }
+        this.chatBuilder.setSelectedModel(model)
+        const { isPublic: repoIsPublic, repoMetadata } = await firstResultFromOperation(
+            publicRepoMetadataIfAllWorkspaceReposArePublic
+        )
+
+        const telemetryProperties = {
+            requestID,
+            chatModel: model,
+            authStatus,
+            source,
+            command,
+            sessionID: this.chatBuilder.sessionID,
+            repoMetadata,
+            repoIsPublic,
+            traceId: span.spanContext().traceId,
+            promptText: inputText,
+        } as const
+        const tokenCounterUtils = await getTokenCounterUtils()
+
+        telemetryEvents['cody.chat-question/submitted'].record(
+            {
+                ...telemetryProperties,
+                mentions,
+            },
+            tokenCounterUtils
+        )
+
+        await tracer.startActiveSpan('chat.submit.firstToken', async (firstTokenSpan): Promise<void> => {
+            this.postEmptyMessageInProgress(model)
+
+            // All mentions we receive are either source=initial or source=user. If the caller
+            // forgot to set the source, assume it's from the user.
+            mentions = mentions.map(m => (m.source ? m : { ...m, source: ContextItemSource.User }))
+
+            const contextAlternatives = await this.computeContext(
+                { text: inputText, mentions },
+                requestID,
+                editorState,
+                span,
+                signal
+            )
+            signal.throwIfAborted()
+            const corpusContext = contextAlternatives[0].items
+
+            const repositoryMentioned = mentions.find(contextItem =>
+                ['repository', 'tree'].includes(contextItem.type)
             )
 
-            await tracer.startActiveSpan(
-                'chat.submit.firstToken',
-                async (firstTokenSpan): Promise<void> => {
-                    if (inputText.toString().match(/^\/reset$/)) {
-                        span.addEvent('clearAndRestartSession')
-                        span.end()
-                        return this.clearAndRestartSession()
-                    }
+            // We are checking the feature flag here to log non-undefined intent only if the feature flag is on
+            let intent: ChatMessage['intent'] | undefined = this.featureCodyExperimentalOneBox
+                ? detectedIntent
+                : undefined
 
-                    this.chatBuilder.addHumanMessage({
-                        text: inputText,
-                        editorState,
-                        intent: detectedIntent,
+            let intentScores: { intent: string; score: number }[] | undefined | null = this
+                .featureCodyExperimentalOneBox
+                ? detectedIntentScores
+                : undefined
+
+            const userSpecifiedIntent = this.featureCodyExperimentalOneBox
+                ? manuallySelectedIntent && detectedIntent
+                    ? detectedIntent
+                    : 'auto'
+                : undefined
+
+            if (this.featureCodyExperimentalOneBox && repositoryMentioned) {
+                const inputTextWithoutContextChips = editorState
+                    ? PromptString.unsafe_fromUserQuery(
+                          inputTextWithoutContextChipsFromPromptEditorState(editorState)
+                      )
+                    : inputText
+
+                const finalIntentDetectionResponse = detectedIntent
+                    ? { intent: detectedIntent, allScores: detectedIntentScores }
+                    : await this.detectChatIntent({
+                          requestID,
+                          text: inputTextWithoutContextChips.toString(),
+                      })
+                          .then(async response => {
+                              signal.throwIfAborted()
+                              this.chatBuilder.setLastMessageIntent(response?.intent)
+                              this.postViewTranscript()
+                              return response
+                          })
+                          .catch(() => undefined)
+
+                intent = finalIntentDetectionResponse?.intent
+                intentScores = finalIntentDetectionResponse?.allScores
+                signal.throwIfAborted()
+                if (intent === 'search') {
+                    telemetryEvents['cody.chat-question/executed'].record(
+                        {
+                            ...telemetryProperties,
+                            context: corpusContext,
+                            userSpecifiedIntent,
+                            detectedIntent: intent,
+                            detectedIntentScores: intentScores,
+                        },
+                        { current: span, firstToken: firstTokenSpan, addMetadata: true }
+                    )
+
+                    return await this.handleSearchIntent({
+                        context: corpusContext,
+                        signal,
+                        contextAlternatives,
                     })
-                    await this.saveSession()
-                    signal.throwIfAborted()
-
-                    this.postEmptyMessageInProgress(model)
-
-                    // All mentions we receive are either source=initial or source=user. If the caller
-                    // forgot to set the source, assume it's from the user.
-                    mentions = mentions.map(m =>
-                        m.source ? m : { ...m, source: ContextItemSource.User }
-                    )
-
-                    const contextAlternatives = await this.computeContext(
-                        { text: inputText, mentions },
-                        requestID,
-                        editorState,
-                        span,
-                        signal
-                    )
-                    signal.throwIfAborted()
-                    const corpusContext = contextAlternatives[0].items
-
-                    const repositoryMentioned = mentions.find(contextItem =>
-                        ['repository', 'tree'].includes(contextItem.type)
-                    )
-
-                    // We are checking the feature flag here to log non-undefined intent only if the feature flag is on
-                    let intent: ChatMessage['intent'] | undefined = this.featureCodyExperimentalOneBox
-                        ? detectedIntent
-                        : undefined
-
-                    let intentScores: { intent: string; score: number }[] | undefined | null = this
-                        .featureCodyExperimentalOneBox
-                        ? detectedIntentScores
-                        : undefined
-
-                    const userSpecifiedIntent = this.featureCodyExperimentalOneBox
-                        ? manuallySelectedIntent && detectedIntent
-                            ? detectedIntent
-                            : 'auto'
-                        : undefined
-
-                    if (this.featureCodyExperimentalOneBox && repositoryMentioned) {
-                        const inputTextWithoutContextChips = editorState
-                            ? PromptString.unsafe_fromUserQuery(
-                                  inputTextWithoutContextChipsFromPromptEditorState(editorState)
-                              )
-                            : inputText
-
-                        const finalIntentDetectionResponse = detectedIntent
-                            ? { intent: detectedIntent, allScores: detectedIntentScores }
-                            : await this.detectChatIntent({
-                                  requestID,
-                                  text: inputTextWithoutContextChips.toString(),
-                              })
-                                  .then(async response => {
-                                      signal.throwIfAborted()
-                                      this.chatBuilder.setLastMessageIntent(response?.intent)
-                                      this.postViewTranscript()
-                                      return response
-                                  })
-                                  .catch(() => undefined)
-                        intent = finalIntentDetectionResponse?.intent
-                        intentScores = finalIntentDetectionResponse?.allScores
-                        signal.throwIfAborted()
-                        if (intent === 'search') {
-                            telemetryEvents['cody.chat-question/executed'].record(
-                                {
-                                    ...telemetryProperties,
-                                    context: corpusContext,
-                                    userSpecifiedIntent,
-                                    detectedIntent: intent,
-                                    detectedIntentScores: intentScores,
-                                },
-                                { current: span, firstToken: firstTokenSpan, addMetadata: true }
-                            )
-
-                            return await this.handleSearchIntent({
-                                context: corpusContext,
-                                signal,
-                                contextAlternatives,
-                            })
-                        }
-                    }
-
-                    // Experimental Feature: Deep Cody
-                    if (model === DeepCodyAgent.ModelRef) {
-                        const agenticContext = await new DeepCodyAgent(
-                            this.chatBuilder,
-                            this.chatClient,
-                            getCodyTools(this.contextRetriever, span),
-                            corpusContext
-                        ).getContext(signal)
-                        corpusContext.push(...agenticContext)
-                    }
-
-                    const { explicitMentions, implicitMentions } = getCategorizedMentions(corpusContext)
-
-                    const prompter = new DefaultPrompter(
-                        explicitMentions,
-                        implicitMentions,
-                        command !== undefined
-                    )
-
-                    try {
-                        const versions = await currentSiteVersion()
-                        if (!versions) {
-                            throw new Error('unable to determine site version')
-                        }
-                        const { prompt, context } = await this.buildPrompt(
-                            prompter,
-                            signal,
-                            requestID,
-                            versions.codyAPIVersion,
-                            contextAlternatives
-                        )
-
-                        telemetryEvents['cody.chat-question/executed'].record(
-                            {
-                                ...telemetryProperties,
-                                context,
-                                userSpecifiedIntent,
-                                detectedIntent: intent,
-                                detectedIntentScores: intentScores,
-                            },
-                            {
-                                addMetadata: true,
-                                current: span,
-                                firstToken: firstTokenSpan,
-                            }
-                        )
-
-                        signal.throwIfAborted()
-                        this.streamAssistantResponse(
-                            requestID,
-                            prompt,
-                            model,
-                            span,
-                            firstTokenSpan,
-                            signal
-                        )
-                    } catch (error) {
-                        if (isAbortErrorOrSocketHangUp(error as Error)) {
-                            return
-                        }
-                        if (isRateLimitError(error) || isContextWindowLimitError(error)) {
-                            this.postError(error, 'transcript')
-                        } else {
-                            this.postError(
-                                isError(error)
-                                    ? error
-                                    : new Error(`Error generating assistant response: ${error}`)
-                            )
-                        }
-                        recordErrorToSpan(span, error as Error)
-                    }
                 }
+            }
+
+            // Experimental Feature: Deep Cody
+            if (model === DeepCodyAgent.ModelRef) {
+                const agenticContext = await new DeepCodyAgent(
+                    this.chatBuilder,
+                    this.chatClient,
+                    getCodyTools(this.contextRetriever, span),
+                    corpusContext
+                ).getContext(signal)
+                corpusContext.push(...agenticContext)
+            }
+
+            const { explicitMentions, implicitMentions } = getCategorizedMentions(corpusContext)
+
+            const prompter = new DefaultPrompter(
+                explicitMentions,
+                implicitMentions,
+                command !== undefined
             )
+
+            try {
+                const versions = await currentSiteVersion()
+                if (!versions) {
+                    throw new Error('unable to determine site version')
+                }
+                const { prompt, context } = await this.buildPrompt(
+                    prompter,
+                    signal,
+                    requestID,
+                    versions.codyAPIVersion,
+                    contextAlternatives
+                )
+
+                telemetryEvents['cody.chat-question/executed'].record(
+                    {
+                        ...telemetryProperties,
+                        context,
+                        userSpecifiedIntent,
+                        detectedIntent: intent,
+                        detectedIntentScores: intentScores,
+                    },
+                    {
+                        addMetadata: true,
+                        current: span,
+                        firstToken: firstTokenSpan,
+                    }
+                )
+
+                signal.throwIfAborted()
+                this.streamAssistantResponse(requestID, prompt, model, span, firstTokenSpan, signal)
+            } catch (error) {
+                if (isAbortErrorOrSocketHangUp(error as Error)) {
+                    return
+                }
+                if (isRateLimitError(error) || isContextWindowLimitError(error)) {
+                    this.postError(error, 'transcript')
+                } else {
+                    this.postError(
+                        isError(error)
+                            ? error
+                            : new Error(`Error generating assistant response: ${error}`)
+                    )
+                }
+                recordErrorToSpan(span, error as Error)
+            }
         })
     }
 
@@ -1649,11 +1667,8 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
 
     private async setWebviewToChat(): Promise<void> {
         const viewOrPanel = this._webviewPanelOrView ?? (await this.createWebviewViewOrPanel())
-
         this._webviewPanelOrView = viewOrPanel
-
         revealWebviewViewOrPanel(viewOrPanel)
-
         await this.postMessage({
             type: 'view',
             view: View.Chat,
