@@ -1,10 +1,14 @@
 import fs from 'node:fs/promises'
+import path from 'node:path'
 import { codyPaths } from '@sourcegraph/cody-shared'
 
-export const uninstallMarker = codyPaths().config + '/uninstall-marker'
+export async function getUninstallMarker() {
+    const paths = await codyPaths()
+    return path.join(paths.config, 'uninstall-marker')
+}
 
 export const createUninstallMarker = async (): Promise<void> => {
-    await fs.writeFile(uninstallMarker, '')
+    await fs.writeFile(await getUninstallMarker(), '')
 }
 
 let isReinstall: boolean | undefined = undefined
@@ -17,6 +21,7 @@ export const isReinstalling = async (): Promise<boolean> => {
         return isReinstall
     }
     try {
+        const uninstallMarker = await getUninstallMarker()
         await fs.stat(uninstallMarker)
         await fs.unlink(uninstallMarker)
         isReinstall = true
