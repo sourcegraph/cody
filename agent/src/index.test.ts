@@ -568,7 +568,7 @@ describe('Agent', () => {
             const completions = await client.request('autocomplete/execute', {
                 uri: ignoredUri.toString(),
                 position: { line: 1, character: 3 },
-                triggerKind: 'Invoke',
+                triggerKind: 'Automatic',
             })
             const texts = completions.items.map(item => item.insertText)
             expect(completions.items.length).toBe(0)

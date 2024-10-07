@@ -37,7 +37,7 @@ describe('Autocomplete', () => {
         const completions = await client.request('autocomplete/execute', {
             uri: uri.toString(),
             position: { line: 1, character: 4 },
-            triggerKind: 'Invoke',
+            triggerKind: 'Automatic',
         })
         const completionID = completions.items[0].id
 
@@ -91,7 +91,7 @@ describe('Autocomplete', () => {
         const completions = await client.request('autocomplete/execute', {
             uri: uri.toString(),
             position: { line: 1, character: 4 },
-            triggerKind: 'Invoke',
+            triggerKind: 'Automatic',
         })
 
         const completionID = completions.items[0].id
@@ -113,11 +113,10 @@ describe('Autocomplete', () => {
         expect(texts).toMatchInlineSnapshot(
             `
           [
-            "    const n = arr.length
-              for (let i = 0; i < n - 1; i++) {
-                  for (let j = 0; j < n - i - 1; j++) {
+            "    for (let i = 0; i < arr.length; i++) {
+                  for (let j = 0; j < arr.length - i - 1; j++) {
                       if (arr[j] > arr[j + 1]) {
-                          const temp = arr[j]
+                          let temp = arr[j]
                           arr[j] = arr[j + 1]
                           arr[j + 1] = temp
                       }

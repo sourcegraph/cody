@@ -125,7 +125,7 @@ export class InlineCompletionItemProvider
     /** Value derived from the {@link authStatus}, available synchronously. */
     private isDotComUser = false
 
-    private get config(): InlineCompletionItemProviderConfig {
+    public get config(): InlineCompletionItemProviderConfig {
         return InlineCompletionItemProviderConfigSingleton.configuration
     }
     private disableLowPerfLangDelay = false
@@ -899,6 +899,7 @@ export class InlineCompletionItemProvider
     }
 
     public async manuallyTriggerCompletion(): Promise<void> {
+        console.log('manuallyTriggerCompletion')
         await vscode.commands.executeCommand('editor.action.inlineSuggest.hide')
         this.lastManualCompletionTimestamp = Date.now()
         await vscode.commands.executeCommand('editor.action.inlineSuggest.trigger')
