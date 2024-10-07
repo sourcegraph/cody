@@ -73,7 +73,7 @@ export function processCompletion(
     const { document, position, docContext, metadata } = params
     const { prefix, suffix, currentLineSuffix, multilineTrigger, multilineTriggerPosition } = docContext
     let { insertText } = completion
-
+    const originalInsertText = insertText
     if (completion.insertText.length === 0) {
         return completion
     }
@@ -129,6 +129,11 @@ export function processCompletion(
 
     // Trim start and end of the completion to remove all trailing whitespace.
     insertText = insertText.trimEnd()
+    if (insertText.length <= 3 && originalInsertText.length > 3) {
+        console.log(
+            'insertText.length<= 3 && originalInsertText.length > 3 so the text was trimmed so much we lost it'
+        )
+    }
 
     return { ...completion, insertText }
 }
