@@ -65,7 +65,9 @@ describe('ChatController', () => {
         vi.clearAllMocks()
         vi.useFakeTimers()
         mockAuthStatus(AUTH_STATUS_FIXTURE_AUTHED)
-        mockResolvedConfig({ auth: { serverEndpoint: AUTH_STATUS_FIXTURE_AUTHED.endpoint } })
+        mockResolvedConfig({
+            auth: { serverEndpoint: AUTH_STATUS_FIXTURE_AUTHED.endpoint },
+        })
         mockClientCapabilities(CLIENT_CAPABILITIES_FIXTURE)
         mockLocalStorage()
         vi.setSystemTime(mockNowDate)
@@ -116,6 +118,7 @@ describe('ChatController', () => {
                 {
                     speaker: 'human',
                     text: 'Test input',
+                    intent: undefined,
                     model: undefined,
                     error: undefined,
                     editorState: null,
@@ -124,6 +127,7 @@ describe('ChatController', () => {
                 {
                     speaker: 'assistant',
                     model: 'my-model',
+                    intent: undefined,
                     error: undefined,
                     editorState: undefined,
                     text: undefined,
@@ -146,6 +150,7 @@ describe('ChatController', () => {
                 {
                     speaker: 'human',
                     text: 'Test input',
+                    intent: undefined,
                     model: undefined,
                     error: undefined,
                     editorState: null,
@@ -153,6 +158,7 @@ describe('ChatController', () => {
                 },
                 {
                     speaker: 'assistant',
+                    intent: undefined,
                     model: 'my-model',
                     error: undefined,
                     editorState: undefined,
@@ -191,6 +197,7 @@ describe('ChatController', () => {
                 {
                     speaker: 'human',
                     text: 'Test input',
+                    intent: undefined,
                     model: undefined,
                     error: undefined,
                     editorState: null,
@@ -199,6 +206,7 @@ describe('ChatController', () => {
                 {
                     speaker: 'assistant',
                     model: 'my-model',
+                    intent: undefined,
                     error: undefined,
                     editorState: undefined,
                     text: 'Test reply 1',
@@ -207,6 +215,7 @@ describe('ChatController', () => {
                 {
                     speaker: 'human',
                     text: 'Test followup',
+                    intent: undefined,
                     model: undefined,
                     error: undefined,
                     editorState: null,
@@ -215,6 +224,7 @@ describe('ChatController', () => {
                 {
                     speaker: 'assistant',
                     model: 'my-model',
+                    intent: undefined,
                     error: undefined,
                     editorState: undefined,
                     text: 'Test reply 2',
@@ -251,6 +261,7 @@ describe('ChatController', () => {
                 {
                     speaker: 'human',
                     text: 'Test input',
+                    intent: undefined,
                     model: undefined,
                     error: undefined,
                     editorState: null,
@@ -259,6 +270,7 @@ describe('ChatController', () => {
                 {
                     speaker: 'assistant',
                     model: 'my-model',
+                    intent: undefined,
                     error: undefined,
                     editorState: undefined,
                     text: 'Test reply 1',
@@ -267,6 +279,7 @@ describe('ChatController', () => {
                 {
                     speaker: 'human',
                     text: 'Test edit',
+                    intent: undefined,
                     model: undefined,
                     error: undefined,
                     editorState: null,
@@ -275,6 +288,7 @@ describe('ChatController', () => {
                 {
                     speaker: 'assistant',
                     model: 'my-model',
+                    intent: undefined,
                     error: undefined,
                     editorState: undefined,
                     text: 'Test reply 3',
