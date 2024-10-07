@@ -143,7 +143,7 @@ export async function start(
                     event => event.affectsConfiguration('cody') || event.affectsConfiguration('openctx')
                 ),
                 startWith(undefined),
-                map(getConfiguration),
+                map(() => getConfiguration()),
                 distinctUntilChanged()
             ),
             fromVSCodeEvent(secretStorage.onDidChange.bind(secretStorage)).pipe(
