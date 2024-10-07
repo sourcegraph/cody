@@ -92,7 +92,6 @@ export async function createAgentClient({
             customConfiguration: {
                 'cody.autocomplete.enabled': false,
                 'cody.experimental.urlContext': true,
-                'cody.web': true,
                 'cody.internal.debug.state': !!process.env.CODY_WEB_DEMO,
             },
         },

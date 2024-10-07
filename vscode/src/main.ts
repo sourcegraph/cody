@@ -25,7 +25,7 @@ import {
     isDotCom,
     modelsService,
     resolvedConfig,
-    setClientCapabilitiesFromConfiguration,
+    setClientCapabilities,
     setClientNameVersion,
     setEditorWindowIsFocused,
     setLogger,
@@ -130,7 +130,7 @@ export async function start(
 
     const disposables: vscode.Disposable[] = []
 
-    setClientCapabilitiesFromConfiguration(getConfiguration())
+    setClientCapabilities(getConfiguration(), platform.extensionClient.capabilities)
 
     setResolvedConfigurationObservable(
         combineLatest(

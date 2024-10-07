@@ -2,7 +2,7 @@ import { Observable } from 'observable-fns'
 import type {
     AuthCredentials,
     AuthStatus,
-    ClientCapabilities,
+    ClientCapabilitiesWithLegacyFields,
     ClientConfiguration,
     ModelsData,
     ResolvedConfiguration,
@@ -163,7 +163,7 @@ export interface PromptsResult {
  */
 export interface LegacyWebviewConfig {
     config: ConfigurationSubsetForWebview & LocalEnv
-    clientCapabilities: ClientCapabilities
+    clientCapabilities: ClientCapabilitiesWithLegacyFields
     authStatus: AuthStatus
     userProductSubscription?: UserProductSubscription | null | undefined
     configFeatures: {

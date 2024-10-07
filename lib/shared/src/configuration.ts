@@ -1,4 +1,4 @@
-import type { ClientCapabilities } from './configuration/clientCapabilities'
+import type { ClientCapabilitiesWithLegacyFields } from './configuration/clientCapabilities'
 import type { ChatModelProviderConfig } from './models/sync'
 
 import type { PromptString } from './prompt/prompt-string'
@@ -69,28 +69,28 @@ interface RawClientConfiguration {
     /**
      * @deprecated Do not use directly. Call {@link clientCapabilities} instead
      * (`clientCapabilities().agentIDE`) and see the docstring on
-     * {@link ClientCapabilities.agentIDE}.
+     * {@link ClientCapabilitiesWithLegacyFields.agentIDE}.
      */
     agentIDE?: CodyIDE
 
     /**
      * @deprecated Do not use directly. Call {@link clientCapabilities} instead
      * (`clientCapabilities().agentIDEVersion`) and see the docstring on
-     * {@link ClientCapabilities.agentIDEVersion}.
+     * {@link ClientCapabilitiesWithLegacyFields.agentIDEVersion}.
      */
-    agentIDEVersion?: ClientCapabilities['agentIDEVersion']
+    agentIDEVersion?: ClientCapabilitiesWithLegacyFields['agentIDEVersion']
 
     /**
      * @deprecated Do not use directly. Call {@link clientCapabilities} instead
      * (`clientCapabilities().agentExtensionVersion`) and see the docstring on
-     * {@link ClientCapabilities.agentExtensionVersion}.
+     * {@link ClientCapabilitiesWithLegacyFields.agentExtensionVersion}.
      */
-    agentExtensionVersion?: ClientCapabilities['agentExtensionVersion']
+    agentExtensionVersion?: ClientCapabilitiesWithLegacyFields['agentExtensionVersion']
 
     /**
      * @deprecated Do not use directly. Call {@link clientCapabilities} instead
      * (`clientCapabilities().agentIDEVersion`) and see the docstring on
-     * {@link ClientCapabilities.agentIDEVersion}.
+     * {@link ClientCapabilitiesWithLegacyFields.agentIDEVersion}.
      */
     telemetryClientName?: string
 

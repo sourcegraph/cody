@@ -1,6 +1,10 @@
 import type { Meta, StoryObj } from '@storybook/react'
 
-import { type ClientCapabilities, CodyIDE, type LegacyWebviewConfig } from '@sourcegraph/cody-shared'
+import {
+    type ClientCapabilitiesWithLegacyFields,
+    CodyIDE,
+    type LegacyWebviewConfig,
+} from '@sourcegraph/cody-shared'
 import { ExtensionAPIProviderForTestsOnly, MOCK_API_PROXY } from '@sourcegraph/prompt-editor'
 import { Observable } from 'observable-fns'
 import type { ComponentProps } from 'react'
@@ -15,7 +19,9 @@ const vscodeAPI: VSCodeWrapper = {
     setState: () => {},
 }
 
-const meta: Meta<ComponentProps<typeof AuthPage> & { clientCapabilities: ClientCapabilities }> = {
+const meta: Meta<
+    ComponentProps<typeof AuthPage> & { clientCapabilities: ClientCapabilitiesWithLegacyFields }
+> = {
     title: 'cody/AuthPage',
     component: AuthPage,
     decorators: [VSCodeWebview],
