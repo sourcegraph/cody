@@ -1,5 +1,4 @@
 import { isDotCom } from '../sourcegraph-api/environments'
-import type { CodyLLMSiteConfiguration } from '../sourcegraph-api/graphql/client'
 import type { UserProductSubscription } from '../sourcegraph-api/userProductSubscription'
 
 /**
@@ -26,7 +25,6 @@ export interface AuthenticatedAuthStatus {
 
     hasVerifiedEmail?: boolean
     requiresVerifiedEmail?: boolean
-    configOverwrites?: CodyLLMSiteConfiguration
 
     primaryEmail?: string
     displayName?: string
@@ -68,10 +66,6 @@ export const AUTH_STATUS_FIXTURE_UNAUTHED: AuthStatus & { authenticated: false }
 export const AUTH_STATUS_FIXTURE_AUTHED_DOTCOM: AuthenticatedAuthStatus = {
     ...AUTH_STATUS_FIXTURE_AUTHED,
     endpoint: 'https://sourcegraph.com',
-    configOverwrites: {
-        provider: 'sourcegraph',
-        completionModel: 'fireworks/starcoder-hybrid',
-    },
 }
 
 export function isCodyProUser(authStatus: AuthStatus, sub: UserProductSubscription | null): boolean {

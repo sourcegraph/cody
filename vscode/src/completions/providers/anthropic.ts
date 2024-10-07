@@ -67,10 +67,16 @@ function getClientModel(
     return model || BYOK_MODEL_ID_FOR_LOGS
 }
 
-export function createProvider({ legacyModel, source, authStatus }: ProviderFactoryParams): Provider {
+export function createProvider({
+    legacyModel,
+    source,
+    authStatus,
+    configOverwrites,
+}: ProviderFactoryParams): Provider {
     return new AnthropicProvider({
         id: 'anthropic',
         legacyModel: getClientModel(legacyModel, authStatus),
         source,
+        configOverwrites,
     })
 }

@@ -3,8 +3,10 @@ import { expect, it, vi } from 'vitest'
 import {
     AUTH_STATUS_FIXTURE_AUTHED,
     AUTH_STATUS_FIXTURE_AUTHED_DOTCOM,
+    type AuthenticatedAuthStatus,
     type AutocompleteProviderID,
     type CodeCompletionsParams,
+    type CodyLLMSiteConfiguration,
     type ModelsData,
     type UserProductSubscription,
     createModelFromServerModel,
@@ -63,6 +65,14 @@ export function getAutocompleteProviderFromLocalSettings({
             },
         },
         authStatus,
+        configOverwrites: Observable.of<CodyLLMSiteConfiguration | null>(
+            isDotCom
+                ? {
+                      provider: 'sourcegraph',
+                      completionModel: 'fireworks/starcoder-hybrid',
+                  }
+                : null
+        ),
     })
 }
 
@@ -94,16 +104,9 @@ export async function getAutocompleteProviderFromServerSideModelConfig({
         } satisfies Partial<ModelsData> as ModelsData)
     )
 
-    const authStatus = isDotCom
+    const authStatus: AuthenticatedAuthStatus = isDotCom
         ? AUTH_STATUS_FIXTURE_AUTHED_DOTCOM
-        : {
-              ...AUTH_STATUS_FIXTURE_AUTHED,
-              // TODO: stop using the `configOverwrites` in combination with server-side model config.
-              configOverwrites: {
-                  provider: isBYOK ? parseModelRef(modelRef).providerId : 'sourcegraph',
-              },
-          }
-
+        : AUTH_STATUS_FIXTURE_AUTHED
     mockAuthStatus(authStatus)
 
     return createProviderForTest({
@@ -114,6 +117,10 @@ export async function getAutocompleteProviderFromServerSideModelConfig({
             },
         },
         authStatus,
+        configOverwrites: Observable.of<CodyLLMSiteConfiguration | null>(
+            // TODO: stop using the `configOverwrites` in combination with server-side model config.
+            { provider: isBYOK ? parseModelRef(modelRef).providerId : 'sourcegraph' }
+        ),
     })
 }
 
@@ -147,13 +154,11 @@ export function getAutocompleteProviderFromSiteConfigCodyLLMConfiguration({
                 autocompleteAdvancedModel: null,
             },
         },
-        authStatus: {
-            ...authStatus,
-            configOverwrites: {
-                provider,
-                completionModel,
-            },
-        },
+        authStatus,
+        configOverwrites: Observable.of<CodyLLMSiteConfiguration | null>({
+            provider,
+            completionModel,
+        }),
     })
 }
 
@@ -200,7 +205,7 @@ export function getRequestParamsWithoutMessages(
     provider: Provider
 ): Omit<CodeCompletionsParams, 'messages' | 'stopSequences'> {
     const { messages, stopSequences, ...restParams } = provider.getRequestParams(
-        getMockedGenerateCompletionsOptions()
+        getMockedGenerateCompletionsOptions(provider.options)
     ) as CodeCompletionsParams
 
     return restParams

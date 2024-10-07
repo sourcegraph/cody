@@ -417,10 +417,7 @@ export async function validateCredentials(
         clientState: config.clientState,
     })
 
-    const [codyLLMConfiguration, userInfo] = await Promise.all([
-        client.getCodyLLMConfiguration(signal),
-        client.getCurrentUserInfo(signal),
-    ])
+    const userInfo = await client.getCurrentUserInfo(signal)
     signal?.throwIfAborted()
 
     if (isError(userInfo) && isNetworkLikeError(userInfo)) {
@@ -451,12 +448,9 @@ export async function validateCredentials(
     }
 
     logDebug('auth', `Authentication succeeed to endpoint ${config.auth.serverEndpoint}`)
-    const configOverwrites = isError(codyLLMConfiguration) ? undefined : codyLLMConfiguration
-
     return newAuthStatus({
         ...userInfo,
         endpoint: config.auth.serverEndpoint,
-        configOverwrites,
         authenticated: true,
         hasVerifiedEmail: false,
     })

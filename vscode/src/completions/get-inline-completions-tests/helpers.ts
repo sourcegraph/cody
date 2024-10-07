@@ -12,6 +12,7 @@ import {
     ClientConfigSingleton,
     type CodeCompletionsClient,
     type CodyClientConfig,
+    type CodyLLMSiteConfiguration,
     type CompletionParameters,
     type CompletionResponse,
     CompletionStopReason,
@@ -65,6 +66,7 @@ export type Params = Partial<Omit<InlineCompletionsParams, 'document' | 'positio
     ) => Generator<CompletionResponse> | AsyncGenerator<CompletionResponse>
     configuration?: Parameters<typeof mockResolvedConfig>[0]
     authStatus?: AuthenticatedAuthStatus
+    configOverwrites?: CodyLLMSiteConfiguration | null
     documentUri?: URI
 }
 
@@ -96,6 +98,7 @@ export function params(
         takeSuggestWidgetSelectionIntoAccount,
         configuration: config,
         documentUri = testFileUri('test.ts'),
+        configOverwrites = null,
         ...restParams
     }: Params = {}
 ): ParamsResult {
@@ -166,6 +169,7 @@ export function params(
             (config?.configuration?.autocompleteAdvancedModel as AutocompleteProviderID) || 'anthropic',
         source: 'local-editor-settings',
         authStatus,
+        configOverwrites,
     })
 
     provider.client = client
@@ -420,8 +424,12 @@ export function initCompletionProviderConfig({
     mockClientCapabilities(CLIENT_CAPABILITIES_FIXTURE)
 }
 
-export function getMockedGenerateCompletionsOptions(): GenerateCompletionsOptions {
-    const { position, document, docContext, triggerKind } = params('const value = █', [])
+export function getMockedGenerateCompletionsOptions({
+    configOverwrites,
+}: Pick<Params, 'configOverwrites'> = {}): GenerateCompletionsOptions {
+    const { position, document, docContext, triggerKind } = params('const value = █', [], {
+        configOverwrites,
+    })
     return {
         position,
         document,

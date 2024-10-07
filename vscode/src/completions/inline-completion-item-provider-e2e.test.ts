@@ -149,6 +149,7 @@ function getInlineCompletionProvider(
             authStatus: currentAuthStatus(),
             provider: 'default',
             source: 'local-editor-settings',
+            configOverwrites: null,
         }),
         firstCompletionTimeout:
             args?.firstCompletionTimeout ?? DEFAULT_VSCODE_SETTINGS.autocompleteFirstCompletionTimeout,
@@ -174,6 +175,7 @@ function createNetworkProvider(params: RequestParams): MockRequestProvider {
             id: 'mock-provider',
             legacyModel: 'test-model',
             source: 'local-editor-settings',
+            configOverwrites: null,
         },
         providerOptions
     )

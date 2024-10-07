@@ -25,7 +25,11 @@ class GoogleGeminiProvider extends Provider {
 
 const SUPPORTED_GEMINI_MODELS = ['gemini-1.5-flash', 'gemini-pro', 'gemini-1.0-pro'] as const
 
-export function createProvider({ legacyModel, source }: ProviderFactoryParams): Provider {
+export function createProvider({
+    legacyModel,
+    source,
+    configOverwrites,
+}: ProviderFactoryParams): Provider {
     const clientModel = legacyModel ?? 'gemini-1.5-flash'
 
     if (!SUPPORTED_GEMINI_MODELS.some(m => clientModel.includes(m))) {
@@ -36,5 +40,6 @@ export function createProvider({ legacyModel, source }: ProviderFactoryParams): 
         id: 'google',
         legacyModel: clientModel,
         source,
+        configOverwrites,
     })
 }

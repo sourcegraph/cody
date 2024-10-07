@@ -30,10 +30,15 @@ class UnstableOpenAIProvider extends Provider {
     }
 }
 
-export function createProvider({ legacyModel, source }: ProviderFactoryParams): Provider {
+export function createProvider({
+    legacyModel,
+    source,
+    configOverwrites,
+}: ProviderFactoryParams): Provider {
     return new UnstableOpenAIProvider({
         id: 'unstable-openai',
         legacyModel: legacyModel || BYOK_MODEL_ID_FOR_LOGS,
         source,
+        configOverwrites,
     })
 }

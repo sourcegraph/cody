@@ -62,6 +62,7 @@ describe('createProvider', () => {
                     },
                 },
                 authStatus: AUTH_STATUS_FIXTURE_AUTHED,
+                configOverwrites: Observable.of<CodyLLMSiteConfiguration | null>(null),
             })
 
             await expect(createCall).rejects.toThrowErrorMatchingInlineSnapshot(
@@ -78,6 +79,7 @@ describe('createProvider', () => {
                     },
                 },
                 authStatus: AUTH_STATUS_FIXTURE_AUTHED,
+                configOverwrites: Observable.of<CodyLLMSiteConfiguration | null>(null),
             })
             expect(provider.id).toBe('unstable-openai')
             expect(provider.legacyModel).toBe(
@@ -114,10 +116,8 @@ describe('createProvider', () => {
                             autocompleteAdvancedModel: null,
                         },
                     },
-                    authStatus: {
-                        ...AUTH_STATUS_FIXTURE_AUTHED_DOTCOM,
-                        configOverwrites,
-                    },
+                    authStatus: AUTH_STATUS_FIXTURE_AUTHED_DOTCOM,
+                    configOverwrites: Observable.of<CodyLLMSiteConfiguration | null>(configOverwrites),
                 })
 
                 await expect(createCall).rejects.toThrow()

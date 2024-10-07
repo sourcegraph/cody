@@ -380,3 +380,4 @@ export {
     userProductSubscription,
 } from './sourcegraph-api/userProductSubscription'
 export { siteVersion, currentSiteVersion } from './sourcegraph-api/siteVersion'
+export { configOverwrites } from './models/configOverwrites'

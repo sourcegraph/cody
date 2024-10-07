@@ -10,6 +10,7 @@ import { logDebug } from '../logger'
 import {
     combineLatest,
     distinctUntilChanged,
+    pick,
     promiseFactoryToObservable,
     shareReplay,
     startWith,
@@ -21,6 +22,7 @@ import { pendingOperation, switchMapReplayOperation } from '../misc/observableOp
 import { ANSWER_TOKENS } from '../prompt/constants'
 import type { CodyClientConfig } from '../sourcegraph-api/clientConfig'
 import { isDotCom } from '../sourcegraph-api/environments'
+import type { CodyLLMSiteConfiguration } from '../sourcegraph-api/graphql/client'
 import { RestClient } from '../sourcegraph-api/rest/client'
 import { CHAT_INPUT_TOKEN_BUDGET } from '../token/constants'
 import { isError } from '../utils'
@@ -43,6 +45,7 @@ const EMPTY_PREFERENCES: DefaultsAndUserPreferencesForEndpoint = { defaults: {},
 export function syncModels({
     resolvedConfig,
     authStatus,
+    configOverwrites,
     clientConfig,
     fetchServerSideModels_ = fetchServerSideModels,
 }: {
@@ -54,6 +57,7 @@ export function syncModels({
         }>
     >
     authStatus: Observable<AuthStatus>
+    configOverwrites: Observable<CodyLLMSiteConfiguration | null | typeof pendingOperation>
     clientConfig: Observable<CodyClientConfig | undefined | typeof pendingOperation>
     fetchServerSideModels_?: typeof fetchServerSideModels
 }): Observable<ModelsData | typeof pendingOperation> {
@@ -113,11 +117,11 @@ export function syncModels({
             map(config => config.clientState.modelPreferences),
             distinctUntilChanged()
         ),
-        authStatus
+        authStatus.pipe(pick('endpoint'), distinctUntilChanged())
     ).pipe(
-        map(([modelPreferences, authStatus]) => {
+        map(([modelPreferences, { endpoint }]) => {
             // Deep clone so it's not readonly and we can mutate it, for convenience.
-            const prevPreferences = modelPreferences[authStatus.endpoint]
+            const prevPreferences = modelPreferences[endpoint]
             return deepClone(prevPreferences ?? EMPTY_PREFERENCES)
         }),
         distinctUntilChanged(),
@@ -241,34 +245,41 @@ export function syncModels({
                         // BYOK customers to set a model of their choice without us having to map it to a known
                         // model on the client.
                         //
-                        // NOTE: If authStatus?.configOverwrites?.chatModel is empty, automatically fallback to
-                        // use the default model configured on the instance.
-                        if (authStatus?.configOverwrites?.chatModel) {
-                            return Observable.of<RemoteModelsData>({
-                                preferences: null,
-                                primaryModels: [
-                                    createModel({
-                                        id: authStatus.configOverwrites.chatModel,
-                                        // TODO (umpox) Add configOverwrites.editModel for separate edit support
-                                        usage: [ModelUsage.Chat, ModelUsage.Edit],
-                                        contextWindow: getEnterpriseContextWindow(
-                                            authStatus?.configOverwrites?.chatModel,
-                                            authStatus?.configOverwrites,
-                                            config.configuration
-                                        ),
-                                        tags: [ModelTag.Enterprise],
-                                    }),
-                                ],
-                            })
-                        }
+                        // NOTE: If configOverwrites?.chatModel is empty, automatically fallback to use the
+                        // default model configured on the instance.
+                        return configOverwrites.pipe(
+                            map((configOverwrites): RemoteModelsData | typeof pendingOperation => {
+                                if (configOverwrites === pendingOperation) {
+                                    return pendingOperation
+                                }
+                                if (configOverwrites?.chatModel) {
+                                    return {
+                                        preferences: null,
+                                        primaryModels: [
+                                            createModel({
+                                                id: configOverwrites.chatModel,
+                                                // TODO (umpox) Add configOverwrites.editModel for separate edit support
+                                                usage: [ModelUsage.Chat, ModelUsage.Edit],
+                                                contextWindow: getEnterpriseContextWindow(
+                                                    configOverwrites?.chatModel,
+                                                    configOverwrites,
+                                                    config.configuration
+                                                ),
+                                                tags: [ModelTag.Enterprise],
+                                            }),
+                                        ],
+                                    } satisfies RemoteModelsData
+                                }
 
-                        // If the enterprise instance didn't have any configuration data for Cody, clear the
-                        // models available in the modelsService. Otherwise there will be stale, defunct models
-                        // available.
-                        return Observable.of<RemoteModelsData>({
-                            preferences: null,
-                            primaryModels: [],
-                        })
+                                // If the enterprise instance didn't have any configuration data for Cody, clear the
+                                // models available in the modelsService. Otherwise there will be stale, defunct models
+                                // available.
+                                return {
+                                    preferences: null,
+                                    primaryModels: [],
+                                } satisfies RemoteModelsData
+                            })
+                        )
                     })
                 )
                 return serverModelsConfig

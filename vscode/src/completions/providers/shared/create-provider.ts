@@ -4,12 +4,15 @@ import {
     AUTOCOMPLETE_PROVIDER_ID,
     type AuthenticatedAuthStatus,
     type AutocompleteProviderID,
+    type CodyLLMSiteConfiguration,
     type Model,
     ModelUsage,
     type PickResolvedConfiguration,
     isDotComAuthed,
+    isError,
     modelsService,
     pendingOperation,
+    switchMap,
     switchMapReplayOperation,
     toLegacyModel,
 } from '@sourcegraph/cody-shared'
@@ -29,85 +32,97 @@ import type { Provider, ProviderFactory } from './provider'
 export function createProvider({
     config: { configuration },
     authStatus,
+    configOverwrites,
 }: {
     config: PickResolvedConfiguration<{
         configuration: 'autocompleteAdvancedModel' | 'autocompleteAdvancedProvider'
     }>
-    authStatus: Pick<AuthenticatedAuthStatus, 'endpoint' | 'configOverwrites'>
+    authStatus: Pick<AuthenticatedAuthStatus, 'endpoint'>
+    configOverwrites: Observable<CodyLLMSiteConfiguration | null | typeof pendingOperation>
 }): Observable<Provider | typeof pendingOperation | Error> {
-    // Resolve the provider config from the VS Code config.
-    if (
-        configuration.autocompleteAdvancedProvider &&
-        configuration.autocompleteAdvancedProvider !== 'default'
-    ) {
-        return Observable.of(
-            createProviderHelper({
-                legacyModel: configuration.autocompleteAdvancedModel || undefined,
-                provider: configuration.autocompleteAdvancedProvider,
-                source: 'local-editor-settings',
-                authStatus,
-            })
-        )
-    }
+    return configOverwrites.pipe(
+        switchMap(configOverwrites => {
+            if (configOverwrites === pendingOperation) {
+                return Observable.of(pendingOperation)
+            }
 
-    return getDotComExperimentModel({ authStatus }).pipe(
-        switchMapReplayOperation(dotComExperiment => {
-            // Check if a user participates in autocomplete experiments.
-            if (dotComExperiment) {
+            // Resolve the provider config from the VS Code config.
+            if (
+                configuration.autocompleteAdvancedProvider &&
+                configuration.autocompleteAdvancedProvider !== 'default'
+            ) {
                 return Observable.of(
                     createProviderHelper({
-                        legacyModel: dotComExperiment.model,
-                        provider: dotComExperiment.provider,
-                        source: 'dotcom-feature-flags',
+                        legacyModel: configuration.autocompleteAdvancedModel || undefined,
+                        provider: configuration.autocompleteAdvancedProvider,
+                        source: 'local-editor-settings',
                         authStatus,
+                        configOverwrites,
                     })
                 )
             }
 
-            return modelsService.getDefaultModel(ModelUsage.Autocomplete).pipe(
-                map(model => {
-                    if (model === pendingOperation) {
-                        return pendingOperation
+            return getDotComExperimentModel({ authStatus }).pipe(
+                switchMapReplayOperation(dotComExperiment => {
+                    // Check if a user participates in autocomplete experiments.
+                    if (dotComExperiment) {
+                        return Observable.of(
+                            createProviderHelper({
+                                legacyModel: dotComExperiment.model,
+                                provider: dotComExperiment.provider,
+                                source: 'dotcom-feature-flags',
+                                authStatus,
+                                configOverwrites,
+                            })
+                        )
                     }
 
-                    // Check if server-side model configuration is available.
-                    if (model) {
-                        const provider = model.clientSideConfig?.openAICompatible
-                            ? 'openaicompatible'
-                            : model.provider
+                    return modelsService.getDefaultModel(ModelUsage.Autocomplete).pipe(
+                        map(model => {
+                            if (model === pendingOperation) {
+                                return pendingOperation
+                            }
 
-                        return createProviderHelper({
-                            legacyModel: model.id,
-                            model,
-                            provider,
-                            source: 'server-side-model-config',
-                            authStatus,
+                            // Check if server-side model configuration is available.
+                            if (model) {
+                                const provider = model.clientSideConfig?.openAICompatible
+                                    ? 'openaicompatible'
+                                    : model.provider
+
+                                return createProviderHelper({
+                                    legacyModel: model.id,
+                                    model,
+                                    provider,
+                                    source: 'server-side-model-config',
+                                    authStatus,
+                                    configOverwrites,
+                                })
+                            }
+
+                            // Fallback to site-config Cody LLM configuration.
+                            if (configOverwrites?.provider) {
+                                const parsedProviderAndModel = parseProviderAndModel({
+                                    provider: configOverwrites.provider,
+                                    legacyModel: configOverwrites.completionModel,
+                                })
+
+                                if (parsedProviderAndModel instanceof Error) {
+                                    return parsedProviderAndModel
+                                }
+
+                                return createProviderHelper({
+                                    legacyModel: parsedProviderAndModel.legacyModel,
+                                    provider: parsedProviderAndModel.provider,
+                                    source: 'site-config-cody-llm-configuration',
+                                    authStatus,
+                                    configOverwrites,
+                                })
+                            }
+
+                            return new Error(
+                                'Failed to create autocomplete provider. Please configure the `completionModel` using site configuration.'
+                            )
                         })
-                    }
-
-                    // Fallback to site-config Cody LLM configuration.
-                    const { configOverwrites } = authStatus
-
-                    if (configOverwrites?.provider) {
-                        const parsedProviderAndModel = parseProviderAndModel({
-                            provider: configOverwrites.provider,
-                            legacyModel: configOverwrites.completionModel,
-                        })
-
-                        if (parsedProviderAndModel instanceof Error) {
-                            return parsedProviderAndModel
-                        }
-
-                        return createProviderHelper({
-                            legacyModel: parsedProviderAndModel.legacyModel,
-                            provider: parsedProviderAndModel.provider,
-                            source: 'site-config-cody-llm-configuration',
-                            authStatus,
-                        })
-                    }
-
-                    return new Error(
-                        'Failed to create autocomplete provider. Please configure the `completionModel` using site configuration.'
                     )
                 })
             )
@@ -122,25 +137,31 @@ interface CreateProviderHelperParams {
     model?: Model
     source: AutocompleteProviderConfigSource
 
-    authStatus: Pick<AuthenticatedAuthStatus, 'endpoint' | 'configOverwrites'>
+    authStatus: Pick<AuthenticatedAuthStatus, 'endpoint'>
+    configOverwrites: CodyLLMSiteConfiguration | null
 }
 
 function createProviderHelper(params: CreateProviderHelperParams): Provider | Error {
-    const { legacyModel, model, provider, source, authStatus } = params
+    const { legacyModel, model, provider, source, authStatus, configOverwrites } = params
 
     const providerCreator = getProviderCreator({
         provider: provider as AutocompleteProviderID,
-        authStatus,
+        configOverwrites,
     })
 
     if (providerCreator) {
-        return providerCreator({
-            model,
-            legacyModel: legacyModel ? toLegacyModel(legacyModel) : legacyModel,
-            provider: provider as AutocompleteProviderID,
-            source,
-            authStatus,
-        })
+        try {
+            return providerCreator({
+                model,
+                legacyModel: legacyModel ? toLegacyModel(legacyModel) : legacyModel,
+                provider: provider as AutocompleteProviderID,
+                source,
+                authStatus,
+                configOverwrites,
+            })
+        } catch (error) {
+            return isError(error) ? error : new Error(`${error}`)
+        }
     }
 
     const sourceDependentMessage =
@@ -157,11 +178,11 @@ function createProviderHelper(params: CreateProviderHelperParams): Provider | Er
 
 interface GetProviderCreatorParams {
     provider: AutocompleteProviderID
-    authStatus: Pick<AuthenticatedAuthStatus, 'configOverwrites'>
+    configOverwrites: CodyLLMSiteConfiguration | null
 }
 
 function getProviderCreator(params: GetProviderCreatorParams): ProviderFactory | null {
-    const { provider, authStatus } = params
+    const { provider, configOverwrites } = params
 
     if (
         provider === AUTOCOMPLETE_PROVIDER_ID.default ||
@@ -185,8 +206,6 @@ function getProviderCreator(params: GetProviderCreatorParams): ProviderFactory |
     if (provider === AUTOCOMPLETE_PROVIDER_ID['experimental-openaicompatible']) {
         return createExperimentalOpenAICompatibleProvider
     }
-
-    const { configOverwrites } = authStatus
 
     if (
         provider === AUTOCOMPLETE_PROVIDER_ID.anthropic ||

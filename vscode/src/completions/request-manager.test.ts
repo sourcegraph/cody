@@ -88,6 +88,7 @@ function createProvider() {
         id: 'mock-provider',
         legacyModel: 'test-model',
         source: 'local-editor-settings',
+        configOverwrites: null,
     })
 }
 
