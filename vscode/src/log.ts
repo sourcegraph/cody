@@ -119,7 +119,7 @@ export const logger: CompletionLogger = {
             }
 
             logError(
-                'CompletionAnalyticsLogger:onError',
+                'CompletionLogger:onError',
                 JSON.stringify({
                     type,
                     endpoint,
@@ -140,7 +140,7 @@ export const logger: CompletionLogger = {
             hasFinished = true
 
             logDebug(
-                'CompletionAnalyticsLogger:onComplete',
+                'CompletionLogger:onComplete',
                 JSON.stringify({
                     type,
                     endpoint,
