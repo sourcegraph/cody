@@ -357,8 +357,8 @@ importers:
         specifier: ^5.2.0
         version: 5.2.0
       env-paths:
-        specifier: ^3.0.0
-        version: 3.0.0
+        specifier: ^2.2.1
+        version: 2.2.1
       immer:
         specifier: ^10.1.1
         version: 10.1.1
@@ -9065,6 +9065,7 @@ packages:
   /env-paths@3.0.0:
     resolution: {integrity: sha512-dtJUTepzMW3Lm/NPxRf3wP4642UWhjL2sQxc+ym2YMj1m/H2zDNQOlezafzkHwn6sMstjHTwG6iQQsctDW/b1A==}
     engines: {node: ^12.20.0 || ^14.13.1 || >=16.0.0}
+    dev: true
 
   /envinfo@7.13.0:
     resolution: {integrity: sha512-cvcaMr7KqXVh4nyzGTVqTum+gAiL265x5jUWQIDLq//zOGbW+gSW/C+OWLleY/rs9Qole6AZLMXPbtIFQbqu+Q==}

@@ -8,5 +8,5 @@
     "moduleResolution": "Bundler"
   },
   "include": ["src"],
-  "exclude": ["dist", "typehacks"]
+  "exclude": ["dist", "typehacks", "*.mjs"]
 }

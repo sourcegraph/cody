@@ -150,7 +150,7 @@ async function initializeVscodeExtension(
     globalState: AgentGlobalState,
     secrets: vscode.SecretStorage
 ): Promise<void> {
-    const paths = await codyPaths()
+    const paths = codyPaths()
     const extensionPath = paths.config
     copyExtensionRelativeResources(extensionPath, extensionClient)
 
@@ -466,7 +466,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
                     }
                     registerNativeWebviewHandlers(
                         this,
-                        vscode.Uri.file((await codyPaths()).config + '/dist'),
+                        vscode.Uri.file(codyPaths().config + '/dist'),
                         nativeWebviewConfig
                     )
                 } else {
@@ -1424,7 +1424,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
             case 'server-managed':
                 return AgentGlobalState.initialize(
                     clientInfo.name,
-                    clientInfo.globalStateDir ?? (await codyPaths()).data
+                    clientInfo.globalStateDir ?? codyPaths().data
                 )
             case 'client-managed':
                 throw new Error('client-managed global state is not supported')

@@ -9,7 +9,7 @@ import {
 
 const CONFIG_FILE = 'config.json'
 
-const getConfigPath = async () => path.join((await codyPaths()).config, CONFIG_FILE)
+const getConfigPath = () => path.join(codyPaths().config, CONFIG_FILE)
 
 async function exists(path: string): Promise<boolean> {
     try {
@@ -28,7 +28,7 @@ async function ensureDirectoryExists(directory: string) {
 
 // Used to cleanup the uninstaller directory after the last telemetry event is sent
 export async function deleteUninstallerConfig() {
-    return fs.rm(await getConfigPath())
+    return fs.rm(getConfigPath())
 }
 
 async function writeSnapshot(directory: string, filename: string, content: any): Promise<void> {
@@ -49,13 +49,13 @@ interface UninstallerConfig {
  * of an uninstall event to log one last telemetry event.
  */
 export async function serializeConfigSnapshot(uninstall: UninstallerConfig) {
-    const directory = (await codyPaths()).config
+    const directory = codyPaths().config
     await ensureDirectoryExists(directory)
     await writeSnapshot(directory, CONFIG_FILE, uninstall)
 }
 
 export async function readConfig(): Promise<UninstallerConfig | null> {
-    const file = await getConfigPath()
+    const file = getConfigPath()
 
     if (!(await exists(file))) {
         return null
