@@ -52,13 +52,15 @@ class CodyInlineCompletionProvider : InlineCompletionProvider {
     val cancellationToken = CancellationToken()
     currentJob.set(cancellationToken)
 
+    val triggerKind =
+        if (request.event is InlineCompletionEvent.DirectCall) {
+          InlineCompletionTriggerKind.INVOKE
+        } else {
+          InlineCompletionTriggerKind.AUTOMATIC
+        }
+
     val completions =
-        fetchCompletions(
-                project,
-                editor,
-                InlineCompletionTriggerKind.AUTOMATIC,
-                cancellationToken,
-                lookupString)
+        fetchCompletions(project, editor, triggerKind, cancellationToken, lookupString)
             .completeOnTimeout(null, 1, TimeUnit.SECONDS)
             .get() ?: return InlineCompletionSuggestion.empty()
 
