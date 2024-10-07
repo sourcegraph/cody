@@ -14,7 +14,7 @@ import {
 
 import type { PromptString } from '../../prompt/prompt-string'
 import { truncatePromptString } from '../../prompt/truncation'
-import { isDotCom } from '../../sourcegraph-api/environments'
+import { isDotCom, isS2 } from '../../sourcegraph-api/environments'
 import { CHAT_INPUT_TOKEN_BUDGET } from '../../token/constants'
 import type { TokenCounterUtils } from '../../token/counter'
 import { telemetryRecorder } from '../singleton'
@@ -135,6 +135,7 @@ export const events = [
                             ? map.intent(params.detectedIntent)
                             : undefined,
                         ...metadata,
+                        recordsPrivateMetadataTranscript: isS2(params.authStatus) ? 1 : 0,
                     }),
                     privateMetadata: {
                         detectedIntentScores: params.detectedIntentScores?.length
@@ -150,6 +151,12 @@ export const events = [
                         userSpecifiedIntent: params.userSpecifiedIntent,
                         traceId: spans.current.spanContext().traceId,
                         gitMetadata,
+                        // 🚨 SECURITY: Chat transcripts are to be included only for S2 users AND for V2 telemetry.
+                        // V2 telemetry exports privateMetadata only for S2 users. The condition below is an additional safeguard measure.
+                        // Check `SRC_TELEMETRY_SENSITIVEMETADATA_ADDITIONAL_ALLOWED_EVENT_TYPES` env to learn more.
+                        promptText: isS2(params.authStatus)
+                            ? truncatePromptString(params.promptText, CHAT_INPUT_TOKEN_BUDGET)
+                            : undefined,
                     },
                     billingMetadata: {
                         product: 'cody',
