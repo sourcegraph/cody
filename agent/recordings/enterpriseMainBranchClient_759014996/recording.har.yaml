@@ -145,7 +145,7 @@ log:
 
                   // export interface Squirrel {}
 
-                  // 
+                  //
 
 
                   // Here is a reference snippet of code from src/animal.ts:
@@ -164,7 +164,7 @@ log:
 
                   // /* SELECTION_END */
 
-                  // 
+                  //
 
 
                   export function sum(a: number, b: number): number {
@@ -566,7 +566,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query CurrentSiteCodyLlmConfiguration {
                   site {
                       codyLLMConfiguration {
@@ -672,7 +672,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query CurrentSiteCodyLlmConfiguration {
                   site {
                       codyLLMConfiguration {
@@ -776,7 +776,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query CurrentSiteCodyLlmProvider {
                   site {
                       codyLLMConfiguration {
@@ -880,7 +880,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query CurrentUser {
                   currentUser {
                       id
@@ -905,7 +905,7 @@ log:
             value: null
         url: https://sourcegraph.sourcegraph.com/.api/graphql?CurrentUser
       response:
-        bodySize: 231
+        bodySize: 239
         content:
           encoding: base64
           mimeType: application/json
@@ -995,7 +995,7 @@ log:
           params: []
           textJSON:
             query: |
-              
+
               query ResolveRepoName($cloneURL: String!) {
                   repository(cloneURL: $cloneURL) {
                       name
@@ -1097,7 +1097,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query SiteProductVersion {
                   site {
                       productVersion
@@ -1109,7 +1109,7 @@ log:
             value: null
         url: https://sourcegraph.sourcegraph.com/.api/graphql?SiteProductVersion
       response:
-        bodySize: 139
+        bodySize: 143
         content:
           encoding: base64
           mimeType: application/json
@@ -1195,7 +1195,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query SnippetAttribution($snippet: String!) {
                   snippetAttribution(snippet: $snippet) {
                       limitHit
@@ -1296,7 +1296,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query SnippetAttribution($snippet: String!) {
                   snippetAttribution(snippet: $snippet) {
                       limitHit

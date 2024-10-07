@@ -13,7 +13,6 @@ import {
 
 import * as uuid from 'uuid'
 import { ResponseError } from 'vscode-jsonrpc'
-import { URI } from 'vscode-uri'
 import { CodyJsonRpcErrorCode } from '../../vscode/src/jsonrpc/CodyJsonRpcErrorCode'
 import { TESTING_CREDENTIALS } from '../../vscode/src/testutils/testing-credentials'
 import { logTestingData } from '../../vscode/test/fixtures/mock-server'
@@ -113,9 +112,6 @@ describe('Agent', () => {
     const sumUri = workspace.file('src', 'sum.ts')
     const animalUri = workspace.file('src', 'animal.ts')
     const squirrelUri = workspace.file('src', 'squirrel.ts')
-
-    // Context files ends with 'Ignored.ts' will be excluded by .cody/ignore
-    const ignoredUri = workspace.file('src', 'isIgnored.ts')
 
     async function setChatModel(model = 'mistral::v1::mixtral-8x7b-instruct'): Promise<string> {
         // Use the same chat model regardless of the server response (in case it changes on the
@@ -546,121 +542,6 @@ describe('Agent', () => {
                 )
             }, 30_000)
         })
-    })
-
-    // TODO(dpc): Integrate file-based .cody/ignore with ignore/test
-    describe.skip('Cody Ignore', () => {
-        beforeAll(async () => {
-            // Make sure Cody ignore config exists and works
-            const codyIgnoreConfig = workspace.file('.cody', 'ignore')
-            await client.openFile(codyIgnoreConfig)
-            const codyIgnoreConfigFile = client.workspace.getDocument(codyIgnoreConfig)
-            expect(codyIgnoreConfigFile?.content).toBeDefined()
-
-            const result = await client.request('ignore/test', {
-                uri: ignoredUri.toString(),
-            })
-            expect(result.policy).toBe('ignore')
-        }, 10_000)
-
-        it('autocomplete/execute on ignored file', async () => {
-            await client.openFile(ignoredUri)
-            const completions = await client.request('autocomplete/execute', {
-                uri: ignoredUri.toString(),
-                position: { line: 1, character: 3 },
-                triggerKind: 'Automatic',
-            })
-            const texts = completions.items.map(item => item.insertText)
-            expect(completions.items.length).toBe(0)
-            expect(texts).toMatchInlineSnapshot(
-                `
-              []
-            `
-            )
-        }, 10_000)
-
-        it('chat/submitMessage on an ignored file', async () => {
-            await client.openFile(ignoredUri)
-            const { transcript } = await client.sendSingleMessageToNewChatWithFullTranscript(
-                'What files contain SELECTION_START?',
-                { contextFiles: mockContextItems }
-            )
-            decodeURIs(transcript)
-            const contextFiles = transcript.messages.flatMap(m => m.contextFiles ?? [])
-            // Current file which is ignored, should not be included in context files
-            expect(contextFiles.find(f => f.uri.toString() === ignoredUri.toString())).toBeUndefined()
-            // Ignored file should not be included in context files
-            const contextFilesUrls = contextFiles.map(f => f.uri).filter(uri => uri)
-            const result = await Promise.all(
-                contextFilesUrls.map(uri => client.request('ignore/test', { uri: uri.toString() }))
-            )
-            for (const r of result) {
-                expect(r.policy).toBe('use')
-            }
-            // Files that are not ignored should be used as context files
-            expect(contextFiles.length).toBeGreaterThan(0)
-        }, 30_000)
-
-        it('chat command on an ignored file', async () => {
-            await client.openFile(ignoredUri)
-            // Cannot execute commands in an ignored files, so this should throw error
-            await client.request('commands/explain', null).catch(err => {
-                expect(err).toBeDefined()
-            })
-        }, 30_000)
-
-        it('inline edit on an ignored file', async () => {
-            await client.openFile(ignoredUri, { removeCursor: false })
-            await client.request('editCommands/document', null).catch(err => {
-                expect(err).toBeDefined()
-            })
-        })
-
-        it('ignore rule is not case sensitive', async () => {
-            const alsoIgnored = workspace.file('src', 'is_ignored.ts')
-            const result = await client.request('ignore/test', {
-                uri: URI.file(alsoIgnored.fsPath).toString(),
-            })
-            expect(result.policy).toBe('ignore')
-        })
-
-        afterAll(async () => {
-            // Makes sure cody ignore is still active after tests
-            // as it should stay active for each workspace session.
-            const result = await client.request('ignore/test', {
-                uri: ignoredUri.toString(),
-            })
-            expect(result.policy).toBe('ignore')
-
-            // Check the network requests to ensure no requests include context from ignored files
-            const { requests } = await client.request('testing/networkRequests', null)
-
-            const groupedMsgs = []
-            for (const req of requests) {
-                // Get the messages from the request body
-                const messages = JSON.parse(req.body || '{}')?.messages as {
-                    speaker: string
-                    text: string
-                }[]
-                // Filter out messages that do not include context snippets.
-                const text = messages
-                    ?.filter(m => m.speaker === 'human' && m.text !== undefined)
-                    ?.map(m => m.text)
-
-                groupedMsgs.push(...(text ?? []))
-            }
-            expect(groupedMsgs.length).toBeGreaterThan(0)
-
-            // Join all the string from each groupedMsgs[] together into
-            // one block of text, and then check if it contains the ignored file name
-            // to confirm context from the ignored file was not sent to the server.
-            const groupedText = groupedMsgs.flat().join(' ')
-            expect(groupedText).not.includes('src/isIgnored.ts')
-
-            // Confirm the grouped text is valid by checking for known
-            // context file names from the test.
-            expect(groupedText).includes('src/squirrel.ts')
-        }, 10_000)
     })
 
     describe('Commands', () => {
