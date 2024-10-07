@@ -15,12 +15,12 @@ import {
     RateLimitError,
     SourcegraphCompletionsClient,
     addClientInfoParams,
-    agent,
     currentResolvedConfig,
     customUserAgent,
     getActiveTraceAndSpanId,
     getSerializedParams,
     getTraceparentHeaders,
+    globalAgentRef,
     isError,
     logError,
     onAbort,
@@ -108,8 +108,9 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                         Connection: 'keep-alive',
                     },
                     // So we can send requests to the Sourcegraph local development instance, which has an incompatible cert.
-                    rejectUnauthorized: process.env.NODE_TLS_REJECT_UNAUTHORIZED !== '0',
-                    agent: agent.current?.(url),
+                    //TODO: THIS MUST NOT BE DONE HERE!
+                    // rejectUnauthorized: process.env.NODE_TLS_REJECT_UNAUTHORIZED !== '0',
+                    agent: globalAgentRef.curr,
                 },
                 (res: http.IncomingMessage) => {
                     const { 'set-cookie': _setCookie, ...safeHeaders } = res.headers

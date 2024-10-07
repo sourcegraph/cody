@@ -10,7 +10,11 @@
   },
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
-  "files": ["dist", "src", "!**/*.test.*"],
+  "files": [
+    "dist",
+    "src",
+    "!**/*.test.*"
+  ],
   "sideEffects": false,
   "scripts": {
     "build": "tsc --build",
@@ -46,6 +50,7 @@
     "@types/node-fetch": "^2.6.4",
     "@types/semver": "^7.5.0",
     "@types/vscode": "^1.80.0",
+    "agent-base": "^7.1.1",
     "type-fest": "^4.26.1"
   }
 }
