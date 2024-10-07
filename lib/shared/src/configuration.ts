@@ -122,6 +122,12 @@ export enum CodyIDE {
     Neovim = 'Neovim',
     Emacs = 'Emacs',
     Web = 'Web',
+
+    /**
+     * The standalone web client in the Cody repository's `web/` tree.
+     */
+    StandaloneWeb = 'StandaloneWeb',
+
     VisualStudio = 'VisualStudio',
     Eclipse = 'Eclipse',
 }
