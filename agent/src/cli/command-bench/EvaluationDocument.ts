@@ -7,7 +7,7 @@ import type * as vscode from 'vscode'
 import type {
     CompletionBookkeepingEvent,
     CompletionItemInfo,
-} from '../../../../vscode/src/completions/logger'
+} from '../../../../vscode/src/completions/analytics-logger'
 import { ProtocolTextDocumentWithUri } from '../../../../vscode/src/jsonrpc/TextDocumentWithUri'
 import { AgentTextDocument } from '../../AgentTextDocument'
 

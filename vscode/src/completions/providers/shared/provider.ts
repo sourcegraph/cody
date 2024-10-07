@@ -17,9 +17,9 @@ import {
     tokensToChars,
 } from '@sourcegraph/cody-shared'
 
+import type * as CompletionAnalyticsLogger from '../../analytics-logger'
 import { defaultCodeCompletionsClient } from '../../default-client'
 import type { TriggerKind } from '../../get-inline-completions'
-import type * as CompletionLogger from '../../logger'
 import { type DefaultModel, getModelHelpers } from '../../model-helpers'
 import type { InlineCompletionItemWithAnalytics } from '../../text-processing/process-inline-completions'
 import { forkSignal, generatorWithErrorObserver, generatorWithTimeout, zipGenerators } from '../../utils'
@@ -58,7 +58,7 @@ export interface GenerateCompletionsOptions {
      *  Timeout in milliseconds for the first completion to be yielded from the completions generator.
      */
     firstCompletionTimeout: number
-    completionLogId: CompletionLogger.CompletionLogID
+    completionLogId: CompletionAnalyticsLogger.CompletionLogID
 
     /**
      * Git related context information. Currently only supports a repo name, which is used by various FIM models in prompt.

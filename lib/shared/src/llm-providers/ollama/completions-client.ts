@@ -8,7 +8,7 @@ import {
     type CompletionResponseGenerator,
     CompletionStopReason,
 } from '../../inferenceClient/misc'
-import type { CompletionLogger } from '../../sourcegraph-api/completions/client'
+import type { CompletionAnalyticsLogger } from '../../sourcegraph-api/completions/client'
 import type { CompletionResponse } from '../../sourcegraph-api/completions/types'
 import { isAbortError } from '../../sourcegraph-api/errors'
 import { isError } from '../../utils'
@@ -18,7 +18,7 @@ import { isError } from '../../utils'
  */
 export function createOllamaClient(
     ollamaOptions: OllamaOptions,
-    logger?: CompletionLogger,
+    logger?: CompletionAnalyticsLogger,
     logDebug?: (filterLabel: string, text: string, ...args: unknown[]) => void
 ): CodeCompletionsClient<OllamaGenerateParams> {
     async function* complete(

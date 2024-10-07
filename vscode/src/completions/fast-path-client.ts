@@ -1,6 +1,6 @@
 import {
     type CodeCompletionsParams,
-    type CompletionLogger,
+    type CompletionAnalyticsLogger,
     type CompletionResponse,
     type CompletionResponseGenerator,
     CompletionStopReason,
@@ -31,7 +31,7 @@ import type { GenerateCompletionsOptions } from './providers/shared/provider'
 interface FastPathParams {
     isLocalInstance: boolean
     fireworksConfig: ExperimentalFireworksConfig | undefined
-    logger: CompletionLogger | undefined
+    logger: CompletionAnalyticsLogger | undefined
     providerOptions: GenerateCompletionsOptions
     fastPathAccessToken: string | undefined
 

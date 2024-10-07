@@ -3,12 +3,12 @@ import { describe, expect, it, vitest } from 'vitest'
 import * as vscode from 'vscode'
 
 import { range } from '../../testutils/textDocument'
+import type { CompletionLogID } from '../analytics-logger'
 import { getCurrentDocContext } from '../get-current-doc-context'
 import {
     InlineCompletionsResultSource,
     type LastInlineCompletionCandidate,
 } from '../get-inline-completions'
-import type { CompletionLogID } from '../logger'
 import { documentAndPosition } from '../test-helpers'
 
 import { type V, getInlineCompletions, getInlineCompletionsInsertText, params } from './helpers'

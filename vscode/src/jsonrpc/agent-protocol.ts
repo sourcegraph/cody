@@ -21,7 +21,7 @@ import type * as vscode from 'vscode'
 
 import type { ModelAvailabilityStatus } from '@sourcegraph/cody-shared/dist/models/modelsService'
 import type { ExtensionMessage, WebviewMessage } from '../chat/protocol'
-import type { CompletionBookkeepingEvent, CompletionItemID } from '../completions/logger'
+import type { CompletionBookkeepingEvent, CompletionItemID } from '../completions/analytics-logger'
 import type { FixupTaskID } from '../non-stop/FixupTask'
 import type { CodyTaskState } from '../non-stop/state'
 

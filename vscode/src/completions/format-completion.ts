@@ -1,7 +1,7 @@
 import * as vscode from 'vscode'
 
 import { getEditorInsertSpaces, getEditorTabSize } from '@sourcegraph/cody-shared'
-import { logCompletionFormatEvent, logError } from './logger'
+import { logCompletionFormatEvent, logError } from './analytics-logger'
 import type { AutocompleteItem } from './suggested-autocomplete-items-cache'
 import { lines } from './text-processing'
 
