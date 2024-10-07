@@ -22,6 +22,8 @@ import { type CodyIgnoreType, showCodyIgnoreNotification } from '../cody-ignore/
 import { autocompleteStageCounterLogger } from '../services/autocomplete-stage-counter-logger'
 import { recordExposedExperimentsToSpan } from '../services/open-telemetry/utils'
 import { isInTutorial } from '../tutorial/helpers'
+import type { CompletionBookkeepingEvent, CompletionItemID, CompletionLogID } from './analytics-logger'
+import * as CompletionAnalyticsLogger from './analytics-logger'
 import { getArtificialDelay } from './artificial-delay'
 import { completionProviderConfig } from './completion-provider-config'
 import { ContextMixer } from './context/context-mixer'
@@ -44,8 +46,6 @@ import {
     InlineCompletionItemProviderConfigSingleton,
 } from './inline-completion-item-provider-config-singleton'
 import { isCompletionVisible } from './is-completion-visible'
-import type { CompletionBookkeepingEvent, CompletionItemID, CompletionLogID } from './logger'
-import * as CompletionLogger from './logger'
 import { RequestManager, type RequestParams } from './request-manager'
 import {
     canReuseLastCandidateInDocumentContext,
@@ -342,7 +342,9 @@ export class InlineCompletionItemProvider
         const triggerDelay = this.config.triggerDelay
 
         return wrapInActiveSpan(`autocomplete.${spanNamePrefix}InlineCompletionItems`, async span => {
-            const stageRecorder = new CompletionLogger.AutocompleteStageRecorder({ isPreloadRequest })
+            const stageRecorder = new CompletionAnalyticsLogger.AutocompleteStageRecorder({
+                isPreloadRequest,
+            })
 
             const isManualCompletion = Boolean(
                 this.lastManualCompletionTimestamp &&
@@ -603,7 +605,7 @@ export class InlineCompletionItemProvider
                     // Returning null will clear any existing suggestions, thus we need to reset the
                     // last candidate.
                     this.lastCandidate = undefined
-                    CompletionLogger.noResponse(result.logId)
+                    CompletionAnalyticsLogger.noResponse(result.logId)
                     return null
                 }
 
@@ -631,7 +633,7 @@ export class InlineCompletionItemProvider
                 const autocompleteResult: AutocompleteResult = {
                     logId: result.logId,
                     items: updateInsertRangeForVSCode(visibleItems),
-                    completionEvent: CompletionLogger.getCompletionEvent(result.logId),
+                    completionEvent: CompletionAnalyticsLogger.getCompletionEvent(result.logId),
                 }
 
                 if (!this.config.isRunningInsideAgent) {
@@ -699,7 +701,7 @@ export class InlineCompletionItemProvider
 
         this.lastAcceptedCompletionItem = completion
 
-        CompletionLogger.accepted(
+        CompletionAnalyticsLogger.accepted(
             completion.logId,
             completion.requestParams.document,
             completion.analyticsItem,
@@ -731,7 +733,7 @@ export class InlineCompletionItemProvider
 
     public getTestingCompletionEvent(id: CompletionItemID): CompletionBookkeepingEvent | undefined {
         const completion = suggestedAutocompleteItemsCache.get<AutocompleteItem>(id)
-        return completion ? CompletionLogger.getCompletionEvent(completion.logId) : undefined
+        return completion ? CompletionAnalyticsLogger.getCompletionEvent(completion.logId) : undefined
     }
 
     /**
@@ -770,7 +772,7 @@ export class InlineCompletionItemProvider
      * Will confirm that the completion is _still_ visible before firing the event.
      */
     public markCompletionAsSuggestedAfterDelay(completion: AutocompleteItem): void {
-        const suggestionEvent = CompletionLogger.prepareSuggestionEvent({
+        const suggestionEvent = CompletionAnalyticsLogger.prepareSuggestionEvent({
             id: completion.logId,
             span: completion.span,
             shouldSample: this.shouldSample,
@@ -890,7 +892,7 @@ export class InlineCompletionItemProvider
         completion: Pick<AutocompleteItem, 'logId' | 'analyticsItem'>,
         acceptedLength: number
     ): void {
-        CompletionLogger.partiallyAccept(
+        CompletionAnalyticsLogger.partiallyAccept(
             completion.logId,
             completion.analyticsItem,
             acceptedLength,

@@ -33,6 +33,7 @@ import { DEFAULT_VSCODE_SETTINGS } from '../../testutils/mocks'
 import type { SupportedLanguage } from '../../tree-sitter/grammars'
 import { updateParseTreeCache } from '../../tree-sitter/parse-tree-cache'
 import { getParser } from '../../tree-sitter/parser'
+import { AutocompleteStageRecorder, type CompletionLogID } from '../analytics-logger'
 import { ContextMixer } from '../context/context-mixer'
 import { DefaultContextStrategyFactory } from '../context/context-strategy'
 import { getCompletionIntent } from '../doc-context-getters'
@@ -43,7 +44,6 @@ import {
     TriggerKind,
     getInlineCompletions as _getInlineCompletions,
 } from '../get-inline-completions'
-import { AutocompleteStageRecorder, type CompletionLogID } from '../logger'
 import { createProvider as createAnthropicProvider } from '../providers/anthropic'
 import { createProvider as createFireworksProvider } from '../providers/fireworks'
 import { pressEnterAndGetIndentString } from '../providers/shared/hot-streak'

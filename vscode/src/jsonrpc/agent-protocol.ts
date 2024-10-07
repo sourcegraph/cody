@@ -1,3 +1,5 @@
+import type * as vscode from 'vscode'
+
 import type {
     AuthStatus,
     BillingCategory,
@@ -7,6 +9,7 @@ import type {
     ContextMentionProviderID,
     CurrentUserCodySubscription,
     Model,
+    ModelAvailabilityStatus,
     ModelUsage,
     SerializedChatTranscript,
     event,
@@ -17,12 +20,10 @@ import type {
     TelemetryEventMarketingTrackingInput,
     TelemetryEventParameters,
 } from '@sourcegraph/telemetry'
-import type * as vscode from 'vscode'
 
-import type { ModelAvailabilityStatus } from '@sourcegraph/cody-shared/dist/models/modelsService'
 import type { ExtensionMessage, WebviewMessage } from '../chat/protocol'
+import type { CompletionBookkeepingEvent, CompletionItemID } from '../completions/analytics-logger'
 import type { InlineCompletionItemProviderConfig } from '../completions/inline-completion-item-provider-config-singleton'
-import type { CompletionBookkeepingEvent, CompletionItemID } from '../completions/logger'
 import type { FixupTaskID } from '../non-stop/FixupTask'
 import type { CodyTaskState } from '../non-stop/state'
 
