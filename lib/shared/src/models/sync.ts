@@ -208,9 +208,18 @@ export function syncModels({
                                                         createModelFromServerModel
                                                     )
                                                 )
+                                                // Update model preferences for chat to DEEP CODY once on first sync.
                                                 data.preferences!.defaults.edit =
                                                     data.preferences!.defaults.chat
                                                 data.preferences!.defaults.chat = DEEPCODY_MODEL.modelRef
+                                                return userModelPreferences.pipe(
+                                                    take(1),
+                                                    tap(preferences => {
+                                                        preferences.selected[ModelUsage.Chat] =
+                                                            DEEPCODY_MODEL.modelRef
+                                                    }),
+                                                    map(() => data)
+                                                )
                                             }
 
                                             // TODO(sqs): remove waitlist from localStorage when user has access
@@ -321,9 +330,6 @@ export function syncModels({
     )
 }
 
-// Set Deep Cody as the user selected model on first sync.
-let hasSelectedDeepCodyOnce = false
-
 function resolveModelPreferences(
     remote: Pick<DefaultsAndUserPreferencesForEndpoint, 'defaults'> | null,
     user: DefaultsAndUserPreferencesForEndpoint
@@ -331,15 +337,6 @@ function resolveModelPreferences(
     user = deepClone(user)
 
     function setDefaultModel(usage: ModelUsage, newDefaultModelId: string | undefined): void {
-        // Set Deep Cody as the user selected model once.
-        // TODO (bee) remove when Deep Cody is removed.
-        if (newDefaultModelId === DEEPCODY_MODEL.modelRef && !hasSelectedDeepCodyOnce) {
-            hasSelectedDeepCodyOnce = true
-            user.defaults[usage] = newDefaultModelId
-            user.selected[usage] = newDefaultModelId
-            return
-        }
-
         // If our cached default model matches, nothing needed.
         if (user.defaults[usage] === newDefaultModelId) {
             return
