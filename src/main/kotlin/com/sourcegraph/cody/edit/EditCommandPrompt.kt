@@ -125,7 +125,7 @@ class EditCommandPrompt(
       }
 
   private val instructionsField =
-      InstructionsInputTextArea(this).apply { text = previousEdit?.instruction ?: lastPrompt }
+      InstructionsInputTextArea().apply { text = previousEdit?.instruction ?: lastPrompt }
 
   private val historyManager = TextAreaHistoryManager(instructionsField, promptHistory)
 
