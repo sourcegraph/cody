@@ -3,7 +3,6 @@ import {
     type ChatClient,
     type ContextItem,
     FeatureFlag,
-    type Model,
     type PromptMixin,
     PromptString,
     logDebug,
@@ -29,19 +28,7 @@ type AgenticContext = {
 export class DeepCodyAgent {
     public static readonly ModelRef = 'sourcegraph::2023-06-01::deep-cody'
 
-    private static hasEnrolled = false
-    public static isEnrolled(models: Model[]): string | undefined {
-        // Only enrolled user has access to the Deep Cody model.
-        const hasAccess = models.some(m => m.id === DeepCodyAgent.ModelRef)
-        const enrolled = DeepCodyAgent.hasEnrolled || logFirstEnrollmentEvent(FeatureFlag.DeepCody, true)
-        //Return modelRef for first time enrollment of Deep Cody.
-        if (hasAccess && !enrolled) {
-            DeepCodyAgent.hasEnrolled = true
-            return DeepCodyAgent.ModelRef
-        }
-        // Does not have access or not enrolled.
-        return undefined
-    }
+    private static enrolled = false
 
     private readonly promptMixins: PromptMixin[] = []
     private readonly multiplexer = new BotResponseMultiplexer()
@@ -56,6 +43,9 @@ export class DeepCodyAgent {
         this.sort(mentions)
         this.promptMixins.push(newPromptMixin(this.buildPrompt()))
         this.initializeMultiplexer()
+        // Log Enrollment event if needed.
+        DeepCodyAgent.enrolled =
+            DeepCodyAgent.enrolled || logFirstEnrollmentEvent(FeatureFlag.DeepCody, true)
     }
 
     private initializeMultiplexer(): void {

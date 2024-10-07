@@ -1604,21 +1604,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     chatModels: () =>
                         modelsService.getModels(ModelUsage.Chat).pipe(
                             startWith([]),
-                            map(models => {
-                                if (models === pendingOperation) {
-                                    return []
-                                }
-                                // If Deep Cody is available but the user has not enrolled before,
-                                // enroll the user and set the model as the default for chat.
-                                if (DeepCodyAgent.isEnrolled(models)) {
-                                    this.chatBuilder.setSelectedModel(DeepCodyAgent.ModelRef)
-                                    modelsService.setSelectedModel(
-                                        ModelUsage.Chat,
-                                        DeepCodyAgent.ModelRef
-                                    )
-                                }
-                                return models
-                            })
+                            map(models => (models === pendingOperation ? [] : models))
                         ),
                     highlights: parameters =>
                         promiseFactoryToObservable(() =>

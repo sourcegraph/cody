@@ -38,6 +38,7 @@ import { ModelUsage } from './types'
 import { getEnterpriseContextWindow } from './utils'
 
 const EMPTY_PREFERENCES: DefaultsAndUserPreferencesForEndpoint = { defaults: {}, selected: {} }
+const DEEPCODY_MODEL = getExperimentalClientModelByFeatureFlag(FeatureFlag.DeepCody)!
 
 /**
  * Observe the list of all available models.
@@ -199,17 +200,17 @@ export function syncModels({
                                         featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.DeepCody)
                                     ).pipe(
                                         switchMap(([hasEarlyAccess, deepCodyEnabled]) => {
+                                            // DEEP CODY - available to users with feature flag enabled only.
                                             // TODO(bee): remove once deepCody is enabled for all users.
                                             if (deepCodyEnabled && serverModelsConfig) {
-                                                const DeepCody = getExperimentalClientModelByFeatureFlag(
-                                                    FeatureFlag.DeepCody
-                                                )!
                                                 data.primaryModels.push(
-                                                    ...maybeAdjustContextWindows([DeepCody]).map(
+                                                    ...maybeAdjustContextWindows([DEEPCODY_MODEL]).map(
                                                         createModelFromServerModel
                                                     )
                                                 )
-                                                data.preferences!.defaults.chat = DeepCody.modelRef
+                                                data.preferences!.defaults.edit =
+                                                    data.preferences!.defaults.chat
+                                                data.preferences!.defaults.chat = DEEPCODY_MODEL.modelRef
                                             }
 
                                             // TODO(sqs): remove waitlist from localStorage when user has access
@@ -320,6 +321,9 @@ export function syncModels({
     )
 }
 
+// Set Deep Cody as the user selected model on first sync.
+let hasSelectedDeepCodyOnce = false
+
 function resolveModelPreferences(
     remote: Pick<DefaultsAndUserPreferencesForEndpoint, 'defaults'> | null,
     user: DefaultsAndUserPreferencesForEndpoint
@@ -327,6 +331,15 @@ function resolveModelPreferences(
     user = deepClone(user)
 
     function setDefaultModel(usage: ModelUsage, newDefaultModelId: string | undefined): void {
+        // Set Deep Cody as the user selected model once.
+        // TODO (bee) remove when Deep Cody is removed.
+        if (newDefaultModelId === DEEPCODY_MODEL.modelRef && !hasSelectedDeepCodyOnce) {
+            hasSelectedDeepCodyOnce = true
+            user.defaults[usage] = newDefaultModelId
+            user.selected[usage] = newDefaultModelId
+            return
+        }
+
         // If our cached default model matches, nothing needed.
         if (user.defaults[usage] === newDefaultModelId) {
             return
@@ -340,7 +353,7 @@ function resolveModelPreferences(
     }
     if (remote?.defaults) {
         setDefaultModel(ModelUsage.Chat, remote.defaults.chat)
-        setDefaultModel(ModelUsage.Edit, remote.defaults.chat)
+        setDefaultModel(ModelUsage.Edit, remote.defaults.edit || remote.defaults.chat)
         setDefaultModel(ModelUsage.Autocomplete, remote.defaults.autocomplete)
     }
     return user
