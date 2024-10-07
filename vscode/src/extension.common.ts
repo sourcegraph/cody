@@ -1,13 +1,8 @@
 import * as vscode from 'vscode'
 
-import type {
-    ClientConfiguration,
-    CompletionLogger,
-    SourcegraphCompletionsClient,
-} from '@sourcegraph/cody-shared'
+import type { CompletionLogger, SourcegraphCompletionsClient } from '@sourcegraph/cody-shared'
 import type { startTokenReceiver } from './auth/token-receiver'
 import { onActivationDevelopmentHelpers } from './dev/helpers'
-
 import './editor/displayPathEnvInfo' // import for side effects
 
 import type { createController } from '@openctx/vscode-lib'
@@ -16,6 +11,7 @@ import { ExtensionApi } from './extension-api'
 import type { ExtensionClient } from './extension-client'
 import type { SymfRunner } from './local-context/symf'
 import { start } from './main'
+import type { DelegatingProxyAgent } from './net.node'
 import type { OpenTelemetryService } from './services/open-telemetry/OpenTelemetryService.node'
 import { type SentryService, captureException } from './services/sentry/sentry'
 
@@ -26,7 +22,7 @@ type Constructor<T extends new (...args: any) => any> = T extends new (
     : never
 
 export interface PlatformContext {
-    intializeConfigurationProxy?: () => Promise<void>
+    initializeNetworkAgent?: () => Promise<DelegatingProxyAgent>
     createOpenCtxController?: typeof createController
     createStorage?: () => Promise<vscode.Memento>
     createCommandsProvider?: Constructor<typeof CommandsProvider>

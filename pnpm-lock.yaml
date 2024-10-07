@@ -417,6 +417,9 @@ importers:
       '@types/vscode':
         specifier: ^1.80.0
         version: 1.80.0
+      agent-base:
+        specifier: ^7.1.1
+        version: 7.1.1
       type-fest:
         specifier: ^4.26.1
         version: 4.26.1
@@ -4032,7 +4035,7 @@ packages:
       '@types/react-dom':
         optional: true
     dependencies:
-      '@babel/runtime': 7.25.6
+      '@babel/runtime': 7.24.5
       '@radix-ui/primitive': 1.0.1
       '@radix-ui/react-compose-refs': 1.0.1(@types/react@18.2.37)(react@18.2.0)
       '@radix-ui/react-context': 1.0.1(@types/react@18.2.37)(react@18.2.0)
