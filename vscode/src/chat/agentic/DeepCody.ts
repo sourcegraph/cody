@@ -2,7 +2,6 @@ import {
     BotResponseMultiplexer,
     type ChatClient,
     type ContextItem,
-    FeatureFlag,
     type PromptMixin,
     PromptString,
     logDebug,
@@ -11,7 +10,6 @@ import {
 } from '@sourcegraph/cody-shared'
 import { getOSPromptString } from '../../os'
 import { getCategorizedMentions } from '../../prompt-builder/utils'
-import { logFirstEnrollmentEvent } from '../../services/utils/enrollment-event'
 import type { ChatBuilder } from '../chat-view/ChatBuilder'
 import { DefaultPrompter } from '../chat-view/prompt'
 import type { CodyTool } from './CodyTool'
@@ -28,8 +26,6 @@ type AgenticContext = {
 export class DeepCodyAgent {
     public static readonly ModelRef = 'sourcegraph::2023-06-01::deep-cody'
 
-    private static enrolled = false
-
     private readonly promptMixins: PromptMixin[] = []
     private readonly multiplexer = new BotResponseMultiplexer()
     private context: AgenticContext = { explicit: [], implicit: [] }
@@ -43,9 +39,6 @@ export class DeepCodyAgent {
         this.sort(mentions)
         this.promptMixins.push(newPromptMixin(this.buildPrompt()))
         this.initializeMultiplexer()
-        // Log Enrollment event if needed.
-        DeepCodyAgent.enrolled =
-            DeepCodyAgent.enrolled || logFirstEnrollmentEvent(FeatureFlag.DeepCody, true)
     }
 
     private initializeMultiplexer(): void {

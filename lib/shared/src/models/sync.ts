@@ -38,7 +38,6 @@ import { ModelUsage } from './types'
 import { getEnterpriseContextWindow } from './utils'
 
 const EMPTY_PREFERENCES: DefaultsAndUserPreferencesForEndpoint = { defaults: {}, selected: {} }
-const DEEPCODY_MODEL = getExperimentalClientModelByFeatureFlag(FeatureFlag.DeepCody)!
 
 /**
  * Observe the list of all available models.
@@ -203,6 +202,10 @@ export function syncModels({
                                             // DEEP CODY - available to users with feature flag enabled only.
                                             // TODO(bee): remove once deepCody is enabled for all users.
                                             if (deepCodyEnabled && serverModelsConfig) {
+                                                const DEEPCODY_MODEL =
+                                                    getExperimentalClientModelByFeatureFlag(
+                                                        FeatureFlag.DeepCody
+                                                    )!
                                                 data.primaryModels.push(
                                                     ...maybeAdjustContextWindows([DEEPCODY_MODEL]).map(
                                                         createModelFromServerModel
