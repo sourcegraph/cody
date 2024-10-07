@@ -3,7 +3,7 @@ import { detectForbiddenImportPlugin } from '../../lib/shared/esbuild.utils.mjs'
 
 import { build as esbuild } from 'esbuild'
 
-async function build () {
+async function build() {
     const plugins = [detectForbiddenImportPlugin(['vscode'])]
     /** @type {import('esbuild').BuildOptions} */
     const esbuildOptions = {

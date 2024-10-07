@@ -2,7 +2,7 @@ import fs from 'node:fs/promises'
 import path from 'node:path'
 import process from 'node:process'
 // @ts-ignore this is not compiled by typescript so it can import files from outside the rootDir
-import { detectForbiddenImportPlugin } from "../../lib/shared/esbuild.utils.mjs";
+import { detectForbiddenImportPlugin } from '../../lib/shared/esbuild.utils.mjs'
 
 import { build } from 'esbuild'
 
