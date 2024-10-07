@@ -234,7 +234,6 @@ class EditCommandPrompt(
     popup =
         JBPopupFactory.getInstance()
             .createComponentPopupBuilder(createPopupContent(), instructionsField)
-            .setTitle(dialogTitle)
             .setMovable(true)
             .setResizable(true)
             .setRequestFocus(true)

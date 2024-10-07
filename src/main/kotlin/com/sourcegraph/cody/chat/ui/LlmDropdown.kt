@@ -77,13 +77,11 @@ class LlmDropdown(
     val selectedFromHistory = HistoryService.getInstance(project).getDefaultLlm()
 
     selectedItem =
-        availableModels
-            .map { it.model }
-            .find {
-              it.id == model ||
-                  it.id == selectedFromHistory?.model ||
-                  it.id == selectedFromChatState?.id
-            } ?: models.firstOrNull()
+        availableModels.find {
+          it.model.id == model ||
+              it.model.id == selectedFromHistory?.model ||
+              it.model.id == selectedFromChatState?.id
+        } ?: models.firstOrNull()
 
     // If the dropdown is already disabled, don't change it. It can happen
     // in the case of the legacy commands (updateAfterFirstMessage happens before this call).
