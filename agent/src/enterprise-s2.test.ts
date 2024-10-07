@@ -1,8 +1,10 @@
-import path from 'node:path'
-
 import { spawnSync } from 'node:child_process'
+import path from 'node:path'
+import omit from 'lodash/omit'
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
+
 import { INCLUDE_EVERYTHING_CONTEXT_FILTERS } from '@sourcegraph/cody-shared'
-import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
+
 import { TESTING_CREDENTIALS } from '../../vscode/src/testutils/testing-credentials'
 import { TestClient } from './TestClient'
 import { TestWorkspace } from './TestWorkspace'
@@ -31,9 +33,7 @@ describe('Enterprise - S2 (close main branch)', { timeout: 5000 }, () => {
             stdio: 'inherit',
         })
 
-        const serverInfo = await s2EnterpriseClient.initialize({
-            autocompleteAdvancedProvider: 'fireworks',
-        })
+        const serverInfo = await s2EnterpriseClient.initialize()
 
         expect(serverInfo.authStatus?.authenticated).toBeTruthy()
         if (!serverInfo.authStatus?.authenticated) {
@@ -42,27 +42,19 @@ describe('Enterprise - S2 (close main branch)', { timeout: 5000 }, () => {
         expect(serverInfo.authStatus?.username).toStrictEqual('codytesting')
     }, 10_000)
 
-    // Disabled because `attribution/search` GraphQL does not work on S2
-    // See https://sourcegraph.slack.com/archives/C05JDP433DL/p1714017586160079
-    it.skip('attribution/found', async () => {
-        const id = await s2EnterpriseClient.request('chat/new', null)
-        const { repoNames, error } = await s2EnterpriseClient.request('attribution/search', {
-            id,
-            snippet: 'sourcegraph.Location(new URL',
-        })
-        expect(repoNames).not.empty
-        expect(error).null
-    }, 20_000)
+    it('creates an autocomplete provider using server-side model config from S2', async () => {
+        const { id, legacyModel, configSource } = (
+            await s2EnterpriseClient.request('testing/autocomplete/providerConfig', null)
+        ).provider
 
-    it('attribution/not found', async () => {
-        const id = await s2EnterpriseClient.request('chat/new', null)
-        const { repoNames, error } = await s2EnterpriseClient.request('attribution/search', {
-            id,
-            snippet: 'sourcegraph.Location(new LRU',
-        })
-        expect(repoNames).empty
-        expect(error).null
-    }, 20_000)
+        expect({ id, legacyModel, configSource }).toMatchInlineSnapshot(`
+          {
+            "configSource": "server-side-model-config",
+            "id": "fireworks",
+            "legacyModel": "deepseek-coder-v2-lite-base",
+          }
+        `)
+    })
 
     // Use S2 instance for Cody Context Filters enterprise tests
     describe('Cody Context Filters for enterprise', () => {
@@ -73,13 +65,8 @@ describe('Enterprise - S2 (close main branch)', { timeout: 5000 }, () => {
                 INCLUDE_EVERYTHING_CONTEXT_FILTERS
             )
         })
-        afterEach(() => {
-            s2EnterpriseClient.unregisterNotification('ignore/didChange')
-        })
 
-        // NOTE(sqs): Run many times to find flakes better. This test has been often flaky but was
-        // fixed on 2024-09-20.
-        it.each(Array.from({ length: 25 }))('testing/ignore/overridePolicy', async () => {
+        it('testing/ignore/overridePolicy', async () => {
             await s2EnterpriseClient.openFile(sumUri)
 
             const onChangeCallback = vi.fn()
@@ -115,14 +102,12 @@ describe('Enterprise - S2 (close main branch)', { timeout: 5000 }, () => {
 
             // onChangeCallback is not called again because filters are the same
             expect(onChangeCallback).toBeCalledTimes(2)
+            s2EnterpriseClient.unregisterNotification('ignore/didChange')
         })
 
         // The site config `cody.contextFilters` value on sourcegraph.sourcegraph.com instance
         // should include `sourcegraph/cody` repo for this test to pass.
-        // Skipped because of the API error:
-        //  Request to https://sourcegraph.sourcegraph.com/.api/completions/code?client-name=vscode&client-version=v1 failed with 406 Not Acceptable: ClientCodyIgnoreCompatibilityError: Cody for vscode version "v1" doesn't match version constraint ">= 1.20.0". Please upgrade your client.
-        // https://linear.app/sourcegraph/issue/CODY-2814/fix-and-re-enable-cody-context-filters-agent-integration-test
-        it.skip('autocomplete/execute (with Cody Ignore filters)', async () => {
+        it('autocomplete/execute (with Cody Ignore filters)', async () => {
             // Documents to be used as context sources.
             await s2EnterpriseClient.openFile(animalUri)
             await s2EnterpriseClient.openFile(squirrelUri)
@@ -132,15 +117,48 @@ describe('Enterprise - S2 (close main branch)', { timeout: 5000 }, () => {
 
             const { items, completionEvent } = await s2EnterpriseClient.request('autocomplete/execute', {
                 uri: sumUri.toString(),
-                position: { line: 1, character: 3 },
-                triggerKind: 'Invoke',
+                position: { line: 1, character: 4 },
+                triggerKind: 'Automatic',
             })
+
+            // Get the code completion request to assert the params used for inference.
+            const { requests } = await s2EnterpriseClient.request('testing/networkRequests', null)
+            const codeCompletionRequest = requests.find(request =>
+                request.url.includes('.api/completions')
+            )!
+            const requestParamsWithoutMessages = omit(
+                JSON.parse(codeCompletionRequest.body!),
+                'messages'
+            )
+
+            // Review that the code completion API request params match s2 instance configuration.
+            expect(requestParamsWithoutMessages).toMatchInlineSnapshot(`
+              {
+                "maxTokensToSample": 256,
+                "model": "fireworks/deepseek-coder-v2-lite-base",
+                "stopSequences": [
+                  "
+
+              ",
+                  "
+
+              ",
+                  "<｜fim▁begin｜>",
+                  "<｜fim▁hole｜>",
+                  "<｜fim▁end｜>, <|eos_token|>",
+                ],
+                "stream": true,
+                "temperature": 0.2,
+                "timeoutMs": 7000,
+                "topK": 0,
+              }
+            `)
 
             expect(items.length).toBeGreaterThan(0)
             expect(items.map(item => item.insertText)).toMatchInlineSnapshot(
                 `
               [
-                "   return a + b",
+                "    return a + b",
               ]
             `
             )
@@ -155,6 +173,30 @@ describe('Enterprise - S2 (close main branch)', { timeout: 5000 }, () => {
                 completionID: items[0].id,
             })
         }, 10_000)
+    })
+
+    describe('attribution', () => {
+        // Disabled because `attribution/search` GraphQL does not work on S2
+        // See https://sourcegraph.slack.com/archives/C05JDP433DL/p1714017586160079
+        it.skip('found', async () => {
+            const id = await s2EnterpriseClient.request('chat/new', null)
+            const { repoNames, error } = await s2EnterpriseClient.request('attribution/search', {
+                id,
+                snippet: 'sourcegraph.Location(new URL',
+            })
+            expect(repoNames).not.empty
+            expect(error).null
+        }, 20_000)
+
+        it('not found', async () => {
+            const id = await s2EnterpriseClient.request('chat/new', null)
+            const { repoNames, error } = await s2EnterpriseClient.request('attribution/search', {
+                id,
+                snippet: 'sourcegraph.Location(new LRU',
+            })
+            expect(repoNames).empty
+            expect(error).null
+        }, 20_000)
     })
 
     afterAll(async () => {

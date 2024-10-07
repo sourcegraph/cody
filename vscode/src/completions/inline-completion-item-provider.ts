@@ -125,7 +125,7 @@ export class InlineCompletionItemProvider
     /** Value derived from the {@link authStatus}, available synchronously. */
     private isDotComUser = false
 
-    private get config(): InlineCompletionItemProviderConfig {
+    public get config(): InlineCompletionItemProviderConfig {
         return InlineCompletionItemProviderConfigSingleton.configuration
     }
     private disableLowPerfLangDelay = false

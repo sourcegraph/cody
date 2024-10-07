@@ -1,3 +1,5 @@
+import type * as vscode from 'vscode'
+
 import type {
     AuthStatus,
     BillingCategory,
@@ -7,6 +9,7 @@ import type {
     ContextMentionProviderID,
     CurrentUserCodySubscription,
     Model,
+    ModelAvailabilityStatus,
     ModelUsage,
     SerializedChatTranscript,
     event,
@@ -17,11 +20,10 @@ import type {
     TelemetryEventMarketingTrackingInput,
     TelemetryEventParameters,
 } from '@sourcegraph/telemetry'
-import type * as vscode from 'vscode'
 
-import type { ModelAvailabilityStatus } from '@sourcegraph/cody-shared/dist/models/modelsService'
 import type { ExtensionMessage, WebviewMessage } from '../chat/protocol'
 import type { CompletionBookkeepingEvent, CompletionItemID } from '../completions/analytics-logger'
+import type { InlineCompletionItemProviderConfig } from '../completions/inline-completion-item-provider-config-singleton'
 import type { FixupTaskID } from '../non-stop/FixupTask'
 import type { CodyTaskState } from '../non-stop/state'
 
@@ -234,6 +236,9 @@ export type ClientRequests = {
     // For testing purposes, sets the minimum time given to users for reading and deciding
     // whether to accept a completion.
     'testing/autocomplete/setCompletionVisibilityDelay': [{ delay: number }, null]
+
+    // For testing purposes, returns the current autocomplete provider configuration.
+    'testing/autocomplete/providerConfig': [null, InlineCompletionItemProviderConfig]
 
     // Updates the extension configuration and returns the new
     // authentication status, which indicates whether the provided credentials are
