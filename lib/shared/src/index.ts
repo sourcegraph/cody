@@ -221,7 +221,7 @@ export {
 export { SourcegraphBrowserCompletionsClient } from './sourcegraph-api/completions/browserClient'
 export { SourcegraphCompletionsClient } from './sourcegraph-api/completions/client'
 export type {
-    CompletionAnalyticsLogger,
+    CompletionLogger as CompletionLogger,
     CompletionRequestParameters,
 } from './sourcegraph-api/completions/client'
 export * from './sourcegraph-api/completions/types'

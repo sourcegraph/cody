@@ -12,7 +12,7 @@ import type {
     SerializedCompletionParameters,
 } from './types'
 
-export interface CompletionAnalyticsLogger {
+export interface CompletionLogger {
     startCompletion(
         params: CompletionParameters | unknown,
         endpoint: string
@@ -43,7 +43,7 @@ export abstract class SourcegraphCompletionsClient {
 
     protected readonly isTemperatureZero = process.env.CODY_TEMPERATURE_ZERO === 'true'
 
-    constructor(protected logger?: CompletionAnalyticsLogger) {}
+    constructor(protected logger?: CompletionLogger) {}
 
     protected async completionsEndpoint(): Promise<string> {
         return new URL('/.api/completions/stream', (await currentResolvedConfig()).auth.serverEndpoint)

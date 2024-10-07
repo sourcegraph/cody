@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
 
-import type { CompletionAnalyticsLogger, SourcegraphCompletionsClient } from '@sourcegraph/cody-shared'
+import type { CompletionLogger, SourcegraphCompletionsClient } from '@sourcegraph/cody-shared'
 import type { startTokenReceiver } from './auth/token-receiver'
 import { onActivationDevelopmentHelpers } from './dev/helpers'
 
@@ -26,7 +26,7 @@ export interface PlatformContext {
     createStorage?: () => Promise<vscode.Memento>
     createCommandsProvider?: Constructor<typeof CommandsProvider>
     createSymfRunner?: Constructor<typeof SymfRunner>
-    createCompletionsClient: (logger?: CompletionAnalyticsLogger) => SourcegraphCompletionsClient
+    createCompletionsClient: (logger?: CompletionLogger) => SourcegraphCompletionsClient
     createSentryService?: () => SentryService
     createOpenTelemetryService?: () => OpenTelemetryService
     startTokenReceiver?: typeof startTokenReceiver

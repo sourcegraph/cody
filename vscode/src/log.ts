@@ -2,7 +2,7 @@ import * as vscode from 'vscode'
 
 import { appendFileSync } from 'node:fs'
 import type {
-    CompletionAnalyticsLogger,
+    CompletionLogger,
     CompletionParameters,
     CompletionResponse,
     Event,
@@ -96,7 +96,7 @@ function log(level: 'debug' | 'error', filterLabel: string, text: string, ...arg
     printLog(`${PREFIX}${filterLabel}: ${text} ${args.join(' ')}`)
 }
 
-export const logger: CompletionAnalyticsLogger = {
+export const logger: CompletionLogger = {
     startCompletion(params: CompletionParameters | Record<string, never>, endpoint: string) {
         const start = Date.now()
         const type =

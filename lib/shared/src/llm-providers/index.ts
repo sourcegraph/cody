@@ -1,4 +1,4 @@
-import type { CompletionAnalyticsLogger } from '../sourcegraph-api/completions/client'
+import type { CompletionLogger } from '../sourcegraph-api/completions/client'
 import type { CompletionCallbacks, CompletionParameters } from '../sourcegraph-api/completions/types'
 
 export { useCustomChatClient } from './clients'
@@ -16,7 +16,7 @@ export interface ChatNetworkClientParams {
     cb: CompletionCallbacks
     // This is used for logging as the completions request is sent to the provider's API
     completionsEndpoint: string
-    logger?: CompletionAnalyticsLogger
+    logger?: CompletionLogger
     signal?: AbortSignal
 }
 

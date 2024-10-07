@@ -1,5 +1,5 @@
 import type { LegacyModelRefStr, ModelRefStr } from '../models/modelsService'
-import type { CompletionAnalyticsLogger } from '../sourcegraph-api/completions/client'
+import type { CompletionLogger } from '../sourcegraph-api/completions/client'
 import type {
     CompletionParameters,
     CompletionResponse,
@@ -62,7 +62,7 @@ export interface CodeCompletionsClient<
     T = CodeCompletionsParams,
     ProviderSpecificOptions = CodeCompletionProviderOptions,
 > {
-    logger: CompletionAnalyticsLogger | undefined
+    logger: CompletionLogger | undefined
     complete(
         params: T,
         abortController: AbortController,
