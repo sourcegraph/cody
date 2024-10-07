@@ -25,7 +25,7 @@ class KeyboardShortcutTest : BasePlatformTestCase() {
             "cody.command.Smell" to arrayOf("ctrl alt 2", "ctrl alt 2"),
 
             // This command also handles cody.inlineEditRetryAction:
-            "cody.editCodeAction" to arrayOf("ctrl ENTER", "ctrl alt ENTER"),
+            "cody.editCodeAction" to arrayOf("alt K", "ctrl alt ENTER"),
             "cody.documentCodeAction" to arrayOf("alt H", "ctrl alt H"),
             "cody.testCodeAction" to arrayOf("alt G", "ctrl alt G"),
             "cody.fixup.codelens.diff" to arrayOf("alt D", "ctrl alt K"),

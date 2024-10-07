@@ -145,38 +145,38 @@
                         class="com.sourcegraph.cody.autocomplete.action.TriggerAutocompleteAction"
                         text="Autocomplete"
                         description="Shows autocomplete suggestions">
-                    <keyboard-shortcut replace-all="true" first-keystroke="ctrl alt P" keymap="$default"/>
-                    <keyboard-shortcut replace-all="true" first-keystroke="ctrl alt P" keymap="Mac OS X 10.5+"/>
+                    <keyboard-shortcut first-keystroke="ctrl alt P" keymap="$default"/>
+                    <keyboard-shortcut first-keystroke="ctrl alt P" keymap="Mac OS X 10.5+"/>
                     <override-text place="GoToAction" text="Cody: Autocomplete"/>
                 </action>
                 <action id="cody.acceptAutocompleteAction"
                         class="com.sourcegraph.cody.autocomplete.action.AcceptCodyAutocompleteAction"
                         text="Accept Autocomplete Suggestion"
                         description="Accepts the autocomplete suggestion">
-                    <keyboard-shortcut replace-all="true" first-keystroke="TAB" keymap="$default"/>
+                    <keyboard-shortcut first-keystroke="TAB" keymap="$default"/>
                     <override-text place="GoToAction" text="Cody: Accept Autocomplete Suggestion"/>
                 </action>
                 <action id="cody.cycleForwardAutocompleteAction"
                         class="com.sourcegraph.cody.autocomplete.action.CycleForwardAutocompleteAction"
                         text="Cycle Forward Autocomplete Suggestion"
                         description="Cycles forward through autocomplete suggestions">
-                    <keyboard-shortcut replace-all="true" first-keystroke="alt OPEN_BRACKET" keymap="$default"/>
-                    <keyboard-shortcut replace-all="true" first-keystroke="alt OPEN_BRACKET" keymap="Mac OS X 10.5+"/>
+                    <keyboard-shortcut first-keystroke="alt OPEN_BRACKET" keymap="$default"/>
+                    <keyboard-shortcut first-keystroke="alt OPEN_BRACKET" keymap="Mac OS X 10.5+"/>
                     <override-text place="GoToAction" text="Cody: Cycle Forward Autocomplete Suggestion"/>
                 </action>
                 <action id="cody.cycleBackAutocompleteAction"
                         class="com.sourcegraph.cody.autocomplete.action.CycleBackwardAutocompleteAction"
                         text="Cycle Backwards Autocomplete Suggestion"
                         description="Cycles backwards through autocomplete suggestions">
-                    <keyboard-shortcut replace-all="true" first-keystroke="alt CLOSE_BRACKET" keymap="$default"/>
-                    <keyboard-shortcut replace-all="true" first-keystroke="alt CLOSE_BRACKET" keymap="Mac OS X 10.5+"/>
+                    <keyboard-shortcut first-keystroke="alt CLOSE_BRACKET" keymap="$default"/>
+                    <keyboard-shortcut first-keystroke="alt CLOSE_BRACKET" keymap="Mac OS X 10.5+"/>
                     <override-text place="GoToAction" text="Cody: Cycle Backwards Autocomplete Suggestion"/>
                 </action>
                 <action id="cody.disposeInlays"
                         class="com.sourcegraph.cody.autocomplete.action.DisposeInlaysAction"
                         text="Hide Completions"
                         description="Hides the autocomplete popup">
-                    <keyboard-shortcut replace-all="true" first-keystroke="ESCAPE" keymap="$default"/>
+                    <keyboard-shortcut first-keystroke="ESCAPE" keymap="$default"/>
                     <override-text place="GoToAction" text="Cody: Hide Completions"/>
                 </action>
             </group>
@@ -186,8 +186,8 @@
                         class="com.sourcegraph.cody.chat.actions.NewChatAction"
                         text="New Chat"
                         description="New chat">
-                    <keyboard-shortcut replace-all="true" first-keystroke="ctrl alt 0" keymap="$default"/>
-                    <keyboard-shortcut replace-all="true" first-keystroke="ctrl alt 0" keymap="Mac OS X 10.5+"/>
+                    <keyboard-shortcut first-keystroke="ctrl alt 0" keymap="$default"/>
+                    <keyboard-shortcut first-keystroke="ctrl alt 0" keymap="Mac OS X 10.5+"/>
                     <override-text place="GoToAction" text="Cody: New Chat"/>
                 </action>
 
@@ -202,8 +202,8 @@
                         class="com.sourcegraph.cody.chat.OpenChatAction"
                         text="Open Chat"
                         description="Opens a chat">
-                    <keyboard-shortcut replace-all="true" first-keystroke="ctrl alt 9" keymap="$default"/>
-                    <keyboard-shortcut replace-all="true" first-keystroke="ctrl alt 9" keymap="Mac OS X 10.5+"/>
+                    <keyboard-shortcut first-keystroke="ctrl alt 9" keymap="$default"/>
+                    <keyboard-shortcut first-keystroke="ctrl alt 9" keymap="Mac OS X 10.5+"/>
                     <override-text place="GoToAction" text="Cody: Open Chat"/>
                 </action>
 
@@ -212,8 +212,8 @@
                         class="com.sourcegraph.cody.chat.actions.ExplainCommand"
                         text="Explain Code"
                         description="Explains the selected code">
-                    <keyboard-shortcut replace-all="true" first-keystroke="ctrl alt 1" keymap="$default"/>
-                    <keyboard-shortcut replace-all="true" first-keystroke="ctrl alt 1" keymap="Mac OS X 10.5+"/>
+                    <keyboard-shortcut first-keystroke="ctrl alt 1" keymap="$default"/>
+                    <keyboard-shortcut first-keystroke="ctrl alt 1" keymap="Mac OS X 10.5+"/>
                     <override-text place="GoToAction" text="Cody: Explain Code"/>
                 </action>
 
@@ -222,8 +222,8 @@
                         class="com.sourcegraph.cody.chat.actions.SmellCommand"
                         text="Find Code Smells"
                         description="Finds code smells in the selected code">
-                    <keyboard-shortcut replace-all="true" first-keystroke="ctrl alt 2" keymap="$default"/>
-                    <keyboard-shortcut replace-all="true" first-keystroke="ctrl alt 2" keymap="Mac OS X 10.5+"/>
+                    <keyboard-shortcut first-keystroke="ctrl alt 2" keymap="$default"/>
+                    <keyboard-shortcut first-keystroke="ctrl alt 2" keymap="Mac OS X 10.5+"/>
                     <override-text place="GoToAction" text="Cody: Find Code Smells"/>
                 </action>
             </group>
@@ -235,8 +235,8 @@
                         class="com.sourcegraph.cody.edit.actions.TestCodeAction"
                         text="Generate Unit Tests"
                         description="Generates unit tests for the selected code">
-                    <keyboard-shortcut replace-all="true" first-keystroke="alt G" keymap="$default"/>
-                    <keyboard-shortcut replace-all="true" first-keystroke="ctrl alt G" keymap="Mac OS X 10.5+"/>
+                    <keyboard-shortcut first-keystroke="alt G" keymap="$default"/>
+                    <keyboard-shortcut first-keystroke="ctrl alt G" keymap="Mac OS X 10.5+"/>
                     <override-text place="GoToAction" text="Cody: Generate Unit Tests"/>
                 </action>
 
@@ -245,8 +245,8 @@
                         class="com.sourcegraph.cody.edit.actions.DocumentCodeAction"
                         text="Document Code"
                         description="Documents the selected code">
-                    <keyboard-shortcut replace-all="true" first-keystroke="alt H" keymap="$default"/>
-                    <keyboard-shortcut replace-all="true" first-keystroke="ctrl alt H" keymap="Mac OS X 10.5+"/>
+                    <keyboard-shortcut first-keystroke="alt H" keymap="$default"/>
+                    <keyboard-shortcut first-keystroke="ctrl alt H" keymap="Mac OS X 10.5+"/>
                     <override-text place="GoToAction" text="Cody: Document Code"/>
                 </action>
 
@@ -255,8 +255,8 @@
                         class="com.sourcegraph.cody.edit.actions.EditCodeAction"
                         description="Opens the Edit Code dialog"
                         text="Edit Code...">
-                    <keyboard-shortcut replace-all="true" first-keystroke="ctrl ENTER" keymap="$default"/>
-                    <keyboard-shortcut replace-all="true" first-keystroke="ctrl alt ENTER" keymap="Mac OS X 10.5+"/>
+                    <keyboard-shortcut first-keystroke="alt K" keymap="$default"/>
+                    <keyboard-shortcut first-keystroke="ctrl alt ENTER" keymap="Mac OS X 10.5+"/>
                     <override-text place="GoToAction" text="Cody: Edit Code..."/>
                 </action>
 
@@ -265,8 +265,8 @@
                         class="com.sourcegraph.cody.edit.lenses.actions.EditAcceptAction"
                         text="Accept Edit"
                         description="Accept the fixup">
-                    <keyboard-shortcut replace-all="true" first-keystroke="alt A" keymap="$default"/>
-                    <keyboard-shortcut replace-all="true" first-keystroke="ctrl alt A" keymap="Mac OS X 10.5+"/>
+                    <keyboard-shortcut first-keystroke="alt A" keymap="$default"/>
+                    <keyboard-shortcut first-keystroke="ctrl alt A" keymap="Mac OS X 10.5+"/>
                     <override-text place="GoToAction" text="Cody: Accept Edit"/>
                 </action>
 
@@ -275,16 +275,16 @@
                         text="Cancel Edit"
                         description="Cancel the fixup">
                     <override-text place="GoToAction" text="Cody: Cancel Edit"/>
-                    <keyboard-shortcut replace-all="true" first-keystroke="alt Z" keymap="$default"/>
-                    <keyboard-shortcut replace-all="true" first-keystroke="ctrl alt Z" keymap="Mac OS X 10.5+"/>
+                    <keyboard-shortcut first-keystroke="alt Z" keymap="$default"/>
+                    <keyboard-shortcut first-keystroke="ctrl alt Z" keymap="Mac OS X 10.5+"/>
                 </action>
 
                 <action id="cody.fixup.codelens.retry"
                         class="com.sourcegraph.cody.edit.lenses.actions.EditRetryAction"
                         text="Retry Edit"
                         description="Retry the fixup">
-                    <keyboard-shortcut replace-all="true" first-keystroke="alt R" keymap="$default"/>
-                    <keyboard-shortcut replace-all="true" first-keystroke="ctrl alt T" keymap="Mac OS X 10.5+"/>
+                    <keyboard-shortcut first-keystroke="alt R" keymap="$default"/>
+                    <keyboard-shortcut first-keystroke="ctrl alt T" keymap="Mac OS X 10.5+"/>
                     <override-text place="GoToAction" text="Cody: Retry Edit"/>
                 </action>
 
@@ -293,8 +293,8 @@
                         text="Undo Edit"
                         description="Undo the fixup">
                     <override-text place="GoToAction" text="Cody: Undo Edit"/>
-                    <keyboard-shortcut replace-all="true" first-keystroke="alt X" keymap="$default"/>
-                    <keyboard-shortcut replace-all="true" first-keystroke="ctrl alt X"
+                    <keyboard-shortcut first-keystroke="alt X" keymap="$default"/>
+                    <keyboard-shortcut first-keystroke="ctrl alt X"
                                        keymap="Mac OS X 10.5+"/>
                 </action>
 
@@ -302,16 +302,16 @@
                         class="com.sourcegraph.cody.edit.lenses.actions.EditShowDiffAction"
                         text="Show Diff"
                         description="Show a diff view of the fixup">
-                    <keyboard-shortcut replace-all="true" first-keystroke="alt D" keymap="$default"/>
-                    <keyboard-shortcut replace-all="true" first-keystroke="ctrl alt K" keymap="Mac OS X 10.5+"/>
+                    <keyboard-shortcut first-keystroke="alt D" keymap="$default"/>
+                    <keyboard-shortcut first-keystroke="ctrl alt K" keymap="Mac OS X 10.5+"/>
                     <override-text place="GoToAction" text="Cody: Show Diff"/>
                 </action>
 
                 <action id="cody.inlineEditEditCode"
                         text="Edit Code"
                         class="com.sourcegraph.cody.edit.InlineEditPromptEditCodeAction">
-                    <keyboard-shortcut replace-all="true" first-keystroke="ctrl ENTER" keymap="$default"/>
-                    <keyboard-shortcut replace-all="true" first-keystroke="meta ENTER" keymap="Mac OS X 10.5+"/>
+                    <keyboard-shortcut first-keystroke="alt K" keymap="$default"/>
+                    <keyboard-shortcut first-keystroke="meta ENTER" keymap="Mac OS X 10.5+"/>
                     <override-text place="GoToAction" text="Cody: Edit Code"/>
                 </action>
             </group>
@@ -385,8 +385,8 @@
                         icon="/icons/sourcegraphLogo.svg"
                         text="Find with Sourcegraph..."
                         description="Search all your repos on Sourcegraph">
-                    <keyboard-shortcut replace-all="true" first-keystroke="alt s" keymap="$default"/>
-                    <keyboard-shortcut replace-all="true" first-keystroke="alt s" keymap="Mac OS X 10.5+"/>
+                    <keyboard-shortcut first-keystroke="alt s" keymap="$default"/>
+                    <keyboard-shortcut first-keystroke="alt s" keymap="Mac OS X 10.5+"/>
                     <add-to-group group-id="FindMenuGroup" anchor="after" relative-to-action="ReplaceInPath"/>
                     <override-text place="GoToAction" text="Cody: Find with Sourcegraph..."/>
                 </action>
@@ -413,8 +413,8 @@
                         class="com.sourcegraph.cody.statusbar.OpenLogAction"
                         text="Open Log"
                         description="Opens Cody log">
-                    <keyboard-shortcut replace-all="true" first-keystroke="ctrl shift L" keymap="$default"/>
-                    <keyboard-shortcut replace-all="true" first-keystroke="ctrl shift L" keymap="Mac OS X 10.5+"/>
+                    <keyboard-shortcut first-keystroke="ctrl shift L" keymap="$default"/>
+                    <keyboard-shortcut first-keystroke="ctrl shift L" keymap="Mac OS X 10.5+"/>
                     <override-text place="GoToAction" text="Cody: Open Log"/>
                 </action>
                 <action id="cody.enableOffScreenRenderingAction"
