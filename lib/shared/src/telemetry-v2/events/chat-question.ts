@@ -108,7 +108,8 @@ export const events = [
                     current: Span
                     firstToken: Span
                     addMetadata: boolean
-                }
+                },
+                tokenCounterUtils: TokenCounterUtils
             ) => {
                 const gitMetadata =
                     isDotCom(params.authStatus) && params.repoIsPublic && isArray(params.repoMetadata)
@@ -155,7 +156,11 @@ export const events = [
                         // V2 telemetry exports privateMetadata only for S2 users. The condition below is an additional safeguard measure.
                         // Check `SRC_TELEMETRY_SENSITIVEMETADATA_ADDITIONAL_ALLOWED_EVENT_TYPES` env to learn more.
                         promptText: isS2(params.authStatus)
-                            ? truncatePromptString(params.promptText, CHAT_INPUT_TOKEN_BUDGET)
+                            ? truncatePromptString(
+                                  params.promptText,
+                                  CHAT_INPUT_TOKEN_BUDGET,
+                                  tokenCounterUtils
+                              )
                             : undefined,
                     },
                     billingMetadata: {
@@ -204,7 +209,10 @@ function publicContextSummary(globalPrefix: string, context: ContextItem[]) {
         openctx: cloneDeep(defaultByTypeCount),
         repository: cloneDeep(defaultByTypeCount),
         symbol: cloneDeep(defaultByTypeCount),
-        tree: { ...cloneDeep(defaultByTypeCount), isWorkspaceRoot: undefined as number | undefined },
+        tree: {
+            ...cloneDeep(defaultByTypeCount),
+            isWorkspaceRoot: undefined as number | undefined,
+        },
     }
     const byOpenctxProvider = {
         [REMOTE_REPOSITORY_PROVIDER_URI]: cloneDeep(defaultSharedItemCount),
@@ -327,7 +335,9 @@ const defaultSharedItemCount: SharedItemCount = {
 }
 type BySourceCount = SharedItemCount & {
     isWorkspaceRoot: number | undefined
-    types: { [key in Exclude<ContextItem['type'], undefined>]: number | undefined }
+    types: {
+        [key in Exclude<ContextItem['type'], undefined>]: number | undefined
+    }
 }
 const defaultBySourceCount: BySourceCount = {
     ...defaultSharedItemCount,
@@ -342,7 +352,9 @@ const defaultBySourceCount: BySourceCount = {
 }
 
 type ByTypeCount = SharedItemCount & {
-    sources: { [key in Exclude<ContextItem['source'] | 'other', undefined>]: number | undefined }
+    sources: {
+        [key in Exclude<ContextItem['source'] | 'other', undefined>]: number | undefined
+    }
 }
 const defaultByTypeCount: ByTypeCount = {
     ...defaultSharedItemCount,
