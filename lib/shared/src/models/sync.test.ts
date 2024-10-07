@@ -16,6 +16,7 @@ import type { CodyClientConfig } from '../sourcegraph-api/clientConfig'
 import type { CodyLLMSiteConfiguration } from '../sourcegraph-api/graphql/client'
 import * as userProductSubscriptionModule from '../sourcegraph-api/userProductSubscription'
 import type { PartialDeep } from '../utils'
+import { getExperimentalClientModelByFeatureFlag } from './client'
 import {
     type Model,
     type ServerModel,
@@ -34,7 +35,6 @@ import {
 import { maybeAdjustContextWindows, syncModels } from './sync'
 import { ModelTag } from './tags'
 import { ModelUsage } from './types'
-import { getExperimentalClientModelByFeatureFlag } from './client'
 
 vi.mock('graphqlClient')
 vi.mock('../services/LocalStorageProvider')
@@ -522,5 +522,4 @@ describe('syncModels', () => {
         expect(result.preferences.selected.chat).toBe(undefined)
         expect(storage.data?.[AUTH_STATUS_FIXTURE_AUTHED.endpoint]!.selected.chat).toBe(undefined)
     })
-
 })
