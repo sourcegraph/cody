@@ -1,6 +1,6 @@
 import {
     AUTH_STATUS_FIXTURE_AUTHED,
-    type ClientCapabilities,
+    type ClientCapabilitiesWithLegacyFields,
     type LegacyWebviewConfig,
 } from '@sourcegraph/cody-shared'
 import { fireEvent, render, screen } from '@testing-library/react'
@@ -33,7 +33,7 @@ describe('WelcomeMessage', () => {
         vi.spyOn(useConfigModule, 'useLegacyWebviewConfig').mockReturnValue({
             clientCapabilities: {
                 isVSCode: true,
-            } satisfies Partial<ClientCapabilities> as ClientCapabilities,
+            } satisfies Partial<ClientCapabilitiesWithLegacyFields> as ClientCapabilitiesWithLegacyFields,
             authStatus: AUTH_STATUS_FIXTURE_AUTHED,
         } satisfies Partial<LegacyWebviewConfig> as LegacyWebviewConfig)
         render(<WelcomeMessage setView={() => {}} />, {
@@ -49,7 +49,7 @@ describe('WelcomeMessage', () => {
         vi.spyOn(useConfigModule, 'useLegacyWebviewConfig').mockReturnValue({
             clientCapabilities: {
                 isVSCode: false,
-            } satisfies Partial<ClientCapabilities> as ClientCapabilities,
+            } satisfies Partial<ClientCapabilitiesWithLegacyFields> as ClientCapabilitiesWithLegacyFields,
             authStatus: AUTH_STATUS_FIXTURE_AUTHED,
         } satisfies Partial<LegacyWebviewConfig> as LegacyWebviewConfig)
         render(<WelcomeMessage setView={() => {}} />, {
