@@ -899,7 +899,6 @@ export class InlineCompletionItemProvider
     }
 
     public async manuallyTriggerCompletion(): Promise<void> {
-        console.log('manuallyTriggerCompletion')
         await vscode.commands.executeCommand('editor.action.inlineSuggest.hide')
         this.lastManualCompletionTimestamp = Date.now()
         await vscode.commands.executeCommand('editor.action.inlineSuggest.trigger')
