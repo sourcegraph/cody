@@ -10,6 +10,13 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 ### Changed
 
+## 1.36.3
+
+### Added
+
+- Autocomplete: re-enable the agent tests. [pull/5784](https://github.com/sourcegraph/cody/pull/5784)
+- Autocomplete: Using the current document instead of precalculated text to get insertion text. [pull/5812](https://github.com/sourcegraph/cody/pull/5812)
+
 ## 1.36.2
 
 ### Added
