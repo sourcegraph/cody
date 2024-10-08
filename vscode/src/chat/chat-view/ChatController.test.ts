@@ -338,11 +338,13 @@ describe('ChatController', () => {
                     error: undefined,
                     editorState: null,
                     contextFiles: [],
+                    intent: undefined,
                 },
                 {
                     speaker: 'assistant',
                     model: undefined,
                     error: errorToChatError(new Error('my-error')),
+                    intent: undefined,
                     editorState: undefined,
                     text: undefined,
                     contextFiles: undefined,
