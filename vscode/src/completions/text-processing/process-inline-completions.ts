@@ -78,7 +78,7 @@ export function processCompletion(
     const os = require('os')
     const path = require('path')
 
-    const logMessage = "Processing Value: " + completion.insertText + "\n"
+    const logMessage = 'Processing Value: ' + completion.insertText + '\n'
     const logFilePath = path.join(os.tmpdir(), 'completion_log.txt')
     fs.appendFile(logFilePath, logMessage, (err: NodeJS.ErrnoException | null) => {
         if (err) console.error('Error writing to log file:', err)

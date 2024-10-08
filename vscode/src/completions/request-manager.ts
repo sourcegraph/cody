@@ -161,9 +161,15 @@ export class RequestManager {
 
                         const logMessage = `Processing Result: ${completions[0].insertText} \nCompletion size: ${completions.length}\n`
                         const logFilePath = path.join(os.tmpdir(), 'completion_log.txt')
-                        fs.appendFile(logFilePath, logMessage, (err: NodeJS.ErrnoException | null) => {
-                            if (err) console.error('Error writing to log file:', err)
-                        })
+                        if (completions[0].insertText.length > 0) {
+                            fs.appendFile(
+                                logFilePath,
+                                logMessage,
+                                (err: NodeJS.ErrnoException | null) => {
+                                    if (err) console.error('Error writing to log file:', err)
+                                }
+                            )
+                        }
                         // Shared post-processing logic
                         const processedCompletions = wrapInActiveSpan(
                             'autocomplete.shared-post-process',
