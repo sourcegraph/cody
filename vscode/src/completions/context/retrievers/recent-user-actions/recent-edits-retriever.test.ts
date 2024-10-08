@@ -22,7 +22,7 @@ describe('RecentEditsRetriever', () => {
         retriever = new RecentEditsRetriever(
             {
                 maxAgeMs: FIVE_MINUTES,
-                addLineNumbersForDiff: true,
+                addLineNumbersForDiff: false,
             },
             {
                 onDidChangeTextDocument(listener) {

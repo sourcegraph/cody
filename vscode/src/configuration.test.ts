@@ -95,6 +95,8 @@ describe('getConfiguration', () => {
                         return false
                     case 'cody.experimental.supercompletions':
                         return false
+                    case 'cody.experimental.autoedits':
+                        return false
                     case 'cody.experimental.noodle':
                         return false
                     case 'cody.experimental.minion.anthropicKey':

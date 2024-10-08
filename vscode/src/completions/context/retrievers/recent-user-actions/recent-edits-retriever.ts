@@ -1,7 +1,6 @@
 import { PromptString, contextFiltersProvider } from '@sourcegraph/cody-shared'
 import type { AutocompleteContextSnippet } from '@sourcegraph/cody-shared'
 import { structuredPatch } from 'diff'
-import type { Diff } from 'diff'
 import * as vscode from 'vscode'
 import { displayPath } from '../../../../../../lib/shared/src/editor/displayPath'
 import type { ContextRetriever, ContextRetrieverOptions } from '../../../types'
@@ -13,12 +12,6 @@ interface TrackedDocument {
     uri: vscode.Uri
     changes: { timestamp: number; change: vscode.TextDocumentContentChangeEvent }[]
 }
-
-// interface Diff {
-//     label: string
-//     lineNumber: number
-//     lineText: string
-// }
 
 export interface RecentEditsRetrieverOptions {
     maxAgeMs: number
