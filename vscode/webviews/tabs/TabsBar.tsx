@@ -19,12 +19,13 @@ import { getVSCodeAPI } from '../utils/VSCodeApi'
 import { View } from './types'
 
 import { CodyIDE, FeatureFlag, isDefined } from '@sourcegraph/cody-shared'
-import { type FC, Fragment, forwardRef, useCallback, useMemo, useState } from 'react'
+import { type FC, Fragment, forwardRef, memo, useCallback, useMemo, useState } from 'react'
 import { Kbd } from '../components/Kbd'
 import { Tooltip, TooltipContent, TooltipTrigger } from '../components/shadcn/ui/tooltip'
 import { useConfig } from '../utils/useConfig'
 
 import { useExtensionAPI } from '@sourcegraph/prompt-editor'
+import { isEqual } from 'lodash'
 import { downloadChatHistory } from '../chat/downloadChatHistory'
 import { Button } from '../components/shadcn/ui/button'
 import { useFeatureFlag } from '../utils/useFeatureFlags'
@@ -68,7 +69,8 @@ interface TabConfig {
     subActions?: TabSubAction[]
 }
 
-export const TabsBar: React.FC<TabsBarProps> = ({ currentView, setView, IDE }) => {
+export const TabsBar = memo<TabsBarProps>(props => {
+    const { currentView, setView, IDE } = props
     const tabItems = useTabs({ IDE })
     const {
         config: { webviewType, multipleWebviewsEnabled },
@@ -183,7 +185,7 @@ export const TabsBar: React.FC<TabsBarProps> = ({ currentView, setView, IDE }) =
             </Tabs.List>
         </div>
     )
-}
+}, isEqual)
 
 interface ActionButtonWithConfirmationProps {
     title: string
