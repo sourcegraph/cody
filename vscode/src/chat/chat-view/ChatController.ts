@@ -768,7 +768,8 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                             detectedIntent: intent,
                             detectedIntentScores: intentScores,
                         },
-                        { current: span, firstToken: firstTokenSpan, addMetadata: true }
+                        { current: span, firstToken: firstTokenSpan, addMetadata: true },
+                        tokenCounterUtils
                     )
 
                     return await this.handleSearchIntent({
@@ -823,7 +824,8 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                         addMetadata: true,
                         current: span,
                         firstToken: firstTokenSpan,
-                    }
+                    },
+                    tokenCounterUtils
                 )
 
                 signal.throwIfAborted()

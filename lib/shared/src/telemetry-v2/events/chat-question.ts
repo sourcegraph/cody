@@ -14,7 +14,7 @@ import {
 
 import type { PromptString } from '../../prompt/prompt-string'
 import { truncatePromptString } from '../../prompt/truncation'
-import { isDotCom } from '../../sourcegraph-api/environments'
+import { isDotCom, isS2 } from '../../sourcegraph-api/environments'
 import { CHAT_INPUT_TOKEN_BUDGET } from '../../token/constants'
 import type { TokenCounterUtils } from '../../token/counter'
 import { telemetryRecorder } from '../singleton'
@@ -108,10 +108,15 @@ export const events = [
                     current: Span
                     firstToken: Span
                     addMetadata: boolean
-                }
+                },
+                tokenCounterUtils: TokenCounterUtils
             ) => {
+                const recordTranscript =
+                    params.authStatus.endpoint &&
+                    (isDotCom(params.authStatus) || isS2(params.authStatus))
+
                 const gitMetadata =
-                    isDotCom(params.authStatus) && params.repoIsPublic && isArray(params.repoMetadata)
+                    recordTranscript && params.repoIsPublic && isArray(params.repoMetadata)
                         ? params.repoMetadata
                         : undefined
 
@@ -135,6 +140,7 @@ export const events = [
                             ? map.intent(params.detectedIntent)
                             : undefined,
                         ...metadata,
+                        recordsPrivateMetadataTranscript: recordTranscript ? 1 : 0,
                     }),
                     privateMetadata: {
                         detectedIntentScores: params.detectedIntentScores?.length
@@ -150,6 +156,16 @@ export const events = [
                         userSpecifiedIntent: params.userSpecifiedIntent,
                         traceId: spans.current.spanContext().traceId,
                         gitMetadata,
+                        // 🚨 SECURITY: Chat transcripts are to be included only for S2 & Dotcom users AND for V2 telemetry.
+                        // V2 telemetry exports privateMetadata only for S2 & Dotcom users. The condition below is an additional safeguard measure.
+                        // Check `SRC_TELEMETRY_SENSITIVEMETADATA_ADDITIONAL_ALLOWED_EVENT_TYPES` env to learn more.
+                        promptText: recordTranscript
+                            ? truncatePromptString(
+                                  params.promptText,
+                                  CHAT_INPUT_TOKEN_BUDGET,
+                                  tokenCounterUtils
+                              )
+                            : undefined,
                     },
                     billingMetadata: {
                         product: 'cody',
@@ -197,7 +213,10 @@ function publicContextSummary(globalPrefix: string, context: ContextItem[]) {
         openctx: cloneDeep(defaultByTypeCount),
         repository: cloneDeep(defaultByTypeCount),
         symbol: cloneDeep(defaultByTypeCount),
-        tree: { ...cloneDeep(defaultByTypeCount), isWorkspaceRoot: undefined as number | undefined },
+        tree: {
+            ...cloneDeep(defaultByTypeCount),
+            isWorkspaceRoot: undefined as number | undefined,
+        },
     }
     const byOpenctxProvider = {
         [REMOTE_REPOSITORY_PROVIDER_URI]: cloneDeep(defaultSharedItemCount),
@@ -320,7 +339,9 @@ const defaultSharedItemCount: SharedItemCount = {
 }
 type BySourceCount = SharedItemCount & {
     isWorkspaceRoot: number | undefined
-    types: { [key in Exclude<ContextItem['type'], undefined>]: number | undefined }
+    types: {
+        [key in Exclude<ContextItem['type'], undefined>]: number | undefined
+    }
 }
 const defaultBySourceCount: BySourceCount = {
     ...defaultSharedItemCount,
@@ -335,7 +356,9 @@ const defaultBySourceCount: BySourceCount = {
 }
 
 type ByTypeCount = SharedItemCount & {
-    sources: { [key in Exclude<ContextItem['source'] | 'other', undefined>]: number | undefined }
+    sources: {
+        [key in Exclude<ContextItem['source'] | 'other', undefined>]: number | undefined
+    }
 }
 const defaultByTypeCount: ByTypeCount = {
     ...defaultSharedItemCount,
