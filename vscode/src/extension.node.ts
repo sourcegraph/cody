@@ -2,7 +2,7 @@
 import { NodeSentryService } from './services/sentry/sentry.node'
 
 // Network patching needs to happend ASAP
-import { patchNetworkStack } from './net.node'
+import { patchNetworkStack } from './net/net.node'
 patchNetworkStack()
 
 // Everything else
@@ -14,7 +14,7 @@ import type { ExtensionApi } from './extension-api'
 import { type ExtensionClient, defaultVSCodeExtensionClient } from './extension-client'
 import { activate as activateCommon } from './extension.common'
 import { SymfRunner } from './local-context/symf'
-import { DelegatingProxyAgent } from './net.node'
+import { DelegatingProxyAgent } from './net/net.node'
 import { OpenTelemetryService } from './services/open-telemetry/OpenTelemetryService.node'
 
 /**
