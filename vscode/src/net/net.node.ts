@@ -30,6 +30,20 @@ import type * as internalVSCodeAgent from './vscode-network-proxy'
 
 const TIMEOUT = 60_000
 
+let debugFile: vscode.TextEditor | undefined
+function appendText(editor: vscode.TextEditor | undefined, string: string) {
+    if (!editor) {
+        return
+    }
+    void editor.edit(builder => {
+        builder.insert(editor.document.lineAt(editor.document.lineCount - 1).range.end, string + '\n')
+    })
+}
+async function openEmptyEditor() {
+    const document = await vscode.workspace.openTextDocument({ language: 'jsonl' })
+    return await vscode.window.showTextDocument(document)
+}
+
 export class DelegatingProxyAgent extends AgentBase implements vscode.Disposable {
     private disposables: vscode.Disposable[] = []
     private proxyCache = new Map<LiteralUnion<'http:' | 'https:', string>, AgentBase>()
@@ -99,6 +113,7 @@ export class DelegatingProxyAgent extends AgentBase implements vscode.Disposable
         if (globalAgentRef.isSet) {
             throw new Error('Already initialized')
         }
+        debugFile = await openEmptyEditor()
         const agent = new DelegatingProxyAgent()
         await firstValueFrom(agent.config)
         globalAgentRef.curr = agent
@@ -110,6 +125,14 @@ export class DelegatingProxyAgent extends AgentBase implements vscode.Disposable
         options: AgentConnectOpts & { _vscodeAgent?: Pick<AgentBase, 'connect'> }
     ): Promise<stream.Duplex | Agent> {
         const config = await firstValueFrom(this.config)
+
+        addRequestTimings(req, timings => {
+            //write a line to the file
+            appendText(
+                debugFile,
+                JSON.stringify({ url: { host: req.host, path: req.path }, ...timings })
+            )
+        })
 
         if (options._vscodeAgent && !config.preferInternalAgents) {
             if (config.proxyPath) {
@@ -435,6 +458,59 @@ function patchVSCodeModule(originalModule: typeof http | typeof https) {
         return patchedFn
     }
     return { get: patch(originalModule.get), request: patch(originalModule.request) }
+}
+
+interface RequestTimings {
+    startTime: number
+    socket?: number
+    lookup?: number
+    connect?: number
+    response?: number
+    end?: number
+    finish?: number
+    connectError?: Error
+    responseError?: Error
+}
+function addRequestTimings(req: http.ClientRequest, callback: (timings: RequestTimings) => void) {
+    const startTime = performance.now()
+
+    const timings: RequestTimings = {
+        startTime,
+    }
+
+    req.on('socket', socket => {
+        timings.socket = performance.now() - startTime
+
+        socket.on('lookup', () => {
+            timings.lookup = performance.now() - startTime
+        })
+
+        socket.on('connect', () => {
+            timings.connect = performance.now() - startTime
+        })
+
+        socket.on('error', err => {
+            timings.connectError = err
+        })
+    })
+
+    req.on('response', res => {
+        timings.response = performance.now() - startTime
+
+        res.on('end', () => {
+            timings.end = performance.now() - startTime
+        })
+    })
+
+    req.on('error', err => {
+        timings.responseError = err
+        timings.end = performance.now() - startTime
+    })
+
+    req.on('finish', () => {
+        timings.finish = performance.now() - startTime
+        callback(timings)
+    })
 }
 
 function requireInternalVSCodeAgent(): typeof internalVSCodeAgent | undefined {
