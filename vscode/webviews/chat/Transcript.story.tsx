@@ -7,6 +7,7 @@ import {
     type ChatMessage,
     PromptString,
     RateLimitError,
+    SerializedPromptEditorValue,
     errorToChatError,
     ps,
 } from '@sourcegraph/cody-shared'
@@ -14,6 +15,10 @@ import { useArgs, useCallback, useEffect, useRef, useState } from '@storybook/pr
 import type { ComponentProps } from 'react'
 import { URI } from 'vscode-uri'
 import { VSCodeWebview } from '../storybook/VSCodeStoryDecorator'
+
+const updateEditorStateOnChange = (index: number, state: SerializedPromptEditorValue) => {
+    console.log(`Editor state updated for index ${index}:`, state)
+}
 
 const meta: Meta<typeof Transcript> = {
     title: 'ui/Transcript',
@@ -36,6 +41,7 @@ const meta: Meta<typeof Transcript> = {
         userInfo: FIXTURE_USER_ACCOUNT_INFO,
         postMessage: () => {},
         chatEnabled: true,
+        updateEditorStateOnChange: () => {},
     } satisfies ComponentProps<typeof Transcript>,
 
     decorators: [

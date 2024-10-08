@@ -15,6 +15,7 @@ const PROPS: Omit<ComponentProps<typeof Transcript>, 'transcript'> = {
     userInfo: FIXTURE_USER_ACCOUNT_INFO,
     chatEnabled: true,
     postMessage: () => {},
+    updateEditorStateOnChange: () => {},
 }
 
 vi.mock('@vscode/webview-ui-toolkit/react', () => ({
@@ -398,4 +399,44 @@ describe('transcriptToInteractionPairs', () => {
             },
         ])
     })
+
+    test('preserves editor state when switching tabs', async () => {
+        const waitForDebounce = () => new Promise(resolve => setTimeout(resolve, 350)); // 350ms to be safe as we debounce on change.
+
+        const humanMessage: ChatMessage = {
+            speaker: 'human',
+            text: ps`Foo`,
+            contextFiles: [],
+        }
+        const assistantMessage: ChatMessage = { speaker: 'assistant', text: ps`Bar` }
+        const updateEditorStateOnChange = vi.fn()
+        const { container, rerender } = render(
+            <Transcript
+                {...PROPS}
+                transcript={[humanMessage, assistantMessage]}
+                updateEditorStateOnChange={updateEditorStateOnChange}
+            />
+        )
+
+        const editor = container.querySelector<EditorHTMLElement>(
+            '[role="row"]:last-child [data-lexical-editor="true"]'
+        )! as EditorHTMLElement
+        editor.textContent = 'Unsent message'
+
+        await typeInEditor(editor, 'Unsent message updated')
+
+        // Wait for the debounce
+        await waitForDebounce()
+
+        rerender(
+            <Transcript
+                {...PROPS}
+                transcript={[humanMessage, assistantMessage]}
+                updateEditorStateOnChange={updateEditorStateOnChange}
+            />
+        )
+
+        expect(editor.textContent).toBe('Unsent message updated')
+    })
+
 })
