@@ -2,8 +2,6 @@ import {
     BotResponseMultiplexer,
     type ChatClient,
     type ContextItem,
-    FeatureFlag,
-    type Model,
     type PromptMixin,
     PromptString,
     logDebug,
@@ -12,7 +10,6 @@ import {
 } from '@sourcegraph/cody-shared'
 import { getOSPromptString } from '../../os'
 import { getCategorizedMentions } from '../../prompt-builder/utils'
-import { logFirstEnrollmentEvent } from '../../services/utils/enrollment-event'
 import type { ChatBuilder } from '../chat-view/ChatBuilder'
 import { DefaultPrompter } from '../chat-view/prompt'
 import type { CodyTool } from './CodyTool'
@@ -28,20 +25,6 @@ type AgenticContext = {
  */
 export class DeepCodyAgent {
     public static readonly ModelRef = 'sourcegraph::2023-06-01::deep-cody'
-
-    private static hasEnrolled = false
-    public static isEnrolled(models: Model[]): string | undefined {
-        // Only enrolled user has access to the Deep Cody model.
-        const hasAccess = models.some(m => m.id === DeepCodyAgent.ModelRef)
-        const enrolled = DeepCodyAgent.hasEnrolled || logFirstEnrollmentEvent(FeatureFlag.DeepCody, true)
-        //Return modelRef for first time enrollment of Deep Cody.
-        if (hasAccess && !enrolled) {
-            DeepCodyAgent.hasEnrolled = true
-            return DeepCodyAgent.ModelRef
-        }
-        // Does not have access or not enrolled.
-        return undefined
-    }
 
     private readonly promptMixins: PromptMixin[] = []
     private readonly multiplexer = new BotResponseMultiplexer()
