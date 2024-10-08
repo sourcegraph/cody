@@ -13,6 +13,11 @@
       ],
       "sourceMaps": true,
       "outFiles": ["${workspaceRoot}/vscode/dist/**/*.js"],
+      "skipFiles": [
+        "<node_internals>/**",
+        "**/node_modules/**"
+        //"!**/node_modules/my-important-module/**"
+      ],
       "env": {
         "NODE_ENV": "development",
         "CODY_DEBUG_ENABLE": "true",
