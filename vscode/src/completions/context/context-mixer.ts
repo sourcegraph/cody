@@ -77,10 +77,16 @@ export interface GetContextResult {
  */
 export class ContextMixer implements vscode.Disposable {
     private disposables: vscode.Disposable[] = []
-    private contextDataCollector = new ContextRetrieverDataCollection()
+    private contextDataCollector: ContextRetrieverDataCollection | null = null
 
-    constructor(private strategyFactory: ContextStrategyFactory) {
-        this.disposables.push(this.contextDataCollector)
+    constructor(
+        private strategyFactory: ContextStrategyFactory,
+        dataCollectionEnabled = false
+    ) {
+        if (dataCollectionEnabled) {
+            this.contextDataCollector = new ContextRetrieverDataCollection()
+            this.disposables.push(this.contextDataCollector)
+        }
     }
 
     public async getContext(options: GetContextOptions): Promise<GetContextResult> {
@@ -230,7 +236,7 @@ export class ContextMixer implements vscode.Disposable {
     }
 
     private getDataCollectionRetrievers(repoName: string | undefined): ContextRetriever[] {
-        if (!this.contextDataCollector.shouldCollectContextDatapoint(repoName)) {
+        if (!this.contextDataCollector?.shouldCollectContextDatapoint(repoName)) {
             return []
         }
         return this.contextDataCollector.dataCollectionRetrievers

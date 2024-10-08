@@ -52,6 +52,7 @@ interface RawClientConfiguration {
 
     experimentalTracing: boolean
     experimentalSupercompletions: boolean
+    experimentalAutoedits: boolean
     experimentalCommitMessage: boolean
     experimentalNoodle: boolean
     experimentalMinionAnthropicKey: string | undefined

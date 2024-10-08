@@ -41,6 +41,7 @@ import { filter, map } from 'observable-fns'
 import type { CommandResult } from './CommandResult'
 import { showAccountMenu } from './auth/account-menu'
 import { showSignInMenu, showSignOutMenu, tokenCallbackHandler } from './auth/auth'
+import { AutoeditsProvider } from './autoedits/autoedits-provider'
 import type { MessageProviderOptions } from './chat/MessageProvider'
 import { ChatsController, CodyChatEditorViewType } from './chat/chat-view/ChatsController'
 import { ContextRetriever } from './chat/chat-view/ContextRetriever'
@@ -413,6 +414,14 @@ async function registerCodyCommands(
         enableFeature(
             ({ configuration }) => configuration.experimentalSupercompletions,
             () => new SupercompletionProvider({ statusBar, chat: chatClient })
+        )
+    )
+
+    // Initialize autoedit provider if experimental feature is enabled
+    disposables.push(
+        enableFeature(
+            ({ configuration }) => configuration.experimentalAutoedits,
+            () => new AutoeditsProvider()
         )
     )
 

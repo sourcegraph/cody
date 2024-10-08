@@ -29,6 +29,7 @@ export type ContextStrategy =
     | 'recent-copy'
     | 'diagnostics'
     | 'recent-view-port'
+    | 'auto-edits'
 
 export interface ContextStrategyFactory extends vscode.Disposable {
     getStrategy(
@@ -39,7 +40,7 @@ export interface ContextStrategyFactory extends vscode.Disposable {
 export class DefaultContextStrategyFactory implements ContextStrategyFactory {
     private contextStrategySubscription: Unsubscribable
 
-    private localRetriever: ContextRetriever | undefined
+    private allLocalRetrievers: ContextRetriever[] | undefined
     private graphRetriever: ContextRetriever | undefined
 
     constructor(private contextStrategy: Observable<ContextStrategy>) {
@@ -50,54 +51,75 @@ export class DefaultContextStrategyFactory implements ContextStrategyFactory {
                         case 'none':
                             break
                         case 'recent-edits':
-                            this.localRetriever = new RecentEditsRetriever(60 * 1000)
+                            this.allLocalRetrievers = [new RecentEditsRetriever(60 * 1000)]
                             break
                         case 'recent-edits-1m':
-                            this.localRetriever = new RecentEditsRetriever(60 * 1000)
+                            this.allLocalRetrievers = [new RecentEditsRetriever(60 * 1000)]
                             break
                         case 'recent-edits-5m':
-                            this.localRetriever = new RecentEditsRetriever(60 * 5 * 1000)
+                            this.allLocalRetrievers = [new RecentEditsRetriever(60 * 5 * 1000)]
                             break
                         case 'recent-edits-mixed':
-                            this.localRetriever = new RecentEditsRetriever(60 * 1000)
-                            this.graphRetriever = new JaccardSimilarityRetriever()
+                            this.allLocalRetrievers = [
+                                new RecentEditsRetriever(60 * 1000),
+                                new JaccardSimilarityRetriever(),
+                            ]
                             break
                         case 'tsc-mixed':
-                            this.localRetriever = new JaccardSimilarityRetriever()
+                            this.allLocalRetrievers = [new JaccardSimilarityRetriever()]
                             this.graphRetriever = loadTscRetriever()
                             break
                         case 'tsc':
                             this.graphRetriever = loadTscRetriever()
                             break
                         case 'lsp-light':
-                            this.localRetriever = new JaccardSimilarityRetriever()
+                            this.allLocalRetrievers = [new JaccardSimilarityRetriever()]
                             this.graphRetriever = new LspLightRetriever()
                             break
                         case 'recent-copy':
-                            this.localRetriever = new RecentCopyRetriever({
-                                maxAgeMs: 60 * 1000,
-                                maxSelections: 100,
-                            })
+                            this.allLocalRetrievers = [
+                                new RecentCopyRetriever({
+                                    maxAgeMs: 60 * 1000,
+                                    maxSelections: 100,
+                                }),
+                            ]
                             break
                         case 'diagnostics':
-                            this.localRetriever = new DiagnosticsRetriever()
+                            this.allLocalRetrievers = [new DiagnosticsRetriever()]
                             break
                         case 'recent-view-port':
-                            this.localRetriever = new RecentViewPortRetriever({
-                                maxTrackedViewPorts: 50,
-                                maxRetrievedViewPorts: 10,
-                            })
+                            this.allLocalRetrievers = [
+                                new RecentViewPortRetriever({
+                                    maxTrackedViewPorts: 50,
+                                    maxRetrievedViewPorts: 10,
+                                }),
+                            ]
+                            break
+                        case 'auto-edits':
+                            this.allLocalRetrievers = [
+                                new RecentEditsRetriever(10 * 60 * 1000),
+                                new DiagnosticsRetriever(),
+                                new RecentViewPortRetriever({
+                                    maxTrackedViewPorts: 50,
+                                    maxRetrievedViewPorts: 10,
+                                }),
+                                new RecentCopyRetriever({
+                                    maxAgeMs: 60 * 1000,
+                                    maxSelections: 100,
+                                }),
+                                new JaccardSimilarityRetriever(),
+                            ]
                             break
                         case 'jaccard-similarity':
-                            this.localRetriever = new JaccardSimilarityRetriever()
+                            this.allLocalRetrievers = [new JaccardSimilarityRetriever()]
                             break
                     }
                     return [
-                        this.localRetriever,
+                        ...(this.allLocalRetrievers ?? []),
                         this.graphRetriever,
                         {
                             dispose: () => {
-                                this.localRetriever = undefined
+                                this.allLocalRetrievers = undefined
                                 this.graphRetriever = undefined
                             },
                         },
@@ -123,8 +145,8 @@ export class DefaultContextStrategyFactory implements ContextStrategyFactory {
                 if (this.graphRetriever?.isSupportedForLanguageId(document.languageId)) {
                     retrievers.push(this.graphRetriever)
                 }
-                if (this.localRetriever) {
-                    retrievers.push(this.localRetriever)
+                if (this.allLocalRetrievers) {
+                    retrievers.push(...this.allLocalRetrievers)
                 }
                 break
             }
@@ -134,8 +156,8 @@ export class DefaultContextStrategyFactory implements ContextStrategyFactory {
                 if (this.graphRetriever?.isSupportedForLanguageId(document.languageId)) {
                     retrievers.push(this.graphRetriever)
                 }
-                if (this.localRetriever) {
-                    retrievers.push(this.localRetriever)
+                if (this.allLocalRetrievers) {
+                    retrievers.push(...this.allLocalRetrievers)
                 }
                 break
 
@@ -146,18 +168,11 @@ export class DefaultContextStrategyFactory implements ContextStrategyFactory {
             case 'recent-edits-5m':
             case 'recent-copy':
             case 'diagnostics':
-            case 'recent-view-port': {
-                if (this.localRetriever) {
-                    retrievers.push(this.localRetriever)
-                }
-                break
-            }
+            case 'recent-view-port':
+            case 'auto-edits':
             case 'recent-edits-mixed': {
-                if (this.localRetriever) {
-                    retrievers.push(this.localRetriever)
-                }
-                if (this.graphRetriever?.isSupportedForLanguageId(document.languageId)) {
-                    retrievers.push(this.graphRetriever)
+                if (this.allLocalRetrievers) {
+                    retrievers.push(...this.allLocalRetrievers)
                 }
                 break
             }
