@@ -15,13 +15,13 @@ import {
     telemetryRecorder,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
-import { logDebug } from '../log'
-import { localStorage } from '../services/LocalStorageProvider'
 
 import { type CodyIgnoreType, showCodyIgnoreNotification } from '../cody-ignore/notification'
+import { localStorage } from '../services/LocalStorageProvider'
 import { autocompleteStageCounterLogger } from '../services/autocomplete-stage-counter-logger'
 import { recordExposedExperimentsToSpan } from '../services/open-telemetry/utils'
 import { isInTutorial } from '../tutorial/helpers'
+
 import type { CompletionBookkeepingEvent, CompletionItemID, CompletionLogID } from './analytics-logger'
 import * as CompletionAnalyticsLogger from './analytics-logger'
 import { getArtificialDelay } from './artificial-delay'
@@ -46,6 +46,7 @@ import {
     InlineCompletionItemProviderConfigSingleton,
 } from './inline-completion-item-provider-config-singleton'
 import { isCompletionVisible } from './is-completion-visible'
+import { autocompleteOutputChannelLogger } from './output-channel-logger'
 import { RequestManager, type RequestParams } from './request-manager'
 import {
     canReuseLastCandidateInDocumentContext,
@@ -214,9 +215,8 @@ export class InlineCompletionItemProvider
         this.smartThrottleService = new SmartThrottleService()
         this.disposables.push(this.smartThrottleService)
 
-        // TODO(valery): replace `model_configured_by_site_config` with the actual model ID received from backend.
-        logDebug(
-            'AutocompleteProvider:initialized',
+        autocompleteOutputChannelLogger.logDebug(
+            'initialized',
             `using "${this.config.provider.configSource}": "${this.config.provider.id}::${
                 this.config.provider.legacyModel || 'model_configured_by_site_config'
             }"`
@@ -1161,8 +1161,8 @@ function logIgnored(uri: vscode.Uri, reason: CodyIgnoreType, isManualCompletion:
         return
     }
     lastIgnoredUriLogged = string
-    logDebug(
-        'AutocompleteProvider:ignored',
+    autocompleteOutputChannelLogger.logDebug(
+        'ignored',
         'Cody is disabled in file ' + uri.toString() + ' (' + reason + ')'
     )
 }

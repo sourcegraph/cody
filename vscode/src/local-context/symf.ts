@@ -28,7 +28,7 @@ import {
     uriDirname,
 } from '@sourcegraph/cody-shared'
 
-import { logDebug } from '../log'
+import { logDebug } from '../output-channel-logger'
 
 import path from 'node:path'
 import { getEditor } from '../editor/active-editor'

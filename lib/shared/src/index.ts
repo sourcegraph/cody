@@ -188,6 +188,7 @@ export {
     type SerializedCodeCompletionsParams,
     type CompletionResponseGenerator,
     type CompletionResponseWithMetaData,
+    type CodeCompletionProviderOptions,
 } from './inferenceClient/misc'
 export type { Result } from './local-context'
 export { logDebug, logError, setLogger } from './logger'

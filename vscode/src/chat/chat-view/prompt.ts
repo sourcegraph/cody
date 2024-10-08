@@ -10,7 +10,7 @@ import {
     isDefined,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
-import { logDebug } from '../../log'
+import { logDebug } from '../../output-channel-logger'
 import { PromptBuilder } from '../../prompt-builder'
 import { ChatBuilder } from './ChatBuilder'
 

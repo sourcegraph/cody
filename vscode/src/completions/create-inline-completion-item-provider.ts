@@ -13,11 +13,11 @@ import {
     switchMap,
 } from '@sourcegraph/cody-shared'
 
-import { logDebug } from '../log'
+import type { PlatformContext } from '../extension.common'
 import type { CodyStatusBar } from '../services/StatusBar'
 
-import type { PlatformContext } from '../extension.common'
 import { InlineCompletionItemProvider } from './inline-completion-item-provider'
+import { autocompleteOutputChannelLogger } from './output-channel-logger'
 import { createProvider } from './providers/shared/create-provider'
 import { registerAutocompleteTraceView } from './tracer/traceView'
 
@@ -49,7 +49,7 @@ export function createInlineCompletionItemProvider({
 
     if (!authStatus.authenticated) {
         if (!authStatus.pendingValidation) {
-            logDebug('AutocompleteProvider:notSignedIn', 'You are not signed in.')
+            autocompleteOutputChannelLogger.logDebug('createProvider', 'You are not signed in.')
         }
 
         return NEVER
@@ -64,7 +64,10 @@ export function createInlineCompletionItemProvider({
                 skipPendingOperation(),
                 createDisposables(providerOrError => {
                     if (providerOrError instanceof Error) {
-                        logDebug('AutocompleteProvider', providerOrError.message)
+                        autocompleteOutputChannelLogger.logError(
+                            'createProvider',
+                            providerOrError.message
+                        )
 
                         if (configuration.isRunningInsideAgent) {
                             const configString = JSON.stringify({ configuration }, null, 2)

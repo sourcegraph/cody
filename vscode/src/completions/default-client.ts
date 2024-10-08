@@ -1,9 +1,13 @@
+import { SpanStatusCode } from '@opentelemetry/api'
+
 import {
     type BrowserOrNodeResponse,
+    type CodeCompletionProviderOptions,
     type CodeCompletionsClient,
     type CodeCompletionsParams,
     type CompletionResponse,
     type CompletionResponseGenerator,
+    type CompletionResponseWithMetaData,
     CompletionStopReason,
     FeatureFlag,
     NetworkError,
@@ -11,9 +15,11 @@ import {
     type SerializedCodeCompletionsParams,
     TracedError,
     addTraceparent,
+    contextFiltersProvider,
     createSSEIterator,
     currentResolvedConfig,
     featureFlagProvider,
+    fetch,
     getActiveTraceAndSpanId,
     getClientInfoParams,
     isAbortError,
@@ -26,19 +32,13 @@ import {
     tracer,
 } from '@sourcegraph/cody-shared'
 
-import { SpanStatusCode } from '@opentelemetry/api'
-import { contextFiltersProvider, fetch } from '@sourcegraph/cody-shared'
-import type {
-    CodeCompletionProviderOptions,
-    CompletionResponseWithMetaData,
-} from '@sourcegraph/cody-shared/src/inferenceClient/misc'
-import { logger } from '../log'
+import { autocompleteLifecycleOutputChannelLogger } from './output-channel-logger'
 
 /**
  * Access the code completion LLM APIs via a Sourcegraph server instance.
  */
 class DefaultCodeCompletionsClient implements CodeCompletionsClient {
-    public logger = logger
+    public logger = autocompleteLifecycleOutputChannelLogger
 
     public async complete(
         params: CodeCompletionsParams,
@@ -49,7 +49,7 @@ class DefaultCodeCompletionsClient implements CodeCompletionsClient {
 
         const query = new URLSearchParams(getClientInfoParams())
         const url = new URL(`/.api/completions/code?${query.toString()}`, auth.serverEndpoint).href
-        const log = logger?.startCompletion(params, url)
+        const log = autocompleteLifecycleOutputChannelLogger?.startCompletion(params, url)
         const { signal } = abortController
 
         return tracer.startActiveSpan(
@@ -107,6 +107,8 @@ class DefaultCodeCompletionsClient implements CodeCompletionsClient {
                         }))
                     ),
                 }
+
+                log.onFetch('defaultClient', serializedParams)
 
                 const response = await fetch(url, {
                     method: 'POST',
