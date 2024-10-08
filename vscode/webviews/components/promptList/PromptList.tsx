@@ -61,7 +61,7 @@ export const PromptList: FC<PromptListProps> = props => {
 
     const endpointURL = new URL(useConfig().authStatus.endpoint)
     const telemetryRecorder = useTelemetryRecorder()
-    const [lastUsedActions = {}] = useLocalStorage<Record<string, number>>('last-used-actions', {})
+    const [lastUsedActions = {}] = useLocalStorage<Record<string, number>>('last-used-actions-v2', {})
 
     const telemetryPublicMetadata: Record<string, number> = {
         [`in${telemetryLocation}`]: 1,
