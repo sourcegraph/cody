@@ -11,7 +11,7 @@ import { ExtensionApi } from './extension-api'
 import type { ExtensionClient } from './extension-client'
 import type { SymfRunner } from './local-context/symf'
 import { start } from './main'
-import type { DelegatingProxyAgent } from './net/net.node'
+import type { DelegatingAgent } from './net/net'
 import type { OpenTelemetryService } from './services/open-telemetry/OpenTelemetryService.node'
 import { type SentryService, captureException } from './services/sentry/sentry'
 
@@ -22,7 +22,7 @@ type Constructor<T extends new (...args: any) => any> = T extends new (
     : never
 
 export interface PlatformContext {
-    initializeNetworkAgent?: () => Promise<DelegatingProxyAgent>
+    initializeNetworkAgent?: () => Promise<DelegatingAgent>
     createOpenCtxController?: typeof createController
     createStorage?: () => Promise<vscode.Memento>
     createCommandsProvider?: Constructor<typeof CommandsProvider>

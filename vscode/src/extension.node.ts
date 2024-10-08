@@ -1,9 +1,10 @@
+// We're synchronously requiring this to ensure the network is patched before
+// anything else loads. If we're ever switching to ESM you'll need to do a
+// top-level await with a IFFY / SIF e.g. `await (async () => {})`
+import './net/patch-vscode'
+
 // Sentry should be imported first
 import { NodeSentryService } from './services/sentry/sentry.node'
-
-// Network patching needs to happend ASAP
-import { patchNetworkStack } from './net/net.node'
-patchNetworkStack()
 
 // Everything else
 import * as vscode from 'vscode'
@@ -14,7 +15,7 @@ import type { ExtensionApi } from './extension-api'
 import { type ExtensionClient, defaultVSCodeExtensionClient } from './extension-client'
 import { activate as activateCommon } from './extension.common'
 import { SymfRunner } from './local-context/symf'
-import { DelegatingProxyAgent } from './net/net.node'
+import { DelegatingAgent } from './net'
 import { OpenTelemetryService } from './services/open-telemetry/OpenTelemetryService.node'
 
 /**
@@ -38,7 +39,7 @@ export function activate(
         .get<boolean>('cody.experimental.telemetry.enabled', true)
 
     return activateCommon(context, {
-        initializeNetworkAgent: DelegatingProxyAgent.initialize,
+        initializeNetworkAgent: DelegatingAgent.initialize,
         createCompletionsClient: (...args) => new SourcegraphNodeCompletionsClient(...args),
         createCommandsProvider: () => new CommandsProvider(),
         createSymfRunner: isSymfEnabled ? (...args) => new SymfRunner(...args) : undefined,

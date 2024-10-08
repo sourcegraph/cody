@@ -2,7 +2,6 @@
 // counterpart) since it requires node-only APIs. These can't be part of
 // the main `lib/shared` bundle since it would otherwise not work in the
 // web build.
-
 import http from 'node:http'
 import https from 'node:https'
 
@@ -67,6 +66,9 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
 
             const log = this.logger?.startCompletion(params, url.toString())
 
+            const a = http.request
+            const b = https.request
+            console.log(a, b)
             const requestFn = url.protocol === 'https:' ? https.request : http.request
 
             // Keep track if we have send any message to the completion callbacks
