@@ -1,6 +1,11 @@
 // Sentry should be imported first
 import { NodeSentryService } from './services/sentry/sentry.node'
 
+// Network patching needs to happend ASAP
+import { patchNetworkStack } from './net.node'
+patchNetworkStack()
+
+// Everything else
 import * as vscode from 'vscode'
 import { startTokenReceiver } from './auth/token-receiver'
 import { CommandsProvider } from './commands/services/provider'
@@ -9,7 +14,7 @@ import type { ExtensionApi } from './extension-api'
 import { type ExtensionClient, defaultVSCodeExtensionClient } from './extension-client'
 import { activate as activateCommon } from './extension.common'
 import { SymfRunner } from './local-context/symf'
-import { DelegatingProxyAgent, patchNetworkStack } from './net.node'
+import { DelegatingProxyAgent } from './net.node'
 import { OpenTelemetryService } from './services/open-telemetry/OpenTelemetryService.node'
 
 /**
@@ -20,8 +25,6 @@ export function activate(
     context: vscode.ExtensionContext,
     extensionClient?: ExtensionClient
 ): Promise<ExtensionApi> {
-    patchNetworkStack(context)
-
     // When activated by VSCode, we are only passed the extension context.
     // Create the default client for VSCode.
     extensionClient ||= defaultVSCodeExtensionClient()

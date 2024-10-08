@@ -869,7 +869,7 @@ export const vsCodeMocks = {
 } as const
 
 export const DEFAULT_VSCODE_SETTINGS = {
-    proxy: undefined,
+    net: {},
     codebase: '',
     serverEndpoint: undefined,
     customHeaders: undefined,

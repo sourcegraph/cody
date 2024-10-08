@@ -1,15 +1,13 @@
 import * as fs from 'node:fs'
-import type { Agent, ClientRequest } from 'node:http'
-import * as http from 'node:http'
-import https from 'node:https'
+import type * as http from 'node:http'
+import type { Agent } from 'node:http'
+import * as https from 'node:https'
 import * as os from 'node:os'
 import * as path from 'node:path'
 import type stream from 'node:stream'
-// import http from 'node:http'
-// import https from 'node:https'
-// import { parse as parseUrl } from 'node:url'
-import type { ClientConfiguration } from '@sourcegraph/cody-shared'
 import {
+    type NetConfiguration,
+    cenv,
     distinctUntilChanged,
     firstValueFrom,
     globalAgentRef,
@@ -22,29 +20,40 @@ import {
     subscriptionDisposable,
 } from '@sourcegraph/cody-shared'
 import { Agent as AgentBase, type AgentConnectOpts } from 'agent-base'
-// import { HttpProxyAgent } from 'http-proxy-agent'
-// import { HttpsProxyAgent } from 'https-proxy-agent'
-// import { SocksProxyAgent } from 'socks-proxy-agent'
-import { type Observable, map } from 'observable-fns'
-// import type { AuthCredentials, ClientConfiguration, ClientState } from '@sourcegraph/cody-shared'
-// import { HttpProxyAgent } from 'http-proxy-agent'
-// import { HttpsProxyAgent } from 'https-proxy-agent'
-// import { ProxyAgent } from 'proxy-agent'
-// import { SocksProxyAgent } from 'socks-proxy-agent'
+import { map } from 'observable-fns'
+import { ProxyAgent } from 'proxy-agent'
+import type { LiteralUnion } from 'type-fest'
 import type * as vscode from 'vscode'
 import { getConfiguration } from './configuration'
-// import { ProxyAgent } from 'proxy-agent'
 import { CONFIG_KEY } from './configuration-keys'
+
+const TIMEOUT = 60_000
 
 export class DelegatingProxyAgent extends AgentBase implements vscode.Disposable {
     private disposables: vscode.Disposable[] = []
-    private cachedAgents = new Map<string, Agent | undefined>()
+    private proxyCache = new Map<LiteralUnion<'http:' | 'https:', string>, AgentBase>()
 
     private constructor() {
         super()
         this.disposables.push(
-            subscriptionDisposable(this.config.subscribe(this.handleConfigChanges.bind(this)))
+            subscriptionDisposable(
+                this.config.subscribe(() => {
+                    const expired = [...this.proxyCache.values()]
+                    this.proxyCache.clear()
+                    if (expired.length > 0) {
+                        setTimeout(() => {
+                            for (const agent of expired) {
+                                agent.destroy()
+                            }
+                        }, TIMEOUT)
+                    }
+                })
+            )
         )
+    }
+
+    destroy(): void {
+        this.dispose()
     }
 
     dispose() {
@@ -52,6 +61,7 @@ export class DelegatingProxyAgent extends AgentBase implements vscode.Disposable
             d.dispose()
         }
         this.disposables = []
+        super.destroy()
     }
 
     private config = resolvedConfig
@@ -61,8 +71,8 @@ export class DelegatingProxyAgent extends AgentBase implements vscode.Disposable
                 configuration: getConfiguration(),
             }),
             map(v => {
-                const { proxy, proxyServer, proxyPath, proxyCACert } = v.configuration
-                return { proxy, proxyServer, proxyPath, proxyCACert }
+                const { proxy, bypassVSCode } = v.configuration.net
+                return { proxy, bypassVSCode }
             }),
             distinctUntilChanged()
         )
@@ -75,21 +85,14 @@ export class DelegatingProxyAgent extends AgentBase implements vscode.Disposable
             mapError((error: Error) => {
                 return {
                     error,
-                    bypassVSCode: false,
+                    preferInternalAgents: false,
                     caCert: null,
-                    path: null,
-                    server: null,
-                    vscodeServer: null,
-                }
+                    proxyPath: null,
+                    proxyServer: null,
+                } satisfies ResolvedSettings
             })
         )
         .pipe(distinctUntilChanged(), shareReplay())
-
-    private handleConfigChanges(v: ResolvedSettings) {
-        // we don't rely on useLatestValue on the observable because it adds a bit of overhead on each connect call
-        // We also already construct a new agent for all of those perviously constructed
-        this.cachedAgents.clear()
-    }
 
     static async initialize() {
         if (globalAgentRef.isSet) {
@@ -102,202 +105,165 @@ export class DelegatingProxyAgent extends AgentBase implements vscode.Disposable
     }
 
     async connect(
-        req: ClientRequest,
-        options: AgentConnectOpts & { prevAgent?: AgentBase }
+        req: http.ClientRequest & https.RequestOptions,
+        options: AgentConnectOpts & { _vscodeAgent?: Pick<AgentBase, 'connect'> }
     ): Promise<stream.Duplex | Agent> {
-        if (options.prevAgent) {
-            return options.prevAgent.connect(req, options)
+        const config = await firstValueFrom(this.config)
+
+        if (options._vscodeAgent && !config.preferInternalAgents) {
+            if (config.proxyPath) {
+                req.socketPath = config.proxyPath
+            }
+            req.setNoDelay(true)
+            req.setTimeout(TIMEOUT)
+            // req.setSocketKeepAlive(true,30_000) <-- this is NOT a good idea to do
+            // globally as it can cause all sorts of issues if we're not in full
+            // control.
+
+            // these simply return a socket so we can't cache the agent :shrug:
+            return options._vscodeAgent.connect(req, {
+                ...options,
+                //@ts-ignore
+                _vscodeAgent: undefined, // we must ensure _vscodeAgent is unset as VSCode might call us again
+            })
         }
 
-        return options.secureEndpoint ? https.globalAgent : https.globalAgent
+        /*
+        We could/should be handling all requests ourselves  in the future.
+        Especially because it will allow us to properly re-use agents and handle
+        keep-alives, socket timeouts, etc. However there is a lot of nuance in
+        doing so. Because of this for now we simply don't do this yet and hand
+        back to VSCode unless we need to specifically handle something
+        ourselves.
+
+        When we do we can yoink some of the helpers functions passed in params
+        to vscode/PacProxyAgent:
+        - Reading platform (on extension host) proxy info through `resolveProxy`
+        - Reading additional certs through `getOrLoadAdditionalCertificates` and
+          deciding on V1 (patched ._vscodeAdditionalCerts param picked up in
+          tls.createSecureContext) or V2 (certs added directly)
+        - Handling of (kerberos) proxy-authorization & re-connection (e.g. the
+          point of `HttpsProxyAgent2` in
+          `vscode-proxy-agent/blob/main/src/agent.ts`
+        - ...
+
+        Or alternatively just implement a native network stack that more
+        graceuflly handles these settings internally.
+        */
+
+        let protocol = options.protocol || 'https:'
+        if (!options.protocol && options.port === 80) {
+            protocol = 'http:'
+        }
+
+        let agent = this.proxyCache.get(protocol)
+        if (!agent) {
+            agent = buildAgent(config)
+            this.proxyCache.set(protocol, agent)
+        }
+
+        return agent.connect(req, options)
     }
 }
 
-export async function intializeConfigurationProxy(
-    config: Observable<Pick<ClientConfiguration, 'proxy' | 'proxyServer' | 'proxyPath' | 'proxyCACert'>>
-) {
-    // 1. Attempt to load initial proxy settings / ca certs etc
-    //    1.1 set up config change listener to update agent = {current, _forceCodyProxy}
-    // 2. regardless of success resolve promise
+function buildAgent(config: ResolvedSettings): AgentBase {
+    const ca = additionalCACerts(config.caCert)
+
+    return new ProxyAgent({
+        keepAlive: true,
+        keepAliveMsecs: 10_000,
+        ALPNProtocols: ['http/1.1'], // for now
+        scheduling: 'lifo', // Just so we always keep autocomplete snappy
+        maxSockets: Number.POSITIVE_INFINITY,
+        maxFreeSockets: 256,
+        timeout: TIMEOUT,
+        socketPath: config.proxyPath ?? undefined,
+        fallbackToDirect: true,
+        getProxyForUrl: (_: string) => {
+            if (config.proxyPath) {
+                // we can't have proxy and socket path at the same time
+                return ''
+            }
+            return config.proxyServer || cenv.CODY_DEFAULT_PROXY || ''
+        },
+        //TODO: Properly handle all cert scenarios
+        ...(ca ? { ca } : { rejectUnauthorized: false }),
+    })
 }
 
-//@ts-ignore
-function getGlobalProxyURI(protocol: string, env: typeof process.env): string | null {
-    if (protocol === 'http:') {
-        return env.HTTP_PROXY || env.http_proxy || null
+function additionalCACerts(additional: string | null) {
+    if (!additional) {
+        return undefined
     }
-    if (protocol === 'https:') {
-        return env.HTTPS_PROXY || env.https_proxy || env.HTTP_PROXY || env.http_proxy || null
+
+    // TODO: Technically these certs might need to be split and converted to PEM
+    // TODO: Probably want to load in the VSCode certs as well if available
+    // TODO: Need a more solid workaround than ca-cert.exe we use now
+    const globalCA = https.globalAgent.options.ca
+
+    if (!globalCA) {
+        return [additional]
     }
-    if (protocol.startsWith('socks')) {
-        return env.SOCKS_PROXY || env.socks_proxy || null
+
+    if (Buffer.isBuffer(globalCA)) {
+        return [globalCA, additional]
     }
-    return null
+
+    if (typeof globalCA === 'string') {
+        return [globalCA, additional]
+    }
+
+    if (Array.isArray(globalCA)) {
+        return [...globalCA, additional]
+    }
+
+    return [additional]
 }
 
-// function getAgentFactory({
-//     proxy,
-//     proxyServer,
-//     proxyPath,
-//     proxyCACert,
-// }: ClientConfiguration): ({ protocol }: Pick<URL, 'protocol'>) => any {
-//     return ({ protocol }) => {
-//         if (proxyServer || proxyPath) {
-//             const [proxyHost, proxyPort] = proxyServer ? proxyServer.split(':') : [undefined, undefined]
+type NormalizedSettings = {
+    bypassVSCode: boolean | null
+    proxyPath: string | null
+    proxyServer: string | null
+    proxyCACert: string | null
+    proxyCACertPath: string | null
+}
+function normalizeSettings(raw: NetConfiguration): NormalizedSettings {
+    const caCertConfig = isInlineCert(raw.proxy?.cacert)
+        ? ({ proxyCACert: raw.proxy?.cacert ?? null, proxyCACertPath: null } as const)
+        : ({ proxyCACert: null, proxyCACertPath: normalizePath(raw.proxy?.cacert) } as const)
 
-//             // Combine the CA certs from the global options with the one(s) defined in settings,
-//             // otherwise the CA cert in the settings overrides all of the global agent options
-//             // (or the other way around, depending on the order of the options).
-//             const caCerts = (() => {
-//                 if (proxyCACert) {
-//                     if (Array.isArray(https.globalAgent.options.ca)) {
-//                         return [...https.globalAgent.options.ca, proxyCACert]
-//                     }
-//                     return [https.globalAgent.options.ca, proxyCACert]
-//                 }
-//                 return undefined
-//             })()
-//             const agent = new ProxyAgent({
-//                 protocol: protocol || 'https:',
-//                 ...(proxyServer ? { host: proxyHost, port: Number(proxyPort) } : null),
-//                 ...(proxyPath ? { socketPath: proxyPath } : null),
-//                 keepAlive: true,
-//                 keepAliveMsecs: 60000,
-//                 ...https.globalAgent.options,
-//                 // Being at the end, this will override https.globalAgent.options.ca
-//                 ...(caCerts ? { ca: caCerts } : null),
-//             })
-//             return agent
-//         }
-
-//         const proxyURL = proxy || getGlobalProxyURI(protocol, process.env)
-//         if (proxyURL) {
-//             if (proxyURL?.startsWith('socks')) {
-//                 if (!socksProxyAgent) {
-//                     socksProxyAgent = new SocksProxyAgent(proxyURL, {
-//                         keepAlive: true,
-//                         keepAliveMsecs: 60000,
-//                     })
-//                 }
-//                 return socksProxyAgent
-//             }
-//             const proxyEndpoint = parseUrl(proxyURL)
-
-//             const opts = {
-//                 host: proxyEndpoint.hostname || '',
-//                 port:
-//                     (proxyEndpoint.port ? +proxyEndpoint.port : 0) ||
-//                     (proxyEndpoint.protocol === 'https' ? 443 : 80),
-//                 auth: proxyEndpoint.auth,
-//                 rejectUnauthorized: true,
-//                 keepAlive: true,
-//                 keepAliveMsecs: 60000,
-//                 ...https.globalAgent.options,
-//             }
-//             if (protocol === 'http:') {
-//                 if (!httpProxyAgent) {
-//                     httpProxyAgent = new HttpProxyAgent(proxyURL, opts)
-//                 }
-//                 return httpProxyAgent
-//             }
-
-//             if (!httpsProxyAgent) {
-//                 httpsProxyAgent = new HttpsProxyAgent(proxyURL, opts)
-//             }
-//             return httpsProxyAgent
-//         }
-//         return protocol === 'http:' ? httpAgent : httpsAgent
-//     }
-// }
-
-// subscribe to proxy settings changes in order to validate them and refresh the agent if needed
-// export const proxySettings: Observable<ClientConfiguration> = resolvedConfig.pipe(
-//     // pluck(resolvedConfig, [CONFIG_KEY.proxy, CONFIG_KEY.proxyServer, CONFIG_KEY.proxyPath, CONFIG_KEY.proxyCACert]),
-//     map(validateProxySettings),
-//     distinctUntilChanged((prev, curr) => {
-//         return (
-//             prev.proxy === curr.proxy &&
-//             prev.proxyServer === curr.proxyServer &&
-//             prev.proxyPath === curr.proxyPath &&
-//             prev.proxyCACert === curr.proxyCACert
-//         )
-//     })
-// )
-
-// set up the subscription here instead of in main.ts => start() because adding it to main.ts
-// introduced fetch.node.ts as a dependency, which pulled in transitive dependencies that are not
-// available for browser builds, which breaks the "_build:esbuild:web" target.
-// We handled a similar issue with the Search extension by using package resolution in a build script,
-// but there's no build script here and `esbuild --alias` doesn't like `./` prefixes, so it can't map
-// `./fetch.node` to a stub/shim module.
-// proxySettings.subscribe(setCustomAgent)
-
-// let cachedProxyPath: string | undefined
-// let cachedProxyCACertPath: string | null | undefined
-// let cachedProxyCACert: string | undefined
-
-function normalizeSettings(raw: {
-    proxy: string | null | undefined
-    proxyServer: string | null | undefined
-    proxyPath: string | null | undefined
-    proxyCACert: string | null | undefined
-}) {
-    const caCertConfig = isInlineCert(raw.proxyCACert)
-        ? { proxyCACert: raw.proxyCACert, proxyCACertPath: null }
-        : { proxyCACert: null, proxyCACertPath: normalizePath(raw.proxyCACert) }
+    const proxyServer = raw.proxy?.server?.trim() || null
 
     return {
-        ...raw,
+        bypassVSCode: raw.bypassVSCode ?? null,
         ...caCertConfig,
-        proxyPath: normalizePath(raw.proxyPath),
+        proxyPath: normalizePath(raw.proxy?.path),
+        proxyServer,
     }
 }
 
 type ResolvedSettings = {
     error: Error | null
-    server: string | null
-    path: string | null
+    proxyServer: string | null
+    proxyPath: string | null
     caCert: string | null
-    vscodeServer: string | null
-    bypassVSCode: boolean
+    preferInternalAgents: boolean
 }
-
-function resolveSettings(settings: {
-    proxy: string | null | undefined
-    proxyServer: string | null | undefined
-    proxyPath: string | null | undefined
-    proxyCACert: string | null | undefined
-    proxyCACertPath: string | null | undefined
-}): ResolvedSettings {
-    const path = resolveProxyPath(settings.proxyPath) || null
+function resolveSettings(settings: NormalizedSettings): ResolvedSettings {
+    const proxyPath = resolveProxyPath(settings.proxyPath) || null
     const caCert = settings.proxyCACert || readProxyCACert(settings.proxyCACertPath) || null
     return {
-        bypassVSCode: !!settings.proxyServer || !!settings.proxyPath || false,
+        preferInternalAgents:
+            typeof settings.bypassVSCode === 'boolean'
+                ? settings.bypassVSCode
+                : !!settings.proxyServer || !!settings.proxyPath || false,
         error: null,
-        vscodeServer: settings.proxy || null,
-        server: settings.proxyServer || null,
-        path,
+        proxyServer: settings.proxyServer || null,
+        proxyPath,
         caCert,
     }
 }
 
-// function validateProxySettings(config: ResolvedConfiguration): ClientConfiguration {
-//     const resolvedProxyPath = normalizePath(config.configuration.proxyPath)
-//     const resolvedProxyCACert = normalizePath(config.configuration.proxyCACert)
-//     if (resolvedProxyPath !== cachedProxyPath) {
-//         cachedProxyPath = validateProxyPath(resolvedProxyPath)
-//     }
-//     if (resolvedProxyCACert !== cachedProxyCACertPath) {
-//         cachedProxyCACert = readProxyCACert(resolvedProxyCACert)
-//         cachedProxyCACertPath = config.configuration.proxyCACert
-//     }
-
-//     return {
-//         ...config.configuration,
-//         proxyPath: cachedProxyPath,
-//         proxyCACert: cachedProxyCACert,
-//     }
-// }
 function resolveProxyPath(filePath: string | null | undefined): string | undefined {
     if (!filePath) {
         return undefined
@@ -316,8 +282,11 @@ function resolveProxyPath(filePath: string | null | undefined): string | undefin
         }
         return filePath
     } catch (error) {
-        logError('vscode.configuration', `Cannot verify ${CONFIG_KEY.proxy}.path: ${filePath}: ${error}`)
-        throw new Error(`Cannot verify ${CONFIG_KEY.proxy}.path: ${filePath}:\n${error}`)
+        logError(
+            'vscode.configuration',
+            `Cannot verify ${CONFIG_KEY.netProxy}.path: ${filePath}: ${error}`
+        )
+        throw new Error(`Cannot verify ${CONFIG_KEY.netProxy}.proxy.path: ${filePath}:\n${error}`)
     }
 }
 
@@ -329,22 +298,25 @@ export function readProxyCACert(filePath: string | null | undefined): string | u
     try {
         return fs.readFileSync(filePath, { encoding: 'utf-8' })
     } catch (error) {
-        logError('vscode.configuration', `Cannot read ${CONFIG_KEY.proxy}.cacert: ${filePath}: ${error}`)
-        throw new Error(`Error reading ${CONFIG_KEY.proxy}.cacert from ${filePath}:\n${error}`)
+        logError(
+            'vscode.configuration',
+            `Cannot read ${CONFIG_KEY.netProxy}.cacert: ${filePath}: ${error}`
+        )
+        throw new Error(`Error reading ${CONFIG_KEY.netProxy}.cacert from ${filePath}:\n${error}`)
     }
 }
 
 function isInlineCert(pathOrCert: string | null | undefined): boolean {
     return (
-        (pathOrCert?.startsWith('-----BEGIN CERTIFICATE-----') ||
-            pathOrCert?.startsWith('-----BEGIN PKCS7-----')) ??
+        pathOrCert?.startsWith('-----BEGIN CERTIFICATE-----') ||
+        pathOrCert?.startsWith('-----BEGIN PKCS7-----') ||
         false
     )
 }
 
-function normalizePath(filePath: string | null | undefined): string | undefined {
+function normalizePath(filePath: string | null | undefined): string | null {
     if (!filePath) {
-        return undefined
+        return null
     }
 
     let normalizedPath = filePath
@@ -361,158 +333,69 @@ function normalizePath(filePath: string | null | undefined): string | undefined 
     return normalizedPath
 }
 
-/**
- * We use keepAlive agents here to avoid excessive SSL/TLS handshakes for autocomplete requests.
- */
-// let httpAgent: http.Agent
-// let httpsAgent: https.Agent
-// let socksProxyAgent: SocksProxyAgent
-// let httpProxyAgent: HttpProxyAgent<string>
-// let httpsProxyAgent: HttpsProxyAgent<string>
-
-// export function setCustomAgent(
-//     configuration: ClientConfiguration
-// ): ({ protocol }: Pick<URL, 'protocol'>) => http.Agent {
-//     agent.current = getCustomAgent(configuration)
-//     return agent.current as ({ protocol }: Pick<URL, 'protocol'>) => http.Agent
-// }
-
-// The path to the exported class can be found in the npm contents
-// https://www.npmjs.com/package/@vscode/proxy-agent?activeTab=code
-
-const _IMPORT_NODE_MODULES = '_VSCODE_NODE_MODULES'
-const _IMPORT_PROXY_AGENT_PATH = '@vscode/proxy-agent/out/agent'
-const _IMPORT_PAC_PROXY_AGENT = 'PacProxyAgent'
-export function patchNetworkStack(context: Pick<vscode.ExtensionContext, 'extensionUri'>): void {
+export function patchNetworkStack(): void {
     globalAgentRef.blockEarlyAccess = true
-    // This is to load certs for HTTPS requests
-    /* TODO: Move to configuration proxy: registerLocalCertificates(context)
-    httpAgent = new http.Agent({ keepAlive: true, keepAliveMsecs: 60000 })
-    httpsAgent = new https.Agent({
-        ...https.globalAgent.options,
-        keepAlive: true,
-        keepAliveMsecs: 60000,
-    })
 
-
-    const customAgent = setCustomAgent(
-        validateProxySettings({
-            configuration: getConfiguration(),
-            auth: {} as AuthCredentials,
-            clientState: {} as ClientState,
-        })
-    )
-    */
-
-    /**
-     * This works around an issue in the default VS Code proxy agent code. When `http.proxySupport`
-     * is set to its default value and no proxy setting is being used, the proxy library does not
-     * properly reuse the agent set on the http(s) method and is instead always using a new agent
-     * per request.
-     *
-     * To work around this, we patch the default proxy agent method and overwrite the
-     * `originalAgent` value before invoking it for requests that want to keep their connection
-     * alive (as indicated by the `Connection: keep-alive` header).
-     *
-     * c.f. https://github.com/microsoft/vscode/issues/173861
-     */
-
-    /**
- *
-        const { secureEndpoint } = opts;
-
-		// Calculate the `url` parameter
-		const defaultPort = secureEndpoint ? 443 : 80;
-
- * 		const urlOpts = {
-			...opts,
-			protocol: secureEndpoint ? 'https:' : 'http:',
-			pathname: path,
-			search,
-
-			// need to use `hostname` instead of `host` otherwise `port` is ignored
-			hostname: opts.host,
-			host: null,
-			href: null,
-
-			// set `port` to null when it is the protocol default port (80 / 443)
-			port: defaultPort === opts.port ? null : opts.port
-		};
-		const url = format(urlOpts);
-
-		debug('url: %o', url);
-		let result = await this.resolver(req, opts, url);
-
- */
-
+    let _PacProxyAgent:
+        | null
+        | ({
+              new (resolver: any, opts: any): AgentBase
+          } & {
+              [K in keyof AgentBase]: AgentBase[K]
+          }) = null
     try {
-        // We make a fake agent here so that the module we want to patch is loaded
-        //@ts-ignore
-        const httpAgent = new http.Agent({ keepAlive: true, keepAliveMsecs: 60000 })
-        //@ts-ignore
-        const httpsAgent = new https.Agent({
-            ...https.globalAgent.options,
-            keepAlive: true,
-            keepAliveMsecs: 60000,
-        })
-        const _PacProxyAgent = (globalThis as any)?.[_IMPORT_NODE_MODULES]?.[_IMPORT_PROXY_AGENT_PATH]?.[
-            _IMPORT_PAC_PROXY_AGENT
-        ] as { new (resolver: any, opts: any): AgentBase } & { [K in keyof AgentBase]: AgentBase[K] }
-
-        if (!_PacProxyAgent) {
-            logDebug('fetch.node', 'TODO: Not patching stuff.')
-            // WE don't handle this yet, we rely on the fact that Sourcegraph
-            // HTTP Client and Completions client explicitly set agent.current
-            // as their agent (which will be respected if PacProxy is not
-            // interfering)
-            return
-        }
-
-        patchVSCodeModule(http)
-        patchVSCodeModule(https)
-
-        /**?? customAgent**/
-        //TODO: Logging!
-        // const _constructor = _PacProxyAgent.prototype.constructor
-        // _PacProxyAgent.prototype.constructor = (resolver: any, opts: any) =>
-        //     new Proxy(_constructor(resolver, opts), {
-        //         getPrototypeOf(target) {
-        //             return Object.getPrototypeOf(target)
-        //         },
-        //         get(target, prop, receiver) {
-        //             if (prop === 'connect') {
-        //                 return async function (
-        //                     req: http.ClientRequest,
-        //                     opts: http.RequestOptions & { _codyAgent?: DelegatingProxyAgent | unknown }
-        //                 ) {
-        //                     if (!(opts._codyAgent instanceof DelegatingProxyAgent)) {
-        //                         // biome-ignore lint/style/noArguments: apply uses arguments array
-        //                         return target.connect.apply(target, arguments)
-        //                     }
-        //                     console.log('Overridden connect method called')
-        //                     // New connection logic here
-        //                     // You can still call the original method if needed:
-        //                     // return target.connect.apply(target, arguments);
-        //                 }
-        //             }
-        //             return Reflect.get(target, prop, receiver)
-        //         },
-        //     })
-        // this actually in "VSCode 'Extension Host'"
-
-        const originalConnect = _PacProxyAgent.prototype.connect
-        _PacProxyAgent.prototype.connect = async function (
-            req: http.ClientRequest,
-            opts: AgentConnectOpts & { _codyAgent?: DelegatingProxyAgent | unknown }
-        ): Promise<any> {
-            if (!(opts._codyAgent instanceof DelegatingProxyAgent)) {
-                // biome-ignore lint/style/noArguments: apply uses arguments array
-                return originalConnect.apply(this, arguments)
-            }
-
-            return opts._codyAgent.connect(req, { ...opts, prevAgent: this })
-        }
+        const mod = Object.keys(require.cache)?.find(v => v.endsWith('@vscode/proxy-agent/out/agent.js'))
+        _PacProxyAgent = mod ? (require.cache[mod] as any)?.exports?.PacProxyAgent : null
+        //TODO: has the module so we can log changes in versions for future
     } catch {}
+
+    //TODO: We might need to fallback to previous _VSCODE_NODE_MODULES hack for older versions?
+    // const _IMPORT_NODE_MODULES = '_VSCODE_NODE_MODULES'
+    // const _IMPORT_PROXY_AGENT_PATH = '@vscode/proxy-agent/out/agent'
+    // const _IMPORT_PAC_PROXY_AGENT = 'PacProxyAgent'
+
+    if (!_PacProxyAgent) {
+        logDebug('fetch.node', 'TODO: Not patching stuff.')
+        // WE don't handle this yet, we rely on the fact that Sourcegraph
+        // HTTP Client and Completions client explicitly set agent.current
+        // as their agent (which will be respected if PacProxy is not
+        // interfering)
+        return
+    }
+    // biome-ignore lint/style/useNodejsImportProtocol: <explanation>
+    const _http = require('http')
+    // biome-ignore lint/style/useNodejsImportProtocol: <explanation>
+    const _https = require('https')
+    mergeModules(_http, patchVSCodeModule(_http))
+    mergeModules(_https, patchVSCodeModule(_https))
+
+    const originalConnect = _PacProxyAgent.prototype.connect
+    _PacProxyAgent.prototype.connect = async function (
+        req: http.ClientRequest & https.RequestOptions,
+        opts: AgentConnectOpts & { _codyAgent?: DelegatingProxyAgent | unknown; agent?: any }
+    ): Promise<any> {
+        if (!(opts._codyAgent instanceof DelegatingProxyAgent)) {
+            // biome-ignore lint/style/noArguments: apply uses arguments array
+            return originalConnect.apply(this, arguments)
+        }
+
+        // By setting this we can ensure that the fallback to VSCode's internal
+        // proxy is still maintained. As such the order is:
+        // 1. Allow our DelegatingProxyAgent to give it a shot
+        // 2  If DelegatingProxyAgent decides it's not a priority it hands it back to VSCode
+        // 3. If VSCode has proxy disabled it hands back to the req.proxy...which is us again
+        req.agent = opts._codyAgent
+        return opts._codyAgent.connect(req, {
+            ...opts,
+            _vscodeAgent: { connect: originalConnect.bind(this) },
+            //@ts-ignore
+            _codyAgent: undefined,
+        })
+    }
+}
+
+function mergeModules(module: any, patch: any) {
+    return Object.assign(module.default || module, patch)
 }
 
 function patchVSCodeModule(originalModule: typeof http | typeof https) {
@@ -530,97 +413,32 @@ function patchVSCodeModule(originalModule: typeof http | typeof https) {
                 callback = options
                 options = null
             }
-            options = options || {}
+            if (url) {
+                const parsed = typeof url === 'string' ? new URL(url) : url
+                const urlOptions = {
+                    protocol: parsed.protocol,
+                    hostname:
+                        parsed.hostname.lastIndexOf('[', 0) === 0
+                            ? parsed.hostname.slice(1, -1)
+                            : parsed.hostname,
+                    port: parsed.port,
+                    path: `${parsed.pathname}${parsed.search}`,
+                }
+                if (parsed.username || parsed.password) {
+                    options.auth = `${parsed.username}:${parsed.password}`
+                }
+                options = { ...urlOptions, ...options }
+            } else {
+                options = { ...options }
+            }
             if (options.agent instanceof DelegatingProxyAgent) {
                 // instead we move it to _codyAgent so that our proxy handler works correctly
-                return originalFn(
-                    url,
-                    { ...options, _codyAgent: options.agent, agent: undefined },
-                    callback
-                )
+                options._codyAgent = options.agent
+                options.agent = undefined
             }
-            return originalFn(url, options, callback)
+            return originalFn(options, callback)
         }
         return patchedFn
     }
-    originalModule.get = patch(originalModule.get)
-    originalModule.request = patch(originalModule.request)
-}
-
-// if(!agent._forceCodyProxy){
-//     // We've decided to, contrary to before, leave the original VSCode implmentation alone.
-//     // Especially w.r.t. keep-alive which for reasons TODO: XXX
-//     return
-// }
-
-// Overide PacProxyAgnent.connect()
-// let s: Duplex | http.Agent;
-// if (agent instanceof Agent) {
-//     s = await agent.connect(req, opts);
-// } else {
-//     s = agent;
-// }
-// req.emit('proxy', { proxy, socket: s });
-// return s;
-
-// const originalConnect = PacProxyAgent.prototype.connect
-// Patches the implementation defined here:
-// https://github.com/microsoft/vscode-proxy-agent/blob/d340b9d34684da494d6ebde3bcd18490a8bbd071/src/agent.ts#L53
-//             PacProxyAgent.prototype.connect = function (
-//                 req: http.ClientRequest,
-//                 opts: { protocol: string }
-//             ): any {
-//                 if (agent.current && agent._forceCodyProxy) {
-//                     const originalResolver = this.resolver
-//                     const originalAgent = this.opts.originalAgent
-//                     const reset = () => {
-//                         this.resolver = originalResolver
-//                         this.originalAgent = originalAgent
-//                     }
-
-//                     this.resolver = () => null
-//                     this.opts.originalAgent = agent.current
-//                     return originalConnect.call(this, req, opts).finally(reset.bind(this))
-//                 }
-//                 return originalConnect.call(this, req, opts)
-
-// try {
-//     const connectionHeader = req.getHeader('connection')
-//     if (
-//         connectionHeader === 'keep-alive' ||
-//         (Array.isArray(connectionHeader) && connectionHeader.includes('keep-alive'))
-//     ) {
-//         this.opts.originalAgent = customAgent(opts)
-//         return originalConnect.call(this, req, opts)
-//     }
-//     return originalConnect.call(this, req, opts)
-// } catch {
-//     return originalConnect.call(this, req, opts)
-// }
-
-// Yoinked from https://github.com/microsoft/vscode-proxy-agent/blob/main/src/index.ts
-// @ts-ignore
-function pacProxyIDFromURL(rawUrl: string | undefined) {
-    const url = (rawUrl || '').trim()
-
-    const [scheme, proxy] = url.split(/:\/\//, 1)
-    if (!proxy) {
-        return undefined
-    }
-
-    switch (scheme.toLowerCase()) {
-        case 'http':
-            return 'PROXY ' + proxy
-        case 'https':
-            return 'HTTPS ' + proxy
-        case 'socks':
-        case 'socks5':
-        case 'socks5h':
-            return 'SOCKS ' + proxy
-        case 'socks4':
-        case 'socks4a':
-            return 'SOCKS4 ' + proxy
-        default:
-            return undefined
-    }
+    return { get: patch(originalModule.get), request: patch(originalModule.request) }
 }
