@@ -111,8 +111,12 @@ export const events = [
                 },
                 tokenCounterUtils: TokenCounterUtils
             ) => {
+                const recordTranscript =
+                    params.authStatus.endpoint &&
+                    (isDotCom(params.authStatus) || isS2(params.authStatus))
+
                 const gitMetadata =
-                    isDotCom(params.authStatus) && params.repoIsPublic && isArray(params.repoMetadata)
+                    recordTranscript && params.repoIsPublic && isArray(params.repoMetadata)
                         ? params.repoMetadata
                         : undefined
 
@@ -136,7 +140,7 @@ export const events = [
                             ? map.intent(params.detectedIntent)
                             : undefined,
                         ...metadata,
-                        recordsPrivateMetadataTranscript: isS2(params.authStatus) ? 1 : 0,
+                        recordsPrivateMetadataTranscript: recordTranscript ? 1 : 0,
                     }),
                     privateMetadata: {
                         detectedIntentScores: params.detectedIntentScores?.length
@@ -152,10 +156,10 @@ export const events = [
                         userSpecifiedIntent: params.userSpecifiedIntent,
                         traceId: spans.current.spanContext().traceId,
                         gitMetadata,
-                        // 🚨 SECURITY: Chat transcripts are to be included only for S2 users AND for V2 telemetry.
-                        // V2 telemetry exports privateMetadata only for S2 users. The condition below is an additional safeguard measure.
+                        // 🚨 SECURITY: Chat transcripts are to be included only for S2 & Dotcom users AND for V2 telemetry.
+                        // V2 telemetry exports privateMetadata only for S2 & Dotcom users. The condition below is an additional safeguard measure.
                         // Check `SRC_TELEMETRY_SENSITIVEMETADATA_ADDITIONAL_ALLOWED_EVENT_TYPES` env to learn more.
-                        promptText: isS2(params.authStatus)
+                        promptText: recordTranscript
                             ? truncatePromptString(
                                   params.promptText,
                                   CHAT_INPUT_TOKEN_BUDGET,
