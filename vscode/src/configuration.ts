@@ -1,5 +1,3 @@
-import * as os from 'node:os'
-import * as path from 'node:path'
 import * as vscode from 'vscode'
 
 import {
@@ -8,6 +6,7 @@ import {
     OLLAMA_DEFAULT_URL,
     type PickResolvedConfiguration,
     PromptString,
+    cenv,
     ps,
     setStaticResolvedConfigurationValue,
 } from '@sourcegraph/cody-shared'
@@ -26,8 +25,6 @@ interface ConfigGetter {
 export function getConfiguration(
     config: ConfigGetter = vscode.workspace.getConfiguration()
 ): ClientConfiguration {
-    const isTesting = process.env.CODY_TESTING === 'true'
-
     function getHiddenSetting<T>(configKey: string, defaultValue?: T): T {
         return config.get<T>(`cody.${configKey}` as any, defaultValue)
     }
@@ -50,28 +47,11 @@ export function getConfiguration(
         debugRegex = /.*/
     }
 
-    const vsCodeConfig = vscode.workspace.getConfiguration()
-
-    const proxyConfig = config.get<{
-        server?: string
-        path?: string
-        cacert?: string
-    } | null>(CONFIG_KEY.proxy, null)
-
-    function resolveHomedir(filePath: string | null | undefined): string | undefined {
-        for (const homeDir of ['~/', '%USERPROFILE%\\']) {
-            if (filePath?.startsWith(homeDir)) {
-                return `${os.homedir()}${path.sep}${filePath.slice(homeDir.length)}`
-            }
-        }
-        return filePath ? filePath : undefined
-    }
-
     return {
-        proxy: vsCodeConfig.get<string>('http.proxy'),
-        proxyServer: proxyConfig?.server,
-        proxyPath: resolveHomedir(proxyConfig?.path),
-        proxyCACert: resolveHomedir(proxyConfig?.cacert),
+        net: {
+            ...config.get<object | undefined>('cody.net' as any, undefined), // TODO: For some reason the config getter is not working
+            vscode: config.get<object>('http' as any), // this is vscode's config that we need to watch
+        },
         codebase: sanitizeCodebase(config.get(CONFIG_KEY.codebase)),
         serverEndpoint: config.get<string>(CONFIG_KEY.serverEndpoint),
         customHeaders: config.get<Record<string, string>>(CONFIG_KEY.customHeaders),
@@ -105,7 +85,10 @@ export function getConfiguration(
          * Hidden settings for internal use only.
          */
 
-        internalUnstable: getHiddenSetting('internal.unstable', isTesting),
+        internalUnstable: getHiddenSetting(
+            'internal.unstable',
+            cenv.CODY_CONFIG_ENABLE_INTERNAL_UNSTABLE
+        ),
         internalDebugContext: getHiddenSetting('internal.debug.context', false),
         internalDebugState: getHiddenSetting('internal.debug.state', false),
 

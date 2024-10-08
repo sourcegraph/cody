@@ -10,13 +10,24 @@ import {
     customUserAgent,
 } from './sourcegraph-api/graphql/client'
 
+/**
+ * In node environments, it might be necessary to set up a custom agent to control the network
+ * requests being made.
+ *
+ * To do this, we have a mutable agent variable that can be set to an instance of `http.Agent` or
+ * `https.Agent` (depending on the protocol of the URL) but that will be kept undefined for web
+ * environments.
+ *
+ * Agent is a mutable ref so that we can override it from `fetch.node.ts`
+ */
+// TODO: We couldn't make this Observable yet so instead we guard it from early
+// access with a exception.
 let _globalAgent: AgentBase | undefined
 let _blockEarlyAccess = false
 export const globalAgentRef = {
     get curr() {
         if (_blockEarlyAccess && !_globalAgent) {
-            return undefined
-            // throw new Error('Agent was used before it was initialized')
+            throw new Error('Agent was used before it was initialized')
         }
         return _globalAgent
     },
@@ -34,27 +45,6 @@ export const globalAgentRef = {
         return _globalAgent !== undefined
     },
 }
-
-/**
- * In node environments, it might be necessary to set up a custom agent to control the network
- * requests being made.
- *
- * To do this, we have a mutable agent variable that can be set to an instance of `http.Agent` or
- * `https.Agent` (depending on the protocol of the URL) but that will be kept undefined for web
- * environments.
- *
- * Agent is a mutable ref so that we can override it from `fetch.node.ts`
- */
-// export const agent:
-//     | { current: undefined; _forceCodyProxy?: undefined }
-//     | {
-//           current: (req?: Partial<ClientRequest>, opts?: Partial<RequestOptions>) => Agent | AgentBase
-//           _forceCodyProxy?: boolean | undefined
-//       } = { current: undefined }
-
-/**
- * Set this on
- */
 
 export function fetch(input: RequestInfo | URL, init?: RequestInit): Promise<BrowserOrNodeResponse> {
     if (customUserAgent) {

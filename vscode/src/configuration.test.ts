@@ -123,7 +123,7 @@ describe('getConfiguration', () => {
             },
         }
         expect(getConfiguration(config)).toEqual({
-            proxy: undefined,
+            net: {},
             codebase: 'my/codebase',
             serverEndpoint: 'http://example.com',
             customHeaders: {

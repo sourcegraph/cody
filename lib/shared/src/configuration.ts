@@ -21,11 +21,18 @@ export interface AuthCredentials {
     tokenSource?: TokenSource | undefined
 }
 
+export interface NetConfiguration {
+    vscode?: Record<string, any> | undefined | null
+    proxy?: {
+        server?: string | undefined | null
+        path?: string | undefined | null
+        cacert?: string | undefined | null
+    }
+    bypassVSCode?: boolean | undefined | null
+}
+
 interface RawClientConfiguration {
-    proxy?: string | null
-    proxyServer?: string | null
-    proxyPath?: string | null
-    proxyCACert?: string | null
+    net: NetConfiguration
     codebase?: string
     debugFilter: RegExp | null
     debugVerbose: boolean
