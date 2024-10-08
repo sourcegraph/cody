@@ -31,7 +31,11 @@ export async function deleteUninstallerConfig() {
     return fs.rm(getConfigPath())
 }
 
-async function writeSnapshot(directory: string, filename: string, content: any): Promise<void> {
+async function writeSnapshot(
+    directory: string,
+    filename: string,
+    content: UninstallerConfig
+): Promise<void> {
     const filePath = path.join(directory, filename)
 
     return fs.writeFile(filePath, JSON.stringify(content, null, 2))

@@ -966,6 +966,11 @@ export class Agent extends MessageHandler implements ExtensionClient {
             }
         })
 
+        this.registerAuthenticatedRequest('extension/reset', async () => {
+            this.globalState?.reset()
+            return null
+        })
+
         this.registerNotification('autocomplete/completionAccepted', async ({ completionID }) => {
             const provider = await vscode_shim.completionProvider()
             await provider.handleDidAcceptCompletionItem(completionID as CompletionItemID)

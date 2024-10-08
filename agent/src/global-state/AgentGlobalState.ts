@@ -44,10 +44,8 @@ export class AgentGlobalState implements vscode.Memento {
         this.db.set(key, value)
     }
 
-    public reset(): void {
-        if (this.db instanceof InMemoryDB) {
-            this.db.clear()
-        }
+    public reset() {
+        this.db.clear()
     }
 
     public keys(): readonly string[] {
@@ -88,6 +86,7 @@ interface DB {
     get(key: string): any
     set(key: string, value: any): void
     keys(): readonly string[]
+    clear(): void
 }
 
 class InMemoryDB implements DB {
@@ -116,6 +115,9 @@ class LocalStorageDB implements DB {
     constructor(ide: string, dir: string) {
         const quota = 1024 * 1024 * 256 // 256 MB
         this.storage = new LocalStorage(path.join(dir, `${ide}-globalState`), quota)
+    }
+    clear() {
+        this.storage.clear()
     }
 
     get(key: string): any {
