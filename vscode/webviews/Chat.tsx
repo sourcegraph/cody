@@ -7,6 +7,7 @@ import type {
     CodyIDE,
     Guardrails,
     PromptString,
+    SerializedPromptEditorValue,
 } from '@sourcegraph/cody-shared'
 import { Transcript, focusLastHumanMessageEditor } from './chat/Transcript'
 import type { VSCodeWrapper } from './utils/VSCodeApi'
@@ -32,6 +33,8 @@ interface ChatboxProps {
     showIDESnippetActions?: boolean
     setView: (view: View) => void
     smartApplyEnabled?: boolean
+
+    updateEditorStateOnChange: (index: number, state: SerializedPromptEditorValue) => void
 }
 
 export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>> = ({
@@ -45,6 +48,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     showIDESnippetActions = true,
     setView,
     smartApplyEnabled,
+    updateEditorStateOnChange,
 }) => {
     const telemetryRecorder = useTelemetryRecorder()
 
@@ -224,6 +228,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                 postMessage={postMessage}
                 guardrails={guardrails}
                 smartApplyEnabled={smartApplyEnabled}
+                updateEditorStateOnChange={updateEditorStateOnChange}
             />
             {transcript.length === 0 && showWelcomeMessage && (
                 <>

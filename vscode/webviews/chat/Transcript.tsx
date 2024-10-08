@@ -42,6 +42,8 @@ interface TranscriptProps {
     insertButtonOnSubmit?: CodeBlockActionsProps['insertButtonOnSubmit']
     smartApply?: CodeBlockActionsProps['smartApply']
     smartApplyEnabled?: boolean
+
+    updateEditorStateOnChange: (index: number, state: SerializedPromptEditorValue) => void
 }
 
 export const Transcript: FC<TranscriptProps> = props => {
@@ -57,6 +59,7 @@ export const Transcript: FC<TranscriptProps> = props => {
         insertButtonOnSubmit,
         smartApply,
         smartApplyEnabled,
+        updateEditorStateOnChange,
     } = props
 
     const interactions = useMemo(
@@ -92,6 +95,7 @@ export const Transcript: FC<TranscriptProps> = props => {
                     )}
                     smartApply={smartApply}
                     smartApplyEnabled={smartApplyEnabled}
+                    updateEditorStateOnChange={updateEditorStateOnChange}
                 />
             ))}
         </div>
@@ -160,6 +164,8 @@ interface TranscriptInteractionProps
     isLastInteraction: boolean
     isLastSentInteraction: boolean
     priorAssistantMessageIsLoading: boolean
+
+    updateEditorStateOnChange: (index: number, state: SerializedPromptEditorValue) => void
 }
 
 const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
@@ -178,6 +184,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
         copyButtonOnSubmit,
         smartApply,
         smartApplyEnabled,
+        updateEditorStateOnChange,
     } = props
 
     const [intentResults, setIntentResults] = useState<
@@ -221,6 +228,10 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
         return debounce(async (editorValue: SerializedPromptEditorValue) => {
             setIntentResults(undefined)
 
+            if (editorValue.text) {
+                updateEditorStateOnChange(humanMessage.index, editorValue)
+            }
+
             if (!experimentalOneBoxEnabled) {
                 return
             }
@@ -240,7 +251,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                     })
             }
         }, 300)
-    }, [experimentalOneBoxEnabled, extensionAPI])
+    }, [humanMessage.index, experimentalOneBoxEnabled, extensionAPI, updateEditorStateOnChange])
 
     const onStop = useCallback(() => {
         getVSCodeAPI().postMessage({

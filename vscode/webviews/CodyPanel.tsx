@@ -1,6 +1,19 @@
-import { type AuthStatus, type ClientCapabilities, CodyIDE } from '@sourcegraph/cody-shared'
+import {
+    type AuthStatus,
+    type ClientCapabilities,
+    CodyIDE,
+    type SerializedPromptEditorValue,
+} from '@sourcegraph/cody-shared'
 import type React from 'react'
-import { type ComponentProps, type FunctionComponent, useMemo, useRef } from 'react'
+import {
+    type ComponentProps,
+    type FunctionComponent,
+    useCallback,
+    useEffect,
+    useMemo,
+    useRef,
+    useState,
+} from 'react'
 import type { ConfigurationSubsetForWebview, LocalEnv } from '../src/chat/protocol'
 import styles from './App.module.css'
 import { Chat } from './Chat'
@@ -55,6 +68,44 @@ export const CodyPanel: FunctionComponent<
 }) => {
     const tabContainerRef = useRef<HTMLDivElement>(null)
 
+    const [transcriptState, setTranscriptState] = useState({
+        current: transcript,
+        lastEditor: transcript,
+    })
+
+    // Update the lastEditor in transcriptState on every input box changes for chat message associated with the index.
+    const updateEditorStateOnChange = useCallback(
+        (index: number, newEditorValue: SerializedPromptEditorValue) => {
+            setTranscriptState(prev => {
+                const updated = [...prev.lastEditor]
+                updated[index] = {
+                    ...updated[index],
+                    lastStoredEditorValue: newEditorValue,
+                    speaker: 'human',
+                }
+                return { ...prev, lastEditor: updated }
+            })
+        },
+        []
+    )
+
+    // Reset transcripts on new transcript change.
+    // This ensures editor states are reset when switching to a new chat session.
+    useEffect(() => {
+        setTranscriptState({ current: transcript, lastEditor: transcript })
+    }, [transcript])
+
+    // Set the current transcript to the transcript with the last stored editor states when switching to a different tab.
+    // This ensures the editor states are preserved when switching back to the chat tab.
+    useEffect(() => {
+        if (view !== View.Chat) {
+            setTranscriptState(prev => ({
+                current: prev.lastEditor,
+                lastEditor: prev.lastEditor,
+            }))
+        }
+    }, [view])
+
     return (
         <TabViewContext.Provider value={useMemo(() => ({ view, setView }), [view, setView])}>
             <TabRoot
@@ -76,9 +127,10 @@ export const CodyPanel: FunctionComponent<
                 <TabContainer value={view} ref={tabContainerRef}>
                     {view === View.Chat && (
                         <Chat
+                            transcript={transcriptState.current}
+                            updateEditorStateOnChange={updateEditorStateOnChange}
                             chatEnabled={chatEnabled}
                             messageInProgress={messageInProgress}
-                            transcript={transcript}
                             vscodeAPI={vscodeAPI}
                             guardrails={attributionEnabled ? guardrails : undefined}
                             showIDESnippetActions={showIDESnippetActions}

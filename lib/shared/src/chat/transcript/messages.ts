@@ -2,6 +2,7 @@ import type { ContextItem } from '../../codebase-context/messages'
 import type { Message } from '../../sourcegraph-api'
 
 import type { SerializedChatTranscript } from '.'
+import type { SerializedPromptEditorValue } from '../..'
 
 /**
  * The list of context items (most important first) along with
@@ -28,6 +29,8 @@ export interface ChatMessage extends Message {
      * back to editing the text for invalid values.
      */
     editorState?: unknown
+
+    lastStoredEditorValue?: SerializedPromptEditorValue
 
     /**
      * The model used to generate this chat message response. Not set on human messages.
