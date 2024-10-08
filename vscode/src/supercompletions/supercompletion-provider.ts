@@ -27,7 +27,12 @@ export class SupercompletionProvider implements vscode.Disposable {
         > = vscode.workspace
     ) {
         this.renderer = new SupercompletionRenderer()
-        this.recentEditsRetriever = new RecentEditsRetriever(EDIT_HISTORY, workspace)
+        this.recentEditsRetriever = new RecentEditsRetriever(
+            {
+                maxAgeMs: EDIT_HISTORY,
+            },
+            workspace
+        )
 
         this.disposables.push(
             workspace.onDidChangeTextDocument(this.onDidChangeTextDocument.bind(this)),

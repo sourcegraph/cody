@@ -1,10 +1,11 @@
-import type { DocumentContext } from '@sourcegraph/cody-shared'
+import { type DocumentContext, logDebug } from '@sourcegraph/cody-shared'
 import { Observable } from 'observable-fns'
 import * as vscode from 'vscode'
 import { ContextMixer } from '../completions/context/context-mixer'
 import { DefaultContextStrategyFactory } from '../completions/context/context-strategy'
 import { RetrieverIdentifier } from '../completions/context/utils'
 import { getCurrentDocContext } from '../completions/get-current-doc-context'
+import { getOpenAIChatCompletion } from './model-helpers'
 import { OpenAIPromptProvider, type PromptProvider } from './prompt-provider'
 
 const AUTOEDITS_CONTEXT_STRATEGY = 'auto-edits'
@@ -39,7 +40,7 @@ export class AutoeditsProvider implements vscode.Disposable {
         maxPrefixLinesInArea: 12,
         maxSuffixLinesInArea: 5,
         codeToRewritePrefixLines: 2,
-        codeToRewriteSuffixLines: 2,
+        codeToRewriteSuffixLines: 3,
         contextSpecificTokenLimit: new Map([
             [RetrieverIdentifier.RecentEditsRetriever, 2_500],
             [RetrieverIdentifier.JaccardSimilarityRetriever, 3_000],
@@ -79,7 +80,10 @@ export class AutoeditsProvider implements vscode.Disposable {
             context,
             this.autoEditsTokenLimit
         )
-        console.log(prompt)
+        if (Array.isArray(prompt)) {
+            const response = await getOpenAIChatCompletion(prompt)
+            logDebug('AutoEdits:\n', response)
+        }
     }
 
     private getDocContext(document: vscode.TextDocument, position: vscode.Position): DocumentContext {

@@ -19,20 +19,26 @@ describe('RecentEditsRetriever', () => {
         vi.useFakeTimers()
         vi.spyOn(contextFiltersProvider, 'isUriIgnored').mockResolvedValue(false)
 
-        retriever = new RecentEditsRetriever(FIVE_MINUTES, {
-            onDidChangeTextDocument(listener) {
-                onDidChangeTextDocument = listener
-                return { dispose: () => {} }
+        retriever = new RecentEditsRetriever(
+            {
+                maxAgeMs: FIVE_MINUTES,
+                addLineNumbersForDiff: true,
             },
-            onDidRenameFiles(listener) {
-                onDidRenameFiles = listener
-                return { dispose: () => {} }
-            },
-            onDidDeleteFiles(listener) {
-                onDidDeleteFiles = listener
-                return { dispose: () => {} }
-            },
-        })
+            {
+                onDidChangeTextDocument(listener) {
+                    onDidChangeTextDocument = listener
+                    return { dispose: () => {} }
+                },
+                onDidRenameFiles(listener) {
+                    onDidRenameFiles = listener
+                    return { dispose: () => {} }
+                },
+                onDidDeleteFiles(listener) {
+                    onDidDeleteFiles = listener
+                    return { dispose: () => {} }
+                },
+            }
+        )
     })
     afterEach(() => {
         retriever.dispose()

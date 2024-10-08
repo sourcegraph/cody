@@ -1,4 +1,4 @@
-import { PromptString, logDebug, ps, psDedent } from '@sourcegraph/cody-shared'
+import { PromptString, logDebug, ps } from '@sourcegraph/cody-shared'
 import { Uri } from 'vscode'
 import type * as vscode from 'vscode'
 import type {
@@ -59,10 +59,10 @@ export function getPromptForTheContextSource(
     callback: (contextItems: AutocompleteContextSnippet[]) => PromptString
 ): PromptString {
     const prompt = callback(contextItems)
-    if (prompt === ps``) {
+    if (contextItems.length === 0 || prompt.length === 0) {
         return ps``
     }
-    return ps`${instructionPrompt}${prompt}`
+    return ps`${instructionPrompt}${prompt}\n`
 }
 
 //  Prompt components helper functions
@@ -89,24 +89,25 @@ export function getCurrentFilePromptComponents(
         ps``
     )
 
-    const fileWithMarker = ps`${prefixContext.prefixBeforeArea}${AREA_FOR_CODE_MARKER}\n${suffixContext.suffixAfterArea}`
+    const fileWithMarker = ps`${prefixContext.prefixBeforeArea}
+${AREA_FOR_CODE_MARKER}
+${suffixContext.suffixAfterArea}`
+
     const filePrompt = getContextPromptWithPath(
         PromptString.fromDisplayPath(options.document.uri),
-        psDedent`
-            ${FILE_TAG_OPEN}
-            ${fileWithMarker}
-            ${FILE_TAG_CLOSE}
-        `
+        ps`${FILE_TAG_OPEN}
+${fileWithMarker}
+${FILE_TAG_CLOSE}
+`
     )
-    const areaPrompt = psDedent`
-        ${AREA_FOR_CODE_MARKER_OPEN}
-        ${prefixContext.prefixInArea}
-        ${CODE_TO_REWRITE_TAG_OPEN}
-        ${codeToRewrite}
-        ${CODE_TO_REWRITE_TAG_CLOSE}
-        ${suffixContext.suffixInArea}
-        ${AREA_FOR_CODE_MARKER_CLOSE}
-    `
+    const areaPrompt = ps`${AREA_FOR_CODE_MARKER_OPEN}
+${prefixContext.prefixInArea}
+${CODE_TO_REWRITE_TAG_OPEN}
+${codeToRewrite}
+${CODE_TO_REWRITE_TAG_CLOSE}
+${suffixContext.suffixInArea}
+${AREA_FOR_CODE_MARKER_CLOSE}
+`
     return { fileWithMarkerPrompt: filePrompt, codeToRewritePrompt: areaPrompt }
 }
 
@@ -145,11 +146,10 @@ export function getLintErrorsPrompt(contextItems: AutocompleteContextSnippet[]):
     }
 
     const lintErrorsPrompt = PromptString.join(combinedPrompts, ps`\n`)
-    return psDedent`
-        ${LINT_ERRORS_TAG_OPEN}
-        ${lintErrorsPrompt}
-        ${LINT_ERRORS_TAG_CLOSE}
-    `
+    return ps`${LINT_ERRORS_TAG_OPEN}
+${lintErrorsPrompt}
+${LINT_ERRORS_TAG_CLOSE}
+`
 }
 
 export function getRecentCopyPrompt(contextItems: AutocompleteContextSnippet[]): PromptString {
@@ -167,11 +167,10 @@ export function getRecentCopyPrompt(contextItems: AutocompleteContextSnippet[]):
         )
     )
     const recentCopyPrompt = PromptString.join(recentCopyPrompts, ps`\n`)
-    return psDedent`
-        ${RECENT_COPY_TAG_OPEN}
-        ${recentCopyPrompt}
-        ${RECENT_COPY_TAG_CLOSE}
-    `
+    return ps`${RECENT_COPY_TAG_OPEN}
+${recentCopyPrompt}
+${RECENT_COPY_TAG_CLOSE}
+`
 }
 
 export function getRecentEditsPrompt(contextItems: AutocompleteContextSnippet[]): PromptString {
@@ -190,11 +189,10 @@ export function getRecentEditsPrompt(contextItems: AutocompleteContextSnippet[])
         )
     )
     const recentEditsPrompt = PromptString.join(recentEditsPrompts, ps`\n`)
-    return psDedent`
-        ${RECENT_EDITS_TAG_OPEN}
-        ${recentEditsPrompt}
-        ${RECENT_EDITS_TAG_CLOSE}
-    `
+    return ps`${RECENT_EDITS_TAG_OPEN}
+${recentEditsPrompt}
+${RECENT_EDITS_TAG_CLOSE}
+`
 }
 
 export function getRecentlyViewedSnippetsPrompt(
@@ -210,21 +208,19 @@ export function getRecentlyViewedSnippetsPrompt(
     }
     const recentViewedSnippetPrompts = recentViewedSnippets.map(
         item =>
-            psDedent`
-            ${SNIPPET_TAG_OPEN}
-            ${getContextPromptWithPath(
-                PromptString.fromDisplayPath(item.uri),
-                PromptString.fromAutocompleteContextSnippet(item).content
-            )}
-            ${SNIPPET_TAG_CLOSE}
-        `
+            ps`${SNIPPET_TAG_OPEN}
+${getContextPromptWithPath(
+    PromptString.fromDisplayPath(item.uri),
+    PromptString.fromAutocompleteContextSnippet(item).content
+)}
+${SNIPPET_TAG_CLOSE}
+`
     )
     const snippetsPrompt = PromptString.join(recentViewedSnippetPrompts, ps`\n`)
-    return psDedent`
-        ${RECENT_SNIPPET_VIEWS_TAG_OPEN}
-        ${snippetsPrompt}
-        ${RECENT_SNIPPET_VIEWS_TAG_CLOSE}
-    `
+    return ps`${RECENT_SNIPPET_VIEWS_TAG_OPEN}
+${snippetsPrompt}
+${RECENT_SNIPPET_VIEWS_TAG_CLOSE}
+`
 }
 
 export function getJaccardSimilarityPrompt(contextItems: AutocompleteContextSnippet[]): PromptString {
@@ -237,21 +233,19 @@ export function getJaccardSimilarityPrompt(contextItems: AutocompleteContextSnip
     }
     const jaccardSimilarityPrompts = jaccardSimilarity.map(
         item =>
-            psDedent`
-            ${SNIPPET_TAG_OPEN}
-            ${getContextPromptWithPath(
-                PromptString.fromDisplayPath(item.uri),
-                PromptString.fromAutocompleteContextSnippet(item).content
-            )}
-            ${SNIPPET_TAG_CLOSE}
-        `
+            ps`${SNIPPET_TAG_OPEN}
+${getContextPromptWithPath(
+    PromptString.fromDisplayPath(item.uri),
+    PromptString.fromAutocompleteContextSnippet(item).content
+)}
+${SNIPPET_TAG_CLOSE}
+`
     )
     const snippetsPrompt = PromptString.join(jaccardSimilarityPrompts, ps`\n`)
-    return psDedent`
-        ${EXTRACTED_CODE_SNIPPETS_TAG_OPEN}
-        ${snippetsPrompt}
-        ${EXTRACTED_CODE_SNIPPETS_TAG_CLOSE}
-    `
+    return ps`${EXTRACTED_CODE_SNIPPETS_TAG_OPEN}
+${snippetsPrompt}
+${EXTRACTED_CODE_SNIPPETS_TAG_CLOSE}
+`
 }
 
 function getPrefixContext(
@@ -263,7 +257,10 @@ function getPrefixContext(
     const totalLines = prefixLines.length
 
     // Ensure we don't exceed the total number of lines available
-    const actualPrefixLinesBudget = Math.min(prefixAreaLinesBudget, totalLines)
+    const actualPrefixLinesBudget = Math.min(
+        prefixAreaLinesBudget + codeToRewritePrefixLines,
+        totalLines
+    )
     const actualCodeToRewritePrefixLines = Math.min(codeToRewritePrefixLines, actualPrefixLinesBudget)
 
     // Calculate start indexes for each section
@@ -295,7 +292,10 @@ function getSuffixContext(
     const totalLines = suffixLines.length
 
     // Ensure we don't exceed the total number of lines available
-    const actualSuffixAreaLinesBudget = Math.min(suffixAreaLinesBudget, totalLines)
+    const actualSuffixAreaLinesBudget = Math.min(
+        suffixAreaLinesBudget + codeToRewriteSuffixLines,
+        totalLines
+    )
     const actualCodeToRewriteSuffixLines = Math.min(
         codeToRewriteSuffixLines,
         actualSuffixAreaLinesBudget
@@ -320,26 +320,25 @@ function getSuffixContext(
 //  Helper functions
 export function getContextItemMappingWithTokenLimit(
     contextItems: AutocompleteContextSnippet[],
-    contextTokenLimitMapping = new Map<RetrieverIdentifier, number>()
-): Record<string, AutocompleteContextSnippet[]> {
-    const contextItemMapping = contextItems.reduce(
-        (mapping, item) => {
-            if (!mapping[item.identifier]) {
-                mapping[item.identifier] = []
-            }
-            mapping[item.identifier].push(item)
-            return mapping
-        },
-        {} as Record<string, AutocompleteContextSnippet[]>
-    )
-
-    for (const [identifier, items] of Object.entries(contextItemMapping)) {
-        const tokenLimit = contextTokenLimitMapping.get(identifier as RetrieverIdentifier)
+    contextTokenLimitMapping: Map<RetrieverIdentifier, number>
+): Map<RetrieverIdentifier, AutocompleteContextSnippet[]> {
+    const contextItemMapping = new Map<RetrieverIdentifier, AutocompleteContextSnippet[]>()
+    // Group items by identifier
+    for (const item of contextItems) {
+        const identifier = item.identifier as RetrieverIdentifier
+        if (!contextItemMapping.has(identifier)) {
+            contextItemMapping.set(identifier, [])
+        }
+        contextItemMapping.get(identifier)!.push(item)
+    }
+    // Apply token limits
+    for (const [identifier, items] of contextItemMapping) {
+        const tokenLimit = contextTokenLimitMapping.get(identifier)
         if (tokenLimit !== undefined) {
-            contextItemMapping[identifier] = getContextItemsInTokenBudget(items, tokenLimit)
+            contextItemMapping.set(identifier, getContextItemsInTokenBudget(items, tokenLimit))
         } else {
             logDebug('AutoEdits', `No token limit for ${identifier}`)
-            contextItemMapping[identifier] = []
+            contextItemMapping.set(identifier, [])
         }
     }
     return contextItemMapping
@@ -347,9 +346,10 @@ export function getContextItemMappingWithTokenLimit(
 
 function getContextItemsInTokenBudget(
     contextItems: AutocompleteContextSnippet[],
-    charsBudget: number
+    tokenBudget: number
 ): AutocompleteContextSnippet[] {
     let currentCharsCount = 0
+    const charsBudget = tokenBudget * 4
     for (let i = 0; i < contextItems.length; i++) {
         currentCharsCount += contextItems[i].content.length
         if (currentCharsCount > charsBudget) {

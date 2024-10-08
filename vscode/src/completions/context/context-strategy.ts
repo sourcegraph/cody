@@ -51,17 +51,31 @@ export class DefaultContextStrategyFactory implements ContextStrategyFactory {
                         case 'none':
                             break
                         case 'recent-edits':
-                            this.allLocalRetrievers = [new RecentEditsRetriever(60 * 1000)]
+                            this.allLocalRetrievers = [
+                                new RecentEditsRetriever({
+                                    maxAgeMs: 60 * 1000,
+                                }),
+                            ]
                             break
                         case 'recent-edits-1m':
-                            this.allLocalRetrievers = [new RecentEditsRetriever(60 * 1000)]
+                            this.allLocalRetrievers = [
+                                new RecentEditsRetriever({
+                                    maxAgeMs: 60 * 1000,
+                                }),
+                            ]
                             break
                         case 'recent-edits-5m':
-                            this.allLocalRetrievers = [new RecentEditsRetriever(60 * 5 * 1000)]
+                            this.allLocalRetrievers = [
+                                new RecentEditsRetriever({
+                                    maxAgeMs: 60 * 5 * 1000,
+                                }),
+                            ]
                             break
                         case 'recent-edits-mixed':
                             this.allLocalRetrievers = [
-                                new RecentEditsRetriever(60 * 1000),
+                                new RecentEditsRetriever({
+                                    maxAgeMs: 60 * 1000,
+                                }),
                                 new JaccardSimilarityRetriever(),
                             ]
                             break
@@ -85,7 +99,12 @@ export class DefaultContextStrategyFactory implements ContextStrategyFactory {
                             ]
                             break
                         case 'diagnostics':
-                            this.allLocalRetrievers = [new DiagnosticsRetriever()]
+                            this.allLocalRetrievers = [
+                                new DiagnosticsRetriever({
+                                    contextLines: 0,
+                                    useXMLForPromptRendering: true,
+                                }),
+                            ]
                             break
                         case 'recent-view-port':
                             this.allLocalRetrievers = [
@@ -97,8 +116,15 @@ export class DefaultContextStrategyFactory implements ContextStrategyFactory {
                             break
                         case 'auto-edits':
                             this.allLocalRetrievers = [
-                                new RecentEditsRetriever(10 * 60 * 1000),
-                                new DiagnosticsRetriever(),
+                                new RecentEditsRetriever({
+                                    maxAgeMs: 10 * 60 * 1000,
+                                    addLineNumbersForDiff: true,
+                                }),
+                                new DiagnosticsRetriever({
+                                    contextLines: 0,
+                                    useXMLForPromptRendering: false,
+                                    useCaretToIndicateErrorLocation: false,
+                                }),
                                 new RecentViewPortRetriever({
                                     maxTrackedViewPorts: 50,
                                     maxRetrievedViewPorts: 10,
