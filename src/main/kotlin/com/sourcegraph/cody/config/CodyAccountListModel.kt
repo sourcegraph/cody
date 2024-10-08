@@ -76,7 +76,7 @@ class CodyAccountListModel(private val project: Project) :
 
     val account = CodyAccount(login, displayName, server, id)
     if (accountsListModel.isEmpty) {
-      activeAccount = account
+      CodyAuthenticationManager.getInstance().setActiveAccount(account)
     }
     if (!accountsListModel.toList().contains(account)) {
       accountsListModel.add(account)

@@ -2,14 +2,17 @@ package com.sourcegraph.cody.initialization
 
 import com.intellij.AppTopics
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.components.service
 import com.intellij.openapi.editor.EditorFactory
 import com.intellij.openapi.editor.ex.EditorEventMulticasterEx
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.startup.ProjectActivity
 import com.sourcegraph.cody.agent.CodyAgentService
 import com.sourcegraph.cody.config.CodyAuthenticationManager
-import com.sourcegraph.cody.config.CodySettingsChangeListener
+import com.sourcegraph.cody.config.CodySettingsFileChangeListener
 import com.sourcegraph.cody.config.migration.SettingsMigration
+import com.sourcegraph.cody.config.notification.AccountSettingChangeListener
+import com.sourcegraph.cody.config.notification.CodySettingChangeListener
 import com.sourcegraph.cody.config.ui.CheckUpdatesTask
 import com.sourcegraph.cody.listeners.CodyCaretListener
 import com.sourcegraph.cody.listeners.CodyDocumentListener
@@ -51,7 +54,12 @@ class PostStartupActivity : ProjectActivity {
     multicaster.addDocumentListener(CodyDocumentListener(project), disposable)
     project.messageBus
         .connect(disposable)
-        .subscribe(AppTopics.FILE_DOCUMENT_SYNC, CodySettingsChangeListener(project))
+        .subscribe(AppTopics.FILE_DOCUMENT_SYNC, CodySettingsFileChangeListener(project))
+
+    // DO NOT remove those lines.
+    // Project level listeners need to be used at least once to get initialized.
+    project.service<AccountSettingChangeListener>()
+    project.service<CodySettingChangeListener>()
 
     TelemetryV2.sendTelemetryEvent(project, "extension", "started")
   }

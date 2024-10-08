@@ -241,6 +241,7 @@ class EditCommandPrompt(
             .createPopup()
 
     popup?.showInBestPositionFor(editor)
+
     popup?.addListener(
         object : JBPopupListener {
           override fun onClosed(event: LightweightWindowEvent) {

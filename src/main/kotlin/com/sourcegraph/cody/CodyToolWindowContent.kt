@@ -85,16 +85,10 @@ class CodyToolWindowContent(project: Project) {
   @RequiresEdt
   internal fun setWebviewComponent(host: CodyToolWindowContentWebviewHost?) {
     webview = host
-    if (webview == null) {
-      refreshPanelsVisibility()
-    } else {
-      val component = host?.proxy?.component
-      if (component == null) {
-        logger.warn("expected browser component to be created, but was null")
-      } else {
-        showView(component)
-      }
+    if (host != null && host.proxy?.component == null) {
+      logger.warn("expected browser component to be created, but was null")
     }
+    refreshPanelsVisibility()
   }
 
   fun openDevTools() {
