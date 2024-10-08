@@ -16,6 +16,8 @@ export const AUTOCOMPLETE_STAGE_COUNTER_INITIAL_STATE = {
     preNetworkRequest: 0,
     preFinalCancellationCheck: 0,
     preVisibilityCheck: 0,
+    preCompletionTrimming: 0,
+    preResponseDisplay: 0,
 }
 
 export type AutocompletePipelineCountedStage = keyof typeof AUTOCOMPLETE_STAGE_COUNTER_INITIAL_STATE

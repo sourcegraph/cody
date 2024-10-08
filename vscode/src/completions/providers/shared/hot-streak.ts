@@ -82,7 +82,7 @@ const MAX_HOT_STREAK_LINES = vscode.workspace
     .get<number>('cody.experimental.maxHotStreakLines', 5)
 
 export function createHotStreakExtractor(params: HotStreakExtractorParams): HotStreakExtractor {
-    const { completedCompletion, generateOptions, abortController } = params
+    const { completedCompletion, generateOptions, abortController, stageRecorder } = params
     const {
         docContext,
         document,
@@ -144,11 +144,15 @@ export function createHotStreakExtractor(params: HotStreakExtractorParams): HotS
                 // ... if not and we are processing the last payload, we use the whole remainder for the
                 // completion (this means we will parse the last line even when a \n is missing at
                 // the end) ...
-                const processedCompletion = processCompletion(completion, {
-                    document,
-                    position: maybeDynamicMultilineDocContext.position,
-                    docContext: maybeDynamicMultilineDocContext,
-                })
+                const processedCompletion = processCompletion(
+                    completion,
+                    {
+                        document,
+                        position: maybeDynamicMultilineDocContext.position,
+                        docContext: maybeDynamicMultilineDocContext,
+                    },
+                    stageRecorder
+                )
 
                 yield {
                     docContext: updatedDocContext,

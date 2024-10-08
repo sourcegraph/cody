@@ -15,6 +15,7 @@ import {
 } from '../../text-processing/process-inline-completions'
 
 import { trace } from '@opentelemetry/api'
+import type * as CompletionLogger from '../../logger'
 import { getDynamicMultilineDocContext } from './dynamic-multiline'
 import { type HotStreakExtractor, createHotStreakExtractor } from './hot-streak'
 import type { GenerateCompletionsOptions } from './provider'
@@ -24,6 +25,7 @@ export interface FetchAndProcessCompletionsParams {
     completionResponseGenerator: CompletionResponseGenerator
     providerSpecificPostProcess: (insertText: string) => string
     generateOptions: Readonly<GenerateCompletionsOptions>
+    stageRecorder: CompletionLogger.AutocompleteStageRecorder
 }
 
 export type FetchCompletionResult =
@@ -47,6 +49,7 @@ export async function* fetchAndProcessDynamicMultilineCompletions(
         abortController,
         generateOptions,
         providerSpecificPostProcess,
+        stageRecorder,
     } = params
     const { docContext, multiline, firstCompletionTimeout } = generateOptions
 
@@ -143,7 +146,11 @@ export async function* fetchAndProcessDynamicMultilineCompletions(
             })
 
             if (completion) {
-                const completedCompletion = processCompletion(completion, postProcessParams)
+                const completedCompletion = processCompletion(
+                    completion,
+                    postProcessParams,
+                    stageRecorder
+                )
                 yield* stopStreamingAndUsePartialResponse({
                     completedCompletion,
                     isFullResponse,
@@ -183,12 +190,16 @@ export async function* fetchAndProcessDynamicMultilineCompletions(
                     text: completion.insertText,
                 })
 
-                const completedCompletion = processCompletion(completion, {
-                    document: generateOptions.document,
-                    position: dynamicMultilineDocContext.position,
-                    docContext: dynamicMultilineDocContext,
-                    metadata,
-                })
+                const completedCompletion = processCompletion(
+                    completion,
+                    {
+                        document: generateOptions.document,
+                        position: dynamicMultilineDocContext.position,
+                        docContext: dynamicMultilineDocContext,
+                        metadata,
+                    },
+                    stageRecorder
+                )
 
                 yield* stopStreamingAndUsePartialResponse({
                     completedCompletion,
@@ -221,7 +232,8 @@ export async function* fetchAndProcessDynamicMultilineCompletions(
                         ...completion,
                         insertText: firstLine,
                     },
-                    postProcessParams
+                    postProcessParams,
+                    stageRecorder
                 )
 
                 yield* stopStreamingAndUsePartialResponse({

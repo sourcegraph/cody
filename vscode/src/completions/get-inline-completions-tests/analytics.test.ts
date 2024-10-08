@@ -101,6 +101,8 @@ describe('[getInlineCompletions] completion event', () => {
                 "preDebounce",
                 "preContextRetrieval",
                 "preNetworkRequest",
+                "preCompletionTrimming",
+   "preResponseDisplay",
               ]
             `)
 
@@ -173,6 +175,8 @@ describe('[getInlineCompletions] completion event', () => {
                 "preDebounce",
                 "preContextRetrieval",
                 "preNetworkRequest",
+                "preCompletionTrimming",
+  "preResponseDisplay",
               ]
             `)
 

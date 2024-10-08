@@ -229,6 +229,7 @@ export abstract class Provider {
     public async generateCompletions(
         generateOptions: GenerateCompletionsOptions,
         abortSignal: AbortSignal,
+        stageRecorder: CompletionLogger.AutocompleteStageRecorder,
         tracer?: CompletionProviderTracer
     ): Promise<AsyncGenerator<FetchCompletionResult[]>> {
         const { docContext, numberOfCompletionsToGenerate } = generateOptions
@@ -279,6 +280,7 @@ export abstract class Provider {
                     generateOptions,
                     providerSpecificPostProcess: content =>
                         this.modelHelper.postProcess(content, docContext),
+                    stageRecorder: stageRecorder,
                 })
             }
         )

@@ -511,6 +511,7 @@ async function doGetInlineCompletions(
         isCacheEnabled: triggerKind !== TriggerKind.Manual,
         isPreloadRequest: triggerKind === TriggerKind.Preload,
         tracer: tracer ? createCompletionProviderTracer(tracer) : undefined,
+        stageRecorder: stageRecorder,
     })
 
     return processRequestManagerResult({

@@ -17,6 +17,7 @@ import { getLanguageConfig } from '../../tree-sitter/language'
 import { forkSignal, generatorWithTimeout, zipGenerators } from '../utils'
 
 import { map } from 'observable-fns'
+import type * as CompletionLogger from '../logger'
 import { type DefaultModel, getModelHelpers } from '../model-helpers'
 import { getSuffixAfterFirstNewline } from '../text-processing'
 import {
@@ -164,6 +165,7 @@ class ExperimentalOllamaProvider extends Provider {
     public async generateCompletions(
         options: GenerateCompletionsOptions,
         abortSignal: AbortSignal,
+        stageRecorder: CompletionLogger.AutocompleteStageRecorder,
         tracer?: CompletionProviderTracer
     ): Promise<AsyncGenerator<FetchCompletionResult[]>> {
         const { numberOfCompletionsToGenerate } = options
@@ -202,6 +204,7 @@ class ExperimentalOllamaProvider extends Provider {
                         // Increased first completion timeout value to account for the higher latency.
                         firstCompletionTimeout: 3_0000,
                     },
+                    stageRecorder,
                 })
             }
         )

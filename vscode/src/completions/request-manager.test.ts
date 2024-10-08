@@ -8,6 +8,7 @@ import { getCurrentDocContext } from './get-current-doc-context'
 import { InlineCompletionsResultSource, TriggerKind } from './get-inline-completions'
 import { initCompletionProviderConfig } from './get-inline-completions-tests/helpers'
 import type { CompletionLogID } from './logger'
+import { AutocompleteStageRecorder } from './logger'
 import type { FetchCompletionResult } from './providers/shared/fetch-and-process-completions'
 import { STOP_REASON_HOT_STREAK } from './providers/shared/hot-streak'
 import { type GenerateCompletionsOptions, Provider } from './providers/shared/provider'
@@ -149,6 +150,7 @@ describe('RequestManager', () => {
                 isCacheEnabled: true,
                 isPreloadRequest: false,
                 logId: '1' as CompletionLogID,
+                stageRecorder: new AutocompleteStageRecorder({ isPreloadRequest: false }),
             })
         }
         checkCache = (prefix: string, suffix?: string) =>

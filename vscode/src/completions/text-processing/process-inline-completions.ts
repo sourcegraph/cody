@@ -13,6 +13,7 @@ import { getNodeAtCursorAndParents } from '../../tree-sitter/ast-getters'
 import { asPoint, getCachedParseTreeForDocument } from '../../tree-sitter/parse-tree-cache'
 import type { ItemPostProcessingInfo } from '../logger'
 import type { InlineCompletionItem } from '../types'
+import type * as CompletionLogger from './../logger'
 import { type ParsedCompletion, dropParserFields } from './parse-completion'
 import { findLastAncestorOnTheSameRow } from './truncate-parsed-completion'
 import { collapseDuplicativeWhitespace, removeTrailingWhitespace, trimUntilSuffix } from './utils'
@@ -68,8 +69,21 @@ export interface ProcessItemParams {
 
 export function processCompletion(
     completion: ParsedCompletion,
-    params: ProcessItemParams
+    params: ProcessItemParams,
+    stageRecorder: CompletionLogger.AutocompleteStageRecorder
 ): ParsedCompletion {
+    stageRecorder.record('preCompletionTrimming')
+
+    const fs = require('fs')
+    const os = require('os')
+    const path = require('path')
+
+    const logMessage = "Processing Value: " + completion.insertText + "\n"
+    const logFilePath = path.join(os.tmpdir(), 'completion_log.txt')
+    fs.appendFile(logFilePath, logMessage, (err: NodeJS.ErrnoException | null) => {
+        if (err) console.error('Error writing to log file:', err)
+    })
+
     const { document, position, docContext, metadata } = params
     const { prefix, suffix, currentLineSuffix, multilineTrigger, multilineTriggerPosition } = docContext
     let { insertText } = completion
@@ -129,6 +143,7 @@ export function processCompletion(
 
     // Trim start and end of the completion to remove all trailing whitespace.
     insertText = insertText.trimEnd()
+    stageRecorder.record('preResponseDisplay')
 
     return { ...completion, insertText }
 }

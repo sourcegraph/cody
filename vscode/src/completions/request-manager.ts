@@ -12,6 +12,7 @@ import {
     InlineCompletionsResultSource,
     type LastInlineCompletionCandidate,
 } from './get-inline-completions'
+import type * as CompletionLogger from './logger'
 import { type CompletionLogID, logCompletionBookkeepingEvent } from './logger'
 import { STOP_REASON_HOT_STREAK } from './providers/shared/hot-streak'
 import type {
@@ -59,6 +60,7 @@ interface RequestsManagerParams {
     logId: CompletionLogID
     isPreloadRequest: boolean
     tracer?: CompletionProviderTracer
+    stageRecorder: CompletionLogger.AutocompleteStageRecorder
 }
 
 /**
@@ -118,7 +120,7 @@ export class RequestManager {
             this.latestRequestParams = params
         }
 
-        const { requestParams, provider, generateOptions, tracer, logId } = params
+        const { requestParams, provider, generateOptions, tracer, logId, stageRecorder } = params
 
         addAutocompleteDebugEvent('RequestManager.request')
 
@@ -137,6 +139,7 @@ export class RequestManager {
                 for await (const fetchCompletionResults of await provider.generateCompletions(
                     generateOptions,
                     request.abortController.signal,
+                    stageRecorder,
                     tracer
                 )) {
                     const [hotStreakCompletions, currentCompletions] = partition(
@@ -152,7 +155,15 @@ export class RequestManager {
                     if (currentCompletions.length > 0) {
                         // Process regular completions that will shown to the user.
                         const completions = currentCompletions.map(result => result.completion)
+                        const fs = require('fs')
+                        const os = require('os')
+                        const path = require('path')
 
+                        const logMessage = `Processing Result: ${completions[0].insertText} \nCompletion size: ${completions.length}\n`
+                        const logFilePath = path.join(os.tmpdir(), 'completion_log.txt')
+                        fs.appendFile(logFilePath, logMessage, (err: NodeJS.ErrnoException | null) => {
+                            if (err) console.error('Error writing to log file:', err)
+                        })
                         // Shared post-processing logic
                         const processedCompletions = wrapInActiveSpan(
                             'autocomplete.shared-post-process',
