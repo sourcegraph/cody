@@ -1,4 +1,4 @@
-import { logError } from '../../../logger'
+import { logError } from '../../../analytics-logger'
 import type { TscRetriever } from './tsc-retriever'
 
 let retriever: TscRetriever | undefined

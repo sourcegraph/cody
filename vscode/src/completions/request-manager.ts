@@ -8,11 +8,11 @@ import { addAutocompleteDebugEvent } from '../services/open-telemetry/debug-util
 
 import levenshtein from 'js-levenshtein'
 import { logDebug } from '../log'
+import { type CompletionLogID, logCompletionBookkeepingEvent } from './analytics-logger'
 import {
     InlineCompletionsResultSource,
     type LastInlineCompletionCandidate,
 } from './get-inline-completions'
-import { type CompletionLogID, logCompletionBookkeepingEvent } from './logger'
 import { STOP_REASON_HOT_STREAK } from './providers/shared/hot-streak'
 import type {
     CompletionProviderTracer,

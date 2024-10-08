@@ -13,6 +13,8 @@ import {
 } from '../misc/observable'
 import { pendingOperation, skipPendingOperation } from '../misc/observableOperation'
 import type { CodyClientConfig } from '../sourcegraph-api/clientConfig'
+import type { CodyLLMSiteConfiguration } from '../sourcegraph-api/graphql/client'
+import * as userProductSubscriptionModule from '../sourcegraph-api/userProductSubscription'
 import type { PartialDeep } from '../utils'
 import {
     type Model,
@@ -36,6 +38,9 @@ import { ModelUsage } from './types'
 vi.mock('graphqlClient')
 vi.mock('../services/LocalStorageProvider')
 vi.mock('../experimentation/FeatureFlagProvider')
+
+// Returns true for all feature flags enabled during synctests.
+vi.spyOn(featureFlagProvider, 'evaluatedFeatureFlag').mockReturnValue(Observable.of(true))
 
 mockClientCapabilities(CLIENT_CAPABILITIES_FIXTURE)
 
@@ -186,6 +191,7 @@ describe('server sent models', async () => {
     }
 
     const mockFetchServerSideModels = vi.fn(() => Promise.resolve(SERVER_MODELS))
+    vi.mocked(featureFlagProvider).evaluatedFeatureFlag.mockReturnValue(Observable.of(false))
 
     const result = await firstValueFrom(
         syncModels({
@@ -194,6 +200,7 @@ describe('server sent models', async () => {
                 clientState: { modelPreferences: {} },
             } satisfies PartialDeep<ResolvedConfiguration> as ResolvedConfiguration),
             authStatus: Observable.of(AUTH_STATUS_FIXTURE_AUTHED),
+            configOverwrites: Observable.of(null),
             clientConfig: Observable.of({
                 modelsAPIEnabled: true,
             } satisfies Partial<CodyClientConfig> as CodyClientConfig),
@@ -214,6 +221,9 @@ describe('server sent models', async () => {
     })
 
     it("sets server models and default models if they're not already set", async () => {
+        vi.spyOn(userProductSubscriptionModule, 'userProductSubscription', 'get').mockReturnValue(
+            Observable.of({ userCanUpgrade: true })
+        )
         // expect all defaults to be set
         expect(await firstValueFrom(modelsService.getDefaultChatModel())).toBe(opus.id)
         expect(await firstValueFrom(modelsService.getDefaultEditModel())).toBe(opus.id)
@@ -225,7 +235,7 @@ describe('server sent models', async () => {
     it('allows updating the selected model', async () => {
         vi.spyOn(modelsService, 'modelsChanges', 'get').mockReturnValue(Observable.of(result))
         await modelsService.setSelectedModel(ModelUsage.Chat, titan)
-        expect(storage.data?.[AUTH_STATUS_FIXTURE_AUTHED.endpoint].selected.chat).toBe(titan.id)
+        expect(storage.data?.[AUTH_STATUS_FIXTURE_AUTHED.endpoint]!.selected.chat).toBe(titan.id)
     })
 })
 
@@ -235,11 +245,11 @@ describe('syncModels', () => {
         { repeats: 100 },
         async () => {
             vi.useFakeTimers()
-            vi.mocked(featureFlagProvider).evaluatedFeatureFlag.mockReturnValue(Observable.of(false))
             const mockFetchServerSideModels = vi.fn(
                 (): Promise<ServerModelConfiguration | undefined> => Promise.resolve(undefined)
             )
             const authStatusSubject = new Subject<AuthStatus>()
+            const configOverwritesSubject = new Subject<CodyLLMSiteConfiguration | null>()
             const clientConfigSubject = new Subject<CodyClientConfig>()
             const syncModelsObservable = syncModels({
                 resolvedConfig: Observable.of({
@@ -247,6 +257,7 @@ describe('syncModels', () => {
                     clientState: { modelPreferences: {} },
                 } satisfies PartialDeep<ResolvedConfiguration> as ResolvedConfiguration),
                 authStatus: authStatusSubject.pipe(shareReplay()),
+                configOverwrites: configOverwritesSubject.pipe(shareReplay()),
                 clientConfig: clientConfigSubject.pipe(shareReplay()),
                 fetchServerSideModels_: mockFetchServerSideModels,
             })
@@ -276,15 +287,14 @@ describe('syncModels', () => {
                 } satisfies Partial<ServerModel> as ServerModel
             }
 
-            // Emits when authStatus emits.
-            authStatusSubject.next({
-                ...AUTH_STATUS_FIXTURE_AUTHED,
-                configOverwrites: { chatModel: 'foo' },
-            })
+            // Emits when authStatus configOverwrites emits.
+            authStatusSubject.next(AUTH_STATUS_FIXTURE_AUTHED)
             await vi.advanceTimersByTimeAsync(0)
             clientConfigSubject.next({
                 modelsAPIEnabled: false,
             } satisfies Partial<CodyClientConfig> as CodyClientConfig)
+            await vi.advanceTimersByTimeAsync(0)
+            configOverwritesSubject.next({ chatModel: 'foo' })
             await vi.advanceTimersByTimeAsync(0)
             await vi.runOnlyPendingTimersAsync()
             expect(values).toStrictEqual<typeof values>([
@@ -301,14 +311,11 @@ describe('syncModels', () => {
             clearValues()
 
             // Emits immediately when the new data can be computed synchronously.
-            authStatusSubject.next({
-                ...AUTH_STATUS_FIXTURE_AUTHED,
-                configOverwrites: { chatModel: 'bar' },
-            })
-            await vi.advanceTimersByTimeAsync(0)
             clientConfigSubject.next({
                 modelsAPIEnabled: false,
             } satisfies Partial<CodyClientConfig> as CodyClientConfig)
+            await vi.advanceTimersByTimeAsync(0)
+            configOverwritesSubject.next({ chatModel: 'bar' })
             await vi.advanceTimersByTimeAsync(0)
             const result0: ModelsData = {
                 localModels: [],

@@ -4,10 +4,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { type CodeCompletionsParams, nextTick } from '@sourcegraph/cody-shared'
 import type { PartialDeep } from '@sourcegraph/cody-shared/src/utils'
 import { mockLocalStorage } from '../services/LocalStorageProvider'
+import type { CompletionLogID } from './analytics-logger'
 import { getCurrentDocContext } from './get-current-doc-context'
 import { InlineCompletionsResultSource, TriggerKind } from './get-inline-completions'
 import { initCompletionProviderConfig } from './get-inline-completions-tests/helpers'
-import type { CompletionLogID } from './logger'
 import type { FetchCompletionResult } from './providers/shared/fetch-and-process-completions'
 import { STOP_REASON_HOT_STREAK } from './providers/shared/hot-streak'
 import { type GenerateCompletionsOptions, Provider } from './providers/shared/provider'
@@ -88,6 +88,7 @@ function createProvider() {
         id: 'mock-provider',
         legacyModel: 'test-model',
         source: 'local-editor-settings',
+        configOverwrites: null,
     })
 }
 

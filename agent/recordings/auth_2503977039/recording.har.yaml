@@ -1548,11 +1548,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 9b9152f0377dec9ed637889dbf8ddfe5
+    - _id: efcea9325c02ab43fe2a2ec1446e679f
       _order: 0
       cache: {}
       request:
-        bodySize: 570
+        bodySize: 622
         cookies: []
         headers:
           - name: content-type
@@ -1565,7 +1565,7 @@ log:
           - name: user-agent
             value: auth / v1
           - name: traceparent
-            value: 00-34de8606d62cb93bff6d663b17d64a7d-0898b03bd6648012-01
+            value: 00-22e3e05a426a9489b14a2fa3fc12c21e-90770de3c9c9d553-01
           - name: connection
             value: keep-alive
           - name: host
@@ -1588,7 +1588,10 @@ log:
 
                   For executable terminal commands: enclose each command in individual "bash" language code block without comments and new lines inside.
               - speaker: human
-                text: hello after switching accounts
+                text: |-
+                  Answer positively without apologizing.
+
+                  Question: hello after switching accounts
             model: anthropic::2023-06-01::claude-3.5-sonnet
             temperature: 0
             topK: -1
@@ -1602,14 +1605,14 @@ log:
             value: v1
         url: https://sourcegraph.sourcegraph.com/.api/completions/stream?api-version=2&client-name=auth&client-version=v1
       response:
-        bodySize: 1531
+        bodySize: 868
         content:
           mimeType: text/event-stream
-          size: 1531
+          size: 868
           text: >+
             event: completion
 
-            data: {"deltaText":"Hello! It's nice to meet you. I'm Cody, an AI coding assistant from Sourcegraph. How can I help you today? Whether you have questions about coding, need help with a programming task, or want to discuss software development topics, I'm here to assist. What would you like to work on?","stopReason":"end_turn"}
+            data: {"deltaText":"Hello! It's great to see you after switching accounts. Welcome back! How can I assist you today? I'm excited to help with any coding questions or tasks you may have.","stopReason":"end_turn"}
 
 
             event: done
@@ -1619,7 +1622,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Fri, 27 Sep 2024 17:28:53 GMT
+            value: Wed, 02 Oct 2024 05:24:28 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -1648,7 +1651,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-27T17:28:51.566Z
+      startedDateTime: 2024-10-02T05:24:26.961Z
       time: 0
       timings:
         blocked: -1

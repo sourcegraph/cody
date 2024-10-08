@@ -2,7 +2,7 @@ import findLast from 'lodash/findLast'
 import * as vscode from 'vscode'
 
 import { getLanguageConfig } from '../../tree-sitter/language'
-import { logCompletionBookkeepingEvent } from '../logger'
+import { logCompletionBookkeepingEvent } from '../analytics-logger'
 
 import { PromptString, ps } from '@sourcegraph/cody-shared'
 import type { Position } from 'vscode'

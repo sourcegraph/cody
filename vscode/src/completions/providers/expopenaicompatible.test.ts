@@ -63,6 +63,7 @@ describe('experimental-openaicompatible autocomplete provider', () => {
         getAutocompleteProviderFromServerSideModelConfig({
             modelRef: 'experimental-openaicompatible::2024-02-01::starchat-16b-beta',
             isDotCom,
+            isBYOK: !isDotCom,
         })
     )
 

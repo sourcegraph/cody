@@ -10,6 +10,23 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 ### Changed
 
+## 1.36.2
+
+### Added
+
+- Autocomplete: Change the feature flag names for experiment to prevent older client quering deprecated models. [pull/5805](https://github.com/sourcegraph/cody/pull/5805)
+
+### Fixed
+
+- Chat: Fix an issue in repository name resolution for workspaces that caused Chat to hang. [pull/5808](https://github.com/sourcegraph/cody/pull/5808)
+
+## 1.36.1
+
+### Fixed
+
+- Autocomplete: The PR fixes the slowness in vscode because because of completions by using local cache instead of querying vscode localStorage. [pull/5798](https://github.com/sourcegraph/cody/pull/5798)
+- Sourcegraph API GraphQL: Increase the default timeout from 6sec to 20sec. [pull/5789](https://github.com/sourcegraph/cody/pull/5789)
+
 ## 1.36.0
 
 ### Added

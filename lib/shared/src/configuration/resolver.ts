@@ -8,7 +8,7 @@ import {
     promiseToObservable,
 } from '../misc/observable'
 import { skipPendingOperation, switchMapReplayOperation } from '../misc/observableOperation'
-import type { PerSitePreferences } from '../models/modelsService'
+import type { DefaultsAndUserPreferencesByEndpoint } from '../models/modelsService'
 import { DOTCOM_URL } from '../sourcegraph-api/environments'
 import { type PartialDeep, type ReadonlyDeep, isError } from '../utils'
 
@@ -33,7 +33,7 @@ export interface ClientState {
     lastUsedEndpoint: string | null
     anonymousUserID: string | null
     lastUsedChatModality: 'sidebar' | 'editor'
-    modelPreferences: PerSitePreferences
+    modelPreferences: DefaultsAndUserPreferencesByEndpoint
     waitlist_o1: boolean | null
 }
 

@@ -23,57 +23,32 @@ describe('Autocomplete', () => {
         await client.afterAll()
     })
 
-    // TODO: use `vi.useFakeTimers()` instead of `sleep()` once it's supported by the agent tests.
-    it.skip('autocomplete/execute multiline (non-empty result)', async () => {
-        const uri = workspace.file('src', 'bubbleSort.ts')
-        await client.openFile(uri)
-
-        const completions = await client.request('autocomplete/execute', {
-            uri: uri.toString(),
-            position: { line: 1, character: 4 },
-            triggerKind: 'Invoke',
-        })
-
-        const completionID = completions.items[0].id
-        const texts = completions.items.map(item => item.insertText)
-
-        await client.notify('autocomplete/completionSuggested', { completionID })
-        await sleep(800) // Wait for the completion visibility timeout (750ms) to elapse
-        await client.notify('autocomplete/completionAccepted', { completionID })
-
-        const completionEvent = await client.request('testing/autocomplete/completionEvent', {
-            completionID,
-        })
-
-        expect(completionEvent?.read).toBe(true)
-        expect(completionEvent?.acceptedAt).toBeTruthy()
-
-        expect(completions.items.length).toBeGreaterThan(0)
-        expect(texts).toMatchInlineSnapshot(
-            `
-          [
-            "    return nums;",
-          ]
-        `
-        )
-    }, 10_000)
-
-    // TODO: use `vi.useFakeTimers()` instead of `sleep()` once it's supported by the agent tests.
-    it.skip('autocomplete/execute (non-empty result)', async () => {
+    it('autocomplete/execute (non-empty result)', async () => {
         const uri = workspace.file('src', 'sum.ts')
         await client.openFile(uri)
+
+        // Set a small visibility delay for testing purposes.
+        const visibilityDelay = 100
+        await client.request('testing/autocomplete/setCompletionVisibilityDelay', {
+            delay: visibilityDelay,
+        })
+
+        // Generate completions for the current cursor position.
         const completions = await client.request('autocomplete/execute', {
             uri: uri.toString(),
             position: { line: 1, character: 4 },
-            triggerKind: 'Invoke',
+            triggerKind: 'Automatic',
         })
         const completionID = completions.items[0].id
-        await client.notify('autocomplete/completionSuggested', { completionID })
-        await sleep(400)
+
+        // Tell completion provider that the completion was shown to the user.
+        client.notify('autocomplete/completionSuggested', { completionID })
+
+        // Wait for only half of the time required to mark the completion as read.
+        await sleep(visibilityDelay / 2)
 
         // Change the cursor position discarding the current completion.
-        // The current `COMPLETION_VISIBLE_DELAY_MS` is 750ms and since the completion was visible only 400ms
-        // it should not be marked as read.
+        // Since the completion was visible only `visibilityDelay / 2` it should not be marked as read.
         await client.changeFile(uri, {
             selection: {
                 start: { line: 0, character: 0 },
@@ -82,9 +57,10 @@ describe('Autocomplete', () => {
         })
 
         // Now the completion visibility timeout is elapsed but because we discarded it, it should not be
-        // marked as read.
-        await sleep(400)
+        // marked as read because we moved the cursor on the previous step and discarded the completion.
+        await client.request('testing/autocomplete/awaitPendingVisibilityTimeout', null)
 
+        // Get the analytics event for the completion to assert the read and accepted state.
         const completionEvent = await client.request('testing/autocomplete/completionEvent', {
             completionID,
         })
@@ -97,6 +73,56 @@ describe('Autocomplete', () => {
             `
           [
             "    return a + b;",
+          ]
+        `
+        )
+    }, 10_000)
+
+    it('autocomplete/execute multiline (non-empty result)', async () => {
+        // Open merge sort with a full algorithm implementation to add it to the context.
+        // Otherwise there's a higher chance that model won't complete the code because of all
+        // the functions in the workspace missing implementations.
+        const uri1 = workspace.file('src', 'mergeSort.ts')
+        await client.openFile(uri1)
+
+        const uri = workspace.file('src', 'bubbleSort.ts')
+        await client.openFile(uri)
+
+        const completions = await client.request('autocomplete/execute', {
+            uri: uri.toString(),
+            position: { line: 1, character: 4 },
+            triggerKind: 'Automatic',
+        })
+
+        const completionID = completions.items[0].id
+        const texts = completions.items.map(item => item.insertText)
+
+        client.notify('autocomplete/completionSuggested', { completionID })
+        // Wait for the completion visibility timeout we use to ensure users read a completion.
+        await client.request('testing/autocomplete/awaitPendingVisibilityTimeout', null)
+        client.notify('autocomplete/completionAccepted', { completionID })
+
+        const completionEvent = await client.request('testing/autocomplete/completionEvent', {
+            completionID,
+        })
+
+        expect(completionEvent?.read).toBe(true)
+        expect(completionEvent?.acceptedAt).toBeTruthy()
+
+        expect(completions.items.length).toBeGreaterThan(0)
+        expect(texts).toMatchInlineSnapshot(
+            `
+          [
+            "    for (let i = 0; i < arr.length; i++) {
+                  for (let j = 0; j < arr.length - i - 1; j++) {
+                      if (arr[j] > arr[j + 1]) {
+                          let temp = arr[j]
+                          arr[j] = arr[j + 1]
+                          arr[j + 1] = temp
+                      }
+                  }
+              }
+              return arr",
           ]
         `
         )

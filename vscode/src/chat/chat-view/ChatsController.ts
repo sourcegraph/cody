@@ -305,24 +305,23 @@ export class ChatsController implements vscode.Disposable {
      */
     private async submitChat({
         text,
-        submitType,
         contextItems,
         source = DEFAULT_EVENT_SOURCE,
         command,
     }: ExecuteChatArguments): Promise<ChatSession | undefined> {
         let provider: ChatController
         // If the sidebar panel is visible and empty, use it instead of creating a new panel
-        if (submitType === 'user-newchat' && this.panel.isVisible() && this.panel.isEmpty()) {
+        if (this.panel.isVisible() && this.panel.isEmpty()) {
             provider = this.panel
         } else {
             provider = await this.getOrCreateEditorChatController()
         }
+        await provider.clearAndRestartSession()
         const abortSignal = provider.startNewSubmitOrEditOperation()
         const editorState = editorStateFromPromptString(text)
         await provider.handleUserMessageSubmission({
             requestID: uuid.v4(),
             inputText: text,
-            submitType,
             mentions: contextItems ?? [],
             editorState,
             signal: abortSignal,

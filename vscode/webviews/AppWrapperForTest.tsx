@@ -119,6 +119,7 @@ export const AppWrapperForTest: FunctionComponent<{ children: ReactNode }> = ({ 
                                 },
                             },
                         }),
+                    userProductSubscription: () => Observable.of(null),
                 },
             } satisfies Wrapper<ComponentProps<typeof ExtensionAPIProviderForTestsOnly>['value']>,
             {
@@ -129,6 +130,7 @@ export const AppWrapperForTest: FunctionComponent<{ children: ReactNode }> = ({ 
                             endpoint: 'https://sourcegraph.example.com',
                             authenticated: true,
                         } satisfies Partial<AuthStatus> as any,
+                        userProductSubscription: null,
                         config: {} as any,
                         clientCapabilities: CLIENT_CAPABILITIES_FIXTURE,
                         configFeatures: {

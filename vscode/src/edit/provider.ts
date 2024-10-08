@@ -5,7 +5,7 @@ import {
     type CompletionParameters,
     Typewriter,
     currentAuthStatus,
-    currentAuthStatusAuthed,
+    currentSiteVersion,
     isAbortError,
     isDotCom,
     isNetworkLikeError,
@@ -56,7 +56,10 @@ export class EditProvider {
             this.config.controller.startTask(this.config.task)
             const model = this.config.task.model
             const contextWindow = modelsService.getContextWindowByID(model)
-            const authStatus = currentAuthStatusAuthed()
+            const versions = await currentSiteVersion()
+            if (!versions) {
+                throw new Error('unable to determine site version')
+            }
             const {
                 messages,
                 stopSequences,
@@ -64,7 +67,7 @@ export class EditProvider {
                 responsePrefix = '',
             } = await buildInteraction({
                 model,
-                codyApiVersion: authStatus.codyApiVersion,
+                codyApiVersion: versions.codyAPIVersion,
                 contextWindow: contextWindow.input,
                 task: this.config.task,
                 editor: this.config.editor,
@@ -133,7 +136,11 @@ export class EditProvider {
             if (modelsService.isStreamDisabled(model)) {
                 params.stream = false
             }
-            const stream = this.config.chat.chat(messages, { ...params }, this.abortController.signal)
+            const stream = await this.config.chat.chat(
+                messages,
+                { ...params },
+                this.abortController.signal
+            )
 
             let textConsumed = 0
             for await (const message of stream) {

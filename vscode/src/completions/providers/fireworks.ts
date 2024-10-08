@@ -22,6 +22,9 @@ import {
 export const DEEPSEEK_CODER_V2_LITE_BASE = 'deepseek-coder-v2-lite-base'
 // Context window experiments with DeepSeek Model
 export const DEEPSEEK_CODER_V2_LITE_BASE_WINDOW_4096 = 'deepseek-coder-v2-lite-base-context-4096'
+export const DEEPSEEK_CODER_V2_LITE_BASE_WINDOW_8192 = 'deepseek-coder-v2-lite-base-context-8192'
+export const DEEPSEEK_CODER_V2_LITE_BASE_WINDOW_16384 = 'deepseek-coder-v2-lite-base-context-16384'
+
 export const CODE_QWEN_7B_V2P5 = 'code-qwen-7b-v2p5'
 
 // Model identifiers can be found in https://docs.fireworks.ai/explore/ and in our internal
@@ -36,6 +39,8 @@ const MODEL_MAP = {
     'llama-code-13b': 'fireworks/accounts/fireworks/models/llama-v2-13b-code',
     [DEEPSEEK_CODER_V2_LITE_BASE]: 'fireworks/deepseek-coder-v2-lite-base',
     [DEEPSEEK_CODER_V2_LITE_BASE_WINDOW_4096]: 'accounts/fireworks/models/deepseek-coder-v2-lite-base',
+    [DEEPSEEK_CODER_V2_LITE_BASE_WINDOW_8192]: 'accounts/fireworks/models/deepseek-coder-v2-lite-base',
+    [DEEPSEEK_CODER_V2_LITE_BASE_WINDOW_16384]: 'accounts/fireworks/models/deepseek-coder-v2-lite-base',
     [CODE_QWEN_7B_V2P5]: 'accounts/fireworks/models/qwen-v2p5-7b',
 } as const
 
@@ -64,6 +69,10 @@ function getMaxContextTokens(model: FireworksModel): number {
         }
         case DEEPSEEK_CODER_V2_LITE_BASE_WINDOW_4096:
             return 4096
+        case DEEPSEEK_CODER_V2_LITE_BASE_WINDOW_8192:
+            return 8192
+        case DEEPSEEK_CODER_V2_LITE_BASE_WINDOW_16384:
+            return 16384
         default:
             return 1200
     }
@@ -173,7 +182,12 @@ function getClientModel(
     throw new Error(`Unknown model: '${model}'`)
 }
 
-export function createProvider({ legacyModel, source, authStatus }: ProviderFactoryParams): Provider {
+export function createProvider({
+    legacyModel,
+    source,
+    authStatus,
+    configOverwrites,
+}: ProviderFactoryParams): Provider {
     const clientModel = getClientModel(legacyModel, authStatus)
 
     return new FireworksProvider({
@@ -181,5 +195,6 @@ export function createProvider({ legacyModel, source, authStatus }: ProviderFact
         legacyModel: clientModel,
         maxContextTokens: getMaxContextTokens(clientModel),
         source,
+        configOverwrites,
     })
 }

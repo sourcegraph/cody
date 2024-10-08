@@ -367,14 +367,14 @@ interface ContextSearchResponse {
     }[]
 }
 
-interface Location {
+interface Position {
     line: number
-    column: number
+    character: number
 }
 
 export interface Range {
-    start: Location
-    end: Location
+    start: Position
+    end: Position
 }
 
 export interface ChatIntentResult {
@@ -581,8 +581,6 @@ export function setUserAgent(newUseragent: string): void {
 
 const QUERY_TO_NAME_REGEXP = /^\s*(?:query|mutation)\s+(\w+)/m
 
-const DEFAULT_TIMEOUT_MSEC = 20000
-
 export class SourcegraphGraphQLAPIClient {
     private dotcomUrl = DOTCOM_URL
 
@@ -765,10 +763,13 @@ export class SourcegraphGraphQLAPIClient {
         )
     }
 
-    public async getCurrentUserCodySubscription(): Promise<CurrentUserCodySubscription | null | Error> {
+    public async getCurrentUserCodySubscription(
+        signal?: AbortSignal
+    ): Promise<CurrentUserCodySubscription | null | Error> {
         return this.fetchSourcegraphAPI<APIResponse<CurrentUserCodySubscriptionResponse>>(
             CURRENT_USER_CODY_SUBSCRIPTION_QUERY,
-            {}
+            {},
+            signal
         ).then(response =>
             extractDataOrError(response, data => data.currentUser?.codySubscription ?? null)
         )
@@ -1048,10 +1049,23 @@ export class SourcegraphGraphQLAPIClient {
     }> {
         // CONTEXT FILTERS are only available on Sourcegraph 5.3.3 and later.
         const minimumVersion = '5.3.3'
-        const { enabled, version } = await this.isCodyEnabled()
+        const version = await this.getSiteVersion()
+        if (isError(version)) {
+            logError(
+                'SourcegraphGraphQLAPIClient',
+                'contextFilters getSiteVersion failed',
+                version.message
+            )
+
+            // Exclude everything in case of an unexpected error.
+            return {
+                filters: EXCLUDE_EVERYTHING_CONTEXT_FILTERS,
+                transient: true,
+            }
+        }
         const insiderBuild = version.length > 12 || version.includes('dev')
         const isValidVersion = insiderBuild || semver.gte(version, minimumVersion)
-        if (!enabled || !isValidVersion) {
+        if (!isValidVersion) {
             return {
                 filters: INCLUDE_EVERYTHING_CONTEXT_FILTERS,
                 transient: false,
@@ -1116,53 +1130,6 @@ export class SourcegraphGraphQLAPIClient {
             throw result
         }
         return result
-    }
-
-    /**
-     * Checks if Cody is enabled on the current Sourcegraph instance.
-     * @returns
-     * enabled: Whether Cody is enabled.
-     * version: The Sourcegraph version.
-     *
-     * This method first checks the Sourcegraph version using `getSiteVersion()`.
-     * If the version is before 5.0.0, Cody is disabled.
-     * If the version is 5.0.0 or newer, it checks for the existence of the `isCodyEnabled` field using `getSiteHasIsCodyEnabledField()`.
-     * If the field exists, it calls `getSiteHasCodyEnabled()` to check its value.
-     * If the field does not exist, Cody is assumed to be enabled for versions between 5.0.0 - 5.1.0.
-     */
-    public async isCodyEnabled(signal?: AbortSignal): Promise<{
-        enabled: boolean
-        version: string
-    }> {
-        // Check site version.
-        const siteVersion = await this.getSiteVersion(signal)
-        if (isError(siteVersion)) {
-            return { enabled: false, version: 'unknown' }
-        }
-        signal?.throwIfAborted()
-        const insiderBuild = siteVersion.length > 12 || siteVersion.includes('dev')
-        if (insiderBuild) {
-            return { enabled: true, version: siteVersion }
-        }
-        // NOTE: Cody does not work on version later than 5.0
-        const versionBeforeCody = semver.lt(siteVersion, '5.0.0')
-        if (versionBeforeCody) {
-            return { enabled: false, version: siteVersion }
-        }
-        // Beta version is betwewen 5.0.0 - 5.1.0 and does not have isCodyEnabled field
-        const betaVersion = semver.gte(siteVersion, '5.0.0') && semver.lt(siteVersion, '5.1.0')
-        const hasIsCodyEnabledField = await this.getSiteHasIsCodyEnabledField(signal)
-        signal?.throwIfAborted()
-        // The isCodyEnabled field does not exist before version 5.1.0
-        if (!betaVersion && !isError(hasIsCodyEnabledField) && hasIsCodyEnabledField) {
-            const siteHasCodyEnabled = await this.getSiteHasCodyEnabled(signal)
-            signal?.throwIfAborted()
-            return {
-                enabled: !isError(siteHasCodyEnabled) && siteHasCodyEnabled,
-                version: siteVersion,
-            }
-        }
-        return { enabled: insiderBuild || betaVersion, version: siteVersion }
     }
 
     /**
@@ -1399,15 +1366,13 @@ export class SourcegraphGraphQLAPIClient {
     public async fetchSourcegraphAPI<T>(
         query: string,
         variables: Record<string, any> = {},
-        signalOrTimeout?: AbortSignal | number
+        signal?: AbortSignal
     ): Promise<T | Error> {
         if (!this.config) {
             throw new Error('SourcegraphGraphQLAPIClient config not set')
         }
         const config = await firstValueFrom(this.config)
-        if (signalOrTimeout instanceof AbortSignal) {
-            signalOrTimeout.throwIfAborted()
-        }
+        signal?.throwIfAborted()
 
         const headers = new Headers(config.configuration?.customHeaders as HeadersInit | undefined)
         headers.set('Content-Type', 'application/json; charset=utf-8')
@@ -1428,14 +1393,7 @@ export class SourcegraphGraphQLAPIClient {
             baseUrl: config.auth.serverEndpoint,
         })
 
-        const timeoutMs = typeof signalOrTimeout === 'number' ? signalOrTimeout : DEFAULT_TIMEOUT_MSEC
-        const timeoutSignal = AbortSignal.timeout(timeoutMs)
-
-        const abortController = dependentAbortController(
-            typeof signalOrTimeout !== 'number' ? signalOrTimeout : undefined
-        )
-        onAbort(timeoutSignal, () => abortController.abort())
-
+        const { abortController, timeoutSignal } = dependentAbortControllerWithTimeout(signal)
         return wrapInActiveSpan(`graphql.fetch${queryName ? `.${queryName}` : ''}`, () =>
             fetch(url, {
                 method: 'POST',
@@ -1445,17 +1403,7 @@ export class SourcegraphGraphQLAPIClient {
             })
                 .then(verifyResponseCode)
                 .then(response => response.json() as T)
-                .catch(error => {
-                    if (isAbortError(error)) {
-                        if (timeoutSignal.aborted) {
-                            return new Error(
-                                `ETIMEDOUT: Request timed out after ${timeoutMs}ms (${url})`
-                            )
-                        }
-                        return error
-                    }
-                    return new Error(`accessing Sourcegraph GraphQL API: ${error} (${url})`)
-                })
+                .catch(catchHTTPError(url, timeoutSignal))
         )
     }
     // make an anonymous request to the dotcom API
@@ -1529,14 +1477,9 @@ export class SourcegraphGraphQLAPIClient {
         addTraceparent(headers)
         addCustomUserAgent(headers)
 
-        // Timeout of 6 seconds.
-        const timeoutSignal = AbortSignal.timeout(DEFAULT_TIMEOUT_MSEC)
-
-        const abortController = dependentAbortController(signal)
-        onAbort(timeoutSignal, () => abortController.abort())
-
         const url = new URL(urlPath, config.auth.serverEndpoint).href
 
+        const { abortController, timeoutSignal } = dependentAbortControllerWithTimeout(signal)
         return wrapInActiveSpan(`httpapi.fetch${queryName ? `.${queryName}` : ''}`, () =>
             fetch(url, {
                 method: method,
@@ -1546,13 +1489,45 @@ export class SourcegraphGraphQLAPIClient {
             })
                 .then(verifyResponseCode)
                 .then(response => response.json() as T)
-                .catch(error => {
-                    if (isAbortError(error)) {
-                        return error
-                    }
-                    return new Error(`accessing Sourcegraph HTTP API: ${error} (${url})`)
-                })
+                .catch(catchHTTPError(url, timeoutSignal))
         )
+    }
+}
+
+const DEFAULT_TIMEOUT_MSEC = 20000
+
+/**
+ * Create an {@link AbortController} that aborts when the {@link signal} aborts or when the timeout
+ * elapses.
+ */
+function dependentAbortControllerWithTimeout(signal?: AbortSignal): {
+    abortController: AbortController
+    timeoutSignal: Pick<AbortSignal, 'aborted'>
+} {
+    const abortController = dependentAbortController(signal)
+
+    const timeoutSignal = AbortSignal.timeout(DEFAULT_TIMEOUT_MSEC)
+    onAbort(timeoutSignal, () =>
+        abortController.abort({ message: `timed out after ${DEFAULT_TIMEOUT_MSEC}ms` })
+    )
+    return { abortController, timeoutSignal }
+}
+
+function catchHTTPError(
+    url: string,
+    timeoutSignal: Pick<AbortSignal, 'aborted'>
+): (error: any) => Error {
+    return (error: any) => {
+        // Throw the plain AbortError for intentional aborts so we handle them with call
+        // flow, but treat timeout aborts as a network error (below) and include the
+        // URL.
+        if (isAbortError(error)) {
+            if (!timeoutSignal.aborted) {
+                throw error
+            }
+            error = `ETIMEDOUT: timed out after ${DEFAULT_TIMEOUT_MSEC}ms`
+        }
+        return new Error(`accessing Sourcegraph HTTP API: ${error} (${url})`)
     }
 }
 

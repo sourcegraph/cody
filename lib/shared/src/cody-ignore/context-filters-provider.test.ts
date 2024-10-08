@@ -29,7 +29,7 @@ describe('ContextFiltersProvider', () => {
         provider = new ContextFiltersProvider()
         vi.useFakeTimers()
 
-        vi.spyOn(graphqlClient, 'isCodyEnabled').mockResolvedValue({ enabled: true, version: '6.0.0' })
+        vi.spyOn(graphqlClient, 'getSiteVersion').mockResolvedValue('6.0.0')
     })
 
     afterEach(() => {
@@ -298,10 +298,7 @@ describe('ContextFiltersProvider', () => {
         }
 
         it('should handle the case when version is older than the supported version', async () => {
-            vi.spyOn(graphqlClient, 'isCodyEnabled').mockResolvedValue({
-                enabled: true,
-                version: '5.3.2',
-            })
+            vi.spyOn(graphqlClient, 'getSiteVersion').mockResolvedValue('5.3.2')
             await initProviderWithContextFilters({
                 include: [{ repoNamePattern: '^github\\.com/sourcegraph/cody' }],
                 exclude: [{ repoNamePattern: '^github\\.com/sourcegraph/sourcegraph' }],

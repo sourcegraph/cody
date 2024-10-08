@@ -186,7 +186,8 @@ export async function chatAction(options: ChatOptions): Promise<number> {
             const lastMessage = message.message.messages.at(-1)
             if (lastMessage?.model && !spinner.text.startsWith('Model')) {
                 const modelName =
-                    models.find(model => model.id === lastMessage.model)?.title ?? lastMessage.model
+                    models.find(({ model }) => model.id === lastMessage.model)?.model.title ??
+                    lastMessage.model
                 spinner.text = modelName
                 spinner.spinner = spinners.dots
             }
@@ -278,7 +279,6 @@ export async function chatAction(options: ChatOptions): Promise<number> {
             id,
             message: {
                 command: 'submit',
-                submitType: 'user',
                 text: messageText,
                 contextItems,
             },

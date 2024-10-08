@@ -23,22 +23,7 @@ enableImmerMapSetSupport()
 
 // Add anything else here that needs to be used outside of this library.
 
-export {
-    modelsService,
-    mockModelsService,
-    ModelsService,
-    type ModelCategory,
-    type ModelTier,
-    type ServerModelConfiguration,
-    type PerSitePreferences,
-    type SitePreferences,
-    type ModelRefStr,
-    type LegacyModelRefStr,
-    type ModelRef,
-    type ModelsData,
-    TestLocalStorageForModelPreferences,
-    type LocalStorageForModelPreferences,
-} from './models/modelsService'
+export * from './models/modelsService'
 export {
     type Model,
     type ServerModel,
@@ -47,6 +32,7 @@ export {
     modelTier,
     parseModelRef,
     toLegacyModel,
+    FIXTURE_MODEL,
 } from './models/model'
 export {
     type EditModel,
@@ -329,7 +315,12 @@ export {
     type ContextMentionProviderID,
     type ContextMentionProviderMetadata,
 } from './mentions/api'
-export { TokenCounter, getTokenCounterUtils, TokenCounterUtils } from './token/counter'
+export {
+    TokenCounter,
+    getTokenCounterUtils,
+    TokenCounterUtils,
+    useFakeTokenCounterUtils,
+} from './token/counter'
 export { CORPUS_CONTEXT_ALLOCATION as ENHANCED_CONTEXT_ALLOCATION } from './token/constants'
 export { tokensToChars, charsToTokens } from './token/utils'
 export * from './prompt/prompt-string'
@@ -383,3 +374,11 @@ export * from './singletons'
 export * from './auth/authStatus'
 export { fetchLocalOllamaModels } from './llm-providers/ollama/utils'
 export * from './editor/editorState'
+export {
+    currentUserProductSubscription,
+    type UserProductSubscription,
+    cachedUserProductSubscription,
+    userProductSubscription,
+} from './sourcegraph-api/userProductSubscription'
+export { siteVersion, currentSiteVersion } from './sourcegraph-api/siteVersion'
+export { configOverwrites } from './models/configOverwrites'

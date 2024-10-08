@@ -87,7 +87,11 @@ function getClientModel(model?: string): OpenAICompatibleModel {
     throw new Error(`Unknown model: \`${model}\``)
 }
 
-export function createProvider({ legacyModel, source }: ProviderFactoryParams): Provider {
+export function createProvider({
+    legacyModel,
+    source,
+    configOverwrites,
+}: ProviderFactoryParams): Provider {
     const clientModel = getClientModel(legacyModel)
 
     return new ExpOpenAICompatibleProvider({
@@ -95,5 +99,6 @@ export function createProvider({ legacyModel, source }: ProviderFactoryParams): 
         legacyModel: clientModel,
         maxContextTokens: getMaxContextTokens(clientModel),
         source,
+        configOverwrites,
     })
 }

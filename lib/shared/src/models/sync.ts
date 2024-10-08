@@ -10,6 +10,7 @@ import { logDebug } from '../logger'
 import {
     combineLatest,
     distinctUntilChanged,
+    pick,
     promiseFactoryToObservable,
     shareReplay,
     startWith,
@@ -21,16 +22,22 @@ import { pendingOperation, switchMapReplayOperation } from '../misc/observableOp
 import { ANSWER_TOKENS } from '../prompt/constants'
 import type { CodyClientConfig } from '../sourcegraph-api/clientConfig'
 import { isDotCom } from '../sourcegraph-api/environments'
+import type { CodyLLMSiteConfiguration } from '../sourcegraph-api/graphql/client'
 import { RestClient } from '../sourcegraph-api/rest/client'
 import { CHAT_INPUT_TOKEN_BUDGET } from '../token/constants'
 import { isError } from '../utils'
+import { getExperimentalClientModelByFeatureFlag } from './client'
 import { type Model, type ServerModel, createModel, createModelFromServerModel } from './model'
-import type { ModelsData, ServerModelConfiguration, SitePreferences } from './modelsService'
+import type {
+    DefaultsAndUserPreferencesForEndpoint,
+    ModelsData,
+    ServerModelConfiguration,
+} from './modelsService'
 import { ModelTag } from './tags'
 import { ModelUsage } from './types'
 import { getEnterpriseContextWindow } from './utils'
 
-const EMPTY_PREFERENCES: SitePreferences = { defaults: {}, selected: {} }
+const EMPTY_PREFERENCES: DefaultsAndUserPreferencesForEndpoint = { defaults: {}, selected: {} }
 
 /**
  * Observe the list of all available models.
@@ -38,6 +45,7 @@ const EMPTY_PREFERENCES: SitePreferences = { defaults: {}, selected: {} }
 export function syncModels({
     resolvedConfig,
     authStatus,
+    configOverwrites,
     clientConfig,
     fetchServerSideModels_ = fetchServerSideModels,
 }: {
@@ -49,6 +57,7 @@ export function syncModels({
         }>
     >
     authStatus: Observable<AuthStatus>
+    configOverwrites: Observable<CodyLLMSiteConfiguration | null | typeof pendingOperation>
     clientConfig: Observable<CodyClientConfig | undefined | typeof pendingOperation>
     fetchServerSideModels_?: typeof fetchServerSideModels
 }): Observable<ModelsData | typeof pendingOperation> {
@@ -103,19 +112,17 @@ export function syncModels({
         distinctUntilChanged()
     )
 
-    const userModelPreferences = combineLatest(
+    const userModelPreferences: Observable<DefaultsAndUserPreferencesForEndpoint> = combineLatest(
         resolvedConfig.pipe(
             map(config => config.clientState.modelPreferences),
             distinctUntilChanged()
         ),
-        authStatus
+        authStatus.pipe(pick('endpoint'), distinctUntilChanged())
     ).pipe(
-        map(([modelPreferences, authStatus]) => {
+        map(([modelPreferences, { endpoint }]) => {
             // Deep clone so it's not readonly and we can mutate it, for convenience.
-            const prevPreferences = modelPreferences[authStatus.endpoint] as SitePreferences | undefined
-            return deepClone(
-                (prevPreferences ?? EMPTY_PREFERENCES) satisfies SitePreferences as SitePreferences
-            )
+            const prevPreferences = modelPreferences[endpoint]
+            return deepClone(prevPreferences ?? EMPTY_PREFERENCES)
         }),
         distinctUntilChanged(),
         tap(preferences => {
@@ -130,6 +137,10 @@ export function syncModels({
     const remoteModelsData: Observable<RemoteModelsData | Error | typeof pendingOperation> =
         combineLatest(relevantConfig, authStatus).pipe(
             switchMapReplayOperation(([config, authStatus]) => {
+                if (authStatus.pendingValidation) {
+                    return Observable.of(pendingOperation)
+                }
+
                 if (!authStatus.authenticated) {
                     return Observable.of<RemoteModelsData>({ primaryModels: [], preferences: null })
                 }
@@ -154,7 +165,6 @@ export function syncModels({
                                         primaryModels: [],
                                     }
 
-                                    // If the request failed, fall back to using the default models
                                     if (serverModelsConfig) {
                                         // Remove deprecated models from the list, filter out waitlisted models for Enterprise.
                                         const filteredModels = serverModelsConfig?.models.filter(
@@ -171,50 +181,59 @@ export function syncModels({
                                             defaultModelPreferencesFromServerModelsConfig(
                                                 serverModelsConfig
                                             )
-
-                                        // NOTE: Calling `registerModelsFromVSCodeConfiguration()` doesn't
-                                        // entirely make sense in a world where LLM models are managed
-                                        // server-side. However, this is how Cody can be extended to use locally
-                                        // running LLMs such as Ollama. (Though some more testing is needed.)
-                                        // See:
-                                        // https://sourcegraph.com/blog/local-code-completion-with-ollama-and-cody
-                                        data.primaryModels.push(
-                                            ...getModelsFromVSCodeConfiguration(config)
-                                        )
                                     }
 
-                                    if (!isDotComUser) {
-                                        return Observable.of(data)
-                                    }
+                                    // NOTE: Calling `registerModelsFromVSCodeConfiguration()` doesn't
+                                    // entirely make sense in a world where LLM models are managed
+                                    // server-side. However, this is how Cody can be extended to use locally
+                                    // running LLMs such as Ollama. (Though some more testing is needed.)
+                                    // See:
+                                    // https://sourcegraph.com/blog/local-code-completion-with-ollama-and-cody
+                                    data.primaryModels.push(...getModelsFromVSCodeConfiguration(config))
 
                                     // For DotCom users with early access or on the waitlist, replace the waitlist tag with the appropriate tags.
-                                    return featureFlagProvider
-                                        .evaluatedFeatureFlag(FeatureFlag.CodyEarlyAccess)
-                                        .pipe(
-                                            switchMap(hasEarlyAccess => {
-                                                const isOnWaitlist = config.clientState.waitlist_o1
-                                                if (hasEarlyAccess || isOnWaitlist) {
-                                                    data.primaryModels = data.primaryModels.map(
-                                                        model => {
-                                                            if (model.tags.includes(ModelTag.Waitlist)) {
-                                                                const newTags = model.tags.filter(
-                                                                    tag => tag !== ModelTag.Waitlist
-                                                                )
-                                                                newTags.push(
-                                                                    hasEarlyAccess
-                                                                        ? ModelTag.EarlyAccess
-                                                                        : ModelTag.OnWaitlist
-                                                                )
-                                                                return { ...model, tags: newTags }
-                                                            }
-                                                            return model
-                                                        }
+                                    return combineLatest(
+                                        featureFlagProvider.evaluatedFeatureFlag(
+                                            FeatureFlag.CodyEarlyAccess
+                                        ),
+                                        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.DeepCody)
+                                    ).pipe(
+                                        switchMap(([hasEarlyAccess, deepCodyEnabled]) => {
+                                            // TODO(bee): remove once deepCody is enabled for all users.
+                                            if (deepCodyEnabled && serverModelsConfig) {
+                                                const DeepCody = getExperimentalClientModelByFeatureFlag(
+                                                    FeatureFlag.DeepCody
+                                                )!
+                                                data.primaryModels.push(
+                                                    ...maybeAdjustContextWindows([DeepCody]).map(
+                                                        createModelFromServerModel
                                                     )
-                                                    // TODO(sqs): remove waitlist from localStorage when user has access
-                                                }
-                                                return Observable.of(data)
-                                            })
-                                        )
+                                                )
+                                                data.preferences!.defaults.chat = DeepCody.modelRef
+                                            }
+
+                                            // TODO(sqs): remove waitlist from localStorage when user has access
+                                            const isOnWaitlist = config.clientState.waitlist_o1
+                                            if (isDotComUser && (hasEarlyAccess || isOnWaitlist)) {
+                                                data.primaryModels = data.primaryModels.map(model => {
+                                                    if (model.tags.includes(ModelTag.Waitlist)) {
+                                                        const newTags = model.tags.filter(
+                                                            tag => tag !== ModelTag.Waitlist
+                                                        )
+                                                        newTags.push(
+                                                            hasEarlyAccess
+                                                                ? ModelTag.EarlyAccess
+                                                                : ModelTag.OnWaitlist
+                                                        )
+                                                        return { ...model, tags: newTags }
+                                                    }
+                                                    return model
+                                                })
+                                            }
+
+                                            return Observable.of(data)
+                                        })
+                                    )
                                 })
                             )
                         }
@@ -226,34 +245,41 @@ export function syncModels({
                         // BYOK customers to set a model of their choice without us having to map it to a known
                         // model on the client.
                         //
-                        // NOTE: If authStatus?.configOverwrites?.chatModel is empty, automatically fallback to
-                        // use the default model configured on the instance.
-                        if (authStatus?.configOverwrites?.chatModel) {
-                            return Observable.of<RemoteModelsData>({
-                                preferences: null,
-                                primaryModels: [
-                                    createModel({
-                                        id: authStatus.configOverwrites.chatModel,
-                                        // TODO (umpox) Add configOverwrites.editModel for separate edit support
-                                        usage: [ModelUsage.Chat, ModelUsage.Edit],
-                                        contextWindow: getEnterpriseContextWindow(
-                                            authStatus?.configOverwrites?.chatModel,
-                                            authStatus?.configOverwrites,
-                                            config.configuration
-                                        ),
-                                        tags: [ModelTag.Enterprise],
-                                    }),
-                                ],
-                            })
-                        }
+                        // NOTE: If configOverwrites?.chatModel is empty, automatically fallback to use the
+                        // default model configured on the instance.
+                        return configOverwrites.pipe(
+                            map((configOverwrites): RemoteModelsData | typeof pendingOperation => {
+                                if (configOverwrites === pendingOperation) {
+                                    return pendingOperation
+                                }
+                                if (configOverwrites?.chatModel) {
+                                    return {
+                                        preferences: null,
+                                        primaryModels: [
+                                            createModel({
+                                                id: configOverwrites.chatModel,
+                                                // TODO (umpox) Add configOverwrites.editModel for separate edit support
+                                                usage: [ModelUsage.Chat, ModelUsage.Edit],
+                                                contextWindow: getEnterpriseContextWindow(
+                                                    configOverwrites?.chatModel,
+                                                    configOverwrites,
+                                                    config.configuration
+                                                ),
+                                                tags: [ModelTag.Enterprise],
+                                            }),
+                                        ],
+                                    } satisfies RemoteModelsData
+                                }
 
-                        // If the enterprise instance didn't have any configuration data for Cody, clear the
-                        // models available in the modelsService. Otherwise there will be stale, defunct models
-                        // available.
-                        return Observable.of<RemoteModelsData>({
-                            preferences: null,
-                            primaryModels: [],
-                        })
+                                // If the enterprise instance didn't have any configuration data for Cody, clear the
+                                // models available in the modelsService. Otherwise there will be stale, defunct models
+                                // available.
+                                return {
+                                    preferences: null,
+                                    primaryModels: [],
+                                } satisfies RemoteModelsData
+                            })
+                        )
                     })
                 )
                 return serverModelsConfig
@@ -295,9 +321,9 @@ export function syncModels({
 }
 
 function resolveModelPreferences(
-    remote: Pick<SitePreferences, 'defaults'> | null,
-    user: SitePreferences
-): SitePreferences {
+    remote: Pick<DefaultsAndUserPreferencesForEndpoint, 'defaults'> | null,
+    user: DefaultsAndUserPreferencesForEndpoint
+): DefaultsAndUserPreferencesForEndpoint {
     user = deepClone(user)
 
     function setDefaultModel(usage: ModelUsage, newDefaultModelId: string | undefined): void {
@@ -429,7 +455,7 @@ function deepClone<T>(value: T): T {
 
 export function defaultModelPreferencesFromServerModelsConfig(
     config: ServerModelConfiguration
-): SitePreferences['defaults'] {
+): DefaultsAndUserPreferencesForEndpoint['defaults'] {
     return {
         autocomplete: config.defaultModels.codeCompletion,
         chat: config.defaultModels.chat,

@@ -58,13 +58,7 @@ shutdown: [null, null]
 ```ts
 'chat/new': [null, string]
 ```
-<h2 id="chat_restore"><a href="#chat_restore" name="chat_restore"><code>chat/restore</code> (<img class="emoji" title=":arrow_right:" alt=":arrow_right:" src="https://github.githubassets.com/images/icons/emoji/unicode/27a1.png" height="20" width="20">)</a></h2>
-<p>Request sent from the client to client server.</p>
 
-
-```ts
-'chat/restore': [{ modelID: string; messages: AgentChatMessage[]; chatID: string; }, string]
-```
 <h2 id="chat_models"><a href="#chat_models" name="chat_models"><code>chat/models</code> (<img class="emoji" title=":arrow_right:" alt=":arrow_right:" src="https://github.githubassets.com/images/icons/emoji/unicode/27a1.png" height="20" width="20">)</a></h2>
 <p>Request sent from the client to client server.</p>
 

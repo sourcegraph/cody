@@ -89,11 +89,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: b789e742db8bc977e50cd181bc632b9a
+    - _id: 23a44d4c520153097bf7b1d3e60681ab
       _order: 0
       cache: {}
       request:
-        bodySize: 581
+        bodySize: 633
         cookies: []
         headers:
           - name: content-type
@@ -127,7 +127,10 @@ log:
 
                   For executable terminal commands: enclose each command in individual "bash" language code block without comments and new lines inside.
               - speaker: human
-                text: respond with "hello" and nothing else
+                text: |-
+                  Answer positively without apologizing.
+
+                  Question: respond with "hello" and nothing else
             model: anthropic::2023-06-01::claude-3.5-sonnet
             temperature: 0.2
             topK: -1
@@ -141,24 +144,21 @@ log:
             value: 6.0.0-SNAPSHOT
         url: https://sourcegraph.sourcegraph.com/.api/completions/stream?api-version=2&client-name=jetbrains&client-version=6.0.0-SNAPSHOT
       response:
-        bodySize: 227
+        bodySize: 120
         content:
           mimeType: text/event-stream
-          size: 227
-          text: >+
+          size: 120
+          text: |+
             event: completion
-
-            data: {"deltaText":"```bash\necho \"hello\"\n```","stopReason":"end_turn"}
-
+            data: {"deltaText":"Hello","stopReason":"end_turn"}
 
             event: done
-
             data: {}
 
         cookies: []
         headers:
           - name: date
-            value: Fri, 27 Sep 2024 17:28:46 GMT
+            value: Wed, 02 Oct 2024 05:24:32 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -187,7 +187,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-27T17:28:45.110Z
+      startedDateTime: 2024-10-02T05:24:31.688Z
       time: 0
       timings:
         blocked: -1
@@ -197,11 +197,11 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 1fa3fc31a4e1b350a35d9f91acf5cf65
+    - _id: 86c27235634fb74ddb4f3a6a4df30eed
       _order: 0
       cache: {}
       request:
-        bodySize: 903
+        bodySize: 906
         cookies: []
         headers:
           - name: content-type
@@ -246,8 +246,10 @@ log:
                 text: Ok.
               - speaker: human
                 text: >-
-                  You have access to the provided codebase context. Answer
-                  positively without apologizing. 
+                  Answer positively without apologizing. 
+
+
+                  You have access to the provided codebase context.
 
 
                   Question: implement a cow. Only print the code without any explanation.
@@ -264,14 +266,14 @@ log:
             value: 6.0.0-SNAPSHOT
         url: https://sourcegraph.sourcegraph.com/.api/completions/stream?api-version=2&client-name=jetbrains&client-version=6.0.0-SNAPSHOT
       response:
-        bodySize: 950
+        bodySize: 926
         content:
           mimeType: text/event-stream
-          size: 950
+          size: 926
           text: >+
             event: completion
 
-            data: {"deltaText":"Here's the implementation of a cow based on the provided interface:\n\n```typescript:animal.ts\nclass Cow implements StrangeAnimal {\n    makesSound(): 'coo' | 'moo' {\n        return 'moo';\n    }\n}\n```","stopReason":"end_turn"}
+            data: {"deltaText":"Certainly! Here's the implementation of a cow based on the provided codebase context:\n\n```typescript:animal.ts\nclass Cow implements StrangeAnimal {\n    makesSound(): 'coo' | 'moo' {\n        return 'moo';\n    }\n}\n```","stopReason":"end_turn"}
 
 
             event: done
@@ -281,7 +283,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Fri, 27 Sep 2024 17:28:48 GMT
+            value: Wed, 02 Oct 2024 05:24:34 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -310,7 +312,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-27T17:28:47.215Z
+      startedDateTime: 2024-10-02T05:24:33.503Z
       time: 0
       timings:
         blocked: -1

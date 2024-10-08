@@ -68,7 +68,9 @@ export function getContextItemTokenUsageType(item: ContextItem): ContextTokenUsa
     switch (item.source) {
         case 'user':
         case 'initial':
+        case 'terminal':
         case 'selection':
+        case 'editor':
             return 'user'
         default:
             return 'corpus'
@@ -87,4 +89,39 @@ export function getContextItemDisplayPath(item: ContextItem): string {
 
 function getContextItemLocalUri(item: ContextItem): URI {
     return item.source === ContextItemSource.Unified ? URI.parse(item.title || '') : item.uri
+}
+
+/**
+ * If the context item is a user-added item:
+ * - `user` - The item was added by the user through @-mentions or other user input.
+ * - `selection` - The item was added by the user through a selection.
+ */
+export function isUserAddedItem(item: ContextItem): boolean {
+    return getContextItemTokenUsageType(item) === 'user'
+}
+
+/**
+ * Categorizes context items into explicit and implicit mentions.
+ *
+ * @param mentions - An array of ContextItem objects to categorize.
+ * @returns An object containing two arrays:
+ *   - explicitMentions: ContextItems added by the user.
+ *   - implicitMentions: ContextItems not added by the user.
+ */
+export function getCategorizedMentions(mentions: ContextItem[]): {
+    explicitMentions: ContextItem[]
+    implicitMentions: ContextItem[]
+} {
+    const explicitMentions: ContextItem[] = []
+    const implicitMentions: ContextItem[] = []
+
+    for (const m of mentions) {
+        if (isUserAddedItem(m)) {
+            explicitMentions.push(m)
+        } else {
+            implicitMentions.push(m)
+        }
+    }
+
+    return { explicitMentions, implicitMentions }
 }

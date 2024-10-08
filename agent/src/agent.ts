@@ -37,8 +37,6 @@ import {
     modelsService,
     setUserAgent,
 } from '@sourcegraph/cody-shared'
-
-import { ChatBuilder } from '../../vscode/src/chat/chat-view/ChatBuilder'
 import { chatHistory } from '../../vscode/src/chat/chat-view/ChatHistoryManager'
 import type { ExtensionMessage, WebviewMessage } from '../../vscode/src/chat/protocol'
 import { ProtocolTextDocumentWithUri } from '../../vscode/src/jsonrpc/TextDocumentWithUri'
@@ -56,9 +54,11 @@ import * as uuid from 'uuid'
 import type { MessageConnection } from 'vscode-jsonrpc'
 import type { CommandResult } from '../../vscode/src/CommandResult'
 import { formatURL } from '../../vscode/src/auth/auth'
+import { executeExplainCommand, executeSmellCommand } from '../../vscode/src/commands/execute'
+import type { CodyCommandArgs } from '../../vscode/src/commands/types'
+import type { CompletionItemID } from '../../vscode/src/completions/analytics-logger'
 import { loadTscRetriever } from '../../vscode/src/completions/context/retrievers/tsc/load-tsc-retriever'
 import { supportedTscLanguages } from '../../vscode/src/completions/context/retrievers/tsc/supportedTscLanguages'
-import type { CompletionItemID } from '../../vscode/src/completions/logger'
 import { type ExecuteEditArguments, executeEdit } from '../../vscode/src/edit/execute'
 import type { QuickPickInput } from '../../vscode/src/edit/input/get-input'
 import { getModelOptionItems } from '../../vscode/src/edit/input/get-items/model'
@@ -477,7 +477,6 @@ export class Agent extends MessageHandler implements ExtensionClient {
                 return {
                     name: 'cody-agent',
                     authenticated: authStatus?.authenticated ?? false,
-                    codyVersion: authStatus?.authenticated ? authStatus.siteVersion : undefined,
                     authStatus,
                 }
             } catch (error) {
@@ -845,7 +844,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
 
         this.registerAuthenticatedRequest('testing/reset', async () => {
             await this.workspace.reset()
-            this.globalState?.reset()
+            await this.globalState?.reset()
             // reset the telemetry recorded events
             TESTING_TELEMETRY_EXPORTER.reset()
             return null
@@ -981,6 +980,28 @@ export class Agent extends MessageHandler implements ExtensionClient {
             provider.unstable_handleDidShowCompletionItem(completionID as CompletionItemID)
         })
 
+        this.registerAuthenticatedRequest(
+            'testing/autocomplete/awaitPendingVisibilityTimeout',
+            async () => {
+                const provider = await vscode_shim.completionProvider()
+                return provider.testing_completionSuggestedPromise
+            }
+        )
+
+        this.registerAuthenticatedRequest(
+            'testing/autocomplete/setCompletionVisibilityDelay',
+            async ({ delay }) => {
+                const provider = await vscode_shim.completionProvider()
+                provider.testing_setCompletionVisibilityDelay(delay)
+                return null
+            }
+        )
+
+        this.registerAuthenticatedRequest('testing/autocomplete/providerConfig', async () => {
+            const provider = await vscode_shim.completionProvider()
+            return provider.config
+        })
+
         this.registerAuthenticatedRequest('graphql/getRepoIds', async ({ names, first }) => {
             const repos = await graphqlClient.getRepoIds(names, first)
             if (isError(repos)) {
@@ -1087,12 +1108,10 @@ export class Agent extends MessageHandler implements ExtensionClient {
         })
 
         // The arguments to pass to the command to make sure edit commands would also run in chat mode
-        const commandArgs = [{ source: 'editor' }]
+        const commandArgs: Partial<CodyCommandArgs> = { source: 'editor' }
 
         this.registerAuthenticatedRequest('commands/explain', () => {
-            return this.createChatPanel(
-                vscode.commands.executeCommand('cody.command.explain-code', commandArgs)
-            )
+            return this.createChatPanel(executeExplainCommand(commandArgs))
         })
 
         this.registerAuthenticatedRequest('editTask/accept', async ({ id }) => {
@@ -1184,9 +1203,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
         })
 
         this.registerAuthenticatedRequest('commands/smell', () => {
-            return this.createChatPanel(
-                vscode.commands.executeCommand('cody.command.smell-code', commandArgs)
-            )
+            return this.createChatPanel(executeSmellCommand(commandArgs))
         })
 
         this.registerAuthenticatedRequest('commands/custom', ({ key }) => {
@@ -1232,27 +1249,9 @@ export class Agent extends MessageHandler implements ExtensionClient {
             return { panelId, chatId }
         })
 
-        // TODO: JetBrains no longer uses this, consider deleting it.
-        this.registerAuthenticatedRequest('chat/restore', async ({ modelID, messages, chatID }) => {
-            const authStatus = currentAuthStatusAuthed()
-            modelID ??= (await firstResultFromOperation(modelsService.getDefaultChatModel())) ?? ''
-            const chatMessages = messages?.map(PromptString.unsafe_deserializeChatMessage) ?? []
-            const chatBuilder = new ChatBuilder(modelID, chatID, chatMessages)
-            const chat = chatBuilder.toSerializedChatTranscript()
-            if (chat) {
-                await chatHistory.saveChat(authStatus, chat)
-            }
-            return this.createChatPanel(
-                Promise.resolve({
-                    type: 'chat',
-                    session: await vscode.commands.executeCommand('cody.chat.panel.restore', [chatID]),
-                })
-            )
-        })
-
         this.registerAuthenticatedRequest('chat/models', async ({ modelUsage }) => {
             return {
-                models: await firstResultFromOperation(modelsService.getModels(modelUsage)),
+                models: await modelsService.getModelsAvailabilityStatus(modelUsage),
             }
         })
 

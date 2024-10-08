@@ -5,7 +5,6 @@ import {
     type Guardrails,
     type SourcegraphCompletionsClient,
     SourcegraphGuardrailsClient,
-    currentAuthStatusAuthed,
     graphqlClient,
 } from '@sourcegraph/cody-shared'
 import { ChatIntentAPIClient } from './chat/context/chatIntentAPIClient'
@@ -45,7 +44,7 @@ export async function configureExternalServices(
     const symfRunner = platform.createSymfRunner?.(context, completionsClient)
     if (symfRunner) disposables.push(symfRunner)
 
-    const chatClient = new ChatClient(completionsClient, () => currentAuthStatusAuthed())
+    const chatClient = new ChatClient(completionsClient)
 
     const guardrails = new SourcegraphGuardrailsClient()
 

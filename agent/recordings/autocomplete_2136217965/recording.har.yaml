@@ -41,14 +41,14 @@ log:
           encoding: base64
           mimeType: text/plain; charset=utf-8
           size: 224
-          text: "[\"H4sIAAAAAAAAA2yOsQrCMBRF935F6Ozk2K0Eh26Fgs6v5omBvLySd4OK+O8uFZfM59zDf\
+          text: "[\"H4sIAAAAAAAAA2yOsQrCMBRF935F6Ozo1K0Eh26Fgs6v5omBvLySd4OK+O8uFZfM59zDf\
             XfOOddfNbxOmdbEoR8cSuXDDu6EJqAK9SpbYnB7WQ0qXkUoB2s3gBLXiqj5z2+U7CeY\
             UIHXDH7iEnPQR7MjGjjZOE/tSiKwYanbpgUc9tdRsy0oTDLO05mLRc394I7dp/sCAAD\
-            //wMARx9M/RUBAAA=\"]"
+            //wMAm0An2BUBAAA=\"]"
         cookies: []
         headers:
           - name: date
-            value: Thu, 19 Sep 2024 04:38:55 GMT
+            value: Mon, 07 Oct 2024 04:05:21 GMT
           - name: content-type
             value: text/plain; charset=utf-8
           - name: transfer-encoding
@@ -79,7 +79,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-19T04:38:55.163Z
+      startedDateTime: 2024-10-07T04:05:21.336Z
       time: 0
       timings:
         blocked: -1
@@ -89,130 +89,7 @@ log:
         send: 0
         ssl: -1
         wait: 0
-    - _id: 7f4346cee9ec8c4bac8e5e852105f871
-      _order: 0
-      cache: {}
-      request:
-        bodySize: 419
-        cookies: []
-        headers:
-          - _fromType: array
-            name: accept-encoding
-            value: gzip;q=0
-          - _fromType: array
-            name: authorization
-            value: token
-              REDACTED_3dd704711f82a44ff6aba261b53b61a03fb8edba658774639148630d838c2d1d
-          - _fromType: array
-            name: connection
-            value: keep-alive
-          - _fromType: array
-            name: content-type
-            value: application/json; charset=utf-8
-          - _fromType: array
-            name: user-agent
-            value: autocomplete / v1
-          - _fromType: array
-            name: x-timeout-ms
-            value: "7000"
-          - _fromType: array
-            name: accept
-            value: "*/*"
-          - _fromType: array
-            name: content-length
-            value: "419"
-          - name: host
-            value: sourcegraph.com
-        headersSize: 396
-        httpVersion: HTTP/1.1
-        method: POST
-        postData:
-          mimeType: application/json; charset=utf-8
-          params: []
-          textJSON:
-            maxTokensToSample: 256
-            messages:
-              - speaker: human
-                text: |-
-                  
-
-                  #src/bubbleSort.ts
-                  <｜fim▁begin｜>export function bubbleSort(nums: number[]) {
-                      <｜fim▁hole｜>
-                  }
-                  <｜fim▁end｜>
-            model: fireworks/deepseek-coder-v2-lite-base
-            stopSequences:
-              - "\n\n"
-              - "\n\r\n"
-              - <｜fim▁begin｜>
-              - <｜fim▁hole｜>
-              - <｜fim▁end｜>, <|eos_token|>
-            stream: true
-            temperature: 0.2
-            timeoutMs: 7000
-            topK: 0
-        queryString:
-          - name: client-name
-            value: autocomplete
-          - name: client-version
-            value: v1
-        url: https://sourcegraph.com/.api/completions/code?client-name=autocomplete&client-version=v1
-      response:
-        bodySize: 201
-        content:
-          mimeType: text/event-stream
-          size: 201
-          text: |+
-            event: completion
-            data: {"completion":"return nums;","stopReason":"stop"}
-
-            event: done
-            data: {}
-
-        cookies: []
-        headers:
-          - name: date
-            value: Thu, 19 Sep 2024 05:03:05 GMT
-          - name: content-type
-            value: text/event-stream
-          - name: transfer-encoding
-            value: chunked
-          - name: connection
-            value: keep-alive
-          - name: access-control-allow-credentials
-            value: "true"
-          - name: access-control-allow-origin
-            value: ""
-          - name: cache-control
-            value: no-cache
-          - name: vary
-            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
-              X-Requested-With,Cookie
-          - name: x-content-type-options
-            value: nosniff
-          - name: x-frame-options
-            value: DENY
-          - name: x-xss-protection
-            value: 1; mode=block
-          - name: strict-transport-security
-            value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1299
-        httpVersion: HTTP/1.1
-        redirectURL: ""
-        status: 200
-        statusText: OK
-      startedDateTime: 2024-09-19T05:03:04.591Z
-      time: 0
-      timings:
-        blocked: -1
-        connect: -1
-        dns: -1
-        receive: 0
-        send: 0
-        ssl: -1
-        wait: 0
-    - _id: 1b565ea0c36e38daa63e49879123705e
+    - _id: 77e95c4ac59a4092c0c69958e6a57fc3
       _order: 0
       cache: {}
       request:
@@ -256,14 +133,1431 @@ log:
             maxTokensToSample: 256
             messages:
               - speaker: human
-                text: >-
-                  #src/bubbleSort.ts
-
-                  export function bubbleSort(nums: number[]) {
+                text: |-
+                  #src/sum.ts
+                  export function sum(a: number, b: number): number {
                       
                   }
 
 
+                  #src/bubbleSort.ts
+                  <｜fim▁begin｜>export function bubbleSort(nums: number[]) {
+                      <｜fim▁hole｜>
+                  }
+                  <｜fim▁end｜>
+            model: fireworks/deepseek-coder-v2-lite-base
+            stopSequences:
+              - "\n\n"
+              - "\n\r\n"
+              - <｜fim▁begin｜>
+              - <｜fim▁hole｜>
+              - <｜fim▁end｜>, <|eos_token|>
+            stream: true
+            temperature: 0.2
+            timeoutMs: 7000
+            topK: 0
+        queryString:
+          - name: client-name
+            value: autocomplete
+          - name: client-version
+            value: v1
+        url: https://sourcegraph.com/.api/completions/code?client-name=autocomplete&client-version=v1
+      response:
+        bodySize: 69
+        content:
+          mimeType: text/event-stream
+          size: 69
+          text: |+
+            event: completion
+            data: {"completion":"","stopReason":"stop"}
+
+            event: done
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Wed, 02 Oct 2024 12:38:00 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1299
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-10-02T12:37:59.840Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: 24049d4ef33e744fa5f64445144fa255
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 504
+        cookies: []
+        headers:
+          - _fromType: array
+            name: accept-encoding
+            value: gzip;q=0
+          - _fromType: array
+            name: authorization
+            value: token
+              REDACTED_3dd704711f82a44ff6aba261b53b61a03fb8edba658774639148630d838c2d1d
+          - _fromType: array
+            name: connection
+            value: keep-alive
+          - _fromType: array
+            name: content-type
+            value: application/json; charset=utf-8
+          - _fromType: array
+            name: user-agent
+            value: autocomplete / v1
+          - _fromType: array
+            name: x-timeout-ms
+            value: "7000"
+          - _fromType: array
+            name: accept
+            value: "*/*"
+          - _fromType: array
+            name: content-length
+            value: "504"
+          - name: host
+            value: sourcegraph.com
+        headersSize: 396
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json; charset=utf-8
+          params: []
+          textJSON:
+            maxTokensToSample: 256
+            messages:
+              - speaker: human
+                text: >-
+                  #src/sum.ts
+
+                  export function sum(a: number, b: number): number {
+                      
+                  }
+
+
+
+                  #src/bubbleSort.ts
+
+                  <｜fim▁begin｜>export function bubbleSort(nums: number[]): number[] {
+                      <｜fim▁hole｜>
+                  }
+
+                  <｜fim▁end｜>
+            model: fireworks/deepseek-coder-v2-lite-base
+            stopSequences:
+              - "\n\n"
+              - "\n\r\n"
+              - <｜fim▁begin｜>
+              - <｜fim▁hole｜>
+              - <｜fim▁end｜>, <|eos_token|>
+            stream: true
+            temperature: 0.2
+            timeoutMs: 7000
+            topK: 0
+        queryString:
+          - name: client-name
+            value: autocomplete
+          - name: client-version
+            value: v1
+        url: https://sourcegraph.com/.api/completions/code?client-name=autocomplete&client-version=v1
+      response:
+        bodySize: 69
+        content:
+          mimeType: text/event-stream
+          size: 69
+          text: |+
+            event: completion
+            data: {"completion":"","stopReason":"stop"}
+
+            event: done
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Wed, 02 Oct 2024 12:41:14 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1299
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-10-02T12:41:13.610Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: b8002ff7625fcea1158064edbd37eb95
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 505
+        cookies: []
+        headers:
+          - _fromType: array
+            name: accept-encoding
+            value: gzip;q=0
+          - _fromType: array
+            name: authorization
+            value: token
+              REDACTED_3dd704711f82a44ff6aba261b53b61a03fb8edba658774639148630d838c2d1d
+          - _fromType: array
+            name: connection
+            value: keep-alive
+          - _fromType: array
+            name: content-type
+            value: application/json; charset=utf-8
+          - _fromType: array
+            name: user-agent
+            value: autocomplete / v1
+          - _fromType: array
+            name: x-timeout-ms
+            value: "7000"
+          - _fromType: array
+            name: accept
+            value: "*/*"
+          - _fromType: array
+            name: content-length
+            value: "505"
+          - name: host
+            value: sourcegraph.com
+        headersSize: 396
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json; charset=utf-8
+          params: []
+          textJSON:
+            maxTokensToSample: 256
+            messages:
+              - speaker: human
+                text: >-
+                  #src/sum.ts
+
+                  export function sum(a: number, b: number): number {
+                      
+                  }
+
+
+
+                  #src/bubbleSort.ts
+
+                  <｜fim▁begin｜>export function helloNumbers(nums: number[]): number[] {
+
+                      <｜fim▁hole｜>
+                  <｜fim▁end｜>
+            model: fireworks/deepseek-coder-v2-lite-base
+            stopSequences:
+              - "\n\n"
+              - "\n\r\n"
+              - <｜fim▁begin｜>
+              - <｜fim▁hole｜>
+              - <｜fim▁end｜>, <|eos_token|>
+            stream: true
+            temperature: 0.2
+            timeoutMs: 7000
+            topK: 0
+        queryString:
+          - name: client-name
+            value: autocomplete
+          - name: client-version
+            value: v1
+        url: https://sourcegraph.com/.api/completions/code?client-name=autocomplete&client-version=v1
+      response:
+        bodySize: 264
+        content:
+          mimeType: text/event-stream
+          size: 264
+          text: |+
+            event: completion
+            data: {"completion":"return nums;\n}","stopReason":"stop"}
+
+            event: done
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Wed, 02 Oct 2024 12:43:36 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1299
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-10-02T12:43:36.198Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: 5ffc6834a9c6ae94a46e916a5edf7a78
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 504
+        cookies: []
+        headers:
+          - _fromType: array
+            name: accept-encoding
+            value: gzip;q=0
+          - _fromType: array
+            name: authorization
+            value: token
+              REDACTED_3dd704711f82a44ff6aba261b53b61a03fb8edba658774639148630d838c2d1d
+          - _fromType: array
+            name: connection
+            value: keep-alive
+          - _fromType: array
+            name: content-type
+            value: application/json; charset=utf-8
+          - _fromType: array
+            name: user-agent
+            value: autocomplete / v1
+          - _fromType: array
+            name: x-timeout-ms
+            value: "7000"
+          - _fromType: array
+            name: accept
+            value: "*/*"
+          - _fromType: array
+            name: content-length
+            value: "504"
+          - name: host
+            value: sourcegraph.com
+        headersSize: 396
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json; charset=utf-8
+          params: []
+          textJSON:
+            maxTokensToSample: 256
+            messages:
+              - speaker: human
+                text: >-
+                  #src/sum.ts
+
+                  export function sum(a: number, b: number): number {
+                      
+                  }
+
+
+
+                  #src/bubbleSort.ts
+
+                  <｜fim▁begin｜>export function bubble_sort(nums: number[]): number[] {
+
+                      <｜fim▁hole｜>
+                  <｜fim▁end｜>
+            model: fireworks/deepseek-coder-v2-lite-base
+            stopSequences:
+              - "\n\n"
+              - "\n\r\n"
+              - <｜fim▁begin｜>
+              - <｜fim▁hole｜>
+              - <｜fim▁end｜>, <|eos_token|>
+            stream: true
+            temperature: 0.2
+            timeoutMs: 7000
+            topK: 0
+        queryString:
+          - name: client-name
+            value: autocomplete
+          - name: client-version
+            value: v1
+        url: https://sourcegraph.com/.api/completions/code?client-name=autocomplete&client-version=v1
+      response:
+        bodySize: 179
+        content:
+          mimeType: text/event-stream
+          size: 179
+          text: |+
+            event: completion
+            data: {"completion":"\n}","stopReason":"stop"}
+
+            event: done
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Wed, 02 Oct 2024 12:44:29 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1299
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-10-02T12:44:29.180Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: 7d0b6281a7c54ae9f985a3388f817dde
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 429
+        cookies: []
+        headers:
+          - _fromType: array
+            name: accept-encoding
+            value: gzip;q=0
+          - _fromType: array
+            name: authorization
+            value: token
+              REDACTED_3dd704711f82a44ff6aba261b53b61a03fb8edba658774639148630d838c2d1d
+          - _fromType: array
+            name: connection
+            value: keep-alive
+          - _fromType: array
+            name: content-type
+            value: application/json; charset=utf-8
+          - _fromType: array
+            name: user-agent
+            value: autocomplete / v1
+          - _fromType: array
+            name: x-timeout-ms
+            value: "7000"
+          - _fromType: array
+            name: accept
+            value: "*/*"
+          - _fromType: array
+            name: content-length
+            value: "429"
+          - name: host
+            value: sourcegraph.com
+        headersSize: 396
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json; charset=utf-8
+          params: []
+          textJSON:
+            maxTokensToSample: 256
+            messages:
+              - speaker: human
+                text: >-
+                  
+
+                  #src/bubbleSort.ts
+
+                  <｜fim▁begin｜>export function bubble_sort(nums: number[]): number[] {
+
+                      <｜fim▁hole｜>
+                  <｜fim▁end｜>
+            model: fireworks/deepseek-coder-v2-lite-base
+            stopSequences:
+              - "\n\n"
+              - "\n\r\n"
+              - <｜fim▁begin｜>
+              - <｜fim▁hole｜>
+              - <｜fim▁end｜>, <|eos_token|>
+            stream: true
+            temperature: 0.2
+            timeoutMs: 7000
+            topK: 0
+        queryString:
+          - name: client-name
+            value: autocomplete
+          - name: client-version
+            value: v1
+        url: https://sourcegraph.com/.api/completions/code?client-name=autocomplete&client-version=v1
+      response:
+        bodySize: 207
+        content:
+          mimeType: text/event-stream
+          size: 207
+          text: |+
+            event: completion
+            data: {"completion":"return nums;\n}","stopReason":"stop"}
+
+            event: done
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Wed, 02 Oct 2024 12:45:22 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1299
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-10-02T12:45:21.631Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: 1915b12724d61c513753013fe2508a6e
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 430
+        cookies: []
+        headers:
+          - _fromType: array
+            name: accept-encoding
+            value: gzip;q=0
+          - _fromType: array
+            name: authorization
+            value: token
+              REDACTED_3dd704711f82a44ff6aba261b53b61a03fb8edba658774639148630d838c2d1d
+          - _fromType: array
+            name: connection
+            value: keep-alive
+          - _fromType: array
+            name: content-type
+            value: application/json; charset=utf-8
+          - _fromType: array
+            name: user-agent
+            value: autocomplete / v1
+          - _fromType: array
+            name: x-timeout-ms
+            value: "7000"
+          - _fromType: array
+            name: accept
+            value: "*/*"
+          - _fromType: array
+            name: content-length
+            value: "430"
+          - name: host
+            value: sourcegraph.com
+        headersSize: 396
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json; charset=utf-8
+          params: []
+          textJSON:
+            maxTokensToSample: 256
+            messages:
+              - speaker: human
+                text: >-
+                  
+
+                  #src/bubbleSort.ts
+
+                  <｜fim▁begin｜>export function bubble_sort(nums: number[]): number[] {
+                      <｜fim▁hole｜>
+                  }
+
+                  <｜fim▁end｜>
+            model: fireworks/deepseek-coder-v2-lite-base
+            stopSequences:
+              - "\n\n"
+              - "\n\r\n"
+              - <｜fim▁begin｜>
+              - <｜fim▁hole｜>
+              - <｜fim▁end｜>, <|eos_token|>
+            stream: true
+            temperature: 0.2
+            timeoutMs: 7000
+            topK: 0
+        queryString:
+          - name: client-name
+            value: autocomplete
+          - name: client-version
+            value: v1
+        url: https://sourcegraph.com/.api/completions/code?client-name=autocomplete&client-version=v1
+      response:
+        bodySize: 201
+        content:
+          mimeType: text/event-stream
+          size: 201
+          text: |+
+            event: completion
+            data: {"completion":"return nums;","stopReason":"stop"}
+
+            event: done
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Thu, 03 Oct 2024 03:00:01 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1299
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-10-03T03:00:00.736Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: c4dc7e21eb78aaf381d66da820394ba9
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 470
+        cookies: []
+        headers:
+          - _fromType: array
+            name: accept-encoding
+            value: gzip;q=0
+          - _fromType: array
+            name: authorization
+            value: token
+              REDACTED_3dd704711f82a44ff6aba261b53b61a03fb8edba658774639148630d838c2d1d
+          - _fromType: array
+            name: connection
+            value: keep-alive
+          - _fromType: array
+            name: content-type
+            value: application/json; charset=utf-8
+          - _fromType: array
+            name: user-agent
+            value: autocomplete / v1
+          - _fromType: array
+            name: x-timeout-ms
+            value: "7000"
+          - _fromType: array
+            name: accept
+            value: "*/*"
+          - _fromType: array
+            name: content-length
+            value: "470"
+          - name: host
+            value: sourcegraph.com
+        headersSize: 396
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json; charset=utf-8
+          params: []
+          textJSON:
+            maxTokensToSample: 256
+            messages:
+              - speaker: human
+                text: |-
+                  
+
+                  #src/bubbleSort.ts
+                  <｜fim▁begin｜>// Implement bubble sort in TypeScript
+                  export function bubble_sort(nums: number[]): number[] {
+                      <｜fim▁hole｜>
+                  }
+                  <｜fim▁end｜>
+            model: fireworks/deepseek-coder-v2-lite-base
+            stopSequences:
+              - "\n\n"
+              - "\n\r\n"
+              - <｜fim▁begin｜>
+              - <｜fim▁hole｜>
+              - <｜fim▁end｜>, <|eos_token|>
+            stream: true
+            temperature: 0.2
+            timeoutMs: 7000
+            topK: 0
+        queryString:
+          - name: client-name
+            value: autocomplete
+          - name: client-version
+            value: v1
+        url: https://sourcegraph.com/.api/completions/code?client-name=autocomplete&client-version=v1
+      response:
+        bodySize: 201
+        content:
+          mimeType: text/event-stream
+          size: 201
+          text: |+
+            event: completion
+            data: {"completion":"return nums;","stopReason":"stop"}
+
+            event: done
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Thu, 03 Oct 2024 03:02:29 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1299
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-10-03T03:02:29.011Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: 2063c51a7356ad55dcf1523867effc03
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 469
+        cookies: []
+        headers:
+          - _fromType: array
+            name: accept-encoding
+            value: gzip;q=0
+          - _fromType: array
+            name: authorization
+            value: token
+              REDACTED_3dd704711f82a44ff6aba261b53b61a03fb8edba658774639148630d838c2d1d
+          - _fromType: array
+            name: connection
+            value: keep-alive
+          - _fromType: array
+            name: content-type
+            value: application/json; charset=utf-8
+          - _fromType: array
+            name: user-agent
+            value: autocomplete / v1
+          - _fromType: array
+            name: x-timeout-ms
+            value: "7000"
+          - _fromType: array
+            name: accept
+            value: "*/*"
+          - _fromType: array
+            name: content-length
+            value: "469"
+          - name: host
+            value: sourcegraph.com
+        headersSize: 396
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json; charset=utf-8
+          params: []
+          textJSON:
+            maxTokensToSample: 256
+            messages:
+              - speaker: human
+                text: |-
+                  
+
+                  #src/bubbleSort.ts
+                  <｜fim▁begin｜>// Implement bubble sort in TypeScript
+                  export function bubbleSort(nums: number[]): number[] {
+                      <｜fim▁hole｜>
+                  }
+                  <｜fim▁end｜>
+            model: fireworks/deepseek-coder-v2-lite-base
+            stopSequences:
+              - "\n\n"
+              - "\n\r\n"
+              - <｜fim▁begin｜>
+              - <｜fim▁hole｜>
+              - <｜fim▁end｜>, <|eos_token|>
+            stream: true
+            temperature: 0.2
+            timeoutMs: 7000
+            topK: 0
+        queryString:
+          - name: client-name
+            value: autocomplete
+          - name: client-version
+            value: v1
+        url: https://sourcegraph.com/.api/completions/code?client-name=autocomplete&client-version=v1
+      response:
+        bodySize: 201
+        content:
+          mimeType: text/event-stream
+          size: 201
+          text: |+
+            event: completion
+            data: {"completion":"return nums;","stopReason":"stop"}
+
+            event: done
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Thu, 03 Oct 2024 03:03:17 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1299
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-10-03T03:03:17.138Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: 7f2e587854ea4e5bc850890e59f8b1ee
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 470
+        cookies: []
+        headers:
+          - _fromType: array
+            name: accept-encoding
+            value: gzip;q=0
+          - _fromType: array
+            name: authorization
+            value: token
+              REDACTED_3dd704711f82a44ff6aba261b53b61a03fb8edba658774639148630d838c2d1d
+          - _fromType: array
+            name: connection
+            value: keep-alive
+          - _fromType: array
+            name: content-type
+            value: application/json; charset=utf-8
+          - _fromType: array
+            name: user-agent
+            value: autocomplete / v1
+          - _fromType: array
+            name: x-timeout-ms
+            value: "7000"
+          - _fromType: array
+            name: accept
+            value: "*/*"
+          - _fromType: array
+            name: content-length
+            value: "470"
+          - name: host
+            value: sourcegraph.com
+        headersSize: 396
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json; charset=utf-8
+          params: []
+          textJSON:
+            maxTokensToSample: 256
+            messages:
+              - speaker: human
+                text: |-
+                  
+
+                  #src/bubbleSort.ts
+                  <｜fim▁begin｜>// Implement bubble sort in TypeScript
+                  export function bubbleSort(nums: number[]): number[] {
+                      <｜fim▁hole｜>
+                  }
+                  <｜fim▁end｜>
+            model: fireworks/deepseek-coder-v2-lite-base
+            stopSequences:
+              - "\n\n"
+              - "\n\r\n"
+              - <｜fim▁begin｜>
+              - <｜fim▁hole｜>
+              - <｜fim▁end｜>, <|eos_token|>
+            stream: true
+            temperature: 0.2
+            timeoutMs: 7000
+            topK: 50
+        queryString:
+          - name: client-name
+            value: autocomplete
+          - name: client-version
+            value: v1
+        url: https://sourcegraph.com/.api/completions/code?client-name=autocomplete&client-version=v1
+      response:
+        bodySize: 201
+        content:
+          mimeType: text/event-stream
+          size: 201
+          text: |+
+            event: completion
+            data: {"completion":"return nums;","stopReason":"stop"}
+
+            event: done
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Thu, 03 Oct 2024 03:04:00 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1299
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-10-03T03:04:00.459Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: d37fcecba644c8970e866cea35c6359b
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 421
+        cookies: []
+        headers:
+          - _fromType: array
+            name: accept-encoding
+            value: gzip;q=0
+          - _fromType: array
+            name: authorization
+            value: token
+              REDACTED_3dd704711f82a44ff6aba261b53b61a03fb8edba658774639148630d838c2d1d
+          - _fromType: array
+            name: connection
+            value: keep-alive
+          - _fromType: array
+            name: content-type
+            value: application/json; charset=utf-8
+          - _fromType: array
+            name: user-agent
+            value: autocomplete / v1
+          - _fromType: array
+            name: x-timeout-ms
+            value: "7000"
+          - _fromType: array
+            name: accept
+            value: "*/*"
+          - _fromType: array
+            name: content-length
+            value: "421"
+          - name: host
+            value: sourcegraph.com
+        headersSize: 396
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json; charset=utf-8
+          params: []
+          textJSON:
+            maxTokensToSample: 256
+            messages:
+              - speaker: human
+                text: |-
+                  
+
+                  #src/bubbleSort.ts
+                  <｜fim▁begin｜>function bubbleSort(arr: number[]): number[] {
+                      <｜fim▁hole｜>
+                  }
+                  <｜fim▁end｜>
+            model: fireworks/deepseek-coder-v2-lite-base
+            stopSequences:
+              - "\n\n"
+              - "\n\r\n"
+              - <｜fim▁begin｜>
+              - <｜fim▁hole｜>
+              - <｜fim▁end｜>, <|eos_token|>
+            stream: true
+            temperature: 0.2
+            timeoutMs: 7000
+            topK: 0
+        queryString:
+          - name: client-name
+            value: autocomplete
+          - name: client-version
+            value: v1
+        url: https://sourcegraph.com/.api/completions/code?client-name=autocomplete&client-version=v1
+      response:
+        bodySize: 199
+        content:
+          mimeType: text/event-stream
+          size: 199
+          text: |+
+            event: completion
+            data: {"completion":"return arr;","stopReason":"stop"}
+
+            event: done
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Thu, 03 Oct 2024 03:08:41 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1299
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-10-03T03:08:41.037Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: f1036717c04b557099abdd2fae57fef1
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 1238
+        cookies: []
+        headers:
+          - _fromType: array
+            name: accept-encoding
+            value: gzip;q=0
+          - _fromType: array
+            name: authorization
+            value: token
+              REDACTED_3dd704711f82a44ff6aba261b53b61a03fb8edba658774639148630d838c2d1d
+          - _fromType: array
+            name: connection
+            value: keep-alive
+          - _fromType: array
+            name: content-type
+            value: application/json; charset=utf-8
+          - _fromType: array
+            name: user-agent
+            value: autocomplete / v1
+          - _fromType: array
+            name: x-timeout-ms
+            value: "7000"
+          - _fromType: array
+            name: accept
+            value: "*/*"
+          - _fromType: array
+            name: content-length
+            value: "1238"
+          - name: host
+            value: sourcegraph.com
+        headersSize: 397
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json; charset=utf-8
+          params: []
+          textJSON:
+            maxTokensToSample: 256
+            messages:
+              - speaker: human
+                text: >-
+                  #src/mergeSort.ts
+
+                  function mergeSort(arr: number[]): number[] {
+                      if (arr.length <= 1) {
+                          return arr
+                      }
+
+                      const mid = Math.floor(arr.length / 2)
+                      const left = arr.slice(0, mid)
+                      const right = arr.slice(mid)
+
+                      return merge(mergeSort(left), mergeSort(right))
+                  }
+
+
+                  function merge(left: number[], right: number[]): number[] {
+                      let result: number[] = []
+                      let leftIndex = 0
+                      let rightIndex = 0
+
+                      while (leftIndex < left.length && rightIndex < right.length) {
+                          if (left[leftIndex] < right[rightIndex]) {
+                              result.push(left[leftIndex])
+                              leftIndex++
+                          } else {
+                              result.push(right[rightIndex])
+                              rightIndex++
+                          }
+                      }
+
+                      return result.concat(left.slice(leftIndex)).concat(right.slice(rightIndex))
+                  }
+
+
+
+                  #src/bubbleSort.ts
+
+                  <｜fim▁begin｜>function bubbleSort(arr: number[]): number[] {
+                      <｜fim▁hole｜>
+                  }
+
+                  <｜fim▁end｜>
+            model: fireworks/deepseek-coder-v2-lite-base
+            stopSequences:
+              - "\n\n"
+              - "\n\r\n"
+              - <｜fim▁begin｜>
+              - <｜fim▁hole｜>
+              - <｜fim▁end｜>, <|eos_token|>
+            stream: true
+            temperature: 0.2
+            timeoutMs: 7000
+            topK: 0
+        queryString:
+          - name: client-name
+            value: autocomplete
+          - name: client-version
+            value: v1
+        url: https://sourcegraph.com/.api/completions/code?client-name=autocomplete&client-version=v1
+      response:
+        bodySize: 2824
+        content:
+          mimeType: text/event-stream
+          size: 2824
+          text: >+
+            event: completion
+
+            data: {"completion":"const n = arr.length\n    for (let i = 0; i < n - 1; i++) {\n        for (let j = 0; j < n - i - 1; j++) {\n            if (arr[j] > arr[j + 1]) {\n                const temp = arr[j]\n                arr[j] = arr[j + 1]\n                arr[j + 1] = temp\n            }\n        }\n    }\n    return arr","stopReason":"stop"}
+
+
+            event: done
+
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Thu, 03 Oct 2024 03:10:02 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1299
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-10-03T03:10:01.678Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: d373616a58be0462153bc0c3b0429a7f
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 419
+        cookies: []
+        headers:
+          - _fromType: array
+            name: accept-encoding
+            value: gzip;q=0
+          - _fromType: array
+            name: authorization
+            value: token
+              REDACTED_3dd704711f82a44ff6aba261b53b61a03fb8edba658774639148630d838c2d1d
+          - _fromType: array
+            name: connection
+            value: keep-alive
+          - _fromType: array
+            name: content-type
+            value: application/json; charset=utf-8
+          - _fromType: array
+            name: user-agent
+            value: autocomplete / v1
+          - _fromType: array
+            name: x-timeout-ms
+            value: "7000"
+          - _fromType: array
+            name: accept
+            value: "*/*"
+          - _fromType: array
+            name: content-length
+            value: "419"
+          - name: host
+            value: sourcegraph.com
+        headersSize: 396
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json; charset=utf-8
+          params: []
+          textJSON:
+            maxTokensToSample: 256
+            messages:
+              - speaker: human
+                text: >-
+                  
 
                   #src/sum.ts
 
@@ -304,7 +1598,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 19 Sep 2024 05:03:07 GMT
+            value: Mon, 07 Oct 2024 04:05:22 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
@@ -333,7 +1627,176 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-19T05:03:07.088Z
+      startedDateTime: 2024-10-07T04:05:21.934Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: 6eaadd9d24fd743f006e5d6b5c97b416
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 1317
+        cookies: []
+        headers:
+          - _fromType: array
+            name: accept-encoding
+            value: gzip;q=0
+          - _fromType: array
+            name: authorization
+            value: token
+              REDACTED_3dd704711f82a44ff6aba261b53b61a03fb8edba658774639148630d838c2d1d
+          - _fromType: array
+            name: connection
+            value: keep-alive
+          - _fromType: array
+            name: content-type
+            value: application/json; charset=utf-8
+          - _fromType: array
+            name: user-agent
+            value: autocomplete / v1
+          - _fromType: array
+            name: x-timeout-ms
+            value: "7000"
+          - _fromType: array
+            name: accept
+            value: "*/*"
+          - _fromType: array
+            name: content-length
+            value: "1317"
+          - name: host
+            value: sourcegraph.com
+        headersSize: 397
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json; charset=utf-8
+          params: []
+          textJSON:
+            maxTokensToSample: 256
+            messages:
+              - speaker: human
+                text: >-
+                  #src/sum.ts
+
+                  export function sum(a: number, b: number): number {
+                      
+                  }
+
+
+
+                  #src/mergeSort.ts
+
+                  function mergeSort(arr: number[]): number[] {
+                      if (arr.length <= 1) {
+                          return arr
+                      }
+
+                      const mid = Math.floor(arr.length / 2)
+                      const left = arr.slice(0, mid)
+                      const right = arr.slice(mid)
+
+                      return merge(mergeSort(left), mergeSort(right))
+                  }
+
+
+                  function merge(left: number[], right: number[]): number[] {
+                      let result: number[] = []
+                      let leftIndex = 0
+                      let rightIndex = 0
+
+                      while (leftIndex < left.length && rightIndex < right.length) {
+                          if (left[leftIndex] < right[rightIndex]) {
+                              result.push(left[leftIndex])
+                              leftIndex++
+                          } else {
+                              result.push(right[rightIndex])
+                              rightIndex++
+                          }
+                      }
+
+                      return result.concat(left.slice(leftIndex)).concat(right.slice(rightIndex))
+                  }
+
+
+
+                  #src/bubbleSort.ts
+
+                  <｜fim▁begin｜>function bubbleSort(arr: number[]): number[] {
+                      <｜fim▁hole｜>
+                  }
+
+                  <｜fim▁end｜>
+            model: fireworks/deepseek-coder-v2-lite-base
+            stopSequences:
+              - "\n\n"
+              - "\n\r\n"
+              - <｜fim▁begin｜>
+              - <｜fim▁hole｜>
+              - <｜fim▁end｜>, <|eos_token|>
+            stream: true
+            temperature: 0.2
+            timeoutMs: 7000
+            topK: 0
+        queryString:
+          - name: client-name
+            value: autocomplete
+          - name: client-version
+            value: v1
+        url: https://sourcegraph.com/.api/completions/code?client-name=autocomplete&client-version=v1
+      response:
+        bodySize: 3224
+        content:
+          mimeType: text/event-stream
+          size: 3224
+          text: >+
+            event: completion
+
+            data: {"completion":"for (let i = 0; i < arr.length; i++) {\n        for (let j = 0; j < arr.length - i - 1; j++) {\n            if (arr[j] > arr[j + 1]) {\n                let temp = arr[j]\n                arr[j] = arr[j + 1]\n                arr[j + 1] = temp\n            }\n        }\n    }\n    return arr\n}","stopReason":"stop"}
+
+
+            event: done
+
+            data: {}
+
+        cookies: []
+        headers:
+          - name: date
+            value: Mon, 07 Oct 2024 04:05:23 GMT
+          - name: content-type
+            value: text/event-stream
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1299
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-10-07T04:05:22.506Z
       time: 0
       timings:
         blocked: -1
@@ -398,29 +1861,19 @@ log:
             value: null
         url: https://sourcegraph.com/.api/graphql?CurrentSiteCodyLlmConfiguration
       response:
-        bodySize: 260
+        bodySize: 259
         content:
           encoding: base64
           mimeType: application/json
-          size: 260
-          text: "[\"H4sIAAAAAAAAA3zOTQrCMBCG4bvM2tAxFcRuu7U7LzAmUxtSMyVJ/UF6d1ERxYKrgQ/eh\
-            7mBpUxQ3SC5zI9rxF6326aW0LrDGCk7Cc+9o9yI5R4qoJC7KIMzhelptKxKlSQEzkqj\
-            XqHWG1h8goYuO/EcElRLjYgLaCnl+r/XkfPjiytxDT/NnDRyHHp+PPtGWxf5LNGnwjI\
-            PidkrI5ajOmnVu8xqT4lhVn7RG0Scpmm6AwAA//8DAFuWIPolAQAA\"]"
-          textDecoded:
-            data:
-              site:
-                codyLLMConfiguration:
-                  chatModel: anthropic/claude-3-sonnet-20240229
-                  chatModelMaxTokens: 12000
-                  completionModel: fireworks/deepseek-coder-v2-lite-base
-                  completionModelMaxTokens: 9000
-                  fastChatModel: anthropic/claude-3-haiku-20240307
-                  fastChatModelMaxTokens: 12000
+          size: 259
+          text: "[\"H4sIAAAAAAAAAwAAAP//\",\"hM5NDoIwEAXgu8yaaoMQDVu2svMCYztAA3ZIf4yG9O4G\
+            NhI1cfWSyZsvbwaNAaGawZtASyrWz/O5qdm2posOg2G73nsMDWsaoQLP0SnqHE79Xo0\
+            YNYnDrhSeraUA2bvb4OPCA1kPVVFKKTNo0Yf6DyV6NEOEj/LGOq6U4ts00rLvF6aJJk\
+            80CMWanLjnYjSBxBU9wdfvxs5lcUoppRcAAAD//wMAMOH90BoBAAA=\"]"
         cookies: []
         headers:
           - name: date
-            value: Thu, 19 Sep 2024 04:38:54 GMT
+            value: Mon, 07 Oct 2024 04:05:21 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -451,7 +1904,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-19T04:38:54.414Z
+      startedDateTime: 2024-10-07T04:05:20.801Z
       time: 0
       timings:
         blocked: -1
@@ -511,22 +1964,22 @@ log:
             value: null
         url: https://sourcegraph.com/.api/graphql?CurrentSiteCodyLlmConfiguration
       response:
-        bodySize: 132
+        bodySize: 136
         content:
           encoding: base64
           mimeType: application/json
-          size: 132
+          size: 136
           text: "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqzixJBdHJ+SmVPj6+zvl5aZnppUWJJZn5eWD53MSiE\
-            uf8vJLUipLwzLyU/HIlK6XUvMSknNQUpdra2loAAAAA//8DAOgINKVLAAAA\"]"
+            uf8vJLUipLwzLyU/HIlK6WUzOLEpJzUFKXa2tpaAAAAAP//AwArMNn0TAAAAA==\"]"
           textDecoded:
             data:
               site:
                 codyLLMConfiguration:
-                  smartContextWindow: enabled
+                  smartContextWindow: disabled
         cookies: []
         headers:
           - name: date
-            value: Thu, 19 Sep 2024 04:38:54 GMT
+            value: Mon, 07 Oct 2024 04:05:21 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -557,7 +2010,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-19T04:38:54.459Z
+      startedDateTime: 2024-10-07T04:05:20.803Z
       time: 0
       timings:
         blocked: -1
@@ -617,17 +2070,22 @@ log:
             value: null
         url: https://sourcegraph.com/.api/graphql?CurrentSiteCodyLlmProvider
       response:
-        bodySize: 131
+        bodySize: 128
         content:
           encoding: base64
           mimeType: application/json
-          size: 131
+          size: 128
           text: "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqzixJBdHJ+SmVPj6+zvl5aZnppUWJJZn5eSDxgqL8s\
-            syU1CIlK6Xi/NKi5NT0osSCDKXa2tpaAAAAAP//\",\"AwAfFAXARQAAAA==\"]"
+            syU1CIlK6Xi/NKi5NT0osSCDKXa2tpaAAAAAP//AwAfFAXARQAAAA==\"]"
+          textDecoded:
+            data:
+              site:
+                codyLLMConfiguration:
+                  provider: sourcegraph
         cookies: []
         headers:
           - name: date
-            value: Thu, 19 Sep 2024 04:38:54 GMT
+            value: Mon, 07 Oct 2024 04:05:21 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -658,7 +2116,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-19T04:38:54.437Z
+      startedDateTime: 2024-10-07T04:05:20.803Z
       time: 0
       timings:
         blocked: -1
@@ -755,7 +2213,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 19 Sep 2024 04:38:54 GMT
+            value: Mon, 07 Oct 2024 04:05:20 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -786,7 +2244,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-19T04:38:54.483Z
+      startedDateTime: 2024-10-07T04:05:20.394Z
       time: 0
       timings:
         blocked: -1
@@ -850,28 +2308,19 @@ log:
             value: null
         url: https://sourcegraph.com/.api/graphql?CurrentUserCodySubscription
       response:
-        bodySize: 228
+        bodySize: 235
         content:
           encoding: base64
           mimeType: application/json
-          size: 228
-          text: "[\"H4sIAAAAAAAAA1zMsQrCMBSF4Xc5cwtN7GK2Ih0EwdJWB7fYZAjUJNzcDqXk3UVBRMfz8\
-            3E2GM0aasO0EFnPl2TpPYNZh+WeJnKRXfCvlljzkqDQHMbjtUWBOGsPha4/o4COcV47\
-            Cr1me3IPxwmKabHF57uz5IIZWBM3DAVZybqs9qWoRymVEGonb/jTrTdfK6pfm3POTwA\
-            AAP//AwAV1OF3wgAAAA==\"]"
-          textDecoded:
-            data:
-              currentUser:
-                codySubscription:
-                  applyProRateLimits: true
-                  currentPeriodEndAt: 2024-10-14T22:11:32Z
-                  currentPeriodStartAt: 2024-09-14T22:11:32Z
-                  plan: PRO
-                  status: ACTIVE
+          size: 235
+          text: "[\"H4sIAAAAAAAAAwAAAP//\",\"XMyxCsIwFIXhdzlzC03sYrYiHQTB0lYHt9hkCNQk3NwO\
+            peTdRUFEx/PzcTYYzRpqw7QQWc+XZOk9g1mH5Z4mcpFd8K+WWPOSoNAcxuO1RYE4aw+\
+            Frj+jgI5xXjsKvWZ7cg/HCYppscXnu7PkghlYEzcMBVnJuqz2pahHKZUQaidv+NOtN1\
+            8rql+bc85PAAAA//8DABXU4XfCAAAA\"]"
         cookies: []
         headers:
           - name: date
-            value: Thu, 19 Sep 2024 04:38:55 GMT
+            value: Mon, 07 Oct 2024 04:05:21 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -902,7 +2351,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-19T04:38:54.814Z
+      startedDateTime: 2024-10-07T04:05:20.895Z
       time: 0
       timings:
         blocked: -1
@@ -960,18 +2409,21 @@ log:
             value: null
         url: https://sourcegraph.com/.api/graphql?SiteProductVersion
       response:
-        bodySize: 139
+        bodySize: 136
         content:
           encoding: base64
           mimeType: application/json
-          size: 139
-          text: "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqzixJBdEFRfkppcklYalFxZn5eUpWSkaWhqYmxvFGB\
-            kYmugaWuoYW8aZ65rpJZikWRilplkap5hZKtbW1AAAAAP//\",\"AwAMQVH6SQAAAA==\
-            \"]"
+          size: 136
+          text: "[\"H4sIAAAAAAAAA6pWSkksSVSyqlYqzixJBdEFRfkppcklYalFxZn5eUpWSkaWxhaGZvFGB\
+            kYmuoYGugYm8aZ65rrJyclJyYmmRokpJilKtbW1AAAAAP//AwDesQeISQAAAA==\"]"
+          textDecoded:
+            data:
+              site:
+                productVersion: 293816_2024-10-04_5.7-cccbca52ad4d
         cookies: []
         headers:
           - name: date
-            value: Thu, 19 Sep 2024 04:38:54 GMT
+            value: Mon, 07 Oct 2024 04:05:21 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
@@ -1002,7 +2454,101 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-09-19T04:38:54.344Z
+      startedDateTime: 2024-10-07T04:05:20.826Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: a1889526ab4ac60a56dc11d08e0510f9
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 0
+        cookies: []
+        headers:
+          - _fromType: array
+            name: authorization
+            value: token
+              REDACTED_3dd704711f82a44ff6aba261b53b61a03fb8edba658774639148630d838c2d1d
+          - _fromType: array
+            name: user-agent
+            value: autocomplete / v1
+          - _fromType: array
+            name: accept
+            value: "*/*"
+          - _fromType: array
+            name: accept-encoding
+            value: gzip,deflate
+          - name: host
+            value: sourcegraph.com
+        headersSize: 261
+        httpVersion: HTTP/1.1
+        method: GET
+        queryString: []
+        url: https://sourcegraph.com/.api/modelconfig/supported-models.json
+      response:
+        bodySize: 1103
+        content:
+          encoding: base64
+          mimeType: text/plain; charset=utf-8
+          size: 1103
+          text: "[\"H4sIAAA=\",\"AAAAAP/smE1P4zgYx+/9FFaui4ubtpTNDbpiF2kZ0ICYw4iD6zxtrSax\
+            ZTt9EeK7j5I0YdKYJkVVURl6SuP/87fj3+PX5xZCCDmaTSGkj6A0F5HjIafTJs5JVqZ\
+            gzvPXpE3a5C8f5nmhVGLOfVDa8dDP9FXyey6eUhH3k1gamakSkrN1bFHscy0DuvpGQ0\
+            h0F4WukL2cbLcecwULoWa6xvqq0DW2nggxCaDG999M1NhUSIgorzG9lRBdXDc3Dbk2i\
+            gY1rjdr1att+vS05hkKH4KtMFPFdxiXkHqeS9wuJmeYdDyPBTT2AXfbfaxFFIGpadMw\
+            1aNuu4/urfq0zlydu+PcHbvE7ZEzl2yGMSrpiAfccCh/UqEAn29WlkVOqfX9eiSUCp4\
+            qtRqYCLVKO4ixWFG22myZNtTESZuSp1E1vwwHlSa2gkoZE5GBpfnBI18sHG+DT9ZfdH\
+            kdydg8iBlESTW9PiHE8j0hXd7GpqQkhJR0Lw0ScIecwELGdcM0zwd0a9HacyFxzfLAd\
+            f/ecx40pi3MFNR7UUslPhnpKeWzuCnq/2xiO+vUN4PdJYOPgq0lgP/R43pwMNjFEut5\
+            847naUMVE3413Tf43huqhjZdCe2bbvUwaWwEE6EMwMCRwXNJ77wRPLd/tk92PoDUADO\
+            cdjmeuzjgBvCI6rp9zj8A8h5ghh5d9D83gC4tMSWylDERR0afahErBhNF5fQ022Sc7t\
+            COrzzYRx5ke9ksCSYQ8ojjTruPLSvP5v42FaNOu4/uquIS8O2+h5qcRzSgEft4tAdcj\
+            d+AOw6onjbHe2WTvwXY6v1Hrb8H5Ls+3mWAQ75M/uDz5WCEeaSNilndKesmi0Hny8Fl\
+            szm7WDfyGbtRtfUJcISgD7fRyu4G0i11DxM33VJPpMG92kn67sEiKo9dq8/xH5OP7+x\
+            ko8yEv8JJl2KpYM5hgQnpNLokQqKTx2w/QjWpYd/jtx7ugnITcF2ZST4/Xrcx3mTR3Z\
+            ltxf6L7Va2rd++1/FhTOPA3OQ3oq/NyDrpffefzphqM2wWX7lBSSDDMDvlrG/kdzjbt\
+            bJvfGn9CgAA//8QR+8r9RcAAA==\"]"
+        cookies: []
+        headers:
+          - name: date
+            value: Mon, 07 Oct 2024 04:05:21 GMT
+          - name: content-type
+            value: text/plain; charset=utf-8
+          - name: transfer-encoding
+            value: chunked
+          - name: connection
+            value: keep-alive
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache, max-age=0
+          - name: content-encoding
+            value: gzip
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1342
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-10-07T04:05:21.626Z
       time: 0
       timings:
         blocked: -1

@@ -44,8 +44,11 @@ export class AgentGlobalState implements vscode.Memento {
         this.db.set(key, value)
     }
 
-    public reset() {
+    public async reset(): Promise<void> {
         this.db.clear()
+
+        // HACK(sqs): Force `localStorage` to fire a change event.
+        await localStorage.delete('')
     }
 
     public keys(): readonly string[] {

@@ -4,7 +4,7 @@ import {
     type ChatClient,
     ClientConfigSingleton,
     PromptString,
-    currentAuthStatusAuthed,
+    currentSiteVersion,
     firstResultFromOperation,
     modelsService,
     ps,
@@ -311,7 +311,11 @@ export class EditManager implements vscode.Disposable {
         // queries to ask the LLM to generate a selection, and then ultimately apply the edit.
         const replacementCode = PromptString.unsafe_fromLLMResponse(configuration.replacement)
 
-        const authStatus = currentAuthStatusAuthed()
+        const versions = await currentSiteVersion()
+        if (!versions) {
+            throw new Error('unable to determine site version')
+        }
+
         const selection = await getSmartApplySelection(
             configuration.id,
             configuration.instruction,
@@ -319,7 +323,7 @@ export class EditManager implements vscode.Disposable {
             configuration.document,
             model,
             this.options.chat,
-            authStatus.codyApiVersion
+            versions.codyAPIVersion
         )
 
         // We finished prompting the LLM for the selection, we can now remove the "progress" decoration

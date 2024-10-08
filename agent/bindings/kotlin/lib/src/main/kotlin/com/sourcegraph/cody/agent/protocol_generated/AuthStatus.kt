@@ -12,46 +12,35 @@ sealed class AuthStatus {
   companion object {
     val deserializer: JsonDeserializer<AuthStatus> =
       JsonDeserializer { element: JsonElement, _: Type, context: JsonDeserializationContext ->
-        when (element.getAsJsonObject().get("endpoint").getAsString()) {
-          "https://example.com" -> context.deserialize<UnauthenticatedAuthStatus>(element, UnauthenticatedAuthStatus::class.java)
-          else -> throw Exception("Unknown discriminator ${element}")
-        }
+          if (element.getAsJsonObject().get("username") == null) {
+              context.deserialize<UnauthenticatedAuthStatus>(element, UnauthenticatedAuthStatus::class.java)
+          } else {
+              context.deserialize<AuthenticatedAuthStatus>(element, AuthenticatedAuthStatus::class.java)
+          }
       }
   }
 }
 
 data class UnauthenticatedAuthStatus(
-  val endpoint: EndpointEnum, // Oneof: https://example.com
+  val endpoint: String,
   val authenticated: Boolean,
   val showNetworkError: Boolean? = null,
   val showInvalidAccessTokenError: Boolean? = null,
   val pendingValidation: Boolean,
 ) : AuthStatus() {
-
-  enum class EndpointEnum {
-    @SerializedName("https://example.com") `Https-example-com`,
-  }
 }
 
 data class AuthenticatedAuthStatus(
-  val endpoint: EndpointEnum, // Oneof: https://example.com
+  val endpoint: String,
   val authenticated: Boolean,
   val username: String,
   val isFireworksTracingEnabled: Boolean? = null,
   val hasVerifiedEmail: Boolean? = null,
   val requiresVerifiedEmail: Boolean? = null,
-  val siteVersion: String,
-  val codyApiVersion: Long,
-  val configOverwrites: CodyLLMSiteConfiguration? = null,
   val primaryEmail: String? = null,
   val displayName: String? = null,
   val avatarURL: String? = null,
-  val userCanUpgrade: Boolean? = null,
   val pendingValidation: Boolean,
 ) : AuthStatus() {
-
-  enum class EndpointEnum {
-    @SerializedName("https://example.com") `Https-example-com`,
-  }
 }
 

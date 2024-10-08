@@ -20,7 +20,12 @@ import {
     skipPendingOperation,
 } from '../misc/observableOperation'
 import { ClientConfigSingleton } from '../sourcegraph-api/clientConfig'
+import {
+    type UserProductSubscription,
+    userProductSubscription,
+} from '../sourcegraph-api/userProductSubscription'
 import { CHAT_INPUT_TOKEN_BUDGET, CHAT_OUTPUT_TOKEN_BUDGET } from '../token/constants'
+import { configOverwrites } from './configOverwrites'
 import { type Model, type ServerModel, modelTier } from './model'
 import { syncModels } from './sync'
 import { ModelTag } from './tags'
@@ -44,6 +49,7 @@ export type ModelStatus =
     | ModelTag.EarlyAccess
     | ModelTag.OnWaitlist
     | ModelTag.Waitlist
+    | ModelTag.Internal
     | 'stable'
     | ModelTag.Deprecated
     | ModelTag.Internal
@@ -171,14 +177,24 @@ export interface ServerModelConfiguration {
     defaultModels: DefaultModels
 }
 
-export interface PerSitePreferences {
-    [endpoint: string]: SitePreferences
+export interface DefaultsAndUserPreferencesByEndpoint {
+    [endpoint: string]: DefaultsAndUserPreferencesForEndpoint
 }
 
-export interface SitePreferences {
+/**
+ * The endpoint defaults and user preferences for a single endpoint.
+ */
+export interface DefaultsAndUserPreferencesForEndpoint {
+    /**
+     * The server's default models for each usage.
+     */
     defaults: {
         [usage in ModelUsage]?: string
     }
+
+    /**
+     * The user's selected models for each usage, which take precedence over the defaults.
+     */
     selected: {
         [usage in ModelUsage]?: string
     }
@@ -192,7 +208,7 @@ export interface ModelsData {
     localModels: Model[]
 
     /** Preferences for the current endpoint. */
-    preferences: SitePreferences
+    preferences: DefaultsAndUserPreferencesForEndpoint
 }
 
 const EMPTY_MODELS_DATA: ModelsData = {
@@ -202,8 +218,13 @@ const EMPTY_MODELS_DATA: ModelsData = {
 }
 
 export interface LocalStorageForModelPreferences {
-    getModelPreferences(): PerSitePreferences
-    setModelPreferences(preferences: PerSitePreferences): Promise<void>
+    getModelPreferences(): DefaultsAndUserPreferencesByEndpoint
+    setModelPreferences(preferences: DefaultsAndUserPreferencesByEndpoint): Promise<void>
+}
+
+export interface ModelAvailabilityStatus {
+    model: Model
+    isModelAvailable: boolean
 }
 
 /**
@@ -237,7 +258,7 @@ export class ModelsService {
                 tap(data => {
                     if (this.storage) {
                         const allSitePrefs = this.storage.getModelPreferences()
-                        const updated: PerSitePreferences = {
+                        const updated: DefaultsAndUserPreferencesByEndpoint = {
                             ...allSitePrefs,
                             [currentAuthStatus().endpoint]: data.preferences,
                         }
@@ -271,6 +292,7 @@ export class ModelsService {
             distinctUntilChanged()
         ),
         authStatus,
+        configOverwrites,
         clientConfig: ClientConfigSingleton.getInstance().changes,
     })
 
@@ -322,16 +344,37 @@ export class ModelsService {
         )
     }
 
+    public async getModelsAvailabilityStatus(type: ModelUsage): Promise<ModelAvailabilityStatus[]> {
+        const models = await firstResultFromOperation(modelsService.getModels(type))
+        return Promise.all(
+            models.map(async model => {
+                const isModelAvailable = await firstResultFromOperation(this.isModelAvailable(model))
+                return { model, isModelAvailable }
+            })
+        )
+    }
+
     public getDefaultModel(type: ModelUsage): Observable<Model | undefined | typeof pendingOperation> {
-        return combineLatest(this.getModelsByType(type), this.modelsChanges, authStatus).pipe(
-            map(([models, modelsData, authStatus]) => {
-                if (models === pendingOperation || modelsData === pendingOperation) {
+        return combineLatest(
+            this.getModelsByType(type),
+            this.modelsChanges,
+            authStatus,
+            userProductSubscription
+        ).pipe(
+            map(([models, modelsData, authStatus, userProductSubscription]) => {
+                if (
+                    models === pendingOperation ||
+                    modelsData === pendingOperation ||
+                    userProductSubscription === pendingOperation
+                ) {
                     return pendingOperation
                 }
 
                 // Free users can only use the default free model, so we just find the first model they can use
                 const firstModelUserCanUse = models.find(
-                    m => this._isModelAvailable(modelsData, authStatus, m) === true
+                    m =>
+                        this._isModelAvailable(modelsData, authStatus, userProductSubscription, m) ===
+                        true
                 )
 
                 if (modelsData.preferences) {
@@ -341,7 +384,15 @@ export class ModelsService {
                         modelsData,
                         modelsData.preferences.selected[type] ?? modelsData.preferences.defaults[type]
                     )
-                    if (selected && this._isModelAvailable(modelsData, authStatus, selected) === true) {
+                    if (
+                        selected &&
+                        this._isModelAvailable(
+                            modelsData,
+                            authStatus,
+                            userProductSubscription,
+                            selected
+                        ) === true
+                    ) {
                         return selected
                     }
                 }
@@ -392,21 +443,18 @@ export class ModelsService {
         const serverEndpoint = currentAuthStatus().endpoint
         const currentPrefs = deepClone(this.storage.getModelPreferences())
         if (!currentPrefs[serverEndpoint]) {
-            currentPrefs[serverEndpoint] = {
-                defaults: {},
-                selected: {},
-            }
+            currentPrefs[serverEndpoint] = modelsData.preferences
         }
         currentPrefs[serverEndpoint].selected[type] = resolved.id
         await this.storage.setModelPreferences(currentPrefs)
     }
 
     public isModelAvailable(model: string | Model): Observable<boolean | typeof pendingOperation> {
-        return combineLatest(authStatus, this.modelsChanges).pipe(
-            map(([authStatus, modelsData]) =>
-                modelsData === pendingOperation
+        return combineLatest(authStatus, this.modelsChanges, userProductSubscription).pipe(
+            map(([authStatus, modelsData, userProductSubscription]) =>
+                modelsData === pendingOperation || userProductSubscription === pendingOperation
                     ? pendingOperation
-                    : this._isModelAvailable(modelsData, authStatus, model)
+                    : this._isModelAvailable(modelsData, authStatus, userProductSubscription, model)
             ),
             distinctUntilChanged()
         )
@@ -415,6 +463,7 @@ export class ModelsService {
     private _isModelAvailable(
         modelsData: ModelsData,
         authStatus: AuthStatus,
+        sub: UserProductSubscription | null,
         model: string | Model
     ): boolean {
         const resolved = this.resolveModel(modelsData, model)
@@ -430,7 +479,7 @@ export class ModelsService {
         // A Cody Pro user can use any Free or Pro model, but not Enterprise.
         // (But in reality, Sourcegraph.com wouldn't serve any Enterprise-only models to
         // Cody Pro users anyways.)
-        if (isCodyProUser(authStatus)) {
+        if (isCodyProUser(authStatus, sub)) {
             return (
                 tier !== 'enterprise' &&
                 !resolved.tags.includes(ModelTag.Waitlist) &&
@@ -516,13 +565,13 @@ interface MockModelsServiceResult {
 }
 
 export class TestLocalStorageForModelPreferences implements LocalStorageForModelPreferences {
-    constructor(public data: PerSitePreferences | null = null) {}
+    constructor(public data: DefaultsAndUserPreferencesByEndpoint | null = null) {}
 
-    getModelPreferences(): PerSitePreferences {
+    getModelPreferences(): DefaultsAndUserPreferencesByEndpoint {
         return this.data || {}
     }
 
-    async setModelPreferences(preferences: PerSitePreferences): Promise<void> {
+    async setModelPreferences(preferences: DefaultsAndUserPreferencesByEndpoint): Promise<void> {
         this.data = preferences
     }
 }

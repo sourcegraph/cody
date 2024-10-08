@@ -11,6 +11,7 @@ import type {
     RequestMessage,
     ResponseMessage,
     SerializedChatMessage,
+    UserProductSubscription,
 } from '@sourcegraph/cody-shared'
 
 import type { BillingCategory, BillingProduct } from '@sourcegraph/cody-shared/src/telemetry-v2'
@@ -105,7 +106,7 @@ export type WebviewMessage =
       }
     | {
           command: 'auth'
-          authKind: 'signin' | 'signout' | 'support' | 'callback' | 'simplified-onboarding'
+          authKind: 'signin' | 'signout' | 'support' | 'callback' | 'simplified-onboarding' | 'switch'
           endpoint?: string | undefined | null
           value?: string | undefined | null
           authMethod?: AuthMethod | undefined | null
@@ -137,6 +138,7 @@ export type ExtensionMessage =
           config: ConfigurationSubsetForWebview & LocalEnv
           clientCapabilities: ClientCapabilities
           authStatus: AuthStatus
+          userProductSubscription?: UserProductSubscription | null | undefined
           configFeatures: {
               chat: boolean
               attribution: boolean
@@ -175,16 +177,8 @@ interface ExtensionAttributionMessage {
     error?: string | undefined | null
 }
 
-/**
- * ChatSubmitType represents the type of chat submission.
- * - 'user': The user starts a new chat panel.
- * - 'user-newchat': The user reuses the current chat panel.
- */
-export type ChatSubmitType = 'user' | 'user-newchat'
-
 export interface WebviewSubmitMessage extends WebviewContextMessage {
     text: string
-    submitType: ChatSubmitType
 
     /** An opaque value representing the text editor's state. @see {ChatMessage.editorState} */
     editorState?: unknown | undefined | null
