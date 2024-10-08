@@ -1,4 +1,4 @@
-import { ExtensionAPIProviderForTestsOnly, MOCK_API } from '@sourcegraph/prompt-editor'
+import { ExtensionAPIProviderForTestsOnly, MOCK_API, SerializedPromptEditorValue } from '@sourcegraph/prompt-editor'
 import type { Meta, StoryObj } from '@storybook/react'
 import { Observable } from 'observable-fns'
 import { Chat } from './Chat'
@@ -27,6 +27,7 @@ const meta: Meta<typeof Chat> = {
             onMessage: () => () => {},
         },
         setView: () => {},
+        updateEditorStateOnChange: () => {},
     } satisfies React.ComponentProps<typeof Chat>,
 
     decorators: [VSCodeWebview],
@@ -76,3 +77,12 @@ export const EmptyWithNoPrompts: StoryObj<typeof meta> = {
 }
 
 export const Disabled: StoryObj<typeof meta> = { args: { chatEnabled: false } }
+
+export const UnsentMessagePreservation: StoryObj<typeof meta> = {
+    args: {
+        transcript: [],
+        updateEditorStateOnChange: (index: number, state: SerializedPromptEditorValue) => {
+            console.log(`Editor state updated for message ${index}:`, state)
+        },
+    },
+}
