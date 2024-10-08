@@ -28,15 +28,14 @@ export const PromptsTab: React.FC<{
 export function useActionSelect() {
     const dispatchClientAction = useClientActionDispatcher()
     const [lastUsedActions = {}, persistValue] = useLocalStorage<Record<string, number>>(
-        'last-used-actions',
+        'last-used-actions-v2',
         {}
     )
 
     return (action: Action, setView: (view: View) => void) => {
         try {
             const actionKey = action.actionType === 'prompt' ? action.id : action.key
-            const lastUsedActionCount = lastUsedActions[actionKey] ?? 0
-            persistValue({ ...lastUsedActions, [actionKey]: lastUsedActionCount + 1 })
+            persistValue({ ...lastUsedActions, [actionKey]: Date.now() })
         } catch {
             console.error('Failed to persist last used action count')
         }
