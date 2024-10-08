@@ -23,9 +23,10 @@ import { Agent as AgentBase, type AgentConnectOpts } from 'agent-base'
 import { map } from 'observable-fns'
 import { ProxyAgent } from 'proxy-agent'
 import type { LiteralUnion } from 'type-fest'
-import type * as vscode from 'vscode'
-import { getConfiguration } from './configuration'
-import { CONFIG_KEY } from './configuration-keys'
+import * as vscode from 'vscode'
+import { getConfiguration } from '../configuration'
+import { CONFIG_KEY } from '../configuration-keys'
+import type * as internalVSCodeAgent from './vscode-network-proxy'
 
 const TIMEOUT = 60_000
 
@@ -336,18 +337,10 @@ function normalizePath(filePath: string | null | undefined): string | null {
 export function patchNetworkStack(): void {
     globalAgentRef.blockEarlyAccess = true
 
-    let _PacProxyAgent:
-        | null
-        | ({
-              new (resolver: any, opts: any): AgentBase
-          } & {
-              [K in keyof AgentBase]: AgentBase[K]
-          }) = null
-    try {
-        const mod = Object.keys(require.cache)?.find(v => v.endsWith('@vscode/proxy-agent/out/agent.js'))
-        _PacProxyAgent = mod ? (require.cache[mod] as any)?.exports?.PacProxyAgent : null
-        //TODO: has the module so we can log changes in versions for future
-    } catch {}
+    const _PacProxyAgent = requireInternalVSCodeAgent()?.PacProxyAgent
+    // const mod = Object.keys(require.cache)?.find(v => v.endsWith('@vscode/proxy-agent/out/agent.js'))
+    // _PacProxyAgent = mod ? (require.cache[mod] as any)?.exports?.PacProxyAgent : null
+    //TODO: has the module so we can log changes in versions for future
 
     //TODO: We might need to fallback to previous _VSCODE_NODE_MODULES hack for older versions?
     // const _IMPORT_NODE_MODULES = '_VSCODE_NODE_MODULES'
@@ -375,6 +368,7 @@ export function patchNetworkStack(): void {
         opts: AgentConnectOpts & { _codyAgent?: DelegatingProxyAgent | unknown; agent?: any }
     ): Promise<any> {
         if (!(opts._codyAgent instanceof DelegatingProxyAgent)) {
+            //@ts-ignore
             // biome-ignore lint/style/noArguments: apply uses arguments array
             return originalConnect.apply(this, arguments)
         }
@@ -441,4 +435,31 @@ function patchVSCodeModule(originalModule: typeof http | typeof https) {
         return patchedFn
     }
     return { get: patch(originalModule.get), request: patch(originalModule.request) }
+}
+
+function requireInternalVSCodeAgent(): typeof internalVSCodeAgent | undefined {
+    try {
+        return requireFromApp('vscode-proxy-agent/out/agent')
+    } catch {}
+
+    try {
+        return requireFromApp('@vscode/proxy-agent/out/agent')
+    } catch {}
+
+    return undefined
+}
+
+function requireFromApp(moduleName: string) {
+    const appRoot = vscode.env.appRoot
+    try {
+        return require(`${appRoot}/node_modules.asar/${moduleName}`)
+    } catch (err) {
+        // Not in ASAR.
+    }
+    try {
+        return require(`${appRoot}/node_modules/${moduleName}`)
+    } catch (err) {
+        // Not available.
+    }
+    throw new Error(`Could not load ${moduleName} from ${appRoot}`)
 }

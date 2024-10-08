@@ -11,7 +11,7 @@ import { ExtensionApi } from './extension-api'
 import type { ExtensionClient } from './extension-client'
 import type { SymfRunner } from './local-context/symf'
 import { start } from './main'
-import type { DelegatingProxyAgent } from './net.node'
+import type { DelegatingProxyAgent } from './net/net.node'
 import type { OpenTelemetryService } from './services/open-telemetry/OpenTelemetryService.node'
 import { type SentryService, captureException } from './services/sentry/sentry'
 
