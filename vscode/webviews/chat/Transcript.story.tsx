@@ -7,7 +7,7 @@ import {
     type ChatMessage,
     PromptString,
     RateLimitError,
-    SerializedPromptEditorValue,
+    type SerializedPromptEditorValue,
     errorToChatError,
     ps,
 } from '@sourcegraph/cody-shared'

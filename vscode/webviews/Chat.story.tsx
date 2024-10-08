@@ -1,4 +1,8 @@
-import { ExtensionAPIProviderForTestsOnly, MOCK_API, SerializedPromptEditorValue } from '@sourcegraph/prompt-editor'
+import {
+    ExtensionAPIProviderForTestsOnly,
+    MOCK_API,
+    type SerializedPromptEditorValue,
+} from '@sourcegraph/prompt-editor'
 import type { Meta, StoryObj } from '@storybook/react'
 import { Observable } from 'observable-fns'
 import { Chat } from './Chat'

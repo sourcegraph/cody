@@ -401,7 +401,7 @@ describe('transcriptToInteractionPairs', () => {
     })
 
     test('preserves editor state when switching tabs', async () => {
-        const waitForDebounce = () => new Promise(resolve => setTimeout(resolve, 350)); // 350ms to be safe as we debounce on change.
+        const waitForDebounce = () => new Promise(resolve => setTimeout(resolve, 350)) // 350ms to be safe as we debounce on change.
 
         const humanMessage: ChatMessage = {
             speaker: 'human',
@@ -438,5 +438,4 @@ describe('transcriptToInteractionPairs', () => {
 
         expect(editor.textContent).toBe('Unsent message updated')
     })
-
 })
