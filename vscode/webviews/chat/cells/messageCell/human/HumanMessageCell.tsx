@@ -68,10 +68,8 @@ export const HumanMessageCell: FunctionComponent<{
     }) => {
         const messageJSON = JSON.stringify(message)
         const initialEditorState = useMemo(
-            () =>
-                message.lastStoredEditorValue?.editorState ??
-                serializedPromptEditorStateFromChatMessage(JSON.parse(messageJSON)),
-            [message.lastStoredEditorValue?.editorState, messageJSON]
+            () => serializedPromptEditorStateFromChatMessage(JSON.parse(messageJSON)),
+            [messageJSON]
         )
 
         return (

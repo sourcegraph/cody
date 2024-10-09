@@ -69,17 +69,17 @@ export const CodyPanel: FunctionComponent<
 }) => {
     const tabContainerRef = useRef<HTMLDivElement>(null)
 
-    const [activeTranscript, setActiveTranscript] = useState<ChatMessage[] | undefined>(undefined)
+    const [activeTranscript, setActiveTranscript] = useState<ChatMessage[] | undefined>(transcript)
     const [storedTranscriptState, setStoredTranscriptState] = useState(transcript)
 
-    // Update the lastEditor in transcriptState on every input box changes for chat message associated with the index.
+    // Update the Transcript State for each input box value change.
     const updateEditorStateOnChange = useCallback(
         (index: number, newEditorValue: SerializedPromptEditorValue) => {
             setStoredTranscriptState(prev => {
                 const updated = [...prev]
                 updated[index] = {
                     ...updated[index],
-                    lastStoredEditorValue: newEditorValue,
+                    editorState: newEditorValue.editorState,
                     speaker: 'human',
                 }
                 return updated

@@ -33,7 +33,6 @@ interface ChatboxProps {
     showIDESnippetActions?: boolean
     setView: (view: View) => void
     smartApplyEnabled?: boolean
-
     updateEditorStateOnChange: (index: number, state: SerializedPromptEditorValue) => void
 }
 
