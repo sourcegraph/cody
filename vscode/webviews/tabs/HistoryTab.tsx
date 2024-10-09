@@ -1,9 +1,13 @@
-import type { CodyIDE, SerializedChatTranscript, UserLocalHistory } from '@sourcegraph/cody-shared'
+import type {
+    CodyIDE,
+    SerializedChatTranscript,
+    UserLocalHistory,
+    WebviewType,
+} from '@sourcegraph/cody-shared'
 import { useExtensionAPI, useObservable } from '@sourcegraph/prompt-editor'
 import { HistoryIcon, MessageSquarePlusIcon, MessageSquareTextIcon, TrashIcon } from 'lucide-react'
 import type React from 'react'
 import { useCallback, useMemo } from 'react'
-import type { WebviewType } from '../../src/chat/protocol'
 import { getRelativeChatPeriod } from '../../src/common/time-date'
 import { LoadingDots } from '../chat/components/LoadingDots'
 import { CollapsiblePanel } from '../components/CollapsiblePanel'

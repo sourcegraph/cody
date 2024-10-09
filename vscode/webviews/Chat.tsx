@@ -19,12 +19,12 @@ import { WelcomeMessage } from './chat/components/WelcomeMessage'
 import { ScrollDown } from './components/ScrollDown'
 import type { View } from './tabs'
 import { useTelemetryRecorder } from './utils/telemetry'
-import { useUserAccountInfo } from './utils/useConfig'
+import { useUserAccountInfo } from './utils/useLegacyWebviewConfig'
 
 interface ChatboxProps {
     chatEnabled: boolean
     messageInProgress: ChatMessage | null
-    transcript: ChatMessage[]
+    transcript: ChatMessage[] | null
     vscodeAPI: Pick<VSCodeWrapper, 'postMessage' | 'onMessage'>
     guardrails?: Guardrails
     scrollableParent?: HTMLElement | null
@@ -71,7 +71,10 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                     // V2 telemetry exports privateMetadata only for DotCom users
                     // the condition below is an aditional safegaurd measure
                     responseText: userInfo.isDotComUser
-                        ? truncateTextStart(transcriptRef.current.toString(), CHAT_INPUT_TOKEN_BUDGET)
+                        ? truncateTextStart(
+                              transcriptRef.current?.toString() ?? '',
+                              CHAT_INPUT_TOKEN_BUDGET
+                          )
                         : '',
                 },
                 billingMetadata: {
@@ -198,7 +201,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
         // Scroll to the bottom instead of focus input for unsent message
         // it's possible that we just want to scroll to the bottom in case of
         // welcome message screen
-        if (transcript.length === 0) {
+        if (!transcript || transcript.length === 0) {
             return
         }
 
@@ -212,26 +215,28 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                     Cody chat is disabled by your Sourcegraph site administrator
                 </div>
             )}
-            <Transcript
-                transcript={transcript}
-                messageInProgress={messageInProgress}
-                feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
-                copyButtonOnSubmit={copyButtonOnSubmit}
-                insertButtonOnSubmit={insertButtonOnSubmit}
-                smartApply={smartApply}
-                userInfo={userInfo}
-                chatEnabled={chatEnabled}
-                postMessage={postMessage}
-                guardrails={guardrails}
-                smartApplyEnabled={smartApplyEnabled}
-            />
-            {transcript.length === 0 && showWelcomeMessage && (
-                <>
-                    <WelcomeMessage setView={setView} />
-                    <WelcomeFooter IDE={userInfo.IDE} />
-                </>
+            {transcript && (
+                <Transcript
+                    transcript={transcript}
+                    messageInProgress={messageInProgress}
+                    feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
+                    copyButtonOnSubmit={copyButtonOnSubmit}
+                    insertButtonOnSubmit={insertButtonOnSubmit}
+                    smartApply={smartApply}
+                    userInfo={userInfo}
+                    chatEnabled={chatEnabled}
+                    postMessage={postMessage}
+                    guardrails={guardrails}
+                    smartApplyEnabled={smartApplyEnabled}
+                />
             )}
-
+            {!transcript ||
+                (transcript.length === 0 && showWelcomeMessage && (
+                    <>
+                        <WelcomeMessage setView={setView} />
+                        <WelcomeFooter IDE={userInfo.IDE} />
+                    </>
+                ))}
             {scrollableParent && (
                 <ScrollDown scrollableParent={scrollableParent} onClick={handleScrollDownClick} />
             )}

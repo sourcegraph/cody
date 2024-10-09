@@ -15,8 +15,8 @@ import { Button } from '../../../components/shadcn/ui/button'
 import { Tooltip, TooltipContent, TooltipTrigger } from '../../../components/shadcn/ui/tooltip'
 import { SourcegraphLogo } from '../../../icons/SourcegraphLogo'
 import { useTelemetryRecorder } from '../../../utils/telemetry'
-import { useConfig } from '../../../utils/useConfig'
 import { useExperimentalOneBox } from '../../../utils/useExperimentalOneBox'
+import { useLegacyWebviewConfig } from '../../../utils/useLegacyWebviewConfig'
 import { CodyIcon } from '../../components/CodyIcon'
 import { LoadingDots } from '../../components/LoadingDots'
 import { Cell } from '../Cell'
@@ -95,7 +95,7 @@ export const ContextCell: FunctionComponent<{
 
         const {
             config: { internalDebugContext },
-        } = useConfig()
+        } = useLegacyWebviewConfig()
 
         const telemetryRecorder = useTelemetryRecorder()
         const oneboxEnabled = useExperimentalOneBox()
