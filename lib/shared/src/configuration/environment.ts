@@ -32,39 +32,46 @@ export const cenv = defineEnvBuilder({
     /**
      * Disable fetching of Ollama models
      */
-    CODY_OVERRIDE_DISABLE_OLLAMA: (v, _) => bool(v) ?? assigned(env.VITEST) ?? assigned(env.PW) ?? false,
+    CODY_OVERRIDE_DISABLE_OLLAMA: (v, _) =>
+        bool(v) ?? assigned(getEnv('VITEST')) ?? assigned(getEnv('PW')) ?? false,
 
     /**
      * Disables the default console logging
      */
-    CODY_DEFAULT_LOGGER_DISABLE: (v, _) => bool(v) ?? assigned(env.VITEST) ?? false,
+    CODY_DEFAULT_LOGGER_DISABLE: (v, _) => bool(v) ?? assigned(getEnv('VITEST')) ?? false,
 
     /**
      * General flag to supress logs considered verbose during testing.
      */
-    CODY_TESTING_LOG_SUPRESS_VERBOSE: (v, _) => bool(v) ?? assigned(env.VITEST) ?? false,
+    CODY_TESTING_LOG_SUPRESS_VERBOSE: (v, _) => bool(v) ?? assigned(getEnv('VITEST')) ?? false,
 
     /**
      * Ignore error for telemetry provider initializations
      */
-    CODY_TESTING_IGNORE_TELEMETRY_PROVIDER_ERROR: (v, _) => bool(v) ?? assigned(env.VITEST) ?? false,
+    CODY_TESTING_IGNORE_TELEMETRY_PROVIDER_ERROR: (v, _) =>
+        bool(v) ?? assigned(getEnv('VITEST')) ?? false,
 
     /**
      * Limit the number of timers emitted from observables so that tests don't get stuck
      */
-    CODY_TESTING_LIMIT_MAX_TIMERS: (v, _) => bool(v) ?? assigned(env.VITEST) ?? false,
+    CODY_TESTING_LIMIT_MAX_TIMERS: (v, _) => bool(v) ?? assigned(getEnv('VITEST')) ?? false,
 })
 
 // Note of pride by the author: Doing this kind of wrapper that modifies the
 // function into getters ensures that we're both as type-safe as we can be,
 // keys are easily grepped, but typescript's goto-definition still works too!
-const env = typeof process !== 'undefined' ? process.env : {}
+const _env = typeof process !== 'undefined' ? process.env : {}
 
 /**
- * Looks up the key and it's variations
+ * Looks up the key and it's variations.
  */
 function getEnv(key: string): string | undefined {
-    return env[key] ?? env[key.toUpperCase()] ?? env[key.toLowerCase()]
+    const v = _env[key] ?? _env[key.toUpperCase()] ?? _env[key.toLowerCase()]
+    if (v === undefined) {
+        return v
+    }
+    // For some reason in VSCode Web process.env is not a string.
+    return `${v}`
 }
 // biome-ignore lint/complexity/noBannedTypes: we don't need it
 const logCache = new LRUCache<string, {}>({ max: 1000 })
