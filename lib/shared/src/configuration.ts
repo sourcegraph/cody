@@ -27,6 +27,7 @@ export interface NetConfiguration {
         server?: string | undefined | null
         path?: string | undefined | null
         cacert?: string | undefined | null
+        skipCertValidation?: boolean | null
     }
     bypassVSCode?: boolean | undefined | null
 }
