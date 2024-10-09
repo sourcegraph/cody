@@ -10,30 +10,26 @@ export const CODY_OUTPUT_CHANNEL = 'Cody by Sourcegraph'
  * Provides a default output channel and creates per-feature output channels when needed.
  */
 class OutputChannelManager {
-    public defaultOutputChannel: vscode.OutputChannel
-    private outputChannels: Map<string, vscode.OutputChannel>
+    public defaultOutputChannel = vscode.window.createOutputChannel(CODY_OUTPUT_CHANNEL, 'json')
+    private outputChannels: Map<string, vscode.OutputChannel> = new Map()
 
-    constructor() {
-        this.defaultOutputChannel = vscode.window.createOutputChannel(CODY_OUTPUT_CHANNEL, 'json')
-        this.outputChannels = new Map()
-    }
-
-    getOutputChannel(feature: string): vscode.OutputChannel {
+    getOutputChannel(feature: string): vscode.OutputChannel | undefined {
         if (!this.outputChannels.has(feature) && process.env.NODE_ENV === 'development') {
             const channel = vscode.window.createOutputChannel(`Cody ${feature}`, 'json')
             this.outputChannels.set(feature, channel)
         }
-        return this.outputChannels.get(feature)!
+
+        return this.outputChannels.get(feature)
     }
 
     appendLine(text: string, feature?: string): void {
         // Always log to the default output channel
-        this.defaultOutputChannel.appendLine(text)
+        this.defaultOutputChannel?.appendLine(text)
 
-        // Also log to the feature-specific output channel if provided
+        // Also log to the feature-specific output channel if available
         if (feature) {
             const channel = this.getOutputChannel(feature)
-            channel.appendLine(text)
+            channel?.appendLine(text)
         }
 
         // Write to log file if needed
