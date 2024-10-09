@@ -8,6 +8,7 @@ import { getCurrentDocContext } from '../completions/get-current-doc-context'
 import { getOpenAIChatCompletion } from './model-helpers'
 import { OpenAIPromptProvider, type PromptProvider } from './prompt-provider'
 import {createGitDiff} from '../../../lib/shared/src/editor/create-git-diff';
+import {CodeToReplaceData} from './prompt-utils';
 
 const AUTOEDITS_CONTEXT_STRATEGY = 'auto-edits'
 
@@ -75,7 +76,7 @@ export class AutoeditsProvider implements vscode.Disposable {
             docContext: docContext,
             maxChars: 100000,
         })
-        const { codeToRewrite, promptResponse: prompt } = this.provider.getPrompt(
+        const { codeToReplace, promptResponse: prompt } = this.provider.getPrompt(
             docContext,
             options.document,
             context,
@@ -83,8 +84,22 @@ export class AutoeditsProvider implements vscode.Disposable {
         )
         if (Array.isArray(prompt)) {
             const response = await getOpenAIChatCompletion(prompt)
-            this.logDiff(options.document.uri, codeToRewrite.toString(), response)
+            this.showSuggestion(options, codeToReplace, response)
         }
+    }
+
+    private showSuggestion(options: AutoEditsProviderOptions, codeToReplace: CodeToReplaceData, predictedText: string) {
+        const prevSuffixLine = codeToReplace.endLine - 1;
+        const range = new vscode.Range(
+            codeToReplace.startLine, 0,
+            prevSuffixLine, options.document.lineAt(prevSuffixLine).range.end.character
+        )
+        const currentText = options.document.getText(range)
+        const originalText = codeToReplace.codeToRewrite.toString()
+        this.logDiff(options.document.uri, currentText, predictedText)
+
+        // Show the decoration
+
     }
 
     private logDiff(uri: vscode.Uri, codeToRewrite: string, prediction: string) {

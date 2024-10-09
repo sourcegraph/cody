@@ -16,7 +16,7 @@ export type ChatPrompt = {
 export type PromptProviderResponse = CompletionsPrompt | ChatPrompt
 
 export interface PromptResponseData {
-    codeToRewrite: PromptString
+    codeToReplace: utils.CodeToReplaceData
     promptResponse: PromptProviderResponse
 }
 
@@ -38,7 +38,7 @@ export class OpenAIPromptProvider implements PromptProvider {
         context: AutocompleteContextSnippet[],
         tokenBudget: AutoEditsTokenLimit
     ): PromptResponseData {
-        const { codeToRewrite, promptResponse: userPrompt } = getBaseUserPrompt(docContext, document, context, tokenBudget)
+        const { codeToReplace, promptResponse: userPrompt } = getBaseUserPrompt(docContext, document, context, tokenBudget)
         const prompt: ChatPrompt = [
             {
                 role: 'system',
@@ -50,7 +50,7 @@ export class OpenAIPromptProvider implements PromptProvider {
             },
         ]
         return {
-            codeToRewrite: codeToRewrite,
+            codeToReplace: codeToReplace,
             promptResponse: prompt,
         }
     }
@@ -71,7 +71,7 @@ export class DeepSeekPromptProvider implements PromptProvider {
         context: AutocompleteContextSnippet[],
         tokenBudget: AutoEditsTokenLimit
     ): PromptResponseData {
-        const { codeToRewrite, promptResponse: userPrompt } = getBaseUserPrompt(docContext, document, context, tokenBudget)
+        const { codeToReplace, promptResponse: userPrompt } = getBaseUserPrompt(docContext, document, context, tokenBudget)
         const prompt = psDedent`${this.bosToken}${SYSTEM_PROMPT}
 
             ${this.userToken}${userPrompt}
@@ -79,7 +79,7 @@ export class DeepSeekPromptProvider implements PromptProvider {
             ${this.assistantToken}`
 
         return {
-            codeToRewrite: codeToRewrite,
+            codeToReplace: codeToReplace,
             promptResponse: prompt,
         }
     }
@@ -109,14 +109,14 @@ export function getBaseUserPrompt(
     context: AutocompleteContextSnippet[],
     tokenBudget: AutoEditsTokenLimit
 ): {
-    codeToRewrite: PromptString
+    codeToReplace: utils.CodeToReplaceData
     promptResponse: PromptString
 } {
     const contextItemMapping = utils.getContextItemMappingWithTokenLimit(
         context,
         tokenBudget.contextSpecificTokenLimit
     )
-    const { fileWithMarkerPrompt, areaPrompt, codeToRewritePrompt } = utils.getCurrentFilePromptComponents({
+    const { fileWithMarkerPrompt, areaPrompt, codeToReplace } = utils.getCurrentFilePromptComponents({
         docContext,
         document,
         maxPrefixLinesInArea: tokenBudget.maxPrefixLinesInArea,
@@ -165,7 +165,7 @@ ${FINAL_USER_PROMPT}
 `
 
     return {
-        codeToRewrite: codeToRewritePrompt,
+        codeToReplace: codeToReplace,
         promptResponse: finalPrompt,
     }
 }

@@ -36,22 +36,32 @@ export interface CurrentFilePromptOptions {
     codeToRewriteSuffixLines: number
 }
 
+export interface CodeToReplaceData {
+    codeToRewrite: PromptString
+    startLine: number
+    endLine: number
+}
+
 export interface CurrentFilePromptResponse {
     fileWithMarkerPrompt: PromptString
     areaPrompt: PromptString
-    codeToRewritePrompt: PromptString
+    codeToReplace: CodeToReplaceData
 }
 
 interface PrefixContext {
     prefixBeforeArea: PromptString
     prefixInArea: PromptString
     codeToRewritePrefix: PromptString
+    codeToRewriteStartLines: number
+    totalPrefixLines: number
 }
 
 interface SuffixContext {
     suffixAfterArea: PromptString
     suffixInArea: PromptString
     codeToRewriteSuffix: PromptString
+    codeToRewriteEndLines: number
+    totalSuffixLines: number
 }
 
 export function getPromptForTheContextSource(
@@ -75,6 +85,7 @@ export function getCurrentFilePromptComponents(
         options.docContext,
         options.document.uri
     )
+    const completePrefixLines = options.docContext.completePrefix.split('\n').length
     const prefixContext = getPrefixContext(
         prefix,
         options.maxPrefixLinesInArea,
@@ -89,6 +100,12 @@ export function getCurrentFilePromptComponents(
         [prefixContext.codeToRewritePrefix, suffixContext.codeToRewriteSuffix],
         ps``
     )
+
+    const codeToReplace = {
+        codeToRewrite: codeToRewrite,
+        startLine: completePrefixLines - prefixContext.codeToRewriteStartLines,
+        endLine: completePrefixLines + suffixContext.codeToRewriteEndLines,
+    }
 
     const fileWithMarker = ps`${prefixContext.prefixBeforeArea}
 ${AREA_FOR_CODE_MARKER}
@@ -109,7 +126,7 @@ ${CODE_TO_REWRITE_TAG_CLOSE}
 ${suffixContext.suffixInArea}
 ${AREA_FOR_CODE_MARKER_CLOSE}
 `
-    return { fileWithMarkerPrompt: filePrompt, areaPrompt: areaPrompt, codeToRewritePrompt: codeToRewrite }
+    return { fileWithMarkerPrompt: filePrompt, areaPrompt: areaPrompt, codeToReplace: codeToReplace }
 }
 
 export function getLintErrorsPrompt(contextItems: AutocompleteContextSnippet[]): PromptString {
@@ -252,7 +269,7 @@ ${EXTRACTED_CODE_SNIPPETS_TAG_CLOSE}
 function getPrefixContext(
     prefix: PromptString,
     prefixAreaLinesBudget: number,
-    codeToRewritePrefixLines: number
+    codeToRewritePrefixLines: number,
 ): PrefixContext {
     const prefixLines = prefix.split('\n')
     const totalLines = prefixLines.length
@@ -281,13 +298,15 @@ function getPrefixContext(
         prefixBeforeArea: prefixBeforeArea,
         prefixInArea: prefixInArea,
         codeToRewritePrefix: codeToRewritePrefix,
+        codeToRewriteStartLines: totalLines - codeToRewriteStart,
+        totalPrefixLines: totalLines,
     }
 }
 
 function getSuffixContext(
     suffix: PromptString,
     suffixAreaLinesBudget: number,
-    codeToRewriteSuffixLines: number
+    codeToRewriteSuffixLines: number,
 ): SuffixContext {
     const suffixLines = suffix.split('\n')
     const totalLines = suffixLines.length
@@ -315,6 +334,8 @@ function getSuffixContext(
         codeToRewriteSuffix: codeToRewriteSuffix,
         suffixInArea: suffixInArea,
         suffixAfterArea: suffixAfterArea,
+        codeToRewriteEndLines: codeToRewriteEnd - 1,
+        totalSuffixLines: totalLines,
     }
 }
 
