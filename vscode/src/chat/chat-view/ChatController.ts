@@ -3,6 +3,7 @@ import {
     type CodyClientConfig,
     cenv,
     clientCapabilities,
+    currentAuthStatusOrNotReadyYet,
     currentSiteVersion,
     distinctUntilChanged,
     firstResultFromOperation,
@@ -1490,6 +1491,19 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         if (this.webviewPanelOrView) {
             return this.webviewPanelOrView
         }
+
+        const currentAuthStatus = currentAuthStatusOrNotReadyYet()
+        if (!currentAuthStatus?.authenticated) {
+            await new Promise(resolve => {
+                const sub = authStatus.subscribe(authStatus => {
+                    if (authStatus.authenticated) {
+                        sub.unsubscribe
+                        resolve(undefined)
+                    }
+                })
+            })
+        }
+        console.log('# createWebviewViewOrPanel: currentAuthStatus', currentAuthStatusAuthed())
 
         const viewType = CodyChatEditorViewType
         const panelTitle =
