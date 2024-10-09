@@ -5,11 +5,11 @@ export function useTracePropsUpdate(props: any) {
 
     useEffect(() => {
         const changedProps = Object.entries(props).reduce(
-            (ps, [k, v]) => {
+            (prop, [k, v]) => {
                 if (prev.current[k] !== v) {
-                    ps[k] = [prev.current[k], v]
+                    prop[k] = [prev.current[k], v]
                 }
-                return ps
+                return prop
             },
             {} as Record<any, any>
         )
