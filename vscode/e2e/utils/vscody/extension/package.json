@@ -10,7 +10,7 @@
     "vscode": "^1.79.0",
     "node": ">=18.16.0"
   },
-  "activationEvents": ["*"],
+  "activationEvents": ["onStartupFinished"],
   "main": "./main.js",
   "contributes": {
     "commands": [
