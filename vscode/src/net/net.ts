@@ -1,10 +1,13 @@
 import * as fs from 'node:fs'
-import type * as http from 'node:http'
 import type { Agent } from 'node:http'
+import * as http from 'node:http'
 import * as https from 'node:https'
+import * as net from 'node:net'
 import * as os from 'node:os'
 import * as path from 'node:path'
 import type stream from 'node:stream'
+import * as tls from 'node:tls'
+import * as url from 'node:url'
 import {
     type NetConfiguration,
     cenv,
@@ -19,47 +22,42 @@ import {
     subscriptionDisposable,
 } from '@sourcegraph/cody-shared'
 import { Agent as AgentBase, type AgentConnectOpts } from 'agent-base'
+import { HttpsProxyAgent, type HttpsProxyAgentOptions } from 'https-proxy-agent'
+import omit from 'lodash/omit'
 import { map } from 'observable-fns'
 import { ProxyAgent } from 'proxy-agent'
-import type { LiteralUnion } from 'type-fest'
-import * as vscode from 'vscode'
+import { SocksProxyAgent } from 'socks-proxy-agent'
+import type * as vscode from 'vscode'
 import { getConfiguration } from '../configuration'
 import { CONFIG_KEY } from '../configuration-keys'
-
-import { proxyIdentifierSybmol } from './patch-vscode'
+import { bypassVSCodeSymbol } from './vscode.patch'
 
 const TIMEOUT = 60_000
 
-let debugFile: vscode.TextEditor | undefined
-function appendText(editor: vscode.TextEditor | undefined, string: string) {
-    if (!editor) {
-        return
-    }
-    void editor.edit(builder => {
-        builder.insert(editor.document.lineAt(editor.document.lineCount - 1).range.end, string + '\n')
-    })
-}
-async function openEmptyEditor() {
-    const document = await vscode.workspace.openTextDocument({ language: 'jsonl' })
-    return await vscode.window.showTextDocument(document)
-}
-
 export class DelegatingAgent extends AgentBase implements vscode.Disposable {
-    [proxyIdentifierSybmol] = true // this is what the network patch uses to identify this proxy
+    [bypassVSCodeSymbol](): boolean {
+        if (!this.latestConfig) {
+            // This means someone made a network call before we've started. Naughty!
+            throw new Error('Network call was dispatched before DelegatingAgent was initialized')
+        }
+        return this.latestConfig.bypassVSCode
+    }
 
     private disposables: vscode.Disposable[] = []
-    private proxyCache = new Map<LiteralUnion<'http:' | 'https:', string>, AgentBase>()
+    private latestConfig: ResolvedSettings | null = null // we need sync access for VSCode to work
+    private agentCache: Map<string, AgentBase | http.Agent | https.Agent> = new Map()
 
     private constructor() {
         super()
         this.disposables.push(
             subscriptionDisposable(
-                this.config.subscribe(() => {
-                    const expired = [...this.proxyCache.values()]
-                    this.proxyCache.clear()
-                    if (expired.length > 0) {
+                this.config.subscribe(latestConfig => {
+                    this.latestConfig = latestConfig
+                    const expiredAgents = [...this.agentCache.values()]
+                    this.agentCache.clear()
+                    if (expiredAgents.length > 0) {
                         setTimeout(() => {
-                            for (const agent of expired) {
+                            for (const agent of expiredAgents) {
                                 agent.destroy()
                             }
                         }, TIMEOUT)
@@ -74,6 +72,11 @@ export class DelegatingAgent extends AgentBase implements vscode.Disposable {
     }
 
     dispose() {
+        this.latestConfig = null
+        for (const agent of this.agentCache.values()) {
+            agent.destroy()
+        }
+        this.agentCache.clear()
         for (const d of this.disposables) {
             d.dispose()
         }
@@ -102,10 +105,11 @@ export class DelegatingAgent extends AgentBase implements vscode.Disposable {
             mapError((error: Error) => {
                 return {
                     error,
-                    preferInternalAgents: false,
-                    caCert: null,
+                    bypassVSCode: false,
+                    ca: [],
                     proxyPath: null,
                     proxyServer: null,
+                    skipCertValidation: false,
                 } satisfies ResolvedSettings
             })
         )
@@ -115,7 +119,7 @@ export class DelegatingAgent extends AgentBase implements vscode.Disposable {
         if (globalAgentRef.isSet) {
             throw new Error('Already initialized')
         }
-        debugFile = await openEmptyEditor()
+        // debugFile = await openEmptyEditor()
         const agent = new DelegatingAgent()
         await firstValueFrom(agent.config)
         globalAgentRef.curr = agent
@@ -124,135 +128,108 @@ export class DelegatingAgent extends AgentBase implements vscode.Disposable {
 
     async connect(
         req: http.ClientRequest & https.RequestOptions,
-        options: AgentConnectOpts & { _vscodeAgent?: Pick<AgentBase, 'connect'> }
+        options: AgentConnectOpts & { _vscode?: { utils: number } }
     ): Promise<stream.Duplex | Agent> {
-        const config = await firstValueFrom(this.config)
-
-        appendText(
-            debugFile,
-            `${JSON.stringify({ action: 'CONNECT', url: { host: req.host, path: req.path } })}`
-        )
-        addRequestTimings(req, timings => {
-            //write a line to the file
-            appendText(
-                debugFile,
-                JSON.stringify({ url: { host: req.host, path: req.path }, ...timings })
-            )
-        })
-
-        if (options._vscodeAgent && !config.preferInternalAgents) {
-            if (config.proxyPath) {
-                req.socketPath = config.proxyPath
-            }
-            req.setNoDelay(true)
-            req.setTimeout(TIMEOUT)
-            // req.setSocketKeepAlive(true,30_000) <-- this is NOT a good idea to do
-            // globally as it can cause all sorts of issues if we're not in full
-            // control.
-
-            // these simply return a socket so we can't cache the agent :shrug:
-            return options._vscodeAgent.connect(req, {
-                ...options,
-                //@ts-ignore
-                _vscodeAgent: undefined, // we must ensure _vscodeAgent is unset as VSCode might call us again
-            })
+        const config = this.latestConfig
+        if (!config) {
+            // This somehow means connect was called before we were initialized
+            throw new Error('Connect called before agent was initialized')
         }
 
-        /*
-        We could/should be handling all requests ourselves  in the future.
-        Especially because it will allow us to properly re-use agents and handle
-        keep-alives, socket timeouts, etc. However there is a lot of nuance in
-        doing so. Because of this for now we simply don't do this yet and hand
-        back to VSCode unless we need to specifically handle something
-        ourselves.
+        const reqOptions = {
+            keepAlive: false, // <-- this CAN NOT be enabled safely due to needing considerable re-work of reliance on 'close' events etc.
+            ALPNProtocols: ['http/1.1'], // http2 support would require significant rework of proxies etc.
+            scheduling: 'lifo', // Just so we always keep autocomplete snappy
+            noDelay: true,
+            maxSockets: Number.POSITIVE_INFINITY,
+            timeout: TIMEOUT,
+            ca: config.ca,
+            rejectUnauthorized: !config.skipCertValidation,
+        } as const
 
-        When we do we can yoink some of the helpers functions passed in params
-        to vscode/PacProxyAgent:
-        - Reading platform (on extension host) proxy info through `resolveProxy`
-        - Reading additional certs through `getOrLoadAdditionalCertificates` and
-          deciding on V1 (patched ._vscodeAdditionalCerts param picked up in
-          tls.createSecureContext) or V2 (certs added directly)
-        - Handling of (kerberos) proxy-authorization & re-connection (e.g. the
-          point of `HttpsProxyAgent2` in
-          `vscode-proxy-agent/blob/main/src/agent.ts`
-        - ...
+        const { proxyServer, proxyPath } = config
 
-        Or alternatively just implement a native network stack that more
-        graceuflly handles these settings internally.
-        */
-
-        let protocol = options.protocol || 'https:'
-        if (!options.protocol && options.port === 80) {
-            protocol = 'http:'
-        }
-
-        let agent = this.proxyCache.get(protocol)
+        const agentId = `${proxyPath ?? proxyServer?.protocol ?? 'direct'}+${
+            options.secureEndpoint ? 'https:' : 'http:'
+        }`
+        const cachedAgent = this.agentCache.get(agentId)
+        let agent = cachedAgent
         if (!agent) {
-            agent = buildAgent(config)
-            this.proxyCache.set(protocol, agent)
+            if (proxyPath) {
+                agent = new ProxyAgent({
+                    ...reqOptions,
+                    socketPath: proxyPath,
+                })
+            }
+            if (proxyServer) {
+                switch (proxyServer.protocol) {
+                    case 'http:':
+                    case 'https:':
+                        agent = new FixedHttpsProxyAgent(proxyServer.href, reqOptions, {
+                            ca: config.ca,
+                            requestCert: !config.skipCertValidation,
+                            rejectUnauthorized: !config.skipCertValidation,
+                        })
+                        break
+                    case 'socks:':
+                    case 'socks4:':
+                    case 'socks4a:':
+                    case 'socks5:':
+                        agent = new SocksProxyAgent(proxyServer.href, reqOptions)
+                        break
+                    default:
+                        logError(
+                            'DelegatingProxy',
+                            'Unsupported proxy protocol, falling back to direct',
+                            proxyServer.protocol
+                        )
+                        break
+                }
+            }
         }
 
-        return agent.connect(req, options)
+        if (!agent) {
+            const ctor = options.secureEndpoint ? https.Agent : http.Agent
+            agent = new ctor(reqOptions)
+        }
+        if (agent !== cachedAgent) {
+            this.agentCache.set(agentId, agent)
+        }
+        return agent
     }
 }
 
-function buildAgent(config: ResolvedSettings): AgentBase {
-    const ca = additionalCACerts(config.caCert)
-
-    return new ProxyAgent({
-        keepAlive: false, // <-- this CAN NOT be enabled safely due to needing considerable re-work of reliance on 'close' events etc.
-        ALPNProtocols: ['http/1.1'], // for now
-        scheduling: 'lifo', // Just so we always keep autocomplete snappy
-        maxSockets: Number.POSITIVE_INFINITY,
-        timeout: TIMEOUT,
-        socketPath: config.proxyPath ?? undefined,
-        fallbackToDirect: true,
-        getProxyForUrl: (_: string) => {
-            if (config.proxyPath) {
-                // we can't have proxy and socket path at the same time
-                return ''
-            }
-            return config.proxyServer || cenv.CODY_DEFAULT_PROXY || ''
-        },
-        //TODO: Properly handle all cert scenarios
-        ...(ca ? { ca } : { rejectUnauthorized: false }),
-    })
-}
-
-function additionalCACerts(additional: string | null) {
-    if (!additional) {
-        return undefined
-    }
-
-    // TODO: Technically these certs might need to be split and converted to PEM
+async function buildCaCerts(additional: string[] | null | undefined): Promise<(string | Buffer)[]> {
     // TODO: Probably want to load in the VSCode certs as well if available
-    // TODO: Need a more solid workaround than ca-cert.exe we use now
-    const globalCA = https.globalAgent.options.ca
+    const tlsCA = tls.rootCertificates
+    const globalAgentCa = https.globalAgent.options.ca
 
-    if (!globalCA) {
-        return [additional]
+    const toArray = (
+        v: Buffer | string | (string | Buffer)[] | null | undefined
+    ): (string | Buffer)[] => {
+        if (v === null || v === undefined) {
+            return []
+        }
+        if (Buffer.isBuffer(v)) {
+            return [v]
+        }
+        if (typeof v === 'string') {
+            return [v]
+        }
+        return v
     }
 
-    if (Buffer.isBuffer(globalCA)) {
-        return [globalCA, additional]
-    }
+    const combined = new Set([...tlsCA, ...toArray(globalAgentCa), ...(additional ?? [])])
 
-    if (typeof globalCA === 'string') {
-        return [globalCA, additional]
-    }
-
-    if (Array.isArray(globalCA)) {
-        return [...globalCA, additional]
-    }
-
-    return [additional]
+    return [...combined.values()]
 }
 
 type NormalizedSettings = {
     bypassVSCode: boolean | null
     proxyPath: string | null
-    proxyServer: string | null
+    proxyServer: URL | null
     proxyCACert: string | null
+    skipCertValidation: boolean
     proxyCACertPath: string | null
 }
 function normalizeSettings(raw: NetConfiguration): NormalizedSettings {
@@ -260,10 +237,11 @@ function normalizeSettings(raw: NetConfiguration): NormalizedSettings {
         ? ({ proxyCACert: raw.proxy?.cacert ?? null, proxyCACertPath: null } as const)
         : ({ proxyCACert: null, proxyCACertPath: normalizePath(raw.proxy?.cacert) } as const)
 
-    const proxyServer = raw.proxy?.server?.trim() || null
-
+    const proxyServerString = raw.proxy?.server?.trim() || cenv.CODY_DEFAULT_PROXY || null
+    const proxyServer = proxyServerString ? new url.URL(proxyServerString) : null
     return {
         bypassVSCode: raw.bypassVSCode ?? null,
+        skipCertValidation: raw.proxy?.skipCertValidation || false,
         ...caCertConfig,
         proxyPath: normalizePath(raw.proxy?.path),
         proxyServer,
@@ -272,23 +250,25 @@ function normalizeSettings(raw: NetConfiguration): NormalizedSettings {
 
 type ResolvedSettings = {
     error: Error | null
-    proxyServer: string | null
+    proxyServer: URL | null
     proxyPath: string | null
-    caCert: string | null
-    preferInternalAgents: boolean
+    ca: (string | Buffer)[]
+    skipCertValidation: boolean
+    bypassVSCode: boolean
 }
-function resolveSettings(settings: NormalizedSettings): ResolvedSettings {
+async function resolveSettings(settings: NormalizedSettings): Promise<ResolvedSettings> {
     const proxyPath = resolveProxyPath(settings.proxyPath) || null
     const caCert = settings.proxyCACert || readProxyCACert(settings.proxyCACertPath) || null
     return {
-        preferInternalAgents:
+        bypassVSCode:
             typeof settings.bypassVSCode === 'boolean'
                 ? settings.bypassVSCode
                 : !!settings.proxyServer || !!settings.proxyPath || false,
         error: null,
         proxyServer: settings.proxyServer || null,
         proxyPath,
-        caCert,
+        ca: await buildCaCerts(caCert ? [caCert] : null),
+        skipCertValidation: settings.skipCertValidation,
     }
 }
 
@@ -302,19 +282,14 @@ function resolveProxyPath(filePath: string | null | undefined): string | undefin
         if (!stats.isSocket()) {
             throw new Error('Not a socket')
         }
-        const mode = stats.mode
-        const canRead = (mode & fs.constants.S_IRUSR) !== 0
-        const canWrite = (mode & fs.constants.S_IWGRP) !== 0
-        if (!(canRead && canWrite)) {
-            throw new Error('Insufficient permissions')
-        }
+        fs.accessSync(filePath, fs.constants.R_OK | fs.constants.W_OK)
         return filePath
     } catch (error) {
         logError(
             'vscode.configuration',
             `Cannot verify ${CONFIG_KEY.netProxy}.path: ${filePath}: ${error}`
         )
-        throw new Error(`Cannot verify ${CONFIG_KEY.netProxy}.proxy.path: ${filePath}:\n${error}`)
+        throw new Error(`Cannot verify ${CONFIG_KEY.netProxy}.path: ${filePath}:\n${error}`)
     }
 }
 
@@ -361,55 +336,43 @@ function normalizePath(filePath: string | null | undefined): string | null {
     return normalizedPath
 }
 
-interface RequestTimings {
-    startTime: number
-    socket?: number
-    lookup?: number
-    connect?: number
-    response?: number
-    end?: number
-    finish?: number
-    connectError?: Error
-    responseError?: Error
-}
-function addRequestTimings(req: http.ClientRequest, callback: (timings: RequestTimings) => void) {
-    const startTime = performance.now()
-
-    const timings: RequestTimings = {
-        startTime,
+type TlsUpgradeOpts = Omit<tls.ConnectionOptions, 'path' | 'port' | 'host' | 'socket' | 'servername'>
+class FixedHttpsProxyAgent<Uri extends string> extends HttpsProxyAgent<Uri> {
+    constructor(
+        uri: Uri,
+        opts?: HttpsProxyAgentOptions<Uri> | undefined,
+        private tlsUpgradeOpts: TlsUpgradeOpts = {}
+    ) {
+        super(uri, opts)
     }
 
-    req.on('socket', socket => {
-        timings.socket = performance.now() - startTime
-
-        socket.on('lookup', () => {
-            timings.lookup = performance.now() - startTime
+    private upgradeSocketToTls(
+        socket: net.Socket,
+        servername: string | undefined,
+        opts: tls.ConnectionOptions
+    ) {
+        return tls.connect({
+            ...opts,
+            ...this.tlsUpgradeOpts,
+            socket,
+            servername: !servername || net.isIP(servername) ? undefined : servername,
         })
+    }
 
-        socket.on('connect', () => {
-            timings.connect = performance.now() - startTime
-        })
-
-        socket.on('error', err => {
-            timings.connectError = err
-        })
-    })
-
-    req.on('response', res => {
-        timings.response = performance.now() - startTime
-
-        res.on('end', () => {
-            timings.end = performance.now() - startTime
-        })
-    })
-
-    req.on('error', err => {
-        timings.responseError = err
-        timings.end = performance.now() - startTime
-    })
-
-    req.on('close', () => {
-        timings.finish = performance.now() - startTime
-        callback(timings)
-    })
+    async connect(req: http.ClientRequest, opts: AgentConnectOpts): Promise<net.Socket> {
+        // We temporarily disable secureEndpoint on the opts to ensure that we're given back control to create the tls socket.
+        // This is done so that we can apply the logic from https://github.com/TooTallNate/proxy-agents/pull/235
+        const socket = await super.connect(req, { ...opts, secureEndpoint: false })
+        // check that it's not a fake socket
+        if (!socket.writable) {
+            return socket
+        }
+        if (opts.secureEndpoint) {
+            // The proxy is connecting to a TLS server, so upgrade
+            // this socket connection to a TLS connection.
+            const servername = opts.servername || opts.host
+            return this.upgradeSocketToTls(socket, servername, omit(opts, 'host', 'path', 'port'))
+        }
+        return socket
+    }
 }

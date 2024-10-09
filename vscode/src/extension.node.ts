@@ -1,7 +1,7 @@
 // We're synchronously requiring this to ensure the network is patched before
 // anything else loads. If we're ever switching to ESM you'll need to do a
 // top-level await with a IFFY / SIF e.g. `await (async () => {})`
-import './net/patch-vscode'
+import './net/vscode.patch'
 
 // Sentry should be imported first
 import { NodeSentryService } from './services/sentry/sentry.node'

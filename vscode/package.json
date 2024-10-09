@@ -1266,6 +1266,11 @@
             }
           ],
           "properties": {
+            "skipCertValidation": {
+              "description": "Whether to skip server cert validation",
+              "type": "boolean",
+              "default": false
+            },
             "cacert": {
               "description": "Either the PEM-encoded CA certificate the proxy uses (replace newlines with `\n`), or the path to the file containing that certificate.",
               "type": "string",
@@ -1407,7 +1412,7 @@
     "graceful-fs": "^4.2.11",
     "he": "^1.2.0",
     "http-proxy-agent": "^7.0.2",
-    "https-proxy-agent": "^7.0.4",
+    "https-proxy-agent": "^7.0.5",
     "ini": "^4.1.2",
     "js-levenshtein": "^1.1.6",
     "lexical": "^0.17.0",
