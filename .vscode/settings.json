@@ -28,12 +28,15 @@
   "editor.insertSpaces": true,
   "cSpell.words": ["Supercompletion", "Supercompletions"],
   "[javascript][javascriptreact][json][jsonc][typescript][typescriptreact][graphql]": {
-  "editor.defaultFormatter": "biomejs.biome"
-},
+    "editor.defaultFormatter": "biomejs.biome"
+  },
   "[css]": {
     "editor.defaultFormatter": "stylelint.vscode-stylelint"
   },
   "[javascript]": {
     "editor.defaultFormatter": "vscode.typescript-language-features"
   },
+  "[typescript]": {
+    "editor.defaultFormatter": "biomejs.biome"
+  }
 }

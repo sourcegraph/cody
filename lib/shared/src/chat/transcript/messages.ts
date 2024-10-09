@@ -50,6 +50,7 @@ export interface SerializedChatMessage {
     speaker: 'human' | 'assistant' | 'system'
     text?: string // Changed from PromptString
     model?: string
+    intent?: ChatMessage['intent']
 }
 
 export interface ChatError {
