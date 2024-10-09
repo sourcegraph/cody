@@ -78,7 +78,7 @@ import { AgentWorkspaceDocuments } from './AgentWorkspaceDocuments'
 import { registerNativeWebviewHandlers, resolveWebviewView } from './NativeWebview'
 import type { PollyRequestError } from './cli/command-jsonrpc-stdio'
 import { codyPaths } from './codyPaths'
-import { currrentProtocolAuthStatus, toProtocolAuthStatus } from './currentProtocolAuthStatus'
+import { currentProtocolAuthStatus, toProtocolAuthStatus } from './currentProtocolAuthStatus'
 import { AgentGlobalState } from './global-state/AgentGlobalState'
 import {
     MessageHandler,
@@ -577,12 +577,12 @@ export class Agent extends MessageHandler implements ExtensionClient {
         this.registerRequest('extensionConfiguration/change', async config => {
             this.authenticationPromise = this.handleConfigChanges(config)
             await this.authenticationPromise
-            return currrentProtocolAuthStatus()
+            return currentProtocolAuthStatus()
         })
 
         this.registerRequest('extensionConfiguration/status', async () => {
             await this.authenticationPromise
-            return currrentProtocolAuthStatus()
+            return currentProtocolAuthStatus()
         })
 
         this.registerRequest('extensionConfiguration/getSettingsSchema', async () => {

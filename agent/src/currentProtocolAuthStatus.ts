@@ -14,6 +14,6 @@ export function toProtocolAuthStatus(status: AuthStatus): ProtocolAuthStatus {
     }
 }
 
-export function currrentProtocolAuthStatus(): ProtocolAuthStatus {
+export function currentProtocolAuthStatus(): ProtocolAuthStatus {
     return toProtocolAuthStatus(currentAuthStatus())
 }

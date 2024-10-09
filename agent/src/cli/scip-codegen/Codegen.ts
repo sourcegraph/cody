@@ -1140,11 +1140,6 @@ export class Codegen extends BaseCodegen {
                 }
             >()
             for (const property of this.properties(jsonrpcMethod.signature.type_signature.lower_bound)) {
-                if (!this.symtab.has(property)) {
-                    console.log(this.debug(jsonrpcMethod))
-                    console.log(new Error().stack)
-                    continue
-                }
                 const propertyInfo = this.symtab.info(property)
                 const sibling = declarations.get(propertyInfo.display_name)
                 if (!sibling) {
