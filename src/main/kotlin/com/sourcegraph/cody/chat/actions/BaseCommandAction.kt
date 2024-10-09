@@ -36,7 +36,7 @@ abstract class BaseCommandAction : DumbAwareEDTAction() {
       ReadAction.nonBlocking(
               Callable { IgnoreOracle.getInstance(project).policyForUri(protocolFile.uri).get() })
           .expireWith(project)
-          .finishOnUiThread(ModalityState.NON_MODAL) {
+          .finishOnUiThread(ModalityState.nonModal()) {
             when (it) {
               IgnorePolicy.USE -> {
                 CodyAgentService.withAgent(project) { agent ->

@@ -12,9 +12,20 @@ import com.sourcegraph.cody.auth.Account
 import com.sourcegraph.cody.auth.AccountDetails
 import com.sourcegraph.cody.auth.ServerAccount
 import com.sourcegraph.cody.config.CachingCodyUserAvatarLoader
-import java.awt.*
+import java.awt.BorderLayout
+import java.awt.Component
+import java.awt.FlowLayout
+import java.awt.Font
+import java.awt.GridBagConstraints
+import java.awt.GridBagLayout
+import java.awt.Image
 import java.util.concurrent.CompletableFuture
-import javax.swing.*
+import javax.swing.Icon
+import javax.swing.JComponent
+import javax.swing.JLabel
+import javax.swing.JList
+import javax.swing.JPanel
+import javax.swing.ListCellRenderer
 import org.jetbrains.annotations.Nls
 
 class SimpleAccountsListCellRenderer<A : Account, D : AccountDetails>(
@@ -97,7 +108,7 @@ class SimpleAccountsListCellRenderer<A : Account, D : AccountDetails>(
     UIUtil.setBackgroundRecursively(
         this, ListUiUtil.WithTallRow.background(list, isSelected, list.hasFocus()))
     val primaryTextColor = ListUiUtil.WithTallRow.foreground(isSelected, list.hasFocus())
-    val secondaryTextColor = ListUiUtil.WithTallRow.secondaryForeground(list, isSelected)
+    val secondaryTextColor = ListUiUtil.WithTallRow.secondaryForeground(isSelected, list.hasFocus())
 
     accountName.apply {
       text = account.name

@@ -87,7 +87,7 @@ class SettingsMigration : Activity {
         loadUserDetails(
             SourcegraphApiRequestExecutor.Factory.instance,
             token,
-            EmptyProgressIndicator(ModalityState.NON_MODAL),
+            EmptyProgressIndicator(ModalityState.nonModal()),
             server) {
               codyAccount.id = it.id
               CodyAuthenticationManager.getInstance().updateAccountToken(codyAccount, token)
@@ -175,14 +175,14 @@ class SettingsMigration : Activity {
             dotcomAccessToken,
             server,
             requestExecutorFactory,
-            EmptyProgressIndicator(ModalityState.NON_MODAL))
+            EmptyProgressIndicator(ModalityState.nonModal()))
       } else {
         addAccountIfUnique(
             project,
             dotcomAccessToken,
             server,
             requestExecutorFactory,
-            EmptyProgressIndicator(ModalityState.NON_MODAL))
+            EmptyProgressIndicator(ModalityState.nonModal()))
       }
     }
   }
@@ -203,14 +203,14 @@ class SettingsMigration : Activity {
                   enterpriseAccessToken,
                   it,
                   requestExecutorFactory,
-                  EmptyProgressIndicator(ModalityState.NON_MODAL))
+                  EmptyProgressIndicator(ModalityState.nonModal()))
             } else {
               addAccountIfUnique(
                   project,
                   enterpriseAccessToken,
                   it,
                   requestExecutorFactory,
-                  EmptyProgressIndicator(ModalityState.NON_MODAL))
+                  EmptyProgressIndicator(ModalityState.nonModal()))
             }
           }) {
             LOG.warn("Unable to parse enterprise server url: '$enterpriseUrl'", it)

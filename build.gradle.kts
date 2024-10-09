@@ -46,7 +46,8 @@ val skippedFailureLevels =
         // remote IDE
         FailureLevel.DEPRECATED_API_USAGES,
         FailureLevel.INTERNAL_API_USAGES,
-        FailureLevel.SCHEDULED_FOR_REMOVAL_API_USAGES, // blocked by: Kotlin UI DSL Cell.align
+        FailureLevel
+            .SCHEDULED_FOR_REMOVAL_API_USAGES, // HttpConfigurable, migration to coroutines, others
         FailureLevel.EXPERIMENTAL_API_USAGES,
         FailureLevel.NOT_DYNAMIC)!!
 

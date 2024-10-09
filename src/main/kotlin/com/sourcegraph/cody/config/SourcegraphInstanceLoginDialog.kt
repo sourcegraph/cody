@@ -143,7 +143,7 @@ class SourcegraphInstanceLoginDialog(
     val server = deriveServerPath()
 
     acquireDetailsAndToken(emptyProgressIndicator)
-        .successOnEdt(ModalityState.NON_MODAL) { (details, token) ->
+        .successOnEdt(ModalityState.nonModal()) { (details, token) ->
           codyAuthData =
               CodyAuthData(
                   CodyAccount(details.username, details.displayName, server, details.id),
@@ -151,7 +151,7 @@ class SourcegraphInstanceLoginDialog(
                   token)
           close(OK_EXIT_CODE, true)
         }
-        .errorOnEdt(ModalityState.NON_MODAL) {
+        .errorOnEdt(ModalityState.nonModal()) {
           if (advancedSettings.isSelected.not()) {
             isAcquiringToken.isSelected = false
           }

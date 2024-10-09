@@ -1,5 +1,6 @@
 package com.sourcegraph.website;
 
+import com.intellij.dvcs.repo.VcsRepositoryManager;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.application.ApplicationInfo;
 import com.intellij.openapi.application.ApplicationManager;
@@ -8,7 +9,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.VcsDataKeys;
 import com.intellij.openapi.vcs.history.VcsFileRevision;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.vcs.log.VcsLog;
+import com.intellij.vcs.log.VcsLogCommitSelection;
 import com.intellij.vcs.log.VcsLogDataKeys;
 import com.intellij.vcsUtil.VcsUtil;
 import com.sourcegraph.common.BrowserOpener;
@@ -18,6 +19,7 @@ import com.sourcegraph.config.ConfigUtil;
 import com.sourcegraph.vcs.RepoUtil;
 import com.sourcegraph.vcs.RevisionContext;
 import com.sourcegraph.vcs.VCSType;
+import git4idea.GitVcs;
 import java.util.Optional;
 import org.jetbrains.annotations.NotNull;
 
@@ -35,7 +37,10 @@ public class OpenRevisionAction extends DumbAwareEDTAction {
     // This action handles events for both log and history views, so attempt to load from any
     // possible option.
     RevisionContext context =
-        getHistoryRevisionContext(event).or(() -> getLogRevisionContext(event)).orElse(null);
+        getHistoryRevisionContext(event)
+            .or(() -> getLogRevisionContext(event))
+            .or(() -> getEditorRevisionContext(event))
+            .orElse(null);
 
     if (context == null) {
       VirtualFile file = event.getDataContext().getData(VcsDataKeys.VCS_VIRTUAL_FILE);
@@ -131,18 +136,34 @@ public class OpenRevisionAction extends DumbAwareEDTAction {
 
   @NotNull
   private Optional<RevisionContext> getLogRevisionContext(@NotNull AnActionEvent event) {
-    VcsLog log = event.getDataContext().getData(VcsLogDataKeys.VCS_LOG);
+    VcsLogCommitSelection log =
+        event.getDataContext().getData(VcsLogDataKeys.VCS_LOG_COMMIT_SELECTION);
     Project project = event.getProject();
 
     if (project == null) {
       return Optional.empty();
     }
-    if (log == null || log.getSelectedCommits().isEmpty()) {
+    if (log == null || log.getCommits().isEmpty()) {
       return Optional.empty();
     }
 
-    String revision = log.getSelectedCommits().get(0).getHash().asString();
-    VirtualFile root = log.getSelectedCommits().get(0).getRoot();
+    String revision = log.getCommits().get(0).getHash().asString();
+    VirtualFile root = log.getCommits().get(0).getRoot();
     return Optional.of(new RevisionContext(revision, root));
+  }
+
+  private Optional<RevisionContext> getEditorRevisionContext(@NotNull AnActionEvent event) {
+    Project project = event.getProject();
+
+    if (project == null) {
+      return Optional.empty();
+    }
+
+    return VcsRepositoryManager.getInstance(project).getRepositories().stream()
+        .filter(it -> it.getVcs().getName().equals(GitVcs.NAME))
+        .findFirst()
+        .map(
+            repository ->
+                new RevisionContext(repository.getCurrentRevision(), repository.getRoot()));
   }
 }

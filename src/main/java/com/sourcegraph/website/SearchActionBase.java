@@ -62,8 +62,7 @@ public abstract class SearchActionBase extends DumbAwareEDTAction {
                   String codeHostUrl =
                       (scope == Scope.REPOSITORY) ? repoInfo.getCodeHostUrl() : null;
                   String repoName = (scope == Scope.REPOSITORY) ? repoInfo.getRepoName() : null;
-                  url =
-                      URLBuilder.buildDirectSearchUrl(project, selectedText, codeHostUrl, repoName);
+                  url = URLBuilder.buildDirectSearchUrl(selectedText, codeHostUrl, repoName);
                 } else {
                   url = URLBuilder.buildEditorSearchUrl(selectedText, remoteUrl, remoteBranchName);
                 }

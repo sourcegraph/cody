@@ -155,7 +155,7 @@ class CodyAuthenticationManager :
 
     if (token != null) {
       val executor = SourcegraphApiRequestExecutor.Factory.instance.create(theAccount.server, token)
-      val progressIndicator = EmptyProgressIndicator(ModalityState.NON_MODAL)
+      val progressIndicator = EmptyProgressIndicator(ModalityState.nonModal())
       val submitIOTask =
           service<ProgressManager>().submitIOTask(progressIndicator) {
             if (theAccount.isEnterpriseAccount()) {

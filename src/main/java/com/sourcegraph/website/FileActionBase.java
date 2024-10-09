@@ -77,7 +77,6 @@ public abstract class FileActionBase extends DumbAwareEDTAction {
                 } else {
                   url =
                       URLBuilder.buildEditorFileUrl(
-                          project,
                           repoInfo.remoteUrl,
                           repoInfo.remoteBranchName,
                           repoInfo.relativePath,
