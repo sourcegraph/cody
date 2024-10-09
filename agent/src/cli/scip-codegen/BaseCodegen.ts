@@ -21,8 +21,18 @@ export interface ProtocolSymbol {
     kind: ProtocolMethodKind
 }
 
+export type ConstantType = string | boolean | number
+export type ConstantTypeType = 'string' | 'boolean' | 'number'
+
+export function typeOfUnion(union: DiscriminatedUnion): ConstantTypeType {
+    if (union.members.length === 0) {
+        throw new TypeError(`Union ${JSON.stringify(union, null, 2)} has no members`)
+    }
+    return typeof union.members[0].value as ConstantTypeType
+}
+
 export interface DiscriminatedUnionMember {
-    value: string
+    value: ConstantType
     type: scip.Type
 }
 export interface DiscriminatedUnion {

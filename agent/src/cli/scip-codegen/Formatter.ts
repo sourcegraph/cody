@@ -1,23 +1,31 @@
 import type { DiscriminatedUnion, DiscriminatedUnionMember } from './BaseCodegen'
-import { type Codegen, TargetLanguage } from './Codegen'
+import type { Codegen } from './Codegen'
 import type { SymbolTable } from './SymbolTable'
 import { isNullOrUndefinedOrUnknownType } from './isNullOrUndefinedOrUnknownType'
 import type { scip } from './scip'
-import { capitalize, typescriptKeyword, typescriptKeywordSyntax } from './utils'
+import { TypescriptKeyword, capitalize, typescriptKeyword, typescriptKeywordSyntax } from './utils'
 
-export class Formatter {
+export interface LanguageOptions {
+    typeNameSeparator: string
+    typeAnnotations: 'before' | 'after'
+    voidType: string
+    nullableSyntax?: string
+    reserved: Set<string>
+    keywordOverrides: Map<TypescriptKeyword, string>
+}
+export abstract class Formatter {
     constructor(
-        private readonly language: TargetLanguage,
         private readonly symtab: SymbolTable,
         private codegen: Codegen
     ) {}
+
+    public abstract options: LanguageOptions
+    public abstract mapSyntax(key: string, value: string): string
+    public abstract listSyntax(elementType: string): string
+    public abstract formatFieldName(name: string): string
+
     public functionName(info: scip.SymbolInformation): string {
-        switch (this.language) {
-            case TargetLanguage.CSharp:
-                return info.display_name.replaceAll('$/', '').split('/').map(capitalize).join('')
-            default:
-                return info.display_name.replaceAll('$/', '').replaceAll('/', '_')
-        }
+        return info.display_name.replaceAll('$/', '').replaceAll('/', '_')
     }
 
     public typeName(info: scip.SymbolInformation): string {
@@ -29,7 +37,7 @@ export class Formatter {
             .replaceAll('$/', '')
             .split('/')
             .map(part => capitalize(part))
-            .join(this.language === TargetLanguage.CSharp ? '' : '_')
+            .join(this.options.typeNameSeparator)
     }
 
     public jsonrpcMethodParameter(jsonrpcMethod: scip.SymbolInformation): {
@@ -38,7 +46,7 @@ export class Formatter {
     } {
         const parameterType = jsonrpcMethod.signature.value_signature.tpe.type_ref.type_arguments[0]
         const parameterSyntax = this.jsonrpcTypeName(jsonrpcMethod, parameterType, 'parameter')
-        if (this.language === TargetLanguage.Kotlin) {
+        if (this.options.typeAnnotations === 'after') {
             return { parameterType, parameterSyntax: `params: ${parameterSyntax}` }
         }
         return { parameterType, parameterSyntax: `${parameterSyntax} params` }
@@ -52,14 +60,10 @@ export class Formatter {
         return this.isNullable(info.signature.value_signature.tpe)
     }
     public nullableSyntax(tpe: scip.Type): string {
-        if (this.language === TargetLanguage.Java) {
-            // TODO: emit @Nullable
-            return ''
+        if (this.options.nullableSyntax && this.isNullable(tpe)) {
+            return this.options.nullableSyntax
         }
-        if (this.language === TargetLanguage.CSharp) {
-            return ''
-        }
-        return this.isNullable(tpe) ? '?' : ''
+        return ''
     }
 
     public isNullable(tpe: scip.Type): boolean {
@@ -94,31 +98,19 @@ export class Formatter {
                 const [k, v] = parameterOrResultType.type_ref.type_arguments
                 const key = this.jsonrpcTypeName(jsonrpcMethod, k, kind)
                 const value = this.jsonrpcTypeName(jsonrpcMethod, v, kind)
-                if (this.language === TargetLanguage.Kotlin) {
-                    return `Map<${key}, ${value}>`
-                }
-                if (this.language === TargetLanguage.CSharp) {
-                    return `Dictionary<${key}, ${value}>`
-                }
-                return `java.util.Map<${key}, ${value}>`
+                return this.mapSyntax(key, value)
             }
-            const keyword = typescriptKeywordSyntax(this.language, parameterOrResultType.type_ref.symbol)
-            if (keyword === 'List') {
+            const keyword = typescriptKeywordSyntax(parameterOrResultType.type_ref.symbol)
+            if (keyword === TypescriptKeyword.List) {
                 const elementType = this.jsonrpcTypeName(
                     jsonrpcMethod,
                     parameterOrResultType.type_ref.type_arguments[0],
                     kind
                 )
-                if (this.language === TargetLanguage.Kotlin) {
-                    return `List<${elementType}>`
-                }
-                if (this.language === TargetLanguage.CSharp) {
-                    return `${elementType}[]`
-                }
-                return `java.util.List<${elementType}>`
+                return this.listSyntax(elementType)
             }
             if (keyword) {
-                return this.languageSpecificKeyword(keyword)
+                return this.options.keywordOverrides.get(keyword) ?? keyword
             }
             return this.typeName(this.symtab.info(parameterOrResultType.type_ref.symbol))
         }
@@ -147,10 +139,7 @@ export class Formatter {
                 tpe => !this.isNullable(tpe)
             )
             if (nonNullableTypes.length === 0) {
-                if (this.language === TargetLanguage.Kotlin) {
-                    return 'Null'
-                }
-                return 'Void'
+                return this.options.voidType
             }
             if (nonNullableTypes.length === 1) {
                 return this.nonNullableJsonrpcTypeName(jsonrpcMethod, nonNullableTypes[0], kind)
@@ -184,25 +173,6 @@ export class Formatter {
                 2
             )}`
         )
-    }
-
-    private languageSpecificKeyword(keyword: string): string {
-        switch (this.language) {
-            case TargetLanguage.Kotlin:
-            case TargetLanguage.Java:
-                return keyword
-            case TargetLanguage.CSharp:
-                switch (keyword) {
-                    case 'Boolean':
-                        return 'bool'
-                    case 'String':
-                        return 'string'
-                    case 'Long':
-                        return 'int'
-                    default:
-                        return keyword
-                }
-        }
     }
 
     public readonly ignoredProperties = [
@@ -242,55 +212,6 @@ export class Formatter {
         )
     }
 
-    // Incomplete, but useful list of keywords. Thank you Cody!
-    private kotlinKeywords = new Set([
-        'class',
-        'interface',
-        'object',
-        'package',
-        'typealias',
-        'val',
-        'var',
-        'fun',
-        'when',
-    ])
-    private javaKeywords = new Set([
-        'class',
-        'interface',
-        'object',
-        'package',
-        'var',
-        'default',
-        'case',
-        'switch',
-        'native',
-    ])
-
-    public formatFieldName(name: string): string {
-        const escaped = name.replace(':', '_').replace('/', '_')
-        if (this.language === TargetLanguage.Kotlin) {
-            const isKeyword = this.kotlinKeywords.has(escaped)
-            const needsBacktick = isKeyword || !/^[a-zA-Z0-9_]+$/.test(escaped)
-            // Replace all non-alphanumeric characters with underscores
-            const fieldName = getEscapedValue(escaped, '-')
-            return needsBacktick ? `\`${fieldName}\`` : fieldName
-        }
-        // CSharp
-        if (this.language === TargetLanguage.CSharp) {
-            return getEscapedValue(escaped)
-                .split('_')
-                .map(part => part.charAt(0).toUpperCase() + part.slice(1))
-                .join('')
-                .replaceAll('_', '')
-        }
-        // Java
-        const isKeyword = this.javaKeywords.has(escaped)
-        if (isKeyword) {
-            return escaped + '_'
-        }
-        return escaped.replace(/[^a-zA-Z0-9]/g, '_')
-    }
-
     public discriminatedUnionTypeName(
         union: DiscriminatedUnion,
         member: DiscriminatedUnionMember
@@ -302,18 +223,19 @@ export class Formatter {
             this.formatFieldName(member.value + this.symtab.info(union.symbol).display_name)
         )
     }
+
     public formatEnumType(name: string): string {
         return `${capitalize(name)}Enum`
     }
-}
 
-function getEscapedValue(name: string, replacer: '_' | '-' = '_'): string {
-    const nonAlphanumericRegex = replacer === '-' ? /[^a-zA-Z0-9]+/g : /[^a-zA-Z0-9]/g
-    const repeatedReplacerRegex = new RegExp(`${replacer}+`, 'g')
-    const trimReplacerRegex = new RegExp(`^${replacer}|${replacer}$`, 'g')
+    protected escape(name: string, replacer: '_' | '-' = '_'): string {
+        const nonAlphanumericRegex = replacer === '-' ? /[^a-zA-Z0-9]+/g : /[^a-zA-Z0-9]/g
+        const repeatedReplacerRegex = new RegExp(`${replacer}+`, 'g')
+        const trimReplacerRegex = new RegExp(`^${replacer}|${replacer}$`, 'g')
 
-    return name
-        .replace(nonAlphanumericRegex, replacer)
-        .replace(repeatedReplacerRegex, replacer)
-        .replace(trimReplacerRegex, '')
+        return name
+            .replace(nonAlphanumericRegex, replacer)
+            .replace(repeatedReplacerRegex, replacer)
+            .replace(trimReplacerRegex, '')
+    }
 }

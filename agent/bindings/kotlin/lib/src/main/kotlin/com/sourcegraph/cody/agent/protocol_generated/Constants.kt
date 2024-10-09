@@ -41,7 +41,6 @@ object Constants {
   const val function = "function"
   const val gateway = "gateway"
   const val history = "history"
-  const val `https-example-com` = "https://example.com"
   const val human = "human"
   const val ignore = "ignore"
   const val indentation = "indentation"

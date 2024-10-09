@@ -23,7 +23,6 @@ import type {
 
 import type { ExtensionMessage, WebviewMessage } from '../chat/protocol'
 import type { CompletionBookkeepingEvent, CompletionItemID } from '../completions/analytics-logger'
-import type { InlineCompletionItemProviderConfig } from '../completions/inline-completion-item-provider-config-singleton'
 import type { FixupTaskID } from '../non-stop/FixupTask'
 import type { CodyTaskState } from '../non-stop/state'
 
@@ -238,7 +237,10 @@ export type ClientRequests = {
     'testing/autocomplete/setCompletionVisibilityDelay': [{ delay: number }, null]
 
     // For testing purposes, returns the current autocomplete provider configuration.
-    'testing/autocomplete/providerConfig': [null, InlineCompletionItemProviderConfig]
+    'testing/autocomplete/providerConfig': [
+        null,
+        { id: string; legacyModel: string; configSource: string },
+    ]
 
     // Updates the extension configuration and returns the new
     // authentication status, which indicates whether the provided credentials are

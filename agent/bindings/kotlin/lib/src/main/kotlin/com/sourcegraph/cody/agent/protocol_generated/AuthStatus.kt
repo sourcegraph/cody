@@ -1,7 +1,6 @@
 @file:Suppress("FunctionName", "ClassName", "unused", "EnumEntryName", "UnusedImport")
 package com.sourcegraph.cody.agent.protocol_generated;
 
-import com.google.gson.annotations.SerializedName;
 import com.google.gson.Gson;
 import com.google.gson.JsonDeserializationContext;
 import com.google.gson.JsonDeserializer;
@@ -12,11 +11,10 @@ sealed class AuthStatus {
   companion object {
     val deserializer: JsonDeserializer<AuthStatus> =
       JsonDeserializer { element: JsonElement, _: Type, context: JsonDeserializationContext ->
-          if (element.getAsJsonObject().get("username") == null) {
-              context.deserialize<UnauthenticatedAuthStatus>(element, UnauthenticatedAuthStatus::class.java)
-          } else {
-              context.deserialize<AuthenticatedAuthStatus>(element, AuthenticatedAuthStatus::class.java)
-          }
+        when (element.getAsJsonObject().get("authenticated").getAsBoolean()) {
+          false -> context.deserialize<UnauthenticatedAuthStatus>(element, UnauthenticatedAuthStatus::class.java)
+          true -> context.deserialize<AuthenticatedAuthStatus>(element, AuthenticatedAuthStatus::class.java)
+        }
       }
   }
 }
@@ -27,8 +25,7 @@ data class UnauthenticatedAuthStatus(
   val showNetworkError: Boolean? = null,
   val showInvalidAccessTokenError: Boolean? = null,
   val pendingValidation: Boolean,
-) : AuthStatus() {
-}
+) : AuthStatus()
 
 data class AuthenticatedAuthStatus(
   val endpoint: String,
@@ -41,6 +38,6 @@ data class AuthenticatedAuthStatus(
   val displayName: String? = null,
   val avatarURL: String? = null,
   val pendingValidation: Boolean,
-) : AuthStatus() {
-}
+  val organizations: List<OrganizationsParams>? = null,
+) : AuthStatus()
 
