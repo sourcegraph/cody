@@ -15,13 +15,18 @@ export type ChatPrompt = {
 }[]
 export type PromptProviderResponse = CompletionsPrompt | ChatPrompt
 
+export interface PromptResponseData {
+    codeToRewrite: PromptString
+    promptResponse: PromptProviderResponse
+}
+
 export interface PromptProvider {
     getPrompt(
         docContext: DocumentContext,
         document: vscode.TextDocument,
         context: AutocompleteContextSnippet[],
         tokenBudget: AutoEditsTokenLimit
-    ): PromptProviderResponse
+    ): PromptResponseData
 
     postProcessResponse(completion: string | null): string
 }
@@ -32,9 +37,9 @@ export class OpenAIPromptProvider implements PromptProvider {
         document: vscode.TextDocument,
         context: AutocompleteContextSnippet[],
         tokenBudget: AutoEditsTokenLimit
-    ): PromptProviderResponse {
-        const userPrompt = getBaseUserPrompt(docContext, document, context, tokenBudget)
-        return [
+    ): PromptResponseData {
+        const { codeToRewrite, promptResponse: userPrompt } = getBaseUserPrompt(docContext, document, context, tokenBudget)
+        const prompt: ChatPrompt = [
             {
                 role: 'system',
                 content: SYSTEM_PROMPT,
@@ -44,6 +49,10 @@ export class OpenAIPromptProvider implements PromptProvider {
                 content: userPrompt,
             },
         ]
+        return {
+            codeToRewrite: codeToRewrite,
+            promptResponse: prompt,
+        }
     }
 
     postProcessResponse(response: string): string {
@@ -61,15 +70,18 @@ export class DeepSeekPromptProvider implements PromptProvider {
         document: vscode.TextDocument,
         context: AutocompleteContextSnippet[],
         tokenBudget: AutoEditsTokenLimit
-    ): CompletionsPrompt {
-        const userPrompt = getBaseUserPrompt(docContext, document, context, tokenBudget)
+    ): PromptResponseData {
+        const { codeToRewrite, promptResponse: userPrompt } = getBaseUserPrompt(docContext, document, context, tokenBudget)
         const prompt = psDedent`${this.bosToken}${SYSTEM_PROMPT}
 
             ${this.userToken}${userPrompt}
 
             ${this.assistantToken}`
 
-        return prompt
+        return {
+            codeToRewrite: codeToRewrite,
+            promptResponse: prompt,
+        }
     }
 
     postProcessResponse(response: string): string {
@@ -96,12 +108,15 @@ export function getBaseUserPrompt(
     document: vscode.TextDocument,
     context: AutocompleteContextSnippet[],
     tokenBudget: AutoEditsTokenLimit
-): PromptString {
+): {
+    codeToRewrite: PromptString
+    promptResponse: PromptString
+} {
     const contextItemMapping = utils.getContextItemMappingWithTokenLimit(
         context,
         tokenBudget.contextSpecificTokenLimit
     )
-    const { fileWithMarkerPrompt, codeToRewritePrompt } = utils.getCurrentFilePromptComponents({
+    const { fileWithMarkerPrompt, areaPrompt, codeToRewritePrompt } = utils.getCurrentFilePromptComponents({
         docContext,
         document,
         maxPrefixLinesInArea: tokenBudget.maxPrefixLinesInArea,
@@ -138,16 +153,21 @@ export function getBaseUserPrompt(
         JACCARD_SIMILARITY_INSTRUCTION,
         utils.getJaccardSimilarityPrompt
     )
-    return ps`${BASE_USER_PROMPT}
+    const finalPrompt = ps`${BASE_USER_PROMPT}
 ${jaccardSimilarityPrompt}
 ${recentViewsPrompt}
 ${CURRENT_FILE_INSTRUCTION}${fileWithMarkerPrompt}
 ${recentEditsPrompt}
 ${lintErrorsPrompt}
 ${recentCopyPrompt}
-${codeToRewritePrompt}
+${areaPrompt}
 ${FINAL_USER_PROMPT}
 `
+
+    return {
+        codeToRewrite: codeToRewritePrompt,
+        promptResponse: finalPrompt,
+    }
 }
 
 // ################################################################################################################

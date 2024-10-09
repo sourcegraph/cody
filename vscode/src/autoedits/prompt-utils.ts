@@ -38,6 +38,7 @@ export interface CurrentFilePromptOptions {
 
 export interface CurrentFilePromptResponse {
     fileWithMarkerPrompt: PromptString
+    areaPrompt: PromptString
     codeToRewritePrompt: PromptString
 }
 
@@ -108,7 +109,7 @@ ${CODE_TO_REWRITE_TAG_CLOSE}
 ${suffixContext.suffixInArea}
 ${AREA_FOR_CODE_MARKER_CLOSE}
 `
-    return { fileWithMarkerPrompt: filePrompt, codeToRewritePrompt: areaPrompt }
+    return { fileWithMarkerPrompt: filePrompt, areaPrompt: areaPrompt, codeToRewritePrompt: codeToRewrite }
 }
 
 export function getLintErrorsPrompt(contextItems: AutocompleteContextSnippet[]): PromptString {

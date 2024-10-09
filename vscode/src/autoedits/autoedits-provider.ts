@@ -1,4 +1,4 @@
-import { type DocumentContext, logDebug } from '@sourcegraph/cody-shared'
+import { displayPath, type DocumentContext, logDebug } from '@sourcegraph/cody-shared'
 import { Observable } from 'observable-fns'
 import * as vscode from 'vscode'
 import { ContextMixer } from '../completions/context/context-mixer'
@@ -7,6 +7,7 @@ import { RetrieverIdentifier } from '../completions/context/utils'
 import { getCurrentDocContext } from '../completions/get-current-doc-context'
 import { getOpenAIChatCompletion } from './model-helpers'
 import { OpenAIPromptProvider, type PromptProvider } from './prompt-provider'
+import {createGitDiff} from '../../../lib/shared/src/editor/create-git-diff';
 
 const AUTOEDITS_CONTEXT_STRATEGY = 'auto-edits'
 
@@ -74,7 +75,7 @@ export class AutoeditsProvider implements vscode.Disposable {
             docContext: docContext,
             maxChars: 100000,
         })
-        const prompt = this.provider.getPrompt(
+        const { codeToRewrite, promptResponse: prompt } = this.provider.getPrompt(
             docContext,
             options.document,
             context,
@@ -82,8 +83,13 @@ export class AutoeditsProvider implements vscode.Disposable {
         )
         if (Array.isArray(prompt)) {
             const response = await getOpenAIChatCompletion(prompt)
-            logDebug('AutoEdits:\n', response)
+            this.logDiff(options.document.uri, codeToRewrite.toString(), response)
         }
+    }
+
+    private logDiff(uri: vscode.Uri, codeToRewrite: string, prediction: string) {
+        const diff = createGitDiff(displayPath(uri), codeToRewrite, prediction)
+        logDebug('AutoEdits (Diff@ Cursor Position)\n', diff)
     }
 
     private getDocContext(document: vscode.TextDocument, position: vscode.Position): DocumentContext {
