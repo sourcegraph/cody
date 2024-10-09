@@ -39,6 +39,10 @@ export class SymbolTable {
         return `${packageName} ${descriptor}`
     }
 
+    public has(symbol: string): boolean {
+        return this.table.has(symbol)
+    }
+
     public info(symbol: string): scip.SymbolInformation {
         if (symbol === '') {
             return new scip.SymbolInformation()

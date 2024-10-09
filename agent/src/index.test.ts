@@ -68,7 +68,10 @@ describe('Agent', () => {
         await workspace.beforeAll()
 
         // Init a repo in the workspace to make the parent-dirs repo-name resolver work for Cody Context Filters tests.
-        spawnSync('git', ['init'], { cwd: workspace.rootPath, stdio: 'inherit' })
+        spawnSync('git', ['init'], {
+            cwd: workspace.rootPath,
+            stdio: 'inherit',
+        })
         spawnSync('git', ['remote', 'add', 'origin', 'git@github.com:sourcegraph/cody.git'], {
             cwd: workspace.rootPath,
             stdio: 'inherit',
@@ -130,7 +133,9 @@ describe('Agent', () => {
         // fine as long as we didn't send the second unauthenticated config
         // change.
         const initModelName = 'anthropic::2023-06-01::claude-3.5-sonnet'
-        const { models } = await client.request('chat/models', { modelUsage: ModelUsage.Chat })
+        const { models } = await client.request('chat/models', {
+            modelUsage: ModelUsage.Chat,
+        })
         expect(models[0].model.id).toStrictEqual(initModelName)
 
         const invalid = await client.request('extensionConfiguration/change', {
@@ -142,7 +147,9 @@ describe('Agent', () => {
             customHeaders: {},
         })
         expect(invalid?.authenticated).toBeFalsy()
-        const invalidModels = await client.request('chat/models', { modelUsage: ModelUsage.Chat })
+        const invalidModels = await client.request('chat/models', {
+            modelUsage: ModelUsage.Chat,
+        })
         const remoteInvalidModels = invalidModels.models.filter(
             ({ model }) => model.provider !== 'Ollama'
         )
@@ -154,9 +161,8 @@ describe('Agent', () => {
             serverEndpoint: client.info.extensionConfiguration?.serverEndpoint ?? DOTCOM_URL.toString(),
             customHeaders: {},
         })
-        expect(valid?.authenticated).toBeTruthy()
-        if (!valid?.authenticated) {
-            throw new Error('unreachable')
+        if (valid?.status !== 'authenticated') {
+            throw new Error('not authenticated')
         }
 
         const reauthenticatedModels = await client.request('chat/models', {
@@ -254,9 +260,8 @@ describe('Agent', () => {
                 transcript: transcript,
             })
             const auth = await client.request('extensionConfiguration/status', null)
-            expect(auth?.authenticated).toBeTruthy()
-            if (!auth?.authenticated) {
-                throw new Error('unreachable')
+            if (auth?.status !== 'authenticated') {
+                throw new Error('not authentticated')
             }
 
             const transcript1: SerializedChatTranscript = {
@@ -396,7 +401,10 @@ describe('Agent', () => {
         it('webview/receiveMessage (type: chatModel)', async () => {
             const id = await client.request('chat/new', null)
             {
-                await client.request('chat/setModel', { id, model: 'google::v1::gemini-1.5-flash' })
+                await client.request('chat/setModel', {
+                    id,
+                    model: 'google::v1::gemini-1.5-flash',
+                })
                 const lastMessage = await client.sendMessage(id, 'what color is the sky?')
                 expect(lastMessage?.text?.toLocaleLowerCase().includes('blue')).toBeTruthy()
             }
@@ -681,9 +689,8 @@ describe('Agent', () => {
         beforeAll(async () => {
             const serverInfo = await rateLimitedClient.initialize()
 
-            expect(serverInfo.authStatus?.authenticated).toBeTruthy()
-            if (!serverInfo.authStatus?.authenticated) {
-                throw new Error('unreachable')
+            if (serverInfo.authStatus?.status !== 'authenticated') {
+                throw new Error('not authenticated')
             }
             expect(serverInfo.authStatus?.username).toStrictEqual('sourcegraphcodyclients-1-efapb')
         }, 10_000)

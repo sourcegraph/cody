@@ -78,6 +78,7 @@ import { AgentWorkspaceDocuments } from './AgentWorkspaceDocuments'
 import { registerNativeWebviewHandlers, resolveWebviewView } from './NativeWebview'
 import type { PollyRequestError } from './cli/command-jsonrpc-stdio'
 import { codyPaths } from './codyPaths'
+import { currrentProtocolAuthStatus, toProtocolAuthStatus } from './currentProtocolAuthStatus'
 import { AgentGlobalState } from './global-state/AgentGlobalState'
 import {
     MessageHandler,
@@ -386,7 +387,9 @@ export class Agent extends MessageHandler implements ExtensionClient {
             }
 
             this.workspace.workspaceRootUri = clientInfo.workspaceRootUri
-                ? vscode.Uri.parse(clientInfo.workspaceRootUri).with({ scheme: 'file' })
+                ? vscode.Uri.parse(clientInfo.workspaceRootUri).with({
+                      scheme: 'file',
+                  })
                 : vscode.Uri.from({
                       scheme: 'file',
                       path: clientInfo.workspaceRootPath ?? undefined,
@@ -477,7 +480,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
                 return {
                     name: 'cody-agent',
                     authenticated: authStatus?.authenticated ?? false,
-                    authStatus,
+                    authStatus: authStatus ? toProtocolAuthStatus(authStatus) : undefined,
                 }
             } catch (error) {
                 console.error(
@@ -517,7 +520,10 @@ export class Agent extends MessageHandler implements ExtensionClient {
             )
 
             this.pushPendingPromise(
-                vscode_shim.onDidChangeWorkspaceFolders.cody_fireAsync({ added, removed })
+                vscode_shim.onDidChangeWorkspaceFolders.cody_fireAsync({
+                    added,
+                    removed,
+                })
             )
         })
 
@@ -571,12 +577,12 @@ export class Agent extends MessageHandler implements ExtensionClient {
         this.registerRequest('extensionConfiguration/change', async config => {
             this.authenticationPromise = this.handleConfigChanges(config)
             await this.authenticationPromise
-            return currentAuthStatus()
+            return currrentProtocolAuthStatus()
         })
 
         this.registerRequest('extensionConfiguration/status', async () => {
             await this.authenticationPromise
-            return currentAuthStatus()
+            return currrentProtocolAuthStatus()
         })
 
         this.registerRequest('extensionConfiguration/getSettingsSchema', async () => {
@@ -731,7 +737,10 @@ export class Agent extends MessageHandler implements ExtensionClient {
         this.registerAuthenticatedRequest('testing/networkRequests', async () => {
             const requests = this.params.networkRequests ?? []
             return {
-                requests: requests.map(req => ({ url: req.url, body: req.body })),
+                requests: requests.map(req => ({
+                    url: req.url,
+                    body: req.body,
+                })),
             }
         })
         this.registerAuthenticatedRequest('testing/closestPostData', async ({ url, postData }) => {
@@ -1276,7 +1285,9 @@ export class Agent extends MessageHandler implements ExtensionClient {
         this.registerAuthenticatedRequest('chat/import', async ({ history, merge }) => {
             const accountKeyedChatHistory: AccountKeyedChatHistory = {}
             for (const [account, chats] of Object.entries(history)) {
-                accountKeyedChatHistory[account as ChatHistoryKey] = { chat: chats }
+                accountKeyedChatHistory[account as ChatHistoryKey] = {
+                    chat: chats,
+                }
             }
             await chatHistory.importChatHistory(accountKeyedChatHistory, merge, currentAuthStatus())
             return null
@@ -1607,7 +1618,10 @@ export class Agent extends MessageHandler implements ExtensionClient {
     private async resolveWebviewView({
         viewId,
         webviewHandle,
-    }: { viewId: string; webviewHandle: string }): Promise<void> {
+    }: {
+        viewId: string
+        webviewHandle: string
+    }): Promise<void> {
         const provider = this.webviewViewProviders.get(viewId)
         if (!provider) {
             return
@@ -1635,7 +1649,9 @@ export class Agent extends MessageHandler implements ExtensionClient {
     }
 
     private async createEditTask(commandResult: Thenable<CommandResult | undefined>): Promise<EditTask> {
-        const result = (await commandResult) ?? { type: 'empty-command-result' }
+        const result = (await commandResult) ?? {
+            type: 'empty-command-result',
+        }
         if (result?.type !== 'edit' || result.task === undefined) {
             throw new TypeError(
                 `Expected a non-empty edit command result. Got ${JSON.stringify(result)}`
@@ -1645,7 +1661,9 @@ export class Agent extends MessageHandler implements ExtensionClient {
     }
 
     private async createChatPanel(commandResult: Thenable<CommandResult | undefined>): Promise<string> {
-        const result = (await commandResult) ?? { type: 'empty-command-result' }
+        const result = (await commandResult) ?? {
+            type: 'empty-command-result',
+        }
         if (result?.type !== 'chat') {
             throw new TypeError(`Expected chat command result, got ${result.type}`)
         }
@@ -1675,7 +1693,9 @@ export class Agent extends MessageHandler implements ExtensionClient {
     private async executeCustomCommand(
         commandResult: Thenable<CommandResult | undefined>
     ): Promise<CustomCommandResult> {
-        const result = (await commandResult) ?? { type: 'empty-command-result' }
+        const result = (await commandResult) ?? {
+            type: 'empty-command-result',
+        }
 
         if (result?.type === 'chat') {
             return {

@@ -39,7 +39,10 @@ export class Formatter {
         const parameterType = jsonrpcMethod.signature.value_signature.tpe.type_ref.type_arguments[0]
         const parameterSyntax = this.jsonrpcTypeName(jsonrpcMethod, parameterType, 'parameter')
         if (this.language === TargetLanguage.Kotlin) {
-            return { parameterType, parameterSyntax: `params: ${parameterSyntax}` }
+            return {
+                parameterType,
+                parameterSyntax: `params: ${parameterSyntax}`,
+            }
         }
         return { parameterType, parameterSyntax: `${parameterSyntax} params` }
     }
@@ -205,15 +208,29 @@ export class Formatter {
         }
     }
 
+    public readonly ignoredInfoSymbol: string[] = []
     public readonly ignoredProperties = [
         'npm @sourcegraph/telemetry ', // Too many complicated types from this package
+        '`inline-completion-item-provider-config-singleton.ts`/tracer0:',
+        '`observable.d.ts`/Subscription#',
+        '`provider.ts`/Provider#configSource',
+        '`StatusBar.ts`/CodyStatusBar',
     ]
     private readonly ignoredTypeRefs = [
+        '`provider.ts`/Provider#',
         'npm @sourcegraph/telemetry', // Too many complicated types from this package
         '/TelemetryEventParameters#',
         ' lib/`lib.es5.d.ts`/Omit#',
     ]
 
+    public isIgnoredInfo(info: scip.SymbolInformation): boolean {
+        for (const ignored of this.ignoredInfoSymbol) {
+            if (info.symbol.includes(ignored)) {
+                return true
+            }
+        }
+        return false
+    }
     public isIgnoredType(tpe: scip.Type): boolean {
         if (tpe.has_type_ref) {
             return this.ignoredTypeRefs.some(ref => tpe.type_ref.symbol.includes(ref))
@@ -231,9 +248,10 @@ export class Formatter {
     // Hacky workaround: we are exposing a few tricky union types in the
     // protocol that don't have a clean encoding in other languages. We use this
     // list to manually pick one of the types in the union type.
-    public readonly unionTypeExceptionIndex: { prefix: string; index: number }[] = [
-        { prefix: 'scip-typescript npm @types/vscode ', index: 0 },
-    ]
+    public readonly unionTypeExceptionIndex: {
+        prefix: string
+        index: number
+    }[] = [{ prefix: 'scip-typescript npm @types/vscode ', index: 0 }]
 
     public isRecord(symbol: string): boolean {
         return (

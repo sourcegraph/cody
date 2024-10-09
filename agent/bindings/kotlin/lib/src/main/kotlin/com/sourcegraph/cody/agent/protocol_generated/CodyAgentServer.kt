@@ -120,10 +120,12 @@ interface CodyAgentServer {
   fun testing_autocomplete_awaitPendingVisibilityTimeout(params: Null?): CompletableFuture<CompletionItemID?>
   @JsonRequest("testing/autocomplete/setCompletionVisibilityDelay")
   fun testing_autocomplete_setCompletionVisibilityDelay(params: Testing_Autocomplete_SetCompletionVisibilityDelayParams): CompletableFuture<Null?>
+  @JsonRequest("testing/autocomplete/providerConfig")
+  fun testing_autocomplete_providerConfig(params: Null?): CompletableFuture<InlineCompletionItemProviderConfig>
   @JsonRequest("extensionConfiguration/change")
-  fun extensionConfiguration_change(params: ExtensionConfiguration): CompletableFuture<AuthStatus?>
+  fun extensionConfiguration_change(params: ExtensionConfiguration): CompletableFuture<ProtocolAuthStatus?>
   @JsonRequest("extensionConfiguration/status")
-  fun extensionConfiguration_status(params: Null?): CompletableFuture<AuthStatus?>
+  fun extensionConfiguration_status(params: Null?): CompletableFuture<ProtocolAuthStatus?>
   @JsonRequest("extensionConfiguration/getSettingsSchema")
   fun extensionConfiguration_getSettingsSchema(params: Null?): CompletableFuture<String>
   @JsonRequest("textDocument/change")

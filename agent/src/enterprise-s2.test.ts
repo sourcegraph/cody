@@ -27,7 +27,10 @@ describe('Enterprise - S2 (close main branch)', { timeout: 5000 }, () => {
     beforeAll(async () => {
         await workspace.beforeAll()
         // Init a repo in the workspace to make the parent-dirs repo-name resolver work for Cody Context Filters tests.
-        spawnSync('git', ['init'], { cwd: workspace.rootPath, stdio: 'inherit' })
+        spawnSync('git', ['init'], {
+            cwd: workspace.rootPath,
+            stdio: 'inherit',
+        })
         spawnSync('git', ['remote', 'add', 'origin', 'git@github.com:sourcegraph/cody.git'], {
             cwd: workspace.rootPath,
             stdio: 'inherit',
@@ -35,9 +38,8 @@ describe('Enterprise - S2 (close main branch)', { timeout: 5000 }, () => {
 
         const serverInfo = await s2EnterpriseClient.initialize()
 
-        expect(serverInfo.authStatus?.authenticated).toBeTruthy()
-        if (!serverInfo.authStatus?.authenticated) {
-            throw new Error('unreachable')
+        if (serverInfo.authStatus?.status !== 'authenticated') {
+            throw new Error('not authenticated')
         }
         expect(serverInfo.authStatus?.username).toStrictEqual('codytesting')
     }, 10_000)
@@ -73,7 +75,9 @@ describe('Enterprise - S2 (close main branch)', { timeout: 5000 }, () => {
 
             // `sumUri` is located inside of the github.com/sourcegraph/cody repo.
             const ignoreTest = () =>
-                s2EnterpriseClient.request('ignore/test', { uri: sumUri.toString() })
+                s2EnterpriseClient.request('ignore/test', {
+                    uri: sumUri.toString(),
+                })
             s2EnterpriseClient.registerNotification('ignore/didChange', onChangeCallback)
 
             expect(await ignoreTest()).toStrictEqual({ policy: 'use' })

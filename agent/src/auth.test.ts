@@ -109,7 +109,9 @@ describe(
             await expect(client.request('chat/new', null)).rejects.toThrowError('Not authenticated')
 
             // Listing models should yield empty when not authenticated.
-            const { models } = await client.request('chat/models', { modelUsage: ModelUsage.Chat })
+            const { models } = await client.request('chat/models', {
+                modelUsage: ModelUsage.Chat,
+            })
             expect(models).toStrictEqual<typeof models>([])
         })
 
@@ -135,7 +137,9 @@ describe(
             expect(chat.lastMessage?.error).toBe(undefined)
 
             // Listing models should work.
-            const { models } = await client.request('chat/models', { modelUsage: ModelUsage.Chat })
+            const { models } = await client.request('chat/models', {
+                modelUsage: ModelUsage.Chat,
+            })
             expect(models.length).toBeGreaterThanOrEqual(2)
             expect(models.map(({ model }) => model.id)).toContain('openai::2024-02-01::gpt-4o') // arbitrary model that we expect to be included
         })
@@ -153,7 +157,9 @@ describe(
             expect(preAuthStatus?.authenticated).toBe(true)
             expect(preAuthStatus?.endpoint).toBe(INITIAL_CREDENTIALS.serverEndpoint)
 
-            const dotcomModels = await client.request('chat/models', { modelUsage: ModelUsage.Chat })
+            const dotcomModels = await client.request('chat/models', {
+                modelUsage: ModelUsage.Chat,
+            })
             expect(dotcomModels?.models?.length).toBeGreaterThanOrEqual(1)
 
             // Before switching, set a chat model as default on the prior endpoint. We want it to NOT be
@@ -176,7 +182,9 @@ describe(
             // Test things that should work after having switched accounts.
 
             // Enterprise models should not contain models with the waitlist tag.
-            const enterpriseModels = await client.request('chat/models', { modelUsage: ModelUsage.Chat })
+            const enterpriseModels = await client.request('chat/models', {
+                modelUsage: ModelUsage.Chat,
+            })
             expect(
                 enterpriseModels.models?.some(({ model }) => model.tags.includes(ModelTag.Waitlist))
             ).toBeFalsy()
@@ -198,7 +206,9 @@ describe(
             expect(chat.lastMessage?.error).toBeUndefined()
 
             // Listing models should work.
-            const { models } = await client.request('chat/models', { modelUsage: ModelUsage.Chat })
+            const { models } = await client.request('chat/models', {
+                modelUsage: ModelUsage.Chat,
+            })
             expect(models.length).toBeGreaterThanOrEqual(2)
             expect(models.map(({ model }) => toModelRefStr(model.modelRef!))).toContain(
                 'openai::2024-02-01::gpt-4o' // arbitrary model that we expect to be included

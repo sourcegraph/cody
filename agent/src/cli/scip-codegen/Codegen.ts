@@ -73,7 +73,11 @@ export class Codegen extends BaseCodegen {
     private startDocument(): DocumentContext & {
         c: DocumentContext
     } {
-        const context: DocumentContext = { f: this.f, p: new CodePrinter(), symtab: this.symtab }
+        const context: DocumentContext = {
+            f: this.f,
+            p: new CodePrinter(),
+            symtab: this.symtab,
+        }
         return { ...context, c: context }
     }
 
@@ -410,7 +414,9 @@ export class Codegen extends BaseCodegen {
                 : new scip.SymbolInformation({
                       display_name: typeName,
                       signature: new scip.Signature({
-                          value_signature: new scip.ValueSignature({ tpe: member.type }),
+                          value_signature: new scip.ValueSignature({
+                              tpe: member.type,
+                          }),
                       }),
                   })
             this.writeDataClass({ p, f, symtab }, typeName, info, {
@@ -429,6 +435,20 @@ export class Codegen extends BaseCodegen {
     }
 
     private async writeDataClass(
+        { p, f, symtab }: DocumentContext,
+        name: string,
+        info: scip.SymbolInformation,
+        params?: { heritageClause?: string; innerClass?: boolean }
+    ): Promise<void> {
+        try {
+            await this.writeDataClassUnsafe({ p, f, symtab }, name, info, params)
+        } catch (e) {
+            const errorMessage = `Failed to handle class ${info.symbol}. To fix this problem, consider skipping this type by adding the symbol to "ignoredInfoSymbol" in Formatter.ts\n${e}`
+            this.reporter.error(info.symbol, errorMessage)
+        }
+    }
+
+    private async writeDataClassUnsafe(
         { p, f, symtab }: DocumentContext,
         name: string,
         info: scip.SymbolInformation,
@@ -516,7 +536,14 @@ export class Codegen extends BaseCodegen {
                     memberTypeSyntax = enumTypeName + this.f.nullableSyntax(memberType)
                     enums.push({ name: enumTypeName, members: constants })
                 } else {
-                    this.queueClassLikeType(memberType, member, 'parameter')
+                    try {
+                        this.queueClassLikeType(memberType, member, 'parameter')
+                    } catch (error) {
+                        const stack = error instanceof Error ? '\n' + error.stack : ''
+                        const errorMessage = `error handling member: ${member.symbol}. To fix this problem, you may want to ignore it from code generation by adding the symbol name to the "ignoredProperties" in the Formatter.ts file.\n${error}${stack}`
+                        this.reporter.error(memberSymbol, errorMessage)
+                        continue
+                    }
                 }
                 const oneofSyntax = constants.length > 0 ? ' // Oneof: ' + constants.join(', ') : ''
                 const defaultValueSyntax = this.f.isNullable(memberType) ? ' = null' : ''
@@ -658,6 +685,9 @@ export class Codegen extends BaseCodegen {
         const { f, p, c } = this.startDocument()
         const name = f.typeName(info)
         const alias = this.aliasType(info)
+        if (this.f.isIgnoredInfo(info)) {
+            return
+        }
 
         if (this.language === TargetLanguage.CSharp) {
             p.addImport('using Newtonsoft.Json;')
@@ -934,7 +964,9 @@ export class Codegen extends BaseCodegen {
                     signature: new scip.Signature({
                         // Convert structural types to class signature with name of the JSON-RPC method
                         class_signature: new scip.ClassSignature({
-                            declarations: new scip.Scope({ symlinks: this.properties(type) }),
+                            declarations: new scip.Scope({
+                                symlinks: this.properties(type),
+                            }),
                         }),
                     }),
                 })
@@ -1059,6 +1091,9 @@ export class Codegen extends BaseCodegen {
 
     // Same as `queueClassLikeType` but for `scip.SymbolInformation` instead of `scip.Type`.
     private queueClassLikeInfo(jsonrpcMethod: scip.SymbolInformation): void {
+        if (!jsonrpcMethod.has_signature) {
+            return
+        }
         if (jsonrpcMethod.signature.has_class_signature) {
             // Easy, this looks like a class/interface.
             this.queue.push(jsonrpcMethod)
@@ -1098,9 +1133,18 @@ export class Codegen extends BaseCodegen {
 
             const declarations = new Map<
                 string,
-                { info: scip.SymbolInformation; diagnostic: Diagnostic; siblings: string[] }
+                {
+                    info: scip.SymbolInformation
+                    diagnostic: Diagnostic
+                    siblings: string[]
+                }
             >()
             for (const property of this.properties(jsonrpcMethod.signature.type_signature.lower_bound)) {
+                if (!this.symtab.has(property)) {
+                    console.log(this.debug(jsonrpcMethod))
+                    console.log(new Error().stack)
+                    continue
+                }
                 const propertyInfo = this.symtab.info(property)
                 const sibling = declarations.get(propertyInfo.display_name)
                 if (!sibling) {

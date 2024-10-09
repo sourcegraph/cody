@@ -17,10 +17,8 @@ describe('Enterprise', () => {
     // Initialize inside beforeAll so that subsequent tests are skipped if initialization fails.
     beforeAll(async () => {
         const serverInfo = await demoEnterpriseClient.initialize()
-
-        expect(serverInfo.authStatus?.authenticated).toBeTruthy()
-        if (!serverInfo.authStatus?.authenticated) {
-            throw new Error('unreachable')
+        if (serverInfo.authStatus?.status !== 'authenticated') {
+            throw new Error('not authenticated')
         }
         expect(serverInfo.authStatus?.username).toStrictEqual('codytesting')
     }, 10_000)
