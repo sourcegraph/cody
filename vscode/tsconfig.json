@@ -38,6 +38,9 @@
     },
     {
       "path": "../lib/prompt-editor"
+    },
+    {
+      "path": "../lib/tree-sitter-worker"
     }
   ]
 }
