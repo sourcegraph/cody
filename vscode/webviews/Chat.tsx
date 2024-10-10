@@ -6,6 +6,7 @@ import type {
     ChatMessage,
     CodyIDE,
     Guardrails,
+    Model,
     PromptString,
 } from '@sourcegraph/cody-shared'
 import { Transcript, focusLastHumanMessageEditor } from './chat/Transcript'
@@ -13,7 +14,6 @@ import type { VSCodeWrapper } from './utils/VSCodeApi'
 
 import { truncateTextStart } from '@sourcegraph/cody-shared/src/prompt/truncation'
 import { CHAT_INPUT_TOKEN_BUDGET } from '@sourcegraph/cody-shared/src/token/constants'
-import { useExtensionAPI, useObservable } from '@sourcegraph/prompt-editor'
 import styles from './Chat.module.css'
 import WelcomeFooter from './chat/components/WelcomeFooter'
 import { WelcomeMessage } from './chat/components/WelcomeMessage'
@@ -26,6 +26,7 @@ interface ChatboxProps {
     chatEnabled: boolean
     messageInProgress: ChatMessage | null
     transcript: ChatMessage[]
+    models: Model[]
     vscodeAPI: Pick<VSCodeWrapper, 'postMessage' | 'onMessage'>
     guardrails?: Guardrails
     scrollableParent?: HTMLElement | null
@@ -38,6 +39,7 @@ interface ChatboxProps {
 export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>> = ({
     messageInProgress,
     transcript,
+    models,
     vscodeAPI,
     chatEnabled = true,
     guardrails,
@@ -53,9 +55,6 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     transcriptRef.current = transcript
 
     const userInfo = useUserAccountInfo()
-
-    const api = useExtensionAPI()
-    const { value: chatModels } = useObservable(useMemo(() => api.chatModels(), [api.chatModels]))
 
     const feedbackButtonsOnSubmit = useCallback(
         (text: string) => {
@@ -218,7 +217,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             )}
             <Transcript
                 transcript={transcript}
-                models={chatModels ?? []}
+                models={models}
                 messageInProgress={messageInProgress}
                 feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
                 copyButtonOnSubmit={copyButtonOnSubmit}
