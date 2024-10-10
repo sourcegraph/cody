@@ -31,6 +31,7 @@ import com.intellij.util.withScheme
 import com.sourcegraph.cody.agent.protocol_extensions.toOffsetRange
 import com.sourcegraph.cody.agent.protocol_generated.Range
 import com.sourcegraph.config.ConfigUtil
+import com.sourcegraph.utils.ThreadingUtil.runInEdtAndGet
 import java.net.URI
 import java.net.URISyntaxException
 import kotlin.io.path.createDirectories
@@ -166,7 +167,6 @@ object CodyEditorUtil {
       FileDocumentManager.getInstance().getFile(editor.document)
 
   @JvmStatic
-  @RequiresEdt
   fun showDocument(
       project: Project,
       vf: VirtualFile,
@@ -174,16 +174,17 @@ object CodyEditorUtil {
       preserveFocus: Boolean? = false
   ): Boolean {
     try {
-      if (selection == null) {
-        OpenFileDescriptor(project, vf).navigate(/* requestFocus= */ preserveFocus != true)
-      } else {
-        OpenFileDescriptor(
+      val descriptor =
+          if (selection == null) {
+            OpenFileDescriptor(project, vf)
+          } else {
+            OpenFileDescriptor(
                 project,
                 vf,
                 selection.start.line.toInt(),
                 /* logicalColumn= */ selection.start.character.toInt())
-            .navigate(/* requestFocus= */ preserveFocus != true)
-      }
+          }
+      runInEdtAndGet { descriptor.navigate(/* requestFocus= */ preserveFocus != true) }
       return true
     } catch (e: Exception) {
       logger.error("Cannot switch view to file ${vf.path}", e)

@@ -100,17 +100,19 @@ class CodyAgentClient(private val project: Project, private val webview: NativeW
 
   @JsonRequest("textDocument/show")
   fun textDocument_show(params: TextDocument_ShowParams): CompletableFuture<Boolean> {
-    return acceptOnEventThreadAndGet {
-      val selection = params.options?.selection
-      val preserveFocus = params.options?.preserveFocus
-      val vf = CodyEditorUtil.findFileOrScratch(project, params.uri)
-      if (vf != null) {
-        CodyEditorUtil.showDocument(project, vf, selection, preserveFocus)
-        true
-      } else {
-        false
-      }
-    }
+    val vf =
+        acceptOnEventThreadAndGet { CodyEditorUtil.findFileOrScratch(project, params.uri) }.get()
+
+    val result =
+        if (vf != null) {
+          val selection = params.options?.selection
+          val preserveFocus = params.options?.preserveFocus
+          CodyEditorUtil.showDocument(project, vf, selection, preserveFocus)
+        } else {
+          false
+        }
+
+    return CompletableFuture.completedFuture(result)
   }
 
   @JsonRequest("textDocument/openUntitledDocument")
