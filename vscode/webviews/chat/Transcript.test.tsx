@@ -1,4 +1,9 @@
-import { type ChatMessage, errorToChatError, ps } from '@sourcegraph/cody-shared'
+import {
+    type ChatMessage,
+    errorToChatError,
+    getMockedDotComClientModels,
+    ps,
+} from '@sourcegraph/cody-shared'
 import { fireEvent, getQueriesForElement, render as render_, screen } from '@testing-library/react'
 import type { ComponentProps } from 'react'
 import { type Assertion, describe, expect, test, vi } from 'vitest'
@@ -6,6 +11,8 @@ import { URI } from 'vscode-uri'
 import { AppWrapperForTest } from '../AppWrapperForTest'
 import { type Interaction, Transcript, transcriptToInteractionPairs } from './Transcript'
 import { FIXTURE_USER_ACCOUNT_INFO } from './fixtures'
+
+const MOCK_MODELS = getMockedDotComClientModels()
 
 const PROPS: Omit<ComponentProps<typeof Transcript>, 'transcript'> = {
     messageInProgress: null,
@@ -15,6 +22,7 @@ const PROPS: Omit<ComponentProps<typeof Transcript>, 'transcript'> = {
     userInfo: FIXTURE_USER_ACCOUNT_INFO,
     chatEnabled: true,
     postMessage: () => {},
+    models: MOCK_MODELS,
 }
 
 vi.mock('@vscode/webview-ui-toolkit/react', () => ({
@@ -37,6 +45,34 @@ describe('Transcript', () => {
     test('empty', () => {
         render(<Transcript {...PROPS} transcript={[]} />)
         expectCells([{ message: '' }])
+    })
+
+    test('renders with provided models', () => {
+        const { container } = render(
+            <Transcript
+                {...PROPS}
+                transcript={[
+                    { speaker: 'human', text: ps`Hello` },
+                    { speaker: 'assistant', text: ps`Hi` },
+                ]}
+            />
+        )
+
+        // Check if the model selector is rendered
+        const modelSelector = container.querySelector('[data-testid="chat-model-selector"]')
+        expect(modelSelector).not.toBeNull()
+        expect(modelSelector?.textContent).toEqual(MOCK_MODELS[0].title)
+
+        // Open the menu on click
+        fireEvent.click(modelSelector!)
+        const modelPopover = container?.querySelectorAll('[data-testid="chat-model-popover"]')[0]
+        const modelMenu = modelPopover!.querySelector('[data-testid="chat-model-popover-option"]')
+        const modelOptions = modelMenu!.querySelectorAll('[data-testid="chat-model-popover-option"]')
+        expect(modelOptions).toHaveLength(MOCK_MODELS.length)
+
+        // Check if the model titles are correct
+        const modelTitles = Array.from(modelOptions!).map(option => option.textContent)
+        expect(modelTitles.some(title => title === MOCK_MODELS[0].title)).toBe(true)
     })
 
     test('interaction without context', () => {
