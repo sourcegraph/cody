@@ -6,6 +6,7 @@ import type {
     ChatMessage,
     CodyIDE,
     Guardrails,
+    Model,
     PromptString,
 } from '@sourcegraph/cody-shared'
 import { Transcript, focusLastHumanMessageEditor } from './chat/Transcript'
@@ -25,6 +26,7 @@ interface ChatboxProps {
     chatEnabled: boolean
     messageInProgress: ChatMessage | null
     transcript: ChatMessage[]
+    models: Model[]
     vscodeAPI: Pick<VSCodeWrapper, 'postMessage' | 'onMessage'>
     guardrails?: Guardrails
     scrollableParent?: HTMLElement | null
@@ -37,6 +39,7 @@ interface ChatboxProps {
 export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>> = ({
     messageInProgress,
     transcript,
+    models,
     vscodeAPI,
     chatEnabled = true,
     guardrails,
@@ -214,6 +217,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             )}
             <Transcript
                 transcript={transcript}
+                models={models}
                 messageInProgress={messageInProgress}
                 feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
                 copyButtonOnSubmit={copyButtonOnSubmit}

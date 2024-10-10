@@ -36,6 +36,7 @@ import { Toolbar } from './toolbar/Toolbar'
  * A component to compose and edit human chat messages and the settings associated with them.
  */
 export const HumanMessageEditor: FunctionComponent<{
+    models: Model[]
     userInfo: UserAccountInfo
 
     initialEditorState: SerializedPromptEditorState | undefined
@@ -67,6 +68,7 @@ export const HumanMessageEditor: FunctionComponent<{
     /** For use in storybooks only. */
     __storybook__focus?: boolean
 }> = ({
+    models,
     userInfo,
     initialEditorState,
     placeholder,
@@ -359,6 +361,7 @@ export const HumanMessageEditor: FunctionComponent<{
             />
             {!disabled && (
                 <Toolbar
+                    models={models}
                     userInfo={userInfo}
                     isEditorFocused={focused}
                     onMentionClick={onMentionClick}
