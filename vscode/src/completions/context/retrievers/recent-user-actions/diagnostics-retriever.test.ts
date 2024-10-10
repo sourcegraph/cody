@@ -11,7 +11,10 @@ describe('DiagnosticsRetriever', () => {
 
     beforeEach(() => {
         vi.useFakeTimers()
-        retriever = new DiagnosticsRetriever()
+        retriever = new DiagnosticsRetriever({
+            contextLines: 3,
+            useXMLForPromptRendering: true,
+        })
         parser = new XMLParser()
     })
 

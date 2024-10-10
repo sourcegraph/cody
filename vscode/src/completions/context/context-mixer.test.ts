@@ -332,7 +332,7 @@ describe('ContextMixer', () => {
             retrievers.map(set => createMockedContextRetriever(set[0].identifier, set))
 
         const setupTest = (primaryRetrievers: any[], loggingRetrievers: any[]) => {
-            mixer = new ContextMixer(createMockStrategy(primaryRetrievers))
+            mixer = new ContextMixer(createMockStrategy(primaryRetrievers), true)
             getDataCollectionRetrieversSpy = vi.spyOn(mixer as any, 'getDataCollectionRetrievers')
             getDataCollectionRetrieversSpy.mockReturnValue(createMockedRetrievers(loggingRetrievers))
         }
