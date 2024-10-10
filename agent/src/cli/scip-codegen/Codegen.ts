@@ -549,22 +549,9 @@ export class Codegen extends BaseCodegen {
         if (!type.has_union_type || type.union_type.types.length === 0) {
             return undefined
         }
-        const unionTypes = this.unionTypes(type)
-        // HACK: We have to special case the `AuthStatus` type because it's
-        // SCIP doesn't recognize the `authenticated` member as a constant type
-        // and thus picks the wrong discriminator
-        if (info.display_name === 'AuthStatus') {
-            return {
-                symbol: info.symbol,
-                discriminatorDisplayName: 'authenticated',
-                members: unionTypes.map(type => ({
-                    type,
-                    value: type.type_ref.symbol.includes('Authenticated'),
-                })),
-            }
-        }
         const candidates = new Map<string, number>()
         const memberss = new Map<string, DiscriminatedUnionMember[]>()
+        const unionTypes = this.unionTypes(type)
         for (const unionType of unionTypes) {
             for (const propertySymbol of this.properties(unionType)) {
                 const property = this.symtab.info(propertySymbol)
