@@ -170,7 +170,7 @@ export async function handleSmartApply(
 
     const uri =
         fileUri && workspaceUri
-            ? path.isAbsolute(fileUri)
+            ? path.isAbsolute(fileUri) && (await doesFileExist(vscode.Uri.file(fileUri || '')))
                 ? vscode.Uri.file(fileUri)
                 : smartJoinPath(workspaceUri, fileUri)
             : activeEditor?.document.uri
