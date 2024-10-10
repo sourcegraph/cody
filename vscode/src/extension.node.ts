@@ -4,7 +4,6 @@ import { NodeSentryService } from './services/sentry/sentry.node'
 import {
     currentAuthStatus,
     currentResolvedConfig,
-    resolvedConfig,
     subscriptionDisposable,
 } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
@@ -20,6 +19,8 @@ import { localStorage } from './services/LocalStorageProvider'
 import { OpenTelemetryService } from './services/open-telemetry/OpenTelemetryService.node'
 import { serializeConfigSnapshot } from './uninstall/serializeConfig'
 
+import { proxySettings } from './configuration-proxy'
+
 /**
  * Activation entrypoint for the VS Code extension when running VS Code as a desktop app
  * (Node.js/Electron).
@@ -28,6 +29,7 @@ export function activate(
     context: vscode.ExtensionContext,
     extensionClient?: ExtensionClient
 ): Promise<ExtensionApi> {
+    proxySettings.subscribe(setCustomAgent)
     initializeNetworkAgent(context)
 
     // When activated by VSCode, we are only passed the extension context.
@@ -43,6 +45,7 @@ export function activate(
         .get<boolean>('cody.experimental.telemetry.enabled', true)
 
     return activateCommon(context, {
+        intializeConfigurationProxy: () => {},
         createCompletionsClient: (...args) => new SourcegraphNodeCompletionsClient(...args),
         createCommandsProvider: () => new CommandsProvider(),
         createSymfRunner: isSymfEnabled ? (...args) => new SymfRunner(...args) : undefined,
@@ -52,9 +55,7 @@ export function activate(
             : undefined,
         startTokenReceiver: (...args) => startTokenReceiver(...args),
         otherInitialization: () => {
-            return subscriptionDisposable(
-                resolvedConfig.subscribe(config => setCustomAgent(config.configuration))
-            )
+            return subscriptionDisposable(proxySettings.subscribe(setCustomAgent))
         },
         extensionClient,
     })

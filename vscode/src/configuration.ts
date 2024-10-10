@@ -1,3 +1,5 @@
+import * as os from 'node:os'
+import * as path from 'node:path'
 import * as vscode from 'vscode'
 
 import {
@@ -50,8 +52,26 @@ export function getConfiguration(
 
     const vsCodeConfig = vscode.workspace.getConfiguration()
 
+    const proxyConfig = config.get<{
+        server?: string
+        path?: string
+        cacert?: string
+    } | null>(CONFIG_KEY.proxy, null)
+
+    function resolveHomedir(filePath: string | null | undefined): string | undefined {
+        for (const homeDir of ['~/', '%USERPROFILE%\\']) {
+            if (filePath?.startsWith(homeDir)) {
+                return `${os.homedir()}${path.sep}${filePath.slice(homeDir.length)}`
+            }
+        }
+        return filePath ? filePath : undefined
+    }
+
     return {
         proxy: vsCodeConfig.get<string>('http.proxy'),
+        proxyServer: proxyConfig?.server,
+        proxyPath: resolveHomedir(proxyConfig?.path),
+        proxyCACert: resolveHomedir(proxyConfig?.cacert),
         codebase: sanitizeCodebase(config.get(CONFIG_KEY.codebase)),
         serverEndpoint: config.get<string>(CONFIG_KEY.serverEndpoint),
         customHeaders: config.get<Record<string, string>>(CONFIG_KEY.customHeaders),

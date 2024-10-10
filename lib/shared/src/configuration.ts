@@ -23,6 +23,9 @@ export interface AuthCredentials {
 
 interface RawClientConfiguration {
     proxy?: string | null
+    proxyServer?: string | null
+    proxyPath?: string | null
+    proxyCACert?: string | null
     codebase?: string
     debugFilter: RegExp | null
     debugVerbose: boolean

@@ -1,6 +1,10 @@
 import * as vscode from 'vscode'
 
-import type { CompletionLogger, SourcegraphCompletionsClient } from '@sourcegraph/cody-shared'
+import type {
+    ClientConfiguration,
+    CompletionLogger,
+    SourcegraphCompletionsClient,
+} from '@sourcegraph/cody-shared'
 import type { startTokenReceiver } from './auth/token-receiver'
 import { onActivationDevelopmentHelpers } from './dev/helpers'
 
@@ -22,6 +26,7 @@ type Constructor<T extends new (...args: any) => any> = T extends new (
     : never
 
 export interface PlatformContext {
+    intializeConfigurationProxy?: () => Promise<void>
     createOpenCtxController?: typeof createController
     createStorage?: () => Promise<vscode.Memento>
     createCommandsProvider?: Constructor<typeof CommandsProvider>

@@ -41,7 +41,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query CurrentSiteCodyLlmConfiguration {
                   site {
                       codyLLMConfiguration {
@@ -159,7 +159,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query CurrentSiteCodyLlmConfiguration {
                   site {
                       codyLLMConfiguration {
@@ -265,7 +265,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query CurrentSiteCodyLlmProvider {
                   site {
                       codyLLMConfiguration {
@@ -371,7 +371,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query CurrentUser {
                   currentUser {
                       id
@@ -499,7 +499,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query CurrentUserCodySubscription {
                   currentUser {
                       codySubscription {
@@ -615,7 +615,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query SiteProductVersion {
                   site {
                       productVersion
@@ -722,7 +722,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Wed, 02 Oct 2024 01:38:28 GMT
+            value: Thu, 03 Oct 2024 17:13:11 GMT
           - name: content-type
             value: text/plain; charset=utf-8
           - name: transfer-encoding
@@ -753,7 +753,7 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-10-02T01:38:28.361Z
+      startedDateTime: 2024-10-03T17:13:10.854Z
       time: 0
       timings:
         blocked: -1
@@ -799,7 +799,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query CurrentSiteCodyLlmConfiguration {
                   site {
                       codyLLMConfiguration {
@@ -907,7 +907,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query CurrentSiteCodyLlmConfiguration {
                   site {
                       codyLLMConfiguration {
@@ -1009,7 +1009,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query CurrentSiteCodyLlmProvider {
                   site {
                       codyLLMConfiguration {
@@ -1110,7 +1110,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query CurrentUser {
                   currentUser {
                       id
@@ -1224,7 +1224,7 @@ log:
           params: []
           textJSON:
             query: |-
-              
+
               query SiteProductVersion {
                   site {
                       productVersion
@@ -1279,6 +1279,101 @@ log:
         status: 200
         statusText: OK
       startedDateTime: 2024-09-27T16:58:09.963Z
+      time: 0
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 0
+    - _id: b67fa467a48dcabba8c60bd47c398d1a
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 0
+        cookies: []
+        headers:
+          - _fromType: array
+            name: authorization
+            value: token
+              REDACTED_4229eb42e0efa2f15f3e6f8843764c7f92ab8051020cc4e90802f4fc0cc91bfa
+          - _fromType: array
+            name: user-agent
+            value: unauthed / v1
+          - _fromType: array
+            name: accept
+            value: "*/*"
+          - _fromType: array
+            name: accept-encoding
+            value: gzip,deflate
+          - name: host
+            value: sourcegraph.sourcegraph.com
+        headersSize: 281
+        httpVersion: HTTP/1.1
+        method: GET
+        queryString: []
+        url: https://sourcegraph.sourcegraph.com/.api/modelconfig/supported-models.json
+      response:
+        bodySize: 773
+        content:
+          encoding: base64
+          mimeType: text/plain; charset=utf-8
+          size: 773
+          text: "[\"H4sIAAAAAAAA/+yYX0/bPBTG7/sprNy+uDhpC+9yxzqxIY2BBmIXExeuc9pYTWLLdloqx\
+            HefkjRhaUyTIlQEo1dR/JzHf37H9Ynvewgh5GgWQkxvQGkuEsdHjtsnzkHRpmDBy9ek\
+            T/rkvwAWZaNUYsEDUNrx0e/8Vfa7r55yEQ+yWJqYUAnJ2Tq2ag64lhFd/aAxZLqTSlf\
+            JHg62W0+5gqVQc91ifVrpOlvPhJhF0OL7tRB1NhUSEspbTC8kJCdn3U1jro2iUYvr+V\
+            r1aJs/3a55xiKAaCvMXPETpjWkvu8Rb4DJESau77OIpgHgQX+EtUgSMC1jGud6NOiP0\
+            JVVn/dZqkt3XLpjj3hDcuSRzTBGJZ3wiBsO9SlVCgj4ZmdFZEit79c7odZw2+jVwEyo\
+            Vb5AjKWKstXmyLShJs3GlD1NmvllOKg8sRU02phIDNyZXzwJxNLxN/gU60XvzhKZmms\
+            xhyTrZjgihFjmE9O7i9TUlISQmu6hQwLukBNYyLRtm5b5gC4sWnsuZK5FHnjepxfOg8\
+            60hQlBPRe1VOKdkQ4pn6ddUX+zie2sc98C9oAcvxZsLQGC197Xx3uDXR2xvr9wfV8bq\
+            pgImum+wffKUDW26Wpon3Rrh0lTI5iIZQQG3hg8jwz/7wTPGx29JLsAQGqAOc6XHC88\
+            HHEDeEJ1W53zBUBeAczRjYe+cwPosyWmRpYyJtLE6EMtUsVgpqgMD4si43CHcXzkwUv\
+            kQVHLFkkwg5gnHLv9EbacPJv1bS5Gbn+ELpviGvDtvvv6c57QiCbs9dHu8TR+Au40oj\
+            rsjvfUJn8KsNX7nzp/98i3+GbMS60hJl5eas2kwcPWzXt5bRHVmVp93v7n09urqW2Um\
+            QhWOFtSLBUsOCwxIW6nywMk3DJme2ndpYf2dNhtA7fDXVJuIq4b1wHvH6/XGW/2Z7wz\
+            24b9B9utbHt/zdcJYErTyJyXN2WPwygW6Xn3Ys6UajPuFt/4ss4gw7ioftc3tTvU/L1\
+            ijg+9PwEAAP//fIckBg0WAAA=\"]"
+        cookies: []
+        headers:
+          - name: date
+            value: Thu, 03 Oct 2024 17:51:08 GMT
+          - name: content-type
+            value: text/plain; charset=utf-8
+          - name: content-length
+            value: "773"
+          - name: connection
+            value: keep-alive
+          - name: retry-after
+            value: "559"
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache, max-age=0
+          - name: content-encoding
+            value: gzip
+          - name: vary
+            value: Accept-Encoding, Authorization, Cookie, Authorization, X-Requested-With,
+              Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1358
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-10-03T17:51:07.644Z
       time: 0
       timings:
         blocked: -1
