@@ -26,7 +26,7 @@ import {
 import isEqual from 'lodash/isEqual'
 import { Observable, Subject } from 'observable-fns'
 import { type ResolvedConfigurationCredentialsOnly, validateCredentials } from '../auth/auth'
-import { logError } from '../log'
+import { logError } from '../output-channel-logger'
 import { maybeStartInteractiveTutorial } from '../tutorial/helpers'
 import { localStorage } from './LocalStorageProvider'
 

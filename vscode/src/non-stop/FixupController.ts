@@ -17,7 +17,7 @@ import {
     type EditMode,
     EditModeTelemetryMetadataMapping,
 } from '../edit/types'
-import { logDebug } from '../log'
+import { logDebug } from '../output-channel-logger'
 import { splitSafeMetadata } from '../services/telemetry-v2'
 import { countCode } from '../services/utils/code-count'
 

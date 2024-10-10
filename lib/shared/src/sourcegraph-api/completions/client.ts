@@ -1,8 +1,10 @@
 import type { Span } from '@opentelemetry/api'
-import { addClientInfoParams, getSerializedParams } from '../..'
+
+import { type FireworksCodeCompletionParams, addClientInfoParams, getSerializedParams } from '../..'
 import { currentResolvedConfig } from '../../configuration/resolver'
 import { useCustomChatClient } from '../../llm-providers'
 import { recordErrorToSpan } from '../../tracing'
+
 import type {
     CompletionCallbacks,
     CompletionGeneratorValue,
@@ -20,10 +22,12 @@ export interface CompletionLogger {
         | undefined
         | {
               onError: (error: string, rawError?: unknown) => void
-              onComplete: (
-                  response: string | CompletionResponse | string[] | CompletionResponse[]
-              ) => void
+              onComplete: (response: CompletionResponse) => void
               onEvents: (events: Event[]) => void
+              onFetch: (
+                  httpClientLabel: string,
+                  body: SerializedCompletionParameters | FireworksCodeCompletionParams
+              ) => void
           }
 }
 

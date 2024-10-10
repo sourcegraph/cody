@@ -361,12 +361,7 @@ export interface ExperimentalFireworksConfig {
     url: string
     token: string
     model: string
-    parameters?: {
-        temperature?: number
-        top_k?: number
-        top_p?: number
-        stop?: string[]
-    }
+    parameters?: FireworksCodeCompletionParams
 }
 
 /**
@@ -401,4 +396,18 @@ export interface GroqCompletionOptions {
      *A stop sequence is a predefined or user-specified text string that signals an AI to stop generating content, ensuring its responses remain focused and concise.
      */
     stop?: string[]
+}
+
+export interface FireworksCodeCompletionParams {
+    model: string | undefined
+    prompt: string
+    max_tokens: number
+    echo: boolean
+    temperature: number | undefined
+    top_p: number | undefined
+    top_k: number | undefined
+    stop: string[]
+    stream: boolean
+    languageId: string
+    user: string | null
 }
