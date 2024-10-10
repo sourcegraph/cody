@@ -12,8 +12,10 @@ import com.intellij.util.Consumer
 import java.awt.Component
 import java.net.URLEncoder
 import java.util.concurrent.CompletableFuture
+import kotlin.math.max
 
 class CodyErrorSubmitter : ErrorReportSubmitter() {
+  private val DOTS = "..."
 
   override fun getReportActionText() = "Open GitHub Issue"
 
@@ -46,13 +48,21 @@ class CodyErrorSubmitter : ErrorReportSubmitter() {
       throwableText: String? = null,
       additionalInfo: String? = null
   ): String {
-    return "https://github.com/sourcegraph/jetbrains/issues/new" +
-        "?template=bug_report.yml" +
-        "&labels=bug" +
-        "&projects=sourcegraph/381" +
-        (throwableText?.let { "&title=${encode(getTitle(throwableText))}" } ?: "") +
-        "&about=${encode(getAboutText(project).get())}" +
-        "&logs=${encode(formatLogs(throwableText, additionalInfo))}"
+    val baseUrl =
+        "https://github.com/sourcegraph/jetbrains/issues/new" +
+            "?template=bug_report.yml" +
+            "&labels=bug" +
+            "&projects=sourcegraph/381"
+
+    val title = throwableText?.let { "&title=${encode(getTitle(it))}" } ?: ""
+    val about = "&about=${encode(getAboutText(project).get())}"
+
+    val availableSpace =
+        MAX_URL_LENGTH - baseUrl.length - title.length - about.length - "&logs=".length
+
+    val trimmedLogs = trimLogs(throwableText, additionalInfo, max(0, availableSpace))
+
+    return "$baseUrl$title$about&logs=$trimmedLogs"
   }
 
   private fun getTitle(throwableText: String): String {
@@ -66,15 +76,20 @@ class CodyErrorSubmitter : ErrorReportSubmitter() {
     return result
   }
 
+  private fun trimLogs(throwableText: String?, additionalInfo: String?, maxLength: Int): String {
+    val formattedLogs = encode(formatLogs(throwableText, additionalInfo))
+    return if (formattedLogs.length > maxLength) {
+      formattedLogs.take(maxLength - DOTS.length) + DOTS
+    } else {
+      formattedLogs
+    }
+  }
+
   private fun formatLogs(throwableText: String?, additionalInfo: String?) =
-      formatAttributes(
-          "Stacktrace" to
-              throwableText?.let { trimPostfix(throwableText, 6000) }, // max total length is 8192
-          "Additional info" to additionalInfo)
+      formatAttributes("Stacktrace" to throwableText, "Additional info" to additionalInfo)
 
   private fun trimPostfix(text: String, maxLength: Int): String {
-    val postfix = "..."
-    return if (text.length > maxLength) text.take(maxLength - postfix.length) + postfix else text
+    return if (text.length > maxLength) text.take(maxLength - DOTS.length) + DOTS else text
   }
 
   private fun formatAttributes(vararg pairs: Pair<String, String?>) =
@@ -86,4 +101,8 @@ class CodyErrorSubmitter : ErrorReportSubmitter() {
       if (text.lines().size != 1) "$label:\n```text\n$text\n```" else "$label: ```$text```"
 
   private fun encode(text: String) = URLEncoder.encode(text, "UTF-8")
+
+  companion object {
+    const val MAX_URL_LENGTH = 8192 - 1
+  }
 }
