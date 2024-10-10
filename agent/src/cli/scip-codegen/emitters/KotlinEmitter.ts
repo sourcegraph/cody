@@ -227,6 +227,7 @@ export class KotlinEmitter implements Emitter {
     }
 
     getFileNameForType(tpe: string): string {
+        console.log('generating file', `${capitalize(tpe)}.${this.getFileType()}`)
         return `${capitalize(tpe)}.${this.getFileType()}`
     }
 
