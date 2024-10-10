@@ -350,10 +350,11 @@ class NativeWebviewPanel implements vscode.WebviewPanel {
     }
 
     public set title(value: string) {
-        this.delegate.setTitle(this.handle, value)
-        this._title = value
+        if (value !== this._title) {
+            this.delegate.setTitle(this.handle, value)
+            this._title = value
+        }
     }
-
     public get iconPath(): vscode.Uri | { light: vscode.Uri; dark: vscode.Uri } | undefined {
         if (!this._iconPath) {
             return undefined
