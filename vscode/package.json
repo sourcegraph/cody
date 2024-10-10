@@ -349,7 +349,7 @@
         "when": "cody.activated && cody.isGeneratingCommit"
       },
       {
-        "command": "cody.command.auto-diff-at-position",
+        "command": "cody.command.auto-edits-at-cursor",
         "category": "Cody Command",
         "group": "Cody Command",
         "title": "Calculate diff at Cursor",

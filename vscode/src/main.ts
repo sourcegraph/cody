@@ -420,7 +420,7 @@ async function registerCodyCommands(
     // Initialize autoedit provider if experimental feature is enabled
     disposables.push(
         enableFeature(
-            ({ configuration }) => configuration.experimentalAutoedits,
+            ({ configuration }) => configuration.experimentalAutoedits !== undefined,
             () => new AutoeditsProvider()
         )
     )

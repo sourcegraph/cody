@@ -337,7 +337,7 @@ describe('ContextMixer', () => {
             getDataCollectionRetrieversSpy.mockReturnValue(createMockedRetrievers(loggingRetrievers))
         }
 
-        it.only('extracts the correct `loggingSnippets` and `results` from the retrievers', async () => {
+        it('extracts the correct `loggingSnippets` and `results` from the retrievers', async () => {
             const primaryRetrievers = [
                 [
                     {

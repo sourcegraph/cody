@@ -1,13 +1,11 @@
-import { type PromptString, ps, psDedent } from '@sourcegraph/cody-shared'
+import { type AutoEditsTokenLimit, type PromptString, logDebug, ps } from '@sourcegraph/cody-shared'
 import type * as vscode from 'vscode'
 import type {
     AutocompleteContextSnippet,
     DocumentContext,
 } from '../../../lib/shared/src/completions/types'
 import { RetrieverIdentifier } from '../completions/context/utils'
-import type { AutoEditsTokenLimit } from './autoedits-provider'
 import * as utils from './prompt-utils'
-
 export type CompletionsPrompt = PromptString
 export type ChatPrompt = {
     role: 'system' | 'user' | 'assistant'
@@ -29,8 +27,9 @@ export interface PromptProvider {
     ): PromptResponseData
 
     postProcessResponse(completion: string | null): string
-}
 
+    getModelResponse(model: string, apiKey: string, prompt: PromptProviderResponse): Promise<string>
+}
 export class OpenAIPromptProvider implements PromptProvider {
     getPrompt(
         docContext: DocumentContext,
@@ -38,7 +37,12 @@ export class OpenAIPromptProvider implements PromptProvider {
         context: AutocompleteContextSnippet[],
         tokenBudget: AutoEditsTokenLimit
     ): PromptResponseData {
-        const { codeToReplace, promptResponse: userPrompt } = getBaseUserPrompt(docContext, document, context, tokenBudget)
+        const { codeToReplace, promptResponse: userPrompt } = getBaseUserPrompt(
+            docContext,
+            document,
+            context,
+            tokenBudget
+        )
         const prompt: ChatPrompt = [
             {
                 role: 'system',
@@ -58,6 +62,32 @@ export class OpenAIPromptProvider implements PromptProvider {
     postProcessResponse(response: string): string {
         return response
     }
+
+    async getModelResponse(
+        model: string,
+        apiKey: string,
+        prompt: PromptProviderResponse
+    ): Promise<string> {
+        try {
+            const response = await getModelResponse(
+                'https://api.openai.com/v1/chat/completions',
+                JSON.stringify({
+                    model: model,
+                    messages: prompt,
+                    temperature: 0.5,
+                    max_tokens: 256,
+                    response_format: {
+                        type: 'text',
+                    },
+                }),
+                apiKey
+            )
+            return response.choices[0].message.content
+        } catch (error) {
+            logDebug('AutoEdits', 'Error calling OpenAI API:', error)
+            throw error
+        }
+    }
 }
 
 export class DeepSeekPromptProvider implements PromptProvider {
@@ -71,12 +101,17 @@ export class DeepSeekPromptProvider implements PromptProvider {
         context: AutocompleteContextSnippet[],
         tokenBudget: AutoEditsTokenLimit
     ): PromptResponseData {
-        const { codeToReplace, promptResponse: userPrompt } = getBaseUserPrompt(docContext, document, context, tokenBudget)
-        const prompt = psDedent`${this.bosToken}${SYSTEM_PROMPT}
+        const { codeToReplace, promptResponse: userPrompt } = getBaseUserPrompt(
+            docContext,
+            document,
+            context,
+            tokenBudget
+        )
+        const prompt = ps`${this.bosToken}${SYSTEM_PROMPT}
 
-            ${this.userToken}${userPrompt}
+${this.userToken}${userPrompt}
 
-            ${this.assistantToken}`
+${this.assistantToken}`
 
         return {
             codeToReplace: codeToReplace,
@@ -87,6 +122,46 @@ export class DeepSeekPromptProvider implements PromptProvider {
     postProcessResponse(response: string): string {
         return response
     }
+
+    async getModelResponse(
+        model: string,
+        apiKey: string,
+        prompt: PromptProviderResponse
+    ): Promise<string> {
+        try {
+            const response = await getModelResponse(
+                'https://api.fireworks.ai/inference/v1/completions',
+                JSON.stringify({
+                    model: model,
+                    prompt: prompt.toString(),
+                    temperature: 0.5,
+                    max_tokens: 256,
+                }),
+                apiKey
+            )
+            return response.choices[0].text
+        } catch (error) {
+            logDebug('AutoEdits', 'Error calling Fireworks API:', error)
+            throw error
+        }
+    }
+}
+
+async function getModelResponse(url: string, body: string, apiKey: string): Promise<any> {
+    const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${apiKey}`,
+        },
+        body: body,
+    })
+    if (response.status !== 200) {
+        const errorText = await response.text()
+        throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`)
+    }
+    const data = await response.json()
+    return data
 }
 
 // ################################################################################################################
@@ -163,7 +238,7 @@ ${recentCopyPrompt}
 ${areaPrompt}
 ${FINAL_USER_PROMPT}
 `
-
+    logDebug('AutoEdits', 'Prompt\n', finalPrompt)
     return {
         codeToReplace: codeToReplace,
         promptResponse: finalPrompt,

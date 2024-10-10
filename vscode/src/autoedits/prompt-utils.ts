@@ -269,7 +269,7 @@ ${EXTRACTED_CODE_SNIPPETS_TAG_CLOSE}
 function getPrefixContext(
     prefix: PromptString,
     prefixAreaLinesBudget: number,
-    codeToRewritePrefixLines: number,
+    codeToRewritePrefixLines: number
 ): PrefixContext {
     const prefixLines = prefix.split('\n')
     const totalLines = prefixLines.length
@@ -306,7 +306,7 @@ function getPrefixContext(
 function getSuffixContext(
     suffix: PromptString,
     suffixAreaLinesBudget: number,
-    codeToRewriteSuffixLines: number,
+    codeToRewriteSuffixLines: number
 ): SuffixContext {
     const suffixLines = suffix.split('\n')
     const totalLines = suffixLines.length
@@ -342,7 +342,7 @@ function getSuffixContext(
 //  Helper functions
 export function getContextItemMappingWithTokenLimit(
     contextItems: AutocompleteContextSnippet[],
-    contextTokenLimitMapping: Map<RetrieverIdentifier, number>
+    contextTokenLimitMapping: Record<string, number>
 ): Map<RetrieverIdentifier, AutocompleteContextSnippet[]> {
     const contextItemMapping = new Map<RetrieverIdentifier, AutocompleteContextSnippet[]>()
     // Group items by identifier
@@ -355,7 +355,8 @@ export function getContextItemMappingWithTokenLimit(
     }
     // Apply token limits
     for (const [identifier, items] of contextItemMapping) {
-        const tokenLimit = contextTokenLimitMapping.get(identifier)
+        const tokenLimit =
+            identifier in contextTokenLimitMapping ? contextTokenLimitMapping[identifier] : undefined
         if (tokenLimit !== undefined) {
             contextItemMapping.set(identifier, getContextItemsInTokenBudget(items, tokenLimit))
         } else {
@@ -370,8 +371,9 @@ function getContextItemsInTokenBudget(
     contextItems: AutocompleteContextSnippet[],
     tokenBudget: number
 ): AutocompleteContextSnippet[] {
+    const CHARS_PER_TOKEN = 4
     let currentCharsCount = 0
-    const charsBudget = tokenBudget * 4
+    const charsBudget = tokenBudget * CHARS_PER_TOKEN
     for (let i = 0; i < contextItems.length; i++) {
         currentCharsCount += contextItems[i].content.length
         if (currentCharsCount > charsBudget) {
@@ -389,5 +391,5 @@ function getContextItemsForIdentifier(
 }
 
 function getContextPromptWithPath(filePath: PromptString, content: PromptString): PromptString {
-    return ps`(${filePath})\n\n${content}\n`
+    return ps`(\`${filePath}\`)\n\n${content}\n`
 }

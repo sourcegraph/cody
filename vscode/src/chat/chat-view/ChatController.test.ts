@@ -298,7 +298,7 @@ describe('ChatController', () => {
         })
     })
 
-    test.only('send error', async () => {
+    test('send error', async () => {
         const postMessageSpy = vi
             .spyOn(chatController as any, 'postMessage')
             .mockImplementation(() => {})

@@ -96,7 +96,7 @@ describe('getConfiguration', () => {
                     case 'cody.experimental.supercompletions':
                         return false
                     case 'cody.experimental.autoedits':
-                        return false
+                        return undefined
                     case 'cody.experimental.noodle':
                         return false
                     case 'cody.experimental.minion.anthropicKey':
@@ -138,7 +138,7 @@ describe('getConfiguration', () => {
             },
             commandCodeLenses: true,
             experimentalSupercompletions: false,
-            experimentalAutoedits: false,
+            experimentalAutoedits: undefined,
             experimentalMinionAnthropicKey: undefined,
             experimentalTracing: true,
             experimentalCommitMessage: true,

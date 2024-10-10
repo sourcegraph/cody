@@ -1,13 +1,17 @@
-import { type DocumentContext, displayPath, logDebug } from '@sourcegraph/cody-shared'
+import {
+    type AutoEditsTokenLimit,
+    type DocumentContext,
+    displayPath,
+    logDebug,
+} from '@sourcegraph/cody-shared'
 import { Observable } from 'observable-fns'
 import * as vscode from 'vscode'
 import { createGitDiff } from '../../../lib/shared/src/editor/create-git-diff'
 import { ContextMixer } from '../completions/context/context-mixer'
 import { DefaultContextStrategyFactory } from '../completions/context/context-strategy'
-import { RetrieverIdentifier } from '../completions/context/utils'
 import { getCurrentDocContext } from '../completions/get-current-doc-context'
-import { getOpenAIChatCompletion } from './model-helpers'
-import { OpenAIPromptProvider, type PromptProvider } from './prompt-provider'
+import { getConfiguration } from '../configuration'
+import { DeepSeekPromptProvider, OpenAIPromptProvider, type PromptProvider } from './prompt-provider'
 import type { CodeToReplaceData } from './prompt-utils'
 
 const AUTOEDITS_CONTEXT_STRATEGY = 'auto-edits'
@@ -17,49 +21,44 @@ export interface AutoEditsProviderOptions {
     position: vscode.Position
 }
 
-export interface AutoEditsTokenLimit {
-    prefixTokens: number
-    suffixTokens: number
-    maxPrefixLinesInArea: number
-    maxSuffixLinesInArea: number
-    codeToRewritePrefixLines: number
-    codeToRewriteSuffixLines: number
-    contextSpecificTokenLimit: Map<RetrieverIdentifier, number>
-}
-
 export class AutoeditsProvider implements vscode.Disposable, vscode.HoverProvider {
     private disposables: vscode.Disposable[] = []
     private contextMixer: ContextMixer = new ContextMixer(
         new DefaultContextStrategyFactory(Observable.of(AUTOEDITS_CONTEXT_STRATEGY)),
         false
     )
-    private provider: PromptProvider = new OpenAIPromptProvider()
-
-    // Values based on the offline experiment.
-    private autoEditsTokenLimit: AutoEditsTokenLimit = {
-        prefixTokens: 3000,
-        suffixTokens: 3000,
-        maxPrefixLinesInArea: 12,
-        maxSuffixLinesInArea: 5,
-        codeToRewritePrefixLines: 2,
-        codeToRewriteSuffixLines: 3,
-        contextSpecificTokenLimit: new Map([
-            [RetrieverIdentifier.RecentEditsRetriever, 1500],
-            [RetrieverIdentifier.JaccardSimilarityRetriever, 0],
-            [RetrieverIdentifier.RecentCopyRetriever, 500],
-            [RetrieverIdentifier.DiagnosticsRetriever, 500],
-            [RetrieverIdentifier.RecentViewPortRetriever, 2500],
-        ]),
-    }
+    private autoEditsTokenLimit: AutoEditsTokenLimit | undefined
+    private provider: PromptProvider | undefined
+    private model: string | undefined
+    private apiKey: string | undefined
 
     constructor() {
+        const config = getConfiguration().experimentalAutoedits
+        if (config === undefined) {
+            logDebug('AutoEdits', 'No Configuration found in the settings')
+            return
+        }
+        this.initizlizePromptProvider(config.provider)
+        this.autoEditsTokenLimit = config.tokenLimit as AutoEditsTokenLimit
+        this.model = config.model
+        this.apiKey = config.apiKey
         this.disposables.push(
             this.contextMixer,
-            vscode.commands.registerCommand('cody.command.auto-diff-at-position', () =>
+            vscode.commands.registerCommand('cody.command.auto-edits-at-cursor', () =>
                 this.getAutoedit()
             ),
             vscode.languages.registerHoverProvider({ scheme: 'file' }, this)
         )
+    }
+
+    private initizlizePromptProvider(provider: string) {
+        if (provider === 'openai') {
+            this.provider = new OpenAIPromptProvider()
+        } else if (provider === 'deepseek') {
+            this.provider = new DeepSeekPromptProvider()
+        } else {
+            logDebug('AutoEdits', `provider ${provider} not supported`)
+        }
     }
 
     public getAutoedit() {
@@ -70,6 +69,10 @@ export class AutoeditsProvider implements vscode.Disposable, vscode.HoverProvide
     }
 
     public async predictAutoeditAtDocAndPosition(options: AutoEditsProviderOptions) {
+        if (!this.provider || !this.autoEditsTokenLimit || !this.model || !this.apiKey) {
+            logDebug('AutoEdits', 'No Provider or Token Limit found in the settings')
+            return
+        }
         const start = Date.now()
         const docContext = this.getDocContext(options.document, options.position)
         const { context } = await this.contextMixer.getContext({
@@ -84,11 +87,9 @@ export class AutoeditsProvider implements vscode.Disposable, vscode.HoverProvide
             context,
             this.autoEditsTokenLimit
         )
-        if (Array.isArray(prompt)) {
-            const response = await getOpenAIChatCompletion(prompt)
-            const timeToResponse = Date.now() - start
-            this.showSuggestion(options, codeToReplace, response, timeToResponse)
-        }
+        const response = await this.provider.getModelResponse(this.model, this.apiKey, prompt)
+        const timeToResponse = Date.now() - start
+        this.showSuggestion(options, codeToReplace, response, timeToResponse)
     }
 
     private showSuggestion(
@@ -162,8 +163,8 @@ export class AutoeditsProvider implements vscode.Disposable, vscode.HoverProvide
         return getCurrentDocContext({
             document,
             position,
-            maxPrefixLength: convertTokensToChars(this.autoEditsTokenLimit.prefixTokens),
-            maxSuffixLength: convertTokensToChars(this.autoEditsTokenLimit.suffixTokens),
+            maxPrefixLength: convertTokensToChars(this.autoEditsTokenLimit?.prefixTokens ?? 0),
+            maxSuffixLength: convertTokensToChars(this.autoEditsTokenLimit?.suffixTokens ?? 0),
         })
     }
 
