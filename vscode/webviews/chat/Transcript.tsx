@@ -75,8 +75,7 @@ export const Transcript: FC<TranscriptProps> = props => {
         >
             {interactions.map((interaction, i) => (
                 <TranscriptInteraction
-                    // biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
-                    key={i}
+                    key={interaction.humanMessage.index}
                     models={models}
                     chatEnabled={chatEnabled}
                     userInfo={userInfo}
