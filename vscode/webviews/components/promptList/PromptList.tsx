@@ -162,7 +162,7 @@ export const PromptList: FC<PromptListProps> = props => {
         >
             <CommandList className={className}>
                 {showSearch && (
-                    <div className={inputPaddingClass}>
+                    <div className={clsx(inputPaddingClass, styles.listInputContainer)}>
                         <CommandInput
                             value={query}
                             onValueChange={setQuery}

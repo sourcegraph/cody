@@ -47,7 +47,7 @@ export const PromptSelectField: React.FunctionComponent<{
             tooltip="Insert prompt from Prompt Library"
             aria-label="Insert prompt"
             popoverContent={close => (
-                <div className="tw-flex tw-flex-col tw-gap-4">
+                <div className="tw-flex tw-flex-col tw-max-h-[500px] tw-overflow-auto">
                     <PromptList
                         onSelect={item => {
                             onSelect(item)
@@ -61,7 +61,7 @@ export const PromptSelectField: React.FunctionComponent<{
                         lastUsedSorting={true}
                     />
 
-                    <footer className="tw-px-2 tw-py-2 tw-border-t tw-border-border tw-bg-muted">
+                    <footer className="tw-px-2 tw-py-1 tw-border-t tw-border-border tw-bg-muted">
                         <Button variant="text" onClick={() => setView(View.Prompts)}>
                             <BookText size={16} /> Browse library
                         </Button>
@@ -70,8 +70,7 @@ export const PromptSelectField: React.FunctionComponent<{
             )}
             popoverRootProps={{ onOpenChange }}
             popoverContentProps={{
-                className:
-                    'tw-min-w-[325px] tw-w-[75vw] tw-max-w-[550px] !tw-p-0 tw-max-h-[500px] tw-overflow-auto',
+                className: 'tw-min-w-[325px] tw-w-[75vw] tw-max-w-[550px] !tw-p-0',
                 onKeyDown: onKeyDown,
                 onCloseAutoFocus: event => {
                     // Prevent the popover trigger from stealing focus after the user selects an

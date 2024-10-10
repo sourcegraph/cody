@@ -1,8 +1,13 @@
 
 .item {
     display: flex;
-    padding: 0.5rem;
     gap: 0.5rem;
+
+    /*
+        Styles order can be inconsistent in different clients (Cody Web, JB, ...etc)
+        Ensure that paddings won't be overridden in these clients.
+    */
+    padding: 0.25rem 0.5rem !important;
 
     &--indicator {
         display: none !important;

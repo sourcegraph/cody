@@ -11,7 +11,7 @@ export const PromptsTab: React.FC<{
     const runAction = useActionSelect()
 
     return (
-        <div className="tw-overflow-auto">
+        <div className="tw-overflow-auto tw-h-full">
             <PromptList
                 showSearch={true}
                 showCommandOrigins={true}
