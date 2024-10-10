@@ -39,13 +39,17 @@ describe('Enterprise - S2 (close main branch)', { timeout: 5000 }, () => {
         if (!serverInfo.authStatus?.authenticated) {
             throw new Error('unreachable')
         }
-        expect(serverInfo.authStatus?.username).toStrictEqual('codytesting')
+        expect(serverInfo.authStatus?.status).toStrictEqual('authenticated')
+        if (serverInfo.authStatus?.status === 'authenticated') {
+            expect(serverInfo.authStatus?.username).toStrictEqual('codytesting')
+        }
     }, 10_000)
 
     it('creates an autocomplete provider using server-side model config from S2', async () => {
-        const { id, legacyModel, configSource } = (
-            await s2EnterpriseClient.request('testing/autocomplete/providerConfig', null)
-        ).provider
+        const { id, legacyModel, configSource } = await s2EnterpriseClient.request(
+            'testing/autocomplete/providerConfig',
+            null
+        )
 
         expect({ id, legacyModel, configSource }).toMatchInlineSnapshot(`
           {
