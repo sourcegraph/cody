@@ -17,6 +17,4 @@ pnpm install --prefer-offline
 pnpm build
 # TODO: invoke @sourcegraph/scip-typescript npm package instead
 pnpm exec ts-node "$INDEXER_DIR"/src/main.ts index --emit-signatures --emit-external-symbols
-ls agent/bindings/kotlin/lib/src/main/kotlin/com/sourcegraph/cody/agent/protocol_generated
 pnpm exec ts-node agent/src/cli/scip-codegen/command.ts --output agent/bindings/kotlin/lib/src/main/kotlin/com/sourcegraph/cody/agent/protocol_generated
-ls agent/bindings/kotlin/lib/src/main/kotlin/com/sourcegraph/cody/agent/protocol_generated

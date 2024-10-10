@@ -49,7 +49,7 @@ async function main() {
         customHeaders: {},
     })
 
-    if (!valid?.authenticated) {
+    if (valid?.status !== 'authenticated') {
         throw new Error('Failed to authenticate')
     }
 

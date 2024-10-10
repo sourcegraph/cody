@@ -175,10 +175,17 @@ export abstract class Formatter {
         )
     }
 
+    public readonly ignoredInfoSymbol: string[] = []
+
     public readonly ignoredProperties = [
         'npm @sourcegraph/telemetry ', // Too many complicated types from this package
+        '`inline-completion-item-provider-config-singleton.ts`/tracer0:',
+        '`observable.d.ts`/Subscription#',
+        '`provider.ts`/Provider#configSource',
+        '`StatusBar.ts`/CodyStatusBar',
     ]
     private readonly ignoredTypeRefs = [
+        '`provider.ts`/Provider#',
         'npm @sourcegraph/telemetry', // Too many complicated types from this package
         '/TelemetryEventParameters#',
         ' lib/`lib.es5.d.ts`/Omit#',
@@ -193,6 +200,15 @@ export abstract class Formatter {
             const nonNullableTypes = tpe.union_type.types.filter(tpe => !this.isNullable(tpe))
             if (nonNullableTypes.length === 1) {
                 return this.isIgnoredType(nonNullableTypes[0])
+            }
+        }
+        return false
+    }
+
+    public isIgnoredInfo(info: scip.SymbolInformation): boolean {
+        for (const ignored of this.ignoredInfoSymbol) {
+            if (info.symbol.includes(ignored)) {
+                return true
             }
         }
         return false

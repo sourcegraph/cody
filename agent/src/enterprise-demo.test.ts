@@ -22,7 +22,10 @@ describe('Enterprise', () => {
         if (!serverInfo.authStatus?.authenticated) {
             throw new Error('unreachable')
         }
-        expect(serverInfo.authStatus?.username).toStrictEqual('codytesting')
+        expect(serverInfo.authStatus?.status).toStrictEqual('authenticated')
+        if (serverInfo.authStatus?.status === 'authenticated') {
+            expect(serverInfo.authStatus?.username).toStrictEqual('codytesting')
+        }
     }, 10_000)
 
     // Skip because it consistently fails with:
