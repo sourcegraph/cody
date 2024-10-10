@@ -1,11 +1,10 @@
-import { capitalize } from 'lodash'
 import type { CodePrinter } from '../../../../../vscode/src/completions/context/retrievers/tsc/CodePrinter'
 import { type ConstantType, type DiscriminatedUnion, typeOfUnion } from '../BaseCodegen'
 import type { Codegen } from '../Codegen'
 import { Formatter, type LanguageOptions } from '../Formatter'
 import type { SymbolTable } from '../SymbolTable'
 import type { CodegenOptions } from '../command'
-import { TypescriptKeyword } from '../utils'
+import { TypescriptKeyword, capitalize } from '../utils'
 import type {
     DataClassOptions,
     Emitter,
