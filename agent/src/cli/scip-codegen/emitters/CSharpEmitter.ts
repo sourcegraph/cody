@@ -275,7 +275,6 @@ export class CSharpEmitter implements Emitter {
     }
 
     private addJsonImport(p: CodePrinter): void {
-        // p.addImport('using Newtonsoft.Json;')
         p.addImport('using System.Text.Json.Serialization;')
     }
 }

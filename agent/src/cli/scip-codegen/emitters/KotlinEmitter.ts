@@ -1,3 +1,4 @@
+import { capitalize } from 'lodash'
 import type { CodePrinter } from '../../../../../vscode/src/completions/context/retrievers/tsc/CodePrinter'
 import { type ConstantType, type DiscriminatedUnion, typeOfUnion } from '../BaseCodegen'
 import type { Codegen } from '../Codegen'
@@ -226,7 +227,7 @@ export class KotlinEmitter implements Emitter {
     }
 
     getFileNameForType(tpe: string): string {
-        return `${tpe}.${this.getFileType()}`
+        return `${capitalize(tpe)}.${this.getFileType()}`
     }
 
     getFileType(): string {
