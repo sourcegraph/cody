@@ -8,6 +8,7 @@ import {
     type CodyCommand,
     CodyIDE,
     ModelUsage,
+    authStatus,
     currentAuthStatus,
     currentAuthStatusAuthed,
     currentAuthStatusOrNotReadyYet,
@@ -447,6 +448,17 @@ export class Agent extends MessageHandler implements ExtensionClient {
 
                 const ideType = AgentWorkspaceConfiguration.clientNameToIDE(this.clientInfo?.name ?? '')
 
+                const currentAuthStatus = currentAuthStatusOrNotReadyYet()
+                if (!currentAuthStatus) {
+                    console.log('# currentAuthStatus is undefined', currentAuthStatus)
+                    await new Promise(resolve => {
+                        const sub = authStatus.subscribe(() => {
+                            sub.unsubscribe()
+                            resolve(undefined)
+                        })
+                    })
+                }
+
                 this.authenticationPromise =
                     clientInfo.extensionConfiguration &&
                     (clientInfo.extensionConfiguration?.accessToken || ideType === CodyIDE.Web)
@@ -473,11 +485,11 @@ export class Agent extends MessageHandler implements ExtensionClient {
                     this.registerWebviewHandlers()
                 }
 
-                const authStatus = currentAuthStatusOrNotReadyYet()
+                const currentAuthStatusMaybe = currentAuthStatusOrNotReadyYet()
                 return {
                     name: 'cody-agent',
-                    authenticated: authStatus?.authenticated ?? false,
-                    authStatus,
+                    authenticated: currentAuthStatusMaybe?.authenticated ?? false,
+                    authStatus: currentAuthStatusMaybe,
                 }
             } catch (error) {
                 console.error(
