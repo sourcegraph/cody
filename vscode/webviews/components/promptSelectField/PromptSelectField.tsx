@@ -59,6 +59,7 @@ export const PromptSelectField: React.FunctionComponent<{
                         showOnlyPromptInsertableCommands={true}
                         showPromptLibraryUnsupportedMessage={true}
                         lastUsedSorting={true}
+                        inputClassName="tw-bg-popover"
                     />
 
                     <footer className="tw-px-2 tw-py-1 tw-border-t tw-border-border tw-bg-muted">

@@ -1,13 +1,13 @@
 
 .list {
     outline: none;
-    background-color: transparent;
     max-height: unset !important;
+    background-color: transparent !important;
 
     &--input-container {
-        position: sticky;
         top: 0;
-        background-color: var(--vscode-quickInput-background);
+        position: sticky;
+        z-index: 1;
     }
 
     &--input {

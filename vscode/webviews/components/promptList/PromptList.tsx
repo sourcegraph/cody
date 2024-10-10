@@ -29,6 +29,7 @@ interface PromptListProps {
     showCommandOrigins?: boolean
     showPromptLibraryUnsupportedMessage?: boolean
     className?: string
+    inputClassName?: string
     paddingLevels?: 'none' | 'middle' | 'big'
     appearanceMode?: 'flat-list' | 'chips-list'
     lastUsedSorting?: boolean
@@ -52,6 +53,7 @@ export const PromptList: FC<PromptListProps> = props => {
         showInitialSelectedItem = true,
         showPromptLibraryUnsupportedMessage = true,
         className,
+        inputClassName,
         paddingLevels = 'none',
         appearanceMode = 'flat-list',
         lastUsedSorting,
@@ -162,7 +164,7 @@ export const PromptList: FC<PromptListProps> = props => {
         >
             <CommandList className={className}>
                 {showSearch && (
-                    <div className={clsx(inputPaddingClass, styles.listInputContainer)}>
+                    <div className={clsx(inputPaddingClass, inputClassName, styles.listInputContainer)}>
                         <CommandInput
                             value={query}
                             onValueChange={setQuery}
