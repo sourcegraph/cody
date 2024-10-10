@@ -82,12 +82,14 @@ export const PromptList: FC<PromptListProps> = props => {
             }
 
             const isPrompt = action.actionType === 'prompt'
+            const isPromptAutoSubmit = action.actionType === 'prompt' && action.autoSubmit
             const isCommand = action.actionType === 'command'
             const isBuiltInCommand = isCommand && action.type === 'default'
 
             telemetryRecorder.recordEvent('cody.promptList', 'select', {
                 metadata: {
                     isPrompt: isPrompt ? 1 : 0,
+                    isPromptAutoSubmit: isPromptAutoSubmit ? 1 : 0,
                     isCommand: isCommand ? 1 : 0,
                     isCommandBuiltin: isBuiltInCommand ? 1 : 0,
                     isCommandCustom: !isBuiltInCommand ? 1 : 0,
@@ -160,7 +162,9 @@ export const PromptList: FC<PromptListProps> = props => {
             tabIndex={0}
             shouldFilter={false}
             defaultValue={showInitialSelectedItem ? undefined : 'xxx-no-item'}
-            className={clsx(styles.list, { [styles.listChips]: appearanceMode === 'chips-list' })}
+            className={clsx(styles.list, {
+                [styles.listChips]: appearanceMode === 'chips-list',
+            })}
         >
             <CommandList className={className}>
                 {showSearch && (

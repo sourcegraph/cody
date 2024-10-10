@@ -51,10 +51,10 @@ interface Props extends KeyboardEventPluginProps {
 
 export interface PromptEditorRefAPI {
     getSerializedValue(): SerializedPromptEditorValue
-    setFocus(focus: boolean, options?: { moveCursorToEnd?: boolean }): void
-    appendText(text: string, ensureWhitespaceBefore?: boolean): void
-    addMentions(items: ContextItem[]): void
-    setInitialContextMentions(items: ContextItem[]): void
+    setFocus(focus: boolean, options?: { moveCursorToEnd?: boolean }, cb?: () => void): void
+    appendText(text: string, cb?: () => void): void
+    addMentions(items: ContextItem[], cb?: () => void): void
+    setInitialContextMentions(items: ContextItem[], cb?: () => void): void
     setEditorState(state: SerializedPromptEditorState): void
 }
 
@@ -92,7 +92,8 @@ export const PromptEditor: FunctionComponent<Props> = ({
                 }
                 return toSerializedPromptEditorValue(editorRef.current)
             },
-            setFocus(focus, { moveCursorToEnd } = {}): void {
+            // biome-ignore lint/style/useDefaultParameterLast:
+            setFocus(focus, { moveCursorToEnd } = {}, cb): void {
                 const editor = editorRef.current
                 if (editor) {
                     if (focus) {
@@ -123,24 +124,31 @@ export const PromptEditor: FunctionComponent<Props> = ({
                                 // on initial load, for some reason.
                                 setTimeout(doFocus)
                             },
-                            { tag: 'skip-scroll-into-view' }
+                            { tag: 'skip-scroll-into-view', onUpdate: cb }
                         )
                     } else {
                         editor.blur()
+                        cb?.()
                     }
+                } else {
+                    cb?.()
                 }
             },
-            appendText(text: string, ensureWhitespaceBefore?: boolean): void {
-                editorRef.current?.update(() => {
-                    const root = $getRoot()
-                    root.selectEnd()
-                    $insertNodes([$createTextNode(`${getWhitespace(root)}${text}`)])
-                    root.selectEnd()
-                })
+            appendText(text: string, cb?: () => void): void {
+                editorRef.current?.update(
+                    () => {
+                        const root = $getRoot()
+                        root.selectEnd()
+                        $insertNodes([$createTextNode(`${getWhitespace(root)}${text}`)])
+                        root.selectEnd()
+                    },
+                    { onUpdate: cb }
+                )
             },
-            addMentions(items: ContextItem[]) {
+            addMentions(items: ContextItem[], cb?: () => void): void {
                 const editor = editorRef.current
                 if (!editor) {
+                    cb?.()
                     return
                 }
 
@@ -161,42 +169,50 @@ export const PromptEditor: FunctionComponent<Props> = ({
                     })
                 }
                 if (ops.create.length === 0) {
+                    cb?.()
                     return
                 }
 
-                editorRef.current?.update(() => {
-                    const nodesToInsert = lexicalNodesForContextItems(ops.create, {
-                        isFromInitialContext: false,
-                    })
-                    $insertNodes([$createTextNode(getWhitespace($getRoot())), ...nodesToInsert])
-                    const lastNode = nodesToInsert.at(-1)
-                    if (lastNode) {
-                        $selectAfter(lastNode)
-                    }
-                })
+                editorRef.current?.update(
+                    () => {
+                        const nodesToInsert = lexicalNodesForContextItems(ops.create, {
+                            isFromInitialContext: false,
+                        })
+                        $insertNodes([$createTextNode(getWhitespace($getRoot())), ...nodesToInsert])
+                        const lastNode = nodesToInsert.at(-1)
+                        if (lastNode) {
+                            $selectAfter(lastNode)
+                        }
+                    },
+                    { onUpdate: cb }
+                )
             },
-            setInitialContextMentions(items: ContextItem[]) {
+            setInitialContextMentions(items: ContextItem[], cb?: () => void): void {
                 const editor = editorRef.current
                 if (!editor) {
+                    cb?.()
                     return
                 }
 
-                editor.update(() => {
-                    if (!hasSetInitialContext.current || isEditorContentOnlyInitialContext(editor)) {
-                        if (isEditorContentOnlyInitialContext(editor)) {
-                            // Only clear in this case so that we don't clobber any text that was
-                            // inserted before initial context was received.
-                            $getRoot().clear()
+                editor.update(
+                    () => {
+                        if (!hasSetInitialContext.current || isEditorContentOnlyInitialContext(editor)) {
+                            if (isEditorContentOnlyInitialContext(editor)) {
+                                // Only clear in this case so that we don't clobber any text that was
+                                // inserted before initial context was received.
+                                $getRoot().clear()
+                            }
+                            const nodesToInsert = lexicalNodesForContextItems(items, {
+                                isFromInitialContext: true,
+                            })
+                            $setSelection($getRoot().selectStart()) // insert at start
+                            $insertNodes(nodesToInsert)
+                            $selectEnd()
+                            hasSetInitialContext.current = true
                         }
-                        const nodesToInsert = lexicalNodesForContextItems(items, {
-                            isFromInitialContext: true,
-                        })
-                        $setSelection($getRoot().selectStart()) // insert at start
-                        $insertNodes(nodesToInsert)
-                        $selectEnd()
-                        hasSetInitialContext.current = true
-                    }
-                })
+                    },
+                    { onUpdate: cb }
+                )
             },
         }),
         []
