@@ -47,7 +47,10 @@ export function useActionSelect() {
             case 'prompt': {
                 setView(View.Chat)
                 dispatchClientAction(
-                    { appendTextToLastPromptEditor: action.definition.text },
+                    {
+                        appendTextToLastPromptEditor: action.definition.text,
+                        submitHumanInput: action.autoSubmit,
+                    },
                     // Buffer because PromptEditor is not guaranteed to be mounted after the `setView`
                     // call above, and it needs to be mounted to receive the action.
                     { buffer: true }

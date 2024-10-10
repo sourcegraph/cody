@@ -235,7 +235,7 @@ export const HumanMessageEditor: FunctionComponent<{
         if (editorRef.current.getSerializedValue().text.trim().endsWith('@')) {
             editorRef.current.setFocus(true, { moveCursorToEnd: true })
         } else {
-            editorRef.current.appendText('@', true)
+            editorRef.current.appendText('@')
         }
 
         const value = editorRef.current.getSerializedValue()
@@ -256,42 +256,51 @@ export const HumanMessageEditor: FunctionComponent<{
     // Set up the message listener so the extension can control the input field.
     useClientActionListener(
         useCallback<ClientActionListener>(
-            ({ addContextItemsToLastHumanInput, appendTextToLastPromptEditor }) => {
-                if (addContextItemsToLastHumanInput) {
-                    // Add new context to chat from the "Cody Add Selection to Cody Chat"
-                    // command, etc. Only add to the last human input field.
-                    if (isSent) {
-                        return
+            ({ addContextItemsToLastHumanInput, appendTextToLastPromptEditor, submitHumanInput }) => {
+                // Add new context to chat from the "Cody Add Selection to Cody Chat"
+                // command, etc. Only add to the last human input field.
+                if (isSent) {
+                    return
+                }
+
+                const updates: Promise<unknown>[] = []
+                const awaitUpdate = () => {
+                    let resolve: (value?: unknown) => void
+                    updates.push(
+                        new Promise(r => {
+                            resolve = r
+                        })
+                    )
+
+                    return () => {
+                        resolve?.()
                     }
-                    if (
-                        !addContextItemsToLastHumanInput ||
-                        addContextItemsToLastHumanInput.length === 0
-                    ) {
-                        return
-                    }
+                }
+
+                if (addContextItemsToLastHumanInput && addContextItemsToLastHumanInput.length > 0) {
                     const editor = editorRef.current
                     if (editor) {
-                        editor.addMentions(addContextItemsToLastHumanInput)
+                        editor.addMentions(addContextItemsToLastHumanInput, awaitUpdate())
                         editor.setFocus(true)
                     }
                 }
 
                 if (appendTextToLastPromptEditor) {
-                    // Append text to the last human input field.
-                    if (isSent) {
-                        return
-                    }
-
                     // Schedule append text task to the next tick to avoid collisions with
                     // initial text set (add initial mentions first then append text from prompt)
+                    const onUpdate = awaitUpdate()
                     requestAnimationFrame(() => {
                         if (editorRef.current) {
-                            editorRef.current.appendText(appendTextToLastPromptEditor)
+                            editorRef.current.appendText(appendTextToLastPromptEditor, onUpdate)
                         }
                     })
                 }
+
+                if (submitHumanInput) {
+                    Promise.all(updates).then(() => onSubmitClick())
+                }
             },
-            [isSent]
+            [isSent, onSubmitClick]
         )
     )
 

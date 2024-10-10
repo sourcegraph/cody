@@ -353,6 +353,7 @@ query ViewerPrompts($query: String!) {
             }
             description
             draft
+            autoSubmit
             definition {
                 text
             }
