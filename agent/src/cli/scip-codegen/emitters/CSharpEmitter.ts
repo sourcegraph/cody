@@ -27,7 +27,7 @@ export class CSharpEmitter implements Emitter {
     }
 
     emitSerializationAdapter(p: CodePrinter, discriminatedUnions: string[]): void {
-        p.line(`namespace ${this.options.kotlinPackage}`)
+        p.line(`namespace ${this.options.kotlinPackage};`)
         p.line('{')
         p.block(() => {
             p.line('public static class ProtocolTypeAdapters')
@@ -103,7 +103,7 @@ export class CSharpEmitter implements Emitter {
     }
 
     startType(p: CodePrinter, _: TypeOptions): void {
-        p.addImport('using Newtonsoft.Json;')
+        this.addJsonImport(p)
         p.line()
         p.line(`namespace ${this.options.kotlinPackage}`)
         p.line('{')
@@ -137,60 +137,70 @@ export class CSharpEmitter implements Emitter {
                 p.line(`public class ${name} : ${alias} {}`)
             }
         })
-
-        p.line('}')
     }
 
     startSealedClass(p: CodePrinter, { name, union }: SealedClassOptions): void {
-        p.addImport('using Newtonsoft.Json;')
-        p.line(`[JsonConverter(typeof(${name}Converter))]`)
-        name = name.split(/[ -]/).map(capitalize).join('')
-        p.line(`public abstract class ${name}`)
-        p.line('{')
+        this.addJsonImport(p)
+        p.line()
         p.block(() => {
-            p.line(`private class ${name}Converter : JsonConverter<${name}>`)
+            p.line(`[JsonConverter(typeof(${name}Converter))]`)
+            name = name.split(/[ -]/).map(capitalize).join('')
+            p.line(`public abstract class ${name}`)
             p.line('{')
             p.block(() => {
-                p.line(
-                    `public override ${name} Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)`
-                )
-                p.line('{')
                 p.block(() => {
-                    p.line('var jsonDoc = JsonDocument.ParseValue(ref reader);')
-                    p.line(
-                        `var discriminator = jsonDoc.RootElement.GetProperty("${union.discriminatorDisplayName}").GetString();`
-                    )
-                    p.line('switch (discriminator)')
+                    p.line(`private class ${name}Converter : JsonConverter<${name}>`)
                     p.line('{')
                     p.block(() => {
-                        for (const member of union.members) {
-                            const typeName = this.formatter.discriminatedUnionTypeName(union, member)
-                            p.line(`case "${member.value}":`)
-                            p.block(() => {
-                                p.line(
-                                    `return JsonSerializer.Deserialize<${typeName}>(jsonDoc.RootElement.GetRawText(), options);`
-                                )
-                            })
-                        }
-                        p.line('default:')
+                        p.line(
+                            `public override ${name} Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)`
+                        )
+                        p.line('{')
                         p.block(() => {
-                            p.line('throw new JsonException($"Unknown discriminator {discriminator}");')
+                            p.line('var jsonDoc = JsonDocument.ParseValue(ref reader);')
+                            p.line(
+                                `var discriminator = jsonDoc.RootElement.GetProperty("${union.discriminatorDisplayName}").GetString();`
+                            )
+                            p.line('switch (discriminator)')
+                            p.line('{')
+                            p.block(() => {
+                                for (const member of union.members) {
+                                    const typeName = this.formatter.discriminatedUnionTypeName(
+                                        union,
+                                        member
+                                    )
+                                    p.line(`case "${member.value}":`)
+                                    p.block(() => {
+                                        p.line(
+                                            `return JsonSerializer.Deserialize<${typeName}>(jsonDoc.RootElement.GetRawText(), options);`
+                                        )
+                                    })
+                                }
+                                p.line('default:')
+                                p.block(() => {
+                                    p.line(
+                                        'throw new JsonException($"Unknown discriminator {discriminator}");'
+                                    )
+                                })
+                                p.line('}')
+                            })
                         })
                         p.line('}')
+                        p.line()
+
+                        p.line(
+                            `public override void Write(Utf8JsonWriter writer, ${name} value, JsonSerializerOptions options)`
+                        )
+                        p.line('{')
+                        p.block(() =>
+                            p.line('JsonSerializer.Serialize(writer, value, value.GetType(), options);')
+                        )
+
+                        p.line('}')
                     })
-
-                    p.line(
-                        `public override void Write(Utf8JsonWriter writer, ${name} value, JsonSerializerOptions options`
-                    )
-                    p.line('{')
-                    p.block(() =>
-                        p.line('JsonSerializer.Serialize(writer, value, value.GetType(), options);')
-                    )
-
                     p.line('}')
                 })
             })
-            p.line('}')
         })
     }
 
@@ -200,7 +210,7 @@ export class CSharpEmitter implements Emitter {
 
     emitDataClass(
         p: CodePrinter,
-        { name, members, enums, parentClass, isStringType }: DataClassOptions
+        { name, members, enums, parentClass, isStringType, innerClass }: DataClassOptions
     ): void {
         // Special case for string types
         if (isStringType) {
@@ -212,30 +222,35 @@ export class CSharpEmitter implements Emitter {
             }
             return
         }
-        const heritage = parentClass ? ` : ${parentClass}` : ''
-        p.line(`public class ${name}${heritage}`)
-        p.line('{')
-        p.block(() => {
-            for (const { info, typeSyntax, formattedName, oneOfComment } of members) {
-                p.line(`[JsonProperty(PropertyName = "${info.display_name}")]`)
-                if (oneOfComment.includes('-')) {
-                    p.line(`public string ${formattedName} { get; set; }${oneOfComment}`)
-                } else {
-                    p.line(`public ${typeSyntax} ${formattedName} { get; set; }${oneOfComment}`)
-                }
-            }
-            if (members.length === 0) {
-                p.line('public string PlaceholderField { get; set; } // Empty class')
-            }
-        })
-
-        if (enums.length > 0) {
-            p.addImport('using Newtonsoft.Json;')
-            for (const enum_ of enums) {
-                this.emitEnum(p, enum_)
-            }
+        if (innerClass) {
+            p.line()
         }
-        p.line('}')
+        const heritage = parentClass ? ` : ${parentClass}` : ''
+        p.block(() => {
+            p.line(`public class ${name}${heritage}`)
+            p.line('{')
+            p.block(() => {
+                for (const { info, typeSyntax, formattedName, oneOfComment } of members) {
+                    p.line(`[JsonProperty(PropertyName = "${info.display_name}")]`)
+                    if (oneOfComment.includes('-')) {
+                        p.line(`public string ${formattedName} { get; set; }${oneOfComment}`)
+                    } else {
+                        p.line(`public ${typeSyntax} ${formattedName} { get; set; }${oneOfComment}`)
+                    }
+                }
+                if (members.length === 0) {
+                    p.line('public string PlaceholderField { get; set; } // Empty class')
+                }
+                if (enums.length > 0) {
+                    this.addJsonImport(p)
+                    for (const enum_ of enums) {
+                        this.emitEnum(p, enum_)
+                    }
+                }
+            })
+
+            p.line('}')
+        })
     }
 
     emitEnum(p: CodePrinter, { name, members }: Enum): void {
@@ -244,7 +259,8 @@ export class CSharpEmitter implements Emitter {
         p.line('{')
         p.block(() => {
             for (const { serializedName, formattedName } of members) {
-                p.line(`${formattedName}, // ${serializedName}`)
+                p.line(`[EnumMember(Value = "${serializedName}")]`)
+                p.line(`${formattedName},`)
             }
         })
         p.line('}')
@@ -257,15 +273,21 @@ export class CSharpEmitter implements Emitter {
     getFileNameForType(tpe: string): string {
         return `${tpe}.${this.getFileType()}`.split('_').map(capitalize).join('')
     }
+
+    private addJsonImport(p: CodePrinter): void {
+        // p.addImport('using Newtonsoft.Json;')
+        p.addImport('using System.Text.Json.Serialization;')
+    }
 }
 
 export class CSharpFormatter extends Formatter {
     override options: LanguageOptions = {
         typeNameSeparator: '',
-        typeAnnotations: 'after',
+        typeAnnotations: 'before',
         voidType: 'Void',
         reserved: new Set(),
         keywordOverrides: new Map([
+            [TypescriptKeyword.Null, 'Void'],
             [TypescriptKeyword.Boolean, 'bool'],
             [TypescriptKeyword.String, 'string'],
             [TypescriptKeyword.Long, 'int'],
