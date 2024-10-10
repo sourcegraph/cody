@@ -1,4 +1,8 @@
-import { type AuthStatus, currentAuthStatus } from '@sourcegraph/cody-shared'
+import {
+    type AuthStatus,
+    currentAuthStatus,
+    currentAuthStatusOrNotReadyYet,
+} from '@sourcegraph/cody-shared'
 import type { ProtocolAuthStatus } from './protocol-alias'
 
 export function toProtocolAuthStatus(status: AuthStatus): ProtocolAuthStatus {
@@ -19,7 +23,7 @@ export function currentProtocolAuthStatus(): ProtocolAuthStatus {
 }
 
 export function currentProtocolAuthStatusOrNotReadyYet(): ProtocolAuthStatus | undefined {
-    const status = currentAuthStatus()
+    const status = currentAuthStatusOrNotReadyYet()
     if (status) {
         return toProtocolAuthStatus(status)
     }

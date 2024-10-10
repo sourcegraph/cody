@@ -758,29 +758,29 @@ export interface ProtocolAuthenticatedAuthStatus {
      * Used to enable Fireworks tracing for Sourcegraph teammates on DotCom.
      * https://readme.fireworks.ai/docs/enabling-tracing
      */
-    isFireworksTracingEnabled?: boolean
+    isFireworksTracingEnabled?: boolean | null | undefined
+    hasVerifiedEmail?: boolean | null | undefined
+    requiresVerifiedEmail?: boolean | null | undefined
 
-    hasVerifiedEmail?: boolean
-    requiresVerifiedEmail?: boolean
-
-    primaryEmail?: string
-    displayName?: string
-    avatarURL?: string
+    primaryEmail?: string | null | undefined
+    displayName?: string | null | undefined
+    avatarURL?: string | null | undefined
 
     pendingValidation: boolean
 
     /**
      * Organizations on the instance that the user is a member of.
      */
-    organizations?: { name: string; id: string }[]
+    organizations?: { name: string; id: string }[] | null | undefined
 }
 
 export interface ProtocolUnauthenticatedAuthStatus {
     status: 'unauthenticated'
     authenticated: boolean
     endpoint: string
-    showNetworkError?: boolean
-    showInvalidAccessTokenError?: boolean
+    showNetworkError?: boolean | null | undefined
+
+    showInvalidAccessTokenError?: boolean | null | undefined
     pendingValidation: boolean
 }
 
