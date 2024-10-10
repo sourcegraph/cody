@@ -3,11 +3,9 @@ package com.sourcegraph.cody.ui.web
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.fileEditor.FileEditor
 import com.intellij.openapi.fileEditor.FileEditorLocation
-import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.fileEditor.FileEditorPolicy
 import com.intellij.openapi.fileEditor.FileEditorProvider
 import com.intellij.openapi.fileEditor.FileEditorState
-import com.intellij.openapi.fileEditor.ex.FileEditorManagerEx
 import com.intellij.openapi.project.DumbAware
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Key
@@ -77,8 +75,6 @@ class WebPanelProvider : FileEditorProvider, DumbAware {
 
   override fun createEditor(project: Project, file: VirtualFile): FileEditor {
     ApplicationManager.getApplication().assertIsDispatchThread()
-    // If this file is already open elsewhere, close it.
-    (FileEditorManager.getInstance(project) as? FileEditorManagerEx)?.closeFile(file)
 
     // If file was reopened we don't want to dispose WebView, as it means panel was just moved
     // between editors
