@@ -199,6 +199,25 @@ export function syncModels({
                                         featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.DeepCody)
                                     ).pipe(
                                         switchMap(([hasEarlyAccess, deepCodyEnabled]) => {
+                                            // TODO(sqs): remove waitlist from localStorage when user has access
+                                            const isOnWaitlist = config.clientState.waitlist_o1
+                                            if (isDotComUser && (hasEarlyAccess || isOnWaitlist)) {
+                                                data.primaryModels = data.primaryModels.map(model => {
+                                                    if (model.tags.includes(ModelTag.Waitlist)) {
+                                                        const newTags = model.tags.filter(
+                                                            tag => tag !== ModelTag.Waitlist
+                                                        )
+                                                        newTags.push(
+                                                            hasEarlyAccess
+                                                                ? ModelTag.EarlyAccess
+                                                                : ModelTag.OnWaitlist
+                                                        )
+                                                        return { ...model, tags: newTags }
+                                                    }
+                                                    return model
+                                                })
+                                            }
+
                                             // DEEP CODY - available to users with feature flag enabled only.
                                             // TODO(bee): remove once deepCody is enabled for all users.
                                             if (deepCodyEnabled && serverModelsConfig) {
@@ -223,25 +242,6 @@ export function syncModels({
                                                     }),
                                                     map(() => data)
                                                 )
-                                            }
-
-                                            // TODO(sqs): remove waitlist from localStorage when user has access
-                                            const isOnWaitlist = config.clientState.waitlist_o1
-                                            if (isDotComUser && (hasEarlyAccess || isOnWaitlist)) {
-                                                data.primaryModels = data.primaryModels.map(model => {
-                                                    if (model.tags.includes(ModelTag.Waitlist)) {
-                                                        const newTags = model.tags.filter(
-                                                            tag => tag !== ModelTag.Waitlist
-                                                        )
-                                                        newTags.push(
-                                                            hasEarlyAccess
-                                                                ? ModelTag.EarlyAccess
-                                                                : ModelTag.OnWaitlist
-                                                        )
-                                                        return { ...model, tags: newTags }
-                                                    }
-                                                    return model
-                                                })
                                             }
 
                                             return Observable.of(data)
