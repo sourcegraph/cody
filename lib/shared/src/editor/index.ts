@@ -35,6 +35,7 @@ export interface ActiveTextEditorVisibleContent {
     fileUri: URI
     repoName?: string
     revision?: string
+    range: RangeData
 }
 
 export interface Editor {

@@ -6,6 +6,7 @@ import {
     MAX_BYTES_PER_FILE,
     type PromptString,
     type Result,
+    TokenCounterUtils,
     isAbortError,
     isFileURI,
     truncateTextNearestLine,
@@ -101,14 +102,11 @@ const userAttentionRegexps: RegExp[] = [
     /have\s+open/,
 ]
 
-function getVisibleEditorContext(editor: VSCodeEditor): ContextItem[] {
-    return wrapInActiveSpan('chat.context.visibleEditorContext', () => {
+async function getVisibleEditorContext(editor: VSCodeEditor): Promise<ContextItem[]> {
+    return wrapInActiveSpan('chat.context.visibleEditorContext', async () => {
         const visible = editor.getActiveTextEditorVisibleContent()
         const fileUri = visible?.fileUri
-        if (!visible || !fileUri) {
-            return []
-        }
-        if (!visible.content.trim()) {
+        if (!visible?.content.trim() || !fileUri) {
             return []
         }
         return [
@@ -116,7 +114,9 @@ function getVisibleEditorContext(editor: VSCodeEditor): ContextItem[] {
                 type: 'file',
                 content: visible.content,
                 uri: fileUri,
-                source: ContextItemSource.Editor,
+                range: visible.range,
+                source: ContextItemSource.Priority,
+                size: await TokenCounterUtils.countTokens(visible.content),
             },
         ] satisfies ContextItem[]
     })
@@ -131,7 +131,7 @@ export async function getPriorityContext(
         const priorityContext: ContextItem[] = []
         if (needsUserAttentionContext(text)) {
             // Query refers to current editor
-            priorityContext.push(...getVisibleEditorContext(editor))
+            priorityContext.push(...(await getVisibleEditorContext(editor)))
         } else if (needsReadmeContext(editor, text)) {
             // Query refers to project, so include the README
             let containsREADME = false
@@ -231,7 +231,8 @@ async function getReadmeContext(): Promise<ContextItem[]> {
             uri: readmeUri,
             content: truncatedReadmeText,
             range,
-            source: ContextItemSource.Editor,
+            source: ContextItemSource.Priority,
+            size: await TokenCounterUtils.countTokens(truncatedReadmeText),
         },
     ]
 }
