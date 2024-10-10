@@ -349,14 +349,6 @@
         "when": "cody.activated && cody.isGeneratingCommit"
       },
       {
-        "command": "cody.command.auto-edits-at-cursor",
-        "category": "Cody Command",
-        "group": "Cody Command",
-        "title": "Calculate diff at Cursor",
-        "icon": "$(surround-with)",
-        "enablement": "cody.activated && config.cody.experimental.autoedit"
-      },
-      {
         "command": "cody.command.auto-edit",
         "category": "Cody Command",
         "group": "Cody Command",
@@ -736,6 +728,21 @@
         "args": ["previous"],
         "key": "shift+ctrl+up",
         "when": "cody.activated && !editorReadonly && cody.hasActionableSupercompletion"
+      },
+      {
+        "command": "cody.supersuggest.accept",
+        "key": "tab",
+        "when": "editorTextFocus && cody.activated && cody.supersuggest.active"
+      },
+      {
+        "command": "cody.supersuggest.dismiss",
+        "key": "escape",
+        "when": "editorTextFocus && cody.activated && cody.supersuggest.active"
+      },
+      {
+        "command": "cody.experimental.suggest",
+        "key": "ctrl+shift+enter",
+        "when": "cody.activated"
       }
     ],
     "submenus": [

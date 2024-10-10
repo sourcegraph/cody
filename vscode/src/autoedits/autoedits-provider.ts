@@ -1,18 +1,12 @@
-import {
-    type AutoEditsTokenLimit,
-    type DocumentContext,
-    displayPath,
-    logDebug,
-} from '@sourcegraph/cody-shared'
+import { type AutoEditsTokenLimit, type DocumentContext, logDebug } from '@sourcegraph/cody-shared'
 import { Observable } from 'observable-fns'
 import * as vscode from 'vscode'
-import { createGitDiff } from '../../../lib/shared/src/editor/create-git-diff'
 import { ContextMixer } from '../completions/context/context-mixer'
 import { DefaultContextStrategyFactory } from '../completions/context/context-strategy'
 import { getCurrentDocContext } from '../completions/get-current-doc-context'
 import { getConfiguration } from '../configuration'
 import { DeepSeekPromptProvider, OpenAIPromptProvider, type PromptProvider } from './prompt-provider'
-import type { CodeToReplaceData } from './prompt-utils'
+import { AutoEditsRenderer } from './renderer'
 
 const AUTOEDITS_CONTEXT_STRATEGY = 'auto-edits'
 
@@ -21,7 +15,7 @@ export interface AutoEditsProviderOptions {
     position: vscode.Position
 }
 
-export class AutoeditsProvider implements vscode.Disposable, vscode.HoverProvider {
+export class AutoeditsProvider implements vscode.Disposable {
     private disposables: vscode.Disposable[] = []
     private contextMixer: ContextMixer = new ContextMixer(
         new DefaultContextStrategyFactory(Observable.of(AUTOEDITS_CONTEXT_STRATEGY)),
@@ -31,6 +25,7 @@ export class AutoeditsProvider implements vscode.Disposable, vscode.HoverProvide
     private provider: PromptProvider | undefined
     private model: string | undefined
     private apiKey: string | undefined
+    private renderer: AutoEditsRenderer = new AutoEditsRenderer()
 
     constructor() {
         const config = getConfiguration().experimentalAutoedits
@@ -44,10 +39,8 @@ export class AutoeditsProvider implements vscode.Disposable, vscode.HoverProvide
         this.apiKey = config.apiKey
         this.disposables.push(
             this.contextMixer,
-            vscode.commands.registerCommand('cody.command.auto-edits-at-cursor', () =>
-                this.getAutoedit()
-            ),
-            vscode.languages.registerHoverProvider({ scheme: 'file' }, this)
+            this.renderer,
+            vscode.commands.registerCommand('cody.experimental.suggest', () => this.getAutoedit())
         )
     }
 
@@ -89,74 +82,8 @@ export class AutoeditsProvider implements vscode.Disposable, vscode.HoverProvide
         )
         const response = await this.provider.getModelResponse(this.model, this.apiKey, prompt)
         const timeToResponse = Date.now() - start
-        this.showSuggestion(options, codeToReplace, response, timeToResponse)
-    }
-
-    private showSuggestion(
-        options: AutoEditsProviderOptions,
-        codeToReplace: CodeToReplaceData,
-        predictedText: string,
-        timeToResponse: number
-    ) {
-        const prevSuffixLine = codeToReplace.endLine - 1
-        const range = new vscode.Range(
-            codeToReplace.startLine,
-            0,
-            prevSuffixLine,
-            options.document.lineAt(prevSuffixLine).range.end.character
-        )
-        const currentText = options.document.getText(range)
         logDebug('AutoEdits: (Time LLM Query):', timeToResponse.toString())
-
-        // Show the decoration
-        const diff = this.getDiff(options.document.uri, currentText, predictedText)
-
-        // Register the hover provider for this specific range
-        const hoverDisposable = vscode.languages.registerHoverProvider(
-            { scheme: 'file' },
-            {
-                provideHover: (document, position, token) => {
-                    if (range.contains(position)) {
-                        return this.provideHover(document, position, token, diff)
-                    }
-                    return null
-                },
-            }
-        )
-
-        this.disposables.push(
-            hoverDisposable,
-            vscode.workspace.onDidChangeTextDocument(e => {
-                if (e.document === options.document) {
-                    hoverDisposable.dispose()
-                }
-            })
-        )
-
-        // Automatically show the hover
-        vscode.commands.executeCommand('editor.action.showHover')
-    }
-
-    public provideHover(
-        document: vscode.TextDocument,
-        position: vscode.Position,
-        token: vscode.CancellationToken,
-        diff?: string
-    ): vscode.ProviderResult<vscode.Hover> {
-        if (diff) {
-            const displayDiff = diff.replace('\\ No newline at end of file', '').trim()
-            const markdown = new vscode.MarkdownString()
-            markdown.appendText('✨ Cody Auto Edits ✨\n')
-            markdown.appendCodeblock(displayDiff, 'diff')
-            return new vscode.Hover(markdown)
-        }
-        return null
-    }
-
-    private getDiff(uri: vscode.Uri, codeToRewrite: string, prediction: string) {
-        const diff = createGitDiff(displayPath(uri), codeToRewrite, prediction)
-        logDebug('AutoEdits (Diff@ Cursor Position)\n', diff)
-        return diff
+        await this.renderer.render(options, codeToReplace, response)
     }
 
     private getDocContext(document: vscode.TextDocument, position: vscode.Position): DocumentContext {
