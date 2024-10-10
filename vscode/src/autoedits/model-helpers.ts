@@ -33,7 +33,7 @@ export async function getOpenAIChatCompletion(messages: ChatPrompt): Promise<str
         const response = await axios.post(
             'https://api.openai.com/v1/chat/completions',
             {
-                model: 'ft:gpt-4o-mini-2024-07-18:sourcegraph-production::AFXNjNiC',
+                model: 'ft:gpt-4o-mini-2024-07-18:sourcegraph-production::AGaITVmn',
                 messages: messages,
                 temperature: 0.5,
                 max_tokens: 256,

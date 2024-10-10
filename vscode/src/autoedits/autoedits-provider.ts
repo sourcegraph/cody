@@ -37,18 +37,18 @@ export class AutoeditsProvider implements vscode.Disposable, vscode.HoverProvide
 
     // Values based on the offline experiment.
     private autoEditsTokenLimit: AutoEditsTokenLimit = {
-        prefixTokens: 3_000,
-        suffixTokens: 3_000,
+        prefixTokens: 3000,
+        suffixTokens: 3000,
         maxPrefixLinesInArea: 12,
         maxSuffixLinesInArea: 5,
         codeToRewritePrefixLines: 2,
         codeToRewriteSuffixLines: 3,
         contextSpecificTokenLimit: new Map([
-            [RetrieverIdentifier.RecentEditsRetriever, 2_500],
-            [RetrieverIdentifier.JaccardSimilarityRetriever, 3_000],
-            [RetrieverIdentifier.RecentCopyRetriever, 1_000],
-            [RetrieverIdentifier.DiagnosticsRetriever, 1_000],
-            [RetrieverIdentifier.RecentViewPortRetriever, 3_000],
+            [RetrieverIdentifier.RecentEditsRetriever, 1500],
+            [RetrieverIdentifier.JaccardSimilarityRetriever, 0],
+            [RetrieverIdentifier.RecentCopyRetriever, 500],
+            [RetrieverIdentifier.DiagnosticsRetriever, 500],
+            [RetrieverIdentifier.RecentViewPortRetriever, 2500],
         ]),
     }
 
@@ -70,6 +70,7 @@ export class AutoeditsProvider implements vscode.Disposable, vscode.HoverProvide
     }
 
     public async predictAutoeditAtDocAndPosition(options: AutoEditsProviderOptions) {
+        const start = Date.now()
         const docContext = this.getDocContext(options.document, options.position)
         const { context } = await this.contextMixer.getContext({
             document: options.document,
@@ -85,14 +86,16 @@ export class AutoeditsProvider implements vscode.Disposable, vscode.HoverProvide
         )
         if (Array.isArray(prompt)) {
             const response = await getOpenAIChatCompletion(prompt)
-            this.showSuggestion(options, codeToReplace, response)
+            const timeToResponse = Date.now() - start
+            this.showSuggestion(options, codeToReplace, response, timeToResponse)
         }
     }
 
     private showSuggestion(
         options: AutoEditsProviderOptions,
         codeToReplace: CodeToReplaceData,
-        predictedText: string
+        predictedText: string,
+        timeToResponse: number
     ) {
         const prevSuffixLine = codeToReplace.endLine - 1
         const range = new vscode.Range(
@@ -102,9 +105,7 @@ export class AutoeditsProvider implements vscode.Disposable, vscode.HoverProvide
             options.document.lineAt(prevSuffixLine).range.end.character
         )
         const currentText = options.document.getText(range)
-        const originalText = codeToReplace.codeToRewrite.toString()
-
-        logDebug('AutoEdits (originalText)\n', originalText)
+        logDebug('AutoEdits: (Time LLM Query):', timeToResponse.toString())
 
         // Show the decoration
         const diff = this.getDiff(options.document.uri, currentText, predictedText)
