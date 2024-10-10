@@ -1,10 +1,14 @@
+import { SpanStatusCode } from '@opentelemetry/api'
+
 import {
     type CodeCompletionsParams,
     type CompletionLogger,
     type CompletionResponse,
     type CompletionResponseGenerator,
+    type CompletionResponseWithMetaData,
     CompletionStopReason,
     type ExperimentalFireworksConfig,
+    type FireworksCodeCompletionParams,
     NetworkError,
     TracedError,
     addTraceparent,
@@ -12,6 +16,7 @@ import {
     createSSEIterator,
     currentResolvedConfig,
     currentUserProductSubscription,
+    fetch,
     getActiveTraceAndSpanId,
     isAbortError,
     isNodeResponse,
@@ -20,11 +25,7 @@ import {
     recordErrorToSpan,
     tracer,
 } from '@sourcegraph/cody-shared'
-import { fetch } from '@sourcegraph/cody-shared'
 
-import { SpanStatusCode } from '@opentelemetry/api'
-import type { CompletionResponseWithMetaData } from '@sourcegraph/cody-shared/src/inferenceClient/misc'
-import { logDebug } from '../log'
 import { createRateLimitErrorFromResponse } from './default-client'
 import type { GenerateCompletionsOptions } from './providers/shared/provider'
 
@@ -91,7 +92,8 @@ export function createFastPathClient(
             stream: true,
             languageId: providerOptions.document.languageId,
             user: (await currentResolvedConfig()).clientState.anonymousUserID,
-        }
+        } satisfies FireworksCodeCompletionParams
+
         const headers = new Headers(fireworksCustomHeaders)
         // Force HTTP connection reuse to reduce latency.
         // c.f. https://github.com/microsoft/vscode/issues/173861
@@ -102,7 +104,8 @@ export function createFastPathClient(
         headers.set('X-Timeout-Ms', requestParams.timeoutMs.toString())
         addTraceparent(headers)
 
-        logDebug('FireworksProvider', 'fetch', { verbose: { url, fireworksRequest } })
+        log?.onFetch('fastPathClient', fireworksRequest)
+
         const response = await fetch(url, {
             method: 'POST',
             body: JSON.stringify(fireworksRequest),

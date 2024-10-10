@@ -5,13 +5,15 @@ import { PromptList } from '../components/promptList/PromptList'
 import { View } from '../tabs/types'
 import { getVSCodeAPI } from '../utils/VSCodeApi'
 
+import styles from './PromptsTab.module.css'
+
 export const PromptsTab: React.FC<{
     setView: (view: View) => void
 }> = ({ setView }) => {
     const runAction = useActionSelect()
 
     return (
-        <div className="tw-overflow-auto">
+        <div className="tw-overflow-auto tw-h-full">
             <PromptList
                 showSearch={true}
                 showCommandOrigins={true}
@@ -20,6 +22,7 @@ export const PromptsTab: React.FC<{
                 showPromptLibraryUnsupportedMessage={true}
                 showOnlyPromptInsertableCommands={false}
                 onSelect={item => runAction(item, setView)}
+                inputClassName={styles.promptsInput}
             />
         </div>
     )
@@ -28,15 +31,14 @@ export const PromptsTab: React.FC<{
 export function useActionSelect() {
     const dispatchClientAction = useClientActionDispatcher()
     const [lastUsedActions = {}, persistValue] = useLocalStorage<Record<string, number>>(
-        'last-used-actions',
+        'last-used-actions-v2',
         {}
     )
 
     return (action: Action, setView: (view: View) => void) => {
         try {
             const actionKey = action.actionType === 'prompt' ? action.id : action.key
-            const lastUsedActionCount = lastUsedActions[actionKey] ?? 0
-            persistValue({ ...lastUsedActions, [actionKey]: lastUsedActionCount + 1 })
+            persistValue({ ...lastUsedActions, [actionKey]: Date.now() })
         } catch {
             console.error('Failed to persist last used action count')
         }

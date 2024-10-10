@@ -1,7 +1,6 @@
 import type * as vscode from 'vscode'
 
 import type {
-    AuthStatus,
     BillingCategory,
     BillingProduct,
     CodyCommand,
@@ -23,7 +22,6 @@ import type {
 
 import type { ExtensionMessage, WebviewMessage } from '../chat/protocol'
 import type { CompletionBookkeepingEvent, CompletionItemID } from '../completions/analytics-logger'
-import type { InlineCompletionItemProviderConfig } from '../completions/inline-completion-item-provider-config-singleton'
 import type { FixupTaskID } from '../non-stop/FixupTask'
 import type { CodyTaskState } from '../non-stop/state'
 
@@ -238,16 +236,19 @@ export type ClientRequests = {
     'testing/autocomplete/setCompletionVisibilityDelay': [{ delay: number }, null]
 
     // For testing purposes, returns the current autocomplete provider configuration.
-    'testing/autocomplete/providerConfig': [null, InlineCompletionItemProviderConfig]
+    'testing/autocomplete/providerConfig': [
+        null,
+        { id: string; legacyModel: string; configSource: string },
+    ]
 
     // Updates the extension configuration and returns the new
     // authentication status, which indicates whether the provided credentials are
     // valid or not. The agent can't support autocomplete or chat if the credentials
     // are invalid.
-    'extensionConfiguration/change': [ExtensionConfiguration, AuthStatus | null]
+    'extensionConfiguration/change': [ExtensionConfiguration, ProtocolAuthStatus | null]
 
     // Returns the current authentication status without making changes to it.
-    'extensionConfiguration/status': [null, AuthStatus | null]
+    'extensionConfiguration/status': [null, ProtocolAuthStatus | null]
 
     // Returns the json schema of the extension confi
     'extensionConfiguration/getSettingsSchema': [null, string]
@@ -630,7 +631,7 @@ export interface WebviewNativeConfig {
 export interface ServerInfo {
     name: string
     authenticated?: boolean | undefined | null
-    authStatus?: AuthStatus | undefined | null
+    authStatus?: ProtocolAuthStatus | undefined | null
 }
 
 export interface ExtensionConfiguration {
@@ -738,6 +739,53 @@ export interface Position {
 export interface Range {
     start: Position
     end: Position
+}
+
+// Equivalent to our internal `AuthStatus` type but using a string discriminator
+// instead of a boolean discriminator. Boolean discriminators complicate
+// deserializing in other languages. We have custom codegen for string
+// discriminators but not boolean ones.
+// It's good practice to be more intentional about the Agent protocol types
+// anyways.  As a rule of thumb, we should try to avoid leaking internal types
+// that are constantly making tiny changes that are irrelevant for the other
+// clients anyways.
+export type ProtocolAuthStatus = ProtocolAuthenticatedAuthStatus | ProtocolUnauthenticatedAuthStatus
+
+export interface ProtocolAuthenticatedAuthStatus {
+    status: 'authenticated'
+    authenticated: boolean
+    endpoint: string
+
+    username: string
+
+    /**
+     * Used to enable Fireworks tracing for Sourcegraph teammates on DotCom.
+     * https://readme.fireworks.ai/docs/enabling-tracing
+     */
+    isFireworksTracingEnabled?: boolean | null | undefined
+    hasVerifiedEmail?: boolean | null | undefined
+    requiresVerifiedEmail?: boolean | null | undefined
+
+    primaryEmail?: string | null | undefined
+    displayName?: string | null | undefined
+    avatarURL?: string | null | undefined
+
+    pendingValidation: boolean
+
+    /**
+     * Organizations on the instance that the user is a member of.
+     */
+    organizations?: { name: string; id: string }[] | null | undefined
+}
+
+export interface ProtocolUnauthenticatedAuthStatus {
+    status: 'unauthenticated'
+    authenticated: boolean
+    endpoint: string
+    showNetworkError?: boolean | null | undefined
+
+    showInvalidAccessTokenError?: boolean | null | undefined
+    pendingValidation: boolean
 }
 
 export interface ProtocolTextDocument {

@@ -13,7 +13,7 @@ import {
 import { TimestampTelemetryProcessor } from '@sourcegraph/telemetry/dist/processors/timestamp'
 
 import type { Disposable } from 'vscode'
-import { logDebug } from '../log'
+import { logDebug } from '../output-channel-logger'
 import { localStorage } from './LocalStorageProvider'
 
 /**

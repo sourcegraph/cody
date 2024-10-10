@@ -11,7 +11,7 @@ import { clsx } from 'clsx'
 import debounce from 'lodash/debounce'
 import isEqual from 'lodash/isEqual'
 import { Search } from 'lucide-react'
-import { type FC, memo, useCallback, useMemo, useRef, useState } from 'react'
+import { type FC, type MutableRefObject, memo, useCallback, useMemo, useRef } from 'react'
 import type { UserAccountInfo } from '../Chat'
 import type { ApiPostMessage } from '../Chat'
 import { Button } from '../components/shadcn/ui/button'
@@ -180,7 +180,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
         smartApplyEnabled,
     } = props
 
-    const [intentResults, setIntentResults] = useState<
+    const [intentResults, setIntentResults] = useMutatedValue<
         | { intent: ChatMessage['intent']; allScores?: { intent: string; score: number }[] }
         | undefined
         | null
@@ -193,20 +193,20 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
             editHumanMessage({
                 messageIndexInTranscript: humanMessage.index,
                 editorValue,
-                intent: intentFromSubmit || intentResults?.intent,
-                intentScores: intentFromSubmit ? undefined : intentResults?.allScores,
+                intent: intentFromSubmit || intentResults.current?.intent,
+                intentScores: intentFromSubmit ? undefined : intentResults.current?.allScores,
                 manuallySelectedIntent: !!intentFromSubmit,
             })
         },
-        [humanMessage, intentResults]
+        [humanMessage.index, intentResults]
     )
 
     const onFollowupSubmit = useCallback(
         (editorValue: SerializedPromptEditorValue, intentFromSubmit?: ChatMessage['intent']): void => {
             submitHumanMessage({
                 editorValue,
-                intent: intentFromSubmit || intentResults?.intent,
-                intentScores: intentFromSubmit ? undefined : intentResults?.allScores,
+                intent: intentFromSubmit || intentResults.current?.intent,
+                intentScores: intentFromSubmit ? undefined : intentResults.current?.allScores,
                 manuallySelectedIntent: !!intentFromSubmit,
             })
         },
@@ -214,7 +214,6 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
     )
 
     const extensionAPI = useExtensionAPI()
-
     const experimentalOneBoxEnabled = useExperimentalOneBox()
 
     const onChange = useMemo(() => {
@@ -240,7 +239,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                     })
             }
         }, 300)
-    }, [experimentalOneBoxEnabled, extensionAPI])
+    }, [experimentalOneBoxEnabled, extensionAPI, setIntentResults])
 
     const onStop = useCallback(() => {
         getVSCodeAPI().postMessage({
@@ -290,7 +289,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
         [reSubmitWithIntent]
     )
 
-    const resetIntent = useCallback(() => setIntentResults(undefined), [])
+    const resetIntent = useCallback(() => setIntentResults(undefined), [setIntentResults])
 
     return (
         <>
@@ -312,6 +311,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                 className={!isFirstInteraction && isLastInteraction ? 'tw-mt-auto' : ''}
                 onEditorFocusChange={resetIntent}
             />
+
             {experimentalOneBoxEnabled && humanMessage.intent && (
                 <InfoMessage>
                     {humanMessage.intent === 'search' ? (
@@ -388,6 +388,17 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
         </>
     )
 }, isEqual)
+
+function useMutatedValue<T>(value?: T): [MutableRefObject<T | undefined>, setValue: (value: T) => void] {
+    const valueRef = useRef<T | undefined>(value)
+
+    return [
+        valueRef,
+        useCallback(value => {
+            valueRef.current = value
+        }, []),
+    ]
+}
 
 // TODO(sqs): Do this the React-y way.
 export function focusLastHumanMessageEditor(): void {

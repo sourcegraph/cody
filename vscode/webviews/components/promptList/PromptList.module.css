@@ -1,8 +1,14 @@
 
 .list {
     outline: none;
-    background-color: transparent;
     max-height: unset !important;
+    background-color: transparent !important;
+
+    &--input-container {
+        top: 0;
+        position: sticky;
+        z-index: 1;
+    }
 
     &--input {
         margin: 0.5rem;

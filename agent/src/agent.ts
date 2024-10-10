@@ -10,7 +10,6 @@ import {
     ModelUsage,
     currentAuthStatus,
     currentAuthStatusAuthed,
-    currentAuthStatusOrNotReadyYet,
     firstResultFromOperation,
     telemetryRecorder,
     waitUntilComplete,
@@ -78,6 +77,10 @@ import { AgentWorkspaceConfiguration } from './AgentWorkspaceConfiguration'
 import { AgentWorkspaceDocuments } from './AgentWorkspaceDocuments'
 import { registerNativeWebviewHandlers, resolveWebviewView } from './NativeWebview'
 import type { PollyRequestError } from './cli/command-jsonrpc-stdio'
+import {
+    currentProtocolAuthStatus,
+    currentProtocolAuthStatusOrNotReadyYet,
+} from './currentProtocolAuthStatus'
 import { AgentGlobalState } from './global-state/AgentGlobalState'
 import {
     MessageHandler,
@@ -473,7 +476,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
                     this.registerWebviewHandlers()
                 }
 
-                const authStatus = currentAuthStatusOrNotReadyYet()
+                const authStatus = currentProtocolAuthStatusOrNotReadyYet()
                 return {
                     name: 'cody-agent',
                     authenticated: authStatus?.authenticated ?? false,
@@ -571,12 +574,12 @@ export class Agent extends MessageHandler implements ExtensionClient {
         this.registerRequest('extensionConfiguration/change', async config => {
             this.authenticationPromise = this.handleConfigChanges(config)
             await this.authenticationPromise
-            return currentAuthStatus()
+            return currentProtocolAuthStatus()
         })
 
         this.registerRequest('extensionConfiguration/status', async () => {
             await this.authenticationPromise
-            return currentAuthStatus()
+            return currentProtocolAuthStatus()
         })
 
         this.registerRequest('extensionConfiguration/getSettingsSchema', async () => {
@@ -999,7 +1002,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
 
         this.registerAuthenticatedRequest('testing/autocomplete/providerConfig', async () => {
             const provider = await vscode_shim.completionProvider()
-            return provider.config
+            return provider.config.provider
         })
 
         this.registerAuthenticatedRequest('graphql/getRepoIds', async ({ names, first }) => {
