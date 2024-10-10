@@ -209,7 +209,7 @@ export class InlineCompletionItemProvider
         )
         this.disposables.push(strategyFactory)
 
-        this.contextMixer = new ContextMixer(strategyFactory)
+        this.contextMixer = new ContextMixer(strategyFactory, true)
         this.disposables.push(this.contextMixer)
 
         this.smartThrottleService = new SmartThrottleService()
