@@ -751,7 +751,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                           .then(async response => {
                               signal.throwIfAborted()
                               this.chatBuilder.setLastMessageIntent(response?.intent)
-                              this.postViewTranscript()
+                              this.postEmptyMessageInProgress(model)
                               return response
                           })
                           .catch(() => undefined)

@@ -5,6 +5,7 @@ import {
     type ReactNode,
     createContext,
     useContext,
+    useMemo,
 } from 'react'
 import type { ExtensionMessage } from '../../src/chat/protocol'
 import type { UserAccountInfo } from '../Chat'
@@ -43,18 +44,22 @@ export function useConfig(): Config {
 }
 
 export function useUserAccountInfo(): UserAccountInfo {
-    const value = useConfig()
-    if (!value.authStatus.authenticated) {
+    const { authStatus, isDotComUser, clientCapabilities, userProductSubscription } = useConfig()
+
+    if (!authStatus.authenticated) {
         throw new Error(
             'useUserAccountInfo must be used within a ConfigProvider with authenticated user'
         )
     }
-    return {
-        isCodyProUser: isCodyProUser(value.authStatus, value.userProductSubscription ?? null),
-        // Receive this value from the extension backend to make it work
-        // with E2E tests where change the DOTCOM_URL via the env variable TESTING_DOTCOM_URL.
-        isDotComUser: value.isDotComUser,
-        user: value.authStatus,
-        IDE: value.clientCapabilities.agentIDE,
-    }
+    return useMemo<UserAccountInfo>(
+        () => ({
+            isCodyProUser: isCodyProUser(authStatus, userProductSubscription ?? null),
+            // Receive this value from the extension backend to make it work
+            // with E2E tests where change the DOTCOM_URL via the env variable TESTING_DOTCOM_URL.
+            isDotComUser: isDotComUser,
+            user: authStatus,
+            IDE: clientCapabilities.agentIDE,
+        }),
+        [authStatus, isDotComUser, clientCapabilities, userProductSubscription]
+    )
 }
