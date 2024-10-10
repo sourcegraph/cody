@@ -45,6 +45,7 @@ import {
     HIGHLIGHTED_FILE_QUERY,
     LEGACY_CHAT_INTENT_QUERY,
     LEGACY_CONTEXT_SEARCH_QUERY,
+    LEGACY_PROMPTS_QUERY_5_8,
     LOG_EVENT_MUTATION,
     LOG_EVENT_MUTATION_DEPRECATED,
     PACKAGE_LIST_QUERY,
@@ -1111,8 +1112,10 @@ export class SourcegraphGraphQLAPIClient {
     }
 
     public async queryPrompts(query: string, signal?: AbortSignal): Promise<Prompt[]> {
+        const hasIncludeViewerDraftsArg = await this.isValidSiteVersion({ minimumVersion: '5.9.0' })
+
         const response = await this.fetchSourcegraphAPI<APIResponse<{ prompts: { nodes: Prompt[] } }>>(
-            PROMPTS_QUERY,
+            hasIncludeViewerDraftsArg ? PROMPTS_QUERY : LEGACY_PROMPTS_QUERY_5_8,
             { query },
             signal
         )

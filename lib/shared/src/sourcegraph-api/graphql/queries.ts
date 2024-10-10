@@ -309,9 +309,41 @@ query ContextFilters {
     }
 }`
 
-export const PROMPTS_QUERY = `
+// Legacy prompts query supported up to Sourcegraph 5.8.0. Newer versions include the `includeViewerDrafts` argument.
+export const LEGACY_PROMPTS_QUERY_5_8 = `
 query ViewerPrompts($query: String!) {
     prompts(query: $query, first: 100, includeDrafts: false, viewerIsAffiliated: true, orderBy: PROMPT_UPDATED_AT) {
+        nodes {
+            id
+            name
+            nameWithOwner
+            owner {
+                namespaceName
+            }
+            description
+            draft
+            definition {
+                text
+            }
+            url
+            createdBy {
+                id
+                username
+                displayName
+                avatarURL
+            }
+        }
+        totalCount
+        pageInfo {
+            hasNextPage
+            endCursor
+        }
+    }
+}`
+
+export const PROMPTS_QUERY = `
+query ViewerPrompts($query: String!) {
+    prompts(query: $query, first: 100, includeDrafts: false, includeViewerDrafts: true, viewerIsAffiliated: true, orderBy: PROMPT_UPDATED_AT) {
         nodes {
             id
             name
