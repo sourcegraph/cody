@@ -354,7 +354,7 @@
         "group": "Cody Command",
         "title": "Calculate diff at Cursor",
         "icon": "$(surround-with)",
-        "enablement": "cody.activated"
+        "enablement": "cody.activated && config.cody.experimental.autoedit"
       },
       {
         "command": "cody.command.auto-edit",

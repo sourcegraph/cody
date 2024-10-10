@@ -95,7 +95,7 @@ describe('getConfiguration', () => {
                         return false
                     case 'cody.experimental.supercompletions':
                         return false
-                    case 'cody.experimental.autoedits':
+                    case 'cody.experimental.autoedit':
                         return undefined
                     case 'cody.experimental.noodle':
                         return false
