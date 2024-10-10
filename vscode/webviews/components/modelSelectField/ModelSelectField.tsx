@@ -182,7 +182,9 @@ export const ModelSelectField: React.FunctionComponent<{
             aria-label="Select a model"
             popoverContent={close => (
                 <Command loop={true} defaultValue={value} tabIndex={0} className="focus:tw-outline-none">
-                    <CommandList className={'model-selector-popover'}>
+                    <CommandList
+                        className={cn('model-selector-popover', 'tw-max-h-[80vh] tw-overflow-y-auto')}
+                    >
                         {optionsByGroup.map(({ group, options }) => (
                             <CommandGroup heading={group} key={group}>
                                 {options.map(option => (
