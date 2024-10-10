@@ -11,9 +11,18 @@ import styles from './FileContextItem.module.css'
 interface FileContextItemProps {
     item: ContextItem
     showSnippets: boolean
+    onAddToFollowupChat?: (props: {
+        repoName: string
+        filePath: string
+        fileURL: string
+    }) => void
 }
 
-export const FileContextItem: FC<FileContextItemProps> = ({ item, showSnippets }) => {
+export const FileContextItem: FC<FileContextItemProps> = ({
+    item,
+    showSnippets,
+    onAddToFollowupChat,
+}) => {
     // Fallback on link for any non file context items (like openctx items)
     if (item.type !== 'file' || !showSnippets) {
         return (
@@ -33,5 +42,11 @@ export const FileContextItem: FC<FileContextItemProps> = ({ item, showSnippets }
         )
     }
 
-    return <FileSnippet item={item} className={styles.codeBlock} />
+    return (
+        <FileSnippet
+            item={item}
+            className={styles.codeBlock}
+            onAddToFollowupChat={onAddToFollowupChat}
+        />
+    )
 }

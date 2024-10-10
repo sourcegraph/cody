@@ -1,7 +1,19 @@
 import type * as React from 'react'
 import { useEffect, useRef } from 'react'
 
-import { ChevronDown, ChevronUp } from 'lucide-react'
+import {
+    type ContextItemOpenCtx,
+    ContextItemSource,
+    REMOTE_FILE_PROVIDER_URI,
+} from '@sourcegraph/cody-shared'
+import { ChevronDown, ChevronUp, EllipsisIcon, MessageSquareDiff, MessageSquarePlus } from 'lucide-react'
+import { URI } from 'vscode-uri'
+import { getCreateNewChatCommand } from '../../../tabs/utils'
+import { getVSCodeAPI } from '../../../utils/VSCodeApi'
+import { useConfig } from '../../../utils/useConfig'
+import { Button } from '../../shadcn/ui/button'
+import { Popover, PopoverContent, PopoverTrigger } from '../../shadcn/ui/popover'
+import { cn } from '../../shadcn/utils'
 import { highlightNode } from '../highlights'
 import type { Range } from '../types'
 
@@ -16,6 +28,11 @@ interface Props {
     isKeyboardSelectable?: boolean
     collapsed: boolean
     onToggleCollapse: () => void
+    onAddToFollowupChat?: (props: {
+        repoName: string
+        filePath: string
+        fileURL: string
+    }) => void
 }
 
 /**
@@ -34,6 +51,7 @@ export const RepoFileLink: React.FunctionComponent<React.PropsWithChildren<Props
         isKeyboardSelectable,
         collapsed,
         onToggleCollapse,
+        onAddToFollowupChat,
     } = props
 
     const [fileBase, fileName] = splitPath(filePath)
@@ -51,9 +69,45 @@ export const RepoFileLink: React.FunctionComponent<React.PropsWithChildren<Props
         }
     }, [pathMatchRanges, fileName])
 
+    const config = useConfig()
+
+    const addToNewChat = () => {
+        const command = getCreateNewChatCommand({
+            IDE: config.clientCapabilities.agentIDE,
+            webviewType: config.config.webviewType,
+            multipleWebviewsEnabled: config.config.multipleWebviewsEnabled,
+        })
+
+        getVSCodeAPI().postMessage({
+            command: 'command',
+            id: command,
+            arg: JSON.stringify({
+                contextItems: [
+                    {
+                        providerUri: REMOTE_FILE_PROVIDER_URI,
+                        provider: 'openctx',
+                        type: 'openctx',
+                        uri: URI.parse(fileURL),
+                        title: fileName,
+                        description: filePath,
+                        source: ContextItemSource.User,
+                        mention: {
+                            uri: fileURL,
+                            description: filePath,
+                            data: {
+                                repoName,
+                                filePath: filePath,
+                            },
+                        },
+                    },
+                ] satisfies ContextItemOpenCtx[],
+            }),
+        })
+    }
+
     return (
-        <span className={className}>
-            <span>
+        <span className={cn(className, 'tw-flex tw-justify-between tw-w-full')}>
+            <span className="tw-flex-1">
                 {collapsed ? (
                     <ChevronDown
                         size={16}
@@ -82,6 +136,37 @@ export const RepoFileLink: React.FunctionComponent<React.PropsWithChildren<Props
                     <strong>{fileName}</strong>
                 </a>
             </span>
+            <div>
+                <Popover>
+                    <PopoverTrigger asChild>
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            className="!tw-w-auto !tw-justify-start tw-invisible group-hover:tw-visible"
+                        >
+                            <EllipsisIcon size="16" />
+                        </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="tw-max-w-[200px]" side="bottom" align="start">
+                        <Button
+                            variant="ghost"
+                            className="!tw-justify-start tw-w-full"
+                            onClick={() => onAddToFollowupChat?.({ repoName, filePath, fileURL })}
+                        >
+                            <MessageSquarePlus size="16" className="tw-mr-2" />
+                            Add to follow up chat
+                        </Button>
+                        <Button
+                            variant="ghost"
+                            className="!tw-justify-start tw-w-full"
+                            onClick={addToNewChat}
+                        >
+                            <MessageSquareDiff size="16" className="tw-mr-2" />
+                            Add to new Cody chat
+                        </Button>
+                    </PopoverContent>
+                </Popover>
+            </div>
         </span>
     )
 }
