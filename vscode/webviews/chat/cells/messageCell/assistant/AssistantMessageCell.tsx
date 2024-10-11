@@ -33,7 +33,6 @@ import { ContextFocusActions } from './ContextFocusActions'
  */
 export const AssistantMessageCell: FunctionComponent<{
     message: ChatMessage
-
     /** Information about the human message that led to this assistant response. */
     humanMessage: PriorHumanMessageInfo | null
 

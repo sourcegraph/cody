@@ -170,7 +170,7 @@ export {
     setDisplayPathEnvInfo,
     type DisplayPathEnvInfo,
 } from './editor/displayPath'
-export { hydrateAfterPostMessage } from './editor/hydrateAfterPostMessage'
+export { forceHydration, hydrateAfterPostMessage } from './editor/hydrateAfterPostMessage'
 export * from './editor/utils'
 export {
     FeatureFlag,

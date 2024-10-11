@@ -6,6 +6,7 @@ import {
     currentSiteVersion,
     distinctUntilChanged,
     firstResultFromOperation,
+    forceHydration,
     pendingOperation,
     ps,
     resolvedConfig,
@@ -1190,7 +1191,9 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
      * except within this method.
      */
     private postMessage(message: ExtensionMessage): Thenable<boolean | undefined> {
-        return this.initDoer.do(() => this.webviewPanelOrView?.webview.postMessage(message))
+        return this.initDoer.do(() =>
+            this.webviewPanelOrView?.webview.postMessage(forceHydration(message))
+        )
     }
 
     // #endregion
