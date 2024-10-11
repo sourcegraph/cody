@@ -1,11 +1,58 @@
 import { describe, expect, test } from 'vitest'
 
-import { hydrateAfterPostMessage } from './hydrateAfterPostMessage'
+import {
+    hydrateAfterPostMessage,
+    isDehydratedUri,
+    lazyHydrateAfterPostMessage,
+} from './hydrateAfterPostMessage'
 
 // Mock URI hydration function
 const mockHydrateUri = (value: unknown) => {
     return { hydrated: true, originalValue: value }
 }
+
+describe('lazyHydrateAfterPostMessage', () => {
+    test('handles non-object values', () => {
+        expect(lazyHydrateAfterPostMessage(7, mockHydrateUri)).toEqual(7)
+    })
+
+    test('handles shallow, non-URI values', () => {
+        expect(lazyHydrateAfterPostMessage({ foo: 7, bar: 'hello' }, mockHydrateUri)).toEqual({
+            foo: 7,
+            bar: 'hello',
+        })
+    })
+
+    test('handles deep values', () => {
+        expect(lazyHydrateAfterPostMessage({ foo: { bar: 'qux' } }, mockHydrateUri)).toEqual({
+            foo: { bar: 'qux' },
+        })
+    })
+
+    test('handles URI values', () => {
+        const uri = { $mid: 1, path: '/path/to/resource', scheme: 'file' }
+        expect(isDehydratedUri(uri)).toBe(true)
+        expect(lazyHydrateAfterPostMessage({ foo: uri }, mockHydrateUri)).toEqual({
+            foo: {
+                hydrated: true,
+                originalValue: { $mid: 1, path: '/path/to/resource', scheme: 'file' },
+            },
+        })
+    })
+
+    test('handles arrays', () => {
+        const uriA = { $mid: 1, path: '/path/to/resource/1', scheme: 'file' }
+        const uriB = { $mid: 2, path: '/path/to/resource/2', scheme: 'file' }
+        expect(lazyHydrateAfterPostMessage([uriA, uriB, uriA], mockHydrateUri)).toEqual([
+            {
+                hydrated: true,
+                originalValue: { $mid: 1, path: '/path/to/resource/1', scheme: 'file' },
+            },
+            { hydrated: true, originalValue: { $mid: 2, path: '/path/to/resource/2', scheme: 'file' } },
+            { hydrated: true, originalValue: { $mid: 1, path: '/path/to/resource/1', scheme: 'file' } },
+        ])
+    })
+})
 
 describe('hydrateAfterPostMessage', () => {
     // The fixture data is a function that returns the data because hydrateAfterPostMessage mutates

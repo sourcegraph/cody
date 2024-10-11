@@ -41,7 +41,7 @@ export function setVSCodeWrapper(value: VSCodeWrapper): void {
 
 let genericApi: GenericVSCodeWrapper<any, any>
 
-export function getGenericVSCodeAPI<W, E>(): GenericVSCodeWrapper<W, E> {
+export function getGenericVSCodeAPI<W, E extends object>(): GenericVSCodeWrapper<W, E> {
     if (!genericApi) {
         const vsCodeApi = acquireVsCodeApi()
         genericApi = {
