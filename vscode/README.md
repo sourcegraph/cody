@@ -8,7 +8,7 @@ Install Cody to get started with free AI-powered autocomplete, chat, prompts, an
 
 Cody autocompletes single lines, or whole functions, in any programming language, configuration file, or documentation. It’s powered by the latest instant LLM models, for accuracy and performance.
 
-<img src="https://storage.googleapis.com/sourcegraph-assets/blog/vs-code-onboarding-walkthrough-dec-2023-cody-autocomplete-tsx.gif" width="480" alt="Cody autocomplete">
+<img src="https://storage.googleapis.com/sourcegraph-assets/vscode-marketplace/cody-autocomplete.gif" width="480" alt="Cody autocomplete">
 
 ## Chat
 
@@ -23,19 +23,17 @@ For example, you can ask Cody:
 - "Add helpful debug log statements"
 - "Make this work" _(seriously, it often works—try it!)_
 
-<img src="https://storage.googleapis.com/sourcegraph-assets/blog/blog-vscode-v018-release/blog-v018-context-controls-002.gif" width="480" alt="Cody Chat">
+<img src="https://storage.googleapis.com/sourcegraph-assets/vscode-marketplace/cody-chat.gif" width="480" alt="Cody Chat">
 
 ## Built-In Prompts
 
 Streamline your development process by using prompts to understand, improve, fix, document, and generate unit tests for your code.
 
-<img src="https://storage.googleapis.com/sourcegraph-assets/blog/vs-code-onboarding-walkthrough-dec-2023-explain.gif" width="480" alt="Explain Code command">
+<img src="https://storage.googleapis.com/sourcegraph-assets/vscode-marketplace/cody-prompts.gif" width="480" alt="Explain Code command">
 
 ## Prompt Library
 
 You can also create your own [prompts](https://sourcegraph.com/docs/cody/capabilities/commands#custom-commands) and save them in the Prompt Library to tailor Cody to your workflow. 
-
-<img src="https://storage.googleapis.com/sourcegraph-assets/blog/vs-code-onboarding-walkthrough-dec-2023-convert-html-to-md.gif" width="480" alt="Custom command">
 
 ## Choose Your LLM
 
