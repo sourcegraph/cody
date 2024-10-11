@@ -6,7 +6,7 @@ import {
     TokenCounterUtils,
     displayPath,
 } from '@sourcegraph/cody-shared'
-import { logError } from '../../log'
+import { logError } from '../../output-channel-logger'
 import type { Repository } from '../../repository/builtinGitExtension'
 import { doesFileExist } from '../utils/workspace-files'
 

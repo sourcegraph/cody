@@ -51,21 +51,23 @@ export interface UnauthenticatedAuthStatus {
 }
 
 export const AUTH_STATUS_FIXTURE_AUTHED: AuthenticatedAuthStatus = {
-    endpoint: 'https://example.com',
+    // this typecast is necessary to prevent codegen from becoming too specific
+    endpoint: 'https://example.com' as string,
     authenticated: true,
     username: 'alice',
     pendingValidation: false,
 }
 
 export const AUTH_STATUS_FIXTURE_UNAUTHED: AuthStatus & { authenticated: false } = {
-    endpoint: 'https://example.com',
+    // this typecast is necessary to prevent codegen from becoming too specific
+    endpoint: 'https://example.com' as string,
     authenticated: false,
     pendingValidation: false,
 }
 
 export const AUTH_STATUS_FIXTURE_AUTHED_DOTCOM: AuthenticatedAuthStatus = {
     ...AUTH_STATUS_FIXTURE_AUTHED,
-    endpoint: 'https://sourcegraph.com',
+    endpoint: 'https://sourcegraph.com' as string,
 }
 
 export function isCodyProUser(authStatus: AuthStatus, sub: UserProductSubscription | null): boolean {

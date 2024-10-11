@@ -5,13 +5,15 @@ import { PromptList } from '../components/promptList/PromptList'
 import { View } from '../tabs/types'
 import { getVSCodeAPI } from '../utils/VSCodeApi'
 
+import styles from './PromptsTab.module.css'
+
 export const PromptsTab: React.FC<{
     setView: (view: View) => void
 }> = ({ setView }) => {
     const runAction = useActionSelect()
 
     return (
-        <div className="tw-overflow-auto">
+        <div className="tw-overflow-auto tw-h-full">
             <PromptList
                 showSearch={true}
                 showCommandOrigins={true}
@@ -20,6 +22,7 @@ export const PromptsTab: React.FC<{
                 showPromptLibraryUnsupportedMessage={true}
                 showOnlyPromptInsertableCommands={false}
                 onSelect={item => runAction(item, setView)}
+                inputClassName={styles.promptsInput}
             />
         </div>
     )

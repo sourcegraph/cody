@@ -14,7 +14,7 @@ import {
     subscriptionDisposable,
     telemetryRecorder,
 } from '@sourcegraph/cody-shared'
-import { logDebug, logError } from '../../log'
+import { logDebug, logError } from '../../output-channel-logger'
 import type { MessageProviderOptions } from '../MessageProvider'
 
 import type { URI } from 'vscode-uri'

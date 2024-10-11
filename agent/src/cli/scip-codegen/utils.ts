@@ -1,25 +1,32 @@
-import { TargetLanguage } from './Codegen'
-
-export function typescriptKeywordSyntax(language: TargetLanguage, symbol: string): string | undefined {
+export function typescriptKeywordSyntax(symbol: string): TypescriptKeyword | undefined {
     switch (symbol) {
         case 'scip-typescript npm typescript . array#':
-            return 'List'
+            return TypescriptKeyword.List
         case 'scip-typescript npm typescript . null#':
-            return language === TargetLanguage.Kotlin ? 'Null' : 'Void'
+            return TypescriptKeyword.Null
         case 'scip-typescript npm typescript . string#':
-            return 'String'
+            return TypescriptKeyword.String
         case 'scip-typescript npm typescript . false#':
         case 'scip-typescript npm typescript . true#':
         case 'scip-typescript npm typescript . boolean#':
-            return 'Boolean'
+            return TypescriptKeyword.Boolean
         case 'scip-typescript npm typescript . number#':
-            return 'Long'
+            return TypescriptKeyword.Long
         case 'scip-typescript npm typescript . any#':
         case 'scip-typescript npm typescript . unknown#':
-            return language === TargetLanguage.Kotlin ? 'Any' : 'Object'
+            return TypescriptKeyword.Object
         default:
             return undefined
     }
+}
+
+export enum TypescriptKeyword {
+    List = 'List',
+    Null = 'Null',
+    String = 'String',
+    Boolean = 'Boolean',
+    Long = 'Long',
+    Object = 'Object',
 }
 
 export function isBooleanTypeRef(symbol: string): boolean {
@@ -40,9 +47,9 @@ export function capitalize(text: string): string {
     return text[0].toUpperCase() + text.slice(1)
 }
 
-export function isTypescriptKeyword(language: TargetLanguage, symbol: string): boolean {
+export function isTypescriptKeyword(symbol: string): boolean {
     return (
-        typescriptKeywordSyntax(language, symbol) !== undefined &&
+        typescriptKeywordSyntax(symbol) !== undefined &&
         symbol !== 'scip-typescript npm typescript . array#'
     )
 }

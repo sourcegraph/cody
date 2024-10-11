@@ -3,7 +3,7 @@ import * as vscode from 'vscode'
 import type { CodyCommandContext, ContextItem } from '@sourcegraph/cody-shared'
 
 import { Utils } from 'vscode-uri'
-import { logDebug } from '../../log'
+import { logDebug } from '../../output-channel-logger'
 import { getContextFileFromCurrentFile } from './current-file'
 import { getContextFileFromDirectory } from './directory'
 import { getContextFileFromUri } from './file-path'
