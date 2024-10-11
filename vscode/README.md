@@ -1,8 +1,8 @@
 # AI that uses your codebase as context
 
-[Cody](https://about.sourcegraph.com/cody?utm_source=marketplace.visualstudio.com&utm_medium=referral) is an AI coding assistant that helps you understand, write, and fix code faster. It uses advanced search to pull context from both local and remote codebases so that you can use context about APIs, symbols, and usage patterns from across your entire codebase at any scale, all from within VS Code. Plus, Cody Pro users can choose from the latest large language models—like GPT-4o and Claude 3 Opus—to customize Cody to their needs.
+[Cody](https://about.sourcegraph.com/cody?utm_source=marketplace.visualstudio.com&utm_medium=referral) is an AI coding assistant that helps you understand, write, and fix code faster. It uses advanced search to pull context from both local and remote codebases so that you can use context about APIs, symbols, and usage patterns from across your entire codebase at any scale, all from within VS Code. Plus, Cody users can choose from the latest large language models—like GPT-4o and Claude 3.5 Sonnet—to customize Cody to their needs.
 
-Install Cody to get started with free AI-powered autocomplete, chat, commands, and more.
+Install Cody to get started with free AI-powered autocomplete, chat, prompts, and more.
 
 ## Autocomplete
 
@@ -25,21 +25,21 @@ For example, you can ask Cody:
 
 <img src="https://storage.googleapis.com/sourcegraph-assets/blog/blog-vscode-v018-release/blog-v018-context-controls-002.gif" width="480" alt="Cody Chat">
 
-## Built-In Commands
+## Built-In Prompts
 
-Streamline your development process by using Cody commands to understand, improve, fix, document, and generate unit tests for your code.
+Streamline your development process by using prompts to understand, improve, fix, document, and generate unit tests for your code.
 
 <img src="https://storage.googleapis.com/sourcegraph-assets/blog/vs-code-onboarding-walkthrough-dec-2023-explain.gif" width="480" alt="Explain Code command">
 
-## Custom Commands (Beta)
+## Prompt Library
 
-You can also build your own [Custom Commands (Beta)](https://sourcegraph.com/docs/cody/capabilities/commands#custom-commands) to tailor Cody to your workflow. Custom Commands are defined as JSON within your repository and can be saved to your workspace for your teammates to reuse.
+You can also create your own [prompts](https://sourcegraph.com/docs/cody/capabilities/commands#custom-commands) and save them in the Prompt Library to tailor Cody to your workflow. 
 
 <img src="https://storage.googleapis.com/sourcegraph-assets/blog/vs-code-onboarding-walkthrough-dec-2023-convert-html-to-md.gif" width="480" alt="Custom command">
 
 ## Choose Your LLM
 
-Cody Pro users can now select the LLM they want to use for chat and experiment to choose the best model for the job. Choose from Claude 3 Opus, Claude 3.5 Sonnet, Claude 3 Sonnet, Claude 3 Haiku, ChatGPT 4o, ChatGPT 4 Turbo, ChatGPT 3.5 Turbo, Google Gemini 1.5 Pro, Gemini 1.5 Flash, and Mixtral.
+Cody users can select the LLM they want to use for chat and experiment to choose the best model for the job. Choose from Claude 3 Opus, Claude 3.5 Sonnet, Claude 3 Haiku, GPT-4 Turbo, GPT-3.5 Turbo, Google Gemini 1.5 Pro, Gemini 1.5 Flash, and Mixtral. Cody Pro users can also select Claude 3 Opus and GPT-4o.
 
 Administrators for Sourcegraph Enterprise instances can choose betweeen Claude and ChatGPT models to set for their teams as well.
 
