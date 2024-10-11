@@ -199,19 +199,6 @@ export function syncModels({
                                         featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.DeepCody)
                                     ).pipe(
                                         switchMap(([hasEarlyAccess, deepCodyEnabled]) => {
-                                            // TODO(bee): remove once deepCody is enabled for all users.
-                                            if (deepCodyEnabled && serverModelsConfig) {
-                                                const DeepCody = getExperimentalClientModelByFeatureFlag(
-                                                    FeatureFlag.DeepCody
-                                                )!
-                                                data.primaryModels.push(
-                                                    ...maybeAdjustContextWindows([DeepCody]).map(
-                                                        createModelFromServerModel
-                                                    )
-                                                )
-                                                data.preferences!.defaults.chat = DeepCody.modelRef
-                                            }
-
                                             // TODO(sqs): remove waitlist from localStorage when user has access
                                             const isOnWaitlist = config.clientState.waitlist_o1
                                             if (isDotComUser && (hasEarlyAccess || isOnWaitlist)) {
@@ -229,6 +216,32 @@ export function syncModels({
                                                     }
                                                     return model
                                                 })
+                                            }
+
+                                            // DEEP CODY - available to users with feature flag enabled only.
+                                            // TODO(bee): remove once deepCody is enabled for all users.
+                                            if (deepCodyEnabled && serverModelsConfig) {
+                                                const DEEPCODY_MODEL =
+                                                    getExperimentalClientModelByFeatureFlag(
+                                                        FeatureFlag.DeepCody
+                                                    )!
+                                                data.primaryModels.push(
+                                                    ...maybeAdjustContextWindows([DEEPCODY_MODEL]).map(
+                                                        createModelFromServerModel
+                                                    )
+                                                )
+                                                // Update model preferences for chat to DEEP CODY once on first sync.
+                                                data.preferences!.defaults.edit =
+                                                    data.preferences!.defaults.chat
+                                                data.preferences!.defaults.chat = DEEPCODY_MODEL.modelRef
+                                                return userModelPreferences.pipe(
+                                                    take(1),
+                                                    tap(preferences => {
+                                                        preferences.selected[ModelUsage.Chat] =
+                                                            DEEPCODY_MODEL.modelRef
+                                                    }),
+                                                    map(() => data)
+                                                )
                                             }
 
                                             return Observable.of(data)
@@ -340,7 +353,7 @@ function resolveModelPreferences(
     }
     if (remote?.defaults) {
         setDefaultModel(ModelUsage.Chat, remote.defaults.chat)
-        setDefaultModel(ModelUsage.Edit, remote.defaults.chat)
+        setDefaultModel(ModelUsage.Edit, remote.defaults.edit || remote.defaults.chat)
         setDefaultModel(ModelUsage.Autocomplete, remote.defaults.autocomplete)
     }
     return user

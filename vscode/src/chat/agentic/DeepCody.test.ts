@@ -91,7 +91,7 @@ describe('DeepCody', () => {
         )
     })
 
-    it('initializes correctly for dotcom user', async () => {
+    it('initializes correctly when invoked', async () => {
         const agent = new DeepCodyAgent(
             mockChatBuilder,
             mockChatClient,

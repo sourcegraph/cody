@@ -9,7 +9,7 @@ import {
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
-import { logError } from '../../log'
+import { logError } from '../../output-channel-logger'
 
 const execAsync = promisify(exec)
 const config = vscode.workspace.getConfiguration('cody')

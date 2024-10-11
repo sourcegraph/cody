@@ -93,8 +93,8 @@ import { getContextFileFromCursor } from '../../commands/context/selection'
 import { resolveContextItems } from '../../editor/utils/editor-context'
 import type { VSCodeEditor } from '../../editor/vscode-editor'
 import type { ExtensionClient } from '../../extension-client'
-import { logDebug } from '../../log'
 import { migrateAndNotifyForOutdatedModels } from '../../models/modelMigrator'
+import { logDebug } from '../../output-channel-logger'
 import { getCategorizedMentions } from '../../prompt-builder/utils'
 import { mergedPromptsAndLegacyCommands } from '../../prompts/prompts'
 import { publicRepoMetadataIfAllWorkspaceReposArePublic } from '../../repository/githubRepoMetadata'
@@ -751,7 +751,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                           .then(async response => {
                               signal.throwIfAborted()
                               this.chatBuilder.setLastMessageIntent(response?.intent)
-                              this.postViewTranscript()
+                              this.postEmptyMessageInProgress(model)
                               return response
                           })
                           .catch(() => undefined)
@@ -1606,21 +1606,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     chatModels: () =>
                         modelsService.getModels(ModelUsage.Chat).pipe(
                             startWith([]),
-                            map(models => {
-                                if (models === pendingOperation) {
-                                    return []
-                                }
-                                // If Deep Cody is available but the user has not enrolled before,
-                                // enroll the user and set the model as the default for chat.
-                                if (DeepCodyAgent.isEnrolled(models)) {
-                                    this.chatBuilder.setSelectedModel(DeepCodyAgent.ModelRef)
-                                    modelsService.setSelectedModel(
-                                        ModelUsage.Chat,
-                                        DeepCodyAgent.ModelRef
-                                    )
-                                }
-                                return models
-                            })
+                            map(models => (models === pendingOperation ? [] : models))
                         ),
                     highlights: parameters =>
                         promiseFactoryToObservable(() =>

@@ -1,7 +1,7 @@
 import * as vscode from 'vscode'
 
 import type { ClientSecrets, TokenSource } from '@sourcegraph/cody-shared'
-import { logDebug, logError } from '../log'
+import { logDebug, logError } from '../output-channel-logger'
 export const CODY_ACCESS_TOKEN_SOURCE = 'cody.access-token.source'
 const CODY_ACCESS_TOKEN_SECRET = 'cody.access-token'
 
