@@ -13,7 +13,12 @@ export function forceHydration(object: any): any {
     if (Array.isArray(object)) {
         return object.map(forceHydration)
     }
-    const clone = Object.create(Object.getPrototypeOf(object))
+    let clone: any
+    if (object instanceof Date) {
+        clone = new Date(object)
+    } else {
+        clone = Object.create(Object.getPrototypeOf(object))
+    }
     for (const [key, value] of Object.entries(object)) {
         clone[key] = forceHydration(value)
     }
