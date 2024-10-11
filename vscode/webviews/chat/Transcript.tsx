@@ -374,6 +374,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                         userInfo={userInfo}
                         chatEnabled={chatEnabled}
                         message={assistantMessage}
+                        models={models}
                         feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
                         copyButtonOnSubmit={copyButtonOnSubmit}
                         insertButtonOnSubmit={insertButtonOnSubmit}
