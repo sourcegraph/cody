@@ -168,16 +168,6 @@ export const AUTOCOMPLETE_PROVIDER_ID = {
     'azure-openai': 'azure-openai',
 
     /**
-     * Cody talking to customer's custom proxy service.
-     *
-     * TODO(slimsag): self-hosted models: deprecate and remove this
-     * once customers are upgraded to non-experimental version.
-     *
-     * @deprecated use `openaicompatible` instead
-     */
-    'experimental-openaicompatible': 'experimental-openaicompatible',
-
-    /**
      * This refers to either Anthropic models re-sold by AWS,
      * or to other models hosted by AWS' Bedrock inference API service
      */
