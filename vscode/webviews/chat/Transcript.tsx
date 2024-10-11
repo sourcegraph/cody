@@ -295,6 +295,10 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
 
     const resetIntent = useCallback(() => setIntentResults(undefined), [setIntentResults])
 
+    const chatModel = useMemo(() => {
+        return models?.find(m => m.id === humanMessage.model) ?? models[0]
+    }, [humanMessage.model, models])
+
     return (
         <>
             <HumanMessageCell
@@ -358,7 +362,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                     key={`${humanMessage.index}-${humanMessage.intent}-context`}
                     contextItems={humanMessage.contextFiles}
                     contextAlternatives={humanMessage.contextAlternatives}
-                    model={assistantMessage?.model}
+                    model={humanMessage?.model}
                     isForFirstMessage={humanMessage.index === 0}
                     showSnippets={experimentalOneBoxEnabled && humanMessage.intent === 'search'}
                     defaultOpen={experimentalOneBoxEnabled && humanMessage.intent === 'search'}
@@ -388,6 +392,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                         }
                         smartApply={smartApply}
                         smartApplyEnabled={smartApplyEnabled}
+                        chatModel={chatModel}
                     />
                 )}
         </>

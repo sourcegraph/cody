@@ -53,12 +53,10 @@ interface HumanMessageCellProps {
  * A component that displays a chat message from the human.
  */
 export const HumanMessageCell: FC<HumanMessageCellProps> = ({ message, ...otherProps }) => {
-    const messageJSON = JSON.stringify(message)
-
-    const initialEditorState = useMemo(
-        () => serializedPromptEditorStateFromChatMessage(JSON.parse(messageJSON)),
-        [messageJSON]
-    )
+    // biome-ignore lint/correctness/useExhaustiveDependencies: initial value is memoized
+    const initialEditorState = useMemo(() => {
+        return serializedPromptEditorStateFromChatMessage(message)
+    }, [])
 
     return <HumanMessageCellContent {...otherProps} initialEditorState={initialEditorState} />
 }

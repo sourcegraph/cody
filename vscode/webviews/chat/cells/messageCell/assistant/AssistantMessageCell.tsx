@@ -8,11 +8,10 @@ import {
     contextItemsFromPromptEditorValue,
     filterContextItemsFromPromptEditorValue,
     isAbortErrorOrSocketHangUp,
-    ps,
     reformatBotMessageForChat,
     serializedPromptEditorStateFromChatMessage,
 } from '@sourcegraph/cody-shared'
-import { type PromptEditorRefAPI, useExtensionAPI, useObservable } from '@sourcegraph/prompt-editor'
+import type { PromptEditorRefAPI } from '@sourcegraph/prompt-editor'
 import isEqual from 'lodash/isEqual'
 import { type FunctionComponent, type RefObject, memo, useMemo } from 'react'
 import type { ApiPostMessage, UserAccountInfo } from '../../../../Chat'
@@ -33,6 +32,7 @@ import { ContextFocusActions } from './ContextFocusActions'
  */
 export const AssistantMessageCell: FunctionComponent<{
     message: ChatMessage
+    chatModel: Model
 
     /** Information about the human message that led to this assistant response. */
     humanMessage: PriorHumanMessageInfo | null
@@ -67,13 +67,13 @@ export const AssistantMessageCell: FunctionComponent<{
         guardrails,
         smartApply,
         smartApplyEnabled,
+        chatModel,
     }) => {
         const displayMarkdown = useMemo(
-            () => reformatBotMessageForChat(message.text ?? ps``).toString(),
-            [message]
+            () => (message.text ? reformatBotMessageForChat(message.text).toString() : ''),
+            [message.text]
         )
 
-        const chatModel = useChatModelByID(message.model)
         const ModelIcon = chatModel ? chatModelIconComponent(chatModel.id) : null
         const isAborted = isAbortErrorOrSocketHangUp(message.error)
 
@@ -84,9 +84,7 @@ export const AssistantMessageCell: FunctionComponent<{
                 speakerIcon={ModelIcon ? <ModelIcon size={NON_HUMAN_CELL_AVATAR_SIZE} /> : null}
                 speakerTitle={
                     <span data-testid="chat-model">
-                        {chatModel
-                            ? chatModel.title ?? `Model ${chatModel.id} by ${chatModel.provider}`
-                            : 'Model'}
+                        {chatModel.title ?? `Model ${chatModel.id} by ${chatModel.provider}`}
                     </span>
                 }
                 content={
@@ -231,22 +229,4 @@ export function makeHumanMessageInfo(
             }
         },
     }
-}
-
-function useChatModelByID(
-    model: string | undefined
-): Pick<Model, 'id' | 'title' | 'provider' | 'tags'> | undefined {
-    const models = useExtensionAPI().chatModels
-    const chatModels = useObservable(useMemo(() => models(), [models])).value
-    return (
-        chatModels?.find(m => m.id === model) ??
-        (model
-            ? {
-                  id: model,
-                  title: model,
-                  provider: 'unknown',
-                  tags: [],
-              }
-            : undefined)
-    )
 }
