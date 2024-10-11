@@ -8,7 +8,7 @@ Install Cody to get started with free AI-powered autocomplete, chat, prompts, an
 
 Cody autocompletes single lines, or whole functions, in any programming language, configuration file, or documentation. It’s powered by the latest instant LLM models, for accuracy and performance.
 
-<img src="https://storage.googleapis.com/sourcegraph-assets/vscode-marketplace/cody-autocomplete.gif" width="480" alt="Cody autocomplete">
+<img src="https://storage.googleapis.com/sourcegraph-assets/vscode-marketplace/cody-autocomplete.gif" width="700" alt="Cody autocomplete">
 
 ## Chat
 
@@ -23,13 +23,13 @@ For example, you can ask Cody:
 - "Add helpful debug log statements"
 - "Make this work" _(seriously, it often works—try it!)_
 
-<img src="https://storage.googleapis.com/sourcegraph-assets/vscode-marketplace/cody-chat.gif" width="480" alt="Cody Chat">
+<img src="https://storage.googleapis.com/sourcegraph-assets/vscode-marketplace/cody-chat.gif" width="700" alt="Cody Chat">
 
 ## Built-In Prompts
 
 Streamline your development process by using prompts to understand, improve, fix, document, and generate unit tests for your code.
 
-<img src="https://storage.googleapis.com/sourcegraph-assets/vscode-marketplace/cody-prompts.gif" width="480" alt="Explain Code command">
+<img src="https://storage.googleapis.com/sourcegraph-assets/vscode-marketplace/cody-prompts.gif" width="700" alt="Explain Code command">
 
 ## Prompt Library
 
