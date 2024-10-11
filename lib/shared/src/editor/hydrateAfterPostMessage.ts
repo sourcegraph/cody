@@ -2,6 +2,25 @@ import type * as vscode from 'vscode'
 import type { URI } from 'vscode-uri'
 
 /**
+ * Forces hydration by cloning any part that may be lazily hydrated. This is necessary before using
+ * a lazily hydrated object in a structured clone (postMessage, IndexedDB, etc.) see
+ * https://html.spec.whatwg.org/multipage/structured-data.html#structuredserializeinternal
+ */
+export function forceHydration(object: any): any {
+    if (typeof object !== 'object' || object === null) {
+        return object
+    }
+    if (Array.isArray(object)) {
+        return object.map(forceHydration)
+    }
+    const clone = Object.create(Object.getPrototypeOf(object))
+    for (const [key, value] of Object.entries(object)) {
+        clone[key] = forceHydration(value)
+    }
+    return clone
+}
+
+/**
  * A Proxy handler that lazily hydrates objects that are sent over postMessage. Laziness is
  * important for performance, because the chat transcript is large and there are many independent
  * listeners to postMessage events who just want to check a couple of properties, like a message
@@ -35,6 +54,17 @@ class LazyHydrationHandler implements ProxyHandler<object> {
         this.lazyHydrationCache.set(value, proxy)
         return proxy
     }
+
+    // Forces an eager clone of the target object. This is necessary to use the object in a
+    // structured clone (postMessage, IndexedDB, etc.)
+    force(target: object): any {
+        if (typeof target !== 'object' || target === null) {
+            return target
+        }
+        if (Array.isArray(target)) {
+            return target.map(item => this.force(item))
+        }
+    }
 }
 
 /**
@@ -47,6 +77,10 @@ class LazyHydrationHandler implements ProxyHandler<object> {
  * structure as it. Note that `value` is read lazily, modifications to `value` are reflected in the
  * returned objects and modifying the returned objects will "write through" to `value`. This is
  * spooky so don't do it.
+ *
+ * The result is a cluster of Proxies. These cannot be used with the structured clone algorithm,
+ * which means they can't be sent over `postMessage` or stored in IndexedDB as-is. See
+ * `forceHydration`.
  */
 export function hydrateAfterPostMessage<T, U>(value: T, hydrateUri: (value: unknown) => U): T {
     // Proxy({value}, ...).value here is simply to share rehydration logic for the top level value
