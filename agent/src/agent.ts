@@ -969,7 +969,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
         })
 
         this.registerAuthenticatedRequest('extension/reset', async () => {
-            this.globalState?.reset()
+            await this.globalState?.reset()
             return null
         })
 
