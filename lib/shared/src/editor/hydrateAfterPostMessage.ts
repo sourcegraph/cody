@@ -1,68 +1,56 @@
 import type * as vscode from 'vscode'
 import type { URI } from 'vscode-uri'
 
+/**
+ * A Proxy handler that lazily hydrates objects that are sent over postMessage. Laziness is
+ * important for performance, because the chat transcript is large and there are many independent
+ * listeners to postMessage events who just want to check a couple of properties, like a message
+ * type or stream ID, before discarding the message.
+ */
 class LazyHydrationHandler implements ProxyHandler<object> {
-    readonly lazyHydrationCache = new WeakMap<object, { object: any; isUri: boolean }>()
+    // The backing cache of lazily allocated proxies and hydrated URIs.
+    readonly lazyHydrationCache = new WeakMap<object, any>()
 
+    /**
+     * Constructs a LazyHydrationHandler. Hydration is lazy: `hydrateUri` may be called at any time.
+     */
     constructor(private hydrateUri: (value: unknown) => any) {}
 
     get(target: object, property: string | symbol, receiver: any): any {
-        let cached: any
-        if (this.lazyHydrationCache.has(target)) {
-            cached = this.lazyHydrationCache.get(target)
-        } else {
-            let clone: any
-            if (Array.isArray(target)) {
-                clone = target.map(value => {
-                    if (typeof value === 'object' && value !== null) {
-                        if (isDehydratedUri(value)) {
-                            return this.hydrateUri(value)
-                        }
-                        return new Proxy(value, this)
-                    }
-                    return value
-                })
-            } else {
-                clone = Object.create(Object.getPrototypeOf(target))
-                for (const [key, value] of Object.entries(target)) {
-                    if (typeof value === 'object' && value !== null) {
-                        if (isDehydratedUri(value)) {
-                            clone[key] = this.hydrateUri(value)
-                        } else {
-                            clone[key] = new Proxy(value, this)
-                        }
-                    } else {
-                        clone[key] = value
-                    }
-                }
-            }
-            cached = { object: clone, isUri: false }
-            this.lazyHydrationCache.set(target, cached)
+        const value = Reflect.get(target, property, receiver)
+        if (typeof value !== 'object' || value === null) {
+            return value
         }
-        const value = Reflect.get(cached.object, property, receiver)
-        return value
+        const cached = this.lazyHydrationCache.get(value)
+        if (cached) {
+            return cached
+        }
+        if (isDehydratedUri(value)) {
+            const hydrated = this.hydrateUri(value)
+            this.lazyHydrationCache.set(value, hydrated)
+            return hydrated
+        }
+        // Cache the proxy to avoid isDehydratedUri checks on subsequent accesses.
+        const proxy = new Proxy(value, this)
+        this.lazyHydrationCache.set(value, proxy)
+        return proxy
     }
-
-    set(target: object, property: string | symbol, value: any, receiver: any): boolean {
-        const cached = this.lazyHydrationCache.get(target)!
-        return Reflect.set(cached.object, property, value, receiver)
-    }
-}
-
-export function lazyHydrateAfterPostMessage<T, U>(value: T, hydrateUri: (value: unknown) => U): T {
-    return typeof value === 'object' && value !== null
-        ? (new Proxy(value, new LazyHydrationHandler(hydrateUri)) as T)
-        : value
 }
 
 /**
- * Recursively re-hydrate {@link value}, re-creating instances of classes from the raw data that was
- * sent to us via `postMessage`. When values are sent over `postMessage` between the webview and the
- * extension host, only data is preserved, not classes/prototypes. This is a problem particularly
- * with URI instances.
+ * Recursively and lazily re-hydrates {@link value}, re-creating instances of classes from the raw
+ * data that was sent to us via `postMessage`. When values are sent over `postMessage` between the
+ * webview and the extension host, only data is preserved, not classes/prototypes. This is a problem
+ * particularly with URI instances.
+ *
+ * This function does not mutate `value`, but instead returns a cluster of Proxies with the same
+ * structure as it. Note that `value` is read lazily, modifications to `value` are reflected in the
+ * returned objects and modifying the returned objects will "write through" to `value`. This is
+ * spooky so don't do it.
  */
 export function hydrateAfterPostMessage<T, U>(value: T, hydrateUri: (value: unknown) => U): T {
-    return lazyHydrateAfterPostMessage({ value }, hydrateUri).value
+    // Proxy({value}, ...).value here is simply to share rehydration logic for the top level value
+    return new Proxy<{ value: T }>({ value }, new LazyHydrationHandler(hydrateUri)).value
 }
 
 export function isDehydratedUri(value: unknown): value is vscode.Uri | URI {

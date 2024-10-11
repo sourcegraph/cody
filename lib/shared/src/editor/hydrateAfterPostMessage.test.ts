@@ -1,10 +1,6 @@
 import { describe, expect, test } from 'vitest'
 
-import {
-    hydrateAfterPostMessage,
-    isDehydratedUri,
-    lazyHydrateAfterPostMessage,
-} from './hydrateAfterPostMessage'
+import { hydrateAfterPostMessage, isDehydratedUri } from './hydrateAfterPostMessage'
 
 // Mock URI hydration function
 const mockHydrateUri = (value: unknown) => {
@@ -13,18 +9,18 @@ const mockHydrateUri = (value: unknown) => {
 
 describe('lazyHydrateAfterPostMessage', () => {
     test('handles non-object values', () => {
-        expect(lazyHydrateAfterPostMessage(7, mockHydrateUri)).toEqual(7)
+        expect(hydrateAfterPostMessage(7, mockHydrateUri)).toEqual(7)
     })
 
     test('handles shallow, non-URI values', () => {
-        expect(lazyHydrateAfterPostMessage({ foo: 7, bar: 'hello' }, mockHydrateUri)).toEqual({
+        expect(hydrateAfterPostMessage({ foo: 7, bar: 'hello' }, mockHydrateUri)).toEqual({
             foo: 7,
             bar: 'hello',
         })
     })
 
     test('handles deep values', () => {
-        expect(lazyHydrateAfterPostMessage({ foo: { bar: 'qux' } }, mockHydrateUri)).toEqual({
+        expect(hydrateAfterPostMessage({ foo: { bar: 'qux' } }, mockHydrateUri)).toEqual({
             foo: { bar: 'qux' },
         })
     })
@@ -32,7 +28,7 @@ describe('lazyHydrateAfterPostMessage', () => {
     test('handles URI values', () => {
         const uri = { $mid: 1, path: '/path/to/resource', scheme: 'file' }
         expect(isDehydratedUri(uri)).toBe(true)
-        expect(lazyHydrateAfterPostMessage({ foo: uri }, mockHydrateUri)).toEqual({
+        expect(hydrateAfterPostMessage({ foo: uri }, mockHydrateUri)).toEqual({
             foo: {
                 hydrated: true,
                 originalValue: { $mid: 1, path: '/path/to/resource', scheme: 'file' },
@@ -43,7 +39,7 @@ describe('lazyHydrateAfterPostMessage', () => {
     test('handles arrays', () => {
         const uriA = { $mid: 1, path: '/path/to/resource/1', scheme: 'file' }
         const uriB = { $mid: 2, path: '/path/to/resource/2', scheme: 'file' }
-        expect(lazyHydrateAfterPostMessage([uriA, uriB, uriA], mockHydrateUri)).toEqual([
+        expect(hydrateAfterPostMessage([uriA, uriB, uriA], mockHydrateUri)).toEqual([
             {
                 hydrated: true,
                 originalValue: { $mid: 1, path: '/path/to/resource/1', scheme: 'file' },
@@ -51,6 +47,20 @@ describe('lazyHydrateAfterPostMessage', () => {
             { hydrated: true, originalValue: { $mid: 2, path: '/path/to/resource/2', scheme: 'file' } },
             { hydrated: true, originalValue: { $mid: 1, path: '/path/to/resource/1', scheme: 'file' } },
         ])
+    })
+
+    test('modifications to the dehydrated object are reflected in the returned object', () => {
+        const originalValue: any = { foo: { bar: 'qux' } }
+        const hydratedValue = hydrateAfterPostMessage(originalValue, mockHydrateUri)
+        originalValue.foo = 'glorp'
+        expect(hydratedValue.foo).toEqual('glorp')
+    })
+
+    test('modifications to the returned value are reflected in the dehydrated object', () => {
+        const originalValue = { foo: { bar: 'qux' } }
+        const hydratedValue = hydrateAfterPostMessage(originalValue, mockHydrateUri)
+        hydratedValue.foo.bar = 'baz'
+        expect(originalValue.foo.bar).toEqual('baz')
     })
 })
 
