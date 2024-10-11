@@ -33,7 +33,7 @@ Streamline your development process by using prompts to understand, improve, fix
 
 ## Prompt Library
 
-You can also create your own [prompts](https://sourcegraph.com/docs/cody/capabilities/commands#custom-commands) and save them in the Prompt Library to tailor Cody to your workflow. 
+You can also create your own prompts and save them in the [Prompt Library](https://sourcegraph.com/docs/cody/capabilities/commands#prompt-library) to tailor Cody to your workflow. 
 
 ## Choose Your LLM
 
