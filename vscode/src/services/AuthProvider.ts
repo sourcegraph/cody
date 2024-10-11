@@ -224,7 +224,8 @@ class AuthProvider implements vscode.Disposable {
     // we only write on auth change as that is the only significantly important factor
     // and we don't want to write too frequently (so we don't react to config changes)
     // The vscode API is not available in the post-uninstall script.
-    private async serializeUninstallerInfo(authStatus: AuthStatus): Promise<void> {
+    // Public so that it can be mocked for testing
+    public async serializeUninstallerInfo(authStatus: AuthStatus): Promise<void> {
         let clientCapabilities: ClientCapabilities | undefined
         try {
             clientCapabilities = getClientCapabilities()
