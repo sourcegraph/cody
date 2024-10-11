@@ -16,6 +16,7 @@ import isEqual from 'lodash/isEqual'
 import { type FunctionComponent, type RefObject, memo, useMemo } from 'react'
 import type { ApiPostMessage, UserAccountInfo } from '../../../../Chat'
 import { chatModelIconComponent } from '../../../../components/ChatModelIcon'
+import { useChatSession } from '../../../../utils/useChatSession'
 import {
     ChatMessageContent,
     type CodeBlockActionsProps,
@@ -32,7 +33,6 @@ import { ContextFocusActions } from './ContextFocusActions'
  */
 export const AssistantMessageCell: FunctionComponent<{
     message: ChatMessage
-    chatModel: Model
 
     /** Information about the human message that led to this assistant response. */
     humanMessage: PriorHumanMessageInfo | null
@@ -67,13 +67,14 @@ export const AssistantMessageCell: FunctionComponent<{
         guardrails,
         smartApply,
         smartApplyEnabled,
-        chatModel,
     }) => {
         const displayMarkdown = useMemo(
             () => (message.text ? reformatBotMessageForChat(message.text).toString() : ''),
             [message.text]
         )
 
+        const { models } = useChatSession()
+        const chatModel = useChatModelByID(message.model, models)
         const ModelIcon = chatModel ? chatModelIconComponent(chatModel.id) : null
         const isAborted = isAbortErrorOrSocketHangUp(message.error)
 
@@ -84,7 +85,7 @@ export const AssistantMessageCell: FunctionComponent<{
                 speakerIcon={ModelIcon ? <ModelIcon size={NON_HUMAN_CELL_AVATAR_SIZE} /> : null}
                 speakerTitle={
                     <span data-testid="chat-model">
-                        {chatModel.title ?? `Model ${chatModel.id} by ${chatModel.provider}`}
+                        {chatModel.title ?? `${chatModel.id} by ${chatModel.provider}`}
                     </span>
                 }
                 content={
@@ -229,4 +230,18 @@ export function makeHumanMessageInfo(
             }
         },
     }
+}
+
+function useChatModelByID(
+    model: string | undefined,
+    chatModels: Model[]
+): Pick<Model, 'id' | 'title' | 'provider' | 'tags'> {
+    return (
+        chatModels?.find(m => m.id === model) ?? {
+            id: model ?? '',
+            title: 'Cody',
+            provider: '',
+            tags: [],
+        }
+    )
 }

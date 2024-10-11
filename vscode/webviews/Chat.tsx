@@ -6,7 +6,6 @@ import type {
     ChatMessage,
     CodyIDE,
     Guardrails,
-    Model,
     PromptString,
 } from '@sourcegraph/cody-shared'
 import { Transcript, focusLastHumanMessageEditor } from './chat/Transcript'
@@ -20,13 +19,13 @@ import { WelcomeMessage } from './chat/components/WelcomeMessage'
 import { ScrollDown } from './components/ScrollDown'
 import type { View } from './tabs'
 import { useTelemetryRecorder } from './utils/telemetry'
+import { ChatSessionProvider } from './utils/useChatSession'
 import { useUserAccountInfo } from './utils/useConfig'
 
 interface ChatboxProps {
     chatEnabled: boolean
     messageInProgress: ChatMessage | null
     transcript: ChatMessage[]
-    models: Model[]
     vscodeAPI: Pick<VSCodeWrapper, 'postMessage' | 'onMessage'>
     guardrails?: Guardrails
     scrollableParent?: HTMLElement | null
@@ -39,7 +38,6 @@ interface ChatboxProps {
 export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>> = ({
     messageInProgress,
     transcript,
-    models,
     vscodeAPI,
     chatEnabled = true,
     guardrails,
@@ -209,7 +207,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     }, [transcript])
 
     return (
-        <>
+        <ChatSessionProvider>
             {!chatEnabled && (
                 <div className={styles.chatDisabled}>
                     Cody chat is disabled by your Sourcegraph site administrator
@@ -217,7 +215,6 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             )}
             <Transcript
                 transcript={transcript}
-                models={models}
                 messageInProgress={messageInProgress}
                 feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
                 copyButtonOnSubmit={copyButtonOnSubmit}
@@ -239,7 +236,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             {scrollableParent && (
                 <ScrollDown scrollableParent={scrollableParent} onClick={handleScrollDownClick} />
             )}
-        </>
+        </ChatSessionProvider>
     )
 }
 

@@ -5,6 +5,7 @@ import {
     type WebviewToExtensionAPI,
     createExtensionAPI,
     createMessageAPIForWebview,
+    getMockedDotComClientModels,
 } from '@sourcegraph/cody-shared'
 import { Observable } from 'observable-fns'
 import { type FunctionComponent, type ReactNode, createContext, useContext, useMemo } from 'react'
@@ -43,7 +44,7 @@ export function useExtensionAPI<M extends keyof WebviewToExtensionAPI>(): Pick<
 
 export const MOCK_API = new Proxy<Partial<WebviewToExtensionAPI>>(
     {
-        chatModels: () => Observable.of<Model[]>([]),
+        chatModels: () => Observable.of<Model[]>(getMockedDotComClientModels()),
         evaluatedFeatureFlag: () => Observable.of<boolean | undefined>(false),
     },
     {

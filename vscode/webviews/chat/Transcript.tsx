@@ -1,7 +1,6 @@
 import {
     type ChatMessage,
     type Guardrails,
-    type Model,
     type SerializedPromptEditorValue,
     deserializeContextItem,
     inputTextWithoutContextChipsFromPromptEditorState,
@@ -32,7 +31,6 @@ import { InfoMessage } from './components/InfoMessage'
 interface TranscriptProps {
     chatEnabled: boolean
     transcript: ChatMessage[]
-    models: Model[]
     userInfo: UserAccountInfo
     messageInProgress: ChatMessage | null
 
@@ -50,7 +48,6 @@ export const Transcript: FC<TranscriptProps> = props => {
     const {
         chatEnabled,
         transcript,
-        models,
         userInfo,
         messageInProgress,
         guardrails,
@@ -76,7 +73,6 @@ export const Transcript: FC<TranscriptProps> = props => {
             {interactions.map((interaction, i) => (
                 <TranscriptInteraction
                     key={interaction.humanMessage.index}
-                    models={models}
                     chatEnabled={chatEnabled}
                     userInfo={userInfo}
                     interaction={interaction}
@@ -168,7 +164,6 @@ interface TranscriptInteractionProps
 const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
     const {
         interaction: { humanMessage, assistantMessage },
-        models,
         isFirstInteraction,
         isLastInteraction,
         isLastSentInteraction,
@@ -295,10 +290,6 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
 
     const resetIntent = useCallback(() => setIntentResults(undefined), [setIntentResults])
 
-    const chatModel = useMemo(() => {
-        return models?.find(m => m.id === humanMessage.model) ?? models[0]
-    }, [humanMessage.model, models])
-
     return (
         <>
             <HumanMessageCell
@@ -318,7 +309,6 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                 editorRef={humanEditorRef}
                 className={!isFirstInteraction && isLastInteraction ? 'tw-mt-auto' : ''}
                 onEditorFocusChange={resetIntent}
-                models={models}
             />
 
             {experimentalOneBoxEnabled && humanMessage.intent && (
@@ -362,7 +352,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                     key={`${humanMessage.index}-${humanMessage.intent}-context`}
                     contextItems={humanMessage.contextFiles}
                     contextAlternatives={humanMessage.contextAlternatives}
-                    model={humanMessage?.model}
+                    model={assistantMessage?.model}
                     isForFirstMessage={humanMessage.index === 0}
                     showSnippets={experimentalOneBoxEnabled && humanMessage.intent === 'search'}
                     defaultOpen={experimentalOneBoxEnabled && humanMessage.intent === 'search'}
@@ -392,7 +382,6 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                         }
                         smartApply={smartApply}
                         smartApplyEnabled={smartApplyEnabled}
-                        chatModel={chatModel}
                     />
                 )}
         </>

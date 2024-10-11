@@ -1,7 +1,6 @@
 import {
     type ChatMessage,
     FAST_CHAT_INPUT_TOKEN_BUDGET,
-    type Model,
     ModelTag,
     type SerializedPromptEditorState,
     type SerializedPromptEditorValue,
@@ -19,13 +18,13 @@ import {
     useCallback,
     useEffect,
     useImperativeHandle,
-    useMemo,
     useRef,
     useState,
 } from 'react'
 import type { UserAccountInfo } from '../../../../../Chat'
 import { type ClientActionListener, useClientActionListener } from '../../../../../client/clientState'
 import { useTelemetryRecorder } from '../../../../../utils/telemetry'
+import { useChatSession } from '../../../../../utils/useChatSession'
 import styles from './HumanMessageEditor.module.css'
 import type { SubmitButtonState } from './toolbar/SubmitButton'
 import { Toolbar } from './toolbar/Toolbar'
@@ -34,7 +33,6 @@ import { Toolbar } from './toolbar/Toolbar'
  * A component to compose and edit human chat messages and the settings associated with them.
  */
 export const HumanMessageEditor: FunctionComponent<{
-    models: Model[]
     userInfo: UserAccountInfo
 
     initialEditorState: SerializedPromptEditorState | undefined
@@ -66,7 +64,6 @@ export const HumanMessageEditor: FunctionComponent<{
     /** For use in storybooks only. */
     __storybook__focus?: boolean
 }> = ({
-    models,
     userInfo,
     initialEditorState,
     placeholder,
@@ -295,7 +292,8 @@ export const HumanMessageEditor: FunctionComponent<{
         )
     )
 
-    const currentChatModel = useMemo(() => models[0], [models[0]])
+    const { models } = useChatSession()
+    const selectedModel = models[0]
 
     let initialContext = useInitialContextForChat()
     useEffect(() => {
@@ -304,13 +302,13 @@ export const HumanMessageEditor: FunctionComponent<{
             if (editor) {
                 // Don't show the initial codebase context if the model doesn't support streaming
                 // as including context result in longer processing time.
-                if (currentChatModel?.tags?.includes(ModelTag.StreamDisabled)) {
+                if (selectedModel?.tags?.includes(ModelTag.StreamDisabled)) {
                     initialContext = initialContext.filter(item => item.type !== 'tree')
                 }
                 editor.setInitialContextMentions(initialContext)
             }
         }
-    }, [initialContext, isSent, isFirstMessage, currentChatModel])
+    }, [initialContext, isSent, isFirstMessage, selectedModel])
 
     const focusEditor = useCallback(() => editorRef.current?.setFocus(true), [])
 
@@ -322,8 +320,8 @@ export const HumanMessageEditor: FunctionComponent<{
 
     const focused = Boolean(isEditorFocused || isFocusWithin || __storybook__focus)
     const contextWindowSizeInTokens =
-        currentChatModel?.contextWindow?.context?.user ||
-        currentChatModel?.contextWindow?.input ||
+        selectedModel?.contextWindow?.context?.user ||
+        selectedModel?.contextWindow?.input ||
         FAST_CHAT_INPUT_TOKEN_BUDGET
 
     return (

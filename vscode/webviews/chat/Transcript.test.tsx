@@ -22,7 +22,6 @@ const PROPS: Omit<ComponentProps<typeof Transcript>, 'transcript'> = {
     userInfo: FIXTURE_USER_ACCOUNT_INFO,
     chatEnabled: true,
     postMessage: () => {},
-    models: MOCK_MODELS,
 }
 
 vi.mock('@vscode/webview-ui-toolkit/react', () => ({
