@@ -1,5 +1,4 @@
 import { CodyIDE } from '@sourcegraph/cody-shared'
-import { common } from 'lowlight'
 import type { ComponentProps, FunctionComponent } from 'react'
 import { useMemo } from 'react'
 import Markdown, { defaultUrlTransform } from 'react-markdown'
@@ -8,6 +7,7 @@ import rehypeHighlight, { type Options as RehypeHighlightOptions } from 'rehype-
 import rehypeSanitize, { type Options as RehypeSanitizeOptions, defaultSchema } from 'rehype-sanitize'
 import remarkGFM from 'remark-gfm'
 import { remarkAttachFilePathToCodeBlocks } from '../chat/extract-file-path'
+import { SYNTAX_HIGHLIGHTING_LANGUAGES } from '../utils/highlight'
 import { useConfig } from '../utils/useConfig'
 
 /**
@@ -123,7 +123,12 @@ function markdownPluginProps(): Pick<
                             ...(defaultSchema.attributes?.code || []),
                             // We use `data-file-path` to attach file path metadata to <code> blocks.
                             ['data-file-path'],
-                            ['className', ...LANGUAGES.map(language => `language-${language}`)],
+                            [
+                                'className',
+                                ...Object.keys(SYNTAX_HIGHLIGHTING_LANGUAGES).map(
+                                    language => `language-${language}`
+                                ),
+                            ],
                         ],
                     },
                 } satisfies RehypeSanitizeOptions,
@@ -135,9 +140,9 @@ function markdownPluginProps(): Pick<
                 rehypeHighlight as any,
                 {
                     detect: true,
-                    languages: Object.fromEntries(
-                        Object.entries(common).filter(([language]) => LANGUAGES.includes(language))
-                    ),
+                    languages: {
+                        ...SYNTAX_HIGHLIGHTING_LANGUAGES,
+                    },
 
                     // `ignoreMissing: true` is required to avoid errors when trying to highlight
                     // partial code blocks received from the LLM that have (e.g.) "```p" for
@@ -152,52 +157,3 @@ function markdownPluginProps(): Pick<
     }
     return _markdownPluginProps
 }
-
-const LANGUAGES = [
-    'apex',
-    'bash',
-    'c',
-    'clojure',
-    'cpp',
-    'cpp',
-    'cs',
-    'csharp',
-    'css',
-    'dart',
-    'diff',
-    'diff',
-    'dockerfile',
-    'dockerfile',
-    'elixir',
-    'fortran',
-    'go',
-    'graphql',
-    'groovy',
-    'haskell',
-    'html',
-    'http',
-    'java',
-    'javascript',
-    'json',
-    'jsonc',
-    'kotlin',
-    'lua',
-    'markdown',
-    'matlab',
-    'nix',
-    'objectivec',
-    'ocaml',
-    'perl',
-    'php',
-    'python',
-    'r',
-    'ruby',
-    'rust',
-    'scala',
-    'sql',
-    'swift',
-    'typescript',
-    'verilog',
-    'vhdl',
-    'yaml',
-]
