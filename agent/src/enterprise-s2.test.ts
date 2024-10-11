@@ -162,7 +162,7 @@ describe('Enterprise - S2 (close main branch)', { timeout: 5000 }, () => {
             expect(items.map(item => item.insertText)).toMatchInlineSnapshot(
                 `
               [
-                "    return a + b",
+                "return a + b",
               ]
             `
             )
