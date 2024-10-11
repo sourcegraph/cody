@@ -7,7 +7,12 @@ import { telemetryRecorder } from '@sourcegraph/cody-shared'
 import { document } from '../completions/test-helpers'
 import { range } from '../testutils/textDocument'
 
-import { CharactersLogger, LOG_INTERVAL } from './CharactersLogger'
+import {
+    CharactersLogger,
+    DEFAULT_COUNTERS,
+    type DocumentChangeCounters,
+    LOG_INTERVAL,
+} from './CharactersLogger'
 
 const testDocument = document('foo')
 
@@ -98,6 +103,11 @@ describe('CharactersLogger', () => {
         }
     }
 
+    // Helper function to create default metadata counters with expected values
+    function expectedCounters(expected: Partial<DocumentChangeCounters>): Record<string, number> {
+        return { ...DEFAULT_COUNTERS, ...expected }
+    }
+
     it('logs inserted and deleted characters for user edits', () => {
         onDidChangeTextEditorSelection(mockTextEditorSelectionEvent)
         onDidChangeTextDocument(createChange({ text: 'foo', range: range(0, 0, 0, 0), rangeLength: 0 }))
@@ -107,14 +117,14 @@ describe('CharactersLogger', () => {
         vi.advanceTimersByTime(LOG_INTERVAL)
 
         expect(recordSpy).toHaveBeenCalledWith('cody.characters', 'flush', {
-            metadata: {
-                insertedCharacters: 6,
-                deletedCharacters: 0,
-            },
+            metadata: expectedCounters({
+                normal_inserted: 6,
+                normal_deleted: 0,
+            }),
         })
     })
 
-    it('ignores changes when window is not focused', () => {
+    it('logs changes under "windowNotFocused" when window is not focused', () => {
         onDidChangeTextEditorSelection(mockTextEditorSelectionEvent)
         onDidChangeTextDocument(createChange({ text: 'foo', range: range(0, 0, 0, 0), rangeLength: 0 }))
 
@@ -126,16 +136,18 @@ describe('CharactersLogger', () => {
 
         vi.advanceTimersByTime(LOG_INTERVAL)
 
-        // Only the first change should be counted
+        // Changes while focused and not focused are logged under different types
         expect(recordSpy).toHaveBeenCalledWith('cody.characters', 'flush', {
-            metadata: {
-                insertedCharacters: 3,
-                deletedCharacters: 0,
-            },
+            metadata: expectedCounters({
+                normal_inserted: 3,
+                normal_deleted: 0,
+                windowNotFocused_inserted: 3,
+                windowNotFocused_deleted: 0,
+            }),
         })
     })
 
-    it('ignores changes in non-visible documents', () => {
+    it('logs changes under "nonVisibleDocument" when in non-visible documents', () => {
         // Remove testDocument from visible editors
         mockVisibleTextEditors = []
         onDidChangeVisibleTextEditors(mockVisibleTextEditors)
@@ -145,16 +157,16 @@ describe('CharactersLogger', () => {
 
         vi.advanceTimersByTime(LOG_INTERVAL)
 
-        // No changes should be counted
+        // Change is logged under 'nonVisibleDocument'
         expect(recordSpy).toHaveBeenCalledWith('cody.characters', 'flush', {
-            metadata: {
-                insertedCharacters: 0,
-                deletedCharacters: 0,
-            },
+            metadata: expectedCounters({
+                nonVisibleDocument_inserted: 3,
+                nonVisibleDocument_deleted: 0,
+            }),
         })
     })
 
-    it('ignores changes when there has been no recent cursor movement', () => {
+    it('logs changes under "inactiveSelection" when there has been no recent cursor movement', () => {
         // Simulate last selection happened 6 seconds ago
         onDidChangeTextEditorSelection(mockTextEditorSelectionEvent)
         vi.advanceTimersByTime(6000)
@@ -163,42 +175,58 @@ describe('CharactersLogger', () => {
 
         vi.advanceTimersByTime(LOG_INTERVAL - 6000)
 
-        // No changes should be counted
+        // Change is logged under 'inactiveSelection'
         expect(recordSpy).toHaveBeenCalledWith('cody.characters', 'flush', {
-            metadata: {
-                insertedCharacters: 0,
-                deletedCharacters: 0,
-            },
+            metadata: expectedCounters({
+                inactiveSelection_inserted: 3,
+                inactiveSelection_deleted: 0,
+            }),
         })
     })
 
-    it('ignores undo and redo changes', () => {
+    it('logs undo and redo changes under their respective types', () => {
         onDidChangeTextEditorSelection(mockTextEditorSelectionEvent)
-        const undoIdentifier = 1
+        const textDocumentChangeReason = {
+            undo: 1,
+            redo: 2,
+        }
 
         // Simulate undo change
         onDidChangeTextDocument(
             createChange({
                 text: '',
-                range: range(0, 0, 0, 3),
+                range: range(0, 3, 0, 0),
                 rangeLength: 3,
                 document: testDocument,
-                reason: undoIdentifier,
+                reason: textDocumentChangeReason.undo,
+            })
+        )
+
+        // Simulate redo change
+        onDidChangeTextDocument(
+            createChange({
+                text: 'foo',
+                range: range(0, 0, 0, 0),
+                rangeLength: 0,
+                document: testDocument,
+                reason: textDocumentChangeReason.redo,
             })
         )
 
         vi.advanceTimersByTime(LOG_INTERVAL)
 
-        // No changes should be counted
+        // Changes are logged under 'undo' and 'redo'
         expect(recordSpy).toHaveBeenCalledWith('cody.characters', 'flush', {
-            metadata: {
-                insertedCharacters: 0,
-                deletedCharacters: 0,
-            },
+            metadata: expectedCounters({
+                undo_inserted: 0,
+                undo_deleted: 3,
+                redo_inserted: 3,
+                redo_deleted: 0,
+            }),
         })
     })
 
-    it('ignores rapid, large changes likely caused by external operations', () => {
+    it('logs rapid, large changes under "rapidLargeChange"', () => {
         onDidChangeTextEditorSelection(mockTextEditorSelectionEvent)
 
         // Simulate large change (e.g., 2000 characters inserted)
@@ -209,16 +237,16 @@ describe('CharactersLogger', () => {
 
         vi.advanceTimersByTime(LOG_INTERVAL)
 
-        // No changes should be counted due to large change heuristic
+        // Change is logged under 'rapidLargeChange'
         expect(recordSpy).toHaveBeenCalledWith('cody.characters', 'flush', {
-            metadata: {
-                insertedCharacters: 0,
-                deletedCharacters: 0,
-            },
+            metadata: expectedCounters({
+                rapidLargeChange_inserted: 2000,
+                rapidLargeChange_deleted: 0,
+            }),
         })
     })
 
-    it('counts large changes if they are not rapid', () => {
+    it('counts large changes as "normal" if they are not rapid', () => {
         onDidChangeTextEditorSelection(mockTextEditorSelectionEvent)
 
         // Simulate large change after some time has passed
@@ -230,12 +258,12 @@ describe('CharactersLogger', () => {
 
         vi.advanceTimersByTime(LOG_INTERVAL - 2000)
 
-        // The large change should be counted
+        // The large change is logged under 'normal'
         expect(recordSpy).toHaveBeenCalledWith('cody.characters', 'flush', {
-            metadata: {
-                insertedCharacters: 2000,
-                deletedCharacters: 0,
-            },
+            metadata: expectedCounters({
+                normal_inserted: 2000,
+                normal_deleted: 0,
+            }),
         })
     })
 
@@ -247,10 +275,10 @@ describe('CharactersLogger', () => {
 
         expect(recordSpy).toHaveBeenCalledTimes(1)
         expect(recordSpy).toHaveBeenCalledWith('cody.characters', 'flush', {
-            metadata: {
-                insertedCharacters: 3,
-                deletedCharacters: 0,
-            },
+            metadata: expectedCounters({
+                normal_inserted: 3,
+                normal_deleted: 0,
+            }),
         })
 
         onDidChangeTextEditorSelection(mockTextEditorSelectionEvent)
@@ -260,14 +288,14 @@ describe('CharactersLogger', () => {
 
         expect(recordSpy).toHaveBeenCalledTimes(2)
         expect(recordSpy).toHaveBeenCalledWith('cody.characters', 'flush', {
-            metadata: {
-                insertedCharacters: 3,
-                deletedCharacters: 0,
-            },
+            metadata: expectedCounters({
+                normal_inserted: 3,
+                normal_deleted: 0,
+            }),
         })
     })
 
-    it('does not ignore user typing after cursor movement', () => {
+    it('logs user typing under "normal" after cursor movement', () => {
         // Simulate user moving the cursor
         onDidChangeTextEditorSelection(mockTextEditorSelectionEvent)
 
@@ -276,12 +304,12 @@ describe('CharactersLogger', () => {
 
         vi.advanceTimersByTime(LOG_INTERVAL)
 
-        // Changes should be counted
+        // Changes are logged under 'normal'
         expect(recordSpy).toHaveBeenCalledWith('cody.characters', 'flush', {
-            metadata: {
-                insertedCharacters: 3,
-                deletedCharacters: 0,
-            },
+            metadata: expectedCounters({
+                normal_inserted: 3,
+                normal_deleted: 0,
+            }),
         })
     })
 
@@ -328,12 +356,12 @@ describe('CharactersLogger', () => {
 
         vi.advanceTimersByTime(LOG_INTERVAL)
 
-        // Changes in both documents should be counted
+        // Changes in both documents should be counted under 'normal'
         expect(recordSpy).toHaveBeenCalledWith('cody.characters', 'flush', {
-            metadata: {
-                insertedCharacters: 6,
-                deletedCharacters: 0,
-            },
+            metadata: expectedCounters({
+                normal_inserted: 6,
+                normal_deleted: 0,
+            }),
         })
     })
 })

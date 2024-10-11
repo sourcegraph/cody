@@ -8,10 +8,35 @@ const LARGE_CHANGE_THRESHOLD = 1000
 const LARGE_CHANGE_TIMEOUT = 1000 // Ignore large changes happened within this time.
 const SELECTION_TIMEOUT = 5000 // 5 seconds
 
+const DOCUMENT_CHANGE_TYPES = [
+    'normal',
+    'undo',
+    'redo',
+    'windowNotFocused',
+    'nonVisibleDocument',
+    'inactiveSelection',
+    'rapidLargeChange',
+] as const
+
+type DocumentChangeType = (typeof DOCUMENT_CHANGE_TYPES)[number]
+
+// This flat structure is required by the 'metadata' field type in the telemetry event.
+export type DocumentChangeCounters = {
+    [K in `${DocumentChangeType}_${'inserted' | 'deleted'}`]: number
+}
+
+export const DEFAULT_COUNTERS: DocumentChangeCounters = DOCUMENT_CHANGE_TYPES.reduce(
+    (acc, changeType) => {
+        acc[`${changeType}_inserted`] = 0
+        acc[`${changeType}_deleted`] = 0
+        return acc
+    },
+    {} as DocumentChangeCounters
+)
+
 export class CharactersLogger implements vscode.Disposable {
     private disposables: vscode.Disposable[] = []
-    private inserted = 0
-    private deleted = 0
+    private changeCounters: DocumentChangeCounters = { ...DEFAULT_COUNTERS }
     private nextTimeoutId: NodeJS.Timeout | null = null
 
     private windowFocused = true
@@ -44,14 +69,11 @@ export class CharactersLogger implements vscode.Disposable {
 
     public flush(): void {
         this.nextTimeoutId = null
-        const insertedCharacters = this.inserted
-        const deletedCharacters = this.deleted
-        this.inserted = 0
-        this.deleted = 0
 
         telemetryRecorder.recordEvent('cody.characters', 'flush', {
-            metadata: { insertedCharacters, deletedCharacters },
+            metadata: { ...this.changeCounters },
         })
+        this.changeCounters = { ...DEFAULT_COUNTERS }
 
         this.nextTimeoutId = setTimeout(() => this.flush(), LOG_INTERVAL)
     }
@@ -70,75 +92,70 @@ export class CharactersLogger implements vscode.Disposable {
     }
 
     private onDidChangeTextDocument(event: vscode.TextDocumentChangeEvent): void {
-        const currentTimestamp = Date.now()
-        const documentUri = event.document.uri.toString()
-
-        // Ignored non-file URI document
         if (!isFileURI(event.document.uri)) {
             return
         }
 
-        // Ignored undo/redo change in document
-        if (
-            event.reason === vscode.TextDocumentChangeReason.Undo ||
-            event.reason === vscode.TextDocumentChangeReason.Redo
-        ) {
-            return
-        }
+        const changeType = this.getDocumentChangeType(event)
 
-        // Ignored change while window not focused in document
-        if (!this.windowFocused) {
-            return
-        }
-
-        // Ignored change in non-visible document
-        if (!this.visibleDocuments.has(documentUri)) {
-            return
-        }
-
-        // Check if there has been recent cursor movement in this document
-        const lastSelectionTimestamp = this.lastSelectionTimestamps.get(documentUri) || 0
-        const timeSinceLastSelection = currentTimestamp - lastSelectionTimestamp
-
-        // Ignored change due to inactive selection in document
-        if (timeSinceLastSelection > SELECTION_TIMEOUT) {
-            return
-        }
-
-        // Time-based heuristics to detect rapid, large changes
-        const timeSinceLastChange = currentTimestamp - this.lastChangeTimestamp
-        const totalChangeSize = event.contentChanges.reduce((sum, change) => {
-            return sum + Math.abs(change.rangeLength) + Math.abs(change.text.length)
-        }, 0)
-
-        // Ignored rapid large change in document
-        if (totalChangeSize > LARGE_CHANGE_THRESHOLD && timeSinceLastChange < LARGE_CHANGE_TIMEOUT) {
-            return
-        }
-
-        // Proceed with processing the changes
         for (const change of event.contentChanges) {
             // We use change.rangeLength for deletions because:
             // 1. It represents the length of the text being replaced, including newline characters.
             // 2. It accurately accounts for multi-line deletions.
             // 3. For pure deletions (without insertions), this will be the number of characters removed.
             // 4. For replacements, this represents the "old" text that's being replaced.
-            this.deleted += change.rangeLength
+            this.changeCounters[`${changeType}_deleted`] += change.rangeLength
 
             // We use change.text.length for insertions because:
             // 1. It represents the length of the new text being inserted, including newline characters.
             // 2. It accurately accounts for multi-line insertions.
             // 3. For pure insertions (without deletions), this will be the number of characters added.
             // 4. For replacements, this represents the "new" text that's replacing the old.
-            this.inserted += change.text.length
+            this.changeCounters[`${changeType}_inserted`] += change.text.length
 
             // Note: In the case of replacements, both deleted and inserted will be incremented.
             // This accurately represents that some text was removed and some was added, even if
             // the lengths are the same.
         }
 
-        // Update the last change timestamp only when changes are processed
-        this.lastChangeTimestamp = currentTimestamp
+        this.lastChangeTimestamp = Date.now()
+    }
+
+    private getDocumentChangeType(event: vscode.TextDocumentChangeEvent): DocumentChangeType {
+        const currentTimestamp = Date.now()
+        const documentUri = event.document.uri.toString()
+
+        if (event.reason === vscode.TextDocumentChangeReason.Undo) {
+            return 'undo'
+        }
+        if (event.reason === vscode.TextDocumentChangeReason.Redo) {
+            return 'redo'
+        }
+
+        if (!this.windowFocused) {
+            return 'windowNotFocused'
+        }
+        if (!this.visibleDocuments.has(documentUri)) {
+            return 'nonVisibleDocument'
+        }
+
+        const lastSelectionTimestamp = this.lastSelectionTimestamps.get(documentUri) || 0
+        const timeSinceLastSelection = currentTimestamp - lastSelectionTimestamp
+
+        if (timeSinceLastSelection > SELECTION_TIMEOUT) {
+            return 'inactiveSelection'
+        }
+
+        const timeSinceLastChange = currentTimestamp - this.lastChangeTimestamp
+        const totalChangeSize = event.contentChanges.reduce((sum, change) => {
+            return sum + Math.abs(change.rangeLength) + Math.abs(change.text.length)
+        }, 0)
+
+        if (totalChangeSize > LARGE_CHANGE_THRESHOLD && timeSinceLastChange < LARGE_CHANGE_TIMEOUT) {
+            return 'rapidLargeChange'
+        }
+
+        return 'normal'
     }
 
     private updateVisibleDocuments(editors: Readonly<vscode.TextEditor[]>): void {
