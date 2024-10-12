@@ -15,7 +15,6 @@ import {
     firstValueFrom,
     globalAgentRef,
     logError,
-    mapError,
     resolvedConfig,
     shareReplay,
     startWith,
@@ -30,7 +29,7 @@ import { SocksProxyAgent } from 'socks-proxy-agent'
 import type * as vscode from 'vscode'
 import { getConfiguration } from '../configuration'
 import { CONFIG_KEY } from '../configuration-keys'
-import { bypassVSCodeSymbol } from './vscode.patch'
+import { bypassVSCodeSymbol } from './net.patch'
 
 const TIMEOUT = 60_000
 
@@ -98,22 +97,16 @@ export class DelegatingAgent extends AgentBase implements vscode.Disposable {
         )
         //Note: This is split into two pipes because observable-fns sadly hasn't
         //used recursive types properly so after 7 elements the typing breaks.
-        .pipe(
-            map(normalizeSettings),
-            distinctUntilChanged(),
-            map(resolveSettings),
-            mapError((error: Error) => {
-                return {
-                    error,
-                    bypassVSCode: false,
-                    ca: [],
-                    proxyPath: null,
-                    proxyServer: null,
-                    skipCertValidation: false,
-                } satisfies ResolvedSettings
-            })
-        )
+        .pipe(map(normalizeSettings), distinctUntilChanged(), map(resolveSettings))
         .pipe(distinctUntilChanged(), shareReplay())
+
+    readonly configurationError = this.config.pipe(
+        map(config => {
+            return config.error ?? null
+        }),
+        distinctUntilChanged(),
+        shareReplay()
+    )
 
     static async initialize() {
         if (globalAgentRef.isSet) {
@@ -122,7 +115,7 @@ export class DelegatingAgent extends AgentBase implements vscode.Disposable {
         // debugFile = await openEmptyEditor()
         const agent = new DelegatingAgent()
         await firstValueFrom(agent.config)
-        globalAgentRef.curr = agent
+        globalAgentRef.agent = agent
         return agent
     }
 
@@ -232,19 +225,27 @@ type NormalizedSettings = {
     skipCertValidation: boolean
     proxyCACertPath: string | null
 }
-function normalizeSettings(raw: NetConfiguration): NormalizedSettings {
-    const caCertConfig = isInlineCert(raw.proxy?.cacert)
-        ? ({ proxyCACert: raw.proxy?.cacert ?? null, proxyCACertPath: null } as const)
-        : ({ proxyCACert: null, proxyCACertPath: normalizePath(raw.proxy?.cacert) } as const)
+function normalizeSettings(raw: NetConfiguration): [Error, null] | [null, NormalizedSettings] {
+    try {
+        const caCertConfig = isInlineCert(raw.proxy?.cacert)
+            ? ({ proxyCACert: raw.proxy?.cacert ?? null, proxyCACertPath: null } as const)
+            : ({ proxyCACert: null, proxyCACertPath: normalizePath(raw.proxy?.cacert) } as const)
 
-    const proxyServerString = raw.proxy?.server?.trim() || cenv.CODY_DEFAULT_PROXY || null
-    const proxyServer = proxyServerString ? new url.URL(proxyServerString) : null
-    return {
-        bypassVSCode: raw.bypassVSCode ?? null,
-        skipCertValidation: raw.proxy?.skipCertValidation || false,
-        ...caCertConfig,
-        proxyPath: normalizePath(raw.proxy?.path),
-        proxyServer,
+        const proxyServerString = raw.proxy?.server?.trim() || cenv.CODY_DEFAULT_PROXY || null
+        const proxyServer = proxyServerString ? new url.URL(proxyServerString) : null
+        const proxyPath = normalizePath(raw.proxy?.path)
+        return [
+            null,
+            {
+                bypassVSCode: raw.bypassVSCode ?? !!proxyServer ?? !!proxyPath,
+                skipCertValidation: raw.proxy?.skipCertValidation || false,
+                ...caCertConfig,
+                proxyPath,
+                proxyServer,
+            },
+        ]
+    } catch (e: any) {
+        return [e, null]
     }
 }
 
@@ -256,7 +257,19 @@ type ResolvedSettings = {
     skipCertValidation: boolean
     bypassVSCode: boolean
 }
-async function resolveSettings(settings: NormalizedSettings): Promise<ResolvedSettings> {
+async function resolveSettings([error, settings]:
+    | [Error, null]
+    | [null, NormalizedSettings]): Promise<ResolvedSettings> {
+    if (error) {
+        return {
+            error,
+            bypassVSCode: false,
+            ca: [],
+            proxyPath: null,
+            proxyServer: null,
+            skipCertValidation: false,
+        } satisfies ResolvedSettings
+    }
     const proxyPath = resolveProxyPath(settings.proxyPath) || null
     const caCert = settings.proxyCACert || readProxyCACert(settings.proxyCACertPath) || null
     return {

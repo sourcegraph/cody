@@ -11,7 +11,7 @@ import { ExtensionApi } from './extension-api'
 import type { ExtensionClient } from './extension-client'
 import type { SymfRunner } from './local-context/symf'
 import { start } from './main'
-import type { DelegatingAgent } from './net/net'
+import type { DelegatingAgent } from './net'
 import type { OpenTelemetryService } from './services/open-telemetry/OpenTelemetryService.node'
 import { type SentryService, captureException } from './services/sentry/sentry'
 
@@ -22,7 +22,7 @@ type Constructor<T extends new (...args: any) => any> = T extends new (
     : never
 
 export interface PlatformContext {
-    initializeNetworkAgent?: () => Promise<DelegatingAgent>
+    networkAgent?: DelegatingAgent
     createOpenCtxController?: typeof createController
     createStorage?: () => Promise<vscode.Memento>
     createCommandsProvider?: Constructor<typeof CommandsProvider>
@@ -35,12 +35,24 @@ export interface PlatformContext {
     extensionClient: ExtensionClient
 }
 
+interface ActivationContext {
+    initializeNetworkAgent?: () => Promise<DelegatingAgent>
+}
+
 export async function activate(
     context: vscode.ExtensionContext,
-    platformContext: PlatformContext
+    { initializeNetworkAgent, ...platformContext }: PlatformContext & ActivationContext
 ): Promise<ExtensionApi> {
+    //TODO: Properly handle extension mode overrides in a single way
     const api = new ExtensionApi(context.extensionMode)
     try {
+        // Important! This needs to happen before we resolve the config
+        // Otherwise some eager beavers might start making network requests
+        const networkAgent = await initializeNetworkAgent?.()
+        if (networkAgent) {
+            context.subscriptions.push(networkAgent)
+            platformContext.networkAgent = networkAgent
+        }
         const disposable = await start(context, platformContext)
         if (!context.globalState.get('extension.hasActivatedPreviously')) {
             void context.globalState.update('extension.hasActivatedPreviously', 'true')

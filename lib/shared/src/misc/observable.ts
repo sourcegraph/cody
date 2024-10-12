@@ -11,7 +11,6 @@ import {
 } from 'observable-fns'
 import { AsyncSerialScheduler } from 'observable-fns/dist/_scheduler'
 import type { VitestUtils } from 'vitest'
-import { isError } from '../utils'
 
 /**
  * A type helper to get the value type of an {@link Observable} (i.e., what it emits from `next`).
@@ -1206,44 +1205,6 @@ export function catchError<T, R>(
                 }
             }
         })
-}
-
-/**
- * Maps errors from the source observable to new values, allowing the stream to continue.
- * This is useful for simple error recovery scenarios where you want to substitute a default
- * or fallback value when an error occurs, without switching to a new observable.
- *
- * @param handler A function that takes an error and returns a new value of type T
- * @returns A function that transforms a source observable
- */
-
-export function mapError<T>(
-    handler: (error: Error) => T
-): (observable: ObservableLike<T>) => Observable<T> {
-    return observable => {
-        return new Observable<T>(scheduler => {
-            const subscription = observable.subscribe({
-                complete() {
-                    scheduler.complete()
-                },
-                error(error) {
-                    if (isError(error)) {
-                        try {
-                            scheduler.next(handler(error))
-                        } catch {
-                            scheduler.error(error)
-                        }
-                    } else {
-                        scheduler.error(error)
-                    }
-                },
-                next(input) {
-                    scheduler.next(input)
-                },
-            })
-            return () => unsubscribe(subscription)
-        })
-    }
 }
 
 export function withLatestFrom<T, R>(

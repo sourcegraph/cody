@@ -12,21 +12,33 @@
  * For read only access simply import the fetch.ts file
  */
 
+import type EventEmitter from 'node:events'
+import type * as http from 'node:http'
+import type * as https from 'node:https'
 import type { Agent } from 'agent-base'
 
 let _globalAgent: Agent | undefined
+let _eventEmitter: EventEmitter<NetEventMap> | undefined
 let _blockEarlyAccess = false
 export const globalAgentRef = {
-    get curr() {
+    get agent() {
         if (_blockEarlyAccess && !_globalAgent) {
             throw new Error('Agent was used before it was initialized')
         }
         return _globalAgent
     },
 
-    set curr(v: Agent | undefined) {
+    get netEvents() {
+        return _eventEmitter
+    },
+
+    set agent(v: Agent | undefined) {
         //TODO: Maybe we only want to allow this once!
         _globalAgent = v
+    },
+
+    set netEvents(v: EventEmitter<NetEventMap> | undefined) {
+        _eventEmitter = v
     },
 
     set blockEarlyAccess(v: boolean) {
@@ -36,4 +48,15 @@ export const globalAgentRef = {
     get isSet() {
         return _globalAgent !== undefined
     },
+}
+
+interface RequestEvent {
+    req: http.ClientRequest
+    protocol: 'http' | 'https'
+    url?: string | URL
+    options?: http.RequestOptions | https.RequestOptions
+    agent: 'vscode' | 'delegating-agent' | 'other' | null
+}
+export type NetEventMap = {
+    request: [RequestEvent]
 }

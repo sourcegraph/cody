@@ -1,9 +1,7 @@
-// We're synchronously requiring this to ensure the network is patched before
-// anything else loads. If we're ever switching to ESM you'll need to do a
-// top-level await with a IFFY / SIF e.g. `await (async () => {})`
-import './net/vscode.patch'
+// Network patch must be imported first
+import './net/net.patch'
 
-// Sentry should be imported first
+// Sentry should be imported as soon as possible so that errors are reported
 import { NodeSentryService } from './services/sentry/sentry.node'
 
 // Everything else
@@ -20,7 +18,6 @@ import { DelegatingAgent } from './net'
 import { localStorage } from './services/LocalStorageProvider'
 import { OpenTelemetryService } from './services/open-telemetry/OpenTelemetryService.node'
 import { serializeConfigSnapshot } from './uninstall/serializeConfig'
-
 /**
  * Activation entrypoint for the VS Code extension when running VS Code as a desktop app
  * (Node.js/Electron).

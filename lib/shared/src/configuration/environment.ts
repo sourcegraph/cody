@@ -3,12 +3,22 @@ import type { UIKind } from 'vscode' // types are ok
 import { logError as _logError } from '../logger'
 
 /**
- * This should be the only location we read process.env variables from. It's
- * just a small layer on top of raw process.env variables, so should be kept to
- * static or a get method at most.
+ * In general config values should be preferred over environment variables. The
+ * exeption roughly being:
+ * 1. Settings that shouldn't be used by users
+ * 2. Settings that have deep implications for the execution environment and
+ *    would require a reload of the extension/platform if changed. might cause
+ * 3. Security sensitive settings that might expose sensitive information or
+ *    untested/unsafe functionality if accidentally/maliciously enabled in the
+ *    config file.
+ *
+ * So if you do need an invorment variable this should be the only location we
+ * read process.env variables from. It's just a small layer on top of raw
+ * process.env variables, so should be kept to static or a get method at most.
  *
  * We provide them as getters as some parts of code might rely on being able to
  * modify and re-read `process.env`.
+ *
  */
 
 export const cenv = defineEnvBuilder({

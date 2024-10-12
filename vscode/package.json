@@ -1233,9 +1233,10 @@
           "default": false
         },
         "cody.net.bypassVSCode": {
-          "type": "boolean",
+          "type": ["null", "boolean"],
           "order": 999,
-          "markdownDescription": "[EXPERIMENTAL] Forcefully enable/disable bypassing VSCode's network stack. Bypassing is automatically enabled if `cody.net.proxy` is configured. In some scenarios bypassign VSCode network could give some performance benefits."
+          "markdownDescription": "[EXPERIMENTAL] Forcefully enable/disable bypassing VSCode's network stack. Bypassing is automatically enabled if `cody.net.proxy` is configured. In some scenarios bypassign VSCode network could give some performance benefits.",
+          "default": null
         },
         "cody.net.proxy": {
           "type": ["null", "object"],
@@ -1430,6 +1431,7 @@
     "rehype-highlight": "^6.0.0",
     "rehype-sanitize": "^6.0.0",
     "remark-gfm": "^4.0.0",
+    "safe-stable-stringify": "^2.5.0",
     "semver": "^7.5.4",
     "signal-exit": "^4.1.0",
     "socks-proxy-agent": "^8.0.1",
