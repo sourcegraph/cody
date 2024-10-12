@@ -300,9 +300,9 @@ function resolveProxyPath(filePath: string | null | undefined): string | undefin
     } catch (error) {
         logError(
             'vscode.configuration',
-            `Cannot verify ${CONFIG_KEY.netProxy}.path: ${filePath}: ${error}`
+            `Cannot verify ${CONFIG_KEY.net}.proxy.path: ${filePath}: ${error}`
         )
-        throw new Error(`Cannot verify ${CONFIG_KEY.netProxy}.path: ${filePath}:\n${error}`)
+        throw new Error(`Cannot verify ${CONFIG_KEY.net}.proxy.path: ${filePath}:\n${error}`)
     }
 }
 
@@ -316,9 +316,9 @@ export function readProxyCACert(filePath: string | null | undefined): string | u
     } catch (error) {
         logError(
             'vscode.configuration',
-            `Cannot read ${CONFIG_KEY.netProxy}.cacert: ${filePath}: ${error}`
+            `Cannot read ${CONFIG_KEY.net}.proxy.cacert: ${filePath}: ${error}`
         )
-        throw new Error(`Error reading ${CONFIG_KEY.netProxy}.cacert from ${filePath}:\n${error}`)
+        throw new Error(`Error reading ${CONFIG_KEY.net}.proxy.cacert from ${filePath}:\n${error}`)
     }
 }
 

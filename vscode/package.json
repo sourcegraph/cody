@@ -1233,53 +1233,58 @@
           "markdownDescription": "[INTERNAL ONLY] Enable all unstable experimental features.",
           "default": false
         },
-        "cody.net.bypassVSCode": {
-          "type": ["null", "boolean"],
-          "order": 999,
-          "markdownDescription": "[EXPERIMENTAL] Forcefully enable/disable bypassing VSCode's network stack. Bypassing is automatically enabled if `cody.net.proxy` is configured. In some scenarios bypassign VSCode network could give some performance benefits.",
-          "default": null
-        },
-        "cody.net.proxy": {
+        "cody.net": {
           "type": ["null", "object"],
-          "description": "Configure the proxy to use when connecting to the Sourcegraph instance.",
+          "description": "Network settings to use when connecting to the Sourcegraph instance",
           "default": null,
-          "oneOf": [
-            {
-              "properties": {
-                "server": {
-                  "description": "Hostname/IP address and port of the server to use when proxying requests to the Sourcegraph instance. Do not include a protocol (like \"http://\")",
-                  "type": "string",
-                  "pattern": "^[^:]+:\\d+$",
-                  "examples": ["localhost:7080", "1.2.3.4:8080"]
-                }
+          "bypassVSCode": {
+            "type": ["null", "boolean"],
+            "order": 999,
+            "markdownDescription": "[EXPERIMENTAL] Forcefully enable/disable bypassing VSCode's network stack. Bypassing is automatically enabled if `cody.net.proxy` is configured. In some scenarios bypassing VSCode network settings could give some performance benefits and forces usage of Cody's proxy instead of one configured globally for VSCode.",
+            "default": null
+          },
+          "proxy": {
+            "type": ["null", "object"],
+            "description": "Configure the proxy to use when connecting to the Sourcegraph instance.",
+            "default": null,
+            "oneOf": [
+              {
+                "properties": {
+                  "server": {
+                    "description": "Protocol + hostname/IP address and port of the server to use when proxying requests to the Sourcegraph instance. The protocol is the protocol of the proxy server. Supports http(s) and socks 4/5",
+                    "type": "string",
+                    "pattern": "^(http[s]?|socks[45]?)://[^:]+:\\d+$",
+                    "examples": ["https://localhost:7080", "socks5://1.2.3.4:1080"]
+                  }
+                },
+                "required": ["server"]
               },
-              "required": ["server"]
-            },
-            {
-              "properties": {
-                "path": {
-                  "description": "The full path to a file when proxying requests to the Sourcegraph instance via a UNIX domain socket.",
-                  "type": "string",
-                  "examples": ["/home/user/mitm-proxy.sock"]
-                }
+              {
+                "properties": {
+                  "path": {
+                    "description": "The full path to a file when proxying requests to the Sourcegraph instance via a UNIX domain socket.",
+                    "type": "string",
+                    "examples": ["/home/user/mitm-proxy.sock"]
+                  }
+                },
+                "required": ["path"]
+              }
+            ],
+            "properties": {
+              "skipCertValidation": {
+                "description": "Whether to skip server cert validation",
+                "type": "boolean",
+                "default": false
               },
-              "required": ["path"]
-            }
-          ],
-          "properties": {
-            "skipCertValidation": {
-              "description": "Whether to skip server cert validation",
-              "type": "boolean",
-              "default": false
-            },
-            "cacert": {
-              "description": "Either the PEM-encoded CA certificate the proxy uses (replace newlines with `\n`), or the path to the file containing that certificate.",
-              "type": "string",
-              "default": "",
-              "examples": [
-                "/home/user/.mitmproxy/mitmproxy-ca-cert.pem",
-                "-----BEGIN CERTIFICATE-----\n...\n-----END CERTIFICATE-----"
-              ]
+              "cacert": {
+                "description": "Either the PEM-encoded CA certificate the proxy uses (replace newlines with `\n`), or the path to the file containing that certificate.",
+                "type": "string",
+                "default": "",
+                "examples": [
+                  "/home/user/.mitmproxy/mitmproxy-ca-cert.pem",
+                  "-----BEGIN CERTIFICATE-----\n...\n-----END CERTIFICATE-----"
+                ]
+              }
             }
           }
         }
