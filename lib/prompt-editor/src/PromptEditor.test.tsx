@@ -3,6 +3,7 @@ import {
     type SerializedContextItem,
     contextItemsFromPromptEditorValue,
     serializedPromptEditorStateFromText,
+    uriStringFromKnownValidString,
 } from '@sourcegraph/cody-shared'
 import { describe, expect, test } from 'vitest'
 
@@ -18,7 +19,7 @@ describe('serializedPromptEditorStateFromText', () => {
         >([
             {
                 type: 'symbol',
-                uri: 'file:///a/b/file1.go',
+                uri: uriStringFromKnownValidString('file:///a/b/file1.go'),
                 range: {
                     start: {
                         line: 2,
@@ -34,11 +35,11 @@ describe('serializedPromptEditorStateFromText', () => {
             },
             {
                 type: 'file',
-                uri: 'file:///dir/dir/file-a-1.py',
+                uri: uriStringFromKnownValidString('file:///dir/dir/file-a-1.py'),
             },
             {
                 type: 'file',
-                uri: 'file:///dir/dir/README.md',
+                uri: uriStringFromKnownValidString('file:///dir/dir/README.md'),
                 range: {
                     end: {
                         character: 0,

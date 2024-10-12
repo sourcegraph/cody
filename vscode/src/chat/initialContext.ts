@@ -22,10 +22,11 @@ import {
     shareReplay,
     startWith,
     switchMap,
+    uriString,
+    uriStringFromKnownValidString,
 } from '@sourcegraph/cody-shared'
 import { Observable, map } from 'observable-fns'
 import * as vscode from 'vscode'
-import { URI } from 'vscode-uri'
 import { getSelectionOrFileContext } from '../commands/context/selection'
 import { createRepositoryMention } from '../context/openctx/common/get-repository-mentions'
 import { remoteReposForAllWorkspaceFolders } from '../repository/remoteRepos'
@@ -216,7 +217,7 @@ export function getCorpusContextItemsForEditorState(): Observable<
                 if (workspaceFolder) {
                     items.push({
                         type: 'tree',
-                        uri: workspaceFolder.uri,
+                        uri: uriString(workspaceFolder.uri),
                         title: 'Current Repository',
                         name: workspaceFolder.name,
                         description: workspaceFolder.name,
@@ -271,7 +272,7 @@ function getOpenCtxContextItems(): Observable<ContextItem[] | typeof pendingOper
                                         ...mention,
                                         provider: 'openctx',
                                         type: 'openctx',
-                                        uri: URI.parse(mention.uri),
+                                        uri: uriStringFromKnownValidString(mention.uri),
                                         source: ContextItemSource.Initial,
                                         mention, // include the original mention to pass to `items` later
                                     }) satisfies ContextItem

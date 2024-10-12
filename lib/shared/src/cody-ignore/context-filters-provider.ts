@@ -5,6 +5,7 @@ import { RE2JS as RE2 } from 're2js'
 import type * as vscode from 'vscode'
 import { currentAuthStatus } from '../auth/authStatus'
 import { isFileURI } from '../common/uri'
+import { type URIString, uriString } from '../common/uriString'
 import { cenv } from '../configuration/environment'
 import { logDebug, logError } from '../logger'
 import { fromVSCodeEvent } from '../misc/observable'
@@ -56,7 +57,7 @@ export type IsIgnored =
     | `repo:${string}`
 
 export type GetRepoNamesContainingUri = (
-    uri: vscode.Uri,
+    uri: URIString,
     signal?: AbortSignal
 ) => Promise<string[] | null>
 type RepoName = string
@@ -252,7 +253,9 @@ export class ContextFiltersProvider implements vscode.Disposable {
             'repoNameResolver.getRepoNamesFromWorkspaceUri',
             span => {
                 span.setAttribute('sampled', true)
-                return ContextFiltersProvider.repoNameResolver.getRepoNamesContainingUri?.(uri)
+                return ContextFiltersProvider.repoNameResolver.getRepoNamesContainingUri?.(
+                    uriString(uri)
+                )
             }
         )
 

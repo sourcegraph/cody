@@ -1,5 +1,5 @@
-import { URI } from 'vscode-uri'
 import type { ContextItemOpenCtx } from '../../codebase-context/messages'
+import { uriStringFromKnownValidString } from '../../common/uriString'
 import { openCtx } from './api'
 
 // getContextForChatMessage returns context items for a given chat message from the OpenCtx providers.
@@ -47,11 +47,11 @@ export const getContextForChatMessage = async (
                     ({
                         type: 'openctx',
                         title: item.title,
-                        uri: URI.parse(item.url || item.providerUri),
+                        uri: uriStringFromKnownValidString(item.url || item.providerUri),
                         providerUri: item.providerUri,
                         content: item.ai?.content || '',
                         provider: 'openctx',
-                    }) as ContextItemOpenCtx
+                    }) satisfies ContextItemOpenCtx
             )
     } catch {
         return []

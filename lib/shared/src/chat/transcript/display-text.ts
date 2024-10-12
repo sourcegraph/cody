@@ -1,5 +1,5 @@
 import type * as vscode from 'vscode'
-import type { URI } from 'vscode-uri'
+import { URI } from 'vscode-uri'
 import type { ContextItem } from '../../codebase-context/messages'
 import type { RangeData } from '../../common/range'
 
@@ -40,11 +40,12 @@ export function webviewOpenURIForContextItem(item: Pick<ContextItem, 'uri' | 'ra
     href: string
     target: '_blank' | undefined
 } {
-    if (item.uri.scheme === 'http' || item.uri.scheme === 'https') {
+    const uri = URI.parse(item.uri)
+    if (uri.scheme === 'http' || uri.scheme === 'https') {
         return {
-            href: item.uri.toString(),
+            href: uri.toString(),
             target: '_blank',
         }
     }
-    return { href: commandURIForVSCodeOpen(item.uri, item.range), target: undefined }
+    return { href: commandURIForVSCodeOpen(uri, item.range), target: undefined }
 }

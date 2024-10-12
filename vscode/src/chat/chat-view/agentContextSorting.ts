@@ -24,7 +24,7 @@ export function sortContextItemsIfInTest(files: ContextItem[]): ContextItem[] {
     // could sort by some numerical score from symf based on how relevant
     // the matches are for the query.
     files.sort((a, b) => {
-        const byPath = a.uri.path.localeCompare(b.uri.path, sortLocale)
+        const byPath = a.uri.localeCompare(b.uri, sortLocale)
         if (byPath !== 0) {
             return byPath
         }

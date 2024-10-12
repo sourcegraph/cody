@@ -12,6 +12,7 @@ import {
     errorToChatError,
     getMockedDotComClientModels,
     ps,
+    uriString,
 } from '@sourcegraph/cody-shared'
 import { useArgs, useCallback, useEffect, useRef, useState } from '@storybook/preview-api'
 import type { ComponentProps } from 'react'
@@ -113,7 +114,7 @@ export const WaitingForAssistantMessageWithContext: StoryObj<typeof meta> = {
             {
                 speaker: 'human',
                 text: ps`What color is the sky?'`,
-                contextFiles: [{ type: 'file', uri: URI.file('/foo.js') }],
+                contextFiles: [{ type: 'file', uri: uriString(URI.file('/foo.js')) }],
             },
         ]),
         messageInProgress: { speaker: 'assistant', model: 'my-llm' },
@@ -141,7 +142,7 @@ export const AssistantMessageInProgress: StoryObj<typeof meta> = {
             {
                 speaker: 'human',
                 text: ps`What color is the sky?'`,
-                contextFiles: [{ type: 'file', uri: URI.file('/foo.js') }],
+                contextFiles: [{ type: 'file', uri: uriString(URI.file('/foo.js')) }],
             },
         ]),
         messageInProgress: {
@@ -194,7 +195,7 @@ export const abortedWithPartialResponse: StoryObj<typeof meta> = {
             {
                 speaker: 'human',
                 text: ps`What color is the sky?`,
-                contextFiles: [{ type: 'file', uri: URI.file('/foo.js') }],
+                contextFiles: [{ type: 'file', uri: uriString(URI.file('/foo.js')) }],
             },
             { speaker: 'assistant', text: ps`Bl`, error: errorToChatError(new Error('aborted')) },
         ]),

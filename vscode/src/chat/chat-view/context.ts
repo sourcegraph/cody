@@ -10,6 +10,7 @@ import {
     isFileURI,
     truncateTextNearestLine,
     uriBasename,
+    uriString,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
 import type { VSCodeEditor } from '../../editor/vscode-editor'
@@ -79,7 +80,7 @@ export async function searchSymf(
                     }
                     return {
                         type: 'file',
-                        uri: result.file,
+                        uri: uriString(result.file),
                         range,
                         source: ContextItemSource.Search,
                         content: text,
@@ -115,7 +116,7 @@ function getVisibleEditorContext(editor: VSCodeEditor): ContextItem[] {
             {
                 type: 'file',
                 content: visible.content,
-                uri: fileUri,
+                uri: uriString(fileUri),
                 source: ContextItemSource.Editor,
             },
         ] satisfies ContextItem[]
@@ -228,7 +229,7 @@ async function getReadmeContext(): Promise<ContextItem[]> {
     return [
         {
             type: 'file',
-            uri: readmeUri,
+            uri: uriString(readmeUri),
             content: truncatedReadmeText,
             range,
             source: ContextItemSource.Editor,

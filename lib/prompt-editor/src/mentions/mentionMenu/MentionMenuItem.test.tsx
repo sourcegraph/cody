@@ -1,4 +1,9 @@
-import type { ContextItem, ContextItemRepository, ContextItemSymbol } from '@sourcegraph/cody-shared'
+import {
+    type ContextItem,
+    type ContextItemRepository,
+    type ContextItemSymbol,
+    uriString,
+} from '@sourcegraph/cody-shared'
 import { describe, expect, it } from 'vitest'
 import { URI } from 'vscode-uri'
 import { getMentionItemTitleAndDisplayName } from './MentionMenuItem'
@@ -7,7 +12,7 @@ describe('getMentionItemTitleAndDisplayName', () => {
     it('should return correct title and displayName for a file', () => {
         const item: ContextItem = {
             type: 'file',
-            uri: URI.parse('file:///path/to/testfile.ts'),
+            uri: uriString(URI.parse('file:///path/to/testfile.ts')),
         }
         const result = getMentionItemTitleAndDisplayName(item)
         expect(result).toEqual({ title: 'testfile.ts', displayName: 'testfile.ts' })
@@ -16,7 +21,7 @@ describe('getMentionItemTitleAndDisplayName', () => {
     it('should use provided title if available', () => {
         const item: ContextItem = {
             type: 'file',
-            uri: URI.parse('file:///path/to/file.ts'),
+            uri: uriString(URI.parse('file:///path/to/file.ts')),
             title: 'Custom Title',
         }
         const result = getMentionItemTitleAndDisplayName(item)
@@ -27,7 +32,7 @@ describe('getMentionItemTitleAndDisplayName', () => {
         const item: ContextItemSymbol = {
             type: 'symbol',
             symbolName: 'ClassSymbol',
-            uri: URI.parse('file:///path/to/file.ts'),
+            uri: uriString(URI.parse('file:///path/to/file.ts')),
             kind: 'class',
         }
         const result = getMentionItemTitleAndDisplayName(item)
@@ -38,7 +43,7 @@ describe('getMentionItemTitleAndDisplayName', () => {
         const item: ContextItemSymbol = {
             type: 'symbol',
             symbolName: 'MethodSymbol',
-            uri: URI.parse('file:///path/to/file.ts'),
+            uri: uriString(URI.parse('file:///path/to/file.ts')),
             kind: 'method',
         }
         const result = getMentionItemTitleAndDisplayName(item)
@@ -51,7 +56,7 @@ describe('getMentionItemTitleAndDisplayName', () => {
             title: 'host.com/org/repo',
             repoName: 'host.com/org/repo',
             repoID: 'host.com/org/repo',
-            uri: URI.parse('https://host.com/org/repo'),
+            uri: uriString(URI.parse('https://host.com/org/repo')),
             content: null,
         }
         const result = getMentionItemTitleAndDisplayName(item)
@@ -64,7 +69,7 @@ describe('getMentionItemTitleAndDisplayName', () => {
             title: 'host.com/org/repo/sub/dir',
             repoName: 'host.com/org/repo/sub/dir',
             repoID: 'host.com/org/repo/sub/dir',
-            uri: URI.parse('https://host.com/org/repo/sub/dir'),
+            uri: uriString(URI.parse('https://host.com/org/repo/sub/dir')),
             content: null,
         }
         const result = getMentionItemTitleAndDisplayName(item)
@@ -77,7 +82,7 @@ describe('getMentionItemTitleAndDisplayName', () => {
             title: 'org/repo',
             repoName: 'org/repo',
             repoID: 'repo',
-            uri: URI.parse('https://host.org/repo'),
+            uri: uriString(URI.parse('https://host.org/repo')),
             content: null,
         }
         const result = getMentionItemTitleAndDisplayName(item)
@@ -90,7 +95,7 @@ describe('getMentionItemTitleAndDisplayName', () => {
             title: 'repo',
             repoName: 'repo',
             repoID: 'repo',
-            uri: URI.parse('https://host.org/repo'),
+            uri: uriString(URI.parse('https://host.org/repo')),
             content: null,
         }
         const result = getMentionItemTitleAndDisplayName(item)

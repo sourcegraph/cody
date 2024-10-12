@@ -7,6 +7,7 @@ import {
     contextFiltersProvider,
     displayPath,
     ps,
+    uriString,
 } from '@sourcegraph/cody-shared'
 import { URI } from 'vscode-uri'
 import { PromptBuilder } from './index'
@@ -23,7 +24,7 @@ describe('PromptBuilder', () => {
         builder.tryAddToPrefix(preamble)
         const file: ContextItem = {
             type: 'file',
-            uri: URI.file('/foo/bar'),
+            uri: uriString(URI.file('/foo/bar')),
             content: 'foobar',
             size: 100,
         }
@@ -35,7 +36,7 @@ describe('PromptBuilder', () => {
         builder.tryAddToPrefix(preamble)
         const file: ContextItem = {
             type: 'file',
-            uri: URI.file('/foo/bar'),
+            uri: uriString(URI.file('/foo/bar')),
             content: 'foobar',
             size: 100,
         }
@@ -164,7 +165,7 @@ describe('PromptBuilder', () => {
 
         const fileWithSameUri: ContextItem = {
             type: 'file',
-            uri: URI.file('/foo/bar.go'),
+            uri: uriString(URI.file('/foo/bar.go')),
             size: 1,
             content: 'foo',
         }

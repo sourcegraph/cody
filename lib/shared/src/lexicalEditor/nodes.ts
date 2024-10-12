@@ -17,6 +17,7 @@ import {
     isRangeProperSubset,
     mergeRanges,
 } from '../common/range'
+import type { URIString } from '../common/uriString'
 import { displayPathBasename } from '../editor/displayPath'
 
 export const CONTEXT_ITEM_MENTION_NODE_TYPE = 'contextItemMention'
@@ -27,7 +28,7 @@ export const TEMPLATE_INPUT_NODE_TYPE = 'templateInput'
  * item mentions.
  */
 export type SerializedContextItem = {
-    uri: string
+    uri: URIString
     title?: string
     content?: undefined
     source?: ContextItemSource
@@ -69,7 +70,6 @@ export function serializeContextItem(
     // could accidentally include tons of data (including the entire contents of files).
     return {
         ...contextItem,
-        uri: contextItem.uri.toString(),
 
         // Don't include the `content` (if it's present) because it's quite large, and we don't need
         // to serialize it here. It can be hydrated on demand.
@@ -78,7 +78,7 @@ export function serializeContextItem(
 }
 
 export function deserializeContextItem(contextItem: SerializedContextItem): ContextItem {
-    return { ...contextItem, uri: URI.parse(contextItem.uri) } as ContextItem
+    return { ...contextItem } as ContextItem
 }
 
 export function isSerializedContextItemMentionNode(

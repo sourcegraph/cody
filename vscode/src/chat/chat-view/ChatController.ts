@@ -13,6 +13,7 @@ import {
     shareReplay,
     skip,
     skipPendingOperation,
+    uriString,
 } from '@sourcegraph/cody-shared'
 import * as uuid from 'uuid'
 import * as vscode from 'vscode'
@@ -533,7 +534,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
 
         const configForWebview = await this.getConfigForWebview()
         const workspaceFolderUris =
-            vscode.workspace.workspaceFolders?.map(folder => folder.uri.toString()) ?? []
+            vscode.workspace.workspaceFolders?.map(folder => uriString(folder.uri)) ?? []
 
         const abortController = new AbortController()
         let clientConfig: CodyClientConfig | undefined

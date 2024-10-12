@@ -4,7 +4,10 @@ import type * as vscode from 'vscode'
 import {
     type AutocompleteContextSnippet,
     type AutocompleteSymbolContextSnippet,
+    type URIString,
     isDefined,
+    uriString,
+    uriStringFromKnownValidString,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
 
@@ -128,7 +131,9 @@ async function getSnippetForLocationGetter(
 
     const symbolContextSnippet = {
         identifier: RetrieverIdentifier.LspLightRetriever,
-        key: `${definitionUri}::${definitionRange.start.line}:${definitionRange.start.character}`,
+        key: `${uriString(definitionUri)}::${definitionRange.start.line}:${
+            definitionRange.start.character
+        }`,
         uri: definitionUri,
         startLine: definitionRange.start.line,
         endLine: definitionRange.end.line,
@@ -487,12 +492,11 @@ interface DefinitionCacheEntryValue {
 type DefinitionCacheEntry = DefinitionCacheEntryValue | typeof EMPTY_CACHE_ENTRY
 
 type LocationRangeStart = `${string}:${string}`
-type UriString = string
 type DefinitionCacheKey = LocationRangeStart
-type DefinitionCacheEntryPath = `${UriString}::${DefinitionCacheKey}`
+type DefinitionCacheEntryPath = `${URIString}::${DefinitionCacheKey}`
 
 type DefinitionLocationCacheKey = string
-type DefinitionLocationCacheEntryPath = `${UriString}::${DefinitionLocationCacheKey}`
+type DefinitionLocationCacheEntryPath = `${URIString}::${DefinitionLocationCacheKey}`
 type DefinitionLocationCacheEntry = vscode.Location[] | typeof EMPTY_CACHE_ENTRY
 
 const MAX_CACHED_DOCUMENTS = 100
@@ -504,7 +508,7 @@ const MAX_CACHED_DEFINITIONS = 100
  */
 class DefinitionCache {
     private isDisabled = IS_LSP_LIGHT_CACHE_DISABLED
-    public cache = new LRUCache<UriString, LRUCache<DefinitionCacheKey, DefinitionCacheEntry>>({
+    public cache = new LRUCache<URIString, LRUCache<DefinitionCacheKey, DefinitionCacheEntry>>({
         max: MAX_CACHED_DOCUMENTS,
     })
 
@@ -517,7 +521,7 @@ class DefinitionCache {
             return undefined
         }
 
-        const documentCache = this.cache.get(location.uri.toString())
+        const documentCache = this.cache.get(uriString(location.uri))
         if (!documentCache) {
             return undefined
         }
@@ -527,11 +531,11 @@ class DefinitionCache {
 
     public getByPath(path: DefinitionCacheEntryPath): DefinitionCacheEntry | undefined {
         const [uri, key] = path.split('::')
-        return this.cache.get(uri)?.get(key as DefinitionCacheKey)
+        return this.cache.get(uriStringFromKnownValidString(uri))?.get(key as DefinitionCacheKey)
     }
 
     public set(location: vscode.Location, locations: DefinitionCacheEntry): void {
-        const uri = location.uri.toString()
+        const uri = uriString(location.uri)
         let documentCache = this.cache.get(uri)
         if (!documentCache) {
             documentCache = new LRUCache({
@@ -544,14 +548,14 @@ class DefinitionCache {
     }
 
     public delete(location: vscode.Location): void {
-        const documentCache = this.cache.get(location.uri.toString())
+        const documentCache = this.cache.get(uriString(location.uri))
 
         if (documentCache) {
             documentCache.delete(this.toDefinitionCacheKey(location))
         }
     }
 
-    public deleteDocument(uri: string) {
+    public deleteDocument(uri: URIString) {
         this.cache.delete(uri)
     }
 }
@@ -569,7 +573,7 @@ const definitionCache = new DefinitionCache()
 class DefinitionLocationCache {
     private isDisabled = IS_LSP_LIGHT_CACHE_DISABLED
     public cache = new LRUCache<
-        UriString,
+        URIString,
         LRUCache<DefinitionLocationCacheKey, DefinitionLocationCacheEntry>
     >({
         max: MAX_CACHED_DOCUMENTS,
@@ -579,7 +583,7 @@ class DefinitionLocationCache {
      * Keeps track of the cache keys for each document so that we can quickly
      * invalidate the cache when a document is changed.
      */
-    public documentToLocationCacheKeyMap = new Map<UriString, Set<DefinitionLocationCacheEntryPath>>()
+    public documentToLocationCacheKeyMap = new Map<URIString, Set<DefinitionLocationCacheEntryPath>>()
 
     public toDefinitionLocationCacheKey(request: SymbolSnippetsRequest): DefinitionLocationCacheKey {
         const { position, nodeType, symbolName } = request
@@ -591,7 +595,7 @@ class DefinitionLocationCache {
             return undefined
         }
 
-        const documentCache = this.cache.get(request.uri.toString())
+        const documentCache = this.cache.get(uriString(request.uri))
         if (!documentCache) {
             return undefined
         }
@@ -600,7 +604,7 @@ class DefinitionLocationCache {
     }
 
     public set(request: SymbolSnippetsRequest, value: DefinitionLocationCacheEntry): void {
-        const uri = request.uri.toString()
+        const uri = uriString(request.uri)
         let documentCache = this.cache.get(uri)
         if (!documentCache) {
             documentCache = new LRUCache({
@@ -614,27 +618,27 @@ class DefinitionLocationCache {
 
         if (!isEmptyCacheEntry(value)) {
             for (const location of value) {
-                this.addToDocumentToCacheKeyMap(location.uri.toString(), `${uri}::${locationCacheKey}`)
+                this.addToDocumentToCacheKeyMap(uriString(location.uri), `${uri}::${locationCacheKey}`)
             }
         }
     }
 
     public delete(request: SymbolSnippetsRequest): void {
-        const documentCache = this.cache.get(request.uri.toString())
+        const documentCache = this.cache.get(uriString(request.uri))
 
         if (documentCache) {
             documentCache.delete(this.toDefinitionLocationCacheKey(request))
         }
     }
 
-    addToDocumentToCacheKeyMap(uri: string, cacheKey: DefinitionLocationCacheEntryPath) {
+    addToDocumentToCacheKeyMap(uri: URIString, cacheKey: DefinitionLocationCacheEntryPath) {
         if (!this.documentToLocationCacheKeyMap.has(uri)) {
             this.documentToLocationCacheKeyMap.set(uri, new Set())
         }
         this.documentToLocationCacheKeyMap.get(uri)!.add(cacheKey)
     }
 
-    removeFromDocumentToCacheKeyMap(uri: string, cacheKey: DefinitionLocationCacheEntryPath) {
+    removeFromDocumentToCacheKeyMap(uri: URIString, cacheKey: DefinitionLocationCacheEntryPath) {
         if (this.documentToLocationCacheKeyMap.has(uri)) {
             this.documentToLocationCacheKeyMap.get(uri)!.delete(cacheKey)
             if (this.documentToLocationCacheKeyMap.get(uri)!.size === 0) {
@@ -643,13 +647,13 @@ class DefinitionLocationCache {
         }
     }
 
-    invalidateEntriesForDocument(uri: string) {
+    invalidateEntriesForDocument(uri: URIString) {
         if (this.documentToLocationCacheKeyMap.has(uri)) {
             const cacheKeysToRemove = this.documentToLocationCacheKeyMap.get(uri)!
             for (const cacheKey of cacheKeysToRemove) {
                 const [uri, key] = cacheKey.split('::')
-                this.cache.get(uri)?.delete(key)
-                this.removeFromDocumentToCacheKeyMap(uri, cacheKey)
+                this.cache.get(uriStringFromKnownValidString(uri))?.delete(key)
+                this.removeFromDocumentToCacheKeyMap(uriStringFromKnownValidString(uri), cacheKey)
             }
         }
     }
@@ -658,11 +662,11 @@ class DefinitionLocationCache {
 const definitionLocationCache = new DefinitionLocationCache()
 
 export function invalidateDocumentCache(document: vscode.TextDocument) {
-    const uriString = document.uri.toString()
+    const uri = uriString(document.uri)
 
     // Remove cache items that depend on the updated document
-    definitionCache.deleteDocument(uriString)
-    definitionLocationCache.invalidateEntriesForDocument(uriString)
+    definitionCache.deleteDocument(uri)
+    definitionLocationCache.invalidateEntriesForDocument(uri)
 }
 
 // TODO: make the incremental symbol resolution work with caching. The integration test snapshots should be updated

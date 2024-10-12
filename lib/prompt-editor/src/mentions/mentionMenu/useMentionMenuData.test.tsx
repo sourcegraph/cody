@@ -5,6 +5,7 @@ import {
     FILE_CONTEXT_MENTION_PROVIDER,
     type MentionMenuData,
     promiseToObservable,
+    uriString,
 } from '@sourcegraph/cody-shared'
 import { renderHook } from '@testing-library/react'
 import { Observable } from 'observable-fns'
@@ -22,7 +23,7 @@ describe('useMentionMenuData', () => {
     describe('initial context deduping', () => {
         test('items does not duplicate items from initialContextItems', async () => {
             const file1: ContextItem = {
-                uri: URI.file('file1.ts'),
+                uri: uriString(URI.file('file1.ts')),
                 type: 'file',
                 isTooLarge: undefined,
                 source: ContextItemSource.User,
@@ -30,13 +31,13 @@ describe('useMentionMenuData', () => {
             const mockContextItems: ContextItem[] = [
                 file1,
                 {
-                    uri: URI.file('file2.ts'),
+                    uri: uriString(URI.file('file2.ts')),
                     type: 'file',
                     isTooLarge: undefined,
                     source: ContextItemSource.User,
                 },
                 {
-                    uri: URI.file('file3.ts'),
+                    uri: uriString(URI.file('file3.ts')),
                     type: 'file',
                     isTooLarge: undefined,
                     source: ContextItemSource.User,
@@ -129,7 +130,7 @@ describe('useMentionMenuData', () => {
 
 describe('useCallMentionMenuData', () => {
     test('returns filtered providers and items based on query', async () => {
-        const CONTEXT_ITEM: ContextItem = { type: 'file', uri: URI.file('foo.go') }
+        const CONTEXT_ITEM: ContextItem = { type: 'file', uri: uriString(URI.file('foo.go')) }
 
         let resolve: (items: MentionMenuData) => void
         const dataPromise = new Promise<MentionMenuData>(resolve_ => {

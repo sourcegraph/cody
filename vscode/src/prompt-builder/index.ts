@@ -8,6 +8,7 @@ import {
     ps,
 } from '@sourcegraph/cody-shared'
 import type { ContextTokenUsageType } from '@sourcegraph/cody-shared/src/token'
+import { Uri } from 'vscode'
 import { sortContextItemsIfInTest } from '../chat/chat-view/agentContextSorting'
 import { getUniqueContextItems, isUniqueContextItem } from './unique-context'
 import { getContextItemTokenUsageType, renderContextItem } from './utils'
@@ -123,8 +124,9 @@ export class PromptBuilder {
         contextItems = sortContextItemsIfInTest(contextItems)
 
         for (const item of contextItems) {
+            const itemUri = Uri.parse(item.uri)
             // Skip context items that are in the Cody ignore list
-            if (await contextFiltersProvider.isUriIgnored(item.uri)) {
+            if (await contextFiltersProvider.isUriIgnored(itemUri)) {
                 result.ignored.push(item)
                 continue
             }
@@ -134,7 +136,7 @@ export class PromptBuilder {
             // ignored on a client to always be treated as ignored.
             if (
                 item.type === 'file' &&
-                (item.uri.scheme === 'https' || item.uri.scheme === 'http') &&
+                (itemUri.scheme === 'https' || itemUri.scheme === 'http') &&
                 item.repoName &&
                 (await contextFiltersProvider.isRepoNameIgnored(item.repoName))
             ) {

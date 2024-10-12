@@ -1,16 +1,22 @@
-import { type ContextItem, isWindows } from '@sourcegraph/cody-shared'
+import { type ContextItem, isWindows, uriStringFromKnownValidString } from '@sourcegraph/cody-shared'
 import { describe, expect, test, vi } from 'vitest'
 import * as vscode from 'vscode'
 import { explainCommand } from './explain'
 
 vi.mock('../context/selection', () => ({
     getContextFileFromCursor: () =>
-        Promise.resolve<ContextItem>({ type: 'file', uri: vscode.Uri.file('foo.go') }),
+        Promise.resolve<ContextItem>({
+            type: 'file',
+            uri: uriStringFromKnownValidString('file:///foo.go'),
+        }),
 }))
 
 vi.mock('../context/current-file', () => ({
     getContextFileFromCurrentFile: () =>
-        Promise.resolve<ContextItem>({ type: 'file', uri: vscode.Uri.file('bar.go') }),
+        Promise.resolve<ContextItem>({
+            type: 'file',
+            uri: uriStringFromKnownValidString('file:///bar.go'),
+        }),
 }))
 
 describe('explainCommand', () => {

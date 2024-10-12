@@ -1,4 +1,4 @@
-import type { ContextItem } from '@sourcegraph/cody-shared'
+import { type ContextItem, uriStringFromKnownValidString } from '@sourcegraph/cody-shared'
 import { describe, expect, it } from 'vitest'
 import * as vscode from 'vscode'
 import { type Root, filterLocallyModifiedFilesOutOfRemoteContext } from './ContextRetriever'
@@ -30,21 +30,21 @@ describe('filterLocallyModifiedFilesOutOfRemoteContext', () => {
                         type: 'file',
                         title: 'README.md',
                         repoName: 'github.com/my/repo',
-                        uri: vscode.Uri.parse('https://example.com/1'),
+                        uri: uriStringFromKnownValidString('https://example.com/1'),
                     },
                     {
                         // Doesn't match relative file path
                         type: 'file',
                         title: 'main.go',
                         repoName: 'github.com/my/repo',
-                        uri: vscode.Uri.parse('https://example.com/2'),
+                        uri: uriStringFromKnownValidString('https://example.com/2'),
                     },
                     {
                         // Doesn't match repo name
                         type: 'file',
                         title: 'README.md',
                         repoName: 'github.com/my/other-repo',
-                        uri: vscode.Uri.parse('https://example.com/3'),
+                        uri: uriStringFromKnownValidString('https://example.com/3'),
                     },
                 ],
                 expectedFilteredRemoteContextItems: [
@@ -53,14 +53,14 @@ describe('filterLocallyModifiedFilesOutOfRemoteContext', () => {
                         type: 'file',
                         title: 'main.go',
                         repoName: 'github.com/my/repo',
-                        uri: vscode.Uri.parse('https://example.com/2'),
+                        uri: uriStringFromKnownValidString('https://example.com/2'),
                     },
                     {
                         // Doesn't match repo name
                         type: 'file',
                         title: 'README.md',
                         repoName: 'github.com/my/other-repo',
-                        uri: vscode.Uri.parse('https://example.com/3'),
+                        uri: uriStringFromKnownValidString('https://example.com/3'),
                     },
                 ],
             },

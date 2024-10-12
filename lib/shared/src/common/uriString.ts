@@ -18,8 +18,16 @@ export type URIString = string & { __brand: 'URIString' }
 /**
  * Create a {@link URIString} from a `vscode-uri` {@link URI} or a `vscode` {@link vscodeUri}.
  *
- * This function is the only way to create a {@link URIString} value.
+ * This function is the only safe way to create a {@link URIString} value.
  */
 export function uriString(uri: URI | vscodeUri): URIString {
     return uri.toString() as URIString
+}
+
+/**
+ * Create a {@link URIString} from a string that is already known to be a valid URI. Use
+ * {@link uriString} as `uriString(URI.parse(str))` unless you are sure that `str` is a valid URI.
+ */
+export function uriStringFromKnownValidString(knownValidURIString: string): URIString {
+    return knownValidURIString as URIString
 }

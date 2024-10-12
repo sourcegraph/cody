@@ -12,6 +12,7 @@ import {
     mockResolvedConfig,
     modelsService,
     ps,
+    uriStringFromKnownValidString,
 } from '@sourcegraph/cody-shared'
 import { Observable } from 'observable-fns'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -75,7 +76,7 @@ describe('DeepCody', () => {
 
         mockCurrentContext = [
             {
-                uri: URI.file('/path/to/file.ts'),
+                uri: uriStringFromKnownValidString('file:///path/to/file.ts'),
                 type: 'file',
                 isTooLarge: undefined,
                 source: ContextItemSource.User,
@@ -127,7 +128,7 @@ describe('DeepCody', () => {
             Observable.of([
                 {
                     type: 'tree',
-                    uri: URI.file('/path/to/repo/'),
+                    uri: uriStringFromKnownValidString('file:///path/to/repo/'),
                     name: 'Mock Repository',
                     isWorkspaceRoot: true,
                     content: null,

@@ -1,11 +1,13 @@
 import dedent from 'dedent'
 import type * as vscode from 'vscode'
+import { URI } from 'vscode-uri'
 import type { ChatMessage, SerializedChatMessage } from '../chat/transcript/messages'
 import type { ContextItem } from '../codebase-context/messages'
 import type { ContextFiltersProvider } from '../cody-ignore/context-filters-provider'
 import type { TerminalOutputArguments } from '../commands/types'
 import { markdownCodeBlockLanguageIDForFilename } from '../common/languages'
 import type { RangeData } from '../common/range'
+import { type URIString, uriString } from '../common/uriString'
 import type { AutocompleteContextSnippet, DocumentContext, GitContext } from '../completions/types'
 import type { ActiveTextEditorDiagnostic } from '../editor'
 import { createGitDiff } from '../editor/create-git-diff'
@@ -61,7 +63,8 @@ export class PromptString {
     ): Promise<string> {
         const references = internal_toReferences(this)
         const checks = references.map(
-            async reference => [reference, await contextFilter.isUriIgnored(reference)] as const
+            async reference =>
+                [reference, await contextFilter.isUriIgnored(URI.parse(reference))] as const
         )
         const resolved = await Promise.all(checks)
 
@@ -75,9 +78,10 @@ export class PromptString {
                     `${reference} is ignored by the current context filters. Reason: ${reason}`,
                     { verbose: contextFilter.toDebugObject() }
                 )
+                const referenceUri = URI.parse(reference)
                 telemetryRecorder.recordEvent('contextFilters.promptString', 'illegalReference', {
                     privateMetadata: {
-                        scheme: reference.scheme,
+                        scheme: referenceUri.scheme,
                         reason,
                     },
                 })
@@ -242,12 +246,16 @@ export class PromptString {
     }
 
     public static fromDisplayPath(uri: vscode.Uri) {
-        return internal_createPromptString(PromptString.sanitizeDisplayPath(displayPath(uri)), [uri])
+        return internal_createPromptString(PromptString.sanitizeDisplayPath(displayPath(uri)), [
+            uriString(uri),
+        ])
     }
 
     public static fromDisplayPathLineRange(uri: vscode.Uri, range?: RangeData) {
         const pathToDisplay = range ? displayPathWithLines(uri, range) : displayPath(uri)
-        return internal_createPromptString(PromptString.sanitizeDisplayPath(pathToDisplay), [uri])
+        return internal_createPromptString(PromptString.sanitizeDisplayPath(pathToDisplay), [
+            uriString(uri),
+        ])
     }
 
     public static fromDocumentText(document: vscode.TextDocument, range?: vscode.Range): PromptString {
@@ -470,7 +478,7 @@ export function psDedent(format: TemplateStringsArray, ...args: TemplateArgs): P
 // WeakMap. Consumers can do what they like with the PromptString, all of the
 // operations use data in the map and so are protected from the PromptString
 // constructor being disclosed, prototype pollution, property manipulation, etc.
-type StringReference = vscode.Uri
+type StringReference = URIString
 const pocket = new WeakMap<PromptString, PromptStringPocket>()
 class PromptStringPocket {
     constructor(
@@ -484,12 +492,18 @@ class PromptStringPocket {
 
 function internal_createPromptString(
     string: string,
-    references: readonly StringReference[]
+    references: readonly (StringReference | URI | vscode.Uri)[]
 ): PromptString {
     const handle = new PromptString(string)
     // Create a shallow copy of the references list as a set, so it's both de-duped
     // and can not be mutated by the caller
-    pocket.set(handle, new PromptStringPocket(string, new Set(references)))
+    pocket.set(
+        handle,
+        new PromptStringPocket(
+            string,
+            new Set(references.map(r => (typeof r === 'string' ? r : uriString(r))))
+        )
+    )
     return handle
 }
 function internal_toString(s: PromptString): string {

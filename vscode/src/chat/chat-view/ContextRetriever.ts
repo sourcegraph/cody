@@ -12,9 +12,11 @@ import {
     type FileURI,
     type PromptString,
     type SourcegraphCompletionsClient,
+    type URIString,
     firstResultFromOperation,
     graphqlClient,
     isFileURI,
+    uriString,
 } from '@sourcegraph/cody-shared'
 import isError from 'lodash/isError'
 import * as vscode from 'vscode'
@@ -76,7 +78,7 @@ export interface Root {
     /**
      * The absolute path on local disk
      */
-    local?: vscode.Uri
+    local?: URIString
 
     /**
      * List of repository remotes associated with the codebase.
@@ -191,7 +193,7 @@ export class ContextRetriever implements vscode.Disposable {
         }
 
         // Retrieve context from locally edited files
-        const localRoots: vscode.Uri[] = []
+        const localRoots: URIString[] = []
         for (const root of roots) {
             if (!root.local) {
                 continue
@@ -203,7 +205,7 @@ export class ContextRetriever implements vscode.Disposable {
         let changedFiles: string[] = []
         try {
             changedFilesByRoot = await Promise.all(
-                localRoots.map(root => gitLocallyModifiedFiles(root, signal))
+                localRoots.map(root => gitLocallyModifiedFiles(vscode.Uri.parse(root), signal))
             )
             changedFiles = changedFilesByRoot.flat()
         } catch (error) {
@@ -261,7 +263,7 @@ export class ContextRetriever implements vscode.Disposable {
                     }
                     return {
                         type: 'file',
-                        uri: r.file,
+                        uri: uriString(r.file),
                         range,
                         source: ContextItemSource.Search,
                         content: text,
