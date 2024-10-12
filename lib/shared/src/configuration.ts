@@ -124,6 +124,11 @@ export enum CodyIDE {
     Web = 'Web',
     VisualStudio = 'VisualStudio',
     Eclipse = 'Eclipse',
+
+    /**
+     * The standalone web client in the Cody repository's `web/` tree.
+     */
+    StandaloneWeb = 'StandaloneWeb',
 }
 
 export type AutocompleteProviderID = keyof typeof AUTOCOMPLETE_PROVIDER_ID
