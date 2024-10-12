@@ -94,6 +94,7 @@ import { CodyTerminal } from './services/CodyTerminal'
 import { showFeedbackSupportQuickPick } from './services/FeedbackOptions'
 import { displayHistoryQuickPick } from './services/HistoryChat'
 import { localStorage } from './services/LocalStorageProvider'
+import { NetworkDiagnostics } from './services/NetworkDiagnostics'
 import { VSCodeSecretStorage, secretStorage } from './services/SecretStorageProvider'
 import { registerSidebarCommands } from './services/SidebarCommands'
 import { CodyStatusBar } from './services/StatusBar'
@@ -118,13 +119,7 @@ export async function start(
 ): Promise<vscode.Disposable> {
     const disposables: vscode.Disposable[] = []
 
-    // Important! This needs to happen before we resolve the config
-    // Otherwise some eager beavers might start making network requests
-    const proxyAgent = await platform.initializeNetworkAgent?.()
-    if (proxyAgent) {
-        disposables.push(proxyAgent)
-    }
-
+    //TODO: Add override flag
     const isExtensionModeDevOrTest =
         context.extensionMode === vscode.ExtensionMode.Development ||
         context.extensionMode === vscode.ExtensionMode.Test
@@ -267,11 +262,20 @@ const register = async (
     )
     disposables.push(chatsController)
 
-    const statusBar = CodyStatusBar.init(disposables)
     disposables.push(
         subscriptionDisposable(
             exposeOpenCtxClient(context, platform.createOpenCtxController).subscribe({})
         )
+    )
+
+    const statusBar = CodyStatusBar.init()
+    disposables.push(statusBar)
+
+    disposables.push(
+        NetworkDiagnostics.init({
+            statusBar,
+            agent: platform.networkAgent ?? null,
+        })
     )
 
     registerAutocomplete(platform, statusBar, disposables)

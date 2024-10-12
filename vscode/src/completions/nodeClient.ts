@@ -66,9 +66,6 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
 
             const log = this.logger?.startCompletion(params, url.toString())
 
-            const a = http.request
-            const b = https.request
-            console.log(a, b)
             const requestFn = url.protocol === 'https:' ? https.request : http.request
 
             // Keep track if we have send any message to the completion callbacks
@@ -113,7 +110,7 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                     // So we can send requests to the Sourcegraph local development instance, which has an incompatible cert.
                     //TODO: THIS MUST NOT BE DONE HERE!
                     // rejectUnauthorized: process.env.NODE_TLS_REJECT_UNAUTHORIZED !== '0',
-                    agent: globalAgentRef.curr,
+                    agent: globalAgentRef.agent,
                 },
                 (res: http.IncomingMessage) => {
                     const { 'set-cookie': _setCookie, ...safeHeaders } = res.headers

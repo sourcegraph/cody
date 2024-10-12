@@ -14,9 +14,9 @@ export function fetch(input: RequestInfo | URL, init?: RequestInit): Promise<Bro
     addCodyClientIdentificationHeaders(headers)
     init.headers = headers
 
-    const initWithAgent: RequestInit & { agent: typeof globalAgentRef.curr } = {
+    const initWithAgent: RequestInit & { agent: typeof globalAgentRef.agent } = {
         ...init,
-        agent: globalAgentRef.curr,
+        agent: globalAgentRef.agent,
     }
     return isomorphicFetch(input, initWithAgent)
 }

@@ -130,6 +130,7 @@ export function isNetworkLikeError(error: Error): boolean {
         message.includes('ECONNREFUSED') ||
         message.includes('ECONNRESET') ||
         message.includes('EHOSTUNREACH') ||
-        message.includes('ETIMEDOUT')
+        message.includes('ETIMEDOUT') ||
+        message.includes('SELF_SIGNED_CERT_IN_CHAIN')
     )
 }
