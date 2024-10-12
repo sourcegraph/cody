@@ -5,7 +5,7 @@ import com.google.gson.annotations.SerializedName;
 
 data class WebviewNativeConfig(
   val view: ViewEnum, // Oneof: multiple, single
-  val cspSource: String,
+  val cspSource: String? = null,
   val webviewBundleServingPrefix: String? = null,
   val skipResourceRelativization: Boolean? = null,
   val injectScript: String? = null,

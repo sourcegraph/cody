@@ -2,7 +2,7 @@ import type {
     AuthCredentials,
     AuthStatus,
     ChatMessage,
-    ClientCapabilities,
+    ClientCapabilitiesWithLegacyFields,
     ClientConfiguration,
     CodyIDE,
     ContextItem,
@@ -136,7 +136,7 @@ export type ExtensionMessage =
     | {
           type: 'config'
           config: ConfigurationSubsetForWebview & LocalEnv
-          clientCapabilities: ClientCapabilities
+          clientCapabilities: ClientCapabilitiesWithLegacyFields
           authStatus: AuthStatus
           userProductSubscription?: UserProductSubscription | null | undefined
           configFeatures: {
