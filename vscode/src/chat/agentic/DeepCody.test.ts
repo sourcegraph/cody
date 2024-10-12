@@ -1,12 +1,15 @@
 import {
     AUTH_STATUS_FIXTURE_AUTHED,
     type AuthenticatedAuthStatus,
+    CLIENT_CAPABILITIES_FIXTURE,
     type ChatClient,
     type ContextItem,
     ContextItemSource,
     DOTCOM_URL,
     featureFlagProvider,
     mockAuthStatus,
+    mockClientCapabilities,
+    mockResolvedConfig,
     modelsService,
     ps,
 } from '@sourcegraph/cody-shared'
@@ -40,6 +43,8 @@ describe('DeepCody', () => {
     let mockCurrentContext: ContextItem[]
 
     beforeEach(() => {
+        mockResolvedConfig({ configuration: {} })
+        mockClientCapabilities(CLIENT_CAPABILITIES_FIXTURE)
         mockAuthStatus(codyProAuthStatus)
         mockChatBuilder = {
             selectedModel: 'anthropic::2023-06-01::deep-cody',
