@@ -9,7 +9,7 @@ import type {
     Range as VSCodeRange,
 } from 'vscode'
 
-import { type ClientConfiguration, OLLAMA_DEFAULT_URL, ps } from '@sourcegraph/cody-shared'
+import { type ClientConfiguration, OLLAMA_DEFAULT_URL } from '@sourcegraph/cody-shared'
 
 import path from 'node:path'
 import { AgentEventEmitter as EventEmitter } from './AgentEventEmitter'
@@ -873,8 +873,6 @@ export const DEFAULT_VSCODE_SETTINGS = {
     codebase: '',
     serverEndpoint: undefined,
     customHeaders: undefined,
-    chatPreInstruction: ps``,
-    editPreInstruction: ps``,
     autocomplete: true,
     autocompleteLanguages: {
         '*': true,

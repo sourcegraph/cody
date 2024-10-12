@@ -30,8 +30,8 @@ interface RawClientConfiguration {
 
     serverEndpoint?: string
     customHeaders?: Record<string, string>
-    chatPreInstruction: PromptString
-    editPreInstruction: PromptString
+    chatPreInstruction?: PromptString
+    editPreInstruction?: PromptString
     codeActions: boolean
     commandHints: boolean
     commandCodeLenses: boolean
