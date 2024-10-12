@@ -12,7 +12,6 @@ import {
 } from 'react'
 
 import { clsx } from 'clsx'
-import VisibilitySensor from 'react-visibility-sensor'
 
 import type {
     ChunkMatch,
@@ -34,9 +33,10 @@ import {
 } from './utils'
 
 import type { Observable } from 'observable-fns'
+import { useInView } from 'react-intersection-observer'
 import styles from './CodeSnippet.module.css'
 
-const DEFAULT_VISIBILITY_OFFSET = { bottom: -500 }
+const DEFAULT_VISIBILITY_OFFSET = '500px'
 
 export interface FetchFileParameters {
     repoName: string
@@ -99,7 +99,6 @@ export const FileContentSearchResult: FC<PropsWithChildren<FileContentSearchResu
 
     // States
     const [expanded, setExpanded] = useState(allExpanded || defaultExpanded)
-    const [hasBeenVisible, setHasBeenVisible] = useState(false)
     const [expandedGroups, setExpandedGroups] = useState(unhighlightedGroups)
 
     // Calculated state
@@ -114,38 +113,45 @@ export const FileContentSearchResult: FC<PropsWithChildren<FileContentSearchResu
 
     useEffect(() => setExpanded(allExpanded || defaultExpanded), [allExpanded, defaultExpanded])
 
-    const handleVisibility = useCallback(() => {
-        if (hasBeenVisible || !fetchHighlightedFileLineRanges) {
-            return
-        }
+    const handleVisibility = useCallback(
+        (inView: boolean, entry: IntersectionObserverEntry) => {
+            if (!inView) {
+                return
+            }
+            if (!fetchHighlightedFileLineRanges) {
+                return
+            }
 
-        setHasBeenVisible(true)
+            // This file contains some large lines, avoid stressing
+            // syntax-highlighter and the browser.
+            if (result.chunkMatches?.some(chunk => chunk.contentTruncated)) {
+                return
+            }
 
-        // This file contains some large lines, avoid stressing
-        // syntax-highlighter and the browser.
-        if (result.chunkMatches?.some(chunk => chunk.contentTruncated)) {
-            return
-        }
-
-        fetchHighlightedFileLineRanges(
-            {
-                repoName: result.repository,
-                commitID: result.commit || '',
-                filePath: result.path,
-                disableTimeout: false,
-                // Explicitly narrow the object otherwise we'll send a bunch of extra data in the request.
-                ranges: unhighlightedGroups.map(({ startLine, endLine }) => ({ startLine, endLine })),
-            },
-            false
-        ).subscribe(res => {
-            setExpandedGroups(
-                unhighlightedGroups.map((group, i) => ({
-                    ...group,
-                    highlightedHTMLRows: res[i],
-                }))
-            )
-        })
-    }, [fetchHighlightedFileLineRanges, hasBeenVisible, unhighlightedGroups, result])
+            fetchHighlightedFileLineRanges(
+                {
+                    repoName: result.repository,
+                    commitID: result.commit || '',
+                    filePath: result.path,
+                    disableTimeout: false,
+                    // Explicitly narrow the object otherwise we'll send a bunch of extra data in the request.
+                    ranges: unhighlightedGroups.map(({ startLine, endLine }) => ({
+                        startLine,
+                        endLine,
+                    })),
+                },
+                false
+            ).subscribe(res => {
+                setExpandedGroups(
+                    unhighlightedGroups.map((group, i) => ({
+                        ...group,
+                        highlightedHTMLRows: res[i],
+                    }))
+                )
+            })
+        },
+        [fetchHighlightedFileLineRanges, unhighlightedGroups, result]
+    )
 
     const toggleExpand = useCallback((): void => {
         if (expandable) {
@@ -185,6 +191,13 @@ export const FileContentSearchResult: FC<PropsWithChildren<FileContentSearchResu
         />
     )
 
+    const [ref] = useInView({
+        rootMargin: `0px 0px ${DEFAULT_VISIBILITY_OFFSET} 0px`,
+        onChange: handleVisibility,
+        threshold: 0,
+        triggerOnce: true,
+    })
+
     return (
         <ResultContainer
             ref={rootRef}
@@ -197,41 +210,35 @@ export const FileContentSearchResult: FC<PropsWithChildren<FileContentSearchResu
             repoLastFetched={result.repoLastFetched}
             collapsed={hidden}
         >
-            <VisibilitySensor
-                partialVisibility={true}
-                offset={DEFAULT_VISIBILITY_OFFSET}
-                onChange={(visible: boolean) => visible && handleVisibility()}
-            >
-                <div data-expanded={expanded}>
-                    <FileMatchChildren
-                        serverEndpoint={serverEndpoint}
-                        result={result}
-                        grouped={expanded ? expandedGroups : collapsedGroups}
-                    />
-                    {expandable && (
-                        <button
-                            type="button"
-                            className={clsx(
-                                styles.toggleMatchesButton,
-                                styles.focusableBlock,
-                                styles.clickable,
-                                { [styles.toggleMatchesButtonExpanded]: expanded }
-                            )}
-                            onClick={toggleExpand}
-                        >
-                            <span className={styles.toggleMatchesButtonText}>
-                                {expanded
-                                    ? 'Show less'
-                                    : `Show ${hiddenMatchesCount} more ${pluralize(
-                                          'match',
-                                          hiddenMatchesCount,
-                                          'matches'
-                                      )}`}
-                            </span>
-                        </button>
-                    )}
-                </div>
-            </VisibilitySensor>
+            <div ref={ref} data-expanded={expanded}>
+                <FileMatchChildren
+                    serverEndpoint={serverEndpoint}
+                    result={result}
+                    grouped={expanded ? expandedGroups : collapsedGroups}
+                />
+                {expandable && (
+                    <button
+                        type="button"
+                        className={clsx(
+                            styles.toggleMatchesButton,
+                            styles.focusableBlock,
+                            styles.clickable,
+                            { [styles.toggleMatchesButtonExpanded]: expanded }
+                        )}
+                        onClick={toggleExpand}
+                    >
+                        <span className={styles.toggleMatchesButtonText}>
+                            {expanded
+                                ? 'Show less'
+                                : `Show ${hiddenMatchesCount} more ${pluralize(
+                                      'match',
+                                      hiddenMatchesCount,
+                                      'matches'
+                                  )}`}
+                        </span>
+                    </button>
+                )}
+            </div>
         </ResultContainer>
     )
 }
