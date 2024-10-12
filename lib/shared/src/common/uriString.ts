@@ -1,0 +1,25 @@
+import type { Uri as vscodeUri } from 'vscode'
+import type { URI } from 'vscode-uri'
+
+/**
+ * A URI string that has been validated to be a valid URI.
+ *
+ * @internal At runtime, this type is just a plain string; it does not have the `__brand` prop,
+ * which is just the typechecker to ensure that {@link URIString} values only come from the
+ * {@link uriString} function.
+ *
+ * @internal We use {@link URIString} values (i.e., strings) instead of URI instances when sending
+ * URIs across a postMessage boundary to avoid differences in the various URI implementations'
+ * `toJSON` methods and to avoid the unnecessary work of dehydrating and re-hydrating instances that
+ * are not used by the caller.
+ */
+export type URIString = string & { __brand: 'URIString' }
+
+/**
+ * Create a {@link URIString} from a `vscode-uri` {@link URI} or a `vscode` {@link vscodeUri}.
+ *
+ * This function is the only way to create a {@link URIString} value.
+ */
+export function uriString(uri: URI | vscodeUri): URIString {
+    return uri.toString() as URIString
+}
