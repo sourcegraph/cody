@@ -305,4 +305,109 @@ describe('modelsService', () => {
             expect(await firstValueFrom(modelsService.isModelAvailable(proModel.id))).toBe(true)
         })
     })
+
+    describe('ModelCategory', () => {
+        it('includes ModelTag.Other', () => {
+            const otherModel = createModel({
+                id: 'other-model',
+                usage: [ModelUsage.Chat],
+                tags: [ModelTag.Other],
+            })
+
+            const modelsService = modelsServiceWithModels([otherModel])
+
+            vi.spyOn(modelsService, 'modelsChanges', 'get').mockReturnValue(
+                Observable.of({
+                    ...EMPTY_MODELS_DATA,
+                    primaryModels: [otherModel],
+                })
+            )
+
+            expect(otherModel.tags).toContain(ModelTag.Other)
+            expect(modelsService.models).toContain(otherModel)
+        })
+
+        it('correctly categorizes models with different tags', () => {
+            const powerModel = createModel({
+                id: 'power-model',
+                usage: [ModelUsage.Chat],
+                tags: [ModelTag.Power],
+            })
+            const balancedModel = createModel({
+                id: 'balanced-model',
+                usage: [ModelUsage.Chat],
+                tags: [ModelTag.Balanced],
+            })
+            const speedModel = createModel({
+                id: 'speed-model',
+                usage: [ModelUsage.Chat],
+                tags: [ModelTag.Speed],
+            })
+            const accuracyModel = createModel({
+                id: 'accuracy-model',
+                usage: [ModelUsage.Chat],
+                tags: ['accuracy' as ModelTag],
+            })
+
+            const modelsService = modelsServiceWithModels([
+                powerModel,
+                balancedModel,
+                speedModel,
+                accuracyModel,
+            ])
+
+            vi.spyOn(modelsService, 'modelsChanges', 'get').mockReturnValue(
+                Observable.of({
+                    ...EMPTY_MODELS_DATA,
+                    primaryModels: [powerModel, balancedModel, speedModel, accuracyModel],
+                })
+            )
+
+            expect(modelsService.models).toContain(powerModel)
+            expect(modelsService.models).toContain(balancedModel)
+            expect(modelsService.models).toContain(speedModel)
+            expect(modelsService.models).toContain(accuracyModel)
+        })
+
+        it('handles models with multiple category tags', () => {
+            const multiCategoryModel = createModel({
+                id: 'multi-category-model',
+                usage: [ModelUsage.Chat],
+                tags: [ModelTag.Power, ModelTag.Balanced],
+            })
+
+            const modelsService = modelsServiceWithModels([multiCategoryModel])
+
+            vi.spyOn(modelsService, 'modelsChanges', 'get').mockReturnValue(
+                Observable.of({
+                    ...EMPTY_MODELS_DATA,
+                    primaryModels: [multiCategoryModel],
+                })
+            )
+
+            expect(multiCategoryModel.tags).toContain(ModelTag.Power)
+            expect(multiCategoryModel.tags).toContain(ModelTag.Balanced)
+            expect(modelsService.models).toContain(multiCategoryModel)
+        })
+
+        it('correctly handles models without category tags', () => {
+            const uncategorizedModel = createModel({
+                id: 'uncategorized-model',
+                usage: [ModelUsage.Chat],
+                tags: [],
+            })
+
+            const modelsService = modelsServiceWithModels([uncategorizedModel])
+
+            vi.spyOn(modelsService, 'modelsChanges', 'get').mockReturnValue(
+                Observable.of({
+                    ...EMPTY_MODELS_DATA,
+                    primaryModels: [uncategorizedModel],
+                })
+            )
+
+            expect(uncategorizedModel.tags).toHaveLength(0)
+            expect(modelsService.models).toContain(uncategorizedModel)
+        })
+    })
 })
