@@ -34,7 +34,6 @@ import {
     logDebug,
     logError,
     modelsService,
-    setUserAgent,
 } from '@sourcegraph/cody-shared'
 import { chatHistory } from '../../vscode/src/chat/chat-view/ChatHistoryManager'
 import type { ExtensionMessage, WebviewMessage } from '../../vscode/src/chat/protocol'
@@ -429,7 +428,6 @@ export class Agent extends MessageHandler implements ExtensionClient {
 
             vscode_shim.setClientInfo(clientInfo)
             this.clientInfo = clientInfo
-            setUserAgent(`${clientInfo?.name} / ${clientInfo?.version}`)
 
             try {
                 const secrets =

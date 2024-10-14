@@ -5,11 +5,8 @@ import type { Agent } from 'node:http'
  * `fetch` by default, we still use the `node-fetch` polyfill and have access to the networking code
  */
 import isomorphicFetch from 'isomorphic-fetch'
-import {
-    type BrowserOrNodeResponse,
-    addCustomUserAgent,
-    customUserAgent,
-} from './sourcegraph-api/graphql/client'
+import { addCodyClientIdentificationHeaders } from './sourcegraph-api/client-name-version'
+import type { BrowserOrNodeResponse } from './sourcegraph-api/graphql/client'
 
 /**
  * In node environments, it might be necessary to set up a custom agent to control the network
@@ -24,12 +21,10 @@ import {
 export const agent: { current: ((url: URL) => Agent) | undefined } = { current: undefined }
 
 export function fetch(input: RequestInfo | URL, init?: RequestInit): Promise<BrowserOrNodeResponse> {
-    if (customUserAgent) {
-        init = init ?? {}
-        const headers = new Headers(init?.headers)
-        addCustomUserAgent(headers)
-        init.headers = headers
-    }
+    init = init ?? {}
+    const headers = new Headers(init?.headers)
+    addCodyClientIdentificationHeaders(headers)
+    init.headers = headers
 
     const initWithAgent: RequestInit & { agent: (typeof agent)['current'] } = {
         ...init,

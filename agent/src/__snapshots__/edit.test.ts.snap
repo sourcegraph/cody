@@ -1,0 +1,18 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`Edit > editCommand/code (generate new code) 1`] = `
+"import React = require("react");
+
+interface HeadingProps {
+    text: string;
+    level?: number;
+}
+
+export const Heading: React.FC<HeadingProps> = ({ text, level = 1 }) => {
+    const HeadingTag = \`h\${level}\` as keyof JSX.IntrinsicElements;
+
+    return <HeadingTag>{text}</HeadingTag>;
+};
+
+"
+`;
