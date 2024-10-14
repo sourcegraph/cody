@@ -61,6 +61,7 @@ object Constants {
   const val ollama = "ollama"
   const val `on-waitlist` = "on-waitlist"
   const val openctx = "openctx"
+  const val other = "other"
   const val power = "power"
   const val pro = "pro"
   const val `recently-used` = "recently used"
