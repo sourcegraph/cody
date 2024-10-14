@@ -338,9 +338,13 @@ async function waitForVSCodeServerV2(
         extensionHostDebugPort: number | null
     } & Pick<TestContext, 'validOptions'>
 ) {
-    // const nodePath = path.join(versionedExecutableDir, isWindows() ? 'node.exe' : 'node')
+    const nodeExecutable = path.join(
+        config.versionedServerExecutableDir,
+        isWindows() ? 'node.exe' : 'node'
+    ) // this ensures we use the VSCode bundled node version
+
     const extendedArgs = ['out/server-main.js', ...config.args]
-    const serverProcess = spawn(isWindows() ? 'node.exe' : 'node', extendedArgs, {
+    const serverProcess = spawn(nodeExecutable, extendedArgs, {
         env: config.env,
         cwd: config.versionedServerExecutableDir,
         stdio: ['inherit', 'pipe', 'inherit'],
@@ -378,7 +382,7 @@ async function installExtensions({
     userDataDir: string
 }) {
     // We start by installing all extensions to a shared cache dir. This speeds up tests without any risk of flake.
-    const nodeExecutable = isWindows() ? 'node.exe' : 'node'
+    const nodeExecutable = path.join(versionedServerExecutableDir, isWindows() ? 'node.exe' : 'node') // this ensures we use the VSCode bundled node version
     const sharedExtensionsDir = path.resolve(CODY_VSCODE_ROOT_DIR, validOptions.vscodeExtensionCacheDir)
     await fs.mkdir(sharedExtensionsDir, { recursive: true })
 
