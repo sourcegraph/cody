@@ -14,16 +14,16 @@ const useChatModels = () => useContext(ChatModelsContext) ?? []
  */
 export const ChatSessionProvider: FunctionComponent<{ children: React.ReactNode }> = ({ children }) => {
     const [models, setModels] = useState<Model[] | undefined>(undefined)
+    const api = useExtensionAPI()
 
     // Only fetch the chat session context onces when the component mounts.
     useEffect(() => {
-        const api = useExtensionAPI()
         const subscription = api.chatModels().subscribe(
             newModels => setModels(newModels),
             error => console.error('Error fetching chat models:', error)
         )
         return () => subscription.unsubscribe()
-    }, [])
+    }, [api])
 
     return <ChatModelsContext.Provider value={models}>{children}</ChatModelsContext.Provider>
 }
