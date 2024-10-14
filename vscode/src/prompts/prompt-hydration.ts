@@ -1,10 +1,22 @@
 import type { SerializedPromptEditorState } from '@sourcegraph/cody-shared'
-import { PromptString, editorStateFromPromptString } from '@sourcegraph/cody-shared'
+import {
+    ContextItemSource,
+    PromptString,
+    REMOTE_REPOSITORY_PROVIDER_URI,
+    contextFiltersProvider,
+    currentAuthStatusAuthed,
+    editorStateFromPromptString,
+    firstValueFrom,
+    isError,
+    pendingOperation,
+} from '@sourcegraph/cody-shared'
+import { contextItemMentionFromOpenCtxItem } from '../chat/context/chatContext'
 import { getContextFileFromDirectory } from '../commands/context/directory'
 import { getContextFileFromTabs } from '../commands/context/open-tabs'
 import { getFileContext, getSelectionOrFileContext } from '../commands/context/selection'
-import { getWorkspaceContext } from '../commands/context/workspace'
 import { selectedCodePromptWithExtraFiles } from '../commands/execute'
+import { createRepositoryMention } from '../context/openctx/common/get-repository-mentions'
+import { remoteReposForAllWorkspaceFolders } from '../repository/remoteRepos'
 
 const PROMPT_CURRENT_FILE_PLACEHOLDER: string = '[[current file]]'
 const PROMPT_CURRENT_SELECTION_PLACEHOLDER: string = '[[current selection]]'
@@ -108,15 +120,55 @@ async function hydrateWithOpenTabs(promptText: PromptString): Promise<PromptStri
 }
 
 async function hydrateWithCurrentWorkspace(promptText: PromptString) {
-    const currentWorkspace = getWorkspaceContext()
+    const authStatus = currentAuthStatusAuthed()
+    const workspaceFolders = await firstValueFrom(remoteReposForAllWorkspaceFolders)
 
-    // TODO (vk): Add support for error notification if prompt hydration fails
-    if (!currentWorkspace) {
+    const items = []
+
+    if (workspaceFolders === pendingOperation) {
         return promptText
     }
 
+    if (isError(workspaceFolders)) {
+        throw workspaceFolders
+    }
+
+    for (const repo of workspaceFolders) {
+        if (await contextFiltersProvider.isRepoNameIgnored(repo.name)) {
+            continue
+        }
+        if (repo.id === undefined) {
+            continue
+        }
+
+        items.push({
+            ...contextItemMentionFromOpenCtxItem(
+                await createRepositoryMention(
+                    {
+                        id: repo.id,
+                        name: repo.name,
+                        url: repo.name,
+                    },
+                    REMOTE_REPOSITORY_PROVIDER_URI,
+                    authStatus
+                )
+            ),
+            title: 'Current Repository',
+            description: repo.name,
+            source: ContextItemSource.Initial,
+            icon: 'folder',
+        })
+    }
+
+    // TODO (vk): Add support for error notification if prompt hydration fails
+    if (items.length === 0) {
+        return promptText
+    }
+
+    const [workspace, ...other] = items
+
     return promptText.replaceAll(
         PROMPT_CURRENT_REPOSITORY_PLACEHOLDER,
-        selectedCodePromptWithExtraFiles(currentWorkspace, [])
+        selectedCodePromptWithExtraFiles(workspace, other)
     )
 }
