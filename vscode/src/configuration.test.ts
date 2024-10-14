@@ -117,6 +117,8 @@ describe('getConfiguration', () => {
                         return undefined
                     case 'cody.override.serverEndpoint':
                         return undefined
+                    case 'http':
+                        return undefined
                     default:
                         throw new Error(`unexpected key: ${key}`)
                 }
