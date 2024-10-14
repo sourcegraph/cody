@@ -168,15 +168,20 @@ export async function handleSmartApply(
     const activeEditor = getEditor()?.active
     const workspaceUri = vscode.workspace.workspaceFolders?.[0].uri
 
-    const uri =
-        fileUri && workspaceUri
-            ? path.isAbsolute(fileUri) && (await doesFileExist(vscode.Uri.file(fileUri || '')))
-                ? vscode.Uri.file(fileUri)
-                : smartJoinPath(workspaceUri, fileUri)
-            : activeEditor?.document.uri
+    let uri: vscode.Uri | undefined
+
+    if (fileUri && workspaceUri) {
+        if (path.isAbsolute(fileUri) && (await doesFileExist(vscode.Uri.file(fileUri)))) {
+            uri = vscode.Uri.file(fileUri)
+        } else {
+            uri = smartJoinPath(workspaceUri, fileUri)
+        }
+    } else {
+        uri = activeEditor?.document.uri
+    }
 
     const isNewFile = uri && !(await doesFileExist(uri))
-    if (isNewFile) {
+    if (isNewFile && uri) {
         const workspaceEditor = new vscode.WorkspaceEdit()
         workspaceEditor.createFile(uri, { ignoreIfExists: false })
         await vscode.workspace.applyEdit(workspaceEditor)
