@@ -70,6 +70,7 @@ export function getContextItemTokenUsageType(item: ContextItem): ContextTokenUsa
         case 'initial':
         case 'terminal':
         case 'selection':
+        case 'agentic':
         case 'editor':
             return 'user'
         default:

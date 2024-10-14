@@ -1,43 +1,57 @@
+import type { ImportedProviderConfiguration } from '@openctx/client'
 import type { Span } from '@opentelemetry/api'
 import {
     type ContextItem,
+    type ContextItemOpenCtx,
+    ContextItemSource,
+    type ContextMentionProviderMetadata,
     PromptString,
     firstValueFrom,
     logDebug,
+    parseMentionQuery,
     pendingOperation,
     ps,
 } from '@sourcegraph/cody-shared'
+import type { Disposable } from 'vscode'
 import { getContextFromRelativePath } from '../../commands/context/file-path'
 import { getContextFileFromShell } from '../../commands/context/shell'
 import { type ContextRetriever, toStructuredMentions } from '../chat-view/ContextRetriever'
+import { getChatContextItemsForMention } from '../context/chatContext'
 import { getCorpusContextItemsForEditorState } from '../initialContext'
 
-export interface PromptConfig {
-    instruction: PromptString
-    placeholder: PromptString
-    example: PromptString
+export interface CodyToolConfig {
+    tags: {
+        tag: PromptString
+        subTag: PromptString
+    }
+    prompt: {
+        instruction: PromptString
+        placeholder: PromptString
+        example: PromptString
+    }
 }
 
-export abstract class CodyTool {
-    abstract readonly tag: PromptString
-    abstract readonly subTag: PromptString
-    abstract readonly prompt: PromptConfig
-
+export abstract class CodyTool implements Disposable {
     protected rawText = ''
+    protected disposibles: Disposable[] = []
+
+    constructor(public readonly config: CodyToolConfig) {}
 
     public getInstruction(): PromptString {
-        const { instruction, placeholder } = this.prompt
+        const { tag, subTag } = this.config.tags
+        const { instruction, placeholder } = this.config.prompt
         return ps`${instruction}:
-   <${this.tag}><${this.subTag}>$${placeholder}</${this.subTag}></${this.tag}>`
+   <${tag}><${subTag}>${placeholder}</${subTag}></${tag}>`
     }
 
-    public parse(): string[] {
-        const regex = new RegExp(`<${this.subTag}>(.+?)</?${this.subTag}>`, 's')
+    protected parse(): string[] {
+        const { tag, subTag } = this.config.tags
+        const regex = new RegExp(`<${subTag}>(.+?)</?${subTag}>`, 's')
         const parsed = (this.rawText.match(new RegExp(regex, 'g')) || [])
             .map(match => regex.exec(match)?.[1].trim())
             .filter(Boolean) as string[]
         if (parsed.length) {
-            logDebug('CodyTool', this.tag.toString(), { verbose: parsed })
+            logDebug('CodyTool', tag.toString(), { verbose: parsed })
         }
         this.rawText = ''
         return parsed
@@ -47,38 +61,54 @@ export abstract class CodyTool {
         this.rawText += text
     }
 
-    abstract execute(): Promise<ContextItem[]>
+    public abstract execute(span: Span): Promise<ContextItem[]>
+
+    public dispose(): void {
+        this.rawText = ''
+    }
 }
 
-class CliTool extends CodyTool {
-    public readonly tag = ps`TOOLCLI`
-    public readonly subTag = ps`cmd`
-
-    public readonly prompt = {
-        instruction: ps`To see the output of shell commands`,
-        placeholder: ps`SHELL_COMMAND`,
-        example: ps`Details about GitHub issue#1234: <TOOLCLI><cmd>gh issue view 1234</cmd></TOOLCLI>`,
+export class CliTool extends CodyTool {
+    constructor() {
+        super({
+            tags: {
+                tag: ps`TOOLCLI`,
+                subTag: ps`cmd`,
+            },
+            prompt: {
+                instruction: ps`To see the output of shell commands`,
+                placeholder: ps`SHELL_COMMAND`,
+                example: ps`Details about GitHub issue#1234: <TOOLCLI><cmd>gh issue view 1234</cmd></TOOLCLI>`,
+            },
+        })
     }
 
-    async execute(): Promise<ContextItem[]> {
+    public async execute(): Promise<ContextItem[]> {
         const commands = this.parse()
-        logDebug('CodyTool', `executing ${commands.length} commands`)
+        if (commands.length === 0) return []
+        logDebug('CodyTool', `executing ${commands.length} commands...`)
         return Promise.all(commands.map(getContextFileFromShell)).then(results => results.flat())
     }
 }
 
-class FileTool extends CodyTool {
-    public readonly tag = ps`TOOLFILE`
-    public readonly subTag = ps`name`
-
-    public readonly prompt = {
-        instruction: ps`To retrieve full content of a codebase file`,
-        placeholder: ps`FILENAME`,
-        example: ps`See the content of different files: <TOOLFILE><name>path/foo.ts</name><name>path/bar.ts</name></TOOLFILE>`,
+export class FileTool extends CodyTool {
+    constructor() {
+        super({
+            tags: {
+                tag: ps`TOOLFILE`,
+                subTag: ps`name`,
+            },
+            prompt: {
+                instruction: ps`To retrieve full content of a codebase file`,
+                placeholder: ps`FILENAME`,
+                example: ps`See the content of different files: <TOOLFILE><name>path/foo.ts</name><name>path/bar.ts</name></TOOLFILE>`,
+            },
+        })
     }
 
-    async execute(): Promise<ContextItem[]> {
+    public async execute(): Promise<ContextItem[]> {
         const filePaths = this.parse()
+        if (filePaths.length === 0) return []
         logDebug('CodyTool', `requesting ${filePaths.length} files`)
         return Promise.all(filePaths.map(getContextFromRelativePath)).then(results =>
             results.filter((item): item is ContextItem => item !== null)
@@ -86,26 +116,24 @@ class FileTool extends CodyTool {
     }
 }
 
-class SearchTool extends CodyTool {
-    public readonly tag = ps`TOOLSEARCH`
-    public readonly subTag = ps`query`
-
-    public readonly prompt = {
-        instruction: ps`To search for context in the codebase`,
-        placeholder: ps`SEARCH_QUERY`,
-        example: ps`Find usage of "node:fetch" in my codebase: <TOOLSEARCH><query>node:fetch</query></TOOLSEARCH>`,
-    }
-
-    constructor(
-        private contextRetriever: Pick<ContextRetriever, 'retrieveContext'>,
-        private span: Span
-    ) {
-        super()
-    }
-
+export class SearchTool extends CodyTool {
     private performedSearch = new Set<string>()
 
-    async execute(): Promise<ContextItem[]> {
+    constructor(private contextRetriever: Pick<ContextRetriever, 'retrieveContext'>) {
+        super({
+            tags: {
+                tag: ps`TOOLSEARCH`,
+                subTag: ps`query`,
+            },
+            prompt: {
+                instruction: ps`To search for context in the codebase`,
+                placeholder: ps`SEARCH_QUERY`,
+                example: ps`Find usage of "node:fetch" in my codebase: <TOOLSEARCH><query>node:fetch</query></TOOLSEARCH>`,
+            },
+        })
+    }
+
+    public async execute(span: Span): Promise<ContextItem[]> {
         const queries = this.parse()
         const query = queries[0] // There should only be one query.
         if (!this.contextRetriever || !query || this.performedSearch.has(query)) {
@@ -121,21 +149,48 @@ class SearchTool extends CodyTool {
         if (!repo) {
             return []
         }
+        logDebug('CodyTool', `searching codebase for ${query}`)
         const context = await this.contextRetriever.retrieveContext(
             toStructuredMentions([repo]),
             PromptString.unsafe_fromLLMResponse(query),
-            this.span
+            span
         )
         // Store the search query to avoid running the same query again.
         this.performedSearch.add(query)
-        logDebug('CodyTool', `searching codebase for ${query}`)
         return context
     }
 }
 
-export function getCodyTools(
-    contextRetriever: Pick<ContextRetriever, 'retrieveContext'>,
-    span: Span
-): CodyTool[] {
-    return [new SearchTool(contextRetriever, span), new CliTool(), new FileTool()]
+export class OpenCtxTool extends CodyTool {
+    constructor(
+        private provider: ImportedProviderConfiguration,
+        config: CodyToolConfig
+    ) {
+        super(config)
+    }
+
+    async execute(): Promise<ContextItem[]> {
+        const queries = this.parse()
+        if (!queries?.length) {
+            return []
+        }
+        logDebug('CodyTool', `searching ${this.provider.providerUri} for "${queries}"`)
+        const results: ContextItem[] = []
+        const idObject: Pick<ContextMentionProviderMetadata, 'id'> = { id: this.provider.providerUri }
+        try {
+            for (const query of queries) {
+                const mention = parseMentionQuery(query, idObject)
+                const items = (await getChatContextItemsForMention({ mentionQuery: mention })).map(f => {
+                    const i = f as ContextItemOpenCtx
+                    const content = i.mention?.description ?? i.mention?.data?.content
+                    return { ...i, content, source: ContextItemSource.Agentic }
+                })
+                results.push(...items)
+            }
+            logDebug('CodyTool', `OpenCtx returned ${results.length} items`, { verbose: results })
+        } catch {
+            logDebug('CodyTool', `OpenCtx item retrieval failed for ${queries}`)
+        }
+        return results
+    }
 }
