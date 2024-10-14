@@ -1,5 +1,6 @@
 import { Observable } from 'observable-fns'
 import type { AuthStatus, ModelsData, ResolvedConfiguration, UserProductSubscription } from '../..'
+import type { SerializedPromptEditorState } from '../..'
 import type { ChatMessage, UserLocalHistory } from '../../chat/transcript/messages'
 import type { ContextItem } from '../../codebase-context/messages'
 import type { CodyCommand } from '../../commands/types'
@@ -39,6 +40,8 @@ export interface WebviewToExtensionAPI {
     chatModels(): Observable<Model[]>
 
     highlights(query: FetchHighlightFileParameters): Observable<string[][]>
+
+    hydratePromptMessage(promptText: string): Observable<SerializedPromptEditorState>
 
     /**
      * Set the chat model.
@@ -96,6 +99,7 @@ export function createExtensionAPI(
         models: proxyExtensionAPI(messageAPI, 'models'),
         chatModels: proxyExtensionAPI(messageAPI, 'chatModels'),
         highlights: proxyExtensionAPI(messageAPI, 'highlights'),
+        hydratePromptMessage: proxyExtensionAPI(messageAPI, 'hydratePromptMessage'),
         setChatModel: proxyExtensionAPI(messageAPI, 'setChatModel'),
         initialContext: staticInitialContext
             ? () => Observable.of(staticInitialContext)

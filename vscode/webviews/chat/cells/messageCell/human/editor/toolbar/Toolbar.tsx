@@ -107,8 +107,8 @@ const PromptSelectFieldToolbarItem: FunctionComponent<{
     const runAction = useActionSelect()
 
     const onSelect = useCallback(
-        (item: Action) => {
-            runAction(item, () => {})
+        async (item: Action) => {
+            await runAction(item, () => {})
             focusEditor?.()
         },
         [focusEditor, runAction]

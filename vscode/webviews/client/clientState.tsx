@@ -1,3 +1,4 @@
+import type { SerializedPromptEditorState } from '@sourcegraph/cody-shared'
 import {
     type FunctionComponent,
     type ReactNode,
@@ -8,7 +9,9 @@ import {
 } from 'react'
 import type { ExtensionMessage } from '../../src/chat/protocol'
 
-type ClientActionArg = Omit<Extract<ExtensionMessage, { type: 'clientAction' }>, 'type'>
+type ClientActionArg = Omit<Extract<ExtensionMessage, { type: 'clientAction' }>, 'type'> & {
+    editorState?: SerializedPromptEditorState
+}
 
 export type ClientActionListener = (arg: ClientActionArg) => void
 

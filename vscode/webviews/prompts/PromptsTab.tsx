@@ -5,6 +5,8 @@ import { PromptList } from '../components/promptList/PromptList'
 import { View } from '../tabs/types'
 import { getVSCodeAPI } from '../utils/VSCodeApi'
 
+import { firstValueFrom } from '@sourcegraph/cody-shared'
+import { useExtensionAPI } from '@sourcegraph/prompt-editor'
 import styles from './PromptsTab.module.css'
 
 export const PromptsTab: React.FC<{
@@ -30,12 +32,13 @@ export const PromptsTab: React.FC<{
 
 export function useActionSelect() {
     const dispatchClientAction = useClientActionDispatcher()
+    const extensionAPI = useExtensionAPI()
     const [lastUsedActions = {}, persistValue] = useLocalStorage<Record<string, number>>(
         'last-used-actions-v2',
         {}
     )
 
-    return (action: Action, setView: (view: View) => void) => {
+    return async (action: Action, setView: (view: View) => void) => {
         try {
             const actionKey = action.actionType === 'prompt' ? action.id : action.key
             persistValue({ ...lastUsedActions, [actionKey]: Date.now() })
@@ -46,9 +49,13 @@ export function useActionSelect() {
         switch (action.actionType) {
             case 'prompt': {
                 setView(View.Chat)
+                const promptEditorState = await firstValueFrom(
+                    extensionAPI.hydratePromptMessage(action.definition.text)
+                )
+
                 dispatchClientAction(
                     {
-                        appendTextToLastPromptEditor: action.definition.text,
+                        editorState: promptEditorState,
                         submitHumanInput: action.autoSubmit,
                     },
                     // Buffer because PromptEditor is not guaranteed to be mounted after the `setView`
