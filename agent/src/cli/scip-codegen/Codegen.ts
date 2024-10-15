@@ -636,7 +636,7 @@ export class Codegen extends BaseCodegen {
                             message: dedent`Incompatible signatures. For discriminated unions, each property name must map to a unique type.
                                    For example, it's not allowed to have a property named 'result', which is a string for one type in the
                                    discrimated union and a number for another type in the union. To fix this problem, give one of the
-                                   following properties a unique name and try running the code generator again.`,
+                                   following properties a unique name and try running the code generator again. `,
                             additionalInformation: [],
                         },
                         siblings: [],
@@ -657,6 +657,15 @@ export class Codegen extends BaseCodegen {
                         symbol: property,
                         message: 'conflict here',
                     })
+                    if (
+                        this.compatibleSignatures(siblingProperty, propertyInfo, {
+                            allowSubtyping: true,
+                        })
+                    ) {
+                        diagnostic.message = dedent`${diagnostic.message} Note that these types are
+                        sub-type compatible, so if you want to allow subtyping for this class, add the symbol to
+                        ALLOW_SUBTYPING_FOR_MEMBERS in AllowLists.ts`
+                    }
                 } else {
                     siblings.push(property)
                 }
