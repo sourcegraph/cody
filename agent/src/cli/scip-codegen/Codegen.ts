@@ -9,6 +9,7 @@ import {
 } from './BaseCodegen'
 
 import { CodePrinter } from '../../../../vscode/src/completions/context/retrievers/tsc/CodePrinter'
+import { ALLOW_SUBTYPING_FOR_MEMBERS, IGNORED_PROPERTIES } from './AllowLists'
 import type { ConsoleReporter } from './ConsoleReporter'
 import { type Diagnostic, Severity } from './Diagnostic'
 import type { Formatter } from './Formatter'
@@ -185,7 +186,7 @@ export class Codegen extends BaseCodegen {
         try {
             await this.writeDataClassUnsafe({ p, f, symtab }, name, info, params)
         } catch (e) {
-            const errorMessage = `Failed to handle class ${info.symbol}. To fix this problem, consider skipping this type by adding the symbol to "ignoredInfoSymbol" in Formatter.ts\n${e}`
+            const errorMessage = `Failed to handle class ${info.symbol}. To fix this problem, consider skipping this type by adding the symbol to "IGNORED_INFO_SYMBOL" in AllowLists.ts\n${e}`
             this.reporter.error(info.symbol, errorMessage)
         }
     }
@@ -206,11 +207,7 @@ export class Codegen extends BaseCodegen {
         const enums: Enum[] = []
         const members: Member[] = []
         for (const memberSymbol of this.infoProperties(info)) {
-            if (
-                this.emitter.formatter.ignoredProperties.find(ignoredProperty =>
-                    memberSymbol.includes(ignoredProperty)
-                )
-            ) {
+            if (IGNORED_PROPERTIES.find(ignoredProperty => memberSymbol.includes(ignoredProperty))) {
                 continue
             }
             if (memberSymbol.endsWith('().')) {
@@ -273,7 +270,7 @@ export class Codegen extends BaseCodegen {
                     this.queueClassLikeType(memberType, member, 'parameter')
                 } catch (error) {
                     const stack = error instanceof Error ? '\n' + error.stack : ''
-                    const errorMessage = `error handling member: ${member.symbol}. To fix this problem, you may want to ignore it from code generation by adding the symbol name to the "ignoredProperties" in the Formatter.ts file.\n${error}${stack}`
+                    const errorMessage = `error handling member: ${member.symbol}. To fix this problem, you may want to ignore it from code generation by adding the symbol name to the "IGNORED_PROPERTIES" in the AllowLists.ts file.\n${error}${stack}`
                     this.reporter.error(memberSymbol, errorMessage)
                     continue
                 }
@@ -648,7 +645,13 @@ export class Codegen extends BaseCodegen {
                 }
                 const { info: siblingProperty, diagnostic, siblings } = sibling
 
-                if (!this.compatibleSignatures(siblingProperty, propertyInfo)) {
+                if (
+                    !this.compatibleSignatures(siblingProperty, propertyInfo, {
+                        allowSubtyping: ALLOW_SUBTYPING_FOR_MEMBERS.some(subtypeAllowed =>
+                            jsonrpcMethod.symbol.includes(subtypeAllowed)
+                        ),
+                    })
+                ) {
                     diagnostic.additionalInformation?.push({
                         severity: Severity.Error,
                         symbol: property,

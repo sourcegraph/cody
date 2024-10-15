@@ -1,3 +1,4 @@
+import { IGNORED_INFO_SYMBOL, IGNORED_TYPE_REFS } from './AllowLists'
 import type { DiscriminatedUnion, DiscriminatedUnionMember } from './BaseCodegen'
 import type { Codegen } from './Codegen'
 import type { SymbolTable } from './SymbolTable'
@@ -175,26 +176,9 @@ export abstract class Formatter {
         )
     }
 
-    public readonly ignoredInfoSymbol: string[] = []
-
-    public readonly ignoredProperties = [
-        'npm @sourcegraph/telemetry ', // Too many complicated types from this package
-        '`inline-completion-item-provider-config-singleton.ts`/tracer0:',
-        '`observable.d.ts`/Subscription#',
-        '`provider.ts`/Provider#configSource',
-        '`StatusBar.ts`/CodyStatusBar',
-        'lexicalEditor/`nodes.ts`/content0',
-    ]
-    private readonly ignoredTypeRefs = [
-        '`provider.ts`/Provider#',
-        'npm @sourcegraph/telemetry', // Too many complicated types from this package
-        '/TelemetryEventParameters#',
-        ' lib/`lib.es5.d.ts`/Omit#',
-    ]
-
     public isIgnoredType(tpe: scip.Type): boolean {
         if (tpe.has_type_ref) {
-            return this.ignoredTypeRefs.some(ref => tpe.type_ref.symbol.includes(ref))
+            return IGNORED_TYPE_REFS.some(ref => tpe.type_ref.symbol.includes(ref))
         }
 
         if (tpe.has_union_type) {
@@ -207,7 +191,7 @@ export abstract class Formatter {
     }
 
     public isIgnoredInfo(info: scip.SymbolInformation): boolean {
-        for (const ignored of this.ignoredInfoSymbol) {
+        for (const ignored of IGNORED_INFO_SYMBOL) {
             if (info.symbol.includes(ignored)) {
                 return true
             }
