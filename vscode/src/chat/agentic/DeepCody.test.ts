@@ -73,7 +73,7 @@ describe('DeepCody', () => {
             retrieveContext: vi.fn(),
         } as unknown as ContextRetriever
 
-        mockCodyTools = await CodyToolProvider.getTestInstance(mockContextRetriever).getTools()
+        mockCodyTools = await CodyToolProvider.instance(mockContextRetriever).getTools()
 
         mockSpan = {}
 

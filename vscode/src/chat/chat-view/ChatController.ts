@@ -219,7 +219,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         this.editor = editor
         this.extensionClient = extensionClient
         this.contextRetriever = contextRetriever
-        this.toolProvider = CodyToolProvider.getInstance(this.contextRetriever)
+        this.toolProvider = CodyToolProvider.instance(this.contextRetriever)
 
         this.chatBuilder = new ChatBuilder(undefined)
 

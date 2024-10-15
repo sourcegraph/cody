@@ -23,43 +23,34 @@ import {
  * lazily initializes the tools when they are first requested.
  */
 export class CodyToolProvider {
-    private static instance: CodyToolProvider
-    private tools: CodyTool[] = []
-    private contextRetriever: Pick<ContextRetriever, 'retrieveContext'>
+    private openCtxTools: CodyTool[] | null = null
 
-    private constructor(contextRetriever: Pick<ContextRetriever, 'retrieveContext'>) {
-        this.contextRetriever = contextRetriever
+    private constructor(private contextRetriever: Pick<ContextRetriever, 'retrieveContext'>) {
+        this.initializeOpenCtxTools()
     }
 
-    public static getInstance(
-        contextRetriever: Pick<ContextRetriever, 'retrieveContext'>
-    ): CodyToolProvider {
-        if (!CodyToolProvider.instance) {
-            CodyToolProvider.instance = new CodyToolProvider(contextRetriever)
-        }
-        return CodyToolProvider.instance
-    }
-
-    public static getTestInstance(
+    public static instance(
         contextRetriever: Pick<ContextRetriever, 'retrieveContext'>
     ): CodyToolProvider {
         return new CodyToolProvider(contextRetriever)
     }
 
     public async getTools(): Promise<CodyTool[]> {
-        if (!this.tools.length) {
-            await this.initializeTools()
+        // Wait for OpenCtxTools to be initialized if they haven't been already
+        if (!this.openCtxTools) {
+            await this.initializeOpenCtxTools()
         }
-        return this.tools
-    }
 
-    private async initializeTools(): Promise<void> {
-        this.tools = [
+        return [
             new SearchTool(this.contextRetriever),
             new CliTool(),
             new FileTool(),
-            ...(await this.buildOpenCtxCodyTools()),
+            ...(this.openCtxTools || []),
         ]
+    }
+
+    private async initializeOpenCtxTools(): Promise<void> {
+        this.openCtxTools = await this.buildOpenCtxCodyTools()
     }
 
     private async buildOpenCtxCodyTools(): Promise<CodyTool[]> {
