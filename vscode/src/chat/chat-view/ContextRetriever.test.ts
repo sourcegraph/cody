@@ -95,18 +95,18 @@ describe('ContextRetriever', () => {
 
     describe('retrieveLiveContext', () => {
         it('calls getLiveResults with the original query', async () => {
-            const originalQuery = ps`Test query`
+            const query = ps`Test query`
             const files = ['/local/repo/file.ts']
 
             vi.spyOn(mockSymf, 'getLiveResults').mockResolvedValue([])
 
-            await (contextRetriever as any).retrieveLiveContext(originalQuery, files)
+            await (contextRetriever as any).retrieveLiveContext(query, files)
 
-            expect(mockSymf.getLiveResults).toHaveBeenCalledWith(originalQuery, files, undefined)
+            expect(mockSymf.getLiveResults).toHaveBeenCalledWith(query, files, undefined)
         })
 
         it('retrieves live context using symf', async () => {
-            const originalQuery = ps`Test query`
+            const query = ps`Test query`
             const files = ['/local/repo/file.ts']
 
             vi.spyOn(mockSymf, 'getLiveResults').mockResolvedValue([
@@ -123,7 +123,7 @@ describe('ContextRetriever', () => {
 
             vi.spyOn(mockEditor, 'getTextEditorContentForFile').mockResolvedValue('Test content')
 
-            const result = await (contextRetriever as any).retrieveLiveContext(originalQuery, files)
+            const result = await (contextRetriever as any).retrieveLiveContext(query, files)
 
             expect(result).toHaveLength(1)
             expect(result[0]).toEqual({
@@ -144,7 +144,7 @@ describe('ContextRetriever', () => {
                     remoteRepos: [{ name: 'test/repo', id: 'repo1' }],
                 },
             ]
-            const originalQuery = ps`Test query`
+            const query = ps`Test query`
             const mockSpan = {} as any
 
             const spy = vi
@@ -152,9 +152,9 @@ describe('ContextRetriever', () => {
                 .mockResolvedValue([])
             vi.spyOn(contextRetriever as any, 'retrieveIndexedContextLocally').mockResolvedValue([])
 
-            await (contextRetriever as any).retrieveIndexedContext(roots, originalQuery, mockSpan)
+            await (contextRetriever as any).retrieveIndexedContext(roots, query, mockSpan)
 
-            expect(spy).toHaveBeenCalledWith(['repo1'], originalQuery.toString(), undefined)
+            expect(spy).toHaveBeenCalledWith(['repo1'], query.toString(), undefined)
         })
 
         it('calls retrieveIndexedContextLocally with the original query', async () => {
@@ -164,7 +164,7 @@ describe('ContextRetriever', () => {
                     remoteRepos: [],
                 },
             ]
-            const originalQuery = ps`Test query`
+            const query = ps`Test query`
             const mockSpan = {} as any
 
             vi.spyOn(contextRetriever as any, 'retrieveIndexedContextFromRemote').mockResolvedValue([])
@@ -172,7 +172,7 @@ describe('ContextRetriever', () => {
                 .spyOn(contextRetriever as any, 'retrieveIndexedContextLocally')
                 .mockResolvedValue([])
 
-            await (contextRetriever as any).retrieveIndexedContext(roots, originalQuery, mockSpan)
+            await (contextRetriever as any).retrieveIndexedContext(roots, query, mockSpan)
 
             expect(spy).toBeCalled()
         })
@@ -184,7 +184,7 @@ describe('ContextRetriever', () => {
                     remoteRepos: [{ name: 'test/repo', id: 'repo1' }],
                 },
             ]
-            const originalQuery = ps`Test query`
+            const query = ps`Test query`
             const mockSpan = {} as any
 
             vi.spyOn(contextRetriever as any, 'retrieveIndexedContextFromRemote').mockResolvedValue([
@@ -198,11 +198,7 @@ describe('ContextRetriever', () => {
                 { type: 'file', content: 'Local content', uri: vscode.Uri.file('/local/repo/file.ts') },
             ])
 
-            const result = await (contextRetriever as any).retrieveIndexedContext(
-                roots,
-                originalQuery,
-                mockSpan
-            )
+            const result = await (contextRetriever as any).retrieveIndexedContext(roots, query, mockSpan)
 
             expect(result).toHaveLength(2)
             expect(result[0]).toEqual({

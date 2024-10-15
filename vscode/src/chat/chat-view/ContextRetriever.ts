@@ -220,7 +220,7 @@ export class ContextRetriever implements vscode.Disposable {
     }
 
     private async retrieveLiveContext(
-        originalQuery: PromptString,
+        query: PromptString,
         files: string[],
         signal?: AbortSignal
     ): Promise<ContextItem[]> {
@@ -231,7 +231,7 @@ export class ContextRetriever implements vscode.Disposable {
             logDebug('ContextRetriever', 'symf not available, skipping live context')
             return []
         }
-        const results = await this.symf.getLiveResults(originalQuery, files, signal)
+        const results = await this.symf.getLiveResults(query, files, signal)
         return (
             await Promise.all(
                 results.map(async (r): Promise<ContextItem | ContextItem[]> => {
@@ -265,7 +265,7 @@ export class ContextRetriever implements vscode.Disposable {
 
     private async retrieveIndexedContext(
         roots: Root[],
-        originalQuery: PromptString,
+        query: PromptString,
         span: Span,
         signal?: AbortSignal
     ): Promise<ContextItem[]> {
@@ -316,12 +316,12 @@ export class ContextRetriever implements vscode.Disposable {
 
         const remoteResultsPromise = this.retrieveIndexedContextFromRemote(
             [...repoIDsOnRemote],
-            originalQuery.toString(),
+            query.toString(),
             signal
         )
         const localResultsPromise = this.retrieveIndexedContextLocally(
             [...localRootURIs.values()],
-            originalQuery,
+            query,
             span
         )
 
@@ -355,7 +355,7 @@ export class ContextRetriever implements vscode.Disposable {
 
     private async retrieveIndexedContextLocally(
         localRootURIs: vscode.Uri[],
-        originalQuery: PromptString,
+        query: PromptString,
         span: Span
     ): Promise<ContextItem[]> {
         if (localRootURIs.length === 0) {
@@ -369,7 +369,7 @@ export class ContextRetriever implements vscode.Disposable {
                       // TODO(beyang): retire searchSymf and retrieveContextGracefully
                       // (see invocation of symf in retrieveLiveContext)
                       retrieveContextGracefully(
-                          searchSymf(symf, this.editor, rootURI, originalQuery),
+                          searchSymf(symf, this.editor, rootURI, query),
                           `symf ${rootURI.path}`
                       )
                   )
