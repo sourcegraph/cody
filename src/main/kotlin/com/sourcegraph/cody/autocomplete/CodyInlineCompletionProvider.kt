@@ -1,10 +1,6 @@
 package com.sourcegraph.cody.autocomplete
 
-import com.intellij.codeInsight.inline.completion.InlineCompletionElement
-import com.intellij.codeInsight.inline.completion.InlineCompletionEvent
-import com.intellij.codeInsight.inline.completion.InlineCompletionProvider
-import com.intellij.codeInsight.inline.completion.InlineCompletionRequest
-import com.intellij.codeInsight.inline.completion.InlineCompletionSuggestion
+import com.intellij.codeInsight.inline.completion.*
 import com.intellij.codeInsight.inline.completion.elements.InlineCompletionGrayTextElement
 import com.intellij.openapi.application.ApplicationInfo
 import com.intellij.openapi.application.ApplicationManager
@@ -31,8 +27,6 @@ import com.sourcegraph.utils.CodyFormatter
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicReference
-
-@JvmInline value class InlineCompletionProviderID(val id: String)
 
 class CodyInlineCompletionProvider : InlineCompletionProvider {
   private val logger = Logger.getInstance(CodyInlineCompletionProvider::class.java)
@@ -136,6 +130,9 @@ class CodyInlineCompletionProvider : InlineCompletionProvider {
     return isEnabled()
   }
 
+  // Needed to compile with IntelliJ platform 2023.2, not used in 2024.2+.
+  // What follows InlineCompletionElement need to be in the same package as in 2023.2, not in
+  // 2024.2+ (it was moved).
   override suspend fun getProposals(
       request: InlineCompletionRequest
   ): List<InlineCompletionElement> {
