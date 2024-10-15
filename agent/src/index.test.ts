@@ -555,7 +555,7 @@ describe('Agent', () => {
             // which is undesireable for agent clients.
             expect(id).not.toStrictEqual(freshChatID)
 
-            const lastMessage = await client.firstNonEmptyTranscript(id)
+            const lastMessage = await client.firstTranscriptWithAssistantMessage(id)
             expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchSnapshot()
             // telemetry assertion, to validate the expected events fired during the test run
             // Do not remove this assertion, and instead update the expectedEvents list above
@@ -573,7 +573,7 @@ describe('Agent', () => {
             await client.openFile(animalUri)
             await setChatModel()
             const id = await client.request('commands/smell', null)
-            const lastMessage = await client.firstNonEmptyTranscript(id)
+            const lastMessage = await client.firstTranscriptWithAssistantMessage(id)
 
             expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchSnapshot()
             // telemetry assertion, to validate the expected events fired during the test run

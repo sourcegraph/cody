@@ -4,8 +4,8 @@ import { type FC, useCallback, useState } from 'react'
 import type { Action } from '@sourcegraph/cody-shared'
 
 import { useTelemetryRecorder } from '../../utils/telemetry'
-import { useConfig } from '../../utils/useConfig'
 import { useDebounce } from '../../utils/useDebounce'
+import { useLegacyWebviewConfig } from '../../utils/useLegacyWebviewConfig'
 import {
     Command,
     CommandInput,
@@ -61,7 +61,7 @@ export const PromptList: FC<PromptListProps> = props => {
         onSelect: parentOnSelect,
     } = props
 
-    const endpointURL = new URL(useConfig().authStatus.endpoint)
+    const endpointURL = new URL(useLegacyWebviewConfig().authStatus.endpoint)
     const telemetryRecorder = useTelemetryRecorder()
     const [lastUsedActions = {}] = useLocalStorage<Record<string, number>>('last-used-actions-v2', {})
 

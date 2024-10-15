@@ -1,6 +1,9 @@
 import type { Meta, StoryObj } from '@storybook/react'
 
-import { CodyIDE } from '@sourcegraph/cody-shared'
+import { type ClientCapabilities, CodyIDE, type LegacyWebviewConfig } from '@sourcegraph/cody-shared'
+import { ExtensionAPIProviderForTestsOnly, MOCK_API } from '@sourcegraph/prompt-editor'
+import { Observable } from 'observable-fns'
+import type { ComponentProps } from 'react'
 import { AuthPage } from './AuthPage'
 import { VSCodeWebview } from './storybook/VSCodeStoryDecorator'
 import type { VSCodeWrapper } from './utils/VSCodeApi'
@@ -12,7 +15,7 @@ const vscodeAPI: VSCodeWrapper = {
     setState: () => {},
 }
 
-const meta: Meta<typeof AuthPage> = {
+const meta: Meta<ComponentProps<typeof AuthPage> & { clientCapabilities: ClientCapabilities }> = {
     title: 'cody/AuthPage',
     component: AuthPage,
     decorators: [VSCodeWebview],
@@ -20,38 +23,51 @@ const meta: Meta<typeof AuthPage> = {
         simplifiedLoginRedirect: () => {},
         uiKindIsWeb: false,
         vscodeAPI: vscodeAPI,
-        codyIDE: CodyIDE.VSCode,
     },
+    render: args => (
+        <ExtensionAPIProviderForTestsOnly
+            value={{
+                ...MOCK_API,
+                legacyConfig: () =>
+                    Observable.of({
+                        config: {} as any,
+                        clientCapabilities: args.clientCapabilities,
+                    } satisfies Partial<LegacyWebviewConfig> as LegacyWebviewConfig),
+            }}
+        >
+            <AuthPage {...args} />
+        </ExtensionAPIProviderForTestsOnly>
+    ),
 }
 
 export default meta
 
-type Story = StoryObj<typeof AuthPage>
+type Story = StoryObj<typeof meta>
 
 export const VSCodeDesktop: Story = {
     args: {
         uiKindIsWeb: false,
-        codyIDE: CodyIDE.VSCode,
+        clientCapabilities: { agentIDE: CodyIDE.VSCode, isVSCode: true, isCodyWeb: false },
     },
 }
 
-export const VSCodeWeb: StoryObj<typeof AuthPage> = {
+export const VSCodeWeb: Story = {
     args: {
         uiKindIsWeb: true,
-        codyIDE: CodyIDE.VSCode,
+        clientCapabilities: { agentIDE: CodyIDE.VSCode, isVSCode: true, isCodyWeb: false },
     },
 }
 
-export const SourcegraphWeb: StoryObj<typeof AuthPage> = {
+export const SourcegraphWeb: Story = {
     args: {
         uiKindIsWeb: true,
-        codyIDE: CodyIDE.Web,
+        clientCapabilities: { agentIDE: CodyIDE.Web, isVSCode: false, isCodyWeb: true },
     },
 }
 
-export const JetBrainsDesktop: StoryObj<typeof AuthPage> = {
+export const JetBrainsDesktop: Story = {
     args: {
         uiKindIsWeb: false,
-        codyIDE: CodyIDE.JetBrains,
+        clientCapabilities: { agentIDE: CodyIDE.JetBrains, isVSCode: false, isCodyWeb: false },
     },
 }

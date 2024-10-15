@@ -6,7 +6,7 @@ const MARGIN = 200 /* px */
 
 interface Scroller {
     root: HTMLElement
-    getObserveElement: () => Element
+    getObserveElement: () => Element | null
     getScrollTop: () => number
     getScrollHeight: () => number
     getClientHeight: () => number
@@ -15,7 +15,7 @@ interface Scroller {
 function createScrollerAPI(element: HTMLElement): Scroller {
     return {
         root: element,
-        getObserveElement: () => element.firstElementChild!,
+        getObserveElement: () => element.firstElementChild,
         getScrollTop: () => element.scrollTop,
         getScrollHeight: () => element.scrollHeight,
         getClientHeight: () => element.getBoundingClientRect().height,
@@ -38,6 +38,11 @@ export const ScrollDown: FC<ScrollDownProps> = props => {
     const scrollerAPI = useMemo(() => createScrollerAPI(scrollableParent), [scrollableParent])
 
     useEffect(() => {
+        const target = scrollerAPI.getObserveElement()
+        if (!target) {
+            return
+        }
+
         function calculateScrollState() {
             const scrollTop = scrollerAPI.getScrollTop()
             const scrollHeight = scrollerAPI.getScrollHeight()
@@ -52,7 +57,7 @@ export const ScrollDown: FC<ScrollDownProps> = props => {
             calculateScrollState()
         })
 
-        resizeObserver.observe(scrollerAPI.getObserveElement())
+        resizeObserver.observe(target)
         scrollerAPI.root.addEventListener('scroll', calculateScrollState)
 
         return () => {
