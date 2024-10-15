@@ -124,7 +124,11 @@ async function hydrateWithCurrentDirectory(
     }
 
     const repository = workspaceFolders[0]
-    const directoryPath = currentFileContextItem.uri.toString().split('/').slice(0, -1).join('/')
+    const repoName = repository.name.split('/').at(-1)
+    const fullDirectoryPath = currentFileContextItem.uri.toString().split('/').slice(0, -1).join('/')
+    const directoryPath = repoName
+        ? fullDirectoryPath.split(`${repoName}/`).at(-1) ?? fullDirectoryPath
+        : fullDirectoryPath
 
     const directoryItem: ContextItemOpenCtx = {
         type: 'openctx',
@@ -134,10 +138,9 @@ async function hydrateWithCurrentDirectory(
         providerUri: REMOTE_DIRECTORY_PROVIDER_URI,
         description: 'Current Directory',
         source: ContextItemSource.Initial,
-        // @ts-ignore
         mention: {
             description: directoryPath,
-            //uri: `${repository.name}/${directoryPath}/`,
+            uri: `${repository.name}/${directoryPath}/`,
             data: {
                 repoName: repository.name,
                 repoID: repository.id,
@@ -145,12 +148,6 @@ async function hydrateWithCurrentDirectory(
             },
         },
     }
-
-    // Currently we just search files in the directory that contains opened files
-    // and include these files mentions, but it would be better to support openctx
-    // remote directory mentions here to enhance functionality of prompt directory
-    // mentions
-    // const directoryFiles = await getContextFileFromDirectory()
 
     return [
         promptText.replaceAll(
