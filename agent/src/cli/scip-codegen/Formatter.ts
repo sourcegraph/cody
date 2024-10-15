@@ -183,6 +183,7 @@ export abstract class Formatter {
         '`observable.d.ts`/Subscription#',
         '`provider.ts`/Provider#configSource',
         '`StatusBar.ts`/CodyStatusBar',
+        'lexicalEditor/`nodes.ts`/content0',
     ]
     private readonly ignoredTypeRefs = [
         '`provider.ts`/Provider#',

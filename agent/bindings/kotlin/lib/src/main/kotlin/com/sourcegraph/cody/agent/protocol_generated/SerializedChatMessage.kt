@@ -4,7 +4,7 @@ package com.sourcegraph.cody.agent.protocol_generated;
 import com.google.gson.annotations.SerializedName;
 
 data class SerializedChatMessage(
-  val contextFiles: List<ContextItem>? = null,
+  val contextFiles: List<SerializedContextItem>? = null,
   val error: ChatError? = null,
   val editorState: Any? = null,
   val speaker: SpeakerEnum, // Oneof: human, assistant, system
