@@ -2,6 +2,7 @@ import type { ContextItem } from '../../codebase-context/messages'
 import type { Message } from '../../sourcegraph-api'
 
 import type { SerializedChatTranscript } from '.'
+import { PromptString } from '../../prompt/prompt-string'
 
 /**
  * The list of context items (most important first) along with
@@ -51,6 +52,22 @@ export interface SerializedChatMessage {
     text?: string // Changed from PromptString
     model?: string
     intent?: ChatMessage['intent']
+}
+
+export function serializeChatMessage(chatMessage: ChatMessage): SerializedChatMessage {
+    return {
+        speaker: chatMessage.speaker,
+        model: chatMessage.model,
+        contextFiles: chatMessage.contextFiles,
+        editorState: chatMessage.editorState,
+        error: chatMessage.error,
+        text: chatMessage.text ? chatMessage.text.toString() : undefined,
+        intent: chatMessage.intent,
+    }
+}
+
+export function deserializeChatMessage(message: SerializedChatMessage): ChatMessage {
+    return { ...message, text: PromptString.unsafe_deserializeChatMessageText(message.text) }
 }
 
 export interface ChatError {

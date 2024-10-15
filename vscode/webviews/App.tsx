@@ -6,8 +6,8 @@ import {
     type ChatMessage,
     type ContextItem,
     GuardrailsPost,
-    PromptString,
     type TelemetryRecorder,
+    deserializeChatMessage,
 } from '@sourcegraph/cody-shared'
 import type { AuthMethod } from '../src/chat/protocol'
 import { AuthPage } from './AuthPage'
@@ -57,9 +57,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                         break
                     }
                     case 'transcript': {
-                        const deserializedMessages = message.messages.map(
-                            PromptString.unsafe_deserializeChatMessage
-                        )
+                        const deserializedMessages = message.messages.map(deserializeChatMessage)
                         if (message.isMessageInProgress) {
                             const msgLength = deserializedMessages.length - 1
                             setTranscript(deserializedMessages.slice(0, msgLength))

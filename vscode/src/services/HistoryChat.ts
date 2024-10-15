@@ -3,7 +3,7 @@ import * as vscode from 'vscode'
 import { chatHistory } from '../chat/chat-view/ChatHistoryManager'
 import { getChatPanelTitle } from '../chat/chat-view/chat-helpers'
 
-import { type AuthStatus, type ChatMessage, PromptString } from '@sourcegraph/cody-shared'
+import { type AuthStatus, type ChatMessage, deserializeChatMessage } from '@sourcegraph/cody-shared'
 import { prepareChatMessage } from '../chat/chat-view/ChatBuilder'
 import { getRelativeChatPeriod } from '../common/time-date'
 
@@ -41,7 +41,7 @@ function groupCodyChats(authStatus: AuthStatus | undefined): GroupedChats | null
         // Can use Array.prototype.findLast once we drop Node 16
         for (let index = entry.interactions.length - 1; index >= 0; index--) {
             lastHumanMessage = prepareChatMessage(
-                PromptString.unsafe_deserializeChatMessage(entry.interactions[index]?.humanMessage)
+                deserializeChatMessage(entry.interactions[index]?.humanMessage)
             )
             if (lastHumanMessage) {
                 break
