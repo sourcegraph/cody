@@ -3,7 +3,7 @@ import * as vscode from 'vscode'
 import {
     type AuthCredentials,
     type AuthStatus,
-    type ClientCapabilities,
+    type ClientCapabilitiesWithLegacyFields,
     NEVER,
     type ResolvedConfiguration,
     type Unsubscribable,
@@ -226,7 +226,7 @@ class AuthProvider implements vscode.Disposable {
     // The vscode API is not available in the post-uninstall script.
     // Public so that it can be mocked for testing
     public async serializeUninstallerInfo(authStatus: AuthStatus): Promise<void> {
-        let clientCapabilities: ClientCapabilities | undefined
+        let clientCapabilities: ClientCapabilitiesWithLegacyFields | undefined
         try {
             clientCapabilities = getClientCapabilities()
         } catch {

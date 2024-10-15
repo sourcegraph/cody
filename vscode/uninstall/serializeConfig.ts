@@ -2,7 +2,7 @@ import * as fs from 'node:fs/promises'
 import * as path from 'node:path'
 import {
     type AuthStatus,
-    type ClientCapabilities,
+    type ClientCapabilitiesWithLegacyFields,
     type ResolvedConfiguration,
     codyPaths,
 } from '@sourcegraph/cody-shared'
@@ -44,7 +44,7 @@ async function writeSnapshot(
 interface UninstallerConfig {
     config?: ResolvedConfiguration
     authStatus: AuthStatus | undefined
-    clientCapabilities?: ClientCapabilities
+    clientCapabilities?: ClientCapabilitiesWithLegacyFields
     version?: string
 }
 
