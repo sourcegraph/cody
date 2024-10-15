@@ -1,12 +1,15 @@
 import {
     AUTH_STATUS_FIXTURE_AUTHED,
     type AuthenticatedAuthStatus,
+    CLIENT_CAPABILITIES_FIXTURE,
     type ChatClient,
     type ContextItem,
     ContextItemSource,
     DOTCOM_URL,
     featureFlagProvider,
     mockAuthStatus,
+    mockClientCapabilities,
+    mockResolvedConfig,
     modelsService,
     ps,
 } from '@sourcegraph/cody-shared'
@@ -16,7 +19,8 @@ import { URI } from 'vscode-uri'
 import { ChatBuilder } from '../chat-view/ChatBuilder'
 import type { ContextRetriever } from '../chat-view/ContextRetriever'
 import * as initialContext from '../initialContext'
-import { getCodyTools } from './CodyTool'
+import type { CodyTool } from './CodyTool'
+import { CodyToolProvider } from './CodyToolProvider'
 import { DeepCodyAgent } from './DeepCody'
 
 const DeepCodyModel = DeepCodyAgent.ModelRef
@@ -38,8 +42,11 @@ describe('DeepCody', () => {
     let mockContextRetriever: ContextRetriever
     let mockSpan: any
     let mockCurrentContext: ContextItem[]
+    let mockCodyTools: CodyTool[]
 
-    beforeEach(() => {
+    beforeEach(async () => {
+        mockResolvedConfig({ configuration: {} })
+        mockClientCapabilities(CLIENT_CAPABILITIES_FIXTURE)
         mockAuthStatus(codyProAuthStatus)
         mockChatBuilder = {
             selectedModel: 'anthropic::2023-06-01::deep-cody',
@@ -65,6 +72,8 @@ describe('DeepCody', () => {
         mockContextRetriever = {
             retrieveContext: vi.fn(),
         } as unknown as ContextRetriever
+
+        mockCodyTools = await CodyToolProvider.instance(mockContextRetriever).getTools()
 
         mockSpan = {}
 
@@ -95,7 +104,8 @@ describe('DeepCody', () => {
         const agent = new DeepCodyAgent(
             mockChatBuilder,
             mockChatClient,
-            getCodyTools(mockContextRetriever, mockSpan),
+            mockCodyTools,
+            mockSpan,
             mockCurrentContext
         )
 
@@ -115,6 +125,7 @@ describe('DeepCody', () => {
                 type: 'file',
                 uri: URI.file('/path/to/repo/newfile.ts'),
                 content: 'const newExample = "test result";',
+                source: ContextItemSource.Agentic,
             },
         ])
 
@@ -134,16 +145,19 @@ describe('DeepCody', () => {
         const agent = new DeepCodyAgent(
             mockChatBuilder,
             mockChatClient,
-            getCodyTools(mockContextRetriever, mockSpan),
+            mockCodyTools,
+            mockSpan,
             mockCurrentContext
         )
 
         const result = await agent.getContext({ aborted: false } as AbortSignal)
 
         expect(mockChatClient.chat).toHaveBeenCalled()
+        expect(mockCodyTools).toHaveLength(4)
         expect(mockContextRetriever.retrieveContext).toHaveBeenCalled()
         expect(result).toHaveLength(2)
-        expect(result[0].content).toBe('const newExample = "test result";')
+        expect(result[0].content).toBe('const example = "test";')
+        expect(result[1].content).toBe('const newExample = "test result";')
     })
 
     it('does not retrieve additional context for enterprise user without feature flag', async () => {

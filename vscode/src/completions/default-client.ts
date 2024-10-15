@@ -32,6 +32,7 @@ import {
     tracer,
 } from '@sourcegraph/cody-shared'
 
+import { getClientIdentificationHeaders } from '@sourcegraph/cody-shared'
 import { autocompleteLifecycleOutputChannelLogger } from './output-channel-logger'
 
 /**
@@ -62,6 +63,7 @@ class DefaultCodeCompletionsClient implements CodeCompletionsClient {
                 const headers = new Headers({
                     ...configuration.customHeaders,
                     ...providerOptions?.customHeaders,
+                    ...getClientIdentificationHeaders(),
                 })
 
                 // Force HTTP connection reuse to reduce latency.

@@ -216,7 +216,7 @@ export class PromptString {
         defaultValue: D
     ): PromptString | D {
         const raw = config.get(path, null)
-        const value = raw === null ? defaultValue : internal_createPromptString(raw, [])
+        const value = raw === null || raw === '' ? defaultValue : internal_createPromptString(raw, [])
         return value
     }
 

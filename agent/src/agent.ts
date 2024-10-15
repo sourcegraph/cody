@@ -5,6 +5,7 @@ import type { Polly, Request } from '@pollyjs/core'
 import {
     type AccountKeyedChatHistory,
     type ChatHistoryKey,
+    type ClientCapabilities,
     type CodyCommand,
     CodyIDE,
     ModelUsage,
@@ -34,7 +35,6 @@ import {
     logDebug,
     logError,
     modelsService,
-    setUserAgent,
 } from '@sourcegraph/cody-shared'
 import { chatHistory } from '../../vscode/src/chat/chat-view/ChatHistoryManager'
 import type { ExtensionMessage, WebviewMessage } from '../../vscode/src/chat/protocol'
@@ -429,7 +429,6 @@ export class Agent extends MessageHandler implements ExtensionClient {
 
             vscode_shim.setClientInfo(clientInfo)
             this.clientInfo = clientInfo
-            setUserAgent(`${clientInfo?.name} / ${clientInfo?.version}`)
 
             try {
                 const secrets =
@@ -1479,7 +1478,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
         return this.clientInfo?.version || '0.0.0'
     }
 
-    get capabilities(): agent_protocol.ClientCapabilities | undefined {
+    get capabilities(): ClientCapabilities | undefined {
         return this.clientInfo?.capabilities ?? undefined
     }
 

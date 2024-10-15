@@ -235,8 +235,6 @@ export function getServerModelTags(
     }
     if (category === 'accuracy') {
         tags.push(ModelTag.Power)
-    } else if (category === 'other') {
-        tags.push(ModelTag.Balanced)
     } else {
         tags.push(category)
     }

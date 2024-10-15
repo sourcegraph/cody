@@ -43,7 +43,12 @@ export interface ModelRef {
     modelId: ModelId
 }
 
-export type ModelCategory = ModelTag.Power | ModelTag.Balanced | ModelTag.Speed | 'accuracy' | 'other'
+export type ModelCategory =
+    | ModelTag.Power
+    | ModelTag.Balanced
+    | ModelTag.Speed
+    | 'accuracy'
+    | ModelTag.Other
 export type ModelStatus =
     | ModelTag.Experimental
     | ModelTag.EarlyAccess

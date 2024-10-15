@@ -8,6 +8,7 @@ export enum ModelTag {
     Power = 'power',
     Speed = 'speed',
     Balanced = 'balanced',
+    Other = 'other',
 
     // Statuses
     Recommended = 'recommended',
