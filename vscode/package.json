@@ -56,7 +56,14 @@
     "version-bump:patch": "RELEASE_TYPE=patch ts-node-transpile-only ./scripts/version-bump.ts",
     "version-bump:dry-run": "RELEASE_TYPE=prerelease ts-node-transpile-only ./scripts/version-bump.ts"
   },
-  "categories": ["AI", "Chat", "Programming Languages", "Machine Learning", "Snippets", "Education"],
+  "categories": [
+    "AI",
+    "Chat",
+    "Programming Languages",
+    "Machine Learning",
+    "Snippets",
+    "Education"
+  ],
   "keywords": [
     "cody",
     "codey",
@@ -120,7 +127,11 @@
   },
   "main": "./dist/extension.node.js",
   "browser": "./dist/extension.web.js",
-  "activationEvents": ["onLanguage", "onStartupFinished", "onWebviewPanel:cody.editorPanel"],
+  "activationEvents": [
+    "onLanguage",
+    "onStartupFinished",
+    "onWebviewPanel:cody.editorPanel"
+  ],
   "contributes": {
     "walkthroughs": [
       {
@@ -719,13 +730,17 @@
       },
       {
         "command": "cody.supercompletion.jumpTo",
-        "args": ["next"],
+        "args": [
+          "next"
+        ],
         "key": "shift+ctrl+down",
         "when": "cody.activated && !editorReadonly && cody.hasActionableSupercompletion"
       },
       {
         "command": "cody.supercompletion.jumpTo",
-        "args": ["previous"],
+        "args": [
+          "previous"
+        ],
         "key": "shift+ctrl+up",
         "when": "cody.activated && !editorReadonly && cody.hasActionableSupercompletion"
       }
@@ -979,7 +994,10 @@
           "order": 2,
           "type": "string",
           "markdownDescription": "A Git repository URL to use instead of allowing Cody to infer the Git repository from the workspace.",
-          "examples": ["https://github.com/sourcegraph/cody", "ssh://git@github.com/sourcegraph/cody"]
+          "examples": [
+            "https://github.com/sourcegraph/cody",
+            "ssh://git@github.com/sourcegraph/cody"
+          ]
         },
         "cody.customHeaders": {
           "order": 4,
@@ -1029,12 +1047,18 @@
           "order": 6,
           "type": "string",
           "markdownDescription": "A custom instruction to be included at the start of all chat messages (e.g. \"Answer all my questions in Spanish.\")",
-          "examples": ["Answer all my questions in Spanish."]
+          "examples": [
+            "Answer all my questions in Spanish."
+          ]
         },
         "cody.chat.defaultLocation": {
           "order": 6,
           "type": "string",
-          "enum": ["sticky", "sidebar", "editor"],
+          "enum": [
+            "sticky",
+            "sidebar",
+            "editor"
+          ],
           "markdownDescription": "Controls where the Cody chat view opens when the user invokes the `Cody: New Chat` command, or the Alt+L and Alt+/ shortcuts.",
           "enumDescriptions": [
             "Opens in the last-activated view location, which is set whenever the user explicitly chooses to open chat in a given location",
@@ -1047,7 +1071,9 @@
           "order": 7,
           "type": "string",
           "markdownDescription": "A custom instruction to be included at the end of all instructions for edit commands (e.g. \"Write all unit tests with Jest instead of detected framework.\")",
-          "examples": ["Write all unit tests with Jest instead of detected framework."]
+          "examples": [
+            "Write all unit tests with Jest instead of detected framework."
+          ]
         },
         "cody.codeActions.enabled": {
           "order": 11,
@@ -1093,15 +1119,24 @@
         "cody.telemetry.level": {
           "order": 99,
           "type": "string",
-          "enum": ["all", "off"],
-          "enumDescriptions": ["Sends usage data and errors.", "Disables all extension telemetry."],
+          "enum": [
+            "all",
+            "off"
+          ],
+          "enumDescriptions": [
+            "Sends usage data and errors.",
+            "Disables all extension telemetry."
+          ],
           "markdownDescription": "Controls the telemetry about Cody usage and errors. See [Cody usage and privacy notice](https://about.sourcegraph.com/terms/cody-notice).",
           "default": "all"
         },
         "cody.autocomplete.advanced.provider": {
           "type": "string",
           "default": "default",
-          "enum": ["default", "experimental-ollama"],
+          "enum": [
+            "default",
+            "experimental-ollama"
+          ],
           "enumDescriptions": [
             "Our recommended setup with the best balance of quality and latency. We continuously update this for optimal performance.",
             "Experimental support for Ollama users. Use `cody.autocomplete.experimental.ollamaOptions` to configure requests to Ollama server."
@@ -1125,7 +1160,10 @@
         },
         "cody.experimental.foldingRanges": {
           "type": "string",
-          "enum": ["lsp", "indentation-based"],
+          "enum": [
+            "lsp",
+            "indentation-based"
+          ],
           "enumDescriptions": [
             "Use folding ranges that are enabled by default in VS Code, and are usually powered by LSP",
             "Use custom implementation of folding ranges that is indentation based. This is the implementation that is used by other Cody clients like the JetBrains plugin"
@@ -1136,7 +1174,11 @@
         "cody.autocomplete.experimental.graphContext": {
           "type": "string",
           "default": null,
-          "enum": [null, "tsc", "tsc-mixed"],
+          "enum": [
+            null,
+            "tsc",
+            "tsc-mixed"
+          ],
           "markdownDescription": "Use the code graph to retrieve context for autocomplete requests."
         },
         "cody.autocomplete.experimental.fireworksOptions": {
@@ -1311,7 +1353,9 @@
     "untrustedWorkspaces": {
       "supported": "limited",
       "description": "Cody only uses providers (configured in `openctx.providers`) from trusted workspaces because providers may execute arbitrary code.",
-      "restrictedConfigurations": ["openctx.providers"]
+      "restrictedConfigurations": [
+        "openctx.providers"
+      ]
     }
   },
   "dependencies": {
@@ -1367,7 +1411,6 @@
     "js-levenshtein": "^1.1.6",
     "lexical": "^0.17.0",
     "lodash": "^4.17.21",
-    "lowlight": "^2.9.0",
     "lru-cache": "^10.0.0",
     "lucide-react": "^0.378.0",
     "mac-ca": "^2.0.3",
