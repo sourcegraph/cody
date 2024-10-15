@@ -11,7 +11,6 @@ import {
     type ContextSearchResult,
     type FileURI,
     type PromptString,
-    type SourcegraphCompletionsClient,
     firstResultFromOperation,
     graphqlClient,
     isFileURI,
@@ -19,7 +18,6 @@ import {
 import isError from 'lodash/isError'
 import * as vscode from 'vscode'
 import type { VSCodeEditor } from '../../editor/vscode-editor'
-import { rewriteKeywordQuery } from '../../local-context/rewrite-keyword-query'
 import type { SymfRunner } from '../../local-context/symf'
 import { logDebug, logError } from '../../output-channel-logger'
 import { gitLocallyModifiedFiles } from '../../repository/git-extension-api'
@@ -157,8 +155,7 @@ async function codebaseRootsFromMentions(
 export class ContextRetriever implements vscode.Disposable {
     constructor(
         private editor: VSCodeEditor,
-        private symf: SymfRunner | undefined,
-        private llms: SourcegraphCompletionsClient
+        private symf: SymfRunner | undefined
     ) {}
 
     public dispose(): void {
@@ -183,11 +180,6 @@ export class ContextRetriever implements vscode.Disposable {
     ): Promise<ContextItem[]> {
         if (roots.length === 0) {
             return []
-        }
-        const rewritten = await rewriteKeywordQuery(this.llms, query, signal)
-        const rewrittenQuery = {
-            ...query,
-            rewritten,
         }
 
         // Retrieve context from locally edited files
@@ -214,8 +206,8 @@ export class ContextRetriever implements vscode.Disposable {
             )
         }
         const [liveContext, indexedContext] = await Promise.all([
-            this.retrieveLiveContext(query, rewrittenQuery.rewritten, changedFiles, signal),
-            this.retrieveIndexedContext(roots, query, rewrittenQuery.rewritten, span, signal),
+            this.retrieveLiveContext(query, changedFiles, signal),
+            this.retrieveIndexedContext(roots, query, span, signal),
         ])
 
         const { keep: filteredIndexedContext } = filterLocallyModifiedFilesOutOfRemoteContext(
@@ -229,7 +221,6 @@ export class ContextRetriever implements vscode.Disposable {
 
     private async retrieveLiveContext(
         originalQuery: PromptString,
-        rewrittenQuery: string,
         files: string[],
         signal?: AbortSignal
     ): Promise<ContextItem[]> {
@@ -240,7 +231,7 @@ export class ContextRetriever implements vscode.Disposable {
             logDebug('ContextRetriever', 'symf not available, skipping live context')
             return []
         }
-        const results = await this.symf.getLiveResults(originalQuery, rewrittenQuery, files, signal)
+        const results = await this.symf.getLiveResults(originalQuery, files, signal)
         return (
             await Promise.all(
                 results.map(async (r): Promise<ContextItem | ContextItem[]> => {
@@ -275,7 +266,6 @@ export class ContextRetriever implements vscode.Disposable {
     private async retrieveIndexedContext(
         roots: Root[],
         originalQuery: PromptString,
-        rewrittenQuery: string,
         span: Span,
         signal?: AbortSignal
     ): Promise<ContextItem[]> {
@@ -326,7 +316,7 @@ export class ContextRetriever implements vscode.Disposable {
 
         const remoteResultsPromise = this.retrieveIndexedContextFromRemote(
             [...repoIDsOnRemote],
-            rewrittenQuery,
+            originalQuery.toString(),
             signal
         )
         const localResultsPromise = this.retrieveIndexedContextLocally(
