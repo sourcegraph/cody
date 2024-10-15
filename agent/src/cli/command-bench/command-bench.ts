@@ -10,12 +10,7 @@ import { newAgentClient } from '../../agent'
 import { exec } from 'node:child_process'
 import fs from 'node:fs'
 import { promisify } from 'node:util'
-import {
-    codyPaths,
-    isDefined,
-    modelsService,
-    setClientCapabilities,
-} from '@sourcegraph/cody-shared'
+import { codyPaths, isDefined, modelsService, setClientCapabilities } from '@sourcegraph/cody-shared'
 import { sleep } from '../../../../vscode/src/completions/utils'
 import {
     getConfiguration,
