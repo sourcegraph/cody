@@ -1,5 +1,4 @@
-import { authStatus, firstValueFrom, ps } from '@sourcegraph/cody-shared'
-import type { Disposable } from 'vscode'
+import { authStatus, firstValueFrom, isDefined, ps } from '@sourcegraph/cody-shared'
 import { getOpenCtxProviders } from '../../context/openctx'
 import type { ContextRetriever } from '../chat-view/ContextRetriever'
 import {
@@ -11,7 +10,7 @@ import {
     SearchTool,
 } from './CodyTool'
 
-export class CodyToolProvider implements Disposable {
+export class CodyToolProvider {
     private static instance: CodyToolProvider
     private tools: CodyTool[] = []
     private contextRetriever: Pick<ContextRetriever, 'retrieveContext'>
@@ -37,7 +36,7 @@ export class CodyToolProvider implements Disposable {
 
     public async getTools(): Promise<CodyTool[]> {
         if (!this.tools.length) {
-            await this.buildTools()
+            await this.initializeTools()
         }
         return this.tools
     }
@@ -84,11 +83,5 @@ export class CodyToolProvider implements Disposable {
                 return config ? new OpenCtxTool(provider, config as CodyToolConfig) : null
             })
             .filter(isDefined)
-    }
-
-    public dispose(): void {
-        for (const tool of this.tools) {
-            tool?.dispose()
-        }
     }
 }

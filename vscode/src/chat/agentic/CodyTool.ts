@@ -12,7 +12,6 @@ import {
     pendingOperation,
     ps,
 } from '@sourcegraph/cody-shared'
-import type { Disposable } from 'vscode'
 import { getContextFromRelativePath } from '../../commands/context/file-path'
 import { getContextFileFromShell } from '../../commands/context/shell'
 import { type ContextRetriever, toStructuredMentions } from '../chat-view/ContextRetriever'
@@ -31,9 +30,8 @@ export interface CodyToolConfig {
     }
 }
 
-export abstract class CodyTool implements Disposable {
+export abstract class CodyTool {
     protected rawText = ''
-    protected disposables: Disposable[] = []
 
     constructor(public readonly config: CodyToolConfig) {}
 
@@ -53,7 +51,7 @@ export abstract class CodyTool implements Disposable {
         if (parsed.length) {
             logDebug('CodyTool', tag.toString(), { verbose: parsed })
         }
-        this.rawText = ''
+        this.reset()
         return parsed
     }
 
@@ -63,7 +61,7 @@ export abstract class CodyTool implements Disposable {
 
     public abstract execute(span: Span): Promise<ContextItem[]>
 
-    public dispose(): void {
+    private reset(): void {
         this.rawText = ''
     }
 }
@@ -180,11 +178,13 @@ export class OpenCtxTool extends CodyTool {
         try {
             for (const query of queries) {
                 const mention = parseMentionQuery(query, idObject)
-                const items = (await getChatContextItemsForMention({ mentionQuery: mention })).map(f => {
-                    const i = f as ContextItemOpenCtx
-                    const content = i.mention?.description ?? i.mention?.data?.content
-                    return { ...i, content, source: ContextItemSource.Agentic }
-                })
+                const items = (await getChatContextItemsForMention({ mentionQuery: mention })).map(
+                    mention => {
+                        const item = mention as ContextItemOpenCtx
+                        const content = item.mention?.description ?? item.mention?.data?.content
+                        return { ...item, content, source: ContextItemSource.Agentic }
+                    }
+                )
                 results.push(...items)
             }
             logDebug('CodyTool', `OpenCtx returned ${results.length} items`, { verbose: results })
