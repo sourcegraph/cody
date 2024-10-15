@@ -9,15 +9,15 @@ Use Cody, the AI coding assistant, plus Code Search directly from your JetBrains
 
 ## Cody Features
 
-### Autocomplete: Cody writes code for you
+### Autocomplete
 
 Cody autocompletes single lines or whole functions in any programming language, configuration file, or documentation. It’s powered by the latest instant LLMs for accuracy and performance.
 
 ![Example of using code autocomplete](https://storage.googleapis.com/sourcegraph-assets/website/Product%20Animations/AutoCompletion_IntelliJ_SS.jpg)
 
-### Chat: Ask Cody about anything in your codebase
+### Chat
 
-Cody is able to search context from your entire codebase — not just your open files. Cody uses advanced code search to retrieve context from both local and remote repositories.
+Answer questions about your entire codebase, specific files and symbols, or general programming topics.
 
 For example, you can ask Cody:
 
@@ -30,19 +30,19 @@ For example, you can ask Cody:
 
 ![Example of chatting with Cody](https://storage.googleapis.com/sourcegraph-assets/website/Product%20Animations/Chat_IntelliJ_SS.jpg)
 
-### Built-in commands
+### Built-in prompts
 
-Cody has quick commands for common actions. Select the commands tab or right-click on a selection of code and choose one of the `Ask Cody > ...` commands, such as:
+Streamline your development process by using prompts to understand, improve, fix, document, and generate unit tests for your code. Cody supports one-click prompts such as:
 
 - Explain code
-- Generate unit test
+- Generate unit tests
 - Smell code
 
-_We also welcome pull request contributions for new, useful commands!_
+### Choose your LLM
 
-### Swappable LLMs
+Cody users can select the LLM they want to use for chat and experiment to choose the best model for the job. Choose from multiple options including Claude 3.5 Sonnet, Gemini 1.5 Pro, and Mixtral 8x7B. Cody Pro users can also select Claude 3 Opus and GPT-4o. [See the full list of model options here](https://sourcegraph.com/docs/cody/capabilities/supported-models).
 
-Cody supports multiple LLMs including Anthropic Claude 3, OpenAI GPT-4o, and Mixtral models, with more coming soon. Cody Pro users can swap models used for chat on-demand.
+Administrators for Sourcegraph Enterprise instances can configure which model options to let team members choose from.
 
 ### Usage
 
