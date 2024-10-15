@@ -108,6 +108,9 @@ export enum ContextItemSource {
 
     /** From source control history */
     History = 'history',
+
+    /** Agentic context */
+    Agentic = 'agentic',
 }
 
 /**
