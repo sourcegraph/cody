@@ -20,7 +20,7 @@ import { ChatBuilder } from '../chat-view/ChatBuilder'
 import type { ContextRetriever } from '../chat-view/ContextRetriever'
 import * as initialContext from '../initialContext'
 import type { CodyTool } from './CodyTool'
-import { CodyToolProvider } from './CodyTools'
+import { CodyToolProvider } from './CodyToolProvider'
 import { DeepCodyAgent } from './DeepCody'
 
 const DeepCodyModel = DeepCodyAgent.ModelRef

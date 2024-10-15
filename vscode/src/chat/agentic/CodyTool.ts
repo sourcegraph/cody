@@ -18,6 +18,9 @@ import { type ContextRetriever, toStructuredMentions } from '../chat-view/Contex
 import { getChatContextItemsForMention } from '../context/chatContext'
 import { getCorpusContextItemsForEditorState } from '../initialContext'
 
+/**
+ * Configuration interface for CodyTool instances.
+ */
 export interface CodyToolConfig {
     tags: {
         tag: PromptString
@@ -30,42 +33,53 @@ export interface CodyToolConfig {
     }
 }
 
+/**
+ * Abstract base class for Cody tools.
+ */
 export abstract class CodyTool {
-    protected rawText = ''
-
     constructor(public readonly config: CodyToolConfig) {}
-
+    /**
+     * Generates and returns the instruction prompt string for the tool.
+     */
     public getInstruction(): PromptString {
         const { tag, subTag } = this.config.tags
         const { instruction, placeholder } = this.config.prompt
-        return ps`${instruction}:
-   <${tag}><${subTag}>${placeholder}</${subTag}></${tag}>`
+        return ps`${instruction}: \`<${tag}><${subTag}>${placeholder}</${subTag}></${tag}>\``
     }
-
+    /**
+     * Parses the raw text input and extracts relevant content.
+     */
     protected parse(): string[] {
-        const { tag, subTag } = this.config.tags
+        const { subTag } = this.config.tags
         const regex = new RegExp(`<${subTag}>(.+?)</?${subTag}>`, 's')
-        const parsed = (this.rawText.match(new RegExp(regex, 'g')) || [])
+        const parsed = (this.unprocessedText.match(new RegExp(regex, 'g')) || [])
             .map(match => regex.exec(match)?.[1].trim())
             .filter(Boolean) as string[]
-        if (parsed.length) {
-            logDebug('CodyTool', tag.toString(), { verbose: parsed })
-        }
         this.reset()
         return parsed
     }
-
-    public stream(text: string): void {
-        this.rawText += text
-    }
-
+    /**
+     * Abstract method to be implemented by subclasses for executing the tool.
+     */
     public abstract execute(span: Span): Promise<ContextItem[]>
-
+    /**
+     * The raw text input stream.
+     */
+    protected unprocessedText = ''
+    /**
+     * Appends new text to the existing raw text on stream.
+     */
+    public stream(text: string): void {
+        this.unprocessedText += text
+    }
     private reset(): void {
-        this.rawText = ''
+        this.unprocessedText = ''
     }
 }
 
+/**
+ * Tool for executing CLI commands and retrieving their output.
+ */
 export class CliTool extends CodyTool {
     constructor() {
         super({
@@ -76,7 +90,7 @@ export class CliTool extends CodyTool {
             prompt: {
                 instruction: ps`To see the output of shell commands`,
                 placeholder: ps`SHELL_COMMAND`,
-                example: ps`Details about GitHub issue#1234: <TOOLCLI><cmd>gh issue view 1234</cmd></TOOLCLI>`,
+                example: ps`Details about GitHub issue#1234: \`<TOOLCLI><cmd>gh issue view 1234</cmd></TOOLCLI>\``,
             },
         })
     }
@@ -89,6 +103,9 @@ export class CliTool extends CodyTool {
     }
 }
 
+/**
+ * Tool for retrieving the full content of files in the codebase.
+ */
 export class FileTool extends CodyTool {
     constructor() {
         super({
@@ -99,7 +116,7 @@ export class FileTool extends CodyTool {
             prompt: {
                 instruction: ps`To retrieve full content of a codebase file`,
                 placeholder: ps`FILENAME`,
-                example: ps`See the content of different files: <TOOLFILE><name>path/foo.ts</name><name>path/bar.ts</name></TOOLFILE>`,
+                example: ps`See the content of different files: \`<TOOLFILE><name>path/foo.ts</name><name>path/bar.ts</name></TOOLFILE>\``,
             },
         })
     }
@@ -114,6 +131,9 @@ export class FileTool extends CodyTool {
     }
 }
 
+/**
+ * Tool for performing searches within the codebase.
+ */
 export class SearchTool extends CodyTool {
     private performedSearch = new Set<string>()
 
@@ -126,15 +146,15 @@ export class SearchTool extends CodyTool {
             prompt: {
                 instruction: ps`To search for context in the codebase`,
                 placeholder: ps`SEARCH_QUERY`,
-                example: ps`Find usage of "node:fetch" in my codebase: <TOOLSEARCH><query>node:fetch</query></TOOLSEARCH>`,
+                example: ps`Find usage of "node:fetch" in my codebase: \`<TOOLSEARCH><query>node:fetch</query></TOOLSEARCH>\``,
             },
         })
     }
 
     public async execute(span: Span): Promise<ContextItem[]> {
         const queries = this.parse()
-        const query = queries[0] // There should only be one query.
-        if (!this.contextRetriever || !query || this.performedSearch.has(query)) {
+        const query = queries.find(q => !this.performedSearch.has(q))
+        if (!this.contextRetriever || !query) {
             return []
         }
         // Get the latest corpus context items
@@ -160,6 +180,9 @@ export class SearchTool extends CodyTool {
     }
 }
 
+/**
+ * Tool for interacting with OpenCtx providers and retrieving context items.
+ */
 export class OpenCtxTool extends CodyTool {
     constructor(
         private provider: ImportedProviderConfiguration,
