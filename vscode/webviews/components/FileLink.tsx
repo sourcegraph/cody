@@ -2,7 +2,7 @@ import { clsx } from 'clsx'
 import type React from 'react'
 
 import {
-    type ContextItemSource,
+    ContextItemSource,
     type RangeData,
     displayLineRange,
     displayPath,
@@ -147,7 +147,7 @@ export const FileLink: React.FunctionComponent<
                     href={linkDetails.href}
                     target={linkDetails.target}
                 >
-                    <i className="codicon codicon-file" title={iconTitle} />
+                    <i className={getContextItemSourceIcon(source, uri)} title={iconTitle} />
                     <div
                         className={clsx(styles.path, (isTooLarge || isIgnored) && styles.excluded)}
                         data-source={source || 'unknown'}
@@ -166,19 +166,7 @@ export const FileLink: React.FunctionComponent<
                     variant="link"
                     onClick={onFileLinkClicked}
                 >
-                    <i
-                        className={clsx(
-                            'codicon',
-                            `codicon-${
-                                source === 'terminal'
-                                    ? 'terminal'
-                                    : source === 'user'
-                                      ? 'mention'
-                                      : 'file'
-                            }`
-                        )}
-                        title={iconTitle}
-                    />
+                    <i className={getContextItemSourceIcon(source)} title={iconTitle} />
                     <div
                         className={clsx(styles.path, (isTooLarge || isIgnored) && styles.excluded)}
                         data-source={source || 'unknown'}
@@ -220,4 +208,22 @@ export const PrettyPrintedContextItem: React.FunctionComponent<{
             <span className={styles.dirname}>{dirname}</span>
         </>
     )
+}
+
+function getContextItemSourceIcon(source?: ContextItemSource, uri?: URI): string {
+    if (uri && (uri.scheme === 'http' || uri.scheme === 'https')) {
+        return 'codicon codicon-globe'
+    }
+    switch (source) {
+        case ContextItemSource.Terminal:
+            return 'codicon codicon-terminal'
+        case ContextItemSource.Agentic:
+            return 'codicon codicon-plug'
+        case ContextItemSource.Selection:
+        case ContextItemSource.Initial:
+        case ContextItemSource.User:
+            return 'codicon codicon-mention'
+        default:
+            return 'codicon codicon-file'
+    }
 }
