@@ -112,7 +112,7 @@ import {
 import { openExternalLinks } from '../../services/utils/workspace-action'
 import { TestSupport } from '../../test-support'
 import type { MessageErrorType } from '../MessageProvider'
-import type { CodyToolProvider } from '../agentic/CodyTools'
+import { CodyToolProvider } from '../agentic/CodyTools'
 import { DeepCodyAgent } from '../agentic/DeepCody'
 import { getMentionMenuData } from '../context/chatContext'
 import type { ChatIntentAPIClient } from '../context/chatIntentAPIClient'
@@ -141,7 +141,6 @@ export interface ChatControllerOptions {
 
     contextRetriever: Pick<ContextRetriever, 'retrieveContext'>
     chatIntentAPIClient: ChatIntentAPIClient | null
-    agenticToolsProvider: CodyToolProvider
 
     extensionClient: Pick<ExtensionClient, 'capabilities'>
 
@@ -188,7 +187,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
     private readonly chatClient: ChatControllerOptions['chatClient']
 
     private readonly contextRetriever: ChatControllerOptions['contextRetriever']
-    private readonly agenticToolsProvider: CodyToolProvider
+    private readonly toolProvider: CodyToolProvider
 
     private readonly editor: ChatControllerOptions['editor']
     private readonly extensionClient: ChatControllerOptions['extensionClient']
@@ -214,14 +213,13 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         chatIntentAPIClient,
         contextRetriever,
         extensionClient,
-        agenticToolsProvider,
     }: ChatControllerOptions) {
         this.extensionUri = extensionUri
         this.chatClient = chatClient
         this.editor = editor
         this.extensionClient = extensionClient
         this.contextRetriever = contextRetriever
-        this.agenticToolsProvider = agenticToolsProvider
+        this.toolProvider = CodyToolProvider.getInstance(this.contextRetriever)
 
         this.chatBuilder = new ChatBuilder(undefined)
 
@@ -790,7 +788,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 const agenticContext = await new DeepCodyAgent(
                     this.chatBuilder,
                     this.chatClient,
-                    await this.agenticToolsProvider.getTools(),
+                    await this.toolProvider.getTools(),
                     span,
                     corpusContext
                 ).getContext(signal)

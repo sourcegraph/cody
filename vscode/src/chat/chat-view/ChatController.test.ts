@@ -23,7 +23,6 @@ import type { VSCodeEditor } from '../../editor/vscode-editor'
 import type { ExtensionClient } from '../../extension-client'
 import * as githubRepoMetadataModule from '../../repository/githubRepoMetadata'
 import { mockLocalStorage } from '../../services/LocalStorageProvider'
-import type { CodyToolProvider } from '../agentic/CodyTools'
 import type { ExtensionMessage } from '../protocol'
 import { ChatController, type ChatControllerOptions } from './ChatController'
 import { manipulateWebviewHTML } from './ChatController'
@@ -41,7 +40,6 @@ describe('ChatController', () => {
         retrieveContext: vi.fn(),
     } satisfies ChatControllerOptions['contextRetriever']
 
-    const mockCodyToolProvider: CodyToolProvider = {} as any
     const mockEditor: VSCodeEditor = {} as any
     const mockExtensionClient: Pick<ExtensionClient, 'capabilities'> = {
         capabilities: {},
@@ -84,7 +82,6 @@ describe('ChatController', () => {
             guardrails: mockGuardrails,
             contextRetriever: mockContextRetriever,
             chatIntentAPIClient: null,
-            agenticToolsProvider: mockCodyToolProvider,
         })
     })
 
