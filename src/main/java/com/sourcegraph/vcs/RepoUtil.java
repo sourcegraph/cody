@@ -6,15 +6,12 @@ import com.intellij.dvcs.repo.Repository;
 import com.intellij.dvcs.repo.VcsRepositoryManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.vcs.ProjectLevelVcsManager;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.vcsUtil.VcsUtil;
 import com.sourcegraph.cody.config.CodyProjectSettings;
 import com.sourcegraph.common.ErrorNotification;
-import git4idea.GitVcs;
 import git4idea.repo.GitRepository;
 import java.io.File;
-import java.util.Optional;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.idea.perforce.perforce.PerforceSettings;
@@ -72,37 +69,6 @@ public class RepoUtil {
         remoteUrl,
         remoteBranchName != null ? remoteBranchName : codyProjectSettings.getDefaultBranchName(),
         relativePath);
-  }
-
-  @Nullable
-  public static String findRepositoryName(
-      @NotNull Project project, @Nullable VirtualFile currentFile) {
-    VirtualFile fileFromTheRepository =
-        currentFile != null
-            ? currentFile
-            : RepoUtil.getRootFileFromFirstGitRepository(project).orElse(null);
-    if (fileFromTheRepository == null) {
-      return null;
-    }
-    try {
-      return RepoUtil.getRemoteRepoUrl(project, fileFromTheRepository);
-    } catch (Exception e) {
-      return RepoUtil.getSimpleRepositoryName(project, fileFromTheRepository);
-    }
-  }
-
-  @Nullable
-  private static String getSimpleRepositoryName(
-      @NotNull Project project, @NotNull VirtualFile file) {
-    try {
-      Repository repository = VcsRepositoryManager.getInstance(project).getRepositoryForFile(file);
-      if (repository == null) {
-        return null;
-      }
-      return repository.getRoot().getName();
-    } catch (Exception e) {
-      return null;
-    }
   }
 
   private static String doReplacements(
@@ -193,28 +159,5 @@ public class RepoUtil {
     }
 
     return VCSType.UNKNOWN;
-  }
-
-  private static Optional<VirtualFile> getRootFileFromFirstGitRepository(@NotNull Project project) {
-    // https://intellij-support.jetbrains.com/hc/en-us/community/posts/206105769/comments/206091565
-    Object lock = new Object();
-    ProjectLevelVcsManager.getInstance(project)
-        .runAfterInitialization(
-            () -> {
-              synchronized (lock) {
-                lock.notify();
-              }
-            });
-    synchronized (lock) {
-      try {
-        lock.wait();
-      } catch (InterruptedException ignored) {
-      }
-    }
-    Optional<Repository> firstFoundRepository =
-        VcsRepositoryManager.getInstance(project).getRepositories().stream()
-            .filter(it -> it.getVcs().getName().equals(GitVcs.NAME))
-            .findFirst();
-    return firstFoundRepository.map(Repository::getRoot);
   }
 }

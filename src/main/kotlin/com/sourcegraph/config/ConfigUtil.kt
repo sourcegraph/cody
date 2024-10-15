@@ -11,7 +11,6 @@ import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.fileEditor.TextEditor
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectManager
-import com.sourcegraph.cody.agent.CodyAgentCodebase
 import com.sourcegraph.cody.agent.protocol_generated.ExtensionConfiguration
 import com.sourcegraph.cody.config.CodyApplicationSettings
 import com.sourcegraph.cody.config.CodyAuthenticationManager
@@ -81,7 +80,6 @@ object ConfigUtil {
             UserLevelConfig.getAutocompleteProviderType()?.vscodeSettingString(),
         debug = isCodyDebugEnabled(),
         verboseDebug = isCodyVerboseDebugEnabled(),
-        codebase = CodyAgentCodebase.getInstance(project).getUrl().getNow(null),
         customConfiguration = getCustomConfiguration(project, customConfigContent),
     )
   }

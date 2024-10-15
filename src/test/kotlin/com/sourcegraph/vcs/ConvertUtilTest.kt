@@ -115,6 +115,37 @@ class ConvertUtilTest : TestCase() {
             .value)
   }
 
+  fun `test conversion Gitlab SSH URL with Git and multiple subgroups`() {
+    assertEquals(
+        "gitlab.com/sourcegraph/ui/sourcegraph-frontend",
+        convertGitCloneURLToCodebaseNameOrError(
+                "git@gitlab.com:sourcegraph/ui/sourcegraph-frontend.git")
+            .value)
+  }
+
+  fun `test conversion Gitlab SSH URL with Git and multiple subgroups including cody-ui`() {
+    assertEquals(
+        "gitlab.com/sourcegraph/ui/cody-ui/sourcegraph-frontend",
+        convertGitCloneURLToCodebaseNameOrError(
+                "git@gitlab.com:sourcegraph/ui/cody-ui/sourcegraph-frontend.git")
+            .value)
+  }
+
+  fun `test conversion custom hosts with a mono-repo`() {
+    assertEquals(
+        "my-custom-host.com.internal/mono-repo",
+        convertGitCloneURLToCodebaseNameOrError("some-user@my-custom-host.com.internal:mono-repo")
+            .value)
+  }
+
+  fun `test conversion custom hosts with a port`() {
+    assertEquals(
+        "my-custom-host.com.internal:2022/owner/repo",
+        convertGitCloneURLToCodebaseNameOrError(
+                "some-user@my-custom-host.com.internal:2022/owner/repo.git")
+            .value)
+  }
+
   // sourcegraph/jetbrains#1194 the add repository dialog has a fallback when the user enters a repo
   // name instead of a clone URL. If changing the failure behavior here, ensure the add repository
   // dialog can still add "literal" repo names successfully.

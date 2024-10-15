@@ -8,10 +8,11 @@ fun convertGitCloneURLToCodebaseNameOrError(theCloneURL: String): CodebaseName {
   val cloneURL = theCloneURL.lowercase()
 
   // Handle common Git SSH URL format
-  val sshUrlRegexMatchResult = Regex("""^[\w-]+@([^:]+):([\w-]+)/([\w-.]+)$""").find(cloneURL)
+  val sshUrlRegexMatchResult = Regex("""^[\w-]+@([^:]+):(?:(\d+)/)?([\w-/.]+)$""").find(cloneURL)
   if (sshUrlRegexMatchResult != null) {
-    val (host, owner, repo) = sshUrlRegexMatchResult.destructured
-    return CodebaseName("$host/$owner/${repo.replace(".git$".toRegex(), "")}")
+    val (host, port, path) = sshUrlRegexMatchResult.destructured
+    return CodebaseName(
+        "${host}${if (port.isNotEmpty()) ":$port" else ""}/${path.removeSuffix(".git")}")
   }
 
   var uri = URI(cloneURL)
