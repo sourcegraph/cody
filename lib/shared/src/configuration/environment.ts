@@ -21,53 +21,56 @@ import type { UIKind } from 'vscode' // types are ok
 
 export const cenv = defineEnvBuilder({
     /**
-     * Mirrors the HTTP_PROXY and HTTPS_PROXY environment variables but can be
-     * set explicitly which is a lot easier than having to handle the
-     * accompanying NO_PROXY=... properly (which we weren't)
+     * A combination of HTTP_PROXY, HTTPS_PROXY and NO_PROXY environment
+     * variables for easier consumption.
      */
-    CODY_DEFAULT_PROXY: codyProxy,
+    CODY_NODE_DEFAULT_PROXY: codyProxy,
 
     /**
      * Enables unstable internal testing configuration to be read from settings.json
      */
-    CODY_CONFIG_ENABLE_INTERNAL_UNSTABLE: (v, _) => bool(v) ?? bool(getEnv('CODY_TESTING')) ?? false,
+    CODY_CONFIG_ENABLE_INTERNAL_UNSTABLE: (envValue, _) =>
+        bool(envValue) ?? bool(getEnv('CODY_TESTING')) ?? false,
 
     /**
      * Forces the UIKind regardless of what vscode.env.uiKind returns.
      */
-    CODY_OVERRIDE_UI_KIND: (v, _) => uiKind(v),
+    CODY_OVERRIDE_UI_KIND: (envValue, _) => uiKind(envValue),
 
     /**
      * Disable fetching of Ollama models
      */
-    CODY_OVERRIDE_DISABLE_OLLAMA: (v, _) =>
-        bool(v) ?? assigned(getEnv('VITEST')) ?? assigned(getEnv('PW')) ?? false,
+    CODY_OVERRIDE_DISABLE_OLLAMA: (envValue, _) =>
+        bool(envValue) ?? assigned(getEnv('VITEST')) ?? assigned(getEnv('PW')) ?? false,
 
     /**
      * Forces a specific URL to be the DotCom API endpoint
      */
-    CODY_OVERRIDE_DOTCOM_URL: (v, _) => str(v) ?? /* LEGACY */ str(getEnv('TESTING_DOTCOM_URL')),
+    CODY_OVERRIDE_DOTCOM_URL: (envValue, _) =>
+        str(envValue) ?? /* LEGACY */ str(getEnv('TESTING_DOTCOM_URL')),
 
     /**
      * Disables the default console logging
      */
-    CODY_DEFAULT_LOGGER_DISABLE: (v, _) => bool(v) ?? assigned(getEnv('VITEST')) ?? false,
+    CODY_DEFAULT_LOGGER_DISABLE: (envValue, _) => bool(envValue) ?? assigned(getEnv('VITEST')) ?? false,
 
     /**
      * General flag to supress logs considered verbose during testing.
      */
-    CODY_TESTING_LOG_SUPRESS_VERBOSE: (v, _) => bool(v) ?? assigned(getEnv('VITEST')) ?? false,
+    CODY_TESTING_LOG_SUPRESS_VERBOSE: (envValue, _) =>
+        bool(envValue) ?? assigned(getEnv('VITEST')) ?? false,
 
     /**
      * Ignore error for telemetry provider initializations
      */
-    CODY_TESTING_IGNORE_TELEMETRY_PROVIDER_ERROR: (v, _) =>
-        bool(v) ?? assigned(getEnv('VITEST')) ?? false,
+    CODY_TESTING_IGNORE_TELEMETRY_PROVIDER_ERROR: (envValue, _) =>
+        bool(envValue) ?? assigned(getEnv('VITEST')) ?? false,
 
     /**
      * Limit the number of timers emitted from observables so that tests don't get stuck
      */
-    CODY_TESTING_LIMIT_MAX_TIMERS: (v, _) => bool(v) ?? assigned(getEnv('VITEST')) ?? false,
+    CODY_TESTING_LIMIT_MAX_TIMERS: (envValue, _) =>
+        bool(envValue) ?? assigned(getEnv('VITEST')) ?? false,
 })
 
 // Note of pride by the author: Doing this kind of wrapper that modifies the
@@ -79,16 +82,16 @@ const _env = typeof process !== 'undefined' ? process.env : {}
  * Looks up the key and it's variations.
  */
 function getEnv(key: string): string | undefined {
-    const v = _env[key] ?? _env[key.toUpperCase()] ?? _env[key.toLowerCase()]
-    if (v === undefined) {
-        return v
+    const envValue = _env[key] ?? _env[key.toUpperCase()] ?? _env[key.toLowerCase()]
+    if (envValue === undefined) {
+        return envValue
     }
     // For some reason in VSCode Web process.env is not a string.
-    return `${v}`
+    return `${envValue}`
 }
 
-type EnvBuilderFn<T> = (v: string | undefined, k: string) => T
-type InferReturnType<T> = T extends (v: string | undefined, k: string) => infer R ? R : never
+type EnvBuilderFn<T> = (envValue: string | undefined, k: string) => T
+type InferReturnType<T> = T extends (envValue: string | undefined, k: string) => infer R ? R : never
 function defineEnvBuilder<T extends Record<string, EnvBuilderFn<any>>>(config: T) {
     return Object.defineProperties(
         {} as { readonly [K in keyof T]: InferReturnType<T[K]> },
@@ -158,10 +161,8 @@ function uiKind(uiKind: string | undefined): UIKind | undefined {
     }
 }
 
-function codyProxy(v: string | undefined, k: string): string | undefined {
-    switch (bool(v)) {
-        case true:
-            break
+function codyProxy(envValue: string | undefined): string | undefined {
+    switch (bool(envValue)) {
         case false:
             // explicitly disabled
             return undefined
@@ -169,18 +170,15 @@ function codyProxy(v: string | undefined, k: string): string | undefined {
             break
     }
 
-    const forcedProxy = str(v)
+    const forcedProxy = str(envValue)
     if (forcedProxy) {
         return forcedProxy
     }
 
-    // we now fall back to environment variables
+    // If no explicit value was set we fall back to Node's proxy settings.
 
-    // TODO: We probably want to have a look through this to see if we should
-    // not enable proxy
-    //
-    // const noProxyRaw = getEnv('NO_PROXY') const noProxy = bool(noProxyRaw) ??
-    // str(noProxyRaw)
+    // TODO: We should check NO_PROXY to see if we're excluded. To be determined
+    // how we identify ourselves.
     const httpsProxy = str(getEnv('HTTPS_PROXY'))
     const httpProxy = str(getEnv('HTTP_PROXY'))
 

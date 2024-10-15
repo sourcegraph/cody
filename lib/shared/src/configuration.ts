@@ -22,7 +22,7 @@ export interface AuthCredentials {
 }
 
 export interface NetConfiguration {
-    vscode?: Record<string, any> | undefined | null
+    vscode?: string | undefined | null
     proxy?: {
         server?: string | undefined | null
         path?: string | undefined | null

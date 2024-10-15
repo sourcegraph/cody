@@ -89,10 +89,7 @@ export class DelegatingAgent extends AgentBase implements vscode.Disposable {
             startWith({
                 configuration: getConfiguration(),
             }),
-            map(v => {
-                const { proxy, bypassVSCode } = v.configuration.net
-                return { proxy, bypassVSCode }
-            }),
+            map(v => v.configuration.net),
             distinctUntilChanged()
         )
         //Note: This is split into two pipes because observable-fns sadly hasn't
@@ -231,6 +228,7 @@ type NormalizedSettings = {
     proxyCACert: string | null
     skipCertValidation: boolean
     proxyCACertPath: string | null
+    vscode: string | null
 }
 function normalizeSettings(raw: NetConfiguration): [Error, null] | [null, NormalizedSettings] {
     try {
@@ -238,7 +236,7 @@ function normalizeSettings(raw: NetConfiguration): [Error, null] | [null, Normal
             ? ({ proxyCACert: raw.proxy?.cacert ?? null, proxyCACertPath: null } as const)
             : ({ proxyCACert: null, proxyCACertPath: normalizePath(raw.proxy?.cacert) } as const)
 
-        const proxyServerString = raw.proxy?.server?.trim() || cenv.CODY_DEFAULT_PROXY || null
+        const proxyServerString = raw.proxy?.server?.trim() || cenv.CODY_NODE_DEFAULT_PROXY || null
         const proxyServer = proxyServerString ? new url.URL(proxyServerString) : null
         const proxyPath = normalizePath(raw.proxy?.path)
         return [
@@ -249,6 +247,7 @@ function normalizeSettings(raw: NetConfiguration): [Error, null] | [null, Normal
                 ...caCertConfig,
                 proxyPath,
                 proxyServer,
+                vscode: raw.vscode ?? null,
             },
         ]
     } catch (e: any) {
@@ -263,6 +262,7 @@ type ResolvedSettings = {
     ca: (string | Buffer)[]
     skipCertValidation: boolean
     bypassVSCode: boolean
+    vscode: string | null
 }
 async function resolveSettings([error, settings]:
     | [Error, null]
@@ -275,10 +275,20 @@ async function resolveSettings([error, settings]:
             proxyPath: null,
             proxyServer: null,
             skipCertValidation: false,
+            vscode: null,
         } satisfies ResolvedSettings
     }
     const proxyPath = resolveProxyPath(settings.proxyPath) || null
     const caCert = settings.proxyCACert || readProxyCACert(settings.proxyCACertPath) || null
+    if (proxyPath && settings.proxyServer) {
+        logError(
+            'vscode.configuration',
+            `Can't use ${CONFIG_KEY.netProxyPath} and ${CONFIG_KEY.netProxyServer} at the same time.`
+        )
+        throw new Error(
+            `Can't use ${CONFIG_KEY.netProxyPath} and ${CONFIG_KEY.netProxyServer} at the same time.`
+        )
+    }
     return {
         bypassVSCode:
             typeof settings.bypassVSCode === 'boolean'
@@ -289,6 +299,7 @@ async function resolveSettings([error, settings]:
         proxyPath,
         ca: await buildCaCerts(caCert ? [caCert] : null),
         skipCertValidation: settings.skipCertValidation,
+        vscode: settings.vscode,
     }
 }
 
@@ -307,9 +318,9 @@ function resolveProxyPath(filePath: string | null | undefined): string | undefin
     } catch (error) {
         logError(
             'vscode.configuration',
-            `Cannot verify ${CONFIG_KEY.net}.proxy.path: ${filePath}: ${error}`
+            `Cannot verify ${CONFIG_KEY.netProxyPath}: ${filePath}: ${error}`
         )
-        throw new Error(`Cannot verify ${CONFIG_KEY.net}.proxy.path: ${filePath}:\n${error}`)
+        throw new Error(`Cannot verify ${CONFIG_KEY.netProxyPath}: ${filePath}:\n${error}`)
     }
 }
 
@@ -323,9 +334,9 @@ export function readProxyCACert(filePath: string | null | undefined): string | u
     } catch (error) {
         logError(
             'vscode.configuration',
-            `Cannot read ${CONFIG_KEY.net}.proxy.cacert: ${filePath}: ${error}`
+            `Cannot read ${CONFIG_KEY.netProxyCacert}: ${filePath}: ${error}`
         )
-        throw new Error(`Error reading ${CONFIG_KEY.net}.proxy.cacert from ${filePath}:\n${error}`)
+        throw new Error(`Error reading ${CONFIG_KEY.netProxyCacert} from ${filePath}:\n${error}`)
     }
 }
 

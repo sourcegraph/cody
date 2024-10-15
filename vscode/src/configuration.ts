@@ -48,8 +48,20 @@ export function getConfiguration(
 
     return {
         net: {
-            ...config.get<object | undefined>('cody.net' as any, undefined), // TODO: For some reason the config getter is not working
-            vscode: config.get<object>('http' as any), // this is vscode's config that we need to watch
+            bypassVSCode: config.get<boolean | null | undefined>(CONFIG_KEY.netBypassVSCode, undefined),
+            proxy: {
+                server: config.get<string | null | undefined>(CONFIG_KEY.netProxyServer, undefined),
+                cacert: config.get<string | null | undefined>(CONFIG_KEY.netProxyCacert, undefined),
+                path: config.get<string | null | undefined>(CONFIG_KEY.netProxyPath, undefined),
+                skipCertValidation: config.get<boolean | null | undefined>(
+                    CONFIG_KEY.netProxySkipCertValidation,
+                    false
+                ),
+            },
+            // this is vscode's config that we need to watch. This is because it
+            // might require us to re-try auth. Settings aren't actually used so
+            // we stringify them.
+            vscode: JSON.stringify(config.get<object>('http' as any, {})),
         },
         codebase: sanitizeCodebase(config.get(CONFIG_KEY.codebase)),
         serverEndpoint: config.get<string>(CONFIG_KEY.serverEndpoint),
