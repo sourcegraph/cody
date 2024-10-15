@@ -23,6 +23,7 @@ import { getFileContext, getSelectionOrFileContext } from '../commands/context/s
 import { selectedCodePromptWithExtraFiles } from '../commands/execute'
 import { createRepositoryMention } from '../context/openctx/common/get-repository-mentions'
 import { remoteReposForAllWorkspaceFolders } from '../repository/remoteRepos'
+import { getCurrentRepositoryInfo } from './utils';
 
 const PROMPT_CURRENT_FILE_PLACEHOLDER: string = '[[current file]]'
 const PROMPT_CURRENT_SELECTION_PLACEHOLDER: string = '[[current selection]]'
@@ -30,7 +31,15 @@ const PROMPT_CURRENT_DIRECTORY_PLACEHOLDER: string = '[[current directory]]'
 const PROMPT_EDITOR_OPEN_TABS_PLACEHOLDER: string = '[[open tabs]]'
 const PROMPT_CURRENT_REPOSITORY_PLACEHOLDER: string = '[[current repository]]'
 
-type PromptHydrationModifier = (promptText: PromptString) => Promise<[PromptString, ContextItem[]]>
+/**
+ * Be default IDE itself can figure out all needed context via vscode API,
+ * for Cody Web where we don't hava access to this API (or way to override this)
+ * we pass static initial context from the main thread (current repo, file, dir, etc.)
+ */
+export type PromptHydrationInitialContext = ContextItem[]
+
+type PromptHydrationModifier = (promptText: PromptString, initialContext: PromptHydrationInitialContext) =>
+    Promise<[PromptString, ContextItem[]]>
 
 const PROMPT_HYDRATION_MODIFIERS: Record<string, PromptHydrationModifier> = {
     [PROMPT_CURRENT_FILE_PLACEHOLDER]: hydrateWithCurrentFile,
@@ -44,7 +53,7 @@ const PROMPT_HYDRATION_MODIFIERS: Record<string, PromptHydrationModifier> = {
  * This function replaces prompt generic mentions like current file, selection, directory,
  * etc. with actual context items mentions based on Editor context information.
  */
-export async function hydratePromptText(promptRawText: string): Promise<SerializedPromptEditorState> {
+export async function hydratePromptText(promptRawText: string, initialContext: PromptHydrationInitialContext): Promise<SerializedPromptEditorState> {
     const promptText = PromptString.unsafe_fromUserQuery(promptRawText)
     const promptTextMentionMatches = promptText.toString().match(/\[\[[^\]]*\]\]/gm) ?? []
 
@@ -58,7 +67,7 @@ export async function hydratePromptText(promptRawText: string): Promise<Serializ
             continue
         }
 
-        const [nextPromptText, contextItems] = await hydrateModifier(hydratedPromptText)
+        const [nextPromptText, contextItems] = await hydrateModifier(hydratedPromptText, initialContext)
         hydratedPromptText = nextPromptText
 
         for (const item of contextItems) {
@@ -71,8 +80,10 @@ export async function hydratePromptText(promptRawText: string): Promise<Serializ
     })
 }
 
-async function hydrateWithCurrentFile(promptText: PromptString): Promise<[PromptString, ContextItem[]]> {
-    const currentFileContextItem = await getFileContext()
+async function hydrateWithCurrentFile(promptText: PromptString, initialContext: PromptHydrationInitialContext): Promise<[PromptString, ContextItem[]]> {
+    // Check if initial context already contains current file (Cody Web case)
+    const initialContextFile = initialContext.find(item => item.type === 'file')
+    const currentFileContextItem = initialContextFile ?? await getFileContext()
 
     // TODO (vk): Add support for error notification if prompt hydration fails
     if (currentFileContextItem === null) {
@@ -89,9 +100,14 @@ async function hydrateWithCurrentFile(promptText: PromptString): Promise<[Prompt
 }
 
 async function hydrateWithCurrentSelection(
-    promptText: PromptString
+    promptText: PromptString,
+    initialContext: PromptHydrationInitialContext
 ): Promise<[PromptString, ContextItem[]]> {
-    const currentSelection = (await getSelectionOrFileContext())[0]
+    // Check if initial context already contains current file with selection (Cody Web case)
+    const initialContextFile = initialContext
+        .find(item => item.type === 'file' && item.range)
+
+    const currentSelection = initialContextFile ?? (await getSelectionOrFileContext())[0]
 
     // TODO (vk): Add support for error notification if prompt hydration fails
     if (!currentSelection) {
@@ -108,23 +124,34 @@ async function hydrateWithCurrentSelection(
 }
 
 async function hydrateWithCurrentDirectory(
-    promptText: PromptString
+    promptText: PromptString,
+    initialContext: PromptHydrationInitialContext
 ): Promise<[PromptString, ContextItem[]]> {
-    const currentFileContextItem = await getFileContext()
-    const workspaceFolders = await firstValueFrom(remoteReposForAllWorkspaceFolders)
+    const initialContextDirectory = initialContext
+        .find(item => item.type === 'openctx' && item.providerUri === REMOTE_DIRECTORY_PROVIDER_URI)
+
+    if (initialContextDirectory) {
+        return [
+            promptText.replaceAll(
+                PROMPT_CURRENT_DIRECTORY_PLACEHOLDER,
+                selectedCodePromptWithExtraFiles(initialContextDirectory, [])
+            ),
+            [initialContextDirectory],
+        ]
+    }
+
+    const initialContextFile = initialContext
+        .find(item => item.type === 'file')
+
+    const currentFileContextItem = initialContextFile ?? await getFileContext()
+    const currentRepository = await getCurrentRepositoryInfo(initialContext)
 
     // TODO (vk): Add support for error notification if prompt hydration fails
-    if (
-        !currentFileContextItem ||
-        workspaceFolders === pendingOperation ||
-        isError(workspaceFolders) ||
-        !workspaceFolders[0]
-    ) {
+    if (!currentFileContextItem || !currentRepository) {
         return [promptText, []]
     }
 
-    const repository = workspaceFolders[0]
-    const repoName = repository.name.split('/').at(-1)
+    const repoName = currentRepository.name.split('/').at(-1)
     const fullDirectoryPath = currentFileContextItem.uri.toString().split('/').slice(0, -1).join('/')
     const directoryPath = repoName
         ? fullDirectoryPath.split(`${repoName}/`).at(-1) ?? fullDirectoryPath
@@ -134,16 +161,16 @@ async function hydrateWithCurrentDirectory(
         type: 'openctx',
         provider: 'openctx',
         title: directoryPath,
-        uri: URI.file(`${repository.name}/${directoryPath}/`),
+        uri: URI.file(`${currentRepository.name}/${directoryPath}/`),
         providerUri: REMOTE_DIRECTORY_PROVIDER_URI,
         description: 'Current Directory',
         source: ContextItemSource.Initial,
         mention: {
             description: directoryPath,
-            uri: `${repository.name}/${directoryPath}/`,
+            uri: `${currentRepository.name}/${directoryPath}/`,
             data: {
-                repoName: repository.name,
-                repoID: repository.id,
+                repoID: currentRepository.id,
+                repoName: currentRepository.name,
                 directoryPath: `${directoryPath}/`,
             },
         },
@@ -177,8 +204,21 @@ async function hydrateWithOpenTabs(promptText: PromptString): Promise<[PromptStr
 }
 
 async function hydrateWithCurrentWorkspace(
-    promptText: PromptString
+    promptText: PromptString,
+    initialContext: PromptHydrationInitialContext
 ): Promise<[PromptString, ContextItem[]]> {
+    const initialContextRepository = initialContext.find(item => item.type === 'repository')
+
+    if (initialContextRepository) {
+        return [
+            promptText.replaceAll(
+                PROMPT_CURRENT_REPOSITORY_PLACEHOLDER,
+                selectedCodePromptWithExtraFiles(initialContextRepository, [])
+            ),
+            [initialContextRepository],
+        ]
+    }
+
     const authStatus = currentAuthStatusAuthed()
     const workspaceFolders = await firstValueFrom(remoteReposForAllWorkspaceFolders)
 

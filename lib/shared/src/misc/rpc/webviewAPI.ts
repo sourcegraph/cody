@@ -41,7 +41,7 @@ export interface WebviewToExtensionAPI {
 
     highlights(query: FetchHighlightFileParameters): Observable<string[][]>
 
-    hydratePromptMessage(promptText: string): Observable<SerializedPromptEditorState>
+    hydratePromptMessage(promptText: string, initialContext?: ContextItem[]): Observable<SerializedPromptEditorState>
 
     /**
      * Set the chat model.
@@ -92,6 +92,7 @@ export function createExtensionAPI(
     // As a workaround for Cody Web, support providing static initial context.
     staticInitialContext?: ContextItem[]
 ): WebviewToExtensionAPI {
+    const hydratePromptMessage = proxyExtensionAPI(messageAPI, 'hydratePromptMessage')
     return {
         mentionMenuData: proxyExtensionAPI(messageAPI, 'mentionMenuData'),
         evaluatedFeatureFlag: proxyExtensionAPI(messageAPI, 'evaluatedFeatureFlag'),
@@ -99,7 +100,8 @@ export function createExtensionAPI(
         models: proxyExtensionAPI(messageAPI, 'models'),
         chatModels: proxyExtensionAPI(messageAPI, 'chatModels'),
         highlights: proxyExtensionAPI(messageAPI, 'highlights'),
-        hydratePromptMessage: proxyExtensionAPI(messageAPI, 'hydratePromptMessage'),
+        hydratePromptMessage: (promptText) =>
+            hydratePromptMessage(promptText, staticInitialContext),
         setChatModel: proxyExtensionAPI(messageAPI, 'setChatModel'),
         initialContext: staticInitialContext
             ? () => Observable.of(staticInitialContext)
