@@ -221,19 +221,6 @@ const serverSentModelsMock = {
             },
         },
         {
-            modelRef: 'experimental-openaicompatible::2024-02-01::starchat-16b-beta',
-            displayName: 'starchat 16b',
-            modelName: 'starchat-16b',
-            capabilities: ['autocomplete', 'chat'],
-            category: 'power' as ModelTag.Balanced,
-            status: 'stable',
-            tier: 'pro' as ModelTag.Pro,
-            contextWindow: {
-                maxInputTokens: 30000,
-                maxOutputTokens: 4000,
-            },
-        },
-        {
             modelRef: 'cerebras::v1::llama3.1-70b',
             displayName: 'Llama 3.1 70b (via Cerebras)',
             modelName: 'llama3.1-70b',

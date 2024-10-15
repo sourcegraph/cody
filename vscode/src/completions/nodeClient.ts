@@ -15,9 +15,9 @@ import {
     RateLimitError,
     SourcegraphCompletionsClient,
     addClientInfoParams,
+    addCodyClientIdentificationHeaders,
     agent,
     currentResolvedConfig,
-    customUserAgent,
     getActiveTraceAndSpanId,
     getSerializedParams,
     getTraceparentHeaders,
@@ -90,23 +90,24 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
             const builder = new CompletionsResponseBuilder(apiVersion)
 
             const { auth, configuration } = await currentResolvedConfig()
+            const headers = new Headers({
+                'Content-Type': 'application/json',
+                // Disable gzip compression since the sg instance will start to batch
+                // responses afterwards.
+                'Accept-Encoding': 'gzip;q=0',
+                ...(auth.accessToken ? { Authorization: `token ${auth.accessToken}` } : null),
+                ...configuration?.customHeaders,
+                ...requestParams.customHeaders,
+                ...getTraceparentHeaders(),
+                Connection: 'keep-alive',
+            })
+            addCodyClientIdentificationHeaders(headers)
 
             const request = requestFn(
                 url,
                 {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        // Disable gzip compression since the sg instance will start to batch
-                        // responses afterwards.
-                        'Accept-Encoding': 'gzip;q=0',
-                        ...(auth.accessToken ? { Authorization: `token ${auth.accessToken}` } : null),
-                        ...(customUserAgent ? { 'User-Agent': customUserAgent } : null),
-                        ...configuration?.customHeaders,
-                        ...requestParams.customHeaders,
-                        ...getTraceparentHeaders(),
-                        Connection: 'keep-alive',
-                    },
+                    headers: Object.fromEntries(headers.entries()),
                     // So we can send requests to the Sourcegraph local development instance, which has an incompatible cert.
                     rejectUnauthorized: process.env.NODE_TLS_REJECT_UNAUTHORIZED !== '0',
                     agent: agent.current?.(url),
@@ -295,17 +296,20 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
             })
             try {
                 const { auth, configuration } = await currentResolvedConfig()
+                const headers = new Headers({
+                    'Content-Type': 'application/json',
+                    'Accept-Encoding': 'gzip;q=0',
+                    ...(auth.accessToken ? { Authorization: `token ${auth.accessToken}` } : null),
+                    ...configuration.customHeaders,
+                    ...requestParams.customHeaders,
+                    ...getTraceparentHeaders(),
+                })
+
+                addCodyClientIdentificationHeaders(headers)
+
                 const response = await fetch(url.toString(), {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Accept-Encoding': 'gzip;q=0',
-                        ...(auth.accessToken ? { Authorization: `token ${auth.accessToken}` } : null),
-                        ...(customUserAgent ? { 'User-Agent': customUserAgent } : null),
-                        ...configuration.customHeaders,
-                        ...requestParams.customHeaders,
-                        ...getTraceparentHeaders(),
-                    },
+                    headers: Object.fromEntries(headers.entries()),
                     body: JSON.stringify(serializedParams),
                     signal,
                 })

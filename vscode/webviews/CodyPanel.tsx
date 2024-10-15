@@ -1,4 +1,8 @@
-import { type AuthStatus, type ClientCapabilities, CodyIDE } from '@sourcegraph/cody-shared'
+import {
+    type AuthStatus,
+    type ClientCapabilitiesWithLegacyFields,
+    CodyIDE,
+} from '@sourcegraph/cody-shared'
 import { useExtensionAPI, useObservable } from '@sourcegraph/prompt-editor'
 import type React from 'react'
 import { type ComponentProps, type FunctionComponent, useMemo, useRef } from 'react'
@@ -21,7 +25,7 @@ export const CodyPanel: FunctionComponent<
         setView: (view: View) => void
         configuration: {
             config: LocalEnv & ConfigurationSubsetForWebview
-            clientCapabilities: ClientCapabilities
+            clientCapabilities: ClientCapabilitiesWithLegacyFields
             authStatus: AuthStatus
         }
         errorMessages: string[]

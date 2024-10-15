@@ -1,6 +1,6 @@
+import type { ClientCapabilities } from '@sourcegraph/cody-shared'
 import type { TextDocument, Uri } from 'vscode'
 import type vscode from 'vscode'
-import type { ClientCapabilities } from './jsonrpc/agent-protocol'
 import { FixupCodeLenses } from './non-stop/codelenses/provider'
 import type { FixupActor, FixupFileCollection } from './non-stop/roles'
 import type { FixupControlApplicator } from './non-stop/strategies'

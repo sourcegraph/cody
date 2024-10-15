@@ -14,7 +14,7 @@ import {
     codyPaths,
     isDefined,
     modelsService,
-    setClientCapabilitiesFromConfiguration,
+    setClientCapabilities,
 } from '@sourcegraph/cody-shared'
 import { sleep } from '../../../../vscode/src/completions/utils'
 import {
@@ -361,7 +361,7 @@ async function evaluateWorkspace(options: CodyBenchOptions, recordingDirectory: 
     console.log(`starting evaluation: fixture=${options.fixture.name} workspace=${options.workspace}`)
 
     createOrUpdateTelemetryRecorderProvider(true)
-    setClientCapabilitiesFromConfiguration(getConfiguration())
+    setClientCapabilities({ configuration: getConfiguration(), agentCapabilities: undefined })
 
     const workspaceRootUri = vscode.Uri.from({ scheme: 'file', path: options.workspace })
 

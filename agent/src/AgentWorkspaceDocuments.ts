@@ -80,7 +80,7 @@ export class AgentWorkspaceDocuments implements vscode_shim.WorkspaceDocuments {
         }
 
         // We have seen this document before, which means we mutate the existing
-        // document to reflect the latest chagnes. For each URI, we keep a
+        // document to reflect the latest changes. For each URI, we keep a
         // singleton document so that `AgentTextDocument.getText()` always
         // reflects the latest value.
         const contentChanges: vscode.TextDocumentContentChangeEvent[] = []

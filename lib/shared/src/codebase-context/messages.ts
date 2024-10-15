@@ -97,6 +97,9 @@ export enum ContextItemSource {
     /** In initial context */
     Initial = 'initial',
 
+    /** Query-based context that is not added by user */
+    Priority = 'priority',
+
     /** Remote search */
     Unified = 'unified',
 
@@ -108,6 +111,9 @@ export enum ContextItemSource {
 
     /** From source control history */
     History = 'history',
+
+    /** Agentic context */
+    Agentic = 'agentic',
 }
 
 /**
