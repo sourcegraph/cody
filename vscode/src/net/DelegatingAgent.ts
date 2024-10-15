@@ -222,12 +222,12 @@ async function buildCaCerts(additional: string[] | null | undefined): Promise<(s
 }
 
 type NormalizedSettings = {
-    bypassVSCode: boolean | null
+    bypassVSCode: boolean
     proxyPath: string | null
     proxyServer: URL | null
     proxyCACert: string | null
-    skipCertValidation: boolean
     proxyCACertPath: string | null
+    skipCertValidation: boolean
     vscode: string | null
 }
 function normalizeSettings(raw: NetConfiguration): [Error, null] | [null, NormalizedSettings] {
@@ -236,13 +236,21 @@ function normalizeSettings(raw: NetConfiguration): [Error, null] | [null, Normal
             ? ({ proxyCACert: raw.proxy?.cacert ?? null, proxyCACertPath: null } as const)
             : ({ proxyCACert: null, proxyCACertPath: normalizePath(raw.proxy?.cacert) } as const)
 
-        const proxyServerString = raw.proxy?.server?.trim() || cenv.CODY_NODE_DEFAULT_PROXY || null
-        const proxyServer = proxyServerString ? new url.URL(proxyServerString) : null
-        const proxyPath = normalizePath(raw.proxy?.path)
+        const proxyEndpointString = raw.proxy?.endpoint?.trim() || cenv.CODY_NODE_DEFAULT_PROXY || null
+        const proxyServer =
+            proxyEndpointString &&
+            /^(http|https|socks|socks4|socks4a|socks5|socks5h):\/\/[^:]+:\d+/i.test(proxyEndpointString)
+                ? new url.URL(proxyEndpointString)
+                : null
+        const proxyPath = proxyEndpointString?.startsWith('unix://')
+            ? normalizePath(proxyEndpointString.slice(7))
+            : null
         return [
             null,
             {
-                bypassVSCode: raw.bypassVSCode ?? !!proxyServer ?? !!proxyPath,
+                bypassVSCode:
+                    raw.mode?.toLowerCase() === 'bypass' ||
+                    (raw.mode?.toLowerCase() !== 'vscode' && (!!proxyServer || !!proxyPath)),
                 skipCertValidation: raw.proxy?.skipCertValidation || false,
                 ...caCertConfig,
                 proxyPath,
@@ -280,20 +288,8 @@ async function resolveSettings([error, settings]:
     }
     const proxyPath = resolveProxyPath(settings.proxyPath) || null
     const caCert = settings.proxyCACert || readProxyCACert(settings.proxyCACertPath) || null
-    if (proxyPath && settings.proxyServer) {
-        logError(
-            'vscode.configuration',
-            `Can't use ${CONFIG_KEY.netProxyPath} and ${CONFIG_KEY.netProxyServer} at the same time.`
-        )
-        throw new Error(
-            `Can't use ${CONFIG_KEY.netProxyPath} and ${CONFIG_KEY.netProxyServer} at the same time.`
-        )
-    }
     return {
-        bypassVSCode:
-            typeof settings.bypassVSCode === 'boolean'
-                ? settings.bypassVSCode
-                : !!settings.proxyServer || !!settings.proxyPath || false,
+        bypassVSCode: settings.bypassVSCode,
         error: null,
         proxyServer: settings.proxyServer || null,
         proxyPath,
@@ -318,9 +314,9 @@ function resolveProxyPath(filePath: string | null | undefined): string | undefin
     } catch (error) {
         logError(
             'vscode.configuration',
-            `Cannot verify ${CONFIG_KEY.netProxyPath}: ${filePath}: ${error}`
+            `Cannot verify ${CONFIG_KEY.netProxyEndpoint}: ${filePath}: ${error}`
         )
-        throw new Error(`Cannot verify ${CONFIG_KEY.netProxyPath}: ${filePath}:\n${error}`)
+        throw new Error(`Cannot verify ${CONFIG_KEY.netProxyEndpoint}: ${filePath}:\n${error}`)
     }
 }
 
@@ -341,11 +337,7 @@ export function readProxyCACert(filePath: string | null | undefined): string | u
 }
 
 function isInlineCert(pathOrCert: string | null | undefined): boolean {
-    return (
-        pathOrCert?.startsWith('-----BEGIN CERTIFICATE-----') ||
-        pathOrCert?.startsWith('-----BEGIN PKCS7-----') ||
-        false
-    )
+    return pathOrCert?.startsWith('-----BEGIN CERTIFICATE-----') || false
 }
 
 function normalizePath(filePath: string | null | undefined): string | null {

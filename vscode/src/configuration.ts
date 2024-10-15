@@ -48,11 +48,10 @@ export function getConfiguration(
 
     return {
         net: {
-            bypassVSCode: config.get<boolean | null | undefined>(CONFIG_KEY.netBypassVSCode, undefined),
+            mode: config.get<string | null | undefined>(CONFIG_KEY.netMode, undefined),
             proxy: {
-                server: config.get<string | null | undefined>(CONFIG_KEY.netProxyServer, undefined),
+                endpoint: config.get<string | null | undefined>(CONFIG_KEY.netProxyEndpoint, undefined),
                 cacert: config.get<string | null | undefined>(CONFIG_KEY.netProxyCacert, undefined),
-                path: config.get<string | null | undefined>(CONFIG_KEY.netProxyPath, undefined),
                 skipCertValidation: config.get<boolean | null | undefined>(
                     CONFIG_KEY.netProxySkipCertValidation,
                     false

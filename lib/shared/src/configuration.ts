@@ -22,14 +22,13 @@ export interface AuthCredentials {
 }
 
 export interface NetConfiguration {
-    vscode?: string | undefined | null
+    mode?: string | undefined | null
     proxy?: {
-        server?: string | undefined | null
-        path?: string | undefined | null
+        endpoint?: string | undefined | null
         cacert?: string | undefined | null
         skipCertValidation?: boolean | null
     }
-    bypassVSCode?: boolean | undefined | null
+    vscode?: string | undefined | null
 }
 
 interface RawClientConfiguration {
