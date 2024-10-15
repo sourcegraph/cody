@@ -4,7 +4,7 @@
  *
  * Example:
  *
- * ✨ See the [What’s new in v0.18](https://about.sourcegraph.com/blog/cody-vscode-0-18-release) blog post for what’s new in this release since v0.16 ✨
+ * ✨ See the [What’s new in v0.18](https://sourcegraph.com/changelog?topics=VS+Code) changelog for what’s new in this release since v0.16 ✨
  *
  * ## v0.18.6 Changes
  *
@@ -119,10 +119,7 @@ async function main(): Promise<void> {
     const previousMinor = extractPreviousMinor(minor)
 
     const intro = dedent`
-        ✨ See the [What’s new in v${minor}](https://about.sourcegraph.com/blog/cody-vscode-${minor.replaceAll(
-            '.',
-            '-'
-        )}-0-release) blog post for what’s new in this release since v${previousMinor} ✨
+        ✨ See the [What’s new in v${minor}](https://sourcegraph.com/changelog?topics=VS+Code) blog post for what’s new in this release since v${previousMinor} ✨
 
         ## v${currentVersion} Changes
     `
