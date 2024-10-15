@@ -41,7 +41,10 @@ export interface WebviewToExtensionAPI {
 
     highlights(query: FetchHighlightFileParameters): Observable<string[][]>
 
-    hydratePromptMessage(promptText: string, initialContext?: ContextItem[]): Observable<SerializedPromptEditorState>
+    hydratePromptMessage(
+        promptText: string,
+        initialContext?: ContextItem[]
+    ): Observable<SerializedPromptEditorState>
 
     /**
      * Set the chat model.
@@ -100,8 +103,7 @@ export function createExtensionAPI(
         models: proxyExtensionAPI(messageAPI, 'models'),
         chatModels: proxyExtensionAPI(messageAPI, 'chatModels'),
         highlights: proxyExtensionAPI(messageAPI, 'highlights'),
-        hydratePromptMessage: (promptText) =>
-            hydratePromptMessage(promptText, staticInitialContext),
+        hydratePromptMessage: promptText => hydratePromptMessage(promptText, staticInitialContext),
         setChatModel: proxyExtensionAPI(messageAPI, 'setChatModel'),
         initialContext: staticInitialContext
             ? () => Observable.of(staticInitialContext)

@@ -1613,7 +1613,9 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     },
                     evaluatedFeatureFlag: flag => featureFlagProvider.evaluatedFeatureFlag(flag),
                     hydratePromptMessage: (promptText, initialContext) =>
-                        promiseFactoryToObservable(() => hydratePromptText(promptText, initialContext ?? [])),
+                        promiseFactoryToObservable(() =>
+                            hydratePromptText(promptText, initialContext ?? [])
+                        ),
                     prompts: query =>
                         promiseFactoryToObservable(signal =>
                             mergedPromptsAndLegacyCommands(query, signal)

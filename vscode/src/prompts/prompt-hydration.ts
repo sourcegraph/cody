@@ -23,7 +23,7 @@ import { getFileContext, getSelectionOrFileContext } from '../commands/context/s
 import { selectedCodePromptWithExtraFiles } from '../commands/execute'
 import { createRepositoryMention } from '../context/openctx/common/get-repository-mentions'
 import { remoteReposForAllWorkspaceFolders } from '../repository/remoteRepos'
-import { getCurrentRepositoryInfo } from './utils';
+import { getCurrentRepositoryInfo } from './utils'
 
 const PROMPT_CURRENT_FILE_PLACEHOLDER: string = '[[current file]]'
 const PROMPT_CURRENT_SELECTION_PLACEHOLDER: string = '[[current selection]]'
@@ -38,8 +38,10 @@ const PROMPT_CURRENT_REPOSITORY_PLACEHOLDER: string = '[[current repository]]'
  */
 export type PromptHydrationInitialContext = ContextItem[]
 
-type PromptHydrationModifier = (promptText: PromptString, initialContext: PromptHydrationInitialContext) =>
-    Promise<[PromptString, ContextItem[]]>
+type PromptHydrationModifier = (
+    promptText: PromptString,
+    initialContext: PromptHydrationInitialContext
+) => Promise<[PromptString, ContextItem[]]>
 
 const PROMPT_HYDRATION_MODIFIERS: Record<string, PromptHydrationModifier> = {
     [PROMPT_CURRENT_FILE_PLACEHOLDER]: hydrateWithCurrentFile,
@@ -53,7 +55,10 @@ const PROMPT_HYDRATION_MODIFIERS: Record<string, PromptHydrationModifier> = {
  * This function replaces prompt generic mentions like current file, selection, directory,
  * etc. with actual context items mentions based on Editor context information.
  */
-export async function hydratePromptText(promptRawText: string, initialContext: PromptHydrationInitialContext): Promise<SerializedPromptEditorState> {
+export async function hydratePromptText(
+    promptRawText: string,
+    initialContext: PromptHydrationInitialContext
+): Promise<SerializedPromptEditorState> {
     const promptText = PromptString.unsafe_fromUserQuery(promptRawText)
     const promptTextMentionMatches = promptText.toString().match(/\[\[[^\]]*\]\]/gm) ?? []
 
@@ -80,10 +85,13 @@ export async function hydratePromptText(promptRawText: string, initialContext: P
     })
 }
 
-async function hydrateWithCurrentFile(promptText: PromptString, initialContext: PromptHydrationInitialContext): Promise<[PromptString, ContextItem[]]> {
+async function hydrateWithCurrentFile(
+    promptText: PromptString,
+    initialContext: PromptHydrationInitialContext
+): Promise<[PromptString, ContextItem[]]> {
     // Check if initial context already contains current file (Cody Web case)
     const initialContextFile = initialContext.find(item => item.type === 'file')
-    const currentFileContextItem = initialContextFile ?? await getFileContext()
+    const currentFileContextItem = initialContextFile ?? (await getFileContext())
 
     // TODO (vk): Add support for error notification if prompt hydration fails
     if (currentFileContextItem === null) {
@@ -104,8 +112,7 @@ async function hydrateWithCurrentSelection(
     initialContext: PromptHydrationInitialContext
 ): Promise<[PromptString, ContextItem[]]> {
     // Check if initial context already contains current file with selection (Cody Web case)
-    const initialContextFile = initialContext
-        .find(item => item.type === 'file' && item.range)
+    const initialContextFile = initialContext.find(item => item.type === 'file' && item.range)
 
     const currentSelection = initialContextFile ?? (await getSelectionOrFileContext())[0]
 
@@ -127,8 +134,9 @@ async function hydrateWithCurrentDirectory(
     promptText: PromptString,
     initialContext: PromptHydrationInitialContext
 ): Promise<[PromptString, ContextItem[]]> {
-    const initialContextDirectory = initialContext
-        .find(item => item.type === 'openctx' && item.providerUri === REMOTE_DIRECTORY_PROVIDER_URI)
+    const initialContextDirectory = initialContext.find(
+        item => item.type === 'openctx' && item.providerUri === REMOTE_DIRECTORY_PROVIDER_URI
+    )
 
     if (initialContextDirectory) {
         return [
@@ -140,10 +148,9 @@ async function hydrateWithCurrentDirectory(
         ]
     }
 
-    const initialContextFile = initialContext
-        .find(item => item.type === 'file')
+    const initialContextFile = initialContext.find(item => item.type === 'file')
 
-    const currentFileContextItem = initialContextFile ?? await getFileContext()
+    const currentFileContextItem = initialContextFile ?? (await getFileContext())
     const currentRepository = await getCurrentRepositoryInfo(initialContext)
 
     // TODO (vk): Add support for error notification if prompt hydration fails
