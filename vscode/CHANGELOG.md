@@ -22,7 +22,6 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 ### Fixed
 
 - Chat: Improve webview performance in long chats. [pull/5866](https://github.com/sourcegraph/cody/pull/5866), [pull/5875](https://github.com/sourcegraph/cody/pull/5875), [pull/5879](https://github.com/sourcegraph/cody/pull/5879)
-
 - Autocomplete: Remove support for the deprecated `experimental-openaicompatible` provider. Use `openaicompatible` instead. [pull/5872](https://github.com/sourcegraph/cody/pull/5872)
 
 ## 1.36.3

@@ -81,10 +81,10 @@ function parseNewlineList(input: string): string[] {
 
 function parseContextList(input: string): EvalContextItem[] {
     return input
-        .split('\n')
+        .split(',')
         .map(s => s.trim())
         .filter(rr => rr.length > 0)
-        .flatMap(s => contextItemFromString(s))
+        .map(s => contextItemFromString(s))
 }
 
 export interface Example {

@@ -1,4 +1,4 @@
-import { hydrateAfterPostMessage, isErrorLike } from '@sourcegraph/cody-shared'
+import { forceHydration, hydrateAfterPostMessage, isErrorLike } from '@sourcegraph/cody-shared'
 import type { ExtensionMessage } from 'cody-ai/src/chat/protocol'
 import { type VSCodeWrapper, setVSCodeWrapper } from 'cody-ai/webviews/utils/VSCodeApi'
 import {
@@ -153,7 +153,7 @@ function useVSCodeAPI(input: useVSCodeAPIInput): VSCodeWrapper | null {
                     }
                     void client.rpc.sendRequest('webview/receiveMessage', {
                         id: activeWebviewPanelIDRef.current,
-                        message,
+                        message: forceHydration(message),
                     })
                 }
             },
