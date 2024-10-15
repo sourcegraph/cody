@@ -46,6 +46,7 @@ const hoverSourceLabels: Record<ContextItemSource, string | undefined> = {
     terminal: 'from terminal output',
     history: 'from git history',
     initial: 'from open repo or file',
+    priority: 'via query matching',
 }
 
 export const FileLink: React.FunctionComponent<
