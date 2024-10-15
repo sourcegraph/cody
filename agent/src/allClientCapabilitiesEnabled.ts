@@ -1,4 +1,4 @@
-import type { ClientCapabilities } from './protocol-alias'
+import type { ClientCapabilities } from '@sourcegraph/cody-shared'
 
 export const allClientCapabilitiesEnabled: ClientCapabilities = {
     progressBars: 'enabled',
@@ -11,4 +11,5 @@ export const allClientCapabilitiesEnabled: ClientCapabilities = {
     ignore: 'enabled',
     codeActions: 'enabled',
     secrets: 'client-managed',
+    authentication: 'enabled',
 }

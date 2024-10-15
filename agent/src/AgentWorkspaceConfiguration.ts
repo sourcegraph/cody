@@ -46,6 +46,8 @@ export class AgentWorkspaceConfiguration implements vscode.WorkspaceConfiguratio
                 return CodyIDE.VisualStudio
             case 'eclipse':
                 return CodyIDE.Eclipse
+            case 'standalone-web':
+                return CodyIDE.StandaloneWeb
             default:
                 return undefined
         }

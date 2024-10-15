@@ -20,7 +20,7 @@ import {
 } from '@sourcegraph/cody-shared'
 
 import { Observable, map } from 'observable-fns'
-import { logDebug } from '../log'
+import { logDebug } from '../output-channel-logger'
 import { gitRemoteUrlsForUri } from './remote-urls-from-parent-dirs'
 
 export class RepoNameResolver {

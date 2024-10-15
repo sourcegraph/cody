@@ -6,7 +6,6 @@ import {
     OLLAMA_DEFAULT_URL,
     type PickResolvedConfiguration,
     PromptString,
-    ps,
     setStaticResolvedConfigurationValue,
 } from '@sourcegraph/cody-shared'
 
@@ -62,8 +61,8 @@ export function getConfiguration(
         autocompleteLanguages: config.get(CONFIG_KEY.autocompleteLanguages, {
             '*': true,
         }),
-        chatPreInstruction: PromptString.fromConfig(config, CONFIG_KEY.chatPreInstruction, ps``),
-        editPreInstruction: PromptString.fromConfig(config, CONFIG_KEY.editPreInstruction, ps``),
+        chatPreInstruction: PromptString.fromConfig(config, CONFIG_KEY.chatPreInstruction, undefined),
+        editPreInstruction: PromptString.fromConfig(config, CONFIG_KEY.editPreInstruction, undefined),
         commandCodeLenses: config.get(CONFIG_KEY.commandCodeLenses, false),
         autocompleteAdvancedProvider: config.get<ClientConfiguration['autocompleteAdvancedProvider']>(
             CONFIG_KEY.autocompleteAdvancedProvider,

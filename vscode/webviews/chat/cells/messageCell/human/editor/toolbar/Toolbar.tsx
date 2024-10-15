@@ -1,7 +1,7 @@
 import type { Action, ChatMessage, Model } from '@sourcegraph/cody-shared'
-import { useExtensionAPI, useObservable } from '@sourcegraph/prompt-editor'
+import { useExtensionAPI } from '@sourcegraph/prompt-editor'
 import clsx from 'clsx'
-import { type FunctionComponent, useCallback, useMemo } from 'react'
+import { type FunctionComponent, useCallback } from 'react'
 import type { UserAccountInfo } from '../../../../../../Chat'
 import { ModelSelectField } from '../../../../../../components/modelSelectField/ModelSelectField'
 import { PromptSelectField } from '../../../../../../components/promptSelectField/PromptSelectField'
@@ -14,6 +14,7 @@ import { SubmitButton, type SubmitButtonState } from './SubmitButton'
  * The toolbar for the human message editor.
  */
 export const Toolbar: FunctionComponent<{
+    models: Model[]
     userInfo: UserAccountInfo
 
     isEditorFocused: boolean
@@ -40,6 +41,7 @@ export const Toolbar: FunctionComponent<{
     focusEditor,
     hidden,
     className,
+    models,
 }) => {
     /**
      * If the user clicks in a gap or on the toolbar outside of any of its buttons, report back to
@@ -69,6 +71,7 @@ export const Toolbar: FunctionComponent<{
             )}
             onMouseDown={onMaybeGapClick}
             onClick={onMaybeGapClick}
+            data-testid="chat-editor-toolbar"
         >
             <div className="tw-flex tw-items-center">
                 {/* Can't use tw-gap-1 because the popover creates an empty element when open. */}
@@ -80,6 +83,7 @@ export const Toolbar: FunctionComponent<{
                 )}
                 <PromptSelectFieldToolbarItem focusEditor={focusEditor} className="tw-ml-1 tw-mr-1" />
                 <ModelSelectFieldToolbarItem
+                    models={models}
                     userInfo={userInfo}
                     focusEditor={focusEditor}
                     className="tw-mr-1"
@@ -114,10 +118,11 @@ const PromptSelectFieldToolbarItem: FunctionComponent<{
 }
 
 const ModelSelectFieldToolbarItem: FunctionComponent<{
+    models: Model[]
     userInfo: UserAccountInfo
     focusEditor?: () => void
     className?: string
-}> = ({ userInfo, focusEditor, className }) => {
+}> = ({ userInfo, focusEditor, className, models }) => {
     const config = useConfig()
 
     const api = useExtensionAPI()
@@ -132,18 +137,17 @@ const ModelSelectFieldToolbarItem: FunctionComponent<{
         [api.setChatModel, focusEditor]
     )
 
-    const { value: chatModels } = useObservable(useMemo(() => api.chatModels(), [api.chatModels]))
-
     return (
-        !!chatModels?.length &&
+        !!models?.length &&
         (userInfo.isDotComUser || config.configFeatures.serverSentModels) && (
             <ModelSelectField
-                models={chatModels}
+                models={models}
                 onModelSelect={onModelSelect}
                 serverSentModelsEnabled={config.configFeatures.serverSentModels}
                 userInfo={userInfo}
                 onCloseByEscape={focusEditor}
                 className={className}
+                data-testid="chat-model-selector"
             />
         )
     )

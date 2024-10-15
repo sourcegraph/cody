@@ -37,6 +37,7 @@ const IGNORE_WARNING = 'File ignored by an admin setting'
 
 const hoverSourceLabels: Record<ContextItemSource, string | undefined> = {
     // Shown in the format `Included ${label}`
+    agentic: 'via Deep Cody',
     unified: 'via remote repository search',
     search: 'via local repository index (symf)',
     editor: 'from workspace files',

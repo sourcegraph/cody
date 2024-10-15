@@ -8,11 +8,10 @@ import {
     contextItemsFromPromptEditorValue,
     filterContextItemsFromPromptEditorValue,
     isAbortErrorOrSocketHangUp,
-    ps,
     reformatBotMessageForChat,
     serializedPromptEditorStateFromChatMessage,
 } from '@sourcegraph/cody-shared'
-import { type PromptEditorRefAPI, useExtensionAPI, useObservable } from '@sourcegraph/prompt-editor'
+import type { PromptEditorRefAPI } from '@sourcegraph/prompt-editor'
 import isEqual from 'lodash/isEqual'
 import { type FunctionComponent, type RefObject, memo, useMemo } from 'react'
 import type { ApiPostMessage, UserAccountInfo } from '../../../../Chat'
@@ -33,7 +32,7 @@ import { ContextFocusActions } from './ContextFocusActions'
  */
 export const AssistantMessageCell: FunctionComponent<{
     message: ChatMessage
-
+    models: Model[]
     /** Information about the human message that led to this assistant response. */
     humanMessage: PriorHumanMessageInfo | null
 
@@ -55,6 +54,7 @@ export const AssistantMessageCell: FunctionComponent<{
 }> = memo(
     ({
         message,
+        models,
         humanMessage,
         userInfo,
         chatEnabled,
@@ -69,11 +69,11 @@ export const AssistantMessageCell: FunctionComponent<{
         smartApplyEnabled,
     }) => {
         const displayMarkdown = useMemo(
-            () => reformatBotMessageForChat(message.text ?? ps``).toString(),
-            [message]
+            () => (message.text ? reformatBotMessageForChat(message.text).toString() : ''),
+            [message.text]
         )
 
-        const chatModel = useChatModelByID(message.model)
+        const chatModel = useChatModelByID(message.model, models)
         const ModelIcon = chatModel ? chatModelIconComponent(chatModel.id) : null
         const isAborted = isAbortErrorOrSocketHangUp(message.error)
 
@@ -234,10 +234,9 @@ export function makeHumanMessageInfo(
 }
 
 function useChatModelByID(
-    model: string | undefined
+    model: string | undefined,
+    chatModels: Model[]
 ): Pick<Model, 'id' | 'title' | 'provider' | 'tags'> | undefined {
-    const models = useExtensionAPI().chatModels
-    const chatModels = useObservable(useMemo(() => models(), [models])).value
     return (
         chatModels?.find(m => m.id === model) ??
         (model

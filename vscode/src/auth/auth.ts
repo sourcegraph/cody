@@ -17,7 +17,7 @@ import {
 } from '@sourcegraph/cody-shared'
 import { isSourcegraphToken } from '../chat/protocol'
 import { newAuthStatus } from '../chat/utils'
-import { logDebug } from '../log'
+import { logDebug } from '../output-channel-logger'
 import { authProvider } from '../services/AuthProvider'
 import { localStorage } from '../services/LocalStorageProvider'
 import { secretStorage } from '../services/SecretStorageProvider'

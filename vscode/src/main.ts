@@ -25,7 +25,7 @@ import {
     isDotCom,
     modelsService,
     resolvedConfig,
-    setClientCapabilitiesFromConfiguration,
+    setClientCapabilities,
     setClientNameVersion,
     setEditorWindowIsFocused,
     setLogger,
@@ -79,11 +79,11 @@ import type { PlatformContext } from './extension.common'
 import { configureExternalServices } from './external-services'
 import { isRunningInsideAgent } from './jsonrpc/isRunningInsideAgent'
 import type { SymfRunner } from './local-context/symf'
-import { logDebug, logError } from './log'
 import { MinionOrchestrator } from './minion/MinionOrchestrator'
 import { PoorMansBash } from './minion/environment'
 import { CodyProExpirationNotifications } from './notifications/cody-pro-expiration'
 import { showSetupNotification } from './notifications/setup-notification'
+import { logDebug, logError } from './output-channel-logger'
 import { initVSCodeGitApi } from './repository/git-extension-api'
 import { authProvider } from './services/AuthProvider'
 import { CharactersLogger } from './services/CharactersLogger'
@@ -130,7 +130,10 @@ export async function start(
 
     const disposables: vscode.Disposable[] = []
 
-    setClientCapabilitiesFromConfiguration(getConfiguration())
+    setClientCapabilities({
+        configuration: getConfiguration(),
+        agentCapabilities: platform.extensionClient.capabilities,
+    })
 
     setResolvedConfigurationObservable(
         combineLatest(
@@ -176,10 +179,12 @@ const register = async (
     isExtensionModeDevOrTest: boolean
 ): Promise<vscode.Disposable> => {
     const disposables: vscode.Disposable[] = []
-    setClientNameVersion(
-        platform.extensionClient.httpClientNameForLegacyReasons ?? platform.extensionClient.clientName,
-        platform.extensionClient.clientVersion
-    )
+    setClientNameVersion({
+        newClientName: platform.extensionClient.clientName,
+        newClientCompletionsStreamQueryParameterName:
+            platform.extensionClient.httpClientNameForLegacyReasons,
+        newClientVersion: platform.extensionClient.clientVersion,
+    })
 
     // Initialize `displayPath` first because it might be used to display paths in error messages
     // from the subsequent initialization.
@@ -197,7 +202,6 @@ const register = async (
     // Initialize external services
     const {
         chatClient,
-        completionsClient,
         guardrails,
         symfRunner,
         chatIntentAPIClient,
@@ -206,7 +210,7 @@ const register = async (
     disposables.push({ dispose: disposeExternalServices })
 
     const editor = new VSCodeEditor()
-    const contextRetriever = new ContextRetriever(editor, symfRunner, completionsClient)
+    const contextRetriever = new ContextRetriever(editor, symfRunner)
 
     const { chatsController } = registerChat(
         {

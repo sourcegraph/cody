@@ -207,6 +207,7 @@ function publicContextSummary(globalPrefix: string, context: ContextItem[]) {
         [ContextItemSource.Terminal]: cloneDeep(defaultBySourceCount),
         [ContextItemSource.History]: cloneDeep(defaultBySourceCount),
         [ContextItemSource.Priority]: cloneDeep(defaultBySourceCount),
+        [ContextItemSource.Agentic]: cloneDeep(defaultBySourceCount),
         other: cloneDeep(defaultBySourceCount),
     }
     const byType = {
@@ -373,6 +374,7 @@ const defaultByTypeCount: ByTypeCount = {
         [ContextItemSource.Terminal]: undefined,
         [ContextItemSource.History]: undefined,
         [ContextItemSource.Priority]: undefined,
+        [ContextItemSource.Agentic]: undefined,
         other: undefined,
     },
 }

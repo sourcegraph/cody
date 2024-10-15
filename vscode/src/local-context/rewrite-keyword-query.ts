@@ -6,7 +6,7 @@ import {
     getSimplePreamble,
     ps,
 } from '@sourcegraph/cody-shared'
-import { logDebug } from '../log'
+import { logDebug } from '../output-channel-logger'
 
 import { francAll } from 'franc-min'
 

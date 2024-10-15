@@ -15,7 +15,7 @@ import {
 } from '@sourcegraph/cody-shared'
 import type { VSCodeEditor } from '../../editor/vscode-editor'
 import type { SymfRunner } from '../../local-context/symf'
-import { logDebug, logError } from '../../log'
+import { logDebug, logError } from '../../output-channel-logger'
 
 export interface HumanInput {
     text: PromptString

@@ -1,5 +1,6 @@
 import {
     FILE_MENTION_EDITOR_STATE_FIXTURE,
+    getMockedDotComClientModels,
     serializedPromptEditorStateFromText,
 } from '@sourcegraph/cody-shared'
 import { fireEvent, render, screen } from '@testing-library/react'
@@ -13,6 +14,8 @@ vi.mock('@vscode/webview-ui-toolkit/react', () => ({
     VSCodeButton: vi.fn(),
     VSCodeCheckbox: vi.fn(),
 }))
+
+const MOCK_MODELS = getMockedDotComClientModels()
 
 const ENTER_KEYBOARD_EVENT_DATA: Pick<KeyboardEvent, 'key' | 'code' | 'keyCode'> = {
     key: 'Enter',
@@ -138,6 +141,13 @@ describe('HumanMessageEditor', () => {
             fireEvent.keyDown(editor, ENTER_KEYBOARD_EVENT_DATA)
             expect(onSubmit).toHaveBeenCalledTimes(2)
         })
+
+        test('model selector is showing up with the default model name', () => {
+            const { container } = renderWithMocks({})
+            const modelSelector = container.querySelector('[data-testid="chat-model-selector"]')
+            expect(modelSelector).not.toBeNull()
+            expect(modelSelector?.textContent).toEqual(MOCK_MODELS[0].title)
+        })
     })
 })
 
@@ -166,6 +176,7 @@ function renderWithMocks(props: Partial<ComponentProps<typeof HumanMessageEditor
         onChange,
         onSubmit,
         onStop,
+        models: MOCK_MODELS,
     }
 
     const { container } = render(<HumanMessageEditor {...DEFAULT_PROPS} {...props} />, {
