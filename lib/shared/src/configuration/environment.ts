@@ -1,18 +1,16 @@
-import { LRUCache } from 'lru-cache/min'
 import type { UIKind } from 'vscode' // types are ok
-import { logError as _logError } from '../logger'
 
 /**
  * In general config values should be preferred over environment variables. The
  * exeption roughly being:
  * 1. Settings that shouldn't be used by users
  * 2. Settings that have deep implications for the execution environment and
- *    would require a reload of the extension/platform if changed. might cause
+ *    would require a reload of the extension/platform if changed such UI_KIND.
  * 3. Security sensitive settings that might expose sensitive information or
  *    untested/unsafe functionality if accidentally/maliciously enabled in the
  *    config file.
  *
- * So if you do need an invorment variable this should be the only location we
+ * So if you do need an environment variable this should be the only location we
  * read process.env variables from. It's just a small layer on top of raw
  * process.env variables, so should be kept to static or a get method at most.
  *
@@ -23,7 +21,7 @@ import { logError as _logError } from '../logger'
 
 export const cenv = defineEnvBuilder({
     /**
-     * Mirrors the HTTP_PROXY and HTTPS_PROXY environment varilables but can be
+     * Mirrors the HTTP_PROXY and HTTPS_PROXY environment variables but can be
      * set explicitly which is a lot easier than having to handle the
      * accompanying NO_PROXY=... properly (which we weren't)
      */
@@ -44,6 +42,11 @@ export const cenv = defineEnvBuilder({
      */
     CODY_OVERRIDE_DISABLE_OLLAMA: (v, _) =>
         bool(v) ?? assigned(getEnv('VITEST')) ?? assigned(getEnv('PW')) ?? false,
+
+    /**
+     * Forces a specific URL to be the DotCom API endpoint
+     */
+    CODY_OVERRIDE_DOTCOM_URL: (v, _) => str(v) ?? /* LEGACY */ str(getEnv('TESTING_DOTCOM_URL')),
 
     /**
      * Disables the default console logging
@@ -83,14 +86,7 @@ function getEnv(key: string): string | undefined {
     // For some reason in VSCode Web process.env is not a string.
     return `${v}`
 }
-// biome-ignore lint/complexity/noBannedTypes: we don't need it
-const logCache = new LRUCache<string, {}>({ max: 1000 })
-function logErrorOnce(msg: string): void {
-    if (!logCache.has(msg)) {
-        _logError('Cody Environment Loader', msg)
-    }
-    logCache.set(msg, {})
-}
+
 type EnvBuilderFn<T> = (v: string | undefined, k: string) => T
 type InferReturnType<T> = T extends (v: string | undefined, k: string) => infer R ? R : never
 function defineEnvBuilder<T extends Record<string, EnvBuilderFn<any>>>(config: T) {
@@ -165,7 +161,6 @@ function uiKind(uiKind: string | undefined): UIKind | undefined {
 function codyProxy(v: string | undefined, k: string): string | undefined {
     switch (bool(v)) {
         case true:
-            logErrorOnce(`Invalid ${k} value: ${v}`)
             break
         case false:
             // explicitly disabled
@@ -180,18 +175,17 @@ function codyProxy(v: string | undefined, k: string): string | undefined {
     }
 
     // we now fall back to environment variables
-    const noProxyRaw = getEnv('NO_PROXY')
-    const noProxy = bool(noProxyRaw) ?? str(noProxyRaw)
-    // TODO: We probably want to have a look through this
-    // for now we just flag a warning
+
+    // TODO: We probably want to have a look through this to see if we should
+    // not enable proxy
+    //
+    // const noProxyRaw = getEnv('NO_PROXY') const noProxy = bool(noProxyRaw) ??
+    // str(noProxyRaw)
     const httpsProxy = str(getEnv('HTTPS_PROXY'))
     const httpProxy = str(getEnv('HTTP_PROXY'))
 
     // we assume we always want to prioritize https requests by default
     if (httpsProxy || httpProxy) {
-        if (noProxy) {
-            logErrorOnce(`Ignoring NO_PROXY=${noProxy}`)
-        }
         return httpsProxy || httpProxy
     }
 

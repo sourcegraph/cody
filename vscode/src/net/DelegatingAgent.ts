@@ -100,6 +100,13 @@ export class DelegatingAgent extends AgentBase implements vscode.Disposable {
         .pipe(map(normalizeSettings), distinctUntilChanged(), map(resolveSettings))
         .pipe(distinctUntilChanged(), shareReplay())
 
+    private _configVersion = 0
+    readonly configVersion = this.config.pipe(
+        distinctUntilChanged(),
+        map(_ => this._configVersion++),
+        shareReplay()
+    )
+
     readonly configurationError = this.config.pipe(
         map(config => {
             return config.error ?? null

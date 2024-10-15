@@ -6,10 +6,10 @@
  * this to work we need to ensure no other dependencies have loaded yet. That's
  * why this module is seperate from the fetch.ts file which simply re-exports
  * this variable. This way the patching code can simply import this specific
- * file and gain early acceessss to the agentRef
+ * file and gain early access to the agentRef
  *
  * 🚨 Do not import this file unless you're specifically patching the variable.
- * For read only access simply import the fetch.ts file
+ * For read-only access simply import the fetch.ts file
  */
 
 import type EventEmitter from 'node:events'

@@ -275,6 +275,7 @@ const register = async (
         NetworkDiagnostics.init({
             statusBar,
             agent: platform.networkAgent ?? null,
+            authProvider,
         })
     )
 

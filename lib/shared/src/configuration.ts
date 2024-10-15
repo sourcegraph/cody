@@ -118,8 +118,8 @@ interface RawClientConfiguration {
      * environment variables such as TESTING_MODE which can make it difficult to
      * understand the broad implications such a setting can have.
      */
-    overrideServerEndpoint: string | undefined
-    overrideAuthToken: string | undefined
+    overrideServerEndpoint?: string | undefined
+    overrideAuthToken?: string | undefined
 }
 
 /**

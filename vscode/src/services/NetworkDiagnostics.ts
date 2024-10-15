@@ -1,28 +1,35 @@
 import type { EventEmitter } from 'node:stream'
 import {
+    NEVER,
     type NetEventMap,
+    authStatus,
     combineLatest,
     distinctUntilChanged,
     globalAgentRef,
     resolvedConfig,
     startWith,
     subscriptionDisposable,
+    switchMap,
 } from '@sourcegraph/cody-shared'
 import { Observable, Subject, map } from 'observable-fns'
 import stringify from 'safe-stable-stringify'
 import * as vscode from 'vscode'
 import type { DelegatingAgent } from '../net'
+import type { authProvider } from './AuthProvider'
 import type { CodyStatusBar } from './StatusBar'
+
+type AuthProvider = typeof authProvider
 
 interface NetworkDiagnosticsDeps {
     statusBar: CodyStatusBar | null
     agent: DelegatingAgent | null
+    authProvider: AuthProvider
 }
 
 export class NetworkDiagnostics implements vscode.Disposable {
     private static singleton: NetworkDiagnostics | null = null
 
-    private dispoles: vscode.Disposable[] = []
+    private disposables: vscode.Disposable[] = []
     // private netEvents: NetworkDiagnosticsDeps['netEvents']
     // private agent?: NetworkDiagnosticsDeps['agent']
     //@ts-ignore
@@ -41,12 +48,13 @@ export class NetworkDiagnostics implements vscode.Disposable {
         this._statusBar.next(statusBar)
     }
 
-    private constructor({ statusBar, agent }: NetworkDiagnosticsDeps) {
+    private constructor({ statusBar, agent, authProvider }: NetworkDiagnosticsDeps) {
         this.outputChannel = vscode.window.createOutputChannel('Cody: Network', { log: true })
         this.outputChannel.clear()
 
-        this.dispoles.push(...this.setupStatusBar(statusBar, agent))
-        this.dispoles.push(...this.setupNetworkLogging(agent, globalAgentRef.netEvents ?? null))
+        this.disposables.push(...this.setupAuthRefresh(authProvider, agent))
+        this.disposables.push(...this.setupStatusBar(statusBar, agent))
+        this.disposables.push(...this.setupNetworkLogging(agent, globalAgentRef.netEvents ?? null))
     }
 
     static init(deps: NetworkDiagnosticsDeps): NetworkDiagnostics {
@@ -55,6 +63,38 @@ export class NetworkDiagnostics implements vscode.Disposable {
         }
         NetworkDiagnostics.singleton = new NetworkDiagnostics(deps)
         return NetworkDiagnostics.singleton
+    }
+
+    private setupAuthRefresh(authProvider: AuthProvider, agent: DelegatingAgent | null) {
+        const netConfigVersionChanges = agent?.configVersion
+        if (!netConfigVersionChanges) {
+            return []
+        }
+        let previousConfigVersion: number | undefined
+        return [
+            subscriptionDisposable(
+                combineLatest(authStatus, netConfigVersionChanges)
+                    .pipe(
+                        switchMap(([auth, netConfigVersion]) => {
+                            if (previousConfigVersion === netConfigVersion) {
+                                return NEVER
+                            }
+                            if (auth.pendingValidation) {
+                                return NEVER
+                            }
+                            const isInitial = previousConfigVersion === undefined
+                            previousConfigVersion = netConfigVersion
+                            if (isInitial || auth.authenticated || !auth.showNetworkError) {
+                                return NEVER
+                            }
+                            return Observable.of(void 0)
+                        })
+                    )
+                    .subscribe(() => {
+                        authProvider.refresh()
+                    })
+            ),
+        ]
     }
 
     private setupNetworkLogging(
@@ -210,10 +250,10 @@ export class NetworkDiagnostics implements vscode.Disposable {
 
     dispose() {
         this.outputChannel.dispose()
-        for (const disposable of this.dispoles) {
+        for (const disposable of this.disposables) {
             disposable.dispose()
         }
-        this.dispoles = []
+        this.disposables = []
         NetworkDiagnostics.singleton = null
     }
 }

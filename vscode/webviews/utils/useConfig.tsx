@@ -55,7 +55,7 @@ export function useUserAccountInfo(): UserAccountInfo {
         () => ({
             isCodyProUser: isCodyProUser(authStatus, userProductSubscription ?? null),
             // Receive this value from the extension backend to make it work
-            // with E2E tests where change the DOTCOM_URL via the env variable TESTING_DOTCOM_URL.
+            // with E2E tests where change the DOTCOM_URL via the env variable CODY_OVERRIDE_DOTCOM_URL.
             isDotComUser: isDotComUser,
             user: authStatus,
             IDE: clientCapabilities.agentIDE,
