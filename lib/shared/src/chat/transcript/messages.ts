@@ -2,6 +2,12 @@ import type { ContextItem } from '../../codebase-context/messages'
 import type { Message } from '../../sourcegraph-api'
 
 import type { SerializedChatTranscript } from '.'
+import {
+    type SerializedContextItem,
+    deserializeContextItem,
+    isSerializedContextItem,
+    serializeContextItem,
+} from '../../lexicalEditor/nodes'
 import { PromptString } from '../../prompt/prompt-string'
 
 /**
@@ -45,7 +51,8 @@ export interface ChatMessage extends Message {
 // Note: This is created as an interface so that the Kotlin type-gen does not
 // break.
 export interface SerializedChatMessage {
-    contextFiles?: ContextItem[]
+    contextFiles?: SerializedContextItem[]
+
     error?: ChatError
     editorState?: unknown
     speaker: 'human' | 'assistant' | 'system'
@@ -58,7 +65,7 @@ export function serializeChatMessage(chatMessage: ChatMessage): SerializedChatMe
     return {
         speaker: chatMessage.speaker,
         model: chatMessage.model,
-        contextFiles: chatMessage.contextFiles,
+        contextFiles: chatMessage.contextFiles?.map(serializeContextItem),
         editorState: chatMessage.editorState,
         error: chatMessage.error,
         text: chatMessage.text ? chatMessage.text.toString() : undefined,
@@ -66,8 +73,20 @@ export function serializeChatMessage(chatMessage: ChatMessage): SerializedChatMe
     }
 }
 
-export function deserializeChatMessage(message: SerializedChatMessage): ChatMessage {
-    return { ...message, text: PromptString.unsafe_deserializeChatMessageText(message.text) }
+export function deserializeChatMessage(
+    message: Omit<SerializedChatMessage, 'contextFiles'> & {
+        // Prior to ~2024-10-15, this field's type was ContextItem[], so deserialization needs to
+        // handle either.
+        contextFiles?: ContextItem[] | SerializedContextItem[]
+    }
+): ChatMessage {
+    return {
+        ...message,
+        text: PromptString.unsafe_deserializeChatMessageText(message.text),
+        contextFiles: message.contextFiles?.map(f =>
+            isSerializedContextItem(f) ? deserializeContextItem(f) : f
+        ),
+    }
 }
 
 export interface ChatError {

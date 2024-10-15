@@ -18,7 +18,6 @@ import { TESTING_CREDENTIALS } from '../../vscode/src/testutils/testing-credenti
 import { logTestingData } from '../../vscode/test/fixtures/mock-server'
 import { TestClient } from './TestClient'
 import { TestWorkspace } from './TestWorkspace'
-import { decodeURIs } from './decodeURIs'
 import type { ChatExportResult } from './protocol-alias'
 import { trimEndOfLine } from './trimEndOfLine'
 const workspace = new TestWorkspace(path.join(__dirname, '__tests__', 'example-ts'))
@@ -370,7 +369,6 @@ describe('Agent', () => {
                 )
             expect(lastMessage?.text?.toLocaleLowerCase() ?? '').includes('code nav')
             expect(lastMessage?.text?.toLocaleLowerCase() ?? '').includes('sourcegraph')
-            decodeURIs(transcript)
             const contextFiles = transcript.messages.flatMap(m => m.contextFiles ?? [])
             expect(contextFiles).not.toHaveLength(0)
             expect(contextFiles.map(file => file.uri.toString())).includes(squirrelUri.toString())
