@@ -13,10 +13,10 @@ import {
     mockResolvedConfig,
     modelsService,
     ps,
+    uriStringFromKnownValidString,
 } from '@sourcegraph/cody-shared'
 import { Observable } from 'observable-fns'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import * as vscode from 'vscode'
 import { PromptBuilder } from '../../prompt-builder'
 import { ChatBuilder } from './ChatBuilder'
 import { DefaultPrompter } from './prompt'
@@ -78,12 +78,12 @@ describe('DefaultPrompter', () => {
         const contextItems: ContextItem[] = [
             {
                 type: 'file',
-                uri: vscode.Uri.parse('file:///one'),
+                uri: uriStringFromKnownValidString('file:///one'),
                 content: 'context one',
             },
             {
                 type: 'file',
-                uri: vscode.Uri.parse('file:///two'),
+                uri: uriStringFromKnownValidString('file:///two'),
                 content: 'context two',
             },
         ]
@@ -178,7 +178,7 @@ describe('DefaultPrompter', () => {
         let info = await new DefaultPrompter(
             [
                 {
-                    uri: vscode.Uri.file('user1.go'),
+                    uri: uriStringFromKnownValidString('file:///user1.go'),
                     type: 'file',
                     content: 'package vscode',
                     source: ContextItemSource.User,
@@ -186,7 +186,7 @@ describe('DefaultPrompter', () => {
             ],
             [
                 {
-                    uri: vscode.Uri.file('enhanced1.ts'),
+                    uri: uriStringFromKnownValidString('file:///enhanced1.ts'),
                     type: 'file',
                     content: 'import vscode',
                 },
@@ -211,7 +211,7 @@ describe('DefaultPrompter', () => {
         info = await new DefaultPrompter(
             [
                 {
-                    uri: vscode.Uri.file('user2.go'),
+                    uri: uriStringFromKnownValidString('file:///user2.go'),
                     type: 'file',
                     content: 'package vscode',
                     source: ContextItemSource.User,
@@ -219,7 +219,7 @@ describe('DefaultPrompter', () => {
             ],
             [
                 {
-                    uri: vscode.Uri.file('enhanced2.ts'),
+                    uri: uriStringFromKnownValidString('file:///enhanced2.ts'),
                     type: 'file',
                     content: 'import vscode',
                 },

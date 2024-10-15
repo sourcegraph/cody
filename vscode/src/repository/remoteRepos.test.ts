@@ -42,9 +42,7 @@ describe('remoteReposForAllWorkspaceFolders', () => {
         const mockGetRepoNamesContainingUri = vi
             .spyOn(repoNameResolver, 'getRepoNamesContainingUri')
             .mockImplementation(uri =>
-                Observable.of(
-                    uri.path.includes('w0') ? ['repo0'] : uri.path.includes('w1') ? ['repo1'] : []
-                )
+                Observable.of(uri.includes('w0') ? ['repo0'] : uri.includes('w1') ? ['repo1'] : [])
             )
 
         const mockGetRepoIds = vi

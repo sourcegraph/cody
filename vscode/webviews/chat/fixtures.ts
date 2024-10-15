@@ -6,6 +6,7 @@ import {
     ContextItemSource,
     FILE_MENTION_EDITOR_STATE_FIXTURE,
     ps,
+    uriString,
 } from '@sourcegraph/cody-shared'
 import { GENERATE_UNIT_TEST_EDITOR_STATE_FIXTURE } from '@sourcegraph/cody-shared/src/lexicalEditor/fixtures'
 import type { UserAccountInfo } from '../Chat'
@@ -44,7 +45,7 @@ export const FIXTURE_TRANSCRIPT: Record<
         {
             speaker: 'human',
             text: ps`What color is the sky?`,
-            contextFiles: [{ type: 'file', uri: URI.file('/foo.js') }],
+            contextFiles: [{ type: 'file', uri: uriString(URI.file('/foo.js')) }],
         },
         {
             speaker: 'assistant',
@@ -68,13 +69,15 @@ export const FIXTURE_TRANSCRIPT: Record<
             contextFiles: [
                 {
                     type: 'file',
-                    uri: URI.file('/vscode/src/chat/ChatViewProvider.ts'),
+                    uri: uriString(URI.file('/vscode/src/chat/ChatViewProvider.ts')),
                 },
-                { type: 'file', uri: URI.file('/lib/shared/src/timestamp.ts') },
+                { type: 'file', uri: uriString(URI.file('/lib/shared/src/timestamp.ts')) },
                 {
                     type: 'file',
-                    uri: URI.file(
-                        '/vscode/src/contrib/platform/common/ui/providers/chat/ChatViewProvider.ts'
+                    uri: uriString(
+                        URI.file(
+                            '/vscode/src/contrib/platform/common/ui/providers/chat/ChatViewProvider.ts'
+                        )
                     ),
                 },
             ],
@@ -100,15 +103,19 @@ export const FIXTURE_TRANSCRIPT: Record<
             contextFiles: [
                 {
                     type: 'symbol',
-                    uri: URI.file('dir/dir/file-a-1.py'),
+                    uri: uriString(URI.file('dir/dir/file-a-1.py')),
                     symbolName: 'Symbol1',
                     kind: 'function',
                     range: { start: { line: 1, character: 0 }, end: { line: 8, character: 0 } },
                 },
-                { type: 'file', uri: URI.file('dir/dir/file-a-2.py'), source: ContextItemSource.Search },
                 {
                     type: 'file',
-                    uri: URI.file('README.md'),
+                    uri: uriString(URI.file('dir/dir/file-a-2.py')),
+                    source: ContextItemSource.Search,
+                },
+                {
+                    type: 'file',
+                    uri: uriString(URI.file('README.md')),
                     range: { start: { line: 1, character: 0 }, end: { line: 8, character: 0 } },
                 },
                 {
@@ -118,8 +125,10 @@ export const FIXTURE_TRANSCRIPT: Record<
                     repoName: 'myRepo',
                     title: 'README.md',
                     revision: 'main',
-                    uri: URI.parse(
-                        'https://sourcegraph.sourcegraph.com/github.com/sourcegraph/cody/-/blob/vscode/e2e/issues/CODY-2392.test.ts?L21-43'
+                    uri: uriString(
+                        URI.parse(
+                            'https://sourcegraph.sourcegraph.com/github.com/sourcegraph/cody/-/blob/vscode/e2e/issues/CODY-2392.test.ts?L21-43'
+                        )
                     ),
                     range: { start: { line: 1, character: 0 }, end: { line: 8, character: 0 } },
                 },
@@ -130,8 +139,10 @@ export const FIXTURE_TRANSCRIPT: Record<
                     repoName: 'myRepo',
                     title: 'fooDir/file-c-1.py',
                     revision: 'main',
-                    uri: URI.parse(
-                        'https://sourcegraph.sourcegraph.com/github.com/sourcegraph/cody/-/blob/vscode/e2e/issues/CODY-2392.test.ts?L21-43'
+                    uri: uriString(
+                        URI.parse(
+                            'https://sourcegraph.sourcegraph.com/github.com/sourcegraph/cody/-/blob/vscode/e2e/issues/CODY-2392.test.ts?L21-43'
+                        )
                     ),
                     range: { start: { line: 1, character: 0 }, end: { line: 8, character: 0 } },
                 },
@@ -147,7 +158,11 @@ export const FIXTURE_TRANSCRIPT: Record<
             speaker: 'human',
             editorState: GENERATE_UNIT_TEST_EDITOR_STATE_FIXTURE,
             contextFiles: [
-                { type: 'file', uri: URI.file('/a/b/file1.py'), source: ContextItemSource.User },
+                {
+                    type: 'file',
+                    uri: uriString(URI.file('/a/b/file1.py')),
+                    source: ContextItemSource.User,
+                },
             ],
         },
     ]),
@@ -155,7 +170,7 @@ export const FIXTURE_TRANSCRIPT: Record<
         {
             speaker: 'human',
             text: ps`What are some colors?`,
-            contextFiles: [{ type: 'file', uri: URI.file('dir/dir/file-a-1.py') }],
+            contextFiles: [{ type: 'file', uri: uriString(URI.file('dir/dir/file-a-1.py')) }],
         },
         {
             speaker: 'assistant',
@@ -164,7 +179,7 @@ export const FIXTURE_TRANSCRIPT: Record<
         {
             speaker: 'human',
             text: ps`What are some letters?`,
-            contextFiles: [{ type: 'file', uri: URI.file('dir/dir/file-a-2.py') }],
+            contextFiles: [{ type: 'file', uri: uriString(URI.file('dir/dir/file-a-2.py')) }],
         },
         {
             speaker: 'assistant',
@@ -173,7 +188,7 @@ export const FIXTURE_TRANSCRIPT: Record<
         {
             speaker: 'human',
             text: ps`What are some numbers?`,
-            contextFiles: [{ type: 'file', uri: URI.file('dir/dir/file-a-3.py') }],
+            contextFiles: [{ type: 'file', uri: uriString(URI.file('dir/dir/file-a-3.py')) }],
         },
         {
             speaker: 'assistant',

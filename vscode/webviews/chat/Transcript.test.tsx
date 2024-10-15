@@ -3,6 +3,7 @@ import {
     errorToChatError,
     getMockedDotComClientModels,
     ps,
+    uriString,
 } from '@sourcegraph/cody-shared'
 import { fireEvent, getQueriesForElement, render as render_, screen } from '@testing-library/react'
 import type { ComponentProps } from 'react'
@@ -96,7 +97,7 @@ describe('Transcript', () => {
                     {
                         speaker: 'human',
                         text: ps`Foo`,
-                        contextFiles: [{ type: 'file', uri: URI.file('/foo.js') }],
+                        contextFiles: [{ type: 'file', uri: uriString(URI.file('/foo.js')) }],
                     },
                     { speaker: 'assistant', text: ps`Bar` },
                 ]}
@@ -155,7 +156,7 @@ describe('Transcript', () => {
                     {
                         speaker: 'human',
                         text: ps`Foo`,
-                        contextFiles: [{ type: 'file', uri: URI.file('/foo.js') }],
+                        contextFiles: [{ type: 'file', uri: uriString(URI.file('/foo.js')) }],
                     },
                 ]}
                 messageInProgress={{ speaker: 'assistant', text: undefined }}
@@ -198,7 +199,7 @@ describe('Transcript', () => {
                     {
                         speaker: 'human',
                         text: ps`Foo`,
-                        contextFiles: [{ type: 'file', uri: URI.file('/foo.js') }],
+                        contextFiles: [{ type: 'file', uri: uriString(URI.file('/foo.js')) }],
                     },
                 ]}
                 messageInProgress={{ speaker: 'assistant', text: ps`Bar` }}

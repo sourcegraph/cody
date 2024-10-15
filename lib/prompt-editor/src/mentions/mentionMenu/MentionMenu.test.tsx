@@ -3,6 +3,7 @@ import {
     type ContextMentionProviderMetadata,
     type MentionMenuData,
     displayPathBasename,
+    uriString,
 } from '@sourcegraph/cody-shared'
 import { fireEvent, render, screen } from '@testing-library/react'
 import {
@@ -43,12 +44,12 @@ const PROVIDER_P2: ContextMentionProviderMetadata = {
 
 const ITEM_FILE1: ContextItem = {
     type: 'file',
-    uri: URI.file('file1.go'),
+    uri: uriString(URI.file('file1.go')),
 }
 
 const ITEM_FILE2: ContextItem = {
     type: 'file',
-    uri: URI.file('file2.ts'),
+    uri: uriString(URI.file('file2.ts')),
 }
 
 const PROPS: Pick<

@@ -10,6 +10,7 @@ import {
     populateCodeGenerationContextTemplate,
     populateCurrentEditorDiagnosticsTemplate,
     ps,
+    uriString,
 } from '@sourcegraph/cody-shared'
 
 import type { VSCodeEditor } from '../../editor/vscode-editor'
@@ -73,7 +74,7 @@ const getContextFromIntent = async ({
                     ),
                     file: {
                         type: 'file',
-                        uri,
+                        uri: uriString(uri),
                         source: ContextItemSource.Editor,
                         range: new vscode.Range(prefix.range.start, suffix.range.end),
                     },
@@ -95,14 +96,24 @@ const getContextFromIntent = async ({
                 contextMessages.push({
                     speaker: 'human',
                     text: populateCodeContextTemplate(truncatedPrecedingText, uri, undefined, 'edit'),
-                    file: { type: 'file', uri, source: ContextItemSource.Editor, range: prefix.range },
+                    file: {
+                        type: 'file',
+                        uri: uriString(uri),
+                        source: ContextItemSource.Editor,
+                        range: prefix.range,
+                    },
                 })
             }
             if (truncatedFollowingText.trim().length > 0) {
                 contextMessages.push({
                     speaker: 'human',
                     text: populateCodeContextTemplate(truncatedFollowingText, uri, undefined, 'edit'),
-                    file: { type: 'file', uri, source: ContextItemSource.Editor, range: suffix.range },
+                    file: {
+                        type: 'file',
+                        uri: uriString(uri),
+                        source: ContextItemSource.Editor,
+                        range: suffix.range,
+                    },
                 })
             }
             return contextMessages
@@ -124,7 +135,11 @@ const getContextFromIntent = async ({
                         ({
                             speaker: 'human' as const,
                             text: populateCurrentEditorDiagnosticsTemplate(diagnostic, uri),
-                            file: { type: 'file', uri, source: ContextItemSource.Editor },
+                            file: {
+                                type: 'file',
+                                uri: uriString(uri),
+                                source: ContextItemSource.Editor,
+                            },
                         }) satisfies ContextMessage
                 ),
                 ...[truncatedPrecedingText, truncatedFollowingText]
@@ -134,7 +149,11 @@ const getContextFromIntent = async ({
                             ({
                                 speaker: 'human' as const,
                                 text: populateCodeContextTemplate(text, uri, undefined, 'edit'),
-                                file: { type: 'file', uri, source: ContextItemSource.Editor },
+                                file: {
+                                    type: 'file',
+                                    uri: uriString(uri),
+                                    source: ContextItemSource.Editor,
+                                },
                             }) satisfies ContextMessage
                     ),
             ]
@@ -157,7 +176,7 @@ export const getContext = async ({
     if (isAgentTesting) {
         // Need deterministic ordering of context files for the tests to pass
         // consistently across different file systems.
-        userContextItems.sort((a, b) => a.uri.path.localeCompare(b.uri.path))
+        userContextItems.sort((a, b) => a.uri.localeCompare(b.uri))
     }
 
     const derivedContext = await getContextFromIntent({ editor, ...options })

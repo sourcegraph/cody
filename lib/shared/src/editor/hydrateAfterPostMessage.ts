@@ -1,5 +1,5 @@
 import type * as vscode from 'vscode'
-import type { URI } from 'vscode-uri'
+import { URI } from 'vscode-uri'
 import { PromptString } from '../prompt/prompt-string'
 
 /**
@@ -14,6 +14,13 @@ export function forceHydration(object: any): any {
     if (object instanceof PromptString) {
         // Return as-is, because PromptString object references are used as keys in a WeakMap that
         // implements immutability and encapsulation for PromptString.
+        console.count('postMessage hydration: got PromptString')
+        return object
+    }
+    if (object instanceof URI || '$mid' in object) {
+        // Return as-is, because URI instances are immutable and can be cloned by cloning the
+        // underlying string.
+        console.count('postMessage hydration: got URI')
         return object
     }
     if (Array.isArray(object)) {
@@ -56,6 +63,7 @@ class LazyHydrationHandler implements ProxyHandler<object> {
             return cached
         }
         if (isDehydratedUri(value)) {
+            console.count('postMessage dehydration: got dehydrated URI')
             const hydrated = this.hydrateUri(value)
             this.lazyHydrationCache.set(value, hydrated)
             return hydrated

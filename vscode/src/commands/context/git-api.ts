@@ -5,6 +5,7 @@ import {
     ContextItemSource,
     TokenCounterUtils,
     displayPath,
+    uriString,
 } from '@sourcegraph/cody-shared'
 import { logError } from '../../output-channel-logger'
 import type { Repository } from '../../repository/builtinGitExtension'
@@ -101,7 +102,7 @@ export async function getContextFilesFromGitDiff(gitRepo: Repository): Promise<C
                 content,
                 title: command,
                 // Using the uri by file enables Cody Ignore checks during prompt-building step.
-                uri: matchingFile.uri,
+                uri: uriString(matchingFile.uri),
                 source: ContextItemSource.Terminal,
                 size: await TokenCounterUtils.countTokens(content),
             })
@@ -145,7 +146,7 @@ async function getContextFilesFromGitLog(gitRepo: Repository, maxEntries = 5): P
                 type: 'file',
                 content,
                 title: command,
-                uri: vscode.Uri.file('GIT_LOG'),
+                uri: uriString(vscode.Uri.file('GIT_LOG')),
                 source: ContextItemSource.Terminal,
                 size: await TokenCounterUtils.countTokens(content),
             },
@@ -168,7 +169,7 @@ async function getGitCommitTemplateContextFile(template: string): Promise<Contex
         type: 'file',
         content,
         title: 'Git Commit Template',
-        uri: vscode.Uri.file('COMMIT_TEMPLATE'),
+        uri: uriString(vscode.Uri.file('COMMIT_TEMPLATE')),
         source: ContextItemSource.Terminal,
         size: await TokenCounterUtils.countTokens(content),
     }

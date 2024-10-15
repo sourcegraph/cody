@@ -14,6 +14,7 @@ import {
     type RangeData,
     type SerializedPromptEditorValue,
     markdownCodeBlockLanguageIDForFilename,
+    uriString,
 } from '@sourcegraph/cody-shared'
 import { PromptEditor } from '@sourcegraph/prompt-editor'
 import type { URI } from 'vscode-uri'
@@ -327,7 +328,7 @@ function renderEvent(
                                 <div className="event-code-filename">
                                     <FileLink
                                         linkClassName="event-code-filename-link"
-                                        uri={annotatedContext.source.uri}
+                                        uri={uriString(annotatedContext.source.uri)}
                                         range={annotatedContext.source.range}
                                     />
                                 </div>

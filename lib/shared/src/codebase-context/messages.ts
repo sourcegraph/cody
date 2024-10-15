@@ -1,6 +1,5 @@
-import type { URI } from 'vscode-uri'
-
 import type { RangeData } from '../common/range'
+import type { URIString } from '../common/uriString'
 import type { Message } from '../sourcegraph-api'
 import type { Range } from '../sourcegraph-api/graphql/client'
 
@@ -13,7 +12,7 @@ interface ContextItemCommon {
     /**
      * The URI of the document (such as a file) where this context resides.
      */
-    uri: URI
+    uri: URIString
 
     /**
      * If only a subset of a file is included as context, the range of that subset.
@@ -150,7 +149,7 @@ export interface ContextItemOpenCtx extends ContextItemCommon {
     type: 'openctx'
     provider: 'openctx'
     title: string
-    uri: URI
+    uri: URIString
     providerUri: string
     mention?: {
         uri: string

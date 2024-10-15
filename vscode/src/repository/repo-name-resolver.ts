@@ -1,7 +1,8 @@
-import type * as vscode from 'vscode'
+import * as vscode from 'vscode'
 
 import {
     ContextFiltersProvider,
+    type URIString,
     authStatus,
     combineLatest,
     convertGitCloneURLToCodebaseName,
@@ -31,7 +32,7 @@ export class RepoNameResolver {
      * ❗️ For enterprise, this uses the Sourcegraph API to resolve repo names instead of the local
      * conversion function. ❗️
      */
-    public getRepoNamesContainingUri(uri: vscode.Uri): Observable<string[] | typeof pendingOperation> {
+    public getRepoNamesContainingUri(uri: URIString): Observable<string[] | typeof pendingOperation> {
         return combineLatest(
             promiseFactoryToObservable(signal => this.getUniqueRemoteUrlsCached(uri, signal)),
             authStatus
@@ -72,11 +73,17 @@ export class RepoNameResolver {
     }
 
     private getUniqueRemoteUrlsCache: Partial<Record<string, Promise<string[]>>> = {}
-    private async getUniqueRemoteUrlsCached(uri: vscode.Uri, signal?: AbortSignal): Promise<string[]> {
+    private async getUniqueRemoteUrlsCached(
+        uri: vscode.Uri | URIString,
+        signal?: AbortSignal
+    ): Promise<string[]> {
         const key = uri.toString()
         let uniqueRemoteUrls: Promise<string[]> | undefined = this.getUniqueRemoteUrlsCache[key]
         if (!uniqueRemoteUrls) {
-            uniqueRemoteUrls = gitRemoteUrlsForUri(uri, signal)
+            uniqueRemoteUrls = gitRemoteUrlsForUri(
+                typeof uri === 'string' ? vscode.Uri.parse(uri) : uri,
+                signal
+            )
                 .then(remoteUrls => {
                     const uniqueRemoteUrls = Array.from(new Set(remoteUrls ?? [])).sort()
                     return uniqueRemoteUrls

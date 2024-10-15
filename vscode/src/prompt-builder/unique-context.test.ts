@@ -1,4 +1,4 @@
-import { type ContextItem, ContextItemSource, type RangeData } from '@sourcegraph/cody-shared'
+import { type ContextItem, ContextItemSource, type RangeData, uriString } from '@sourcegraph/cody-shared'
 import { describe, expect, it } from 'vitest'
 import { URI } from 'vscode-uri'
 import { getUniqueContextItems, isUniqueContextItem } from './unique-context'
@@ -6,7 +6,7 @@ import { getUniqueContextItems, isUniqueContextItem } from './unique-context'
 describe('Unique Context Items', () => {
     const baseFile: ContextItem = {
         type: 'file',
-        uri: URI.file('/foo/bar.js'),
+        uri: uriString(URI.file('/foo/bar.js')),
         content: 'foobar',
     }
 
@@ -130,7 +130,7 @@ describe('Unique Context Items', () => {
         it('should add context from a file with a multiline range but not with a single line range that overlaps with it', () => {
             const singleLine: ContextItem = {
                 type: 'file',
-                uri: URI.file('/src/squirrel.ts'),
+                uri: uriString(URI.file('/src/squirrel.ts')),
                 content: 'export interface Squirrel {}',
                 size: 10,
                 range: {
@@ -140,7 +140,7 @@ describe('Unique Context Items', () => {
             }
             const multiLine: ContextItem = {
                 type: 'file',
-                uri: URI.file('/src/squirrel.ts'),
+                uri: uriString(URI.file('/src/squirrel.ts')),
                 content: `/**
                 * Squirrel is an interface that mocks something completely unrelated to squirrels.
                 * It is related to the implementation of precise code navigation in Sourcegraph.
@@ -250,7 +250,7 @@ describe('Unique Context Items', () => {
             }
             const singleLineFile2: ContextItem = {
                 type: 'file',
-                uri: URI.file('/src/different.ts'),
+                uri: uriString(URI.file('/src/different.ts')),
                 content: 'different file',
                 size: 10,
                 range: {
@@ -322,7 +322,7 @@ describe('Unique Context Items', () => {
             }
             return {
                 type: 'file',
-                uri: URI.file('/foo/bar'),
+                uri: uriString(URI.file('/foo/bar')),
                 content,
                 range,
             }

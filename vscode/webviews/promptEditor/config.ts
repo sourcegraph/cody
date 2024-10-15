@@ -1,6 +1,5 @@
 import type { SerializedContextItem } from '@sourcegraph/cody-shared'
 import type { PromptEditorConfig } from '@sourcegraph/prompt-editor'
-import { URI } from 'vscode-uri'
 import {
     Command,
     CommandEmpty,
@@ -20,10 +19,9 @@ import { getVSCodeAPI } from '../utils/VSCodeApi'
 export const promptEditorConfig: PromptEditorConfig = {
     onContextItemMentionNodeMetaClick: (contextItem: SerializedContextItem) => {
         if (contextItem.uri) {
-            const uri = URI.parse(contextItem.uri)
             getVSCodeAPI().postMessage({
                 command: 'openURI',
-                uri,
+                uri: contextItem.uri,
             })
         }
     },

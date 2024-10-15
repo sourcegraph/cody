@@ -1,6 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import * as vscode from 'vscode'
-import { URI } from 'vscode-uri'
 
 import {
     type ContextItem,
@@ -11,6 +10,8 @@ import {
     ps,
     testFileUri,
     uriBasename,
+    uriString,
+    uriStringFromKnownValidString,
 } from '@sourcegraph/cody-shared'
 
 import { filterContextItemFiles, getFileContextFiles, resolveContextItems } from './editor-context'
@@ -116,7 +117,7 @@ describe('getFileContextFiles', () => {
 describe('filterContextItemFiles', () => {
     it('filters out files larger than 1MB', async () => {
         const largeFile: ContextItemFile = {
-            uri: vscode.Uri.file('/large-file.txt'),
+            uri: uriString(vscode.Uri.file('/large-file.txt')),
             type: 'file',
         }
         vscode.workspace.fs.stat = vi.fn().mockResolvedValueOnce({
@@ -131,7 +132,7 @@ describe('filterContextItemFiles', () => {
 
     it('filters out non-text files', async () => {
         const binaryFile: ContextItemFile = {
-            uri: vscode.Uri.file('/binary.bin'),
+            uri: uriString(vscode.Uri.file('/binary.bin')),
             type: 'file',
         }
         vscode.workspace.fs.stat = vi.fn().mockResolvedValueOnce({
@@ -146,7 +147,7 @@ describe('filterContextItemFiles', () => {
 
     it('convert file size in bytes to token for files exceeding token limit but under 1MB', async () => {
         const largeTextFile: ContextItemFile = {
-            uri: vscode.Uri.file('/large-text.txt'),
+            uri: uriString(vscode.Uri.file('/large-text.txt')),
             type: 'file',
         }
         const fsSizeInBytes = EXTENDED_USER_CONTEXT_TOKEN_BUDGET * 4 + 100
@@ -182,11 +183,11 @@ describe('resolveContextItems', () => {
             [
                 {
                     type: 'file',
-                    uri: URI.parse('file:///a.txt'),
+                    uri: uriStringFromKnownValidString('file:///a.txt'),
                 },
                 {
                     type: 'file',
-                    uri: URI.parse('file:///error.txt'),
+                    uri: uriStringFromKnownValidString('file:///error.txt'),
                 },
             ],
             ps``
@@ -194,7 +195,7 @@ describe('resolveContextItems', () => {
         expect(contextItems).toEqual<ContextItem[]>([
             {
                 type: 'file',
-                uri: URI.parse('file:///a.txt'),
+                uri: uriStringFromKnownValidString('file:///a.txt'),
                 content: 'a',
                 size: 1,
             },

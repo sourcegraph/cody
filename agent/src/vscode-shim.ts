@@ -1,7 +1,7 @@
 import { execSync } from 'node:child_process'
 import path from 'node:path'
 
-import { extensionForLanguage, logDebug, logError } from '@sourcegraph/cody-shared'
+import { type URIString, extensionForLanguage, logDebug, logError } from '@sourcegraph/cody-shared'
 import * as uuid from 'uuid'
 import type * as vscode from 'vscode'
 
@@ -490,7 +490,7 @@ const defaultTreeView: vscode.TreeView<any> = {
 }
 
 function toUri(
-    uriOrString: string | UriString | vscode.Uri | { language?: string; content?: string } | undefined
+    uriOrString: string | URIString | vscode.Uri | { language?: string; content?: string } | undefined
 ): Uri | undefined {
     if (typeof uriOrString === 'string') {
         return Uri.parse(uriOrString)
@@ -510,14 +510,6 @@ function toUri(
         })
     }
     return
-}
-
-// This opaque type prevents strings from being mistakenly used as URIs.
-export type UriString = string & { __tag: 'vscode.Uri' }
-export namespace UriString {
-    export function fromUri(uri: vscode.Uri): UriString {
-        return uri.toString() as UriString
-    }
 }
 
 function outputChannel(name: string): vscode.LogOutputChannel {
