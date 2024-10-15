@@ -202,6 +202,7 @@ const register = async (
     // Initialize external services
     const {
         chatClient,
+        completionsClient,
         guardrails,
         symfRunner,
         chatIntentAPIClient,
@@ -210,7 +211,7 @@ const register = async (
     disposables.push({ dispose: disposeExternalServices })
 
     const editor = new VSCodeEditor()
-    const contextRetriever = new ContextRetriever(editor, symfRunner)
+    const contextRetriever = new ContextRetriever(editor, symfRunner, completionsClient)
 
     const { chatsController } = registerChat(
         {
