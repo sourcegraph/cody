@@ -13,6 +13,7 @@ import { logDebug, logError } from '../../logger'
 import { firstValueFrom } from '../../misc/observable'
 import { addTraceparent, wrapInActiveSpan } from '../../tracing'
 import { isError } from '../../utils'
+import { addCodyClientIdentificationHeaders } from '../client-name-version'
 import { DOTCOM_URL, isDotCom } from '../environments'
 import { isAbortError } from '../errors'
 import {
@@ -568,16 +569,6 @@ type GraphQLAPIClientConfig = PickResolvedConfiguration<{
     configuration: 'telemetryLevel' | 'customHeaders'
     clientState: 'anonymousUserID'
 }>
-
-export let customUserAgent: string | undefined
-export function addCustomUserAgent(headers: Headers): void {
-    if (customUserAgent) {
-        headers.set('User-Agent', customUserAgent)
-    }
-}
-export function setUserAgent(newUseragent: string): void {
-    customUserAgent = newUseragent
-}
 
 const QUERY_TO_NAME_REGEXP = /^\s*(?:query|mutation)\s+(\w+)/m
 
@@ -1384,7 +1375,7 @@ export class SourcegraphGraphQLAPIClient {
         }
 
         addTraceparent(headers)
-        addCustomUserAgent(headers)
+        addCodyClientIdentificationHeaders(headers)
 
         const queryName = query.match(QUERY_TO_NAME_REGEXP)?.[1]
 
@@ -1416,7 +1407,7 @@ export class SourcegraphGraphQLAPIClient {
             baseUrl: this.dotcomUrl.href,
         })
         const headers = new Headers()
-        addCustomUserAgent(headers)
+        addCodyClientIdentificationHeaders(headers)
         addTraceparent(headers)
 
         const queryName = query.match(QUERY_TO_NAME_REGEXP)?.[1]
@@ -1439,7 +1430,7 @@ export class SourcegraphGraphQLAPIClient {
         const headers = new Headers({
             'Content-Type': 'application/json',
         })
-        addCustomUserAgent(headers)
+        addCodyClientIdentificationHeaders(headers)
 
         return fetch(url, {
             method: 'POST',
@@ -1475,7 +1466,7 @@ export class SourcegraphGraphQLAPIClient {
         }
 
         addTraceparent(headers)
-        addCustomUserAgent(headers)
+        addCodyClientIdentificationHeaders(headers)
 
         const url = new URL(urlPath, config.auth.serverEndpoint).href
 

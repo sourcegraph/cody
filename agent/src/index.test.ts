@@ -211,15 +211,7 @@ describe('Agent', () => {
         it('chat/submitMessage (short message)', async () => {
             await setChatModel('anthropic::2023-06-01::claude-3.5-sonnet')
             const lastMessage = await client.sendSingleMessageToNewChat('Hello!')
-            expect(lastMessage).toMatchInlineSnapshot(
-                `
-              {
-                "model": "anthropic::2023-06-01::claude-3.5-sonnet",
-                "speaker": "assistant",
-                "text": "Hello there! It's wonderful to hear from you. I'm excited to assist you with any questions or tasks you may have. What can I help you with today?",
-              }
-            `
-            )
+            expect(lastMessage).toMatchSnapshot()
             // telemetry assertion, to validate the expected events fired during the test run
             // Do not remove this assertion, and instead update the expectedEvents list above
             expect(await exportedTelemetryEvents(client)).toEqual(

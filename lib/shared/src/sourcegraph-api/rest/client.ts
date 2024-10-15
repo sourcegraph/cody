@@ -3,15 +3,16 @@ import type { ServerModelConfiguration } from '../../models/modelsService'
 import { fetch } from '../../fetch'
 import { logError } from '../../logger'
 import { addTraceparent, wrapInActiveSpan } from '../../tracing'
+import { addCodyClientIdentificationHeaders } from '../client-name-version'
 import { isAbortError } from '../errors'
-import { addCustomUserAgent, verifyResponseCode } from '../graphql/client'
+import { verifyResponseCode } from '../graphql/client'
 
 /**
  * RestClient is a thin HTTP client that interacts with the Sourcegraph backend.
  *
  * Where possible, this client uses the same data for how things get hooked into
  * the GraphQL client. e.g. HTTP requests made by this client will honor the
- * `graphql` package's `setUserAgent` and `addCustomUserAgent` methods.
+ * `graphql` package's `setUserAgent` and `addCodyClientIdentificationHeaders` methods.
  *
  * NOTE: This is semi-experimental. @chrsmith is a fan of how easy REST APIs can
  * be versioned/evolve compared to GraphQL. But if there is much pushback, we'll
@@ -37,7 +38,7 @@ export class RestClient {
         if (this.accessToken) {
             headers.set('Authorization', `token ${this.accessToken}`)
         }
-        addCustomUserAgent(headers)
+        addCodyClientIdentificationHeaders(headers)
         addTraceparent(headers)
 
         const endpoint = new URL(this.endpointUrl)

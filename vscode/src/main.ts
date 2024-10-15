@@ -179,10 +179,12 @@ const register = async (
     isExtensionModeDevOrTest: boolean
 ): Promise<vscode.Disposable> => {
     const disposables: vscode.Disposable[] = []
-    setClientNameVersion(
-        platform.extensionClient.httpClientNameForLegacyReasons ?? platform.extensionClient.clientName,
-        platform.extensionClient.clientVersion
-    )
+    setClientNameVersion({
+        newClientName: platform.extensionClient.clientName,
+        newClientCompletionsStreamQueryParameterName:
+            platform.extensionClient.httpClientNameForLegacyReasons,
+        newClientVersion: platform.extensionClient.clientVersion,
+    })
 
     // Initialize `displayPath` first because it might be used to display paths in error messages
     // from the subsequent initialization.

@@ -216,8 +216,10 @@ export {
 export type { Message } from './sourcegraph-api'
 export {
     addClientInfoParams,
-    getClientInfoParams,
+    getClientInfoQueryParams as getClientInfoParams,
+    getClientIdentificationHeaders,
     setClientNameVersion,
+    addCodyClientIdentificationHeaders,
 } from './sourcegraph-api/client-name-version'
 export { SourcegraphBrowserCompletionsClient } from './sourcegraph-api/completions/browserClient'
 export { SourcegraphCompletionsClient } from './sourcegraph-api/completions/client'
@@ -250,10 +252,7 @@ export {
 } from './sourcegraph-api/graphql'
 export { ClientConfigSingleton, type CodyClientConfig } from './sourcegraph-api/clientConfig'
 export {
-    addCustomUserAgent,
-    customUserAgent,
     isNodeResponse,
-    setUserAgent,
     INCLUDE_EVERYTHING_CONTEXT_FILTERS,
     EXCLUDE_EVERYTHING_CONTEXT_FILTERS,
     type BrowserOrNodeResponse,
