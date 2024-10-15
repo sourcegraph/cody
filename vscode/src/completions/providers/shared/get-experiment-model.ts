@@ -35,13 +35,12 @@ export function getDotComExperimentModel({
 
     return combineLatest(
         featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyAutocompleteStarCoderHybrid),
-        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyAutocompleteClaude3),
         featureFlagProvider.evaluatedFeatureFlag(
             FeatureFlag.CodyAutocompleteFIMModelExperimentBaseFeatureFlag
         ),
         featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyAutocompleteDeepseekV2LiteBase)
     ).pipe(
-        switchMap(([starCoderHybrid, claude3, fimModelExperimentFlag, deepseekV2LiteBase]) => {
+        switchMap(([starCoderHybrid, fimModelExperimentFlag, deepseekV2LiteBase]) => {
             // We run fine tuning experiment for VSC client only.
             // We disable for all agent clients like the JetBrains plugin.
             const isFinetuningExperimentDisabled = vscode.workspace
@@ -64,13 +63,6 @@ export function getDotComExperimentModel({
                 return Observable.of({
                     provider: 'fireworks',
                     model: 'starcoder-hybrid',
-                })
-            }
-
-            if (claude3) {
-                return Observable.of({
-                    provider: 'anthropic',
-                    model: 'anthropic/claude-3-haiku-20240307',
                 })
             }
 
