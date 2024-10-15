@@ -31,10 +31,18 @@ export function setClientNameVersion(params: {
 
 // See https://github.com/sourcegraph/sourcegraph/pull/943
 export function getClientIdentificationHeaders() {
+    const runtimeInfo =
+        typeof process !== 'undefined' && process.version
+            ? `Node.js ${process.version}`
+            : typeof navigator !== 'undefined' && navigator.userAgent
+              ? `Browser ${navigator.userAgent}`
+              : 'Unknown environment'
     return {
-        'User-Agent': `${clientName}/${clientVersion} (Node.js ${process.version})`,
-        'X-Client-Name': clientName,
-        'X-Client-Version': clientVersion,
+        'User-Agent': `${clientName}/${clientVersion} (${runtimeInfo})`,
+        // NOTE: due to CORS: we need to be careful with adding other HTTP headers
+        // to not break Cody Web. The backend should accept X-Requested-With, but
+        // I was unable to test it locally so this is commented out for now.
+        // 'X-Requested-With': `${clientName}/${clientVersion}`,
     }
 }
 
