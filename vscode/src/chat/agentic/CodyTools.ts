@@ -42,7 +42,7 @@ export class CodyToolProvider implements Disposable {
         return this.tools
     }
 
-    private async buildTools(): Promise<void> {
+    private async initializeTools(): Promise<void> {
         this.tools = [
             new SearchTool(this.contextRetriever),
             new CliTool(),
@@ -83,7 +83,7 @@ export class CodyToolProvider implements Disposable {
                     openCtxPromptConfig[provider.providerUri as keyof typeof openCtxPromptConfig]
                 return config ? new OpenCtxTool(provider, config as CodyToolConfig) : null
             })
-            .filter((tool): tool is OpenCtxTool => tool !== null)
+            .filter(isDefined)
     }
 
     public dispose(): void {

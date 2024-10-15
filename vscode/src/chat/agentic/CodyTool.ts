@@ -33,7 +33,7 @@ export interface CodyToolConfig {
 
 export abstract class CodyTool implements Disposable {
     protected rawText = ''
-    protected disposibles: Disposable[] = []
+    protected disposables: Disposable[] = []
 
     constructor(public readonly config: CodyToolConfig) {}
 
