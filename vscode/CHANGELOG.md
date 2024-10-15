@@ -12,6 +12,8 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 - Chat: Improved handling of duplicated priority context items. [pull/5860](https://github.com/sourcegraph/cody/pull/5860)
 
+- Chat: Improved handling of duplicated priority context items. [pull/5860](https://github.com/sourcegraph/cody/pull/5860)
+
 ### Changed
 
 ## 1.38.1
