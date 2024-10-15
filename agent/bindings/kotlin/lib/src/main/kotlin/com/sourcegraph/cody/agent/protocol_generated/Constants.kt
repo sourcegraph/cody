@@ -63,6 +63,7 @@ object Constants {
   const val openctx = "openctx"
   const val other = "other"
   const val power = "power"
+  const val priority = "priority"
   const val pro = "pro"
   const val `recently-used` = "recently used"
   const val recommended = "recommended"
