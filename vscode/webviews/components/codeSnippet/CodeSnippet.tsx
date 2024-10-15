@@ -77,6 +77,12 @@ interface FileContentSearchResultProps {
 
     /** Called when the file's search result is selected. */
     onSelect: () => void
+
+    onAddToFollowupChat?: (props: {
+        repoName: string
+        filePath: string
+        fileURL: string
+    }) => void
 }
 
 export const FileContentSearchResult: FC<PropsWithChildren<FileContentSearchResultProps>> = props => {
@@ -90,6 +96,7 @@ export const FileContentSearchResult: FC<PropsWithChildren<FileContentSearchResu
         serverEndpoint,
         fetchHighlightedFileLineRanges,
         onSelect,
+        onAddToFollowupChat,
     } = props
 
     const unhighlightedGroups: MatchGroup[] = useMemo(() => matchesToMatchGroups(result), [result])
@@ -188,6 +195,7 @@ export const FileContentSearchResult: FC<PropsWithChildren<FileContentSearchResu
             className={styles.titleInner}
             collapsed={hidden}
             onToggleCollapse={() => setHidden(current => !current)}
+            onAddToFollowupChat={onAddToFollowupChat}
         />
     )
 
@@ -284,7 +292,7 @@ const ResultContainer: ForwardReferenceExoticComponent<
     return (
         <Component
             ref={reference}
-            className={clsx(className, styles.resultContainer)}
+            className={clsx(className, styles.resultContainer, 'tw-group')}
             onClick={onResultClicked}
         >
             <article>
