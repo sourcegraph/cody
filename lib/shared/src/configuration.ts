@@ -1,4 +1,4 @@
-import type { ClientCapabilities } from './configuration/clientCapabilities'
+import type { ClientCapabilitiesWithLegacyFields } from './configuration/clientCapabilities'
 import type { ChatModelProviderConfig } from './models/sync'
 
 import type { PromptString } from './prompt/prompt-string'
@@ -30,8 +30,8 @@ interface RawClientConfiguration {
 
     serverEndpoint?: string
     customHeaders?: Record<string, string>
-    chatPreInstruction: PromptString
-    editPreInstruction: PromptString
+    chatPreInstruction?: PromptString
+    editPreInstruction?: PromptString
     codeActions: boolean
     commandHints: boolean
     commandCodeLenses: boolean
@@ -69,28 +69,28 @@ interface RawClientConfiguration {
     /**
      * @deprecated Do not use directly. Call {@link clientCapabilities} instead
      * (`clientCapabilities().agentIDE`) and see the docstring on
-     * {@link ClientCapabilities.agentIDE}.
+     * {@link ClientCapabilitiesWithLegacyFields.agentIDE}.
      */
     agentIDE?: CodyIDE
 
     /**
      * @deprecated Do not use directly. Call {@link clientCapabilities} instead
      * (`clientCapabilities().agentIDEVersion`) and see the docstring on
-     * {@link ClientCapabilities.agentIDEVersion}.
+     * {@link ClientCapabilitiesWithLegacyFields.agentIDEVersion}.
      */
-    agentIDEVersion?: ClientCapabilities['agentIDEVersion']
+    agentIDEVersion?: ClientCapabilitiesWithLegacyFields['agentIDEVersion']
 
     /**
      * @deprecated Do not use directly. Call {@link clientCapabilities} instead
      * (`clientCapabilities().agentExtensionVersion`) and see the docstring on
-     * {@link ClientCapabilities.agentExtensionVersion}.
+     * {@link ClientCapabilitiesWithLegacyFields.agentExtensionVersion}.
      */
-    agentExtensionVersion?: ClientCapabilities['agentExtensionVersion']
+    agentExtensionVersion?: ClientCapabilitiesWithLegacyFields['agentExtensionVersion']
 
     /**
      * @deprecated Do not use directly. Call {@link clientCapabilities} instead
      * (`clientCapabilities().agentIDEVersion`) and see the docstring on
-     * {@link ClientCapabilities.agentIDEVersion}.
+     * {@link ClientCapabilitiesWithLegacyFields.agentIDEVersion}.
      */
     telemetryClientName?: string
 
@@ -124,6 +124,11 @@ export enum CodyIDE {
     Web = 'Web',
     VisualStudio = 'VisualStudio',
     Eclipse = 'Eclipse',
+
+    /**
+     * The standalone web client in the Cody repository's `web/` tree.
+     */
+    StandaloneWeb = 'StandaloneWeb',
 }
 
 export type AutocompleteProviderID = keyof typeof AUTOCOMPLETE_PROVIDER_ID
@@ -166,16 +171,6 @@ export const AUTOCOMPLETE_PROVIDER_ID = {
      * @deprecated use `openai` instead
      */
     'azure-openai': 'azure-openai',
-
-    /**
-     * Cody talking to customer's custom proxy service.
-     *
-     * TODO(slimsag): self-hosted models: deprecate and remove this
-     * once customers are upgraded to non-experimental version.
-     *
-     * @deprecated use `openaicompatible` instead
-     */
-    'experimental-openaicompatible': 'experimental-openaicompatible',
 
     /**
      * This refers to either Anthropic models re-sold by AWS,
@@ -361,12 +356,7 @@ export interface ExperimentalFireworksConfig {
     url: string
     token: string
     model: string
-    parameters?: {
-        temperature?: number
-        top_k?: number
-        top_p?: number
-        stop?: string[]
-    }
+    parameters?: FireworksCodeCompletionParams
 }
 
 /**
@@ -401,4 +391,18 @@ export interface GroqCompletionOptions {
      *A stop sequence is a predefined or user-specified text string that signals an AI to stop generating content, ensuring its responses remain focused and concise.
      */
     stop?: string[]
+}
+
+export interface FireworksCodeCompletionParams {
+    model: string | undefined
+    prompt: string
+    max_tokens: number
+    echo: boolean
+    temperature: number | undefined
+    top_p: number | undefined
+    top_k: number | undefined
+    stop: string[]
+    stream: boolean
+    languageId: string
+    user: string | null
 }

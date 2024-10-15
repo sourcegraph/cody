@@ -1,6 +1,6 @@
 import { type CodeCompletionsParams, charsToTokens, logError } from '@sourcegraph/cody-shared'
 
-import { logDebug } from '../../log'
+import { logDebug } from '../../output-channel-logger'
 
 import { type GenerateCompletionsOptions, Provider, type ProviderFactoryParams } from './shared/provider'
 
@@ -24,7 +24,7 @@ class OpenAICompatibleProvider extends Provider {
     }
 }
 
-export function createProvider({ model, source }: ProviderFactoryParams): Provider {
+export function createProvider({ model, source, configOverwrites }: ProviderFactoryParams): Provider {
     if (model) {
         logDebug('OpenAICompatible', 'autocomplete provider using model', JSON.stringify(model))
 
@@ -41,6 +41,7 @@ export function createProvider({ model, source }: ProviderFactoryParams): Provid
             model,
             maxContextTokens,
             source,
+            configOverwrites,
         })
     }
 

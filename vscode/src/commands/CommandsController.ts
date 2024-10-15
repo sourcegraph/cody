@@ -1,6 +1,6 @@
 import type * as vscode from 'vscode'
 
-import { logDebug } from '../log'
+import { logDebug } from '../output-channel-logger'
 
 import type { CommandResult } from '../CommandResult'
 import { executeDefaultCommand, isDefaultChatCommand, isDefaultEditCommand } from './execute'
@@ -10,6 +10,7 @@ import type { CodyCommandArgs } from './types'
 import { fromSlashCommand } from './utils/common'
 
 import {
+    type ClientCapabilities,
     type CodyCommand,
     DefaultChatCommands,
     type DefaultCodyCommands,
@@ -18,7 +19,7 @@ import {
     ps,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
-import type { ClientCapabilities } from '../jsonrpc/agent-protocol'
+
 /**
  * Handles commands execution with commands from CommandsProvider
  * Provides additional prompt management and execution logic

@@ -235,10 +235,14 @@ export function getServerModelTags(
     }
     if (category === 'accuracy') {
         tags.push(ModelTag.Power)
-    } else if (category === 'other') {
-        tags.push(ModelTag.Balanced)
     } else {
         tags.push(category)
     }
     return tags
 }
+
+export const FIXTURE_MODEL = createModel({
+    id: 'my-model',
+    usage: [ModelUsage.Chat],
+    tags: [ModelTag.Enterprise],
+})

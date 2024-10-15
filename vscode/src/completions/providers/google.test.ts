@@ -44,6 +44,7 @@ describe('google autocomplete provider', () => {
         getAutocompleteProviderFromServerSideModelConfig({
             modelRef: 'google::v1::gemini-1.5-flash-latest',
             isDotCom,
+            isBYOK: !isDotCom,
         })
     )
 

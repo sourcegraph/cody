@@ -65,7 +65,6 @@ async function unitTestCommand(
         text: prompt,
         contextItems,
         source: args?.source,
-        submitType: 'user-newchat',
         command: DefaultChatCommands.Test,
     }
 }

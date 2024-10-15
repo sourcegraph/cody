@@ -1,6 +1,6 @@
 import {
     type BrowserOrNodeResponse,
-    addCustomUserAgent,
+    addCodyClientIdentificationHeaders,
     addTraceparent,
     currentResolvedConfig,
     distinctUntilChanged,
@@ -92,7 +92,7 @@ class UpstreamHealthProvider implements vscode.Disposable {
             const sharedHeaders = new Headers(configuration.customHeaders as HeadersInit | undefined)
             sharedHeaders.set('Content-Type', 'application/json; charset=utf-8')
             addTraceparent(sharedHeaders)
-            addCustomUserAgent(sharedHeaders)
+            addCodyClientIdentificationHeaders(sharedHeaders)
 
             const upstreamHeaders = new Headers(sharedHeaders)
             if (auth.accessToken) {
@@ -136,12 +136,9 @@ class UpstreamHealthProvider implements vscode.Disposable {
                             : ''
                     }`,
                     {
-                        verbose: {
-                            Latency: upstreamResult.latency,
-                            url,
-                            status: upstreamResult.response.status,
-                            headers: headersToObject(upstreamResult.response.headers),
-                        },
+                        verbose: `url=${url} status=${
+                            upstreamResult.response.status
+                        } cf-ray=${upstreamResult.response.headers.get('cf-ray')}`,
                     }
                 )
             }
@@ -164,14 +161,6 @@ class UpstreamHealthProvider implements vscode.Disposable {
 }
 
 export const upstreamHealthProvider = new UpstreamHealthProvider()
-
-function headersToObject(headers: BrowserOrNodeResponse['headers']) {
-    const result: Record<string, string> = {}
-    for (const [key, value] of headers.entries()) {
-        result[key] = value
-    }
-    return result
-}
 
 async function measureLatencyToUri(
     headers: Headers,

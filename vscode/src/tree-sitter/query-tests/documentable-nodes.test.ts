@@ -7,7 +7,7 @@ import { SupportedLanguage } from '../grammars'
 import type { QueryWrappers } from '../query-sdk'
 import { type Captures, annotateAndMatchSnapshot } from './annotate-and-match-snapshot'
 
-describe('getDocumentableNode', () => {
+describe('getDocumentableNode', { timeout: 5000 }, () => {
     const queryWrapper =
         (query: QueryWrappers['getDocumentableNode']): Captures =>
         (node, start, end) => {

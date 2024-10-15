@@ -170,7 +170,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                         simplifiedLoginRedirect={loginRedirect}
                         uiKindIsWeb={config.config.uiKindIsWeb}
                         vscodeAPI={vscodeAPI}
-                        endpointHistory={config.config.endpointHistory ?? []}
+                        endpoints={config.config.endpointHistory ?? []}
                         codyIDE={config.clientCapabilities.agentIDE}
                     />
                 </div>

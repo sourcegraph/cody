@@ -23,7 +23,7 @@ export interface LineMatch {
 
 export interface ChunkMatch {
     content: string
-    contentStart: Location
+    contentStart: Position
     ranges: Range[]
 
     /**
@@ -34,14 +34,14 @@ export interface ChunkMatch {
     contentTruncated?: boolean
 }
 
-interface Location {
+interface Position {
     line: number
-    column: number
+    character: number
 }
 
 export interface Range {
-    start: Location
-    end: Location
+    start: Position
+    end: Position
 }
 
 /**

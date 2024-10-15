@@ -1,4 +1,4 @@
-import { type FC, type KeyboardEvent, type MouseEvent, type PropsWithChildren, useCallback } from 'react'
+import { type FC, type PropsWithChildren, useCallback } from 'react'
 
 import { clsx } from 'clsx'
 
@@ -8,6 +8,7 @@ import { getFileMatchUrl } from '../utils'
 
 import { CodeExcerpt } from './CodeExcerpt'
 
+import { getVSCodeAPI } from '../../../utils/VSCodeApi'
 import resultStyles from '../CodeSnippet.module.css'
 import styles from './FileMatchChildren.module.css'
 
@@ -38,11 +39,14 @@ export const FileMatchChildren: FC<PropsWithChildren<FileMatchProps>> = props =>
     }
 
     const navigateToFile = useCallback(
-        (event: KeyboardEvent<HTMLElement> | MouseEvent<HTMLElement>): void => {
-            // TODO: implement navigation by blob
-            // navigateToCodeExcerpt(event, props.openInNewTab ?? false, navigate)
+        (line: number) => {
+            // TODO: this does not work on web as opening links from within a web worker does not work.
+            getVSCodeAPI().postMessage({
+                command: 'links',
+                value: `${getFileMatchUrl(serverEndpoint, result)}?L${line}`,
+            })
         },
-        []
+        [serverEndpoint, result]
     )
 
     return (
@@ -50,11 +54,9 @@ export const FileMatchChildren: FC<PropsWithChildren<FileMatchProps>> = props =>
             {grouped.length > 0 &&
                 grouped.map(group => (
                     <div
-                        key={`linematch:${getFileMatchUrl(serverEndpoint, result)}${group.startLine}:${
+                        key={`linematch:${getFileMatchUrl(serverEndpoint, result)}?${group.startLine}:${
                             group.endLine
                         }`}
-                        role="link"
-                        tabIndex={0}
                         data-href={createCodeExcerptLink(group)}
                         className={clsx(
                             'test-file-match-children-item',
@@ -63,8 +65,6 @@ export const FileMatchChildren: FC<PropsWithChildren<FileMatchProps>> = props =>
                             resultStyles.focusableBlock,
                             resultStyles.horizontalDividerBetween
                         )}
-                        onClick={navigateToFile}
-                        onKeyDown={navigateToFile}
                     >
                         <CodeExcerpt
                             commitID={result.commit || ''}
@@ -74,6 +74,7 @@ export const FileMatchChildren: FC<PropsWithChildren<FileMatchProps>> = props =>
                             highlightRanges={group.matches}
                             plaintextLines={group.plaintextLines}
                             highlightedLines={group.highlightedHTMLRows}
+                            onLineClick={navigateToFile}
                         />
                     </div>
                 ))}

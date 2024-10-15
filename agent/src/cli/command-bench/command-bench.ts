@@ -10,9 +10,12 @@ import { newAgentClient } from '../../agent'
 import { exec } from 'node:child_process'
 import fs from 'node:fs'
 import { promisify } from 'node:util'
-import { isDefined, modelsService } from '@sourcegraph/cody-shared'
+import { isDefined, modelsService, setClientCapabilities } from '@sourcegraph/cody-shared'
 import { sleep } from '../../../../vscode/src/completions/utils'
-import { setStaticResolvedConfigurationWithAuthCredentials } from '../../../../vscode/src/configuration'
+import {
+    getConfiguration,
+    setStaticResolvedConfigurationWithAuthCredentials,
+} from '../../../../vscode/src/configuration'
 import { localStorage } from '../../../../vscode/src/services/LocalStorageProvider'
 import { createOrUpdateTelemetryRecorderProvider } from '../../../../vscode/src/services/telemetry-v2'
 import { startPollyRecording } from '../../../../vscode/src/testutils/polly'
@@ -354,6 +357,7 @@ async function evaluateWorkspace(options: CodyBenchOptions, recordingDirectory: 
     console.log(`starting evaluation: fixture=${options.fixture.name} workspace=${options.workspace}`)
 
     createOrUpdateTelemetryRecorderProvider(true)
+    setClientCapabilities({ configuration: getConfiguration(), agentCapabilities: undefined })
 
     const workspaceRootUri = vscode.Uri.from({ scheme: 'file', path: options.workspace })
 

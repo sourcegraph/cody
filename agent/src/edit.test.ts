@@ -7,7 +7,7 @@ import { TestWorkspace } from './TestWorkspace'
 import { explainPollyError } from './explainPollyError'
 import { trimEndOfLine } from './trimEndOfLine'
 
-describe('Edit', () => {
+describe('Edit', { timeout: 5000 }, () => {
     const workspace = new TestWorkspace(path.join(__dirname, '__tests__', 'edit-code'))
     const client = TestClient.create({
         workspaceRootUri: workspace.rootUri,
@@ -110,25 +110,7 @@ describe('Edit', () => {
             model: 'anthropic/claude-3-5-sonnet-20240620',
         })
         await client.acceptEditTask(uri, task)
-        expect(client.documentText(uri)).toMatchInlineSnapshot(
-            `
-          "import React = require("react");
-
-          interface HeadingProps {
-              text: string;
-              level?: number;
-          }
-
-          export const Heading: React.FC<HeadingProps> = ({ text, level = 1 }) => {
-              const HeadingTag = \`h\${level}\` as keyof JSX.IntrinsicElements;
-
-              return <HeadingTag>{text}</HeadingTag>;
-          };
-
-          "
-        `,
-            explainPollyError
-        )
+        expect(client.documentText(uri)).toMatchSnapshot()
     }, 20_000)
 
     it('editCommand/code (adding/deleting code)', async () => {

@@ -9,8 +9,8 @@ import {
     type AuthenticatedAuthStatus,
     type ChatHistoryKey,
     type ClientState,
+    type DefaultsAndUserPreferencesByEndpoint,
     type LocalStorageForModelPreferences,
-    type PerSitePreferences,
     type ResolvedConfiguration,
     type UserLocalHistory,
     distinctUntilChanged,
@@ -32,7 +32,6 @@ class LocalStorage implements LocalStorageForModelPreferences {
     protected readonly CODY_ENDPOINT_HISTORY = 'SOURCEGRAPH_CODY_ENDPOINT_HISTORY'
     protected readonly CODY_ENROLLMENT_HISTORY = 'SOURCEGRAPH_CODY_ENROLLMENTS'
     protected readonly LAST_USED_CHAT_MODALITY = 'cody-last-used-chat-modality'
-    protected readonly GIT_REPO_VISIBILITY_KEY = 'cody-git-repo-visibility'
     public readonly ANONYMOUS_USER_ID_KEY = 'sourcegraphAnonymousUid'
     public readonly LAST_USED_ENDPOINT = 'SOURCEGRAPH_CODY_ENDPOINT'
     public readonly LAST_USED_USERNAME = 'SOURCEGRAPH_CODY_USERNAME'
@@ -228,34 +227,6 @@ class LocalStorage implements LocalStorageForModelPreferences {
         return this.get<string | null>(this.KEY_LOCAL_MINION_HISTORY)
     }
 
-    public async setGitHubRepoVisibility(repoName: string, visibility: boolean): Promise<void> {
-        const visibilityKey = `${this.GIT_REPO_VISIBILITY_KEY}_${repoName}`
-        const visibilityValue = {
-            visibility: visibility,
-            timestamp: Date.now(),
-        }
-        await this.set(visibilityKey, visibilityValue)
-    }
-
-    public getGitHubRepoVisibility(repoName: string): boolean | null {
-        const visibilityKey = `${this.GIT_REPO_VISIBILITY_KEY}_${repoName}`
-        const visibilityValue = this.get<{ visibility: boolean; timestamp: number } | null>(
-            visibilityKey
-        )
-
-        if (visibilityValue) {
-            const currentTime = Date.now()
-            const timeDifference = currentTime - visibilityValue.timestamp
-            // If the visibility value is older than 24 hours, delete it.
-            if (timeDifference > 24 * 60 * 60 * 1000) {
-                this.delete(visibilityKey)
-                return null
-            }
-            return visibilityValue.visibility
-        }
-        return null
-    }
-
     public async removeChatHistory(authStatus: AuthenticatedAuthStatus): Promise<void> {
         try {
             await this.setChatHistory(authStatus, { chat: {} })
@@ -324,11 +295,11 @@ class LocalStorage implements LocalStorageForModelPreferences {
         return this.get(this.LAST_USED_CHAT_MODALITY) ?? 'sidebar'
     }
 
-    public getModelPreferences(): PerSitePreferences {
-        return this.get<PerSitePreferences>(this.MODEL_PREFERENCES_KEY) ?? {}
+    public getModelPreferences(): DefaultsAndUserPreferencesByEndpoint {
+        return this.get<DefaultsAndUserPreferencesByEndpoint>(this.MODEL_PREFERENCES_KEY) ?? {}
     }
 
-    public async setModelPreferences(preferences: PerSitePreferences): Promise<void> {
+    public async setModelPreferences(preferences: DefaultsAndUserPreferencesByEndpoint): Promise<void> {
         await this.set(this.MODEL_PREFERENCES_KEY, preferences)
     }
 

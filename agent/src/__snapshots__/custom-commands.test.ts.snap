@@ -1,11 +1,13 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
 exports[`Custom Commands > commands/custom, chat command, open tabs context 1`] = `
-"Here's a bulleted list of the filenames you've shared with me so far:
+"Certainly! Here's a bulleted list of the filenames you've shared with me so far:
 
 • example3.ts
 • example2.ts
-• example1.ts"
+• example1.ts
+
+These are the raw filenames without any additional formatting, as requested."
 `;
 
 exports[`Custom Commands > commands/custom, edit command, edit mode 1`] = `

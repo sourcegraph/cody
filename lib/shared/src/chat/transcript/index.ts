@@ -25,7 +25,12 @@ export interface SerializedChatInteraction {
 
 export function serializeChatMessage(chatMessage: ChatMessage): SerializedChatMessage {
     return {
-        ...chatMessage,
+        speaker: chatMessage.speaker,
+        model: chatMessage.model,
+        contextFiles: chatMessage.contextFiles,
+        editorState: chatMessage.editorState,
+        error: chatMessage.error,
         text: chatMessage.text ? chatMessage.text.toString() : undefined,
+        intent: chatMessage.intent,
     }
 }

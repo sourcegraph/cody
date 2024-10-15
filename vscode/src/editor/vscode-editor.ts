@@ -164,16 +164,16 @@ export class VSCodeEditor implements Editor {
         }
 
         const visibleRange = visibleRanges[0]
-        const content = activeEditor.document.getText(
-            new vscode.Range(
-                new vscode.Position(visibleRange.start.line, 0),
-                new vscode.Position(visibleRange.end.line + 1, 0)
-            )
+        const range = new vscode.Range(
+            new vscode.Position(visibleRange.start.line, 0),
+            new vscode.Position(visibleRange.end.line + 1, 0)
         )
+        const content = activeEditor.document.getText(range)
 
         return {
             fileUri: activeEditor.document.uri,
             content,
+            range,
         }
     }
 

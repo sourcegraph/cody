@@ -1,4 +1,4 @@
-import { type FC, useLayoutEffect, useMemo, useState } from 'react'
+import { type FC, useCallback, useLayoutEffect, useMemo, useState } from 'react'
 
 import { clsx } from 'clsx'
 
@@ -19,6 +19,7 @@ interface Props {
     plaintextLines: string[]
     highlightedLines?: string[]
     onCopy?: () => void
+    onLineClick?: (line: number) => void
 }
 
 interface HighlightRange {
@@ -44,22 +45,53 @@ interface HighlightRange {
  * A code excerpt that displays syntax highlighting and match range highlighting.
  */
 export const CodeExcerpt: FC<Props> = props => {
-    const { plaintextLines, highlightedLines, startLine, endLine, highlightRanges, className } = props
+    const {
+        plaintextLines,
+        highlightedLines,
+        startLine,
+        endLine,
+        highlightRanges,
+        className,
+        onLineClick,
+    } = props
 
     const [tableContainerElement, setTableContainerElement] = useState<HTMLElement | null>(null)
+
+    const handleLineClick = useCallback(
+        (e: React.MouseEvent<HTMLElement> | React.KeyboardEvent<HTMLElement>) => {
+            if (e.target instanceof HTMLElement && e.target.tagName === 'TD') {
+                const line = e.target.getAttribute('data-line')
+                if (line) {
+                    onLineClick?.(Number.parseInt(line))
+                }
+            }
+        },
+        [onLineClick]
+    )
 
     const table = useMemo(
         () =>
             highlightedLines ? (
-                // biome-ignore lint/security/noDangerouslySetInnerHtml:
-                <table dangerouslySetInnerHTML={{ __html: highlightedLines.join('') }} />
+                <table
+                    // biome-ignore lint/security/noDangerouslySetInnerHtml:
+                    dangerouslySetInnerHTML={{ __html: highlightedLines.join('') }}
+                    onClick={handleLineClick}
+                    onKeyDown={handleLineClick}
+                />
             ) : (
                 <table>
                     <tbody>
                         {plaintextLines.map((line, i) => (
-                            // biome-ignore lint/suspicious/noArrayIndexKey:
-                            <tr key={startLine + i}>
-                                <td className="line" data-line={startLine + i + 1} />
+                            <tr
+                                // biome-ignore lint/suspicious/noArrayIndexKey:
+                                key={startLine + i}
+                            >
+                                <td
+                                    className="line hover:tw-underline tw-cursor-pointer"
+                                    data-line={startLine + i + 1}
+                                    onClick={handleLineClick}
+                                    onKeyDown={handleLineClick}
+                                />
                                 <td className="code">
                                     <span className="hl-text hl-plain">{line}</span>
                                 </td>
@@ -68,7 +100,7 @@ export const CodeExcerpt: FC<Props> = props => {
                     </tbody>
                 </table>
             ),
-        [plaintextLines, highlightedLines, startLine]
+        [plaintextLines, highlightedLines, startLine, handleLineClick]
     )
 
     // Highlight the search matches

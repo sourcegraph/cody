@@ -16,7 +16,6 @@
     "build:for-tests": "pnpm run -s build:root && pnpm run -s build:agent",
     "build:webviews": "pnpm -C ../vscode run -s _build:webviews --mode production --outDir ../../agent/dist/webviews",
     "build": "pnpm run -s build:root && pnpm run -s build:webviews && pnpm run -s build:agent",
-    "build-minify": "pnpm run build --minify",
     "agent": "pnpm run build:for-tests && node --enable-source-maps dist/index.js",
     "agent:skip-root-build": "pnpm run build:agent && node --enable-source-maps dist/index.js",
     "agent:debug": "pnpm run build && CODY_AGENT_TRACE_PATH=/tmp/agent.json CODY_AGENT_DEBUG_REMOTE=true node --enable-source-maps ./dist/index.js api jsonrpc-stdio",

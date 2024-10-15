@@ -8,7 +8,7 @@ import { clientCapabilities } from '../configuration/clientCapabilities'
  * Use "CODY" as the default referral code for fallback.
  */
 export function getCodyAuthReferralCode(uriScheme: string): string | undefined {
-    const referralCodes: Record<CodyIDE, string> = {
+    const referralCodes: Partial<Record<CodyIDE, string>> = {
         [CodyIDE.JetBrains]: 'JETBRAINS',
         [CodyIDE.Neovim]: 'NEOVIM',
         [CodyIDE.Emacs]: 'CODY',

@@ -11,7 +11,7 @@ import {
 import { addAutocompleteDebugEvent } from '../../services/open-telemetry/debug-utils'
 import { getNodeAtCursorAndParents } from '../../tree-sitter/ast-getters'
 import { asPoint, getCachedParseTreeForDocument } from '../../tree-sitter/parse-tree-cache'
-import type { ItemPostProcessingInfo } from '../logger'
+import type { ItemPostProcessingInfo } from '../analytics-logger'
 import type { InlineCompletionItem } from '../types'
 import { type ParsedCompletion, dropParserFields } from './parse-completion'
 import { findLastAncestorOnTheSameRow } from './truncate-parsed-completion'

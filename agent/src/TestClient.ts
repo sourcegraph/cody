@@ -805,7 +805,6 @@ export class TestClient extends MessageHandler {
                 message: {
                     command: 'submit',
                     text,
-                    submitType: 'user',
                     contextItems: params?.contextFiles,
                 },
             })
@@ -983,7 +982,7 @@ ${patch}`
                 serverEndpoint: this.params.credentials.serverEndpoint,
                 customHeaders: {},
                 customConfiguration: {
-                    // For testing .cody/ignore
+                    // For testing internal features.
                     'cody.internal.unstable': true,
                     // Symf is disabled for all agent integration tests because
                     // it makes the tests more stable.

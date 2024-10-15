@@ -1,48 +1,31 @@
+import { type Observable, map } from 'observable-fns'
+import * as vscode from 'vscode'
+
 import {
     type AuthenticatedAuthStatus,
     NEVER,
     type PickResolvedConfiguration,
     type UnauthenticatedAuthStatus,
+    configOverwrites,
     createDisposables,
     promiseFactoryToObservable,
     skipPendingOperation,
     switchMap,
-    vscodeResource,
 } from '@sourcegraph/cody-shared'
-import * as vscode from 'vscode'
 
-import { logDebug } from '../log'
+import type { PlatformContext } from '../extension.common'
 import type { CodyStatusBar } from '../services/StatusBar'
 
-import { type Observable, map } from 'observable-fns'
-import type { PlatformContext } from '../extension.common'
 import { InlineCompletionItemProvider } from './inline-completion-item-provider'
+import { autocompleteOutputChannelLogger } from './output-channel-logger'
 import { createProvider } from './providers/shared/create-provider'
 import { registerAutocompleteTraceView } from './tracer/traceView'
 
 interface InlineCompletionItemProviderArgs {
     config: PickResolvedConfiguration<{ configuration: true }>
-    authStatus:
-        | UnauthenticatedAuthStatus
-        | Pick<AuthenticatedAuthStatus, 'authenticated' | 'endpoint' | 'configOverwrites'>
+    authStatus: UnauthenticatedAuthStatus | Pick<AuthenticatedAuthStatus, 'authenticated' | 'endpoint'>
     platform: Pick<PlatformContext, 'extensionClient'>
     statusBar: CodyStatusBar
-}
-
-/**
- * Inline completion item providers that always returns an empty reply.
- * Implemented as a class instead of anonymous function so that you can identify
- * it with `console.log()` debugging.
- */
-class NoopCompletionItemProvider implements vscode.InlineCompletionItemProvider {
-    public provideInlineCompletionItems(
-        _document: vscode.TextDocument,
-        _position: vscode.Position,
-        _context: vscode.InlineCompletionContext,
-        _token: vscode.CancellationToken
-    ): vscode.ProviderResult<vscode.InlineCompletionItem[] | vscode.InlineCompletionList> {
-        return { items: [] }
-    }
 }
 
 export function createInlineCompletionItemProvider({
@@ -65,18 +48,8 @@ export function createInlineCompletionItemProvider({
     }
 
     if (!authStatus.authenticated) {
-        logDebug('AutocompleteProvider:notSignedIn', 'You are not signed in.')
-
-        if (configuration.isRunningInsideAgent) {
-            // Register an empty completion provider when running inside the
-            // agent to avoid timeouts because it awaits for an
-            // `InlineCompletionItemProvider` to be registered.
-            return vscodeResource(() =>
-                vscode.languages.registerInlineCompletionItemProvider(
-                    '*',
-                    new NoopCompletionItemProvider()
-                )
-            )
+        if (!authStatus.pendingValidation) {
+            autocompleteOutputChannelLogger.logDebug('createProvider', 'You are not signed in.')
         }
 
         return NEVER
@@ -87,11 +60,14 @@ export function createInlineCompletionItemProvider({
         return await getInlineCompletionItemProviderFilters(configuration.autocompleteLanguages)
     }).pipe(
         switchMap(documentFilters =>
-            createProvider({ config: { configuration }, authStatus }).pipe(
+            createProvider({ config: { configuration }, authStatus, configOverwrites }).pipe(
                 skipPendingOperation(),
                 createDisposables(providerOrError => {
                     if (providerOrError instanceof Error) {
-                        logDebug('AutocompleteProvider', providerOrError.message)
+                        autocompleteOutputChannelLogger.logError(
+                            'createProvider',
+                            providerOrError.message
+                        )
 
                         if (configuration.isRunningInsideAgent) {
                             const configString = JSON.stringify({ configuration }, null, 2)

@@ -31,7 +31,7 @@ export const AuthPage: React.FunctionComponent<React.PropsWithoutRef<LoginProps>
     uiKindIsWeb,
     vscodeAPI,
     codyIDE,
-    endpointHistory,
+    endpoints,
 }) => {
     const authStatus = useConfig().authStatus
     const telemetryRecorder = useTelemetryRecorder()
@@ -42,9 +42,26 @@ export const AuthPage: React.FunctionComponent<React.PropsWithoutRef<LoginProps>
     const isCodyWebUI = (uiKindIsWeb || codyIDE === CodyIDE.Web) && !isNonVSCodeIDE
     return (
         <div className="tw-flex tw-flex-col tw-items-center tw-gap-8 tw-h-full tw-py-10 tw-px-8">
-            <h1 className="tw-w-full tw-max-w-md">
-                <img src={onboardingSplashImage} alt="Hi, I'm Cody" className="tw-my-4 tw-w-full" />
-            </h1>
+            <div className="tw-w-full tw-max-w-md tw-flex tw-justify-center">
+                <img src={onboardingSplashImage} alt="Hi, I'm Cody" className="tw-my-4" />
+            </div>
+            <section className="tw-bg-sidebar-background tw-text-sidebar-foreground tw-border tw-border-border tw-rounded-lg tw-p-6 tw-w-full tw-max-w-md">
+                <h2 className="tw-font-semibold tw-text-lg tw-mb-4">Cody Enterprise</h2>
+                {isCodyWebUI || codyIDE === CodyIDE.VSCode ? (
+                    <div className="tw-flex tw-flex-col tw-gap-6 tw-w-full">
+                        <Button onClick={otherSignInClick}>Sign In to Your Enterprise Instance</Button>
+                    </div>
+                ) : (
+                    <ClientSignInForm
+                        authStatus={authStatus}
+                        vscodeAPI={vscodeAPI}
+                        endpoints={endpoints}
+                    />
+                )}
+                <p className="tw-mt-4 tw-mb-0 tw-text-muted-foreground">
+                    Learn more about <a href="https://sourcegraph.com/cloud">Sourcegraph Enterprise</a>.
+                </p>
+            </section>
             <section className="tw-bg-sidebar-background tw-text-sidebar-foreground tw-border tw-border-border tw-rounded-lg tw-p-6 tw-w-full tw-max-w-md">
                 <h2 className="tw-font-semibold tw-text-lg tw-mb-4">Cody Free or Cody Pro</h2>
                 <div className="tw-flex tw-flex-col tw-gap-6 tw-w-full">
@@ -104,7 +121,7 @@ export const AuthPage: React.FunctionComponent<React.PropsWithoutRef<LoginProps>
                         <ClientSignInForm
                             authStatus={authStatus}
                             vscodeAPI={vscodeAPI}
-                            endpointHistory={endpointHistory}
+                            endpoints={endpoints}
                         />
                     ) : (
                         <Button onClick={otherSignInClick}>Sign In to Your Enterprise Instance</Button>
@@ -114,11 +131,11 @@ export const AuthPage: React.FunctionComponent<React.PropsWithoutRef<LoginProps>
                     Learn more about <a href="https://sourcegraph.com/cloud">Sourcegraph Enterprise</a>.
                 </p>
             </section>
-            {endpointHistory?.length && (
+            {endpoints?.length && (
                 <section className="tw-bg-sidebar-background tw-text-sidebar-foreground tw-border tw-border-border tw-rounded-lg tw-p-6 tw-w-full tw-max-w-md">
                     <h2 className="tw-font-semibold tw-text-lg tw-mb-4">Account History</h2>
                     <div className="tw-flex tw-flex-col tw-gap-6 tw-w-full">
-                        <EndpointSelection authStatus={authStatus} endpointHistory={endpointHistory} />
+                        <EndpointSelection authStatus={authStatus} endpoints={endpoints} />
                     </div>
                 </section>
             )}
@@ -146,7 +163,7 @@ interface LoginProps {
     uiKindIsWeb: boolean
     vscodeAPI: VSCodeWrapper
     codyIDE: CodyIDE
-    endpointHistory: string[]
+    endpoints: string[]
 }
 
 const WebLogin: React.FunctionComponent<
@@ -193,7 +210,7 @@ const WebLogin: React.FunctionComponent<
 
 interface ClientSignInFormProps {
     vscodeAPI: VSCodeWrapper
-    endpointHistory: string[]
+    endpoints: string[]
     authStatus?: AuthStatus
     className?: string
 }
@@ -205,13 +222,9 @@ interface ClientSignInFormProps {
  * It validates the input and sends the authentication information to the VSCode extension
  * when the user clicks the "Sign In with Access Token" button.
  */
-const ClientSignInForm: React.FC<ClientSignInFormProps> = ({
-    className,
-    authStatus,
-    endpointHistory,
-}) => {
+const ClientSignInForm: React.FC<ClientSignInFormProps> = ({ className, authStatus, endpoints }) => {
     const [formData, setFormData] = useState({
-        endpoint: authStatus?.endpoint ?? endpointHistory?.[0] ?? '',
+        endpoint: authStatus?.endpoint ?? endpoints?.[0] ?? '',
         accessToken: '',
     })
 
@@ -298,12 +311,10 @@ const ClientSignInForm: React.FC<ClientSignInFormProps> = ({
 export const EndpointSelection: React.FunctionComponent<
     React.PropsWithoutRef<{
         authStatus?: AuthStatus
-        endpointHistory: string[]
+        endpoints: string[]
     }>
-> = ({ authStatus, endpointHistory }) => {
-    const [selectedEndpoint, setSelectedEndpoint] = useState(
-        authStatus?.endpoint ?? endpointHistory?.[0]
-    )
+> = ({ authStatus, endpoints }) => {
+    const [selectedEndpoint, setSelectedEndpoint] = useState(authStatus?.endpoint ?? endpoints?.[0])
 
     const onChange = useCallback(
         (endpoint: string) => {
@@ -322,7 +333,7 @@ export const EndpointSelection: React.FunctionComponent<
     )
 
     // No endpoint history to show.
-    if (!endpointHistory.length) {
+    if (!endpoints.length) {
         return null
     }
 
@@ -337,7 +348,7 @@ export const EndpointSelection: React.FunctionComponent<
                 </SelectTrigger>
                 <SelectContent position="item-aligned" className="tw-w-full tw-m-2 tw-bg-muted">
                     <SelectGroup className="tw-w-full" key="instances">
-                        {endpointHistory?.map(endpoint => (
+                        {endpoints?.map(endpoint => (
                             <SelectItem key={endpoint} value={endpoint} className="tw-w-full tw-p-3">
                                 {endpoint}
                             </SelectItem>

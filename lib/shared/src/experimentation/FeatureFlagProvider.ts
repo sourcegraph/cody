@@ -29,30 +29,28 @@ export enum FeatureFlag {
     // This flag is used to track the overall eligibility to use the StarCoder model. The `-hybrid`
     // suffix is no longer relevant
     CodyAutocompleteStarCoderHybrid = 'cody-autocomplete-default-starcoder-hybrid',
-    // Enable the FineTuned model as the default model via Fireworks
-    CodyAutocompleteFIMFineTunedModelHybrid = 'cody-autocomplete-fim-fine-tuned-model-hybrid',
     // Enable the deepseek-v2 as the default model via Fireworks
     CodyAutocompleteDeepseekV2LiteBase = 'cody-autocomplete-deepseek-v2-lite-base',
 
     // Data collection variants used for completions and next edit completions
-    CodyAutocompleteDataCollectionFlag = 'cody-autocomplete-data-collection-flag',
+    CodyAutocompleteDataCollectionFlag = 'cody-autocomplete-logs-collection-flag',
+
+    // Enables fast-path HTTP client for PLG-users
+    CodyAutocompleteFastPath = 'cody-autocomplete-fast-path',
 
     // Enable various feature flags to experiment with FIM trained fine-tuned models via Fireworks
-    CodyAutocompleteFIMModelExperimentBaseFeatureFlag = 'cody-autocomplete-fim-model-experiment-flag',
-    CodyAutocompleteFIMModelExperimentControl = 'cody-autocomplete-fim-model-experiment-control',
-    CodyAutocompleteFIMModelExperimentCurrentBest = 'cody-autocomplete-fim-model-experiment-current-best',
-    CodyAutocompleteFIMModelExperimentVariant1 = 'cody-autocomplete-fim-model-experiment-variant-1',
-    CodyAutocompleteFIMModelExperimentVariant2 = 'cody-autocomplete-fim-model-experiment-variant-2',
-    CodyAutocompleteFIMModelExperimentVariant3 = 'cody-autocomplete-fim-model-experiment-variant-3',
-    CodyAutocompleteFIMModelExperimentVariant4 = 'cody-autocomplete-fim-model-experiment-variant-4',
+    CodyAutocompleteFIMModelExperimentBaseFeatureFlag = 'cody-autocomplete-model-v1-experiment-flag',
+    CodyAutocompleteFIMModelExperimentControl = 'cody-autocomplete-model-v1-experiment-control',
+    CodyAutocompleteFIMModelExperimentCurrentBest = 'cody-autocomplete-model-v1-experiment-current-best',
+    CodyAutocompleteFIMModelExperimentVariant1 = 'cody-autocomplete-model-v1-experiment-variant-1',
+    CodyAutocompleteFIMModelExperimentVariant2 = 'cody-autocomplete-model-v1-experiment-variant-2',
+    CodyAutocompleteFIMModelExperimentVariant3 = 'cody-autocomplete-model-v1-experiment-variant-3',
+    CodyAutocompleteFIMModelExperimentVariant4 = 'cody-autocomplete-model-v1-experiment-variant-4',
     CodyAutocompleteDisableLowPerfLangDelay = 'cody-autocomplete-disable-low-perf-lang-delay',
-    // Enables Claude 3 if the user is in our holdout group
-    CodyAutocompleteClaude3 = 'cody-autocomplete-claude-3',
 
     CodyAutocompletePreloadingExperimentBaseFeatureFlag = 'cody-autocomplete-preloading-experiment-flag',
     CodyAutocompletePreloadingExperimentVariant1 = 'cody-autocomplete-preloading-experiment-variant-1',
     CodyAutocompletePreloadingExperimentVariant2 = 'cody-autocomplete-preloading-experiment-variant-2',
-    CodyAutocompletePreloadingExperimentVariant3 = 'cody-autocomplete-preloading-experiment-variant-3',
 
     CodyAutocompleteContextExperimentBaseFeatureFlag = 'cody-autocomplete-context-experiment-flag',
     CodyAutocompleteContextExperimentVariant1 = 'cody-autocomplete-context-experiment-variant-1',
@@ -91,6 +89,9 @@ export enum FeatureFlag {
      * some standard out-of-the-box prompts like documentation and explain code prompts)
      */
     CodyUnifiedPrompts = 'cody-unified-prompts',
+
+    /** Whether user has access to the experimental Cody Reflection / Deep Cody feature. */
+    DeepCody = 'cody-deep-reflection',
 }
 
 const ONE_HOUR = 60 * 60 * 1000

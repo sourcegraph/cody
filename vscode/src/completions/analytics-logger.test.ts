@@ -3,12 +3,12 @@ import { type MockInstance, afterEach, beforeEach, describe, expect, it, vi } fr
 import { telemetryRecorder } from '@sourcegraph/cody-shared'
 import { range } from '../testutils/textDocument'
 
+import * as CompletionAnalyticsLogger from './analytics-logger'
+import { type InlineCompletionItemContext, getInlineContextItemToLog } from './analytics-logger'
 import type { ContextSummary } from './context/context-mixer'
 import { getCurrentDocContext } from './get-current-doc-context'
 import { InlineCompletionsResultSource, TriggerKind } from './get-inline-completions'
 import { initCompletionProviderConfig } from './get-inline-completions-tests/helpers'
-import * as CompletionLogger from './logger'
-import { type InlineCompletionItemContext, getInlineContextItemToLog } from './logger'
 import type { RequestParams } from './request-manager'
 import { documentAndPosition } from './test-helpers'
 
@@ -44,16 +44,16 @@ const defaultRequestParams: RequestParams = {
     selectedCompletionInfo: undefined,
 }
 
-const completionItemId = 'completion-item-id' as CompletionLogger.CompletionItemID
+const completionItemId = 'completion-item-id' as CompletionAnalyticsLogger.CompletionItemID
 
-describe('logger', () => {
+describe('analytics-logger', () => {
     let recordSpy: MockInstance
     beforeEach(() => {
         initCompletionProviderConfig({})
         recordSpy = vi.spyOn(telemetryRecorder, 'recordEvent')
     })
     afterEach(() => {
-        CompletionLogger.reset_testOnly()
+        CompletionAnalyticsLogger.reset_testOnly()
     })
 
     it('logs a suggestion life cycle', () => {
@@ -62,12 +62,12 @@ describe('logger', () => {
             insertText: 'foo',
             resolvedModel: 'blazing-fast-llm-resolved',
         }
-        const id = CompletionLogger.create(defaultArgs)
+        const id = CompletionAnalyticsLogger.create(defaultArgs)
         expect(typeof id).toBe('string')
 
-        CompletionLogger.start(id)
-        CompletionLogger.networkRequestStarted(id, defaultContextSummary)
-        CompletionLogger.loaded({
+        CompletionAnalyticsLogger.start(id)
+        CompletionAnalyticsLogger.networkRequestStarted(id, defaultContextSummary)
+        CompletionAnalyticsLogger.loaded({
             logId: id,
             requestParams: defaultRequestParams,
             completions: [item],
@@ -75,14 +75,12 @@ describe('logger', () => {
             isFuzzyMatch: false,
             isDotComUser: false,
         })
-        const suggestionEvent = CompletionLogger.prepareSuggestionEvent({ id })
+        const suggestionEvent = CompletionAnalyticsLogger.prepareSuggestionEvent({ id })
         suggestionEvent?.markAsRead({
             document,
             position,
-            completePrefix: defaultRequestParams.docContext.completePrefix,
-            completeSuffix: defaultRequestParams.docContext.completeSuffix,
         })
-        CompletionLogger.accepted(id, document, item, range(0, 0, 0, 0), false)
+        CompletionAnalyticsLogger.accepted(id, document, item, range(0, 0, 0, 0), false)
 
         expect(recordSpy).toHaveBeenCalledWith('cody.completion', 'suggested', {
             version: 0,
@@ -104,10 +102,10 @@ describe('logger', () => {
     it('reuses the completion ID for the same completion', () => {
         const item = { id: completionItemId, insertText: 'foo' }
 
-        const id1 = CompletionLogger.create(defaultArgs)
-        CompletionLogger.start(id1)
-        CompletionLogger.networkRequestStarted(id1, defaultContextSummary)
-        CompletionLogger.loaded({
+        const id1 = CompletionAnalyticsLogger.create(defaultArgs)
+        CompletionAnalyticsLogger.start(id1)
+        CompletionAnalyticsLogger.networkRequestStarted(id1, defaultContextSummary)
+        CompletionAnalyticsLogger.loaded({
             logId: id1,
             requestParams: defaultRequestParams,
             completions: [item],
@@ -115,22 +113,20 @@ describe('logger', () => {
             isFuzzyMatch: false,
             isDotComUser: false,
         })
-        const firstSuggestionEvent = CompletionLogger.prepareSuggestionEvent({ id: id1 })
+        const firstSuggestionEvent = CompletionAnalyticsLogger.prepareSuggestionEvent({ id: id1 })
         firstSuggestionEvent?.markAsRead({
             document,
             position,
-            completePrefix: defaultRequestParams.docContext.completePrefix,
-            completeSuffix: defaultRequestParams.docContext.completeSuffix,
         })
 
-        const loggerItem = CompletionLogger.getCompletionEvent(id1)
+        const loggerItem = CompletionAnalyticsLogger.getCompletionEvent(id1)
         const completionId = loggerItem?.params.id
         expect(completionId).toBeDefined()
 
-        const id2 = CompletionLogger.create(defaultArgs)
-        CompletionLogger.start(id2)
-        CompletionLogger.networkRequestStarted(id2, defaultContextSummary)
-        CompletionLogger.loaded({
+        const id2 = CompletionAnalyticsLogger.create(defaultArgs)
+        CompletionAnalyticsLogger.start(id2)
+        CompletionAnalyticsLogger.networkRequestStarted(id2, defaultContextSummary)
+        CompletionAnalyticsLogger.loaded({
             logId: id2,
             requestParams: defaultRequestParams,
             completions: [item],
@@ -138,16 +134,14 @@ describe('logger', () => {
             isFuzzyMatch: false,
             isDotComUser: false,
         })
-        const secondSuggestionEvent = CompletionLogger.prepareSuggestionEvent({ id: id2 })
+        const secondSuggestionEvent = CompletionAnalyticsLogger.prepareSuggestionEvent({ id: id2 })
         secondSuggestionEvent?.markAsRead({
             document,
             position,
-            completePrefix: defaultRequestParams.docContext.completePrefix,
-            completeSuffix: defaultRequestParams.docContext.completeSuffix,
         })
-        CompletionLogger.accepted(id2, document, item, range(0, 0, 0, 0), false)
+        CompletionAnalyticsLogger.accepted(id2, document, item, range(0, 0, 0, 0), false)
 
-        const loggerItem2 = CompletionLogger.getCompletionEvent(id2)
+        const loggerItem2 = CompletionAnalyticsLogger.getCompletionEvent(id2)
         expect(loggerItem2?.params.id).toBe(completionId)
 
         expect(recordSpy).toHaveBeenCalledWith('cody.completion', 'suggested', expect.anything())
@@ -157,10 +151,10 @@ describe('logger', () => {
         expect(recordSpy).toHaveBeenCalledWith('cody.completion', 'suggested', expect.anything())
 
         // After accepting the completion, the ID won't be reused a third time
-        const id3 = CompletionLogger.create(defaultArgs)
-        CompletionLogger.start(id3)
-        CompletionLogger.networkRequestStarted(id3, defaultContextSummary)
-        CompletionLogger.loaded({
+        const id3 = CompletionAnalyticsLogger.create(defaultArgs)
+        CompletionAnalyticsLogger.start(id3)
+        CompletionAnalyticsLogger.networkRequestStarted(id3, defaultContextSummary)
+        CompletionAnalyticsLogger.loaded({
             logId: id3,
             requestParams: defaultRequestParams,
             completions: [item],
@@ -168,33 +162,31 @@ describe('logger', () => {
             isFuzzyMatch: false,
             isDotComUser: false,
         })
-        const thirdSuggestionEvent = CompletionLogger.prepareSuggestionEvent({ id: id3 })
+        const thirdSuggestionEvent = CompletionAnalyticsLogger.prepareSuggestionEvent({ id: id3 })
         thirdSuggestionEvent?.markAsRead({
             document,
             position,
-            completePrefix: defaultRequestParams.docContext.completePrefix,
-            completeSuffix: defaultRequestParams.docContext.completeSuffix,
         })
 
-        const loggerItem3 = CompletionLogger.getCompletionEvent(id3)
+        const loggerItem3 = CompletionAnalyticsLogger.getCompletionEvent(id3)
         expect(loggerItem3?.params.id).not.toBe(completionId)
     })
 
     it('does not log partial accept events if the length is not increasing', () => {
         const item = { insertText: 'export default class Agent' }
 
-        const id = CompletionLogger.create(defaultArgs)
-        CompletionLogger.start(id)
-        CompletionLogger.partiallyAccept(id, item, 5, false)
+        const id = CompletionAnalyticsLogger.create(defaultArgs)
+        CompletionAnalyticsLogger.start(id)
+        CompletionAnalyticsLogger.partiallyAccept(id, item, 5, false)
 
         expect(recordSpy).toHaveBeenCalledWith('cody.completion', 'partiallyAccepted', expect.anything())
 
-        CompletionLogger.partiallyAccept(id, item, 10, false)
+        CompletionAnalyticsLogger.partiallyAccept(id, item, 10, false)
 
         expect(recordSpy).toHaveBeenCalledWith('cody.completion', 'partiallyAccepted', expect.anything())
 
-        CompletionLogger.partiallyAccept(id, item, 5, false)
-        CompletionLogger.partiallyAccept(id, item, 8, false)
+        CompletionAnalyticsLogger.partiallyAccept(id, item, 5, false)
+        CompletionAnalyticsLogger.partiallyAccept(id, item, 8, false)
     })
 
     describe('getInlineContextItemToLog', () => {

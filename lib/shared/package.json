@@ -44,7 +44,7 @@
     "@types/isomorphic-fetch": "^0.0.39",
     "@types/lodash": "^4.14.195",
     "@types/node-fetch": "^2.6.4",
-    "@types/semver": "^7.5.0",
+    "@types/semver": "^7.5.8",
     "@types/vscode": "^1.80.0",
     "type-fest": "^4.26.1"
   }

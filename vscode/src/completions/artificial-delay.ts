@@ -1,5 +1,5 @@
-import { logDebug } from '../log'
 import type { CompletionIntent } from '../tree-sitter/queries'
+import { autocompleteOutputChannelLogger } from './output-channel-logger'
 
 export const lowPerformanceConfig = {
     languageIds: new Set([
@@ -42,7 +42,7 @@ export function getArtificialDelay({
     const latency = !codyAutocompleteDisableLowPerfLangDelay && isLowPerformance ? 1000 : 0
 
     if (latency > 0) {
-        logDebug('AutocompleteProvider:getLatency', `Delay added: ${latency}`)
+        autocompleteOutputChannelLogger.logDebug('getLatency', `Delay added: ${latency}`)
     }
 
     return latency

@@ -3,7 +3,7 @@ import { PromptString, type RangeData, type Result } from '@sourcegraph/cody-sha
 import { isNumber, isString } from 'lodash'
 import * as vscode from 'vscode'
 import type { SymfRunner } from '../local-context/symf'
-import { logDebug } from '../log'
+import { logDebug } from '../output-channel-logger'
 
 export interface TextSnippet {
     uri: vscode.Uri

@@ -1,3 +1,4 @@
+import { map } from 'observable-fns'
 import type * as vscode from 'vscode'
 
 import {
@@ -12,13 +13,12 @@ import {
     resolvedConfig,
 } from '@sourcegraph/cody-shared'
 
-import { logger } from '../../log'
 import { getLanguageConfig } from '../../tree-sitter/language'
+import { type DefaultModel, getModelHelpers } from '../model-helpers'
+import { autocompleteLifecycleOutputChannelLogger } from '../output-channel-logger'
+import { getSuffixAfterFirstNewline } from '../text-processing'
 import { forkSignal, generatorWithTimeout, zipGenerators } from '../utils'
 
-import { map } from 'observable-fns'
-import { type DefaultModel, getModelHelpers } from '../model-helpers'
-import { getSuffixAfterFirstNewline } from '../text-processing'
 import {
     type FetchCompletionResult,
     fetchAndProcessDynamicMultilineCompletions,
@@ -181,7 +181,7 @@ class ExperimentalOllamaProvider extends Provider {
 
         // TODO(valery): remove `any` casts
         tracer?.params(requestParams as any)
-        const ollamaClient = createOllamaClient(ollamaOptions, logger)
+        const ollamaClient = createOllamaClient(ollamaOptions, autocompleteLifecycleOutputChannelLogger)
 
         const completionsGenerators = Array.from({ length: numberOfCompletionsToGenerate }).map(
             async () => {

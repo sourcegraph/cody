@@ -29,7 +29,7 @@ import type {
 } from '@openctx/client'
 import type { createController } from '@openctx/vscode-lib'
 import { Observable, map } from 'observable-fns'
-import { logDebug } from '../log'
+import { logDebug } from '../output-channel-logger'
 import { gitMentionsProvider } from './openctx/git'
 import LinearIssuesProvider from './openctx/linear-issues'
 import RemoteDirectoryProvider, { createRemoteDirectoryProvider } from './openctx/remoteDirectorySearch'

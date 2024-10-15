@@ -6,7 +6,7 @@ import {
     fromVSCodeEvent,
     graphqlClient,
     isError,
-    pendingOperation,
+    type pendingOperation,
     startWith,
     switchMapReplayOperation,
 } from '@sourcegraph/cody-shared'
@@ -61,22 +61,27 @@ export const remoteReposForAllWorkspaceFolders: Observable<
                 ...workspaceFolders.map(folder => repoNameResolver.getRepoNamesContainingUri(folder.uri))
             ).pipe(
                 map(repoNamesLists => {
-                    const repoNames = repoNamesLists.flat()
-                    if (repoNames.includes(pendingOperation)) {
-                        return pendingOperation
-                    }
-                    return repoNames as Exclude<(typeof repoNames)[number], typeof pendingOperation>[]
+                    // Filter out non-array results (errors or pendingOperations)
+                    // Flatten the array of arrays and ensure all elements are strings
+                    const completedResults = repoNamesLists
+                        .filter((names): names is string[] => Array.isArray(names))
+                        .flat()
+                        .filter((name): name is string => typeof name === 'string')
+
+                    // Return completed results if available, otherwise an empty array
+                    // This prevents hanging on pendingOperations for caught errors that returns an empty array/value
+                    // that would be treated as a pendingOperation.
+                    return completedResults.length > 0 ? completedResults : []
                 }),
                 abortableOperation(async (repoNames, signal) => {
-                    if (repoNames === pendingOperation) {
-                        return pendingOperation
-                    }
                     if (repoNames.length === 0) {
                         // If we pass an empty repoNames array to getRepoIds, we would
                         // fetch the first 10 repos from the Sourcegraph instance,
                         // because it would think that argument is not set.
                         return []
                     }
+                    // Process the validated results without checking for pendingOperation that
+                    // would cause the abortableOperation to hang indefinitely.
                     const reposOrError = await graphqlClient.getRepoIds(
                         repoNames,
                         MAX_REPO_COUNT,

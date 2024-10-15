@@ -9,8 +9,7 @@ import {
     switchMap,
 } from '@sourcegraph/cody-shared'
 import { Observable, map } from 'observable-fns'
-import { logDebug } from '../log'
-import { localStorage } from '../services/LocalStorageProvider'
+import { logDebug } from '../output-channel-logger'
 import { remoteReposForAllWorkspaceFolders } from './remoteRepos'
 
 interface GitHubDotComRepoMetaData {
@@ -22,6 +21,7 @@ interface GitHubDotComRepoMetaData {
 export class GitHubDotComRepoMetadata {
     // This class is used to get the metadata from the gitApi.
     private static instance: GitHubDotComRepoMetadata | null = null
+    private cache = new Map<string /* repoName */, GitHubDotComRepoMetaData | undefined>()
 
     private constructor() {}
 
@@ -37,14 +37,7 @@ export class GitHubDotComRepoMetadata {
         if (!normalizedRepoName) {
             return undefined
         }
-        const repoVisibility = localStorage.getGitHubRepoVisibility(normalizedRepoName)
-        if (!repoVisibility) {
-            return undefined
-        }
-        return {
-            repoName: normalizedRepoName,
-            isPublic: repoVisibility,
-        }
+        return this.cache.get(normalizedRepoName)
     }
 
     public async getRepoMetadataUsingRepoName(
@@ -57,7 +50,7 @@ export class GitHubDotComRepoMetadata {
         }
         const repoMetaData = await this.ghMetadataFromGit(repoBaseName, signal)
         if (repoMetaData) {
-            await localStorage.setGitHubRepoVisibility(repoBaseName, repoMetaData.isPublic)
+            this.cache.set(repoMetaData.repoName, repoMetaData)
         }
         return repoMetaData
     }

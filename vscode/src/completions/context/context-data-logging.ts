@@ -5,7 +5,7 @@ import {
     subscriptionDisposable,
 } from '@sourcegraph/cody-shared'
 import type * as vscode from 'vscode'
-import { logDebug } from '../../log'
+import { logDebug } from '../../output-channel-logger'
 import { GitHubDotComRepoMetadata } from '../../repository/githubRepoMetadata'
 import { completionProviderConfig } from '../completion-provider-config'
 import type { ContextRetriever } from '../types'
