@@ -85,7 +85,7 @@ export const AccountTab: React.FC<AccountTabProps> = ({ setView }) => {
                             size={30}
                             className="tw-flex-shrink-0 tw-w-[30px] tw-h-[30px] tw-flex tw-items-center tw-justify-center"
                         />
-                        <div className="tw-mt-4">
+                        <div className="tw-flex tw-self-stretch tw-flex-col tw-w-full tw-items-center tw-justify-center tw-mt-4">
                             <p className="tw-text-lg tw-font-semibold">{displayName ?? username}</p>
                             <p className="tw-text-sm tw-text-muted-foreground">{primaryEmail}</p>
                         </div>
