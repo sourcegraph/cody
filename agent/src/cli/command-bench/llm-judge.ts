@@ -1,4 +1,4 @@
-import { type PromptString, setClientCapabilitiesFromConfiguration } from '@sourcegraph/cody-shared'
+import { type PromptString, setClientCapabilities } from '@sourcegraph/cody-shared'
 import { SourcegraphNodeCompletionsClient } from '../../../../vscode/src/completions/nodeClient'
 import { setStaticResolvedConfigurationWithAuthCredentials } from '../../../../vscode/src/configuration'
 import { localStorage } from '../../../../vscode/src/services/LocalStorageProvider'
@@ -18,7 +18,7 @@ export class LlmJudge {
             configuration: { customHeaders: undefined },
             auth: { accessToken: options.srcAccessToken, serverEndpoint: options.srcEndpoint },
         })
-        setClientCapabilitiesFromConfiguration({})
+        setClientCapabilities({ configuration: {}, agentCapabilities: undefined })
         this.client = new SourcegraphNodeCompletionsClient()
     }
 
