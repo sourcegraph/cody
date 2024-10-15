@@ -8,7 +8,6 @@ import com.intellij.openapi.editor.Editor
 import com.sourcegraph.cody.agent.CodyAgentService
 import com.sourcegraph.cody.agent.protocol.AutocompleteItem
 import com.sourcegraph.cody.autocomplete.CodyAutocompleteManager
-import com.sourcegraph.cody.vscode.InlineCompletionTriggerKind
 import com.sourcegraph.utils.CodyEditorUtil
 import java.util.concurrent.ConcurrentHashMap
 
@@ -43,8 +42,7 @@ class CycleCodyAutocompleteActionHandler(private val cycleDirection: CycleDirect
       ApplicationManager.getApplication().invokeLater {
         CodyAutocompleteManager.instance.let {
           it.clearAutocompleteSuggestions(editor)
-          it.displayAgentAutocomplete(
-              editor, caret.offset, newItems, editor.inlayModel, InlineCompletionTriggerKind.INVOKE)
+          it.displayAgentAutocomplete(editor, caret.offset, newItems, editor.inlayModel)
         }
         autocompleteItemsCache[cacheKey] = newItems
       }

@@ -28,12 +28,12 @@ class CodyFormatter {
       try {
         val beforeCompletion = document.text.substring(0, range.startOffset)
         val afterCompletion = document.text.substring(range.endOffset)
-        val appendedString = beforeCompletion + completionText + afterCompletion
+        val contentWithCompletion = beforeCompletion + completionText + afterCompletion
 
         val file = FileDocumentManager.getInstance().getFile(document) ?: return completionText
         val psiFile =
             PsiFileFactory.getInstance(project)
-                .createFileFromText("TEMP", file.fileType, appendedString)
+                .createFileFromText("TEMP", file.fileType, contentWithCompletion)
 
         val codeStyleManager = CodeStyleManager.getInstance(project)
         val endOffset = max(cursor, range.startOffset + completionText.length)
@@ -41,7 +41,7 @@ class CodyFormatter {
 
         // Fix for the IJ formatting bug which removes spaces even before the given formatting
         // range.
-        val existingStart = appendedString.substring(0, cursor)
+        val existingStart = contentWithCompletion.substring(0, cursor)
         val boundedCursorPosition = min(cursor, psiFile.text.length)
         val formattedStart = psiFile.text.substring(0, boundedCursorPosition)
         val startOfDiff = existingStart.zip(formattedStart).indexOfFirst { (e, f) -> e != f }

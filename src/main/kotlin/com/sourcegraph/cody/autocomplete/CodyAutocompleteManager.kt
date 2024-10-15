@@ -1,8 +1,5 @@
 package com.sourcegraph.cody.autocomplete
 
-import com.github.difflib.DiffUtils
-import com.github.difflib.patch.DeltaType
-import com.github.difflib.patch.Patch
 import com.intellij.codeInsight.hint.HintManager
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.client.ClientSessionsManager
@@ -44,7 +41,6 @@ import com.sourcegraph.cody.vscode.TextDocument
 import com.sourcegraph.common.CodyBundle
 import com.sourcegraph.common.CodyBundle.fmt
 import com.sourcegraph.config.ConfigUtil.isCodyEnabled
-import com.sourcegraph.config.UserLevelConfig
 import com.sourcegraph.utils.CodyEditorUtil.getAllOpenEditors
 import com.sourcegraph.utils.CodyEditorUtil.getLanguage
 import com.sourcegraph.utils.CodyEditorUtil.getTextRange
@@ -53,7 +49,7 @@ import com.sourcegraph.utils.CodyEditorUtil.isEditorValidForAutocomplete
 import com.sourcegraph.utils.CodyEditorUtil.isImplicitAutocompleteEnabledForEditor
 import com.sourcegraph.utils.CodyFormatter
 import java.util.concurrent.atomic.AtomicReference
-import java.util.stream.Collectors
+import org.jetbrains.annotations.VisibleForTesting
 
 /** Responsible for triggering and clearing inline code completions (the autocomplete feature). */
 @Service
@@ -217,7 +213,7 @@ class CodyAutocompleteManager {
       // https://github.com/sourcegraph/jetbrains/issues/350
       // CodyFormatter.formatStringBasedOnDocument needs to be on a write action.
       WriteCommandAction.runWriteCommandAction(editor.project) {
-        displayAgentAutocomplete(editor, offset, result.items, inlayModel, triggerKind)
+        displayAgentAutocomplete(editor, offset, result.items, inlayModel)
       }
     }
   }
@@ -234,7 +230,6 @@ class CodyAutocompleteManager {
       cursorOffset: Int,
       items: List<AutocompleteItem>,
       inlayModel: InlayModel,
-      triggerKind: InlineCompletionTriggerKind,
   ) {
     if (editor.isDisposed) {
       return
@@ -254,20 +249,7 @@ class CodyAutocompleteManager {
               defaultItem.insertText, project, editor.document, range, cursorOffset)
         }
 
-    // Run Myers diff between the existing text in the document and the `insertText` that is
-    // returned from the agent.
-    // The diff algorithm returns a list of "deltas" that give us the minimal number of additions we
-    // need to make to the document.
-    val patch = diff(originalText, defaultItem.insertText)
-    if (!patch.deltas.all { delta -> delta.type == DeltaType.INSERT }) {
-      if (triggerKind == InlineCompletionTriggerKind.INVOKE ||
-          UserLevelConfig.isVerboseLoggingEnabled()) {
-        logger.warn("Skipping autocomplete with non-insert deltas: $patch")
-      }
-      // Skip completions that need to delete or change characters in the existing document. We only
-      // want completions to add changes to the document.
-      return
-    }
+    if (formattedCompletionText.trim().isBlank()) return
 
     project?.let {
       CodyAgentService.withAgent(project) { agent ->
@@ -275,43 +257,24 @@ class CodyAutocompleteManager {
       }
     }
 
-    defaultItem.insertText = formattedCompletionText
-    val cursorOffsetInOriginalText = cursorOffset - range.startOffset
-
-    if (cursorOffsetInOriginalText > originalText.length) {
-      logger.warn(
-          """Skipping autocomplete because cursor position is outside of text range:
-            |Original text: `$originalText`
-            |Completion range: $range
-            |Cursor offset: $cursorOffset
-            |Cursor offset in completion text: $cursorOffsetInOriginalText
-          """
-              .trimMargin())
-      return
-    }
-
-    val originalTextBeforeCursor = originalText.substring(0, cursorOffsetInOriginalText)
-    val originalTextAfterCursor = originalText.substring(cursorOffsetInOriginalText)
-    val completionText =
-        formattedCompletionText
-            .removePrefix(originalTextBeforeCursor)
-            .removeSuffix(originalTextAfterCursor)
-    if (completionText.trim().isBlank()) return
-
-    val lineBreaks = listOf("\r\n", "\n", "\r")
-    val startsInline = lineBreaks.none { separator -> completionText.startsWith(separator) }
+    val startsInline =
+        lineBreaks.none { separator -> formattedCompletionText.startsWith(separator) }
 
     var inlay: Inlay<*>? = null
     if (startsInline) {
-      val text = completionText.lines().first()
-      if (text.isNotEmpty()) {
+      val (inlayOffset, completionText) =
+          trimCommonPrefixAndSuffix(
+              formattedCompletionText.lines().first(), originalText.lines().first())
+      if (completionText.isNotEmpty()) {
         val renderer =
-            CodyAutocompleteSingleLineRenderer(text, items, editor, AutocompleteRendererType.INLINE)
+            CodyAutocompleteSingleLineRenderer(
+                completionText, items, editor, AutocompleteRendererType.INLINE)
         inlay =
-            inlayModel.addInlineElement(cursorOffset, /* relatesToPrecedingText = */ true, renderer)
+            inlayModel.addInlineElement(
+                cursorOffset + inlayOffset, /* relatesToPrecedingText = */ true, renderer)
       }
     }
-    val lines = completionText.lines()
+    val lines = formattedCompletionText.lines()
     if (lines.size > 1) {
       val text =
           (if (startsInline) lines.drop(1) else lines).dropWhile { it.isBlank() }.joinToString("\n")
@@ -406,11 +369,30 @@ class CodyAutocompleteManager {
     val instance: CodyAutocompleteManager
       get() = service()
 
-    @JvmStatic
-    fun diff(a: String, b: String): Patch<String> =
-        DiffUtils.diff(characterList(a), characterList(b))
+    private val lineBreaks = listOf("\r\n", "\n", "\r")
 
-    private fun characterList(value: String): List<String> =
-        value.chars().mapToObj { c -> c.toChar().toString() }.collect(Collectors.toList())
+    @VisibleForTesting
+    fun trimCommonPrefixAndSuffix(completion: String, original: String): Pair<Int, String> {
+      var startIndex = 0
+      var endIndex = completion.length
+
+      // Trim common prefix
+      while (startIndex < completion.length &&
+          startIndex < original.length &&
+          completion[startIndex] == original[startIndex]) {
+        startIndex++
+      }
+
+      // Trim common suffix
+      while (endIndex > 0 &&
+          endIndex > startIndex &&
+          original.length - (completion.length - endIndex) > 0 &&
+          completion[endIndex - 1] ==
+              original[original.length - (completion.length - endIndex) - 1]) {
+        endIndex--
+      }
+
+      return Pair(startIndex, completion.substring(startIndex, endIndex))
+    }
   }
 }

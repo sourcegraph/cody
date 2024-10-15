@@ -71,7 +71,6 @@ class CodyInlineCompletionProvider : InlineCompletionProvider {
                 editor.project) {
                   val range = getTextRange(editor.document, it.range)
                   val originalText = editor.document.getText(range)
-                  val cursorOffsetInOriginalText = request.endOffset - range.startOffset
 
                   val formattedCompletionText: String =
                       if (System.getProperty("cody.autocomplete.enableFormatting") == "false") {
@@ -81,15 +80,7 @@ class CodyInlineCompletionProvider : InlineCompletionProvider {
                             it.insertText, project, editor.document, range, request.endOffset)
                       }
 
-                  // ...
-
-                  val originalTextBeforeCursor =
-                      originalText.substring(0, cursorOffsetInOriginalText)
-                  val originalTextAfterCursor = originalText.substring(cursorOffsetInOriginalText)
-                  val completionText =
-                      formattedCompletionText
-                          .removePrefix(originalTextBeforeCursor)
-                          .removeSuffix(originalTextAfterCursor)
+                  val completionText = formattedCompletionText.removeSuffix(originalText)
                   if (completionText.trim().isBlank()) {
                     null
                   } else {
