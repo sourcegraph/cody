@@ -27,7 +27,7 @@ export const Default: Story = {
                 items: [
                     {
                         type: 'file',
-                        uri: URI.file('/foo/bar.go'),
+                        uri: 'file:///foo/bar.go',
                     },
                 ],
             },

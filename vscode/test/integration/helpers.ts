@@ -2,7 +2,7 @@ import * as assert from 'node:assert'
 
 import * as vscode from 'vscode'
 
-import type { ChatMessage } from '@sourcegraph/cody-shared'
+import type { SerializedChatMessage } from '@sourcegraph/cody-shared'
 
 import type { ExtensionApi } from '../../src/extension-api'
 import * as mockServer from '../fixtures/mock-server'
@@ -68,12 +68,12 @@ export function getExtensionAPI(): vscode.Extension<ExtensionApi> {
 }
 
 // Waits for the index-th message to appear in the chat transcript, and returns it.
-export async function getTranscript(index: number): Promise<ChatMessage> {
+export async function getTranscript(index: number): Promise<SerializedChatMessage> {
     const api = getExtensionAPI()
     const testSupport = api.exports.testing
     assert.ok(testSupport)
 
-    let transcript: readonly ChatMessage[] | undefined
+    let transcript: readonly SerializedChatMessage[] | undefined
 
     await waitUntil(async () => {
         if (!api.isActive || !api.exports.testing) {

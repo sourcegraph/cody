@@ -17,7 +17,7 @@ import { PromptString } from '../../prompt/prompt-string'
  */
 export type RankedContext = {
     strategy: string
-    items: ContextItem[]
+    items: SerializedContextItem[]
 }
 
 export interface ChatMessage extends Message {
@@ -52,7 +52,7 @@ export interface ChatMessage extends Message {
 // break.
 export interface SerializedChatMessage {
     contextFiles?: SerializedContextItem[]
-
+    contextAlternatives?: RankedContext[]
     error?: ChatError
     editorState?: unknown
     speaker: 'human' | 'assistant' | 'system'
@@ -66,6 +66,10 @@ export function serializeChatMessage(chatMessage: ChatMessage): SerializedChatMe
         speaker: chatMessage.speaker,
         model: chatMessage.model,
         contextFiles: chatMessage.contextFiles?.map(serializeContextItem),
+        contextAlternatives: chatMessage.contextAlternatives?.map(({ items, strategy }) => ({
+            strategy,
+            items: items.map(serializeContextItem),
+        })),
         editorState: chatMessage.editorState,
         error: chatMessage.error,
         text: chatMessage.text ? chatMessage.text.toString() : undefined,

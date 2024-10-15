@@ -1,5 +1,5 @@
 import type { ContextItem, Model } from '@sourcegraph/cody-shared'
-import { pluralize } from '@sourcegraph/cody-shared'
+import { deserializeContextItem, pluralize } from '@sourcegraph/cody-shared'
 import type { RankedContext } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { clsx } from 'clsx'
 import { BrainIcon, MessagesSquareIcon } from 'lucide-react'
@@ -82,7 +82,8 @@ export const ContextCell: FunctionComponent<{
 
         let contextItemsToDisplay = contextItems
         if (selectedAlternative !== undefined && contextAlternatives) {
-            contextItemsToDisplay = contextAlternatives[selectedAlternative].items
+            contextItemsToDisplay =
+                contextAlternatives[selectedAlternative].items.map(deserializeContextItem)
         }
 
         const { usedContext, excludedContext, itemCountLabel, excludedContextInfo } = getContextInfo(

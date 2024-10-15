@@ -1,7 +1,11 @@
 import { Observable } from 'observable-fns'
 import type { AuthStatus, ModelsData, ResolvedConfiguration, UserProductSubscription } from '../..'
 import type { SerializedPromptEditorState } from '../..'
-import type { ChatMessage, UserLocalHistory } from '../../chat/transcript/messages'
+import type {
+    ChatMessage,
+    SerializedChatMessage,
+    UserLocalHistory,
+} from '../../chat/transcript/messages'
 import type { ContextItem } from '../../codebase-context/messages'
 import type { CodyCommand } from '../../commands/types'
 import type { FeatureFlag } from '../../experimentation/FeatureFlagProvider'
@@ -76,7 +80,7 @@ export interface WebviewToExtensionAPI {
     /**
      * Observe the current transcript.
      */
-    transcript(): Observable<readonly ChatMessage[]>
+    transcript(): Observable<readonly SerializedChatMessage[]>
 
     /**
      * The current user's chat history.

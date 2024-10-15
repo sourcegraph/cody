@@ -7,6 +7,7 @@ import {
     type Message,
     type ModelContextWindow,
     type SerializedChatInteraction,
+    type SerializedChatMessage,
     type SerializedChatTranscript,
     distinctUntilChanged,
     errorToChatError,
@@ -15,7 +16,6 @@ import {
     serializeChatMessage,
     startWith,
     switchMap,
-    toRangeData,
 } from '@sourcegraph/cody-shared'
 
 import type { RankedContext } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
@@ -241,8 +241,8 @@ export class ChatBuilder {
 
     // De-hydrate because vscode.Range serializes to `[start, end]` in JSON.
     // TODO: we should use a different type for `getMessages` to make the range hydration explicit.
-    public getDehydratedMessages(): readonly ChatMessage[] {
-        return this.messages.map(prepareChatMessage)
+    public getSerializedMessages(): readonly SerializedChatMessage[] {
+        return this.messages.map(serializeChatMessage)
     }
 
     public getChatTitle(): string {
@@ -308,24 +308,5 @@ function messageToSerializedChatInteraction(
     return {
         humanMessage: serializeChatMessage(humanMessage),
         assistantMessage: assistantMessage ? serializeChatMessage(assistantMessage) : null,
-    }
-}
-
-export function prepareChatMessage(message: ChatMessage): ChatMessage {
-    return {
-        ...message,
-        contextFiles: message.contextFiles?.map(dehydrateContextItem),
-        contextAlternatives: message.contextAlternatives?.map(({ items, strategy }) => ({
-            strategy,
-            items: items.map(dehydrateContextItem),
-        })),
-    }
-}
-
-function dehydrateContextItem(item: ContextItem): ContextItem {
-    return {
-        ...item,
-        // De-hydrate because vscode.Range serializes to `[start, end]` in JSON.
-        range: toRangeData(item.range),
     }
 }

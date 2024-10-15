@@ -16,6 +16,7 @@ import {
     isRangeContained,
     isRangeProperSubset,
     mergeRanges,
+    toRangeData,
 } from '../common/range'
 import { displayPathBasename } from '../editor/displayPath'
 
@@ -70,6 +71,9 @@ export function serializeContextItem(
     return {
         ...contextItem,
         uri: contextItem.uri.toString(),
+
+        // De-hydrate because vscode.Range serializes to `[start, end]` in JSON.
+        range: contextItem.range ? toRangeData(contextItem.range) : undefined,
 
         // Don't include the `content` (if it's present) because it's quite large, and we don't need
         // to serialize it here. It can be hydrated on demand.

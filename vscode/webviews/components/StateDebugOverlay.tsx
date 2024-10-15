@@ -1,9 +1,9 @@
 import * as Tabs from '@radix-ui/react-tabs'
 import type {
     AuthStatus,
-    ChatMessage,
     ModelsData,
     ResolvedConfiguration,
+    SerializedChatMessage,
 } from '@sourcegraph/cody-shared'
 import { useExtensionAPI, useInitialContextForChat, useObservable } from '@sourcegraph/prompt-editor'
 import clsx from 'clsx'
@@ -153,7 +153,7 @@ function useModelsData(): ModelsData | null | undefined {
     return useObservable(useMemo(() => models(), [models])).value
 }
 
-function useTranscript(): readonly ChatMessage[] | undefined {
+function useTranscript(): readonly SerializedChatMessage[] | undefined {
     const transcript = useExtensionAPI().transcript
     return useObservable(useMemo(() => transcript(), [transcript])).value
 }

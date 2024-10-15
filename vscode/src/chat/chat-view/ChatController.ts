@@ -1,16 +1,19 @@
 import {
     type ChatModel,
     type CodyClientConfig,
+    type SerializedChatMessage,
     cenv,
     clientCapabilities,
     currentSiteVersion,
     deserializeChatMessage,
+    deserializeContextItem,
     distinctUntilChanged,
     firstResultFromOperation,
     forceHydration,
     pendingOperation,
     ps,
     resolvedConfig,
+    serializeContextItem,
     shareReplay,
     skip,
     skipPendingOperation,
@@ -128,7 +131,7 @@ import {
     type WebviewMessage,
 } from '../protocol'
 import { countGeneratedCode } from '../utils'
-import { ChatBuilder, prepareChatMessage } from './ChatBuilder'
+import { ChatBuilder } from './ChatBuilder'
 import { chatHistory } from './ChatHistoryManager'
 import { CodyChatEditorViewType } from './ChatsController'
 import { type ContextRetriever, toStructuredMentions } from './ContextRetriever'
@@ -718,7 +721,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 signal
             )
             signal.throwIfAborted()
-            const corpusContext = contextAlternatives[0].items
+            const corpusContext = contextAlternatives[0].items.map(deserializeContextItem)
 
             const repositoryMentioned = mentions.find(contextItem =>
                 ['repository', 'tree'].includes(contextItem.type)
@@ -966,7 +969,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     openCtxContext,
                     priorityContext,
                     retrievedContext
-                ),
+                ).map(serializeContextItem),
             },
         ]
     }
@@ -1168,7 +1171,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         // https://github.com/microsoft/vscode/issues/159431
         void this.postMessage({
             type: 'transcript',
-            messages: messages.map(prepareChatMessage).map(serializeChatMessage),
+            messages: messages.map(serializeChatMessage),
             isMessageInProgress: !!messageInProgress,
             chatID: this.chatBuilder.sessionID,
         })
@@ -1662,7 +1665,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     resolvedConfig: () => resolvedConfig,
                     authStatus: () => authStatus,
                     transcript: () =>
-                        this.chatBuilder.changes.pipe(map(chat => chat.getDehydratedMessages())),
+                        this.chatBuilder.changes.pipe(map(chat => chat.getSerializedMessages())),
                     userHistory: () => chatHistory.changes,
                     userProductSubscription: () =>
                         userProductSubscription.pipe(
@@ -1691,8 +1694,8 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
     // =======================================================================
 
     // Convenience function for tests
-    public getViewTranscript(): readonly ChatMessage[] {
-        return this.chatBuilder.getMessages().map(prepareChatMessage)
+    public getViewTranscript(): readonly SerializedChatMessage[] {
+        return this.chatBuilder.getMessages().map(serializeChatMessage)
     }
 
     public isEmpty(): boolean {

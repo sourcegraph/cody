@@ -14,6 +14,7 @@ import {
     type UserLocalHistory,
     getMockedDotComClientModels,
     promiseFactoryToObservable,
+    serializeChatMessage,
     serializedPromptEditorStateFromText,
 } from '@sourcegraph/cody-shared'
 import { ExtensionAPIProviderForTestsOnly } from '@sourcegraph/prompt-editor'
@@ -106,7 +107,8 @@ export const AppWrapperForTest: FunctionComponent<{ children: ReactNode }> = ({ 
                             } satisfies Partial<ClientConfiguration> as ClientConfiguration,
                         } satisfies Partial<ResolvedConfiguration> as ResolvedConfiguration),
                     authStatus: () => Observable.of(AUTH_STATUS_FIXTURE_AUTHED),
-                    transcript: () => Observable.of(FIXTURE_TRANSCRIPT.explainCode),
+                    transcript: () =>
+                        Observable.of(FIXTURE_TRANSCRIPT.explainCode.map(serializeChatMessage)),
                     userHistory: () =>
                         Observable.of<UserLocalHistory | null>({
                             chat: {
