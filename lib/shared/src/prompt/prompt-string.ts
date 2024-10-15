@@ -405,13 +405,10 @@ export class PromptString {
     // not deserialize from chat message. To make sure we do not introduce places
     // where we deserialize chat messages this way, the function is marked unsafe
     // for now.
-    public static unsafe_deserializeChatMessage(serializedMessage: SerializedChatMessage): ChatMessage {
-        return {
-            ...serializedMessage,
-            text: serializedMessage.text
-                ? internal_createPromptString(serializedMessage.text, [])
-                : undefined,
-        }
+    public static unsafe_deserializeChatMessageText(
+        serializedMessageText: SerializedChatMessage['text']
+    ): ChatMessage['text'] {
+        return serializedMessageText ? internal_createPromptString(serializedMessageText, []) : undefined
     }
 }
 
