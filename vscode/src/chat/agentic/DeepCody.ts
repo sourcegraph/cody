@@ -95,8 +95,10 @@ export class DeepCodyAgent {
                     break
                 }
             }
-            const contextPromise = await Promise.all(this.tools.map(t => t.execute(this.span)))
-            return contextPromise.flat().filter(isDefined)
+
+            return (await Promise.all(this.tools.map(t => t.execute(this.span))))
+                .flat()
+                .filter(isDefined)
         } catch (error) {
             await this.multiplexer.notifyTurnComplete()
             logDebug('Deep Cody', `context review failed: ${error}`, {
@@ -108,8 +110,8 @@ export class DeepCodyAgent {
 
     private getPrompter(items: ContextItem[]): DefaultPrompter {
         const { explicitMentions, implicitMentions } = getCategorizedMentions(items)
-        const maxSearchItems = 30 // Keep the latest n items and remove the reset.
-        return new DefaultPrompter(explicitMentions, implicitMentions.splice(-maxSearchItems))
+        const maxSearchItems = 30 // Keep the latest n items and remove the rest.
+        return new DefaultPrompter(explicitMentions, implicitMentions.slice(-maxSearchItems))
     }
 
     private buildPrompt(): PromptString {

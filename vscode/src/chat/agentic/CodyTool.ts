@@ -155,7 +155,8 @@ export class SearchTool extends CodyTool {
         )
         // Store the search query to avoid running the same query again.
         this.performedSearch.add(query)
-        return context
+        const maxSearchItems = 30 // Keep the latest n items and remove the rest.
+        return context.slice(-maxSearchItems)
     }
 }
 
