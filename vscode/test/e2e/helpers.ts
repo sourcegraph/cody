@@ -171,7 +171,7 @@ export const test = base
 
             let dotcomUrlOverride: { [key: string]: string } = {}
             if (dotcomUrl) {
-                dotcomUrlOverride = { TESTING_DOTCOM_URL: dotcomUrl }
+                dotcomUrlOverride = { CODY_OVERRIDE_DOTCOM_URL: dotcomUrl }
             }
 
             const tmpLogFile = path.join(testAssetsTmpDir(testInfo.title, 'log'), 'logger.log')

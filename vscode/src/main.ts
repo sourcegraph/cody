@@ -94,6 +94,7 @@ import { CodyTerminal } from './services/CodyTerminal'
 import { showFeedbackSupportQuickPick } from './services/FeedbackOptions'
 import { displayHistoryQuickPick } from './services/HistoryChat'
 import { localStorage } from './services/LocalStorageProvider'
+import { NetworkDiagnostics } from './services/NetworkDiagnostics'
 import { VSCodeSecretStorage, secretStorage } from './services/SecretStorageProvider'
 import { registerSidebarCommands } from './services/SidebarCommands'
 import { CodyStatusBar } from './services/StatusBar'
@@ -116,6 +117,9 @@ export async function start(
     context: vscode.ExtensionContext,
     platform: PlatformContext
 ): Promise<vscode.Disposable> {
+    const disposables: vscode.Disposable[] = []
+
+    //TODO: Add override flag
     const isExtensionModeDevOrTest =
         context.extensionMode === vscode.ExtensionMode.Development ||
         context.extensionMode === vscode.ExtensionMode.Test
@@ -131,8 +135,6 @@ export async function start(
 
     setLogger({ logDebug, logError })
 
-    const disposables: vscode.Disposable[] = []
-
     setClientCapabilities({
         configuration: getConfiguration(),
         agentCapabilities: platform.extensionClient.capabilities,
@@ -144,7 +146,10 @@ export async function start(
         combineLatest(
             fromVSCodeEvent(vscode.workspace.onDidChangeConfiguration).pipe(
                 filter(
-                    event => event.affectsConfiguration('cody') || event.affectsConfiguration('openctx')
+                    event =>
+                        event.affectsConfiguration('cody') ||
+                        event.affectsConfiguration('openctx') ||
+                        event.affectsConfiguration('http')
                 ),
                 startWith(undefined),
                 map(() => getConfiguration()),
@@ -190,6 +195,7 @@ export async function start(
             )
         )
     )
+
     setEditorWindowIsFocused(() => vscode.window.state.focused)
 
     if (process.env.LOG_GLOBAL_STATE_EMISSIONS) {
@@ -256,11 +262,21 @@ const register = async (
     )
     disposables.push(chatsController)
 
-    const statusBar = CodyStatusBar.init(disposables)
     disposables.push(
         subscriptionDisposable(
             exposeOpenCtxClient(context, platform.createOpenCtxController).subscribe({})
         )
+    )
+
+    const statusBar = CodyStatusBar.init()
+    disposables.push(statusBar)
+
+    disposables.push(
+        NetworkDiagnostics.init({
+            statusBar,
+            agent: platform.networkAgent ?? null,
+            authProvider,
+        })
     )
 
     registerAutocomplete(platform, statusBar, disposables)

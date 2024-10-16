@@ -6,6 +6,7 @@ import {
     OLLAMA_DEFAULT_URL,
     type PickResolvedConfiguration,
     PromptString,
+    cenv,
     setStaticResolvedConfigurationValue,
 } from '@sourcegraph/cody-shared'
 
@@ -23,8 +24,6 @@ interface ConfigGetter {
 export function getConfiguration(
     config: ConfigGetter = vscode.workspace.getConfiguration()
 ): ClientConfiguration {
-    const isTesting = process.env.CODY_TESTING === 'true'
-
     function getHiddenSetting<T>(configKey: string, defaultValue?: T): T {
         return config.get<T>(`cody.${configKey}` as any, defaultValue)
     }
@@ -47,10 +46,22 @@ export function getConfiguration(
         debugRegex = /.*/
     }
 
-    const vsCodeConfig = vscode.workspace.getConfiguration()
-
     return {
-        proxy: vsCodeConfig.get<string>('http.proxy'),
+        net: {
+            mode: config.get<string | null | undefined>(CONFIG_KEY.netMode, undefined),
+            proxy: {
+                endpoint: config.get<string | null | undefined>(CONFIG_KEY.netProxyEndpoint, undefined),
+                cacert: config.get<string | null | undefined>(CONFIG_KEY.netProxyCacert, undefined),
+                skipCertValidation: config.get<boolean | null | undefined>(
+                    CONFIG_KEY.netProxySkipCertValidation,
+                    false
+                ),
+            },
+            // this is vscode's config that we need to watch. This is because it
+            // might require us to re-try auth. Settings aren't actually used so
+            // we stringify them.
+            vscode: JSON.stringify(config.get<object>('http' as any, {})),
+        },
         codebase: sanitizeCodebase(config.get(CONFIG_KEY.codebase)),
         serverEndpoint: config.get<string>(CONFIG_KEY.serverEndpoint),
         customHeaders: config.get<Record<string, string>>(CONFIG_KEY.customHeaders),
@@ -84,7 +95,10 @@ export function getConfiguration(
          * Hidden settings for internal use only.
          */
 
-        internalUnstable: getHiddenSetting('internal.unstable', isTesting),
+        internalUnstable: getHiddenSetting(
+            'internal.unstable',
+            cenv.CODY_CONFIG_ENABLE_INTERNAL_UNSTABLE
+        ),
         internalDebugContext: getHiddenSetting('internal.debug.context', false),
         internalDebugState: getHiddenSetting('internal.debug.state', false),
 

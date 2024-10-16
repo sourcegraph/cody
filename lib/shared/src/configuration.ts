@@ -21,8 +21,18 @@ export interface AuthCredentials {
     tokenSource?: TokenSource | undefined
 }
 
+export interface NetConfiguration {
+    mode?: string | undefined | null
+    proxy?: {
+        endpoint?: string | undefined | null
+        cacert?: string | undefined | null
+        skipCertValidation?: boolean | null
+    }
+    vscode?: string | undefined | null
+}
+
 interface RawClientConfiguration {
-    proxy?: string | null
+    net: NetConfiguration
     codebase?: string
     debugFilter: RegExp | null
     debugVerbose: boolean
@@ -107,8 +117,8 @@ interface RawClientConfiguration {
      * environment variables such as TESTING_MODE which can make it difficult to
      * understand the broad implications such a setting can have.
      */
-    overrideServerEndpoint: string | undefined
-    overrideAuthToken: string | undefined
+    overrideServerEndpoint?: string | undefined
+    overrideAuthToken?: string | undefined
 }
 
 /**
