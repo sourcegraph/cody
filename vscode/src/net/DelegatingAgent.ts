@@ -286,15 +286,36 @@ async function resolveSettings([error, settings]:
             vscode: null,
         } satisfies ResolvedSettings
     }
-    const proxyPath = resolveProxyPath(settings.proxyPath) || null
-    const caCert = settings.proxyCACert || readProxyCACert(settings.proxyCACertPath) || null
+    let proxyPath: string | null = null
+    let err: Error | null = null
+    let caCert: string | null = null
+    try {
+        proxyPath = resolveProxyPath(settings.proxyPath) || null
+    } catch (error) {
+        if (error instanceof Error) {
+            err = error
+        } else {
+            err = new Error(`Could not resolve proxy path: ${error}`)
+        }
+    }
+    if (!err) {
+        try {
+            caCert = settings.proxyCACert || readProxyCACert(settings.proxyCACertPath) || null
+        } catch (error) {
+            if (error instanceof Error) {
+                err = error
+            } else {
+                err = new Error(`Could not resolve proxy path: ${error}`)
+            }
+        }
+    }
     return {
-        bypassVSCode: settings.bypassVSCode,
-        error: null,
+        error: err,
         proxyServer: settings.proxyServer || null,
         proxyPath,
         ca: await buildCaCerts(caCert ? [caCert] : null),
         skipCertValidation: settings.skipCertValidation,
+        bypassVSCode: settings.bypassVSCode,
         vscode: settings.vscode,
     }
 }
