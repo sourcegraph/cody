@@ -149,6 +149,10 @@ describe('AuthProvider', () => {
             .mockReturnValue(asyncValue(authedAuthStatusAlice, 10))
 
         const { authProvider, authStatus, resolvedConfig } = setup()
+        const mockSerializeUninstallerInfo = vi
+            .spyOn(authProvider, 'serializeUninstallerInfo')
+            .mockReturnValue(asyncValue(undefined, 10))
+
         const { values, clearValues } = readValuesFrom(authStatus)
         resolvedConfig.next({
             configuration: {},
@@ -165,6 +169,7 @@ describe('AuthProvider', () => {
         clearValues()
         expect(validateCredentialsMock).toHaveBeenCalledTimes(1)
         expect(saveEndpointAndTokenMock).toHaveBeenCalledTimes(0)
+        expect(mockSerializeUninstallerInfo).toHaveBeenCalledTimes(0)
 
         // Call validateAndStoreCredentials.
         validateCredentialsMock.mockReturnValue(asyncValue(authedAuthStatusBob, 10))
@@ -180,12 +185,14 @@ describe('AuthProvider', () => {
         expect(values).toStrictEqual<typeof values>([])
         expect(validateCredentialsMock).toHaveBeenCalledTimes(2)
         expect(saveEndpointAndTokenMock).toHaveBeenCalledTimes(0)
+        expect(mockSerializeUninstallerInfo).toHaveBeenCalledTimes(0)
 
         await vi.advanceTimersByTimeAsync(9)
         await promise
         expect(values).toStrictEqual<typeof values>([authedAuthStatusBob])
         expect(validateCredentialsMock).toHaveBeenCalledTimes(2)
         expect(saveEndpointAndTokenMock).toHaveBeenCalledTimes(1)
+        expect(mockSerializeUninstallerInfo).toHaveBeenCalledTimes(1)
     })
 
     test('refresh', async () => {

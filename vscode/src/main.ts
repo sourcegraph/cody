@@ -4,6 +4,7 @@ import {
     type ChatClient,
     ClientConfigSingleton,
     type ConfigurationInput,
+    DOTCOM_URL,
     type DefaultCodyCommands,
     FeatureFlag,
     type Guardrails,
@@ -36,8 +37,10 @@ import {
     take,
     telemetryRecorder,
 } from '@sourcegraph/cody-shared'
+import _ from 'lodash'
 import { isEqual } from 'lodash'
 import { filter, map } from 'observable-fns'
+import { isReinstalling } from '../uninstall/reinstall'
 import type { CommandResult } from './CommandResult'
 import { showAccountMenu } from './auth/account-menu'
 import { showSignInMenu, showSignOutMenu, tokenCallbackHandler } from './auth/auth'
@@ -135,6 +138,8 @@ export async function start(
         agentCapabilities: platform.extensionClient.capabilities,
     })
 
+    let hasReinstallCleanupRun = false
+
     setResolvedConfigurationObservable(
         combineLatest(
             fromVSCodeEvent(vscode.workspace.onDidChangeConfiguration).pipe(
@@ -157,6 +162,30 @@ export async function start(
                         clientConfiguration,
                         clientSecrets,
                         clientState,
+                        reinstall: {
+                            isReinstalling,
+                            onReinstall: async () => {
+                                // short circuit so that we only run this cleanup once, not every time the config updates
+                                if (hasReinstallCleanupRun) return
+                                logDebug('start', 'Reinstalling Cody')
+                                // VSCode does not provide a way to simply clear all secrets
+                                // associated with the extension (https://github.com/microsoft/vscode/issues/123817)
+                                // So we have to build a list of all endpoints we'd expect to have been populated
+                                // and clear them individually.
+                                const history = await localStorage.deleteEndpointHistory()
+                                const additionalEndpointsToClear = [
+                                    clientConfiguration.overrideServerEndpoint,
+                                    clientState.lastUsedEndpoint,
+                                    DOTCOM_URL.toString(),
+                                ].filter(_.isString)
+                                await Promise.all(
+                                    history
+                                        .concat(additionalEndpointsToClear)
+                                        .map(clientSecrets.deleteToken.bind(clientSecrets))
+                                )
+                                hasReinstallCleanupRun = true
+                            },
+                        },
                     }) satisfies ConfigurationInput
             )
         )

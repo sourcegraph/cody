@@ -3,16 +3,17 @@ import * as vscode from 'vscode'
 import {
     type AuthCredentials,
     type AuthStatus,
+    type ClientCapabilitiesWithLegacyFields,
     NEVER,
     type ResolvedConfiguration,
     type Unsubscribable,
     abortableOperation,
     authStatus,
-    clientCapabilities,
     combineLatest,
     currentResolvedConfig,
     disposableSubscription,
     distinctUntilChanged,
+    clientCapabilities as getClientCapabilities,
     isAbortError,
     normalizeServerEndpointURL,
     pluck,
@@ -25,9 +26,11 @@ import {
 } from '@sourcegraph/cody-shared'
 import isEqual from 'lodash/isEqual'
 import { Observable, Subject } from 'observable-fns'
+import { serializeConfigSnapshot } from '../../uninstall/serializeConfig'
 import { type ResolvedConfigurationCredentialsOnly, validateCredentials } from '../auth/auth'
 import { logError } from '../output-channel-logger'
 import { maybeStartInteractiveTutorial } from '../tutorial/helpers'
+import { version } from '../version'
 import { localStorage } from './LocalStorageProvider'
 
 const HAS_AUTHENTICATED_BEFORE_KEY = 'has-authenticated-before'
@@ -70,7 +73,7 @@ class AuthProvider implements vscode.Disposable {
             )
                 .pipe(
                     abortableOperation(async ([config], signal) => {
-                        if (clientCapabilities().isCodyWeb) {
+                        if (getClientCapabilities().isCodyWeb) {
                             // Cody Web calls {@link AuthProvider.validateAndStoreCredentials}
                             // explicitly. This early exit prevents duplicate authentications during
                             // the initial load.
@@ -176,7 +179,10 @@ class AuthProvider implements vscode.Disposable {
         const shouldStore = mode === 'always-store' || authStatus.authenticated
         if (shouldStore) {
             this.lastValidatedAndStoredCredentials.next(credentials)
-            await localStorage.saveEndpointAndToken(credentials.auth)
+            await Promise.all([
+                localStorage.saveEndpointAndToken(credentials.auth),
+                this.serializeUninstallerInfo(authStatus),
+            ])
             this.status.next(authStatus)
             signal?.throwIfAborted()
         }
@@ -211,6 +217,34 @@ class AuthProvider implements vscode.Disposable {
 
     private setHasAuthenticatedBefore() {
         return localStorage.set(HAS_AUTHENTICATED_BEFORE_KEY, 'true')
+    }
+
+    // When the auth status is updated, we serialize the current configuration to disk,
+    // so that it can be sent with Telemetry when the post-uninstall script runs.
+    // we only write on auth change as that is the only significantly important factor
+    // and we don't want to write too frequently (so we don't react to config changes)
+    // The vscode API is not available in the post-uninstall script.
+    // Public so that it can be mocked for testing
+    public async serializeUninstallerInfo(authStatus: AuthStatus): Promise<void> {
+        if (!authStatus.authenticated) return
+        let clientCapabilities: ClientCapabilitiesWithLegacyFields | undefined
+        try {
+            clientCapabilities = getClientCapabilities()
+        } catch {
+            // If client capabilities cannot be retrieved, we will just synthesize
+            // them from defaults in the post-uninstall script.
+        }
+        // TODO: put this behind a proper client capability if any other IDE's need to uninstall
+        // the same way as VSCode (most editors have a proper uninstall hook)
+        if (clientCapabilities?.isVSCode) {
+            const config = localStorage.getConfig() ?? (await currentResolvedConfig())
+            await serializeConfigSnapshot({
+                config,
+                authStatus,
+                clientCapabilities,
+                version,
+            })
+        }
     }
 }
 

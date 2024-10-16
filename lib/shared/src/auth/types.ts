@@ -51,16 +51,14 @@ export interface UnauthenticatedAuthStatus {
 }
 
 export const AUTH_STATUS_FIXTURE_AUTHED: AuthenticatedAuthStatus = {
-    // this typecast is necessary to prevent codegen from becoming too specific
-    endpoint: 'https://example.com' as string,
+    endpoint: 'https://example.com',
     authenticated: true,
     username: 'alice',
     pendingValidation: false,
 }
 
 export const AUTH_STATUS_FIXTURE_UNAUTHED: AuthStatus & { authenticated: false } = {
-    // this typecast is necessary to prevent codegen from becoming too specific
-    endpoint: 'https://example.com' as string,
+    endpoint: 'https://example.com',
     authenticated: false,
     pendingValidation: false,
 }

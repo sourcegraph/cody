@@ -1,12 +1,7 @@
 // Sentry should be imported first
 import { NodeSentryService } from './services/sentry/sentry.node'
 
-import {
-    currentAuthStatus,
-    currentResolvedConfig,
-    resolvedConfig,
-    subscriptionDisposable,
-} from '@sourcegraph/cody-shared'
+import { resolvedConfig, subscriptionDisposable } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 import { startTokenReceiver } from './auth/token-receiver'
 import { CommandsProvider } from './commands/services/provider'
@@ -16,9 +11,7 @@ import { type ExtensionClient, defaultVSCodeExtensionClient } from './extension-
 import { activate as activateCommon } from './extension.common'
 import { initializeNetworkAgent, setCustomAgent } from './fetch.node'
 import { SymfRunner } from './local-context/symf'
-import { localStorage } from './services/LocalStorageProvider'
 import { OpenTelemetryService } from './services/open-telemetry/OpenTelemetryService.node'
-import { serializeConfigSnapshot } from './uninstall/serializeConfig'
 
 /**
  * Activation entrypoint for the VS Code extension when running VS Code as a desktop app
@@ -57,17 +50,5 @@ export function activate(
             )
         },
         extensionClient,
-    })
-}
-
-// When Cody is deactivated, we serialize the current configuration to disk,
-// so that it can be sent with Telemetry when the post-uninstall script runs.
-// The vscode API is not available in the post-uninstall script.
-export async function deactivate(): Promise<void> {
-    const config = localStorage.getConfig() ?? (await currentResolvedConfig())
-    const authStatus = currentAuthStatus()
-    serializeConfigSnapshot({
-        config,
-        authStatus,
     })
 }

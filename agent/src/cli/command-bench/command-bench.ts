@@ -10,7 +10,7 @@ import { newAgentClient } from '../../agent'
 import { exec } from 'node:child_process'
 import fs from 'node:fs'
 import { promisify } from 'node:util'
-import { isDefined, modelsService, setClientCapabilities } from '@sourcegraph/cody-shared'
+import { codyPaths, isDefined, modelsService, setClientCapabilities } from '@sourcegraph/cody-shared'
 import { sleep } from '../../../../vscode/src/completions/utils'
 import {
     getConfiguration,
@@ -21,7 +21,6 @@ import { createOrUpdateTelemetryRecorderProvider } from '../../../../vscode/src/
 import { startPollyRecording } from '../../../../vscode/src/testutils/polly'
 import { dotcomCredentials } from '../../../../vscode/src/testutils/testing-credentials'
 import { allClientCapabilitiesEnabled } from '../../allClientCapabilitiesEnabled'
-import { codyPaths } from '../../codyPaths'
 import { arrayOption, booleanOption, intOption } from './cli-parsers'
 import { matchesGlobPatterns } from './matchesGlobPatterns'
 import { evaluateAutocompleteStrategy } from './strategy-autocomplete'
