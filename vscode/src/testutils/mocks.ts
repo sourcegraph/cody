@@ -887,6 +887,7 @@ export const DEFAULT_VSCODE_SETTINGS = {
     },
     commandCodeLenses: false,
     experimentalSupercompletions: false,
+    experimentalAutoedits: undefined,
     experimentalMinionAnthropicKey: undefined,
     experimentalTracing: false,
     experimentalCommitMessage: true,

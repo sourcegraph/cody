@@ -21,6 +21,23 @@ export interface AuthCredentials {
     tokenSource?: TokenSource | undefined
 }
 
+export interface AutoEditsTokenLimit {
+    prefixTokens: number
+    suffixTokens: number
+    maxPrefixLinesInArea: number
+    maxSuffixLinesInArea: number
+    codeToRewritePrefixLines: number
+    codeToRewriteSuffixLines: number
+    contextSpecificTokenLimit: Record<string, number>
+}
+
+export interface AutoEditsModelConfig {
+    provider: string
+    model: string
+    apiKey: string
+    tokenLimit: AutoEditsTokenLimit
+}
+
 export interface NetConfiguration {
     mode?: string | undefined | null
     proxy?: {
@@ -62,6 +79,7 @@ interface RawClientConfiguration {
 
     experimentalTracing: boolean
     experimentalSupercompletions: boolean
+    experimentalAutoedits: AutoEditsModelConfig | undefined
     experimentalCommitMessage: boolean
     experimentalNoodle: boolean
     experimentalMinionAnthropicKey: string | undefined

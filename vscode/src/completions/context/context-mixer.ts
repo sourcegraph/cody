@@ -66,6 +66,11 @@ export interface GetContextResult {
     contextLoggingSnippets: AutocompleteContextSnippet[]
 }
 
+export interface ContextMixerOptions {
+    strategyFactory: ContextStrategyFactory
+    dataCollectionEnabled?: boolean
+}
+
 /**
  * The context mixer is responsible for combining multiple context retrieval strategies into a
  * single proposed context list.
@@ -77,10 +82,15 @@ export interface GetContextResult {
  */
 export class ContextMixer implements vscode.Disposable {
     private disposables: vscode.Disposable[] = []
-    private contextDataCollector = new ContextRetrieverDataCollection()
+    private contextDataCollector: ContextRetrieverDataCollection | null = null
+    private strategyFactory: ContextStrategyFactory
 
-    constructor(private strategyFactory: ContextStrategyFactory) {
-        this.disposables.push(this.contextDataCollector)
+    constructor({ strategyFactory, dataCollectionEnabled = false }: ContextMixerOptions) {
+        this.strategyFactory = strategyFactory
+        if (dataCollectionEnabled) {
+            this.contextDataCollector = new ContextRetrieverDataCollection()
+            this.disposables.push(this.contextDataCollector)
+        }
     }
 
     public async getContext(options: GetContextOptions): Promise<GetContextResult> {
@@ -230,7 +240,7 @@ export class ContextMixer implements vscode.Disposable {
     }
 
     private getDataCollectionRetrievers(repoName: string | undefined): ContextRetriever[] {
-        if (!this.contextDataCollector.shouldCollectContextDatapoint(repoName)) {
+        if (!this.contextDataCollector?.shouldCollectContextDatapoint(repoName)) {
             return []
         }
         return this.contextDataCollector.dataCollectionRetrievers

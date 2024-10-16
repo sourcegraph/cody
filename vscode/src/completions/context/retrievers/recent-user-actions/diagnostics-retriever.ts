@@ -1,4 +1,5 @@
 import type { AutocompleteContextSnippet } from '@sourcegraph/cody-shared'
+import { isDefined } from '@sourcegraph/cody-shared'
 import { XMLBuilder } from 'fast-xml-parser'
 import * as vscode from 'vscode'
 import type { ContextRetriever, ContextRetrieverOptions } from '../../../types'
@@ -6,8 +7,18 @@ import { RetrieverIdentifier } from '../../utils'
 
 // XML builder instance for formatting diagnostic messages
 const XML_BUILDER = new XMLBuilder({ format: true })
-// Number of lines of context to include around the diagnostic information in the prompt
-const CONTEXT_LINES = 3
+
+export interface DiagnosticsRetrieverOptions {
+    contextLines: number
+    useXMLForPromptRendering: boolean
+    useCaretToIndicateErrorLocation?: boolean
+}
+
+interface RelatedInfo {
+    message: string
+    file: string
+    text: string
+}
 
 interface DiagnosticInfo {
     message: string
@@ -18,6 +29,16 @@ interface DiagnosticInfo {
 export class DiagnosticsRetriever implements vscode.Disposable, ContextRetriever {
     public identifier = RetrieverIdentifier.DiagnosticsRetriever
     private disposables: vscode.Disposable[] = []
+    private contextLines: number
+    private useXMLForPromptRendering: boolean
+    private useCaretToIndicateErrorLocation: boolean
+
+    constructor(options: DiagnosticsRetrieverOptions) {
+        // Number of lines of context to include around the diagnostic information in the prompt
+        this.contextLines = options.contextLines
+        this.useXMLForPromptRendering = options.useXMLForPromptRendering
+        this.useCaretToIndicateErrorLocation = options.useCaretToIndicateErrorLocation ?? true
+    }
 
     public async retrieve({
         document,
@@ -83,18 +104,37 @@ export class DiagnosticsRetriever implements vscode.Disposable, ContextRetriever
     }
 
     private async getDiagnosticPromptMessage(info: DiagnosticInfo): Promise<string> {
+        if (this.useXMLForPromptRendering) {
+            return this.getDiagnosticPromptMessageXML(info)
+        }
+        return this.getDiagnosticPromptMessagePlainText(info)
+    }
+
+    private async getDiagnosticPromptMessagePlainText(info: DiagnosticInfo): Promise<string> {
+        const errorMessage = info.message
+        const relatedInfoList = info.relatedInformation
+            ? (await this.getRelatedInformationPrompt(info.relatedInformation)).filter(isDefined)
+            : []
+        const relatedInfoPrompt = relatedInfoList
+            .map(info => `Err (Related Information) | ${info.message}, ${info.file}, ${info.text}`)
+            .join('\n')
+        return `${errorMessage}\n${relatedInfoPrompt}`
+    }
+
+    private async getDiagnosticPromptMessageXML(info: DiagnosticInfo): Promise<string> {
+        const relatedInfoList = info.relatedInformation
+            ? (await this.getRelatedInformationPrompt(info.relatedInformation)).filter(isDefined)
+            : []
         const xmlObj: Record<string, string | undefined> = {
             message: info.message,
-            related_information_list: info.relatedInformation
-                ? await this.getRelatedInformationPrompt(info.relatedInformation)
-                : undefined,
+            related_information_list: XML_BUILDER.build(relatedInfoList),
         }
         return XML_BUILDER.build({ diagnostic: xmlObj })
     }
 
     private async getRelatedInformationPrompt(
         relatedInformation: vscode.DiagnosticRelatedInformation[]
-    ): Promise<string> {
+    ): Promise<RelatedInfo[]> {
         const relatedInfoList = await Promise.all(
             relatedInformation.map(async info => {
                 const document = await vscode.workspace.openTextDocument(info.location.uri)
@@ -105,7 +145,7 @@ export class DiagnosticsRetriever implements vscode.Disposable, ContextRetriever
                 }
             })
         )
-        return XML_BUILDER.build(relatedInfoList)
+        return relatedInfoList
     }
 
     private getDiagnosticsText(
@@ -127,8 +167,8 @@ export class DiagnosticsRetriever implements vscode.Disposable, ContextRetriever
         diagnosticLine: number,
         diagnosticText: string
     ): string {
-        const contextStartLine = Math.max(0, diagnosticLine - CONTEXT_LINES)
-        const contextEndLine = Math.min(document.lineCount - 1, diagnosticLine + CONTEXT_LINES)
+        const contextStartLine = Math.max(0, diagnosticLine - this.contextLines)
+        const contextEndLine = Math.min(document.lineCount - 1, diagnosticLine + this.contextLines)
         const prevLines = document.getText(
             new vscode.Range(
                 contextStartLine,
@@ -149,6 +189,9 @@ export class DiagnosticsRetriever implements vscode.Disposable, ContextRetriever
     }
 
     private getDiagnosticMessage(document: vscode.TextDocument, diagnostic: vscode.Diagnostic): string {
+        if (!this.useCaretToIndicateErrorLocation) {
+            return `Err | ${diagnostic.message}`
+        }
         const line = document.lineAt(diagnostic.range.start.line)
         const column = Math.max(0, diagnostic.range.start.character - 1)
         const diagnosticLength = Math.max(
