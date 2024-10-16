@@ -10,9 +10,7 @@ import {
 import {
     PromptEditor,
     type PromptEditorRefAPI,
-    useExtensionAPI,
     useInitialContextForChat,
-    useObservable,
 } from '@sourcegraph/prompt-editor'
 import clsx from 'clsx'
 import {
@@ -36,6 +34,7 @@ import { Toolbar } from './toolbar/Toolbar'
  * A component to compose and edit human chat messages and the settings associated with them.
  */
 export const HumanMessageEditor: FunctionComponent<{
+    models: Model[]
     userInfo: UserAccountInfo
 
     initialEditorState: SerializedPromptEditorState | undefined
@@ -67,6 +66,7 @@ export const HumanMessageEditor: FunctionComponent<{
     /** For use in storybooks only. */
     __storybook__focus?: boolean
 }> = ({
+    models,
     userInfo,
     initialEditorState,
     placeholder,
@@ -295,7 +295,7 @@ export const HumanMessageEditor: FunctionComponent<{
         )
     )
 
-    const model = useCurrentChatModel()
+    const currentChatModel = useMemo(() => models[0], [models[0]])
 
     let initialContext = useInitialContextForChat()
     useEffect(() => {
@@ -304,13 +304,13 @@ export const HumanMessageEditor: FunctionComponent<{
             if (editor) {
                 // Don't show the initial codebase context if the model doesn't support streaming
                 // as including context result in longer processing time.
-                if (model?.tags?.includes(ModelTag.StreamDisabled)) {
+                if (currentChatModel?.tags?.includes(ModelTag.StreamDisabled)) {
                     initialContext = initialContext.filter(item => item.type !== 'tree')
                 }
                 editor.setInitialContextMentions(initialContext)
             }
         }
-    }, [initialContext, isSent, isFirstMessage, model])
+    }, [initialContext, isSent, isFirstMessage, currentChatModel])
 
     const focusEditor = useCallback(() => editorRef.current?.setFocus(true), [])
 
@@ -322,8 +322,8 @@ export const HumanMessageEditor: FunctionComponent<{
 
     const focused = Boolean(isEditorFocused || isFocusWithin || __storybook__focus)
     const contextWindowSizeInTokens =
-        model?.contextWindow?.context?.user ||
-        model?.contextWindow?.input ||
+        currentChatModel?.contextWindow?.context?.user ||
+        currentChatModel?.contextWindow?.input ||
         FAST_CHAT_INPUT_TOKEN_BUDGET
 
     return (
@@ -359,6 +359,7 @@ export const HumanMessageEditor: FunctionComponent<{
             />
             {!disabled && (
                 <Toolbar
+                    models={models}
                     userInfo={userInfo}
                     isEditorFocused={focused}
                     onMentionClick={onMentionClick}
@@ -372,9 +373,4 @@ export const HumanMessageEditor: FunctionComponent<{
             )}
         </div>
     )
-}
-
-function useCurrentChatModel(): Model | undefined {
-    const models = useExtensionAPI().chatModels
-    return useObservable(useMemo(() => models(), [models])).value?.at(0)
 }

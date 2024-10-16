@@ -10,11 +10,7 @@ import { newAgentClient } from '../../agent'
 import { exec } from 'node:child_process'
 import fs from 'node:fs'
 import { promisify } from 'node:util'
-import {
-    isDefined,
-    modelsService,
-    setClientCapabilitiesFromConfiguration,
-} from '@sourcegraph/cody-shared'
+import { codyPaths, isDefined, modelsService, setClientCapabilities } from '@sourcegraph/cody-shared'
 import { sleep } from '../../../../vscode/src/completions/utils'
 import {
     getConfiguration,
@@ -25,7 +21,6 @@ import { createOrUpdateTelemetryRecorderProvider } from '../../../../vscode/src/
 import { startPollyRecording } from '../../../../vscode/src/testutils/polly'
 import { dotcomCredentials } from '../../../../vscode/src/testutils/testing-credentials'
 import { allClientCapabilitiesEnabled } from '../../allClientCapabilitiesEnabled'
-import { codyPaths } from '../../codyPaths'
 import { arrayOption, booleanOption, intOption } from './cli-parsers'
 import { matchesGlobPatterns } from './matchesGlobPatterns'
 import { evaluateAutocompleteStrategy } from './strategy-autocomplete'
@@ -361,7 +356,7 @@ async function evaluateWorkspace(options: CodyBenchOptions, recordingDirectory: 
     console.log(`starting evaluation: fixture=${options.fixture.name} workspace=${options.workspace}`)
 
     createOrUpdateTelemetryRecorderProvider(true)
-    setClientCapabilitiesFromConfiguration(getConfiguration())
+    setClientCapabilities({ configuration: getConfiguration(), agentCapabilities: undefined })
 
     const workspaceRootUri = vscode.Uri.from({ scheme: 'file', path: options.workspace })
 

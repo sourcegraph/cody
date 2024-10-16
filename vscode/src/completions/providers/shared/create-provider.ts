@@ -19,7 +19,6 @@ import {
 
 import { createProvider as createAnthropicProvider } from '../anthropic'
 import { createProvider as createExperimentalOllamaProvider } from '../experimental-ollama'
-import { createProvider as createExperimentalOpenAICompatibleProvider } from '../expopenaicompatible'
 import { createProvider as createFireworksProvider } from '../fireworks'
 import { createProvider as createGeminiProviderConfig } from '../google'
 import { createProvider as createOpenAICompatibleProviderConfig } from '../openaicompatible'
@@ -201,10 +200,6 @@ function getProviderCreator(params: GetProviderCreatorParams): ProviderFactory |
         provider === AUTOCOMPLETE_PROVIDER_ID['azure-openai']
     ) {
         return createUnstableOpenAIProviderConfig
-    }
-
-    if (provider === AUTOCOMPLETE_PROVIDER_ID['experimental-openaicompatible']) {
-        return createExperimentalOpenAICompatibleProvider
     }
 
     if (

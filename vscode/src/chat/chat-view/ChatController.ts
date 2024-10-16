@@ -6,6 +6,7 @@ import {
     currentSiteVersion,
     distinctUntilChanged,
     firstResultFromOperation,
+    forceHydration,
     pendingOperation,
     ps,
     resolvedConfig,
@@ -111,7 +112,7 @@ import {
 import { openExternalLinks } from '../../services/utils/workspace-action'
 import { TestSupport } from '../../test-support'
 import type { MessageErrorType } from '../MessageProvider'
-import { getCodyTools } from '../agentic/CodyTool'
+import { CodyToolProvider } from '../agentic/CodyToolProvider'
 import { DeepCodyAgent } from '../agentic/DeepCody'
 import { getMentionMenuData } from '../context/chatContext'
 import type { ChatIntentAPIClient } from '../context/chatIntentAPIClient'
@@ -186,6 +187,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
     private readonly chatClient: ChatControllerOptions['chatClient']
 
     private readonly contextRetriever: ChatControllerOptions['contextRetriever']
+    private readonly toolProvider: CodyToolProvider
 
     private readonly editor: ChatControllerOptions['editor']
     private readonly extensionClient: ChatControllerOptions['extensionClient']
@@ -217,6 +219,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         this.editor = editor
         this.extensionClient = extensionClient
         this.contextRetriever = contextRetriever
+        this.toolProvider = CodyToolProvider.instance(this.contextRetriever)
 
         this.chatBuilder = new ChatBuilder(undefined)
 
@@ -785,7 +788,8 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 const agenticContext = await new DeepCodyAgent(
                     this.chatBuilder,
                     this.chatClient,
-                    getCodyTools(this.contextRetriever, span),
+                    await this.toolProvider.getTools(),
+                    span,
                     corpusContext
                 ).getContext(signal)
                 corpusContext.push(...agenticContext)
@@ -880,6 +884,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         signal.throwIfAborted()
 
         this.chatBuilder.setLastMessageContext(context, contextAlternatives)
+        this.chatBuilder.setLastMessageIntent('search')
         this.chatBuilder.addBotMessage(
             {
                 text: ps`"cody-experimental-one-box" feature flag is turned on.`,
@@ -1049,6 +1054,15 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         })
     }
 
+    public async addContextItemsToLastHumanInput(
+        contextItems: ContextItem[]
+    ): Promise<boolean | undefined> {
+        return this.postMessage({
+            type: 'clientAction',
+            addContextItemsToLastHumanInput: contextItems,
+        })
+    }
+
     public async handleGetUserEditorContext(uri?: URI): Promise<void> {
         // Get selection from the active editor
         const selection = vscode.window.activeTextEditor?.selection
@@ -1190,7 +1204,9 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
      * except within this method.
      */
     private postMessage(message: ExtensionMessage): Thenable<boolean | undefined> {
-        return this.initDoer.do(() => this.webviewPanelOrView?.webview.postMessage(message))
+        return this.initDoer.do(() =>
+            this.webviewPanelOrView?.webview.postMessage(forceHydration(message))
+        )
     }
 
     // #endregion
@@ -1459,11 +1475,11 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         telemetryRecorder.recordEvent('cody.duplicateSession', 'clicked')
     }
 
-    public async clearAndRestartSession(): Promise<void> {
+    public async clearAndRestartSession(chatMessages?: ChatMessage[]): Promise<void> {
         this.cancelSubmitOrEditOperation()
         await this.saveSession()
 
-        this.chatBuilder = new ChatBuilder()
+        this.chatBuilder = new ChatBuilder(this.chatBuilder.selectedModel, undefined, chatMessages)
         this.postViewTranscript()
     }
 

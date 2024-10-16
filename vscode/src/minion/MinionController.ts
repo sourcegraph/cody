@@ -1,5 +1,5 @@
 import type Anthropic from '@anthropic-ai/sdk'
-import { currentAuthStatus, hydrateAfterPostMessage } from '@sourcegraph/cody-shared'
+import { currentAuthStatus, forceHydration, hydrateAfterPostMessage } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 import type {
     MinionExtensionMessage,
@@ -139,7 +139,7 @@ export abstract class ReactPanelController<WebviewMessageT extends {}, Extension
         message: ExtensionMessageT | BaseExtensionMessage
     ): Promise<boolean | undefined> {
         return await this.initDoer.do(() => {
-            return this.panel?.webview.postMessage(message)
+            return this.panel?.webview.postMessage(forceHydration(message))
         })
     }
 }

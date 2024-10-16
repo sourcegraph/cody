@@ -154,8 +154,8 @@ describe('Agent', () => {
             serverEndpoint: client.info.extensionConfiguration?.serverEndpoint ?? DOTCOM_URL.toString(),
             customHeaders: {},
         })
-        expect(valid?.authenticated).toBeTruthy()
-        if (!valid?.authenticated) {
+        expect(valid?.status).toEqual('authenticated')
+        if (valid?.status !== 'authenticated') {
             throw new Error('unreachable')
         }
 
@@ -174,7 +174,7 @@ describe('Agent', () => {
         //    source agent/scripts/export-cody-http-recording-tokens.sh
         //
         // If you don't have access to this private file then you need to ask
-        expect(valid?.username).toStrictEqual('sourcegraphbot9k-fnwmu')
+        expect(valid.username).toStrictEqual('sourcegraphbot9k-fnwmu')
 
         // telemetry assertion, to validate the expected events fired during the test run
         // Do not remove this assertion, and instead update the expectedEvents list above
@@ -211,15 +211,7 @@ describe('Agent', () => {
         it('chat/submitMessage (short message)', async () => {
             await setChatModel('anthropic::2023-06-01::claude-3.5-sonnet')
             const lastMessage = await client.sendSingleMessageToNewChat('Hello!')
-            expect(lastMessage).toMatchInlineSnapshot(
-                `
-              {
-                "model": "anthropic::2023-06-01::claude-3.5-sonnet",
-                "speaker": "assistant",
-                "text": "Hello there! It's wonderful to hear from you. I'm excited to assist you with any questions or tasks you may have. What can I help you with today?",
-              }
-            `
-            )
+            expect(lastMessage).toMatchSnapshot()
             // telemetry assertion, to validate the expected events fired during the test run
             // Do not remove this assertion, and instead update the expectedEvents list above
             expect(await exportedTelemetryEvents(client)).toEqual(
@@ -254,8 +246,8 @@ describe('Agent', () => {
                 transcript: transcript,
             })
             const auth = await client.request('extensionConfiguration/status', null)
-            expect(auth?.authenticated).toBeTruthy()
-            if (!auth?.authenticated) {
+            expect(auth?.status).toEqual('authenticated')
+            if (auth?.status !== 'authenticated') {
                 throw new Error('unreachable')
             }
 
@@ -324,7 +316,7 @@ describe('Agent', () => {
             // The history we are importing contains two transcripts from the same user and one from a different user.
             // when we do an export, we should only get the transcript from the currently logged in user
             const history: Record<string, Record<string, SerializedChatTranscript>> = {
-                [`${auth?.endpoint}-${auth?.username}`]: {
+                [`${auth.endpoint}-${auth.username}`]: {
                     [transcript1.id]: transcript1,
                     [transcript2.id]: transcript2,
                 },
@@ -681,11 +673,11 @@ describe('Agent', () => {
         beforeAll(async () => {
             const serverInfo = await rateLimitedClient.initialize()
 
-            expect(serverInfo.authStatus?.authenticated).toBeTruthy()
-            if (!serverInfo.authStatus?.authenticated) {
+            expect(serverInfo.authStatus?.status).toEqual('authenticated')
+            if (serverInfo.authStatus?.status !== 'authenticated') {
                 throw new Error('unreachable')
             }
-            expect(serverInfo.authStatus?.username).toStrictEqual('sourcegraphcodyclients-1-efapb')
+            expect(serverInfo.authStatus.username).toStrictEqual('sourcegraphcodyclients-1-efapb')
         }, 10_000)
 
         // Skipped because Polly is failing to record the HTTP rate-limit error

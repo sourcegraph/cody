@@ -1,5 +1,6 @@
 import {
     type ChatMessage,
+    type Model,
     type SerializedPromptEditorState,
     type SerializedPromptEditorValue,
     serializedPromptEditorStateFromChatMessage,
@@ -19,6 +20,7 @@ import { useConfig } from '../../../../utils/useConfig'
 
 interface HumanMessageCellProps {
     message: ChatMessage
+    models: Model[]
     userInfo: UserAccountInfo
     chatEnabled: boolean
 
@@ -67,6 +69,7 @@ type HumanMessageCellContent = { initialEditorState: SerializedPromptEditorState
 >
 const HumanMessageCellContent = memo<HumanMessageCellContent>(props => {
     const {
+        models,
         initialEditorState,
         userInfo,
         chatEnabled = true,
@@ -98,6 +101,7 @@ const HumanMessageCellContent = memo<HumanMessageCellContent>(props => {
             cellAction={isFirstMessage && <OpenInNewEditorAction />}
             content={
                 <HumanMessageEditor
+                    models={models}
                     userInfo={userInfo}
                     initialEditorState={initialEditorState}
                     placeholder={isFirstMessage ? 'Ask...' : 'Ask a followup...'}

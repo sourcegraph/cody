@@ -1,6 +1,10 @@
 import { URI } from 'vscode-uri'
 
-import { type GenericVSCodeWrapper, hydrateAfterPostMessage } from '@sourcegraph/cody-shared'
+import {
+    type GenericVSCodeWrapper,
+    forceHydration,
+    hydrateAfterPostMessage,
+} from '@sourcegraph/cody-shared'
 
 import type { ExtensionMessage, WebviewMessage } from '../../src/chat/protocol'
 
@@ -20,7 +24,7 @@ export function getVSCodeAPI(): VSCodeWrapper {
     if (!api) {
         const vsCodeApi = acquireVsCodeApi()
         api = {
-            postMessage: message => vsCodeApi.postMessage(message),
+            postMessage: message => vsCodeApi.postMessage(forceHydration(message)),
             onMessage: callback => {
                 const listener = (event: MessageEvent<ExtensionMessage>): void => {
                     callback(hydrateAfterPostMessage(event.data, uri => URI.from(uri as any)))

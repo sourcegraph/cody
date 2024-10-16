@@ -65,7 +65,7 @@ export const AUTH_STATUS_FIXTURE_UNAUTHED: AuthStatus & { authenticated: false }
 
 export const AUTH_STATUS_FIXTURE_AUTHED_DOTCOM: AuthenticatedAuthStatus = {
     ...AUTH_STATUS_FIXTURE_AUTHED,
-    endpoint: 'https://sourcegraph.com',
+    endpoint: 'https://sourcegraph.com' as string,
 }
 
 export function isCodyProUser(authStatus: AuthStatus, sub: UserProductSubscription | null): boolean {

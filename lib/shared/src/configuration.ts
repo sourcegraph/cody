@@ -1,4 +1,4 @@
-import type { ClientCapabilities } from './configuration/clientCapabilities'
+import type { ClientCapabilitiesWithLegacyFields } from './configuration/clientCapabilities'
 import type { ChatModelProviderConfig } from './models/sync'
 
 import type { PromptString } from './prompt/prompt-string'
@@ -38,8 +38,18 @@ export interface AutoEditsModelConfig {
     tokenLimit: AutoEditsTokenLimit
 }
 
+export interface NetConfiguration {
+    mode?: string | undefined | null
+    proxy?: {
+        endpoint?: string | undefined | null
+        cacert?: string | undefined | null
+        skipCertValidation?: boolean | null
+    }
+    vscode?: string | undefined | null
+}
+
 interface RawClientConfiguration {
-    proxy?: string | null
+    net: NetConfiguration
     codebase?: string
     debugFilter: RegExp | null
     debugVerbose: boolean
@@ -47,8 +57,8 @@ interface RawClientConfiguration {
 
     serverEndpoint?: string
     customHeaders?: Record<string, string>
-    chatPreInstruction: PromptString
-    editPreInstruction: PromptString
+    chatPreInstruction?: PromptString
+    editPreInstruction?: PromptString
     codeActions: boolean
     commandHints: boolean
     commandCodeLenses: boolean
@@ -87,28 +97,28 @@ interface RawClientConfiguration {
     /**
      * @deprecated Do not use directly. Call {@link clientCapabilities} instead
      * (`clientCapabilities().agentIDE`) and see the docstring on
-     * {@link ClientCapabilities.agentIDE}.
+     * {@link ClientCapabilitiesWithLegacyFields.agentIDE}.
      */
     agentIDE?: CodyIDE
 
     /**
      * @deprecated Do not use directly. Call {@link clientCapabilities} instead
      * (`clientCapabilities().agentIDEVersion`) and see the docstring on
-     * {@link ClientCapabilities.agentIDEVersion}.
+     * {@link ClientCapabilitiesWithLegacyFields.agentIDEVersion}.
      */
-    agentIDEVersion?: ClientCapabilities['agentIDEVersion']
+    agentIDEVersion?: ClientCapabilitiesWithLegacyFields['agentIDEVersion']
 
     /**
      * @deprecated Do not use directly. Call {@link clientCapabilities} instead
      * (`clientCapabilities().agentExtensionVersion`) and see the docstring on
-     * {@link ClientCapabilities.agentExtensionVersion}.
+     * {@link ClientCapabilitiesWithLegacyFields.agentExtensionVersion}.
      */
-    agentExtensionVersion?: ClientCapabilities['agentExtensionVersion']
+    agentExtensionVersion?: ClientCapabilitiesWithLegacyFields['agentExtensionVersion']
 
     /**
      * @deprecated Do not use directly. Call {@link clientCapabilities} instead
      * (`clientCapabilities().agentIDEVersion`) and see the docstring on
-     * {@link ClientCapabilities.agentIDEVersion}.
+     * {@link ClientCapabilitiesWithLegacyFields.agentIDEVersion}.
      */
     telemetryClientName?: string
 
@@ -125,8 +135,8 @@ interface RawClientConfiguration {
      * environment variables such as TESTING_MODE which can make it difficult to
      * understand the broad implications such a setting can have.
      */
-    overrideServerEndpoint: string | undefined
-    overrideAuthToken: string | undefined
+    overrideServerEndpoint?: string | undefined
+    overrideAuthToken?: string | undefined
 }
 
 /**
@@ -142,6 +152,11 @@ export enum CodyIDE {
     Web = 'Web',
     VisualStudio = 'VisualStudio',
     Eclipse = 'Eclipse',
+
+    /**
+     * The standalone web client in the Cody repository's `web/` tree.
+     */
+    StandaloneWeb = 'StandaloneWeb',
 }
 
 export type AutocompleteProviderID = keyof typeof AUTOCOMPLETE_PROVIDER_ID
@@ -184,16 +199,6 @@ export const AUTOCOMPLETE_PROVIDER_ID = {
      * @deprecated use `openai` instead
      */
     'azure-openai': 'azure-openai',
-
-    /**
-     * Cody talking to customer's custom proxy service.
-     *
-     * TODO(slimsag): self-hosted models: deprecate and remove this
-     * once customers are upgraded to non-experimental version.
-     *
-     * @deprecated use `openaicompatible` instead
-     */
-    'experimental-openaicompatible': 'experimental-openaicompatible',
 
     /**
      * This refers to either Anthropic models re-sold by AWS,

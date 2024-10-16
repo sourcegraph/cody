@@ -5,12 +5,12 @@ import type { Polly, Request } from '@pollyjs/core'
 import {
     type AccountKeyedChatHistory,
     type ChatHistoryKey,
+    type ClientCapabilities,
     type CodyCommand,
     CodyIDE,
     ModelUsage,
     currentAuthStatus,
     currentAuthStatusAuthed,
-    currentAuthStatusOrNotReadyYet,
     firstResultFromOperation,
     telemetryRecorder,
     waitUntilComplete,
@@ -35,7 +35,6 @@ import {
     logDebug,
     logError,
     modelsService,
-    setUserAgent,
 } from '@sourcegraph/cody-shared'
 import { chatHistory } from '../../vscode/src/chat/chat-view/ChatHistoryManager'
 import type { ExtensionMessage, WebviewMessage } from '../../vscode/src/chat/protocol'
@@ -45,6 +44,7 @@ import type * as agent_protocol from '../../vscode/src/jsonrpc/agent-protocol'
 import { mkdirSync, statSync } from 'node:fs'
 import { PassThrough } from 'node:stream'
 import type { Har } from '@pollyjs/persister'
+import { codyPaths } from '@sourcegraph/cody-shared'
 import { TESTING_TELEMETRY_EXPORTER } from '@sourcegraph/cody-shared/src/telemetry-v2/TelemetryRecorderProvider'
 import { type TelemetryEventParameters, TestTelemetryExporter } from '@sourcegraph/telemetry'
 import { copySync } from 'fs-extra'
@@ -77,7 +77,10 @@ import { AgentWorkspaceConfiguration } from './AgentWorkspaceConfiguration'
 import { AgentWorkspaceDocuments } from './AgentWorkspaceDocuments'
 import { registerNativeWebviewHandlers, resolveWebviewView } from './NativeWebview'
 import type { PollyRequestError } from './cli/command-jsonrpc-stdio'
-import { codyPaths } from './codyPaths'
+import {
+    currentProtocolAuthStatus,
+    currentProtocolAuthStatusOrNotReadyYet,
+} from './currentProtocolAuthStatus'
 import { AgentGlobalState } from './global-state/AgentGlobalState'
 import {
     MessageHandler,
@@ -426,7 +429,6 @@ export class Agent extends MessageHandler implements ExtensionClient {
 
             vscode_shim.setClientInfo(clientInfo)
             this.clientInfo = clientInfo
-            setUserAgent(`${clientInfo?.name} / ${clientInfo?.version}`)
 
             try {
                 const secrets =
@@ -473,7 +475,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
                     this.registerWebviewHandlers()
                 }
 
-                const authStatus = currentAuthStatusOrNotReadyYet()
+                const authStatus = currentProtocolAuthStatusOrNotReadyYet()
                 return {
                     name: 'cody-agent',
                     authenticated: authStatus?.authenticated ?? false,
@@ -571,12 +573,12 @@ export class Agent extends MessageHandler implements ExtensionClient {
         this.registerRequest('extensionConfiguration/change', async config => {
             this.authenticationPromise = this.handleConfigChanges(config)
             await this.authenticationPromise
-            return currentAuthStatus()
+            return currentProtocolAuthStatus()
         })
 
         this.registerRequest('extensionConfiguration/status', async () => {
             await this.authenticationPromise
-            return currentAuthStatus()
+            return currentProtocolAuthStatus()
         })
 
         this.registerRequest('extensionConfiguration/getSettingsSchema', async () => {
@@ -965,6 +967,11 @@ export class Agent extends MessageHandler implements ExtensionClient {
             }
         })
 
+        this.registerAuthenticatedRequest('extension/reset', async () => {
+            await this.globalState?.reset()
+            return null
+        })
+
         this.registerNotification('autocomplete/completionAccepted', async ({ completionID }) => {
             const provider = await vscode_shim.completionProvider()
             await provider.handleDidAcceptCompletionItem(completionID as CompletionItemID)
@@ -994,7 +1001,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
 
         this.registerAuthenticatedRequest('testing/autocomplete/providerConfig', async () => {
             const provider = await vscode_shim.completionProvider()
-            return provider.config
+            return provider.config.provider
         })
 
         this.registerAuthenticatedRequest('graphql/getRepoIds', async ({ names, first }) => {
@@ -1476,7 +1483,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
         return this.clientInfo?.version || '0.0.0'
     }
 
-    get capabilities(): agent_protocol.ClientCapabilities | undefined {
+    get capabilities(): ClientCapabilities | undefined {
         return this.clientInfo?.capabilities ?? undefined
     }
 

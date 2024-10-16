@@ -1,4 +1,9 @@
-import { type AuthStatus, type ClientCapabilities, CodyIDE } from '@sourcegraph/cody-shared'
+import {
+    type AuthStatus,
+    type ClientCapabilitiesWithLegacyFields,
+    CodyIDE,
+} from '@sourcegraph/cody-shared'
+import { useExtensionAPI, useObservable } from '@sourcegraph/prompt-editor'
 import type React from 'react'
 import { type ComponentProps, type FunctionComponent, useMemo, useRef } from 'react'
 import type { ConfigurationSubsetForWebview, LocalEnv } from '../src/chat/protocol'
@@ -20,7 +25,7 @@ export const CodyPanel: FunctionComponent<
         setView: (view: View) => void
         configuration: {
             config: LocalEnv & ConfigurationSubsetForWebview
-            clientCapabilities: ClientCapabilities
+            clientCapabilities: ClientCapabilitiesWithLegacyFields
             authStatus: AuthStatus
         }
         errorMessages: string[]
@@ -55,6 +60,9 @@ export const CodyPanel: FunctionComponent<
 }) => {
     const tabContainerRef = useRef<HTMLDivElement>(null)
 
+    const api = useExtensionAPI()
+    const { value: chatModels } = useObservable(useMemo(() => api.chatModels(), [api.chatModels]))
+
     return (
         <TabViewContext.Provider value={useMemo(() => ({ view, setView }), [view, setView])}>
             <TabRoot
@@ -79,6 +87,7 @@ export const CodyPanel: FunctionComponent<
                             chatEnabled={chatEnabled}
                             messageInProgress={messageInProgress}
                             transcript={transcript}
+                            models={chatModels || []}
                             vscodeAPI={vscodeAPI}
                             guardrails={attributionEnabled ? guardrails : undefined}
                             showIDESnippetActions={showIDESnippetActions}
