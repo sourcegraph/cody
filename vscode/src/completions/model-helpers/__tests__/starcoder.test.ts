@@ -7,12 +7,12 @@ import { completionParams, contextSnippets } from './test-data'
 import { StarCoder } from '../starcoder'
 
 describe('StarCoder', () => {
-    describe.skipIf(isWindows())('getPrompt', () => {
+    describe.skipIf(isWindows())('getMessages', () => {
         it('returns the prompt with the correct intro snippets', () => {
             const model = new StarCoder()
             const { docContext, document, provider } = completionParams
 
-            const result = model.getPrompt({
+            const result = model.getMessages({
                 document,
                 docContext,
                 snippets: contextSnippets,
@@ -20,7 +20,10 @@ describe('StarCoder', () => {
             })
 
             expect(result).toMatchInlineSnapshot(`
-              "<filename>codebase/test.ts<fim_prefix>// Here is a reference snippet of code from codebase/context1.ts:
+              [
+                {
+                  "speaker": "human",
+                  "text": "<filename>codebase/test.ts<fim_prefix>// Here is a reference snippet of code from codebase/context1.ts:
               // function contextSnippetOne() {}
 
               // Here is a reference snippet of code from codebase/context2.ts:
@@ -160,7 +163,9 @@ describe('StarCoder', () => {
               console.log(suffix line: 22)
               console.log(suffix line: 23)
               console.log(suffix line: 24)
-              console.log(suffix line: 25)<fim_middle>"
+              console.log(suffix line: 25)<fim_middle>",
+                },
+              ]
             `)
         })
 
@@ -168,7 +173,7 @@ describe('StarCoder', () => {
             const model = new StarCoder()
             const { docContext, document, provider } = completionParams
 
-            const result = model.getPrompt({
+            const result = model.getMessages({
                 document,
                 docContext,
                 snippets: contextSnippets,
@@ -177,7 +182,10 @@ describe('StarCoder', () => {
             })
 
             expect(result).toMatchInlineSnapshot(`
-              "// Path: codebase/test.ts
+              [
+                {
+                  "speaker": "human",
+                  "text": "// Path: codebase/test.ts
 
               // Here is a reference snippet of code from codebase/context1.ts:
               // function contextSnippetOne() {}
@@ -293,7 +301,9 @@ describe('StarCoder', () => {
                   console.log(2)
                   console.log(3)
                   console.log(4)
-                  "
+                  ",
+                },
+              ]
             `)
         })
     })

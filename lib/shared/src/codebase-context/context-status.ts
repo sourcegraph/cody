@@ -8,7 +8,7 @@ export interface Disposable {
 // Plain data types for describing context status. These are shared between
 // the VScode webviews, the VScode extension, and cody-shared.
 
-export type ContextProvider = LocalEmbeddingsProvider | SearchProvider
+export type ContextProvider = SearchProvider
 
 export interface RemoteSearchProvider {
     kind: 'search'
@@ -24,15 +24,6 @@ export interface RemoteSearchProvider {
      * Whether the item is excluded by Cody Ignore.
      */
     isIgnored: boolean
-}
-
-export type EmbeddingsProvider = 'sourcegraph'
-
-export interface LocalEmbeddingsProvider {
-    kind: 'embeddings'
-    state: 'indeterminate' | 'no-match' | 'unconsented' | 'indexing' | 'ready'
-    errorReason?: 'not-a-git-repo' | 'git-repo-has-no-remote'
-    embeddingsAPIProvider: EmbeddingsProvider
 }
 
 export type SearchProvider = LocalSearchProvider | RemoteSearchProvider
@@ -56,9 +47,4 @@ export interface ContextGroup {
     displayName: string
 
     providers: ContextProvider[]
-}
-
-// TODO: rename to EnhancedContextStatusT
-export interface EnhancedContextContextT {
-    groups: ContextGroup[]
 }

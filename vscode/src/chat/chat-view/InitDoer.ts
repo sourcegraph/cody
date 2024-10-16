@@ -1,4 +1,4 @@
-import { isError } from 'lodash'
+import isError from 'lodash/isError'
 
 /**
  * Accepts actions that should block on initialization. If invoked before initialization, queues

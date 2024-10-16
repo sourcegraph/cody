@@ -4,183 +4,463 @@ import {
     type AuthStatus,
     type ClientConfiguration,
     CodyIDE,
+    InvisibleStatusBarTag,
+    type IsIgnored,
+    Mutable,
+    type ResolvedConfiguration,
+    assertUnreachable,
+    authStatus,
+    combineLatest,
     contextFiltersProvider,
-    isCodyIgnoredFile,
+    distinctUntilChanged,
+    firstValueFrom,
+    fromVSCodeEvent,
+    logError,
+    promise,
+    resolvedConfig,
+    shareReplay,
 } from '@sourcegraph/cody-shared'
 
-import { getConfiguration } from '../configuration'
-
-import { telemetryRecorder } from '@sourcegraph/cody-shared'
-import type { CodyIgnoreType } from '../cody-ignore/notification'
+import { type Subscription, map } from 'observable-fns'
+import type { LiteralUnion, ReadonlyDeep } from 'type-fest'
 import { getGhostHintEnablement } from '../commands/GhostHintDecorator'
 import { getReleaseNotesURLByIDE } from '../release'
 import { version } from '../version'
 import { FeedbackOptionItems, SupportOptionItems } from './FeedbackOptions'
 import { enableVerboseDebugMode } from './utils/export-logs'
 
-interface StatusBarError {
-    title: string
-    description: string
-    errorType: StatusBarErrorName
-    removeAfterSelected: boolean
-    removeAfterEpoch?: number
-    onShow?: () => void
-    onSelect?: () => void
-}
-
-export interface CodyStatusBar {
-    dispose(): void
-    startLoading(
-        label: string,
-        params?: {
-            // When set, the loading lease will expire after the timeout to avoid getting stuck
-            timeoutMs: number
-        }
-    ): () => void
-    addError(error: StatusBarError): () => void
-    hasError(error: StatusBarErrorName): boolean
-    setAuthStatus(newStatus: AuthStatus): void
-}
-
-const DEFAULT_TEXT = '$(cody-logo-heavy)'
-const DEFAULT_TEXT_DISABLED = '$(cody-logo-heavy-slash) File Ignored'
-const DEFAULT_TOOLTIP = 'Cody Settings'
-const DEFAULT_TOOLTIP_DISABLED = 'The current file is ignored by Cody'
-
 const QUICK_PICK_ITEM_CHECKED_PREFIX = '$(check) '
 const QUICK_PICK_ITEM_EMPTY_INDENT_PREFIX = '\u00A0\u00A0\u00A0\u00A0\u00A0 '
 
 const ONE_HOUR = 60 * 60 * 1000
 
-type StatusBarErrorName = 'auth' | 'RateLimitError' | 'AutoCompleteDisabledByAdmin'
-
-interface StatusBarItem extends vscode.QuickPickItem {
-    onSelect: () => Promise<void>
-}
-
 const STATUS_BAR_INTERACTION_COMMAND = 'cody.status-bar.interacted'
 
-export function createStatusBar(): CodyStatusBar {
-    const statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right)
-    statusBarItem.text = DEFAULT_TEXT
-    statusBarItem.tooltip = DEFAULT_TOOLTIP
-    statusBarItem.command = STATUS_BAR_INTERACTION_COMMAND
-    statusBarItem.show()
+interface StatusBarState {
+    text: string
+    icon: 'normal' | 'loading' | 'disabled'
+    tooltip: string
+    style: 'normal' | 'warning' | 'error' | 'disabled'
+    tags: Set<InvisibleStatusBarTag>
 
-    let isCodyIgnoredType: null | CodyIgnoreType = null
-    async function isCodyIgnored(uri: vscode.Uri): Promise<null | CodyIgnoreType> {
-        if (uri.scheme === 'file' && isCodyIgnoredFile(uri)) {
-            return 'cody-ignore'
-        }
-        if (await contextFiltersProvider.instance!.isUriIgnored(uri)) {
-            return 'context-filter'
-        }
-        return null
-    }
-    const onDocumentChange = vscode.window.onDidChangeActiveTextEditor(async editor => {
-        if (!editor) {
-            return
-        }
-        isCodyIgnoredType = await isCodyIgnored(editor.document.uri)
-        if (isCodyIgnoredType !== 'cody-ignore') {
-            vscode.commands.executeCommand('setContext', 'cody.currentFileIgnored', !!isCodyIgnoredType)
-        }
-        rerender()
-    })
-    const currentUri = vscode.window.activeTextEditor?.document?.uri
-    if (currentUri) {
-        isCodyIgnored(currentUri).then(isIgnored => {
-            if (isCodyIgnoredType !== 'cody-ignore') {
-                vscode.commands.executeCommand('setContext', 'cody.currentFileIgnored', !!isIgnored)
-            }
-            isCodyIgnoredType = isIgnored
+    interact: (abortSignal: AbortSignal) => Promise<void> | void
+}
+export class CodyStatusBar implements vscode.Disposable {
+    private static singleton: CodyStatusBar | null = null
+
+    private errors = new Mutable<Set<StatusBarError>>(new Set())
+    private loaders = new Mutable<Set<StatusBarLoader>>(new Set())
+    private renderSubscription: Subscription<any>
+    private currentInteraction: AbortController | undefined
+
+    private statusBarItem = vscode.window.createStatusBarItem(
+        'extension-status',
+        vscode.StatusBarAlignment.Right
+    )
+    private command = vscode.commands.registerCommand(
+        STATUS_BAR_INTERACTION_COMMAND,
+        this.handleInteraction.bind(this)
+    )
+
+    private ignoreStatus = combineLatest(
+        fromVSCodeEvent(
+            vscode.window.onDidChangeActiveTextEditor,
+            () => vscode.window.activeTextEditor
+        ).pipe(distinctUntilChanged()),
+        // TODO: technically this shouldn't be needed but the contextFilterProvider doesn't update on auth changes yet
+        authStatus,
+        contextFiltersProvider.changes
+    ).pipe(
+        map(async ([editor]) => {
+            const uri = editor?.document.uri
+            const isIgnored = uri ? await contextFiltersProvider.isUriIgnored(uri) : false
+            return isIgnored
         })
-    }
-
-    let authStatus: AuthStatus | undefined
-    const command = vscode.commands.registerCommand(STATUS_BAR_INTERACTION_COMMAND, async () => {
-        telemetryRecorder.recordEvent('cody.statusbarIcon', 'clicked', {
-            privateMetadata: { loggedIn: Boolean(authStatus?.authenticated) },
-        })
-
-        if (!authStatus?.authenticated) {
-            // Bring up the sidebar view
-            void vscode.commands.executeCommand('cody.chat.focus')
-            return
-        }
-
-        const workspaceConfig = vscode.workspace.getConfiguration()
-        const config = getConfiguration(workspaceConfig)
-
-        async function createFeatureToggle(
-            name: string,
-            description: string | undefined,
-            detail: string,
-            setting: string,
-            getValue: (config: ClientConfiguration) => boolean | Promise<boolean>,
-            requiresReload = false,
-            buttons: readonly vscode.QuickInputButton[] | undefined = undefined
-        ): Promise<StatusBarItem> {
-            const isEnabled = await getValue(config)
+    )
+    private state = combineLatest(
+        authStatus,
+        resolvedConfig,
+        this.errors.changes,
+        this.loaders.changes,
+        this.ignoreStatus
+    ).pipe(
+        map((combined): StatusBarState | undefined => {
             return {
-                label:
-                    (isEnabled ? QUICK_PICK_ITEM_CHECKED_PREFIX : QUICK_PICK_ITEM_EMPTY_INDENT_PREFIX) +
-                    name,
-                description,
-                detail: QUICK_PICK_ITEM_EMPTY_INDENT_PREFIX + detail,
-                onSelect: async () => {
-                    await workspaceConfig.update(setting, !isEnabled, vscode.ConfigurationTarget.Global)
+                icon: 'normal',
+                text: '',
+                style: 'normal',
+                tags: new Set(),
+                ...this.buildState(...combined),
+            }
+        }),
+        shareReplay()
+    )
 
-                    const info = `${name} ${isEnabled ? 'disabled' : 'enabled'}.`
-                    const response = await (requiresReload
-                        ? vscode.window.showInformationMessage(info, 'Reload Window')
-                        : vscode.window.showInformationMessage(info))
+    private constructor() {
+        let lastState: StatusBarState | undefined
+        this.statusBarItem.command = STATUS_BAR_INTERACTION_COMMAND
+        this.renderSubscription = this.state.subscribe(newState => {
+            this.render(newState, lastState)
+        })
+    }
 
-                    if (response === 'Reload Window') {
-                        await vscode.commands.executeCommand('workbench.action.reloadWindow')
-                    }
-                },
-                buttons,
+    static init(): CodyStatusBar {
+        if (CodyStatusBar.singleton) {
+            throw new Error('CodyStatusBar already initialized')
+        }
+        CodyStatusBar.singleton = new CodyStatusBar()
+        return CodyStatusBar.singleton
+    }
+
+    addError(args: StatusBarErrorArgs) {
+        const now = Date.now()
+        const ttl = args.timeout !== undefined ? Math.min(ONE_HOUR, args.timeout - now) : ONE_HOUR
+
+        const errorHandle = {}
+        const remove = () => {
+            this.errors.mutate(draft => {
+                // this is safe because we'll asign properties to the same
+                // object, maintaining object identity
+                draft.delete(errorHandle as any)
+                return draft
+            })
+        }
+        const scheduledRemoval = setTimeout(remove, ttl)
+        const removeFn = () => {
+            clearTimeout(scheduledRemoval)
+            remove()
+        }
+        // we assign so we maintain object identity
+        const errorObject = Object.assign(errorHandle, {
+            createdAt: now,
+            title: args.title,
+            description: args.description,
+            errorType: args.errorType,
+            onShow: args.onShow,
+            onSelect: async () => {
+                if (args.removeAfterSelected) {
+                    removeFn()
+                }
+                await args.onSelect?.()
+            },
+        })
+
+        this.errors.mutate(draft => {
+            draft.add(errorObject)
+            return draft
+        })
+        return removeFn
+    }
+
+    addLoader<T>(args: StatusBarLoaderArgs) {
+        const now = Date.now()
+        const ttl = args.timeout !== undefined ? Math.min(ONE_HOUR, args.timeout - now) : ONE_HOUR
+        const loaderHandle = {}
+        const remove = () => {
+            this.loaders.mutate(draft => {
+                // this is safe because we'll asign properties to the same
+                // object, maintaining object identity
+                draft.delete(loaderHandle as any)
+                return draft
+            })
+        }
+        const scheduledRemoval = setTimeout(remove, ttl)
+        const removeFn = () => {
+            clearTimeout(scheduledRemoval)
+            remove()
+        }
+        const loaderObject = Object.assign(loaderHandle, {
+            createdAt: now,
+            title: args.title,
+            kind: args.kind || 'feature',
+        })
+        this.loaders.mutate(draft => {
+            draft.add(loaderObject)
+            return draft
+        })
+        return removeFn
+    }
+
+    hasError(
+        filterFn?: (
+            v: Pick<StatusBarError, 'createdAt' | 'description' | 'errorType' | 'title'>
+        ) => boolean
+    ): boolean {
+        if (!filterFn) {
+            return this.errors.current.size > 0
+        }
+
+        for (const v of this.errors.current.values()) {
+            if (filterFn(v)) {
+                return true
+            }
+        }
+        return false
+    }
+
+    private async handleInteraction() {
+        this.currentInteraction?.abort()
+        const interaction = new AbortController()
+        this.currentInteraction = interaction
+        const currentState = await firstValueFrom(this.state)
+        await currentState?.interact(this.currentInteraction.signal)
+    }
+
+    private render(newState: StatusBarState | undefined, lastState: StatusBarState | undefined) {
+        if (!lastState !== !newState) {
+            newState !== undefined ? this.statusBarItem.show() : this.statusBarItem.hide()
+        }
+        if (!newState) {
+            return
+        }
+        const icon =
+            newState.icon === 'disabled'
+                ? '$(cody-logo-heavy-slash)'
+                : newState.icon === 'loading'
+                  ? '$(loading~spin)'
+                  : '$(cody-logo-heavy)'
+        this.statusBarItem.text = `${icon} ${newState.text}`
+        // we insert tags in the tooltip as it's not escaped by vscode
+        const hiddenTags = [...newState.tags.values()].join('')
+        this.statusBarItem.tooltip = `${hiddenTags}${newState.tooltip}`
+        switch (newState.style) {
+            case 'normal':
+                this.statusBarItem.backgroundColor = new vscode.ThemeColor(
+                    'statusBarItem.activeBackground'
+                )
+                this.statusBarItem.color = new vscode.ThemeColor('statusBar.foreground')
+                break
+            case 'disabled':
+                this.statusBarItem.backgroundColor = new vscode.ThemeColor(
+                    'statusBarItem.offlineBackground'
+                )
+                this.statusBarItem.color = new vscode.ThemeColor('statusBar.offlineForeground')
+                break
+            case 'warning':
+                this.statusBarItem.backgroundColor = new vscode.ThemeColor(
+                    'statusBarItem.warningBackground'
+                )
+                this.statusBarItem.color = new vscode.ThemeColor('statusBarItem.warningForeground')
+                break
+            case 'error':
+                this.statusBarItem.backgroundColor = new vscode.ThemeColor(
+                    'statusBarItem.errorBackground'
+                )
+                this.statusBarItem.color = new vscode.ThemeColor('statusBarItem.errorForeground')
+                break
+            default:
+                assertUnreachable(newState.style)
+        }
+    }
+
+    private buildState(
+        authStatus: AuthStatus,
+        config: ResolvedConfiguration,
+        errors: ReadonlySet<StatusBarError>,
+        loaders: ReadonlySet<StatusBarLoader>,
+        ignoreStatus: IsIgnored
+    ): Partial<StatusBarState> & Pick<StatusBarState, 'interact' | 'tooltip'> {
+        const tags = new Set<InvisibleStatusBarTag>()
+
+        if (authStatus.authenticated) {
+            tags.add(InvisibleStatusBarTag.IsAuthenticated)
+        } else if (authStatus.showInvalidAccessTokenError || authStatus.showNetworkError) {
+            tags.add(InvisibleStatusBarTag.HasErrors)
+        }
+        if (errors.size > 0) {
+            tags.add(InvisibleStatusBarTag.HasErrors)
+        }
+        if (loaders.size > 0) {
+            tags.add(InvisibleStatusBarTag.HasLoaders)
+        }
+        if (ignoreStatus !== false) {
+            tags.add(InvisibleStatusBarTag.IsIgnored)
+        }
+        if (authStatus.pendingValidation) {
+            return {
+                icon: 'loading',
+                tooltip: 'Signing In...',
+                style: 'normal',
+                tags,
+                interact: interactAuth,
+            }
+        }
+        if (
+            !authStatus.authenticated &&
+            !authStatus.showNetworkError &&
+            authStatus.showInvalidAccessTokenError
+        ) {
+            return {
+                icon: 'disabled',
+                tooltip: 'Your authentication has expired.\nSign in again to continue using Cody.',
+                style: 'warning',
+                tags,
+                interact: interactAuth,
             }
         }
 
-        if (errors.length > 0) {
-            errors.map(error => error.error.onShow?.())
+        if (errors.size > 0) {
+            const [firstError, ...otherErrors] = [...errors.values()]
+            const hasDisabilitatingError = [...errors.values()].some(error =>
+                (
+                    [
+                        'AutoCompleteDisabledByAdmin',
+                        'RateLimitError',
+                        'Networking',
+                    ] satisfies StatusBarErrorType[]
+                ).includes(error.errorType as any)
+            )
+            return {
+                text: '',
+                icon: hasDisabilitatingError ? 'disabled' : 'normal',
+                tooltip:
+                    otherErrors.length > 0
+                        ? `(Error 1/${otherErrors.length + 1}): ${firstError.title}`
+                        : `Error: ${firstError.title}`,
+                style: 'error',
+                tags,
+                interact: interactDefault({
+                    config,
+                    errors,
+                    isIgnored: ignoreStatus,
+                }),
+            }
         }
 
+        if (!authStatus.authenticated && authStatus.showNetworkError) {
+            return {
+                icon: 'disabled',
+                tooltip: 'Network issues prevented Cody from signing in.',
+                style: 'error',
+                tags,
+                interact: interactNetworkIssues,
+            }
+        }
+
+        if (!authStatus.authenticated) {
+            return {
+                text: 'Sign In',
+                tooltip: 'Sign in to get started with Cody.',
+                style: 'warning',
+                tags,
+                interact: interactAuth,
+            }
+        }
+
+        if (loaders.size > 0) {
+            const isStarting = [...loaders.values()].some(loader => loader.kind === 'startup')
+            return {
+                icon: 'loading',
+                tooltip: isStarting
+                    ? 'Cody is getting ready...'
+                    : `${loaders.values().next().value.title}`,
+                style: 'normal',
+                tags,
+                interact: interactDefault({
+                    config,
+                    errors,
+                    isIgnored: ignoreStatus,
+                }),
+            }
+        }
+
+        if (ignoreStatus !== false) {
+            return {
+                icon: 'disabled',
+                tooltip: ignoreReason(ignoreStatus)!,
+                style: 'disabled',
+                tags,
+                interact: interactDefault({
+                    config,
+                    errors,
+                    isIgnored: ignoreStatus,
+                }),
+            }
+        }
+
+        return {
+            tooltip: 'Cody Settings',
+            interact: interactDefault({
+                config,
+                errors,
+                isIgnored: ignoreStatus,
+            }),
+        }
+    }
+
+    dispose() {
+        this.errors.complete()
+        this.loaders.complete()
+        this.statusBarItem.dispose()
+        this.command.dispose()
+        this.renderSubscription?.unsubscribe()
+        CodyStatusBar.singleton = null
+    }
+}
+
+async function interactAuth(abort: AbortSignal) {
+    void vscode.commands.executeCommand('cody.chat.focus')
+}
+
+async function interactNetworkIssues(abort: AbortSignal) {
+    void vscode.commands.executeCommand('cody.debug.net.showOutputChannel')
+}
+
+function interactDefault({
+    config,
+    errors,
+    isIgnored,
+}: { config: ResolvedConfiguration; errors: ReadonlySet<StatusBarError>; isIgnored: IsIgnored }): (
+    abort: AbortSignal
+) => Promise<void> {
+    return async (abort: AbortSignal) => {
+        const [interactionDone] = promise<void>()
+        // this QuickPick could probably be made reactive but that's a bit overkill.
         const quickPick = vscode.window.createQuickPick()
+        const currentIgnoreReason = ignoreReason(isIgnored)
+        const abortListener = () => {
+            quickPick?.hide()
+        }
+        quickPick.onDidHide(() => {
+            interactionDone()
+        })
+        abort.addEventListener('abort', abortListener)
+        quickPick.onDidHide(() => {
+            abort.removeEventListener('abort', abortListener)
+        })
+
+        for (const error of errors) {
+            try {
+                error.onShow?.()
+            } catch (e) {
+                logError('Status Bar Interaction', 'Error during show handler')
+            }
+        }
+        const createFeatureToggle = featureToggleBuilder(
+            config.configuration,
+            vscode.workspace.getConfiguration()
+        )
+
         quickPick.items = [
             // These description should stay in sync with the settings in package.json
-            ...(errors.length > 0
+            ...(errors.size > 0
                 ? [
                       { label: 'notice', kind: vscode.QuickPickItemKind.Separator },
-                      ...errors.map(error => ({
-                          label: `$(alert) ${error.error.title}`,
+                      ...[...errors.values()].map(error => ({
+                          label: `$(alert) ${error.title}`,
                           description: '',
-                          detail: QUICK_PICK_ITEM_EMPTY_INDENT_PREFIX + error.error.description,
-                          onSelect(): Promise<void> {
-                              error.error.onSelect?.()
-                              if (error.error.removeAfterSelected) {
-                                  const index = errors.indexOf(error)
-                                  errors.splice(index)
-                                  rerender()
-                              }
-                              return Promise.resolve()
-                          },
+                          detail: QUICK_PICK_ITEM_EMPTY_INDENT_PREFIX + error.description,
+                          onSelect: error.onSelect,
                       })),
                   ]
                 : []),
             { label: 'notice', kind: vscode.QuickPickItemKind.Separator },
-            ...(isCodyIgnoredType
+            ...(currentIgnoreReason
                 ? [
                       {
                           label: '$(debug-pause) Cody is disabled in this file',
                           description: '',
-                          detail:
-                              QUICK_PICK_ITEM_EMPTY_INDENT_PREFIX +
-                              (isCodyIgnoredType === 'context-filter'
-                                  ? 'Your administrator has disabled Cody in this repository.'
-                                  : 'Cody is disabled in this file because of your .cody/ignore file.'),
+                          detail: QUICK_PICK_ITEM_EMPTY_INDENT_PREFIX + currentIgnoreReason,
                       },
                   ]
                 : []),
@@ -283,7 +563,7 @@ export function createStatusBar(): CodyStatusBar {
         quickPick.buttons = [
             {
                 iconPath: new vscode.ThemeIcon('bug'),
-                tooltip: config.debugVerbose ? 'Check Debug Logs' : 'Turn on Debug Mode',
+                tooltip: config.configuration.debugVerbose ? 'Check Debug Logs' : 'Turn on Debug Mode',
                 onClick: () => enableVerboseDebugMode(),
             } as vscode.QuickInputButton,
         ]
@@ -292,125 +572,100 @@ export function createStatusBar(): CodyStatusBar {
             item?.onClick?.()
             quickPick.hide()
         })
-    })
+    }
+}
 
-    // Reference counting to ensure loading states are handled consistently across different
-    // features
-    // TODO: Ensure the label is always set to the right value too.
-    let openLoadingLeases = 0
+function featureToggleBuilder(
+    config: ReadonlyDeep<ClientConfiguration>,
+    workspaceConfig: vscode.WorkspaceConfiguration
+) {
+    return async (
+        name: string,
+        description: string | undefined,
+        detail: string,
+        setting: string,
+        getValue: (config: ReadonlyDeep<ClientConfiguration>) => boolean | Promise<boolean>,
+        requiresReload = false,
+        buttons: readonly vscode.QuickInputButton[] | undefined = undefined
+    ): Promise<StatusBarItem> => {
+        const isEnabled = await getValue(config)
+        return {
+            label:
+                (isEnabled ? QUICK_PICK_ITEM_CHECKED_PREFIX : QUICK_PICK_ITEM_EMPTY_INDENT_PREFIX) +
+                name,
+            description,
+            detail: QUICK_PICK_ITEM_EMPTY_INDENT_PREFIX + detail,
+            onSelect: async () => {
+                await workspaceConfig.update(setting, !isEnabled, vscode.ConfigurationTarget.Global)
 
-    const errors: { error: StatusBarError; createdAt: number }[] = []
+                const info = `${name} ${isEnabled ? 'disabled' : 'enabled'}.`
+                const response = await (requiresReload
+                    ? vscode.window.showInformationMessage(info, 'Reload Window')
+                    : vscode.window.showInformationMessage(info))
 
-    function rerender(): void {
-        if (openLoadingLeases > 0) {
-            statusBarItem.text = '$(loading~spin)'
-        } else {
-            statusBarItem.text = isCodyIgnoredType ? DEFAULT_TEXT_DISABLED : DEFAULT_TEXT
-            statusBarItem.tooltip = isCodyIgnoredType ? DEFAULT_TOOLTIP_DISABLED : DEFAULT_TOOLTIP
-        }
-
-        // Only show this if authStatus is present, otherwise you get a flash of
-        // yellow status bar icon when extension first loads but login hasn't
-        // initialized yet
-        if (authStatus) {
-            if (authStatus.authenticated && authStatus.isOfflineMode) {
-                statusBarItem.text = '$(cody-logo-heavy) Offline'
-                statusBarItem.tooltip = 'Cody is in offline mode'
-                statusBarItem.backgroundColor = new vscode.ThemeColor('statusBarItem.warningBackground')
-                return
-            }
-            if (!authStatus.authenticated && authStatus.showNetworkError) {
-                statusBarItem.text = '$(cody-logo-heavy) Connection Issues'
-                statusBarItem.tooltip = 'Resolve network issues for Cody to work again'
-                statusBarItem.backgroundColor = new vscode.ThemeColor('statusBarItem.errorBackground')
-                return
-            }
-            if (!authStatus.authenticated) {
-                statusBarItem.text = '$(cody-logo-heavy) Sign In'
-                statusBarItem.tooltip = 'Sign in to get started with Cody'
-                statusBarItem.backgroundColor = new vscode.ThemeColor('statusBarItem.warningBackground')
-                return
-            }
-        }
-
-        if (errors.length > 0) {
-            statusBarItem.backgroundColor = new vscode.ThemeColor('statusBarItem.warningBackground')
-            statusBarItem.tooltip = errors[0].error.title
-        } else {
-            statusBarItem.backgroundColor = new vscode.ThemeColor('statusBarItem.activeBackground')
+                if (response === 'Reload Window') {
+                    await vscode.commands.executeCommand('workbench.action.reloadWindow')
+                }
+            },
+            buttons,
         }
     }
+}
 
-    // Clean up all errors after a certain time so they don't accumulate forever
-    function clearOutdatedErrors(): void {
-        const now = Date.now()
-        for (let i = errors.length - 1; i >= 0; i--) {
-            const error = errors[i]
-            if (
-                now - error.createdAt >= ONE_HOUR ||
-                (error.error.removeAfterEpoch && now - error.error.removeAfterEpoch >= 0)
-            ) {
-                errors.splice(i, 1)
+function ignoreReason(isIgnore: IsIgnored): string | null {
+    switch (isIgnore) {
+        case false:
+            return null
+        case 'non-file-uri':
+            return 'This current file is ignored as it does not have a valid file URI.'
+        case 'no-repo-found':
+            return 'This current file is ignored as it is not in known git repository.'
+        case 'has-ignore-everything-filters':
+            return 'Your administrator has disabled Cody for this file.'
+        default:
+            if (isIgnore.startsWith('repo:')) {
+                return `Your administrator has disabled Cody for '${isIgnore.replace('repo:', '')}'.`
             }
-        }
-        rerender()
+            return 'The current file is ignored by Cody.'
     }
+}
 
-    return {
-        startLoading(label: string, params: { timeoutMs?: number } = {}) {
-            openLoadingLeases++
-            statusBarItem.tooltip = label
-            rerender()
+interface StatusBarLoaderArgs {
+    title: string
+    timeout?: Milliseconds
+    kind?: 'startup' | 'feature'
+}
 
-            let didClose = false
-            const timeoutId = params.timeoutMs ? setTimeout(stopLoading, params.timeoutMs) : null
-            function stopLoading() {
-                if (didClose) {
-                    return
-                }
-                didClose = true
+//this is mainly done to ensure the type shows up as Milliseconds not 'number'
+type Milliseconds = LiteralUnion<30_000, number>
 
-                openLoadingLeases--
-                rerender()
-                if (timeoutId) {
-                    clearTimeout(timeoutId)
-                }
-            }
+interface StatusBarErrorArgs {
+    title: string
+    description: string
+    errorType: StatusBarErrorType
+    removeAfterSelected: boolean
+    timeout?: Milliseconds
+    onShow?: () => void
+    onSelect?: () => void | Promise<void>
+}
 
-            return stopLoading
-        },
-        addError(error: StatusBarError) {
-            const now = Date.now()
-            const errorObject = { error, createdAt: now }
-            errors.push(errorObject)
+interface StatusBarError {
+    createdAt: number
+    title: string
+    description: string
+    errorType: StatusBarErrorType
+    onSelect: () => void
+    onShow?: () => void
+}
 
-            if (error.removeAfterEpoch && error.removeAfterEpoch > now) {
-                setTimeout(clearOutdatedErrors, Math.min(ONE_HOUR, error.removeAfterEpoch - now))
-            } else {
-                setTimeout(clearOutdatedErrors, ONE_HOUR)
-            }
+interface StatusBarLoader {
+    createdAt: number
+    title: string
+    kind: 'startup' | 'feature'
+}
 
-            rerender()
+type StatusBarErrorType = 'auth' | 'RateLimitError' | 'AutoCompleteDisabledByAdmin' | 'Networking'
 
-            return () => {
-                const index = errors.indexOf(errorObject)
-                if (index !== -1) {
-                    errors.splice(index, 1)
-                    rerender()
-                }
-            }
-        },
-        hasError(errorName: StatusBarErrorName): boolean {
-            return errors.some(e => e.error.errorType === errorName)
-        },
-        setAuthStatus(newStatus: AuthStatus) {
-            authStatus = newStatus
-            rerender()
-        },
-        dispose() {
-            statusBarItem.dispose()
-            command.dispose()
-            onDocumentChange.dispose()
-        },
-    }
+interface StatusBarItem extends vscode.QuickPickItem {
+    onSelect: () => Promise<void>
 }

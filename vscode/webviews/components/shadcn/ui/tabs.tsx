@@ -1,5 +1,6 @@
 import * as Tabs from '@radix-ui/react-tabs'
 import React from 'react'
+import { cn } from '../utils'
 
 export const TabRoot = React.forwardRef<
     React.ElementRef<typeof Tabs.Root>,
@@ -16,7 +17,7 @@ export const TabContainer = React.forwardRef<
         <Tabs.Content
             ref={ref}
             {...props}
-            className="tw-h-full tw-flex tw-flex-col tw-overflow-auto tw-gap-4"
+            className={cn('tw-h-full tw-flex tw-flex-col tw-overflow-auto tw-gap-4', className)}
         />
     )
 })

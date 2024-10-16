@@ -4,7 +4,8 @@ import {
     type ChatClient,
     ClientConfigSingleton,
     PromptString,
-    isCodyIgnoredFile,
+    currentSiteVersion,
+    firstResultFromOperation,
     modelsService,
     ps,
     telemetryRecorder,
@@ -18,10 +19,8 @@ import type { FixupTask } from '../non-stop/FixupTask'
 
 import { DEFAULT_EVENT_SOURCE } from '@sourcegraph/cody-shared'
 import { isUriIgnoredByContextFilterWithNotification } from '../cody-ignore/context-filter'
-import { showCodyIgnoreNotification } from '../cody-ignore/notification'
 import type { ExtensionClient } from '../extension-client'
 import { ACTIVE_TASK_STATES } from '../non-stop/codelenses/constants'
-import { authProvider } from '../services/AuthProvider'
 import { splitSafeMetadata } from '../services/telemetry-v2'
 import type { ExecuteEditArguments } from './execute'
 import { SMART_APPLY_FILE_DECORATION, getSmartApplySelection } from './prompt/smart-apply'
@@ -107,11 +106,6 @@ export class EditManager implements vscode.Disposable {
         }
 
         const editor = getEditor()
-        if (editor.ignored) {
-            showCodyIgnoreNotification('edit', 'cody-ignore')
-            return
-        }
-
         const document = configuration.document || editor.active?.document
         if (!document) {
             void vscode.window.showErrorMessage('Please open a file before running a command.')
@@ -130,7 +124,8 @@ export class EditManager implements vscode.Disposable {
         // Set default edit configuration, if not provided
         // It is possible that these values may be overriden later, e.g. if the user changes them in the edit input.
         const range = getEditLineSelection(document, proposedRange)
-        const model = configuration.model || modelsService.instance!.getDefaultEditModel()
+        const model =
+            configuration.model || (await firstResultFromOperation(modelsService.getDefaultEditModel()))
         if (!model) {
             throw new Error('No default edit model found. Please set one.')
         }
@@ -217,6 +212,10 @@ export class EditManager implements vscode.Disposable {
                 ...privateMetadata,
                 model: task.model,
             },
+            billingMetadata: {
+                product: 'cody',
+                category: 'core',
+            },
         })
         /**
          * Updates the editor's selection and view for 'doc' or 'test' intents, causing the cursor to
@@ -243,20 +242,22 @@ export class EditManager implements vscode.Disposable {
         }
 
         const document = configuration.document
-        if (isCodyIgnoredFile(document.uri)) {
-            showCodyIgnoreNotification('edit', 'cody-ignore')
-        }
-
         if (await isUriIgnoredByContextFilterWithNotification(document.uri, 'edit')) {
             return
         }
 
-        const model = configuration.model || modelsService.instance!.getDefaultEditModel()
+        const model =
+            configuration.model || (await firstResultFromOperation(modelsService.getDefaultEditModel()))
         if (!model) {
             throw new Error('No default edit model found. Please set one.')
         }
 
-        telemetryRecorder.recordEvent('cody.command.smart-apply', 'executed')
+        telemetryRecorder.recordEvent('cody.command.smart-apply', 'executed', {
+            billingMetadata: {
+                product: 'cody',
+                category: 'core',
+            },
+        })
 
         const editor = await vscode.window.showTextDocument(document.uri)
 
@@ -290,6 +291,10 @@ export class EditManager implements vscode.Disposable {
                     ...privateMetadata,
                     model: task.model,
                 },
+                billingMetadata: {
+                    product: 'cody',
+                    category: 'core',
+                },
             })
 
             const provider = this.getProviderForTask(task)
@@ -306,7 +311,11 @@ export class EditManager implements vscode.Disposable {
         // queries to ask the LLM to generate a selection, and then ultimately apply the edit.
         const replacementCode = PromptString.unsafe_fromLLMResponse(configuration.replacement)
 
-        const authStatus = authProvider.instance!.statusAuthed
+        const versions = await currentSiteVersion()
+        if (!versions) {
+            throw new Error('unable to determine site version')
+        }
+
         const selection = await getSmartApplySelection(
             configuration.id,
             configuration.instruction,
@@ -314,7 +323,7 @@ export class EditManager implements vscode.Disposable {
             configuration.document,
             model,
             this.options.chat,
-            authStatus.codyApiVersion
+            versions.codyAPIVersion
         )
 
         // We finished prompting the LLM for the selection, we can now remove the "progress" decoration
@@ -389,6 +398,10 @@ export class EditManager implements vscode.Disposable {
                 privateMetadata: {
                     ...privateMetadata,
                     model: task.model,
+                },
+                billingMetadata: {
+                    product: 'cody',
+                    category: 'core',
                 },
             })
 

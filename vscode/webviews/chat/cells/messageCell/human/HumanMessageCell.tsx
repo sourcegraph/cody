@@ -1,12 +1,14 @@
 import {
     type ChatMessage,
+    type Model,
+    type SerializedPromptEditorState,
     type SerializedPromptEditorValue,
     serializedPromptEditorStateFromChatMessage,
 } from '@sourcegraph/cody-shared'
 import type { PromptEditorRefAPI } from '@sourcegraph/prompt-editor'
 import isEqual from 'lodash/isEqual'
 import { ColumnsIcon } from 'lucide-react'
-import { type FunctionComponent, memo, useMemo } from 'react'
+import { type FC, memo, useMemo } from 'react'
 import type { UserAccountInfo } from '../../../../Chat'
 import { UserAvatar } from '../../../../components/UserAvatar'
 import { BaseMessageCell, MESSAGE_CELL_AVATAR_SIZE } from '../BaseMessageCell'
@@ -16,11 +18,9 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '../../../../components/
 import { getVSCodeAPI } from '../../../../utils/VSCodeApi'
 import { useConfig } from '../../../../utils/useConfig'
 
-/**
- * A component that displays a chat message from the human.
- */
-export const HumanMessageCell: FunctionComponent<{
+interface HumanMessageCellProps {
     message: ChatMessage
+    models: Model[]
     userInfo: UserAccountInfo
     chatEnabled: boolean
 
@@ -33,6 +33,7 @@ export const HumanMessageCell: FunctionComponent<{
     /** Whether this editor is for a followup message to a still-in-progress assistant response. */
     isPendingPriorResponse: boolean
 
+    onEditorFocusChange?: (focused: boolean) => void
     onChange?: (editorState: SerializedPromptEditorValue) => void
     onSubmit: (editorValue: SerializedPromptEditorValue) => void
     onStop: () => void
@@ -46,9 +47,30 @@ export const HumanMessageCell: FunctionComponent<{
 
     /** For use in storybooks only. */
     __storybook__focus?: boolean
-}> = memo(
-    ({
-        message,
+}
+
+/**
+ * A component that displays a chat message from the human.
+ */
+export const HumanMessageCell: FC<HumanMessageCellProps> = ({ message, ...otherProps }) => {
+    const messageJSON = JSON.stringify(message)
+
+    const initialEditorState = useMemo(
+        () => serializedPromptEditorStateFromChatMessage(JSON.parse(messageJSON)),
+        [messageJSON]
+    )
+
+    return <HumanMessageCellContent {...otherProps} initialEditorState={initialEditorState} />
+}
+
+type HumanMessageCellContent = { initialEditorState: SerializedPromptEditorState } & Omit<
+    HumanMessageCellProps,
+    'message'
+>
+const HumanMessageCellContent = memo<HumanMessageCellContent>(props => {
+    const {
+        models,
+        initialEditorState,
         userInfo,
         chatEnabled = true,
         isFirstMessage,
@@ -63,49 +85,45 @@ export const HumanMessageCell: FunctionComponent<{
         className,
         editorRef,
         __storybook__focus,
-    }) => {
-        const messageJSON = JSON.stringify(message)
-        const initialEditorState = useMemo(
-            () => serializedPromptEditorStateFromChatMessage(JSON.parse(messageJSON)),
-            [messageJSON]
-        )
+        onEditorFocusChange,
+    } = props
 
-        return (
-            <BaseMessageCell
-                speakerIcon={
-                    <UserAvatar
-                        user={userInfo.user}
-                        size={MESSAGE_CELL_AVATAR_SIZE}
-                        sourcegraphGradientBorder={true}
-                    />
-                }
-                speakerTitle={userInfo.user.displayName ?? userInfo.user.username}
-                cellAction={isFirstMessage && <OpenInNewEditorAction />}
-                content={
-                    <HumanMessageEditor
-                        userInfo={userInfo}
-                        initialEditorState={initialEditorState}
-                        placeholder={isFirstMessage ? 'Ask...' : 'Ask a followup...'}
-                        isFirstMessage={isFirstMessage}
-                        isSent={isSent}
-                        isPendingPriorResponse={isPendingPriorResponse}
-                        onChange={onChange}
-                        onSubmit={onSubmit}
-                        onStop={onStop}
-                        disabled={!chatEnabled}
-                        isFirstInteraction={isFirstInteraction}
-                        isLastInteraction={isLastInteraction}
-                        isEditorInitiallyFocused={isEditorInitiallyFocused}
-                        editorRef={editorRef}
-                        __storybook__focus={__storybook__focus}
-                    />
-                }
-                className={className}
-            />
-        )
-    },
-    isEqual
-)
+    return (
+        <BaseMessageCell
+            speakerIcon={
+                <UserAvatar
+                    user={userInfo.user}
+                    size={MESSAGE_CELL_AVATAR_SIZE}
+                    sourcegraphGradientBorder={true}
+                />
+            }
+            speakerTitle={userInfo.user.displayName ?? userInfo.user.username}
+            cellAction={isFirstMessage && <OpenInNewEditorAction />}
+            content={
+                <HumanMessageEditor
+                    models={models}
+                    userInfo={userInfo}
+                    initialEditorState={initialEditorState}
+                    placeholder={isFirstMessage ? 'Ask...' : 'Ask a followup...'}
+                    isFirstMessage={isFirstMessage}
+                    isSent={isSent}
+                    isPendingPriorResponse={isPendingPriorResponse}
+                    onChange={onChange}
+                    onSubmit={onSubmit}
+                    onStop={onStop}
+                    disabled={!chatEnabled}
+                    isFirstInteraction={isFirstInteraction}
+                    isLastInteraction={isLastInteraction}
+                    isEditorInitiallyFocused={isEditorInitiallyFocused}
+                    editorRef={editorRef}
+                    __storybook__focus={__storybook__focus}
+                    onEditorFocusChange={onEditorFocusChange}
+                />
+            }
+            className={className}
+        />
+    )
+}, isEqual)
 
 const OpenInNewEditorAction = () => {
     const {

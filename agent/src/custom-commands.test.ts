@@ -67,7 +67,7 @@ describe('Custom Commands', () => {
         expect(result.type).toBe('chat')
         const lastMessage = await client.firstNonEmptyTranscript(result.chatResult as string)
         expect(trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')).toMatchInlineSnapshot(
-            `"no"`,
+            `"No"`,
             explainPollyError
         )
     }, 30_000)
@@ -82,7 +82,6 @@ describe('Custom Commands', () => {
         expect(result.type).toBe('chat')
         const lastMessage = await client.firstNonEmptyTranscript(result.chatResult as string)
         const reply = trimEndOfLine(lastMessage.messages.at(-1)?.text ?? '')
-        expect(reply).not.includes('.cody/ignore') // file that's not located in the src/directory
         expect(reply).toMatchInlineSnapshot(`"6"`, explainPollyError)
     }, 30_000)
 

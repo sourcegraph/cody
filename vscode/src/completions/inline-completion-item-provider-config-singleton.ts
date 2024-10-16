@@ -1,10 +1,5 @@
-import type {
-    AuthenticatedAuthStatus,
-    ClientConfigurationWithAccessToken,
-} from '@sourcegraph/cody-shared'
 import type { CodyStatusBar } from '../services/StatusBar'
-import type { BfgRetriever } from './context/retrievers/bfg/bfg-retriever'
-import type { Provider } from './providers/provider'
+import type { Provider } from './providers/shared/provider'
 import type { ProvideInlineCompletionItemsTracer } from './tracer'
 
 export interface CodyCompletionItemProviderConfig {
@@ -13,31 +8,17 @@ export interface CodyCompletionItemProviderConfig {
     statusBar: CodyStatusBar
     tracer?: ProvideInlineCompletionItemsTracer | null
     isRunningInsideAgent?: boolean
-    config: ClientConfigurationWithAccessToken
-
-    authStatus: AuthenticatedAuthStatus
-    isDotComUser?: boolean
-
-    createBfgRetriever?: () => BfgRetriever
 
     // Settings
     formatOnAccept?: boolean
     disableInsideComments?: boolean
+    triggerDelay: number
 
     // Feature flags
     completeSuggestWidgetSelection?: boolean
-
-    // Flag to check if the current request is also triggered for multiple providers.
-    // When true it means the inlineCompletion are triggered for multiple model for comparison purpose.
-    // Check `createInlineCompletionItemFromMultipleProviders` method in create-inline-completion-item-provider for more detail.
-    noInlineAccept?: boolean
 }
 
-export type InlineCompletionItemProviderConfig = Omit<
-    CodyCompletionItemProviderConfig,
-    'createBfgRetriever'
-> &
-    Required<Pick<CodyCompletionItemProviderConfig, 'isDotComUser'>>
+export type InlineCompletionItemProviderConfig = CodyCompletionItemProviderConfig
 
 /**
  * A singleton that manages the configuration for the inline completion item provider.

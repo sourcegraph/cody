@@ -30,7 +30,7 @@ export class AgentWorkspaceConfiguration implements vscode.WorkspaceConfiguratio
         return [...this.prefix, section].join('.')
     }
 
-    private clientNameToIDE(value: string): ClientConfiguration['agentIDE'] | undefined {
+    public static clientNameToIDE(value: string): ClientConfiguration['agentIDE'] | undefined {
         switch (value.toLowerCase()) {
             case 'vscode':
                 return CodyIDE.VSCode
@@ -46,6 +46,8 @@ export class AgentWorkspaceConfiguration implements vscode.WorkspaceConfiguratio
                 return CodyIDE.VisualStudio
             case 'eclipse':
                 return CodyIDE.Eclipse
+            case 'standalone-web':
+                return CodyIDE.StandaloneWeb
             default:
                 return undefined
         }
@@ -89,13 +91,10 @@ export class AgentWorkspaceConfiguration implements vscode.WorkspaceConfiguratio
                 return extensionConfig?.verboseDebug ?? false
             case 'cody.experimental.tracing':
                 return extensionConfig?.verboseDebug ?? false
-            case 'cody.useContext':
-                // Disable embeddings by default.
-                return 'keyword'
             case 'cody.codebase':
                 return extensionConfig?.codebase
             case 'cody.advanced.agent.ide':
-                return this.clientNameToIDE(this.clientInfo()?.name ?? '')
+                return AgentWorkspaceConfiguration.clientNameToIDE(this.clientInfo()?.name ?? '')
             case 'cody.advanced.agent.ide.version':
                 return this.clientInfo()?.ideVersion
             case 'cody.advanced.agent.extension.version':
@@ -112,8 +111,6 @@ export class AgentWorkspaceConfiguration implements vscode.WorkspaceConfiguratio
                 return this.clientInfo()?.capabilities?.webview === 'native' ?? false
             case 'editor.insertSpaces':
                 return true // TODO: override from IDE clients
-            case 'cody.accessToken':
-                return extensionConfig?.accessToken
             default:
                 // VS Code picks up default value in package.json, and only uses
                 // the `defaultValue` parameter if package.json provides no

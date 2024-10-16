@@ -1,7 +1,7 @@
 import { execSync } from 'node:child_process'
 import path from 'node:path'
 
-import { extensionForLanguage, logDebug, logError } from '@sourcegraph/cody-shared'
+import { extensionForLanguage, logDebug, logError, setClientNameVersion } from '@sourcegraph/cody-shared'
 import * as uuid from 'uuid'
 import type * as vscode from 'vscode'
 
@@ -120,6 +120,12 @@ const emptyFileWatcher: vscode.FileSystemWatcher = {
 export let clientInfo: ClientInfo | undefined
 export function setClientInfo(newClientInfo: ClientInfo): void {
     clientInfo = newClientInfo
+    setClientNameVersion({
+        newClientName: newClientInfo.name,
+        newClientVersion: newClientInfo.version,
+        newClientCompletionsStreamQueryParameterName:
+            newClientInfo.legacyNameForServerIdentification ?? undefined,
+    })
     if (newClientInfo.extensionConfiguration) {
         setExtensionConfiguration(newClientInfo.extensionConfiguration)
     }
@@ -132,10 +138,6 @@ export function setExtensionConfiguration(newConfig: ExtensionConfiguration): vo
 export function isAuthenticationChange(newConfig: ExtensionConfiguration): boolean {
     if (!extensionConfiguration) {
         return true
-    }
-
-    if (!newConfig.accessToken || !newConfig.serverEndpoint) {
-        return false
     }
 
     return (
@@ -443,11 +445,15 @@ export function defaultWebviewPanel(params: {
     onDidReceiveMessage: vscode.EventEmitter<any>
     onDidPostMessage: EventEmitter<any>
 }): vscode.WebviewPanel {
+    const onDidDispose = new EventEmitter<void>()
     return {
         active: false,
-        dispose: () => {},
+        dispose: () => {
+            onDidDispose.fire()
+            onDidDispose.dispose()
+        },
         onDidChangeViewState: emptyEvent(),
-        onDidDispose: emptyEvent(),
+        onDidDispose: onDidDispose.event,
         options: params.options ?? {
             enableFindWidget: false,
             retainContextWhenHidden: false,
@@ -569,6 +575,23 @@ export function setCreateWebviewPanel(
     newCreateWebviewPanel: typeof vscode.window.createWebviewPanel
 ): void {
     shimmedCreateWebviewPanel = newCreateWebviewPanel
+}
+
+function terminal(): vscode.Terminal {
+    // TODO: implement this when needed
+    return {
+        name: 'Cody Command Line',
+        processId: Promise.resolve(0),
+        creationOptions: {},
+        exitStatus: undefined,
+        state: {
+            isInteractedWith: false,
+        },
+        sendText: () => {},
+        show: () => {},
+        hide: () => {},
+        dispose: () => {},
+    }
 }
 
 export const progressBars = new Map<string, CancellationTokenSource>()
@@ -811,10 +834,7 @@ const _window: typeof vscode.window = {
         console.log(new Error().stack)
         throw new Error('Not implemented: vscode.window.withScmProgress')
     },
-    createTerminal: () => {
-        console.log(new Error().stack)
-        throw new Error('Not implemented: vscode.window.createTerminal')
-    },
+    createTerminal: () => terminal(),
     activeTextEditor: undefined, // Updated by AgentWorkspaceDocuments
     visibleNotebookEditors: [],
     activeNotebookEditor: undefined,
@@ -1109,7 +1129,6 @@ const _languages: Partial<typeof vscode.languages> = {
     registerHoverProvider: (_selector, _provider) => {
         return {
             dispose: () => {
-                console.log(new Error().stack)
                 throw new Error('Not implemented: vscode.languages.registerHoverProvider')
             },
         }

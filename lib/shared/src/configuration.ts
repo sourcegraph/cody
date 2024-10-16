@@ -1,102 +1,142 @@
-import type { Observable } from 'observable-fns'
-import type { EmbeddingsProvider } from './codebase-context/context-status'
-import type { FileURI } from './common/uri'
+import type { ClientCapabilitiesWithLegacyFields } from './configuration/clientCapabilities'
+import type { ChatModelProviderConfig } from './models/sync'
 
 import type { PromptString } from './prompt/prompt-string'
 import type { ReadonlyDeep } from './utils'
 
-export type ConfigurationUseContext = 'embeddings' | 'keyword' | 'none' | 'blended' | 'unified'
+/**
+ * Represents the source of an authentication token generation, either a redirect or paste flow.
+ * A redirect flow is initiated by the user clicking a link in the browser, while a paste flow is initiated by the user
+ * manually entering the access from into the VsCode App.
+ */
+export type TokenSource = 'redirect' | 'paste'
 
 /**
- * Get the numeric ID corresponding to the ConfigurationUseContext mode.
+ * The user's authentication credentials, which are stored separately from the rest of the
+ * configuration.
  */
-export const CONTEXT_SELECTION_ID: Record<ConfigurationUseContext, number> = {
-    none: 0,
-    embeddings: 1,
-    keyword: 2,
-    blended: 10,
-    unified: 11,
+export interface AuthCredentials {
+    serverEndpoint: string
+    accessToken: string | null
+    tokenSource?: TokenSource | undefined
 }
 
-/**
- * A wrapper around a configuration source that lets the client retrieve the current config and
- * watch for changes.
- */
-export interface ConfigWatcher<C> {
-    changes: Observable<C>
-    get(): C
+export interface AutoEditsTokenLimit {
+    prefixTokens: number
+    suffixTokens: number
+    maxPrefixLinesInArea: number
+    maxSuffixLinesInArea: number
+    codeToRewritePrefixLines: number
+    codeToRewriteSuffixLines: number
+    contextSpecificTokenLimit: Record<string, number>
+}
+
+export interface AutoEditsModelConfig {
+    provider: string
+    model: string
+    apiKey: string
+    tokenLimit: AutoEditsTokenLimit
+}
+
+export interface NetConfiguration {
+    mode?: string | undefined | null
+    proxy?: {
+        endpoint?: string | undefined | null
+        cacert?: string | undefined | null
+        skipCertValidation?: boolean | null
+    }
+    vscode?: string | undefined | null
 }
 
 interface RawClientConfiguration {
-    proxy?: string | null
+    net: NetConfiguration
     codebase?: string
     debugFilter: RegExp | null
     debugVerbose: boolean
     telemetryLevel: 'all' | 'off' | 'agent'
-    telemetryClientName?: string
-    useContext: ConfigurationUseContext
+
+    serverEndpoint?: string
     customHeaders?: Record<string, string>
-    chatPreInstruction: PromptString
-    editPreInstruction: PromptString
+    chatPreInstruction?: PromptString
+    editPreInstruction?: PromptString
     codeActions: boolean
     commandHints: boolean
     commandCodeLenses: boolean
 
-    /**
-     * Autocomplete
-     */
+    //#region Autocomplete
     autocomplete: boolean
     autocompleteLanguages: Record<string, boolean>
-    autocompleteAdvancedProvider:
-        | 'anthropic'
-        | 'fireworks'
-        | 'unstable-gemini'
-        | 'unstable-openai'
-        | 'experimental-openaicompatible'
-        | 'experimental-ollama'
-        | null
-    autocompleteAdvancedModel: string | null
+    autocompleteAdvancedProvider: AutocompleteProviderID | string
     autocompleteCompleteSuggestWidgetSelection?: boolean
     autocompleteFormatOnAccept?: boolean
     autocompleteDisableInsideComments: boolean
 
-    /**
-     * Experimental
-     */
+    //#region Experimental
+    autocompleteExperimentalGraphContext: 'lsp-light' | 'tsc' | 'tsc-mixed' | null
+    autocompleteExperimentalOllamaOptions: OllamaOptions
+    autocompleteExperimentalFireworksOptions?: ExperimentalFireworksConfig
+    autocompleteExperimentalPreloadDebounceInterval?: number
+
     experimentalTracing: boolean
     experimentalSupercompletions: boolean
+    experimentalAutoedits: AutoEditsModelConfig | undefined
     experimentalCommitMessage: boolean
     experimentalNoodle: boolean
     experimentalMinionAnthropicKey: string | undefined
     experimentalGuardrailsTimeoutSeconds: number | undefined
 
-    /**
-     * Unstable Features for internal testing only
-     */
+    //#region Unstable
     internalUnstable: boolean
     internalDebugContext?: boolean
+    internalDebugState?: boolean
 
-    /**
-     * Experimental autocomplete
-     */
-    autocompleteExperimentalGraphContext: 'lsp-light' | 'bfg' | 'bfg-mixed' | 'tsc' | 'tsc-mixed' | null
-    autocompleteExperimentalOllamaOptions: OllamaOptions
-    autocompleteExperimentalFireworksOptions?: ExperimentalFireworksConfig
-    autocompleteExperimentalMultiModelCompletions?: MultimodelSingleModelConfig[]
-    autocompleteExperimentalPreloadDebounceInterval?: number
-
-    /**
-     * Hidden settings
-     */
+    //#region Hidden Settings
     hasNativeWebview: boolean
     isRunningInsideAgent?: boolean
+
+    /**
+     * @deprecated Do not use directly. Call {@link clientCapabilities} instead
+     * (`clientCapabilities().agentIDE`) and see the docstring on
+     * {@link ClientCapabilitiesWithLegacyFields.agentIDE}.
+     */
     agentIDE?: CodyIDE
-    agentIDEVersion?: string
-    agentExtensionVersion?: string
+
+    /**
+     * @deprecated Do not use directly. Call {@link clientCapabilities} instead
+     * (`clientCapabilities().agentIDEVersion`) and see the docstring on
+     * {@link ClientCapabilitiesWithLegacyFields.agentIDEVersion}.
+     */
+    agentIDEVersion?: ClientCapabilitiesWithLegacyFields['agentIDEVersion']
+
+    /**
+     * @deprecated Do not use directly. Call {@link clientCapabilities} instead
+     * (`clientCapabilities().agentExtensionVersion`) and see the docstring on
+     * {@link ClientCapabilitiesWithLegacyFields.agentExtensionVersion}.
+     */
+    agentExtensionVersion?: ClientCapabilitiesWithLegacyFields['agentExtensionVersion']
+
+    /**
+     * @deprecated Do not use directly. Call {@link clientCapabilities} instead
+     * (`clientCapabilities().agentIDEVersion`) and see the docstring on
+     * {@link ClientCapabilitiesWithLegacyFields.agentIDEVersion}.
+     */
+    telemetryClientName?: string
+
     agentHasPersistentStorage?: boolean
     autocompleteFirstCompletionTimeout: number
+    autocompleteAdvancedModel: string | null
+    providerLimitPrompt?: number
+    devModels?: ChatModelProviderConfig[]
 
-    testingModelConfig: EmbeddingsModelConfig | undefined
+    //#region Forced Overrides
+    /**
+     * Overrides always take precedence over other configuration. Specific
+     * override flags should be preferred over opaque broad settings /
+     * environment variables such as TESTING_MODE which can make it difficult to
+     * understand the broad implications such a setting can have.
+     */
+    overrideServerEndpoint?: string | undefined
+    overrideAuthToken?: string | undefined
 }
 
 /**
@@ -112,15 +152,107 @@ export enum CodyIDE {
     Web = 'Web',
     VisualStudio = 'VisualStudio',
     Eclipse = 'Eclipse',
+
+    /**
+     * The standalone web client in the Cody repository's `web/` tree.
+     */
+    StandaloneWeb = 'StandaloneWeb',
 }
 
-export type ClientConfigurationWithEndpoint = Omit<ClientConfigurationWithAccessToken, 'accessToken'>
+export type AutocompleteProviderID = keyof typeof AUTOCOMPLETE_PROVIDER_ID
 
-export interface ClientConfigurationWithAccessToken extends ReadonlyDeep<RawClientConfiguration> {
-    readonly serverEndpoint: string
-    /** The access token, which is stored in the secret storage (not configuration). */
-    readonly accessToken: string | null
-}
+export const AUTOCOMPLETE_PROVIDER_ID = {
+    /**
+     * Default identifier that maps to the recommended autocomplete provider on DotCom.
+     */
+    default: 'default',
+
+    /**
+     * Cody talking to Fireworks official API.
+     * https://docs.fireworks.ai/api-reference/introduction
+     */
+    fireworks: 'fireworks',
+
+    /**
+     * Cody talking to openai compatible API.
+     * We plan to use this provider instead of all the existing openai-related providers.
+     */
+    openaicompatible: 'openaicompatible',
+
+    /**
+     * Cody talking to OpenAI's official public API.
+     * https://platform.openai.com/docs/api-reference/introduction
+     */
+    openai: 'openai',
+
+    /**
+     * Cody talking to OpenAI's official public API.
+     * https://platform.openai.com/docs/api-reference/introduction
+     *
+     * @deprecated use `openai` instead
+     */
+    'unstable-openai': 'unstable-openai',
+
+    /**
+     * Cody talking to OpenAI through Microsoft Azure's API (they re-sell the OpenAI API, but slightly modified).
+     *
+     * @deprecated use `openai` instead
+     */
+    'azure-openai': 'azure-openai',
+
+    /**
+     * This refers to either Anthropic models re-sold by AWS,
+     * or to other models hosted by AWS' Bedrock inference API service
+     */
+    'aws-bedrock': 'aws-bedrock',
+
+    /**
+     * Cody talking to Anthropic's official public API.
+     * https://docs.anthropic.com/en/api/getting-started
+     */
+    anthropic: 'anthropic',
+
+    /**
+     * Cody talking to Google's APIs for models created by Google, which include:
+     * - their public Gemini API
+     * - their GCP Gemini API
+     * - GCP Vertex API
+     * - Anthropic-reselling APIs
+     */
+    google: 'google',
+
+    /**
+     * Cody talking to Google's APIs for models created by Google, which include:
+     * - their public Gemini API
+     * - their GCP Gemini API
+     * - GCP Vertex API
+     */
+    gemini: 'gemini',
+
+    /**
+     * Cody talking to Google's APIs for models created by Google, which include:
+     * - their public Gemini API
+     * - their GCP Gemini API
+     * - GCP Vertex API
+     *
+     * @deprecated use `gemini` instead.
+     */
+    'unstable-gemini': 'unstable-gemini',
+
+    /**
+     * Cody talking to Ollama's official public API.
+     * https://ollama.ai/docs/api
+     */
+    'experimental-ollama': 'experimental-ollama',
+
+    /**
+     * Cody talking to Ollama's official public API.
+     * https://ollama.ai/docs/api
+     *
+     * @deprecated use `experimental-ollama` instead.
+     */
+    'unstable-ollama': 'unstable-ollama',
+} as const
 
 export interface OllamaOptions {
     /**
@@ -252,29 +384,7 @@ export interface ExperimentalFireworksConfig {
     url: string
     token: string
     model: string
-    parameters?: {
-        temperature?: number
-        top_k?: number
-        top_p?: number
-        stop?: string[]
-    }
-}
-
-export interface MultimodelSingleModelConfig {
-    provider: string
-    model: string
-    // This flag decides if to enable "cody.autocomplete.experimental.fireworksOptions" settings when creating a custom provider
-    enableExperimentalFireworksOverrides: boolean
-    // Context strategy to use
-    context: string
-}
-
-export interface EmbeddingsModelConfig {
-    model: string
-    dimension: number
-    provider: EmbeddingsProvider
-    endpoint: string
-    indexPath: FileURI
+    parameters?: FireworksCodeCompletionParams
 }
 
 /**
@@ -309,4 +419,18 @@ export interface GroqCompletionOptions {
      *A stop sequence is a predefined or user-specified text string that signals an AI to stop generating content, ensuring its responses remain focused and concise.
      */
     stop?: string[]
+}
+
+export interface FireworksCodeCompletionParams {
+    model: string | undefined
+    prompt: string
+    max_tokens: number
+    echo: boolean
+    temperature: number | undefined
+    top_p: number | undefined
+    top_k: number | undefined
+    stop: string[]
+    stream: boolean
+    languageId: string
+    user: string | null
 }

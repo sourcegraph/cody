@@ -8,7 +8,9 @@ import {
     ModelUsage,
     PromptString,
     SYMBOL_CONTEXT_MENTION_PROVIDER,
+    currentUserProductSubscription,
     displayLineRange,
+    firstResultFromOperation,
     modelsService,
     parseMentionQuery,
     scanForMentionTriggerInUserTextInput,
@@ -21,7 +23,6 @@ import { ACCOUNT_UPGRADE_URL } from '../../chat/protocol'
 import { executeDocCommand, executeTestEditCommand } from '../../commands/execute'
 import { getEditor } from '../../editor/active-editor'
 import { type TextChange, updateRangeMultipleChanges } from '../../non-stop/tracked-range'
-import { authProvider } from '../../services/AuthProvider'
 import type { EditIntent, EditMode } from '../types'
 import { isGenerateIntent } from '../utils/edit-intent'
 import { CURSOR_RANGE_ITEM, EXPANDED_RANGE_ITEM, SELECTION_RANGE_ITEM } from './get-items/constants'
@@ -95,9 +96,9 @@ export const getInput = async (
               ? EXPANDED_RANGE_ITEM
               : SELECTION_RANGE_ITEM
 
-    const authStatus = authProvider.instance!.statusAuthed
-    const isCodyPro = !authStatus.userCanUpgrade
-    const modelOptions = modelsService.instance!.getModels(ModelUsage.Edit)
+    const sub = await currentUserProductSubscription()
+    const isCodyPro = Boolean(sub && !sub.userCanUpgrade)
+    const modelOptions = await firstResultFromOperation(modelsService.getModels(ModelUsage.Edit))
     const modelItems = getModelOptionItems(modelOptions, isCodyPro)
     const showModelSelector = modelOptions.length > 1
 
@@ -105,7 +106,7 @@ export const getInput = async (
     let activeModelItem = modelItems.find(item => item.model === initialValues.initialModel)
 
     const getContextWindowOnModelChange = (model: EditModel) => {
-        const latestContextWindow = modelsService.instance!.getContextWindowByID(model)
+        const latestContextWindow = modelsService.getContextWindowByID(model)
         return latestContextWindow.input + (latestContextWindow.context?.user ?? 0)
     }
     let activeModelContextWindow = getContextWindowOnModelChange(activeModel)
@@ -188,7 +189,12 @@ export const getInput = async (
                 if (!acceptedItem) {
                     return
                 }
-                telemetryRecorder.recordEvent('cody.fixup.input.model', 'selected')
+                telemetryRecorder.recordEvent('cody.fixup.input.model', 'selected', {
+                    billingMetadata: {
+                        product: 'cody',
+                        category: 'billable',
+                    },
+                })
 
                 if (acceptedItem.codyProOnly && !isCodyPro) {
                     const option = await vscode.window.showInformationMessage(
@@ -209,7 +215,7 @@ export const getInput = async (
                     return
                 }
 
-                modelsService.instance!.setSelectedModel(ModelUsage.Edit, acceptedItem.model)
+                modelsService.setSelectedModel(ModelUsage.Edit, acceptedItem.model)
                 activeModelItem = acceptedItem
                 activeModel = acceptedItem.model
                 activeModelContextWindow = getContextWindowOnModelChange(acceptedItem.model)
@@ -238,7 +244,12 @@ export const getInput = async (
                 if (!acceptedItem) {
                     return
                 }
-                telemetryRecorder.recordEvent('cody.fixup.input.rangeSymbol', 'selected')
+                telemetryRecorder.recordEvent('cody.fixup.input.rangeSymbol', 'selected', {
+                    billingMetadata: {
+                        product: 'cody',
+                        category: 'billable',
+                    },
+                })
 
                 activeRangeItem = acceptedItem
                 const range =
@@ -282,7 +293,12 @@ export const getInput = async (
                     return
                 }
 
-                telemetryRecorder.recordEvent('cody.fixup.input.range', 'selected')
+                telemetryRecorder.recordEvent('cody.fixup.input.range', 'selected', {
+                    billingMetadata: {
+                        product: 'cody',
+                        category: 'billable',
+                    },
+                })
 
                 activeRangeItem = acceptedItem
                 const range =

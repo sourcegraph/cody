@@ -22,7 +22,6 @@
 
 .toolbar {
     padding: calc(0.75*var(--prompt-editor-padding-y)) var(--prompt-editor-padding-x);
-    margin-left: -2px;
     overflow: hidden;
 }
 

@@ -22,8 +22,6 @@ interface CodyAgentServer {
   fun chat_sidebar_new(params: Null?): CompletableFuture<Chat_Sidebar_NewResult>
   @JsonRequest("chat/delete")
   fun chat_delete(params: Chat_DeleteParams): CompletableFuture<List<ChatExportResult>>
-  @JsonRequest("chat/restore")
-  fun chat_restore(params: Chat_RestoreParams): CompletableFuture<String>
   @JsonRequest("chat/models")
   fun chat_models(params: Chat_ModelsParams): CompletableFuture<Chat_ModelsResult>
   @JsonRequest("chat/export")
@@ -34,8 +32,6 @@ interface CodyAgentServer {
   fun chat_setModel(params: Chat_SetModelParams): CompletableFuture<Null?>
   @JsonRequest("commands/explain")
   fun commands_explain(params: Null?): CompletableFuture<String>
-  @JsonRequest("commands/test")
-  fun commands_test(params: Null?): CompletableFuture<String>
   @JsonRequest("commands/smell")
   fun commands_smell(params: Null?): CompletableFuture<String>
   @JsonRequest("commands/custom")
@@ -120,10 +116,16 @@ interface CodyAgentServer {
   fun testing_reset(params: Null?): CompletableFuture<Null?>
   @JsonRequest("testing/autocomplete/completionEvent")
   fun testing_autocomplete_completionEvent(params: CompletionItemParams): CompletableFuture<CompletionBookkeepingEvent?>
+  @JsonRequest("testing/autocomplete/awaitPendingVisibilityTimeout")
+  fun testing_autocomplete_awaitPendingVisibilityTimeout(params: Null?): CompletableFuture<CompletionItemID?>
+  @JsonRequest("testing/autocomplete/setCompletionVisibilityDelay")
+  fun testing_autocomplete_setCompletionVisibilityDelay(params: Testing_Autocomplete_SetCompletionVisibilityDelayParams): CompletableFuture<Null?>
+  @JsonRequest("testing/autocomplete/providerConfig")
+  fun testing_autocomplete_providerConfig(params: Null?): CompletableFuture<Testing_Autocomplete_ProviderConfigResult>
   @JsonRequest("extensionConfiguration/change")
-  fun extensionConfiguration_change(params: ExtensionConfiguration): CompletableFuture<AuthStatus?>
+  fun extensionConfiguration_change(params: ExtensionConfiguration): CompletableFuture<ProtocolAuthStatus?>
   @JsonRequest("extensionConfiguration/status")
-  fun extensionConfiguration_status(params: Null?): CompletableFuture<AuthStatus?>
+  fun extensionConfiguration_status(params: Null?): CompletableFuture<ProtocolAuthStatus?>
   @JsonRequest("extensionConfiguration/getSettingsSchema")
   fun extensionConfiguration_getSettingsSchema(params: Null?): CompletableFuture<String>
   @JsonRequest("textDocument/change")
@@ -134,6 +136,8 @@ interface CodyAgentServer {
   fun ignore_test(params: Ignore_TestParams): CompletableFuture<Ignore_TestResult>
   @JsonRequest("testing/ignore/overridePolicy")
   fun testing_ignore_overridePolicy(params: ContextFilters?): CompletableFuture<Null?>
+  @JsonRequest("extension/reset")
+  fun extension_reset(params: Null?): CompletableFuture<Null?>
 
   // =============
   // Notifications

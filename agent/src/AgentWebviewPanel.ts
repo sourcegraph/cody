@@ -20,11 +20,14 @@ export class AgentWebviewPanels {
     >()
     public add(panel: AgentWebviewPanel): void {
         this.panels.set(panel.panelID, panel)
+        panel.onDidDispose(() => {
+            this.panels.delete(panel.panelID)
+        })
     }
     public getPanelOrError(id: string): AgentWebviewPanel {
         const result = this.panels.get(id)
         if (!result) {
-            throw new Error(`No panel with ID${id}`)
+            throw new Error(`No panel with ID ${id}`)
         }
         return result
     }

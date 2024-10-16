@@ -1,4 +1,4 @@
-import { FeatureFlag, featureFlagProvider } from '@sourcegraph/cody-shared'
+import { FeatureFlag, featureFlagProvider, subscriptionDisposable } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 import { type ShouldUseContextParams, shouldBeUsedAsContext } from '../../utils'
 
@@ -8,7 +8,7 @@ interface HistoryItem {
 
 export interface DocumentHistory {
     addItem(newItem: HistoryItem): void
-    lastN(n: number, languageId?: string, ignoreUris?: vscode.Uri[]): Promise<HistoryItem[]>
+    lastN(n: number, languageId?: string, ignoreUris?: vscode.Uri[]): HistoryItem[]
 }
 
 export class VSCodeDocumentHistory implements DocumentHistory, vscode.Disposable {
@@ -18,6 +18,7 @@ export class VSCodeDocumentHistory implements DocumentHistory, vscode.Disposable
     private history: HistoryItem[]
 
     private subscriptions: vscode.Disposable[] = []
+    public enableExtendedLanguagePool = false
 
     constructor(
         register: () => vscode.Disposable | null = () =>
@@ -37,6 +38,16 @@ export class VSCodeDocumentHistory implements DocumentHistory, vscode.Disposable
                 this.subscriptions.push(disposable)
             }
         }
+
+        this.subscriptions.push(
+            subscriptionDisposable(
+                featureFlagProvider
+                    .evaluatedFeatureFlag(FeatureFlag.CodyAutocompleteContextExtendLanguagePool)
+                    .subscribe(resolvedFlag => {
+                        this.enableExtendedLanguagePool = Boolean(resolvedFlag)
+                    })
+            )
+        )
     }
 
     public dispose(): void {
@@ -62,17 +73,7 @@ export class VSCodeDocumentHistory implements DocumentHistory, vscode.Disposable
     /**
      * Returns the last n items of history in reverse chronological order (latest item at the front)
      */
-    public async lastN(
-        n: number,
-        baseLanguageId: string,
-        ignoreUris?: vscode.Uri[]
-    ): Promise<HistoryItem[]> {
-        const enableExtendedLanguagePool = Boolean(
-            await featureFlagProvider.instance!.evaluateFeatureFlag(
-                FeatureFlag.CodyAutocompleteContextExtendLanguagePool
-            )
-        )
-
+    public lastN(n: number, baseLanguageId: string, ignoreUris?: vscode.Uri[]): HistoryItem[] {
         const ret: HistoryItem[] = []
         const ignoreSet = new Set(ignoreUris || [])
         for (let i = this.history.length - 1; i >= 0; i--) {
@@ -84,7 +85,7 @@ export class VSCodeDocumentHistory implements DocumentHistory, vscode.Disposable
                 continue
             }
             const params: ShouldUseContextParams = {
-                enableExtendedLanguagePool,
+                enableExtendedLanguagePool: this.enableExtendedLanguagePool,
                 baseLanguageId: baseLanguageId,
                 languageId: item.document.languageId,
             }

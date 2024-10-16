@@ -9,6 +9,7 @@ import {
     type Message,
     PromptString,
     TokenCounterUtils,
+    currentResolvedConfig,
     getModelInfo,
     getSimplePreamble,
     modelsService,
@@ -104,19 +105,16 @@ export const buildInteraction = async ({
             instruction: task.instruction,
             document,
         })
-    const promptBuilder = await PromptBuilder.create(modelsService.instance!.getContextWindowByID(model))
+    const promptBuilder = await PromptBuilder.create(modelsService.getContextWindowByID(model))
 
     const preamble = getSimplePreamble(model, codyApiVersion, 'Default', prompt.system)
     promptBuilder.tryAddToPrefix(preamble)
 
     // Add pre-instruction for edit commands to end of human prompt to override the default
     // prompt. This is used for providing additional information and guidelines by the user.
-    const preInstruction = PromptString.fromConfig(
-        vscode.workspace.getConfiguration('cody.edit'),
-        'preInstruction',
-        ps``
-    )
-    const additionalRule = preInstruction.length > 0 ? ps`\nIMPORTANT: ${preInstruction.trim()}` : ps``
+    const preInstruction = (await currentResolvedConfig()).configuration.editPreInstruction
+    const additionalRule =
+        preInstruction && preInstruction.length > 0 ? ps`\nIMPORTANT: ${preInstruction.trim()}` : ps``
 
     const transcript: ChatMessage[] = [
         { speaker: 'human', text: prompt.instruction.concat(additionalRule) },

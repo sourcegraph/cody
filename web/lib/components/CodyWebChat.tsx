@@ -4,15 +4,12 @@ import { URI } from 'vscode-uri'
 
 import {
     type ChatMessage,
-    type ClientStateForWebview,
-    CodyIDE,
     type ContextItem,
     type ContextItemOpenCtx,
     type ContextItemRepository,
     ContextItemSource,
     PromptString,
     REMOTE_DIRECTORY_PROVIDER_URI,
-    type SerializedChatTranscript,
     isErrorLike,
     setDisplayPathEnvInfo,
 } from '@sourcegraph/cody-shared'
@@ -22,7 +19,6 @@ import type { VSCodeWrapper } from 'cody-ai/webviews/utils/VSCodeApi'
 import { ChatMentionContext, type ChatMentionsSettings } from '@sourcegraph/prompt-editor'
 import { getAppWrappers } from 'cody-ai/webviews/App'
 import { CodyPanel } from 'cody-ai/webviews/CodyPanel'
-import { ChatEnvironmentContext } from 'cody-ai/webviews/chat/ChatEnvironmentContext'
 import { useClientActionDispatcher } from 'cody-ai/webviews/client/clientState'
 import type { View } from 'cody-ai/webviews/tabs'
 import { ComposedWrappers, type Wrapper } from 'cody-ai/webviews/utils/composeWrappers'
@@ -107,16 +103,14 @@ interface CodyWebPanelProps {
 }
 
 const CodyWebPanel: FC<CodyWebPanelProps> = props => {
-    const { vscodeAPI, initialContext, className } = props
+    const { vscodeAPI, initialContext: initialContextData, className } = props
 
     const dispatchClientAction = useClientActionDispatcher()
     const [errorMessages, setErrorMessages] = useState<string[]>([])
-    const [isTranscriptError, setIsTranscriptError] = useState<boolean>(false)
     const [messageInProgress, setMessageInProgress] = useState<ChatMessage | null>(null)
     const [transcript, setTranscript] = useState<ChatMessage[]>([])
     const [config, setConfig] = useState<Config | null>(null)
     const [view, setView] = useState<View | undefined>()
-    const [userHistory, setUserHistory] = useState<SerializedChatTranscript[]>()
 
     useLayoutEffect(() => {
         vscodeAPI.onMessage(message => {
@@ -129,7 +123,6 @@ const CodyWebPanel: FC<CodyWebPanelProps> = props => {
                         const msgLength = deserializedMessages.length - 1
                         setTranscript(deserializedMessages.slice(0, msgLength))
                         setMessageInProgress(deserializedMessages[msgLength])
-                        setIsTranscriptError(false)
                     } else {
                         setTranscript(deserializedMessages)
                         setMessageInProgress(null)
@@ -142,9 +135,6 @@ const CodyWebPanel: FC<CodyWebPanelProps> = props => {
                 case 'view':
                     setView(message.view)
                     break
-                case 'transcript-errors':
-                    setIsTranscriptError(message.isTranscriptError)
-                    break
                 case 'config':
                     message.config.webviewType = 'sidebar'
                     message.config.multipleWebviewsEnabled = false
@@ -153,9 +143,6 @@ const CodyWebPanel: FC<CodyWebPanelProps> = props => {
                 case 'clientAction':
                     dispatchClientAction(message)
                     break
-                case 'history':
-                    setUserHistory(Object.values(message.localHistory?.chat ?? {}))
-                    break
             }
         })
     }, [vscodeAPI, dispatchClientAction])
@@ -163,11 +150,11 @@ const CodyWebPanel: FC<CodyWebPanelProps> = props => {
     // V2 telemetry recorder
     const telemetryRecorder = useMemo(() => createWebviewTelemetryRecorder(vscodeAPI), [vscodeAPI])
 
-    const clientState: ClientStateForWebview = useMemo<ClientStateForWebview>(() => {
-        const { repository, fileURL, isDirectory } = initialContext ?? {}
+    const initialContext = useMemo<ContextItem[]>(() => {
+        const { repository, fileURL, isDirectory } = initialContextData ?? {}
 
         if (!repository) {
-            return { initialContext: [] }
+            return []
         }
 
         const mentions: ContextItem[] = [
@@ -195,7 +182,7 @@ const CodyWebPanel: FC<CodyWebPanelProps> = props => {
                     title: fileURL,
                     uri: URI.file(`${repository.name}/${fileURL}/`),
                     providerUri: REMOTE_DIRECTORY_PROVIDER_URI,
-                    description: 'Current directory',
+                    description: 'Current Directory',
                     source: ContextItemSource.Initial,
                     mention: {
                         data: {
@@ -210,12 +197,12 @@ const CodyWebPanel: FC<CodyWebPanelProps> = props => {
                 // Common file mention with possible file range positions
                 mentions.push({
                     type: 'file',
-                    title: initialContext?.fileRange ? 'Current Selection' : 'Current File',
+                    title: initialContextData?.fileRange ? 'Current Selection' : 'Current File',
                     isIgnored: false,
-                    range: initialContext?.fileRange
+                    range: initialContextData?.fileRange
                         ? {
-                              start: { line: initialContext.fileRange.startLine, character: 0 },
-                              end: { line: initialContext.fileRange.endLine + 1, character: 0 },
+                              start: { line: initialContextData.fileRange.startLine, character: 0 },
+                              end: { line: initialContextData.fileRange.endLine + 1, character: 0 },
                           }
                         : undefined,
                     remoteRepositoryName: repository.name,
@@ -225,54 +212,46 @@ const CodyWebPanel: FC<CodyWebPanelProps> = props => {
             }
         }
 
-        return {
-            initialContext: mentions,
-        }
-    }, [initialContext])
-
-    const envVars = useMemo(() => ({ clientType: CodyIDE.Web }), [])
+        return mentions
+    }, [initialContextData])
 
     const wrappers = useMemo<Wrapper[]>(
-        () => getAppWrappers(vscodeAPI, telemetryRecorder, clientState, config, envVars),
-        [vscodeAPI, telemetryRecorder, clientState, config, envVars]
+        () => getAppWrappers(vscodeAPI, telemetryRecorder, config, initialContext),
+        [vscodeAPI, telemetryRecorder, config, initialContext]
     )
 
     const CONTEXT_MENTIONS_SETTINGS = useMemo<ChatMentionsSettings>(() => {
-        const { repository } = initialContext ?? {}
+        const { repository } = initialContextData ?? {}
 
         return {
             resolutionMode: 'remote',
             remoteRepositoriesNames: repository?.name ? [repository.name] : [],
         }
-    }, [initialContext])
+    }, [initialContextData])
 
-    const isLoading = !config || !view || !userHistory
+    const isLoading = !config || !view
 
     return (
         <div className={className} data-cody-web-chat={true}>
             {!isLoading && (
-                <ChatEnvironmentContext.Provider value={envVars}>
-                    <ChatMentionContext.Provider value={CONTEXT_MENTIONS_SETTINGS}>
-                        <ComposedWrappers wrappers={wrappers}>
-                            <CodyPanel
-                                view={view}
-                                setView={setView}
-                                errorMessages={errorMessages}
-                                setErrorMessages={setErrorMessages}
-                                attributionEnabled={false}
-                                config={config.config}
-                                userHistory={userHistory}
-                                chatEnabled={true}
-                                showWelcomeMessage={true}
-                                showIDESnippetActions={false}
-                                messageInProgress={messageInProgress}
-                                transcript={transcript}
-                                vscodeAPI={vscodeAPI}
-                                isTranscriptError={isTranscriptError}
-                            />
-                        </ComposedWrappers>
-                    </ChatMentionContext.Provider>
-                </ChatEnvironmentContext.Provider>
+                <ChatMentionContext.Provider value={CONTEXT_MENTIONS_SETTINGS}>
+                    <ComposedWrappers wrappers={wrappers}>
+                        <CodyPanel
+                            view={view}
+                            setView={setView}
+                            errorMessages={errorMessages}
+                            setErrorMessages={setErrorMessages}
+                            attributionEnabled={false}
+                            configuration={config}
+                            chatEnabled={true}
+                            showWelcomeMessage={true}
+                            showIDESnippetActions={false}
+                            messageInProgress={messageInProgress}
+                            transcript={transcript}
+                            vscodeAPI={vscodeAPI}
+                        />
+                    </ComposedWrappers>
+                </ChatMentionContext.Provider>
             )}
         </div>
     )

@@ -1,6 +1,8 @@
 import {
+    type ChatMessage,
     FAST_CHAT_INPUT_TOKEN_BUDGET,
     type Model,
+    ModelTag,
     type SerializedPromptEditorState,
     type SerializedPromptEditorValue,
     textContentFromSerializedLexicalNode,
@@ -8,9 +10,7 @@ import {
 import {
     PromptEditor,
     type PromptEditorRefAPI,
-    useClientState,
-    useExtensionAPI,
-    useObservable,
+    useInitialContextForChat,
 } from '@sourcegraph/prompt-editor'
 import clsx from 'clsx'
 import {
@@ -34,6 +34,7 @@ import { Toolbar } from './toolbar/Toolbar'
  * A component to compose and edit human chat messages and the settings associated with them.
  */
 export const HumanMessageEditor: FunctionComponent<{
+    models: Model[]
     userInfo: UserAccountInfo
 
     initialEditorState: SerializedPromptEditorState | undefined
@@ -50,8 +51,9 @@ export const HumanMessageEditor: FunctionComponent<{
 
     disabled?: boolean
 
+    onEditorFocusChange?: (focused: boolean) => void
     onChange?: (editorState: SerializedPromptEditorValue) => void
-    onSubmit: (editorValue: SerializedPromptEditorValue) => void
+    onSubmit: (editorValue: SerializedPromptEditorValue, intent?: ChatMessage['intent']) => void
     onStop: () => void
 
     isFirstInteraction?: boolean
@@ -64,6 +66,7 @@ export const HumanMessageEditor: FunctionComponent<{
     /** For use in storybooks only. */
     __storybook__focus?: boolean
 }> = ({
+    models,
     userInfo,
     initialEditorState,
     placeholder,
@@ -80,6 +83,7 @@ export const HumanMessageEditor: FunctionComponent<{
     className,
     editorRef: parentEditorRef,
     __storybook__focus,
+    onEditorFocusChange: parentOnEditorFocusChange,
 }) => {
     const telemetryRecorder = useTelemetryRecorder()
 
@@ -106,49 +110,75 @@ export const HumanMessageEditor: FunctionComponent<{
           ? 'emptyEditorValue'
           : 'submittable'
 
-    const onSubmitClick = useCallback(() => {
-        if (submitState === 'emptyEditorValue') {
-            return
-        }
+    const onSubmitClick = useCallback(
+        (intent?: ChatMessage['intent']) => {
+            if (submitState === 'emptyEditorValue') {
+                return
+            }
 
-        if (submitState === 'waitingResponseComplete') {
-            onStop()
-            return
-        }
+            if (submitState === 'waitingResponseComplete') {
+                onStop()
+                return
+            }
 
-        if (!editorRef.current) {
-            throw new Error('No editorRef')
-        }
+            if (!editorRef.current) {
+                throw new Error('No editorRef')
+            }
 
-        const value = editorRef.current.getSerializedValue()
-        parentOnSubmit(value)
+            const value = editorRef.current.getSerializedValue()
+            parentOnSubmit(value, intent)
 
-        telemetryRecorder.recordEvent('cody.humanMessageEditor', 'submit', {
-            metadata: {
-                isFirstMessage: isFirstMessage ? 1 : 0,
-                isEdit: isSent ? 1 : 0,
-                messageLength: value.text.length,
-                contextItems: value.contextItems.length,
-            },
-        })
-    }, [submitState, parentOnSubmit, onStop, telemetryRecorder.recordEvent, isFirstMessage, isSent])
+            telemetryRecorder.recordEvent('cody.humanMessageEditor', 'submit', {
+                metadata: {
+                    isFirstMessage: isFirstMessage ? 1 : 0,
+                    isEdit: isSent ? 1 : 0,
+                    messageLength: value.text.length,
+                    contextItems: value.contextItems.length,
+                    intent: [undefined, 'chat', 'search'].findIndex(i => i === intent),
+                },
+                billingMetadata: {
+                    product: 'cody',
+                    category: 'billable',
+                },
+            })
+        },
+        [submitState, parentOnSubmit, onStop, telemetryRecorder.recordEvent, isFirstMessage, isSent]
+    )
 
     const onEditorEnterKey = useCallback(
         (event: KeyboardEvent | null): void => {
             // Submit input on Enter press (without shift) when input is not empty.
-            if (event && !event.shiftKey && !event.isComposing && !isEmptyEditorValue) {
-                event.preventDefault()
-                onSubmitClick()
+            if (!event || event.isComposing || isEmptyEditorValue || event.shiftKey) {
                 return
             }
+
+            event.preventDefault()
+
+            // Submit search intent query when CMD + Options + Enter is pressed.
+            if ((event.metaKey || event.ctrlKey) && event.altKey) {
+                onSubmitClick('search')
+                return
+            }
+
+            // Submit chat intent query when CMD + Enter is pressed.
+            if (event.metaKey || event.ctrlKey) {
+                onSubmitClick('chat')
+                return
+            }
+
+            onSubmitClick()
         },
         [isEmptyEditorValue, onSubmitClick]
     )
 
     const [isEditorFocused, setIsEditorFocused] = useState(false)
-    const onEditorFocusChange = useCallback((focused: boolean): void => {
-        setIsEditorFocused(focused)
-    }, [])
+    const onEditorFocusChange = useCallback(
+        (focused: boolean): void => {
+            setIsEditorFocused(focused)
+            parentOnEditorFocusChange?.(focused)
+        },
+        [parentOnEditorFocusChange]
+    )
 
     const [isFocusWithin, setIsFocusWithin] = useState(false)
     const onFocus = useCallback(() => {
@@ -198,13 +228,6 @@ export const HumanMessageEditor: FunctionComponent<{
         [onGapClick]
     )
 
-    const appendTextToEditor = useCallback((text: string): void => {
-        if (!editorRef.current) {
-            throw new Error('No editorRef')
-        }
-        editorRef.current.appendText(text)
-    }, [])
-
     const onMentionClick = useCallback((): void => {
         if (!editorRef.current) {
             throw new Error('No editorRef')
@@ -212,7 +235,7 @@ export const HumanMessageEditor: FunctionComponent<{
         if (editorRef.current.getSerializedValue().text.trim().endsWith('@')) {
             editorRef.current.setFocus(true, { moveCursorToEnd: true })
         } else {
-            editorRef.current.appendText('@', true)
+            editorRef.current.appendText('@')
         }
 
         const value = editorRef.current.getSerializedValue()
@@ -223,60 +246,80 @@ export const HumanMessageEditor: FunctionComponent<{
                 messageLength: value.text.length,
                 contextItems: value.contextItems.length,
             },
+            billingMetadata: {
+                product: 'cody',
+                category: 'billable',
+            },
         })
     }, [telemetryRecorder.recordEvent, isFirstMessage, isSent])
 
     // Set up the message listener so the extension can control the input field.
     useClientActionListener(
         useCallback<ClientActionListener>(
-            ({ addContextItemsToLastHumanInput, appendTextToLastPromptEditor }) => {
-                if (addContextItemsToLastHumanInput) {
-                    // Add new context to chat from the "Cody Add Selection to Cody Chat"
-                    // command, etc. Only add to the last human input field.
-                    if (isSent) {
-                        return
+            ({ addContextItemsToLastHumanInput, appendTextToLastPromptEditor, submitHumanInput }) => {
+                // Add new context to chat from the "Cody Add Selection to Cody Chat"
+                // command, etc. Only add to the last human input field.
+                if (isSent) {
+                    return
+                }
+
+                const updates: Promise<unknown>[] = []
+                const awaitUpdate = () => {
+                    let resolve: (value?: unknown) => void
+                    updates.push(
+                        new Promise(r => {
+                            resolve = r
+                        })
+                    )
+
+                    return () => {
+                        resolve?.()
                     }
-                    if (
-                        !addContextItemsToLastHumanInput ||
-                        addContextItemsToLastHumanInput.length === 0
-                    ) {
-                        return
-                    }
+                }
+
+                if (addContextItemsToLastHumanInput && addContextItemsToLastHumanInput.length > 0) {
                     const editor = editorRef.current
                     if (editor) {
-                        editor.addMentions(addContextItemsToLastHumanInput)
+                        editor.addMentions(addContextItemsToLastHumanInput, awaitUpdate())
                         editor.setFocus(true)
                     }
                 }
 
                 if (appendTextToLastPromptEditor) {
-                    // Append text to the last human input field.
-                    if (isSent) {
-                        return
-                    }
-
                     // Schedule append text task to the next tick to avoid collisions with
                     // initial text set (add initial mentions first then append text from prompt)
+                    const onUpdate = awaitUpdate()
                     requestAnimationFrame(() => {
                         if (editorRef.current) {
-                            editorRef.current.appendText(appendTextToLastPromptEditor)
+                            editorRef.current.appendText(appendTextToLastPromptEditor, onUpdate)
                         }
                     })
                 }
+
+                if (submitHumanInput) {
+                    Promise.all(updates).then(() => onSubmitClick())
+                }
             },
-            [isSent]
+            [isSent, onSubmitClick]
         )
     )
 
-    const initialContext = useClientState().initialContext
+    const currentChatModel = useMemo(() => models[0], [models[0]])
+
+    let initialContext = useInitialContextForChat()
     useEffect(() => {
-        if (initialContext && !isSent && isFirstMessage) {
+        if (!isSent && isFirstMessage) {
             const editor = editorRef.current
             if (editor) {
+                // Don't show the initial codebase context if the model doesn't support streaming
+                // as including context result in longer processing time.
+                if (currentChatModel?.tags?.includes(ModelTag.StreamDisabled)) {
+                    initialContext = initialContext.filter(item => item.type !== 'tree')
+                }
                 editor.setInitialContextMentions(initialContext)
             }
         }
-    }, [initialContext, isSent, isFirstMessage])
+    }, [initialContext, isSent, isFirstMessage, currentChatModel])
 
     const focusEditor = useCallback(() => editorRef.current?.setFocus(true), [])
 
@@ -287,11 +330,9 @@ export const HumanMessageEditor: FunctionComponent<{
     }, [__storybook__focus, focusEditor])
 
     const focused = Boolean(isEditorFocused || isFocusWithin || __storybook__focus)
-
-    const model = useCurrentChatModel()
     const contextWindowSizeInTokens =
-        model?.contextWindow?.context?.user ||
-        model?.contextWindow?.input ||
+        currentChatModel?.contextWindow?.context?.user ||
+        currentChatModel?.contextWindow?.input ||
         FAST_CHAT_INPUT_TOKEN_BUDGET
 
     return (
@@ -327,6 +368,7 @@ export const HumanMessageEditor: FunctionComponent<{
             />
             {!disabled && (
                 <Toolbar
+                    models={models}
                     userInfo={userInfo}
                     isEditorFocused={focused}
                     onMentionClick={onMentionClick}
@@ -334,16 +376,10 @@ export const HumanMessageEditor: FunctionComponent<{
                     submitState={submitState}
                     onGapClick={onGapClick}
                     focusEditor={focusEditor}
-                    appendTextToEditor={appendTextToEditor}
                     hidden={!focused && isSent}
                     className={styles.toolbar}
                 />
             )}
         </div>
     )
-}
-
-function useCurrentChatModel(): Model | undefined {
-    const models = useExtensionAPI().models
-    return useObservable(useMemo(() => models(), [models])).value?.at(0)
 }

@@ -1,12 +1,15 @@
 import type { Mention } from '@openctx/client'
 import {
+    type AuthStatus,
     type SuggestionsRepo,
     contextFiltersProvider,
+    currentAuthStatus,
+    firstResultFromOperation,
     graphqlClient,
     isError,
 } from '@sourcegraph/cody-shared'
 import { Fzf, type FzfOptions } from 'fzf'
-import { workspaceReposMonitor } from '../../../repository/repo-metadata-from-git-api'
+import { type RemoteRepo, remoteReposForAllWorkspaceFolders } from '../../../repository/remoteRepos'
 
 type ProviderMention = Mention & { providerUri: string }
 
@@ -41,26 +44,37 @@ export async function getRepositoryMentions(
 
     const repositories = dataOrError.search.results.repositories
     const fzf = new Fzf(repositories, REPO_FZF_OPTIONS)
-    const localRepos = (await workspaceReposMonitor?.getRepoMetadata()) || []
 
-    return fzf.find(cleanRegex(query)).map(repository =>
-        createRepositoryMention(
-            {
-                ...repository.item,
-                current: !!localRepos.find(({ repoName }) => repoName === repository.item.name),
-            },
-            providerId
+    let localRepos: RemoteRepo[]
+    try {
+        localRepos = (await firstResultFromOperation(remoteReposForAllWorkspaceFolders)) ?? []
+    } catch (error) {}
+
+    return await Promise.all(
+        fzf.find(cleanRegex(query)).map(repository =>
+            createRepositoryMention(
+                {
+                    ...repository.item,
+                    current: !!localRepos.find(({ name }) => name === repository.item.name),
+                },
+                providerId,
+                currentAuthStatus()
+            )
         )
     )
 }
 
 type MinimalRepoMention = Pick<SuggestionsRepo, 'id' | 'url' | 'name'> & { current?: boolean }
 
-export function createRepositoryMention(repo: MinimalRepoMention, providerId: string): ProviderMention {
+export async function createRepositoryMention(
+    repo: MinimalRepoMention,
+    providerId: string,
+    { endpoint }: Pick<AuthStatus, 'endpoint'>
+): Promise<ProviderMention> {
     return {
         title: repo.name,
         providerUri: providerId,
-        uri: graphqlClient.endpoint + repo.url,
+        uri: endpoint + repo.url,
 
         // By default, we show <title> <uri> in the mentions' menu.
         // As repo.url and repo.name are almost same, we do not want to show the uri.
@@ -69,7 +83,7 @@ export function createRepositoryMention(repo: MinimalRepoMention, providerId: st
         data: {
             repoId: repo.id,
             repoName: repo.name,
-            isIgnored: contextFiltersProvider.instance!.isRepoNameIgnored(repo.name),
+            isIgnored: (await contextFiltersProvider.isRepoNameIgnored(repo.name)) satisfies boolean,
         },
     }
 }

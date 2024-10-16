@@ -22,3 +22,7 @@
 .description {
     flex: 1;
 }
+
+.title:hover {
+    direction: rtl;
+}

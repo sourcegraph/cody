@@ -4,8 +4,8 @@ import path from 'node:path'
 import type { SemverString } from '@sourcegraph/cody-shared/src/utils'
 import * as vscode from 'vscode'
 import { waitForLock } from '../lockfile'
-import { logDebug, logError } from '../log'
 import { type Arch, Platform, getOSArch } from '../os'
+import { logDebug, logError } from '../output-channel-logger'
 import { captureException } from '../services/sentry/sentry'
 import { downloadFile, fileExists, unzip } from './utils'
 
@@ -57,7 +57,7 @@ export async function _upsertSymfForPlatform(containingDir: string): Promise<str
         void vscode.window.showErrorMessage(
             `No symf binary available for ${os.platform()}/${os.machine()}`
         )
-        logError('CodyEngine', `No symf binary available for ${os.platform()}/${os.machine()}`)
+        logError('symf', `No symf binary available for ${os.platform()}/${os.machine()}`)
         return null
     }
     const { symfFilename, symfUnzippedFilename, zigPlatform } = _getNamesForPlatform(platform, arch)

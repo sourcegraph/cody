@@ -9,9 +9,11 @@ import {
     webviewOpenURIForContextItem,
 } from '@sourcegraph/cody-shared'
 
-import { useMemo } from 'react'
+import { useCallback, useMemo } from 'react'
 import type { URI } from 'vscode-uri'
 import { getVSCodeAPI } from '../utils/VSCodeApi'
+import { useTelemetryRecorder } from '../utils/telemetry'
+import { useExperimentalOneBox } from '../utils/useExperimentalOneBox'
 import styles from './FileLink.module.css'
 import { Button } from './shadcn/ui/button'
 
@@ -35,15 +37,16 @@ const IGNORE_WARNING = 'File ignored by an admin setting'
 
 const hoverSourceLabels: Record<ContextItemSource, string | undefined> = {
     // Shown in the format `Included ${label}`
+    agentic: 'via Deep Cody',
     unified: 'via remote repository search',
     search: 'via local repository index (symf)',
-    embeddings: 'via local repository index (embeddings)',
     editor: 'from workspace files',
     selection: 'from selected code',
     user: 'via @-mention',
     terminal: 'from terminal output',
     history: 'from git history',
     initial: 'from open repo or file',
+    priority: 'via query matching',
 }
 
 export const FileLink: React.FunctionComponent<
@@ -65,28 +68,39 @@ export const FileLink: React.FunctionComponent<
         // Remote search result.
         if (source === 'unified') {
             const repoShortName = repoName?.slice(repoName.lastIndexOf('/') + 1)
-            const pathToDisplay = `${repoShortName} ${title}`
+            const pathToDisplay = `${title}`
+            const tooltip = `${repoName}${
+                revision ? `@${revision}` : ''
+            }\nincluded from Sourcegraph search`
             return {
                 pathWithRange: range ? `${pathToDisplay}:${displayLineRange(range)}` : pathToDisplay,
-                tooltip: `${repoName} ${
-                    revision ? `@${revision}` : ''
-                }\nincluded via Enhanced Context (Remote Search)`,
+                path: pathToDisplay,
+                range: range ? `${displayLineRange(range)}` : undefined,
+                repoShortName,
+                tooltip,
                 // We can skip encoding when the uri path already contains '@'.
                 href: uri.toString(uri.path.includes('@')),
                 target: '_blank' as const,
             }
         }
 
-        const pathToDisplay = displayPath(uri)
+        let pathToDisplay = displayPath(uri)
+        // Remove all the starting slashes from the path
+        if (source === 'terminal') {
+            pathToDisplay = pathToDisplay.replace(/^\/+/g, '')
+        }
+
         const pathWithRange = range ? `${pathToDisplay}:${displayLineRange(range)}` : pathToDisplay
         const openURI = webviewOpenURIForContextItem({ uri, range })
+        const tooltip = isIgnored
+            ? IGNORE_WARNING
+            : isTooLarge
+              ? `${LIMIT_WARNING}${isTooLargeReason ? `: ${isTooLargeReason}` : ''}`
+              : pathWithRange
         return {
-            pathWithRange,
-            tooltip: isIgnored
-                ? IGNORE_WARNING
-                : isTooLarge
-                  ? `${LIMIT_WARNING}${isTooLargeReason ? `: ${isTooLargeReason}` : ''}`
-                  : pathWithRange,
+            path: pathToDisplay,
+            range: range ? `${displayLineRange(range)}` : undefined,
+            tooltip,
             href: openURI.href,
             target: openURI.target,
         }
@@ -99,14 +113,36 @@ export const FileLink: React.FunctionComponent<
     const iconTitle =
         source && hoverSourceLabels[source] ? `Included ${hoverSourceLabels[source]}` : undefined
 
+    const telemetryRecorder = useTelemetryRecorder()
+    const oneboxEnabled = useExperimentalOneBox()
+    const logClick = useCallback(() => {
+        if (!oneboxEnabled) {
+            return
+        }
+        const external = uri.scheme === 'http' || uri.scheme === 'https'
+        telemetryRecorder.recordEvent('onebox.searchResult', 'clicked', {
+            metadata: {
+                isLocal: external ? 0 : 1,
+                isRemote: external ? 1 : 0,
+            },
+            privateMetadata: {
+                filename: displayPath(uri),
+            },
+        })
+    }, [telemetryRecorder, oneboxEnabled, uri])
+
     return (
-        <div className={clsx('tw-inline-flex tw-items-center tw-max-w-full', className)}>
+        <div
+            className={clsx('tw-inline-flex tw-items-center tw-max-w-full', className)}
+            onClick={logClick}
+            onKeyDown={logClick}
+        >
             {(isIgnored || isTooLarge) && (
                 <i className="codicon codicon-warning" title={linkDetails.tooltip} />
             )}
             {source === 'unified' || uri.scheme === 'http' || uri.scheme === 'https' ? (
                 <a
-                    className={linkClassName}
+                    className={`${linkClassName} tw-truncate hover:tw-no-underline !tw-p-0`}
                     title={linkDetails.tooltip}
                     href={linkDetails.href}
                     target={linkDetails.target}
@@ -116,27 +152,72 @@ export const FileLink: React.FunctionComponent<
                         className={clsx(styles.path, (isTooLarge || isIgnored) && styles.excluded)}
                         data-source={source || 'unknown'}
                     >
-                        {linkDetails.pathWithRange}
+                        <PrettyPrintedContextItem
+                            path={linkDetails.path}
+                            range={linkDetails.range}
+                            repoShortName={linkDetails.repoShortName}
+                        />
                     </div>
                 </a>
             ) : (
                 <Button
+                    className={`${linkClassName} tw-truncate hover:tw-no-underline !tw-p-0`}
+                    title={linkDetails.tooltip}
                     variant="link"
                     onClick={onFileLinkClicked}
-                    className="tw-truncate hover:tw-no-underline !tw-p-0"
                 >
                     <i
-                        className={clsx('codicon', `codicon-${source === 'user' ? 'mention' : 'file'}`)}
+                        className={clsx(
+                            'codicon',
+                            `codicon-${
+                                source === 'terminal'
+                                    ? 'terminal'
+                                    : source === 'user'
+                                      ? 'mention'
+                                      : 'file'
+                            }`
+                        )}
                         title={iconTitle}
                     />
                     <div
                         className={clsx(styles.path, (isTooLarge || isIgnored) && styles.excluded)}
                         data-source={source || 'unknown'}
                     >
-                        {linkDetails.pathWithRange}
+                        <PrettyPrintedContextItem
+                            path={linkDetails.path}
+                            range={linkDetails.range}
+                            repoShortName={linkDetails.repoShortName}
+                        />
                     </div>
                 </Button>
             )}
         </div>
+    )
+}
+
+export const PrettyPrintedContextItem: React.FunctionComponent<{
+    path: string
+    range?: string
+    repoShortName?: string
+}> = ({ path, range, repoShortName }) => {
+    let sep = '/'
+    if (!path.includes('/')) {
+        sep = '\\'
+    }
+
+    const basename = path.split(sep).pop() || ''
+    const dirname = path.split(sep).slice(0, -1).join(sep)
+    return (
+        <>
+            <span className={styles.basename}>{basename}</span>
+            <span className={styles.range}>{range ? `:${range}` : ''}</span>{' '}
+            {repoShortName && (
+                <span className={styles.repoShortName}>
+                    {repoShortName}
+                    {dirname.length === 0 || dirname.startsWith(sep) ? '' : sep}
+                </span>
+            )}
+            <span className={styles.dirname}>{dirname}</span>
+        </>
     )
 }

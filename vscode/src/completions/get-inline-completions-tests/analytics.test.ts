@@ -1,12 +1,13 @@
-import { omit } from 'lodash'
+import omit from 'lodash/omit'
 import * as uuid from 'uuid'
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 
 import { resetParsersCache } from '../../tree-sitter/parser'
-import * as CompletionLogger from '../logger'
-import type { CompletionBookkeepingEvent } from '../logger'
+import * as CompletionAnalyticsLogger from '../analytics-logger'
+import type { CompletionBookkeepingEvent } from '../analytics-logger'
 import { initTreeSitterParser } from '../test-helpers'
 
+import { AUTH_STATUS_FIXTURE_AUTHED, AUTH_STATUS_FIXTURE_AUTHED_DOTCOM } from '@sourcegraph/cody-shared'
 import { Response } from 'node-fetch'
 import { getInlineCompletions, params } from './helpers'
 
@@ -25,7 +26,7 @@ describe('[getInlineCompletions] completion event', () => {
         additionalParams: { isDotComUser?: boolean } = {}
     ): Promise<CompletionBookkeepingEvent> {
         vi.spyOn(uuid, 'v4').mockImplementation(() => 'stable-uuid')
-        const spy = vi.spyOn(CompletionLogger, 'loaded')
+        const spy = vi.spyOn(CompletionAnalyticsLogger, 'loaded')
 
         const response = new Response(code, {
             status: 200,
@@ -49,13 +50,22 @@ describe('[getInlineCompletions] completion event', () => {
                         },
                     },
                 ],
-                additionalParams
+                {
+                    configuration: {
+                        configuration: {
+                            autocompleteAdvancedProvider: 'fireworks',
+                        },
+                    },
+                    authStatus: additionalParams.isDotComUser
+                        ? AUTH_STATUS_FIXTURE_AUTHED_DOTCOM
+                        : AUTH_STATUS_FIXTURE_AUTHED,
+                }
             )
         )
 
-        // Get `suggestionId` from `CompletionLogger.loaded` call.
-        const suggestionId: CompletionLogger.CompletionLogID = spy.mock.calls[0][0].logId
-        const completionEvent = CompletionLogger.getCompletionEvent(suggestionId)!
+        // Get `suggestionId` from `CompletionAnalyticsLogger.loaded` call.
+        const suggestionId: CompletionAnalyticsLogger.CompletionLogID = spy.mock.calls[0][0].logId
+        const completionEvent = CompletionAnalyticsLogger.getCompletionEvent(suggestionId)!
 
         return completionEvent
     }
@@ -77,7 +87,7 @@ describe('[getInlineCompletions] completion event', () => {
         ])
     }
 
-    describe('fills all the expected fields on `CompletionLogger.loaded` calls', () => {
+    describe('fills all the expected fields on `CompletionAnalyticsLogger.loaded` calls', () => {
         it('for multiLine completions', async () => {
             const event = await getAnalyticsEvent(
                 'function foo() {█}',
@@ -137,8 +147,8 @@ describe('[getInlineCompletions] completion event', () => {
                   "languageId": "typescript",
                   "multiline": true,
                   "multilineMode": "block",
-                  "providerIdentifier": "anthropic",
-                  "providerModel": "anthropic/claude-instant-1.2",
+                  "providerIdentifier": "fireworks",
+                  "providerModel": "starcoder-hybrid",
                   "resolvedModel": "sourcegraph/gateway-model",
                   "responseHeaders": {
                     "fireworks-speculation-matched-tokens": "100",
@@ -209,8 +219,8 @@ describe('[getInlineCompletions] completion event', () => {
                   "languageId": "typescript",
                   "multiline": false,
                   "multilineMode": null,
-                  "providerIdentifier": "anthropic",
-                  "providerModel": "anthropic/claude-instant-1.2",
+                  "providerIdentifier": "fireworks",
+                  "providerModel": "starcoder-hybrid",
                   "resolvedModel": "sourcegraph/gateway-model",
                   "responseHeaders": {
                     "fireworks-speculation-matched-tokens": "100",
@@ -225,13 +235,13 @@ describe('[getInlineCompletions] completion event', () => {
             `)
         })
 
-        it('logs `insertText` only for DotCom users', async () => {
+        it('does not log `insertText` for enterprise users', async () => {
             const event = await getAnalyticsEvent('function foo() {\n  return█}', '"foo"')
 
             expect(event.items?.some(item => item.insertText)).toBe(false)
         })
 
-        it('does not log `insertText` for enterprise users', async () => {
+        it('logs `insertText` only for DotCom users', async () => {
             const event = await getAnalyticsEvent('function foo() {\n  return█}', '"foo"', {
                 isDotComUser: true,
             })

@@ -6,6 +6,5 @@ data class SerializedChatTranscript(
   val chatTitle: String? = null,
   val interactions: List<SerializedChatInteraction>,
   val lastInteractionTimestamp: String,
-  val enhancedContext: EnhancedContextParams? = null,
 )
 

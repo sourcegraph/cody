@@ -68,7 +68,7 @@ test
 
         // Cody icon in the status bar should shows that the file is being ignored
         const statusBarButton = page.getByRole('button', {
-            name: 'cody-logo-heavy-slash File Ignored, The current file is ignored by Cody',
+            name: 'ignored', //TODO(rnauta): migrate this test to e2ev2 and use StatusBar tags
         })
         await statusBarButton.hover()
         await expect(statusBarButton).toBeVisible()

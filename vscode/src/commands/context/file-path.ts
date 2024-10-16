@@ -19,7 +19,7 @@ export async function getContextFileFromUri(
 ): Promise<ContextItem | null> {
     return wrapInActiveSpan('commands.context.filePath', async span => {
         try {
-            if (await contextFiltersProvider.instance!.isUriIgnored(file)) {
+            if (await contextFiltersProvider.isUriIgnored(file)) {
                 return null
             }
 
@@ -60,4 +60,37 @@ export async function getContextFileFromUri(
             return null
         }
     })
+}
+
+/**
+ * Generate ContextItem for a workspace relative file path.
+ */
+export async function getContextFromRelativePath(path: string): Promise<ContextItem | null> {
+    try {
+        const currentWorkspaceURI = vscode.workspace.workspaceFolders?.[0]?.uri
+        if (!currentWorkspaceURI) {
+            return null
+        }
+        // Combine the workspace URI with the path to get the URI of the file
+        const file = vscode.Uri.joinPath(currentWorkspaceURI, path)
+        if (await contextFiltersProvider.isUriIgnored(file)) {
+            return null
+        }
+        const doc = await vscode.workspace.openTextDocument(file)
+        const content = doc.getText()
+        if (!content.trim()) {
+            throw new Error('No file content')
+        }
+        const size = await TokenCounterUtils.countTokens(content)
+        return {
+            type: 'file',
+            content,
+            uri: file,
+            source: ContextItemSource.User,
+            size,
+        }
+    } catch (error) {
+        logError('getContextFileFromUri', 'failed', { verbose: error })
+        return null
+    }
 }

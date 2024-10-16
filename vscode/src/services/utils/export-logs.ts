@@ -1,5 +1,5 @@
 import * as vscode from 'vscode'
-import { CODY_OUTPUT_CHANNEL, outputChannel } from '../../log'
+import { CODY_OUTPUT_CHANNEL, outputChannelManager } from '../../output-channel-logger'
 
 /**
  * Exports the output log file to a specified location.
@@ -60,7 +60,7 @@ export async function exportOutputLog(logUri: vscode.Uri): Promise<void> {
 }
 
 export function openCodyOutputChannel(): void {
-    outputChannel.show()
+    outputChannelManager.defaultOutputChannel.show()
 }
 
 /**

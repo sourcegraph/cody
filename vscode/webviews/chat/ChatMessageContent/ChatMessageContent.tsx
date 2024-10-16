@@ -5,9 +5,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { clsx } from 'clsx'
 import type { FixupTaskID } from '../../../src/non-stop/FixupTask'
 import { CodyTaskState } from '../../../src/non-stop/state'
-import type { UserAccountInfo } from '../../Chat'
 import { type ClientActionListener, useClientActionListener } from '../../client/clientState'
 import { MarkdownFromCody } from '../../components/MarkdownFromCody'
+import { useConfig } from '../../utils/useConfig'
 import type { PriorHumanMessageInfo } from '../cells/messageCell/assistant/AssistantMessageCell'
 import styles from './ChatMessageContent.module.css'
 import { GuardrailsStatusController } from './GuardRailStatusController'
@@ -28,7 +28,6 @@ interface ChatMessageContentProps {
     displayMarkdown: string
     isMessageLoading: boolean
     humanMessage: PriorHumanMessageInfo | null
-    userInfo: UserAccountInfo
 
     copyButtonOnSubmit?: CodeBlockActionsProps['copyButtonOnSubmit']
     insertButtonOnSubmit?: CodeBlockActionsProps['insertButtonOnSubmit']
@@ -53,9 +52,9 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
     className,
     smartApplyEnabled,
     smartApply,
-    userInfo,
 }) => {
     const rootRef = useRef<HTMLDivElement>(null)
+    const config = useConfig()
 
     const [smartApplyStates, setSmartApplyStates] = useState<Record<FixupTaskID, CodyTaskState>>({})
     const smartApplyInterceptor = useMemo<CodeBlockActionsProps['smartApply'] | undefined>(() => {
@@ -115,6 +114,12 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
                 // This allows us to intelligently apply code to the suitable file.
                 const codeElement = preElement.querySelectorAll('code')?.[0]
                 const fileName = codeElement?.getAttribute('data-file-path') || undefined
+                // Check if the code element has either 'language-bash' or 'language-shell' class
+                const isShellCommand =
+                    codeElement?.classList.contains('language-bash') ||
+                    codeElement?.classList.contains('language-shell')
+                const codeBlockName = isShellCommand ? 'command' : fileName
+
                 let buttons: HTMLElement
 
                 if (smartApplyEnabled) {
@@ -123,8 +128,8 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
                     buttons = createButtonsExperimentalUI(
                         preText,
                         humanMessage,
-                        userInfo,
-                        fileName,
+                        config,
+                        codeBlockName,
                         copyButtonOnSubmit,
                         insertButtonOnSubmit,
                         smartApplyInterceptor,

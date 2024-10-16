@@ -1,11 +1,16 @@
+import type { Action } from '@sourcegraph/cody-shared'
+import { BookText } from 'lucide-react'
 import { useCallback } from 'react'
+import { Button } from '../../components/shadcn/ui/button'
+import { View } from '../../tabs'
 import { useTelemetryRecorder } from '../../utils/telemetry'
-import { PromptList, type PromptOrDeprecatedCommand } from '../promptList/PromptList'
+import { useTabView } from '../../utils/useTabView'
+import { PromptList } from '../promptList/PromptList'
 import { ToolbarPopoverItem } from '../shadcn/ui/toolbar'
 import { cn } from '../shadcn/utils'
 
 export const PromptSelectField: React.FunctionComponent<{
-    onSelect: (item: PromptOrDeprecatedCommand) => void
+    onSelect: (item: Action) => void
     onCloseByEscape?: () => void
     className?: string
 
@@ -13,6 +18,7 @@ export const PromptSelectField: React.FunctionComponent<{
     __storybook__open?: boolean
 }> = ({ onSelect, onCloseByEscape, className, __storybook__open }) => {
     const telemetryRecorder = useTelemetryRecorder()
+    const { setView } = useTabView()
 
     const onOpenChange = useCallback(
         (open: boolean): void => {
@@ -41,17 +47,27 @@ export const PromptSelectField: React.FunctionComponent<{
             tooltip="Insert prompt from Prompt Library"
             aria-label="Insert prompt"
             popoverContent={close => (
-                <PromptList
-                    onSelect={item => {
-                        onSelect(item)
-                        close()
-                    }}
-                    onSelectActionLabels={{ prompt: 'insert', command: 'insert' }}
-                    showSearch={true}
-                    showOnlyPromptInsertableCommands={true}
-                    showPromptLibraryUnsupportedMessage={true}
-                    telemetryLocation="PromptSelectField"
-                />
+                <div className="tw-flex tw-flex-col tw-max-h-[500px] tw-overflow-auto">
+                    <PromptList
+                        onSelect={item => {
+                            onSelect(item)
+                            close()
+                        }}
+                        showSearch={true}
+                        paddingLevels="middle"
+                        telemetryLocation="PromptSelectField"
+                        showOnlyPromptInsertableCommands={true}
+                        showPromptLibraryUnsupportedMessage={true}
+                        lastUsedSorting={true}
+                        inputClassName="tw-bg-popover"
+                    />
+
+                    <footer className="tw-px-2 tw-py-1 tw-border-t tw-border-border tw-bg-muted">
+                        <Button variant="text" onClick={() => setView(View.Prompts)}>
+                            <BookText size={16} /> Browse library
+                        </Button>
+                    </footer>
+                </div>
             )}
             popoverRootProps={{ onOpenChange }}
             popoverContentProps={{

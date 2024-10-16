@@ -4,15 +4,16 @@ import {
     type AutocompleteContextSnippet,
     type DocumentContext,
     contextFiltersProvider,
-    isCodyIgnoredFile,
+    dedupeWith,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
-
 import type { LastInlineCompletionCandidate } from '../get-inline-completions'
+import type { ContextRetriever } from '../types'
 import {
     DefaultCompletionsContextRanker,
     type RetrievedContextResults,
 } from './completions-context-ranker'
+import { ContextRetrieverDataCollection } from './context-data-logging'
 import type { ContextStrategy, ContextStrategyFactory } from './context-strategy'
 
 interface GetContextOptions {
@@ -22,6 +23,7 @@ interface GetContextOptions {
     abortSignal?: AbortSignal
     maxChars: number
     lastCandidate?: LastInlineCompletionCandidate
+    repoName?: string
 }
 
 export interface ContextSummary {
@@ -61,6 +63,12 @@ export interface ContextSummary {
 export interface GetContextResult {
     context: AutocompleteContextSnippet[]
     logSummary: ContextSummary
+    contextLoggingSnippets: AutocompleteContextSnippet[]
+}
+
+export interface ContextMixerOptions {
+    strategyFactory: ContextStrategyFactory
+    dataCollectionEnabled?: boolean
 }
 
 /**
@@ -72,14 +80,29 @@ export interface GetContextResult {
  * ranged for the top ranked document from all retrieval sources before we move on to the second
  * document).
  */
-export class ContextMixer {
-    constructor(private strategyFactory: ContextStrategyFactory) {}
+export class ContextMixer implements vscode.Disposable {
+    private disposables: vscode.Disposable[] = []
+    private contextDataCollector: ContextRetrieverDataCollection | null = null
+    private strategyFactory: ContextStrategyFactory
+
+    constructor({ strategyFactory, dataCollectionEnabled = false }: ContextMixerOptions) {
+        this.strategyFactory = strategyFactory
+        if (dataCollectionEnabled) {
+            this.contextDataCollector = new ContextRetrieverDataCollection()
+            this.disposables.push(this.contextDataCollector)
+        }
+    }
 
     public async getContext(options: GetContextOptions): Promise<GetContextResult> {
         const start = performance.now()
 
         const { name: strategy, retrievers } = await this.strategyFactory.getStrategy(options.document)
-        if (retrievers.length === 0) {
+        const retrieversWithDataLogging = this.maybeAddDataLoggingRetrievers(
+            options.repoName,
+            retrievers
+        )
+
+        if (retrieversWithDataLogging.length === 0) {
             return {
                 context: [],
                 logSummary: {
@@ -90,11 +113,12 @@ export class ContextMixer {
                     duration: 0,
                     retrieverStats: {},
                 },
+                contextLoggingSnippets: [],
             }
         }
 
-        const results: RetrievedContextResults[] = await Promise.all(
-            retrievers.map(async retriever => {
+        const resultsWithDataLogging: RetrievedContextResults[] = await Promise.all(
+            retrieversWithDataLogging.map(async retriever => {
                 const retrieverStart = performance.now()
                 const allSnippets = await wrapInActiveSpan(
                     `autocomplete.retrieve.${retriever.identifier}`,
@@ -117,6 +141,28 @@ export class ContextMixer {
                 }
             })
         )
+
+        // Extract back the context results for the original retrievers
+        const results = this.extractOriginalRetrieverResults(resultsWithDataLogging, retrievers)
+        const contextLoggingSnippets =
+            this.contextDataCollector?.getDataLoggingContextFromRetrievers(resultsWithDataLogging) ?? []
+
+        // Original retrievers were 'none'
+        if (results.length === 0) {
+            return {
+                context: [],
+                logSummary: {
+                    strategy: 'none',
+                    totalChars: options.docContext.prefix.length + options.docContext.suffix.length,
+                    prefixChars: options.docContext.prefix.length,
+                    suffixChars: options.docContext.suffix.length,
+                    duration: 0,
+                    retrieverStats: {},
+                },
+                contextLoggingSnippets,
+            }
+        }
+
         const contextRanker = new DefaultCompletionsContextRanker()
         const fusedResults = contextRanker.rankAndFuseContext(results)
 
@@ -172,7 +218,39 @@ export class ContextMixer {
         return {
             context: mixedContext,
             logSummary,
+            contextLoggingSnippets,
         }
+    }
+
+    private extractOriginalRetrieverResults(
+        resultsWithDataLogging: RetrievedContextResults[],
+        originalRetrievers: ContextRetriever[]
+    ): RetrievedContextResults[] {
+        const originalIdentifiers = new Set(originalRetrievers.map(r => r.identifier))
+        return resultsWithDataLogging.filter(result => originalIdentifiers.has(result.identifier))
+    }
+
+    private maybeAddDataLoggingRetrievers(
+        repoName: string | undefined,
+        originalRetrievers: ContextRetriever[]
+    ): ContextRetriever[] {
+        const dataCollectionRetrievers = this.getDataCollectionRetrievers(repoName)
+        const combinedRetrievers = [...originalRetrievers, ...dataCollectionRetrievers]
+        return dedupeWith(combinedRetrievers, 'identifier')
+    }
+
+    private getDataCollectionRetrievers(repoName: string | undefined): ContextRetriever[] {
+        if (!this.contextDataCollector?.shouldCollectContextDatapoint(repoName)) {
+            return []
+        }
+        return this.contextDataCollector.dataCollectionRetrievers
+    }
+
+    public dispose(): void {
+        for (const disposable of this.disposables) {
+            disposable.dispose()
+        }
+        this.disposables = []
     }
 }
 
@@ -180,10 +258,7 @@ async function filter(snippets: AutocompleteContextSnippet[]): Promise<Autocompl
     return (
         await Promise.all(
             snippets.map(async snippet => {
-                if (isCodyIgnoredFile(snippet.uri)) {
-                    return null
-                }
-                if (await contextFiltersProvider.instance!.isUriIgnored(snippet.uri)) {
+                if (await contextFiltersProvider.isUriIgnored(snippet.uri)) {
                     return null
                 }
                 return snippet

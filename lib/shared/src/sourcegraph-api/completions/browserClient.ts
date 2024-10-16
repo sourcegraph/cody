@@ -1,11 +1,14 @@
 import { fetchEventSource } from '@microsoft/fetch-event-source'
 
 import { dependentAbortController } from '../../common/abortController'
-import { addCustomUserAgent } from '../graphql/client'
+import { currentResolvedConfig } from '../../configuration/resolver'
+import { isError } from '../../utils'
+import { addClientInfoParams, addCodyClientIdentificationHeaders } from '../client-name-version'
 
-import { addClientInfoParams } from '../client-name-version'
+import { CompletionsResponseBuilder } from './CompletionsResponseBuilder'
 import { type CompletionRequestParameters, SourcegraphCompletionsClient } from './client'
-import type { CompletionCallbacks, CompletionParameters, Event } from './types'
+import { parseCompletionJSON } from './parse'
+import type { CompletionCallbacks, CompletionParameters, CompletionResponse, Event } from './types'
 import { getSerializedParams } from './utils'
 
 declare const WorkerGlobalScope: never
@@ -22,27 +25,30 @@ export class SourcegraphBrowserCompletionsClient extends SourcegraphCompletionsC
         const { apiVersion } = requestParams
         const serializedParams = await getSerializedParams(params)
 
-        const url = new URL(this.completionsEndpoint)
+        const url = new URL(await this.completionsEndpoint())
         if (apiVersion >= 1) {
             url.searchParams.append('api-version', '' + apiVersion)
         }
         addClientInfoParams(url.searchParams)
 
+        const config = await currentResolvedConfig()
+
         const abort = dependentAbortController(signal)
         const headersInstance = new Headers({
-            ...this.config.customHeaders,
+            ...config.configuration?.customHeaders,
             ...requestParams.customHeaders,
         } as HeadersInit)
-        addCustomUserAgent(headersInstance)
+        addCodyClientIdentificationHeaders(headersInstance)
         headersInstance.set('Content-Type', 'application/json; charset=utf-8')
-        if (this.config.accessToken) {
-            headersInstance.set('Authorization', `token ${this.config.accessToken}`)
+        if (config.auth.accessToken) {
+            headersInstance.set('Authorization', `token ${config.auth.accessToken}`)
         }
         const parameters = new URLSearchParams(globalThis.location.search)
         const trace = parameters.get('trace')
         if (trace) {
             headersInstance.set('X-Sourcegraph-Should-Trace', 'true')
         }
+        const builder = new CompletionsResponseBuilder(apiVersion)
         // Disable gzip compression since the sg instance will start to batch
         // responses afterwards.
         headersInstance.set('Accept-Encoding', 'gzip;q=0')
@@ -73,8 +79,22 @@ export class SourcegraphBrowserCompletionsClient extends SourcegraphCompletionsC
             },
             onmessage: message => {
                 try {
-                    const data: Event = { ...JSON.parse(message.data), type: message.event }
-                    this.sendEvents([data], cb)
+                    const events: Event[] = []
+                    if (message.event === 'completion') {
+                        const data = parseCompletionJSON(message.data)
+                        if (isError(data)) {
+                            throw data
+                        }
+                        events.push({
+                            type: 'completion',
+                            // concatenate deltas when using api-version>=2
+                            completion: builder.nextCompletion(data.completion, data.deltaText),
+                            stopReason: data.stopReason,
+                        })
+                    } else {
+                        events.push({ type: message.event, ...JSON.parse(message.data) })
+                    }
+                    this.sendEvents(events, cb)
                 } catch (error: any) {
                     cb.onError(error.message)
                     abort.abort()
@@ -96,6 +116,54 @@ export class SourcegraphBrowserCompletionsClient extends SourcegraphCompletionsC
             abort.abort()
             console.error(error)
         })
+    }
+
+    protected async _fetchWithCallbacks(
+        params: CompletionParameters,
+        requestParams: CompletionRequestParameters,
+        cb: CompletionCallbacks,
+        signal?: AbortSignal
+    ): Promise<void> {
+        const { auth, configuration } = await currentResolvedConfig()
+        const { url, serializedParams } = await this.prepareRequest(params, requestParams)
+        const headersInstance = new Headers({
+            'Content-Type': 'application/json; charset=utf-8',
+            ...configuration.customHeaders,
+            ...requestParams.customHeaders,
+        })
+        addCodyClientIdentificationHeaders(headersInstance)
+        if (auth.accessToken) {
+            headersInstance.set('Authorization', `token ${auth.accessToken}`)
+        }
+        if (new URLSearchParams(globalThis.location.search).get('trace')) {
+            headersInstance.set('X-Sourcegraph-Should-Trace', 'true')
+        }
+        try {
+            const response = await fetch(url.toString(), {
+                method: 'POST',
+                headers: headersInstance,
+                body: JSON.stringify(serializedParams),
+                signal,
+            })
+            if (!response.ok) {
+                const errorMessage = await response.text()
+                throw new Error(
+                    errorMessage.length === 0
+                        ? `Request failed with status code ${response.status}`
+                        : errorMessage
+                )
+            }
+            const data = (await response.json()) as CompletionResponse
+            if (data?.completion) {
+                cb.onChange(data.completion)
+                cb.onComplete()
+            } else {
+                throw new Error('Unexpected response format')
+            }
+        } catch (error) {
+            console.error(error)
+            cb.onError(error instanceof Error ? error : new Error(`${error}`))
+        }
     }
 }
 

@@ -30,14 +30,24 @@ export class FixupCodeLenses implements vscode.CodeLensProvider, FixupControlApp
             vscode.languages.registerCodeLensProvider('*', this),
             vscode.workspace.registerTextDocumentContentProvider('cody-fixup', this.contentStore),
             vscode.commands.registerCommand('cody.fixup.codelens.cancel', id => {
-                telemetryRecorder.recordEvent('cody.fixup.codeLens', 'cancel')
+                telemetryRecorder.recordEvent('cody.fixup.codeLens', 'cancel', {
+                    billingMetadata: {
+                        product: 'cody',
+                        category: 'billable',
+                    },
+                })
                 const task = this.controller.taskForId(id)
                 if (task) {
                     this.controller.cancel(task)
                 }
             }),
             vscode.commands.registerCommand('cody.fixup.codelens.diff', id => {
-                telemetryRecorder.recordEvent('cody.fixup.codeLens', 'diff')
+                telemetryRecorder.recordEvent('cody.fixup.codeLens', 'diff', {
+                    billingMetadata: {
+                        product: 'cody',
+                        category: 'core',
+                    },
+                })
                 return this.diff(id)
             }),
             vscode.commands.registerCommand('cody.fixup.codelens.retry', async id => {
@@ -46,26 +56,46 @@ export class FixupCodeLenses implements vscode.CodeLensProvider, FixupControlApp
                 return task ? this.controller.retry(task, 'code-lens') : Promise.resolve()
             }),
             vscode.commands.registerCommand('cody.fixup.codelens.undo', id => {
-                telemetryRecorder.recordEvent('cody.fixup.codeLens', 'undo')
+                telemetryRecorder.recordEvent('cody.fixup.codeLens', 'undo', {
+                    billingMetadata: {
+                        product: 'cody',
+                        category: 'billable',
+                    },
+                })
                 const task = this.controller.taskForId(id)
                 return task ? this.controller.undo(task) : Promise.resolve()
             }),
             vscode.commands.registerCommand('cody.fixup.codelens.accept', id => {
-                telemetryRecorder.recordEvent('cody.fixup.codeLens', 'accept')
+                telemetryRecorder.recordEvent('cody.fixup.codeLens', 'accept', {
+                    billingMetadata: {
+                        product: 'cody',
+                        category: 'core',
+                    },
+                })
                 const task = this.controller.taskForId(id)
                 if (task) {
                     this.controller.accept(task)
                 }
             }),
             vscode.commands.registerCommand('cody.fixup.codelens.acceptChange', (id, range) => {
-                telemetryRecorder.recordEvent('cody.fixup.codeLens', 'acceptChange')
+                telemetryRecorder.recordEvent('cody.fixup.codeLens', 'acceptChange', {
+                    billingMetadata: {
+                        product: 'cody',
+                        category: 'core',
+                    },
+                })
                 const task = this.controller.taskForId(id)
                 if (task) {
                     this.controller.acceptChange(task, range)
                 }
             }),
             vscode.commands.registerCommand('cody.fixup.codelens.rejectChange', (id, range) => {
-                telemetryRecorder.recordEvent('cody.fixup.codeLens', 'rejectChange')
+                telemetryRecorder.recordEvent('cody.fixup.codeLens', 'rejectChange', {
+                    billingMetadata: {
+                        product: 'cody',
+                        category: 'billable',
+                    },
+                })
                 const task = this.controller.taskForId(id)
                 if (task) {
                     this.controller.rejectChange(task, range)
@@ -80,7 +110,7 @@ export class FixupCodeLenses implements vscode.CodeLensProvider, FixupControlApp
                 if (!nearestTask) {
                     return
                 }
-                return vscode.commands.executeCommand('cody.fixup.codelens.cancel', nearestTask.id)
+                return vscode.commands.executeCommand('cody.fixup.codelens.cancel', nearestTask.id, {})
             }),
             vscode.commands.registerCommand('cody.fixup.acceptNearest', () => {
                 const nearestTask = this.getNearestTask({ filter: { states: ACTIONABLE_TASK_STATES } })
@@ -157,8 +187,11 @@ export class FixupCodeLenses implements vscode.CodeLensProvider, FixupControlApp
             this.removeLensesFor(task)
             return
         }
-        this.taskLenses.set(task, getLensesForTask(task))
-        this.notifyCodeLensesChanged()
+
+        const lenses = getLensesForTask(task)
+        this.taskLenses.set(task, lenses)
+
+        this.notifyCodeLensesChanged(task.fixupFile.uri, lenses)
     }
 
     public didDeleteTask(task: FixupTask): void {
@@ -167,10 +200,10 @@ export class FixupCodeLenses implements vscode.CodeLensProvider, FixupControlApp
         this.contentStore.delete(task.id)
     }
 
-    private removeLensesFor(task: FixupTask): void {
+    public removeLensesFor(task: FixupTask): void {
         if (this.taskLenses.delete(task)) {
             // TODO: Clean up the fixup file when there are no remaining code lenses
-            this.notifyCodeLensesChanged()
+            this.notifyCodeLensesChanged(task.fixupFile.uri, [])
         }
     }
 
@@ -194,7 +227,7 @@ export class FixupCodeLenses implements vscode.CodeLensProvider, FixupControlApp
         void vscode.commands.executeCommand('setContext', 'cody.hasActionableEdit', hasActionableEdit)
     }
 
-    private notifyCodeLensesChanged(): void {
+    public notifyCodeLensesChanged(uri: vscode.Uri, codeLenses: vscode.CodeLens[]): void {
         this._onDidChangeCodeLenses.fire()
     }
 

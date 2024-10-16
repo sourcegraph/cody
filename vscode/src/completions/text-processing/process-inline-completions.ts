@@ -11,7 +11,7 @@ import {
 import { addAutocompleteDebugEvent } from '../../services/open-telemetry/debug-utils'
 import { getNodeAtCursorAndParents } from '../../tree-sitter/ast-getters'
 import { asPoint, getCachedParseTreeForDocument } from '../../tree-sitter/parse-tree-cache'
-import type { ItemPostProcessingInfo } from '../logger'
+import type { ItemPostProcessingInfo } from '../analytics-logger'
 import type { InlineCompletionItem } from '../types'
 import { type ParsedCompletion, dropParserFields } from './parse-completion'
 import { findLastAncestorOnTheSameRow } from './truncate-parsed-completion'
@@ -141,6 +141,7 @@ const RESPONSE_HEADERS_TO_SAVE = [
     'fireworks-prompt-tokens',
     'fireworks-server-time-to-first-token',
     'fireworks-speculation-matched-tokens',
+    'x-upstream-time-to-first-token',
 ] as const
 
 type ResponseHeaderName = (typeof RESPONSE_HEADERS_TO_SAVE)[number]

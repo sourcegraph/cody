@@ -1,7 +1,7 @@
 import chalk from 'chalk'
 import { Command } from 'commander'
 import Table from 'easy-table'
-import { isError } from 'lodash'
+import isError from 'lodash/isError'
 import ora from 'ora'
 import { AuthenticatedAccount } from './AuthenticatedAccount'
 import { booleanToText } from './command-auth'

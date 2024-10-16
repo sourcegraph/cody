@@ -12,16 +12,30 @@ import * as mockServer from '../fixtures/mock-server'
  */
 export async function beforeIntegrationTest(): Promise<void> {
     // Wait for Cody extension to become ready.
-    const api = vscode.extensions.getExtension<ExtensionApi>('sourcegraph.cody-ai')
-    assert.ok(api, 'extension not found')
+    const ext = vscode.extensions.getExtension<ExtensionApi>('sourcegraph.cody-ai')
+    assert.ok(ext, 'extension not found')
 
-    await api?.activate()
+    const api = await ext?.activate()
 
-    // Wait for Cody to become activated.
+    // Authenticate extension.
+    await ensureExecuteCommand('cody.test.token', mockServer.SERVER_URL, mockServer.VALID_TOKEN)
     await new Promise(resolve => setTimeout(resolve, 200))
 
-    // Configure extension.
-    await ensureExecuteCommand('cody.test.token', mockServer.SERVER_URL, mockServer.VALID_TOKEN)
+    function isAuthenticated(): boolean {
+        const authStatus = api.testing?.authStatus()
+        return !!authStatus?.authenticated && authStatus.endpoint === `${mockServer.SERVER_URL}/`
+    }
+    if (!isAuthenticated()) {
+        // Try waiting a bit longer.
+        await new Promise(resolve => setTimeout(resolve, 1000))
+        if (!isAuthenticated()) {
+            throw new Error(
+                `Failed to authenticate for integration test (auth status is ${JSON.stringify(
+                    api.testing?.authStatus()
+                )})`
+            )
+        }
+    }
 }
 
 /**

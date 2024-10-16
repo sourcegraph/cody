@@ -216,7 +216,7 @@ export class PromptString {
         defaultValue: D
     ): PromptString | D {
         const raw = config.get(path, null)
-        const value = raw === null ? defaultValue : internal_createPromptString(raw, [])
+        const value = raw === null || raw === '' ? defaultValue : internal_createPromptString(raw, [])
         return value
     }
 
@@ -235,17 +235,27 @@ export class PromptString {
         return internal_createPromptString(indentString, [])
     }
 
+    // We need to sanitize paths used for prompts as they are often used in a markdown
+    //  in a way which does not support spaces in the file paths
+    private static sanitizeDisplayPath(path: string) {
+        return path.replaceAll(' ', '%20')
+    }
+
     public static fromDisplayPath(uri: vscode.Uri) {
-        return internal_createPromptString(displayPath(uri), [uri])
+        return internal_createPromptString(PromptString.sanitizeDisplayPath(displayPath(uri)), [uri])
     }
 
     public static fromDisplayPathLineRange(uri: vscode.Uri, range?: RangeData) {
         const pathToDisplay = range ? displayPathWithLines(uri, range) : displayPath(uri)
-        return internal_createPromptString(pathToDisplay, [uri])
+        return internal_createPromptString(PromptString.sanitizeDisplayPath(pathToDisplay), [uri])
     }
 
     public static fromDocumentText(document: vscode.TextDocument, range?: vscode.Range): PromptString {
         return internal_createPromptString(document.getText(range), [document.uri])
+    }
+
+    public static fromStructuredGitDiff(uri: vscode.Uri, diff: string) {
+        return internal_createPromptString(diff, [uri])
     }
 
     public static fromGitDiff(uri: vscode.Uri, oldContent: string, newContent: string) {

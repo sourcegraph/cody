@@ -12,25 +12,19 @@ import {
     type FileURI,
     type PromptString,
     type SourcegraphCompletionsClient,
+    firstResultFromOperation,
     graphqlClient,
     isFileURI,
 } from '@sourcegraph/cody-shared'
-import { isError } from 'lodash'
+import isError from 'lodash/isError'
 import * as vscode from 'vscode'
-import { getConfiguration } from '../../configuration'
 import type { VSCodeEditor } from '../../editor/vscode-editor'
-import type { LocalEmbeddingsController } from '../../local-context/local-embeddings'
 import { rewriteKeywordQuery } from '../../local-context/rewrite-keyword-query'
 import type { SymfRunner } from '../../local-context/symf'
-import { logDebug, logError } from '../../log'
+import { logDebug, logError } from '../../output-channel-logger'
 import { gitLocallyModifiedFiles } from '../../repository/git-extension-api'
 import { repoNameResolver } from '../../repository/repo-name-resolver'
-import {
-    retrieveContextGracefully,
-    searchEmbeddingsLocal,
-    searchSymf,
-    truncateSymfResult,
-} from './context'
+import { retrieveContextGracefully, searchSymf, truncateSymfResult } from './context'
 
 interface StructuredMentions {
     repos: ContextItemRepository[]
@@ -115,7 +109,10 @@ async function codebaseRootsFromMentions(
     const treesToRepoNames = await Promise.all(
         trees.map(async tree => ({
             tree,
-            names: await repoNameResolver.getRepoNamesFromWorkspaceUri(tree.uri, signal),
+            names: await firstResultFromOperation(
+                repoNameResolver.getRepoNamesContainingUri(tree.uri),
+                signal
+            ),
         }))
     )
     const localRepoNames = treesToRepoNames.flatMap(t => t.names)
@@ -161,7 +158,6 @@ export class ContextRetriever implements vscode.Disposable {
     constructor(
         private editor: VSCodeEditor,
         private symf: SymfRunner | undefined,
-        private localEmbeddings: LocalEmbeddingsController | undefined,
         private llms: SourcegraphCompletionsClient
     ) {}
 
@@ -175,13 +171,8 @@ export class ContextRetriever implements vscode.Disposable {
         span: Span,
         signal?: AbortSignal
     ): Promise<ContextItem[]> {
-        try {
-            const roots = await codebaseRootsFromMentions(mentions, signal)
-            return await this._retrieveContext(roots, inputTextWithoutContextChips, span, signal)
-        } catch (error) {
-            logError('ContextRetriever', 'Unhandled error retrieving context', error)
-            return []
-        }
+        const roots = await codebaseRootsFromMentions(mentions, signal)
+        return await this._retrieveContext(roots, inputTextWithoutContextChips, span, signal)
     }
 
     private async _retrieveContext(
@@ -360,9 +351,8 @@ export class ContextRetriever implements vscode.Disposable {
             return []
         }
 
-        const remoteResultPromise = graphqlClient.contextSearch({ repoIDs, query, signal })
+        const remoteResult = await graphqlClient.contextSearch({ repoIDs, query, signal })
 
-        const remoteResult = await remoteResultPromise
         if (isError(remoteResult)) {
             throw remoteResult
         }
@@ -382,41 +372,23 @@ export class ContextRetriever implements vscode.Disposable {
             return []
         }
 
-        // Legacy context retrieval
-        const config = getConfiguration()
-        const contextStrategy = config.useContext
-        span.setAttribute('strategy', contextStrategy)
-
         const symf = this.symf
-        let localSymfResults: Promise<ContextItem[]> = Promise.resolve([])
-        if (symf && contextStrategy !== 'embeddings' && localRootURIs.length > 0) {
-            localSymfResults = Promise.all(
-                localRootURIs.map(rootURI =>
-                    // TODO(beyang): retire searchSymf and retrieveContextGracefully
-                    // (see invocation of symf in retrieveLiveContext)
-                    retrieveContextGracefully(
-                        searchSymf(symf, this.editor, rootURI, originalQuery),
-                        `symf ${rootURI.path}`
-                    )
-                )
-            ).then(r => r.flat())
-        }
-
-        const localEmbeddings = this.localEmbeddings
-        let localEmbeddingsResults: Promise<ContextItem[]> = Promise.resolve([])
-        if (localEmbeddings && contextStrategy !== 'keyword' && localRootURIs.length > 0) {
-            // TODO(beyang): retire this
-            localEmbeddingsResults = retrieveContextGracefully(
-                searchEmbeddingsLocal(localEmbeddings, originalQuery),
-                'local-embeddings'
-            )
-        }
-
-        return (await Promise.all([localSymfResults, localEmbeddingsResults])).flat()
+        return symf && localRootURIs.length > 0
+            ? Promise.all(
+                  localRootURIs.map(rootURI =>
+                      // TODO(beyang): retire searchSymf and retrieveContextGracefully
+                      // (see invocation of symf in retrieveLiveContext)
+                      retrieveContextGracefully(
+                          searchSymf(symf, this.editor, rootURI, originalQuery),
+                          `symf ${rootURI.path}`
+                      )
+                  )
+              ).then(r => r.flat())
+            : []
     }
 }
 
-function contextSearchResultToContextItem(result: ContextSearchResult): ContextItem | undefined {
+function contextSearchResultToContextItem(result: ContextSearchResult): ContextItemFile | undefined {
     if (result.startLine < 0 || result.endLine < 0) {
         logDebug(
             'ContextRetriever',
@@ -435,6 +407,7 @@ function contextSearchResultToContextItem(result: ContextSearchResult): ContextI
         repoName: result.repoName,
         title: result.path,
         revision: result.commit,
+        ranges: result.ranges,
     }
 }
 

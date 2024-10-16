@@ -105,6 +105,8 @@ export function getCurrentDocContext(params: GetCurrentDocContextParams): Docume
             prefix,
             suffix,
             injectedPrefix,
+            completePrefix: prefixLines.join('\n'),
+            completeSuffix: suffixLines.join('\n'),
         },
     })
 }
@@ -199,7 +201,16 @@ export function insertIntoDocContext(params: InsertIntoDocContextParams): Docume
         insertText,
         languageId,
         docContext,
-        docContext: { position, prefix, suffix, currentLineSuffix, maxPrefixLength, maxSuffixLength },
+        docContext: {
+            position,
+            prefix,
+            suffix,
+            currentLineSuffix,
+            maxPrefixLength,
+            maxSuffixLength,
+            completePrefix,
+            completeSuffix,
+        },
     } = params
 
     const updatedPosition = getPositionAfterTextInsertion(position, insertText)
@@ -215,6 +226,11 @@ export function insertIntoDocContext(params: InsertIntoDocContextParams): Docume
         maxPrefixLength,
         prefixLines: lines(updatedDocumentText),
     })
+    const maxSuffixMatchingLength = getMatchingSuffixLength(insertText, currentLineSuffix)
+    const updatedSuffix = suffix.slice(maxSuffixMatchingLength)
+
+    const completePrefixLines = lines(completePrefix + insertText)
+    const updatedCompleteSuffix = completeSuffix.slice(maxSuffixMatchingLength)
 
     const updatedDocContext = getDerivedDocContext({
         maxPrefixLength,
@@ -225,8 +241,10 @@ export function insertIntoDocContext(params: InsertIntoDocContextParams): Docume
             prefix: updatedPrefix,
             // Remove the characters that are being replaced by the completion
             // to reduce the chances of breaking the parse tree with redundant symbols.
-            suffix: suffix.slice(getMatchingSuffixLength(insertText, currentLineSuffix)),
+            suffix: updatedSuffix,
             injectedPrefix: null,
+            completePrefix: completePrefixLines.join('\n'),
+            completeSuffix: updatedCompleteSuffix,
         },
     })
 

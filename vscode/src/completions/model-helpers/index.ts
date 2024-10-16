@@ -1,7 +1,10 @@
+import { Claude } from './claude'
 import { CodeGemma } from './codegemma'
 import { CodeLlama } from './codellama'
+import { CodeQwen } from './codeqwen'
 import { DeepseekCoder } from './deepseek'
 import { DefaultModel } from './default'
+import { Gemini } from './gemini'
 import { Mistral } from './mistral'
 import { StarCoder } from './starcoder'
 
@@ -10,6 +13,10 @@ export * from './default'
 export function getModelHelpers(model: string): DefaultModel {
     if (model.includes('codellama') || model.includes('llama-code')) {
         return new CodeLlama()
+    }
+
+    if (model.includes('code-qwen')) {
+        return new CodeQwen()
     }
 
     if (model.includes('deepseek')) {
@@ -30,6 +37,14 @@ export function getModelHelpers(model: string): DefaultModel {
 
     if (model.includes('codegemma')) {
         return new CodeGemma()
+    }
+
+    if (model.includes('gemini')) {
+        return new Gemini()
+    }
+
+    if (model.includes('claude')) {
+        return new Claude()
     }
 
     return new DefaultModel()

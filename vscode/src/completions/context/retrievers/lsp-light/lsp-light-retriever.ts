@@ -1,4 +1,4 @@
-import { debounce } from 'lodash'
+import debounce from 'lodash/debounce'
 import * as vscode from 'vscode'
 
 import type { AutocompleteContextSnippet } from '@sourcegraph/cody-shared'
@@ -10,6 +10,7 @@ import {
 } from '../../../../graph/lsp/symbol-context-snippets'
 import { SupportedLanguage } from '../../../../tree-sitter/grammars'
 import type { ContextRetriever, ContextRetrieverOptions } from '../../../types'
+import { RetrieverIdentifier } from '../../utils'
 import { getLastNGraphContextIdentifiersFromDocument } from '../graph/identifiers'
 
 const SUPPORTED_LANGUAGES = new Set([
@@ -26,7 +27,7 @@ const RECURSION_LIMIT = 3
 const IDENTIFIERS_TO_RESOLVE = 1
 
 export class LspLightRetriever implements ContextRetriever {
-    public identifier = 'lsp-light'
+    public identifier = RetrieverIdentifier.LspLightRetriever
     private disposables: vscode.Disposable[] = []
     private isCacheDisabled = IS_LSP_LIGHT_CACHE_DISABLED
 

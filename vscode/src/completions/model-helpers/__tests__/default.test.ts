@@ -7,12 +7,12 @@ import { completionParams, contextSnippets } from './test-data'
 import { DefaultModel } from '../default'
 
 describe('DefaultModel', () => {
-    describe.skipIf(isWindows())('getPrompt', () => {
+    describe.skipIf(isWindows())('getMessages', () => {
         it('returns the prompt with the correct intro snippets', () => {
             const model = new DefaultModel()
             const { docContext, document, provider } = completionParams
 
-            const result = model.getPrompt({
+            const result = model.getMessages({
                 document,
                 docContext,
                 snippets: contextSnippets,
@@ -20,7 +20,10 @@ describe('DefaultModel', () => {
             })
 
             expect(result).toMatchInlineSnapshot(`
-              "// Here is a reference snippet of code from codebase/context1.ts:
+              [
+                {
+                  "speaker": "human",
+                  "text": "// Here is a reference snippet of code from codebase/context1.ts:
               // function contextSnippetOne() {}
 
               // Here is a reference snippet of code from codebase/context2.ts:
@@ -134,7 +137,9 @@ describe('DefaultModel', () => {
                   console.log(2)
                   console.log(3)
                   console.log(4)
-                  "
+                  ",
+                },
+              ]
             `)
         })
     })

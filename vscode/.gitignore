@@ -8,3 +8,6 @@ resources/wasm/
 GITHUB_CHANGELOG.md
 walkthroughs/cody_tutorial.py
 tsconfig.typehacks.json
+
+# these are snapshots that haven't been accepted
+*.new.json

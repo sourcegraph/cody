@@ -2,7 +2,7 @@ import fs from 'node:fs/promises'
 import path from 'node:path'
 import type { FullConfig } from 'playwright/test'
 
-import { getAssetsDir, getTempVideoDir, rmSyncWithRetries } from '../helpers'
+import { getAssetsDir, rmSyncWithRetries, testAssetsTmpDir } from '../helpers'
 
 // Clear out the assets directory if running locally
 export default async function (_: FullConfig) {
@@ -12,7 +12,7 @@ export default async function (_: FullConfig) {
         const dirPath = path.join(getAssetsDir(''), dir)
         const stats = await fs.stat(dirPath)
         if (stats.isDirectory()) {
-            const tempVideoDir = getTempVideoDir(dir)
+            const tempVideoDir = testAssetsTmpDir(dir, 'videos')
             const files = await fs.readdir(dirPath)
 
             // if there is only one file in the directory, there were no failures,

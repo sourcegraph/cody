@@ -1,5 +1,7 @@
-import type { PromptString } from '@sourcegraph/cody-shared'
+import { type PromptString, setClientCapabilities } from '@sourcegraph/cody-shared'
 import { SourcegraphNodeCompletionsClient } from '../../../../vscode/src/completions/nodeClient'
+import { setStaticResolvedConfigurationWithAuthCredentials } from '../../../../vscode/src/configuration'
+import { localStorage } from '../../../../vscode/src/services/LocalStorageProvider'
 import type { CodyBenchOptions } from './command-bench'
 
 export interface LlmJudgeScore {
@@ -11,11 +13,13 @@ export interface LlmJudgeScore {
 export class LlmJudge {
     client: SourcegraphNodeCompletionsClient
     constructor(options: Pick<CodyBenchOptions, 'srcAccessToken' | 'srcEndpoint'>) {
-        this.client = new SourcegraphNodeCompletionsClient({
-            serverEndpoint: options.srcEndpoint,
-            accessToken: options.srcAccessToken,
-            customHeaders: {},
+        localStorage.setStorage('noop')
+        setStaticResolvedConfigurationWithAuthCredentials({
+            configuration: { customHeaders: undefined },
+            auth: { accessToken: options.srcAccessToken, serverEndpoint: options.srcEndpoint },
         })
+        setClientCapabilities({ configuration: {}, agentCapabilities: undefined })
+        this.client = new SourcegraphNodeCompletionsClient()
     }
 
     public async judge(prompt: PromptString): Promise<LlmJudgeScore> {

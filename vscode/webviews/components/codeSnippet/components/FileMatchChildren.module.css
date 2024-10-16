@@ -1,0 +1,5 @@
+.chunk {
+    position: relative;
+    overflow-x: auto;
+    background-color: var(--code-background);
+}

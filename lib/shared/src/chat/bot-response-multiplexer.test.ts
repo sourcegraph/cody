@@ -1,19 +1,8 @@
 import assert from 'node:assert'
-
 import { describe, it } from 'vitest'
+import { promise } from '../utils'
 
 import { BotResponseMultiplexer, type BotResponseSubscriber } from './bot-response-multiplexer'
-
-function promise<T>(): [(value: T) => void, Promise<T>] {
-    let resolver: any
-    const promise = new Promise<T>(resolve => {
-        resolver = resolve
-    })
-    if (!resolver) {
-        throw new Error('unreachable')
-    }
-    return [resolver, promise]
-}
 
 describe('BotResponseMultiplexer', () => {
     it('routes messages with no prefix to the default topic', async () => {
@@ -22,7 +11,7 @@ describe('BotResponseMultiplexer', () => {
         multiplexer.sub(BotResponseMultiplexer.DEFAULT_TOPIC, {
             onResponse(content): Promise<void> {
                 assert.strictEqual(content, 'hello, world')
-                published(undefined)
+                published()
                 return Promise.resolve()
             },
             onTurnComplete() {

@@ -1,19 +1,26 @@
 import {
+    AUTH_STATUS_FIXTURE_AUTHED,
     type AuthStatus,
+    CLIENT_CAPABILITIES_FIXTURE,
+    type ClientConfiguration,
     type ContextItem,
     type ContextItemSymbol,
     EMPTY,
     FILE_CONTEXT_MENTION_PROVIDER,
+    type ModelsData,
+    type ResolvedConfiguration,
     SYMBOL_CONTEXT_MENTION_PROVIDER,
     type SymbolKind,
-    getDotComDefaultModels,
+    type UserLocalHistory,
+    getMockedDotComClientModels,
     promiseFactoryToObservable,
 } from '@sourcegraph/cody-shared'
-import { ClientStateContextProvider, ExtensionAPIProviderForTestsOnly } from '@sourcegraph/prompt-editor'
+import { ExtensionAPIProviderForTestsOnly } from '@sourcegraph/prompt-editor'
 import { Observable } from 'observable-fns'
 import { type ComponentProps, type FunctionComponent, type ReactNode, useMemo } from 'react'
 import { URI } from 'vscode-uri'
 import { COMMON_WRAPPERS } from './AppWrapper'
+import { FIXTURE_TRANSCRIPT } from './chat/fixtures'
 import { FIXTURE_COMMANDS, makePromptsAPIWithData } from './components/promptList/fixtures'
 import { FIXTURE_PROMPTS } from './components/promptSelectField/fixtures'
 import { ComposedWrappers, type Wrapper } from './utils/composeWrappers'
@@ -73,25 +80,59 @@ export const AppWrapperForTest: FunctionComponent<{ children: ReactNode }> = ({ 
                         }),
                     evaluatedFeatureFlag: _flag => Observable.of(true),
                     prompts: makePromptsAPIWithData({
-                        prompts: { type: 'results', results: FIXTURE_PROMPTS },
+                        prompts: FIXTURE_PROMPTS,
                         commands: FIXTURE_COMMANDS,
                     }),
-                    models: () => Observable.of(getDotComDefaultModels()),
+                    highlights: () => Observable.of([]),
+                    models: () =>
+                        Observable.of({
+                            localModels: [],
+                            primaryModels: getMockedDotComClientModels(),
+                            preferences: { defaults: {}, selected: {} },
+                        } satisfies ModelsData),
+                    chatModels: () => Observable.of(getMockedDotComClientModels()),
                     setChatModel: () => EMPTY,
+                    initialContext: () => Observable.of([]),
+                    detectIntent: () => Observable.of(),
+                    resolvedConfig: () =>
+                        Observable.of({
+                            auth: { accessToken: 'abc', serverEndpoint: 'https://example.com' },
+                            configuration: {
+                                autocomplete: true,
+                                devModels: [{ model: 'my-model', provider: 'my-provider' }],
+                            } satisfies Partial<ClientConfiguration> as ClientConfiguration,
+                        } satisfies Partial<ResolvedConfiguration> as ResolvedConfiguration),
+                    authStatus: () => Observable.of(AUTH_STATUS_FIXTURE_AUTHED),
+                    transcript: () => Observable.of(FIXTURE_TRANSCRIPT.explainCode),
+                    userHistory: () =>
+                        Observable.of<UserLocalHistory | null>({
+                            chat: {
+                                a: {
+                                    id: 'a',
+                                    lastInteractionTimestamp: '2024-03-29',
+                                    interactions: [
+                                        {
+                                            humanMessage: { speaker: 'human', text: 'Hello, world!' },
+                                            assistantMessage: { speaker: 'assistant', text: 'Hi!' },
+                                        },
+                                    ],
+                                },
+                            },
+                        }),
+                    userProductSubscription: () => Observable.of(null),
                 },
             } satisfies Wrapper<ComponentProps<typeof ExtensionAPIProviderForTestsOnly>['value']>,
-            {
-                provider: ClientStateContextProvider,
-                value: { initialContext: [] },
-            } satisfies Wrapper<ComponentProps<typeof ClientStateContextProvider>['value']>,
             {
                 component: ConfigProvider,
                 props: {
                     value: {
                         authStatus: {
                             endpoint: 'https://sourcegraph.example.com',
+                            authenticated: true,
                         } satisfies Partial<AuthStatus> as any,
+                        userProductSubscription: null,
                         config: {} as any,
+                        clientCapabilities: CLIENT_CAPABILITIES_FIXTURE,
                         configFeatures: {
                             chat: true,
                             serverSentModels: true,

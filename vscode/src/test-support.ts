@@ -1,4 +1,9 @@
-import { type ChatMessage, type IgnoreHelper, ps } from '@sourcegraph/cody-shared'
+import {
+    type AuthStatus,
+    type ChatMessage,
+    currentAuthStatusOrNotReadyYet,
+    ps,
+} from '@sourcegraph/cody-shared'
 import type { ChatController } from './chat/chat-view/ChatController'
 
 // A one-slot channel which lets readers block on a value being
@@ -35,11 +40,14 @@ class Rendezvous<T> {
 export class TestSupport {
     public static instance: TestSupport | undefined
     public chatPanelProvider = new Rendezvous<ChatController>()
-    public ignoreHelper = new Rendezvous<IgnoreHelper>()
 
     public ps = ps
 
     public async chatMessages(): Promise<readonly ChatMessage[]> {
         return (await this.chatPanelProvider.get()).getViewTranscript()
+    }
+
+    public authStatus(): AuthStatus | undefined {
+        return currentAuthStatusOrNotReadyYet()
     }
 }

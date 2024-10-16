@@ -5,7 +5,7 @@
     "rootDir": ".",
     "outDir": "dist/tsc",
     "jsx": "react-jsx",
-    "lib": ["ESNext", "DOM", "DOM.Iterable"],
+    "lib": ["ESNext", "DOM", "DOM.Iterable", "es2021"],
     "types": ["@testing-library/jest-dom"],
     "paths": {
       "@/*": ["./webviews/*"]
@@ -16,12 +16,14 @@
     "src/commands/execute/cody.json",
     "test/fixtures",
     "playwright.config.ts",
+    "playwright.v2.config.ts",
     "test/e2e",
     "test/e2e/utils/commands.json",
     "e2e",
     "webviews",
     "webviews/*.d.ts",
-    "package.json"
+    "package.json",
+    "uninstall"
   ],
   "exclude": [
     "typehacks",

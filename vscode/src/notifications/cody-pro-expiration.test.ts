@@ -1,24 +1,24 @@
 import { afterEach, beforeEach, describe, expect, it, vi, vitest } from 'vitest'
-import { localStorage } from '../services/LocalStorageProvider'
+import { mockLocalStorage } from '../services/LocalStorageProvider'
 
 import {
     AUTH_STATUS_FIXTURE_AUTHED,
     type AuthStatus,
     DOTCOM_URL,
     FeatureFlag,
-    type FeatureFlagProvider,
-    type GraphQLAPIClientConfig,
-    type SourcegraphGraphQLAPIClient,
+    authStatus,
     featureFlagProvider,
     graphqlClient,
+    mockAuthStatus,
 } from '@sourcegraph/cody-shared'
-import { type AuthProvider, authProvider } from '../services/AuthProvider'
 import { CodyProExpirationNotifications } from './cody-pro-expiration'
+
+vi.mock('../../../lib/shared/src/experimentation/FeatureFlagProvider')
+vi.mock('../services/AuthProvider')
 
 describe('Cody Pro expiration notifications', () => {
     let notifier: CodyProExpirationNotifications
-    let apiClient: SourcegraphGraphQLAPIClient
-    let authStatus: AuthStatus
+    let authStatus_: AuthStatus
     let authChangeListener = () => {}
     let codyPlan: string
     let codyStatus: string
@@ -30,7 +30,7 @@ describe('Cody Pro expiration notifications', () => {
 
     // Set up local storage backed by an object.
     let localStorageData: { [key: string]: unknown } = {}
-    localStorage.setStorage({
+    mockLocalStorage({
         get: (key: string) => localStorageData[key],
         update: (key: string, value: unknown) => {
             localStorageData[key] = value
@@ -45,47 +45,38 @@ describe('Cody Pro expiration notifications', () => {
         enabledFeatureFlags.clear()
         enabledFeatureFlags.add(FeatureFlag.UseSscForCodySubscription)
         enabledFeatureFlags.add(FeatureFlag.CodyProTrialEnded)
-        featureFlagProvider.instance = {
-            evaluateFeatureFlag: (flag: FeatureFlag) => Promise.resolve(enabledFeatureFlags.has(flag)),
-            refresh: () => {},
-        } as FeatureFlagProvider
-        graphqlClient.setConfig({} as unknown as GraphQLAPIClientConfig)
-        apiClient = {
-            getCurrentUserCodySubscription: () => ({
-                status: codyStatus,
-                plan: codyPlan,
-            }),
-        } as unknown as SourcegraphGraphQLAPIClient
-        authProvider.instance = {
-            changes: {
-                subscribe: (f: () => void) => {
-                    authChangeListener = f
-                    // (return an object that simulates the unsubscribe
-                    return {
-                        unsubscribe: () => {
-                            authChangeListener = () => {}
-                        },
-                    }
+        vi.spyOn(featureFlagProvider, 'evaluateFeatureFlagEphemerally').mockImplementation(
+            (flag: FeatureFlag) => Promise.resolve(enabledFeatureFlags.has(flag))
+        )
+        vi.spyOn(graphqlClient, 'getCurrentUserCodySubscription').mockImplementation(async () => ({
+            status: codyStatus,
+            plan: codyPlan,
+            applyProRateLimits: false,
+            currentPeriodEndAt: new Date(2022, 1, 1),
+            currentPeriodStartAt: new Date(2021, 1, 1),
+        }))
+        vi.spyOn(authStatus, 'subscribe').mockImplementation((f: any): any => {
+            authChangeListener = f
+            // (return an object that simulates the unsubscribe
+            return {
+                unsubscribe: () => {
+                    authChangeListener = () => {}
                 },
-            },
-            get status() {
-                return authStatus
-            },
-        } as AuthProvider
-        authStatus = { ...AUTH_STATUS_FIXTURE_AUTHED, endpoint: DOTCOM_URL.toString() }
+            }
+        })
+        authStatus_ = { ...AUTH_STATUS_FIXTURE_AUTHED, endpoint: DOTCOM_URL.toString() }
+        mockAuthStatus(authStatus_)
         localStorageData = {}
     })
 
     afterEach(() => {
         vi.restoreAllMocks()
-        authProvider.instance = null
-        featureFlagProvider.instance = null
         notifier?.dispose()
     })
 
     function createNotifier() {
         return new CodyProExpirationNotifications(
-            apiClient,
+            graphqlClient,
             showInformationMessage,
             openExternal,
             10,
@@ -165,13 +156,15 @@ describe('Cody Pro expiration notifications', () => {
     })
 
     it('does not show if not authenticated', async () => {
-        authStatus.authenticated = false
+        authStatus_.authenticated = false
+        mockAuthStatus(authStatus_)
         await createNotifier().triggerExpirationCheck()
         expectNoNotification()
     })
 
     it('does not show if not DotCom', async () => {
-        authStatus.endpoint = 'https://example.com' // non-dotcom
+        authStatus_.endpoint = 'https://example.com' // non-dotcom
+        mockAuthStatus(authStatus_)
         await createNotifier().triggerExpirationCheck()
         expectNoNotification()
     })
@@ -203,7 +196,7 @@ describe('Cody Pro expiration notifications', () => {
         // For testing, our poll period is set to 10ms, so enable the flag and then wait
         // to allow that to trigger
         enabledFeatureFlags.add(FeatureFlag.UseSscForCodySubscription)
-        featureFlagProvider.instance!.refresh() // Force clear cache of feature flags
+        featureFlagProvider.refresh() // Force clear cache of feature flags
         await new Promise(resolve => setTimeout(resolve, 20))
 
         // Should have been called by the timer.
@@ -212,12 +205,14 @@ describe('Cody Pro expiration notifications', () => {
 
     it('shows later if auth status changes', async () => {
         // Not shown initially because not logged in
-        authStatus.authenticated = false
+        authStatus_.authenticated = false
+        mockAuthStatus(authStatus_)
         await createNotifier().triggerExpirationCheck()
         expectNoNotification()
 
         // Simulate login status change.
-        authStatus.authenticated = true
+        authStatus_.authenticated = true
+        mockAuthStatus(authStatus_)
         authChangeListener()
 
         // Allow time async operations (checking feature flags) to run as part of the check

@@ -5,8 +5,13 @@ import type { Polly, Request } from '@pollyjs/core'
 import {
     type AccountKeyedChatHistory,
     type ChatHistoryKey,
+    type ClientCapabilities,
     type CodyCommand,
+    CodyIDE,
     ModelUsage,
+    currentAuthStatus,
+    currentAuthStatusAuthed,
+    firstResultFromOperation,
     telemetryRecorder,
     waitUntilComplete,
 } from '@sourcegraph/cody-shared'
@@ -30,11 +35,8 @@ import {
     logDebug,
     logError,
     modelsService,
-    setUserAgent,
 } from '@sourcegraph/cody-shared'
-
 import { chatHistory } from '../../vscode/src/chat/chat-view/ChatHistoryManager'
-import { ChatModel } from '../../vscode/src/chat/chat-view/ChatModel'
 import type { ExtensionMessage, WebviewMessage } from '../../vscode/src/chat/protocol'
 import { ProtocolTextDocumentWithUri } from '../../vscode/src/jsonrpc/TextDocumentWithUri'
 import type * as agent_protocol from '../../vscode/src/jsonrpc/agent-protocol'
@@ -42,6 +44,7 @@ import type * as agent_protocol from '../../vscode/src/jsonrpc/agent-protocol'
 import { mkdirSync, statSync } from 'node:fs'
 import { PassThrough } from 'node:stream'
 import type { Har } from '@pollyjs/persister'
+import { codyPaths } from '@sourcegraph/cody-shared'
 import { TESTING_TELEMETRY_EXPORTER } from '@sourcegraph/cody-shared/src/telemetry-v2/TelemetryRecorderProvider'
 import { type TelemetryEventParameters, TestTelemetryExporter } from '@sourcegraph/telemetry'
 import { copySync } from 'fs-extra'
@@ -49,9 +52,12 @@ import levenshtein from 'js-levenshtein'
 import * as uuid from 'uuid'
 import type { MessageConnection } from 'vscode-jsonrpc'
 import type { CommandResult } from '../../vscode/src/CommandResult'
+import { formatURL } from '../../vscode/src/auth/auth'
+import { executeExplainCommand, executeSmellCommand } from '../../vscode/src/commands/execute'
+import type { CodyCommandArgs } from '../../vscode/src/commands/types'
+import type { CompletionItemID } from '../../vscode/src/completions/analytics-logger'
 import { loadTscRetriever } from '../../vscode/src/completions/context/retrievers/tsc/load-tsc-retriever'
 import { supportedTscLanguages } from '../../vscode/src/completions/context/retrievers/tsc/supportedTscLanguages'
-import type { CompletionItemID } from '../../vscode/src/completions/logger'
 import { type ExecuteEditArguments, executeEdit } from '../../vscode/src/edit/execute'
 import type { QuickPickInput } from '../../vscode/src/edit/input/get-input'
 import { getModelOptionItems } from '../../vscode/src/edit/input/get-items/model'
@@ -60,16 +66,21 @@ import type { ExtensionClient } from '../../vscode/src/extension-client'
 import { IndentationBasedFoldingRangeProvider } from '../../vscode/src/lsp/foldingRanges'
 import type { FixupActor, FixupFileCollection } from '../../vscode/src/non-stop/roles'
 import type { FixupControlApplicator } from '../../vscode/src/non-stop/strategies'
+import { authProvider } from '../../vscode/src/services/AuthProvider'
 import { AgentWorkspaceEdit } from '../../vscode/src/testutils/AgentWorkspaceEdit'
 import { AgentAuthHandler } from './AgentAuthHandler'
 import { AgentFixupControls } from './AgentFixupControls'
 import { AgentProviders } from './AgentProviders'
 import { AgentClientManagedSecretStorage, AgentStatelessSecretStorage } from './AgentSecretStorage'
 import { AgentWebviewPanel, AgentWebviewPanels } from './AgentWebviewPanel'
+import { AgentWorkspaceConfiguration } from './AgentWorkspaceConfiguration'
 import { AgentWorkspaceDocuments } from './AgentWorkspaceDocuments'
 import { registerNativeWebviewHandlers, resolveWebviewView } from './NativeWebview'
 import type { PollyRequestError } from './cli/command-jsonrpc-stdio'
-import { codyPaths } from './codyPaths'
+import {
+    currentProtocolAuthStatus,
+    currentProtocolAuthStatusOrNotReadyYet,
+} from './currentProtocolAuthStatus'
 import { AgentGlobalState } from './global-state/AgentGlobalState'
 import {
     MessageHandler,
@@ -88,7 +99,6 @@ import type {
     GetDocumentsParams,
     GetDocumentsResult,
     GetFoldingRangeResult,
-    ProtocolCommand,
     ProtocolTextDocument,
     TextEdit,
 } from './protocol-alias'
@@ -131,12 +141,17 @@ function copyExtensionRelativeResources(extensionPath: string, extensionClient: 
         }
     }
     copySources('win-ca-roots.exe')
-    if (extensionClient.capabilities?.webview === 'native') {
+    // Only copy the files if the client is using the native webview and they haven't opted
+    // to manage the resource files themselves.
+    if (
+        extensionClient.capabilities?.webview === 'native' &&
+        !extensionClient.capabilities?.webviewNativeConfig?.skipResourceRelativization
+    ) {
         copySources('webviews')
     }
 }
 
-export async function initializeVscodeExtension(
+async function initializeVscodeExtension(
     workspaceRoot: vscode.Uri,
     extensionActivate: ExtensionActivate,
     extensionClient: ExtensionClient,
@@ -342,7 +357,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
     public webviewViewProviders = new Map<string, vscode.WebviewViewProvider>()
 
     public authenticationHandler: AgentAuthHandler | null = null
-    private authenticationPromise: Promise<AuthStatus | undefined> = Promise.resolve(undefined)
+    private authenticationPromise: Promise<void> = Promise.resolve()
 
     private clientInfo: ClientInfo | null = null
 
@@ -396,18 +411,14 @@ export class Agent extends MessageHandler implements ExtensionClient {
             }
             if (clientInfo.capabilities?.codeLenses === 'enabled') {
                 vscode_shim.onDidRegisterNewCodeLensProvider(codeLensProvider => {
-                    this.codeLens.addProvider(
-                        codeLensProvider,
-                        codeLensProvider.onDidChangeCodeLenses?.(() => this.updateCodeLenses())
-                    )
-                    this.updateCodeLenses()
+                    this.codeLens.addProvider(codeLensProvider)
                 })
                 vscode_shim.onDidUnregisterNewCodeLensProvider(codeLensProvider =>
                     this.codeLens.removeProvider(codeLensProvider)
                 )
             }
             if (clientInfo.capabilities?.ignore === 'enabled') {
-                contextFiltersProvider.instance!.onContextFiltersChanged(() => {
+                contextFiltersProvider.onContextFiltersChanged(() => {
                     // Forward policy change notifications to the client.
                     this.notify('ignore/didChange', null)
                 })
@@ -423,13 +434,15 @@ export class Agent extends MessageHandler implements ExtensionClient {
 
             vscode_shim.setClientInfo(clientInfo)
             this.clientInfo = clientInfo
-            setUserAgent(`${clientInfo?.name} / ${clientInfo?.version}`)
 
             try {
                 const secrets =
                     clientInfo.capabilities?.secrets === 'client-managed'
                         ? new AgentClientManagedSecretStorage(this, this.secretsDidChange.event)
-                        : new AgentStatelessSecretStorage()
+                        : new AgentStatelessSecretStorage({
+                              [formatURL(clientInfo.extensionConfiguration?.serverEndpoint ?? '') ?? '']:
+                                  clientInfo.extensionConfiguration?.accessToken ?? undefined,
+                          })
 
                 await initializeVscodeExtension(
                     this.workspace.workspaceRootUri,
@@ -439,13 +452,16 @@ export class Agent extends MessageHandler implements ExtensionClient {
                     secrets
                 )
 
-                this.authenticationPromise = clientInfo.extensionConfiguration?.accessToken
-                    ? this.handleConfigChanges(clientInfo.extensionConfiguration, {
-                          forceAuthentication: true,
-                      })
-                    : this.authStatus()
+                const ideType = AgentWorkspaceConfiguration.clientNameToIDE(this.clientInfo?.name ?? '')
 
-                const authStatus = await this.authenticationPromise
+                this.authenticationPromise =
+                    clientInfo.extensionConfiguration &&
+                    (clientInfo.extensionConfiguration?.accessToken || ideType === CodyIDE.Web)
+                        ? this.handleConfigChanges(clientInfo.extensionConfiguration, {
+                              forceAuthentication: true,
+                          })
+                        : Promise.resolve()
+                await this.authenticationPromise
 
                 const webviewKind = clientInfo.capabilities?.webview || 'agentic'
                 const nativeWebviewConfig = clientInfo.capabilities?.webviewNativeConfig
@@ -457,19 +473,17 @@ export class Agent extends MessageHandler implements ExtensionClient {
                     }
                     registerNativeWebviewHandlers(
                         this,
-                        nativeWebviewConfig.rootDir
-                            ? vscode.Uri.parse(nativeWebviewConfig.rootDir, true)
-                            : vscode.Uri.file(codyPaths().config + '/dist'),
+                        vscode.Uri.file(codyPaths().config + '/dist'),
                         nativeWebviewConfig
                     )
                 } else {
                     this.registerWebviewHandlers()
                 }
 
+                const authStatus = currentProtocolAuthStatusOrNotReadyYet()
                 return {
                     name: 'cody-agent',
-                    authenticated: authStatus?.authenticated,
-                    codyVersion: authStatus?.authenticated ? authStatus.siteVersion : undefined,
+                    authenticated: authStatus?.authenticated ?? false,
                     authStatus,
                 }
             } catch (error) {
@@ -563,13 +577,13 @@ export class Agent extends MessageHandler implements ExtensionClient {
 
         this.registerRequest('extensionConfiguration/change', async config => {
             this.authenticationPromise = this.handleConfigChanges(config)
-            const result = await this.authenticationPromise
-            return result ?? null
+            await this.authenticationPromise
+            return currentProtocolAuthStatus()
         })
 
         this.registerRequest('extensionConfiguration/status', async () => {
-            const result = await this.authenticationPromise
-            return result ?? null
+            await this.authenticationPromise
+            return currentProtocolAuthStatus()
         })
 
         this.registerRequest('extensionConfiguration/getSettingsSchema', async () => {
@@ -762,7 +776,14 @@ export class Agent extends MessageHandler implements ExtensionClient {
                         clientVersion: event.source.clientVersion ?? '',
                     },
                     timestamp: event.timestamp,
-                    // TODO add parameters (metadata, privateMetadata, billingMetadata)
+                    parameters: {
+                        metadata: event.parameters.metadata ?? {},
+                        privateMetadata: event.parameters.privateMetadata ?? {},
+                        billingMetadata: {
+                            product: event.parameters.billingMetadata?.product ?? '',
+                            category: event.parameters.billingMetadata?.category ?? '',
+                        },
+                    },
                     testOnlyAnonymousUserID: event.testOnlyAnonymousUserID,
                 })),
             }
@@ -830,7 +851,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
 
         this.registerAuthenticatedRequest('testing/reset', async () => {
             await this.workspace.reset()
-            this.globalState?.reset()
+            await this.globalState?.reset()
             // reset the telemetry recorded events
             TESTING_TELEMETRY_EXPORTER.reset()
             return null
@@ -951,6 +972,11 @@ export class Agent extends MessageHandler implements ExtensionClient {
             }
         })
 
+        this.registerAuthenticatedRequest('extension/reset', async () => {
+            await this.globalState?.reset()
+            return null
+        })
+
         this.registerNotification('autocomplete/completionAccepted', async ({ completionID }) => {
             const provider = await vscode_shim.completionProvider()
             await provider.handleDidAcceptCompletionItem(completionID as CompletionItemID)
@@ -959,6 +985,28 @@ export class Agent extends MessageHandler implements ExtensionClient {
         this.registerNotification('autocomplete/completionSuggested', async ({ completionID }) => {
             const provider = await vscode_shim.completionProvider()
             provider.unstable_handleDidShowCompletionItem(completionID as CompletionItemID)
+        })
+
+        this.registerAuthenticatedRequest(
+            'testing/autocomplete/awaitPendingVisibilityTimeout',
+            async () => {
+                const provider = await vscode_shim.completionProvider()
+                return provider.testing_completionSuggestedPromise
+            }
+        )
+
+        this.registerAuthenticatedRequest(
+            'testing/autocomplete/setCompletionVisibilityDelay',
+            async ({ delay }) => {
+                const provider = await vscode_shim.completionProvider()
+                provider.testing_setCompletionVisibilityDelay(delay)
+                return null
+            }
+        )
+
+        this.registerAuthenticatedRequest('testing/autocomplete/providerConfig', async () => {
+            const provider = await vscode_shim.completionProvider()
+            return provider.config.provider
         })
 
         this.registerAuthenticatedRequest('graphql/getRepoIds', async ({ names, first }) => {
@@ -1067,24 +1115,10 @@ export class Agent extends MessageHandler implements ExtensionClient {
         })
 
         // The arguments to pass to the command to make sure edit commands would also run in chat mode
-        const commandArgs = [{ source: 'editor' }]
+        const commandArgs: Partial<CodyCommandArgs> = { source: 'editor' }
 
         this.registerAuthenticatedRequest('commands/explain', () => {
-            return this.createChatPanel(
-                vscode.commands.executeCommand('cody.command.explain-code', commandArgs)
-            )
-        })
-
-        this.registerAuthenticatedRequest('commands/test', () => {
-            return this.createChatPanel(
-                vscode.commands.executeCommand('cody.command.generate-tests', commandArgs)
-            )
-        })
-
-        this.registerAuthenticatedRequest('editCommands/test', () => {
-            return this.createEditTask(
-                vscode.commands.executeCommand<CommandResult | undefined>('cody.command.unit-tests')
-            )
+            return this.createChatPanel(executeExplainCommand(commandArgs))
         })
 
         this.registerAuthenticatedRequest('editTask/accept', async ({ id }) => {
@@ -1111,9 +1145,12 @@ export class Agent extends MessageHandler implements ExtensionClient {
             return Promise.reject(`No task with id ${id}`)
         })
 
-        this.registerAuthenticatedRequest('editTask/retry', params => {
+        this.registerAuthenticatedRequest('editTask/retry', async params => {
             const instruction = PromptString.unsafe_fromUserQuery(params.instruction)
-            const models = getModelOptionItems(modelsService.instance!.getModels(ModelUsage.Edit), true)
+            const models = getModelOptionItems(
+                await firstResultFromOperation(modelsService.getModels(ModelUsage.Edit)),
+                true
+            )
             const previousInput: QuickPickInput = {
                 instruction: instruction,
                 userContextFiles: [],
@@ -1173,9 +1210,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
         })
 
         this.registerAuthenticatedRequest('commands/smell', () => {
-            return this.createChatPanel(
-                vscode.commands.executeCommand('cody.command.smell-code', commandArgs)
-            )
+            return this.createChatPanel(executeSmellCommand(commandArgs))
         })
 
         this.registerAuthenticatedRequest('commands/custom', ({ key }) => {
@@ -1221,35 +1256,15 @@ export class Agent extends MessageHandler implements ExtensionClient {
             return { panelId, chatId }
         })
 
-        // TODO: JetBrains no longer uses this, consider deleting it.
-        this.registerAuthenticatedRequest('chat/restore', async ({ modelID, messages, chatID }) => {
-            const authStatus = await vscode.commands.executeCommand<AuthStatus>('cody.auth.status')
-            if (!authStatus.authenticated) {
-                throw new Error('Not authenticated')
-            }
-            modelID ??= modelsService.instance!.getDefaultChatModel() ?? ''
-            const chatMessages = messages?.map(PromptString.unsafe_deserializeChatMessage) ?? []
-            const chatModel = new ChatModel(modelID, chatID, chatMessages)
-            await chatHistory.saveChat(authStatus, chatModel.toSerializedChatTranscript())
-            return this.createChatPanel(
-                Promise.resolve({
-                    type: 'chat',
-                    session: await vscode.commands.executeCommand('cody.chat.panel.restore', [chatID]),
-                })
-            )
-        })
-
         this.registerAuthenticatedRequest('chat/models', async ({ modelUsage }) => {
-            const models = modelsService.instance!.getModels(modelUsage)
-            return { models }
+            return {
+                models: await modelsService.getModelsAvailabilityStatus(modelUsage),
+            }
         })
 
         this.registerAuthenticatedRequest('chat/export', async input => {
             const { fullHistory = false } = input ?? {}
-            const authStatus = await vscode.commands.executeCommand<AuthStatus>('cody.auth.status')
-            if (!authStatus.authenticated) {
-                throw new Error('Not authenticated')
-            }
+            const authStatus = currentAuthStatusAuthed()
             const localHistory = chatHistory.getLocalHistory(authStatus)
 
             if (localHistory != null) {
@@ -1271,13 +1286,11 @@ export class Agent extends MessageHandler implements ExtensionClient {
             return []
         })
         this.registerAuthenticatedRequest('chat/import', async ({ history, merge }) => {
-            const authStatus = await vscode.commands.executeCommand<AuthStatus>('cody.auth.status')
-
             const accountKeyedChatHistory: AccountKeyedChatHistory = {}
             for (const [account, chats] of Object.entries(history)) {
                 accountKeyedChatHistory[account as ChatHistoryKey] = { chat: chats }
             }
-            await chatHistory.importChatHistory(accountKeyedChatHistory, merge, authStatus)
+            await chatHistory.importChatHistory(accountKeyedChatHistory, merge, currentAuthStatus())
             return null
         })
 
@@ -1286,12 +1299,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
                 id: params.chatId,
             })
 
-            const authStatus = await vscode.commands.executeCommand<AuthStatus>('cody.auth.status')
-            if (!authStatus.authenticated) {
-                throw new Error('Not authenticated')
-            }
-            const localHistory = await chatHistory.getLocalHistory(authStatus)
-
+            const localHistory = chatHistory.getLocalHistory(currentAuthStatusAuthed())
             if (localHistory != null) {
                 return Object.entries(localHistory?.chat).map(([chatID, chatTranscript]) => ({
                     chatID: chatID,
@@ -1382,7 +1390,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
         })
 
         this.registerAuthenticatedRequest('featureFlags/getFeatureFlag', async ({ flagName }) => {
-            return featureFlagProvider.instance!.evaluateFeatureFlag(
+            return featureFlagProvider.evaluateFeatureFlagEphemerally(
                 FeatureFlag[flagName as keyof typeof FeatureFlag]
             )
         })
@@ -1403,14 +1411,14 @@ export class Agent extends MessageHandler implements ExtensionClient {
 
         this.registerAuthenticatedRequest('ignore/test', async ({ uri: uriString }) => {
             const uri = vscode.Uri.parse(uriString)
-            const isIgnored = await contextFiltersProvider.instance!.isUriIgnored(uri)
+            const isIgnored = await contextFiltersProvider.isUriIgnored(uri)
             return {
                 policy: isIgnored ? 'ignore' : 'use',
             } as const
         })
 
         this.registerAuthenticatedRequest('testing/ignore/overridePolicy', async contextFilters => {
-            contextFiltersProvider.instance!.setTestingContextFilters(contextFilters)
+            contextFiltersProvider.setTestingContextFilters(contextFilters)
             return null
         })
     }
@@ -1480,96 +1488,36 @@ export class Agent extends MessageHandler implements ExtensionClient {
         return this.clientInfo?.version || '0.0.0'
     }
 
-    get capabilities(): agent_protocol.ClientCapabilities | undefined {
+    get capabilities(): ClientCapabilities | undefined {
         return this.clientInfo?.capabilities ?? undefined
-    }
-
-    private codeLensToken = new vscode.CancellationTokenSource()
-    /**
-     * Matches VS Code codicon syntax, e.g. $(cody-logo)
-     * Source: https://sourcegraph.com/github.com/microsoft/vscode@f34d4/-/blob/src/vs/base/browser/ui/iconLabel/iconLabels.ts?L9
-     */
-    private labelWithIconsRegex = /(\\)?\$\(([A-Za-z0-9-]+(?:~[A-Za-z]+)?)\)/g
-    /**
-     * Given a title, such as "$(cody-logo) Cody", returns the raw
-     * title without icons and the icons matched with their respective positions.
-     */
-    private splitIconsFromTitle(title: string): ProtocolCommand['title'] {
-        const icons: { value: string; position: number }[] = []
-        const matches = [...title.matchAll(this.labelWithIconsRegex)]
-
-        for (const match of matches) {
-            if (match.index !== undefined) {
-                icons.push({ value: match[0], position: match.index })
-            }
-        }
-
-        return { text: title.replace(this.labelWithIconsRegex, ''), icons }
-    }
-
-    private async updateCodeLenses(): Promise<void> {
-        const uri = this.workspace.activeDocumentFilePath
-        if (!uri) {
-            return
-        }
-        const document = this.workspace.getDocument(uri)
-        if (!document) {
-            return
-        }
-        this.codeLensToken.cancel()
-        this.codeLensToken = new vscode.CancellationTokenSource()
-        const promises: Promise<vscode.CodeLens[]>[] = []
-        for (const provider of this.codeLens.providers()) {
-            promises.push(this.provideCodeLenses(provider, document))
-        }
-        const lenses = (await Promise.all(promises)).flat()
-
-        // VS Code supports icons in code lenses, but we cannot render these through agent.
-        // We need to strip any icons from the title and provide those seperately, so the client can decide how to render them.
-        const agentLenses = lenses.map(lens => {
-            if (!lens.command) {
-                return {
-                    ...lens,
-                    command: undefined,
-                }
-            }
-
-            return {
-                ...lens,
-                command: {
-                    ...lens.command,
-                    title: this.splitIconsFromTitle(lens.command.title),
-                },
-            }
-        })
-
-        this.notify('codeLenses/display', {
-            uri: uri.toString(),
-            codeLenses: agentLenses,
-        })
-    }
-    private async provideCodeLenses(
-        provider: vscode.CodeLensProvider,
-        document: vscode.TextDocument
-    ): Promise<vscode.CodeLens[]> {
-        const result = await provider.provideCodeLenses(document, this.codeLensToken.token)
-        return result ?? []
     }
 
     private async handleConfigChanges(
         config: ExtensionConfiguration,
         params?: { forceAuthentication: boolean }
-    ): Promise<AuthStatus | undefined> {
+    ): Promise<void> {
         const isAuthChange = vscode_shim.isAuthenticationChange(config)
         vscode_shim.setExtensionConfiguration(config)
         // If this is an authentication change we need to reauthenticate prior to firing events
         // that update the clients
         if (isAuthChange || params?.forceAuthentication) {
             try {
-                const authStatus = await vscode_shim.commands.executeCommand<AuthStatus | undefined>(
-                    'cody.agent.auth.authenticate',
-                    [config]
+                await authProvider.validateAndStoreCredentials(
+                    {
+                        configuration: {
+                            customHeaders: config.customHeaders,
+                        },
+                        auth: {
+                            serverEndpoint: config.serverEndpoint,
+                            accessToken: config.accessToken ?? null,
+                        },
+                        clientState: {
+                            anonymousUserID: config.anonymousUserID ?? null,
+                        },
+                    },
+                    'always-store'
                 )
+
                 // Critical: we need to await for the handling of `onDidChangeConfiguration` to
                 // let the new credentials propagate. If we remove the statement below, then
                 // autocomplete may return empty results because we can't await for the updated
@@ -1580,24 +1528,10 @@ export class Agent extends MessageHandler implements ExtensionClient {
                         // functionality), we return true to always triggger the callback.
                         true,
                 })
-                // await new Promise<void>(resolve => setTimeout(resolve, 3_000))
-                // TODO(#56621): JetBrains: persistent chat history:
-                // This is a temporary workaround to ensure that a new chat panel is created and properly initialized after the auth change.
-                this.webPanels.panels.clear()
-                return authStatus
             } catch (error) {
                 console.log('Authentication failed', error)
             }
         }
-        return this.authStatus()
-    }
-
-    private async authStatus(): Promise<AuthStatus | undefined> {
-        // Do explicit `await` because `executeCommand()` returns `Thenable`.
-        const result = await vscode_shim.commands.executeCommand<AuthStatus | undefined>(
-            'cody.auth.status'
-        )
-        return result
     }
 
     private async handleDocumentChange(document: ProtocolTextDocument) {

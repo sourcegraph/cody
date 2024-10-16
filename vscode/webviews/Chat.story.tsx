@@ -1,3 +1,4 @@
+import { getMockedDotComClientModels } from '@sourcegraph/cody-shared'
 import { ExtensionAPIProviderForTestsOnly, MOCK_API } from '@sourcegraph/prompt-editor'
 import type { Meta, StoryObj } from '@storybook/react'
 import { Observable } from 'observable-fns'
@@ -5,6 +6,8 @@ import { Chat } from './Chat'
 import { FIXTURE_TRANSCRIPT } from './chat/fixtures'
 import { FIXTURE_COMMANDS, makePromptsAPIWithData } from './components/promptList/fixtures'
 import { VSCodeWebview } from './storybook/VSCodeStoryDecorator'
+
+const MOCK_MODELS = getMockedDotComClientModels()
 
 const meta: Meta<typeof Chat> = {
     title: 'cody/Chat',
@@ -16,6 +19,7 @@ const meta: Meta<typeof Chat> = {
             options: Object.keys(FIXTURE_TRANSCRIPT),
             mapping: FIXTURE_TRANSCRIPT,
             control: { type: 'select' },
+            models: MOCK_MODELS,
         },
     },
     args: {
@@ -26,8 +30,8 @@ const meta: Meta<typeof Chat> = {
             postMessage: () => {},
             onMessage: () => () => {},
         },
-        isTranscriptError: false,
         setView: () => {},
+        models: MOCK_MODELS,
     } satisfies React.ComponentProps<typeof Chat>,
 
     decorators: [VSCodeWebview],
@@ -46,7 +50,8 @@ export const EmptyWithPromptLibraryUnsupported: StoryObj<typeof meta> = {
             value={{
                 ...MOCK_API,
                 prompts: makePromptsAPIWithData({
-                    prompts: { type: 'unsupported' },
+                    arePromptsSupported: false,
+                    prompts: [],
                     commands: FIXTURE_COMMANDS,
                 }),
                 evaluatedFeatureFlag: _flag => Observable.of(true),
@@ -64,7 +69,7 @@ export const EmptyWithNoPrompts: StoryObj<typeof meta> = {
             value={{
                 ...MOCK_API,
                 prompts: makePromptsAPIWithData({
-                    prompts: { type: 'results', results: [] },
+                    prompts: [],
                     commands: FIXTURE_COMMANDS,
                 }),
                 evaluatedFeatureFlag: _flag => Observable.of(true),

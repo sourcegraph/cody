@@ -10,7 +10,6 @@ Cody is an AI coding assistant that uses search and codebase context to help you
 
 [![vscode extension](https://img.shields.io/vscode-marketplace/v/sourcegraph.cody-ai.svg?label=vscode%20ext)](https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai)
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
-[![test](https://github.com/sourcegraph/cody/actions/workflows/ci.yml/badge.svg)](https://github.com/sourcegraph/cody/actions/workflows/ci.yml)
 [![Twitter](https://img.shields.io/twitter/follow/sourcegraph.svg?label=Follow%20%40Sourcegraph&style=social)](https://twitter.com/sourcegraph)
 [![Discord](https://dcbadge.vercel.app/api/server/s2qDtYGnAE?style=flat)](https://discord.gg/s2qDtYGnAE)
 
@@ -39,18 +38,16 @@ See [cody.dev](https://about.sourcegraph.com/cody?utm_source=github.com&utm_medi
 - **Autocomplete:** Cody makes single-line and multi-line suggestions as you type, speeding up your coding and shortcutting the need for you to hunt down function and variable names as you type.
 - **Inline Edit:** Ask Cody to fix or refactor code from anywhere in a file.
 - **Commands:** Cody has quick commands for common actions. Simply highlight a code snippet and run a command, like “Document code,” “Explain code,” or “Generate Unit Tests.”
-- **Swappable LLMs:** Support for Anthropic Claude 3.3 Sonnet, OpenAI GPT-4o, Mixtral, Gemini 1.5, and more.
+- **Swappable LLMs:** Support for Anthropic Claude 3.5 Sonnet, OpenAI GPT-4o, Mixtral, Gemini 1.5, and more.
   - **Free LLM usage included** Cody Free gives you access to Anthropic Claude 3.5 Sonnet and other models. It's available for individual devs on both personal and work code, subject to reasonable per-user rate limits ([more info](#usage)).
 
-## Demos
+## Demo
 
-**Autocomplete**
+Cody comes with a variety of AI-for-coding features, such as autocomplete, chat, Smart Apply, generating unit tests, and more.
 
-> <img src="https://storage.googleapis.com/sourcegraph-assets/website/Product%20Animations/GIFS/cody-completions-may2023-optim-sm2.gif" width=400>
+Here's an example of how you can combine some of these features to use Cody to work on a large codebase.
 
-**Codebase-wide chat:**
-
-> <img src="https://storage.googleapis.com/sourcegraph-assets/website/Product%20Animations/GIFS/cody-chat-may2023-optim.gif" width=400>
+https://www.loom.com/share/ae710891c9044069a9017ee98ce657c5
 
 ## Contributing
 
@@ -66,18 +63,18 @@ Cody is often magical and sometimes frustratingly wrong. Cody's goal is to be po
 
 - Use the <kbd>👍</kbd>/<kbd>👎</kbd> buttons in the chat sidebar to give feedback.
 - [File an issue](https://github.com/sourcegraph/cody/issues) (or submit a PR!) when you see problems.
-- [Discussions](https://github.com/sourcegraph/cody/discussions)
+- [Community forum](https://community.sourcegraph.com/)
 - [Discord](https://discord.gg/s2qDtYGnAE)
 
 ## Usage
 
 ### Individual usage
 
-Individual usage of Cody currently requires a (free) [Sourcegraph.com](https://sourcegraph.com/?utm_source=github.com&utm_medium=referral) account because we need to prevent abuse of the free Anthropic/OpenAI LLM usage. We're working on supporting more swappable LLM options (including using your own Anthropic/OpenAI account or a self-hosted LLM) to make it possible to use Cody without any required third-party dependencies.
+Individual usage of Cody currently requires a (free) [Sourcegraph.com](https://sourcegraph.com/?utm_source=github.com&utm_medium=referral) account because we need to prevent abuse of the free Anthropic/OpenAI LLM usage. We're working on supporting [more swappable LLM options](https://sourcegraph.com/docs/cody/faq#can-i-use-my-own-api-keys) (including using your own Anthropic/OpenAI account or a self-hosted LLM) to make it possible to use Cody without any required third-party dependencies.
 
 ### Codying at work
 
-You can use Cody Free or Cody Pro when Codying on your work code. If that doesn't meet your needs (because you need higher rate limits, a dedicated/single-tenant instance, audit logs, etc.), upgrade to [Cody Enterprise](https://sourcegraph.com/pricing).
+You can use Cody Free or Cody Pro when Codying on your work code. If that doesn't meet your needs (because you need a dedicated/single-tenant instance, audit logs, bring-your-own-model etc.), upgrade to [Cody Enterprise](https://sourcegraph.com/pricing).
 
 ### Existing Sourcegraph customers
 

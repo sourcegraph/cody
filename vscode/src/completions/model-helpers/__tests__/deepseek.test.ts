@@ -7,12 +7,12 @@ import { completionParams, contextSnippets } from './test-data'
 import { DeepseekCoder } from '../deepseek'
 
 describe('DeepseekCoder ', () => {
-    describe.skipIf(isWindows())('getPrompt', () => {
+    describe.skipIf(isWindows())('getMessages', () => {
         it('returns the prompt with the correct intro snippets', () => {
             const model = new DeepseekCoder()
             const { docContext, document, provider } = completionParams
 
-            const result = model.getPrompt({
+            const result = model.getMessages({
                 document,
                 docContext,
                 snippets: contextSnippets,
@@ -20,7 +20,10 @@ describe('DeepseekCoder ', () => {
             })
 
             expect(result).toMatchInlineSnapshot(`
-              "#codebase/context1.ts
+              [
+                {
+                  "speaker": "human",
+                  "text": "#codebase/context1.ts
               function contextSnippetOne() {}
 
               #codebase/context2.ts
@@ -161,7 +164,9 @@ describe('DeepseekCoder ', () => {
               console.log(suffix line: 22)
               console.log(suffix line: 23)
               console.log(suffix line: 24)
-              console.log(suffix line: 25)<｜fim▁end｜>"
+              console.log(suffix line: 25)<｜fim▁end｜>",
+                },
+              ]
             `)
         })
     })

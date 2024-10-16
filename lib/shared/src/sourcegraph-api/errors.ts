@@ -102,6 +102,7 @@ export function isAbortError(error: unknown): error is AbortError {
         // custom abort error
         ((error instanceof AbortError && error.isAbortError) ||
             error.name === 'AbortError' ||
+            ('type' in error && error.type === 'aborted') ||
             // http module
             error.message === 'aborted' ||
             // fetch
@@ -129,6 +130,7 @@ export function isNetworkLikeError(error: Error): boolean {
         message.includes('ECONNREFUSED') ||
         message.includes('ECONNRESET') ||
         message.includes('EHOSTUNREACH') ||
-        message.includes('ETIMEDOUT')
+        message.includes('ETIMEDOUT') ||
+        message.includes('SELF_SIGNED_CERT_IN_CHAIN')
     )
 }

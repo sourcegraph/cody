@@ -13,7 +13,7 @@ import {
 import { telemetryRecorder } from '@sourcegraph/cody-shared'
 import { type ExecuteEditArguments, executeEdit } from '../../edit/execute'
 import type { EditMode } from '../../edit/types'
-import { logDebug } from '../../log'
+import { logDebug } from '../../output-channel-logger'
 
 import type { CommandResult } from '../../CommandResult'
 import type { ChatCommandResult, EditCommandResult } from '../../CommandResult'
@@ -72,6 +72,10 @@ export class CommandRunner implements vscode.Disposable {
                 source: this.args.source,
                 traceId: this.span.spanContext().traceId,
             },
+            billingMetadata: {
+                product: 'cody',
+                category: 'core',
+            },
         })
 
         // Conditions checks
@@ -112,16 +116,14 @@ export class CommandRunner implements vscode.Disposable {
         const prompt = PromptString.unsafe_fromUserQuery(this.command.prompt)
 
         // Fetch context for the command
-        const contextFiles = await this.getContextFiles()
+        const contextItems = await this.getContextFiles()
 
         // NOTE: (bee) codebase context is not supported for custom commands
         return {
             type: 'chat',
             session: await executeChat({
                 text: prompt,
-                submitType: 'user',
-                contextFiles,
-                addEnhancedContext: this.command.context?.codebase ?? false,
+                contextItems,
                 source: 'custom-commands',
                 command: DefaultChatCommands.Custom,
             }),

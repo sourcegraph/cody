@@ -2,21 +2,19 @@ import * as uuid from 'uuid'
 import * as vscode from 'vscode'
 
 import {
-    type AuthStatus,
     type AuthenticatedAuthStatus,
     CODY_PASSTHROUGH_VSCODE_OPEN_COMMAND_ID,
     type ChatClient,
-    type ClientConfigurationWithAccessToken,
-    type ConfigWatcher,
     DEFAULT_EVENT_SOURCE,
     type Guardrails,
+    authStatus,
+    currentAuthStatus,
+    currentAuthStatusAuthed,
     editorStateFromPromptString,
     subscriptionDisposable,
     telemetryRecorder,
 } from '@sourcegraph/cody-shared'
-import type { LocalEmbeddingsController } from '../../local-context/local-embeddings'
-import type { SymfRunner } from '../../local-context/symf'
-import { logDebug, logError } from '../../log'
+import { logDebug, logError } from '../../output-channel-logger'
 import type { MessageProviderOptions } from '../MessageProvider'
 
 import type { URI } from 'vscode-uri'
@@ -24,16 +22,14 @@ import type { startTokenReceiver } from '../../auth/token-receiver'
 import type { ExecuteChatArguments } from '../../commands/execute/ask'
 import { getConfiguration } from '../../configuration'
 import type { ExtensionClient } from '../../extension-client'
-import { authProvider } from '../../services/AuthProvider'
 import { type ChatLocation, localStorage } from '../../services/LocalStorageProvider'
 import {
     handleCodeFromInsertAtCursor,
     handleCodeFromSaveToNewFile,
 } from '../../services/utils/codeblock-action-tracker'
-import type { ContextAPIClient } from '../context/contextAPIClient'
+import type { ChatIntentAPIClient } from '../context/chatIntentAPIClient'
 import type { SmartApplyResult } from '../protocol'
 import {
-    AuthDependentRetrievers,
     ChatController,
     type ChatSession,
     disposeWebviewViewOrPanel,
@@ -70,36 +66,30 @@ export class ChatsController implements vscode.Disposable {
         private options: Options,
         private chatClient: ChatClient,
 
-        private readonly localEmbeddings: LocalEmbeddingsController | null,
-        private readonly symf: SymfRunner | null,
-
         private readonly contextRetriever: ContextRetriever,
 
         private readonly guardrails: Guardrails,
-        private readonly contextAPIClient: ContextAPIClient | null,
-        private readonly extensionClient: ExtensionClient,
-        private readonly configWatcher: ConfigWatcher<ClientConfigurationWithAccessToken>
+        private readonly chatIntentAPIClient: ChatIntentAPIClient | null,
+        private readonly extensionClient: ExtensionClient
     ) {
         logDebug('ChatsController:constructor', 'init')
         this.panel = this.createChatController()
 
         this.disposables.push(
             subscriptionDisposable(
-                authProvider.instance!.changes.subscribe(authStatus => this.setAuthStatus(authStatus))
+                authStatus.subscribe(authStatus => {
+                    const hasLoggedOut = !authStatus.authenticated
+                    const hasSwitchedAccount =
+                        this.currentAuthAccount &&
+                        this.currentAuthAccount.endpoint !== authStatus.endpoint
+                    if (hasLoggedOut || hasSwitchedAccount) {
+                        this.disposeAllChats()
+                    }
+
+                    this.currentAuthAccount = authStatus.authenticated ? { ...authStatus } : undefined
+                })
             )
         )
-    }
-
-    private async setAuthStatus(authStatus: AuthStatus): Promise<void> {
-        const hasLoggedOut = !authStatus.authenticated
-        const hasSwitchedAccount =
-            this.currentAuthAccount && this.currentAuthAccount.endpoint !== authStatus.endpoint
-        if (hasLoggedOut || hasSwitchedAccount) {
-            this.disposeAllChats()
-        }
-
-        this.currentAuthAccount = authStatus.authenticated ? { ...authStatus } : undefined
-        this.panel.setAuthStatus(authStatus)
     }
 
     public async restoreToPanel(panel: vscode.WebviewPanel, chatID: string): Promise<void> {
@@ -146,25 +136,41 @@ export class ChatsController implements vscode.Disposable {
             vscode.commands.registerCommand('cody.chat.signIn', () =>
                 vscode.commands.executeCommand('cody.chat.focus')
             ),
-
-            vscode.commands.registerCommand('cody.chat.newPanel', async () => {
+            vscode.commands.registerCommand('cody.chat.newPanel', async args => {
                 localStorage.setLastUsedChatModality('sidebar')
                 const isVisible = this.panel.isVisible()
                 await this.panel.clearAndRestartSession()
+
+                try {
+                    const { contextItems } = JSON.parse(args) || {}
+                    if (contextItems?.length) {
+                        await this.panel.addContextItemsToLastHumanInput(contextItems)
+                    }
+                } catch {}
+
                 if (!isVisible) {
                     await vscode.commands.executeCommand('cody.chat.focus')
                 }
             }),
-            vscode.commands.registerCommand('cody.chat.newEditorPanel', () => {
+            vscode.commands.registerCommand('cody.chat.newEditorPanel', async args => {
                 localStorage.setLastUsedChatModality('editor')
-                return this.getOrCreateEditorChatController()
+                const panel = await this.getOrCreateEditorChatController()
+
+                try {
+                    const { contextItems } = JSON.parse(args) || {}
+                    if (contextItems?.length) {
+                        await panel.addContextItemsToLastHumanInput(contextItems)
+                    }
+                } catch {}
+
+                return panel
             }),
-            vscode.commands.registerCommand('cody.chat.new', async () => {
+            vscode.commands.registerCommand('cody.chat.new', async args => {
                 switch (getNewChatLocation()) {
                     case 'editor':
-                        return vscode.commands.executeCommand('cody.chat.newEditorPanel')
+                        return vscode.commands.executeCommand('cody.chat.newEditorPanel', args)
                     case 'sidebar':
-                        return vscode.commands.executeCommand('cody.chat.newPanel')
+                        return vscode.commands.executeCommand('cody.chat.newPanel', args)
                 }
             }),
 
@@ -248,7 +254,12 @@ export class ChatsController implements vscode.Disposable {
     }
 
     private async sendEditorContextToChat(uri?: URI): Promise<void> {
-        telemetryRecorder.recordEvent('cody.addChatContext', 'clicked')
+        telemetryRecorder.recordEvent('cody.addChatContext', 'clicked', {
+            billingMetadata: {
+                category: 'billable',
+                product: 'cody',
+            },
+        })
         const provider = await this.getActiveChatController()
         if (provider === this.panel) {
             await vscode.commands.executeCommand('cody.chat.focus')
@@ -310,32 +321,29 @@ export class ChatsController implements vscode.Disposable {
      */
     private async submitChat({
         text,
-        submitType,
-        contextFiles,
-        addEnhancedContext,
+        contextItems,
         source = DEFAULT_EVENT_SOURCE,
         command,
     }: ExecuteChatArguments): Promise<ChatSession | undefined> {
         let provider: ChatController
         // If the sidebar panel is visible and empty, use it instead of creating a new panel
-        if (submitType === 'user-newchat' && this.panel.isVisible() && this.panel.isEmpty()) {
+        if (this.panel.isVisible() && this.panel.isEmpty()) {
             provider = this.panel
         } else {
             provider = await this.getOrCreateEditorChatController()
         }
+        await provider.clearAndRestartSession()
         const abortSignal = provider.startNewSubmitOrEditOperation()
         const editorState = editorStateFromPromptString(text)
-        await provider.handleUserMessageSubmission(
-            uuid.v4(),
-            text,
-            submitType,
-            contextFiles ?? [],
+        await provider.handleUserMessageSubmission({
+            requestID: uuid.v4(),
+            inputText: text,
+            mentions: contextItems ?? [],
             editorState,
-            addEnhancedContext ?? true,
-            abortSignal,
+            signal: abortSignal,
             source,
-            command
-        )
+            command,
+        })
         return provider
     }
 
@@ -343,12 +351,18 @@ export class ChatsController implements vscode.Disposable {
      * Export chat history to file system
      */
     private async exportHistory(): Promise<void> {
-        telemetryRecorder.recordEvent('cody.exportChatHistoryButton', 'clicked')
-        const authStatus = authProvider.instance!.status
+        telemetryRecorder.recordEvent('cody.exportChatHistoryButton', 'clicked', {
+            billingMetadata: {
+                product: 'cody',
+                category: 'billable',
+            },
+        })
+        const authStatus = currentAuthStatus()
         if (authStatus.authenticated) {
             try {
                 const historyJson = chatHistory.getLocalHistory(authStatus)
                 const exportPath = await vscode.window.showSaveDialog({
+                    title: 'Cody: Export Chat History',
                     filters: { 'Chat History': ['json'] },
                 })
                 if (!exportPath || !historyJson) {
@@ -374,7 +388,7 @@ export class ChatsController implements vscode.Disposable {
         // The chat ID for client to pass in to clear all chats without showing window pop-up for confirmation.
         const ClearWithoutConfirmID = 'clear-all-no-confirm'
         const isClearAll = !chatID || chatID === ClearWithoutConfirmID
-        const authStatus = authProvider.instance!.statusAuthed
+        const authStatus = currentAuthStatusAuthed()
 
         if (isClearAll) {
             if (chatID !== ClearWithoutConfirmID) {
@@ -435,7 +449,7 @@ export class ChatsController implements vscode.Disposable {
     ): Promise<ChatController> {
         const chatController = this.createChatController()
         if (chatID) {
-            await chatController.restoreSession(chatID)
+            chatController.restoreSession(chatID)
         }
 
         if (panel) {
@@ -473,13 +487,11 @@ export class ChatsController implements vscode.Disposable {
         return new ChatController({
             ...this.options,
             chatClient: this.chatClient,
-            retrievers: new AuthDependentRetrievers(this.localEmbeddings, this.symf),
             guardrails: this.guardrails,
             startTokenReceiver: this.options.startTokenReceiver,
-            contextAPIClient: this.contextAPIClient,
+            chatIntentAPIClient: this.chatIntentAPIClient,
             contextRetriever: this.contextRetriever,
             extensionClient: this.extensionClient,
-            configWatcher: this.configWatcher,
         })
     }
 

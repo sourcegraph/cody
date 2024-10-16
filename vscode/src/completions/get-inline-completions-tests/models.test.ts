@@ -1,5 +1,4 @@
 import { describe, expect, test } from 'vitest'
-
 import { allTriggerKinds } from '../get-inline-completions'
 import { getInlineCompletionsWithInlinedChunks } from './helpers'
 
@@ -15,8 +14,10 @@ describe('[getInlineCompletions] models', () => {
                 },
                 triggerKind,
                 configuration: {
-                    autocompleteAdvancedProvider: 'fireworks',
-                    autocompleteAdvancedModel: 'starcoder-hybrid',
+                    configuration: {
+                        autocompleteAdvancedProvider: 'fireworks',
+                        autocompleteAdvancedModel: 'starcoder-hybrid',
+                    },
                 },
             })
         }

@@ -11,14 +11,12 @@ import { executeEdit } from '../../edit/execute'
 import { executeDocCommand } from './doc'
 import { executeExplainCommand } from './explain'
 import { executeSmellCommand } from './smell'
-import { executeTestChatCommand } from './test-chat'
 import { executeTestEditCommand } from './test-edit'
 
 export { commands as defaultCommands } from './cody.json'
 
 export { executeSmellCommand } from './smell'
 export { executeExplainCommand } from './explain'
-export { executeTestChatCommand } from './test-chat'
 export { executeDocCommand } from './doc'
 export { executeTestEditCommand } from './test-edit'
 export { executeTestCaseEditCommand } from './test-case'
@@ -57,8 +55,6 @@ export async function executeDefaultCommand(
             return executeExplainCommand({ additionalInstruction })
         case DefaultChatCommands.Smell:
             return executeSmellCommand({ additionalInstruction })
-        case DefaultChatCommands.Unit:
-            return executeTestChatCommand({ additionalInstruction })
         case DefaultEditCommands.Test:
             return executeTestEditCommand({ additionalInstruction })
         case DefaultEditCommands.Doc:

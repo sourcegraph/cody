@@ -3,8 +3,11 @@ import type { Ora } from 'ora'
 import { readCodySecret } from './secrets'
 
 import type { CurrentUserInfo } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
-import { isError } from 'lodash'
+import isError from 'lodash/isError'
+import ora from 'ora'
 import type { AuthenticationOptions } from './command-login'
+import { notAuthenticated } from './messages'
+import { errorSpinner } from './messages'
 import { type Account, loadUserSettings } from './settings'
 
 type AuthenticationSource = 'ENVIRONMENT_VARIABLE' | 'SECRET_STORAGE'
@@ -37,9 +40,10 @@ export class AuthenticatedAccount {
         options: AuthenticationOptions,
         source: AuthenticationSource
     ): Promise<AuthenticatedAccount | Error> {
-        const graphqlClient = new SourcegraphGraphQLAPIClient({
-            accessToken: options.accessToken,
-            serverEndpoint: options.endpoint,
+        const graphqlClient = SourcegraphGraphQLAPIClient.withStaticConfig({
+            configuration: { telemetryLevel: 'agent' },
+            auth: { accessToken: options.accessToken, serverEndpoint: options.endpoint },
+            clientState: { anonymousUserID: null },
         })
         const userInfo = await graphqlClient.getCurrentUserInfo()
         if (isError(userInfo)) {
@@ -60,6 +64,23 @@ export class AuthenticatedAccount {
             userInfo,
             source
         )
+    }
+
+    public static async fromUserSettingsOrExitProcess(
+        options: AuthenticationOptions
+    ): Promise<[AuthenticatedAccount, Ora]> {
+        const spinner = ora().start()
+        const account = await AuthenticatedAccount.fromUserSettings(spinner, options)
+
+        if (isError(account)) {
+            errorSpinner(spinner, account, options)
+            process.exit(1)
+        }
+        if (!account?.username) {
+            notAuthenticated(spinner)
+            process.exit(1)
+        }
+        return [account, spinner]
     }
 
     public static async fromUserSettings(

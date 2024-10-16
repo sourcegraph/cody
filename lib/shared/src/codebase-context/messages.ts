@@ -2,6 +2,7 @@ import type { URI } from 'vscode-uri'
 
 import type { RangeData } from '../common/range'
 import type { Message } from '../sourcegraph-api'
+import type { Range } from '../sourcegraph-api/graphql/client'
 
 export type ContextFileType = 'file' | 'symbol'
 
@@ -84,9 +85,6 @@ interface ContextItemCommon {
  * The source of this context.
  */
 export enum ContextItemSource {
-    /** From embeddings search */
-    Embeddings = 'embeddings',
-
     /** Explicitly @-mentioned by the user in chat */
     User = 'user',
 
@@ -99,6 +97,9 @@ export enum ContextItemSource {
     /** In initial context */
     Initial = 'initial',
 
+    /** Query-based context that is not added by user */
+    Priority = 'priority',
+
     /** Remote search */
     Unified = 'unified',
 
@@ -110,6 +111,9 @@ export enum ContextItemSource {
 
     /** From source control history */
     History = 'history',
+
+    /** Agentic context */
+    Agentic = 'agentic',
 }
 
 /**
@@ -172,6 +176,8 @@ export interface ContextItemFile extends ContextItemCommon {
      * that we need to resolve this context item mention via remote search file
      */
     remoteRepositoryName?: string
+
+    ranges?: Range[]
 }
 
 /**

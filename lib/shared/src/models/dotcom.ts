@@ -1,110 +1,178 @@
-import type { Model } from '.'
-import {
-    CHAT_INPUT_TOKEN_BUDGET,
-    CHAT_OUTPUT_TOKEN_BUDGET,
-    EXTENDED_CHAT_INPUT_TOKEN_BUDGET,
-    EXTENDED_USER_CONTEXT_TOKEN_BUDGET,
-} from '../token/constants'
-import { ModelTag } from './tags'
+import { type Model, type ServerModel, createModelFromServerModel } from './model'
+import type { ServerModelConfiguration } from './modelsService'
+import type { ModelTag } from './tags'
 
-import { type ModelContextWindow, ModelUsage } from './types'
+/**
+ * Copy of the DotCom model configuration API response from Sep 26 2024.
+ */
+const MOCKED_SERVER_MODELS_CONFIG = {
+    schemaVersion: '1.0',
+    revision: '0.0.0+dev',
+    providers: [
+        {
+            id: 'anthropic',
+            displayName: 'Anthropic',
+        },
+        {
+            id: 'fireworks',
+            displayName: 'Fireworks',
+        },
+        {
+            id: 'google',
+            displayName: 'Google',
+        },
+        {
+            id: 'openai',
+            displayName: 'OpenAI',
+        },
+        {
+            id: 'mistral',
+            displayName: 'Mistral',
+        },
+    ],
+    models: [
+        {
+            modelRef: 'anthropic::2023-06-01::claude-3.5-sonnet',
+            displayName: 'Claude 3.5 Sonnet',
+            modelName: 'claude-3-5-sonnet-20240620',
+            capabilities: ['edit', 'chat'],
+            category: 'balanced' as ModelTag.Balanced,
+            status: 'stable',
+            tier: 'free' as ModelTag.Free,
+            contextWindow: {
+                maxInputTokens: 45000,
+                maxOutputTokens: 4000,
+            },
+        },
+        {
+            modelRef: 'anthropic::2023-06-01::claude-3-opus',
+            displayName: 'Claude 3 Opus',
+            modelName: 'claude-3-opus-20240229',
+            capabilities: ['edit', 'chat'],
+            category: 'other' as ModelTag.Other,
+            status: 'stable',
+            tier: 'pro' as ModelTag.Pro,
+            contextWindow: {
+                maxInputTokens: 45000,
+                maxOutputTokens: 4000,
+            },
+        },
+        {
+            modelRef: 'anthropic::2023-06-01::claude-3-haiku',
+            displayName: 'Claude 3 Haiku',
+            modelName: 'claude-3-haiku-20240307',
+            capabilities: ['edit', 'chat'],
+            category: 'speed' as ModelTag.Speed,
+            status: 'stable',
+            tier: 'free' as ModelTag.Free,
+            contextWindow: {
+                maxInputTokens: 7000,
+                maxOutputTokens: 4000,
+            },
+        },
+        {
+            modelRef: 'fireworks::v1::starcoder',
+            displayName: 'StarCoder',
+            modelName: 'starcoder',
+            capabilities: ['autocomplete'],
+            category: 'speed' as ModelTag.Speed,
+            status: 'stable',
+            tier: 'pro' as ModelTag.Pro,
+            contextWindow: {
+                maxInputTokens: 2048,
+                maxOutputTokens: 256,
+            },
+        },
+        {
+            modelRef: 'fireworks::v1::deepseek-coder-v2-lite-base',
+            displayName: 'DeepSeek V2 Lite Base',
+            modelName: 'accounts/sourcegraph/models/deepseek-coder-v2-lite-base',
+            capabilities: ['autocomplete'],
+            category: 'speed' as ModelTag.Speed,
+            status: 'stable',
+            tier: 'pro' as ModelTag.Pro,
+            contextWindow: {
+                maxInputTokens: 2048,
+                maxOutputTokens: 256,
+            },
+        },
+        {
+            modelRef: 'google::v1::gemini-1.5-pro',
+            displayName: 'Gemini 1.5 Pro',
+            modelName: 'gemini-1.5-pro',
+            capabilities: ['edit', 'chat'],
+            category: 'balanced' as ModelTag.Balanced,
+            status: 'stable',
+            tier: 'free' as ModelTag.Free,
+            contextWindow: {
+                maxInputTokens: 45000,
+                maxOutputTokens: 4000,
+            },
+        },
+        {
+            modelRef: 'google::v1::gemini-1.5-flash',
+            displayName: 'Gemini 1.5 Flash',
+            modelName: 'gemini-1.5-flash',
+            capabilities: ['edit', 'chat'],
+            category: 'speed' as ModelTag.Speed,
+            status: 'stable',
+            tier: 'free' as ModelTag.Free,
+            contextWindow: {
+                maxInputTokens: 45000,
+                maxOutputTokens: 4000,
+            },
+        },
+        {
+            modelRef: 'openai::2024-02-01::gpt-4o',
+            displayName: 'GPT-4o',
+            modelName: 'gpt-4o',
+            capabilities: ['edit', 'chat'],
+            category: 'balanced' as ModelTag.Balanced,
+            status: 'stable',
+            tier: 'pro' as ModelTag.Pro,
+            contextWindow: {
+                maxInputTokens: 45000,
+                maxOutputTokens: 4000,
+            },
+        },
+        {
+            modelRef: 'openai::2024-02-01::cody-chat-preview-001',
+            displayName: 'OpenAI o1-preview',
+            modelName: 'cody-chat-preview-001',
+            capabilities: ['chat'],
+            category: 'accuracy',
+            status: 'waitlist' as ModelTag.Waitlist,
+            tier: 'pro' as ModelTag.Pro,
+            contextWindow: {
+                maxInputTokens: 45000,
+                maxOutputTokens: 4000,
+            },
+        },
+        {
+            modelRef: 'openai::2024-02-01::cody-chat-preview-002',
+            displayName: 'OpenAI o1-mini',
+            modelName: 'cody-chat-preview-002',
+            capabilities: ['chat'],
+            category: 'accuracy',
+            status: 'waitlist' as ModelTag.Waitlist,
+            tier: 'pro' as ModelTag.Pro,
+            contextWindow: {
+                maxInputTokens: 45000,
+                maxOutputTokens: 4000,
+            },
+        },
+    ],
+    defaultModels: {
+        chat: 'anthropic::2023-06-01::claude-3.5-sonnet',
+        fastChat: 'anthropic::2023-06-01::claude-3-haiku',
+        codeCompletion: 'fireworks::v1::deepseek-coder-v2-lite-base',
+    },
+} as const satisfies ServerModelConfiguration
 
-const basicContextWindow: ModelContextWindow = {
-    input: CHAT_INPUT_TOKEN_BUDGET,
-    output: CHAT_OUTPUT_TOKEN_BUDGET,
+export function getMockedDotComClientModels(): Model[] {
+    return MOCKED_SERVER_MODELS_CONFIG.models.map(createModelFromServerModel)
 }
 
-/**
- * Has a higher context window with a separate limit for user-context.
- */
-const expandedContextWindow: ModelContextWindow = {
-    input: EXTENDED_CHAT_INPUT_TOKEN_BUDGET,
-    output: CHAT_OUTPUT_TOKEN_BUDGET,
-    context: { user: EXTENDED_USER_CONTEXT_TOKEN_BUDGET },
-}
-
-/**
- * Returns an array of Models representing the default models for DotCom.
- * The order listed here is the order shown to users. Put the default LLM first.
- *
- * NOTE: The models MUST first be added to the custom chat models list in Cody Gateway.
- * @link https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/internal/completions/httpapi/chat.go?L48-51
- *
- * @returns An array of `Models` objects.
- * @deprecated This will be replaced with server-sent models
- */
-export const DEFAULT_DOT_COM_MODELS = [
-    // --------------------------------
-    // Powerful models
-    // --------------------------------
-    {
-        title: 'Claude 3.5 Sonnet',
-        id: 'anthropic/claude-3-5-sonnet-20240620',
-        provider: 'Anthropic',
-        usage: [ModelUsage.Chat, ModelUsage.Edit],
-        contextWindow: expandedContextWindow,
-        tags: [ModelTag.Gateway, ModelTag.Power, ModelTag.Recommended, ModelTag.Free],
-    },
-    {
-        title: 'Claude 3 Opus',
-        id: 'anthropic/claude-3-opus-20240229',
-        provider: 'Anthropic',
-        usage: [ModelUsage.Chat, ModelUsage.Edit],
-        contextWindow: expandedContextWindow,
-        tags: [ModelTag.Gateway, ModelTag.Pro, ModelTag.Power],
-    },
-    {
-        title: 'GPT-4o',
-        id: 'openai/gpt-4o',
-        provider: 'OpenAI',
-        usage: [ModelUsage.Chat, ModelUsage.Edit],
-        contextWindow: expandedContextWindow,
-        tags: [ModelTag.Gateway, ModelTag.Power, ModelTag.Pro],
-    },
-    {
-        title: 'Gemini 1.5 Pro',
-        id: 'google/gemini-1.5-pro-latest',
-        provider: 'Google',
-        usage: [ModelUsage.Chat, ModelUsage.Edit],
-        contextWindow: expandedContextWindow,
-        tags: [ModelTag.Gateway, ModelTag.Power],
-    },
-
-    // --------------------------------
-    // Faster models
-    // --------------------------------
-    {
-        title: 'Gemini 1.5 Flash',
-        id: 'google/gemini-1.5-flash-latest',
-        provider: 'Google',
-        usage: [ModelUsage.Chat, ModelUsage.Edit],
-        contextWindow: expandedContextWindow,
-        tags: [ModelTag.Gateway, ModelTag.Speed],
-    },
-    {
-        title: 'Claude 3 Haiku',
-        id: 'anthropic/claude-3-haiku-20240307',
-        provider: 'Anthropic',
-        usage: [ModelUsage.Chat, ModelUsage.Edit],
-        contextWindow: basicContextWindow,
-        tags: [ModelTag.Gateway, ModelTag.Speed],
-    },
-    {
-        title: 'Mixtral 8x7B',
-        id: 'fireworks/accounts/fireworks/models/mixtral-8x7b-instruct',
-        provider: 'Mistral',
-        usage: [ModelUsage.Chat],
-        contextWindow: basicContextWindow,
-        tags: [ModelTag.Gateway, ModelTag.Speed],
-    },
-] as const satisfies Model[]
-
-/**
- * Returns an array of Models representing the default models for DotCom.
- *
- * @returns An array of `Models` objects.
- * @deprecated This will be replaced with server-sent models
- */
-export function getDotComDefaultModels(): Model[] {
-    return DEFAULT_DOT_COM_MODELS
+export function getMockedDotComServerModels(): ServerModel[] {
+    return MOCKED_SERVER_MODELS_CONFIG.models
 }

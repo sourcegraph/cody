@@ -369,7 +369,7 @@ function getItemsHeading(
             <div className="tw-flex tw-flex-gap-2 tw-items-center tw-justify-between">
                 <div>
                     {mentionQuery.text.includes(':')
-                        ? 'Directory - Select a directory*'
+                        ? 'Directory - Select or search for a directory*'
                         : 'Directory - Select a repository*'}
                 </div>
                 <div

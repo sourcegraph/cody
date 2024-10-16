@@ -1,3 +1,4 @@
+import { FILE_CONTEXT_MENTION_PROVIDER } from '@sourcegraph/cody-shared'
 import type { ClientInfo, ServerInfo } from 'cody-ai/src/jsonrpc/agent-protocol'
 import {
     BrowserMessageReader,
@@ -67,12 +68,14 @@ export async function createAgentClient({
 
     // Initialize
     const serverInfo: ServerInfo = await rpc.sendRequest('initialize', {
-        name: 'web',
+        name: 'standalone-web',
         version: '0.0.1',
         workspaceRootUri,
         capabilities: {
             completions: 'none',
             webview: 'agentic',
+            disabledMentionsProviders: [FILE_CONTEXT_MENTION_PROVIDER.id],
+            authentication: 'none',
         },
         extensionConfiguration: {
             accessToken,
@@ -82,7 +85,7 @@ export async function createAgentClient({
             customConfiguration: {
                 'cody.autocomplete.enabled': false,
                 'cody.experimental.urlContext': true,
-                'cody.web': true,
+                'cody.internal.debug.state': !!process.env.CODY_WEB_DEMO,
             },
         },
     } satisfies ClientInfo)

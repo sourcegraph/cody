@@ -9,18 +9,20 @@ import {
 } from '@sourcegraph/telemetry'
 import { TimestampTelemetryProcessor } from '@sourcegraph/telemetry/dist/processors/timestamp'
 
-import {
-    CONTEXT_SELECTION_ID,
-    type ClientConfiguration,
-    type ClientConfigurationWithAccessToken,
-    type CodyIDE,
-} from '../configuration'
-import { type LogEventMode, graphqlClient } from '../sourcegraph-api/graphql/client'
+import type { CodyIDE } from '../configuration'
+import type { LogEventMode } from '../sourcegraph-api/graphql/client'
 import { GraphQLTelemetryExporter } from '../sourcegraph-api/telemetry/GraphQLTelemetryExporter'
 import { MockServerTelemetryExporter } from '../sourcegraph-api/telemetry/MockServerTelemetryExporter'
 
 import type { BillingCategory, BillingProduct } from '.'
-import type { AuthStatus, AuthStatusProvider } from '../auth/types'
+import { currentAuthStatusOrNotReadyYet } from '../auth/authStatus'
+import type { AuthStatus } from '../auth/types'
+import { clientCapabilities } from '../configuration/clientCapabilities'
+import type { PickResolvedConfiguration } from '../configuration/resolver'
+import {
+    type UserProductSubscription,
+    cachedUserProductSubscription,
+} from '../sourcegraph-api/userProductSubscription'
 import { getTier } from './cody-tier'
 
 export interface ExtensionDetails {
@@ -62,47 +64,45 @@ export class TelemetryRecorderProvider extends BaseTelemetryRecorderProvider<
     BillingCategory
 > {
     constructor(
-        extensionDetails: ExtensionDetails,
-        config: ClientConfigurationWithAccessToken,
-        authStatusProvider: AuthStatusProvider,
-        anonymousUserID: string,
+        config: PickResolvedConfiguration<{
+            configuration: true
+            auth: true
+            clientState: 'anonymousUserID'
+        }>,
         legacyBackcompatLogEventMode: LogEventMode
     ) {
-        graphqlClient.setConfig(config)
-        const clientName = extensionDetails.telemetryClientName
-            ? extensionDetails.telemetryClientName
-            : `${extensionDetails.ide || 'unknown'}.Cody`
+        const cap = clientCapabilities()
+        const clientName = cap.telemetryClientName || `${cap.agentIDE}.Cody`
 
         super(
             {
                 client: clientName,
-                clientVersion: extensionDetails.version,
+                clientVersion: cap.agentExtensionVersion,
             },
             process.env.CODY_TELEMETRY_EXPORTER === 'testing'
-                ? TESTING_TELEMETRY_EXPORTER.withAnonymousUserID(anonymousUserID)
-                : new GraphQLTelemetryExporter(anonymousUserID, legacyBackcompatLogEventMode),
+                ? TESTING_TELEMETRY_EXPORTER.withAnonymousUserID(config.clientState.anonymousUserID)
+                : new GraphQLTelemetryExporter(legacyBackcompatLogEventMode),
             [
-                new ConfigurationMetadataProcessor(config, authStatusProvider),
+                new ConfigurationMetadataProcessor(),
                 // Generate timestamps when recording events, instead of serverside
                 new TimestampTelemetryProcessor(),
             ],
             {
                 ...defaultEventRecordingOptions,
-                bufferTimeMs: 0, // disable buffering for now
+                bufferTimeMs: 0, // disable buffering for now. If this is enabled tests might need to be updated to be able to handle the delay between an action and the telemetry being fired.
             }
         )
     }
 }
 
 // This is a special type that is only used in testing to allow for access to anonymousUserID
-type TestTelemetryEventInput = TelemetryEventInput & { testOnlyAnonymousUserID: string }
+type TestTelemetryEventInput = TelemetryEventInput & { testOnlyAnonymousUserID: string | null }
 
 // creating a delegate to the TESTING_TELEMETRY_EXPORTER to allow for easy access to exported events.
 // This instance must be shared for a consistent view of what has been exported.
 class DelegateTelemetryExporter implements TelemetryExporter {
     private exportedEvents: TestTelemetryEventInput[] = []
-    // default to unset to make it clear when it's not set
-    private anonymousUserID = 'unset'
+    private anonymousUserID: string | null = null
 
     constructor(public delegate: TestTelemetryExporter) {}
     async exportEvents(events: TelemetryEventInput[]): Promise<void> {
@@ -115,7 +115,7 @@ class DelegateTelemetryExporter implements TelemetryExporter {
         await this.delegate.exportEvents(events)
     }
 
-    withAnonymousUserID(anonymousUserID: string): DelegateTelemetryExporter {
+    withAnonymousUserID(anonymousUserID: string | null): DelegateTelemetryExporter {
         this.anonymousUserID = anonymousUserID
         return this
     }
@@ -161,18 +161,16 @@ export class MockServerTelemetryRecorderProvider extends BaseTelemetryRecorderPr
     BillingCategory
 > {
     constructor(
-        extensionDetails: ExtensionDetails,
-        config: ClientConfiguration,
-        authStatusProvider: AuthStatusProvider,
-        anonymousUserID: string
+        config: PickResolvedConfiguration<{ configuration: true; clientState: 'anonymousUserID' }>
     ) {
+        const cap = clientCapabilities()
         super(
             {
-                client: `${extensionDetails.ide}.Cody`,
-                clientVersion: extensionDetails.version,
+                client: `${cap.agentIDE}.Cody`,
+                clientVersion: cap.agentExtensionVersion,
             },
-            new MockServerTelemetryExporter(anonymousUserID),
-            [new ConfigurationMetadataProcessor(config, authStatusProvider)]
+            new MockServerTelemetryExporter(config.clientState.anonymousUserID),
+            [new ConfigurationMetadataProcessor()]
         )
     }
 }
@@ -182,31 +180,23 @@ export class MockServerTelemetryRecorderProvider extends BaseTelemetryRecorderPr
  * automatically attached to all events.
  */
 class ConfigurationMetadataProcessor implements TelemetryProcessor {
-    constructor(
-        private config: ClientConfiguration,
-        private authStatusProvider: AuthStatusProvider
-    ) {}
-
     public processEvent(event: TelemetryEventInput): void {
         if (!event.parameters.metadata) {
             event.parameters.metadata = []
         }
 
-        event.parameters.metadata.push({
-            key: 'contextSelection',
-            value: CONTEXT_SELECTION_ID[this.config.useContext],
-        })
-
         // The tier is not known yet when the user is not authed, and
         // `this.authStatusProvider.status` will throw, so omit it.
         let authStatus: AuthStatus | undefined
+        let sub: UserProductSubscription | null = null
         try {
-            authStatus = this.authStatusProvider.status
+            authStatus = currentAuthStatusOrNotReadyYet()
+            sub = cachedUserProductSubscription()
         } catch {}
         if (authStatus) {
             event.parameters.metadata.push({
                 key: 'tier',
-                value: getTier(authStatus),
+                value: getTier(authStatus, sub),
             })
         }
     }

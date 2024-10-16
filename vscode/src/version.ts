@@ -1,5 +1,6 @@
 import * as vscode from 'vscode'
 
+import { setExtensionVersion } from '@sourcegraph/cody-shared'
 import { version as packageVersion } from '../package.json'
 
 // The runtime version (available from the host extension) will represent
@@ -8,3 +9,5 @@ import { version as packageVersion } from '../package.json'
 export const version =
     (vscode.extensions.getExtension('sourcegraph.cody-ai')?.packageJSON as { version: string })
         ?.version ?? packageVersion
+
+setExtensionVersion(version)

@@ -1,33 +1,45 @@
 import { CodyIDE } from '@sourcegraph/cody-shared'
 import { useCallback } from 'react'
 import { URI } from 'vscode-uri'
-import { ACCOUNT_USAGE_URL } from '../../src/chat/protocol'
-import { MESSAGE_CELL_AVATAR_SIZE } from '../chat/cells/messageCell/BaseMessageCell'
+import { ACCOUNT_UPGRADE_URL, ACCOUNT_USAGE_URL } from '../../src/chat/protocol'
 import { UserAvatar } from '../components/UserAvatar'
 import { Button } from '../components/shadcn/ui/button'
 import { getVSCodeAPI } from '../utils/VSCodeApi'
-import { useUserAccountInfo } from '../utils/useConfig'
+import { useConfig, useUserAccountInfo } from '../utils/useConfig'
+import { View } from './types'
+
+interface AccountAction {
+    text: string
+    onClick: () => void
+}
+interface AccountTabProps {
+    setView: (view: View) => void
+}
 
 // TODO: Implement the AccountTab component once the design is ready.
-export const AccountTab: React.FC = () => {
+export const AccountTab: React.FC<AccountTabProps> = ({ setView }) => {
+    const config = useConfig()
     const userInfo = useUserAccountInfo()
-    const { user, isCodyProUser, isDotComUser, ide } = userInfo
+    const { user, isCodyProUser, isDotComUser } = userInfo
     const { displayName, username, primaryEmail, endpoint } = user
 
     // We open the native system pop-up for VS Code.
-    if (ide === CodyIDE.VSCode) {
+    if (config.clientCapabilities.isVSCode) {
         return null
     }
 
-    const actions: any[] = []
+    const actions: AccountAction[] = []
 
+    if (isDotComUser && !isCodyProUser) {
+        actions.push({
+            text: 'Upgrade',
+            onClick: () =>
+                getVSCodeAPI().postMessage({ command: 'links', value: ACCOUNT_UPGRADE_URL.toString() }),
+        })
+    }
     actions.push({
         text: 'Switch Account...',
-        onClick: useCallback(() => {
-            if (userInfo.user.username) {
-                getVSCodeAPI().postMessage({ command: 'command', id: 'cody.auth.switchAccount' })
-            }
-        }, [userInfo]),
+        onClick: () => getVSCodeAPI().postMessage({ command: 'command', id: 'cody.auth.switchAccount' }),
     })
     if (isDotComUser) {
         actions.push({
@@ -49,7 +61,17 @@ export const AccountTab: React.FC = () => {
     })
     actions.push({
         text: 'Sign Out',
-        onClick: () => getVSCodeAPI().postMessage({ command: 'auth', authKind: 'signout' }),
+        onClick: () => {
+            getVSCodeAPI().postMessage({ command: 'auth', authKind: 'signout' })
+            // TODO: Remove when JB moves to agent based auth
+            // Set the view to the Chat tab so that if the user signs back in, they will be
+            // automatically redirected to the Chat tab, rather than the accounts tab.
+            // This is only for JB as the signout call is captured by the extension and not
+            // passed through to the agent.
+            if (config.clientCapabilities.agentIDE === CodyIDE.JetBrains) {
+                setView(View.Chat)
+            }
+        },
     })
 
     return (
@@ -57,9 +79,13 @@ export const AccountTab: React.FC = () => {
             <h2>Account</h2>
             <div className="tw-w-full tw-px-8 tw-py-4 tw-flex tw-flex-col tw-gap-4 tw-bg-popover tw-border tw-border-border tw-rounded-lg">
                 <div className="tw-flex tw-justify-between tw-w-full tw-border-b tw-border-border tw-shadow-lg tw-shadow-border-500/50 tw-p-4 tw-pb-6">
-                    <div className="tw-flex tw-self-stretch">
-                        <UserAvatar user={user} size={MESSAGE_CELL_AVATAR_SIZE} />
-                        <div className="tw-ml-4">
+                    <div className="tw-flex tw-self-stretch tw-flex-col tw-w-full tw-items-center tw-justify-center">
+                        <UserAvatar
+                            user={user}
+                            size={30}
+                            className="tw-flex-shrink-0 tw-w-[30px] tw-h-[30px] tw-flex tw-items-center tw-justify-center"
+                        />
+                        <div className="tw-flex tw-self-stretch tw-flex-col tw-w-full tw-items-center tw-justify-center tw-mt-4">
                             <p className="tw-text-lg tw-font-semibold">{displayName ?? username}</p>
                             <p className="tw-text-sm tw-text-muted-foreground">{primaryEmail}</p>
                         </div>
@@ -71,7 +97,11 @@ export const AccountTab: React.FC = () => {
                         {isDotComUser ? (isCodyProUser ? 'Cody Pro' : 'Cody Free') : 'Enterprise'}
                     </div>
                     <div>Endpoint:</div>
-                    <div className="tw-text-muted-foreground tw-col-span-4">{endpoint}</div>
+                    <div className="tw-text-muted-foreground tw-col-span-4">
+                        <a href={endpoint} target="_blank" rel="noreferrer">
+                            {endpoint}
+                        </a>
+                    </div>
                 </div>
             </div>
             {actions.map(a => (

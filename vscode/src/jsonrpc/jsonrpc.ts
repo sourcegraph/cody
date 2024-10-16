@@ -6,11 +6,9 @@ import * as vscode from 'vscode'
 import { type CancellationToken, type MessageConnection, ResponseError, Trace } from 'vscode-jsonrpc'
 import { CodyJsonRpcErrorCode } from './CodyJsonRpcErrorCode'
 import type * as agent from './agent-protocol'
-import type * as bfg from './bfg-protocol'
-import type * as embeddings from './embeddings-protocol'
 
-type Requests = bfg.Requests & agent.Requests & embeddings.Requests
-type Notifications = bfg.Notifications & agent.Notifications & embeddings.Notifications
+type Requests = agent.Requests
+type Notifications = agent.Notifications
 
 // String literal types for the names of the Cody Agent protocol methods.
 export type RequestMethodName = keyof Requests
@@ -42,7 +40,10 @@ export type RpcMessageHandler = Pick<MessageHandler, 'request' | 'notify' | 'con
 export class MessageHandler {
     // Tracked for `clientForThisInstance` only.
     private readonly requestHandlers = new Map<RequestMethodName, RequestCallback<any>>()
-    private readonly notificationHandlers = new Map<NotificationMethodName, NotificationCallback<any>>()
+    private readonly notificationHandlers = new Map<
+        NotificationMethodName,
+        { callback: NotificationCallback<any>; disposable: vscode.Disposable }
+    >()
 
     private disposables: vscode.Disposable[] = []
 
@@ -103,8 +104,18 @@ export class MessageHandler {
         method: M,
         callback: NotificationCallback<M>
     ): void {
-        this.notificationHandlers.set(method, callback)
-        this.disposables.push(this.conn.onNotification(method, params => callback(params)))
+        const disposable = this.conn.onNotification(method, params => callback(params))
+        this.notificationHandlers.set(method, { callback, disposable })
+        this.disposables.push(disposable)
+    }
+
+    public unregisterNotification<M extends NotificationMethodName>(method: M): void {
+        const entry = this.notificationHandlers.get(method)
+        if (!entry) {
+            throw new Error(`unregisterNotification: no handler for ${method}`)
+        }
+        entry.disposable.dispose()
+        this.notificationHandlers.delete(method)
     }
 
     public async request<M extends RequestMethodName>(
@@ -154,9 +165,9 @@ export class MessageHandler {
                 throw new Error(`No such request handler: ${method}`)
             },
             notify: <M extends NotificationMethodName>(method: M, params: ParamsOf<M>) => {
-                const handler = this.notificationHandlers.get(method)
-                if (handler) {
-                    handler(params)
+                const entry = this.notificationHandlers.get(method)
+                if (entry?.callback) {
+                    entry.callback(params)
                     return
                 }
                 throw new Error(`No such notification handler: ${method}`)

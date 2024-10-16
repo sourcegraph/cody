@@ -41,7 +41,7 @@ export async function getWorkspaceFilesContext(
             return (
                 await Promise.all(
                     results.map(async result => {
-                        if (await contextFiltersProvider.instance!.isUriIgnored(result)) {
+                        if (await contextFiltersProvider.isUriIgnored(result)) {
                             return null
                         }
 

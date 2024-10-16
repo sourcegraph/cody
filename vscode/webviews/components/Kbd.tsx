@@ -31,6 +31,10 @@ function keyTextOrSvg(key: string): React.ReactElement | string {
     switch (key.toLowerCase()) {
         case 'return':
             return <CornerDownLeftIcon className={iconClassName} />
+        case 'alt':
+            return <OptionIcon className={iconClassName} />
+        case 'ctrl':
+            return <ChevronUpIcon className={cn(iconClassName, '-tw-translate-y-[.2em]')} />
         case 'shift':
             return <ArrowBigUpIcon className={iconClassName} />
         default:

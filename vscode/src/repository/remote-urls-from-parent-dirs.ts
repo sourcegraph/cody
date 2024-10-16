@@ -2,14 +2,33 @@ import ini from 'ini'
 import * as vscode from 'vscode'
 
 import { isFileURI } from '@sourcegraph/cody-shared'
+import { vscodeGitAPI } from './git-extension-api'
 
 const textDecoder = new TextDecoder('utf-8')
+
+/**
+ * Get the Git remote URLs for a given URI, which is assumed to be a file or path in a Git
+ * repository. If it's not in a Git repository or there are no remote URLs, it returns `undefined`.
+ *
+ * This function tries 2 different ways to get the remote URLs: (1) by using the Git extension API
+ * available in VS Code only, and (2) by crawling the file system for the `.git/config` file.
+ */
+export async function gitRemoteUrlsForUri(
+    uri: vscode.Uri,
+    signal?: AbortSignal
+): Promise<string[] | undefined> {
+    const fromGitExtension = gitRemoteUrlsFromGitExtension(uri)
+    if (fromGitExtension && fromGitExtension.length > 0) {
+        return fromGitExtension
+    }
+    return await gitRemoteUrlsFromParentDirs(uri, signal)
+}
 
 /**
  * Walks the tree from the current directory to find the `.git` folder and
  * extracts remote URLs.
  */
-export async function gitRemoteUrlsFromParentDirs(
+async function gitRemoteUrlsFromParentDirs(
     uri: vscode.Uri,
     signal?: AbortSignal
 ): Promise<string[] | undefined> {
@@ -24,6 +43,27 @@ export async function gitRemoteUrlsFromParentDirs(
     return gitRepoURIs
         ? await gitRemoteUrlsFromGitConfigUri(gitRepoURIs.gitConfigUri, signal)
         : undefined
+}
+
+/**
+ * ❗️ The Git extension API instance is only available in the VS Code extension. ️️❗️
+ */
+function gitRemoteUrlsFromGitExtension(uri: vscode.Uri): string[] | undefined {
+    const repository = vscodeGitAPI?.getRepository(uri)
+    if (!repository) {
+        return undefined
+    }
+
+    const remoteUrls = new Set<string>()
+    for (const remote of repository.state?.remotes || []) {
+        if (remote.fetchUrl) {
+            remoteUrls.add(remote.fetchUrl)
+        }
+        if (remote.pushUrl) {
+            remoteUrls.add(remote.pushUrl)
+        }
+    }
+    return remoteUrls.size ? Array.from(remoteUrls) : undefined
 }
 
 interface GitRepoURIs {

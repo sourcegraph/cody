@@ -2,12 +2,13 @@ import {
     FeatureFlag,
     type SourcegraphGraphQLAPIClient,
     type Unsubscribable,
+    authStatus,
+    currentAuthStatusOrNotReadyYet,
     featureFlagProvider,
     isDotCom,
 } from '@sourcegraph/cody-shared'
 import type * as vscode from 'vscode'
 import { URI } from 'vscode-uri'
-import { authProvider } from '../services/AuthProvider'
 import { localStorage } from '../services/LocalStorageProvider'
 
 export class CodyProExpirationNotifications implements vscode.Disposable {
@@ -83,16 +84,16 @@ export class CodyProExpirationNotifications implements vscode.Disposable {
             // right flags.
             //
             // See https://sourcegraph.slack.com/archives/C05AGQYD528/p1706872864488829
-            this.authProviderSubscription = authProvider.instance!.changes.subscribe(() =>
+            this.authProviderSubscription = authStatus.subscribe(() =>
                 setTimeout(() => this.triggerExpirationCheck(), this.autoUpdateDelay)
             )
         }
 
         // Not logged in or not DotCom, don't show.
-        const authStatus = authProvider.instance!.status
-        if (!authStatus.authenticated || !isDotCom(authStatus)) return
+        const authStatus_ = currentAuthStatusOrNotReadyYet()
+        if (!authStatus_?.authenticated || !isDotCom(authStatus_)) return
 
-        const useSscForCodySubscription = await featureFlagProvider.instance!.evaluateFeatureFlag(
+        const useSscForCodySubscription = await featureFlagProvider.evaluateFeatureFlagEphemerally(
             FeatureFlag.UseSscForCodySubscription
         )
         if (this.shouldSuppressNotifications()) return // Status may have changed during await
@@ -121,7 +122,7 @@ export class CodyProExpirationNotifications implements vscode.Disposable {
     }
 
     private async showNotification(): Promise<void> {
-        const codyProTrialEnded = await featureFlagProvider.instance!.evaluateFeatureFlag(
+        const codyProTrialEnded = await featureFlagProvider.evaluateFeatureFlagEphemerally(
             FeatureFlag.CodyProTrialEnded
         )
         if (this.shouldSuppressNotifications()) return // Status may have changed during await

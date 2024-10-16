@@ -26,7 +26,12 @@ const startTutorial = async (document: vscode.TextDocument): Promise<vscode.Disp
     const editor = await vscode.window.showTextDocument(document)
     const diagnosticCollection = vscode.languages.createDiagnosticCollection('codyTutorial')
     disposables.push(diagnosticCollection)
-    telemetryRecorder.recordEvent('cody.interactiveTutorial', 'started')
+    telemetryRecorder.recordEvent('cody.interactiveTutorial', 'started', {
+        billingMetadata: {
+            product: 'cody',
+            category: 'billable',
+        },
+    })
 
     let activeStep: TutorialStep | null = null
 
@@ -67,12 +72,22 @@ const startTutorial = async (document: vscode.TextDocument): Promise<vscode.Disp
         const nextStep = activeStep?.key ? getNextStep(activeStep.key) : 'autocomplete'
 
         if (activeStep?.key) {
-            telemetryRecorder.recordEvent('cody.interactiveTutorial.stepComplete', activeStep.key)
+            telemetryRecorder.recordEvent('cody.interactiveTutorial.stepComplete', activeStep.key, {
+                billingMetadata: {
+                    product: 'cody',
+                    category: 'billable',
+                },
+            })
         }
 
         if (nextStep === null) {
             editor.setDecorations(TODO_DECORATION, [])
-            telemetryRecorder.recordEvent('cody.interactiveTutorial', 'finished')
+            telemetryRecorder.recordEvent('cody.interactiveTutorial', 'finished', {
+                billingMetadata: {
+                    product: 'cody',
+                    category: 'billable',
+                },
+            })
             return
         }
 
@@ -253,7 +268,12 @@ export const registerInteractiveTutorial = async (
             return start()
         }),
         vscode.commands.registerCommand('cody.tutorial.reset', async () => {
-            telemetryRecorder.recordEvent('cody.interactiveTutorial', 'reset')
+            telemetryRecorder.recordEvent('cody.interactiveTutorial', 'reset', {
+                billingMetadata: {
+                    product: 'cody',
+                    category: 'billable',
+                },
+            })
             stop()
             document = await resetDocument(documentUri)
             return start()

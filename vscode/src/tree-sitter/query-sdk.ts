@@ -1,4 +1,4 @@
-import { findLast } from 'lodash'
+import findLast from 'lodash/findLast'
 import type { Position, TextDocument } from 'vscode'
 import type {
     Language,

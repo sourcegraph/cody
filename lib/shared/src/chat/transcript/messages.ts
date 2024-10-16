@@ -33,6 +33,9 @@ export interface ChatMessage extends Message {
      * The model used to generate this chat message response. Not set on human messages.
      */
     model?: string
+
+    /* The detected intent of the message */
+    intent?: 'search' | 'chat' | undefined | null
 }
 
 // An unsafe version of the {@link ChatMessage} that has the PromptString
@@ -47,6 +50,7 @@ export interface SerializedChatMessage {
     speaker: 'human' | 'assistant' | 'system'
     text?: string // Changed from PromptString
     model?: string
+    intent?: ChatMessage['intent']
 }
 
 export interface ChatError {

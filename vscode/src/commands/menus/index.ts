@@ -5,7 +5,7 @@ import { CommandMenuOption, CustomCommandConfigMenuItems } from './items/menu'
 
 import { CustomCommandType } from '@sourcegraph/cody-shared'
 import { telemetryRecorder } from '@sourcegraph/cody-shared'
-import { CodyCommandMenuItems } from '..'
+import { CodyCommandMenuItems as defaultCommands } from '..'
 import { executeEdit } from '../../edit/execute'
 import { executeChat } from '../execute/ask'
 import { openCustomCommandDocsLink } from '../services/custom-commands'
@@ -16,7 +16,7 @@ import type { CommandMenuItem } from './types'
 
 export async function showCommandMenu(
     type: 'default' | 'custom' | 'config',
-    allCommands: CodyCommand[],
+    customCommands: CodyCommand[],
     args?: CodyCommandArgs
 ): Promise<void> {
     const items: CommandMenuItem[] = []
@@ -27,6 +27,10 @@ export async function showCommandMenu(
     const source = args?.source
     telemetryRecorder.recordEvent(`cody.menu.command.${type}`, 'clicked', {
         privateMetadata: { source },
+        billingMetadata: {
+            product: 'cody',
+            category: 'billable',
+        },
     })
 
     // Add items to menus accordingly:
@@ -39,20 +43,14 @@ export async function showCommandMenu(
         // Add Default Commands
         if (type !== 'custom') {
             items.push(CommandMenuSeperator.commands)
-            for (const item of CodyCommandMenuItems) {
-                // Skip the 'Custom Commands' option
-                if (item.key === 'custom') {
-                    continue
-                }
-
+            for (const item of defaultCommands) {
                 if (
                     item.requires?.setting &&
                     !vscode.workspace.getConfiguration().get(item.requires?.setting)
                 ) {
-                    // Skip items that are missing the correct setting
+                    // Skip items that are missing the correct setting / feature flag.
                     continue
                 }
-
                 const key = item.key
                 const label = `$(${item.icon}) ${item.description}`
                 const command = item.command.command
@@ -64,9 +62,9 @@ export async function showCommandMenu(
         }
 
         // Add Custom Commands
-        if (allCommands?.length) {
+        if (customCommands?.length) {
             items.push(CommandMenuSeperator.custom)
-            for (const customCommand of allCommands) {
+            for (const customCommand of customCommands) {
                 const label = `$(tools) ${customCommand.key}`
                 const description = customCommand.description ?? customCommand.prompt
                 const command = customCommand.key
@@ -97,11 +95,11 @@ export async function showCommandMenu(
         quickPick.onDidTriggerButton(async item => {
             // On gear icon click
             if (item.tooltip?.startsWith('Configure')) {
-                await showCommandMenu('config', allCommands)
+                await showCommandMenu('config', customCommands)
                 return
             }
             // On back button click
-            await showCommandMenu('default', allCommands)
+            await showCommandMenu('default', customCommands)
             quickPick.hide()
         })
 
@@ -165,7 +163,6 @@ export async function showCommandMenu(
                     } else {
                         void executeChat({
                             text: value.trim(),
-                            submitType: 'user-newchat',
                             source,
                         })
                     }
@@ -219,7 +216,12 @@ function normalize(input: string): string {
 export async function showNewCustomCommandMenu(
     commands: string[]
 ): Promise<CustomCommandsBuilder | null> {
-    telemetryRecorder.recordEvent('cody.menu.custom.build', 'clicked')
+    telemetryRecorder.recordEvent('cody.menu.custom.build', 'clicked', {
+        billingMetadata: {
+            product: 'cody',
+            category: 'billable',
+        },
+    })
     const builder = new CustomCommandsBuilderMenu()
     return builder.start(commands)
 }

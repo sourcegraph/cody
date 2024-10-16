@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
 
-import { SUPPORTED_URI_SCHEMAS, isCodyIgnoredFile } from '@sourcegraph/cody-shared'
+import { SUPPORTED_URI_SCHEMAS } from '@sourcegraph/cody-shared'
 
 /**
  * Interface for tracking the last active text editor that is not a webview panel for
@@ -11,6 +11,9 @@ import { SUPPORTED_URI_SCHEMAS, isCodyIgnoredFile } from '@sourcegraph/cody-shar
  */
 interface LastActiveTextEditor {
     active?: vscode.TextEditor
+    /**
+     * @deprecated Cody Ignore has been deprecated. This field will be removed in the future.
+     */
     ignored?: boolean
 }
 
@@ -54,7 +57,6 @@ export function getEditor(): LastActiveTextEditor {
             // Update the lastActiveTextEditor if the active editor is a valid file
             if (SUPPORTED_URI_SCHEMAS.has(activeEditor.document.uri.scheme)) {
                 lastActiveTextEditor.active = activeEditor
-                lastActiveTextEditor.ignored = isCodyIgnoredFile(activeEditor?.document.uri)
             }
         }
         return lastActiveTextEditor

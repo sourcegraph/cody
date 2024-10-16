@@ -26,7 +26,7 @@ export const WithPromptsAndCommands: Story = {
             value={{
                 ...MOCK_API,
                 prompts: makePromptsAPIWithData({
-                    prompts: { type: 'results', results: FIXTURE_PROMPTS },
+                    prompts: FIXTURE_PROMPTS,
                     commands: FIXTURE_COMMANDS,
                 }),
             }}
@@ -42,7 +42,8 @@ export const WithOnlyCommands: Story = {
             value={{
                 ...MOCK_API,
                 prompts: makePromptsAPIWithData({
-                    prompts: { type: 'unsupported' },
+                    arePromptsSupported: false,
+                    prompts: [],
                     commands: FIXTURE_COMMANDS,
                 }),
             }}

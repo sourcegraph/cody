@@ -1,36 +1,52 @@
 import {
+    AUTH_STATUS_FIXTURE_AUTHED,
+    CLIENT_CAPABILITIES_FIXTURE,
     type ContextItem,
     ContextItemSource,
     type Message,
-    Model,
     ModelUsage,
+    type ModelsData,
     contextFiltersProvider,
+    createModel,
+    mockAuthStatus,
+    mockClientCapabilities,
+    mockResolvedConfig,
     modelsService,
     ps,
 } from '@sourcegraph/cody-shared'
+import { Observable } from 'observable-fns'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import * as vscode from 'vscode'
 import { PromptBuilder } from '../../prompt-builder'
-import { ChatModel } from './ChatModel'
+import { ChatBuilder } from './ChatBuilder'
 import { DefaultPrompter } from './prompt'
 
 describe('DefaultPrompter', () => {
     beforeEach(() => {
-        vi.spyOn(contextFiltersProvider.instance!, 'isUriIgnored').mockResolvedValue(false)
+        vi.spyOn(contextFiltersProvider, 'isUriIgnored').mockResolvedValue(false)
+        mockAuthStatus(AUTH_STATUS_FIXTURE_AUTHED)
+        mockResolvedConfig({ configuration: {} })
+        mockClientCapabilities(CLIENT_CAPABILITIES_FIXTURE)
     })
     afterEach(() => {
         vi.restoreAllMocks()
     })
 
     it('constructs a prompt with no context', async () => {
-        modelsService.instance!.setModels([
-            new Model({
-                id: 'a-model-id',
-                usage: [ModelUsage.Chat],
-                contextWindow: { input: 100000, output: 100 },
-            }),
-        ])
-        const chat = new ChatModel('a-model-id')
+        vi.spyOn(modelsService, 'modelsChanges', 'get').mockReturnValue(
+            Observable.of<ModelsData>({
+                primaryModels: [
+                    createModel({
+                        id: 'a-model-id',
+                        usage: [ModelUsage.Chat],
+                        contextWindow: { input: 100000, output: 100 },
+                    }),
+                ],
+                localModels: [],
+                preferences: { defaults: {}, selected: {} },
+            })
+        )
+        const chat = new ChatBuilder('a-model-id')
         chat.addHumanMessage({ text: ps`Hello` })
 
         const { prompt, context } = await new DefaultPrompter([], []).makePrompt(chat, 0)
@@ -38,7 +54,8 @@ describe('DefaultPrompter', () => {
           [
             {
               "speaker": "human",
-              "text": "You are Cody, an AI coding assistant from Sourcegraph.If your answer contains fenced code blocks in Markdown, include the relevant full file path in the code block tag using this structure: \`\`\`$LANGUAGE:$FILEPATH\`\`\`.",
+              "text": "You are Cody, an AI coding assistant from Sourcegraph.If your answer contains fenced code blocks in Markdown, include the relevant full file path in the code block tag using this structure: \`\`\`$LANGUAGE:$FILEPATH\`\`\`
+          For executable terminal commands: enclose each command in individual "bash" language code block without comments and new lines inside.",
             },
             {
               "speaker": "assistant",
@@ -90,22 +107,27 @@ describe('DefaultPrompter', () => {
     })
 
     it('adds the cody.chat.preInstruction vscode setting if set', async () => {
-        const getConfig = vi.spyOn(vscode.workspace, 'getConfiguration')
-        getConfig.mockImplementation((section, resource) => ({
-            get: vi.fn(() => 'Always respond with 🧀 emojis'),
-            has: vi.fn(() => true),
-            inspect: vi.fn(() => ({ key: 'key' })),
-            update: vi.fn(() => Promise.resolve()),
-        }))
+        mockResolvedConfig({
+            configuration: {
+                chatPreInstruction: ps`Always respond with 🧀 emojis`,
+            },
+        })
 
-        modelsService.instance!.setModels([
-            new Model({
-                id: 'a-model-id',
-                usage: [ModelUsage.Chat],
-                contextWindow: { input: 100000, output: 100 },
-            }),
-        ])
-        const chat = new ChatModel('a-model-id')
+        vi.spyOn(modelsService, 'modelsChanges', 'get').mockReturnValue(
+            Observable.of<ModelsData>({
+                primaryModels: [
+                    createModel({
+                        id: 'a-model-id',
+                        usage: [ModelUsage.Chat],
+                        contextWindow: { input: 100000, output: 100 },
+                    }),
+                ],
+                localModels: [],
+                preferences: { defaults: {}, selected: {} },
+            })
+        )
+
+        const chat = new ChatBuilder('a-model-id')
         chat.addHumanMessage({ text: ps`Hello` })
 
         const { prompt, context } = await new DefaultPrompter([], []).makePrompt(chat, 0)
@@ -113,7 +135,8 @@ describe('DefaultPrompter', () => {
           [
             {
               "speaker": "human",
-              "text": "You are Cody, an AI coding assistant from Sourcegraph.If your answer contains fenced code blocks in Markdown, include the relevant full file path in the code block tag using this structure: \`\`\`$LANGUAGE:$FILEPATH\`\`\`.
+              "text": "You are Cody, an AI coding assistant from Sourcegraph.If your answer contains fenced code blocks in Markdown, include the relevant full file path in the code block tag using this structure: \`\`\`$LANGUAGE:$FILEPATH\`\`\`
+          For executable terminal commands: enclose each command in individual "bash" language code block without comments and new lines inside.
 
           Always respond with 🧀 emojis",
             },
@@ -133,15 +156,22 @@ describe('DefaultPrompter', () => {
         expect(context.ignored).toEqual([])
     })
 
-    it('prefers latest enhanced context', async () => {
-        modelsService.instance!.setModels([
-            new Model({
-                id: 'a-model-id',
-                usage: [ModelUsage.Chat],
-                contextWindow: { input: 100000, output: 100 },
-            }),
-        ])
-        const chat = new ChatModel('a-model-id')
+    it('prefers latest context', async () => {
+        vi.spyOn(modelsService, 'modelsChanges', 'get').mockReturnValue(
+            Observable.of<ModelsData>({
+                primaryModels: [
+                    createModel({
+                        id: 'a-model-id',
+                        usage: [ModelUsage.Chat],
+                        contextWindow: { input: 100000, output: 100 },
+                    }),
+                ],
+                localModels: [],
+                preferences: { defaults: {}, selected: {} },
+            })
+        )
+
+        const chat = new ChatBuilder('a-model-id')
         chat.addHumanMessage({ text: ps`Hello, world!` })
 
         // First chat message
@@ -174,7 +204,7 @@ describe('DefaultPrompter', () => {
         ])
 
         chat.setLastMessageContext(info.context.used)
-        chat.addBotMessage({ text: ps`Oh hello there.` })
+        chat.addBotMessage({ text: ps`Oh hello there.` }, 'my-model')
         chat.addHumanMessage({ text: ps`Hello again!` })
 
         // Second chat should give highest priority to new context (both explicit and enhanced)

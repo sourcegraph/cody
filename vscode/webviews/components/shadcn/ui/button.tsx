@@ -6,7 +6,7 @@ import { cn } from '../utils'
 const roundedIconStyles = 'tw-flex tw-items-center tw-justify-center !tw-rounded-full !tw-p-2 tw-border'
 
 const buttonVariants = cva(
-    'tw-inline-flex tw-items-center tw-justify-center tw-whitespace-nowrap tw-rounded-md focus-visible:tw-border-ring focus-visible:tw-outline-none disabled:tw-pointer-events-none disabled:tw-opacity-50 tw-gap-3 tw-transition tw-duration-75 tw-cursor-pointer',
+    'tw-inline-flex tw-items-center tw-justify-center tw-rounded-md focus-visible:tw-border-ring focus-visible:tw-outline-none disabled:tw-pointer-events-none disabled:tw-opacity-50 tw-gap-3 tw-transition tw-duration-75 tw-cursor-pointer',
     {
         variants: {
             variant: {

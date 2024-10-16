@@ -10,13 +10,13 @@ import { renderHook } from '@testing-library/react'
 import { Observable } from 'observable-fns'
 import { describe, expect, test, vi } from 'vitest'
 import { URI } from 'vscode-uri'
-import { useClientState } from '../../clientState'
 import { MOCK_API, useExtensionAPI } from '../../useExtensionAPI'
+import { useInitialContextForChat } from '../../useInitialContext'
 import { waitForObservableInTest } from '../../useObservable'
 import { useCallMentionMenuData, useMentionMenuData } from './useMentionMenuData'
 
 vi.mock('../../useExtensionAPI')
-vi.mock('../../clientState')
+vi.mock('../../useInitialContext')
 
 describe('useMentionMenuData', () => {
     describe('initial context deduping', () => {
@@ -58,9 +58,7 @@ describe('useMentionMenuData', () => {
                 ...mockContextItems[0],
                 source: ContextItemSource.Initial,
             }
-            vi.mocked(useClientState).mockReturnValue({
-                initialContext: [file1FromInitialContext],
-            })
+            vi.mocked(useInitialContextForChat).mockReturnValue([file1FromInitialContext])
 
             const { result } = renderHook(() =>
                 useMentionMenuData(
@@ -68,6 +66,7 @@ describe('useMentionMenuData', () => {
                     { remainingTokenBudget: 100, limit: 10 }
                 )
             )
+            await waitForObservableInTest()
             await waitForObservableInTest()
             expect(result.current).toEqual<typeof result.current>({
                 providers: mockProviders,
@@ -91,6 +90,7 @@ describe('useMentionMenuData', () => {
                 )
             )
             await waitForObservableInTest()
+            await waitForObservableInTest() // HACK(sqs): less flaky on node@18
             expect(result2.current).toEqual<typeof result2.current>({
                 providers: [],
                 items: [file1],
@@ -112,9 +112,7 @@ describe('useMentionMenuData', () => {
                     error: 'my error',
                 }),
         })
-        vi.mocked(useClientState).mockReturnValue({
-            initialContext: [],
-        })
+        vi.mocked(useInitialContextForChat).mockReturnValue([])
 
         const { result } = renderHook(() =>
             useMentionMenuData({ query: '', parentItem: null }, { remainingTokenBudget: 100, limit: 10 })
@@ -143,7 +141,9 @@ describe('useCallMentionMenuData', () => {
             mentionMenuData: () => promiseToObservable(dataPromise),
         })
 
-        const { result } = renderHook(() => useCallMentionMenuData({ query: 'q', parentItem: null }))
+        const { result } = renderHook(() =>
+            useCallMentionMenuData({ query: 'q', parentItem: null, interactionID: null })
+        )
 
         expect(result.current).toEqual<typeof result.current>({
             done: false,

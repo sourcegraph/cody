@@ -1,5 +1,3 @@
-import semver from 'semver'
-
 import { type AuthStatus, type AuthenticatedAuthStatus, isDotCom } from '@sourcegraph/cody-shared'
 import type { CurrentUserInfo } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
 
@@ -7,17 +5,9 @@ type NewAuthStatusOptions = { endpoint: string } & (
     | { authenticated: false; showNetworkError?: boolean; showInvalidAccessTokenError?: boolean }
     | (Pick<
           AuthenticatedAuthStatus,
-          | 'authenticated'
-          | 'username'
-          | 'siteVersion'
-          | 'configOverwrites'
-          | 'hasVerifiedEmail'
-          | 'displayName'
-          | 'avatarURL'
-          | 'userCanUpgrade'
-          | 'isOfflineMode'
+          'authenticated' | 'username' | 'hasVerifiedEmail' | 'displayName' | 'avatarURL'
       > & {
-          userOrganizations?: CurrentUserInfo['organizations']
+          organizations?: CurrentUserInfo['organizations']
           primaryEmail?:
               | string
               | {
@@ -29,21 +19,15 @@ type NewAuthStatusOptions = { endpoint: string } & (
 
 export function newAuthStatus(options: NewAuthStatusOptions): AuthStatus {
     if (!options.authenticated) {
-        return { authenticated: false, endpoint: options.endpoint, showInvalidAccessTokenError: true }
-    }
-
-    const { isOfflineMode, username, endpoint, siteVersion, userOrganizations } = options
-
-    if (isOfflineMode) {
         return {
-            authenticated: true,
-            endpoint,
-            username,
-            codyApiVersion: 0,
-            siteVersion: 'offline',
-            isOfflineMode: true,
+            authenticated: false,
+            endpoint: options.endpoint,
+            showInvalidAccessTokenError: true,
+            pendingValidation: false,
         }
     }
+
+    const { endpoint, organizations } = options
 
     const isDotCom_ = isDotCom(endpoint)
     const primaryEmail =
@@ -56,9 +40,10 @@ export function newAuthStatus(options: NewAuthStatusOptions): AuthStatus {
         primaryEmail,
         requiresVerifiedEmail,
         hasVerifiedEmail,
-        codyApiVersion: inferCodyApiVersion(siteVersion, isDotCom_),
+        pendingValidation: false,
         isFireworksTracingEnabled:
-            isDotCom_ && !!userOrganizations?.nodes.find(org => org.name === 'sourcegraph'),
+            isDotCom_ && !!organizations?.nodes.find(org => org.name === 'sourcegraph'),
+        organizations: organizations?.nodes,
     }
 }
 
@@ -87,27 +72,4 @@ export const countGeneratedCode = (text: string): { lineCount: number; charCount
         count.lineCount += lineCount
     }
     return count
-}
-
-function inferCodyApiVersion(version: string, isDotCom: boolean): 0 | 1 {
-    const parsedVersion = semver.valid(version)
-    // DotCom is always recent
-    if (isDotCom) {
-        return 1
-    }
-    // On Cloud deployments from main, the version identifier will not parse as SemVer. Assume these
-    // are recent
-    if (parsedVersion == null) {
-        return 1
-    }
-    // 5.4.0+ will include the API changes.
-    if (semver.gte(parsedVersion, '5.4.0')) {
-        return 1
-    }
-    // Dev instances report as 0.0.0
-    if (parsedVersion === '0.0.0') {
-        return 1
-    }
-
-    return 0 // zero refers to the legacy, unversioned, Cody API
 }

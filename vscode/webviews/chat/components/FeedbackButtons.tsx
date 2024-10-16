@@ -18,8 +18,8 @@ export const FeedbackButtons: React.FunctionComponent<FeedbackButtonsProps> = ({
 
     const onFeedbackBtnSubmit = useCallback(
         (text: string) => {
-            feedbackButtonsOnSubmit(text)
             setFeedbackSubmitted(text)
+            feedbackButtonsOnSubmit(text)
         },
         [feedbackButtonsOnSubmit]
     )

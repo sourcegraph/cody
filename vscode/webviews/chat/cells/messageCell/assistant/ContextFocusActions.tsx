@@ -3,6 +3,7 @@ import clsx from 'clsx'
 import { type FunctionComponent, useCallback, useMemo } from 'react'
 import { Button } from '../../../../components/shadcn/ui/button'
 import { Tooltip, TooltipContent, TooltipTrigger } from '../../../../components/shadcn/ui/tooltip'
+import { getVSCodeAPI } from '../../../../utils/VSCodeApi'
 import { useTelemetryRecorder } from '../../../../utils/telemetry'
 import type {
     HumanMessageInitialContextInfo as InitialContextInfo,
@@ -11,8 +12,9 @@ import type {
 
 export const ContextFocusActions: FunctionComponent<{
     humanMessage: PriorHumanMessageInfo
+    longResponseTime?: boolean
     className?: string
-}> = ({ humanMessage, className }) => {
+}> = ({ humanMessage, longResponseTime, className }) => {
     const telemetryRecorder = useTelemetryRecorder()
 
     const initialContextEventMetadata: Record<string, number> = {
@@ -27,6 +29,10 @@ export const ContextFocusActions: FunctionComponent<{
                     ...initialContextEventMetadata,
                     rerunWithInitialContextRepositories: rerunWith.repositories ? 1 : 0,
                     rerunWithInitialContextFiles: rerunWith.files ? 1 : 0,
+                },
+                billingMetadata: {
+                    product: 'cody',
+                    category: 'billable',
                 },
             })
         },
@@ -65,21 +71,43 @@ export const ContextFocusActions: FunctionComponent<{
                               },
                           }
                         : null,
-                    {
-                        label: 'Add context...',
-                        tooltip: 'Add relevant content to improve the response',
-                        onClick: () => {
-                            telemetryRecorder.recordEvent('cody.contextSelection', 'addFile', {
-                                metadata: initialContextEventMetadata,
-                            })
-                            humanMessage.appendAtMention()
-                        },
-                    },
+                    longResponseTime
+                        ? {
+                              label: 'Try again with a different model',
+                              tooltip:
+                                  'A new window will open with a copy of the current conversation where you can resubmit your request with a different model',
+                              onClick: () => {
+                                  getVSCodeAPI().postMessage({
+                                      command: 'chatSession',
+                                      action: 'duplicate',
+                                  })
+                              },
+                          }
+                        : {
+                              label: 'Add context...',
+                              tooltip: 'Add relevant content to improve the response',
+                              onClick: () => {
+                                  telemetryRecorder.recordEvent('cody.contextSelection', 'addFile', {
+                                      metadata: initialContextEventMetadata,
+                                      billingMetadata: {
+                                          product: 'cody',
+                                          category: 'core',
+                                      },
+                                  })
+                                  humanMessage.appendAtMention()
+                              },
+                          },
                 ] as { label: string; tooltip: string; onClick: () => void }[]
             )
                 .flat()
                 .filter(isDefined),
-        [humanMessage, telemetryRecorder, logRerunWithDifferentContext, initialContextEventMetadata]
+        [
+            humanMessage,
+            telemetryRecorder,
+            logRerunWithDifferentContext,
+            initialContextEventMetadata,
+            longResponseTime,
+        ]
     )
     return actions.length > 0 ? (
         <menu
@@ -88,7 +116,11 @@ export const ContextFocusActions: FunctionComponent<{
             aria-label="Try again with different context"
         >
             <div className="tw-flex tw-flex-wrap tw-items-center tw-gap-x-4 tw-gap-y-2">
-                <h3 className="tw-flex tw-items-center tw-gap-3">Try again with different context</h3>
+                {!longResponseTime && (
+                    <h3 className="tw-flex tw-items-center tw-gap-3">
+                        Try again with different context
+                    </h3>
+                )}
                 <ul className="tw-whitespace-nowrap tw-flex tw-gap-2 tw-flex-wrap">
                     {actions.map(({ label, tooltip, onClick }) => (
                         <li key={label}>

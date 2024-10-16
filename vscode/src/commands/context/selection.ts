@@ -2,7 +2,6 @@ import {
     type ContextItem,
     TokenCounterUtils,
     contextFiltersProvider,
-    isCodyIgnoredFile,
     logError,
     toRangeData,
     wrapInActiveSpan,
@@ -32,7 +31,7 @@ export async function getContextFileFromCursor(
                 throw new Error('No active editor')
             }
 
-            if (await contextFiltersProvider.instance!.isUriIgnored(document.uri)) {
+            if (await contextFiltersProvider.isUriIgnored(document.uri)) {
                 return null
             }
 
@@ -60,42 +59,6 @@ export async function getContextFileFromCursor(
         } catch (error) {
             logError('getContextFileFromCursor', 'failed', { verbose: error })
             return null
-        }
-    })
-}
-
-/**
- * Gets the context items for the current selection in the active editor.
- *
- * If the file is ignored or if no selection, an empty array is returned.
- *
- * @returns An array of context items for the current selection.
- */
-export async function getContextFileFromSelection(): Promise<ContextItem[]> {
-    return wrapInActiveSpan('commands.context.selection', async span => {
-        const editor = getEditor()?.active
-        const document = editor?.document
-        const selection = editor?.selection
-
-        if (!document || selection?.isEmpty || (await shouldIgnore(document.uri))) {
-            return []
-        }
-
-        try {
-            const content = document.getText(selection)
-            return [
-                {
-                    type: 'file',
-                    uri: document.uri,
-                    content,
-                    source: ContextItemSource.Selection,
-                    range: toRangeData(selection),
-                    size: await TokenCounterUtils.countTokens(content),
-                } satisfies ContextItemFile,
-            ]
-        } catch (error) {
-            logError('getContextFileFromSelection', 'failed', { verbose: error })
-            return []
         }
     })
 }
@@ -136,5 +99,5 @@ export async function getSelectionOrFileContext(): Promise<ContextItem[]> {
 }
 
 async function shouldIgnore(uri: URI): Promise<boolean> {
-    return Boolean((await contextFiltersProvider.instance!.isUriIgnored(uri)) || isCodyIgnoredFile(uri))
+    return Boolean(await contextFiltersProvider.isUriIgnored(uri))
 }

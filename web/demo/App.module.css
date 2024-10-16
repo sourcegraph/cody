@@ -1,3 +1,5 @@
+@import url('../../vscode/.storybook/static/vscode-themes/dark-modern.css');
+
 html,
 :host {
     tab-size: 4;

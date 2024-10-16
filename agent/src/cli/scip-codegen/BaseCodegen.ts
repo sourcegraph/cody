@@ -3,7 +3,7 @@ import type { ConsoleReporter } from './ConsoleReporter'
 import type { SymbolTable } from './SymbolTable'
 import type { CodegenOptions } from './command'
 import { scip } from './scip'
-import { typescriptKeyword } from './utils'
+import { isBooleanTypeRef, typescriptKeyword } from './utils'
 
 export enum ProtocolMethodDirection {
     ClientToServer = 1,
@@ -21,8 +21,18 @@ export interface ProtocolSymbol {
     kind: ProtocolMethodKind
 }
 
+export type ConstantType = string | boolean | number
+export type ConstantTypeType = 'string' | 'boolean' | 'number'
+
+export function typeOfUnion(union: DiscriminatedUnion): ConstantTypeType {
+    if (union.members.length === 0) {
+        throw new TypeError(`Union ${JSON.stringify(union, null, 2)} has no members`)
+    }
+    return typeof union.members[0].value as ConstantTypeType
+}
+
 export interface DiscriminatedUnionMember {
-    value: string
+    value: ConstantType
     type: scip.Type
 }
 export interface DiscriminatedUnion {
@@ -124,6 +134,19 @@ export abstract class BaseCodegen {
         return false
     }
 
+    public isBooleanTypeInfo(info: scip.SymbolInformation): boolean {
+        if (info.signature.has_value_signature && info.signature.value_signature.tpe.has_constant_type) {
+            return info.signature.value_signature.tpe.constant_type.constant.has_boolean_constant
+        }
+
+        if (info.signature.has_value_signature && info.signature.value_signature.tpe.has_type_ref) {
+            const typeRef = info.signature.value_signature.tpe.type_ref
+            return isBooleanTypeRef(typeRef.symbol)
+        }
+
+        return false
+    }
+
     public isStringTypeInfo(info: scip.SymbolInformation): boolean {
         if (info.signature.has_value_signature) {
             return this.isStringType(info.signature.value_signature.tpe)
@@ -148,6 +171,9 @@ export abstract class BaseCodegen {
 
     public compatibleSignatures(a: scip.SymbolInformation, b: scip.SymbolInformation): boolean {
         if (this.isStringTypeInfo(a) && this.isStringTypeInfo(b)) {
+            return true
+        }
+        if (this.isBooleanTypeInfo(a) && this.isBooleanTypeInfo(b)) {
             return true
         }
         // TODO: more optimized comparison?
@@ -195,6 +221,9 @@ export abstract class BaseCodegen {
             isVisited.add(info.symbol)
             for (const sibling of this.siblingDiscriminatedUnionProperties.get(info.symbol) ?? []) {
                 visitInfo(this.symtab.info(sibling))
+            }
+            if (!info.has_signature) {
+                return
             }
             if (info.signature.has_value_signature) {
                 visitType(info.signature.value_signature.tpe)
@@ -274,8 +303,6 @@ export abstract class BaseCodegen {
         // literals. If you're hitting on this error with types like string
         // literals it means you are not guarding against it higher up in the
         // call stack.
-        // throw new TypeError(`type has no properties: ${this.debug(type)}`)
-        this.reporter.error('', `type has no properties: ${this.debug(type)}`)
-        return []
+        throw new TypeError(`type has no properties: ${this.debug(type)}`)
     }
 }

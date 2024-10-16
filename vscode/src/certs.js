@@ -1,6 +1,7 @@
 import fspromises from 'node:fs/promises'
 import { globalAgent } from 'node:https'
 import path from 'node:path'
+import tls from 'node:tls'
 
 /**
  * Registers local root certificates onto the global HTTPS agent.
@@ -51,7 +52,8 @@ function addLinuxCerts() {
     if (process.platform !== 'linux') {
         return
     }
-    const originalCA = globalAgent.options.ca
+    const originalCA = [...(globalAgent.options.ca ?? []), ...tls.rootCertificates]
+    /** @type {string[]} */
     let cas
     if (!Array.isArray(originalCA)) {
         cas = typeof originalCA !== 'undefined' ? [originalCA] : []

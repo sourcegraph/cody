@@ -7,12 +7,12 @@ import { completionParams, contextSnippets } from './test-data'
 import { CodeGemma } from '../codegemma'
 
 describe('CodeGemma', () => {
-    describe.skipIf(isWindows())('getPrompt', () => {
+    describe.skipIf(isWindows())('getMessages', () => {
         it('returns the prompt with the correct intro snippets', () => {
             const model = new CodeGemma()
             const { docContext, document, provider } = completionParams
 
-            const result = model.getPrompt({
+            const result = model.getMessages({
                 document,
                 docContext,
                 snippets: contextSnippets,
@@ -20,7 +20,10 @@ describe('CodeGemma', () => {
             })
 
             expect(result).toMatchInlineSnapshot(`
-              "// Here is a reference snippet of code from codebase/context1.ts:
+              [
+                {
+                  "speaker": "human",
+                  "text": "// Here is a reference snippet of code from codebase/context1.ts:
               // function contextSnippetOne() {}
 
               // Here is a reference snippet of code from codebase/context2.ts:
@@ -160,7 +163,9 @@ describe('CodeGemma', () => {
               console.log(suffix line: 22)
               console.log(suffix line: 23)
               console.log(suffix line: 24)
-              console.log(suffix line: 25)<|fim_middle|>"
+              console.log(suffix line: 25)<|fim_middle|>",
+                },
+              ]
             `)
         })
     })

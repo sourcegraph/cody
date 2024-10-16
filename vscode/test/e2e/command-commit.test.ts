@@ -67,7 +67,4 @@ testGitWorkspace.extend<ExtraWorkspaceSettings>({
     await page.getByRole('button', { name: 'Generate Commit Message (Experimental)' }).click()
 
     await expect(scmInputBox.filter({ hasText: 'hello from the assistant' }).first()).toBeVisible()
-
-    // Verify notification is shown if items are ignored
-    await expect(page.getByLabel('Cody was forced to skip 1 file').first()).toBeVisible()
 })

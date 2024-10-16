@@ -14,6 +14,16 @@ const htmlFamily = new Set([
     // import CSS modules but define them in the same file instead.
 ])
 
+export enum RetrieverIdentifier {
+    RecentEditsRetriever = 'recent-edits',
+    JaccardSimilarityRetriever = 'jaccard-similarity',
+    TscRetriever = 'tsc',
+    LspLightRetriever = 'lsp-light',
+    RecentCopyRetriever = 'recent-copy',
+    DiagnosticsRetriever = 'diagnostics',
+    RecentViewPortRetriever = 'recent-view-port',
+}
+
 export interface ShouldUseContextParams {
     enableExtendedLanguagePool: boolean
     baseLanguageId: string

@@ -7,6 +7,7 @@ import {
     expectContextCellCounts,
     focusChatInputAtEnd,
     getContextCell,
+    mentionMenu,
     openContextCell,
     openFileInEditorTab,
     openMentionsForProvider,
@@ -22,14 +23,11 @@ import { type ExpectedV2Events, executeCommandInPalette, test, withPlatformSlash
 test.extend<ExpectedV2Events>({
     expectedV2Events: [
         'cody.extension:installed',
-        'cody.codyIgnore:hasFile',
         'cody.auth.login:clicked',
         'cody.auth.signin.menu:clicked',
         'cody.auth.login:firstEver',
         'cody.auth.signin.token:clicked',
         'cody.auth:connected',
-        'cody.at-mention:executed',
-        'cody.at-mention.file:executed',
         'cody.chat-question:submitted',
         'cody.chat-question:executed',
         'cody.chatResponse:noCode',
@@ -46,7 +44,7 @@ test.extend<ExpectedV2Events>({
     await chatInput.dblclick()
     await chatInput.focus()
     await page.keyboard.type('@')
-    await expect(chatPanelFrame.getByRole('option', { selected: true })).toHaveText('Files')
+    await expect(mentionMenu(chatPanelFrame).getByRole('option', { selected: true })).toHaveText('Files')
     await page.keyboard.press('Backspace')
 
     // No results
@@ -133,7 +131,7 @@ test.extend<ExpectedV2Events>({
         chatPanelFrame.getByText(withPlatformSlashes('Explain var.go and visualize.go'))
     ).toBeVisible()
 
-    // Ensure explicitly @-included context shows up as enhanced context
+    // Ensure explicitly @-included context is shown.
     await expect(contextCell).toHaveCount(2)
 
     // Check pressing tab after typing a complete filename.
@@ -206,16 +204,12 @@ test.extend<ExpectedV2Events>({
 test.extend<ExpectedV2Events>({
     expectedV2Events: [
         'cody.extension:installed',
-        'cody.codyIgnore:hasFile',
         'cody.auth.login:clicked',
         'cody.auth.signin.menu:clicked',
         'cody.auth.login:firstEver',
         'cody.auth.signin.token:clicked',
         'cody.auth:connected',
-        'cody.codyIgnore:hasFile',
         'cody.auth:connected',
-        'cody.at-mention:executed',
-        'cody.at-mention.file:executed',
         'cody.chat-question:submitted',
         'cody.chat-question:executed',
         'cody.editChatButton:clicked',
@@ -255,13 +249,11 @@ test.extend<ExpectedV2Events>({
 test.extend<ExpectedV2Events>({
     expectedV2Events: [
         'cody.extension:installed',
-        'cody.codyIgnore:hasFile',
         'cody.auth.login:clicked',
         'cody.auth.signin.menu:clicked',
         'cody.auth.login:firstEver',
         'cody.auth.signin.token:clicked',
         'cody.auth:connected',
-        'cody.at-mention.file:executed',
         'cody.chat-question:submitted',
         'cody.chat-question:executed',
         'cody.chatResponse:noCode',
@@ -297,14 +289,11 @@ test.extend<ExpectedV2Events>({
 test.extend<ExpectedV2Events>({
     expectedV2Events: [
         'cody.extension:installed',
-        'cody.codyIgnore:hasFile',
         'cody.auth.login:clicked',
         'cody.auth.signin.menu:clicked',
         'cody.auth.login:firstEver',
         'cody.auth.signin.token:clicked',
         'cody.auth:connected',
-        'cody.at-mention:executed',
-        'cody.at-mention.symbol:executed',
         'cody.chat-question:submitted',
         'cody.chat-question:executed',
         'cody.chatResponse:noCode',

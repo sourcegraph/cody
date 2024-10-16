@@ -43,10 +43,14 @@ export default {
             },
             colors: {
                 border: 'var(--vscode-dropdown-border)',
-                input: 'var(--vscode-input-background)',
                 ring: 'var(--vscode-focusBorder)',
                 background: 'var(--vscode-editor-background)',
                 foreground: 'var(--vscode-foreground)',
+                input: {
+                    foreground: 'var(--vscode-input-foreground)',
+                    background: 'var(--vscode-input-background)',
+                    border: 'var(--vscode-input-border)',
+                },
                 button: {
                     background: {
                         DEFAULT: 'var(--vscode-button-background)',
@@ -61,6 +65,10 @@ export default {
                         },
                         foreground: 'var(--vscode-button-secondaryForeground)',
                     },
+                },
+                sidebar: {
+                    background: 'var(--vscode-sideBar-background)',
+                    foreground: 'var(--vscode-sideBar-foreground)',
                 },
                 muted: {
                     DEFAULT: 'var(--vscode-input-background)',
@@ -92,6 +100,10 @@ export default {
                     border: 'var(--vscode-contrastBorder)',
                     foreground: 'var(--vscode-badge-foreground)',
                     background: 'var(--vscode-badge-background)',
+                },
+                'status-offline': {
+                    background: 'var(--vscode-statusBarItem-offlineBackground)',
+                    foreground: 'var(--vscode-statusBarItem-offlineForeground)',
                 },
             },
             borderRadius: {

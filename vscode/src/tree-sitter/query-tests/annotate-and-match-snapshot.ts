@@ -2,7 +2,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 
 import dedent from 'dedent'
-import { findLast } from 'lodash'
+import findLast from 'lodash/findLast'
 import { expect } from 'vitest'
 import type { default as Parser, Point, SyntaxNode } from 'web-tree-sitter'
 

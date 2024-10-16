@@ -67,10 +67,13 @@ export async function* generatorWithErrorObserver<T>(
 }
 
 export async function* generatorWithTimeout<T>(
-    generator: AsyncGenerator<T>,
+    generatorInput: AsyncGenerator<T> | Promise<AsyncGenerator<T>>,
     timeoutMs: number,
     abortController: AbortController
 ): AsyncGenerator<T> {
+    const generator = await (generatorInput instanceof Promise
+        ? generatorInput
+        : Promise.resolve(generatorInput))
     try {
         if (timeoutMs === 0) {
             return

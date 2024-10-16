@@ -1,9 +1,11 @@
-import type { CodyIDE, SerializedChatTranscript } from '@sourcegraph/cody-shared'
+import type { CodyIDE, SerializedChatTranscript, UserLocalHistory } from '@sourcegraph/cody-shared'
+import { useExtensionAPI, useObservable } from '@sourcegraph/prompt-editor'
 import { HistoryIcon, MessageSquarePlusIcon, MessageSquareTextIcon, TrashIcon } from 'lucide-react'
 import type React from 'react'
 import { useCallback, useMemo } from 'react'
 import type { WebviewType } from '../../src/chat/protocol'
 import { getRelativeChatPeriod } from '../../src/common/time-date'
+import { LoadingDots } from '../chat/components/LoadingDots'
 import { CollapsiblePanel } from '../components/CollapsiblePanel'
 import { Button } from '../components/shadcn/ui/button'
 import { getVSCodeAPI } from '../utils/VSCodeApi'
@@ -13,34 +15,53 @@ import { getCreateNewChatCommand } from './utils'
 interface HistoryTabProps {
     IDE: CodyIDE
     setView: (view: View) => void
-    userHistory: SerializedChatTranscript[]
     webviewType?: WebviewType | undefined | null
     multipleWebviewsEnabled?: boolean | undefined | null
 }
 
-export const HistoryTab: React.FC<HistoryTabProps> = ({
-    userHistory,
-    IDE,
-    webviewType,
-    multipleWebviewsEnabled,
-    setView,
-}) => {
+export const HistoryTab: React.FC<HistoryTabProps> = props => {
+    const userHistory = useUserHistory()
+    const chats = useMemo(
+        () => (userHistory ? Object.values(userHistory.chat) : userHistory),
+        [userHistory]
+    )
+
+    return (
+        <div className="tw-px-8 tw-pt-6 tw-pb-12">
+            {chats === undefined ? (
+                <LoadingDots />
+            ) : chats === null ? (
+                <p>History is not available.</p>
+            ) : (
+                <HistoryTabWithData {...props} chats={chats} />
+            )}
+        </div>
+    )
+}
+
+export const HistoryTabWithData: React.FC<
+    HistoryTabProps & { chats: UserLocalHistory['chat'][string][] }
+> = ({ IDE, webviewType, multipleWebviewsEnabled, setView, chats }) => {
+    const nonEmptyChats = useMemo(() => chats.filter(chat => chat.interactions.length > 0), [chats])
+
     const chatByPeriod = useMemo(
         () =>
-            userHistory
-                .filter(chat => chat.interactions.length)
-                .reverse()
-                .reduce((acc, chat) => {
-                    const period = getRelativeChatPeriod(new Date(chat.lastInteractionTimestamp))
-                    acc.set(period, [...(acc.get(period) || []), chat])
-                    return acc
-                }, new Map<string, SerializedChatTranscript[]>()),
-        [userHistory]
+            Array.from(
+                nonEmptyChats
+                    .filter(chat => chat.interactions.length)
+                    .reverse()
+                    .reduce((acc, chat) => {
+                        const period = getRelativeChatPeriod(new Date(chat.lastInteractionTimestamp))
+                        acc.set(period, [...(acc.get(period) || []), chat])
+                        return acc
+                    }, new Map<string, SerializedChatTranscript[]>())
+            ),
+        [nonEmptyChats]
     )
 
     const onDeleteButtonClick = useCallback(
         (id: string) => {
-            if (userHistory.find(chat => chat.id === id)) {
+            if (chats.find(chat => chat.id === id)) {
                 getVSCodeAPI().postMessage({
                     command: 'command',
                     id: 'cody.chat.history.clear',
@@ -48,7 +69,7 @@ export const HistoryTab: React.FC<HistoryTabProps> = ({
                 })
             }
         },
-        [userHistory]
+        [chats]
     )
 
     const handleStartNewChat = () => {
@@ -59,12 +80,11 @@ export const HistoryTab: React.FC<HistoryTabProps> = ({
         setView(View.Chat)
     }
 
-    const chats = Array.from(chatByPeriod)
-
     return (
-        <div className="tw-px-8 tw-pt-6 tw-pb-12 tw-flex tw-flex-col tw-gap-10">
-            {chats.map(([period, chats]) => (
+        <div className="tw-flex tw-flex-col tw-gap-10">
+            {chatByPeriod.map(([period, chats]) => (
                 <CollapsiblePanel
+                    id={`history-${period}`.replaceAll(' ', '-').toLowerCase()}
                     key={period}
                     storageKey={`history.${period}`}
                     title={period}
@@ -112,7 +132,7 @@ export const HistoryTab: React.FC<HistoryTabProps> = ({
                 </CollapsiblePanel>
             ))}
 
-            {chats.length === 0 && (
+            {nonEmptyChats.length === 0 && (
                 <div className="tw-flex tw-flex-col tw-items-center tw-mt-6">
                     <HistoryIcon
                         size={20}
@@ -143,4 +163,9 @@ export const HistoryTab: React.FC<HistoryTabProps> = ({
             )}
         </div>
     )
+}
+
+function useUserHistory(): UserLocalHistory | null | undefined {
+    const userHistory = useExtensionAPI().userHistory
+    return useObservable(useMemo(() => userHistory(), [userHistory])).value
 }

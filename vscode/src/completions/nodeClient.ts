@@ -2,7 +2,6 @@
 // counterpart) since it requires node-only APIs. These can't be part of
 // the main `lib/shared` bundle since it would otherwise not work in the
 // web build.
-
 import http from 'node:http'
 import https from 'node:https'
 
@@ -10,15 +9,17 @@ import {
     type CompletionCallbacks,
     type CompletionParameters,
     type CompletionRequestParameters,
+    type CompletionResponse,
     NetworkError,
     RateLimitError,
     SourcegraphCompletionsClient,
     addClientInfoParams,
-    agent,
-    customUserAgent,
+    addCodyClientIdentificationHeaders,
+    currentResolvedConfig,
     getActiveTraceAndSpanId,
     getSerializedParams,
     getTraceparentHeaders,
+    globalAgentRef,
     isError,
     logError,
     onAbort,
@@ -27,11 +28,10 @@ import {
     toPartialUtf8String,
     tracer,
 } from '@sourcegraph/cody-shared'
-
-const isTemperatureZero = process.env.CODY_TEMPERATURE_ZERO === 'true'
+import { CompletionsResponseBuilder } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/CompletionsResponseBuilder'
 
 export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClient {
-    protected _streamWithCallbacks(
+    protected async _streamWithCallbacks(
         params: CompletionParameters,
         requestParams: CompletionRequestParameters,
         cb: CompletionCallbacks,
@@ -39,7 +39,7 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
     ): Promise<void> {
         const { apiVersion } = requestParams
 
-        const url = new URL(this.completionsEndpoint)
+        const url = new URL(await this.completionsEndpoint())
         if (apiVersion >= 1) {
             url.searchParams.append('api-version', '' + apiVersion)
         }
@@ -55,7 +55,7 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                 model: params.model,
             })
 
-            if (isTemperatureZero) {
+            if (this.isTemperatureZero) {
                 params = {
                     ...params,
                     temperature: 0,
@@ -86,27 +86,31 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
             // Text which has not been decoded as a server-sent event (SSE)
             let bufferText = ''
 
+            const builder = new CompletionsResponseBuilder(apiVersion)
+
+            const { auth, configuration } = await currentResolvedConfig()
+            const headers = new Headers({
+                'Content-Type': 'application/json',
+                // Disable gzip compression since the sg instance will start to batch
+                // responses afterwards.
+                'Accept-Encoding': 'gzip;q=0',
+                ...(auth.accessToken ? { Authorization: `token ${auth.accessToken}` } : null),
+                ...configuration?.customHeaders,
+                ...requestParams.customHeaders,
+                ...getTraceparentHeaders(),
+                Connection: 'keep-alive',
+            })
+            addCodyClientIdentificationHeaders(headers)
+
             const request = requestFn(
                 url,
                 {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        // Disable gzip compression since the sg instance will start to batch
-                        // responses afterwards.
-                        'Accept-Encoding': 'gzip;q=0',
-                        ...(this.config.accessToken
-                            ? { Authorization: `token ${this.config.accessToken}` }
-                            : null),
-                        ...(customUserAgent ? { 'User-Agent': customUserAgent } : null),
-                        ...this.config.customHeaders,
-                        ...requestParams.customHeaders,
-                        ...getTraceparentHeaders(),
-                        Connection: 'keep-alive',
-                    },
+                    headers: Object.fromEntries(headers.entries()),
+                    // TODO: THIS MUST NOT BE DONE HERE!
                     // So we can send requests to the Sourcegraph local development instance, which has an incompatible cert.
-                    rejectUnauthorized: process.env.NODE_TLS_REJECT_UNAUTHORIZED !== '0',
-                    agent: agent.current?.(url),
+                    // rejectUnauthorized: process.env.NODE_TLS_REJECT_UNAUTHORIZED !== '0',
+                    agent: globalAgentRef.agent,
                 },
                 (res: http.IncomingMessage) => {
                     const { 'set-cookie': _setCookie, ...safeHeaders } = res.headers
@@ -200,7 +204,7 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                         bufferText += str
                         bufferBin = buf
 
-                        const parseResult = parseEvents(bufferText)
+                        const parseResult = parseEvents(builder, bufferText)
                         if (isError(parseResult)) {
                             logError(
                                 'SourcegraphNodeCompletionsClient',
@@ -270,6 +274,70 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
             request.end()
 
             onAbort(signal, () => request.destroy())
+        })
+    }
+
+    protected async _fetchWithCallbacks(
+        params: CompletionParameters,
+        requestParams: CompletionRequestParameters,
+        cb: CompletionCallbacks,
+        signal?: AbortSignal
+    ): Promise<void> {
+        const { url, serializedParams } = await this.prepareRequest(params, requestParams)
+        const log = this.logger?.startCompletion(params, url.toString())
+        return tracer.startActiveSpan(`POST ${url.toString()}`, async span => {
+            span.setAttributes({
+                fast: params.fast,
+                maxTokensToSample: params.maxTokensToSample,
+                temperature: this.isTemperatureZero ? 0 : params.temperature,
+                topK: params.topK,
+                topP: params.topP,
+                model: params.model,
+            })
+            try {
+                const { auth, configuration } = await currentResolvedConfig()
+                const headers = new Headers({
+                    'Content-Type': 'application/json',
+                    'Accept-Encoding': 'gzip;q=0',
+                    ...(auth.accessToken ? { Authorization: `token ${auth.accessToken}` } : null),
+                    ...configuration.customHeaders,
+                    ...requestParams.customHeaders,
+                    ...getTraceparentHeaders(),
+                })
+
+                addCodyClientIdentificationHeaders(headers)
+
+                const response = await fetch(url.toString(), {
+                    method: 'POST',
+                    headers: Object.fromEntries(headers.entries()),
+                    body: JSON.stringify(serializedParams),
+                    signal,
+                })
+                if (!response.ok) {
+                    const errorMessage = await response.text()
+                    throw new NetworkError(
+                        {
+                            url: url.toString(),
+                            status: response.status,
+                            statusText: response.statusText,
+                        },
+                        errorMessage,
+                        getActiveTraceAndSpanId()?.traceId
+                    )
+                }
+                const json = (await response.json()) as CompletionResponse
+                if (typeof json?.completion === 'string') {
+                    cb.onChange(json.completion)
+                    cb.onComplete()
+                    return
+                }
+                throw new Error('Unexpected response format')
+            } catch (error) {
+                const errorObject = error instanceof Error ? error : new Error(`${error}`)
+                log?.onError(errorObject.message, error)
+                recordErrorToSpan(span, errorObject)
+                cb.onError(errorObject)
+            }
         })
     }
 }

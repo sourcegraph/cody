@@ -1,3 +1,4 @@
+import type { ChatModel, EditModel } from '../models/types'
 import { type PromptString, ps } from '../prompt/prompt-string'
 import type { Message } from '../sourcegraph-api'
 
@@ -5,15 +6,16 @@ const DEFAULT_PREAMBLE = ps`You are Cody, an AI coding assistant from Sourcegrap
 
 /**
  * For chat, we add an additional preamble to encourage the model to
- * produce code blocks that we can associate with existing file paths.
- * We want to read these file paths to support applying code directly to files from chat.
+ * produce code blocks that we can associate executable commands or content with existing file paths.
+ * We want to read these file paths to support applying code directly to files from chat for Smart Apply.
  */
-const SMART_APPLY_PREAMBLE = ps`If your answer contains fenced code blocks in Markdown, include the relevant full file path in the code block tag using this structure: \`\`\`$LANGUAGE:$FILEPATH\`\`\`.`
+const SMART_APPLY_PREAMBLE = ps`If your answer contains fenced code blocks in Markdown, include the relevant full file path in the code block tag using this structure: \`\`\`$LANGUAGE:$FILEPATH\`\`\`
+For executable terminal commands: enclose each command in individual "bash" language code block without comments and new lines inside.`
 
 const CHAT_PREAMBLE = DEFAULT_PREAMBLE.concat(SMART_APPLY_PREAMBLE)
 
 export function getSimplePreamble(
-    model: string | undefined,
+    model: ChatModel | EditModel | undefined,
     apiVersion: number,
     type: 'Chat' | 'Default',
     preInstruction?: PromptString

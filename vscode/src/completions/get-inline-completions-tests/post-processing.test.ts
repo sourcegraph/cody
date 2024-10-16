@@ -1,5 +1,5 @@
 import dedent from 'dedent'
-import { pick } from 'lodash'
+import pick from 'lodash/pick'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 import { range } from '../../testutils/textDocument'

@@ -1,39 +1,20 @@
 import {
-    type ClientConfiguration,
-    type ClientConfigurationWithAccessToken,
-    CodyIDE,
-    type ExtensionDetails,
     type LogEventMode,
     MockServerTelemetryRecorderProvider,
     NoOpTelemetryRecorderProvider,
     TelemetryRecorderProvider,
+    clientCapabilities,
+    resolvedConfig,
+    subscriptionDisposable,
     telemetryRecorder,
     telemetryRecorderProvider,
     updateGlobalTelemetryInstances,
 } from '@sourcegraph/cody-shared'
 import { TimestampTelemetryProcessor } from '@sourcegraph/telemetry/dist/processors/timestamp'
 
-import { logDebug } from '../log'
-import { getOSArch } from '../os'
-import { version } from '../version'
-
-import { authProvider } from './AuthProvider'
+import type { Disposable } from 'vscode'
+import { logDebug } from '../output-channel-logger'
 import { localStorage } from './LocalStorageProvider'
-
-const { platform, arch } = getOSArch()
-
-export const getExtensionDetails = (
-    config: Pick<
-        ClientConfiguration,
-        'agentIDE' | 'agentIDEVersion' | 'agentExtensionVersion' | 'telemetryClientName'
-    >
-): ExtensionDetails => ({
-    ide: config.agentIDE ?? CodyIDE.VSCode,
-    telemetryClientName: config.telemetryClientName,
-    arch: arch,
-    platform: platform ?? 'browser',
-    version: config.agentExtensionVersion ?? version,
-})
 
 /**
  * For legacy events export, where we are connected to a pre-5.2.0 instance,
@@ -55,74 +36,82 @@ const debugLogLabel = 'telemetry-v2'
  * new telemetry framework:
  * https://sourcegraph.com/docs/dev/background-information/telemetry
  */
-export async function createOrUpdateTelemetryRecorderProvider(
-    config: ClientConfigurationWithAccessToken,
+export function createOrUpdateTelemetryRecorderProvider(
     /**
      * Hardcode isExtensionModeDevOrTest to false to test real exports - when
      * true, exports are logged to extension output instead.
      */
     isExtensionModeDevOrTest: boolean
-): Promise<void> {
-    const extensionDetails = getExtensionDetails(config)
+): Disposable {
+    return subscriptionDisposable(
+        resolvedConfig.subscribe(({ configuration, auth, clientState, isReinstall }) => {
+            // Add timestamp processor for realistic data in output for dev or no-op scenarios
+            const defaultNoOpProvider = new NoOpTelemetryRecorderProvider([
+                new TimestampTelemetryProcessor(),
+            ])
 
-    // Add timestamp processor for realistic data in output for dev or no-op scenarios
-    const defaultNoOpProvider = new NoOpTelemetryRecorderProvider([new TimestampTelemetryProcessor()])
+            if (configuration.telemetryLevel === 'off') {
+                updateGlobalTelemetryInstances(defaultNoOpProvider)
+                return
+            }
 
-    if (config.telemetryLevel === 'off' || !extensionDetails.ide) {
-        updateGlobalTelemetryInstances(defaultNoOpProvider)
-        return
-    }
+            const initialize = telemetryRecorderProvider === undefined
 
-    const { anonymousUserID, created: newAnonymousUser } = localStorage.anonymousUserID()
-    const initialize = telemetryRecorderProvider === undefined
-
-    /**
-     * In testing, send events to the mock server.
-     */
-    if (process.env.CODY_TESTING === 'true') {
-        logDebug(debugLogLabel, 'using mock exporter')
-        updateGlobalTelemetryInstances(
-            new MockServerTelemetryRecorderProvider(
-                extensionDetails,
-                config,
-                authProvider.instance!,
-                anonymousUserID
-            )
-        )
-    } else if (isExtensionModeDevOrTest) {
-        logDebug(debugLogLabel, 'using no-op exports')
-        updateGlobalTelemetryInstances(defaultNoOpProvider)
-    } else {
-        updateGlobalTelemetryInstances(
-            new TelemetryRecorderProvider(
-                extensionDetails,
-                config,
-                authProvider.instance!,
-                anonymousUserID,
-                legacyBackcompatLogEventMode
-            )
-        )
-    }
-
-    const isCodyWeb = config.agentIDE === CodyIDE.Web
-
-    /**
-     * On first initialization, also record some initial events.
-     * Skip any init events for Cody Web use case.
-     */
-    if (initialize && !isCodyWeb) {
-        if (newAnonymousUser) {
             /**
-             * New user
+             * In testing, send events to the mock server.
              */
-            telemetryRecorder.recordEvent('cody.extension', 'installed')
-        } else if (!config.isRunningInsideAgent || config.agentHasPersistentStorage) {
+            if (process.env.CODY_TESTING === 'true') {
+                logDebug(debugLogLabel, 'using mock exporter')
+                updateGlobalTelemetryInstances(
+                    new MockServerTelemetryRecorderProvider({
+                        configuration,
+                        clientState,
+                    })
+                )
+            } else if (isExtensionModeDevOrTest) {
+                logDebug(debugLogLabel, 'using no-op exports')
+                updateGlobalTelemetryInstances(defaultNoOpProvider)
+            } else {
+                updateGlobalTelemetryInstances(
+                    new TelemetryRecorderProvider(
+                        { configuration, auth, clientState },
+                        legacyBackcompatLogEventMode
+                    )
+                )
+            }
+
             /**
-             * Repeat user
+             * On first initialization, also record some initial events.
+             * Skip any init events for Cody Web use case.
              */
-            telemetryRecorder.recordEvent('cody.extension', 'savedLogin')
-        }
-    }
+            const newAnonymousUser = localStorage.checkIfCreatedAnonymousUserID()
+            if (initialize && !clientCapabilities().isCodyWeb) {
+                if (newAnonymousUser || isReinstall) {
+                    /**
+                     * New user
+                     */
+                    telemetryRecorder.recordEvent(
+                        'cody.extension',
+                        isReinstall ? 'reinstalled' : 'installed',
+                        {
+                            billingMetadata: {
+                                product: 'cody',
+                                category: 'billable',
+                            },
+                        }
+                    )
+                } else if (
+                    !configuration.isRunningInsideAgent ||
+                    configuration.agentHasPersistentStorage
+                ) {
+                    /**
+                     * Repeat user
+                     */
+                    telemetryRecorder.recordEvent('cody.extension', 'savedLogin')
+                }
+            }
+        })
+    )
 }
 
 /**

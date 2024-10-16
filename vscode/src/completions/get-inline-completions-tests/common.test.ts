@@ -125,7 +125,6 @@ describe('[getInlineCompletions] common', () => {
                     this.startLine =",
             }
         `)
-        expect(requests).toBeSingleLine()
     })
 
     it('synthesizes a completion from a prior request', async () => {

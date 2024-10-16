@@ -14,6 +14,8 @@ import {
     type Result,
     type SourcegraphCompletionsClient,
     assertFileURI,
+    authStatus,
+    cenv,
     displayPath,
     isAbortError,
     isDefined,
@@ -26,11 +28,10 @@ import {
     uriDirname,
 } from '@sourcegraph/cody-shared'
 
-import { logDebug } from '../log'
+import { logDebug } from '../output-channel-logger'
 
 import path from 'node:path'
 import { getEditor } from '../editor/active-editor'
-import { authProvider } from '../services/AuthProvider'
 import { getSymfPath } from './download-symf'
 import { rewriteKeywordQuery } from './rewrite-keyword-query'
 
@@ -79,7 +80,10 @@ export class SymfRunner implements vscode.Disposable {
         const indexRoot = vscode.Uri.joinPath(context.globalStorageUri, 'symf', 'indexroot').with(
             // On VS Code Desktop, this is a `vscode-userdata:` URI that actually just refers to
             // file system paths.
-            vscode.env.uiKind === vscode.UIKind.Desktop ? { scheme: 'file' } : {}
+            //TODO: This probaly shouldn't go of UI Kind but extension kind
+            (cenv.CODY_OVERRIDE_UI_KIND ?? vscode.env.uiKind) === vscode.UIKind.Desktop
+                ? { scheme: 'file' }
+                : {}
         )
 
         if (!isFileURI(indexRoot)) {
@@ -90,7 +94,7 @@ export class SymfRunner implements vscode.Disposable {
         let isInitialized = false
         this.disposables.push(
             subscriptionDisposable(
-                authProvider.instance!.changes.subscribe(authStatus => {
+                authStatus.subscribe(authStatus => {
                     if (!isInitialized && authStatus.authenticated && !isEnterpriseUser(authStatus)) {
                         // Only initialize symf after the user has authenticated AND it's not an enterprise account.
                         isInitialized = true
@@ -363,7 +367,7 @@ export class SymfRunner implements vscode.Disposable {
         }
 
         await rename(indexDir.fsPath, trashDir.fsPath)
-        void rm(trashDir.fsPath, { recursive: true, force: true }) // delete in background
+        rm(trashDir.fsPath, { recursive: true, force: true }).catch(() => {}) // delete in background
     }
 
     private async unsafeIndexExists(scopeDir: FileURI): Promise<boolean> {

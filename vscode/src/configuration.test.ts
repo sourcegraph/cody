@@ -3,6 +3,7 @@ import type * as vscode from 'vscode'
 
 import { type ClientConfiguration, OLLAMA_DEFAULT_URL, ps } from '@sourcegraph/cody-shared'
 
+import type { ChatModelProviderConfig } from '@sourcegraph/cody-shared/src/models/sync'
 import { getConfiguration } from './configuration'
 import { DEFAULT_VSCODE_SETTINGS } from './testutils/mocks'
 
@@ -22,8 +23,6 @@ describe('getConfiguration', () => {
                         return 'http://example.com'
                     case 'cody.codebase':
                         return 'my/codebase'
-                    case 'cody.useContext':
-                        return 'keyword'
                     case 'cody.customHeaders':
                         return {
                             'Cache-Control': 'no-cache',
@@ -56,7 +55,7 @@ describe('getConfiguration', () => {
                     case 'cody.edit.preInstruction':
                         return 'My name is not Jeff.'
                     case 'cody.autocomplete.advanced.provider':
-                        return 'unstable-openai'
+                        return 'default'
                     case 'cody.autocomplete.advanced.model':
                         return 'starcoder-16b'
                     case 'cody.autocomplete.advanced.timeout.multiline':
@@ -71,15 +70,13 @@ describe('getConfiguration', () => {
                         return false
                     case 'cody.autocomplete.experimental.fireworksOptions':
                         return undefined
-                    case 'cody.autocomplete.experimental.multiModelCompletions':
-                        return undefined
                     case 'cody.autocomplete.experimental.ollamaOptions':
                         return {
                             model: 'codellama:7b-code',
                             url: OLLAMA_DEFAULT_URL,
                         }
                     case 'cody.autocomplete.experimental.graphContext':
-                        return 'bfg'
+                        return 'lsp-light'
                     case 'cody.advanced.agent.running':
                         return false
                     case 'cody.advanced.hasNativeWebview':
@@ -94,8 +91,12 @@ describe('getConfiguration', () => {
                         return false
                     case 'cody.internal.debug.context':
                         return false
+                    case 'cody.internal.debug.state':
+                        return false
                     case 'cody.experimental.supercompletions':
                         return false
+                    case 'cody.experimental.autoedit':
+                        return undefined
                     case 'cody.experimental.noodle':
                         return false
                     case 'cody.experimental.minion.anthropicKey':
@@ -108,15 +109,41 @@ describe('getConfiguration', () => {
                         return undefined
                     case 'cody.advanced.agent.capabilities.storage':
                         return false
+                    case 'cody.provider.limit.prompt':
+                        return 123
+                    case 'cody.dev.models':
+                        return [{ model: 'm', provider: 'p' }] satisfies ChatModelProviderConfig[]
+                    case 'cody.net.mode':
+                        return 'auto'
+                    case 'cody.net.proxy.endpoint':
+                        return 'https://localhost:8080'
+                    case 'cody.net.proxy.cacert':
+                        return '~/cody-proxy.pem'
+                    case 'cody.net.proxy.skipCertValidation':
+                        return false
+                    case 'cody.override.authToken':
+                        return undefined
+                    case 'cody.override.serverEndpoint':
+                        return undefined
+                    case 'http':
+                        return undefined
                     default:
                         throw new Error(`unexpected key: ${key}`)
                 }
             },
         }
         expect(getConfiguration(config)).toEqual({
-            proxy: undefined,
+            net: {
+                mode: 'auto',
+                proxy: {
+                    cacert: '~/cody-proxy.pem',
+                    endpoint: 'https://localhost:8080',
+                    skipCertValidation: false,
+                },
+                vscode: undefined,
+            },
             codebase: 'my/codebase',
-            useContext: 'keyword',
+            serverEndpoint: 'http://example.com',
             customHeaders: {
                 'Cache-Control': 'no-cache',
                 'Proxy-Authenticate': 'Basic',
@@ -129,6 +156,7 @@ describe('getConfiguration', () => {
             },
             commandCodeLenses: true,
             experimentalSupercompletions: false,
+            experimentalAutoedits: undefined,
             experimentalMinionAnthropicKey: undefined,
             experimentalTracing: true,
             experimentalCommitMessage: true,
@@ -140,25 +168,30 @@ describe('getConfiguration', () => {
             hasNativeWebview: true,
             internalUnstable: false,
             internalDebugContext: false,
+            internalDebugState: false,
             debugVerbose: true,
             debugFilter: /.*/,
             telemetryLevel: 'off',
             agentHasPersistentStorage: false,
-            autocompleteAdvancedProvider: 'unstable-openai',
+            autocompleteAdvancedProvider: 'default',
             autocompleteAdvancedModel: 'starcoder-16b',
             autocompleteCompleteSuggestWidgetSelection: false,
             autocompleteFormatOnAccept: true,
             autocompleteDisableInsideComments: false,
             autocompleteExperimentalFireworksOptions: undefined,
-            autocompleteExperimentalGraphContext: 'bfg',
+            autocompleteExperimentalGraphContext: 'lsp-light',
             autocompleteExperimentalOllamaOptions: {
                 model: 'codellama:7b-code',
                 url: OLLAMA_DEFAULT_URL,
             },
             autocompleteFirstCompletionTimeout: 1500,
             autocompleteExperimentalPreloadDebounceInterval: 0,
-            testingModelConfig: undefined,
+            providerLimitPrompt: 123,
+            devModels: [{ model: 'm', provider: 'p' }],
             experimentalGuardrailsTimeoutSeconds: undefined,
+
+            overrideAuthToken: undefined,
+            overrideServerEndpoint: undefined,
         } satisfies ClientConfiguration)
     })
 })

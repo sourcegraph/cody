@@ -1,5 +1,5 @@
 import type Anthropic from '@anthropic-ai/sdk'
-import { hydrateAfterPostMessage } from '@sourcegraph/cody-shared'
+import { currentAuthStatus, forceHydration, hydrateAfterPostMessage } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 import type {
     MinionExtensionMessage,
@@ -7,7 +7,6 @@ import type {
 } from '../../webviews/minion/webview_protocol'
 import { InitDoer } from '../chat/chat-view/InitDoer'
 import type { SymfRunner } from '../local-context/symf'
-import { authProvider } from '../services/AuthProvider'
 import { MinionStorage } from './MinionStorage'
 import { PlanController } from './PlanController'
 import type { Event, MinionSession, MinionTranscriptBlock, MinionTranscriptItem } from './action'
@@ -140,7 +139,7 @@ export abstract class ReactPanelController<WebviewMessageT extends {}, Extension
         message: ExtensionMessageT | BaseExtensionMessage
     ): Promise<boolean | undefined> {
         return await this.initDoer.do(() => {
-            return this.panel?.webview.postMessage(message)
+            return this.panel?.webview.postMessage(forceHydration(message))
         })
     }
 }
@@ -391,7 +390,7 @@ export class MinionController extends ReactPanelController<
     }
 
     private async handleSetSession(id: string): Promise<void> {
-        const storedSessionState = await this.storage.load(authProvider.instance!.status, id)
+        const storedSessionState = await this.storage.load(currentAuthStatus(), id)
         if (!storedSessionState) {
             throw new Error(`session not found with id: ${id}`)
         }
@@ -409,7 +408,7 @@ export class MinionController extends ReactPanelController<
     }
 
     private async handleClearHistory(): Promise<void> {
-        await this.storage.clear(authProvider.instance!.status)
+        await this.storage.clear(currentAuthStatus())
         if (this.sessionState) {
             await this.save()
         }
@@ -498,7 +497,7 @@ export class MinionController extends ReactPanelController<
         if (!this.sessionState) {
             throw new Error('no session to save')
         }
-        await this.storage.save(authProvider.instance!.status, {
+        await this.storage.save(currentAuthStatus(), {
             session: this.sessionState.session,
         })
     }
@@ -562,7 +561,7 @@ export class MinionController extends ReactPanelController<
     private async postUpdateSessionIds(): Promise<void> {
         this.postMessage({
             type: 'update-session-ids',
-            sessionIds: await this.storage.listIds(authProvider.instance!.status),
+            sessionIds: await this.storage.listIds(currentAuthStatus()),
             currentSessionId: this.sessionState?.session.id,
         })
     }

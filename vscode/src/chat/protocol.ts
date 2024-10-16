@@ -1,18 +1,17 @@
-import type { URI } from 'vscode-uri'
-
 import type {
+    AuthCredentials,
     AuthStatus,
-    ClientConfigurationWithEndpoint,
-    ClientStateForWebview,
+    ChatMessage,
+    ClientCapabilitiesWithLegacyFields,
+    ClientConfiguration,
     CodyIDE,
     ContextItem,
     ContextItemSource,
-    MentionQuery,
     RangeData,
     RequestMessage,
     ResponseMessage,
     SerializedChatMessage,
-    UserLocalHistory,
+    UserProductSubscription,
 } from '@sourcegraph/cody-shared'
 
 import type { BillingCategory, BillingProduct } from '@sourcegraph/cody-shared/src/telemetry-v2'
@@ -41,21 +40,6 @@ export type WebviewRecordEventParameters = TelemetryEventParameters<
 >
 
 /**
- * @deprecated v1 telemetry event properties format - use 'recordEvent' instead
- */
-interface TelemetryEventProperties {
-    [key: string]:
-        | string
-        | number
-        | boolean
-        | null
-        | undefined
-        | string[]
-        | TelemetryEventProperties[]
-        | TelemetryEventProperties
-}
-
-/**
  * The location of where the webview is displayed.
  */
 export type WebviewType = 'sidebar' | 'editor'
@@ -66,14 +50,6 @@ export type WebviewType = 'sidebar' | 'editor'
 export type WebviewMessage =
     | { command: 'ready' }
     | { command: 'initialized' }
-    | {
-          /**
-           * @deprecated v1 telemetry RPC - use 'recordEvent' instead
-           */
-          command: 'event'
-          eventName: string
-          properties?: TelemetryEventProperties | undefined | null
-      }
     | {
           /**
            * DO NOT USE DIRECTLY - ALWAYS USE a TelemetryRecorder from
@@ -91,9 +67,7 @@ export type WebviewMessage =
           parameters: WebviewRecordEventParameters
       }
     | ({ command: 'submit' } & WebviewSubmitMessage)
-    | { command: 'history'; action: 'clear' | 'export' }
     | { command: 'restoreHistory'; chatID: string }
-    | { command: 'deleteHistory'; chatID: string }
     | { command: 'links'; value: string }
     | { command: 'openURI'; uri: Uri }
     | {
@@ -107,20 +81,7 @@ export type WebviewMessage =
           page: string
       }
     | { command: 'command'; id: string; arg?: string | undefined | null }
-    | {
-          command: 'openFile'
-          uri: URI
-          range?: RangeData | undefined | null
-      }
-    | {
-          command: 'openLocalFileWithRange'
-          filePath: string
-          // Note: we're not using vscode.Range objects or nesting here, as the protocol
-          // tends to munge the type in a weird way (nested fields become array indices).
-          range?: RangeData | undefined | null
-      }
     | ({ command: 'edit' } & WebviewEditMessage)
-    | { command: 'embeddings/index' }
     | { command: 'insert'; text: string }
     | { command: 'newFile'; text: string }
     | {
@@ -145,7 +106,7 @@ export type WebviewMessage =
       }
     | {
           command: 'auth'
-          authKind: 'signin' | 'signout' | 'support' | 'callback' | 'simplified-onboarding' | 'offline'
+          authKind: 'signin' | 'signout' | 'support' | 'callback' | 'simplified-onboarding' | 'switch'
           endpoint?: string | undefined | null
           value?: string | undefined | null
           authMethod?: AuthMethod | undefined | null
@@ -156,25 +117,21 @@ export type WebviewMessage =
           onboardingKind: 'web-sign-in-token'
       }
     | {
-          command: 'getUserContext'
-          /** @deprecated Use the `queryContextItems` message instead. */
-          query: string
-      }
-    | {
-          command: 'queryContextItems'
-          query: MentionQuery
-      }
-    | {
-          command: 'reset'
-      }
-    | {
           command: 'attribution-search'
           snippet: string
       }
-    | {
-          command: 'troubleshoot/reloadAuth'
-      }
     | { command: 'rpc/request'; message: RequestMessage }
+    | {
+          command: 'chatSession'
+          action: 'duplicate' | 'new'
+          sessionID?: string | undefined | null
+      }
+    | {
+          command: 'log'
+          level: 'debug' | 'error'
+          filterLabel: string
+          message: string
+      }
 
 export interface SmartApplyResult {
     taskId: FixupTaskID
@@ -188,7 +145,9 @@ export type ExtensionMessage =
     | {
           type: 'config'
           config: ConfigurationSubsetForWebview & LocalEnv
+          clientCapabilities: ClientCapabilitiesWithLegacyFields
           authStatus: AuthStatus
+          userProductSubscription?: UserProductSubscription | null | undefined
           configFeatures: {
               chat: boolean
               attribution: boolean
@@ -197,25 +156,21 @@ export type ExtensionMessage =
           isDotComUser: boolean
           workspaceFolderUris: string[]
       }
-    | { type: 'ui/theme'; agentIDE: CodyIDE; cssVariables: CodyIDECssVariables }
-    | { type: 'history'; localHistory?: UserLocalHistory | undefined | null }
+    | {
+          /** Used by JetBrains and not VS Code. */
+          type: 'ui/theme'
+          agentIDE: CodyIDE
+          cssVariables: CodyIDECssVariables
+      }
     | ({ type: 'transcript' } & ExtensionTranscriptMessage)
     | { type: 'view'; view: View }
     | { type: 'errors'; errors: string }
-    | { type: 'transcript-errors'; isTranscriptError: boolean }
-    /**
-     * Context files returned from a @-mention search
-     */
-    | {
-          type: 'userContextFiles'
-          userContextFiles?: ContextItem[] | undefined | null
-      }
-    | { type: 'clientState'; value: ClientStateForWebview }
     | {
           type: 'clientAction'
           addContextItemsToLastHumanInput?: ContextItem[] | null | undefined
           appendTextToLastPromptEditor?: string | null | undefined
           smartApplyResult?: SmartApplyResult | undefined | null
+          submitHumanInput?: boolean | undefined | null
       }
     | ({ type: 'attribution' } & ExtensionAttributionMessage)
     | { type: 'rpc/response'; message: ResponseMessage }
@@ -232,19 +187,14 @@ interface ExtensionAttributionMessage {
     error?: string | undefined | null
 }
 
-/**
- * ChatSubmitType represents the type of chat submission.
- * - 'user': The user starts a new chat panel.
- * - 'user-newchat': The user reuses the current chat panel.
- */
-export type ChatSubmitType = 'user' | 'user-newchat'
-
 export interface WebviewSubmitMessage extends WebviewContextMessage {
     text: string
-    submitType: ChatSubmitType
 
     /** An opaque value representing the text editor's state. @see {ChatMessage.editorState} */
     editorState?: unknown | undefined | null
+    intent?: ChatMessage['intent'] | undefined | null
+    intentScores?: { intent: string; score: number }[] | undefined | null
+    manuallySelectedIntent?: boolean | undefined | null
 }
 
 interface WebviewEditMessage extends WebviewContextMessage {
@@ -253,11 +203,13 @@ interface WebviewEditMessage extends WebviewContextMessage {
 
     /** An opaque value representing the text editor's state. @see {ChatMessage.editorState} */
     editorState?: unknown | undefined | null
+    intent?: ChatMessage['intent'] | undefined | null
+    intentScores?: { intent: string; score: number }[] | undefined | null
+    manuallySelectedIntent?: boolean | undefined | null
 }
 
 interface WebviewContextMessage {
-    addEnhancedContext?: boolean | undefined | null
-    contextFiles?: ContextItem[] | undefined | null
+    contextItems?: ContextItem[] | undefined | null
 }
 
 export interface ExtensionTranscriptMessage {
@@ -270,14 +222,8 @@ export interface ExtensionTranscriptMessage {
  * The subset of configuration that is visible to the webview.
  */
 export interface ConfigurationSubsetForWebview
-    extends Pick<
-        ClientConfigurationWithEndpoint,
-        | 'experimentalNoodle'
-        | 'serverEndpoint'
-        | 'agentIDE'
-        | 'agentExtensionVersion'
-        | 'internalDebugContext'
-    > {
+    extends Pick<ClientConfiguration, 'experimentalNoodle' | 'internalDebugContext'>,
+        Pick<AuthCredentials, 'serverEndpoint'> {
     smartApply: boolean
     // Type/location of the current webview.
     webviewType?: WebviewType | undefined | null
@@ -289,7 +235,6 @@ export interface ConfigurationSubsetForWebview
  * URLs for the Sourcegraph instance and app.
  */
 export const CODY_DOC_URL = new URL('https://sourcegraph.com/docs/cody')
-export const SG_BLOG_URL = new URL('https://sourcegraph.com/blog/')
 export const SG_CHANGELOG_URL = new URL('https://sourcegraph.com/changelog')
 
 // Community and support
@@ -305,6 +250,8 @@ export const ACCOUNT_USAGE_URL = new URL('https://sourcegraph.com/cody/manage')
 export const ACCOUNT_LIMITS_INFO_URL = new URL(
     'https://sourcegraph.com/docs/cody/troubleshooting#autocomplete-rate-limits'
 )
+// TODO: Update this URL to the correct one when the Cody model waitlist is available
+export const CODY_BLOG_URL_o1_WAITLIST = new URL('https://sourcegraph.com/blog/openai-o1-for-cody')
 
 /** The local environment of the editor. */
 export interface LocalEnv {

@@ -16,7 +16,7 @@ export async function getContextFileFromCurrentFile(): Promise<ContextItem | nul
                 throw new Error('No active editor')
             }
 
-            if (await contextFiltersProvider.instance!.isUriIgnored(document.uri)) {
+            if (await contextFiltersProvider.isUriIgnored(document.uri)) {
                 return null
             }
 

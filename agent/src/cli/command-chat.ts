@@ -7,7 +7,7 @@ import { type ContextItem, ModelUsage, TokenCounterUtils, isDotCom } from '@sour
 import { Command } from 'commander'
 
 import Table from 'easy-table'
-import { isError } from 'lodash'
+import isError from 'lodash/isError'
 import * as vscode from 'vscode'
 import type { ExtensionTranscriptMessage } from '../../../vscode/src/chat/protocol'
 import { activate } from '../../../vscode/src/extension.node'
@@ -23,7 +23,6 @@ import {
     endpointOption,
 } from './command-auth/command-login'
 import { errorSpinner, notAuthenticated } from './command-auth/messages'
-import { isNonEmptyArray } from './isNonEmptyArray'
 import { legacyCodyClientName } from './legacyCodyClientName'
 
 declare const process: { pkg: { entrypoint: string } } & NodeJS.Process
@@ -110,6 +109,22 @@ Enterprise Only:
             process.exit(exitCode)
         })
 
+let agentClient: ReturnType<typeof newEmbeddedAgentClient> | undefined
+function getOrCreateEmbeddedAgentClient(
+    ...args: Parameters<typeof newEmbeddedAgentClient>
+): ReturnType<typeof newEmbeddedAgentClient> {
+    // Reuse the agent client because only one can be running in any given process due to the use of
+    // global singletons such as modelsService. If you create multiple, then modelsService will hang
+    // because of competing processes trying to overwrite the globals.
+    //
+    // This assumes that the args are the same for each call. If that is not true, this will
+    // silently break.
+    if (!agentClient) {
+        agentClient = newEmbeddedAgentClient(...args)
+    }
+    return agentClient
+}
+
 export async function chatAction(options: ChatOptions): Promise<number> {
     const streams = options.streams ?? Streams.default()
     const spinner = ora({
@@ -143,7 +158,10 @@ export async function chatAction(options: ChatOptions): Promise<number> {
         },
     }
     spinner.text = 'Initializing...'
-    const { serverInfo, client, messageHandler } = await newEmbeddedAgentClient(clientInfo, activate)
+    const { serverInfo, client, messageHandler } = await getOrCreateEmbeddedAgentClient(
+        clientInfo,
+        activate
+    )
     if (!serverInfo.authStatus?.authenticated) {
         notAuthenticated(spinner)
         return 1
@@ -168,7 +186,8 @@ export async function chatAction(options: ChatOptions): Promise<number> {
             const lastMessage = message.message.messages.at(-1)
             if (lastMessage?.model && !spinner.text.startsWith('Model')) {
                 const modelName =
-                    models.find(model => model.id === lastMessage.model)?.title ?? lastMessage.model
+                    models.find(({ model }) => model.id === lastMessage.model)?.model.title ??
+                    lastMessage.model
                 spinner.text = modelName
                 spinner.spinner = spinners.dots
             }
@@ -189,9 +208,10 @@ export async function chatAction(options: ChatOptions): Promise<number> {
     const id = await client.request('chat/new', null)
 
     if (options.model) {
-        client.request('chat/setModel', { id, model: options.model })
+        await client.request('chat/setModel', { id, model: options.model })
     }
 
+    const contextItems: ContextItem[] = []
     if (options.contextRepo && options.contextRepo.length > 0) {
         if (isDotCom(serverInfo.authStatus)) {
             spinner.fail(
@@ -225,11 +245,21 @@ export async function chatAction(options: ChatOptions): Promise<number> {
             )
             return 1
         }
+        for (const repo of repos) {
+            const repoUri = vscode.Uri.parse(`https://${endpoint}/${repo.name}`)
+            contextItems.push({
+                type: 'repository',
+                // TODO: confirm syntax for repo
+                uri: repoUri,
+                repoName: repo.name,
+                repoID: repo.id,
+                content: null,
+            })
+        }
     }
 
-    const contextFiles: ContextItem[] = []
     for (const relativeOrAbsolutePath of options.contextFile ?? []) {
-        contextFiles.push({
+        contextItems.push({
             type: 'file',
             uri: toUri(options.dir, relativeOrAbsolutePath),
         })
@@ -242,17 +272,15 @@ export async function chatAction(options: ChatOptions): Promise<number> {
         )
         return 1
     }
-    const addEnhancedContext = isNonEmptyArray(options.contextRepo)
+
     const response = await client.request(
         'chat/submitMessage',
         {
             id,
             message: {
                 command: 'submit',
-                submitType: 'user',
                 text: messageText,
-                contextFiles,
-                addEnhancedContext,
+                contextItems,
             },
         },
         { token: tokenSource.token }

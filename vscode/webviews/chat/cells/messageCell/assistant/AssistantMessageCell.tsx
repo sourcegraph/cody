@@ -3,15 +3,15 @@ import {
     ContextItemSource,
     type Guardrails,
     type Model,
+    ModelTag,
     type PromptString,
     contextItemsFromPromptEditorValue,
     filterContextItemsFromPromptEditorValue,
     isAbortErrorOrSocketHangUp,
-    ps,
     reformatBotMessageForChat,
     serializedPromptEditorStateFromChatMessage,
 } from '@sourcegraph/cody-shared'
-import { type PromptEditorRefAPI, useExtensionAPI, useObservable } from '@sourcegraph/prompt-editor'
+import type { PromptEditorRefAPI } from '@sourcegraph/prompt-editor'
 import isEqual from 'lodash/isEqual'
 import { type FunctionComponent, type RefObject, memo, useMemo } from 'react'
 import type { ApiPostMessage, UserAccountInfo } from '../../../../Chat'
@@ -32,7 +32,7 @@ import { ContextFocusActions } from './ContextFocusActions'
  */
 export const AssistantMessageCell: FunctionComponent<{
     message: ChatMessage
-
+    models: Model[]
     /** Information about the human message that led to this assistant response. */
     humanMessage: PriorHumanMessageInfo | null
 
@@ -54,6 +54,7 @@ export const AssistantMessageCell: FunctionComponent<{
 }> = memo(
     ({
         message,
+        models,
         humanMessage,
         userInfo,
         chatEnabled,
@@ -68,13 +69,15 @@ export const AssistantMessageCell: FunctionComponent<{
         smartApplyEnabled,
     }) => {
         const displayMarkdown = useMemo(
-            () => reformatBotMessageForChat(message.text ?? ps``).toString(),
-            [message]
+            () => (message.text ? reformatBotMessageForChat(message.text).toString() : ''),
+            [message.text]
         )
 
-        const chatModel = useChatModelByID(message.model)
+        const chatModel = useChatModelByID(message.model, models)
         const ModelIcon = chatModel ? chatModelIconComponent(chatModel.id) : null
         const isAborted = isAbortErrorOrSocketHangUp(message.error)
+
+        const hasLongerResponseTime = chatModel?.tags?.includes(ModelTag.StreamDisabled)
 
         return (
             <BaseMessageCell
@@ -109,10 +112,19 @@ export const AssistantMessageCell: FunctionComponent<{
                                 humanMessage={humanMessage}
                                 smartApplyEnabled={smartApplyEnabled}
                                 smartApply={smartApply}
-                                userInfo={userInfo}
                             />
                         ) : (
-                            isLoading && <LoadingDots />
+                            isLoading && (
+                                <div>
+                                    {hasLongerResponseTime && (
+                                        <p className="tw-m-4 tw-mt-0 tw-text-muted-foreground">
+                                            This model may take longer to respond because it takes time
+                                            to "think". Recommended for complex reasoning & coding tasks.
+                                        </p>
+                                    )}
+                                    <LoadingDots />
+                                </div>
+                            )
                         )}
                     </>
                 }
@@ -135,6 +147,7 @@ export const AssistantMessageCell: FunctionComponent<{
                                 {!isLoading && (!message.error || isAborted) && (
                                     <ContextFocusActions
                                         humanMessage={humanMessage}
+                                        longResponseTime={hasLongerResponseTime}
                                         className={
                                             showFeedbackButtons && feedbackButtonsOnSubmit
                                                 ? 'tw-pl-5'
@@ -202,7 +215,11 @@ export function makeHumanMessageInfo(
                             withInitialContext.repositories) ||
                         (item.type === 'file' && withInitialContext.files)
                 )
-                editHumanMessage(assistantMessage.index - 1, newEditorValue)
+                editHumanMessage({
+                    messageIndexInTranscript: assistantMessage.index - 1,
+                    editorValue: newEditorValue,
+                    intent: humanMessage.intent,
+                })
             }
         },
         hasExplicitMentions: Boolean(contextItems.some(item => item.source === ContextItemSource.User)),
@@ -210,17 +227,16 @@ export function makeHumanMessageInfo(
             if (humanEditorRef.current?.getSerializedValue().text.trim().endsWith('@')) {
                 humanEditorRef.current?.setFocus(true, { moveCursorToEnd: true })
             } else {
-                humanEditorRef.current?.appendText('@', true)
+                humanEditorRef.current?.appendText('@')
             }
         },
     }
 }
 
 function useChatModelByID(
-    model: string | undefined
-): Pick<Model, 'id' | 'title' | 'provider'> | undefined {
-    const models = useExtensionAPI().models
-    const chatModels = useObservable(useMemo(() => models(), [models])).value
+    model: string | undefined,
+    chatModels: Model[]
+): Pick<Model, 'id' | 'title' | 'provider' | 'tags'> | undefined {
     return (
         chatModels?.find(m => m.id === model) ??
         (model
@@ -228,6 +244,7 @@ function useChatModelByID(
                   id: model,
                   title: model,
                   provider: 'unknown',
+                  tags: [],
               }
             : undefined)
     )

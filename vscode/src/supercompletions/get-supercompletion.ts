@@ -10,7 +10,7 @@ import {
 import levenshtein from 'js-levenshtein'
 import * as uuid from 'uuid'
 import * as vscode from 'vscode'
-import type { RecentEditsRetriever } from '../completions/context/retrievers/recent-edits/recent-edits-retriever'
+import type { RecentEditsRetriever } from '../completions/context/retrievers/recent-user-actions/recent-edits-retriever'
 import { ASSISTANT_EXAMPLE, HUMAN_EXAMPLE, MODEL, PROMPT, SYSTEM } from './prompt'
 import { fixIndentation } from './utils/fix-indentation'
 import { fuzzyFindLocation } from './utils/fuzzy-find-location'
@@ -39,7 +39,7 @@ export async function* getSupercompletions({
     recentEditsRetriever,
     chat,
 }: SuperCompletionsParams): AsyncGenerator<Supercompletion> {
-    if (await contextFiltersProvider.instance!.isUriIgnored(document.uri)) {
+    if (await contextFiltersProvider.isUriIgnored(document.uri)) {
         return null
     }
 
@@ -69,7 +69,7 @@ async function* generateRawChanges(
     messages: Message[],
     abortSignal: AbortSignal
 ): AsyncGenerator<RawChange> {
-    const stream = chat.chat(
+    const stream = await chat.chat(
         messages,
         { model: MODEL, temperature: 0.1, maxTokensToSample: 1000 },
         abortSignal

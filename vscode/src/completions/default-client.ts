@@ -1,19 +1,25 @@
+import { SpanStatusCode } from '@opentelemetry/api'
+
 import {
     type BrowserOrNodeResponse,
+    type CodeCompletionProviderOptions,
     type CodeCompletionsClient,
     type CodeCompletionsParams,
     type CompletionResponse,
     type CompletionResponseGenerator,
+    type CompletionResponseWithMetaData,
     CompletionStopReason,
-    type CompletionsClientConfig,
     FeatureFlag,
     NetworkError,
     RateLimitError,
     type SerializedCodeCompletionsParams,
     TracedError,
     addTraceparent,
+    contextFiltersProvider,
     createSSEIterator,
+    currentResolvedConfig,
     featureFlagProvider,
+    fetch,
     getActiveTraceAndSpanId,
     getClientInfoParams,
     isAbortError,
@@ -26,59 +32,45 @@ import {
     tracer,
 } from '@sourcegraph/cody-shared'
 
-import { SpanStatusCode } from '@opentelemetry/api'
-import { contextFiltersProvider, fetch } from '@sourcegraph/cody-shared'
-import type {
-    CodeCompletionProviderOptions,
-    CompletionResponseWithMetaData,
-} from '@sourcegraph/cody-shared/src/inferenceClient/misc'
-import { logger } from '../log'
+import { getClientIdentificationHeaders } from '@sourcegraph/cody-shared'
+import { autocompleteLifecycleOutputChannelLogger } from './output-channel-logger'
 
 /**
  * Access the code completion LLM APIs via a Sourcegraph server instance.
  */
 class DefaultCodeCompletionsClient implements CodeCompletionsClient {
-    private config: CompletionsClientConfig | null = null
-    public logger = logger
+    public logger = autocompleteLifecycleOutputChannelLogger
 
-    public onConfigurationChange(newConfig: CompletionsClientConfig) {
-        this.config = newConfig
-    }
-
-    public complete(
+    public async complete(
         params: CodeCompletionsParams,
         abortController: AbortController,
         providerOptions?: CodeCompletionProviderOptions
-    ): CompletionResponseGenerator {
-        const { config, logger } = this
-
-        if (config === null) {
-            throw new Error('DefaultCodeCompletionsClient is not initialized')
-        }
+    ): Promise<CompletionResponseGenerator> {
+        const { auth, configuration } = await currentResolvedConfig()
 
         const query = new URLSearchParams(getClientInfoParams())
-        const url = new URL(`/.api/completions/code?${query.toString()}`, config.serverEndpoint).href
-        const log = logger?.startCompletion(params, url)
+        const url = new URL(`/.api/completions/code?${query.toString()}`, auth.serverEndpoint).href
+        const log = autocompleteLifecycleOutputChannelLogger?.startCompletion(params, url)
         const { signal } = abortController
 
         return tracer.startActiveSpan(
             `POST ${url}`,
             async function* (span): CompletionResponseGenerator {
-                const tracingFlagEnabled = await featureFlagProvider.instance!.evaluateFeatureFlag(
+                const tracingFlagEnabled = await featureFlagProvider.evaluateFeatureFlagEphemerally(
                     FeatureFlag.CodyAutocompleteTracing
                 )
 
                 const headers = new Headers({
-                    ...config.customHeaders,
+                    ...configuration.customHeaders,
                     ...providerOptions?.customHeaders,
+                    ...getClientIdentificationHeaders(),
                 })
 
                 // Force HTTP connection reuse to reduce latency.
                 // c.f. https://github.com/microsoft/vscode/issues/173861
-                headers.set('Connection', 'keep-alive')
                 headers.set('Content-Type', 'application/json; charset=utf-8')
-                if (config.accessToken) {
-                    headers.set('Authorization', `token ${config.accessToken}`)
+                if (auth.accessToken) {
+                    headers.set('Authorization', `token ${auth.accessToken}`)
                 }
 
                 if (tracingFlagEnabled) {
@@ -112,10 +104,12 @@ class DefaultCodeCompletionsClient implements CodeCompletionsClient {
                     messages: await Promise.all(
                         params.messages.map(async m => ({
                             ...m,
-                            text: await m.text?.toFilteredString(contextFiltersProvider.instance!),
+                            text: await m.text?.toFilteredString(contextFiltersProvider),
                         }))
                     ),
                 }
+
+                log.onFetch('defaultClient', serializedParams)
 
                 const response = await fetch(url, {
                     method: 'POST',

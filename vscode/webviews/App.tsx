@@ -4,25 +4,18 @@ import styles from './App.module.css'
 
 import {
     type ChatMessage,
-    type ClientStateForWebview,
-    CodyIDE,
+    type ContextItem,
     GuardrailsPost,
     PromptString,
-    type SerializedChatTranscript,
     type TelemetryRecorder,
 } from '@sourcegraph/cody-shared'
 import type { AuthMethod } from '../src/chat/protocol'
+import { AuthPage } from './AuthPage'
 import { LoadingPage } from './LoadingPage'
-import { LoginSimplified } from './OnboardingExperiment'
-import { ConnectionIssuesPage } from './Troubleshooting'
 import { useClientActionDispatcher } from './client/clientState'
 
-import {
-    ClientStateContextProvider,
-    ExtensionAPIProviderFromVSCodeAPI,
-} from '@sourcegraph/prompt-editor'
+import { ExtensionAPIProviderFromVSCodeAPI } from '@sourcegraph/prompt-editor'
 import { CodyPanel } from './CodyPanel'
-import { ChatEnvironmentContext, type ChatEnvironmentContextData } from './chat/ChatEnvironmentContext'
 import { View } from './tabs'
 import type { VSCodeWrapper } from './utils/VSCodeApi'
 import { ComposedWrappers, type Wrapper } from './utils/composeWrappers'
@@ -38,14 +31,8 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
 
     const [transcript, setTranscript] = useState<ChatMessage[]>([])
 
-    const [userHistory, setUserHistory] = useState<SerializedChatTranscript[]>()
-
     const [errorMessages, setErrorMessages] = useState<string[]>([])
-    const [isTranscriptError, setIsTranscriptError] = useState<boolean>(false)
 
-    const [clientState, setClientState] = useState<ClientStateForWebview>({
-        initialContext: [],
-    })
     const dispatchClientAction = useClientActionDispatcher()
 
     const guardrails = useMemo(() => {
@@ -57,7 +44,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
         })
     }, [vscodeAPI])
 
-    // biome-ignore lint/correctness/useExhaustiveDependencies: intentionally refresh on `view`
     useEffect(
         () =>
             vscodeAPI.onMessage(message => {
@@ -78,7 +64,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                             const msgLength = deserializedMessages.length - 1
                             setTranscript(deserializedMessages.slice(0, msgLength))
                             setMessageInProgress(deserializedMessages[msgLength])
-                            setIsTranscriptError(false)
                         } else {
                             setTranscript(deserializedMessages)
                             setMessageInProgress(null)
@@ -89,24 +74,19 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                     case 'config':
                         setConfig(message)
                         updateDisplayPathEnvInfoForWebview(message.workspaceFolderUris)
-                        break
-                    case 'history':
-                        setUserHistory(Object.values(message.localHistory?.chat ?? {}))
+                        // Reset to the default view (Chat) for unauthenticated users.
+                        if (view && view !== View.Chat && !message.authStatus?.authenticated) {
+                            setView(View.Chat)
+                        }
                         break
                     case 'clientAction':
                         dispatchClientAction(message)
-                        break
-                    case 'clientState':
-                        setClientState(message.value)
                         break
                     case 'errors':
                         setErrorMessages(prev => [...prev, message.errors].slice(-5))
                         break
                     case 'view':
                         setView(message.view)
-                        break
-                    case 'transcript-errors':
-                        setIsTranscriptError(message.isTranscriptError)
                         break
                     case 'attribution':
                         if (message.attribution) {
@@ -172,13 +152,9 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     // V2 telemetry recorder
     const telemetryRecorder = useMemo(() => createWebviewTelemetryRecorder(vscodeAPI), [vscodeAPI])
 
-    const chatEnvironmentContext = useMemo<ChatEnvironmentContextData>(() => {
-        return { clientType: config?.config?.agentIDE ?? CodyIDE.VSCode }
-    }, [config?.config?.agentIDE])
-
     const wrappers = useMemo<Wrapper[]>(
-        () => getAppWrappers(vscodeAPI, telemetryRecorder, clientState, config, chatEnvironmentContext),
-        [vscodeAPI, telemetryRecorder, clientState, config, chatEnvironmentContext]
+        () => getAppWrappers(vscodeAPI, telemetryRecorder, config, undefined),
+        [vscodeAPI, telemetryRecorder, config]
     )
 
     // Wait for all the data to be loaded before rendering Chat View
@@ -188,27 +164,20 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
 
     return (
         <ComposedWrappers wrappers={wrappers}>
-            {!config.authStatus.authenticated && config.authStatus.showNetworkError ? (
+            {view === View.Login || !config.authStatus.authenticated ? (
                 <div className={styles.outerContainer}>
-                    <ConnectionIssuesPage
-                        configuredEndpoint={config.authStatus.endpoint}
-                        vscodeAPI={vscodeAPI}
-                    />
-                </div>
-            ) : view === View.Login || !config.authStatus.authenticated ? (
-                <div className={styles.outerContainer}>
-                    <LoginSimplified
+                    <AuthPage
                         simplifiedLoginRedirect={loginRedirect}
                         uiKindIsWeb={config.config.uiKindIsWeb}
                         vscodeAPI={vscodeAPI}
-                        codyIDE={config.config.agentIDE ?? CodyIDE.VSCode}
+                        codyIDE={config.clientCapabilities.agentIDE}
                     />
                 </div>
             ) : (
                 <CodyPanel
                     view={view}
                     setView={setView}
-                    config={config.config}
+                    configuration={config}
                     errorMessages={errorMessages}
                     setErrorMessages={setErrorMessages}
                     attributionEnabled={config.configFeatures.attribution}
@@ -216,9 +185,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                     messageInProgress={messageInProgress}
                     transcript={transcript}
                     vscodeAPI={vscodeAPI}
-                    isTranscriptError={isTranscriptError}
                     guardrails={guardrails}
-                    userHistory={userHistory ?? []}
                     smartApplyEnabled={config.config.smartApply}
                 />
             )}
@@ -229,9 +196,8 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
 export function getAppWrappers(
     vscodeAPI: VSCodeWrapper,
     telemetryRecorder: TelemetryRecorder,
-    clientState: ClientStateForWebview,
     config: Config | null,
-    chatEnvironmentContext: ChatEnvironmentContextData
+    staticInitialContext: ContextItem[] | undefined
 ): Wrapper[] {
     return [
         {
@@ -240,19 +206,11 @@ export function getAppWrappers(
         } satisfies Wrapper<ComponentProps<typeof TelemetryRecorderContext.Provider>['value']>,
         {
             component: ExtensionAPIProviderFromVSCodeAPI,
-            props: { vscodeAPI },
+            props: { vscodeAPI, staticInitialContext },
         } satisfies Wrapper<any, ComponentProps<typeof ExtensionAPIProviderFromVSCodeAPI>>,
-        {
-            provider: ClientStateContextProvider,
-            value: clientState,
-        } satisfies Wrapper<ComponentProps<typeof ClientStateContextProvider>['value']>,
         {
             component: ConfigProvider,
             props: { value: config },
         } satisfies Wrapper<any, ComponentProps<typeof ConfigProvider>>,
-        {
-            provider: ChatEnvironmentContext.Provider,
-            value: chatEnvironmentContext,
-        } satisfies Wrapper<ComponentProps<typeof ChatEnvironmentContext.Provider>['value']>,
     ]
 }

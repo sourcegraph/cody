@@ -12,7 +12,7 @@ Cody autocompletes single lines, or whole functions, in any programming language
 
 ## Chat
 
-Answer questions about programming topics generally or your codebase specifically with Cody chat. Enable Cody to include Enhanced Context of your open project, or tag specific files and symbols to refine your chat prompt.
+Answer questions about your entire codebase, specific files and symbols, or general programming topics.
 
 For example, you can ask Cody:
 

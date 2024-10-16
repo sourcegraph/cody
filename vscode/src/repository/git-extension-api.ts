@@ -1,5 +1,5 @@
 import * as vscode from 'vscode'
-import { logDebug } from '../log'
+import { logDebug } from '../output-channel-logger'
 import type { API, GitExtension } from './builtinGitExtension'
 
 /**
@@ -49,26 +49,6 @@ export async function initVSCodeGitApi(): Promise<vscode.Disposable> {
             })
         },
     }
-}
-
-/**
- * ❗️ The Git extension API instance is only available in the VS Code extension. ️️❗️
- */
-export function gitRemoteUrlsFromGitExtension(uri: vscode.Uri): string[] | undefined {
-    const repository = vscodeGitAPI?.getRepository(uri)
-    const remoteUrls = new Set<string>()
-
-    for (const remote of repository?.state?.remotes || []) {
-        if (remote.fetchUrl) {
-            remoteUrls.add(remote.fetchUrl)
-        }
-
-        if (remote.pushUrl) {
-            remoteUrls.add(remote.pushUrl)
-        }
-    }
-
-    return remoteUrls.size ? Array.from(remoteUrls) : undefined
 }
 
 /**

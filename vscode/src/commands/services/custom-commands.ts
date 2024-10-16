@@ -1,10 +1,10 @@
 import os from 'node:os'
-import { omit } from 'lodash'
+import omit from 'lodash/omit'
 import * as vscode from 'vscode'
 
 import type { CodyCommand } from '@sourcegraph/cody-shared'
 
-import { logDebug, logError } from '../../log'
+import { logDebug, logError } from '../../output-channel-logger'
 
 import { isMacOS } from '@sourcegraph/cody-shared'
 import { CustomCommandType } from '@sourcegraph/cody-shared'

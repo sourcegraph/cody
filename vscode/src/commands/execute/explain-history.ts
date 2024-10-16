@@ -39,10 +39,10 @@ async function explainHistoryCommand(
 
     logDebug('explainHistoryCommand', 'computed history options', JSON.stringify(historyOptions))
 
-    let contextFiles: ContextItem[] = []
+    let contextItems: ContextItem[] = []
     try {
-        contextFiles = await commandsProvider.history(historyOptions.uri, historyOptions)
-        if (contextFiles.length === 0) {
+        contextItems = await commandsProvider.history(historyOptions.uri, historyOptions)
+        if (contextItems.length === 0) {
             return {
                 level: 'warn',
                 reason: 'git-no-match',
@@ -61,9 +61,7 @@ async function explainHistoryCommand(
 
     return {
         text: prompt,
-        submitType: 'user-newchat',
-        addEnhancedContext: false,
-        contextFiles,
+        contextItems,
         source: args?.source,
     }
 }
@@ -81,6 +79,10 @@ export async function executeExplainHistoryCommand(
                 requestID: args?.requestID,
                 source: args?.source,
                 traceId: span.spanContext().traceId,
+            },
+            billingMetadata: {
+                product: 'cody',
+                category: 'core',
             },
         })
 

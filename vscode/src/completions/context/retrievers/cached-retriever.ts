@@ -1,5 +1,5 @@
 import { type AutocompleteContextSnippet, logError, wrapInActiveSpan } from '@sourcegraph/cody-shared'
-import { debounce } from 'lodash'
+import debounce from 'lodash/debounce'
 import { LRUCache } from 'lru-cache'
 import * as vscode from 'vscode'
 import { getCurrentDocContext } from '../../get-current-doc-context'

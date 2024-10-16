@@ -1,45 +1,54 @@
 import {
-    AUTH_STATUS_FIXTURE_AUTHED,
+    CLIENT_CAPABILITIES_FIXTURE,
     type ClientConfiguration,
-    type GraphQLAPIClientConfig,
+    type CodeCompletionsParams,
     contextFiltersProvider,
-    graphqlClient,
+    currentAuthStatus,
+    featureFlagProvider,
+    mockClientCapabilities,
     nextTick,
     telemetryRecorder,
 } from '@sourcegraph/cody-shared'
+import { Observable } from 'observable-fns'
 import { type MockInstance, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import type * as vscode from 'vscode'
-import { localStorage } from '../services/LocalStorageProvider'
+import { mockLocalStorage } from '../services/LocalStorageProvider'
 import { DEFAULT_VSCODE_SETTINGS, vsCodeMocks } from '../testutils/mocks'
+import * as CompletionAnalyticsLogger from './analytics-logger'
 import { getCurrentDocContext } from './get-current-doc-context'
 import { TriggerKind } from './get-inline-completions'
 import { initCompletionProviderConfig, params } from './get-inline-completions-tests/helpers'
 import { InlineCompletionItemProvider } from './inline-completion-item-provider'
-import * as CompletionLogger from './logger'
 import { createProvider } from './providers/anthropic'
-import type { FetchCompletionResult } from './providers/fetch-and-process-completions'
-import { type GenerateCompletionsOptions, Provider, type ProviderOptions } from './providers/provider'
+import type { FetchCompletionResult } from './providers/shared/fetch-and-process-completions'
+import {
+    type GenerateCompletionsOptions,
+    Provider,
+    type ProviderOptions,
+} from './providers/shared/provider'
 import type { RequestParams } from './request-manager'
 import { documentAndPosition } from './test-helpers'
 import type { InlineCompletionItemWithAnalytics } from './text-processing/process-inline-completions'
 import { sleep } from './utils'
 
-vi.mock('vscode', () => ({
-    ...vsCodeMocks,
-    workspace: {
-        ...vsCodeMocks.workspace,
-        onDidChangeTextDocument() {
-            return null
+vi.mock('vscode', async () => {
+    const { vsCodeMocks, Disposable } = await import('../testutils/mocks')
+    return {
+        ...vsCodeMocks,
+        Disposable,
+        workspace: {
+            ...vsCodeMocks.workspace,
+            onDidChangeTextDocument() {
+                return null
+            },
         },
-    },
-}))
+    }
+})
 
 const DUMMY_CONTEXT: vscode.InlineCompletionContext = {
     selectedCompletionInfo: undefined,
     triggerKind: vsCodeMocks.InlineCompletionTriggerKind.Automatic,
 }
-
-graphqlClient.setConfig({} as unknown as GraphQLAPIClientConfig)
 
 const getAnalyticEventCalls = (mockInstance: MockInstance) => {
     return mockInstance.mock.calls.map(args => {
@@ -92,10 +101,21 @@ class MockRequestProvider extends Provider {
         this.next()
     }
 
-    public async *generateCompletions(
-        options: GenerateCompletionsOptions,
+    public getRequestParams(options: GenerateCompletionsOptions): CodeCompletionsParams {
+        return {} as any as CodeCompletionsParams
+    }
+
+    public async generateCompletions(
+        generateOptions: GenerateCompletionsOptions,
         abortSignal: AbortSignal
-    ): AsyncGenerator<FetchCompletionResult[]> {
+    ): Promise<AsyncGenerator<FetchCompletionResult[]>> {
+        return this.responseGenerator(generateOptions, abortSignal)
+    }
+
+    public async *responseGenerator(
+        generateOptions: GenerateCompletionsOptions,
+        abortSignal: AbortSignal
+    ) {
         abortSignal.addEventListener('abort', () => {
             this.didAbort = true
         })
@@ -119,14 +139,18 @@ class MockRequestProvider extends Provider {
 function getInlineCompletionProvider(
     args: Partial<ConstructorParameters<typeof InlineCompletionItemProvider>[0]> = {}
 ): InlineCompletionItemProvider {
+    vi.spyOn(featureFlagProvider, 'evaluatedFeatureFlag').mockReturnValue(Observable.of(false))
+    mockClientCapabilities(CLIENT_CAPABILITIES_FIXTURE)
     return new InlineCompletionItemProvider({
         completeSuggestWidgetSelection: true,
+        triggerDelay: 0,
         statusBar: { addError: () => {}, hasError: () => {}, startLoading: () => {} } as any,
         provider: createProvider({
-            authStatus: AUTH_STATUS_FIXTURE_AUTHED,
-        } as any),
-        config: {} as any,
-        authStatus: AUTH_STATUS_FIXTURE_AUTHED,
+            authStatus: currentAuthStatus(),
+            provider: 'default',
+            source: 'local-editor-settings',
+            configOverwrites: null,
+        }),
         firstCompletionTimeout:
             args?.firstCompletionTimeout ?? DEFAULT_VSCODE_SETTINGS.autocompleteFirstCompletionTimeout,
         ...args,
@@ -142,16 +166,16 @@ function createNetworkProvider(params: RequestParams): MockRequestProvider {
         numberOfCompletionsToGenerate: 1,
         firstCompletionTimeout: 1500,
         triggerKind: TriggerKind.Automatic,
-        completionLogId: 'mock-log-id' as CompletionLogger.CompletionLogID,
-        authStatus: AUTH_STATUS_FIXTURE_AUTHED,
-        config: {} as any,
+        completionLogId: 'mock-log-id' as CompletionAnalyticsLogger.CompletionLogID,
+        snippets: [],
     }
 
     return new MockRequestProvider(
         {
             id: 'mock-provider',
-            anonymousUserID: 'anonymousUserID',
             legacyModel: 'test-model',
+            source: 'local-editor-settings',
+            configOverwrites: null,
         },
         providerOptions
     )
@@ -192,16 +216,13 @@ function createCompletion(textWithCursor: string, provider: InlineCompletionItem
 // https://github.com/sourcegraph/cody/pull/4984
 describe.skip('InlineCompletionItemProvider E2E', () => {
     describe('smart throttle in-flight requests', () => {
-        beforeAll(async () => {
-            await initCompletionProviderConfig({})
-            localStorage.setStorage({
-                get: () => null,
-                update: () => {},
-            } as any as vscode.Memento)
+        beforeAll(() => {
+            initCompletionProviderConfig({ configuration: {} })
+            mockLocalStorage()
         })
 
         beforeEach(() => {
-            vi.spyOn(contextFiltersProvider.instance!, 'isUriIgnored').mockResolvedValue(false)
+            vi.spyOn(contextFiltersProvider, 'isUriIgnored').mockResolvedValue(false)
         })
 
         /**
@@ -234,7 +255,7 @@ describe.skip('InlineCompletionItemProvider E2E', () => {
 
             // Enough for completion events to be logged
             vi.advanceTimersByTime(1000)
-            CompletionLogger.logSuggestionEvents(true)
+            CompletionAnalyticsLogger.logSuggestionEvents(true)
 
             expect(getAnalyticEventCalls(logSpy)).toMatchInlineSnapshot(`
               [
@@ -286,7 +307,7 @@ describe.skip('InlineCompletionItemProvider E2E', () => {
 
             // Enough for completion events to be logged
             vi.advanceTimersByTime(1000)
-            CompletionLogger.logSuggestionEvents(true)
+            CompletionAnalyticsLogger.logSuggestionEvents(true)
 
             expect(getAnalyticEventCalls(logSpy)).toMatchInlineSnapshot(`
               [
@@ -355,7 +376,7 @@ describe.skip('InlineCompletionItemProvider E2E', () => {
 
             // Enough for completion events to be logged
             vi.advanceTimersByTime(1000)
-            CompletionLogger.logSuggestionEvents(true)
+            CompletionAnalyticsLogger.logSuggestionEvents(true)
 
             expect(getAnalyticEventCalls(logSpy)).toMatchInlineSnapshot(`
               [
@@ -390,22 +411,18 @@ describe('InlineCompletionItemProvider preloading', () => {
 
     beforeEach(() => {
         onDidChangeTextEditorSelection.mockClear()
-    })
 
-    beforeAll(async () => {
         vi.useFakeTimers()
 
-        await initCompletionProviderConfig(autocompleteConfig)
+        initCompletionProviderConfig({ configuration: { configuration: autocompleteConfig, auth: {} } })
+        mockLocalStorage()
 
-        localStorage.setStorage({
-            get: () => null,
-            update: () => {},
-        } as any as vscode.Memento)
+        vi.spyOn(contextFiltersProvider, 'isUriIgnored').mockResolvedValue(false)
     })
 
     it('triggers preload request on cursor movement if cursor is at the end of a line', async () => {
         const autocompleteParams = params('console.log(█', [], {
-            configuration: autocompleteConfig,
+            configuration: { configuration: autocompleteConfig, auth: {} },
         })
 
         const { document, position } = autocompleteParams
@@ -439,7 +456,7 @@ describe('InlineCompletionItemProvider preloading', () => {
 
     it('does not trigger preload request if current line has non-empty suffix', async () => {
         const autocompleteParams = params('console.log(█);', [], {
-            configuration: autocompleteConfig,
+            configuration: { configuration: autocompleteConfig, auth: {} },
         })
 
         const { document, position } = autocompleteParams
@@ -462,7 +479,7 @@ describe('InlineCompletionItemProvider preloading', () => {
 
     it('triggers preload request on next empty line if current line has non-empty suffix', async () => {
         const autocompleteParams = params('console.log(█);\n', [], {
-            configuration: autocompleteConfig,
+            configuration: { configuration: autocompleteConfig },
         })
 
         const { document, position } = autocompleteParams
@@ -488,7 +505,7 @@ describe('InlineCompletionItemProvider preloading', () => {
 
     it('does not trigger preload request if next line is not empty', async () => {
         const autocompleteParams = params('console.log(█);\nconsole.log()', [], {
-            configuration: autocompleteConfig,
+            configuration: { configuration: autocompleteConfig },
         })
 
         const { document, position } = autocompleteParams

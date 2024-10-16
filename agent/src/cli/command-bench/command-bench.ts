@@ -10,21 +10,22 @@ import { newAgentClient } from '../../agent'
 import { exec } from 'node:child_process'
 import fs from 'node:fs'
 import { promisify } from 'node:util'
-import {
-    type ConfigurationUseContext,
-    graphqlClient,
-    isDefined,
-    modelsService,
-} from '@sourcegraph/cody-shared'
+import { codyPaths, isDefined, modelsService, setClientCapabilities } from '@sourcegraph/cody-shared'
 import { sleep } from '../../../../vscode/src/completions/utils'
+import {
+    getConfiguration,
+    setStaticResolvedConfigurationWithAuthCredentials,
+} from '../../../../vscode/src/configuration'
+import { localStorage } from '../../../../vscode/src/services/LocalStorageProvider'
+import { createOrUpdateTelemetryRecorderProvider } from '../../../../vscode/src/services/telemetry-v2'
 import { startPollyRecording } from '../../../../vscode/src/testutils/polly'
 import { dotcomCredentials } from '../../../../vscode/src/testutils/testing-credentials'
 import { allClientCapabilitiesEnabled } from '../../allClientCapabilitiesEnabled'
-import { codyPaths } from '../../codyPaths'
 import { arrayOption, booleanOption, intOption } from './cli-parsers'
 import { matchesGlobPatterns } from './matchesGlobPatterns'
 import { evaluateAutocompleteStrategy } from './strategy-autocomplete'
 import { evaluateChatStrategy } from './strategy-chat'
+import { evaluateChatContextStrategy } from './strategy-chat-context'
 import { evaluateFixStrategy } from './strategy-fix'
 import { evaluateGitLogStrategy } from './strategy-git-log'
 import { evaluateUnitTestStrategy } from './strategy-unit-test'
@@ -62,14 +63,14 @@ export interface CodyBenchOptions {
     evaluationConfig: string
     snapshotDirectory: string
     csvPath?: string
-    bfgBinary?: string
     installCommand?: string
     testCommand?: string
     gitLogFilter?: string
     fixture: EvaluationFixture
-    context: { sourcesDir: string; strategy: ConfigurationUseContext }
+    context?: { sourcesDir: string }
 
     verbose: boolean
+    insecureTls?: boolean
 }
 
 interface EvaluationConfig extends Partial<CodyBenchOptions> {
@@ -80,6 +81,7 @@ interface EvaluationConfig extends Partial<CodyBenchOptions> {
 export enum BenchStrategy {
     Autocomplete = 'autocomplete',
     Chat = 'chat',
+    ChatContext = 'chat-context',
     Fix = 'fix',
     GitLog = 'git-log',
     UnitTest = 'unit-test',
@@ -143,7 +145,7 @@ async function loadEvaluationConfig(options: CodyBenchOptions): Promise<CodyBenc
 
 export const benchCommand = new commander.Command('bench')
     .description(
-        'Evaluate Cody autocomplete by running the Agent in headless mode. ' +
+        'Evaluate Cody by running the Agent in headless mode. ' +
             'See the repo https://github.com/sourcegraph/cody-bench-data for ' +
             'more details about running cody-bench and how to evaluate the data.'
     )
@@ -270,9 +272,6 @@ export const benchCommand = new commander.Command('bench')
         arrayOption as any,
         []
     )
-    .addOption(
-        new commander.Option('--bfg-binary <path>', 'Optional path to a BFG binary').env('BFG_BINARY')
-    )
     .option(
         '--tree-sitter-grammars <path>',
         'Path to a directory containing tree-sitter grammars',
@@ -295,6 +294,7 @@ export const benchCommand = new commander.Command('bench')
         booleanOption,
         true
     )
+    .option('--insecure-tls', 'Allow insecure server connections when using SSL', false)
     .action(async (options: CodyBenchOptions) => {
         if (!options.srcAccessToken) {
             const { token } = dotcomCredentials()
@@ -325,10 +325,13 @@ export const benchCommand = new commander.Command('bench')
         )
 
         // Required to use `PromptString`.
-        graphqlClient.setConfig({
-            accessToken: options.srcAccessToken,
-            serverEndpoint: options.srcEndpoint,
-            customHeaders: {},
+        localStorage.setStorage('inMemory')
+        setStaticResolvedConfigurationWithAuthCredentials({
+            configuration: { customHeaders: {} },
+            auth: {
+                accessToken: options.srcAccessToken,
+                serverEndpoint: options.srcEndpoint,
+            },
         })
 
         const recordingDirectory = path.join(path.dirname(options.evaluationConfig), 'recordings')
@@ -352,6 +355,9 @@ export const benchCommand = new commander.Command('bench')
 async function evaluateWorkspace(options: CodyBenchOptions, recordingDirectory: string): Promise<void> {
     console.log(`starting evaluation: fixture=${options.fixture.name} workspace=${options.workspace}`)
 
+    createOrUpdateTelemetryRecorderProvider(true)
+    setClientCapabilities({ configuration: getConfiguration(), agentCapabilities: undefined })
+
     const workspaceRootUri = vscode.Uri.from({ scheme: 'file', path: options.workspace })
 
     const baseGlobalState: Record<string, any> = {}
@@ -360,7 +366,7 @@ async function evaluateWorkspace(options: CodyBenchOptions, recordingDirectory: 
         // There is no VSC setting yet to configure the base edit model. Users
         // can only modify this setting by changing it through the quickpick
         // menu in VSC.
-        const provider = modelsService.instance!.getModelByIDSubstringOrError(editModel)
+        const provider = modelsService.getModelByIDSubstringOrError(editModel)
         baseGlobalState.editModel = provider.id
     }
 
@@ -377,20 +383,17 @@ async function evaluateWorkspace(options: CodyBenchOptions, recordingDirectory: 
             serverEndpoint: options.srcEndpoint,
             customHeaders: {},
             customConfiguration: {
-                'cody.experimental.symf.enabled': ['keyword', 'blended'].includes(
-                    options.context?.strategy
-                ), // disabling fixes errors in Polly.js related to fetching the symf binary
-                'cody.experimental.localEmbeddings.enabled': ['embeddings', 'blended'].includes(
-                    options.context?.strategy
-                ),
-                'cody.useContext': options.context?.strategy,
+                'cody.experimental.symf.enabled': !!options.context, // disabling fixes errors in Polly.js related to fetching the symf binary
                 'cody.experimental.telemetry.enabled': false,
                 ...options.fixture.customConfiguration,
             },
             baseGlobalState,
         },
         codyAgentPath: options.codyAgentBinary,
-        capabilities: allClientCapabilitiesEnabled,
+        capabilities: {
+            ...allClientCapabilitiesEnabled,
+            secrets: 'stateless',
+        },
         inheritStderr: true,
         extraEnvVariables: {
             CODY_RECORDING_NAME: `${options.fixture.name}-${path.basename(options.workspace)}`,
@@ -422,6 +425,9 @@ async function evaluateWorkspace(options: CodyBenchOptions, recordingDirectory: 
                 break
             case BenchStrategy.Chat:
                 await evaluateChatStrategy(client, options)
+                break
+            case BenchStrategy.ChatContext:
+                await evaluateChatContextStrategy(client, options)
                 break
             case BenchStrategy.UnitTest:
                 await evaluateUnitTestStrategy(client, options)
@@ -465,6 +471,10 @@ function expandWorkspaces(
 }
 
 async function gitInitContextSourcesDir(options: CodyBenchOptions): Promise<void> {
+    if (!options.context) {
+        return
+    }
+
     // If this is our first run, we need to git init the context sources dir so symf & embeddings pick it up
     if (fs.existsSync(path.join(options.workspace, '.git'))) {
         return
@@ -481,9 +491,8 @@ async function gitInitContextSourcesDir(options: CodyBenchOptions): Promise<void
 }
 
 async function indexContextSourcesDir(options: CodyBenchOptions): Promise<void> {
-    // If this is our first run, we need to index the context sources dir so symf & embeddings can retrieve results
+    // If this is our first run, we need to index the context sources dir so symf can retrieve results
     // The agent has started symf by this point - we need to wait until the symf index has been created
-    // TODO: for embeddings, we don't have access to do it the same way
 
     const symfIndex = path.join(codyPaths().data, 'symf/indexroot', options.workspace)
 

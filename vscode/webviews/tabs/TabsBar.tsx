@@ -6,23 +6,29 @@ import {
     BookTextIcon,
     CircleUserIcon,
     DownloadIcon,
+    ExternalLink,
     HistoryIcon,
     type LucideProps,
     MessageSquarePlusIcon,
     MessagesSquareIcon,
+    PlusCircle,
     SettingsIcon,
     Trash2Icon,
 } from 'lucide-react'
 import { getVSCodeAPI } from '../utils/VSCodeApi'
 import { View } from './types'
 
-import { CodyIDE, isDefined } from '@sourcegraph/cody-shared'
-import { type FC, Fragment, forwardRef, useCallback, useMemo, useState } from 'react'
+import { CodyIDE, FeatureFlag, isDefined } from '@sourcegraph/cody-shared'
+import { type FC, Fragment, forwardRef, memo, useCallback, useMemo, useState } from 'react'
 import { Kbd } from '../components/Kbd'
 import { Tooltip, TooltipContent, TooltipTrigger } from '../components/shadcn/ui/tooltip'
 import { useConfig } from '../utils/useConfig'
 
+import { useExtensionAPI } from '@sourcegraph/prompt-editor'
+import { isEqual } from 'lodash'
+import { downloadChatHistory } from '../chat/downloadChatHistory'
 import { Button } from '../components/shadcn/ui/button'
+import { useFeatureFlag } from '../utils/useFeatureFlags'
 import styles from './TabsBar.module.css'
 import { getCreateNewChatCommand } from './utils'
 
@@ -30,7 +36,6 @@ interface TabsBarProps {
     IDE: CodyIDE
     currentView: View
     setView: (view: View) => void
-    onDownloadChatClick?: () => void
 }
 
 type IconComponent = React.ForwardRefExoticComponent<
@@ -46,6 +51,8 @@ interface TabSubAction {
     command: string
     arg?: string | undefined | null
     callback?: () => void
+    changesView?: View
+    uri?: string
     confirmation?: {
         title: string
         description: string
@@ -62,8 +69,9 @@ interface TabConfig {
     subActions?: TabSubAction[]
 }
 
-export const TabsBar: React.FC<TabsBarProps> = ({ currentView, setView, IDE, onDownloadChatClick }) => {
-    const tabItems = useTabs({ IDE, onDownloadChatClick })
+export const TabsBar = memo<TabsBarProps>(props => {
+    const { currentView, setView, IDE } = props
+    const tabItems = useTabs({ IDE })
     const {
         config: { webviewType, multipleWebviewsEnabled },
     } = useConfig()
@@ -82,7 +90,7 @@ export const TabsBar: React.FC<TabsBarProps> = ({ currentView, setView, IDE, onD
     )
 
     const handleSubActionClick = useCallback(
-        (action: Pick<TabSubAction, 'callback' | 'command' | 'arg'>) => {
+        (action: Pick<TabSubAction, 'callback' | 'command' | 'arg' | 'changesView'>) => {
             if (action.callback) {
                 action.callback()
             } else {
@@ -92,8 +100,11 @@ export const TabsBar: React.FC<TabsBarProps> = ({ currentView, setView, IDE, onD
                     arg: action.arg,
                 })
             }
+            if (action.changesView) {
+                setView(action.changesView)
+            }
         },
-        []
+        [setView]
     )
 
     return (
@@ -128,8 +139,10 @@ export const TabsBar: React.FC<TabsBarProps> = ({ currentView, setView, IDE, onD
                                     )}
                                 </>
                             }
+                            view={View.Chat}
                             onClick={() =>
                                 handleSubActionClick({
+                                    changesView: View.Chat,
                                     command: getCreateNewChatCommand({
                                         IDE,
                                         webviewType,
@@ -142,7 +155,7 @@ export const TabsBar: React.FC<TabsBarProps> = ({ currentView, setView, IDE, onD
                 </div>
                 <div className={styles.subTabs}>
                     {currentViewSubActions.map(subAction => (
-                        <Fragment key={subAction.command}>
+                        <Fragment key={`${subAction.command}/${subAction.uri ?? ''}`}>
                             {subAction.confirmation ? (
                                 <ActionButtonWithConfirmation
                                     title={subAction.title}
@@ -160,6 +173,7 @@ export const TabsBar: React.FC<TabsBarProps> = ({ currentView, setView, IDE, onD
                                     Icon={subAction.Icon}
                                     title={subAction.title}
                                     IDE={IDE}
+                                    uri={subAction.uri}
                                     alwaysShowTitle={true}
                                     tooltipExtra={subAction.tooltipExtra}
                                     onClick={() => handleSubActionClick(subAction)}
@@ -171,7 +185,7 @@ export const TabsBar: React.FC<TabsBarProps> = ({ currentView, setView, IDE, onD
             </Tabs.List>
         </div>
     )
-}
+}, isEqual)
 
 interface ActionButtonWithConfirmationProps {
     title: string
@@ -253,6 +267,7 @@ interface TabButtonProps {
     title: string
     Icon: IconComponent
     IDE: CodyIDE
+    uri?: string
     view?: View
     isActive?: boolean
     onClick?: () => void
@@ -264,11 +279,12 @@ interface TabButtonProps {
     'data-testid'?: string
 }
 
-export const TabButton = forwardRef<HTMLButtonElement, TabButtonProps>((props, ref) => {
+const TabButton = forwardRef<HTMLButtonElement, TabButtonProps>((props, ref) => {
     const {
         IDE,
         Icon,
         isActive,
+        uri,
         onClick,
         title,
         alwaysShowTitle,
@@ -277,15 +293,20 @@ export const TabButton = forwardRef<HTMLButtonElement, TabButtonProps>((props, r
         'data-testid': dataTestId,
     } = props
 
+    const Component = uri ? 'a' : 'button'
+
     return (
         <Tooltip>
             <TooltipTrigger asChild>
-                <button
-                    type="button"
-                    onClick={onClick}
-                    ref={ref}
+                <Component
+                    type={uri ? undefined : 'button'}
+                    onClick={uri ? undefined : onClick}
+                    href={uri}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    ref={ref as any}
                     className={clsx(
-                        'tw-flex tw-gap-3 tw-items-center tw-leading-none tw-py-3 tw-px-2 tw-opacity-80 hover:tw-opacity-100 tw-border-b-[1px] tw-border-transparent tw-transition tw-translate-y-[1px]',
+                        'tw-flex tw-gap-3 tw-items-center !tw-font-normal !tw-text-inherit tw-leading-none tw-py-3 tw-px-2 tw-opacity-80 hover:tw-opacity-100 tw-border-b-[1px] tw-border-transparent tw-transition tw-translate-y-[1px]',
                         {
                             '!tw-opacity-100 !tw-border-[var(--vscode-tab-activeBorderTop)]': isActive,
                             '!tw-opacity-100': prominent,
@@ -295,7 +316,7 @@ export const TabButton = forwardRef<HTMLButtonElement, TabButtonProps>((props, r
                 >
                     <Icon size={16} strokeWidth={1.25} className="tw-w-8 tw-h-8" />
                     <span className={alwaysShowTitle ? '' : styles.tabActionLabel}>{title}</span>
-                </button>
+                </Component>
             </TooltipTrigger>
             <TooltipContent portal={IDE === CodyIDE.Web}>
                 {title} {tooltipExtra}
@@ -310,11 +331,14 @@ TabButton.displayName = 'TabButton'
  * Returns list of tabs and its sub-action buttons, used later as configuration for
  * tabs rendering in chat header.
  */
-function useTabs(input: Pick<TabsBarProps, 'IDE' | 'onDownloadChatClick'>): TabConfig[] {
-    const { IDE, onDownloadChatClick } = input
+function useTabs(input: Pick<TabsBarProps, 'IDE'>): TabConfig[] {
+    const { IDE } = input
     const {
-        config: { multipleWebviewsEnabled },
+        config: { multipleWebviewsEnabled, serverEndpoint },
     } = useConfig()
+    const isUnifiedPromptsAvailable = useFeatureFlag(FeatureFlag.CodyUnifiedPrompts)
+
+    const extensionAPI = useExtensionAPI<'userHistory'>()
 
     return useMemo<TabConfig[]>(
         () =>
@@ -335,7 +359,7 @@ function useTabs(input: Pick<TabsBarProps, 'IDE' | 'onDownloadChatClick'>): TabC
                                 title: 'Export',
                                 Icon: DownloadIcon,
                                 command: 'cody.chat.history.export',
-                                callback: onDownloadChatClick,
+                                callback: () => downloadChatHistory(extensionAPI),
                             },
                             {
                                 title: 'Delete all',
@@ -365,9 +389,26 @@ function useTabs(input: Pick<TabsBarProps, 'IDE' | 'onDownloadChatClick'>): TabC
                     },
                     {
                         view: View.Prompts,
-                        title: IDE === CodyIDE.Web ? 'Prompts' : 'Prompts & Commands',
+                        title:
+                            IDE === CodyIDE.Web || isUnifiedPromptsAvailable
+                                ? 'Prompts'
+                                : 'Prompts & Commands',
                         Icon: BookTextIcon,
                         changesView: true,
+                        subActions: [
+                            {
+                                title: 'Create Prompt',
+                                Icon: PlusCircle,
+                                command: '',
+                                uri: `${serverEndpoint}prompts/new`,
+                            },
+                            {
+                                title: 'Prompts Library',
+                                Icon: ExternalLink,
+                                command: '',
+                                uri: `${serverEndpoint}prompts`,
+                            },
+                        ],
                     },
                     multipleWebviewsEnabled
                         ? {
@@ -388,6 +429,6 @@ function useTabs(input: Pick<TabsBarProps, 'IDE' | 'onDownloadChatClick'>): TabC
                         : null,
                 ] as (TabConfig | null)[]
             ).filter(isDefined),
-        [IDE, onDownloadChatClick, multipleWebviewsEnabled]
+        [IDE, multipleWebviewsEnabled, isUnifiedPromptsAvailable, extensionAPI, serverEndpoint]
     )
 }

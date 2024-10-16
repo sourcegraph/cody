@@ -1,25 +1,11 @@
 import * as vscode from 'vscode'
 
-import { logDebug, logError } from '../log'
-
+import type { ClientSecrets, TokenSource } from '@sourcegraph/cody-shared'
+import { logDebug, logError } from '../output-channel-logger'
+export const CODY_ACCESS_TOKEN_SOURCE = 'cody.access-token.source'
 const CODY_ACCESS_TOKEN_SECRET = 'cody.access-token'
 
-export async function getAccessToken(): Promise<string | null> {
-    try {
-        const token = (await secretStorage.get(CODY_ACCESS_TOKEN_SECRET)) || null
-        if (token) {
-            return token
-        }
-        throw new Error('token not found')
-    } catch (error) {
-        logError('VSCodeSecretStorage:getAccessToken', 'failed', { verbose: error })
-        // Remove corrupted token from secret storage
-        await secretStorage.delete(CODY_ACCESS_TOKEN_SECRET)
-        return null
-    }
-}
-
-interface SecretStorage extends vscode.SecretStorage {
+interface SecretStorage extends vscode.SecretStorage, ClientSecrets {
     get(key: string): Promise<string | undefined>
     store(key: string, value: string): Promise<void>
     delete(key: string): Promise<void>
@@ -27,9 +13,14 @@ interface SecretStorage extends vscode.SecretStorage {
 
     // Shorthand for persisting the user's Cody Access token based on
     // the Sourcegraph instance endpoint it is associated with.
-    storeToken(endpoint: string, value: string): Promise<void>
+    storeToken(
+        endpoint: string,
+        accessToken: string,
+        tokenSource: TokenSource | undefined
+    ): Promise<void>
     getToken(endpoint: string): Promise<string | undefined>
     deleteToken(endpoint: string): Promise<void>
+    getTokenSource(endpoint: string): Promise<TokenSource | undefined>
 }
 
 export class VSCodeSecretStorage implements SecretStorage {
@@ -98,18 +89,32 @@ export class VSCodeSecretStorage implements SecretStorage {
     public async getToken(endpoint: string): Promise<string | undefined> {
         return this.get(endpoint)
     }
+    public async getTokenSource(endpoint: string): Promise<TokenSource | undefined> {
+        const tokenSource = await this.get(endpoint + CODY_ACCESS_TOKEN_SOURCE)
+        return tokenSource as TokenSource | undefined
+    }
 
-    public async storeToken(endpoint: string, value: string): Promise<void> {
-        if (!value || !endpoint) {
+    public async storeToken(
+        endpoint: string,
+        accessToken: string,
+        tokenSource: TokenSource | undefined
+    ): Promise<void> {
+        if (!accessToken || !endpoint) {
             return
         }
-        await this.store(endpoint, value)
-        await this.store(CODY_ACCESS_TOKEN_SECRET, value)
+        await this.store(endpoint, accessToken)
+        await this.store(CODY_ACCESS_TOKEN_SECRET, accessToken)
+
+        if (!tokenSource) {
+            return
+        }
+        await this.store(endpoint + CODY_ACCESS_TOKEN_SOURCE, tokenSource)
     }
 
     public async deleteToken(endpoint: string): Promise<void> {
         await this.secretStorage.delete(endpoint)
         await this.secretStorage.delete(CODY_ACCESS_TOKEN_SECRET)
+        await this.secretStorage.delete(endpoint + CODY_ACCESS_TOKEN_SOURCE)
     }
 
     public async delete(key: string): Promise<void> {
@@ -145,7 +150,9 @@ class InMemorySecretStorage implements SecretStorage {
         if (initialToken) {
             const parsedToken = JSON.parse(initialToken)
             if (Array.isArray(parsedToken) && parsedToken.length === 2) {
-                this.storeToken(parsedToken[0], parsedToken[1])
+                // The default types of tokensource is undefined(This is to make sure that older tokens from before are not deleted because we don't know their tokenSource)
+                const tokenSource = undefined
+                this.storeToken(parsedToken[0], parsedToken[1], tokenSource)
             } else {
                 throw new Error('Initial token must be an array with [endpoint, value]')
             }
@@ -173,10 +180,21 @@ class InMemorySecretStorage implements SecretStorage {
     public async getToken(endpoint: string): Promise<string | undefined> {
         return this.get(endpoint)
     }
+    public async getTokenSource(endpoint: string): Promise<TokenSource | undefined> {
+        const tokenSource = await this.get(endpoint + CODY_ACCESS_TOKEN_SOURCE)
+        return tokenSource as TokenSource | undefined
+    }
 
-    public async storeToken(endpoint: string, value: string): Promise<void> {
-        await this.store(endpoint, value)
-        await this.store(CODY_ACCESS_TOKEN_SECRET, value)
+    public async storeToken(
+        endpoint: string,
+        accessToken: string,
+        tokenSource: TokenSource | undefined
+    ): Promise<void> {
+        await this.store(endpoint, accessToken)
+        await this.store(CODY_ACCESS_TOKEN_SECRET, accessToken)
+        if (tokenSource) {
+            await this.store(endpoint + CODY_ACCESS_TOKEN_SOURCE, tokenSource)
+        }
     }
 
     public async deleteToken(endpoint: string): Promise<void> {

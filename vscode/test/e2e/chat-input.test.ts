@@ -13,7 +13,6 @@ import { type DotcomUrlOverride, type ExpectedV2Events, executeCommandInPalette,
 test.extend<ExpectedV2Events>({
     expectedV2Events: [
         'cody.extension:installed',
-        'cody.codyIgnore:hasFile',
         'cody.auth.login:clicked',
         'cody.auth.signin.menu:clicked',
         'cody.auth.login:firstEver',
@@ -59,7 +58,10 @@ test.extend<ExpectedV2Events>({
     await page.getByText("fizzbuzz.push('Buzz')").click()
 
     // Submit a new chat question from the command menu.
-    await page.getByLabel(/Commands \(/).click()
+    await page
+        .locator('[id="workbench\\.parts\\.editor"]')
+        .getByLabel(/Commands \(/)
+        .click()
     await page.waitForTimeout(100)
 
     // HACK: The 'delay' command is used to make sure the response is streamed 400ms after
@@ -180,7 +182,6 @@ test.extend<DotcomUrlOverride>({ dotcomUrl: mockServer.SERVER_URL })(
 test.extend<DotcomUrlOverride>({ dotcomUrl: mockServer.SERVER_URL }).extend<ExpectedV2Events>({
     expectedV2Events: [
         'cody.extension:installed',
-        'cody.codyIgnore:hasFile',
         'cody.auth.login:clicked',
         'cody.auth.signin.menu:clicked',
         'cody.auth.login:firstEver',
@@ -231,7 +232,6 @@ test.extend<ExpectedV2Events>({
     // list of events we expect this test to log, add to this list as needed
     expectedV2Events: [
         'cody.extension:installed',
-        'cody.codyIgnore:hasFile',
         'cody.auth.login:clicked',
         'cody.auth.signin.menu:clicked',
         'cody.auth.login:firstEver',

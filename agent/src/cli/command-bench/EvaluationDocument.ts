@@ -7,7 +7,7 @@ import type * as vscode from 'vscode'
 import type {
     CompletionBookkeepingEvent,
     CompletionItemInfo,
-} from '../../../../vscode/src/completions/logger'
+} from '../../../../vscode/src/completions/analytics-logger'
 import { ProtocolTextDocumentWithUri } from '../../../../vscode/src/jsonrpc/TextDocumentWithUri'
 import { AgentTextDocument } from '../../AgentTextDocument'
 
@@ -69,14 +69,6 @@ export class EvaluationDocument {
         item.providerModel = item.event?.params?.providerModel
         item.stopReason = item.info?.stopReason
         item.resultCharacterCount = item?.info?.charCount
-        const retrieverStats = item.event?.params?.contextSummary?.retrieverStats ?? {}
-        for (const retriever of Object.keys(retrieverStats)) {
-            if (retriever === 'bfg') {
-                item.contextBfgRetrievedCount = retrieverStats[retriever].retrievedItems
-                item.contextBfgSuggestedCount = retrieverStats[retriever].suggestedItems
-                item.contextBfgDurationMs = retrieverStats[retriever].duration
-            }
-        }
         if (item.event) {
             item.eventJSON = JSON.stringify(item.event)
         }
@@ -260,9 +252,6 @@ interface EvaluationItem {
     resultTypechecks?: boolean
     resultParses?: boolean
     resultText?: string
-    contextBfgRetrievedCount?: number
-    contextBfgSuggestedCount?: number
-    contextBfgDurationMs?: number
     resultCharacterCount?: number
     editDiff?: string
     chatReply?: string
@@ -337,9 +326,6 @@ export const headerItems: EvaluationItemHeader[] = [
     { id: 'providerIdentifier', title: 'PROVIDER_IDENTIFIER' },
     { id: 'providerModel', title: 'PROVIDER_MODEL' },
     { id: 'stopReason', title: 'STOP_REASON' },
-    { id: 'contextBfgRetrievedCount', title: 'CONTEXT_BFG_RETRIEVED_COUNT' },
-    { id: 'contextBfgSuggestedCount', title: 'CONTEXT_BFG_SUGGESTED_COUNT' },
-    { id: 'contextBfgDurationMs', title: 'CONTEXT_BFG_DURATION_MS' },
     { id: 'eventJSON', title: 'EVENT' },
     { id: 'testFilename', title: 'TEST_FILENAME' },
     { id: 'testExpectedFilename', title: 'TEST_EXPECTED_FILENAME' },

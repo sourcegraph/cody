@@ -1,5 +1,6 @@
 import type { TelemetryEventInput, TelemetryExporter } from '@sourcegraph/telemetry'
 
+import { currentResolvedConfig } from '../../configuration/resolver'
 import { logDebug, logError } from '../../logger'
 import { isError } from '../../utils'
 import { type LogEventMode, graphqlClient } from '../graphql/client'
@@ -22,14 +23,11 @@ export class GraphQLTelemetryExporter implements TelemetryExporter {
         | undefined
 
     constructor(
-        private anonymousUserID: string,
         /**
          * logEvent mode to use if exporter needs to use a legacy export mode.
          */
         private legacyBackcompatLogEventMode: LogEventMode
-    ) {
-        graphqlClient.setAnonymousUserID(anonymousUserID)
-    }
+    ) {}
 
     /**
      * Checks if the connected server supports the new GraphQL mutations
@@ -97,6 +95,7 @@ export class GraphQLTelemetryExporter implements TelemetryExporter {
          * if setLegacyEventsStateOnce determines we need to do so.
          */
         if (this.exportMode === 'legacy') {
+            const { clientState } = await currentResolvedConfig()
             const resultOrError = await Promise.all(
                 events.map(event =>
                     graphqlClient.logEvent(
@@ -112,7 +111,7 @@ export class GraphQLTelemetryExporter implements TelemetryExporter {
                                     [curr.key]: curr.value,
                                 })),
                             argument: JSON.stringify(event.parameters.privateMetadata),
-                            userCookieID: this.anonymousUserID || '',
+                            userCookieID: clientState.anonymousUserID || '',
                             connectedSiteID: this.legacySiteIdentification?.siteid,
                             hashedLicenseKey: this.legacySiteIdentification?.hashedLicenseKey,
                         },

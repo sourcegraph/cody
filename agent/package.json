@@ -1,6 +1,6 @@
 {
   "name": "@sourcegraph/cody",
-  "version": "5.5.14",
+  "version": "5.5.15",
   "description": "Cody CLI is the same technology that powers Cody in the IDE but available from the command-line.",
   "license": "Apache-2.0",
   "repository": {
@@ -16,7 +16,6 @@
     "build:for-tests": "pnpm run -s build:root && pnpm run -s build:agent",
     "build:webviews": "pnpm -C ../vscode run -s _build:webviews --mode production --outDir ../../agent/dist/webviews",
     "build": "pnpm run -s build:root && pnpm run -s build:webviews && pnpm run -s build:agent",
-    "build-minify": "pnpm run build --minify",
     "agent": "pnpm run build:for-tests && node --enable-source-maps dist/index.js",
     "agent:skip-root-build": "pnpm run build:agent && node --enable-source-maps dist/index.js",
     "agent:debug": "pnpm run build && CODY_AGENT_TRACE_PATH=/tmp/agent.json CODY_AGENT_DEBUG_REMOTE=true node --enable-source-maps ./dist/index.js api jsonrpc-stdio",
@@ -45,7 +44,6 @@
     "csv-writer": "^1.6.0",
     "dedent": "^0.7.0",
     "easy-table": "^1.2.0",
-    "env-paths": "^3.0.0",
     "fast-myers-diff": "^3.2.0",
     "glob": "^11.0.0",
     "js-levenshtein": "^1.1.6",

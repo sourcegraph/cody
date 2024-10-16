@@ -28,7 +28,7 @@ async function serializePrompts(
     return Promise.all(
         messages.map(async m => ({
             ...m,
-            text: await m.text?.toFilteredString(contextFiltersProvider.instance!),
+            text: await m.text?.toFilteredString(contextFiltersProvider),
         }))
     )
 }

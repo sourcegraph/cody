@@ -1,5 +1,5 @@
 import path from 'node:path'
-import _ from 'lodash'
+import chain from 'lodash/chain'
 import * as vscode from 'vscode'
 import yaml from 'yaml'
 import type { RpcMessageHandler } from '../../../../vscode/src/jsonrpc/jsonrpc'
@@ -82,7 +82,7 @@ export async function evaluateUnitTestStrategy(
             testLanguage: task.language,
             testInputFilename,
             testGenerated: test.value,
-            testDiagnostics: _.chain(typescriptErrors)
+            testDiagnostics: chain(typescriptErrors)
                 .uniqBy(d => d.message)
                 .map(prettyDiagnostic)
                 .value()

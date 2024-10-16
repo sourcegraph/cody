@@ -1,11 +1,13 @@
-import type { Observable } from 'observable-fns'
+import { Observable } from 'observable-fns'
+import type { AuthStatus, ModelsData, ResolvedConfiguration, UserProductSubscription } from '../..'
+import type { ChatMessage, UserLocalHistory } from '../../chat/transcript/messages'
 import type { ContextItem } from '../../codebase-context/messages'
 import type { CodyCommand } from '../../commands/types'
 import type { FeatureFlag } from '../../experimentation/FeatureFlagProvider'
 import type { ContextMentionProviderMetadata } from '../../mentions/api'
 import type { MentionQuery } from '../../mentions/query'
-import type { Model } from '../../models'
-import type { Prompt } from '../../sourcegraph-api/graphql/client'
+import type { Model } from '../../models/model'
+import type { FetchHighlightFileParameters, Prompt } from '../../sourcegraph-api/graphql/client'
 import { type createMessageAPIForWebview, proxyExtensionAPI } from './rpc'
 
 export interface WebviewToExtensionAPI {
@@ -15,10 +17,9 @@ export interface WebviewToExtensionAPI {
     mentionMenuData(query: MentionQuery): Observable<MentionMenuData>
 
     /**
-     * Get the evaluated value of a feature flag. All feature flags used by the webview must be in
-     * {@link FEATURE_FLAGS_USED_IN_WEBVIEW}.
+     * Get the evaluated value of a feature flag.
      */
-    evaluatedFeatureFlag(flag: FeatureFlagUsedInWebview): Observable<boolean | undefined>
+    evaluatedFeatureFlag(flag: FeatureFlag): Observable<boolean | undefined>
 
     /**
      * Observe the results of querying prompts in the Prompt Library. For backcompat, it also
@@ -28,25 +29,83 @@ export interface WebviewToExtensionAPI {
     prompts(query: string): Observable<PromptsResult>
 
     /**
-     * Observe the list of available models.
+     * The models data, including all available models, site defaults, and user preferences.
      */
-    models(): Observable<Model[]>
+    models(): Observable<ModelsData | null>
+
+    /**
+     * Observe the list of available chat models.
+     */
+    chatModels(): Observable<Model[]>
+
+    highlights(query: FetchHighlightFileParameters): Observable<string[][]>
 
     /**
      * Set the chat model.
      */
     setChatModel(model: Model['id']): Observable<void>
+
+    /**
+     * Observe the initial context that should be populated in the chat message input field.
+     */
+    initialContext(): Observable<ContextItem[]>
+
+    detectIntent(
+        text: string
+    ): Observable<
+        { intent: ChatMessage['intent']; allScores: { intent: string; score: number }[] } | undefined
+    >
+
+    /**
+     * Observe the current resolved configuration (same as the global {@link resolvedConfig}
+     * observable).
+     */
+    resolvedConfig(): Observable<ResolvedConfiguration>
+
+    /**
+     * Observe the current auth status (same as the global {@link authStatus} observable).
+     */
+    authStatus(): Observable<AuthStatus>
+
+    /**
+     * Observe the current transcript.
+     */
+    transcript(): Observable<readonly ChatMessage[]>
+
+    /**
+     * The current user's chat history.
+     */
+    userHistory(): Observable<UserLocalHistory | null>
+
+    /**
+     * The current user's product subscription information (Cody Free/Pro).
+     */
+    userProductSubscription(): Observable<UserProductSubscription | null>
 }
 
 export function createExtensionAPI(
-    messageAPI: ReturnType<typeof createMessageAPIForWebview>
+    messageAPI: ReturnType<typeof createMessageAPIForWebview>,
+
+    // As a workaround for Cody Web, support providing static initial context.
+    staticInitialContext?: ContextItem[]
 ): WebviewToExtensionAPI {
     return {
         mentionMenuData: proxyExtensionAPI(messageAPI, 'mentionMenuData'),
         evaluatedFeatureFlag: proxyExtensionAPI(messageAPI, 'evaluatedFeatureFlag'),
         prompts: proxyExtensionAPI(messageAPI, 'prompts'),
         models: proxyExtensionAPI(messageAPI, 'models'),
+        chatModels: proxyExtensionAPI(messageAPI, 'chatModels'),
+        highlights: proxyExtensionAPI(messageAPI, 'highlights'),
         setChatModel: proxyExtensionAPI(messageAPI, 'setChatModel'),
+        initialContext: staticInitialContext
+            ? () => Observable.of(staticInitialContext)
+            : proxyExtensionAPI(messageAPI, 'initialContext'),
+        detectIntent: proxyExtensionAPI(messageAPI, 'detectIntent'),
+        resolvedConfig: proxyExtensionAPI(messageAPI, 'resolvedConfig'),
+        authStatus: proxyExtensionAPI(messageAPI, 'authStatus'),
+        transcript: proxyExtensionAPI(messageAPI, 'transcript'),
+        userHistory: proxyExtensionAPI(messageAPI, 'userHistory'),
+        userProductSubscription: proxyExtensionAPI(messageAPI, 'userProductSubscription'),
     }
 }
 
@@ -61,30 +120,22 @@ export interface MentionMenuData {
     error?: string
 }
 
-export interface PromptsResult {
-    /**
-     * `undefined` means the Sourcegraph endpoint is an older Sourcegraph version that doesn't
-     * support the Prompt Library.
-     */
-    prompts:
-        | { type: 'results'; results: Prompt[] }
-        | { type: 'error'; error: string }
-        | { type: 'unsupported' }
+export interface PromptAction extends Prompt {
+    actionType: 'prompt'
+}
 
-    /**
-     * `undefined` means that commands should not be shown at all (not even as an empty
-     * list). Builtin and custom commands are deprecated in favor of the Prompt Library.
-     */
-    commands: CodyCommand[]
+export interface CommandAction extends CodyCommand {
+    actionType: 'command'
+}
+
+export type Action = PromptAction | CommandAction
+
+export interface PromptsResult {
+    arePromptsSupported: boolean
+
+    /** List of all available actions (prompts and/or commands) */
+    actions: Action[]
 
     /** The original query used to fetch this result. */
     query: string
 }
-
-/**
- * You must add a feature flag here if you need to use it from the frontend. This is because only
- * explicitly requested feature flags are evaluated immediately. If you don't add one here, its old
- * value will be cached on the server and returned until it is explicitly evaluated.
- */
-const FEATURE_FLAGS_USED_IN_WEBVIEW = [] as const satisfies FeatureFlag[]
-export type FeatureFlagUsedInWebview = (typeof FEATURE_FLAGS_USED_IN_WEBVIEW)[number]

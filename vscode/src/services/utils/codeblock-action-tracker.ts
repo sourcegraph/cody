@@ -9,11 +9,12 @@ import {
 } from '@sourcegraph/cody-shared'
 import { getEditor } from '../../editor/active-editor'
 
-import { Utils } from 'vscode-uri'
+import { workspace } from 'vscode'
 import { doesFileExist } from '../../commands/utils/workspace-files'
 import { executeSmartApply } from '../../edit/smart-apply'
 import type { VSCodeEditor } from '../../editor/vscode-editor'
 import { countCode, matchCodeSnippets } from './code-count'
+import { resolveRelativeOrAbsoluteUri } from './edit-create-file'
 
 /**
  * It tracks the last stored code snippet and metadata like lines, chars, event, source etc.
@@ -56,6 +57,10 @@ function setLastStoredCode(
     lastStoredCode = codeCount
 
     let operation: string
+
+    // 🚨 [Telemetry] if any new event names/types are added, check that those actions qualify as core events
+    //(https://sourcegraph.notion.site/Cody-analytics-6b77a2cb2373466fae4797b6529a0e3d#2ca9035287854de48877a7cef2b3d4b4).
+    // If not, the event recorded below this switch statement needs to be updated.
     switch (eventName) {
         case 'copyButton':
         case 'keyDown.Copy':
@@ -82,6 +87,11 @@ function setLastStoredCode(
         privateMetadata: {
             source,
             op: operation,
+        },
+        billingMetadata: {
+            product: 'cody',
+            // 🚨 ensure that any new event names added qualify as core events, or update this parameter.
+            category: 'core',
         },
     })
 }
@@ -138,9 +148,8 @@ export async function handleSmartApply(
     fileUri?: string | null
 ): Promise<void> {
     const activeEditor = getEditor()?.active
-    const workspaceUri = vscode.workspace.workspaceFolders?.[0].uri
-    const uri =
-        fileUri && workspaceUri ? Utils.joinPath(workspaceUri, fileUri) : activeEditor?.document.uri
+    const workspaceUri = workspace.workspaceFolders?.[0].uri
+    const uri = await resolveRelativeOrAbsoluteUri(workspaceUri, fileUri, activeEditor?.document?.uri)
 
     const isNewFile = uri && !(await doesFileExist(uri))
     if (isNewFile) {
@@ -230,6 +239,10 @@ export async function onTextDocumentChange(newCode: string): Promise<void> {
             privateMetadata: {
                 source,
                 op,
+            },
+            billingMetadata: {
+                product: 'cody',
+                category: 'core',
             },
         })
     }

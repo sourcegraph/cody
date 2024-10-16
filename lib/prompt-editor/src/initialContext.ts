@@ -1,18 +1,17 @@
-import type { ContextItem } from '@sourcegraph/cody-shared'
+import type { ContextItem, SerializedContextItem } from '@sourcegraph/cody-shared'
 import {
     $createTextNode,
     $getRoot,
-    ElementNode,
     type LexicalEditor,
-    type LexicalNode,
     ParagraphNode,
     RootNode,
     TextNode,
 } from 'lexical'
+import { walkLexicalNodes } from './lexicalUtils'
 import { $createContextItemMentionNode, ContextItemMentionNode } from './nodes/ContextItemMentionNode'
 
 export function lexicalNodesForContextItems(
-    items: ContextItem[],
+    items: (ContextItem | SerializedContextItem)[],
     {
         isFromInitialContext,
     }: {
@@ -27,22 +26,10 @@ export function lexicalNodesForContextItems(
 }
 
 export function isEditorContentOnlyInitialContext(editor: LexicalEditor): boolean {
-    function walk(node: LexicalNode, fn: (node: LexicalNode) => boolean): void {
-        if (!fn(node)) {
-            return
-        }
-        if (node instanceof ElementNode) {
-            for (const child of node.getChildren()) {
-                walk(child, fn)
-            }
-        }
-        return
-    }
-
     return editor.getEditorState().read(() => {
         const root = $getRoot()
         let onlyInitialContext = true
-        walk(root, node => {
+        walkLexicalNodes(root, node => {
             if (!onlyInitialContext) {
                 return false // no need to traverse anymore
             }

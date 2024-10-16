@@ -1,6 +1,39 @@
+import {
+    enablePatches as enableImmerJSONPatchSupport,
+    enableMapSet as enableImmerMapSetSupport,
+} from 'immer'
+
+if (false as unknown) {
+    /**
+     * TODO: @sqs Enabeling JSON patches might be a nice way of economically
+     * syncing state to from the extension to the WebView.
+     *
+     * This would be helpful (but not required) to potentially move all current
+     * state and observables into simple `https://mobx-keystone.js.org/` classes
+     * in the webview. By then using the mobx-react binding it makes the UI a
+     * lot more friendly to work with and we remove this massive waterfall of
+     * forwarded props as each component can directly access the state it needs
+     * and re-render on changes. I've done this before in Tauri apps and it
+     * works beautifully!
+     */
+
+    enableImmerJSONPatchSupport()
+}
+enableImmerMapSetSupport()
+
 // Add anything else here that needs to be used outside of this library.
 
-export { Model, modelsService, type ServerModel, type ServerModelConfiguration } from './models'
+export * from './models/modelsService'
+export {
+    type Model,
+    type ServerModel,
+    createModel,
+    createModelFromServerModel,
+    modelTier,
+    parseModelRef,
+    toLegacyModel,
+    FIXTURE_MODEL,
+} from './models/model'
 export {
     type EditModel,
     type EditProvider,
@@ -9,23 +42,18 @@ export {
     ModelUsage,
     type ModelContextWindow,
 } from './models/types'
-export { getDotComDefaultModels } from './models/dotcom'
+export { getMockedDotComClientModels, getMockedDotComServerModels } from './models/dotcom'
 export { ModelTag } from './models/tags'
 export {
     getProviderName,
     getModelInfo,
     isCodyProModel,
     isCustomModel,
+    toModelRefStr,
+    isWaitlistModel,
 } from './models/utils'
 export { BotResponseMultiplexer } from './chat/bot-response-multiplexer'
 export { ChatClient } from './chat/chat'
-export { ignores, isCodyIgnoredFile } from './cody-ignore/context-filter'
-export {
-    IgnoreHelper,
-    CODY_IGNORE_POSIX_GLOB,
-    type IgnoreFileContent,
-    CODY_IGNORE_URI_PATH,
-} from './cody-ignore/ignore-helper'
 export { getSimplePreamble } from './chat/preamble'
 export type {
     SerializedChatInteraction,
@@ -57,8 +85,6 @@ export type {
     ContextGroup,
     ContextProvider,
     Disposable,
-    EnhancedContextContextT,
-    LocalEmbeddingsProvider,
     LocalSearchProvider,
     RemoteSearchProvider,
     SearchProvider,
@@ -81,6 +107,7 @@ export {
     LARGE_FILE_WARNING_LABEL,
     NO_SYMBOL_MATCHES_HELP_LABEL,
 } from './codebase-context/messages'
+export * from './codyPaths'
 export type {
     CodyCommand,
     CodyCommandContext,
@@ -144,11 +171,11 @@ export {
     setDisplayPathEnvInfo,
     type DisplayPathEnvInfo,
 } from './editor/displayPath'
-export { hydrateAfterPostMessage } from './editor/hydrateAfterPostMessage'
+export { forceHydration, hydrateAfterPostMessage } from './editor/hydrateAfterPostMessage'
 export * from './editor/utils'
 export {
     FeatureFlag,
-    FeatureFlagProvider,
+    type FeatureFlagProvider,
     featureFlagProvider,
 } from './experimentation/FeatureFlagProvider'
 export { GuardrailsPost } from './guardrails'
@@ -162,11 +189,9 @@ export {
     type SerializedCodeCompletionsParams,
     type CompletionResponseGenerator,
     type CompletionResponseWithMetaData,
+    type CodeCompletionProviderOptions,
 } from './inferenceClient/misc'
-export type {
-    LocalEmbeddingsFetcher,
-    Result,
-} from './local-context'
+export type { Result } from './local-context'
 export { logDebug, logError, setLogger } from './logger'
 export {
     createOllamaClient,
@@ -192,14 +217,15 @@ export {
 export type { Message } from './sourcegraph-api'
 export {
     addClientInfoParams,
-    getClientInfoParams,
+    getClientInfoQueryParams as getClientInfoParams,
+    getClientIdentificationHeaders,
     setClientNameVersion,
+    addCodyClientIdentificationHeaders,
 } from './sourcegraph-api/client-name-version'
 export { SourcegraphBrowserCompletionsClient } from './sourcegraph-api/completions/browserClient'
 export { SourcegraphCompletionsClient } from './sourcegraph-api/completions/client'
 export type {
     CompletionLogger,
-    CompletionsClientConfig,
     CompletionRequestParameters,
 } from './sourcegraph-api/completions/client'
 export * from './sourcegraph-api/completions/types'
@@ -225,29 +251,23 @@ export {
     SourcegraphGraphQLAPIClient,
     graphqlClient,
 } from './sourcegraph-api/graphql'
+export { ClientConfigSingleton, type CodyClientConfig } from './sourcegraph-api/clientConfig'
 export {
-    ClientConfigSingleton,
-    addCustomUserAgent,
-    customUserAgent,
     isNodeResponse,
-    setUserAgent,
     INCLUDE_EVERYTHING_CONTEXT_FILTERS,
     EXCLUDE_EVERYTHING_CONTEXT_FILTERS,
     type BrowserOrNodeResponse,
-    type GraphQLAPIClientConfig,
     type LogEventMode,
     type ContextFilters,
     type CodyContextFilterItem,
     type RepoListResponse,
     type SuggestionsRepo,
     type RepoSuggestionsSearchResponse,
-    type InputContextItem,
     type ChatIntentResult,
 } from './sourcegraph-api/graphql/client'
 export type {
     CodyLLMSiteConfiguration,
     ContextSearchResult,
-    EmbeddingsSearchResult,
     Prompt,
     event,
 } from './sourcegraph-api/graphql/client'
@@ -263,13 +283,17 @@ export {
 } from './telemetry-v2/TelemetryRecorderProvider'
 export type { TelemetryRecorder } from './telemetry-v2/TelemetryRecorderProvider'
 export * from './telemetry-v2/singleton'
+export { events as telemetryEvents } from './telemetry-v2/events'
 export { testFileUri } from './test/path-helpers'
+export * from './test/constants'
 export * from './tracing'
 export {
+    assertUnreachable,
     convertGitCloneURLToCodebaseName,
     createSubscriber,
     isError,
     nextTick,
+    promise,
     type ReadonlyDeep,
 } from './utils'
 export type { CurrentUserCodySubscription } from './sourcegraph-api/graphql/client'
@@ -284,14 +308,19 @@ export {
 } from './mentions/query'
 export {
     type ContextItemProps,
-    allMentionProvidersMetadata,
-    webMentionProvidersMetadata,
+    mentionProvidersMetadata,
     openCtxProviderMetadata,
     FILE_CONTEXT_MENTION_PROVIDER,
     SYMBOL_CONTEXT_MENTION_PROVIDER,
+    type ContextMentionProviderID,
     type ContextMentionProviderMetadata,
 } from './mentions/api'
-export { TokenCounter, getTokenCounterUtils, TokenCounterUtils } from './token/counter'
+export {
+    TokenCounter,
+    getTokenCounterUtils,
+    TokenCounterUtils,
+    useFakeTokenCounterUtils,
+} from './token/counter'
 export { CORPUS_CONTEXT_ALLOCATION as ENHANCED_CONTEXT_ALLOCATION } from './token/constants'
 export { tokensToChars, charsToTokens } from './token/utils'
 export * from './prompt/prompt-string'
@@ -316,7 +345,6 @@ export {
     GIT_OPENCTX_PROVIDER_URI,
 } from './context/openctx/api'
 export * from './context/openctx/context'
-export { type ClientStateForWebview } from './clientState'
 export * from './lexicalEditor/editorState'
 export * from './lexicalEditor/nodes'
 export {
@@ -337,4 +365,20 @@ export {
     createMessageAPIForExtension,
 } from './misc/rpc/rpc'
 export * from './misc/observable'
+export * from './misc/observableOperation'
+export * from './misc/mutable'
+export * from './configuration/resolver'
+export * from './configuration/clientCapabilities'
+export * from './configuration/environment'
 export * from './singletons'
+export * from './auth/authStatus'
+export { fetchLocalOllamaModels } from './llm-providers/ollama/utils'
+export * from './editor/editorState'
+export {
+    currentUserProductSubscription,
+    type UserProductSubscription,
+    cachedUserProductSubscription,
+    userProductSubscription,
+} from './sourcegraph-api/userProductSubscription'
+export { siteVersion, currentSiteVersion } from './sourcegraph-api/siteVersion'
+export { configOverwrites } from './models/configOverwrites'

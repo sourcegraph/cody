@@ -127,12 +127,14 @@ describe('bestJaccardMatch', () => {
             score: 1,
             content: 'foo\nbar\nbaz',
             endLine: 2,
+            identifier: 'jaccard-similarity',
             startLine: 0,
         })
         expect(bestJaccardMatches('bar\nquux', matchText, 4, MAX_MATCHES)[0]).toEqual({
             score: 0.5,
             content: 'bar\nbaz\nqux\nquux',
             endLine: 4,
+            identifier: 'jaccard-similarity',
             startLine: 1,
         })
         expect(
@@ -146,6 +148,7 @@ describe('bestJaccardMatch', () => {
             score: 0.3,
             startLine: 4,
             endLine: 9,
+            identifier: 'jaccard-similarity',
             content: ['quux', 'quuz', 'corge', 'grault', 'garply', 'waldo'].join('\n'),
         })
     })
@@ -206,6 +209,7 @@ describe('bestJaccardMatch', () => {
                       'foo',
                       'bar',",
             "endLine": 4,
+            "identifier": "jaccard-similarity",
             "score": 0.14285714285714285,
             "startLine": 0,
           }
@@ -216,6 +220,7 @@ describe('bestJaccardMatch', () => {
         expect(bestJaccardMatches('foo', 'foo', 10, MAX_MATCHES)[0]).toEqual({
             content: 'foo',
             endLine: 0,
+            identifier: 'jaccard-similarity',
             score: 1,
             startLine: 0,
         })

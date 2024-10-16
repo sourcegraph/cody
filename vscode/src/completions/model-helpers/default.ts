@@ -6,6 +6,7 @@ import {
     type CodeCompletionsParams,
     type DocumentContext,
     type GitContext,
+    type Message,
     type OllamaGenerateParameters,
     PromptString,
     ps,
@@ -31,7 +32,7 @@ export interface FormatIntroSnippetsParams {
     languageConfig: LanguageConfig | null
 }
 
-interface GetPromptParams {
+export interface GetPromptParams {
     snippets: AutocompleteContextSnippet[]
     docContext: DocumentContext
     document: vscode.TextDocument
@@ -102,7 +103,11 @@ export class DefaultModel {
         return ps`${PromptString.join(commentedOutSnippets, ps`\n\n`)}\n\n`
     }
 
-    public getPrompt(params: GetPromptParams): PromptString {
+    public getMessages(params: GetPromptParams): Message[] {
+        return [{ speaker: 'human', text: this.getPrompt(params) }]
+    }
+
+    protected getPrompt(params: GetPromptParams): PromptString {
         const { snippets, docContext, document, promptChars, gitContext, isInfill = true } = params
         const { prefix, suffix } = PromptString.fromAutocompleteDocumentContext(docContext, document.uri)
 
@@ -124,7 +129,7 @@ export class DefaultModel {
                 const snippet = snippets[snippetsToInclude - 1]
 
                 if ('symbol' in snippet) {
-                    introSnippets.push(symbolSnippetToPromptString(snippet))
+                    introSnippets.push(this.symbolSnippetToPromptString(snippet))
                 } else {
                     introSnippets.push(this.fileSnippetToPromptString(snippet))
                 }
@@ -151,7 +156,7 @@ export class DefaultModel {
         return currentPrompt
     }
 
-    public postProcess(content: string): string {
+    public postProcess(content: string, docContext: DocumentContext): string {
         return content.replace(' <EOT>', '')
     }
 
@@ -167,12 +172,13 @@ export class DefaultModel {
         return ps`Here is a reference snippet of code from ${uriPromptString}:\n${content}`
     }
 
+    protected symbolSnippetToPromptString(snippet: AutocompleteSymbolContextSnippet): PromptString {
+        const { content, symbol } = PromptString.fromAutocompleteContextSnippet(snippet)
+
+        return ps`Additional documentation for \`${symbol!}\`:\n${content}`
+    }
+
     protected formatPrompt(param: FormatPromptParams): PromptString {
         return ps`${param.intro}${param.prefix}`
     }
-}
-
-function symbolSnippetToPromptString(snippet: AutocompleteSymbolContextSnippet): PromptString {
-    const { content, symbol } = PromptString.fromAutocompleteContextSnippet(snippet)
-    return ps`Additional documentation for \`${symbol!}\`:\n${content}`
 }

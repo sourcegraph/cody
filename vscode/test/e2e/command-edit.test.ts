@@ -11,7 +11,6 @@ test.extend<ExpectedV2Events>({
     // list of events we expect this test to log, add to this list as needed
     expectedV2Events: [
         'cody.extension:installed',
-        'cody.codyIgnore:hasFile',
         'cody.auth.login:clicked',
         'cody.auth.signin.menu:clicked',
         'cody.auth.login:firstEver',
@@ -145,7 +144,7 @@ test('edit (fixup) input - model selection', async ({ page, nap, sidebar }) => {
 
     // Check the correct model item is auto-selected
     await nap()
-    const modelItem = page.getByLabel('$(anthropic-logo) Claude 3.5').locator('a')
+    const modelItem = page.getByLabel('$(anthropic-logo) Claude 3.5 Sonnet').locator('a')
     await nap()
     expect(modelItem).toBeVisible()
 

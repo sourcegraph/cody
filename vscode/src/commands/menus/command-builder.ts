@@ -30,7 +30,12 @@ export class CustomCommandsBuilderMenu {
         const type = prompt && (await this.selectCommandType())
 
         if (key && mode && prompt && type) {
-            telemetryRecorder.recordEvent('cody.command.custom.build', 'executed')
+            telemetryRecorder.recordEvent('cody.command.custom.build', 'executed', {
+                billingMetadata: {
+                    product: 'cody',
+                    category: 'core',
+                },
+            })
 
             return { key, prompt: { ...prompt, key, mode }, type }
         }

@@ -1,4 +1,5 @@
-import type { CompletionLogger, CompletionsClientConfig } from '../sourcegraph-api/completions/client'
+import type { LegacyModelRefStr, ModelRefStr } from '../models/modelsService'
+import type { CompletionLogger } from '../sourcegraph-api/completions/client'
 import type {
     CompletionParameters,
     CompletionResponse,
@@ -23,7 +24,11 @@ export enum CompletionStopReason {
     RequestFinished = 'cody-request-finished',
 }
 
-export type CodeCompletionsParams = Omit<CompletionParameters, 'fast'> & { timeoutMs: number }
+export type CodeCompletionsParams = Omit<CompletionParameters, 'fast'> & {
+    timeoutMs: number
+    // TODO: apply the same type to the underlying `CompletionParameters`
+    model?: LegacyModelRefStr | ModelRefStr
+}
 export type SerializedCodeCompletionsParams = Omit<SerializedCompletionParameters, 'fast'>
 
 export type CompletionResponseWithMetaData = {
@@ -46,6 +51,10 @@ export type CompletionResponseGenerator = AsyncGenerator<
 >
 
 export interface CodeCompletionProviderOptions {
+    /**
+     * Custom headers to send with the HTTP request, in addition to the globally configured headers
+     * on {@link ClientConfiguration.customHeaders}.
+     */
     customHeaders?: Record<string, string>
 }
 
@@ -58,6 +67,5 @@ export interface CodeCompletionsClient<
         params: T,
         abortController: AbortController,
         providerOptions?: ProviderSpecificOptions
-    ): CompletionResponseGenerator
-    onConfigurationChange(newConfig: CompletionsClientConfig): void
+    ): CompletionResponseGenerator | Promise<CompletionResponseGenerator>
 }

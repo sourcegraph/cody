@@ -267,9 +267,9 @@ html[data-ide='VisualStudio'] {
     --vscode-input-border: var(--visualstudio-comboboxborder);
     --vscode-input-foreground: var(--visualstudio-comboboxtext);
     --vscode-input-placeholderForeground: var(--visualstudio-comboboxitemtextinactive);
-    --vscode-inputOption-activeBackground: var(--visualstudio-startpagebuttonunpinned);
-    --vscode-inputOption-activeBorder: var(--visualstudio-startpagebuttonborder);
-    --vscode-inputOption-activeForeground: var(--visualstudio-startpagebuttontext);
+    --vscode-inputOption-activeBackground: var(--visualstudio-startpagetextcontrollinkselected);
+    --vscode-inputOption-activeBorder: var(--visualstudio-startpagetextcontrollinkselected);
+    --vscode-inputOption-activeForeground: var(--visualstudio-startpagetextbody);
     --vscode-inputValidation-errorBackground: var(--visualstudio-statusbardebugging);
     --vscode-inputValidation-errorBorder: var(--visualstudio-statusbardebugging);
     --vscode-inputValidation-infoBackground: var(--visualstudio-statusbarbuilding);
@@ -399,9 +399,9 @@ html[data-ide='VisualStudio'] {
     /* --vscode-remoteHub-decorations-workspaceRepositoriesView-hasUncommittedChangesForegroundColor: var(); */
     --vscode-scm-historyItemStatisticsBorder: var(--visualstudio-scrollbararrowglyph);
     --vscode-scrollbar-shadow: var(--visualstudio-scrollbarthumbglyph);
-    --vscode-scrollbarSlider-activeBackground: var(--visualstudio-scrollbarthumbpressedbackground);
-    --vscode-scrollbarSlider-background: var(--visualstudio-scrollbarbackground);
-    --vscode-scrollbarSlider-hoverBackground: var(--visualstudio-scrollbarthumbmouseoverbackground);
+    --vscode-scrollbarSlider-activeBackground: var(--visualstudio-toolwindowbackground);
+    --vscode-scrollbarSlider-background: var(--visualstudio-toolwindowbackground);
+    --vscode-scrollbarSlider-hoverBackground: var(--visualstudio-toolwindowbackground);
     /* --vscode-search-resultsInfoForeground: var(); */
     /* --vscode-searchEditor-findMatchBorder: var(); */
     /* --vscode-searchEditor-textInputBorder: var(); */
@@ -596,7 +596,7 @@ html[data-ide='VisualStudio'] {
     --vscode-widget-shadow: var(--visualstudio-buttonshadow);
 
     /* Mimic rules injected by VSCode */
-    scrollbar-color: var(--vscode-scrollbarSlider-background) var(--vscode-editor-background);
+    scrollbar-color: var(--visualstudio-scrollbarthumbbackground) var(--visualstudio-toolwindowbackground);
 
 }
 

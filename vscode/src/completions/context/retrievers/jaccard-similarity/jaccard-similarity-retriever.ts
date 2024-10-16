@@ -5,9 +5,9 @@ import { getContextRange } from '../../../doc-context-getters'
 import type { ContextRetriever, ContextRetrieverOptions } from '../../../types'
 import { type DocumentHistory, VSCodeDocumentHistory } from './history'
 
-import { FeatureFlag, featureFlagProvider, isDefined } from '@sourcegraph/cody-shared'
+import { isDefined } from '@sourcegraph/cody-shared'
 import { lastNLines } from '../../../text-processing'
-import { type ShouldUseContextParams, shouldBeUsedAsContext } from '../../utils'
+import { RetrieverIdentifier, type ShouldUseContextParams, shouldBeUsedAsContext } from '../../utils'
 import { type CachedRerieverOptions, CachedRetriever } from '../cached-retriever'
 import { type JaccardMatch, bestJaccardMatches } from './bestJaccardMatch'
 
@@ -46,7 +46,7 @@ export class JaccardSimilarityRetriever extends CachedRetriever implements Conte
         this.maxMatchesPerFile = options.maxMatchesPerFile ?? MAX_MATCHES_PER_FILE
     }
 
-    public identifier = 'jaccard-similarity'
+    public identifier = RetrieverIdentifier.JaccardSimilarityRetriever
     private history = new VSCodeDocumentHistory()
 
     public async doRetrieval({
@@ -125,12 +125,7 @@ export class JaccardSimilarityRetriever extends CachedRetriever implements Conte
         const files: FileContents[] = []
 
         const curLang = currentDocument.languageId
-
-        const enableExtendedLanguagePool = Boolean(
-            await featureFlagProvider.instance!.evaluateFeatureFlag(
-                FeatureFlag.CodyAutocompleteContextExtendLanguagePool
-            )
-        )
+        const { enableExtendedLanguagePool } = this.history
 
         function addDocument(document: vscode.TextDocument): void {
             // Only add files and VSCode user settings.
@@ -229,7 +224,7 @@ export class JaccardSimilarityRetriever extends CachedRetriever implements Conte
             addDocument(document)
         }
 
-        const lastN = await history.lastN(10, curLang, [currentDocument.uri, ...files.map(f => f.uri)])
+        const lastN = history.lastN(10, curLang, [currentDocument.uri, ...files.map(f => f.uri)])
         await Promise.all(
             lastN.map(async item => {
                 try {

@@ -2,28 +2,23 @@ import { isEqual, partition } from 'lodash'
 import { LRUCache } from 'lru-cache'
 import type * as vscode from 'vscode'
 
-import {
-    type AutocompleteContextSnippet,
-    type DocumentContext,
-    isDefined,
-    wrapInActiveSpan,
-} from '@sourcegraph/cody-shared'
+import { type DocumentContext, isDefined, wrapInActiveSpan } from '@sourcegraph/cody-shared'
 
 import { addAutocompleteDebugEvent } from '../services/open-telemetry/debug-utils'
 
 import levenshtein from 'js-levenshtein'
-import { logDebug } from '../log'
+import { type CompletionLogID, logCompletionBookkeepingEvent } from './analytics-logger'
 import {
     InlineCompletionsResultSource,
     type LastInlineCompletionCandidate,
 } from './get-inline-completions'
-import { type CompletionLogID, logCompletionBookkeepingEvent } from './logger'
-import { STOP_REASON_HOT_STREAK } from './providers/hot-streak'
+import { autocompleteOutputChannelLogger } from './output-channel-logger'
+import { STOP_REASON_HOT_STREAK } from './providers/shared/hot-streak'
 import type {
     CompletionProviderTracer,
     GenerateCompletionsOptions,
     Provider,
-} from './providers/provider'
+} from './providers/shared/provider'
 import { reuseLastCandidate } from './reuse-last-candidate'
 import { getPrevNonEmptyLineIndex, lines, removeIndentation } from './text-processing'
 import {
@@ -57,10 +52,9 @@ export interface RequestManagerResult {
 }
 
 interface RequestsManagerParams {
-    providerOptions: GenerateCompletionsOptions
+    generateOptions: GenerateCompletionsOptions
     requestParams: RequestParams
     provider: Provider
-    context: AutocompleteContextSnippet[]
     isCacheEnabled: boolean
     logId: CompletionLogID
     isPreloadRequest: boolean
@@ -124,7 +118,7 @@ export class RequestManager {
             this.latestRequestParams = params
         }
 
-        const { requestParams, provider, providerOptions, context, tracer, logId } = params
+        const { requestParams, provider, generateOptions, tracer, logId } = params
 
         addAutocompleteDebugEvent('RequestManager.request')
 
@@ -140,10 +134,9 @@ export class RequestManager {
 
         const generateCompletions = async (): Promise<void> => {
             try {
-                for await (const fetchCompletionResults of provider.generateCompletions(
-                    providerOptions,
+                for await (const fetchCompletionResults of await provider.generateCompletions(
+                    generateOptions,
                     request.abortController.signal,
-                    context,
                     tracer
                 )) {
                     const [hotStreakCompletions, currentCompletions] = partition(
@@ -301,7 +294,7 @@ export class RequestManager {
             }
 
             if (shouldAbort) {
-                logDebug('CodyCompletionProvider', 'Irrelevant request aborted')
+                autocompleteOutputChannelLogger.logDebug('requestManager', 'Irrelevant request aborted')
                 request.abortController.abort()
                 this.inflightRequests.delete(request)
             }

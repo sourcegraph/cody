@@ -5,19 +5,52 @@ import type { ModelContextWindow } from '..'
 import type { Message, PromptString } from '..'
 import { CORPUS_CONTEXT_ALLOCATION } from './constants'
 
-interface TokenCounterUtils {
+export interface TokenCounterUtils {
     encode(text: string): number[]
     decode(encoded: number[]): string
     countTokens(text: string): number
     countPromptString(text: PromptString): number
-    getMessagesTokenCount(messages: Message[]): number
-    getTokenCountForMessage(message: Message): number
+    getMessagesTokenCount(messages: (Message | undefined)[]): number
+    getTokenCountForMessage(message: Message | undefined): number
+}
+
+let _useFakeTokenCounterUtils: TokenCounterUtils | undefined
+
+/**
+ * @internal For testing only. Importing the weights for the token counter is slow and is not
+ * necessary for most tests.
+ */
+export function useFakeTokenCounterUtils(): void {
+    _useFakeTokenCounterUtils = {
+        encode(text) {
+            return text.split(' ').map(word => word.length)
+        },
+        decode(encoded) {
+            return encoded.map(n => ' '.repeat(n)).join('')
+        },
+        countTokens(text) {
+            return text.split(' ').length
+        },
+        countPromptString(text) {
+            return text.split(' ').length
+        },
+        getMessagesTokenCount(messages) {
+            return messages.reduce((acc, m) => acc + (m?.text?.split(' ').length ?? 0), 0)
+        },
+        getTokenCountForMessage(message) {
+            return message?.text?.split(' ').length ?? 0
+        },
+    }
 }
 
 /**
  * Get the tokenizer, which is lazily-loaded it because it requires reading ~1 MB of tokenizer data.
  */
 export async function getTokenCounterUtils(): Promise<TokenCounterUtils> {
+    if (_useFakeTokenCounterUtils) {
+        return _useFakeTokenCounterUtils
+    }
+
     // This could have been implemented in a separate file that is wholly async-imported, but that
     // carries too much risk of accidental non-async importing.
     if (!_tokenCounterUtilsPromise) {

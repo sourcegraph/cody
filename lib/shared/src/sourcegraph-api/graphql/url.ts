@@ -1,4 +1,4 @@
-import { trimEnd } from 'lodash'
+import trimEnd from 'lodash/trimEnd'
 
 const GRAPHQL_URI = '/.api/graphql'
 

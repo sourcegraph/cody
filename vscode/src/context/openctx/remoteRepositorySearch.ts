@@ -1,5 +1,10 @@
 import type { Item } from '@openctx/client'
-import { REMOTE_REPOSITORY_PROVIDER_URI, graphqlClient, isError } from '@sourcegraph/cody-shared'
+import {
+    REMOTE_REPOSITORY_PROVIDER_URI,
+    currentResolvedConfig,
+    graphqlClient,
+    isError,
+} from '@sourcegraph/cody-shared'
 
 import { getRepositoryMentions } from './common/get-repository-mentions'
 import type { OpenCtxProvider } from './types'
@@ -27,6 +32,7 @@ export function createRemoteRepositoryProvider(customTitle?: string): OpenCtxPro
                 return []
             }
 
+            const { auth } = await currentResolvedConfig()
             const dataOrError = await graphqlClient.contextSearch({
                 repoIDs: [mention?.data?.repoId as string],
                 query: message,
@@ -38,7 +44,7 @@ export function createRemoteRepositoryProvider(customTitle?: string): OpenCtxPro
             return dataOrError.map(
                 node =>
                     ({
-                        url: graphqlClient.endpoint + node.uri.toString(),
+                        url: auth.serverEndpoint + node.uri.toString(),
                         title: node.path,
                         ai: {
                             content: node.content,

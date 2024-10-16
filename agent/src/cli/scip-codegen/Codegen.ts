@@ -1,14 +1,23 @@
 import fspromises from 'node:fs/promises'
 import path from 'node:path'
 import dedent from 'dedent'
-import { BaseCodegen, type DiscriminatedUnion, type DiscriminatedUnionMember } from './BaseCodegen'
+import {
+    BaseCodegen,
+    type ConstantType,
+    type DiscriminatedUnion,
+    type DiscriminatedUnionMember,
+} from './BaseCodegen'
 
 import { CodePrinter } from '../../../../vscode/src/completions/context/retrievers/tsc/CodePrinter'
 import type { ConsoleReporter } from './ConsoleReporter'
 import { type Diagnostic, Severity } from './Diagnostic'
-import { Formatter } from './Formatter'
+import type { Formatter } from './Formatter'
 import type { SymbolTable } from './SymbolTable'
 import type { CodegenOptions } from './command'
+import { CSharpEmitter } from './emitters/CSharpEmitter'
+import type { DataClassOptions, Emitter, Enum, Member } from './emitters/Emitter'
+import { JavaEmitter } from './emitters/JavaEmitter'
+import { KotlinEmitter } from './emitters/KotlinEmitter'
 import { resetOutputPath } from './resetOutputPath'
 import { scip } from './scip'
 import { stringLiteralType } from './stringLiteralType'
@@ -25,21 +34,31 @@ export enum TargetLanguage {
     Kotlin = 'kotlin',
     CSharp = 'csharp',
 }
-
 export class Codegen extends BaseCodegen {
-    private f: Formatter
     public queue: scip.SymbolInformation[] = []
     public generatedSymbols = new Set<string>()
     public stringLiteralConstants = new Set<string>()
+    private emitter: Emitter
 
     constructor(
-        private language: TargetLanguage,
+        language: TargetLanguage,
         options: CodegenOptions,
         symtab: SymbolTable,
         reporter: ConsoleReporter
     ) {
         super(options, symtab, reporter)
-        this.f = new Formatter(this.language, this.symtab, this)
+        this.emitter = this.getEmitter(language)
+    }
+
+    private getEmitter(language: TargetLanguage): Emitter {
+        switch (language) {
+            case TargetLanguage.Kotlin:
+                return new KotlinEmitter(this.options, this.symtab, this)
+            case TargetLanguage.Java:
+                return new JavaEmitter(this.options, this.symtab, this)
+            case TargetLanguage.CSharp:
+                return new CSharpEmitter(this.options, this.symtab, this)
+        }
     }
 
     public async run(): Promise<void> {
@@ -56,9 +75,9 @@ export class Codegen extends BaseCodegen {
             BaseCodegen.protocolSymbols.server.notifications
         )
         let info = this.queue.pop()
-        while (info !== undefined) {
+        while (info) {
             if (!this.generatedSymbols.has(info.symbol)) {
-                this.writeType(info)
+                await this.writeType(info)
                 this.generatedSymbols.add(info.symbol)
             }
             info = this.queue.pop()
@@ -73,7 +92,11 @@ export class Codegen extends BaseCodegen {
     private startDocument(): DocumentContext & {
         c: DocumentContext
     } {
-        const context: DocumentContext = { f: this.f, p: new CodePrinter(), symtab: this.symtab }
+        const context: DocumentContext = {
+            f: this.emitter.formatter,
+            p: new CodePrinter(),
+            symtab: this.symtab,
+        }
         return { ...context, c: context }
     }
 
@@ -82,62 +105,13 @@ export class Codegen extends BaseCodegen {
             return
         }
         const { p } = this.startDocument()
-        switch (this.language) {
-            case TargetLanguage.Kotlin:
-                p.line('@file:Suppress("unused", "ConstPropertyName")')
-                p.line(`package ${this.options.kotlinPackage};`)
-                p.line()
-                p.line('object ProtocolTypeAdapters {')
-                break
-            case TargetLanguage.Java:
-                p.line(`package ${this.options.kotlinPackage};`)
-                p.line()
-                p.line('public final class ProtocolTypeAdapters {')
-                break
-            case TargetLanguage.CSharp:
-                p.line(`namespace ${this.options.kotlinPackage};`)
-                p.line('{')
-                p.block(() => {
-                    p.line('public static class ProtocolTypeAdapters')
-                    p.line('{')
-                })
-                break
-        }
-        p.block(() => {
-            switch (this.language) {
-                case TargetLanguage.Kotlin:
-                    p.line('fun register(gson: com.google.gson.GsonBuilder) {')
-                    break
-                case TargetLanguage.Java:
-                    p.line('public static void register(com.google.gson.GsonBuilder gson) {')
-                    break
-                case TargetLanguage.CSharp:
-                    p.line('public static void Register(JsonSerializerOptions options)')
-                    p.line('{')
-                    break
-            }
-            p.block(() => {
-                const discriminatedUnions = [...this.discriminatedUnions.keys()].sort()
-                for (const symbol of discriminatedUnions) {
-                    const name = this.symtab.info(symbol).display_name
-                    switch (this.language) {
-                        case TargetLanguage.Kotlin:
-                            p.line(`gson.registerTypeAdapter(${name}::class.java, ${name}.deserializer)`)
-                            break
-                        case TargetLanguage.Java:
-                            p.line(`gson.registerTypeAdapter(${name}.class, ${name}.deserializer());`)
-                            break
-                        case TargetLanguage.CSharp:
-                            p.line(`options.Converters.Add(new ${name}Converter());`)
-                            break
-                    }
-                }
-            })
-            p.line('}')
-        })
-        p.line('}')
+
+        const discriminatedUnions = [...this.discriminatedUnions.keys()]
+            .sort()
+            .map(symbol => this.symtab.info(symbol).display_name)
+        this.emitter.emitSerializationAdapter(p, discriminatedUnions)
         await fspromises.writeFile(
-            path.join(this.options.output, `ProtocolTypeAdapters.${this.fileExtension()}`),
+            path.join(this.options.output, `ProtocolTypeAdapters.${this.emitter.getFileType()}`),
             p.build()
         )
     }
@@ -147,92 +121,19 @@ export class Codegen extends BaseCodegen {
             return
         }
         const { p } = this.startDocument()
-        switch (this.language) {
-            case TargetLanguage.CSharp:
-                p.line(`namespace ${this.options.kotlinPackage};`)
-                p.line('{')
-                p.line('public static class Constants')
-                p.line('{')
-                break
-            case TargetLanguage.Kotlin:
-                p.line('@file:Suppress("unused", "ConstPropertyName")')
-                p.line(`package ${this.options.kotlinPackage};`)
-                p.line()
-                p.line('object Constants {')
-                break
-            case TargetLanguage.Java:
-                p.line(`package ${this.options.kotlinPackage};`)
-                p.line()
-                p.line('public final class Constants {')
-                break
-        }
-        p.block(() => {
-            const constants = [...this.stringLiteralConstants.values()].sort()
-            for (const constant of constants) {
-                switch (this.language) {
-                    case TargetLanguage.Kotlin:
-                        p.line(`const val ${this.f.formatFieldName(constant)} = "${constant}"`)
-                        break
-                    case TargetLanguage.Java:
-                        p.line(
-                            `public static final String ${this.f.formatFieldName(
-                                constant
-                            )} = "${constant}";`
-                        )
-                        break
-                    case TargetLanguage.CSharp:
-                        p.line(
-                            `public const string ${this.f.formatFieldName(constant)} = "${constant}";`
-                        )
-                        break
-                }
-            }
-        })
-        p.line('}')
-        if (this.language === TargetLanguage.CSharp) {
-            p.line('}')
-        }
+        const constants = [...this.stringLiteralConstants.values()].sort()
+        this.emitter.emitStringLiteralConstants(p, constants)
         await fspromises.writeFile(
-            path.join(this.options.output, `Constants.${this.fileExtension()}`),
+            path.join(this.options.output, `Constants.${this.emitter.getFileType()}`),
             p.build()
         )
     }
 
-    private fileExtension() {
-        switch (this.language) {
-            case TargetLanguage.CSharp:
-                return 'cs'
-            case TargetLanguage.Kotlin:
-                return 'kt'
-            default:
-                return 'java'
-        }
-    }
-
     private async writeNullAlias(): Promise<void> {
         const { p } = this.startDocument()
-        switch (this.language) {
-            case TargetLanguage.Kotlin:
-                p.line(`package ${this.options.kotlinPackage};`)
-                p.line()
-                p.line('typealias Null = Void?')
-                break
-            case TargetLanguage.Java:
-                p.line(`package ${this.options.kotlinPackage};`)
-                p.line()
-                p.line('public final class Null {}')
-                break
-            case TargetLanguage.CSharp:
-                p.line(`namespace ${this.options.kotlinPackage};`)
-                p.line('{')
-                p.block(() => {
-                    p.line('public sealed class Null {}')
-                })
-                p.line('}')
-                break
-        }
+        this.emitter.emitNullAlias(p)
         await fspromises.writeFile(
-            path.join(this.options.output, `Null.${this.fileExtension()}`),
+            path.join(this.options.output, `Null.${this.emitter.getFileType()}`),
             p.build()
         )
     }
@@ -241,171 +142,24 @@ export class Codegen extends BaseCodegen {
         { p, f, symtab }: DocumentContext,
         name: string,
         info: scip.SymbolInformation,
-        union: DiscriminatedUnion
+        { members, ...unionArgs }: DiscriminatedUnion
     ): Promise<void> {
-        if (this.language === TargetLanguage.CSharp) {
-            p.addImport('using Newtonsoft.Json;')
-        } else {
-            p.line('import com.google.gson.Gson;')
-            p.line('import com.google.gson.JsonDeserializationContext;')
-            p.line('import com.google.gson.JsonDeserializer;')
-            p.line('import com.google.gson.JsonElement;')
-            p.line('import java.lang.reflect.Type;')
-        }
-        p.line()
-        switch (this.language) {
-            case TargetLanguage.Kotlin:
-                p.line(`sealed class ${name} {`)
-                break
-            case TargetLanguage.Java:
-                p.line(`public abstract class ${name} {`)
-                break
-            case TargetLanguage.CSharp:
-                p.line(`[JsonConverter(typeof(${name}Converter))]`)
-                name = name
-                    .split(/[ -]/)
-                    .map(part => part.charAt(0).toUpperCase() + part.slice(1))
-                    .join('')
-                p.line(`public abstract class ${name}`)
-                p.line('{')
-                break
-        }
-        p.block(() => {
-            if (this.language === TargetLanguage.Kotlin) {
-                p.line('companion object {')
+        const isHandledCase = new Set<ConstantType>()
+        const union: DiscriminatedUnion = { ...unionArgs, members: [] }
+        for (const member of members) {
+            if (isHandledCase.has(member.value)) {
+                // There's a bug in ContextProvider where
+                // two cases have the same discriminator
+                // 'search'
+                this.reporter.warn(info.symbol, `duplicate discriminator value ${member.value}`)
+                continue
             }
-            p.block(() => {
-                switch (this.language) {
-                    case TargetLanguage.Kotlin:
-                        p.line(`val deserializer: JsonDeserializer<${name}> =`)
-                        break
-                    case TargetLanguage.Java:
-                        p.line(`public static JsonDeserializer<${name}> deserializer() {`)
-                        break
-                    case TargetLanguage.CSharp:
-                        p.line(`private class ${name}Converter : JsonConverter<${name}>`)
-                        p.line('{')
-                        p.block(() => {
-                            p.line(
-                                `public override ${name} Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)`
-                            )
-                            p.line('{')
-                            p.block(() => {
-                                p.line('var jsonDoc = JsonDocument.ParseValue(ref reader);')
-                                p.line(
-                                    `var discriminator = jsonDoc.RootElement.GetProperty("${union.discriminatorDisplayName}").GetString();`
-                                )
-                                p.line('switch (discriminator)')
-                                p.line('{')
-                            })
-                        })
-                        break
-                }
-                p.block(() => {
-                    switch (this.language) {
-                        case TargetLanguage.Kotlin:
-                            p.line(
-                                'JsonDeserializer { element: JsonElement, _: Type, context: JsonDeserializationContext ->'
-                            )
-                            break
-                        case TargetLanguage.Java:
-                            p.line('return (element, _type, context) -> {')
-                            break
-                    }
-                    p.block(() => {
-                        const keyword = this.language === TargetLanguage.Kotlin ? 'when' : 'switch'
-                        if (this.language !== TargetLanguage.CSharp) {
-                            p.line(
-                                `${keyword} (element.getAsJsonObject().get("${union.discriminatorDisplayName}").getAsString()) {`
-                            )
-                        }
-                        p.block(() => {
-                            const isHandledCase = new Set<string>()
-                            for (const member of union.members) {
-                                if (isHandledCase.has(member.value)) {
-                                    // There's a bug in ContextProvider where
-                                    // two cases have the same discriminator
-                                    // 'search'
-                                    this.reporter.warn(
-                                        info.symbol,
-                                        `duplicate discriminator value ${member.value}`
-                                    )
-                                    continue
-                                }
-                                isHandledCase.add(member.value)
-                                const typeName = this.f.discriminatedUnionTypeName(union, member)
-                                switch (this.language) {
-                                    case TargetLanguage.Kotlin:
-                                        p.line(
-                                            `"${member.value}" -> context.deserialize<${typeName}>(element, ${typeName}::class.java)`
-                                        )
-                                        break
-                                    case TargetLanguage.Java:
-                                        p.line(
-                                            `case "${member.value}": return context.deserialize(element, ${typeName}.class);`
-                                        )
-                                        break
-                                    case TargetLanguage.CSharp:
-                                        p.line(`case "${member.value}":`)
-                                        p.block(() => {
-                                            p.line(
-                                                `return JsonSerializer.Deserialize<${typeName}>(jsonDoc.RootElement.GetRawText(), options);`
-                                            )
-                                        })
-                                        break
-                                }
-                            }
-                            switch (this.language) {
-                                case TargetLanguage.Kotlin:
-                                    p.line('else -> throw Exception("Unknown discriminator ${element}")')
-                                    break
-                                case TargetLanguage.Java:
-                                    p.line(
-                                        'default: throw new RuntimeException("Unknown discriminator " + element);'
-                                    )
-                                    break
-                                case TargetLanguage.CSharp:
-                                    p.line('default:')
-                                    p.block(() => {
-                                        p.line(
-                                            'throw new JsonException($"Unknown discriminator {discriminator}");'
-                                        )
-                                    })
-                                    p.line('}')
-                                    break
-                            }
-                        })
-                        if (this.language === TargetLanguage.Java) {
-                            p.line('};')
-                        } else {
-                            p.line('}')
-                        }
-                    })
-                    switch (this.language) {
-                        case TargetLanguage.CSharp:
-                            p.line(
-                                'public override void Write(Utf8JsonWriter writer, ${name} value, JsonSerializerOptions options)'
-                            )
-                            p.line('{')
-                            p.block(() => {
-                                p.line(
-                                    'JsonSerializer.Serialize(writer, value, value.GetType(), options);'
-                                )
-                            })
-                            break
-                        default:
-                            p.line('}')
-                    }
-                })
-            })
-            p.line('}')
-        })
-        if (this.language === TargetLanguage.Kotlin || this.language === TargetLanguage.CSharp) {
-            p.line('}')
+            isHandledCase.add(member.value)
+            union.members.push(member)
         }
+        this.emitter.startSealedClass(p, { name, info, union })
         for (const member of union.members) {
-            p.line()
-            const typeName = this.f.discriminatedUnionTypeName(union, member)
+            const typeName = this.emitter.formatter.discriminatedUnionTypeName(union, member)
             const info = member.type.has_type_ref
                 ? this.symtab.info(member.type.type_ref.symbol)
                 : new scip.SymbolInformation({
@@ -416,24 +170,31 @@ export class Codegen extends BaseCodegen {
                   })
             this.writeDataClass({ p, f, symtab }, typeName, info, {
                 innerClass: true,
-                heritageClause:
-                    this.language === TargetLanguage.Kotlin
-                        ? ` : ${name}()`
-                        : this.language === TargetLanguage.Java
-                          ? ` extends ${name}`
-                          : ` : ${name}`,
+                parentClass: name,
             })
         }
-        if (this.language === TargetLanguage.Java || this.language === TargetLanguage.CSharp) {
-            p.line('}')
-        }
+        this.emitter.closeSealedClass?.(p, { name, info, union })
     }
 
     private async writeDataClass(
         { p, f, symtab }: DocumentContext,
         name: string,
         info: scip.SymbolInformation,
-        params?: { heritageClause?: string; innerClass?: boolean }
+        params?: Partial<DataClassOptions>
+    ): Promise<void> {
+        try {
+            await this.writeDataClassUnsafe({ p, f, symtab }, name, info, params)
+        } catch (e) {
+            const errorMessage = `Failed to handle class ${info.symbol}. To fix this problem, consider skipping this type by adding the symbol to "ignoredInfoSymbol" in Formatter.ts\n${e}`
+            this.reporter.error(info.symbol, errorMessage)
+        }
+    }
+
+    private async writeDataClassUnsafe(
+        { p, f, symtab }: DocumentContext,
+        name: string,
+        info: scip.SymbolInformation,
+        params?: Partial<DataClassOptions>
     ): Promise<void> {
         if (info.kind === scip.SymbolInformation.Kind.Class) {
             this.reporter.warn(
@@ -442,156 +203,98 @@ export class Codegen extends BaseCodegen {
             )
         }
         const generatedName = new Set<string>()
-        const enums: { name: string; members: string[] }[] = []
-        switch (this.language) {
-            case TargetLanguage.Kotlin:
-                p.line(`data class ${name}(`)
-                break
-            case TargetLanguage.Java: {
-                const staticModifier = params?.innerClass ? 'static ' : ''
-                p.line(`public ${staticModifier}final class ${name}${params?.heritageClause ?? ''} {`)
-                break
+        const enums: Enum[] = []
+        const members: Member[] = []
+        for (const memberSymbol of this.infoProperties(info)) {
+            if (
+                this.emitter.formatter.ignoredProperties.find(ignoredProperty =>
+                    memberSymbol.includes(ignoredProperty)
+                )
+            ) {
+                continue
             }
-            case TargetLanguage.CSharp:
-                p.line(`public class ${name}${params?.heritageClause ?? ''}`)
-                p.line('{')
-                break
-        }
-        p.block(() => {
-            let hasMembers = false
-            for (const memberSymbol of this.infoProperties(info)) {
-                if (
-                    this.f.ignoredProperties.find(ignoredProperty =>
-                        memberSymbol.includes(ignoredProperty)
-                    )
-                ) {
-                    continue
-                }
-                if (memberSymbol.endsWith('().')) {
-                    // Ignore method members because they should not leak into
-                    // the protocol in the first place because functions don't
-                    // have meaningful JSON serialization. The most common cause
-                    // is that a class leaks into the protocol.
-                    continue
-                }
-                const member = symtab.info(memberSymbol)
-
-                if (generatedName.has(member.display_name)) {
-                    continue
-                }
-                generatedName.add(member.display_name)
-
-                if (!member.signature.has_value_signature) {
-                    throw new TypeError(
-                        `not a value signature: ${JSON.stringify(member.toObject(), null, 2)}`
-                    )
-                }
-                if (member.signature.value_signature.tpe.has_lambda_type) {
-                    this.reporter.warn(
-                        memberSymbol,
-                        `ignoring property '${member.display_name}' because it does not serialize correctly to JSON. ` +
-                            `To fix this warning, don't expose this lambda type to the protocol`
-                    )
-                    // Ignore properties with signatures like
-                    // `ChatButton.onClick: (action: string) => void`
-                    continue
-                }
-                const memberType = member.signature.value_signature.tpe
-                if (memberType === undefined) {
-                    throw new TypeError(`no type: ${JSON.stringify(member.toObject(), null, 2)}`)
-                }
-
-                if (this.f.isIgnoredType(memberType)) {
-                    continue
-                }
-
-                let memberTypeSyntax = f.jsonrpcTypeName(member, memberType, 'parameter')
-                const constants = this.stringConstantsFromInfo(member)
-                for (const constant of constants) {
-                    // HACK: merge this duplicate code with the same logic in this file
-                    this.stringLiteralConstants.add(constant)
-                }
-
-                if (constants.length > 0 && memberTypeSyntax.startsWith('String')) {
-                    const enumTypeName = this.f.formatEnumType(member.display_name)
-                    memberTypeSyntax = enumTypeName + this.f.nullableSyntax(memberType)
-                    enums.push({ name: enumTypeName, members: constants })
-                } else {
-                    this.queueClassLikeType(memberType, member, 'parameter')
-                }
-                const oneofSyntax = constants.length > 0 ? ' // Oneof: ' + constants.join(', ') : ''
-                const defaultValueSyntax = this.f.isNullable(memberType) ? ' = null' : ''
-                const fieldName = this.f.formatFieldName(member.display_name)
-                const serializedAnnotation =
-                    fieldName === member.display_name
-                        ? ''
-                        : `@com.google.gson.annotations.SerializedName("${member.display_name}") `
-                switch (this.language) {
-                    case TargetLanguage.Kotlin:
-                        p.line(
-                            `val ${member.display_name}: ${memberTypeSyntax}${defaultValueSyntax},${oneofSyntax}`
-                        )
-                        break
-                    case TargetLanguage.Java:
-                        p.line(
-                            `${serializedAnnotation}public ${memberTypeSyntax} ${this.f.formatFieldName(
-                                member.display_name
-                            )};${oneofSyntax}`
-                        )
-                        break
-                    case TargetLanguage.CSharp:
-                        p.line(`[JsonProperty(PropertyName = "${member.display_name}")]`)
-                        if (oneofSyntax.includes('-')) {
-                            p.line(
-                                `public string ${this.f.formatFieldName(
-                                    member.display_name
-                                )} { get; set; }${oneofSyntax}`
-                            )
-                            enums.length = 0
-                        } else {
-                            p.line(
-                                `public ${memberTypeSyntax} ${this.f.formatFieldName(
-                                    member.display_name
-                                )} { get; set; }${oneofSyntax}`
-                            )
-                        }
-                        break
-                }
-                hasMembers = true
+            if (memberSymbol.endsWith('().')) {
+                // Ignore method members because they should not leak into
+                // the protocol in the first place because functions don't
+                // have meaningful JSON serialization. The most common cause
+                // is that a class leaks into the protocol.
+                continue
             }
-            if (!hasMembers) {
-                if (this.language === TargetLanguage.Kotlin) {
-                    p.line('val placeholderField: String? = null // Empty data class')
-                } else if (this.language === TargetLanguage.CSharp) {
-                    p.line('public string PlaceholderField { get; set; } // Empty class')
-                }
+            const member = symtab.info(memberSymbol)
+
+            if (generatedName.has(member.display_name)) {
+                continue
             }
-        })
-        if (enums.length === 0) {
-            if (this.language === TargetLanguage.Kotlin) {
-                p.line(`)${params?.heritageClause ?? ''}`)
+            generatedName.add(member.display_name)
+
+            if (!member.signature.has_value_signature) {
+                throw new TypeError(
+                    `not a value signature: ${JSON.stringify(member.toObject(), null, 2)}`
+                )
+            }
+            if (member.signature.value_signature.tpe.has_lambda_type) {
+                this.reporter.warn(
+                    memberSymbol,
+                    `ignoring property '${member.display_name}' because it does not serialize correctly to JSON. ` +
+                        `To fix this warning, don't expose this lambda type to the protocol`
+                )
+                // Ignore properties with signatures like
+                // `ChatButton.onClick: (action: string) => void`
+                continue
+            }
+            const memberType = member.signature.value_signature.tpe
+            if (memberType === undefined) {
+                throw new TypeError(`no type: ${JSON.stringify(member.toObject(), null, 2)}`)
+            }
+
+            if (f.isIgnoredType(memberType)) {
+                continue
+            }
+
+            let memberTypeSyntax = f.jsonrpcTypeName(member, memberType, 'parameter')
+            const constants = this.stringConstantsFromInfo(member)
+            for (const constant of constants) {
+                // HACK: merge this duplicate code with the same logic in this file
+                this.stringLiteralConstants.add(constant)
+            }
+
+            if (constants.length > 0 && memberTypeSyntax.startsWith('String')) {
+                const enumTypeName = this.emitter.formatter.formatEnumType(member.display_name)
+                memberTypeSyntax = enumTypeName + this.emitter.formatter.nullableSyntax(memberType)
+                enums.push({
+                    name: enumTypeName,
+                    members: constants.map(constant => ({
+                        serializedName: constant,
+                        formattedName: this.emitter.formatter.formatFieldName(capitalize(constant)),
+                    })),
+                })
             } else {
-                p.line('}')
+                try {
+                    this.queueClassLikeType(memberType, member, 'parameter')
+                } catch (error) {
+                    const stack = error instanceof Error ? '\n' + error.stack : ''
+                    const errorMessage = `error handling member: ${member.symbol}. To fix this problem, you may want to ignore it from code generation by adding the symbol name to the "ignoredProperties" in the Formatter.ts file.\n${error}${stack}`
+                    this.reporter.error(memberSymbol, errorMessage)
+                    continue
+                }
             }
-            return
+            const oneofSyntax = constants.length > 0 ? ' // Oneof: ' + constants.join(', ') : ''
+            const fieldName = this.emitter.formatter.formatFieldName(member.display_name)
+            members.push({
+                info: member,
+                typeSyntax: memberTypeSyntax,
+                formattedName: fieldName,
+                oneOfComment: oneofSyntax,
+                isNullable: this.emitter.formatter.isNullable(memberType),
+            })
         }
-        if (this.language === TargetLanguage.Kotlin) {
-            p.line(`)${params?.heritageClause ?? ''} {`)
-        }
-        // Nest enum classe inside data class to avoid naming conflicts with
-        // enums for other data classes in the same package.
-        p.block(() => {
-            if (this.language === TargetLanguage.Kotlin) {
-                p.addImport('import com.google.gson.annotations.SerializedName;')
-            } else if (this.language === TargetLanguage.CSharp) {
-                p.addImport('using Newtonsoft.Json;')
-            }
-
-            for (const { name, members } of enums) {
-                this.writeEnum(p, name, members)
-            }
+        this.emitter.emitDataClass(p, {
+            ...params,
+            name,
+            info,
+            members,
+            enums,
         })
-        p.line('}')
     }
 
     private aliasType(info: scip.SymbolInformation): string | undefined {
@@ -613,136 +316,36 @@ export class Codegen extends BaseCodegen {
         return undefined
     }
 
-    private writeEnum(p: CodePrinter, name: string, members: string[]): void {
-        p.line()
-        switch (this.language) {
-            case TargetLanguage.Kotlin:
-                p.line(`enum class ${name} {`)
-                break
-            case TargetLanguage.Java:
-                p.line(`public enum ${name} {`)
-                break
-            case TargetLanguage.CSharp:
-                p.line(`public enum ${name}`)
-                p.line('{')
-                break
-        }
-        p.block(() => {
-            for (const member of members) {
-                const serializedName = (() => {
-                    switch (this.language) {
-                        case TargetLanguage.CSharp:
-                            return ''
-                        case TargetLanguage.Kotlin:
-                            return `@SerializedName("${member}")`
-                        case TargetLanguage.Java:
-                            return `@com.google.gson.annotations.SerializedName("${member}")`
-                        default:
-                            return ''
-                    }
-                })()
-                const enumName = this.f.formatFieldName(capitalize(member))
-                switch (this.language) {
-                    case TargetLanguage.CSharp:
-                        p.line(`${enumName}, // ${member}`)
-                        break
-                    default:
-                        p.line(`${serializedName} ${enumName},`)
-                        break
-                }
-            }
-        })
-        p.line('}')
-    }
-
     private async writeType(info: scip.SymbolInformation): Promise<void> {
         const { f, p, c } = this.startDocument()
         const name = f.typeName(info)
         const alias = this.aliasType(info)
-
-        if (this.language === TargetLanguage.CSharp) {
-            p.addImport('using Newtonsoft.Json;')
-            p.line()
-            p.line(`namespace ${this.options.kotlinPackage}`)
-            p.line('{')
-            p.block(() => {
-                if (alias) {
-                    if (this.isStringTypeInfo(info)) {
-                        const constants = this.stringConstantsFromInfo(info)
-                        if (constants.length > 0) {
-                            this.writeEnum(p, name, constants)
-                        } else {
-                            p.line(`public class ${name}`)
-                            p.line('{')
-                            p.block(() => {
-                                p.line('public string Value { get; set; }')
-                                p.line()
-                                p.line(
-                                    `public static implicit operator string(${name} value) => value.Value;`
-                                )
-                                p.line(
-                                    `public static implicit operator ${name}(string value) => new ${name} { Value = value };`
-                                )
-                            })
-                            p.line('}')
-                        }
-                    } else {
-                        p.line(`public class ${name} : ${alias} { }`)
-                    }
-                } else if (info.signature.has_class_signature) {
-                    this.writeDataClass(c, name, info)
-                } else if (info.signature.has_type_signature) {
-                    const discriminatedUnion = this.discriminatedUnions.get(info.symbol)
-                    if (discriminatedUnion) {
-                        this.writeSealedClass(c, name, info, discriminatedUnion)
-                    } else if (this.isStringTypeInfo(info)) {
-                        const constants = this.stringConstantsFromInfo(info)
-                        if (constants.length > 0) {
-                            this.writeEnum(p, name, constants)
-                        } else {
-                            p.line(`public class ${name} : String { }`)
-                        }
-                    } else {
-                        this.writeDataClass(c, name, info)
-                    }
-                } else {
-                    throw new Error(`Unsupported signature: ${JSON.stringify(info.toObject(), null, 2)}`)
-                }
-            })
-            p.line('}')
-            const filename = `${info.display_name}.${this.fileExtension()}`
-                .split('_')
-                .map(capitalize)
-                .join('')
-            fspromises.writeFile(path.join(this.options.output, filename), p.build())
+        if (f.isIgnoredInfo(info)) {
             return
         }
-
-        if (this.language === TargetLanguage.Kotlin) {
-            p.line(
-                '@file:Suppress("FunctionName", "ClassName", "unused", "EnumEntryName", "UnusedImport")'
-            )
-        }
-        p.line(`package ${this.options.kotlinPackage};`)
-        p.line()
+        this.emitter.startType(p, { name, info })
         if (alias) {
-            if (this.language === TargetLanguage.Kotlin) {
-                p.line(`typealias ${name} = ${alias}`)
-            } else {
-                if (info.display_name === 'Date') {
-                    p.line('public final class Date {}')
-                } else if (info.display_name === 'Null') {
-                    p.line('public final class Null {}')
-                } else {
-                    const constants = this.stringConstantsFromInfo(info)
-                    if (constants.length === 0) {
-                        this.reporter.warn(info.symbol, `no constants for ${info.display_name}`)
-                        p.line(`public final class ${name} {} // TODO: fixme`)
-                    } else {
-                        this.writeEnum(p, name, constants)
+            const isStringType = this.isStringTypeInfo(info)
+            let enum_: Enum | undefined
+            if (isStringType) {
+                const constants = this.stringConstantsFromInfo(info)
+                if (constants.length > 0) {
+                    enum_ = {
+                        name,
+                        members: constants.map(name => ({
+                            serializedName: name,
+                            formattedName: f.formatFieldName(capitalize(name)),
+                        })),
                     }
                 }
             }
+            this.emitter.emitTypeAlias(p, {
+                name,
+                alias,
+                isStringType,
+                info,
+                enum: enum_,
+            })
         } else {
             const discriminatedUnion = this.discriminatedUnions.get(info.symbol)
             if (discriminatedUnion) {
@@ -751,147 +354,64 @@ export class Codegen extends BaseCodegen {
                 this.writeDataClass(c, name, info)
             }
         }
-        p.line()
+        this.emitter.closeType(p, { name, info })
         await fspromises.writeFile(
-            path.join(this.options.output, `${name}.${this.fileExtension()}`),
+            path.join(this.options.output, this.emitter.getFileNameForType(info.display_name)),
             p.build()
         )
     }
 
     private async writeProtocolInterface(
         name: string,
-        requests: string,
-        notifications: string
+        requestSymbol: string,
+        notificationSymbol: string
     ): Promise<void> {
         const { f, p, symtab } = this.startDocument()
-        switch (this.language) {
-            case TargetLanguage.Kotlin:
-                p.line('@file:Suppress("FunctionName", "ClassName", "RedundantNullable")')
-                p.line(`package ${this.options.kotlinPackage};`)
-                p.line()
-                p.line('import org.eclipse.lsp4j.jsonrpc.services.JsonNotification;')
-                p.line('import org.eclipse.lsp4j.jsonrpc.services.JsonRequest;')
-                p.line('import java.util.concurrent.CompletableFuture;')
-                break
-            case TargetLanguage.Java:
-                p.line(`package ${this.options.kotlinPackage};`)
-                p.line()
-                p.line('import org.eclipse.lsp4j.jsonrpc.services.JsonNotification;')
-                p.line('import org.eclipse.lsp4j.jsonrpc.services.JsonRequest;')
-                p.line('import java.util.concurrent.CompletableFuture;')
-                break
-            case TargetLanguage.CSharp:
-                p.addImport('using System.Threading.Tasks;')
-                p.line()
-                p.line(`namespace ${this.options.kotlinPackage};`)
-                p.line('{')
-                break
-        }
-        p.line()
-        switch (this.language) {
-            case TargetLanguage.Kotlin:
-                p.line('@Suppress("unused")')
-                p.line(`interface ${name} {`)
-                break
-            case TargetLanguage.Java:
-                p.line('@SuppressWarnings("unused")')
-                p.line(`public interface ${name} {`)
-                break
-            case TargetLanguage.CSharp:
-                p.line('public interface ' + name)
-                p.line('{')
-                break
-        }
-        p.block(() => {
-            p.sectionComment('Requests')
-            for (const request of symtab.structuralType(symtab.canonicalSymbol(requests))) {
-                // We skip the webview protocol because our IDE clients are now
-                // using the string-encoded protocol instead.
-                if (
-                    request.display_name === 'webview/receiveMessage' ||
-                    request.display_name === 'chat/submitMessage' ||
-                    request.display_name === 'chat/editMessage'
-                ) {
-                    continue
-                }
-                // Process a JSON-RPC request signature. For example:
-                // type Requests = { 'textDocument/inlineCompletions': [RequestParams, RequestResult] }
-                const resultType = request.signature.value_signature.tpe.type_ref.type_arguments?.[1]
-                if (resultType === undefined) {
-                    this.reporter.error(
-                        request.symbol,
-                        `missing result type for request. To fix this problem, add a second element to the array type like this: 'example/method: [RequestParams, RequestResult]'`
-                    )
-                    continue
-                }
-                const { parameterType, parameterSyntax } = f.jsonrpcMethodParameter(request)
-                this.queueClassLikeType(parameterType, request, 'parameter')
-                this.queueClassLikeType(resultType, request, 'result')
-                const resultTypeSyntax = f.jsonrpcTypeName(request, resultType, 'result')
-                switch (this.language) {
-                    case TargetLanguage.Kotlin:
-                        p.line(`@JsonRequest("${request.display_name}")`)
-                        p.line(
-                            `fun ${f.functionName(request)}(${parameterSyntax}): ` +
-                                `CompletableFuture<${resultTypeSyntax}>`
-                        )
-                        break
-                    case TargetLanguage.Java:
-                        p.line(`@JsonRequest("${request.display_name}")`)
-                        p.line(
-                            `CompletableFuture<${resultTypeSyntax}> ${f.functionName(
-                                request
-                            )}(${parameterSyntax});`
-                        )
-                        break
-                    case TargetLanguage.CSharp: {
-                        p.line(`[JsonRpcMethod("${request.display_name}")]`)
-                        const _task = resultTypeSyntax === 'Void' ? 'Task' : `Task<${resultTypeSyntax}>`
-                        const _params = parameterSyntax.startsWith('Void') ? '' : parameterSyntax
-                        const _func = capitalize(f.functionName(request))
-                        p.line(`${_task} ${_func}(${_params});`)
-                        break
-                    }
-                }
-            }
-            p.line()
-            p.sectionComment('Notifications')
-            for (const notification of symtab.structuralType(symtab.canonicalSymbol(notifications))) {
-                // We skip the webview protocol because our IDE clients are now
-                // using the string-encoded protocol instead.
-                if (notification.display_name === 'webview/postMessage') {
-                    continue
-                }
-                // Process a JSON-RPC request signature. For example:
-                // type Notifications = { 'textDocument/inlineCompletions': [NotificationParams] }
-                const { parameterType, parameterSyntax } = f.jsonrpcMethodParameter(notification)
-                this.queueClassLikeType(parameterType, notification, 'parameter')
-                const notificationName = f.functionName(notification)
-                switch (this.language) {
-                    case TargetLanguage.Kotlin:
-                        p.line(`@JsonNotification("${notification.display_name}")`)
-                        p.line(`fun ${notificationName}(${parameterSyntax})`)
-                        break
-                    case TargetLanguage.Java:
-                        p.line(`@JsonNotification("${notification.display_name}")`)
-                        p.line(`void ${notificationName}(${parameterSyntax});`)
-                        break
-                    case TargetLanguage.CSharp:
-                        p.line(`[JsonRpcMethod("${notification.display_name}")]`)
-                        p.line(`void ${capitalize(notificationName)}(${parameterSyntax});`)
-                        break
-                }
-            }
-        })
+        const requests: scip.SymbolInformation[] = []
+        const notifications: scip.SymbolInformation[] = []
 
-        p.line('}')
-
-        if (this.language === TargetLanguage.CSharp) {
-            p.line('}')
+        for (const request of symtab.structuralType(symtab.canonicalSymbol(requestSymbol))) {
+            // We skip the webview protocol because our IDE clients are now
+            // using the string-encoded protocol instead.
+            if (
+                request.display_name === 'webview/receiveMessage' ||
+                request.display_name === 'chat/submitMessage' ||
+                request.display_name === 'chat/editMessage'
+            ) {
+                continue
+            }
+            // Process a JSON-RPC request signature. For example:
+            // type Requests = { 'textDocument/inlineCompletions': [RequestParams, RequestResult] }
+            const resultType = request.signature.value_signature.tpe.type_ref.type_arguments?.[1]
+            if (resultType === undefined) {
+                this.reporter.error(
+                    request.symbol,
+                    `missing result type for request. To fix this problem, add a second element to the array type like this: 'example/method: [RequestParams, RequestResult]'`
+                )
+                continue
+            }
+            const { parameterType } = f.jsonrpcMethodParameter(request)
+            this.queueClassLikeType(parameterType, request, 'parameter')
+            this.queueClassLikeType(resultType, request, 'result')
+            requests.push(request)
         }
+
+        for (const notification of symtab.structuralType(symtab.canonicalSymbol(notificationSymbol))) {
+            // We skip the webview protocol because our IDE clients are now
+            // using the string-encoded protocol instead.
+            if (notification.display_name === 'webview/postMessage') {
+                continue
+            }
+            // Process a JSON-RPC request signature. For example:
+            // type Notifications = { 'textDocument/inlineCompletions': [NotificationParams] }
+            const { parameterType } = f.jsonrpcMethodParameter(notification)
+            this.queueClassLikeType(parameterType, notification, 'parameter')
+            notifications.push(notification)
+        }
+        this.emitter.emitProtocolInterface(p, { name, requests, notifications })
 
         await fspromises.writeFile(
-            path.join(this.options.output, `${name}.${this.fileExtension()}`),
+            path.join(this.options.output, `${name}.${this.emitter.getFileType()}`),
             p.build()
         )
     }
@@ -907,13 +427,13 @@ export class Codegen extends BaseCodegen {
         if (type.has_type_ref) {
             if (type.type_ref.symbol === typescriptKeyword('array')) {
                 this.queueClassLikeType(type.type_ref.type_arguments[0], jsonrpcMethod, kind)
-            } else if (this.f.isRecord(type.type_ref.symbol)) {
+            } else if (this.emitter.formatter.isRecord(type.type_ref.symbol)) {
                 if (type.type_ref.type_arguments.length !== 2) {
                     throw new TypeError(`record must have 2 type arguments: ${this.debug(type)}`)
                 }
                 this.queueClassLikeType(type.type_ref.type_arguments[0], jsonrpcMethod, kind)
                 this.queueClassLikeType(type.type_ref.type_arguments[1], jsonrpcMethod, kind)
-            } else if (typescriptKeywordSyntax(this.language, type.type_ref.symbol)) {
+            } else if (typescriptKeywordSyntax(type.type_ref.symbol)) {
                 // Typescript keywords map to primitive types (Int, Double) or built-in types like String
             } else {
                 this.queueClassLikeInfo(this.symtab.info(type.type_ref.symbol))
@@ -929,7 +449,7 @@ export class Codegen extends BaseCodegen {
             // aggregate properties of `A & B` or `{a: b, c: d}`.
             this.queueClassLikeInfo(
                 new scip.SymbolInformation({
-                    display_name: this.f.jsonrpcTypeName(jsonrpcMethod, type, kind),
+                    display_name: this.emitter.formatter.jsonrpcTypeName(jsonrpcMethod, type, kind),
                     // Need unique symbol for parameter+result types
                     symbol: `${jsonrpcMethod.symbol}(${kind}).`,
                     signature: new scip.Signature({
@@ -950,10 +470,12 @@ export class Codegen extends BaseCodegen {
         }
 
         if (type.has_union_type) {
-            const nonNullableTypes = type.union_type.types.filter(type => !this.f.isNullable(type))
+            const nonNullableTypes = type.union_type.types.filter(
+                type => !this.emitter.formatter.isNullable(type)
+            )
             if (
                 nonNullableTypes.every(
-                    tpe => tpe.has_type_ref && isTypescriptKeyword(this.language, tpe.type_ref.symbol)
+                    tpe => tpe.has_type_ref && isTypescriptKeyword(tpe.type_ref.symbol)
                 )
             ) {
                 // Nothing to queue
@@ -969,8 +491,8 @@ export class Codegen extends BaseCodegen {
                 // types. In some cases, we are exposing VS Code  APIs that have
                 // unions like `string | MarkdownString` where we just assume
                 // the type will always be `string`.
-                const exceptionIndex = this.f.unionTypeExceptionIndex.find(({ prefix }) =>
-                    jsonrpcMethod.symbol.startsWith(prefix)
+                const exceptionIndex = this.emitter.formatter.unionTypeExceptionIndex.find(
+                    ({ prefix }) => jsonrpcMethod.symbol.startsWith(prefix)
                 )?.index
                 if (exceptionIndex !== undefined) {
                     this.reporter.warn(
@@ -1018,6 +540,7 @@ export class Codegen extends BaseCodegen {
         loop(type)
         return result
     }
+
     private discriminatedUnion(info: scip.SymbolInformation): DiscriminatedUnion | undefined {
         if (!info.signature.has_type_signature) {
             return undefined
@@ -1060,6 +583,9 @@ export class Codegen extends BaseCodegen {
 
     // Same as `queueClassLikeType` but for `scip.SymbolInformation` instead of `scip.Type`.
     private queueClassLikeInfo(jsonrpcMethod: scip.SymbolInformation): void {
+        if (!jsonrpcMethod.has_signature) {
+            return
+        }
         if (jsonrpcMethod.signature.has_class_signature) {
             // Easy, this looks like a class/interface.
             this.queue.push(jsonrpcMethod)

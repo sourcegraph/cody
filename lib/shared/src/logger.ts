@@ -3,6 +3,8 @@
 // process. Be very conservative about adding imports to modules that perform
 // any kind of side effect.
 
+import { cenv } from './configuration/environment'
+
 /**
  * Interface that mirrors the `logDebug` and `logError` functions in
  * vscode/src/log.ts but is available inside @sourcegraph/cody-shared.
@@ -26,7 +28,13 @@ const consoleLogger: CodyLogger = {
     },
 }
 
-let _logger = consoleLogger
+const noopLogger: CodyLogger = {
+    logDebug() {},
+    logError() {},
+}
+
+// Disable logger in vitest tests by default to unclutter CI output.
+let _logger = cenv.CODY_DEFAULT_LOGGER_DISABLE ? noopLogger : consoleLogger
 export function setLogger(newLogger: CodyLogger): void {
     _logger = newLogger
 }

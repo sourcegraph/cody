@@ -28,7 +28,7 @@
 .close-btn {
     position: absolute;
     top: 0.65rem;
-    right: 0.25rem;
+    right: 0.65rem;
     background: none;
     border: none;
     color: var(--vscode-input-foreground);

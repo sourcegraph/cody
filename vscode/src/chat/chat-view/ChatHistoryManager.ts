@@ -1,12 +1,16 @@
-import type {
-    AccountKeyedChatHistory,
-    AuthStatus,
-    AuthenticatedAuthStatus,
-    SerializedChatTranscript,
-    UserLocalHistory,
+import {
+    type AccountKeyedChatHistory,
+    type AuthStatus,
+    type AuthenticatedAuthStatus,
+    type SerializedChatTranscript,
+    type UnauthenticatedAuthStatus,
+    type UserLocalHistory,
+    authStatus,
+    combineLatest,
+    distinctUntilChanged,
+    startWith,
 } from '@sourcegraph/cody-shared'
-
-import { debounce } from 'lodash'
+import { type Observable, Subject, map } from 'observable-fns'
 import * as vscode from 'vscode'
 import { localStorage } from '../../services/LocalStorageProvider'
 
@@ -24,7 +28,9 @@ class ChatHistoryManager implements vscode.Disposable {
         }
     }
 
-    public getLocalHistory(authStatus: AuthenticatedAuthStatus): UserLocalHistory | null {
+    public getLocalHistory(
+        authStatus: Pick<AuthenticatedAuthStatus, 'endpoint' | 'username'>
+    ): UserLocalHistory | null {
         return localStorage.getChatHistory(authStatus)
     }
 
@@ -38,16 +44,12 @@ class ChatHistoryManager implements vscode.Disposable {
 
     public async saveChat(
         authStatus: AuthenticatedAuthStatus,
-        chat: SerializedChatTranscript | undefined
-    ): Promise<UserLocalHistory> {
+        chat: SerializedChatTranscript
+    ): Promise<void> {
         const history = localStorage.getChatHistory(authStatus)
-        if (chat === undefined) {
-            return history
-        }
         history.chat[chat.id] = chat
         await localStorage.setChatHistory(authStatus, history)
-        this.notifyChatHistoryChanged(authStatus)
-        return history
+        this.changeNotifications.next()
     }
 
     public async importChatHistory(
@@ -56,29 +58,44 @@ class ChatHistoryManager implements vscode.Disposable {
         authStatus: AuthStatus
     ): Promise<void> {
         await localStorage.importChatHistory(history, merge)
-        this.notifyChatHistoryChanged(authStatus)
+        this.changeNotifications.next()
     }
 
     public async deleteChat(authStatus: AuthenticatedAuthStatus, chatID: string): Promise<void> {
         await localStorage.deleteChatHistory(authStatus, chatID)
-        this.notifyChatHistoryChanged(authStatus)
+        this.changeNotifications.next()
     }
 
     // Remove chat history and input history
     public async clear(authStatus: AuthenticatedAuthStatus): Promise<void> {
         await localStorage.removeChatHistory(authStatus)
-        this.notifyChatHistoryChanged(authStatus)
+        this.changeNotifications.next()
     }
 
-    public onHistoryChanged(listener: (chatHistory: UserLocalHistory | null) => any): vscode.Disposable {
-        return this.historyChanged.event(listener)
-    }
-
-    private notifyChatHistoryChanged = debounce(
-        authStatus => this.historyChanged.fire(this.getLocalHistory(authStatus)),
-        100,
-        { leading: true, trailing: true }
-    )
+    private changeNotifications = new Subject<void>()
+    public changes: Observable<UserLocalHistory | null> = combineLatest(
+        authStatus.pipe(
+            // Only need to rere-fetch the chat history when the endpoint or username changes for
+            // authed users (i.e., when they switch to a different account), not when anything else
+            // in the authStatus might change.
+            map(
+                (
+                    authStatus
+                ):
+                    | UnauthenticatedAuthStatus
+                    | Pick<AuthenticatedAuthStatus, 'authenticated' | 'endpoint' | 'username'> =>
+                    authStatus.authenticated
+                        ? {
+                              authenticated: authStatus.authenticated,
+                              endpoint: authStatus.endpoint,
+                              username: authStatus.username,
+                          }
+                        : authStatus
+            ),
+            distinctUntilChanged()
+        ),
+        this.changeNotifications.pipe(startWith(undefined))
+    ).pipe(map(([authStatus]) => (authStatus.authenticated ? this.getLocalHistory(authStatus) : null)))
 }
 
 export const chatHistory = new ChatHistoryManager()

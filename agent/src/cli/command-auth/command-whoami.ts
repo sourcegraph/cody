@@ -1,5 +1,5 @@
 import { Command } from 'commander'
-import { isError } from 'lodash'
+import isError from 'lodash/isError'
 import ora from 'ora'
 import { AuthenticatedAccount } from './AuthenticatedAccount'
 import { type AuthenticationOptions, accessTokenOption, endpointOption } from './command-login'

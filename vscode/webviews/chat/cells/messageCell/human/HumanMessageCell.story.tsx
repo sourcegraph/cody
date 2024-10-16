@@ -1,7 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/react'
 
 import { PromptString, ps } from '@sourcegraph/cody-shared'
-import { ClientStateContextProvider } from '@sourcegraph/prompt-editor'
+import { ExtensionAPIProviderForTestsOnly, MOCK_API } from '@sourcegraph/prompt-editor'
+import { Observable } from 'observable-fns'
 import { URI } from 'vscode-uri'
 import { VSCodeCell } from '../../../../storybook/VSCodeStoryDecorator'
 import { FIXTURE_TRANSCRIPT, FIXTURE_USER_ACCOUNT_INFO } from '../../../fixtures'
@@ -59,23 +60,26 @@ export const Scrolling: StoryObj<typeof meta> = {
 
 export const WithInitialContext: StoryObj<typeof meta> = {
     render: props => (
-        <ClientStateContextProvider
+        <ExtensionAPIProviderForTestsOnly
             value={{
-                initialContext: [
-                    {
-                        type: 'repository',
-                        uri: URI.parse('https://example.com/foo/myrepo'),
-                        title: 'foo/myrepo',
-                        repoName: 'foo/myrepo',
-                        repoID: 'abcd',
-                        content: null,
-                    },
-                    { type: 'file', uri: URI.file('/foo.js') },
-                ],
+                ...MOCK_API,
+                chatModels: () => Observable.of([]),
+                initialContext: () =>
+                    Observable.of([
+                        {
+                            type: 'repository',
+                            uri: URI.parse('https://example.com/foo/myrepo'),
+                            title: 'foo/myrepo',
+                            repoName: 'foo/myrepo',
+                            repoID: 'abcd',
+                            content: null,
+                        },
+                        { type: 'file', uri: URI.file('/foo.js') },
+                    ]),
             }}
         >
             <HumanMessageCell {...props} />
-        </ClientStateContextProvider>
+        </ExtensionAPIProviderForTestsOnly>
     ),
     args: {
         message: { speaker: 'human', text: ps`` },
@@ -85,23 +89,26 @@ export const WithInitialContext: StoryObj<typeof meta> = {
 
 export const WithInitialContextFileTooLarge: StoryObj<typeof meta> = {
     render: props => (
-        <ClientStateContextProvider
+        <ExtensionAPIProviderForTestsOnly
             value={{
-                initialContext: [
-                    {
-                        type: 'repository',
-                        uri: URI.parse('https://example.com/foo/myrepo'),
-                        title: 'foo/myrepo',
-                        repoName: 'foo/myrepo',
-                        repoID: 'abcd',
-                        content: null,
-                    },
-                    { type: 'file', isTooLarge: true, uri: URI.file('/large_file.js') },
-                ],
+                ...MOCK_API,
+                chatModels: () => Observable.of([]),
+                initialContext: () =>
+                    Observable.of([
+                        {
+                            type: 'repository',
+                            uri: URI.parse('https://example.com/foo/myrepo'),
+                            title: 'foo/myrepo',
+                            repoName: 'foo/myrepo',
+                            repoID: 'abcd',
+                            content: null,
+                        },
+                        { type: 'file', isTooLarge: true, uri: URI.file('/large_file.js') },
+                    ]),
             }}
         >
             <HumanMessageCell {...props} />
-        </ClientStateContextProvider>
+        </ExtensionAPIProviderForTestsOnly>
     ),
     args: {
         message: { speaker: 'human', text: ps`` },

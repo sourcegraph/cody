@@ -1,11 +1,13 @@
-import { isEqual } from 'lodash'
+import isEqual from 'lodash/isEqual'
 import { LRUCache } from 'lru-cache'
+import type { Observable } from 'observable-fns'
 import { RE2JS as RE2 } from 're2js'
 import type * as vscode from 'vscode'
-import type { AuthStatusProvider } from '../auth/types'
+import { currentAuthStatus } from '../auth/authStatus'
 import { isFileURI } from '../common/uri'
+import { cenv } from '../configuration/environment'
 import { logDebug, logError } from '../logger'
-import { setSingleton, singletonNotYetSet } from '../singletons'
+import { fromVSCodeEvent } from '../misc/observable'
 import { isDotCom } from '../sourcegraph-api/environments'
 import { graphqlClient } from '../sourcegraph-api/graphql'
 import {
@@ -53,7 +55,10 @@ export type IsIgnored =
     | 'no-repo-found'
     | `repo:${string}`
 
-export type GetRepoNamesFromWorkspaceUri = (uri: vscode.Uri) => Promise<string[] | null>
+export type GetRepoNamesContainingUri = (
+    uri: vscode.Uri,
+    signal?: AbortSignal
+) => Promise<string[] | null>
 type RepoName = string
 type IsRepoNameIgnored = boolean
 
@@ -76,6 +81,10 @@ function canonicalizeContextFilters(filters: ContextFilters): ContextFilters {
 }
 
 export class ContextFiltersProvider implements vscode.Disposable {
+    static repoNameResolver: {
+        getRepoNamesContainingUri: GetRepoNamesContainingUri
+    }
+
     /**
      * `null` value means that we failed to fetch context filters.
      * In that case, we should exclude all the URIs.
@@ -84,13 +93,10 @@ export class ContextFiltersProvider implements vscode.Disposable {
     private parsedContextFilters: ParsedContextFilters | null = null
 
     private cache = new LRUCache<RepoName, IsRepoNameIgnored>({ max: 128 })
-    private getRepoNamesFromWorkspaceUri: GetRepoNamesFromWorkspaceUri | undefined = undefined
 
     private lastFetchDelay = 0
     private lastResultLifetime: ResultLifetime | undefined = undefined
     private fetchIntervalId: NodeJS.Timeout | undefined | number
-
-    private authStatusProvider: AuthStatusProvider | null = null
 
     // Visible for testing.
     public get timerStateForTest() {
@@ -99,16 +105,6 @@ export class ContextFiltersProvider implements vscode.Disposable {
 
     private readonly contextFiltersSubscriber = createSubscriber<ContextFilters>()
     public readonly onContextFiltersChanged = this.contextFiltersSubscriber.subscribe
-
-    async init(
-        getRepoNamesFromWorkspaceUri: GetRepoNamesFromWorkspaceUri,
-        authStatusProvider: AuthStatusProvider
-    ) {
-        this.getRepoNamesFromWorkspaceUri = getRepoNamesFromWorkspaceUri
-        this.authStatusProvider = authStatusProvider
-        this.reset()
-        this.startRefetchTimer(await this.fetchContextFilters())
-    }
 
     // Fetches context filters and updates the cached filter results. Returns
     // 'ephemeral' if the results should be re-queried sooner because they
@@ -127,6 +123,16 @@ export class ContextFiltersProvider implements vscode.Disposable {
         }
     }
 
+    public get changes(): Observable<ContextFilters | null> {
+        return fromVSCodeEvent(
+            listener => {
+                const dispose = this.onContextFiltersChanged(listener)
+                return { dispose }
+            },
+            () => this.lastContextFiltersResponse
+        )
+    }
+
     private setContextFilters(contextFilters: ContextFilters): void {
         if (isEqual(contextFilters, this.lastContextFiltersResponse)) {
             return
@@ -137,7 +143,7 @@ export class ContextFiltersProvider implements vscode.Disposable {
         this.lastContextFiltersResponse = canonicalizeContextFilters(contextFilters)
 
         // Disable logging for unit tests. Retain for manual debugging of enterprise issues.
-        if (!process.env.VITEST) {
+        if (!cenv.CODY_TESTING_LOG_SUPRESS_VERBOSE) {
             logDebug('ContextFiltersProvider', 'setContextFilters', {
                 verbose: contextFilters,
             })
@@ -150,14 +156,17 @@ export class ContextFiltersProvider implements vscode.Disposable {
         this.contextFiltersSubscriber.notify(contextFilters)
     }
 
+    private isTesting = false
+
     /**
      * Overrides context filters for testing.
      */
     public setTestingContextFilters(contextFilters: ContextFilters | null): void {
         if (contextFilters === null) {
-            // Reset context filters to the value from the Sourcegraph API.
-            this.init(this.getRepoNamesFromWorkspaceUri!, this.authStatusProvider!)
+            this.isTesting = false
+            this.reset() // reset context filters to the value from the Sourcegraph API
         } else {
+            this.isTesting = true
             this.setContextFilters(contextFilters)
         }
     }
@@ -174,7 +183,23 @@ export class ContextFiltersProvider implements vscode.Disposable {
         }, this.lastFetchDelay)
     }
 
-    public isRepoNameIgnored(repoName: string): boolean {
+    private async fetchIfNeeded(): Promise<void> {
+        if (!this.fetchIntervalId && !this.isTesting) {
+            const intervalHint = await this.fetchContextFilters()
+            this.startRefetchTimer(intervalHint)
+        }
+    }
+
+    public async isRepoNameIgnored(repoName: string): Promise<boolean> {
+        if (isDotCom(currentAuthStatus())) {
+            return false
+        }
+
+        await this.fetchIfNeeded()
+        return this.isRepoNameIgnored__noFetch(repoName)
+    }
+
+    private isRepoNameIgnored__noFetch(repoName: string): boolean {
         const cached = this.cache.get(repoName)
         if (cached !== undefined) {
             return cached
@@ -202,6 +227,11 @@ export class ContextFiltersProvider implements vscode.Disposable {
     }
 
     public async isUriIgnored(uri: vscode.Uri): Promise<IsIgnored> {
+        if (isDotCom(currentAuthStatus())) {
+            return false
+        }
+        await this.fetchIfNeeded()
+
         if (allowedSchemes.has(uri.scheme) || this.hasAllowEverythingFilters()) {
             return false
         }
@@ -215,11 +245,14 @@ export class ContextFiltersProvider implements vscode.Disposable {
             return 'non-file-uri'
         }
 
+        if (!ContextFiltersProvider.repoNameResolver) {
+            throw new Error('ContextFiltersProvider.repoNameResolver must be set statically')
+        }
         const repoNames = await wrapInActiveSpan(
             'repoNameResolver.getRepoNamesFromWorkspaceUri',
             span => {
                 span.setAttribute('sampled', true)
-                return this.getRepoNamesFromWorkspaceUri?.(uri)
+                return ContextFiltersProvider.repoNameResolver.getRepoNamesContainingUri?.(uri)
             }
         )
 
@@ -227,7 +260,7 @@ export class ContextFiltersProvider implements vscode.Disposable {
             return 'no-repo-found'
         }
 
-        const ignoredRepo = repoNames.find(repoName => this.isRepoNameIgnored(repoName))
+        const ignoredRepo = repoNames.find(repoName => this.isRepoNameIgnored__noFetch(repoName))
         if (ignoredRepo) {
             return `repo:${ignoredRepo}`
         }
@@ -245,6 +278,7 @@ export class ContextFiltersProvider implements vscode.Disposable {
 
         if (this.fetchIntervalId) {
             clearTimeout(this.fetchIntervalId)
+            this.fetchIntervalId = undefined
         }
     }
 
@@ -253,14 +287,10 @@ export class ContextFiltersProvider implements vscode.Disposable {
     }
 
     private hasAllowEverythingFilters(): boolean {
-        return this.isDotCom() || this.lastContextFiltersResponse === INCLUDE_EVERYTHING_CONTEXT_FILTERS
-    }
-
-    private isDotCom(): boolean {
-        if (!this.authStatusProvider) {
-            throw new Error('authStatusProvider is not set, ContextFiltersProvider.init must be called')
-        }
-        return isDotCom(this.authStatusProvider.status)
+        return (
+            isDotCom(currentAuthStatus()) ||
+            this.lastContextFiltersResponse === INCLUDE_EVERYTHING_CONTEXT_FILTERS
+        )
     }
 
     private hasIgnoreEverythingFilters() {
@@ -292,7 +322,5 @@ function parseContextFilterItem(item: CodyContextFilterItem): ParsedContextFilte
 
 /**
  * A singleton instance of the `ContextFiltersProvider` class.
- * `contextFiltersProvider.instance!.init` should be called and awaited on extension activation.
  */
-export const contextFiltersProvider = singletonNotYetSet<ContextFiltersProvider>()
-setSingleton(contextFiltersProvider, new ContextFiltersProvider())
+export const contextFiltersProvider = new ContextFiltersProvider()

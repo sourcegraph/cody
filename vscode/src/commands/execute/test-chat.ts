@@ -4,12 +4,13 @@ import { telemetryRecorder } from '@sourcegraph/cody-shared'
 import type { ChatCommandResult } from '../../CommandResult'
 import { getEditor } from '../../editor/active-editor'
 import { getContextFileFromCursor } from '../context/selection'
-import { getContextFilesForTestCommand } from '../context/unit-test-chat'
 import type { CodyCommandArgs } from '../types'
 import { type ExecuteChatArguments, executeChat } from './ask'
 
 import type { Span } from '@opentelemetry/api'
 import { isUriIgnoredByContextFilterWithNotification } from '../../cody-ignore/context-filter'
+import { getContextFilesForUnitTestCommand } from '../context/unit-test-file'
+import { selectedCodePromptWithExtraFiles } from './index'
 
 /**
  * Generates the prompt and context files with arguments for the '/test' command in Chat.
@@ -28,7 +29,7 @@ async function unitTestCommand(
 
     const editor = getEditor()?.active
     const document = editor?.document
-    const contextFiles: ContextItem[] = []
+    const contextItems: ContextItem[] = []
 
     if (document) {
         try {
@@ -38,9 +39,23 @@ async function unitTestCommand(
                     'Selection content is empty. Please select some code to generate tests for.'
                 )
             }
-            contextFiles.push(cursorContext)
 
-            contextFiles.push(...(await getContextFilesForTestCommand(document.uri)))
+            const sharedContext = await getContextFilesForUnitTestCommand(document.uri).catch(error => {
+                logError('executeNewTestCommand', 'failed to fetch context', { verbose: error })
+                return []
+            })
+
+            prompt = prompt.replaceAll('<selected>', selectedCodePromptWithExtraFiles(cursorContext, []))
+
+            if (sharedContext.length > 0) {
+                prompt = prompt.replaceAll(
+                    'the shared code',
+                    selectedCodePromptWithExtraFiles(sharedContext[0], sharedContext.slice(1))
+                )
+            }
+
+            contextItems.push(cursorContext)
+            contextItems.push(...sharedContext)
         } catch (error) {
             logError('testCommand', 'failed to fetch context', { verbose: error })
         }
@@ -48,11 +63,9 @@ async function unitTestCommand(
 
     return {
         text: prompt,
-        contextFiles,
-        addEnhancedContext: false,
+        contextItems,
         source: args?.source,
-        submitType: 'user-newchat',
-        command: DefaultChatCommands.Unit,
+        command: DefaultChatCommands.Test,
     }
 }
 
@@ -85,6 +98,10 @@ export async function executeTestChatCommand(
                 requestID: args?.requestID,
                 source: args?.source,
                 traceId: span.spanContext().traceId,
+            },
+            billingMetadata: {
+                product: 'cody',
+                category: 'core',
             },
         })
 

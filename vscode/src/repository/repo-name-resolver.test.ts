@@ -1,30 +1,30 @@
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 
-import { AUTH_STATUS_FIXTURE_AUTHED, DOTCOM_URL, EMPTY, graphqlClient } from '@sourcegraph/cody-shared'
+import {
+    AUTH_STATUS_FIXTURE_AUTHED,
+    AUTH_STATUS_FIXTURE_AUTHED_DOTCOM,
+    CLIENT_CAPABILITIES_FIXTURE,
+    firstResultFromOperation,
+    graphqlClient,
+    mockAuthStatus,
+    mockClientCapabilities,
+    mockResolvedConfig,
+} from '@sourcegraph/cody-shared'
 
-import { type AuthProvider, authProvider } from '../services/AuthProvider'
-
-import * as gitExtensionAPI from './git-extension-api'
+import * as remoteUrlsFromParentDirs from './remote-urls-from-parent-dirs'
 import { RepoNameResolver } from './repo-name-resolver'
 import { mockFsCalls } from './test-helpers'
 
-describe('getRepoNamesFromWorkspaceUri', () => {
-    afterEach(() => {
-        authProvider.instance = null
-    })
+vi.mock('../services/AuthProvider')
+
+describe('getRepoNamesContainingUri', () => {
     it('resolves the repo name using graphql for enterprise accounts', async () => {
         const repoNameResolver = new RepoNameResolver()
-        authProvider.instance = {
-            changes: EMPTY,
-            status: {
-                ...AUTH_STATUS_FIXTURE_AUTHED,
-                authenticated: true,
-                endpoint: 'https://example.com',
-            },
-        } as Pick<AuthProvider, 'changes' | 'status'> as unknown as AuthProvider
-        repoNameResolver.init()
+        mockAuthStatus(AUTH_STATUS_FIXTURE_AUTHED)
+        mockResolvedConfig({ auth: {} })
+        mockClientCapabilities(CLIENT_CAPABILITIES_FIXTURE)
 
-        vi.spyOn(gitExtensionAPI, 'gitRemoteUrlsFromGitExtension').mockReturnValue([
+        vi.spyOn(remoteUrlsFromParentDirs, 'gitRemoteUrlsForUri').mockResolvedValue([
             'git@github.com:sourcegraph/cody.git',
         ])
 
@@ -45,25 +45,17 @@ describe('getRepoNamesFromWorkspaceUri', () => {
             .spyOn(graphqlClient, 'getRepoName')
             .mockResolvedValue('sourcegraph/cody')
 
-        expect(await repoNameResolver.getRepoNamesFromWorkspaceUri(fileUri)).toEqual([
-            'sourcegraph/cody',
-        ])
+        expect(
+            await firstResultFromOperation(repoNameResolver.getRepoNamesContainingUri(fileUri))
+        ).toEqual(['sourcegraph/cody'])
         expect(getRepoNameGraphQLMock).toBeCalledTimes(1)
     })
 
     it('resolves the repo name using local conversion function for PLG accounts', async () => {
         const repoNameResolver = new RepoNameResolver()
-        authProvider.instance = {
-            changes: EMPTY,
-            status: {
-                ...AUTH_STATUS_FIXTURE_AUTHED,
-                authenticated: true,
-                endpoint: DOTCOM_URL.toString(),
-            },
-        } as Pick<AuthProvider, 'changes' | 'status'> as unknown as AuthProvider
-        repoNameResolver.init()
+        mockAuthStatus(AUTH_STATUS_FIXTURE_AUTHED_DOTCOM)
 
-        vi.spyOn(gitExtensionAPI, 'gitRemoteUrlsFromGitExtension').mockReturnValue([
+        vi.spyOn(remoteUrlsFromParentDirs, 'gitRemoteUrlsForUri').mockResolvedValue([
             'git@github.com:sourcegraph/cody.git',
         ])
 
@@ -84,9 +76,9 @@ describe('getRepoNamesFromWorkspaceUri', () => {
             .spyOn(graphqlClient, 'getRepoName')
             .mockResolvedValue('sourcegraph/cody')
 
-        expect(await repoNameResolver.getRepoNamesFromWorkspaceUri(fileUri)).toEqual([
-            'github.com/sourcegraph/cody',
-        ])
+        expect(
+            await firstResultFromOperation(repoNameResolver.getRepoNamesContainingUri(fileUri))
+        ).toEqual(['github.com/sourcegraph/cody'])
         expect(getRepoNameGraphQLMock).not.toBeCalled()
     })
 })

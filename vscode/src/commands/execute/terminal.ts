@@ -20,7 +20,6 @@ export async function executeExplainOutput(
         span.setAttribute('sampled', true)
         logDebug('executeExplainOutput', 'executing', { args })
         const requestID = uuid.v4()
-        const addEnhancedContext = false
         const source = 'terminal'
         telemetryRecorder.recordEvent('cody.command.terminal', 'executed', {
             metadata: {
@@ -31,6 +30,10 @@ export async function executeExplainOutput(
                 requestID,
                 source,
                 traceId: span.spanContext().traceId,
+            },
+            billingMetadata: {
+                product: 'cody',
+                category: 'core',
             },
         })
 
@@ -52,9 +55,7 @@ export async function executeExplainOutput(
             type: 'chat',
             session: await executeChat({
                 text: prompt,
-                submitType: 'user-newchat',
-                contextFiles: [],
-                addEnhancedContext,
+                contextItems: [],
                 source,
             }),
         }

@@ -1,6 +1,8 @@
 import {
     type AuthStatus,
+    authStatus,
     contextFiltersProvider,
+    currentAuthStatus,
     getEditorInsertSpaces,
     getEditorTabSize,
     isMacOS,
@@ -10,7 +12,6 @@ import { telemetryRecorder } from '@sourcegraph/cody-shared'
 import { type DebouncedFunc, throttle } from 'lodash'
 import * as vscode from 'vscode'
 import type { SyntaxNode } from 'web-tree-sitter'
-import { authProvider } from '../services/AuthProvider'
 import { execQueryWrapper } from '../tree-sitter/query-sdk'
 
 const EDIT_SHORTCUT_LABEL = isMacOS() ? 'Opt+K' : 'Alt+K'
@@ -112,7 +113,7 @@ export async function getGhostHintEnablement(): Promise<EnabledFeatures> {
     }
 }
 
-const GHOST_TEXT_COLOR = new vscode.ThemeColor('editorGhostText.foreground')
+export const GHOST_TEXT_COLOR = new vscode.ThemeColor('editorGhostText.foreground')
 const UNICODE_SPACE = '\u00a0'
 
 /**
@@ -197,22 +198,16 @@ export class GhostHintDecorator implements vscode.Disposable {
             }
         )
 
-        // Set initial state, based on the configuration and authentication status
-        const initialAuth = authProvider.instance!.status
-        this.updateEnablement(initialAuth)
-
         // Listen to authentication changes
         this.permanentDisposables.push(
-            subscriptionDisposable(
-                authProvider.instance!.changes.subscribe(authStatus => this.updateEnablement(authStatus))
-            )
+            subscriptionDisposable(authStatus.subscribe(authStatus => this.updateEnablement(authStatus)))
         )
 
         // Listen to configuration changes (e.g. if the setting is disabled)
         this.permanentDisposables.push(
             vscode.workspace.onDidChangeConfiguration(e => {
                 if (e.affectsConfiguration('cody')) {
-                    this.updateEnablement(authProvider.instance!.status)
+                    this.updateEnablement(currentAuthStatus())
                 }
             }),
             vscode.workspace.onDidChangeTextDocument(event => {
@@ -358,7 +353,7 @@ export class GhostHintDecorator implements vscode.Disposable {
         variant: GhostVariant,
         textPadding = 0
     ): Promise<void> {
-        if (await contextFiltersProvider.instance!.isUriIgnored(editor.document.uri)) {
+        if (await contextFiltersProvider.isUriIgnored(editor.document.uri)) {
             // The current file is ignored, so do nothing
             return
         }

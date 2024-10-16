@@ -25,9 +25,9 @@ interface CodyAgentClient {
   @JsonRequest("secrets/get")
   fun secrets_get(params: Secrets_GetParams): CompletableFuture<String?>
   @JsonRequest("secrets/store")
-  fun secrets_store(params: Secrets_StoreParams): CompletableFuture<String?>
+  fun secrets_store(params: Secrets_StoreParams): CompletableFuture<Null?>
   @JsonRequest("secrets/delete")
-  fun secrets_delete(params: Secrets_DeleteParams): CompletableFuture<String?>
+  fun secrets_delete(params: Secrets_DeleteParams): CompletableFuture<Null?>
   @JsonRequest("env/openExternal")
   fun env_openExternal(params: Env_OpenExternalParams): CompletableFuture<Boolean>
 

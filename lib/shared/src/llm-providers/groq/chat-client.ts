@@ -43,7 +43,7 @@ export async function groqChatClient({
         messages: await Promise.all(
             params.messages.map(async msg => ({
                 role: msg.speaker === 'human' ? 'user' : 'assistant',
-                content: (await msg.text?.toFilteredString(contextFiltersProvider.instance!)) ?? '',
+                content: (await msg.text?.toFilteredString(contextFiltersProvider)) ?? '',
             }))
         ),
         ...(isCortex && {

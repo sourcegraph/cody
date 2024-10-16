@@ -1,12 +1,18 @@
-import { type AuthenticatedAuthStatus, isDotCom } from '@sourcegraph/cody-shared'
+import {
+    type AuthenticatedAuthStatus,
+    type UserProductSubscription,
+    currentAuthStatusAuthed,
+    currentUserProductSubscription,
+    isDotCom,
+} from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 import { ACCOUNT_USAGE_URL } from '../chat/protocol'
-import { authProvider } from '../services/AuthProvider'
 import { showSignInMenu, showSignOutMenu } from './auth'
 
 export async function showAccountMenu(): Promise<void> {
-    const authStatus = authProvider.instance!.statusAuthed
-    const selected = await openAccountMenuFirstStep(authStatus)
+    const authStatus = currentAuthStatusAuthed()
+    const sub = await currentUserProductSubscription()
+    const selected = await openAccountMenuFirstStep(authStatus, sub)
     if (selected === undefined) {
         return
     }
@@ -36,31 +42,28 @@ enum AccountMenuOptions {
 }
 
 async function openAccountMenuFirstStep(
-    authStatus: AuthenticatedAuthStatus
+    authStatus: AuthenticatedAuthStatus,
+    sub: UserProductSubscription | null
 ): Promise<AccountMenuOptions | undefined> {
-    const isOffline = !!authStatus.isOfflineMode
-    const isDotComInstance = isDotCom(authStatus.endpoint) && !isOffline
+    const isDotComInstance = isDotCom(authStatus.endpoint)
 
     const displayName = authStatus.displayName || authStatus.username
     const email = authStatus.primaryEmail || 'No Email'
     const username = authStatus.username || authStatus.displayName
-    const planDetail = `Plan: ${authStatus.userCanUpgrade ? 'Cody Free' : 'Cody Pro'}`
+    const planDetail = sub ? `Plan: ${sub.userCanUpgrade ? 'Cody Free' : 'Cody Pro'}` : ''
     const enterpriseDetail = `Enterprise Instance:\n${authStatus.endpoint}`
-    const offlineDetail = 'Use Cody offline with Ollama'
 
     const options = isDotComInstance ? [AccountMenuOptions.Manage] : []
     options.push(AccountMenuOptions.Switch, AccountMenuOptions.SignOut)
 
     const messageOptions = {
         modal: true,
-        detail: isOffline ? offlineDetail : isDotComInstance ? planDetail : enterpriseDetail,
+        detail: isDotComInstance ? planDetail : enterpriseDetail,
     }
 
-    const online = isDotComInstance
+    const message = isDotComInstance
         ? `Signed in as ${displayName} (${email})`
         : `Signed in as @${username}`
-    const offline = 'Offline Mode'
-    const message = isOffline ? offline : online
 
     const option = await vscode.window.showInformationMessage(message, messageOptions, ...options)
 

@@ -1,17 +1,16 @@
-import * as vscode from 'vscode'
-
 import {
     type ContextItem,
     type Message,
     PromptMixin,
-    PromptString,
+    currentResolvedConfig,
+    firstResultFromOperation,
     getSimplePreamble,
     isDefined,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
-import { logDebug } from '../../log'
+import { logDebug } from '../../output-channel-logger'
 import { PromptBuilder } from '../../prompt-builder'
-import type { ChatModel } from './ChatModel'
+import { ChatBuilder } from './ChatBuilder'
 
 export interface PromptInfo {
     prompt: Message[]
@@ -41,24 +40,21 @@ export class DefaultPrompter {
     //
     // Returns the reverse prompt and the new context that was used in the prompt for the current message.
     // If user-context added at the last message is ignored, returns the items in the newContextIgnored array.
-    public async makePrompt(chat: ChatModel, codyApiVersion: number): Promise<PromptInfo> {
+    public async makePrompt(
+        chat: ChatBuilder,
+        codyApiVersion: number,
+        mixins: PromptMixin[] = []
+    ): Promise<PromptInfo> {
         return wrapInActiveSpan('chat.prompter', async () => {
-            const promptBuilder = await PromptBuilder.create(chat.contextWindow)
-            const preInstruction: PromptString | undefined = PromptString.fromConfig(
-                vscode.workspace.getConfiguration('cody.chat'),
-                'preInstruction',
-                undefined
-            )
+            const contextWindow = await firstResultFromOperation(ChatBuilder.contextWindowForChat(chat))
+            const promptBuilder = await PromptBuilder.create(contextWindow)
+            const preInstruction = (await currentResolvedConfig()).configuration.chatPreInstruction
 
             // Add preamble messages
-            const preambleMessages = getSimplePreamble(
-                chat.modelID,
-                codyApiVersion,
-                'Chat',
-                preInstruction
-            )
+            const chatModel = await firstResultFromOperation(ChatBuilder.resolvedModelForChat(chat))
+            const preambleMessages = getSimplePreamble(chatModel, codyApiVersion, 'Chat', preInstruction)
             if (!promptBuilder.tryAddToPrefix(preambleMessages)) {
-                throw new Error(`Preamble length exceeded context window ${chat.contextWindow.input}`)
+                throw new Error(`Preamble length exceeded context window ${contextWindow.input}`)
             }
 
             // Add existing chat transcript messages
@@ -77,8 +73,10 @@ export class DefaultPrompter {
                 !this.isCommand &&
                 Boolean(this.explicitContext.length || historyItems.length || this.corpusContext.length)
             ) {
-                reverseTranscript[0] = PromptMixin.mixInto(reverseTranscript[0], chat.modelID)
+                mixins.push(PromptMixin.getContextMixin())
             }
+
+            reverseTranscript[0] = PromptMixin.mixInto(reverseTranscript[0], chat.selectedModel, mixins)
 
             const messagesIgnored = promptBuilder.tryAddMessages(reverseTranscript)
             if (messagesIgnored) {

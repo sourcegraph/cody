@@ -1,15 +1,16 @@
 import dedent from 'dedent'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { nextTick } from '@sourcegraph/cody-shared'
-
+import { type CodeCompletionsParams, nextTick } from '@sourcegraph/cody-shared'
+import type { PartialDeep } from '@sourcegraph/cody-shared/src/utils'
+import { mockLocalStorage } from '../services/LocalStorageProvider'
+import type { CompletionLogID } from './analytics-logger'
 import { getCurrentDocContext } from './get-current-doc-context'
 import { InlineCompletionsResultSource, TriggerKind } from './get-inline-completions'
 import { initCompletionProviderConfig } from './get-inline-completions-tests/helpers'
-import type { CompletionLogID } from './logger'
-import type { FetchCompletionResult } from './providers/fetch-and-process-completions'
-import { STOP_REASON_HOT_STREAK } from './providers/hot-streak'
-import { type GenerateCompletionsOptions, Provider } from './providers/provider'
+import type { FetchCompletionResult } from './providers/shared/fetch-and-process-completions'
+import { STOP_REASON_HOT_STREAK } from './providers/shared/hot-streak'
+import { type GenerateCompletionsOptions, Provider } from './providers/shared/provider'
 import {
     RequestManager,
     type RequestManagerResult,
@@ -24,18 +25,18 @@ class MockProvider extends Provider {
     public didAbort = false
     protected next: () => void = () => {}
     protected responseQueue: FetchCompletionResult[][] = []
-    public providerOptions: GenerateCompletionsOptions | null = null
+    public generateOptions: GenerateCompletionsOptions | null = null
 
     public yield(completions: string[] | InlineCompletionItemWithAnalytics[], keepAlive = false) {
         const result = completions.map(content =>
             typeof content === 'string'
                 ? {
                       completion: { insertText: content, stopReason: 'test' },
-                      docContext: this.providerOptions!.docContext,
+                      docContext: this.generateOptions!.docContext,
                   }
                 : {
                       completion: content,
-                      docContext: this.providerOptions!.docContext,
+                      docContext: this.generateOptions!.docContext,
                   }
         )
 
@@ -44,11 +45,22 @@ class MockProvider extends Provider {
         this.next()
     }
 
-    public async *generateCompletions(
-        providerOptions: GenerateCompletionsOptions,
+    public getRequestParams(options: GenerateCompletionsOptions): CodeCompletionsParams {
+        return {} as any as CodeCompletionsParams
+    }
+
+    public async generateCompletions(
+        options: GenerateCompletionsOptions,
         abortSignal: AbortSignal
-    ): AsyncGenerator<FetchCompletionResult[]> {
-        this.providerOptions = providerOptions
+    ): Promise<AsyncGenerator<FetchCompletionResult[]>> {
+        return this.responseGenerator(options, abortSignal)
+    }
+
+    public async *responseGenerator(
+        generateOptions: GenerateCompletionsOptions,
+        abortSignal: AbortSignal
+    ) {
+        this.generateOptions = generateOptions
 
         abortSignal.addEventListener('abort', () => {
             this.didAbort = true
@@ -74,8 +86,9 @@ class MockProvider extends Provider {
 function createProvider() {
     return new MockProvider({
         id: 'mock-provider',
-        anonymousUserID: 'anonymousUserID',
         legacyModel: 'test-model',
+        source: 'local-editor-settings',
+        configOverwrites: null,
     })
 }
 
@@ -94,6 +107,17 @@ function docState(prefix: string, suffix = ';', uriString?: string): RequestPara
     }
 }
 
+vi.mock(
+    '../services/SecretStorageProvider',
+    () =>
+        ({
+            secretStorage: {
+                get: async () => undefined,
+                store: async () => {},
+            },
+        }) satisfies PartialDeep<typeof import('../services/SecretStorageProvider')>
+)
+
 describe('RequestManager', () => {
     let createRequest: (
         prefix: string,
@@ -101,8 +125,9 @@ describe('RequestManager', () => {
         suffix?: string
     ) => Promise<RequestManagerResult>
     let checkCache: (prefix: string, suffix?: string) => RequestManagerResult | null
-    beforeEach(async () => {
-        await initCompletionProviderConfig({})
+    beforeEach(() => {
+        initCompletionProviderConfig({})
+        mockLocalStorage()
         const requestManager = new RequestManager()
 
         createRequest = (prefix: string, provider: Provider, suffix?: string) => {
@@ -110,9 +135,7 @@ describe('RequestManager', () => {
 
             return requestManager.request({
                 requestParams: docState(prefix, suffix),
-                providerOptions: {
-                    authStatus: {} as any,
-                    config: {} as any,
+                generateOptions: {
                     docContext,
                     document,
                     position,
@@ -121,9 +144,9 @@ describe('RequestManager', () => {
                     firstCompletionTimeout: 1500,
                     triggerKind: TriggerKind.Automatic,
                     completionLogId: 'mock-log-id' as CompletionLogID,
+                    snippets: [],
                 },
                 provider,
-                context: [],
                 isCacheEnabled: true,
                 isPreloadRequest: false,
                 logId: '1' as CompletionLogID,
@@ -174,6 +197,7 @@ describe('RequestManager', () => {
         expect(provider1.didFinishNetworkRequest).toBe(false)
         expect(provider2.didFinishNetworkRequest).toBe(false)
 
+        await nextTick()
         provider2.yield(["'hello')"])
 
         expect((await promise2).completions[0].insertText).toBe("'hello')")
@@ -198,6 +222,7 @@ describe('RequestManager', () => {
         const provider2 = createProvider()
         const promise2 = createRequest(prefix2, provider2)
 
+        await nextTick()
         provider1.yield(["log('hello')"])
 
         const firstResult = await promise1
@@ -327,6 +352,7 @@ describe('RequestManager', () => {
             const provider2 = createProvider()
             const promise2 = createRequest(prefix2, provider2)
 
+            await nextTick()
             provider1.yield(["log('hello')"])
 
             expect((await promise1).completions[0].insertText).toBe("log('hello')")
@@ -344,6 +370,7 @@ describe('RequestManager', () => {
             const prefix1 = 'console.'
             const provider1 = createProvider()
             createRequest(prefix1, provider1)
+            await nextTick()
 
             const prefix2 = 'table.'
             const provider2 = createProvider()
@@ -356,12 +383,14 @@ describe('RequestManager', () => {
             const prefix1 = 'console.'
             const provider1 = createProvider()
             createRequest(prefix1, provider1)
+            await nextTick()
 
             const prefix2 = 'console.tabletop'
             const provider2 = createProvider()
             createRequest(prefix2, provider2)
 
             // we're still looking relevant
+            await nextTick()
             provider1.yield(['ta'], true)
             expect(provider1.didAbort).toBe(false)
 

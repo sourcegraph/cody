@@ -2,6 +2,7 @@ import type * as vscode from 'vscode'
 import type { URI } from 'vscode-uri'
 
 export interface AutocompleteFileContextSnippet {
+    identifier: string
     uri: URI
     startLine: number
     endLine: number
@@ -50,6 +51,9 @@ export interface DocumentDependentContext {
      * suggestion widget and injects the item into the prefix.
      */
     injectedPrefix: string | null
+
+    completePrefix: string
+    completeSuffix: string
 }
 
 export interface LinesContext {

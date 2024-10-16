@@ -1,6 +1,10 @@
 import { SHA256, enc } from 'crypto-js'
 
-export function dotcomTokenToGatewayToken(dotcomToken: string): string | undefined {
+export function dotcomTokenToGatewayToken(dotcomToken?: string | null): string | undefined {
+    if (!dotcomToken) {
+        return undefined
+    }
+
     const DOTCOM_TOKEN_REGEX: RegExp =
         /^(?:sgph?_)?(?:[\da-fA-F]{16}_|local_)?(?<hexbytes>[\da-fA-F]{40})$/
     const match = DOTCOM_TOKEN_REGEX.exec(dotcomToken)

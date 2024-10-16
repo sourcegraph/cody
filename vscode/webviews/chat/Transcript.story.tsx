@@ -5,15 +5,20 @@ import { FIXTURE_TRANSCRIPT, FIXTURE_USER_ACCOUNT_INFO, transcriptFixture } from
 
 import {
     type ChatMessage,
+    ModelTag,
+    ModelUsage,
     PromptString,
     RateLimitError,
     errorToChatError,
+    getMockedDotComClientModels,
     ps,
 } from '@sourcegraph/cody-shared'
 import { useArgs, useCallback, useEffect, useRef, useState } from '@storybook/preview-api'
 import type { ComponentProps } from 'react'
 import { URI } from 'vscode-uri'
 import { VSCodeWebview } from '../storybook/VSCodeStoryDecorator'
+
+const mockedModels = getMockedDotComClientModels()
 
 const meta: Meta<typeof Transcript> = {
     title: 'ui/Transcript',
@@ -36,6 +41,7 @@ const meta: Meta<typeof Transcript> = {
         userInfo: FIXTURE_USER_ACCOUNT_INFO,
         postMessage: () => {},
         chatEnabled: true,
+        models: mockedModels,
     } satisfies ComponentProps<typeof Transcript>,
 
     decorators: [
@@ -54,6 +60,34 @@ export const Default: StoryObj<typeof meta> = {
 export const Empty: StoryObj<typeof meta> = {
     args: {
         transcript: [],
+    },
+}
+
+export const ModelSelection: StoryObj<typeof meta> = {
+    args: {
+        transcript: FIXTURE_TRANSCRIPT.simple,
+        models: mockedModels,
+        userInfo: { ...FIXTURE_USER_ACCOUNT_INFO, isCodyProUser: true },
+    },
+}
+
+export const WithDifferentModels: StoryObj<typeof meta> = {
+    args: {
+        transcript: FIXTURE_TRANSCRIPT.simple,
+        models: [
+            {
+                id: 'custom-model',
+                usage: [ModelUsage.Chat, ModelUsage.Edit, ModelUsage.Autocomplete],
+                contextWindow: {
+                    input: 16000,
+                    output: 4000,
+                },
+                provider: 'CustomAI',
+                title: 'Super AI',
+                tags: [ModelTag.Enterprise, ModelTag.Power],
+            },
+            ...mockedModels,
+        ],
     },
 }
 
@@ -125,7 +159,6 @@ export const WithError: StoryObj<typeof meta> = {
             { speaker: 'human', text: ps`What color is the sky?'`, contextFiles: [] },
             { speaker: 'assistant', error: errorToChatError(new Error('some error')) },
         ]),
-        isTranscriptError: true,
     },
 }
 
@@ -141,7 +174,6 @@ export const WithRateLimitError: StoryObj<typeof meta> = {
                 ),
             },
         ]),
-        isTranscriptError: true,
     },
 }
 
@@ -152,7 +184,6 @@ export const abortedBeforeResponse: StoryObj<typeof meta> = {
             { speaker: 'human', text: ps`What color is the sky?'`, contextFiles: [] },
             { speaker: 'assistant', error: errorToChatError(new Error('aborted')) },
         ]),
-        isTranscriptError: true,
     },
 }
 
@@ -167,7 +198,6 @@ export const abortedWithPartialResponse: StoryObj<typeof meta> = {
             },
             { speaker: 'assistant', text: ps`Bl`, error: errorToChatError(new Error('aborted')) },
         ]),
-        isTranscriptError: true,
     },
 }
 
@@ -185,7 +215,6 @@ export const TextWrapping: StoryObj<typeof meta> = {
                 text: ps`The sky is blueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblue.\n\n\`\`\`\nconst color = 'blueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblue'\n\`\`\`\n\nMore info:\n\n- Color of sky: blueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblue`,
             },
         ]),
-        isTranscriptError: true,
     },
 }
 
@@ -232,6 +261,7 @@ export const Streaming: StoryObj<typeof meta> = {
                     model: 'my-model',
                     text: PromptString.unsafe_fromLLMResponse(`${reply}`),
                 }}
+                models={args.models}
             />
         )
     },

@@ -1,15 +1,22 @@
+import { SpanStatusCode } from '@opentelemetry/api'
+
 import {
     type CodeCompletionsParams,
     type CompletionLogger,
     type CompletionResponse,
     type CompletionResponseGenerator,
+    type CompletionResponseWithMetaData,
     CompletionStopReason,
     type ExperimentalFireworksConfig,
+    type FireworksCodeCompletionParams,
     NetworkError,
     TracedError,
     addTraceparent,
     contextFiltersProvider,
     createSSEIterator,
+    currentResolvedConfig,
+    currentUserProductSubscription,
+    fetch,
     getActiveTraceAndSpanId,
     isAbortError,
     isNodeResponse,
@@ -18,22 +25,21 @@ import {
     recordErrorToSpan,
     tracer,
 } from '@sourcegraph/cody-shared'
-import { fetch } from '@sourcegraph/cody-shared'
 
-import { SpanStatusCode } from '@opentelemetry/api'
-import type { CompletionResponseWithMetaData } from '@sourcegraph/cody-shared/src/inferenceClient/misc'
-import { logDebug } from '../log'
 import { createRateLimitErrorFromResponse } from './default-client'
-import type { GenerateCompletionsOptions } from './providers/provider'
+import type { GenerateCompletionsOptions } from './providers/shared/provider'
 
-interface FastPathParams extends Pick<GenerateCompletionsOptions, 'authStatus'> {
+interface FastPathParams {
     isLocalInstance: boolean
     fireworksConfig: ExperimentalFireworksConfig | undefined
     logger: CompletionLogger | undefined
     providerOptions: GenerateCompletionsOptions
     fastPathAccessToken: string | undefined
-    customHeaders: Record<string, string>
-    anonymousUserID: string | undefined
+
+    /**
+     * Custom headers for the HTTP request to Fireworks.
+     */
+    fireworksCustomHeaders: Record<string, string>
 }
 
 // When using the fast path, the Cody client talks directly to Cody Gateway. Since CG only
@@ -46,19 +52,15 @@ interface FastPathParams extends Pick<GenerateCompletionsOptions, 'authStatus'> 
 export function createFastPathClient(
     requestParams: CodeCompletionsParams,
     abortController: AbortController,
-    params: FastPathParams
-): CompletionResponseGenerator {
-    const {
+    {
         isLocalInstance,
         fireworksConfig,
         logger,
         providerOptions,
-        anonymousUserID,
-        authStatus,
         fastPathAccessToken,
-        customHeaders,
-    } = params
-
+        fireworksCustomHeaders,
+    }: FastPathParams
+): CompletionResponseGenerator {
     const gatewayUrl = isLocalInstance ? 'http://localhost:9992' : 'https://cody-gateway.sourcegraph.com'
     const url = fireworksConfig ? fireworksConfig.url : `${gatewayUrl}/v1/completions/fireworks`
     const log = logger?.startCompletion(requestParams, url)
@@ -75,9 +77,7 @@ export function createFastPathClient(
         }
 
         // Convert the SG instance messages array back to the original prompt
-        const prompt = await requestParams.messages[0]!.text!.toFilteredString(
-            contextFiltersProvider.instance!
-        )
+        const prompt = await requestParams.messages[0]!.text!.toFilteredString(contextFiltersProvider)
 
         // c.f. https://readme.fireworks.ai/reference/createcompletion
         const fireworksRequest = {
@@ -91,19 +91,18 @@ export function createFastPathClient(
             stop: [...(requestParams.stopSequences || []), ...(fireworksConfig?.parameters?.stop || [])],
             stream: true,
             languageId: providerOptions.document.languageId,
-            user: anonymousUserID,
-        }
-        const headers = new Headers(customHeaders)
-        // Force HTTP connection reuse to reduce latency.
-        // c.f. https://github.com/microsoft/vscode/issues/173861
-        headers.set('Connection', 'keep-alive')
+            user: (await currentResolvedConfig()).clientState.anonymousUserID,
+        } satisfies FireworksCodeCompletionParams
+
+        const headers = new Headers(fireworksCustomHeaders)
         headers.set('Content-Type', `application/json${fireworksConfig ? '' : '; charset=utf-8'}`)
         headers.set('Authorization', `Bearer ${fastPathAccessToken}`)
         headers.set('X-Sourcegraph-Feature', 'code_completions')
         headers.set('X-Timeout-Ms', requestParams.timeoutMs.toString())
         addTraceparent(headers)
 
-        logDebug('FireworksProvider', 'fetch', { verbose: { url, fireworksRequest } })
+        log?.onFetch('fastPathClient', fireworksRequest)
+
         const response = await fetch(url, {
             method: 'POST',
             body: JSON.stringify(fireworksRequest),
@@ -119,7 +118,8 @@ export function createFastPathClient(
         // identical to the SG instance response but does not contain information on whether a user
         // is eligible to upgrade to the pro plan. We get this from the authState instead.
         if (response.status === 429) {
-            const upgradeIsAvailable = !!authStatus.userCanUpgrade
+            const sub = await currentUserProductSubscription()
+            const upgradeIsAvailable = sub !== null && !!sub.userCanUpgrade
 
             throw recordErrorToSpan(
                 span,

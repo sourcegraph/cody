@@ -1,20 +1,24 @@
 import { CodyIDE } from '../configuration'
+import { clientCapabilities } from '../configuration/clientCapabilities'
 
 /**
  * Returns a known referral code to use based on the current VS Code environment.
+ * IMPORTANT: The code must be registered in the server-side referral code mapping:
+ * @link client/web/src/user/settings/accessTokens/UserSettingsCreateAccessTokenCallbackPage.tsx
+ * Use "CODY" as the default referral code for fallback.
  */
-export function getCodyAuthReferralCode(ideName: CodyIDE, uriScheme?: string): string | undefined {
-    const referralCodes: Record<CodyIDE, string> = {
-        [CodyIDE.JetBrains]: 'CODY_JETBRAINS',
-        [CodyIDE.Neovim]: 'CODY_NEOVIM',
-        [CodyIDE.Emacs]: 'CODY_EMACS',
+export function getCodyAuthReferralCode(uriScheme: string): string | undefined {
+    const referralCodes: Partial<Record<CodyIDE, string>> = {
+        [CodyIDE.JetBrains]: 'JETBRAINS',
+        [CodyIDE.Neovim]: 'NEOVIM',
+        [CodyIDE.Emacs]: 'CODY',
         [CodyIDE.VisualStudio]: 'VISUAL_STUDIO',
         [CodyIDE.Eclipse]: 'ECLIPSE',
         [CodyIDE.VSCode]: 'CODY',
         [CodyIDE.Web]: 'CODY',
     }
 
-    if (ideName === CodyIDE.VSCode) {
+    if (clientCapabilities().agentIDE === CodyIDE.VSCode) {
         switch (uriScheme) {
             case 'vscode-insiders':
                 return 'CODY_INSIDERS'
@@ -25,5 +29,5 @@ export function getCodyAuthReferralCode(ideName: CodyIDE, uriScheme?: string): s
         }
     }
 
-    return referralCodes[ideName] || undefined
+    return referralCodes[clientCapabilities().agentIDE] || undefined
 }

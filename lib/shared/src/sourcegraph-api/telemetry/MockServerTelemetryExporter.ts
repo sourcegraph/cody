@@ -11,7 +11,7 @@ const ENDPOINT = '/.test/mockEventRecording'
  * http://localhost:49300/.test/mockEventRecording
  */
 export class MockServerTelemetryExporter implements TelemetryExporter {
-    constructor(private anonymousUserID: string) {}
+    constructor(private anonymousUserID: string | null) {}
 
     public async exportEvents(events: TelemetryEventInput[]): Promise<void> {
         const resultOrError = await this.postTestEventRecording(
@@ -25,7 +25,7 @@ export class MockServerTelemetryExporter implements TelemetryExporter {
     private postTestEventRecording<T>(events: TelemetryEventInput[]): Promise<T | Error> {
         const headers = new Headers({
             'Content-Type': 'application/json',
-            'X-Sourcegraph-Actor-Anonymous-UID': this.anonymousUserID,
+            'X-Sourcegraph-Actor-Anonymous-UID': this.anonymousUserID ?? '',
         })
         return fetch(`${MOCK_URL}${ENDPOINT}`, {
             method: 'POST',

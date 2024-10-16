@@ -6,6 +6,7 @@ import type {
     ChatMessage,
     CodyIDE,
     Guardrails,
+    Model,
     PromptString,
 } from '@sourcegraph/cody-shared'
 import { Transcript, focusLastHumanMessageEditor } from './chat/Transcript'
@@ -14,6 +15,7 @@ import type { VSCodeWrapper } from './utils/VSCodeApi'
 import { truncateTextStart } from '@sourcegraph/cody-shared/src/prompt/truncation'
 import { CHAT_INPUT_TOKEN_BUDGET } from '@sourcegraph/cody-shared/src/token/constants'
 import styles from './Chat.module.css'
+import WelcomeFooter from './chat/components/WelcomeFooter'
 import { WelcomeMessage } from './chat/components/WelcomeMessage'
 import { ScrollDown } from './components/ScrollDown'
 import type { View } from './tabs'
@@ -24,8 +26,8 @@ interface ChatboxProps {
     chatEnabled: boolean
     messageInProgress: ChatMessage | null
     transcript: ChatMessage[]
+    models: Model[]
     vscodeAPI: Pick<VSCodeWrapper, 'postMessage' | 'onMessage'>
-    isTranscriptError: boolean
     guardrails?: Guardrails
     scrollableParent?: HTMLElement | null
     showWelcomeMessage?: boolean
@@ -37,8 +39,8 @@ interface ChatboxProps {
 export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>> = ({
     messageInProgress,
     transcript,
+    models,
     vscodeAPI,
-    isTranscriptError,
     chatEnabled = true,
     guardrails,
     scrollableParent,
@@ -63,11 +65,6 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             telemetryRecorder.recordEvent('cody.feedback', 'submit', {
                 metadata: {
                     feedbackType: text === 'thumbsUp' ? FeedbackType.thumbsUp : FeedbackType.thumbsDown,
-                    lastChatUsedEmbeddings: transcriptRef.current
-                        .at(-1)
-                        ?.contextFiles?.some(file => file.source === 'embeddings')
-                        ? 1
-                        : 0,
                     recordsPrivateMetadataTranscript: userInfo.isDotComUser ? 1 : 0,
                 },
                 privateMetadata: {
@@ -79,6 +76,10 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                     responseText: userInfo.isDotComUser
                         ? truncateTextStart(transcriptRef.current.toString(), CHAT_INPUT_TOKEN_BUDGET)
                         : '',
+                },
+                billingMetadata: {
+                    product: 'cody',
+                    category: 'billable',
                 },
             })
         },
@@ -216,12 +217,12 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             )}
             <Transcript
                 transcript={transcript}
+                models={models}
                 messageInProgress={messageInProgress}
                 feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
                 copyButtonOnSubmit={copyButtonOnSubmit}
                 insertButtonOnSubmit={insertButtonOnSubmit}
                 smartApply={smartApply}
-                isTranscriptError={isTranscriptError}
                 userInfo={userInfo}
                 chatEnabled={chatEnabled}
                 postMessage={postMessage}
@@ -229,8 +230,12 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                 smartApplyEnabled={smartApplyEnabled}
             />
             {transcript.length === 0 && showWelcomeMessage && (
-                <WelcomeMessage IDE={userInfo.ide} setView={setView} />
+                <>
+                    <WelcomeMessage setView={setView} />
+                    <WelcomeFooter IDE={userInfo.IDE} />
+                </>
             )}
+
             {scrollableParent && (
                 <ScrollDown scrollableParent={scrollableParent} onClick={handleScrollDownClick} />
             )}
@@ -243,9 +248,9 @@ export interface UserAccountInfo {
     isCodyProUser: boolean
     user: Pick<
         AuthenticatedAuthStatus,
-        'username' | 'displayName' | 'avatarURL' | 'endpoint' | 'primaryEmail'
+        'username' | 'displayName' | 'avatarURL' | 'endpoint' | 'primaryEmail' | 'organizations'
     >
-    ide: CodyIDE
+    IDE: CodyIDE
 }
 
 export type ApiPostMessage = (message: any) => void

@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
 
-import { isRateLimitError } from '@sourcegraph/cody-shared'
+import { isAuthError, isRateLimitError } from '@sourcegraph/cody-shared'
 
 import { isRunningInsideAgent } from '../../jsonrpc/isRunningInsideAgent'
 import type { FixupTask } from '../FixupTask'
@@ -106,7 +106,17 @@ export function getLensesForTask(task: FixupTask): vscode.CodeLens[] {
 // List of lenses
 function getErrorLens(codeLensRange: vscode.Range, task: FixupTask): vscode.CodeLens {
     const lens = new vscode.CodeLens(codeLensRange)
-    if (isRateLimitError(task.error)) {
+    if (task.error?.message.includes('network error')) {
+        lens.command = {
+            title: '$(warning) Network Disconnected',
+            command: 'cody.chat.signIn',
+        }
+    } else if (isAuthError(task.error)) {
+        lens.command = {
+            title: '$(warning) Authentication Failed',
+            command: 'cody.chat.signIn',
+        }
+    } else if (isRateLimitError(task.error)) {
         if (task.error.upgradeIsAvailable) {
             lens.command = {
                 title: '⚡️ Upgrade to Cody Pro',

@@ -1,6 +1,7 @@
 import crypto from 'node:crypto'
 import http from 'node:http'
 import type { AddressInfo } from 'node:net'
+import type { AuthCredentials } from '@sourcegraph/cody-shared'
 import { sleep } from '../completions/utils'
 
 const FIVE_MINUTES = 5 * 60 * 1000
@@ -13,7 +14,7 @@ const FIVE_MINUTES = 5 * 60 * 1000
 // the user follow a redirect.
 export function startTokenReceiver(
     endpoint: string,
-    onNewToken: (accessToken: string, endpoint: string) => void,
+    onNewToken: (credentials: Pick<AuthCredentials, 'serverEndpoint' | 'accessToken'>) => void,
     timeout = FIVE_MINUTES
 ): Promise<string> {
     const endpointUrl = new URL(endpoint)
@@ -45,7 +46,7 @@ export function startTokenReceiver(
                             'accessToken' in json &&
                             typeof json.accessToken === 'string'
                         ) {
-                            onNewToken(json.accessToken, endpoint)
+                            onNewToken({ serverEndpoint: endpoint, accessToken: json.accessToken })
 
                             res.writeHead(200, headers)
                             res.write('ok')

@@ -1,6 +1,5 @@
 import { isDotCom } from '../sourcegraph-api/environments'
-import type { CodyLLMSiteConfiguration } from '../sourcegraph-api/graphql/client'
-import type { ReadonlyDeep } from '../utils'
+import type { UserProductSubscription } from '../sourcegraph-api/userProductSubscription'
 
 /**
  * The authentication status, which includes representing the state when authentication failed or
@@ -26,23 +25,17 @@ export interface AuthenticatedAuthStatus {
 
     hasVerifiedEmail?: boolean
     requiresVerifiedEmail?: boolean
-    siteVersion: string
-    codyApiVersion: number
-    configOverwrites?: CodyLLMSiteConfiguration
 
     primaryEmail?: string
     displayName?: string
     avatarURL?: string
-    /**
-     * Whether the users account can be upgraded.
-     *
-     * This is `true` if the user is on dotCom and has not already upgraded. It
-     * is used to customize rate limit messages and show additional upgrade
-     * buttons in the UI.
-     */
-    userCanUpgrade?: boolean
 
-    isOfflineMode?: boolean
+    pendingValidation: boolean
+
+    /**
+     * Organizations on the instance that the user is a member of.
+     */
+    organizations?: { name: string; id: string }[]
 }
 
 /**
@@ -54,43 +47,33 @@ export interface UnauthenticatedAuthStatus {
     authenticated: false
     showNetworkError?: boolean
     showInvalidAccessTokenError?: boolean
-}
-
-export interface AuthStatusProvider {
-    status: ReadonlyDeep<AuthStatus>
+    pendingValidation: boolean
 }
 
 export const AUTH_STATUS_FIXTURE_AUTHED: AuthenticatedAuthStatus = {
     endpoint: 'https://example.com',
     authenticated: true,
     username: 'alice',
-    codyApiVersion: 1,
-    siteVersion: '9999',
+    pendingValidation: false,
 }
 
 export const AUTH_STATUS_FIXTURE_UNAUTHED: AuthStatus & { authenticated: false } = {
     endpoint: 'https://example.com',
     authenticated: false,
+    pendingValidation: false,
 }
 
 export const AUTH_STATUS_FIXTURE_AUTHED_DOTCOM: AuthenticatedAuthStatus = {
     ...AUTH_STATUS_FIXTURE_AUTHED,
-    endpoint: 'https://sourcegraph.com',
+    endpoint: 'https://sourcegraph.com' as string,
 }
 
-export const AUTH_STATUS_FIXTURE_OFFLINE: Omit<AuthenticatedAuthStatus, 'isOfflineMode'> & {
-    isOfflineMode: true
-} = {
-    ...AUTH_STATUS_FIXTURE_AUTHED,
-    isOfflineMode: true,
+export function isCodyProUser(authStatus: AuthStatus, sub: UserProductSubscription | null): boolean {
+    return isDotCom(authStatus) && authStatus.authenticated && sub !== null && !sub.userCanUpgrade
 }
 
-export function isCodyProUser(authStatus: AuthStatus): boolean {
-    return isDotCom(authStatus) && authStatus.authenticated && !authStatus.userCanUpgrade
-}
-
-export function isFreeUser(authStatus: AuthStatus): boolean {
-    return isDotCom(authStatus) && authStatus.authenticated && !!authStatus.userCanUpgrade
+export function isFreeUser(authStatus: AuthStatus, sub: UserProductSubscription | null): boolean {
+    return isDotCom(authStatus) && authStatus.authenticated && sub !== null && !!sub.userCanUpgrade
 }
 
 export function isEnterpriseUser(authStatus: AuthStatus): boolean {

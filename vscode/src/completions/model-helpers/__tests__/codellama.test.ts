@@ -7,12 +7,12 @@ import { completionParams, contextSnippets } from './test-data'
 import { CodeLlama } from '../codellama'
 
 describe('CodeLlama', () => {
-    describe.skipIf(isWindows())('getPrompt', () => {
+    describe.skipIf(isWindows())('getMessages', () => {
         it('returns the prompt with the correct intro snippets', () => {
             const model = new CodeLlama()
             const { docContext, document, provider } = completionParams
 
-            const result = model.getPrompt({
+            const result = model.getMessages({
                 document,
                 docContext,
                 snippets: contextSnippets,
@@ -20,7 +20,10 @@ describe('CodeLlama', () => {
             })
 
             expect(result).toMatchInlineSnapshot(`
-              "<PRE> // Path: codebase/test.ts
+              [
+                {
+                  "speaker": "human",
+                  "text": "<PRE> // Path: codebase/test.ts
 
               // Here is a reference snippet of code from codebase/context1.ts:
               // function contextSnippetOne() {}
@@ -162,7 +165,9 @@ describe('CodeLlama', () => {
               console.log(suffix line: 22)
               console.log(suffix line: 23)
               console.log(suffix line: 24)
-              console.log(suffix line: 25) <MID>"
+              console.log(suffix line: 25) <MID>",
+                },
+              ]
             `)
         })
     })

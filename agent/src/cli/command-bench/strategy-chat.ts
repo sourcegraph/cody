@@ -1,5 +1,5 @@
 import path from 'node:path'
-import { type ContextItem, PromptString, isDefined } from '@sourcegraph/cody-shared'
+import { type ContextItem, PromptString } from '@sourcegraph/cody-shared'
 import { glob } from 'glob'
 import * as vscode from 'vscode'
 import YAML from 'yaml'
@@ -39,10 +39,10 @@ export async function evaluateChatStrategy(
         const task: ChatTask = YAML.parse(params.content)
         const id = await client.request('chat/new', null)
         client.request('chat/setModel', { id, model: chatModel })
-        const contextFiles: ContextItem[] = []
+        const contextItems: ContextItem[] = []
         for (const relativePath of task.files ?? []) {
             const uri = vscode.Uri.file(path.join(path.dirname(params.uri.fsPath), relativePath))
-            contextFiles.push({
+            contextItems.push({
                 type: 'file',
                 uri,
             })
@@ -51,10 +51,8 @@ export async function evaluateChatStrategy(
             id,
             message: {
                 command: 'submit',
-                submitType: 'user',
                 text: task.question,
-                contextFiles,
-                addEnhancedContext: isDefined(options.context),
+                contextItems,
             },
         })
         const range = new vscode.Range(0, 0, 0, 0)
@@ -75,7 +73,7 @@ export async function evaluateChatStrategy(
                     range,
                     chatReply: reply.text,
                     chatQuestion: task.question,
-                    contextItems: contextItems,
+                    contextItems,
                     questionClass: task.class,
                     llmJudgeScore: score.scoreNumeric,
                     concisenessScore: concisenessScore.scoreNumeric,

@@ -2,16 +2,14 @@ import type * as vscode from 'vscode'
 import type { URI } from 'vscode-uri'
 
 import {
-    type AuthStatus,
     type AutocompleteContextSnippet,
-    type ClientConfigurationWithAccessToken,
     type DocumentContext,
     getActiveTraceAndSpanId,
     isAbortError,
+    isDotComAuthed,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
 
-import { logError } from '../log'
 import type { CompletionIntent } from '../tree-sitter/query-sdk'
 
 import { isValidTestFile } from '../commands/utils/test-commands'
@@ -19,16 +17,17 @@ import {
     type GitIdentifiersForFile,
     gitMetadataForCurrentEditor,
 } from '../repository/git-metadata-for-editor'
-import { GitHubDotComRepoMetadata } from '../repository/repo-metadata-from-git-api'
+import { GitHubDotComRepoMetadata } from '../repository/githubRepoMetadata'
+import * as CompletionAnalyticsLogger from './analytics-logger'
+import type { CompletionLogID } from './analytics-logger'
 import type { ContextMixer } from './context/context-mixer'
 import { insertIntoDocContext } from './get-current-doc-context'
-import * as CompletionLogger from './logger'
-import type { CompletionLogID } from './logger'
+import { autocompleteOutputChannelLogger } from './output-channel-logger'
 import type {
     CompletionProviderTracer,
     GenerateCompletionsOptions,
     Provider,
-} from './providers/provider'
+} from './providers/shared/provider'
 import type { RequestManager, RequestManagerResult, RequestParams } from './request-manager'
 import { reuseLastCandidate } from './reuse-last-candidate'
 import type { SmartThrottleService } from './smart-throttle'
@@ -47,17 +46,14 @@ export interface InlineCompletionsParams {
     completionIntent?: CompletionIntent
     lastAcceptedCompletionItem?: Pick<AutocompleteItem, 'requestParams' | 'analyticsItem'>
     provider: Provider
-    authStatus: AuthStatus
-    config: ClientConfigurationWithAccessToken
 
     // Shared
     requestManager: RequestManager
     contextMixer: ContextMixer
     smartThrottleService: SmartThrottleService | null
-    stageRecorder: CompletionLogger.AutocompleteStageRecorder
+    stageRecorder: CompletionAnalyticsLogger.AutocompleteStageRecorder
 
     // UI state
-    isDotComUser: boolean
     lastCandidate?: LastInlineCompletionCandidate
     debounceInterval?: { singleLine: number; multiLine: number }
     setIsLoading?: (isLoading: boolean) => void
@@ -208,8 +204,11 @@ export async function getInlineCompletions(
             console.error(error)
         }
 
-        logError('getInlineCompletions:error', error.message, error.stack, { verbose: { error } })
-        CompletionLogger.logError(error)
+        autocompleteOutputChannelLogger.logError('getInlineCompletions', error.message, error.stack, {
+            verbose: { error },
+        })
+
+        CompletionAnalyticsLogger.logError(error)
 
         throw error
     } finally {
@@ -243,22 +242,21 @@ async function doGetInlineCompletions(
         firstCompletionTimeout,
         completionIntent,
         lastAcceptedCompletionItem,
-        isDotComUser,
         stageRecorder,
-        authStatus,
-        config,
         numberOfCompletionsToGenerate,
     } = params
 
     tracer?.({ params: { document, position, triggerKind, selectedCompletionInfo } })
 
+    const isDotComUser = isDotComAuthed()
+
     const gitIdentifiersForFile = isDotComUser
         ? gitMetadataForCurrentEditor.getGitIdentifiersForFile()
         : undefined
-    if (gitIdentifiersForFile?.gitUrl) {
+    if (gitIdentifiersForFile?.repoName) {
         const repoMetadataInstance = GitHubDotComRepoMetadata.getInstance()
         // Calling this so that it precomputes the `gitRepoUrl` and store in its cache for query later.
-        repoMetadataInstance.getRepoMetadataUsingGitUrl(gitIdentifiersForFile.gitUrl)
+        repoMetadataInstance.getRepoMetadataUsingRepoName(gitIdentifiersForFile.repoName).catch(() => {})
     }
 
     if (
@@ -313,9 +311,9 @@ async function doGetInlineCompletions(
     // Only log a completion as started if it's either served from cache _or_ the debounce interval
     // has passed to ensure we don't log too many start events where we end up not doing any work at
     // all.
-    CompletionLogger.flushActiveSuggestionRequests(isDotComUser)
+    CompletionAnalyticsLogger.flushActiveSuggestionRequests(isDotComUser)
     const multiline = Boolean(multilineTrigger)
-    const logId = CompletionLogger.create({
+    const logId = CompletionAnalyticsLogger.create({
         multiline,
         triggerKind,
         providerIdentifier: provider.id,
@@ -345,8 +343,8 @@ async function doGetInlineCompletions(
     if (cachedResult) {
         const { completions, source, isFuzzyMatch } = cachedResult
 
-        CompletionLogger.start(logId)
-        CompletionLogger.loaded({
+        CompletionAnalyticsLogger.start(logId)
+        CompletionAnalyticsLogger.loaded({
             logId,
             requestParams,
             completions,
@@ -440,7 +438,7 @@ async function doGetInlineCompletions(
     }
 
     setIsLoading?.(true)
-    CompletionLogger.start(logId)
+    CompletionAnalyticsLogger.start(logId)
     stageRecorder.record('preContextRetrieval')
 
     // Fetch context and apply remaining debounce time
@@ -453,6 +451,7 @@ async function doGetInlineCompletions(
                 abortSignal,
                 maxChars: provider.contextSizeHints.totalChars,
                 lastCandidate,
+                repoName: gitIdentifiersForFile?.repoName,
             })
         ),
         remainingInterval > 0
@@ -467,9 +466,9 @@ async function doGetInlineCompletions(
     tracer?.({ context: contextResult })
 
     let gitContext = undefined
-    if (gitIdentifiersForFile?.gitUrl) {
+    if (gitIdentifiersForFile?.repoName) {
         gitContext = {
-            repoName: gitIdentifiersForFile.gitUrl,
+            repoName: gitIdentifiersForFile.repoName,
         }
     }
 
@@ -481,7 +480,7 @@ async function doGetInlineCompletions(
           ? 1
           : 3
 
-    const providerOptions: GenerateCompletionsOptions = {
+    const generateOptions: GenerateCompletionsOptions = {
         triggerKind,
         docContext,
         document,
@@ -489,32 +488,30 @@ async function doGetInlineCompletions(
         firstCompletionTimeout,
         completionLogId: logId,
         gitContext,
-        authStatus,
-        config,
         numberOfCompletionsToGenerate: numberOfCompletionsToGenerate ?? n,
         multiline: !!docContext.multilineTrigger,
+        snippets: contextResult?.context ?? [],
     }
 
     tracer?.({
         completers: [
             {
                 ...provider.options,
-                ...providerOptions,
+                ...generateOptions,
                 completionIntent,
             },
         ],
     })
 
-    CompletionLogger.networkRequestStarted(logId, contextResult?.logSummary)
+    CompletionAnalyticsLogger.networkRequestStarted(logId, contextResult?.logSummary)
     stageRecorder.record('preNetworkRequest')
 
     // Get the processed completions from providers
     const result = await requestManager.request({
         logId,
         requestParams,
-        providerOptions,
+        generateOptions,
         provider,
-        context: contextResult?.context ?? [],
         isCacheEnabled: triggerKind !== TriggerKind.Manual,
         isPreloadRequest: triggerKind === TriggerKind.Preload,
         tracer: tracer ? createCompletionProviderTracer(tracer) : undefined,
@@ -527,7 +524,7 @@ async function doGetInlineCompletions(
         requestParams,
         isDotComUser,
         stale,
-        context: contextResult?.context ?? [],
+        contextLoggingSnippets: contextResult?.contextLoggingSnippets ?? [],
     })
 }
 
@@ -538,7 +535,7 @@ interface ProcessRequestManagerResultParams {
     requestParams: RequestParams
     isDotComUser: boolean
     stale: boolean | undefined
-    context?: AutocompleteContextSnippet[]
+    contextLoggingSnippets?: AutocompleteContextSnippet[]
 }
 
 function processRequestManagerResult(
@@ -550,7 +547,7 @@ function processRequestManagerResult(
         requestParams,
         isDotComUser,
         stale,
-        context,
+        contextLoggingSnippets,
     } = params
 
     let { logId } = params
@@ -563,20 +560,16 @@ function processRequestManagerResult(
         logId = updatedLogId
     }
 
-    const inlineContextParams = {
-        context: context ?? [],
-        filePath: gitIdentifiersForFile?.filePath,
-        gitUrl: gitIdentifiersForFile?.gitUrl,
-        commit: gitIdentifiersForFile?.commit,
-    }
-
-    CompletionLogger.loaded({
+    CompletionAnalyticsLogger.loaded({
         logId,
         requestParams,
         completions,
         source,
         isDotComUser,
-        inlineContextParams,
+        inlineContextParams: {
+            context: contextLoggingSnippets ?? [],
+            ...gitIdentifiersForFile,
+        },
         isFuzzyMatch: false,
     })
 

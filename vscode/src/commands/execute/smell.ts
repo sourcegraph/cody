@@ -50,9 +50,7 @@ async function smellCommand(
 
     return {
         text: prompt,
-        submitType: 'user-newchat',
-        contextFiles: contextItems,
-        addEnhancedContext: false,
+        contextItems,
         source: args?.source,
         command: DefaultChatCommands.Smell,
     }
@@ -85,6 +83,10 @@ export async function executeSmellCommand(
                 requestID: args?.requestID,
                 source: args?.source,
                 traceId: span.spanContext().traceId,
+            },
+            billingMetadata: {
+                product: 'cody',
+                category: 'core',
             },
         })
 

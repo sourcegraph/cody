@@ -11,13 +11,6 @@ export interface SerializedChatTranscript {
     chatTitle?: string
     interactions: SerializedChatInteraction[]
     lastInteractionTimestamp: string
-    enhancedContext?: {
-        /**
-         * For enterprise multi-repo search, the manually selected repository names (for example
-         * "github.com/sourcegraph/sourcegraph") and IDs.
-         */
-        selectedRepos: { id: string; name: string }[]
-    }
 }
 
 /**
@@ -32,7 +25,12 @@ export interface SerializedChatInteraction {
 
 export function serializeChatMessage(chatMessage: ChatMessage): SerializedChatMessage {
     return {
-        ...chatMessage,
+        speaker: chatMessage.speaker,
+        model: chatMessage.model,
+        contextFiles: chatMessage.contextFiles,
+        editorState: chatMessage.editorState,
+        error: chatMessage.error,
         text: chatMessage.text ? chatMessage.text.toString() : undefined,
+        intent: chatMessage.intent,
     }
 }

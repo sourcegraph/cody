@@ -74,7 +74,7 @@ const getPrompt = async (
     const documentRange = new vscode.Range(0, 0, document.lineCount - 1, 0)
     const documentText = PromptString.fromDocumentText(document, documentRange)
     const tokenCount = await TokenCounterUtils.countPromptString(documentText)
-    const contextWindow = modelsService.instance!.getContextWindowByID(model)
+    const contextWindow = modelsService.getContextWindowByID(model)
     if (tokenCount > contextWindow.input) {
         throw new Error("The amount of text in this document exceeds Cody's current capacity.")
     }
@@ -111,7 +111,7 @@ async function promptModelForOriginalCode(
     codyApiVersion: number
 ): Promise<string> {
     const multiplexer = new BotResponseMultiplexer()
-    const contextWindow = modelsService.instance!.getContextWindowByID(model)
+    const contextWindow = modelsService.getContextWindowByID(model)
 
     let text = ''
     multiplexer.sub(SMART_APPLY_TOPICS.REPLACE.toString(), {
@@ -131,7 +131,7 @@ async function promptModelForOriginalCode(
         model,
         codyApiVersion
     )
-    const stream = client.chat(
+    const stream = await client.chat(
         messages,
         {
             model,

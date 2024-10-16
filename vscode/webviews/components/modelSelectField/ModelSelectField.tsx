@@ -1,4 +1,4 @@
-import { type Model, ModelTag, isCodyProModel } from '@sourcegraph/cody-shared'
+import { type Model, ModelTag, isCodyProModel, isWaitlistModel } from '@sourcegraph/cody-shared'
 import { clsx } from 'clsx'
 import { BookOpenIcon, BuildingIcon, ExternalLinkIcon } from 'lucide-react'
 import { type FunctionComponent, type ReactNode, useCallback, useMemo } from 'react'
@@ -55,6 +55,12 @@ export const ModelSelectField: React.FunctionComponent<{
 
     const onModelSelect = useCallback(
         (model: Model): void => {
+            // Log event when user switches to a different model from Deep Cody.
+            if (selectedModel.id.includes('deep-cody') && selectedModel.id !== model.id) {
+                // TODO (bee) remove after testing has been completed.
+                telemetryRecorder.recordEvent('cody.deepCody', 'switch')
+            }
+
             telemetryRecorder.recordEvent('cody.modelSelector', 'select', {
                 metadata: {
                     modelIsCodyProOnly: isCodyProModel(model) ? 1 : 0,
@@ -65,6 +71,10 @@ export const ModelSelectField: React.FunctionComponent<{
                     modelProvider: model.provider,
                     modelTitle: model.title,
                 },
+                billingMetadata: {
+                    product: 'cody',
+                    category: 'billable',
+                },
             })
 
             if (showCodyProBadge && isCodyProModel(model)) {
@@ -72,21 +82,23 @@ export const ModelSelectField: React.FunctionComponent<{
                     command: 'links',
                     value: 'https://sourcegraph.com/cody/subscription',
                 })
-                getVSCodeAPI().postMessage({
-                    command: 'event',
-                    eventName: 'CodyVSCodeExtension:upgradeLLMChoiceCTA:clicked',
-                    properties: { limit_type: 'chat_commands' },
-                })
                 return
             }
-            getVSCodeAPI().postMessage({
-                command: 'event',
-                eventName: 'CodyVSCodeExtension:chooseLLM:clicked',
-                properties: { LLM_provider: model.id },
-            })
+            if (isWaitlistModel(model)) {
+                getVSCodeAPI().postMessage({
+                    command: 'links',
+                    value: 'waitlist',
+                })
+            }
             parentOnModelSelect(model)
         },
-        [telemetryRecorder.recordEvent, showCodyProBadge, parentOnModelSelect, isCodyProUser]
+        [
+            selectedModel,
+            telemetryRecorder.recordEvent,
+            showCodyProBadge,
+            parentOnModelSelect,
+            isCodyProUser,
+        ]
     )
 
     // Readonly if they are an enterprise user that does not support server-sent models
@@ -95,17 +107,15 @@ export const ModelSelectField: React.FunctionComponent<{
     const onOpenChange = useCallback(
         (open: boolean): void => {
             if (open) {
-                // Trigger `CodyVSCodeExtension:openLLMDropdown:clicked` only when dropdown is about to be opened.
-                getVSCodeAPI().postMessage({
-                    command: 'event',
-                    eventName: 'CodyVSCodeExtension:openLLMDropdown:clicked',
-                    properties: undefined,
-                })
-
+                // Trigger only when dropdown is about to be opened.
                 telemetryRecorder.recordEvent('cody.modelSelector', 'open', {
                     metadata: {
                         isCodyProUser: isCodyProUser ? 1 : 0,
                         totalModels: models.length,
+                    },
+                    billingMetadata: {
+                        product: 'cody',
+                        category: 'billable',
                     },
                 })
             }
@@ -131,12 +141,7 @@ export const ModelSelectField: React.FunctionComponent<{
                     // be taken to the upgrade page.
                     disabled: !['available', 'needs-cody-pro'].includes(availability),
                     group: getModelDropDownUIGroup(m),
-                    tooltip:
-                        availability === 'not-selectable-on-enterprise'
-                            ? 'Chat model set by your Sourcegraph Enterprise admin'
-                            : availability === 'needs-cody-pro'
-                              ? `Upgrade to Cody Pro to use ${m.title} by ${m.provider}`
-                              : `${m.title} by ${m.provider}`,
+                    tooltip: getTooltip(m, availability),
                 } satisfies SelectListOption
             }),
         [models, userInfo, serverSentModelsEnabled]
@@ -169,6 +174,7 @@ export const ModelSelectField: React.FunctionComponent<{
     return (
         <ToolbarPopoverItem
             role="combobox"
+            data-testid="chat-model-selector"
             iconEnd={readOnly ? undefined : 'chevron'}
             className={cn('tw-justify-between', className)}
             disabled={readOnly}
@@ -176,12 +182,22 @@ export const ModelSelectField: React.FunctionComponent<{
             tooltip={readOnly ? undefined : 'Select a model'}
             aria-label="Select a model"
             popoverContent={close => (
-                <Command loop={true} defaultValue={value} tabIndex={0} className="focus:tw-outline-none">
-                    <CommandList className={'model-selector-popover'}>
+                <Command
+                    loop={true}
+                    defaultValue={value}
+                    tabIndex={0}
+                    className="focus:tw-outline-none"
+                    data-testid="chat-model-popover"
+                >
+                    <CommandList
+                        className="model-selector-popover"
+                        data-testid="chat-model-popover-option"
+                    >
                         {optionsByGroup.map(({ group, options }) => (
                             <CommandGroup heading={group} key={group}>
                                 {options.map(option => (
                                     <CommandItem
+                                        data-testid="chat-model-popover-option"
                                         key={option.value}
                                         value={option.value}
                                         onSelect={currentValue => {
@@ -227,7 +243,13 @@ export const ModelSelectField: React.FunctionComponent<{
                                     onSelect={() => {
                                         telemetryRecorder.recordEvent(
                                             'cody.modelSelector',
-                                            'clickEnterpriseModelOption'
+                                            'clickEnterpriseModelOption',
+                                            {
+                                                billingMetadata: {
+                                                    product: 'cody',
+                                                    category: 'billable',
+                                                },
+                                            }
                                         )
                                     }}
                                     className={styles.modelTitleWithIcon}
@@ -285,36 +307,67 @@ function modelAvailability(
     return 'available'
 }
 
-const ModelTitleWithIcon: FunctionComponent<{
+function getTooltip(model: Model, availability: string): string {
+    if (model.tags.includes(ModelTag.Waitlist)) {
+        return 'Request access to this new model'
+    }
+    if (model.tags.includes(ModelTag.OnWaitlist)) {
+        return 'Request received, we will reach out with next steps'
+    }
+
+    switch (availability) {
+        case 'not-selectable-on-enterprise':
+            return 'Chat model set by your Sourcegraph Enterprise admin'
+        case 'needs-cody-pro':
+            return `Upgrade to Cody Pro to use ${model.title} by ${model.provider}`
+        default:
+            return `${model.title} by ${model.provider}`
+    }
+}
+
+const getBadgeText = (model: Model, modelAvailability?: ModelAvailability): string | null => {
+    if (modelAvailability === 'needs-cody-pro') return 'Cody Pro'
+
+    const tagToText: Record<string, string> = {
+        [ModelTag.Internal]: 'Internal',
+        [ModelTag.Experimental]: 'Experimental',
+        [ModelTag.Waitlist]: 'Join Waitlist',
+        [ModelTag.OnWaitlist]: 'On Waitlist',
+        [ModelTag.EarlyAccess]: 'Early Access',
+        [ModelTag.Recommended]: 'Recommended',
+        [ModelTag.Deprecated]: 'Deprecated',
+        [ModelTag.Dev]: 'Preview',
+    }
+
+    return model.tags.reduce((text, tag) => text || tagToText[tag] || '', null as string | null)
+}
+
+const ModelTitleWithIcon: React.FC<{
     model: Model
     showIcon?: boolean
     showProvider?: boolean
     modelAvailability?: ModelAvailability
-}> = ({ model, showIcon, modelAvailability }) => (
-    <span
-        className={clsx(styles.modelTitleWithIcon, {
-            [styles.disabled]: modelAvailability !== 'available',
-        })}
-    >
-        {showIcon && <ChatModelIcon model={model.provider} className={styles.modelIcon} />}
-        <span className={clsx('tw-flex-grow', styles.modelName)}>{model.title}</span>
-        {modelAvailability === 'needs-cody-pro' && (
-            <Badge variant="secondary" className={clsx(styles.badge, 'tw-opacity-75')}>
-                Cody Pro
-            </Badge>
-        )}
-        {model.tags.includes(ModelTag.Experimental) && (
-            <Badge variant="secondary" className={styles.badge}>
-                Experimental
-            </Badge>
-        )}
-        {model.tags.includes(ModelTag.Recommended) && modelAvailability !== 'needs-cody-pro' ? (
-            <Badge variant="secondary" className={styles.badge}>
-                Recommended
-            </Badge>
-        ) : null}
-    </span>
-)
+}> = ({ model, showIcon, modelAvailability }) => {
+    const modelBadge = getBadgeText(model, modelAvailability)
+    const isDisabled = modelAvailability !== 'available'
+
+    return (
+        <span className={clsx(styles.modelTitleWithIcon, { [styles.disabled]: isDisabled })}>
+            {showIcon && <ChatModelIcon model={model.provider} className={styles.modelIcon} />}
+            <span className={clsx('tw-flex-grow', styles.modelName)}>{model.title}</span>
+            {modelBadge && (
+                <Badge
+                    variant="secondary"
+                    className={clsx(styles.badge, {
+                        'tw-opacity-75': modelAvailability === 'needs-cody-pro',
+                    })}
+                >
+                    {modelBadge}
+                </Badge>
+            )}
+        </span>
+    )
+}
 
 const ChatModelIcon: FunctionComponent<{ model: string; className?: string }> = ({
     model,
