@@ -1,5 +1,5 @@
 import * as vscode from 'vscode'
-import { logDebug } from '../log'
+import { logDebug } from '../output-channel-logger'
 import type { API, GitExtension } from './builtinGitExtension'
 
 /**

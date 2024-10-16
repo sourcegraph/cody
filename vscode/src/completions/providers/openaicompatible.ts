@@ -1,6 +1,6 @@
 import { type CodeCompletionsParams, charsToTokens, logError } from '@sourcegraph/cody-shared'
 
-import { logDebug } from '../../log'
+import { logDebug } from '../../output-channel-logger'
 
 import { type GenerateCompletionsOptions, Provider, type ProviderFactoryParams } from './shared/provider'
 

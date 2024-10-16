@@ -6,9 +6,32 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 ### Added
 
-### Fixed
+- Proxy: Support for `cody.net.proxy` settings that enable configuation a cody specific proxy server. This also supports `cody.net.proxy.path` to provide a UNIX domain socket directly. [pull/5883](https://github.com/sourcegraph/cody/pull/5883)
+
+### Fixed 
+
+- Chat: Improved handling of duplicated priority context items. [pull/5860](https://github.com/sourcegraph/cody/pull/5860)
+
+- Chat: Improved handling of duplicated priority context items. [pull/5860](https://github.com/sourcegraph/cody/pull/5860)
 
 ### Changed
+
+## 1.38.1
+- Network: Changed configuration of network libraries to better support VSCode's patching of `http` and `https` modules. Also disabled the use of `keep-alive` headers until more robust testing is in place around VSCode's ongoing network changes. No performance changes are expected as the previous use of `keep-alive` didn't properly create re-usable connections.
+
+## 1.38.0
+
+### Changed
+
+- Telemetry: Add document change reasons to characters logger. [pull/5855](https://github.com/sourcegraph/cody/pull/5855)
+- Autocomplete: Prepare for the fast-path and completion-preloading A/B tests. [pull/5905](https://github.com/sourcegraph/cody/pull/5905)
+
+## 1.38.0
+
+### Fixed
+
+- Chat: Improve webview performance in long chats. [pull/5866](https://github.com/sourcegraph/cody/pull/5866), [pull/5875](https://github.com/sourcegraph/cody/pull/5875), [pull/5879](https://github.com/sourcegraph/cody/pull/5879)
+- Autocomplete: Remove support for the deprecated `experimental-openaicompatible` provider. Use `openaicompatible` instead. [pull/5872](https://github.com/sourcegraph/cody/pull/5872)
 
 ## 1.36.3
 

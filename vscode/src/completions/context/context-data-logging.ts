@@ -5,7 +5,7 @@ import {
     subscriptionDisposable,
 } from '@sourcegraph/cody-shared'
 import type * as vscode from 'vscode'
-import { logDebug } from '../../log'
+import { logDebug } from '../../output-channel-logger'
 import { GitHubDotComRepoMetadata } from '../../repository/githubRepoMetadata'
 import { completionProviderConfig } from '../completion-provider-config'
 import type { ContextRetriever } from '../types'
@@ -104,9 +104,14 @@ export class ContextRetrieverDataCollection implements vscode.Disposable {
     private createRetriever(config: RetrieverConfig): ContextRetriever | undefined {
         switch (config.identifier) {
             case RetrieverIdentifier.RecentEditsRetriever:
-                return new RecentEditsRetriever(10 * 60 * 1000)
+                return new RecentEditsRetriever({
+                    maxAgeMs: 10 * 60 * 1000,
+                })
             case RetrieverIdentifier.DiagnosticsRetriever:
-                return new DiagnosticsRetriever()
+                return new DiagnosticsRetriever({
+                    contextLines: 3,
+                    useXMLForPromptRendering: true,
+                })
             case RetrieverIdentifier.RecentViewPortRetriever:
                 return new RecentViewPortRetriever({
                     maxTrackedViewPorts: 50,

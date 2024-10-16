@@ -5,9 +5,21 @@
     "rootDir": ".",
     "outDir": "dist",
     "target": "es2019",
-    "allowJs": true,
+    "allowJs": false
   },
-  "include": ["**/*", ".*", "package.json", "src/language-file-extensions.json"],
-  "exclude": ["dist", "bindings", "src/__tests__", "vitest.config.ts", "typehacks"],
-  "references": [{ "path": "../lib/shared" }, { "path": "../vscode" }],
+  "include": [
+    "**/*",
+    ".*",
+    "package.json",
+    "src/language-file-extensions.json"
+  ],
+  "exclude": [
+    "dist",
+    "bindings",
+    "src/__tests__",
+    "vitest.config.ts",
+    "typehacks",
+    "*.mjs"
+  ],
+  "references": [{ "path": "../lib/shared" }, { "path": "../vscode" }]
 }

@@ -305,6 +305,88 @@ describe('Unique Context Items', () => {
             expect(getUniqueContextItems([inner, noRange])).toStrictEqual([noRange])
             expect(getUniqueContextItems([inner, noRange, inner, inner])).toStrictEqual([noRange])
         })
+
+        it('should keep priority context item when it does not overlap with user-added item', () => {
+            const priority: ContextItem = {
+                ...baseFile,
+                source: ContextItemSource.Priority,
+                range: {
+                    start: { line: 0, character: 0 },
+                    end: { line: 10, character: 0 },
+                },
+            }
+            const user: ContextItem = {
+                ...baseFile,
+                source: ContextItemSource.User,
+                range: {
+                    start: { line: 15, character: 0 },
+                    end: { line: 20, character: 0 },
+                },
+            }
+
+            expect(getUniqueContextItems([priority, user])).toStrictEqual([priority, user])
+        })
+
+        it('should remove priority context item when it overlaps with user-added item', () => {
+            const priority: ContextItem = {
+                ...baseFile,
+                source: ContextItemSource.Priority,
+                range: {
+                    start: { line: 1, character: 0 },
+                    end: { line: 2, character: 0 },
+                },
+            }
+            const user: ContextItem = {
+                ...baseFile,
+                source: ContextItemSource.User,
+                range: {
+                    start: { line: 1, character: 0 },
+                    end: { line: 2, character: 0 },
+                },
+            }
+
+            expect(getUniqueContextItems([priority, user])).toStrictEqual([user])
+        })
+
+        it('should keep priority context item when it has no range and does not duplicate user-added item', () => {
+            const priority: ContextItem = {
+                ...baseFile,
+                source: ContextItemSource.Priority,
+            }
+            const user: ContextItem = {
+                ...baseFile,
+                source: ContextItemSource.User,
+                range: {
+                    start: { line: 5, character: 0 },
+                    end: { line: 15, character: 0 },
+                },
+            }
+
+            expect(getUniqueContextItems([priority, user])).toStrictEqual([priority, user])
+        })
+
+        it('should remove priority context item when it duplicates user-added item content', () => {
+            const priority: ContextItem = {
+                ...baseFile,
+                source: ContextItemSource.Priority,
+                content: 'duplicate',
+                range: {
+                    start: { line: 1, character: 0 },
+                    end: { line: 2, character: 0 },
+                },
+            }
+            const user: ContextItem = {
+                ...baseFile,
+                source: ContextItemSource.User,
+                content: 'duplicate',
+                range: {
+                    start: { line: 1, character: 0 },
+                    end: { line: 2, character: 0 },
+                },
+            }
+
+            expect(getUniqueContextItems([priority, user])).toStrictEqual([user])
+        })
     })
 
     describe('isUniqueContextItem', () => {

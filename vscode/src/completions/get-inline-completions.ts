@@ -10,7 +10,6 @@ import {
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
 
-import { logError } from '../log'
 import type { CompletionIntent } from '../tree-sitter/query-sdk'
 
 import { isValidTestFile } from '../commands/utils/test-commands'
@@ -23,6 +22,7 @@ import * as CompletionAnalyticsLogger from './analytics-logger'
 import type { CompletionLogID } from './analytics-logger'
 import type { ContextMixer } from './context/context-mixer'
 import { insertIntoDocContext } from './get-current-doc-context'
+import { autocompleteOutputChannelLogger } from './output-channel-logger'
 import type {
     CompletionProviderTracer,
     GenerateCompletionsOptions,
@@ -204,7 +204,10 @@ export async function getInlineCompletions(
             console.error(error)
         }
 
-        logError('getInlineCompletions:error', error.message, error.stack, { verbose: { error } })
+        autocompleteOutputChannelLogger.logError('getInlineCompletions', error.message, error.stack, {
+            verbose: { error },
+        })
+
         CompletionAnalyticsLogger.logError(error)
 
         throw error
@@ -247,8 +250,9 @@ async function doGetInlineCompletions(
 
     const isDotComUser = isDotComAuthed()
 
-    const gitIdentifiersForFile =
-        isDotComUser === true ? gitMetadataForCurrentEditor.getGitIdentifiersForFile() : undefined
+    const gitIdentifiersForFile = isDotComUser
+        ? gitMetadataForCurrentEditor.getGitIdentifiersForFile()
+        : undefined
     if (gitIdentifiersForFile?.repoName) {
         const repoMetadataInstance = GitHubDotComRepoMetadata.getInstance()
         // Calling this so that it precomputes the `gitRepoUrl` and store in its cache for query later.

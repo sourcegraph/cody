@@ -1,7 +1,7 @@
 import * as vscode from 'vscode'
 
 import { authStatus, resolvedConfig, subscriptionDisposable } from '@sourcegraph/cody-shared'
-import { outputChannel } from '../log'
+import { outputChannelManager } from '../output-channel-logger'
 
 /**
  * A development helper that runs on activation to make the edit-debug loop easier.
@@ -12,6 +12,7 @@ import { outputChannel } from '../log'
  * - `cody.dev.openAutocompleteTraceView`: boolean
  * - `cody.dev.openOutputConsole`: boolean
  */
+//TODO(rnauta): Move this to a seperate Doctor Service
 export function onActivationDevelopmentHelpers(): void {
     const settings = vscode.workspace.getConfiguration('cody.dev')
 
@@ -20,7 +21,7 @@ export function onActivationDevelopmentHelpers(): void {
     }
 
     if (settings.get('openOutputConsole')) {
-        outputChannel.show()
+        outputChannelManager.defaultOutputChannel.show()
     }
 }
 

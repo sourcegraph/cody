@@ -174,6 +174,7 @@ export const ModelSelectField: React.FunctionComponent<{
     return (
         <ToolbarPopoverItem
             role="combobox"
+            data-testid="chat-model-selector"
             iconEnd={readOnly ? undefined : 'chevron'}
             className={cn('tw-justify-between', className)}
             disabled={readOnly}
@@ -181,12 +182,22 @@ export const ModelSelectField: React.FunctionComponent<{
             tooltip={readOnly ? undefined : 'Select a model'}
             aria-label="Select a model"
             popoverContent={close => (
-                <Command loop={true} defaultValue={value} tabIndex={0} className="focus:tw-outline-none">
-                    <CommandList className={'model-selector-popover'}>
+                <Command
+                    loop={true}
+                    defaultValue={value}
+                    tabIndex={0}
+                    className="focus:tw-outline-none"
+                    data-testid="chat-model-popover"
+                >
+                    <CommandList
+                        className="model-selector-popover"
+                        data-testid="chat-model-popover-option"
+                    >
                         {optionsByGroup.map(({ group, options }) => (
                             <CommandGroup heading={group} key={group}>
                                 {options.map(option => (
                                     <CommandItem
+                                        data-testid="chat-model-popover-option"
                                         key={option.value}
                                         value={option.value}
                                         onSelect={currentValue => {

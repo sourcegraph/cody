@@ -1,7 +1,8 @@
+import type { WebviewNativeConfig } from '@sourcegraph/cody-shared'
 import * as uuid from 'uuid'
 import * as vscode from 'vscode'
 import type { Agent } from './agent'
-import type { DefiniteWebviewOptions, WebviewNativeConfig } from './protocol-alias'
+import type { DefiniteWebviewOptions } from './protocol-alias'
 import * as vscode_shim from './vscode-shim'
 
 type NativeWebviewHandle = string
@@ -299,7 +300,7 @@ class NativeWebview implements vscode.Webview {
     }
 
     public get cspSource(): string {
-        return this.delegate.cspSource
+        return this.delegate.cspSource ?? ''
     }
 }
 

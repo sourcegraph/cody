@@ -216,7 +216,7 @@ export class PromptString {
         defaultValue: D
     ): PromptString | D {
         const raw = config.get(path, null)
-        const value = raw === null ? defaultValue : internal_createPromptString(raw, [])
+        const value = raw === null || raw === '' ? defaultValue : internal_createPromptString(raw, [])
         return value
     }
 
@@ -252,6 +252,10 @@ export class PromptString {
 
     public static fromDocumentText(document: vscode.TextDocument, range?: vscode.Range): PromptString {
         return internal_createPromptString(document.getText(range), [document.uri])
+    }
+
+    public static fromStructuredGitDiff(uri: vscode.Uri, diff: string) {
+        return internal_createPromptString(diff, [uri])
     }
 
     public static fromGitDiff(uri: vscode.Uri, oldContent: string, newContent: string) {

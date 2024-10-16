@@ -21,8 +21,18 @@ export interface ProtocolSymbol {
     kind: ProtocolMethodKind
 }
 
+export type ConstantType = string | boolean | number
+export type ConstantTypeType = 'string' | 'boolean' | 'number'
+
+export function typeOfUnion(union: DiscriminatedUnion): ConstantTypeType {
+    if (union.members.length === 0) {
+        throw new TypeError(`Union ${JSON.stringify(union, null, 2)} has no members`)
+    }
+    return typeof union.members[0].value as ConstantTypeType
+}
+
 export interface DiscriminatedUnionMember {
-    value: string
+    value: ConstantType
     type: scip.Type
 }
 export interface DiscriminatedUnion {
@@ -212,6 +222,9 @@ export abstract class BaseCodegen {
             for (const sibling of this.siblingDiscriminatedUnionProperties.get(info.symbol) ?? []) {
                 visitInfo(this.symtab.info(sibling))
             }
+            if (!info.has_signature) {
+                return
+            }
             if (info.signature.has_value_signature) {
                 visitType(info.signature.value_signature.tpe)
                 return
@@ -290,8 +303,6 @@ export abstract class BaseCodegen {
         // literals. If you're hitting on this error with types like string
         // literals it means you are not guarding against it higher up in the
         // call stack.
-        // throw new TypeError(`type has no properties: ${this.debug(type)}`)
-        this.reporter.error('', `type has no properties: ${this.debug(type)}`)
-        return []
+        throw new TypeError(`type has no properties: ${this.debug(type)}`)
     }
 }

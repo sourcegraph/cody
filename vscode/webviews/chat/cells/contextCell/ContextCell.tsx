@@ -36,6 +36,11 @@ export const ContextCell: FunctionComponent<{
     defaultOpen?: boolean
     showSnippets?: boolean
     reSubmitWithChatIntent?: () => void
+    onAddToFollowupChat?: (props: {
+        repoName: string
+        filePath: string
+        fileURL: string
+    }) => void
 
     /** For use in storybooks only. */
     __storybook__initialOpen?: boolean
@@ -51,6 +56,7 @@ export const ContextCell: FunctionComponent<{
         reSubmitWithChatIntent,
         showSnippets = false,
         isContextLoading,
+        onAddToFollowupChat,
     }) => {
         const [selectedAlternative, setSelectedAlternative] = useState<number | undefined>(undefined)
         const incrementSelectedAlternative = useCallback(
@@ -198,6 +204,7 @@ export const ContextCell: FunctionComponent<{
                                                             <FileContextItem
                                                                 item={item}
                                                                 showSnippets={showSnippets}
+                                                                onAddToFollowupChat={onAddToFollowupChat}
                                                             />
                                                             {internalDebugContext &&
                                                                 item.metadata &&

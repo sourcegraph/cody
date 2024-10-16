@@ -107,6 +107,7 @@ export {
     LARGE_FILE_WARNING_LABEL,
     NO_SYMBOL_MATCHES_HELP_LABEL,
 } from './codebase-context/messages'
+export * from './codyPaths'
 export type {
     CodyCommand,
     CodyCommandContext,
@@ -170,7 +171,7 @@ export {
     setDisplayPathEnvInfo,
     type DisplayPathEnvInfo,
 } from './editor/displayPath'
-export { hydrateAfterPostMessage } from './editor/hydrateAfterPostMessage'
+export { forceHydration, hydrateAfterPostMessage } from './editor/hydrateAfterPostMessage'
 export * from './editor/utils'
 export {
     FeatureFlag,
@@ -188,6 +189,7 @@ export {
     type SerializedCodeCompletionsParams,
     type CompletionResponseGenerator,
     type CompletionResponseWithMetaData,
+    type CodeCompletionProviderOptions,
 } from './inferenceClient/misc'
 export type { Result } from './local-context'
 export { logDebug, logError, setLogger } from './logger'
@@ -215,8 +217,10 @@ export {
 export type { Message } from './sourcegraph-api'
 export {
     addClientInfoParams,
-    getClientInfoParams,
+    getClientInfoQueryParams as getClientInfoParams,
+    getClientIdentificationHeaders,
     setClientNameVersion,
+    addCodyClientIdentificationHeaders,
 } from './sourcegraph-api/client-name-version'
 export { SourcegraphBrowserCompletionsClient } from './sourcegraph-api/completions/browserClient'
 export { SourcegraphCompletionsClient } from './sourcegraph-api/completions/client'
@@ -249,10 +253,7 @@ export {
 } from './sourcegraph-api/graphql'
 export { ClientConfigSingleton, type CodyClientConfig } from './sourcegraph-api/clientConfig'
 export {
-    addCustomUserAgent,
-    customUserAgent,
     isNodeResponse,
-    setUserAgent,
     INCLUDE_EVERYTHING_CONTEXT_FILTERS,
     EXCLUDE_EVERYTHING_CONTEXT_FILTERS,
     type BrowserOrNodeResponse,

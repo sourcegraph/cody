@@ -1,16 +1,14 @@
-import * as vscode from 'vscode'
-
 import {
     type ContextItem,
     type Message,
     PromptMixin,
-    PromptString,
+    currentResolvedConfig,
     firstResultFromOperation,
     getSimplePreamble,
     isDefined,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
-import { logDebug } from '../../log'
+import { logDebug } from '../../output-channel-logger'
 import { PromptBuilder } from '../../prompt-builder'
 import { ChatBuilder } from './ChatBuilder'
 
@@ -50,11 +48,7 @@ export class DefaultPrompter {
         return wrapInActiveSpan('chat.prompter', async () => {
             const contextWindow = await firstResultFromOperation(ChatBuilder.contextWindowForChat(chat))
             const promptBuilder = await PromptBuilder.create(contextWindow)
-            const preInstruction: PromptString | undefined = PromptString.fromConfig(
-                vscode.workspace.getConfiguration('cody.chat'),
-                'preInstruction',
-                undefined
-            )
+            const preInstruction = (await currentResolvedConfig()).configuration.chatPreInstruction
 
             // Add preamble messages
             const chatModel = await firstResultFromOperation(ChatBuilder.resolvedModelForChat(chat))

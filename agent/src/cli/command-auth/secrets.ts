@@ -1,6 +1,6 @@
 import { execSync, spawn } from 'node:child_process'
 import type { Ora } from 'ora'
-import { logDebug } from '../../../../vscode/src/log'
+import { logDebug } from '../../../../vscode/src/output-channel-logger'
 import type { Account } from './settings'
 
 // This file deals with reading/writing/removing Cody access tokens from the

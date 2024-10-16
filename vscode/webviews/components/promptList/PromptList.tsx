@@ -29,6 +29,7 @@ interface PromptListProps {
     showCommandOrigins?: boolean
     showPromptLibraryUnsupportedMessage?: boolean
     className?: string
+    inputClassName?: string
     paddingLevels?: 'none' | 'middle' | 'big'
     appearanceMode?: 'flat-list' | 'chips-list'
     lastUsedSorting?: boolean
@@ -52,6 +53,7 @@ export const PromptList: FC<PromptListProps> = props => {
         showInitialSelectedItem = true,
         showPromptLibraryUnsupportedMessage = true,
         className,
+        inputClassName,
         paddingLevels = 'none',
         appearanceMode = 'flat-list',
         lastUsedSorting,
@@ -61,7 +63,7 @@ export const PromptList: FC<PromptListProps> = props => {
 
     const endpointURL = new URL(useConfig().authStatus.endpoint)
     const telemetryRecorder = useTelemetryRecorder()
-    const [lastUsedActions = {}] = useLocalStorage<Record<string, number>>('last-used-actions', {})
+    const [lastUsedActions = {}] = useLocalStorage<Record<string, number>>('last-used-actions-v2', {})
 
     const telemetryPublicMetadata: Record<string, number> = {
         [`in${telemetryLocation}`]: 1,
@@ -80,12 +82,14 @@ export const PromptList: FC<PromptListProps> = props => {
             }
 
             const isPrompt = action.actionType === 'prompt'
+            const isPromptAutoSubmit = action.actionType === 'prompt' && action.autoSubmit
             const isCommand = action.actionType === 'command'
             const isBuiltInCommand = isCommand && action.type === 'default'
 
             telemetryRecorder.recordEvent('cody.promptList', 'select', {
                 metadata: {
                     isPrompt: isPrompt ? 1 : 0,
+                    isPromptAutoSubmit: isPromptAutoSubmit ? 1 : 0,
                     isCommand: isCommand ? 1 : 0,
                     isCommandBuiltin: isBuiltInCommand ? 1 : 0,
                     isCommandCustom: !isBuiltInCommand ? 1 : 0,
@@ -158,11 +162,13 @@ export const PromptList: FC<PromptListProps> = props => {
             tabIndex={0}
             shouldFilter={false}
             defaultValue={showInitialSelectedItem ? undefined : 'xxx-no-item'}
-            className={clsx(styles.list, { [styles.listChips]: appearanceMode === 'chips-list' })}
+            className={clsx(styles.list, {
+                [styles.listChips]: appearanceMode === 'chips-list',
+            })}
         >
             <CommandList className={className}>
                 {showSearch && (
-                    <div className={inputPaddingClass}>
+                    <div className={clsx(inputPaddingClass, inputClassName, styles.listInputContainer)}>
                         <CommandInput
                             value={query}
                             onValueChange={setQuery}

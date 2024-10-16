@@ -26,6 +26,14 @@ java -cp /src HelloWorld
 These commands will compile the Java source file and then execute the compiled program, displaying the "Hello, World!" message on your screen. Enjoy your Java programming!"
 `;
 
+exports[`Agent > Chat > chat/submitMessage (short message) 1`] = `
+{
+  "model": "anthropic::2023-06-01::claude-3.5-sonnet",
+  "speaker": "assistant",
+  "text": "Hello there! It's wonderful to hear from you. I'm excited to assist you with any questions or tasks you may have. What can I help you with today?",
+}
+`;
+
 exports[`Agent > Chat > chat/submitMessage (with mock context) 1`] = `
 "Certainly! Here's the Dog class that implements the Animal interface:
 

@@ -14,7 +14,7 @@ import {
     subscriptionDisposable,
     telemetryRecorder,
 } from '@sourcegraph/cody-shared'
-import { logDebug, logError } from '../../log'
+import { logDebug, logError } from '../../output-channel-logger'
 import type { MessageProviderOptions } from '../MessageProvider'
 
 import type { URI } from 'vscode-uri'
@@ -136,25 +136,41 @@ export class ChatsController implements vscode.Disposable {
             vscode.commands.registerCommand('cody.chat.signIn', () =>
                 vscode.commands.executeCommand('cody.chat.focus')
             ),
-
-            vscode.commands.registerCommand('cody.chat.newPanel', async () => {
+            vscode.commands.registerCommand('cody.chat.newPanel', async args => {
                 localStorage.setLastUsedChatModality('sidebar')
                 const isVisible = this.panel.isVisible()
                 await this.panel.clearAndRestartSession()
+
+                try {
+                    const { contextItems } = JSON.parse(args) || {}
+                    if (contextItems?.length) {
+                        await this.panel.addContextItemsToLastHumanInput(contextItems)
+                    }
+                } catch {}
+
                 if (!isVisible) {
                     await vscode.commands.executeCommand('cody.chat.focus')
                 }
             }),
-            vscode.commands.registerCommand('cody.chat.newEditorPanel', () => {
+            vscode.commands.registerCommand('cody.chat.newEditorPanel', async args => {
                 localStorage.setLastUsedChatModality('editor')
-                return this.getOrCreateEditorChatController()
+                const panel = await this.getOrCreateEditorChatController()
+
+                try {
+                    const { contextItems } = JSON.parse(args) || {}
+                    if (contextItems?.length) {
+                        await panel.addContextItemsToLastHumanInput(contextItems)
+                    }
+                } catch {}
+
+                return panel
             }),
-            vscode.commands.registerCommand('cody.chat.new', async () => {
+            vscode.commands.registerCommand('cody.chat.new', async args => {
                 switch (getNewChatLocation()) {
                     case 'editor':
-                        return vscode.commands.executeCommand('cody.chat.newEditorPanel')
+                        return vscode.commands.executeCommand('cody.chat.newEditorPanel', args)
                     case 'sidebar':
-                        return vscode.commands.executeCommand('cody.chat.newPanel')
+                        return vscode.commands.executeCommand('cody.chat.newPanel', args)
                 }
             }),
 

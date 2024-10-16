@@ -15,13 +15,13 @@ import {
     telemetryRecorder,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
-import { logDebug } from '../log'
-import { localStorage } from '../services/LocalStorageProvider'
 
 import { type CodyIgnoreType, showCodyIgnoreNotification } from '../cody-ignore/notification'
+import { localStorage } from '../services/LocalStorageProvider'
 import { autocompleteStageCounterLogger } from '../services/autocomplete-stage-counter-logger'
 import { recordExposedExperimentsToSpan } from '../services/open-telemetry/utils'
 import { isInTutorial } from '../tutorial/helpers'
+
 import type { CompletionBookkeepingEvent, CompletionItemID, CompletionLogID } from './analytics-logger'
 import * as CompletionAnalyticsLogger from './analytics-logger'
 import { getArtificialDelay } from './artificial-delay'
@@ -46,6 +46,7 @@ import {
     InlineCompletionItemProviderConfigSingleton,
 } from './inline-completion-item-provider-config-singleton'
 import { isCompletionVisible } from './is-completion-visible'
+import { autocompleteOutputChannelLogger } from './output-channel-logger'
 import { RequestManager, type RequestParams } from './request-manager'
 import {
     canReuseLastCandidateInDocumentContext,
@@ -208,15 +209,17 @@ export class InlineCompletionItemProvider
         )
         this.disposables.push(strategyFactory)
 
-        this.contextMixer = new ContextMixer(strategyFactory)
+        this.contextMixer = new ContextMixer({
+            strategyFactory,
+            dataCollectionEnabled: true,
+        })
         this.disposables.push(this.contextMixer)
 
         this.smartThrottleService = new SmartThrottleService()
         this.disposables.push(this.smartThrottleService)
 
-        // TODO(valery): replace `model_configured_by_site_config` with the actual model ID received from backend.
-        logDebug(
-            'AutocompleteProvider:initialized',
+        autocompleteOutputChannelLogger.logDebug(
+            'initialized',
             `using "${this.config.provider.configSource}": "${this.config.provider.id}::${
                 this.config.provider.legacyModel || 'model_configured_by_site_config'
             }"`
@@ -632,7 +635,7 @@ export class InlineCompletionItemProvider
                 // return `CompletionEvent` telemetry data to the agent command `autocomplete/execute`.
                 const autocompleteResult: AutocompleteResult = {
                     logId: result.logId,
-                    items: updateInsertRangeForVSCode(visibleItems),
+                    items: visibleItems,
                     completionEvent: CompletionAnalyticsLogger.getCompletionEvent(result.logId),
                 }
 
@@ -641,6 +644,12 @@ export class InlineCompletionItemProvider
                     // that if we pass the above visibility tests, the completion is going to be
                     // rendered in the UI
                     this.unstable_handleDidShowCompletionItem(visibleItems[0])
+
+                    // Adjust the completion insert text and range to start from beginning of the current line
+                    // (instead of starting at the given position). This avoids UI jitter in VS Code; when
+                    // typing or deleting individual characters, VS Code reuses the existing completion
+                    // while it waits for the new one to come in.
+                    autocompleteResult.items = updateInsertRangeForVSCode(visibleItems)
                 }
 
                 recordExposedExperimentsToSpan(span)
@@ -660,6 +669,7 @@ export class InlineCompletionItemProvider
                         return null // Exit early if the request has been aborted
                     }
                 }
+
                 return autocompleteResult
             } catch (error) {
                 this.onError(error as Error)
@@ -1161,8 +1171,8 @@ function logIgnored(uri: vscode.Uri, reason: CodyIgnoreType, isManualCompletion:
         return
     }
     lastIgnoredUriLogged = string
-    logDebug(
-        'AutocompleteProvider:ignored',
+    autocompleteOutputChannelLogger.logDebug(
+        'ignored',
         'Cody is disabled in file ' + uri.toString() + ' (' + reason + ')'
     )
 }

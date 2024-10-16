@@ -34,10 +34,10 @@ class CompletionProviderConfig {
             FeatureFlag.CodyAutocompletePreloadingExperimentBaseFeatureFlag,
             FeatureFlag.CodyAutocompletePreloadingExperimentVariant1,
             FeatureFlag.CodyAutocompletePreloadingExperimentVariant2,
-            FeatureFlag.CodyAutocompletePreloadingExperimentVariant3,
             FeatureFlag.CodyAutocompleteDisableLowPerfLangDelay,
             FeatureFlag.CodyAutocompleteDataCollectionFlag,
             FeatureFlag.CodyAutocompleteTracing,
+            FeatureFlag.CodyAutocompleteFastPath,
         ]
         this.prefetchSubscription = combineLatest(
             ...featureFlagsUsed.map(flag => featureFlagProvider.evaluatedFeatureFlag(flag))
@@ -62,6 +62,7 @@ class CompletionProviderConfig {
             'recent-copy',
             'diagnostics',
             'recent-view-port',
+            'auto-edits',
         ]
         return resolvedConfig.pipe(
             switchMap(({ configuration }) => {
@@ -127,20 +128,7 @@ class CompletionProviderConfig {
             )
     }
 
-    private getPreloadingExperimentGroup(): Observable<
-        'variant1' | 'variant2' | 'variant3' | 'control'
-    > {
-        // The desired distribution:
-        // - Variant-1 25%
-        // - Variant-2 25%
-        // - Variant-3 25%
-        // - Control group 25%
-        //
-        // The rollout values to set:
-        // - CodyAutocompletePreloadingExperimentBaseFeatureFlag 75%
-        // - CodyAutocompleteVariant1 33%
-        // - CodyAutocompleteVariant2 100%
-        // - CodyAutocompleteVariant3 50%
+    private getPreloadingExperimentGroup(): Observable<'variant1' | 'variant2' | 'control'> {
         return combineLatest(
             featureFlagProvider.evaluatedFeatureFlag(
                 FeatureFlag.CodyAutocompletePreloadingExperimentBaseFeatureFlag
@@ -150,22 +138,16 @@ class CompletionProviderConfig {
             ),
             featureFlagProvider.evaluatedFeatureFlag(
                 FeatureFlag.CodyAutocompletePreloadingExperimentVariant2
-            ),
-            featureFlagProvider.evaluatedFeatureFlag(
-                FeatureFlag.CodyAutocompletePreloadingExperimentVariant3
             )
         ).pipe(
-            map(([isContextExperimentFlagEnabled, variant1, variant2, variant3]) => {
+            map(([isContextExperimentFlagEnabled, variant1, variant2]) => {
                 if (isContextExperimentFlagEnabled) {
                     if (variant1) {
                         return 'variant1'
                     }
 
                     if (variant2) {
-                        if (variant3) {
-                            return 'variant2'
-                        }
-                        return 'variant3'
+                        return 'variant2'
                     }
                 }
 
@@ -190,9 +172,7 @@ class CompletionProviderConfig {
                             case 'variant1':
                                 return 150
                             case 'variant2':
-                                return 250
-                            case 'variant3':
-                                return 350
+                                return 100
                             default:
                                 return 0
                         }

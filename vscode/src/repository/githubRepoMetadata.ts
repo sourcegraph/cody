@@ -9,7 +9,7 @@ import {
     switchMap,
 } from '@sourcegraph/cody-shared'
 import { Observable, map } from 'observable-fns'
-import { logDebug } from '../log'
+import { logDebug } from '../output-channel-logger'
 import { remoteReposForAllWorkspaceFolders } from './remoteRepos'
 
 interface GitHubDotComRepoMetaData {

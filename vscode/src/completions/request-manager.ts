@@ -7,12 +7,12 @@ import { type DocumentContext, isDefined, wrapInActiveSpan } from '@sourcegraph/
 import { addAutocompleteDebugEvent } from '../services/open-telemetry/debug-utils'
 
 import levenshtein from 'js-levenshtein'
-import { logDebug } from '../log'
 import { type CompletionLogID, logCompletionBookkeepingEvent } from './analytics-logger'
 import {
     InlineCompletionsResultSource,
     type LastInlineCompletionCandidate,
 } from './get-inline-completions'
+import { autocompleteOutputChannelLogger } from './output-channel-logger'
 import { STOP_REASON_HOT_STREAK } from './providers/shared/hot-streak'
 import type {
     CompletionProviderTracer,
@@ -294,7 +294,7 @@ export class RequestManager {
             }
 
             if (shouldAbort) {
-                logDebug('AutocompleteProvider', 'Irrelevant request aborted')
+                autocompleteOutputChannelLogger.logDebug('requestManager', 'Irrelevant request aborted')
                 request.abortController.abort()
                 this.inflightRequests.delete(request)
             }
