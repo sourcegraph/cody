@@ -141,7 +141,12 @@ function copyExtensionRelativeResources(extensionPath: string, extensionClient: 
         }
     }
     copySources('win-ca-roots.exe')
-    if (extensionClient.capabilities?.webview === 'native') {
+    // Only copy the files if the client is using the native webview and they haven't opted
+    // to manage the resource files themselves.
+    if (
+        extensionClient.capabilities?.webview === 'native' &&
+        !extensionClient.capabilities?.webviewNativeConfig?.skipResourceRelativization
+    ) {
         copySources('webviews')
     }
 }
