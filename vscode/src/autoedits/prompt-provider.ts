@@ -1,11 +1,10 @@
-import { type AutoEditsTokenLimit, type PromptString, logDebug, ps } from '@sourcegraph/cody-shared'
+import type { AutoEditsTokenLimit, PromptString } from '@sourcegraph/cody-shared'
 import type * as vscode from 'vscode'
 import type {
     AutocompleteContextSnippet,
     DocumentContext,
 } from '../../../lib/shared/src/completions/types'
-import { RetrieverIdentifier } from '../completions/context/utils'
-import * as utils from './prompt-utils'
+import type * as utils from './prompt-utils'
 export type CompletionsPrompt = PromptString
 export type ChatPrompt = {
     role: 'system' | 'user' | 'assistant'
@@ -30,124 +29,8 @@ export interface PromptProvider {
 
     getModelResponse(model: string, apiKey: string, prompt: PromptProviderResponse): Promise<string>
 }
-export class OpenAIPromptProvider implements PromptProvider {
-    getPrompt(
-        docContext: DocumentContext,
-        document: vscode.TextDocument,
-        context: AutocompleteContextSnippet[],
-        tokenBudget: AutoEditsTokenLimit
-    ): PromptResponseData {
-        const { codeToReplace, promptResponse: userPrompt } = getBaseUserPrompt(
-            docContext,
-            document,
-            context,
-            tokenBudget
-        )
-        const prompt: ChatPrompt = [
-            {
-                role: 'system',
-                content: SYSTEM_PROMPT,
-            },
-            {
-                role: 'user',
-                content: userPrompt,
-            },
-        ]
-        return {
-            codeToReplace: codeToReplace,
-            promptResponse: prompt,
-        }
-    }
 
-    postProcessResponse(response: string): string {
-        return response
-    }
-
-    async getModelResponse(
-        model: string,
-        apiKey: string,
-        prompt: PromptProviderResponse
-    ): Promise<string> {
-        try {
-            const response = await getModelResponse(
-                'https://api.openai.com/v1/chat/completions',
-                JSON.stringify({
-                    model: model,
-                    messages: prompt,
-                    temperature: 0.5,
-                    max_tokens: 256,
-                    response_format: {
-                        type: 'text',
-                    },
-                }),
-                apiKey
-            )
-            return response.choices[0].message.content
-        } catch (error) {
-            logDebug('AutoEdits', 'Error calling OpenAI API:', error)
-            throw error
-        }
-    }
-}
-
-export class DeepSeekPromptProvider implements PromptProvider {
-    private readonly bosToken: PromptString = ps`<｜begin▁of▁sentence｜>`
-    private readonly userToken: PromptString = ps`User: `
-    private readonly assistantToken: PromptString = ps`Assistant: `
-
-    getPrompt(
-        docContext: DocumentContext,
-        document: vscode.TextDocument,
-        context: AutocompleteContextSnippet[],
-        tokenBudget: AutoEditsTokenLimit
-    ): PromptResponseData {
-        const { codeToReplace, promptResponse: userPrompt } = getBaseUserPrompt(
-            docContext,
-            document,
-            context,
-            tokenBudget
-        )
-        const prompt = ps`${this.bosToken}${SYSTEM_PROMPT}
-
-${this.userToken}${userPrompt}
-
-${this.assistantToken}`
-
-        return {
-            codeToReplace: codeToReplace,
-            promptResponse: prompt,
-        }
-    }
-
-    postProcessResponse(response: string): string {
-        return response
-    }
-
-    async getModelResponse(
-        model: string,
-        apiKey: string,
-        prompt: PromptProviderResponse
-    ): Promise<string> {
-        try {
-            const response = await getModelResponse(
-                'https://api.fireworks.ai/inference/v1/completions',
-                JSON.stringify({
-                    model: model,
-                    prompt: prompt.toString(),
-                    temperature: 0.5,
-                    max_tokens: 256,
-                }),
-                apiKey
-            )
-            return response.choices[0].text
-        } catch (error) {
-            logDebug('AutoEdits', 'Error calling Fireworks API:', error)
-            throw error
-        }
-    }
-}
-
-async function getModelResponse(url: string, body: string, apiKey: string): Promise<any> {
+export async function getModelResponse(url: string, body: string, apiKey: string): Promise<any> {
     const response = await fetch(url, {
         method: 'POST',
         headers: {
@@ -162,87 +45,6 @@ async function getModelResponse(url: string, body: string, apiKey: string): Prom
     }
     const data = await response.json()
     return data
-}
-
-// ################################################################################################################
-
-// Some common prompt instructions
-const SYSTEM_PROMPT = ps`You are an intelligent programmer named CodyBot. You are an expert at coding. Your goal is to help your colleague finish a code change.`
-const BASE_USER_PROMPT = ps`Help me finish a coding change. In particular, you will see a series of snippets from current open files in my editor, files I have recently viewed, the file I am editing, then a history of my recent codebase changes, then current compiler and linter errors, content I copied from my codebase. You will then rewrite the <code_to_rewrite>, to match what you think I would do next in the codebase. Note: I might have stopped in the middle of typing.`
-const FINAL_USER_PROMPT = ps`Now, continue where I left off and finish my change by rewriting "code_to_rewrite":`
-const RECENT_VIEWS_INSTRUCTION = ps`Here are some snippets of code I have recently viewed, roughly from oldest to newest. It's possible these aren't entirely relevant to my code change:\n`
-const JACCARD_SIMILARITY_INSTRUCTION = ps`Here are some snippets of code I have extracted from open files in my code editor. It's possible these aren't entirely relevant to my code change:\n`
-const RECENT_EDITS_INSTRUCTION = ps`Here is my recent series of edits from oldest to newest.\n`
-const LINT_ERRORS_INSTRUCTION = ps`Here are some linter errors from the code that you will rewrite.\n`
-const RECENT_COPY_INSTRUCTION = ps`Here is some recent code I copied from the editor.\n`
-const CURRENT_FILE_INSTRUCTION = ps`Here is the file that I am looking at `
-
-// Helper function to get prompt in some format
-export function getBaseUserPrompt(
-    docContext: DocumentContext,
-    document: vscode.TextDocument,
-    context: AutocompleteContextSnippet[],
-    tokenBudget: AutoEditsTokenLimit
-): {
-    codeToReplace: utils.CodeToReplaceData
-    promptResponse: PromptString
-} {
-    const contextItemMapping = utils.getContextItemMappingWithTokenLimit(
-        context,
-        tokenBudget.contextSpecificTokenLimit
-    )
-    const { fileWithMarkerPrompt, areaPrompt, codeToReplace } = utils.getCurrentFilePromptComponents({
-        docContext,
-        document,
-        maxPrefixLinesInArea: tokenBudget.maxPrefixLinesInArea,
-        maxSuffixLinesInArea: tokenBudget.maxSuffixLinesInArea,
-        codeToRewritePrefixLines: tokenBudget.codeToRewritePrefixLines,
-        codeToRewriteSuffixLines: tokenBudget.codeToRewriteSuffixLines,
-    })
-    const recentViewsPrompt = utils.getPromptForTheContextSource(
-        contextItemMapping.get(RetrieverIdentifier.RecentViewPortRetriever) || [],
-        RECENT_VIEWS_INSTRUCTION,
-        utils.getRecentlyViewedSnippetsPrompt
-    )
-
-    const recentEditsPrompt = utils.getPromptForTheContextSource(
-        contextItemMapping.get(RetrieverIdentifier.RecentEditsRetriever) || [],
-        RECENT_EDITS_INSTRUCTION,
-        utils.getRecentEditsPrompt
-    )
-
-    const lintErrorsPrompt = utils.getPromptForTheContextSource(
-        contextItemMapping.get(RetrieverIdentifier.DiagnosticsRetriever) || [],
-        LINT_ERRORS_INSTRUCTION,
-        utils.getLintErrorsPrompt
-    )
-
-    const recentCopyPrompt = utils.getPromptForTheContextSource(
-        contextItemMapping.get(RetrieverIdentifier.RecentCopyRetriever) || [],
-        RECENT_COPY_INSTRUCTION,
-        utils.getRecentCopyPrompt
-    )
-
-    const jaccardSimilarityPrompt = utils.getPromptForTheContextSource(
-        contextItemMapping.get(RetrieverIdentifier.JaccardSimilarityRetriever) || [],
-        JACCARD_SIMILARITY_INSTRUCTION,
-        utils.getJaccardSimilarityPrompt
-    )
-    const finalPrompt = ps`${BASE_USER_PROMPT}
-${jaccardSimilarityPrompt}
-${recentViewsPrompt}
-${CURRENT_FILE_INSTRUCTION}${fileWithMarkerPrompt}
-${recentEditsPrompt}
-${lintErrorsPrompt}
-${recentCopyPrompt}
-${areaPrompt}
-${FINAL_USER_PROMPT}
-`
-    logDebug('AutoEdits', 'Prompt\n', finalPrompt)
-    return {
-        codeToReplace: codeToReplace,
-        promptResponse: finalPrompt,
-    }
 }
 
 // ################################################################################################################

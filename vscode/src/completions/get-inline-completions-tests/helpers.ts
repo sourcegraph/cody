@@ -211,7 +211,9 @@ export function params(
             config?.configuration?.autocompleteFirstCompletionTimeout ??
             DEFAULT_VSCODE_SETTINGS.autocompleteFirstCompletionTimeout,
         requestManager: new RequestManager(),
-        contextMixer: new ContextMixer(new DefaultContextStrategyFactory(Observable.of('none'))),
+        contextMixer: new ContextMixer({
+            strategyFactory: new DefaultContextStrategyFactory(Observable.of('none')),
+        }),
         smartThrottleService: null,
         completionIntent: getCompletionIntent({
             document,

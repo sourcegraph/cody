@@ -1,4 +1,4 @@
-import { PromptString, logDebug, ps } from '@sourcegraph/cody-shared'
+import { type AutoEditsTokenLimit, PromptString, logDebug, ps } from '@sourcegraph/cody-shared'
 import { Uri } from 'vscode'
 import type * as vscode from 'vscode'
 import type {
@@ -6,6 +6,7 @@ import type {
     DocumentContext,
 } from '../../../lib/shared/src/completions/types'
 import { RetrieverIdentifier } from '../completions/context/utils'
+import * as utils from './prompt-utils'
 
 const LINT_ERRORS_TAG_OPEN = ps`<lint_errors>`
 const LINT_ERRORS_TAG_CLOSE = ps`</lint_errors>`
@@ -26,6 +27,17 @@ const AREA_FOR_CODE_MARKER_OPEN = ps`<area_around_code_to_rewrite>`
 const AREA_FOR_CODE_MARKER_CLOSE = ps`</area_around_code_to_rewrite>`
 const CODE_TO_REWRITE_TAG_OPEN = ps`<code_to_rewrite>`
 const CODE_TO_REWRITE_TAG_CLOSE = ps`</code_to_rewrite>`
+
+// Some common prompt instructions
+export const SYSTEM_PROMPT = ps`You are an intelligent programmer named CodyBot. You are an expert at coding. Your goal is to help your colleague finish a code change.`
+const BASE_USER_PROMPT = ps`Help me finish a coding change. In particular, you will see a series of snippets from current open files in my editor, files I have recently viewed, the file I am editing, then a history of my recent codebase changes, then current compiler and linter errors, content I copied from my codebase. You will then rewrite the <code_to_rewrite>, to match what you think I would do next in the codebase. Note: I might have stopped in the middle of typing.`
+const FINAL_USER_PROMPT = ps`Now, continue where I left off and finish my change by rewriting "code_to_rewrite":`
+const RECENT_VIEWS_INSTRUCTION = ps`Here are some snippets of code I have recently viewed, roughly from oldest to newest. It's possible these aren't entirely relevant to my code change:\n`
+const JACCARD_SIMILARITY_INSTRUCTION = ps`Here are some snippets of code I have extracted from open files in my code editor. It's possible these aren't entirely relevant to my code change:\n`
+const RECENT_EDITS_INSTRUCTION = ps`Here is my recent series of edits from oldest to newest.\n`
+const LINT_ERRORS_INSTRUCTION = ps`Here are some linter errors from the code that you will rewrite.\n`
+const RECENT_COPY_INSTRUCTION = ps`Here is some recent code I copied from the editor.\n`
+const CURRENT_FILE_INSTRUCTION = ps`Here is the file that I am looking at `
 
 export interface CurrentFilePromptOptions {
     docContext: DocumentContext
@@ -62,6 +74,74 @@ interface SuffixContext {
     codeToRewriteSuffix: PromptString
     codeToRewriteEndLines: number
     totalSuffixLines: number
+}
+
+// Helper function to get prompt in some format
+export function getBaseUserPrompt(
+    docContext: DocumentContext,
+    document: vscode.TextDocument,
+    context: AutocompleteContextSnippet[],
+    tokenBudget: AutoEditsTokenLimit
+): {
+    codeToReplace: utils.CodeToReplaceData
+    promptResponse: PromptString
+} {
+    const contextItemMapping = utils.getContextItemMappingWithTokenLimit(
+        context,
+        tokenBudget.contextSpecificTokenLimit
+    )
+    const { fileWithMarkerPrompt, areaPrompt, codeToReplace } = utils.getCurrentFilePromptComponents({
+        docContext,
+        document,
+        maxPrefixLinesInArea: tokenBudget.maxPrefixLinesInArea,
+        maxSuffixLinesInArea: tokenBudget.maxSuffixLinesInArea,
+        codeToRewritePrefixLines: tokenBudget.codeToRewritePrefixLines,
+        codeToRewriteSuffixLines: tokenBudget.codeToRewriteSuffixLines,
+    })
+    const recentViewsPrompt = utils.getPromptForTheContextSource(
+        contextItemMapping.get(RetrieverIdentifier.RecentViewPortRetriever) || [],
+        RECENT_VIEWS_INSTRUCTION,
+        utils.getRecentlyViewedSnippetsPrompt
+    )
+
+    const recentEditsPrompt = utils.getPromptForTheContextSource(
+        contextItemMapping.get(RetrieverIdentifier.RecentEditsRetriever) || [],
+        RECENT_EDITS_INSTRUCTION,
+        utils.getRecentEditsPrompt
+    )
+
+    const lintErrorsPrompt = utils.getPromptForTheContextSource(
+        contextItemMapping.get(RetrieverIdentifier.DiagnosticsRetriever) || [],
+        LINT_ERRORS_INSTRUCTION,
+        utils.getLintErrorsPrompt
+    )
+
+    const recentCopyPrompt = utils.getPromptForTheContextSource(
+        contextItemMapping.get(RetrieverIdentifier.RecentCopyRetriever) || [],
+        RECENT_COPY_INSTRUCTION,
+        utils.getRecentCopyPrompt
+    )
+
+    const jaccardSimilarityPrompt = utils.getPromptForTheContextSource(
+        contextItemMapping.get(RetrieverIdentifier.JaccardSimilarityRetriever) || [],
+        JACCARD_SIMILARITY_INSTRUCTION,
+        utils.getJaccardSimilarityPrompt
+    )
+    const finalPrompt = ps`${BASE_USER_PROMPT}
+${jaccardSimilarityPrompt}
+${recentViewsPrompt}
+${CURRENT_FILE_INSTRUCTION}${fileWithMarkerPrompt}
+${recentEditsPrompt}
+${lintErrorsPrompt}
+${recentCopyPrompt}
+${areaPrompt}
+${FINAL_USER_PROMPT}
+`
+    logDebug('AutoEdits', 'Prompt\n', finalPrompt)
+    return {
+        codeToReplace: codeToReplace,
+        promptResponse: finalPrompt,
+    }
 }
 
 export function getPromptForTheContextSource(

@@ -66,7 +66,9 @@ describe('ContextMixer', () => {
 
     describe('with no retriever', () => {
         it('returns empty result if no retrievers', async () => {
-            const mixer = new ContextMixer(createMockStrategy([]))
+            const mixer = new ContextMixer({
+                strategyFactory: createMockStrategy([]),
+            })
             const { context, logSummary } = await mixer.getContext(defaultOptions)
 
             expect(normalize(context)).toEqual([])
@@ -83,8 +85,8 @@ describe('ContextMixer', () => {
 
     describe('with one retriever', () => {
         it('returns the results of the retriever', async () => {
-            const mixer = new ContextMixer(
-                createMockStrategy([
+            const mixer = new ContextMixer({
+                strategyFactory: createMockStrategy([
                     [
                         {
                             identifier: 'jaccard-similarity',
@@ -101,8 +103,8 @@ describe('ContextMixer', () => {
                             endLine: 0,
                         },
                     ],
-                ])
-            )
+                ]),
+            })
             const { context, logSummary } = await mixer.getContext(defaultOptions)
             expect(normalize(context)).toEqual([
                 {
@@ -141,8 +143,8 @@ describe('ContextMixer', () => {
 
     describe('with more retriever', () => {
         it('mixes the results of the retriever using reciprocal rank fusion', async () => {
-            const mixer = new ContextMixer(
-                createMockStrategy([
+            const mixer = new ContextMixer({
+                strategyFactory: createMockStrategy([
                     [
                         {
                             identifier: 'retriever1',
@@ -183,8 +185,8 @@ describe('ContextMixer', () => {
                             endLine: 1,
                         },
                     ],
-                ])
-            )
+                ]),
+            })
             const { context, logSummary } = await mixer.getContext(defaultOptions)
 
             // The results have overlaps in `foo.ts` and `bar.ts`. `foo.ts` is ranked higher in both
@@ -268,8 +270,8 @@ describe('ContextMixer', () => {
                 )
             })
             it('mixes results are filtered', async () => {
-                const mixer = new ContextMixer(
-                    createMockStrategy([
+                const mixer = new ContextMixer({
+                    strategyFactory: createMockStrategy([
                         [
                             {
                                 identifier: 'retriever1',
@@ -309,8 +311,8 @@ describe('ContextMixer', () => {
                                 endLine: 1,
                             },
                         ],
-                    ])
-                )
+                    ]),
+                })
                 const { context } = await mixer.getContext(defaultOptions)
                 const contextFiles = normalize(context)
                 expect(contextFiles.map(c => c.fileName)).toEqual([
@@ -332,7 +334,10 @@ describe('ContextMixer', () => {
             retrievers.map(set => createMockedContextRetriever(set[0].identifier, set))
 
         const setupTest = (primaryRetrievers: any[], loggingRetrievers: any[]) => {
-            mixer = new ContextMixer(createMockStrategy(primaryRetrievers), true)
+            mixer = new ContextMixer({
+                strategyFactory: createMockStrategy(primaryRetrievers),
+                dataCollectionEnabled: true,
+            })
             getDataCollectionRetrieversSpy = vi.spyOn(mixer as any, 'getDataCollectionRetrievers')
             getDataCollectionRetrieversSpy.mockReturnValue(createMockedRetrievers(loggingRetrievers))
         }

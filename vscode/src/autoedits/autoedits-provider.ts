@@ -1,11 +1,18 @@
-import { type AutoEditsTokenLimit, type DocumentContext, logDebug } from '@sourcegraph/cody-shared'
+import {
+    type AutoEditsTokenLimit,
+    type DocumentContext,
+    logDebug,
+    tokensToChars,
+} from '@sourcegraph/cody-shared'
 import { Observable } from 'observable-fns'
 import * as vscode from 'vscode'
 import { ContextMixer } from '../completions/context/context-mixer'
 import { DefaultContextStrategyFactory } from '../completions/context/context-strategy'
 import { getCurrentDocContext } from '../completions/get-current-doc-context'
 import { getConfiguration } from '../configuration'
-import { DeepSeekPromptProvider, OpenAIPromptProvider, type PromptProvider } from './prompt-provider'
+import type { PromptProvider } from './prompt-provider'
+import { DeepSeekPromptProvider } from './providers/deepseek'
+import { OpenAIPromptProvider } from './providers/openai'
 import { AutoEditsRenderer } from './renderer'
 
 const AUTOEDITS_CONTEXT_STRATEGY = 'auto-edits'
@@ -17,10 +24,10 @@ export interface AutoEditsProviderOptions {
 
 export class AutoeditsProvider implements vscode.Disposable {
     private disposables: vscode.Disposable[] = []
-    private contextMixer: ContextMixer = new ContextMixer(
-        new DefaultContextStrategyFactory(Observable.of(AUTOEDITS_CONTEXT_STRATEGY)),
-        false
-    )
+    private contextMixer: ContextMixer = new ContextMixer({
+        strategyFactory: new DefaultContextStrategyFactory(Observable.of(AUTOEDITS_CONTEXT_STRATEGY)),
+        dataCollectionEnabled: false,
+    })
     private autoEditsTokenLimit: AutoEditsTokenLimit | undefined
     private provider: PromptProvider | undefined
     private model: string | undefined
@@ -90,8 +97,8 @@ export class AutoeditsProvider implements vscode.Disposable {
         return getCurrentDocContext({
             document,
             position,
-            maxPrefixLength: convertTokensToChars(this.autoEditsTokenLimit?.prefixTokens ?? 0),
-            maxSuffixLength: convertTokensToChars(this.autoEditsTokenLimit?.suffixTokens ?? 0),
+            maxPrefixLength: tokensToChars(this.autoEditsTokenLimit?.prefixTokens ?? 0),
+            maxSuffixLength: tokensToChars(this.autoEditsTokenLimit?.suffixTokens ?? 0),
         })
     }
 
@@ -100,8 +107,4 @@ export class AutoeditsProvider implements vscode.Disposable {
             disposable.dispose()
         }
     }
-}
-
-function convertTokensToChars(tokens: number) {
-    return tokens * 4
 }
