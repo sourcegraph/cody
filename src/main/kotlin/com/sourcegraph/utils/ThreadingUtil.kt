@@ -1,7 +1,6 @@
 package com.sourcegraph.utils
 
 import com.intellij.openapi.application.ApplicationManager
-import java.awt.EventQueue.invokeAndWait
 import java.util.concurrent.CompletableFuture
 
 object ThreadingUtil {
@@ -12,7 +11,7 @@ object ThreadingUtil {
       return task()
     }
     val future = CompletableFuture<T>()
-    invokeAndWait {
+    app.invokeLater {
       try {
         future.complete(task())
       } catch (exception: Exception) {
