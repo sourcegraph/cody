@@ -16,7 +16,6 @@ import {
     clientCapabilities as getClientCapabilities,
     isAbortError,
     normalizeServerEndpointURL,
-    pluck,
     resolvedConfig as resolvedConfig_,
     setAuthStatusObservable as setAuthStatusObservable_,
     startWith,
@@ -111,9 +110,18 @@ class AuthProvider implements vscode.Disposable {
 
         // Keep context updated with auth status.
         this.subscriptions.push(
-            authStatus.pipe(pluck('authenticated')).subscribe(authenticated => {
+            authStatus.subscribe(authStatus => {
                 try {
-                    vscode.commands.executeCommand('setContext', 'cody.activated', authenticated)
+                    vscode.commands.executeCommand(
+                        'setContext',
+                        'cody.activated',
+                        authStatus.authenticated
+                    )
+                    vscode.commands.executeCommand(
+                        'setContext',
+                        'cody.serverEndpoint',
+                        authStatus.endpoint
+                    )
                 } catch {}
             })
         )
