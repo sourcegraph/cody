@@ -4,6 +4,7 @@ import './net/net.patch'
 // Sentry should be imported as soon as possible so that errors are reported
 import { NodeSentryService } from './services/sentry/sentry.node'
 
+// Everything else
 import * as vscode from 'vscode'
 import { startTokenReceiver } from './auth/token-receiver'
 import { CommandsProvider } from './commands/services/provider'

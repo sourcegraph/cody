@@ -107,8 +107,8 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                 {
                     method: 'POST',
                     headers: Object.fromEntries(headers.entries()),
+                    // TODO: THIS MUST NOT BE DONE HERE!
                     // So we can send requests to the Sourcegraph local development instance, which has an incompatible cert.
-                    //TODO: THIS MUST NOT BE DONE HERE!
                     // rejectUnauthorized: process.env.NODE_TLS_REJECT_UNAUTHORIZED !== '0',
                     agent: globalAgentRef.agent,
                 },
