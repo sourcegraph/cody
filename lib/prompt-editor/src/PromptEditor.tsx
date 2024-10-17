@@ -55,7 +55,7 @@ export interface PromptEditorRefAPI {
     appendText(text: string, cb?: () => void): void
     addMentions(items: ContextItem[], cb?: () => void): void
     setInitialContextMentions(items: ContextItem[], cb?: () => void): void
-    setEditorState(state: SerializedPromptEditorState): void
+    setEditorState(state: SerializedPromptEditorState, cb?: () => void): void
 }
 
 /**
@@ -80,10 +80,11 @@ export const PromptEditor: FunctionComponent<Props> = ({
     useImperativeHandle(
         ref,
         (): PromptEditorRefAPI => ({
-            setEditorState(state: SerializedPromptEditorState): void {
+            setEditorState(state: SerializedPromptEditorState, onUpdate): void {
                 const editor = editorRef.current
                 if (editor) {
                     editor.setEditorState(editor.parseEditorState(state.lexicalEditorState))
+                    onUpdate?.()
                 }
             },
             getSerializedValue(): SerializedPromptEditorValue {
