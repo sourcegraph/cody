@@ -27,7 +27,7 @@ export const AccountTab: React.FC<AccountTabProps> = ({ setView, endpointHistory
     const { displayName, username, primaryEmail, endpoint } = user
 
     // We open the native system pop-up for VS Code.
-    if (!config.clientCapabilities.isVSCode) {
+    if (config.clientCapabilities.isVSCode) {
         return null
     }
 
@@ -97,7 +97,7 @@ export const AccountTab: React.FC<AccountTabProps> = ({ setView, endpointHistory
             </div>
             {endpointHistory.length && (
                 <div className="tw-w-full tw-bg-popover tw-border tw-border-border">
-                    <EndpointSelection endpointHistory={endpointHistory} />
+                    <EndpointSelection endpoints={endpointHistory} />
                 </div>
             )}
             {actions.map(a => (
