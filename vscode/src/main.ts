@@ -232,7 +232,7 @@ const register = async (
     // Ensure Git API is available
     disposables.push(await initVSCodeGitApi())
 
-    registerParserListeners(disposables)
+    // registerParserListeners(disposables)
     registerChatListeners(disposables)
 
     // Initialize external services
@@ -334,7 +334,7 @@ async function initializeSingletons(
 }
 
 // Registers listeners to trigger parsing of visible documents
-function registerParserListeners(disposables: vscode.Disposable[]) {
+export function registerParserListeners(disposables: vscode.Disposable[]) {
     void parseAllVisibleDocuments()
     disposables.push(vscode.window.onDidChangeVisibleTextEditors(parseAllVisibleDocuments))
     disposables.push(vscode.workspace.onDidChangeTextDocument(updateParseTreeOnEdit))
