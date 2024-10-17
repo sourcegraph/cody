@@ -1,11 +1,10 @@
-import { type Observable, interval, map } from 'observable-fns'
+import { Observable, interval, map } from 'observable-fns'
 import semver from 'semver'
 import { authStatus } from '../auth/authStatus'
 import { editorWindowIsFocused } from '../editor/editorState'
 import { logDebug, logError } from '../logger'
 import {
     NEVER,
-    debounceTime,
     distinctUntilChanged,
     filter,
     firstValueFrom,
@@ -73,9 +72,11 @@ export class ClientConfigSingleton {
      */
     public readonly changes: Observable<CodyClientConfig | undefined | typeof pendingOperation> =
         authStatus.pipe(
-            debounceTime(0), // wait a tick for graphqlClient's auth to be updated
-            switchMapReplayOperation(authStatus =>
-                authStatus.authenticated
+            switchMapReplayOperation(authStatus => {
+                if (authStatus.pendingValidation) {
+                    return NEVER
+                }
+                return authStatus.authenticated
                     ? interval(ClientConfigSingleton.REFETCH_INTERVAL).pipe(
                           map(() => undefined),
                           // Don't update if the editor is in the background, to avoid network
@@ -86,8 +87,8 @@ export class ClientConfigSingleton {
                           startWith(undefined),
                           switchMap(() => promiseFactoryToObservable(signal => this.fetchConfig(signal)))
                       )
-                    : NEVER
-            ),
+                    : Observable.of(undefined)
+            }),
             map(value => (isError(value) ? undefined : value)),
             distinctUntilChanged()
         )

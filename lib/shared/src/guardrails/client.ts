@@ -21,7 +21,10 @@ export class SourcegraphGuardrailsClient implements Guardrails {
     public async searchAttribution(snippet: string): Promise<Attribution | Error> {
         // Short-circuit attribution search if turned off in site config.
         const clientConfig = await ClientConfigSingleton.getInstance().getConfig()
-        if (!clientConfig?.attributionEnabled) {
+        if (!clientConfig) {
+            return new Error("Couldn't get client config.")
+        }
+        if (!clientConfig.attributionEnabled) {
             return new Error('Attribution search is turned off.')
         }
 
