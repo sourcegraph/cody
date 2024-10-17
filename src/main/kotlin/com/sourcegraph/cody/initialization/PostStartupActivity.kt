@@ -29,6 +29,7 @@ class PostStartupActivity : ProjectActivity {
   // doing something wrong, which may be slowing down agent startup. Not fixing it now but this
   // deserves more investigation.
   override suspend fun execute(project: Project) {
+    VerifyJavaBootRuntimeVersion().runActivity(project)
     SettingsMigration().runActivity(project)
     CodyAuthNotificationActivity().runActivity(project)
     CodyAuthenticationManager.getInstance().addAuthChangeListener(project)

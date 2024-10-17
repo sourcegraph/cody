@@ -6,7 +6,9 @@ import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.project.Project
+import com.jetbrains.rd.util.AtomicReference
 import com.jetbrains.rd.util.ConcurrentHashMap
+import com.sourcegraph.cody.CodyToolWindowContent
 import com.sourcegraph.cody.agent.ConfigFeatures
 import com.sourcegraph.cody.agent.CurrentConfigFeatures
 import com.sourcegraph.cody.agent.protocol.WebviewCreateWebviewPanelParams
@@ -44,6 +46,8 @@ class WebUIService(private val project: Project) {
     views.reset()
     return panels.reset()
   }
+
+  val proxyCreationException = AtomicReference<IllegalStateException?>(null)
 
   private fun <T> withCreationGate(name: String, action: (gate: WebUIProxyCreationGate) -> T): T {
     val gate =
@@ -112,7 +116,8 @@ class WebUIService(private val project: Project) {
                 portMapping = emptyList(),
                 enableFindWidget = false,
                 retainContextWhenHidden = false))
-    val proxy = WebUIProxy.create(delegate)
+
+    val proxy = createWebUIProxy(delegate) ?: return
     delegate.view = createView(proxy)
     proxy.updateTheme(themeController.getTheme())
     withCreationGate(handle) {
@@ -121,6 +126,16 @@ class WebUIService(private val project: Project) {
       it.createdCondition.signalAll()
     }
   }
+
+  private fun createWebUIProxy(delegate: WebUIHost): WebUIProxy? =
+      try {
+        proxyCreationException.getAndSet(null)
+        WebUIProxy.create(delegate)
+      } catch (e: IllegalStateException) {
+        proxyCreationException.getAndSet(e)
+        CodyToolWindowContent.executeOnInstanceIfNotDisposed(project) { refreshPanelsVisibility() }
+        null
+      }
 
   internal fun createWebviewPanel(params: WebviewCreateWebviewPanelParams) {
     runInEdt {
