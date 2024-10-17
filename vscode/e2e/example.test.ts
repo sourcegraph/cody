@@ -11,8 +11,8 @@ test.describe('Demonstrations', () => {
         vscodeUI,
         polly,
         workspaceDir,
-    }, testInof) => {
-        const session = uix.vscode.Session.pending({ page, vscodeUI, workspaceDir })
+    }, testInfo) => {
+        const session = uix.vscode.Session.pending({ page, vscodeUI, workspaceDir, polly })
         const cody = uix.cody.Extension.with({ page, workspaceDir })
 
         polly.server.host(mitmProxy.sourcegraph.dotcom.proxyTarget, () => {
@@ -35,7 +35,7 @@ test.describe('Demonstrations', () => {
         )
 
         await session.start()
-        await cody.waitUntilReady()
+        await cody.waitUntilReady({ isAuthenticated: false, hasErrors: false })
 
         await session.runCommand('workbench.action.closeAllEditors')
         await session.runCommand('workbench.explorer.fileView.focus')

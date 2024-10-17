@@ -89,7 +89,6 @@ export class CodyStatusBar implements vscode.Disposable {
                 icon: 'normal',
                 text: '',
                 style: 'normal',
-                tags: new Set(),
                 ...this.buildState(...combined),
             }
         }),
@@ -259,7 +258,7 @@ export class CodyStatusBar implements vscode.Disposable {
         errors: ReadonlySet<StatusBarError>,
         loaders: ReadonlySet<StatusBarLoader>,
         ignoreStatus: IsIgnored
-    ): Partial<StatusBarState> & Pick<StatusBarState, 'interact' | 'tooltip'> {
+    ): Partial<StatusBarState> & Pick<StatusBarState, 'interact' | 'tooltip' | 'tags'> {
         const tags = new Set<InvisibleStatusBarTag>()
 
         if (authStatus.authenticated) {
@@ -380,6 +379,8 @@ export class CodyStatusBar implements vscode.Disposable {
 
         return {
             tooltip: 'Cody Settings',
+            style: 'normal',
+            tags,
             interact: interactDefault({
                 config,
                 errors,

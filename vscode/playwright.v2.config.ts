@@ -2,7 +2,7 @@ import * as path from 'node:path'
 import { type ReporterDescription, defineConfig } from '@playwright/test'
 import * as dotenv from 'dotenv'
 import { ulid } from 'ulidx'
-import { CODY_VSCODE_ROOT_DIR } from './e2e/utils/helpers'
+import { CODY_ROOT_DIR, CODY_VSCODE_ROOT_DIR } from './e2e/utils/helpers'
 import type { TmpDirOptions } from './e2e/utils/tmpdir.setup'
 import type { TestOptions, WorkerOptions } from './e2e/utils/vscody'
 const isWin = process.platform.startsWith('win')
@@ -41,7 +41,7 @@ export default defineConfig<WorkerOptions & TestOptions & TmpDirOptions>({
     // We suspend timeouts when debugging (even from VSCode editor) so that if
     // you hit a breakpoint within the extension it doesn't cause a
     // test-failure.
-    timeout: debugMode ? 0 : isWin || isCI ? 30000 : 20000,
+    timeout: debugMode ? 0 : isWin || isCI ? 10000 : 20000,
     expect: {
         timeout: debugMode ? 0 : isWin || isCI ? 20000 : 10000,
     },
@@ -67,7 +67,7 @@ export default defineConfig<WorkerOptions & TestOptions & TmpDirOptions>({
                 ? process.env.CODY_RECORD_KEEP_UNUSED === 'true'
                 : false,
         recordingMode: (process.env.CODY_RECORDING_MODE as any) || 'replay',
-        pollyRecordingDir: './recordings',
+        pollyRecordingDir: path.join(CODY_ROOT_DIR, './recordings'),
 
         //#region Fixutre
         keepRuntimeDirs: 'all',
@@ -84,9 +84,11 @@ export default defineConfig<WorkerOptions & TestOptions & TmpDirOptions>({
         vscodeExtensions: ['sourcegraph.cody-ai'],
         binaryTmpDir: path.join(testRootDir, 'global/bin'),
 
-        //#region Playwright
-        viewport: { width: 1366, height: 768 },
-        deviceScaleFactor: isCI ? 1 : 2, // TODO: Might be nice to detect this automatically
+        //#region Playwritght
+
+        // By using null here we ensure that when debugging resizing of the
+        // window also resizes the viewport.
+        viewport: !debugMode || isCI ? { width: 1600, height: 900 } : null,
         browserName: 'chromium',
         bypassCSP: true,
         locale: 'en-US',

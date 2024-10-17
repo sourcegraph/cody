@@ -19,6 +19,7 @@ export interface TestContext {
     vscodeUI: {
         url: string
         token: string
+        testUtilsWebsocketPort: number
         extensionHostDebugPort: number | null
         payload: string[][]
     }

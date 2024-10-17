@@ -3,14 +3,21 @@ import { fixture as test, uix } from '../utils/vscody'
 import { MITM_AUTH_TOKEN_PLACEHOLDER } from '../utils/vscody/constants'
 
 test.describe('Auth', () => {
-    test('normal auth flow - desktop', async ({ page, vscodeUI, mitmProxy, workspaceDir }, testInfo) => {
-        const vsc = uix.vscode.Session.pending({ page, vscodeUI, workspaceDir })
-        const cody = uix.cody.Extension.with({ page, workspaceDir })
-
-        await test.step('setup', async () => {
-            await vsc.start()
-            await cody.waitUntilReady()
-        })
+    test('normal auth flow - desktop', async ({
+        page,
+        vscodeUI,
+        mitmProxy,
+        workspaceDir,
+        polly,
+    }, testInfo) => {
+        const { vsc } = await uix.vscode.Session.startWithCody(
+            { page, vscodeUI, workspaceDir, polly },
+            {
+                codyEndpoint: mitmProxy.sourcegraph.dotcom.endpoint,
+                preAuthenticateCody: false,
+                waitForCody: true,
+            }
+        )
 
         await vsc.runCommand('workbench.view.extension.cody')
         const [sidebar] = await uix.cody.WebView.all({ page }, { atLeast: 1 })

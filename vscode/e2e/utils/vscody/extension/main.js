@@ -3,6 +3,10 @@ const { window } = require('vscode')
 const { execSync } = require('node:child_process')
 const path = require('node:path')
 const fs = require('node:fs')
+const { WebSocketServer } = require('ws')
+const { createBirpc } = require('birpc')
+const { connect } = require('node:http2')
+const Flatted = require('flatted')
 
 const fnContext = {
     vscode,
@@ -15,17 +19,85 @@ const fnContext = {
         substitutePathVars,
     },
 }
-function activate(context) {
-    console.log('🧪 VSCody Test Utils Activated 🧪')
-    const disposable = vscode.commands.registerCommand('vscody.eval', async commandArgs => {
-        const [fn, ...fnArgs] = commandArgs
 
-        const res = await Function(`return ${fn}`)().apply(fnContext, fnArgs)
-        await flushEventStack()
+const serverFunctions = {
+    async command(command, args, opts = {}) {
+        const resPromise = flushEventStack()
+            .then(_ => vscode.commands.executeCommand(command, ...args))
+            .finally(flushEventStack)
+        if (opts.skipAwait) {
+            void resPromise
+            return undefined
+        }
+        await resPromise
+        // We can't return this value as it could be anything, including things that are impossible to serialize
+        return void 0
+    },
+    async eval(fn, args, opts = {}) {
+        const compiledFn = Function(`return ${fn}`)()
+        const resPromise = flushEventStack()
+            .then(_ => compiledFn.apply(fnContext, args))
+            .finally(flushEventStack)
+        if (opts.skipAwait) {
+            void resPromise
+            return undefined
+        }
+        const res = await resPromise
         return res
-    })
+    },
+}
 
-    context.subscriptions.push(disposable)
+async function activate(context) {
+    const statusBarIndicator = vscode.window.createStatusBarItem(
+        'status',
+        vscode.StatusBarAlignment.Right,
+        100
+    )
+    statusBarIndicator.tooltip = 'Cody Test Utils'
+    statusBarIndicator.text = '$(beaker) Waiting'
+    statusBarIndicator.show()
+
+    context.subscriptions.push(statusBarIndicator)
+
+    try {
+        const port = Number.parseInt(process.env.CODY_TESTUTILS_WEBSCOKET_PORT)
+
+        const wss = new WebSocketServer({ port, host: '127.0.0.1' })
+
+        context.subscriptions.push(
+            new vscode.Disposable(() => {
+                for (const client of wss.clients) {
+                    client.terminate()
+                }
+                wss.close()
+            })
+        )
+
+        let connections = 0
+        wss.on('connection', ws => {
+            connections++
+            statusBarIndicator.text = '$(beaker) Connected'
+
+            const rpc = createBirpc(serverFunctions, {
+                post: data => ws.send(data),
+                on: fn => ws.on('message', fn),
+                serialize: v => Flatted.stringify(v),
+                deserialize: v => Flatted.parse(v),
+            })
+            ws.on('close', ev => {
+                connections = connections - 1
+                if (ev === 1006) {
+                    statusBarIndicator.text = '$(beaker) Error'
+                } else {
+                    if (connections === 0) {
+                        statusBarIndicator.text = '$(beaker) Waiting'
+                    }
+                }
+            })
+        })
+    } catch {
+        statusBarIndicator.text = '$(beaker) Error'
+    }
 }
 
 function deactivate() {}

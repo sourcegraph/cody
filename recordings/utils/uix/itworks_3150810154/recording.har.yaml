@@ -1,0 +1,100 @@
+log:
+  _recordingName: itworks
+  creator:
+    comment: persister:fs
+    name: Polly.JS
+    version: 6.0.6
+  entries:
+    - _id: df9bbe44d51a47ebe6840a3b9fba1c29
+      _order: 0
+      cache: {}
+      request:
+        bodySize: 101
+        cookies: []
+        headers:
+          - name: connection
+            value: close
+          - name: host
+            value: sourcegraph.com
+          - name: accept-encoding
+            value: identity
+          - name: content-length
+            value: "101"
+          - name: accept
+            value: "*/*"
+          - name: user-agent
+            value: vscode/1.38.1 (Node.js v20.16.0)
+          - name: content-type
+            value: application/json; charset=utf-8
+          - name: x-mitm-proxy-name
+            value: sourcegraph.dotcom
+        headersSize: 471
+        httpVersion: HTTP/1.1
+        method: POST
+        postData:
+          mimeType: application/json; charset=utf-8
+          params: []
+          textJSON:
+            query: |-
+              
+              query SiteProductVersion {
+                  site {
+                      productVersion
+                  }
+              }
+            variables: {}
+        queryString:
+          - name: SiteProductVersion
+            value: null
+        url: https://sourcegraph.com/.api/graphql?SiteProductVersion
+      response:
+        bodySize: 73
+        content:
+          mimeType: application/json
+          size: 73
+          text: "{\"data\":{\"site\":{\"productVersion\":\"295908_2024-10-17_5.8-bb4c7d4f\
+            356f\"}}}"
+        cookies: []
+        headers:
+          - name: date
+            value: Thu, 17 Oct 2024 16:13:09 GMT
+          - name: content-type
+            value: application/json
+          - name: content-length
+            value: "73"
+          - name: connection
+            value: close
+          - name: access-control-allow-credentials
+            value: "true"
+          - name: access-control-allow-origin
+            value: ""
+          - name: cache-control
+            value: no-cache, max-age=0
+          - name: vary
+            value: Cookie,Accept-Encoding,Authorization,Cookie, Authorization,
+              X-Requested-With,Cookie
+          - name: x-content-type-options
+            value: nosniff
+          - name: x-frame-options
+            value: DENY
+          - name: x-xss-protection
+            value: 1; mode=block
+          - name: strict-transport-security
+            value: max-age=31536000; includeSubDomains; preload
+        headersSize: 1436
+        httpVersion: HTTP/1.1
+        redirectURL: ""
+        status: 200
+        statusText: OK
+      startedDateTime: 2024-10-17T16:13:09.510Z
+      time: 232
+      timings:
+        blocked: -1
+        connect: -1
+        dns: -1
+        receive: 0
+        send: 0
+        ssl: -1
+        wait: 232
+  pages: []
+  version: "1.2"

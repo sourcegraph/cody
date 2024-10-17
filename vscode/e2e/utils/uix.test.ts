@@ -1,24 +1,24 @@
 import { expect } from '@playwright/test'
 import { fixture as test, uix } from './vscody'
-import { MITM_AUTH_TOKEN_PLACEHOLDER } from './vscody/constants'
-import { Extension } from './vscody/uix/cody'
-import { modifySettings } from './vscody/uix/workspace'
 
 test.describe('Sidebar selectors', () => {
     //TODO: We don't use sidebars like this anymore so it's unclear if this helper still will bring value
     test.use({
         templateWorkspaceDir: 'test/fixtures/legacy-polyglot-template',
     })
-    test('It works', async ({ page, vscodeUI, workspaceDir }) => {
-        const session = await uix.vscode.Session.pending({ page, vscodeUI, workspaceDir }).start()
-        const sidebar = session.Sidebar
+    test('It works', async ({ page, vscodeUI, workspaceDir, polly, mitmProxy }) => {
+        const { vsc } = await uix.vscode.Session.startWithCody(
+            { page, vscodeUI, workspaceDir, polly },
+            { codyEndpoint: mitmProxy.sourcegraph.dotcom.endpoint, preAuthenticateCody: false }
+        )
+        const sidebar = vsc.Sidebar
 
-        await session.runCommand('workbench.view.explorer')
+        await vsc.runCommand('workbench.view.explorer')
         await sidebar.expect.toBeVisible()
         await sidebar.expect.toHaveActiveView({ id: 'workbench.view.explorer' })
-        await session.runCommand('workbench.action.closeSidebar')
+        await vsc.runCommand('workbench.action.closeSidebar')
         await sidebar.expect.toBeHidden()
-        await session.runCommand('workbench.view.extension.cody')
+        await vsc.runCommand('workbench.view.extension.cody')
         await sidebar.expect.toHaveActiveView('cody')
     })
 })
@@ -28,27 +28,26 @@ test.describe('Webview Selector', () => {
         templateWorkspaceDir: 'test/fixtures/legacy-polyglot-template',
     })
 
-    test('It can handle multiple webviews', async ({ page, vscodeUI, workspaceDir, mitmProxy }) => {
-        await modifySettings(
-            s => ({
-                ...s,
-                'cody.override.authToken': MITM_AUTH_TOKEN_PLACEHOLDER,
-                'cody.override.serverEndpoint': mitmProxy.sourcegraph.dotcom.endpoint,
-            }),
-            { workspaceDir }
+    test('It can handle multiple webviews', async ({
+        page,
+        vscodeUI,
+        workspaceDir,
+        mitmProxy,
+        polly,
+    }) => {
+        const { vsc } = await uix.vscode.Session.startWithCody(
+            { page, vscodeUI, workspaceDir, polly },
+            { codyEndpoint: mitmProxy.sourcegraph.dotcom.endpoint }
         )
-        const session = await uix.vscode.Session.pending({ page, vscodeUI, workspaceDir }).start()
-        const cody = Extension.with({ page, workspaceDir })
-        await cody.waitUntilReady()
 
-        await session.runCommand('workbench.view.extension.cody')
-        const [sidebarChat] = await uix.cody.WebView.all(session, { atLeast: 1 })
+        await vsc.runCommand('workbench.view.extension.cody')
+        const [sidebarChat] = await uix.cody.WebView.all(vsc, { atLeast: 1 })
         await sidebarChat.waitUntilReady()
 
-        await session.runCommand('cody.chat.newEditorPanel')
-        const allWebviews = await uix.cody.WebView.all(session, { atLeast: 2 })
+        await vsc.runCommand('cody.chat.newEditorPanel')
+        const allWebviews = await uix.cody.WebView.all(vsc, { atLeast: 2 })
 
-        const [editorChat] = await uix.cody.WebView.all(session, { atLeast: 1, ignoring: [sidebarChat] })
+        const [editorChat] = await uix.cody.WebView.all(vsc, { atLeast: 1, ignoring: [sidebarChat] })
 
         expect(allWebviews).toHaveLength(2)
         expect(allWebviews).toContainEqual(sidebarChat)

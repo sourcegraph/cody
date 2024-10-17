@@ -122,6 +122,16 @@
             }
         },
         {
+            "include": ["vscode/e2e/utils/vscody/uix/**/*.ts"],
+            "linter": {
+                "rules": {
+                    "suspicious": {
+                        "noExportsInTest": "off"
+                    }
+                }
+            }
+        },
+        {
             "include": ["**/*.test.ts"],
             "linter": {
                 "rules": {

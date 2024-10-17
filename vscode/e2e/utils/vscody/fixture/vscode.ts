@@ -38,7 +38,7 @@ export const vscodeFixture = _test.extend<TestContext, WorkerContext>({
             )
             await use(dir)
             const attachmentPromises = []
-            const logDir = path.join(dir, 'data/logs')
+            const logDir = path.join(dir, 'portable-data/user-data/logs')
 
             for (const file of await getFilesRecursive(logDir)) {
                 const filePath = path.join(file.path, file.name)
@@ -101,7 +101,8 @@ export const vscodeFixture = _test.extend<TestContext, WorkerContext>({
             // Note: Not all settings can be set as machine settings, especially
             // those with security implications. These are set as user settings
             // which live inside the browser's IndexDB. There's
-            const machineDir = path.join(serverRootDir, 'data/Machine')
+            const portableDataDir = path.join(serverRootDir, 'portable-data')
+            const machineDir = path.join(portableDataDir, 'user-data/Machine')
             await fs.mkdir(machineDir, { recursive: true })
             await fs.writeFile(
                 path.join(machineDir, 'settings.json'),
@@ -114,7 +115,11 @@ export const vscodeFixture = _test.extend<TestContext, WorkerContext>({
                         'workbench.welcomePage.walkthroughs.openOnInstall': false,
                         'workbench.colorTheme': 'Default Dark Modern',
                         // sane defaults
-                        'cody.debug.verbose': false,
+                        'cody.debug.verbose': true,
+                        // we disable the minimap becaue it doesn't render in
+                        // headless anyways and it's canvas can interfere with
+                        // clicks
+                        'editor.minimap.enabled': false,
                     },
                     null,
                     2
@@ -127,9 +132,10 @@ export const vscodeFixture = _test.extend<TestContext, WorkerContext>({
             // const isolatedExtensionsDir = await fs.mkdtemp(path.join(os.tmpdir(), 'vsc-extensions'))
             // const extensionsDir = isolatedExtensionsDir
             // console.log('extensionsDir', extensionsDir)
-            const extensionsDir = path.join(serverRootDir, 'extensions')
+            const extensionsDir = path.join(portableDataDir, 'extensions')
             await fs.mkdir(extensionsDir, { recursive: true })
-            const userDataDir = path.join(serverRootDir, 'data/User')
+
+            const userDataDir = path.join(portableDataDir, 'user-data/User')
             await fs.mkdir(userDataDir, { recursive: true })
 
             await stretchTimeout(
@@ -145,8 +151,8 @@ export const vscodeFixture = _test.extend<TestContext, WorkerContext>({
 
             // We can now start the server
             const connectionToken = '0000-0000'
-            const [serverPort, reservedExtensionHostDebugPort] = rangeOffset(
-                [testInfo.parallelIndex * 2, 2],
+            const [serverPort, testUtilsWebsocketPort, reservedExtensionHostDebugPort] = rangeOffset(
+                [testInfo.parallelIndex * 3, 3],
                 validOptions.vscodeServerPortRange
             )
             const args = [
@@ -156,15 +162,18 @@ export const vscodeFixture = _test.extend<TestContext, WorkerContext>({
                 '--host=127.0.0.1', // todo: allow making external for remote support
                 `--port=${serverPort}`,
                 `--connection-token=${connectionToken}`,
-                `--server-data-dir=${serverRootDir}`,
+                `--server-data-dir=${portableDataDir}`,
                 `--extensions-dir=${extensionsDir}`,
+                '--log=debug', //TODO: Figure out how to set extension specific settings
             ]
             const extensionHostDebugPort = validOptions.debugMode ? reservedExtensionHostDebugPort : null
             const env = {
                 PW: '1', //indicate a playwright test
                 ...process.env,
+                VSCODE_PORTABLE: portableDataDir,
+                CODY_TESTUTILS_WEBSCOKET_PORT: testUtilsWebsocketPort.toString(),
                 CODY_OVERRIDE_UI_KIND: `${1 satisfies UIKind.Desktop}`,
-                TESTING_DOTCOM_URL: mitmProxy.sourcegraph.dotcom.endpoint,
+                CODY_OVERRIDE_DOTCOM_URL: mitmProxy.sourcegraph.dotcom.endpoint,
                 CODY_TESTING_BFG_DIR: path.resolve(CODY_VSCODE_ROOT_DIR, validOptions.binaryTmpDir),
                 CODY_TESTING_SYMF_DIR: path.resolve(CODY_VSCODE_ROOT_DIR, validOptions.binaryTmpDir),
             }
@@ -186,6 +195,7 @@ export const vscodeFixture = _test.extend<TestContext, WorkerContext>({
                 token: connectionToken,
                 payload: payload,
                 extensionHostDebugPort,
+                testUtilsWebsocketPort,
             }
             //@ts-ignore
             const serverProcess = await waitForVSCodeServerV2({
@@ -216,7 +226,6 @@ export const vscodeFixture = _test.extend<TestContext, WorkerContext>({
 
             // if the test failed and we're debugging we might want to keep the browser open so we can manually continue
             if (validOptions.keepFinishedTestRunning) {
-                // we'll keep the browser open a bit longer
                 try {
                     testInfo.status === 'failed'
                         ? console.error(
@@ -381,15 +390,26 @@ async function installExtensions({
     extensionsDir: string
     userDataDir: string
 }) {
-    // We start by installing all extensions to a shared cache dir. This speeds up tests without any risk of flake.
     const nodeExecutable = path.join(versionedServerExecutableDir, isWindows() ? 'node.exe' : 'node') // this ensures we use the VSCode bundled node version
-    const sharedExtensionsDir = path.resolve(CODY_VSCODE_ROOT_DIR, validOptions.vscodeExtensionCacheDir)
-    await fs.mkdir(sharedExtensionsDir, { recursive: true })
 
+    // First we symlink any extensions
+    const symlinkedExtensions: Record<string, string> = {}
+    const symlinkExtension = [
+        ...validOptions.symlinkExtensions,
+        // This is the testutils extension which is required for proper functioning of tests
+        path.join(CODY_VSCODE_ROOT_DIR, 'e2e/utils/vscody/extension'),
+    ]
+    for (const entry of symlinkExtension) {
+        const { name, publisher, version } = await readExtensionMetadata(entry)
+        await symlinkDir(entry, path.join(extensionsDir, `${publisher}.${name}-${version}`))
+        symlinkedExtensions[`${publisher}.${name}`] = version
+    }
+
+    // Then we install any remaining extensions
     if (validOptions.vscodeExtensions.length > 0) {
         const args = [
             'out/server-main.js',
-            `--extensions-dir=${sharedExtensionsDir}`,
+            `--extensions-dir=${extensionsDir}`,
             ...validOptions.vscodeExtensions.map(extension => `--install-extension=${extension}`),
         ]
         await pspawn(nodeExecutable, args, {
@@ -400,48 +420,6 @@ async function installExtensions({
             stdio: ['inherit', 'ignore', 'ignore'],
         })
     }
-
-    // Next, we link any symlinkExtensions directly to the test-server extensions
-    // directory. These are always preferred to marketplace versions.
-    const symlinkedExtensions: Record<string, string> = {}
-    const symlinkExtension = [
-        ...validOptions.symlinkExtensions,
-        path.join(CODY_VSCODE_ROOT_DIR, 'e2e/utils/vscody/extension'),
-    ]
-    for (const entry of symlinkExtension) {
-        const { name, publisher, version } = await readExtensionMetadata(entry)
-        await symlinkDir(entry, path.join(extensionsDir, `${publisher}.${name}-${version}`))
-        symlinkedExtensions[`${publisher}.${name}`] = version
-    }
-
-    //we now read all the folders in the shared cache dir and
-    //symlink the relevant ones to our isolated extension dir
-    for (const entry of await fs.readdir(sharedExtensionsDir)) {
-        const [_, extensionName] = /^(.*)-\d+\.\d+\.\d+$/.exec(entry) ?? []
-        if (
-            !validOptions.vscodeExtensions.includes(extensionName?.toLowerCase()) ||
-            symlinkedExtensions[extensionName]
-        ) {
-            continue
-        }
-
-        const existingPath = path.join(sharedExtensionsDir, entry)
-        const newPath = path.join(extensionsDir, entry)
-        await symlinkDir(existingPath, newPath)
-    }
-
-    // Finally by listing the extensions it generates a extensions.json file which ensures that when VSCode starts it doesn't trigger a reload.
-    await pspawn(
-        nodeExecutable,
-        ['out/server-main.js', `--extensions-dir=${extensionsDir}`, '--list-extensions'],
-        {
-            env: {
-                ...process.env,
-            },
-            cwd: versionedServerExecutableDir,
-            stdio: ['inherit', 'ignore', 'ignore'],
-        }
-    )
 }
 
 async function readExtensionMetadata(
