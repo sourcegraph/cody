@@ -81,6 +81,12 @@ export function deserializeContextItem(contextItem: SerializedContextItem): Cont
     return { ...contextItem, uri: URI.parse(contextItem.uri) } as ContextItem
 }
 
+export function isSerializedContextItem(
+    contextItem: ContextItem | SerializedContextItem
+): contextItem is SerializedContextItem {
+    return typeof contextItem.uri === 'string'
+}
+
 export function isSerializedContextItemMentionNode(
     node: SerializedLexicalNode | null | undefined
 ): node is SerializedContextItemMentionNode {
