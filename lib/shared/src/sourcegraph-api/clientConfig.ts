@@ -1,9 +1,10 @@
-import { Observable, interval, map } from 'observable-fns'
+import { type Observable, interval, map } from 'observable-fns'
 import semver from 'semver'
 import { authStatus } from '../auth/authStatus'
 import { editorWindowIsFocused } from '../editor/editorState'
 import { logDebug, logError } from '../logger'
 import {
+    NEVER,
     debounceTime,
     distinctUntilChanged,
     filter,
@@ -85,7 +86,7 @@ export class ClientConfigSingleton {
                           startWith(undefined),
                           switchMap(() => promiseFactoryToObservable(signal => this.fetchConfig(signal)))
                       )
-                    : Observable.of(undefined)
+                    : NEVER
             ),
             map(value => (isError(value) ? undefined : value)),
             distinctUntilChanged()
