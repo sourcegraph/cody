@@ -190,7 +190,7 @@ export const ModelSelectField: React.FunctionComponent<{
                     data-testid="chat-model-popover"
                 >
                     <CommandList
-                        className="model-selector-popover"
+                        className="model-selector-popover tw-max-h-[80vh] tw-overflow-y-auto"
                         data-testid="chat-model-popover-option"
                     >
                         {optionsByGroup.map(({ group, options }) => (
