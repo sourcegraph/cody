@@ -21,10 +21,10 @@ import type { UIKind } from 'vscode' // types are ok
 
 export const cenv = defineEnvBuilder({
     /**
-     * A combination of HTTP_PROXY, HTTPS_PROXY and NO_PROXY environment
-     * variables for easier consumption.
+     * A proxy string that falls back to Node's HTTP_PROXY and HTTPS_PROXY if
+     * not explicitly configured (or disabled with 'false').
      */
-    CODY_NODE_DEFAULT_PROXY: codyProxy,
+    CODY_NODE_DEFAULT_PROXY: proxyStringWithNodeFallback,
 
     /**
      * Enables unstable internal testing configuration to be read from settings.json
@@ -161,13 +161,14 @@ function uiKind(uiKind: string | undefined): UIKind | undefined {
     }
 }
 
-function codyProxy(envValue: string | undefined): string | undefined {
-    switch (bool(envValue)) {
-        case false:
-            // explicitly disabled
-            return undefined
-        default:
-            break
+/**
+ * If explicitly set to false no proxy value is returned. Or returns the string
+ * value set otherwise. If no explicit value is set value defaults to the
+ * default HTTPS_PROXY or HTTP_PROXY values (in that order).
+ */
+function proxyStringWithNodeFallback(envValue: string | undefined): string | undefined {
+    if (bool(envValue) === false) {
+        return undefined
     }
 
     const forcedProxy = str(envValue)
