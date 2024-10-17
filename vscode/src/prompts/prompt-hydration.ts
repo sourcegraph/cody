@@ -25,11 +25,11 @@ import { createRepositoryMention } from '../context/openctx/common/get-repositor
 import { remoteReposForAllWorkspaceFolders } from '../repository/remoteRepos'
 import { getCurrentRepositoryInfo } from './utils'
 
-const PROMPT_CURRENT_FILE_PLACEHOLDER: string = '[[current file]]'
-const PROMPT_CURRENT_SELECTION_PLACEHOLDER: string = '[[current selection]]'
-const PROMPT_CURRENT_DIRECTORY_PLACEHOLDER: string = '[[current directory]]'
-const PROMPT_EDITOR_OPEN_TABS_PLACEHOLDER: string = '[[open tabs]]'
-const PROMPT_CURRENT_REPOSITORY_PLACEHOLDER: string = '[[current repository]]'
+const PROMPT_CURRENT_FILE_PLACEHOLDER: string = 'cody://current-file'
+const PROMPT_CURRENT_SELECTION_PLACEHOLDER: string = 'cody://selection'
+const PROMPT_CURRENT_DIRECTORY_PLACEHOLDER: string = 'cody://current-dir'
+const PROMPT_EDITOR_OPEN_TABS_PLACEHOLDER: string = 'cody://tabs'
+const PROMPT_CURRENT_REPOSITORY_PLACEHOLDER: string = 'cody://repository'
 
 /**
  * Be default IDE itself can figure out all needed context via vscode API,
@@ -60,7 +60,9 @@ export async function hydratePromptText(
     initialContext: PromptHydrationInitialContext
 ): Promise<SerializedPromptEditorState> {
     const promptText = PromptString.unsafe_fromUserQuery(promptRawText)
-    const promptTextMentionMatches = promptText.toString().match(/\[\[[^\]]*\]\]/gm) ?? []
+
+    // Match any general cody mentions in the prompt text with cody:// prefix
+    const promptTextMentionMatches = promptText.toString().match(/cody:\/\/\S+/gm) ?? []
 
     let hydratedPromptText = promptText
     const contextItemsMap = new Map<string, ContextItem>()
