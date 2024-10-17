@@ -3,9 +3,13 @@ import { Utils } from 'vscode-uri'
 import {
     BotResponseMultiplexer,
     type CompletionParameters,
+    PromptString,
+    type SerializedChatTranscript,
     Typewriter,
     currentAuthStatus,
+    currentAuthStatusAuthed,
     currentSiteVersion,
+    editorStateFromPromptString,
     isAbortError,
     isDotCom,
     isNetworkLikeError,
@@ -25,6 +29,7 @@ import {
     EventSourceTelemetryMetadataMapping,
 } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { workspace } from 'vscode'
+import { chatHistory } from '../chat/chat-view/ChatHistoryManager'
 import { doesFileExist } from '../commands/utils/workspace-files'
 import { getEditor } from '../editor/active-editor'
 import { CodyTaskState } from '../non-stop/state'
@@ -62,6 +67,7 @@ export class EditProvider {
             if (!versions) {
                 throw new Error('unable to determine site version')
             }
+
             const {
                 messages,
                 stopSequences,
@@ -97,6 +103,7 @@ export class EditProvider {
                 onTurnComplete: async () => {
                     typewriter.close()
                     typewriter.stop()
+                    void this.saveEditAsChatEntry(text)
                     void this.handleResponse(text, false)
                     return Promise.resolve()
                 },
@@ -197,6 +204,38 @@ export class EditProvider {
         // We need to start the task first, before applying
         this.config.controller.startTask(this.config.task)
         return this.handleResponse(response, false)
+    }
+
+    private async saveEditAsChatEntry(responseContent: string): Promise<void> {
+        let responseMessage = `Inline ${this.config.task.intent} change was triggered over:\n`
+        responseMessage += '``` \n' + `${this.config.task.original}\n` + '```\n'
+        responseMessage += 'Inline change response: \n'
+        responseMessage += '```\n' + `${responseContent}\n` + '```'
+
+        const chatEntry: SerializedChatTranscript = {
+            id: this.config.task.id,
+            interactions: [
+                {
+                    humanMessage: {
+                        speaker: 'human',
+                        text: this.config.task.instruction.toString(),
+                        model: this.config.task.model,
+                        editorState: editorStateFromPromptString(this.config.task.instruction),
+                    },
+                    assistantMessage: {
+                        speaker: 'assistant',
+                        text: responseMessage,
+                        model: this.config.task.model,
+                        editorState: editorStateFromPromptString(
+                            PromptString.unsafe_fromUserQuery(responseMessage)
+                        ),
+                    },
+                },
+            ],
+            lastInteractionTimestamp: this.config.task.id.toString(),
+        }
+
+        return chatHistory.saveChat(currentAuthStatusAuthed(), chatEntry)
     }
 
     private async handleResponse(response: string, isMessageInProgress: boolean): Promise<void> {
