@@ -32,7 +32,7 @@ const PROMPT_EDITOR_OPEN_TABS_PLACEHOLDER: string = 'cody://tabs'
 const PROMPT_CURRENT_REPOSITORY_PLACEHOLDER: string = 'cody://repository'
 
 /**
- * Be default IDE itself can figure out all needed context via vscode API,
+ * Default IDE logic itself can figure out all needed context via vscode API,
  * for Cody Web where we don't hava access to this API (or way to override this)
  * we pass static initial context from the main thread (current repo, file, dir, etc.)
  */
@@ -261,7 +261,6 @@ async function hydrateWithCurrentWorkspace(
                     authStatus
                 )
             ),
-            title: 'Current Repository',
             description: repo.name,
             source: ContextItemSource.Initial,
             icon: 'folder',
