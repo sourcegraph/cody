@@ -3,7 +3,6 @@ import { useCallback } from 'react'
 import { URI } from 'vscode-uri'
 import { ACCOUNT_UPGRADE_URL, ACCOUNT_USAGE_URL } from '../../src/chat/protocol'
 import { EndpointSelection } from '../AuthPage'
-import { MESSAGE_CELL_AVATAR_SIZE } from '../chat/cells/messageCell/BaseMessageCell'
 import { UserAvatar } from '../components/UserAvatar'
 import { Button } from '../components/shadcn/ui/button'
 import { getVSCodeAPI } from '../utils/VSCodeApi'
@@ -73,9 +72,13 @@ export const AccountTab: React.FC<AccountTabProps> = ({ setView, endpointHistory
             <h2>Account</h2>
             <div className="tw-w-full tw-px-8 tw-py-4 tw-flex tw-flex-col tw-gap-4 tw-bg-popover tw-border tw-border-border tw-rounded-lg">
                 <div className="tw-flex tw-justify-between tw-w-full tw-border-b tw-border-border tw-shadow-lg tw-shadow-border-500/50 tw-p-4 tw-pb-6">
-                    <div className="tw-flex tw-self-stretch">
-                        <UserAvatar user={user} size={MESSAGE_CELL_AVATAR_SIZE} />
-                        <div className="tw-ml-4">
+                    <div className="tw-flex tw-self-stretch tw-flex-col tw-w-full tw-items-center tw-justify-center">
+                        <UserAvatar
+                            user={user}
+                            size={30}
+                            className="tw-flex-shrink-0 tw-w-[30px] tw-h-[30px] tw-flex tw-items-center tw-justify-center"
+                        />
+                        <div className="tw-flex tw-self-stretch tw-flex-col tw-w-full tw-items-center tw-justify-center tw-mt-4">
                             <p className="tw-text-lg tw-font-semibold">{displayName ?? username}</p>
                             <p className="tw-text-sm tw-text-muted-foreground">{primaryEmail}</p>
                         </div>
@@ -87,7 +90,11 @@ export const AccountTab: React.FC<AccountTabProps> = ({ setView, endpointHistory
                         {isDotComUser ? (isCodyProUser ? 'Cody Pro' : 'Cody Free') : 'Enterprise'}
                     </div>
                     <div>Endpoint:</div>
-                    <div className="tw-text-muted-foreground tw-col-span-4">{endpoint}</div>
+                    <div className="tw-text-muted-foreground tw-col-span-4">
+                        <a href={endpoint} target="_blank" rel="noreferrer">
+                            {endpoint}
+                        </a>
+                    </div>
                 </div>
             </div>
             {endpointHistory.length && (

@@ -295,6 +295,7 @@ export function contextItemMentionNodeDisplayText(contextItem: SerializedContext
         case 'openctx':
             return contextItem.title
     }
+
     // @ts-ignore
     throw new Error(`unrecognized context item type ${contextItem.type}`)
 }

@@ -1161,6 +1161,14 @@ export function abortableOperation<T, R>(
         )
 }
 
+/**
+ * Catches errors from the source observable and allows switching to a new observable.
+ * This is useful for complex error recovery scenarios where you need to emit multiple values
+ * or perform asynchronous operations in response to an error.
+ *
+ * @param handler A function that takes an error and returns a new observable
+ * @returns A function that transforms a source observable
+ */
 export function catchError<T, R>(
     handler: (error: any) => ObservableLike<R>
 ): (source: ObservableLike<T>) => Observable<T | R> {

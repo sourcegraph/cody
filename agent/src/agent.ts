@@ -44,6 +44,7 @@ import type * as agent_protocol from '../../vscode/src/jsonrpc/agent-protocol'
 import { mkdirSync, statSync } from 'node:fs'
 import { PassThrough } from 'node:stream'
 import type { Har } from '@pollyjs/persister'
+import { codyPaths } from '@sourcegraph/cody-shared'
 import { TESTING_TELEMETRY_EXPORTER } from '@sourcegraph/cody-shared/src/telemetry-v2/TelemetryRecorderProvider'
 import { type TelemetryEventParameters, TestTelemetryExporter } from '@sourcegraph/telemetry'
 import { copySync } from 'fs-extra'
@@ -76,7 +77,6 @@ import { AgentWorkspaceConfiguration } from './AgentWorkspaceConfiguration'
 import { AgentWorkspaceDocuments } from './AgentWorkspaceDocuments'
 import { registerNativeWebviewHandlers, resolveWebviewView } from './NativeWebview'
 import type { PollyRequestError } from './cli/command-jsonrpc-stdio'
-import { codyPaths } from './codyPaths'
 import {
     currentProtocolAuthStatus,
     currentProtocolAuthStatusOrNotReadyYet,
@@ -141,7 +141,12 @@ function copyExtensionRelativeResources(extensionPath: string, extensionClient: 
         }
     }
     copySources('win-ca-roots.exe')
-    if (extensionClient.capabilities?.webview === 'native') {
+    // Only copy the files if the client is using the native webview and they haven't opted
+    // to manage the resource files themselves.
+    if (
+        extensionClient.capabilities?.webview === 'native' &&
+        !extensionClient.capabilities?.webviewNativeConfig?.skipResourceRelativization
+    ) {
         copySources('webviews')
     }
 }
@@ -965,6 +970,11 @@ export class Agent extends MessageHandler implements ExtensionClient {
                 }
                 return Promise.reject(error)
             }
+        })
+
+        this.registerAuthenticatedRequest('extension/reset', async () => {
+            await this.globalState?.reset()
+            return null
         })
 
         this.registerNotification('autocomplete/completionAccepted', async ({ completionID }) => {

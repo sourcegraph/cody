@@ -107,6 +107,7 @@ export {
     LARGE_FILE_WARNING_LABEL,
     NO_SYMBOL_MATCHES_HELP_LABEL,
 } from './codebase-context/messages'
+export * from './codyPaths'
 export type {
     CodyCommand,
     CodyCommandContext,

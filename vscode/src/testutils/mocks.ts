@@ -869,7 +869,15 @@ export const vsCodeMocks = {
 } as const
 
 export const DEFAULT_VSCODE_SETTINGS = {
-    proxy: undefined,
+    net: {
+        mode: undefined,
+        proxy: {
+            cacert: undefined,
+            endpoint: undefined,
+            skipCertValidation: false,
+        },
+        vscode: '{}',
+    },
     codebase: '',
     serverEndpoint: undefined,
     customHeaders: undefined,
@@ -879,6 +887,7 @@ export const DEFAULT_VSCODE_SETTINGS = {
     },
     commandCodeLenses: false,
     experimentalSupercompletions: false,
+    experimentalAutoedits: undefined,
     experimentalMinionAnthropicKey: undefined,
     experimentalTracing: false,
     experimentalCommitMessage: true,

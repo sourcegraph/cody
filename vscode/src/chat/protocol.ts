@@ -121,8 +121,17 @@ export type WebviewMessage =
           snippet: string
       }
     | { command: 'rpc/request'; message: RequestMessage }
-    | { command: 'chatSession'; action: 'duplicate' | 'new'; sessionID?: string | undefined | null }
-    | { command: 'log'; level: 'debug' | 'error'; filterLabel: string; message: string }
+    | {
+          command: 'chatSession'
+          action: 'duplicate' | 'new'
+          sessionID?: string | undefined | null
+      }
+    | {
+          command: 'log'
+          level: 'debug' | 'error'
+          filterLabel: string
+          message: string
+      }
 
 export interface SmartApplyResult {
     taskId: FixupTaskID
@@ -161,6 +170,7 @@ export type ExtensionMessage =
           addContextItemsToLastHumanInput?: ContextItem[] | null | undefined
           appendTextToLastPromptEditor?: string | null | undefined
           smartApplyResult?: SmartApplyResult | undefined | null
+          submitHumanInput?: boolean | undefined | null
       }
     | ({ type: 'attribution' } & ExtensionAttributionMessage)
     | { type: 'rpc/response'; message: ResponseMessage }

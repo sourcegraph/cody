@@ -227,7 +227,7 @@ export function makeHumanMessageInfo(
             if (humanEditorRef.current?.getSerializedValue().text.trim().endsWith('@')) {
                 humanEditorRef.current?.setFocus(true, { moveCursorToEnd: true })
             } else {
-                humanEditorRef.current?.appendText('@', true)
+                humanEditorRef.current?.appendText('@')
             }
         },
     }

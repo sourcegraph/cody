@@ -98,6 +98,7 @@ import type { ExtensionClient } from '../../extension-client'
 import { migrateAndNotifyForOutdatedModels } from '../../models/modelMigrator'
 import { logDebug } from '../../output-channel-logger'
 import { getCategorizedMentions } from '../../prompt-builder/utils'
+import { hydratePromptText } from '../../prompts/prompt-hydration'
 import { mergedPromptsAndLegacyCommands } from '../../prompts/prompts'
 import { publicRepoMetadataIfAllWorkspaceReposArePublic } from '../../repository/githubRepoMetadata'
 import { authProvider } from '../../services/AuthProvider'
@@ -1619,6 +1620,10 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                         })
                     },
                     evaluatedFeatureFlag: flag => featureFlagProvider.evaluatedFeatureFlag(flag),
+                    hydratePromptMessage: (promptText, initialContext) =>
+                        promiseFactoryToObservable(() =>
+                            hydratePromptText(promptText, initialContext ?? [])
+                        ),
                     prompts: query =>
                         promiseFactoryToObservable(signal =>
                             mergedPromptsAndLegacyCommands(query, signal)

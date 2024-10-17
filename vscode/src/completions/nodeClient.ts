@@ -2,7 +2,6 @@
 // counterpart) since it requires node-only APIs. These can't be part of
 // the main `lib/shared` bundle since it would otherwise not work in the
 // web build.
-
 import http from 'node:http'
 import https from 'node:https'
 
@@ -16,11 +15,11 @@ import {
     SourcegraphCompletionsClient,
     addClientInfoParams,
     addCodyClientIdentificationHeaders,
-    agent,
     currentResolvedConfig,
     getActiveTraceAndSpanId,
     getSerializedParams,
     getTraceparentHeaders,
+    globalAgentRef,
     isError,
     logError,
     onAbort,
@@ -108,9 +107,10 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                 {
                     method: 'POST',
                     headers: Object.fromEntries(headers.entries()),
+                    // TODO: THIS MUST NOT BE DONE HERE!
                     // So we can send requests to the Sourcegraph local development instance, which has an incompatible cert.
-                    rejectUnauthorized: process.env.NODE_TLS_REJECT_UNAUTHORIZED !== '0',
-                    agent: agent.current?.(url),
+                    // rejectUnauthorized: process.env.NODE_TLS_REJECT_UNAUTHORIZED !== '0',
+                    agent: globalAgentRef.agent,
                 },
                 (res: http.IncomingMessage) => {
                     const { 'set-cookie': _setCookie, ...safeHeaders } = res.headers

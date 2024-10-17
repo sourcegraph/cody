@@ -139,6 +139,13 @@ class LocalStorage implements LocalStorageForModelPreferences {
         await this.set(this.LAST_USED_ENDPOINT, null)
     }
 
+    // Deletes and returns the endpoint history
+    public async deleteEndpointHistory(): Promise<string[]> {
+        const history = this.getEndpointHistory()
+        await Promise.all([this.deleteEndpoint(), this.set(this.CODY_ENDPOINT_HISTORY, null)])
+        return history || []
+    }
+
     public getEndpointHistory(): string[] | null {
         return this.get<string[] | null>(this.CODY_ENDPOINT_HISTORY)
     }

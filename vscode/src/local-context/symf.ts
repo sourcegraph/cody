@@ -140,10 +140,10 @@ export class SymfRunner implements vscode.Disposable {
 
     public async getLiveResults(
         userQuery: PromptString,
+        keywordQuery: string,
         files: string[],
         signal?: AbortSignal
     ): Promise<Result[]> {
-        const keywordQuery = userQuery.toString()
         const symfPath = await this.mustSymfPath()
         const args = [
             'live-query',

@@ -68,7 +68,6 @@ class DefaultCodeCompletionsClient implements CodeCompletionsClient {
 
                 // Force HTTP connection reuse to reduce latency.
                 // c.f. https://github.com/microsoft/vscode/issues/173861
-                headers.set('Connection', 'keep-alive')
                 headers.set('Content-Type', 'application/json; charset=utf-8')
                 if (auth.accessToken) {
                     headers.set('Authorization', `token ${auth.accessToken}`)
