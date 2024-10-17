@@ -14,7 +14,7 @@ class CodyErrorSubmitterTest : BasePlatformTestCase() {
     assertTrue(
         encodedUrl.startsWith(
             "https://github.com/sourcegraph/jetbrains/issues/new?template=bug_report.yml"))
-    assertTrue(encodedUrl.contains("&labels=bug"))
+    assertTrue(encodedUrl.contains("&labels=bug,repo/jetbrains"))
     assertTrue(encodedUrl.contains("&projects=sourcegraph/381"))
     assertFalse(encodedUrl.contains("&title="))
   }

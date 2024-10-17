@@ -51,7 +51,7 @@ class CodyErrorSubmitter : ErrorReportSubmitter() {
     val baseUrl =
         "https://github.com/sourcegraph/jetbrains/issues/new" +
             "?template=bug_report.yml" +
-            "&labels=bug" +
+            "&labels=bug,repo/jetbrains" +
             "&projects=sourcegraph/381"
 
     val title = throwableText?.let { "&title=${encode(getTitle(it))}" } ?: ""

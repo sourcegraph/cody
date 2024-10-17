@@ -6,6 +6,7 @@ description: "File a bug report for any of the JetBrains IDEs: IntelliJ, Goland,
 title: "bug: "
 labels:
   - bug
+  - repo/jetbrains
 projects:
   - sourcegraph/381
 body:
