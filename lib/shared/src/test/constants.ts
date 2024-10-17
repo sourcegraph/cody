@@ -5,10 +5,10 @@
  * depending on other state the displayed value might change.
  */
 export enum InvisibleStatusBarTag {
-    IsAuthenticated = '\u200B',
     HasErrors = '\u200C',
     HasLoaders = '\u200D',
     IsIgnored = '\u2060',
+    IsAuthenticated = '\u2061',
     // Unassigned = '\u2061'
     // Unassigned = '\u2062'
     // Unassigned = '\u2063'

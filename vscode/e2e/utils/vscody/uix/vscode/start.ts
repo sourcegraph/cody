@@ -78,40 +78,6 @@ export async function start({
             // we remove any mock handlers so that we can load the real deal
             page.unroute(interceptRouteURL)
 
-            // We also make sure that on page loads we expose the VSCodeAPI
-            await page.addInitScript(async () => {
-                // only run this in the main frame
-                if (window && window.self === window.top) {
-                    if (document.querySelector('meta[name="__exposed-vscode-api__"]') !== null) {
-                        return
-                    }
-                    while (true) {
-                        try {
-                            const code = window.require('vs/workbench/workbench.web.main')
-                            //@ts-ignore
-                            Object.assign(window.__testUtils.vscode, {
-                                browserAPI: code,
-                                //@ts-ignore
-                                executeCommand: (cmd, ...args) =>
-                                    code.commands.executeCommand(cmd, args),
-                            })
-                            // insert the meta tag if it doesn't already exist
-                            // await page.waitForSelector('meta[name="__exposed-vscode-api__"]', { timeout: 1000 })
-                            const meta = document.createElement('meta')
-                            meta.setAttribute('name', '__exposed-vscode-api__')
-                            meta.setAttribute('content', 'true')
-                            document.head.appendChild(meta)
-                            return
-                        } catch (err) {
-                            // We'll try again in a bit. Eitehr require wasn't loaded yet or the module isn't imported yet
-                            await new Promise(resolve => {
-                                setTimeout(resolve, 100)
-                            })
-                        }
-                    }
-                }
-            })
-
             // We can now authenticate and navigate to the UI
             const uriFolder = URI.file(path.resolve(workspaceDir))
             await page.goto(
