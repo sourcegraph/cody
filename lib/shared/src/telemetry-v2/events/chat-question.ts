@@ -169,7 +169,7 @@ export const events = [
                     },
                     billingMetadata: {
                         product: 'cody',
-                        category: 'billable',
+                        category: 'core',
                     },
                 } as const
                 telemetryRecorder.recordEvent(feature, action, telemetryData)
