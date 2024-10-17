@@ -37,5 +37,6 @@
   },
   "[css]": {
     "editor.defaultFormatter": "stylelint.vscode-stylelint"
-  }
+  },
+  "liveServer.settings.multiRootWorkspaceName": "cody"
 }
