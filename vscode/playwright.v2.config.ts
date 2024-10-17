@@ -31,7 +31,7 @@ const debugMode =
     process.env.PWDEBUG === '1' || process.env.PWDEBUG === 'console' || process.env.VSCDEBUG === '1'
 
 export default defineConfig<WorkerOptions & TestOptions & TmpDirOptions>({
-    workers: '50%',
+    workers: isWin ? '25%' : '50%',
     retries: 0, // Flake is not allowed!
     forbidOnly: isCI,
     // Important: All tests are parallelized, even within a file. So don't save
@@ -41,7 +41,7 @@ export default defineConfig<WorkerOptions & TestOptions & TmpDirOptions>({
     // We suspend timeouts when debugging (even from VSCode editor) so that if
     // you hit a breakpoint within the extension it doesn't cause a
     // test-failure.
-    timeout: debugMode ? 0 : isWin || isCI ? 10000 : 20000,
+    timeout: debugMode ? 0 : isWin || isCI ? 30000 : 20000,
     expect: {
         timeout: debugMode ? 0 : isWin || isCI ? 20000 : 10000,
     },
