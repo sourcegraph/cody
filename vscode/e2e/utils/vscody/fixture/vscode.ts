@@ -356,7 +356,7 @@ async function waitForVSCodeServerV2(
     const serverProcess = spawn(nodeExecutable, extendedArgs, {
         env: config.env,
         cwd: config.versionedServerExecutableDir,
-        stdio: ['inherit', 'pipe', 'inherit'],
+        stdio: ['inherit', 'pipe', 'ignore'],
         detached: false,
     })
     const startPromise = new Promise<boolean>(ready => {

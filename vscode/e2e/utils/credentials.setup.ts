@@ -49,7 +49,7 @@ async function withMissingValues(values: Map<string, string>) {
             }
             const token = execSync(
                 `gcloud secrets versions access latest --secret ${secretName} --project cody-agent-tokens --quiet`,
-                { encoding: 'utf-8' }
+                { encoding: 'utf-8', stdio: ['inherit', 'ignore', 'ignore'] }
             )
             withMissing.set(exportedName, token)
         } catch {
