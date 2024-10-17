@@ -3,15 +3,13 @@ import { type FC, type FunctionComponent, useLayoutEffect, useMemo, useState } f
 import { URI } from 'vscode-uri'
 
 import {
-    type ChatMessage,
-    type ContextItem,
-    type ContextItemOpenCtx,
-    type ContextItemRepository,
     ContextItemSource,
     REMOTE_DIRECTORY_PROVIDER_URI,
-    deserializeChatMessage,
+    type SerializedChatMessage,
+    type SerializedContextItem,
     isErrorLike,
     setDisplayPathEnvInfo,
+    uriString,
 } from '@sourcegraph/cody-shared'
 import { AppWrapper } from 'cody-ai/webviews/AppWrapper'
 import type { VSCodeWrapper } from 'cody-ai/webviews/utils/VSCodeApi'
@@ -107,8 +105,8 @@ const CodyWebPanel: FC<CodyWebPanelProps> = props => {
 
     const dispatchClientAction = useClientActionDispatcher()
     const [errorMessages, setErrorMessages] = useState<string[]>([])
-    const [messageInProgress, setMessageInProgress] = useState<ChatMessage | null>(null)
-    const [transcript, setTranscript] = useState<ChatMessage[]>([])
+    const [messageInProgress, setMessageInProgress] = useState<SerializedChatMessage | null>(null)
+    const [transcript, setTranscript] = useState<SerializedChatMessage[]>([])
     const [config, setConfig] = useState<Config | null>(null)
     const [view, setView] = useState<View | undefined>()
 
@@ -116,13 +114,12 @@ const CodyWebPanel: FC<CodyWebPanelProps> = props => {
         vscodeAPI.onMessage(message => {
             switch (message.type) {
                 case 'transcript': {
-                    const deserializedMessages = message.messages.map(deserializeChatMessage)
                     if (message.isMessageInProgress) {
-                        const msgLength = deserializedMessages.length - 1
-                        setTranscript(deserializedMessages.slice(0, msgLength))
-                        setMessageInProgress(deserializedMessages[msgLength])
+                        const msgLength = message.messages.length - 1
+                        setTranscript(message.messages.slice(0, msgLength))
+                        setMessageInProgress(message.messages[msgLength])
                     } else {
-                        setTranscript(deserializedMessages)
+                        setTranscript(message.messages)
                         setMessageInProgress(null)
                     }
                     break
@@ -148,41 +145,40 @@ const CodyWebPanel: FC<CodyWebPanelProps> = props => {
     // V2 telemetry recorder
     const telemetryRecorder = useMemo(() => createWebviewTelemetryRecorder(vscodeAPI), [vscodeAPI])
 
-    const initialContext = useMemo<ContextItem[]>(() => {
+    const initialContext = useMemo<SerializedContextItem[]>(() => {
         const { repository, fileURL, isDirectory } = initialContextData ?? {}
 
         if (!repository) {
             return []
         }
 
-        const mentions: ContextItem[] = [
+        const mentions: SerializedContextItem[] = [
             {
                 type: 'repository',
-                id: repository.id,
-                name: repository.name,
                 repoID: repository.id,
                 repoName: repository.name,
                 description: repository.name,
-                uri: URI.parse(`repo:${repository.name}`),
-                content: null,
+                uri: uriString(URI.parse(`repo:${repository.name}`)),
                 source: ContextItemSource.Initial,
                 icon: 'folder',
                 title: 'Current Repository',
-            } as ContextItemRepository,
+            },
         ]
 
         if (fileURL) {
             // Repository directory file url in this case is directory path
             if (isDirectory) {
+                const uri = uriString(URI.file(`${repository.name}/${fileURL}/`))
                 mentions.push({
                     type: 'openctx',
                     provider: 'openctx',
                     title: fileURL,
-                    uri: URI.file(`${repository.name}/${fileURL}/`),
+                    uri,
                     providerUri: REMOTE_DIRECTORY_PROVIDER_URI,
                     description: 'Current Directory',
                     source: ContextItemSource.Initial,
                     mention: {
+                        uri,
                         data: {
                             repoName: repository.name,
                             repoID: repository.id,
@@ -190,7 +186,7 @@ const CodyWebPanel: FC<CodyWebPanelProps> = props => {
                         },
                         description: fileURL,
                     },
-                } as ContextItemOpenCtx)
+                })
             } else {
                 // Common file mention with possible file range positions
                 mentions.push({
@@ -204,7 +200,7 @@ const CodyWebPanel: FC<CodyWebPanelProps> = props => {
                           }
                         : undefined,
                     remoteRepositoryName: repository.name,
-                    uri: URI.file(`${repository.name}/${fileURL}`),
+                    uri: uriString(URI.file(`${repository.name}/${fileURL}`)),
                     source: ContextItemSource.Initial,
                 })
             }

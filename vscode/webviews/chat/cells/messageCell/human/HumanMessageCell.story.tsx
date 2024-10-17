@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react'
 
-import { PromptString, ps } from '@sourcegraph/cody-shared'
+import { uriString } from '@sourcegraph/cody-shared'
 import { ExtensionAPIProviderForTestsOnly, MOCK_API } from '@sourcegraph/prompt-editor'
 import { Observable } from 'observable-fns'
 import { URI } from 'vscode-uri'
@@ -41,19 +41,17 @@ export const Scrolling: StoryObj<typeof meta> = {
     args: {
         message: {
             speaker: 'human',
-            text: PromptString.unsafe_fromUserQuery(
-                new Array(100)
-                    .fill(0)
-                    .map(
-                        (_, index) =>
-                            `Line ${index} ${
-                                index % 5 === 0
-                                    ? 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
-                                    : ''
-                            }`
-                    )
-                    .join('\n')
-            ),
+            text: new Array(100)
+                .fill(0)
+                .map(
+                    (_, index) =>
+                        `Line ${index} ${
+                            index % 5 === 0
+                                ? 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
+                                : ''
+                        }`
+                )
+                .join('\n'),
         },
     },
 }
@@ -68,13 +66,12 @@ export const WithInitialContext: StoryObj<typeof meta> = {
                     Observable.of([
                         {
                             type: 'repository',
-                            uri: URI.parse('https://example.com/foo/myrepo'),
+                            uri: uriString(URI.parse('https://example.com/foo/myrepo')),
                             title: 'foo/myrepo',
                             repoName: 'foo/myrepo',
                             repoID: 'abcd',
-                            content: null,
                         },
-                        { type: 'file', uri: URI.file('/foo.js') },
+                        { type: 'file', uri: uriString(URI.file('/foo.js')) },
                     ]),
             }}
         >
@@ -82,7 +79,7 @@ export const WithInitialContext: StoryObj<typeof meta> = {
         </ExtensionAPIProviderForTestsOnly>
     ),
     args: {
-        message: { speaker: 'human', text: ps`` },
+        message: { speaker: 'human', text: '' },
         isFirstMessage: true,
     },
 }
@@ -97,13 +94,12 @@ export const WithInitialContextFileTooLarge: StoryObj<typeof meta> = {
                     Observable.of([
                         {
                             type: 'repository',
-                            uri: URI.parse('https://example.com/foo/myrepo'),
+                            uri: uriString(URI.parse('https://example.com/foo/myrepo')),
                             title: 'foo/myrepo',
                             repoName: 'foo/myrepo',
                             repoID: 'abcd',
-                            content: null,
                         },
-                        { type: 'file', isTooLarge: true, uri: URI.file('/large_file.js') },
+                        { type: 'file', isTooLarge: true, uri: uriString(URI.file('/large_file.js')) },
                     ]),
             }}
         >
@@ -111,7 +107,7 @@ export const WithInitialContextFileTooLarge: StoryObj<typeof meta> = {
         </ExtensionAPIProviderForTestsOnly>
     ),
     args: {
-        message: { speaker: 'human', text: ps`` },
+        message: { speaker: 'human', text: '' },
         isFirstMessage: true,
     },
 }

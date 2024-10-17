@@ -195,7 +195,7 @@ export function $createContextItemMentionNode(
     return $applyNodeReplacement(node)
 }
 
-function extraClassNamesForContextItem(contextItem: ContextItem | SerializedContextItem): string {
+function extraClassNamesForContextItem(contextItem: SerializedContextItem): string {
     const classNames: string[] = []
     if (contextItem.isTooLarge || contextItem.isIgnored) {
         classNames.push(styles.isTooLargeOrIgnored)
@@ -203,7 +203,7 @@ function extraClassNamesForContextItem(contextItem: ContextItem | SerializedCont
     return classNames.join(' ')
 }
 
-export function $createContextItemTextNode(contextItem: ContextItem): TextNode {
+export function $createContextItemTextNode(contextItem: SerializedContextItem): TextNode {
     const textNode = new TextNode(contextItemMentionNodeDisplayText(serializeContextItem(contextItem)))
     return $applyNodeReplacement(textNode)
 }

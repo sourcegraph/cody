@@ -1,3 +1,4 @@
+import { uriStringFromKnownValidString } from '@sourcegraph/cody-shared'
 import {
     $createParagraphNode,
     $createTextNode,
@@ -24,7 +25,7 @@ describe('isEditorContentOnlyInitialContext', () => {
                 const paragraph = $createParagraphNode()
                 paragraph.append(
                     $createContextItemMentionNode(
-                        { type: 'file', uri: 'test.ts' },
+                        { type: 'file', uri: uriStringFromKnownValidString('file:///test.ts') },
                         { isFromInitialContext: true }
                     ),
                     $createTextNode(' ')
@@ -43,12 +44,12 @@ describe('isEditorContentOnlyInitialContext', () => {
                 const paragraph = $createParagraphNode()
                 paragraph.append(
                     $createContextItemMentionNode(
-                        { type: 'file', uri: 'test1.ts' },
+                        { type: 'file', uri: uriStringFromKnownValidString('file:///test1.ts') },
                         { isFromInitialContext: true }
                     ),
                     $createTextNode(' '),
                     $createContextItemMentionNode(
-                        { type: 'file', uri: 'test2.ts' },
+                        { type: 'file', uri: uriStringFromKnownValidString('file:///test2.ts') },
                         { isFromInitialContext: false }
                     ),
                     $createTextNode(' ')
@@ -66,7 +67,7 @@ describe('isEditorContentOnlyInitialContext', () => {
                 const root = $getRoot()
                 const paragraph = $createParagraphNode()
                 const contextItem = $createContextItemMentionNode(
-                    { type: 'file', uri: 'test.ts' },
+                    { type: 'file', uri: uriStringFromKnownValidString('file:///test.ts') },
                     { isFromInitialContext: true }
                 )
                 const space = $createTextNode(' ')

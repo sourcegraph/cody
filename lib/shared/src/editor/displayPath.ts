@@ -2,6 +2,7 @@ import { URI } from 'vscode-uri'
 
 import { pathFunctionsForURI, posixFilePaths, windowsFilePaths } from '../common/path'
 import { type RangeData, displayLineRange } from '../common/range'
+import type { URIString } from '../common/uriString'
 
 /**
  * Convert an absolute URI to a (possibly shorter) path to display to the user. The display path is
@@ -23,7 +24,7 @@ import { type RangeData, displayLineRange } from '../common/range'
  *   Sourcegraph instance).
  * @param location The absolute URI to convert to a display path.
  */
-export function displayPath(location: URI): string {
+export function displayPath(location: URI | URIString): string {
     const result = _displayPath(location, checkEnvInfo())
     return typeof result === 'string' ? result : result.toString()
 }
@@ -36,7 +37,7 @@ export function displayPath(location: URI): string {
  * @param range - The line range data to display.
  * @returns The formatted path with the start and end lines of the range appended to it.
  */
-export function displayPathWithLines(location: URI, range: RangeData): string {
+export function displayPathWithLines(location: URI | URIString, range: RangeData): string {
     return `${displayPath(location)}:${displayLineRange(range)}`
 }
 
@@ -59,9 +60,11 @@ export function displayPathWithLines(location: URI, range: RangeData): string {
  *   root) and `dir/file2.txt`, then the VS Code-idiomatic way to present the results is as
  *   `file1.txt` and `file2.txt <dir>` (try it in the search sidebar to see).
  */
-export function displayPathDirname(location: URI): string {
+export function displayPathDirname(location: URI | URIString): string {
+    const uri = typeof location === 'string' ? URI.parse(location) : URI.from(location)
+
     const envInfo = checkEnvInfo()
-    const result = _displayPath(location, envInfo)
+    const result = _displayPath(uri, envInfo)
 
     // File path.
     if (typeof result === 'string') {
@@ -71,7 +74,7 @@ export function displayPathDirname(location: URI): string {
     }
 
     // Otherwise, URI.
-    const dirname = pathFunctionsForURI(location, envInfo.isWindows).dirname
+    const dirname = pathFunctionsForURI(uri, envInfo.isWindows).dirname
     return result.with({ path: dirname(result.path) }).toString()
 }
 
@@ -79,7 +82,7 @@ export function displayPathDirname(location: URI): string {
  * Similar to `basename(displayPath(location))`, but it uses the right path separators in `basename`
  * ('\' for file URIs on Windows, '/' otherwise).
  */
-export function displayPathBasename(location: URI | string): string {
+export function displayPathBasename(location: URI | URIString): string {
     const envInfo = checkEnvInfo()
     const result = _displayPath(location, envInfo)
 
@@ -113,7 +116,7 @@ function checkEnvInfo(): DisplayPathEnvInfo {
 }
 
 function _displayPath(
-    location: URI | string,
+    location: URI | URIString,
     { workspaceFolders, isWindows }: DisplayPathEnvInfo,
     includeWorkspaceFolderWhenMultiple = true
 ): string | URI {

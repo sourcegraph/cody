@@ -2,12 +2,12 @@ import type * as React from 'react'
 import { useEffect, useRef } from 'react'
 
 import {
-    type ContextItemOpenCtx,
     ContextItemSource,
     REMOTE_FILE_PROVIDER_URI,
+    type SerializedContextItem,
+    type URIString,
 } from '@sourcegraph/cody-shared'
 import { ChevronDown, ChevronUp, EllipsisIcon, MessageSquareDiff, MessageSquarePlus } from 'lucide-react'
-import { URI } from 'vscode-uri'
 import { getCreateNewChatCommand } from '../../../tabs/utils'
 import { getVSCodeAPI } from '../../../utils/VSCodeApi'
 import { useConfig } from '../../../utils/useConfig'
@@ -22,7 +22,7 @@ interface Props {
     repoURL: string
     filePath: string
     pathMatchRanges?: Range[]
-    fileURL: string
+    fileURL: URIString
     repoDisplayName?: string
     className?: string
     isKeyboardSelectable?: boolean
@@ -87,7 +87,7 @@ export const RepoFileLink: React.FunctionComponent<React.PropsWithChildren<Props
                         providerUri: REMOTE_FILE_PROVIDER_URI,
                         provider: 'openctx',
                         type: 'openctx',
-                        uri: URI.parse(fileURL),
+                        uri: fileURL,
                         title: fileName,
                         description: filePath,
                         source: ContextItemSource.User,
@@ -100,7 +100,7 @@ export const RepoFileLink: React.FunctionComponent<React.PropsWithChildren<Props
                             },
                         },
                     },
-                ] satisfies ContextItemOpenCtx[],
+                ] satisfies SerializedContextItem[],
             }),
         })
     }

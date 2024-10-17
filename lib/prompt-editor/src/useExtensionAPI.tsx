@@ -1,7 +1,7 @@
 import {
-    type ContextItem,
     type GenericVSCodeWrapper,
     type Model,
+    type SerializedContextItem,
     type WebviewToExtensionAPI,
     createExtensionAPI,
     createMessageAPIForWebview,
@@ -13,7 +13,7 @@ const context = createContext<WebviewToExtensionAPI | undefined>(undefined)
 
 export const ExtensionAPIProviderFromVSCodeAPI: FunctionComponent<{
     vscodeAPI: GenericVSCodeWrapper<any, any>
-    staticInitialContext?: ContextItem[]
+    staticInitialContext?: SerializedContextItem[]
     children: ReactNode
 }> = ({ vscodeAPI, staticInitialContext, children }) => {
     const extensionAPI = useMemo<WebviewToExtensionAPI>(

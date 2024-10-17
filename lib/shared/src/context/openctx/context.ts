@@ -51,7 +51,7 @@ export const getContextForChatMessage = async (
                         providerUri: item.providerUri,
                         content: item.ai?.content || '',
                         provider: 'openctx',
-                    }) as ContextItemOpenCtx
+                    }) satisfies ContextItemOpenCtx
             )
     } catch {
         return []

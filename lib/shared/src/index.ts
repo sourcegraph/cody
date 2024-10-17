@@ -147,6 +147,7 @@ export { isWindows, isMacOS } from './common/platform'
 export {
     assertFileURI,
     isFileURI,
+    isFileURIString,
     uriBasename,
     uriDirname,
     uriExtname,
@@ -172,7 +173,7 @@ export {
     setDisplayPathEnvInfo,
     type DisplayPathEnvInfo,
 } from './editor/displayPath'
-export { forceHydration, hydrateAfterPostMessage } from './editor/hydrateAfterPostMessage'
+export { isValueSafeForPostMessage as forceHydration } from './editor/hydrateAfterPostMessage'
 export * from './editor/utils'
 export {
     FeatureFlag,
@@ -383,3 +384,4 @@ export {
 } from './sourcegraph-api/userProductSubscription'
 export { siteVersion, currentSiteVersion } from './sourcegraph-api/siteVersion'
 export { configOverwrites } from './models/configOverwrites'
+export * from './common/uriString'

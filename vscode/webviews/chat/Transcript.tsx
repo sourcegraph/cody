@@ -4,10 +4,11 @@ import {
     type Guardrails,
     type Model,
     REMOTE_FILE_PROVIDER_URI,
+    type SerializedChatMessage,
     type SerializedPromptEditorValue,
-    deserializeContextItem,
     inputTextWithoutContextChipsFromPromptEditorState,
     isAbortErrorOrSocketHangUp,
+    uriStringFromKnownValidString,
 } from '@sourcegraph/cody-shared'
 import { type PromptEditorRefAPI, useExtensionAPI } from '@sourcegraph/prompt-editor'
 import { clsx } from 'clsx'
@@ -23,7 +24,6 @@ import {
     useMemo,
     useRef,
 } from 'react'
-import { URI } from 'vscode-uri'
 import type { UserAccountInfo } from '../Chat'
 import type { ApiPostMessage } from '../Chat'
 import { Button } from '../components/shadcn/ui/button'
@@ -42,10 +42,10 @@ import { InfoMessage } from './components/InfoMessage'
 
 interface TranscriptProps {
     chatEnabled: boolean
-    transcript: ChatMessage[]
+    transcript: SerializedChatMessage[]
     models: Model[]
     userInfo: UserAccountInfo
-    messageInProgress: ChatMessage | null
+    messageInProgress: SerializedChatMessage | null
 
     guardrails?: Guardrails
     postMessage?: ApiPostMessage
@@ -95,7 +95,7 @@ export const Transcript: FC<TranscriptProps> = props => {
                     providerUri: REMOTE_FILE_PROVIDER_URI,
                     provider: 'openctx',
                     type: 'openctx',
-                    uri: URI.parse(fileURL),
+                    uri: uriStringFromKnownValidString(fileURL),
                     title: filePath.split('/').at(-1) ?? filePath,
                     description: filePath,
                     source: ContextItemSource.User,
@@ -152,15 +152,15 @@ export const Transcript: FC<TranscriptProps> = props => {
 /** A human-assistant message-and-response pair. */
 export interface Interaction {
     /** The human message, either sent or not. */
-    humanMessage: ChatMessage & { index: number; isUnsentFollowup: boolean }
+    humanMessage: SerializedChatMessage & { index: number; isUnsentFollowup: boolean }
 
     /** `null` if the {@link Interaction.humanMessage} has not yet been sent. */
-    assistantMessage: (ChatMessage & { index: number; isLoading: boolean }) | null
+    assistantMessage: (SerializedChatMessage & { index: number; isLoading: boolean }) | null
 }
 
 export function transcriptToInteractionPairs(
-    transcript: ChatMessage[],
-    assistantMessageInProgress: ChatMessage | null
+    transcript: SerializedChatMessage[],
+    assistantMessageInProgress: SerializedChatMessage | null
 ): Interaction[] {
     const pairs: Interaction[] = []
     const transcriptLength = transcript.length
@@ -496,7 +496,7 @@ export function editHumanMessage({
         index: messageIndexInTranscript,
         text: editorValue.text,
         editorState: editorValue.editorState,
-        contextItems: editorValue.contextItems.map(deserializeContextItem),
+        contextItems: editorValue.contextItems,
         intent,
         intentScores,
         manuallySelectedIntent,
@@ -519,7 +519,7 @@ function submitHumanMessage({
         command: 'submit',
         text: editorValue.text,
         editorState: editorValue.editorState,
-        contextItems: editorValue.contextItems.map(deserializeContextItem),
+        contextItems: editorValue.contextItems,
         intent,
         intentScores,
         manuallySelectedIntent,

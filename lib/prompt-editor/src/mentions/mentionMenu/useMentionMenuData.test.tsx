@@ -1,15 +1,15 @@
 import {
-    type ContextItem,
     ContextItemSource,
     type ContextMentionProviderMetadata,
     FILE_CONTEXT_MENTION_PROVIDER,
     type MentionMenuData,
+    type SerializedContextItem,
     promiseToObservable,
+    uriStringFromKnownValidString,
 } from '@sourcegraph/cody-shared'
 import { renderHook } from '@testing-library/react'
 import { Observable } from 'observable-fns'
 import { describe, expect, test, vi } from 'vitest'
-import { URI } from 'vscode-uri'
 import { MOCK_API, useExtensionAPI } from '../../useExtensionAPI'
 import { useInitialContextForChat } from '../../useInitialContext'
 import { waitForObservableInTest } from '../../useObservable'
@@ -21,22 +21,22 @@ vi.mock('../../useInitialContext')
 describe('useMentionMenuData', () => {
     describe('initial context deduping', () => {
         test('items does not duplicate items from initialContextItems', async () => {
-            const file1: ContextItem = {
-                uri: URI.file('file1.ts'),
+            const file1: SerializedContextItem = {
+                uri: uriStringFromKnownValidString('file:///file1.ts'),
                 type: 'file',
                 isTooLarge: undefined,
                 source: ContextItemSource.User,
             }
-            const mockContextItems: ContextItem[] = [
+            const mockContextItems: SerializedContextItem[] = [
                 file1,
                 {
-                    uri: URI.file('file2.ts'),
+                    uri: uriStringFromKnownValidString('file:///file2.ts'),
                     type: 'file',
                     isTooLarge: undefined,
                     source: ContextItemSource.User,
                 },
                 {
-                    uri: URI.file('file3.ts'),
+                    uri: uriStringFromKnownValidString('file:///file3.ts'),
                     type: 'file',
                     isTooLarge: undefined,
                     source: ContextItemSource.User,
@@ -54,7 +54,7 @@ describe('useMentionMenuData', () => {
                         items: [file1, mockContextItems[1], mockContextItems[2]],
                     }),
             })
-            const file1FromInitialContext: ContextItem = {
+            const file1FromInitialContext: SerializedContextItem = {
                 ...mockContextItems[0],
                 source: ContextItemSource.Initial,
             }
@@ -129,7 +129,10 @@ describe('useMentionMenuData', () => {
 
 describe('useCallMentionMenuData', () => {
     test('returns filtered providers and items based on query', async () => {
-        const CONTEXT_ITEM: ContextItem = { type: 'file', uri: URI.file('foo.go') }
+        const CONTEXT_ITEM: SerializedContextItem = {
+            type: 'file',
+            uri: uriStringFromKnownValidString('file:///foo.go'),
+        }
 
         let resolve: (items: MentionMenuData) => void
         const dataPromise = new Promise<MentionMenuData>(resolve_ => {

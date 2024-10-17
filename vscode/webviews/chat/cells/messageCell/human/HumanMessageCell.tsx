@@ -1,6 +1,6 @@
 import {
-    type ChatMessage,
     type Model,
+    type SerializedChatMessage,
     type SerializedPromptEditorState,
     type SerializedPromptEditorValue,
     serializedPromptEditorStateFromChatMessage,
@@ -19,7 +19,7 @@ import { getVSCodeAPI } from '../../../../utils/VSCodeApi'
 import { useConfig } from '../../../../utils/useConfig'
 
 interface HumanMessageCellProps {
-    message: ChatMessage
+    message: SerializedChatMessage
     models: Model[]
     userInfo: UserAccountInfo
     chatEnabled: boolean

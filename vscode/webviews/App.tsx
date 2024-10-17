@@ -3,11 +3,10 @@ import { type ComponentProps, useCallback, useEffect, useMemo, useState } from '
 import styles from './App.module.css'
 
 import {
-    type ChatMessage,
-    type ContextItem,
     GuardrailsPost,
+    type SerializedChatMessage,
+    type SerializedContextItem,
     type TelemetryRecorder,
-    deserializeChatMessage,
 } from '@sourcegraph/cody-shared'
 import type { AuthMethod } from '../src/chat/protocol'
 import { AuthPage } from './AuthPage'
@@ -27,9 +26,9 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     const [config, setConfig] = useState<Config | null>(null)
     // NOTE: View state will be set by the extension host during initialization.
     const [view, setView] = useState<View>()
-    const [messageInProgress, setMessageInProgress] = useState<ChatMessage | null>(null)
+    const [messageInProgress, setMessageInProgress] = useState<SerializedChatMessage | null>(null)
 
-    const [transcript, setTranscript] = useState<ChatMessage[]>([])
+    const [transcript, setTranscript] = useState<SerializedChatMessage[]>([])
 
     const [errorMessages, setErrorMessages] = useState<string[]>([])
 
@@ -57,13 +56,12 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                         break
                     }
                     case 'transcript': {
-                        const deserializedMessages = message.messages.map(deserializeChatMessage)
                         if (message.isMessageInProgress) {
-                            const msgLength = deserializedMessages.length - 1
-                            setTranscript(deserializedMessages.slice(0, msgLength))
-                            setMessageInProgress(deserializedMessages[msgLength])
+                            const msgLength = message.messages.length - 1
+                            setTranscript(message.messages.slice(0, msgLength))
+                            setMessageInProgress(message.messages[msgLength])
                         } else {
-                            setTranscript(deserializedMessages)
+                            setTranscript(message.messages)
                             setMessageInProgress(null)
                         }
                         vscodeAPI.setState(message.chatID)
@@ -195,7 +193,7 @@ export function getAppWrappers(
     vscodeAPI: VSCodeWrapper,
     telemetryRecorder: TelemetryRecorder,
     config: Config | null,
-    staticInitialContext: ContextItem[] | undefined
+    staticInitialContext: SerializedContextItem[] | undefined
 ): Wrapper[] {
     return [
         {

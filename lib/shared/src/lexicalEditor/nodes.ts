@@ -18,6 +18,7 @@ import {
     mergeRanges,
     toRangeData,
 } from '../common/range'
+import { type URIString, uriString } from '../common/uriString'
 import { displayPathBasename } from '../editor/displayPath'
 
 export const CONTEXT_ITEM_MENTION_NODE_TYPE = 'contextItemMention'
@@ -28,7 +29,7 @@ export const TEMPLATE_INPUT_NODE_TYPE = 'templateInput'
  * item mentions.
  */
 export type SerializedContextItem = {
-    uri: string
+    uri: URIString
     title?: string
     content?: undefined
     source?: ContextItemSource
@@ -70,7 +71,7 @@ export function serializeContextItem(
     // could accidentally include tons of data (including the entire contents of files).
     return {
         ...contextItem,
-        uri: contextItem.uri.toString(),
+        uri: uriString(contextItem.uri),
 
         // De-hydrate because vscode.Range serializes to `[start, end]` in JSON.
         range: contextItem.range ? toRangeData(contextItem.range) : undefined,

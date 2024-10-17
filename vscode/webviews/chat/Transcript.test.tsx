@@ -1,8 +1,8 @@
 import {
-    type ChatMessage,
+    type SerializedChatMessage,
     errorToChatError,
     getMockedDotComClientModels,
-    ps,
+    uriString,
 } from '@sourcegraph/cody-shared'
 import { fireEvent, getQueriesForElement, render as render_, screen } from '@testing-library/react'
 import type { ComponentProps } from 'react'
@@ -52,8 +52,8 @@ describe('Transcript', () => {
             <Transcript
                 {...PROPS}
                 transcript={[
-                    { speaker: 'human', text: ps`Hello` },
-                    { speaker: 'assistant', text: ps`Hi` },
+                    { speaker: 'human', text: 'Hello' },
+                    { speaker: 'assistant', text: 'Hi' },
                 ]}
             />
         )
@@ -80,8 +80,8 @@ describe('Transcript', () => {
             <Transcript
                 {...PROPS}
                 transcript={[
-                    { speaker: 'human', text: ps`Hello` },
-                    { speaker: 'assistant', text: ps`Hi` },
+                    { speaker: 'human', text: 'Hello' },
+                    { speaker: 'assistant', text: 'Hi' },
                 ]}
             />
         )
@@ -95,10 +95,10 @@ describe('Transcript', () => {
                 transcript={[
                     {
                         speaker: 'human',
-                        text: ps`Foo`,
-                        contextFiles: [{ type: 'file', uri: URI.file('/foo.js') }],
+                        text: 'Foo',
+                        contextFiles: [{ type: 'file', uri: uriString(URI.file('/foo.js')) }],
                     },
-                    { speaker: 'assistant', text: ps`Bar` },
+                    { speaker: 'assistant', text: 'Bar' },
                 ]}
             />
         )
@@ -110,10 +110,10 @@ describe('Transcript', () => {
             <Transcript
                 {...PROPS}
                 transcript={[
-                    { speaker: 'human', text: ps`Foo` },
-                    { speaker: 'assistant', text: ps`Bar` },
-                    { speaker: 'human', text: ps`Baz` },
-                    { speaker: 'assistant', text: ps`Qux` },
+                    { speaker: 'human', text: 'Foo' },
+                    { speaker: 'assistant', text: 'Bar' },
+                    { speaker: 'human', text: 'Baz' },
+                    { speaker: 'assistant', text: 'Qux' },
                 ]}
             />
         )
@@ -133,7 +133,7 @@ describe('Transcript', () => {
                 transcript={[
                     {
                         speaker: 'human',
-                        text: ps`Foo`,
+                        text: 'Foo',
                         contextFiles: undefined,
                     },
                 ]}
@@ -154,8 +154,8 @@ describe('Transcript', () => {
                 transcript={[
                     {
                         speaker: 'human',
-                        text: ps`Foo`,
-                        contextFiles: [{ type: 'file', uri: URI.file('/foo.js') }],
+                        text: 'Foo',
+                        contextFiles: [{ type: 'file', uri: uriString(URI.file('/foo.js')) }],
                     },
                 ]}
                 messageInProgress={{ speaker: 'assistant', text: undefined }}
@@ -176,7 +176,7 @@ describe('Transcript', () => {
                 transcript={[
                     {
                         speaker: 'human',
-                        text: ps`Foo`,
+                        text: 'Foo',
                         contextFiles: [],
                     },
                 ]}
@@ -197,11 +197,11 @@ describe('Transcript', () => {
                 transcript={[
                     {
                         speaker: 'human',
-                        text: ps`Foo`,
-                        contextFiles: [{ type: 'file', uri: URI.file('/foo.js') }],
+                        text: 'Foo',
+                        contextFiles: [{ type: 'file', uri: uriString(URI.file('/foo.js')) }],
                     },
                 ]}
-                messageInProgress={{ speaker: 'assistant', text: ps`Bar` }}
+                messageInProgress={{ speaker: 'assistant', text: 'Bar' }}
             />
         )
         expectCells([
@@ -219,11 +219,11 @@ describe('Transcript', () => {
                 transcript={[
                     {
                         speaker: 'human',
-                        text: ps`Foo`,
+                        text: 'Foo',
                         contextFiles: [],
                     },
                 ]}
-                messageInProgress={{ speaker: 'assistant', text: ps`Bar` }}
+                messageInProgress={{ speaker: 'assistant', text: 'Bar' }}
             />
         )
         expectCells([{ message: 'Foo' }, { message: 'Bar' }, { message: '', canSubmit: true }])
@@ -234,7 +234,7 @@ describe('Transcript', () => {
             <Transcript
                 {...PROPS}
                 transcript={[
-                    { speaker: 'human', text: ps`Foo` },
+                    { speaker: 'human', text: 'Foo' },
                     { speaker: 'assistant', error: errorToChatError(new Error('some error')) },
                 ]}
             />
@@ -244,8 +244,8 @@ describe('Transcript', () => {
     })
 
     test('does not clobber user input into followup while isPendingPriorResponse when it completes', async () => {
-        const humanMessage: ChatMessage = { speaker: 'human', text: ps`Foo`, contextFiles: [] }
-        const assistantMessage: ChatMessage = { speaker: 'assistant', text: ps`Bar` }
+        const humanMessage: SerializedChatMessage = { speaker: 'human', text: 'Foo', contextFiles: [] }
+        const assistantMessage: SerializedChatMessage = { speaker: 'assistant', text: 'Bar' }
         const { container, rerender } = render(
             <Transcript {...PROPS} transcript={[humanMessage]} messageInProgress={assistantMessage} />
         )
@@ -274,8 +274,8 @@ describe('Transcript', () => {
             <Transcript
                 {...PROPS}
                 transcript={[
-                    { speaker: 'human', text: ps`Foo`, contextFiles: [] },
-                    { speaker: 'assistant', text: ps`Bar` },
+                    { speaker: 'human', text: 'Foo', contextFiles: [] },
+                    { speaker: 'assistant', text: 'Bar' },
                 ]}
             />
         )
@@ -290,8 +290,8 @@ describe('Transcript', () => {
             <Transcript
                 {...PROPS}
                 transcript={[
-                    { speaker: 'human', text: ps`Foo`, contextFiles: [] },
-                    { speaker: 'assistant', text: ps`Bar` },
+                    { speaker: 'human', text: 'Foo', contextFiles: [] },
+                    { speaker: 'assistant', text: 'Bar' },
                 ]}
             />
         )
@@ -374,21 +374,21 @@ describe('transcriptToInteractionPairs', () => {
         expect(
             transcriptToInteractionPairs(
                 [
-                    { speaker: 'human', text: ps`a` },
-                    { speaker: 'assistant', text: ps`b` },
-                    { speaker: 'human', text: ps`c` },
-                    { speaker: 'assistant', text: ps`d` },
+                    { speaker: 'human', text: 'a' },
+                    { speaker: 'assistant', text: 'b' },
+                    { speaker: 'human', text: 'c' },
+                    { speaker: 'assistant', text: 'd' },
                 ],
                 null
             )
         ).toEqual<Interaction[]>([
             {
-                humanMessage: { index: 0, speaker: 'human', text: ps`a`, isUnsentFollowup: false },
-                assistantMessage: { index: 1, speaker: 'assistant', text: ps`b`, isLoading: false },
+                humanMessage: { index: 0, speaker: 'human', text: 'a', isUnsentFollowup: false },
+                assistantMessage: { index: 1, speaker: 'assistant', text: 'b', isLoading: false },
             },
             {
-                humanMessage: { index: 2, speaker: 'human', text: ps`c`, isUnsentFollowup: false },
-                assistantMessage: { index: 3, speaker: 'assistant', text: ps`d`, isLoading: false },
+                humanMessage: { index: 2, speaker: 'human', text: 'c', isUnsentFollowup: false },
+                assistantMessage: { index: 3, speaker: 'assistant', text: 'd', isLoading: false },
             },
             {
                 humanMessage: { index: 4, speaker: 'human', isUnsentFollowup: true },
@@ -399,14 +399,14 @@ describe('transcriptToInteractionPairs', () => {
 
     test('assistant message is loading', () => {
         expect(
-            transcriptToInteractionPairs([{ speaker: 'human', text: ps`a` }], {
+            transcriptToInteractionPairs([{ speaker: 'human', text: 'a' }], {
                 speaker: 'assistant',
-                text: ps`b`,
+                text: 'b',
             })
         ).toEqual<Interaction[]>([
             {
-                humanMessage: { index: 0, speaker: 'human', text: ps`a`, isUnsentFollowup: false },
-                assistantMessage: { index: 1, speaker: 'assistant', text: ps`b`, isLoading: true },
+                humanMessage: { index: 0, speaker: 'human', text: 'a', isUnsentFollowup: false },
+                assistantMessage: { index: 1, speaker: 'assistant', text: 'b', isLoading: true },
             },
             {
                 humanMessage: { index: 2, speaker: 'human', isUnsentFollowup: true },
@@ -418,13 +418,13 @@ describe('transcriptToInteractionPairs', () => {
     test('last assistant message is error', () => {
         const error = errorToChatError(new Error('x'))
         expect(
-            transcriptToInteractionPairs([{ speaker: 'human', text: ps`a` }], {
+            transcriptToInteractionPairs([{ speaker: 'human', text: 'a' }], {
                 speaker: 'assistant',
                 error,
             })
         ).toEqual<Interaction[]>([
             {
-                humanMessage: { index: 0, speaker: 'human', text: ps`a`, isUnsentFollowup: false },
+                humanMessage: { index: 0, speaker: 'human', text: 'a', isUnsentFollowup: false },
                 assistantMessage: {
                     index: 1,
                     speaker: 'assistant',

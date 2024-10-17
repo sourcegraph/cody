@@ -1,5 +1,5 @@
 import type Anthropic from '@anthropic-ai/sdk'
-import { currentAuthStatus, forceHydration, hydrateAfterPostMessage } from '@sourcegraph/cody-shared'
+import { currentAuthStatus, forceHydration } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 import type {
     MinionExtensionMessage,
@@ -113,9 +113,7 @@ export abstract class ReactPanelController<WebviewMessageT extends {}, Extension
             ),
 
             this.panel.webview.onDidReceiveMessage(message => {
-                this._handleDidReceiveMessage(
-                    hydrateAfterPostMessage(message, uri => vscode.Uri.from(uri as any))
-                )
+                this._handleDidReceiveMessage(message)
             })
         )
     }

@@ -4,11 +4,12 @@ import path from 'node:path'
 
 import type { Polly } from '@pollyjs/core'
 import {
-    type ContextItem,
     ModelUsage,
     type SerializedContextItem,
     TokenCounterUtils,
     isDotCom,
+    uriString,
+    uriStringFromKnownValidString,
 } from '@sourcegraph/cody-shared'
 import { Command } from 'commander'
 
@@ -217,7 +218,7 @@ export async function chatAction(options: ChatOptions): Promise<number> {
         await client.request('chat/setModel', { id, model: options.model })
     }
 
-    const contextItems: ContextItem[] = []
+    const contextItems: SerializedContextItem[] = []
     if (options.contextRepo && options.contextRepo.length > 0) {
         if (isDotCom(serverInfo.authStatus)) {
             spinner.fail(
@@ -252,14 +253,12 @@ export async function chatAction(options: ChatOptions): Promise<number> {
             return 1
         }
         for (const repo of repos) {
-            const repoUri = vscode.Uri.parse(`https://${endpoint}/${repo.name}`)
             contextItems.push({
                 type: 'repository',
                 // TODO: confirm syntax for repo
-                uri: repoUri,
+                uri: uriStringFromKnownValidString(`https://${endpoint}/${repo.name}`),
                 repoName: repo.name,
                 repoID: repo.id,
-                content: null,
             })
         }
     }
@@ -267,7 +266,7 @@ export async function chatAction(options: ChatOptions): Promise<number> {
     for (const relativeOrAbsolutePath of options.contextFile ?? []) {
         contextItems.push({
             type: 'file',
-            uri: toUri(options.dir, relativeOrAbsolutePath),
+            uri: uriString(toUri(options.dir, relativeOrAbsolutePath)),
         })
     }
     const start = performance.now()

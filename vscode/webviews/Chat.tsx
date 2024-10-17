@@ -3,11 +3,10 @@ import { useCallback, useEffect, useMemo, useRef } from 'react'
 
 import type {
     AuthenticatedAuthStatus,
-    ChatMessage,
     CodyIDE,
     Guardrails,
     Model,
-    PromptString,
+    SerializedChatMessage,
 } from '@sourcegraph/cody-shared'
 import { Transcript, focusLastHumanMessageEditor } from './chat/Transcript'
 import type { VSCodeWrapper } from './utils/VSCodeApi'
@@ -24,8 +23,8 @@ import { useUserAccountInfo } from './utils/useConfig'
 
 interface ChatboxProps {
     chatEnabled: boolean
-    messageInProgress: ChatMessage | null
-    transcript: ChatMessage[]
+    messageInProgress: SerializedChatMessage | null
+    transcript: SerializedChatMessage[]
     models: Model[]
     vscodeAPI: Pick<VSCodeWrapper, 'postMessage' | 'onMessage'>
     guardrails?: Guardrails
@@ -123,16 +122,11 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
         }
 
         return {
-            onSubmit: (
-                id: string,
-                text: string,
-                instruction?: PromptString,
-                fileName?: string
-            ): void => {
+            onSubmit: (id: string, text: string, instruction?: string, fileName?: string): void => {
                 vscodeAPI.postMessage({
                     command: 'smartApplySubmit',
                     id,
-                    instruction: instruction?.toString(),
+                    instruction,
                     // remove the additional /n added by the text area at the end of the text
                     code: text.replace(/\n$/, ''),
                     fileName,

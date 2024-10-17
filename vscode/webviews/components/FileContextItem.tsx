@@ -1,4 +1,4 @@
-import type { ContextItem } from '@sourcegraph/cody-shared'
+import type { SerializedContextItem } from '@sourcegraph/cody-shared'
 import { MENTION_CLASS_NAME } from '@sourcegraph/prompt-editor'
 import { clsx } from 'clsx'
 import type { FC } from 'react'
@@ -9,7 +9,7 @@ import { FileSnippet } from './FileSnippet'
 import styles from './FileContextItem.module.css'
 
 interface FileContextItemProps {
-    item: ContextItem
+    item: SerializedContextItem
     showSnippets: boolean
     onAddToFollowupChat?: (props: {
         repoName: string

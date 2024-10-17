@@ -5,20 +5,19 @@ import type {
     ClientCapabilitiesWithLegacyFields,
     ClientConfiguration,
     CodyIDE,
-    ContextItem,
     ContextItemSource,
     RangeData,
     RequestMessage,
     ResponseMessage,
     SerializedChatMessage,
+    SerializedContextItem,
+    URIString,
     UserProductSubscription,
 } from '@sourcegraph/cody-shared'
 
 import type { BillingCategory, BillingProduct } from '@sourcegraph/cody-shared/src/telemetry-v2'
 
 import type { TelemetryEventParameters } from '@sourcegraph/telemetry'
-
-import type { Uri } from 'vscode'
 import type { View } from '../../webviews/tabs/types'
 import type { FixupTaskID } from '../non-stop/FixupTask'
 import type { CodyTaskState } from '../non-stop/state'
@@ -69,10 +68,10 @@ export type WebviewMessage =
     | ({ command: 'submit' } & WebviewSubmitMessage)
     | { command: 'restoreHistory'; chatID: string }
     | { command: 'links'; value: string }
-    | { command: 'openURI'; uri: Uri }
+    | { command: 'openURI'; uri: URIString }
     | {
           command: 'openFileLink'
-          uri: Uri
+          uri: URIString
           range?: RangeData | undefined | null
           source?: ContextItemSource | undefined | null
       }
@@ -154,7 +153,7 @@ export type ExtensionMessage =
               serverSentModels: boolean
           }
           isDotComUser: boolean
-          workspaceFolderUris: string[]
+          workspaceFolderUris: URIString[]
       }
     | {
           /** Used by JetBrains and not VS Code. */
@@ -167,7 +166,7 @@ export type ExtensionMessage =
     | { type: 'errors'; errors: string }
     | {
           type: 'clientAction'
-          addContextItemsToLastHumanInput?: ContextItem[] | null | undefined
+          addContextItemsToLastHumanInput?: SerializedContextItem[] | null | undefined
           appendTextToLastPromptEditor?: string | null | undefined
           smartApplyResult?: SmartApplyResult | undefined | null
           submitHumanInput?: boolean | undefined | null
@@ -209,7 +208,7 @@ interface WebviewEditMessage extends WebviewContextMessage {
 }
 
 interface WebviewContextMessage {
-    contextItems?: ContextItem[] | undefined | null
+    contextItems?: SerializedContextItem[] | undefined | null
 }
 
 export interface ExtensionTranscriptMessage {

@@ -4,14 +4,13 @@ import { Transcript } from './Transcript'
 import { FIXTURE_TRANSCRIPT, FIXTURE_USER_ACCOUNT_INFO, transcriptFixture } from './fixtures'
 
 import {
-    type ChatMessage,
     ModelTag,
     ModelUsage,
-    PromptString,
     RateLimitError,
+    type SerializedChatMessage,
     errorToChatError,
     getMockedDotComClientModels,
-    ps,
+    uriString,
 } from '@sourcegraph/cody-shared'
 import { useArgs, useCallback, useEffect, useRef, useState } from '@storybook/preview-api'
 import type { ComponentProps } from 'react'
@@ -101,7 +100,7 @@ const SIMPLE_TRANSCRIPT = FIXTURE_TRANSCRIPT.simple
 
 export const WaitingForContext: StoryObj<typeof meta> = {
     args: {
-        transcript: [...SIMPLE_TRANSCRIPT, { speaker: 'human', text: ps`What color is the sky?` }],
+        transcript: [...SIMPLE_TRANSCRIPT, { speaker: 'human', text: 'What color is the sky?' }],
         messageInProgress: { speaker: 'assistant', model: 'my-llm' },
     },
 }
@@ -112,8 +111,8 @@ export const WaitingForAssistantMessageWithContext: StoryObj<typeof meta> = {
             ...SIMPLE_TRANSCRIPT,
             {
                 speaker: 'human',
-                text: ps`What color is the sky?'`,
-                contextFiles: [{ type: 'file', uri: URI.file('/foo.js') }],
+                text: 'What color is the sky?',
+                contextFiles: [{ type: 'file', uri: uriString(URI.file('/foo.js')) }],
             },
         ]),
         messageInProgress: { speaker: 'assistant', model: 'my-llm' },
@@ -126,7 +125,7 @@ export const WaitingForAssistantMessageNoContext: StoryObj<typeof meta> = {
             ...SIMPLE_TRANSCRIPT,
             {
                 speaker: 'human',
-                text: ps`What color is the sky?'`,
+                text: 'What color is the sky?',
                 contextFiles: [],
             },
         ]),
@@ -140,14 +139,14 @@ export const AssistantMessageInProgress: StoryObj<typeof meta> = {
             ...SIMPLE_TRANSCRIPT,
             {
                 speaker: 'human',
-                text: ps`What color is the sky?'`,
-                contextFiles: [{ type: 'file', uri: URI.file('/foo.js') }],
+                text: 'What color is the sky?',
+                contextFiles: [{ type: 'file', uri: uriString(URI.file('/foo.js')) }],
             },
         ]),
         messageInProgress: {
             speaker: 'assistant',
             model: 'my-model',
-            text: ps`The sky is `,
+            text: 'The sky is ',
         },
     },
 }
@@ -156,7 +155,7 @@ export const WithError: StoryObj<typeof meta> = {
     args: {
         transcript: transcriptFixture([
             ...SIMPLE_TRANSCRIPT,
-            { speaker: 'human', text: ps`What color is the sky?'`, contextFiles: [] },
+            { speaker: 'human', text: 'What color is the sky?', contextFiles: [] },
             { speaker: 'assistant', error: errorToChatError(new Error('some error')) },
         ]),
     },
@@ -166,7 +165,7 @@ export const WithRateLimitError: StoryObj<typeof meta> = {
     args: {
         transcript: transcriptFixture([
             ...SIMPLE_TRANSCRIPT,
-            { speaker: 'human', text: ps`What color is the sky?'`, contextFiles: [] },
+            { speaker: 'human', text: 'What color is the sky?', contextFiles: [] },
             {
                 speaker: 'assistant',
                 error: errorToChatError(
@@ -181,7 +180,7 @@ export const abortedBeforeResponse: StoryObj<typeof meta> = {
     args: {
         transcript: transcriptFixture([
             ...SIMPLE_TRANSCRIPT,
-            { speaker: 'human', text: ps`What color is the sky?'`, contextFiles: [] },
+            { speaker: 'human', text: 'What color is the sky?', contextFiles: [] },
             { speaker: 'assistant', error: errorToChatError(new Error('aborted')) },
         ]),
     },
@@ -193,10 +192,10 @@ export const abortedWithPartialResponse: StoryObj<typeof meta> = {
             ...SIMPLE_TRANSCRIPT,
             {
                 speaker: 'human',
-                text: ps`What color is the sky?`,
-                contextFiles: [{ type: 'file', uri: URI.file('/foo.js') }],
+                text: 'What color is the sky?',
+                contextFiles: [{ type: 'file', uri: uriString(URI.file('/foo.js')) }],
             },
-            { speaker: 'assistant', text: ps`Bl`, error: errorToChatError(new Error('aborted')) },
+            { speaker: 'assistant', text: 'Bl', error: errorToChatError(new Error('aborted')) },
         ]),
     },
 }
@@ -207,12 +206,12 @@ export const TextWrapping: StoryObj<typeof meta> = {
             ...SIMPLE_TRANSCRIPT,
             {
                 speaker: 'human',
-                text: ps`What color is the skyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskysky?`,
+                text: 'What color is the skyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskyskysky?',
                 contextFiles: [],
             },
             {
                 speaker: 'assistant',
-                text: ps`The sky is blueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblue.\n\n\`\`\`\nconst color = 'blueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblue'\n\`\`\`\n\nMore info:\n\n- Color of sky: blueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblue`,
+                text: "The sky is blueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblue.\n\n```\nconst color = 'blueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblue'\n```\n\nMore info:\n\n- Color of sky: blueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblueblue",
             },
         ]),
     },
@@ -254,12 +253,12 @@ export const Streaming: StoryObj<typeof meta> = {
             <Transcript
                 {...args}
                 transcript={transcriptFixture([
-                    { speaker: 'human', text: ps`Hello, world!`, contextFiles: [] },
+                    { speaker: 'human', text: 'Hello, world!', contextFiles: [] },
                 ])}
                 messageInProgress={{
                     speaker: 'assistant',
                     model: 'my-model',
-                    text: PromptString.unsafe_fromLLMResponse(`${reply}`),
+                    text: reply,
                 }}
                 models={args.models}
             />
@@ -278,7 +277,8 @@ export const StreamingThenFinish: StoryObj<typeof meta> = {
             document.querySelector<HTMLElement>('[role="row"]:last-child [data-lexical-editor]')?.focus()
         }, [])
 
-        const ASSISTANT_MESSAGE = ps`hello, world!\n\n- a\n- b\n- c\n- d\n- e\n- f\n- g\n- h\n- i\n- j\n- k\n- l\n- m\n- n\n- o\n- p\n- q\n- r\n- s\n- t\n- u\n- v\n- w\n- x\n- y\n- z\n\nOK, done!`
+        const ASSISTANT_MESSAGE =
+            'hello, world!\n\n- a\n- b\n- c\n- d\n- e\n- f\n- g\n- h\n- i\n- j\n- k\n- l\n- m\n- n\n- o\n- p\n- q\n- r\n- s\n- t\n- u\n- v\n- w\n- x\n- y\n- z\n\nOK, done!'
         const [reply, setReply] = useState<string>('')
         useEffect(() => {
             let i = 0
@@ -308,9 +308,14 @@ export const StreamingThenFinish: StoryObj<typeof meta> = {
                 <Transcript
                     {...args}
                     transcript={transcriptFixture([
-                        { speaker: 'human', text: ps`Hello, world!`, contextFiles: [] },
+                        { speaker: 'human', text: 'Hello, world!', contextFiles: [] },
                         ...(finished
-                            ? [{ speaker: 'assistant', text: ASSISTANT_MESSAGE } satisfies ChatMessage]
+                            ? [
+                                  {
+                                      speaker: 'assistant',
+                                      text: ASSISTANT_MESSAGE,
+                                  } satisfies SerializedChatMessage,
+                              ]
                             : []),
                     ])}
                     messageInProgress={
@@ -319,7 +324,7 @@ export const StreamingThenFinish: StoryObj<typeof meta> = {
                             : {
                                   speaker: 'assistant',
                                   model: 'my-model',
-                                  text: PromptString.unsafe_fromLLMResponse(`${reply}`),
+                                  text: reply,
                               }
                     }
                 />

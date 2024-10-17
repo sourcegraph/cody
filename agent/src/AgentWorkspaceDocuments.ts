@@ -4,7 +4,12 @@ import * as vscode from 'vscode'
 
 import { ProtocolTextDocumentWithUri } from '../../vscode/src/jsonrpc/TextDocumentWithUri'
 
-import { logError } from '@sourcegraph/cody-shared'
+import {
+    type URIString,
+    logError,
+    uriString,
+    uriStringFromKnownValidString,
+} from '@sourcegraph/cody-shared'
 import { doesFileExist } from '../../vscode/src/commands/utils/workspace-files'
 import { resetActiveEditor } from '../../vscode/src/editor/active-editor'
 import { AgentTextDocument } from './AgentTextDocument'
@@ -33,10 +38,8 @@ export class AgentWorkspaceDocuments implements vscode_shim.WorkspaceDocuments {
         }
     ) {}
 
-    // Keys are `vscode.Uri.toString()` formatted. We don't use `vscode.Uri` as
-    // keys because hashcode/equals behave unreliably.
     private readonly agentDocuments: Map<
-        string,
+        URIString,
         { document: AgentTextDocument; editor: AgentTextEditor }
     > = new Map()
 
@@ -56,11 +59,14 @@ export class AgentWorkspaceDocuments implements vscode_shim.WorkspaceDocuments {
         editor: AgentTextEditor
         contentChanges: vscode.TextDocumentContentChangeEvent[]
     } {
-        const cached = this.agentDocuments.get(document.underlying.uri)
+        const cached = this.agentDocuments.get(uriStringFromKnownValidString(document.underlying.uri))
         if (!cached) {
             const result = new AgentTextDocument(document)
             const editor = new AgentTextEditor(result, this.params)
-            this.agentDocuments.set(document.underlying.uri, { document: result, editor })
+            this.agentDocuments.set(uriStringFromKnownValidString(document.underlying.uri), {
+                document: result,
+                editor,
+            })
             return { document: result, editor, contentChanges: [] }
         }
         const { document: fromCache } = cached
@@ -122,7 +128,7 @@ export class AgentWorkspaceDocuments implements vscode_shim.WorkspaceDocuments {
         vscode_shim.window.activeTextEditor = textEditor
     }
 
-    public allUris(): string[] {
+    public allUris(): URIString[] {
         return [...this.agentDocuments.keys()]
     }
 
@@ -131,10 +137,10 @@ export class AgentWorkspaceDocuments implements vscode_shim.WorkspaceDocuments {
     }
 
     public getDocument(uri: vscode.Uri): AgentTextDocument | undefined {
-        return this.agentDocuments.get(uri.toString())?.document
+        return this.agentDocuments.get(uriString(uri))?.document
     }
 
-    public getDocumentFromUriString(uriString: string): AgentTextDocument | undefined {
+    public getDocumentFromUriString(uriString: URIString): AgentTextDocument | undefined {
         return this.agentDocuments.get(uriString)?.document
     }
 
@@ -178,7 +184,7 @@ export class AgentWorkspaceDocuments implements vscode_shim.WorkspaceDocuments {
     }
 
     public deleteDocument(uri: vscode.Uri): void {
-        this.agentDocuments.delete(uri.toString())
+        this.agentDocuments.delete(uriString(uri))
     }
 
     private vscodeTab(uri: vscode.Uri): vscode.Tab {
@@ -193,7 +199,7 @@ export class AgentWorkspaceDocuments implements vscode_shim.WorkspaceDocuments {
 
     public async openTextDocument(uri: vscode.Uri): Promise<AgentTextDocument> {
         const document = ProtocolTextDocumentWithUri.from(uri)
-        if (!this.agentDocuments.has(document.underlying.uri)) {
+        if (!this.agentDocuments.has(uriStringFromKnownValidString(document.underlying.uri))) {
             if (uri.scheme === 'untitled') {
                 document.underlying.content = ''
             } else if (!(await doesFileExist(uri))) {
@@ -232,8 +238,9 @@ export class AgentWorkspaceDocuments implements vscode_shim.WorkspaceDocuments {
 
     public newTextEditor(document: AgentTextDocument): vscode.TextEditor {
         return (
-            this.agentDocuments.get(document.protocolDocument.underlying.uri)?.editor ??
-            new AgentTextEditor(document, this.params)
+            this.agentDocuments.get(
+                uriStringFromKnownValidString(document.protocolDocument.underlying.uri)
+            )?.editor ?? new AgentTextEditor(document, this.params)
         )
     }
 }

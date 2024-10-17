@@ -2,6 +2,7 @@ import {
     type ChatModel,
     type CodyClientConfig,
     type SerializedChatMessage,
+    type SerializedContextItem,
     cenv,
     clientCapabilities,
     currentSiteVersion,
@@ -17,6 +18,7 @@ import {
     shareReplay,
     skip,
     skipPendingOperation,
+    uriString,
 } from '@sourcegraph/cody-shared'
 import * as uuid from 'uuid'
 import * as vscode from 'vscode'
@@ -55,7 +57,6 @@ import {
     featureFlagProvider,
     getContextForChatMessage,
     graphqlClient,
-    hydrateAfterPostMessage,
     inputTextWithoutContextChipsFromPromptEditorState,
     isAbortError,
     isAbortErrorOrSocketHangUp,
@@ -282,7 +283,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 await this.handleUserMessageSubmission({
                     requestID: uuid.v4(),
                     inputText: PromptString.unsafe_fromUserQuery(message.text),
-                    mentions: message.contextItems ?? [],
+                    mentions: (message.contextItems ?? []).map(deserializeContextItem),
                     editorState: message.editorState as SerializedPromptEditorState,
                     signal: this.startNewSubmitOrEditOperation(),
                     source: 'chat',
@@ -297,7 +298,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     requestID: uuid.v4(),
                     text: PromptString.unsafe_fromUserQuery(message.text),
                     index: message.index ?? undefined,
-                    contextFiles: message.contextItems ?? [],
+                    contextFiles: (message.contextItems ?? []).map(deserializeContextItem),
                     editorState: message.editorState as SerializedPromptEditorState,
                     intent: message.intent,
                     intentScores: message.intentScores,
@@ -345,7 +346,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 break
             }
             case 'openFileLink':
-                vscode.commands.executeCommand('vscode.open', message.uri, {
+                vscode.commands.executeCommand('vscode.open', vscode.Uri.parse(message.uri), {
                     selection: message.range,
                     preserveFocus: true,
                     background: false,
@@ -540,7 +541,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
 
         const configForWebview = await this.getConfigForWebview()
         const workspaceFolderUris =
-            vscode.workspace.workspaceFolders?.map(folder => folder.uri.toString()) ?? []
+            vscode.workspace.workspaceFolders?.map(folder => uriString(folder.uri)) ?? []
 
         const abortController = new AbortController()
         let clientConfig: CodyClientConfig | undefined
@@ -1060,7 +1061,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
     }
 
     public async addContextItemsToLastHumanInput(
-        contextItems: ContextItem[]
+        contextItems: SerializedContextItem[]
     ): Promise<boolean | undefined> {
         return this.postMessage({
             type: 'clientAction',
@@ -1086,7 +1087,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             type: 'clientAction',
             addContextItemsToLastHumanInput: contextItem
                 ? [
-                      {
+                      serializeContextItem({
                           ...contextItem,
                           type: 'file',
                           // Remove content to avoid sending large data to the webview
@@ -1094,7 +1095,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                           isTooLarge: contextItem.size ? contextItem.size > userContextSize : undefined,
                           source: ContextItemSource.User,
                           range: contextItem.range,
-                      } satisfies ContextItem,
+                      }),
                   ]
                 : [],
         })
@@ -1585,17 +1586,18 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         })
 
         this.disposables.push(
-            viewOrPanel.webview.onDidReceiveMessage(message =>
-                this.onDidReceiveMessage(
-                    hydrateAfterPostMessage(message, uri => vscode.Uri.from(uri as any))
-                )
-            )
+            viewOrPanel.webview.onDidReceiveMessage(message => this.onDidReceiveMessage(message))
         )
 
         // Listen for API calls from the webview.
         const initialContext = observeInitialContext({
             chatBuilder: this.chatBuilder.changes,
-        }).pipe(shareReplay())
+        }).pipe(
+            map(items =>
+                items === pendingOperation ? pendingOperation : items.map(serializeContextItem)
+            ),
+            shareReplay()
+        )
         this.disposables.push(
             addMessageListenersForExtensionAPI(
                 createMessageAPIForExtension({

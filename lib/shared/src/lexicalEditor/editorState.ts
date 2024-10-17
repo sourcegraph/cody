@@ -7,8 +7,8 @@ import {
     type SerializedRootNode,
     type SerializedTextNode,
 } from 'lexical'
-import type { ChatMessage } from '../chat/transcript/messages'
-import { type ContextItem, ContextItemSource } from '../codebase-context/messages'
+import type { SerializedChatMessage } from '../chat/transcript/messages'
+import { ContextItemSource } from '../codebase-context/messages'
 import type { RangeData } from '../common/range'
 import { displayPath } from '../editor/displayPath'
 import type { PromptString } from '../prompt/prompt-string'
@@ -147,7 +147,7 @@ export function serializedPromptEditorStateFromText(text: string): SerializedPro
 }
 
 export function serializedPromptEditorStateFromChatMessage(
-    chatMessage: ChatMessage
+    chatMessage: SerializedChatMessage
 ): SerializedPromptEditorState {
     function isCompatibleVersionEditorState(value: unknown): value is SerializedPromptEditorState {
         if (!value) {
@@ -254,7 +254,7 @@ interface EditorStateFromPromptStringOptions {
      * non-file (non-standard) mentions properly, this map provides additional info for these
      * non-standard prompts (like repository, directory or openctx mentions)
      */
-    additionalContextItemsMap?: Map<string, ContextItem>
+    additionalContextItemsMap?: Map<string, SerializedContextItem>
 }
 
 export function editorStateFromPromptString(

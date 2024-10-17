@@ -2,14 +2,14 @@ import type { Meta, StoryObj } from '@storybook/react'
 import { URI } from 'vscode-uri'
 
 import {
-    type ContextItem,
-    type ContextItemOpenCtx,
     ContextItemSource,
     type ContextMentionProviderMetadata,
     FILE_CONTEXT_MENTION_PROVIDER,
     type MentionMenuData,
     SYMBOL_CONTEXT_MENTION_PROVIDER,
+    type SerializedContextItem,
     openCtxProviderMetadata,
+    uriString,
 } from '@sourcegraph/cody-shared'
 import { MentionMenu, type MentionMenuParams } from '@sourcegraph/prompt-editor'
 import { VSCodeDecorator } from '../storybook/VSCodeStoryDecorator'
@@ -56,7 +56,7 @@ function toParams(query: string, parentItem?: ContextMentionProviderMetadata): M
 }
 
 function toData(
-    items: ContextItem[] | undefined,
+    items: SerializedContextItem[] | undefined,
     providers: ContextMentionProviderMetadata[] = []
 ): MentionMenuData {
     return {
@@ -77,12 +77,11 @@ export const Default: StoryObj<typeof MentionMenu> = {
                     description: 'my-repo',
                     title: 'Current Repository',
                     source: ContextItemSource.Initial,
-                    content: null,
-                    uri: URI.file('a/b'),
+                    uri: uriString(URI.file('a/b')),
                     icon: 'folder',
                 },
                 {
-                    uri: URI.file('a/b/initial.go'),
+                    uri: uriString(URI.file('a/b/initial.go')),
                     type: 'file',
                     description: 'initial.go:8-13',
                     title: 'Current Selection',
@@ -91,11 +90,11 @@ export const Default: StoryObj<typeof MentionMenu> = {
                     icon: 'list-selection',
                 },
                 {
-                    uri: URI.file('a/b/x.go'),
+                    uri: uriString(URI.file('a/b/x.go')),
                     type: 'file',
                 },
                 {
-                    uri: URI.file('a/b/foo.go'),
+                    uri: uriString(URI.file('a/b/foo.go')),
                     type: 'file',
                     range: { start: { line: 3, character: 5 }, end: { line: 7, character: 9 } },
                 },
@@ -103,20 +102,20 @@ export const Default: StoryObj<typeof MentionMenu> = {
                     symbolName: 'LoginDialog',
                     type: 'symbol',
                     kind: 'class',
-                    uri: URI.file('/lib/src/LoginDialog.tsx'),
+                    uri: uriString(URI.file('/lib/src/LoginDialog.tsx')),
                 },
                 {
                     symbolName: 'login',
                     type: 'symbol',
                     kind: 'function',
-                    uri: URI.file('/src/login.go'),
+                    uri: uriString(URI.file('/src/login.go')),
                     range: { start: { line: 42, character: 1 }, end: { line: 44, character: 1 } },
                 },
                 {
                     symbolName: 'handleLogin',
                     type: 'symbol',
                     kind: 'method',
-                    uri: URI.file(`/${'sub-dir/'.repeat(50)}/}/src/LoginDialog.tsx`),
+                    uri: uriString(URI.file(`/${'sub-dir/'.repeat(50)}/}/src/LoginDialog.tsx`)),
                 },
             ],
             [FILE_CONTEXT_MENTION_PROVIDER, SYMBOL_CONTEXT_MENTION_PROVIDER]
@@ -127,7 +126,7 @@ export const Default: StoryObj<typeof MentionMenu> = {
 export const WithError: StoryObj<typeof MentionMenu> = {
     args: {
         params: toParams('', undefined),
-        data: { ...toData([{ uri: URI.file('a/b/c.go'), type: 'file' }]), error: 'my error' },
+        data: { ...toData([{ uri: uriString(URI.file('a/b/c.go')), type: 'file' }]), error: 'my error' },
     },
 }
 
@@ -155,7 +154,7 @@ export const FileSearchNoQueryNoMatches: StoryObj<typeof MentionMenu> = {
 export const FileSearchNoQueryMatches: StoryObj<typeof MentionMenu> = {
     args: {
         params: toParams('', FILE_CONTEXT_MENTION_PROVIDER),
-        data: toData([{ uri: URI.file('a/b/ddddddd.go'), type: 'file' }]),
+        data: toData([{ uri: uriString(URI.file('a/b/ddddddd.go')), type: 'file' }]),
     },
 }
 
@@ -170,9 +169,9 @@ export const FileSearchSuggested: StoryObj<typeof MentionMenu> = {
     args: {
         params: toParams('', FILE_CONTEXT_MENTION_PROVIDER),
         data: toData([
-            { uri: URI.file('a/b/ddddddd.go'), type: 'file' },
+            { uri: uriString(URI.file('a/b/ddddddd.go')), type: 'file' },
             {
-                uri: URI.file('a/b/x.go'),
+                uri: uriString(URI.file('a/b/x.go')),
                 type: 'file',
                 range: { start: { line: 3, character: 5 }, end: { line: 7, character: 9 } },
             },
@@ -184,18 +183,20 @@ export const FileSearchMatches: StoryObj<typeof MentionMenu> = {
     args: {
         params: toParams('d', FILE_CONTEXT_MENTION_PROVIDER),
         data: toData([
-            { uri: URI.file('a/b/ddddddd.go'), type: 'file' },
+            { uri: uriString(URI.file('a/b/ddddddd.go')), type: 'file' },
             {
-                uri: URI.file('a/b/x.go'),
+                uri: uriString(URI.file('a/b/x.go')),
                 type: 'file',
                 range: { start: { line: 3, character: 5 }, end: { line: 7, character: 9 } },
             },
             ...Array.from(new Array(10).keys()).map(
                 i =>
                     ({
-                        uri: URI.file(`${i ? `${'sub-dir/'.repeat(i * 5)}/` : ''}file-${i}.py`),
+                        uri: uriString(
+                            URI.file(`${i ? `${'sub-dir/'.repeat(i * 5)}/` : ''}file-${i}.py`)
+                        ),
                         type: 'file',
-                    }) satisfies ContextItem
+                    }) satisfies SerializedContextItem
             ),
         ]),
     },
@@ -205,10 +206,10 @@ export const FileSearchTooLarge: StoryObj<typeof MentionMenu> = {
     args: {
         params: toParams('d', FILE_CONTEXT_MENTION_PROVIDER),
         data: toData([
-            { uri: URI.file('a/b/c.go'), type: 'file' },
-            { uri: URI.file('a/b/ddddddd.go'), type: 'file', isTooLarge: true },
+            { uri: uriString(URI.file('a/b/c.go')), type: 'file' },
+            { uri: uriString(URI.file('a/b/ddddddd.go')), type: 'file', isTooLarge: true },
             {
-                uri: URI.file('aaaaaaaaaa/bbbbbbbbb/cccccccccc/eeeeeeeeee/ddddddd.go'),
+                uri: uriString(URI.file('aaaaaaaaaa/bbbbbbbbb/cccccccccc/eeeeeeeeee/ddddddd.go')),
                 type: 'file',
                 isTooLarge: true,
             },
@@ -219,7 +220,7 @@ export const FileSearchTooLarge: StoryObj<typeof MentionMenu> = {
 export const FileSearchTooLargePartiallyInserted: StoryObj<typeof MentionMenu> = {
     args: {
         params: toParams('my/file.go:', FILE_CONTEXT_MENTION_PROVIDER),
-        data: toData([{ uri: URI.file('my/file.go'), type: 'file', isTooLarge: true }]),
+        data: toData([{ uri: uriString(URI.file('my/file.go')), type: 'file', isTooLarge: true }]),
     },
 }
 
@@ -227,9 +228,9 @@ export const FileSearchIgnored: StoryObj<typeof MentionMenu> = {
     args: {
         params: toParams('d', FILE_CONTEXT_MENTION_PROVIDER),
         data: toData([
-            { uri: URI.file('a/b/c.go'), type: 'file' },
+            { uri: uriString(URI.file('a/b/c.go')), type: 'file' },
             {
-                uri: URI.file('a/b/ddddddd.go'),
+                uri: uriString(URI.file('a/b/ddddddd.go')),
                 type: 'file',
                 isIgnored: true,
             },
@@ -242,7 +243,7 @@ export const LongScrolling: StoryObj<typeof MentionMenu> = {
         params: toParams('d', FILE_CONTEXT_MENTION_PROVIDER),
         data: toData(
             Array.from(new Array(20).keys()).map(i => ({
-                uri: URI.file(`${i ? `${'dir/'.repeat(i + 1)}` : ''}file-${i}.py`),
+                uri: uriString(URI.file(`${i ? `${'dir/'.repeat(i + 1)}` : ''}file-${i}.py`)),
                 type: 'file',
             }))
         ),
@@ -271,44 +272,44 @@ export const SymbolSearchMatches: StoryObj<typeof MentionMenu> = {
                 symbolName: 'LoginDialog',
                 type: 'symbol',
                 kind: 'class',
-                uri: URI.file('/lib/src/LoginDialog.tsx'),
+                uri: uriString(URI.file('/lib/src/LoginDialog.tsx')),
             },
             {
                 symbolName: 'login',
                 type: 'symbol',
                 kind: 'function',
-                uri: URI.file('/src/login.go'),
+                uri: uriString(URI.file('/src/login.go')),
                 range: { start: { line: 42, character: 1 }, end: { line: 44, character: 1 } },
             },
             {
                 symbolName: 'handleLogin',
                 type: 'symbol',
                 kind: 'method',
-                uri: URI.file(`/${'sub-dir/'.repeat(50)}/}/src/LoginDialog.tsx`),
+                uri: uriString(URI.file(`/${'sub-dir/'.repeat(50)}/}/src/LoginDialog.tsx`)),
             },
             {
                 symbolName: 'handleLogin',
                 type: 'symbol',
                 kind: 'method',
-                uri: URI.file(`/${'sub-dir/'.repeat(50)}/}/src/LoginDialog.tsx`),
+                uri: uriString(URI.file(`/${'sub-dir/'.repeat(50)}/}/src/LoginDialog.tsx`)),
             },
             {
                 symbolName: 'handleLogin',
                 type: 'symbol',
                 kind: 'method',
-                uri: URI.file(`/${'sub-dir/'.repeat(50)}/}/src/LoginDialog.tsx`),
+                uri: uriString(URI.file(`/${'sub-dir/'.repeat(50)}/}/src/LoginDialog.tsx`)),
             },
             {
                 symbolName: 'handleLogin',
                 type: 'symbol',
                 kind: 'method',
-                uri: URI.file(`/${'sub-dir/'.repeat(50)}/}/src/LoginDialog.tsx`),
+                uri: uriString(URI.file(`/${'sub-dir/'.repeat(50)}/}/src/LoginDialog.tsx`)),
             },
             {
                 symbolName: 'handleLogin',
                 type: 'symbol',
                 kind: 'method',
-                uri: URI.file(`/${'sub-dir/'.repeat(50)}/}/src/LoginDialog.tsx`),
+                uri: uriString(URI.file(`/${'sub-dir/'.repeat(50)}/}/src/LoginDialog.tsx`)),
             },
         ]),
     },
@@ -332,13 +333,13 @@ function openCtxStory(query: string, names: string[] | undefined): StoryObj<type
                           type: 'openctx',
                           provider: 'openctx',
                           title: name,
-                          uri: URI.parse('https://example.com').with({ query: name }),
+                          uri: uriString(URI.parse('https://example.com').with({ query: name })),
                           providerUri: OPENCTX_PROVIDER.id,
                           mention: {
                               uri: '',
                               description: 'openctx description ' + name,
                           },
-                      }) satisfies ContextItemOpenCtx
+                      }) satisfies SerializedContextItem
               )
     return {
         args: {

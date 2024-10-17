@@ -4,13 +4,14 @@ import type React from 'react'
 import {
     type ContextItemSource,
     type RangeData,
+    type URIString,
     displayLineRange,
     displayPath,
     webviewOpenURIForContextItem,
 } from '@sourcegraph/cody-shared'
 
 import { useCallback, useMemo } from 'react'
-import type { URI } from 'vscode-uri'
+import { URI } from 'vscode-uri'
 import { getVSCodeAPI } from '../utils/VSCodeApi'
 import { useTelemetryRecorder } from '../utils/telemetry'
 import { useExperimentalOneBox } from '../utils/useExperimentalOneBox'
@@ -18,7 +19,7 @@ import styles from './FileLink.module.css'
 import { Button } from './shadcn/ui/button'
 
 interface FileLinkProps {
-    uri: URI
+    uri: URIString
     repoName?: string
     revision?: string
     source?: ContextItemSource
@@ -78,8 +79,7 @@ export const FileLink: React.FunctionComponent<
                 range: range ? `${displayLineRange(range)}` : undefined,
                 repoShortName,
                 tooltip,
-                // We can skip encoding when the uri path already contains '@'.
-                href: uri.toString(uri.path.includes('@')),
+                href: uri,
                 target: '_blank' as const,
             }
         }
@@ -119,7 +119,8 @@ export const FileLink: React.FunctionComponent<
         if (!oneboxEnabled) {
             return
         }
-        const external = uri.scheme === 'http' || uri.scheme === 'https'
+        const uriParsed = URI.parse(uri)
+        const external = uriParsed.scheme === 'http' || uriParsed.scheme === 'https'
         telemetryRecorder.recordEvent('onebox.searchResult', 'clicked', {
             metadata: {
                 isLocal: external ? 0 : 1,
@@ -140,7 +141,7 @@ export const FileLink: React.FunctionComponent<
             {(isIgnored || isTooLarge) && (
                 <i className="codicon codicon-warning" title={linkDetails.tooltip} />
             )}
-            {source === 'unified' || uri.scheme === 'http' || uri.scheme === 'https' ? (
+            {source === 'unified' || uri.startsWith('http://') || uri.startsWith('https://') ? (
                 <a
                     className={`${linkClassName} tw-truncate hover:tw-no-underline !tw-p-0`}
                     title={linkDetails.tooltip}

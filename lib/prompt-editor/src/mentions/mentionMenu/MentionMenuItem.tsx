@@ -1,5 +1,4 @@
 import {
-    type ContextItem,
     type ContextMentionProviderMetadata,
     FILE_CONTEXT_MENTION_PROVIDER,
     IGNORED_FILE_WARNING_LABEL,
@@ -9,6 +8,7 @@ import {
     REMOTE_FILE_PROVIDER_URI,
     REMOTE_REPOSITORY_PROVIDER_URI,
     SYMBOL_CONTEXT_MENTION_PROVIDER,
+    type SerializedContextItem,
     WEB_PROVIDER_URI,
     displayLineRange,
     displayPath,
@@ -38,7 +38,7 @@ import SlackLogo from '../../providerIcons/slack.svg?react'
 import SourcegraphLogo from '../../providerIcons/sourcegraph.svg?react'
 import styles from './MentionMenuItem.module.css'
 
-function getDescription(item: ContextItem, query: MentionQuery): string {
+function getDescription(item: SerializedContextItem, query: MentionQuery): string {
     if (item.description) {
         return item.description
     }
@@ -61,7 +61,7 @@ function getDescription(item: ContextItem, query: MentionQuery): string {
     }
 }
 
-export function getMentionItemTitleAndDisplayName(item: ContextItem): {
+export function getMentionItemTitleAndDisplayName(item: SerializedContextItem): {
     title: string
     displayName: string
 } {
@@ -77,7 +77,7 @@ export function getMentionItemTitleAndDisplayName(item: ContextItem): {
 
 export const MentionMenuContextItemContent: FunctionComponent<{
     query: MentionQuery
-    item: ContextItem
+    item: SerializedContextItem
 }> = ({ query, item }) => {
     const isOpenCtx = item.type === 'openctx'
     const isFileType = item.type === 'file'

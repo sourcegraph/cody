@@ -1,4 +1,4 @@
-import { forceHydration, hydrateAfterPostMessage, isErrorLike } from '@sourcegraph/cody-shared'
+import { forceHydration, isErrorLike } from '@sourcegraph/cody-shared'
 import type { ExtensionMessage } from 'cody-ai/src/chat/protocol'
 import { type VSCodeWrapper, setVSCodeWrapper } from 'cody-ai/webviews/utils/VSCodeApi'
 import {
@@ -12,7 +12,6 @@ import {
     useState,
 } from 'react'
 import type { MessageConnection } from 'vscode-jsonrpc/browser'
-import { URI } from 'vscode-uri'
 import { createAgentClient } from '../agent/agent.client'
 import type { InitialContext } from '../types'
 
@@ -136,7 +135,7 @@ function useVSCodeAPI(input: useVSCodeAPIInput): VSCodeWrapper | null {
                         GLOBAL_MESSAGE_TYPES.includes(message.type)
                     ) {
                         for (const callback of onMessageCallbacksRef.current) {
-                            callback(hydrateAfterPostMessage(message, uri => URI.from(uri as any)))
+                            callback(message)
                         }
                     }
                 }

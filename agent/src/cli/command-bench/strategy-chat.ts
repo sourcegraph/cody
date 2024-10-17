@@ -1,5 +1,5 @@
 import path from 'node:path'
-import { type ContextItem, PromptString } from '@sourcegraph/cody-shared'
+import { PromptString, type SerializedContextItem, uriString } from '@sourcegraph/cody-shared'
 import { glob } from 'glob'
 import * as vscode from 'vscode'
 import YAML from 'yaml'
@@ -39,12 +39,12 @@ export async function evaluateChatStrategy(
         const task: ChatTask = YAML.parse(params.content)
         const id = await client.request('chat/new', null)
         client.request('chat/setModel', { id, model: chatModel })
-        const contextItems: ContextItem[] = []
+        const contextItems: SerializedContextItem[] = []
         for (const relativePath of task.files ?? []) {
             const uri = vscode.Uri.file(path.join(path.dirname(params.uri.fsPath), relativePath))
             contextItems.push({
                 type: 'file',
-                uri,
+                uri: uriString(uri),
             })
         }
         const response = await client.request('chat/submitMessage', {

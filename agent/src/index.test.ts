@@ -5,10 +5,11 @@ import path from 'node:path'
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
 import {
-    type ContextItem,
     DOTCOM_URL,
     ModelUsage,
     type SerializedChatTranscript,
+    type SerializedContextItem,
+    uriString,
 } from '@sourcegraph/cody-shared'
 
 import * as uuid from 'uuid'
@@ -60,7 +61,7 @@ describe('Agent', () => {
         credentials: TESTING_CREDENTIALS.dotcomProUserRateLimited,
     })
 
-    const mockContextItems: ContextItem[] = []
+    const mockContextItems: SerializedContextItem[] = []
 
     // Initialize inside beforeAll so that subsequent tests are skipped if initialization fails.
     beforeAll(async () => {
@@ -97,10 +98,15 @@ describe('Agent', () => {
             'src/Heading.tsx',
             'src/squirrel.ts',
         ]) {
-            const item = await workspace.loadContextItem(name)
-            // Trim content to the first 20 lines to imitate our context-fetching, which only includes file chunks
-            item.content = item.content?.split('\n').slice(0, 20).join('\n')
-            mockContextItems.push(item)
+            mockContextItems.push({
+                type: 'file',
+                uri: uriString(workspace.file(name)),
+                range: {
+                    // Trim content to the first 20 lines to imitate our context fetching.
+                    start: { line: 0, character: 0 },
+                    end: { line: 20, character: 0 },
+                },
+            })
         }
     }, 20_000)
 
