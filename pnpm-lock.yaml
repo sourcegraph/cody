@@ -757,6 +757,9 @@ importers:
       '@types/vscode':
         specifier: ^1.79.0
         version: 1.80.0
+      '@types/ws':
+        specifier: ^8.5.10
+        version: 8.5.10
       '@vscode/test-electron':
         specifier: ^2.4.0
         version: 2.4.0
@@ -772,6 +775,9 @@ importers:
       ajv-formats:
         specifier: ^3.0.1
         version: 3.0.1(ajv@8.14.0)
+      birpc:
+        specifier: ^0.2.19
+        version: 0.2.19
       buildkite-test-collector:
         specifier: ^1.7.2
         version: 1.7.2
@@ -790,6 +796,9 @@ importers:
       fast-json-stable-stringify:
         specifier: ^2.1.0
         version: 2.1.0
+      flatted:
+        specifier: ^3.3.1
+        version: 3.3.1
       franc-min:
         specifier: ^6.2.0
         version: 6.2.0
@@ -865,6 +874,9 @@ importers:
       vscode-languageserver-protocol:
         specifier: ^3.17.5
         version: 3.17.5
+      ws:
+        specifier: ^8.16.0
+        version: 8.17.0
       yaml:
         specifier: ^2.3.4
         version: 2.3.4
@@ -6632,7 +6644,6 @@ packages:
     resolution: {integrity: sha512-06OCtnTXtWOZBJlRApleWndH4JsRVs1pDCc8dLSQp+7PpUpX3ePdHyeNSFTeSe7FtKyQkrlPvHwJOW3SLd8Oyg==}
     dependencies:
       undici-types: 5.26.5
-    dev: false
 
   /@types/node@20.4.0:
     resolution: {integrity: sha512-jfT7iTf/4kOQ9S7CHV9BIyRaQqHu67mOjsIQBC3BKZvzvUB6zLxEwJ6sBE3ozcvP8kF6Uk5PXN0Q+c0dfhGX0g==}
@@ -6824,7 +6835,7 @@ packages:
   /@types/ws@8.5.10:
     resolution: {integrity: sha512-vmQSUcfalpIq0R9q7uTo2lXs6eGIpt9wtnLdMv9LVpIjCA/+ufZRozlVoVelIYixx1ugCBKDhn89vnsEGOCx9A==}
     dependencies:
-      '@types/node': 20.12.7
+      '@types/node': 20.14.9
     dev: true
 
   /@ungap/structured-clone@1.2.0:
@@ -7555,6 +7566,10 @@ packages:
     dependencies:
       file-uri-to-path: 1.0.0
     dev: false
+
+  /birpc@0.2.19:
+    resolution: {integrity: sha512-5WeXXAvTmitV1RqJFppT5QtUiz2p1mRSYU000Jkft5ZUCLJIk4uQriYNO50HknxKwM6jd8utNc66K1qGIwwWBQ==}
+    dev: true
 
   /bl@4.1.0:
     resolution: {integrity: sha512-1W07cM9gS6DcLperZfFSj+bWLtaPGSOHWhPiGzXmvVJbRLdG82sH/Kn8EtW1VqWVA54AKf2h5k5BbnIbwF3h6w==}
@@ -16747,7 +16762,7 @@ packages:
       require-directory: 2.1.1
       string-width: 4.2.3
       y18n: 5.0.8
-      yargs-parser: 20.2.4
+      yargs-parser: 20.2.9
     dev: true
 
   /yargs@17.7.2:

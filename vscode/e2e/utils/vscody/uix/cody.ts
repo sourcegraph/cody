@@ -60,9 +60,9 @@ export class WebView {
 }
 
 export class StatusBarItem {
-    private constructor(private ctx: Pick<UIXContextFnContext, 'page' | 'workspaceDir'>) {}
+    private constructor(private ctx: Pick<UIXContextFnContext, 'page'>) {}
 
-    static with(init: Pick<UIXContextFnContext, 'page' | 'workspaceDir'>) {
+    static with(init: Pick<UIXContextFnContext, 'page'>) {
         return new StatusBarItem(init)
     }
     get locator() {
@@ -87,13 +87,13 @@ export class StatusBarItem {
         }
         if (tags.hasErrors !== undefined) {
             const filterLocator = this.ctx.page.getByRole('button', {
-                name: InvisibleStatusBarTag.HasErrors,
+                name: tagRegex(InvisibleStatusBarTag.HasErrors),
             })
             locator = locator.filter(tags.hasErrors ? { has: filterLocator } : { hasNot: filterLocator })
         }
         if (tags.hasIgnoredFile !== undefined) {
             const filterLocator = this.ctx.page.getByRole('button', {
-                name: InvisibleStatusBarTag.IsIgnored,
+                name: tagRegex(InvisibleStatusBarTag.IsIgnored),
             })
             locator = locator.filter(
                 tags.hasIgnoredFile ? { has: filterLocator } : { hasNot: filterLocator }
@@ -101,7 +101,7 @@ export class StatusBarItem {
         }
         if (tags.isAuthenticated !== undefined) {
             const filterLocator = this.ctx.page.getByRole('button', {
-                name: InvisibleStatusBarTag.IsAuthenticated,
+                name: tagRegex(InvisibleStatusBarTag.IsAuthenticated),
             })
             locator = locator.filter(
                 tags.isAuthenticated ? { has: filterLocator } : { hasNot: filterLocator }
@@ -149,6 +149,7 @@ export class Extension {
             await expect(this.progressNotifications).toHaveCount(0)
 
             await Promise.all([waitForBinaryDownloads(), waitForIndexing()])
+            return this
         })
     }
 }
@@ -156,3 +157,8 @@ export class Extension {
 async function waitForBinaryDownloads() {}
 
 async function waitForIndexing() {}
+
+function tagRegex(tag: string) {
+    //convert \u200b to \\u200b to avoid escaping
+    return new RegExp(`${tag}`, 'u')
+}
