@@ -122,7 +122,9 @@ class AuthProvider implements vscode.Disposable {
                         'cody.serverEndpoint',
                         authStatus.endpoint
                     )
-                } catch {}
+                } catch (error) {
+                    logError('AuthProvider', 'Unexpected error while setting context', error)
+                }
             })
         )
 
