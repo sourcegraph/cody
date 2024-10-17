@@ -83,6 +83,7 @@ import type { TelemetryEventParameters } from '@sourcegraph/telemetry'
 import { map } from 'observable-fns'
 import type { URI } from 'vscode-uri'
 import { View } from '../../../webviews/tabs/types'
+import { tryAuthenticateEndpoint } from '../../auth/auth'
 import { redirectToEndpointLogin, showSignInMenu, showSignOutMenu } from '../../auth/auth'
 import {
     closeAuthProgressIndicator,
@@ -445,6 +446,10 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     })
                     break
                 }
+                if (message.authKind === 'signin' && message.endpoint) {
+                    await tryAuthenticateEndpoint(message.endpoint)
+                    break
+                }
                 if (message.authKind === 'signout') {
                     await showSignOutMenu()
                     break
@@ -505,10 +510,13 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         const sidebarViewOnly = this.extensionClient.capabilities?.webviewNativeConfig?.view === 'single'
         const isEditorViewType = this.webviewPanelOrView?.viewType === 'cody.editorPanel'
         const webviewType = isEditorViewType && !sidebarViewOnly ? 'editor' : 'sidebar'
+        const endpoints = localStorage.getEndpointHistory() ?? []
+
         const uiKindIsWeb = (cenv.CODY_OVERRIDE_UI_KIND ?? vscode.env.uiKind) === vscode.UIKind.Web
         return {
             uiKindIsWeb,
             serverEndpoint: auth.serverEndpoint,
+            endpointHistory: [...endpoints].reverse(),
             experimentalNoodle: configuration.experimentalNoodle,
             smartApply: this.isSmartApplyEnabled(),
             webviewType,
