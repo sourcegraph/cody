@@ -310,17 +310,22 @@ const ClientSignInForm: React.FC<ClientSignInFormProps> = ({ className, authStat
 
 export const EndpointSelection: React.FunctionComponent<
     React.PropsWithoutRef<{
-        authStatus?: AuthStatus
+        authStatus: AuthStatus
         endpoints: string[]
     }>
 > = ({ authStatus, endpoints }) => {
-    const [selectedEndpoint, setSelectedEndpoint] = useState(authStatus?.endpoint ?? endpoints?.[0])
+    // No endpoint history to show.
+    if (!endpoints.length) {
+        return null
+    }
+
+    const [selectedEndpoint, setSelectedEndpoint] = useState<string | undefined>(authStatus.endpoint)
 
     const onChange = useCallback(
         (endpoint: string) => {
             setSelectedEndpoint(endpoint)
             // The user was already authenticated with an invalid token. Let's not send another auth request.
-            if (endpoint === authStatus?.endpoint && !authStatus.authenticated) {
+            if (endpoint === authStatus?.endpoint) {
                 return
             }
             getVSCodeAPI().postMessage({
@@ -331,14 +336,6 @@ export const EndpointSelection: React.FunctionComponent<
         },
         [authStatus]
     )
-
-    // No endpoint history to show.
-    if (!endpoints.length) {
-        return null
-    }
-
-    const isCurrentSelectedEndpointValidated =
-        authStatus?.endpoint === selectedEndpoint && !authStatus.authenticated
 
     return (
         <div className="tw-flex tw-flex-col tw-gap-6 tw-w-full">
@@ -356,7 +353,7 @@ export const EndpointSelection: React.FunctionComponent<
                     </SelectGroup>
                 </SelectContent>
             </Select>
-            {isCurrentSelectedEndpointValidated && (
+            {!authStatus.authenticated && authStatus.endpoint === selectedEndpoint && (
                 <p className="tw-mt-2 tw-mb-0 tw-text-red-500">
                     Sign in failed. Try re-authenticate again with the forms above.
                 </p>

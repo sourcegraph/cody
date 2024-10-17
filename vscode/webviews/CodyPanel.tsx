@@ -106,7 +106,7 @@ export const CodyPanel: FunctionComponent<
                         />
                     )}
                     {view === View.Prompts && <PromptsTab setView={setView} />}
-                    {view === View.Account && (
+                    {view === View.Account && !clientCapabilities.isVSCode && (
                         <AccountTab setView={setView} endpointHistory={config.endpointHistory || []} />
                     )}
                     {view === View.Settings && <SettingsTab />}
