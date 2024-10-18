@@ -20,24 +20,24 @@ export const changeBoundaries = {
 } as const
 
 const changeBoundariesKeys = Object.keys(changeBoundaries) as (keyof typeof changeBoundaries)[]
-const staleChangeBoundariesKeys = changeBoundariesKeys.map(key => `stale_selection_${key}` as const)
+const staleAndRapidChangeBoundariesKeys = changeBoundariesKeys.flatMap(
+    key => [`stale_${key}`, `rapid_${key}`, `rapid_stale_${key}`] as const
+)
 
 const SPECIAL_DOCUMENT_CHANGE_TYPES = [
     'undo',
     'redo',
     'window_not_focused',
-    'non_visible_document',
-    'non_active_editor',
+    'no_active_editor',
+    'outside_of_active_editor',
     'outside_of_visible_ranges',
-    'stale_selection',
-    'rapid_change', // occurred in less than RAPID_CHANGE_TIMEOUT after/before another change
     'unexpected', // should not be logged because all the change sizes are covered by the keys above
 ] as const
 
 const DOCUMENT_CHANGE_TYPES = [
     ...SPECIAL_DOCUMENT_CHANGE_TYPES,
     ...changeBoundariesKeys,
-    ...staleChangeBoundariesKeys,
+    ...staleAndRapidChangeBoundariesKeys,
 ] as const
 
 type DocumentChangeType = (typeof DOCUMENT_CHANGE_TYPES)[number]
@@ -65,8 +65,6 @@ export class CharactersLogger implements vscode.Disposable {
 
     private windowFocused = true
     private activeTextEditor: vscode.TextEditor | undefined
-    private visibleDocuments = new Set<string>()
-    private visibleRangesMap: Map<string, Readonly<vscode.Range[]>> = new Map()
     private lastChangeTimestamp = 0
     private lastSelectionTimestamps = new Map<string, number>()
 
@@ -77,22 +75,17 @@ export class CharactersLogger implements vscode.Disposable {
         > = vscode.workspace,
         window: Pick<
             typeof vscode.window,
+            | 'state'
             | 'activeTextEditor'
             | 'onDidChangeWindowState'
             | 'onDidChangeActiveTextEditor'
-            | 'onDidChangeVisibleTextEditors'
-            | 'onDidChangeTextEditorVisibleRanges'
             | 'onDidChangeTextEditorSelection'
-            | 'visibleTextEditors'
         > = vscode.window
     ) {
         this.disposables.push(
             workspace.onDidChangeTextDocument(this.onDidChangeTextDocument.bind(this)),
             workspace.onDidCloseTextDocument(document => {
-                const uri = document.uri.toString()
-                this.lastSelectionTimestamps.delete(uri)
-                this.visibleDocuments.delete(uri)
-                this.visibleRangesMap.delete(uri)
+                this.lastSelectionTimestamps.delete(document.uri.toString())
             }),
             window.onDidChangeWindowState(state => {
                 this.windowFocused = state.focused
@@ -100,20 +93,13 @@ export class CharactersLogger implements vscode.Disposable {
             window.onDidChangeActiveTextEditor(editor => {
                 this.activeTextEditor = editor
             }),
-            window.onDidChangeVisibleTextEditors(editors => {
-                this.updateVisibleDocuments(editors)
-            }),
             window.onDidChangeTextEditorSelection(event => {
                 const documentUri = event.textEditor.document.uri.toString()
                 this.lastSelectionTimestamps.set(documentUri, Date.now())
-            }),
-            window.onDidChangeTextEditorVisibleRanges(event => {
-                const documentUri = event.textEditor.document.uri.toString()
-                this.visibleRangesMap.set(documentUri, event.visibleRanges)
             })
         )
 
-        this.updateVisibleDocuments(window.visibleTextEditors)
+        this.windowFocused = window.state.focused
         this.activeTextEditor = window.activeTextEditor
         this.nextTimeoutId = setTimeout(() => this.flush(), LOG_INTERVAL)
     }
@@ -142,18 +128,18 @@ export class CharactersLogger implements vscode.Disposable {
         }, 0)
 
         const changeType = this.getDocumentChangeType(event, totalChangeSize)
-        this.changeCounters[changeType]++
         const { activeTextEditor } = this
 
         for (const change of event.contentChanges) {
-            // TODO: manually test active test editor visible ranges staleness
-            const isChangeVisible = activeTextEditor?.visibleRanges.some(range =>
-                range.contains(change.range)
-            )
+            const isChangeVisible = activeTextEditor?.visibleRanges.some(range => {
+                return range.contains(change.range)
+            })
 
             const isSpecialChangeType = SPECIAL_DOCUMENT_CHANGE_TYPES.find(v => v === changeType)
             const contentChangeType =
                 !isSpecialChangeType && !isChangeVisible ? 'outside_of_visible_ranges' : changeType
+
+            this.changeCounters[contentChangeType]++
 
             // We use change.rangeLength for deletions because:
             // 1. It represents the length of the text being replaced, including newline characters.
@@ -177,10 +163,10 @@ export class CharactersLogger implements vscode.Disposable {
         if (totalChangeSize > 0) {
             this.lastChangeTimestamp = Date.now()
         }
-        console.log(
-            `changes: [${event.contentChanges.map(c => c.text).join(',')}]`,
-            JSON.stringify(this.changeCounters, null, 2)
-        )
+        // console.log(
+        //     `changes: [${event.contentChanges.map(c => c.text).join(',')}]`,
+        //     JSON.stringify(this.changeCounters, null, 2)
+        // )
     }
 
     private getDocumentChangeType(
@@ -202,36 +188,28 @@ export class CharactersLogger implements vscode.Disposable {
             return 'window_not_focused'
         }
 
-        if (!vscode.window.activeTextEditor) {
-            return 'non_active_editor'
+        if (!this.activeTextEditor) {
+            return 'no_active_editor'
         }
 
-        const timeSinceLastChange = currentTimestamp - this.lastChangeTimestamp
-        if (timeSinceLastChange < RAPID_CHANGE_TIMEOUT) {
-            return 'rapid_change'
+        if (this.activeTextEditor.document.uri.toString() !== documentUri) {
+            return 'outside_of_active_editor'
         }
 
         const lastSelectionTimestamp = this.lastSelectionTimestamps.get(documentUri) || 0
         const isSelectionStale = currentTimestamp - lastSelectionTimestamp > SELECTION_TIMEOUT
+        const isRapidChange = currentTimestamp - this.lastChangeTimestamp < RAPID_CHANGE_TIMEOUT
+
+        const rapidPrefix = isRapidChange ? 'rapid_' : ''
+        const stalePrefix = isSelectionStale ? 'stale_' : ''
 
         for (const [changeSizeType, boundaries] of Object.entries(changeBoundaries)) {
             if (boundaries.min <= totalChangeSize && totalChangeSize <= boundaries.max) {
-                return (
-                    isSelectionStale ? `stale_selection_${changeSizeType}` : changeSizeType
-                ) as DocumentChangeType
+                return `${rapidPrefix}${stalePrefix}${changeSizeType as keyof typeof changeBoundaries}`
             }
         }
 
         return 'unexpected'
-    }
-
-    private updateVisibleDocuments(editors: Readonly<vscode.TextEditor[]>): void {
-        this.visibleDocuments.clear()
-        for (const editor of editors) {
-            const uri = editor.document.uri.toString()
-            this.visibleDocuments.add(uri)
-            this.visibleRangesMap.set(uri, editor.visibleRanges)
-        }
     }
 
     public dispose(): void {
