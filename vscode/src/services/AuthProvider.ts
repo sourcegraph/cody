@@ -3,18 +3,19 @@ import * as vscode from 'vscode'
 import {
     type AuthCredentials,
     type AuthStatus,
+    type ClientCapabilitiesWithLegacyFields,
     NEVER,
     type ResolvedConfiguration,
     type Unsubscribable,
     abortableOperation,
     authStatus,
-    clientCapabilities,
     combineLatest,
     currentResolvedConfig,
     disposableSubscription,
     distinctUntilChanged,
+    clientCapabilities as getClientCapabilities,
+    isAbortError,
     normalizeServerEndpointURL,
-    pluck,
     resolvedConfig as resolvedConfig_,
     setAuthStatusObservable as setAuthStatusObservable_,
     startWith,
@@ -24,9 +25,11 @@ import {
 } from '@sourcegraph/cody-shared'
 import isEqual from 'lodash/isEqual'
 import { Observable, Subject } from 'observable-fns'
+import { serializeConfigSnapshot } from '../../uninstall/serializeConfig'
 import { type ResolvedConfigurationCredentialsOnly, validateCredentials } from '../auth/auth'
-import { logError } from '../log'
+import { logError } from '../output-channel-logger'
 import { maybeStartInteractiveTutorial } from '../tutorial/helpers'
+import { version } from '../version'
 import { localStorage } from './LocalStorageProvider'
 
 const HAS_AUTHENTICATED_BEFORE_KEY = 'has-authenticated-before'
@@ -69,7 +72,7 @@ class AuthProvider implements vscode.Disposable {
             )
                 .pipe(
                     abortableOperation(async ([config], signal) => {
-                        if (clientCapabilities().isCodyWeb) {
+                        if (getClientCapabilities().isCodyWeb) {
                             // Cody Web calls {@link AuthProvider.validateAndStoreCredentials}
                             // explicitly. This early exit prevents duplicate authentications during
                             // the initial load.
@@ -92,7 +95,13 @@ class AuthProvider implements vscode.Disposable {
                             this.status.next(authStatus)
                             await this.handleAuthTelemetry(authStatus, signal)
                         } catch (error) {
-                            logError('AuthProvider', 'Unexpected error validating credentials', error)
+                            if (!isAbortError(error)) {
+                                logError(
+                                    'AuthProvider',
+                                    'Unexpected error validating credentials',
+                                    error
+                                )
+                            }
                         }
                     })
                 )
@@ -101,10 +110,21 @@ class AuthProvider implements vscode.Disposable {
 
         // Keep context updated with auth status.
         this.subscriptions.push(
-            authStatus.pipe(pluck('authenticated')).subscribe(authenticated => {
+            authStatus.subscribe(authStatus => {
                 try {
-                    vscode.commands.executeCommand('setContext', 'cody.activated', authenticated)
-                } catch {}
+                    vscode.commands.executeCommand(
+                        'setContext',
+                        'cody.activated',
+                        authStatus.authenticated
+                    )
+                    vscode.commands.executeCommand(
+                        'setContext',
+                        'cody.serverEndpoint',
+                        authStatus.endpoint
+                    )
+                } catch (error) {
+                    logError('AuthProvider', 'Unexpected error while setting context', error)
+                }
             })
         )
 
@@ -169,7 +189,10 @@ class AuthProvider implements vscode.Disposable {
         const shouldStore = mode === 'always-store' || authStatus.authenticated
         if (shouldStore) {
             this.lastValidatedAndStoredCredentials.next(credentials)
-            await localStorage.saveEndpointAndToken(credentials.auth)
+            await Promise.all([
+                localStorage.saveEndpointAndToken(credentials.auth),
+                this.serializeUninstallerInfo(authStatus),
+            ])
             this.status.next(authStatus)
             signal?.throwIfAborted()
         }
@@ -205,6 +228,34 @@ class AuthProvider implements vscode.Disposable {
     private setHasAuthenticatedBefore() {
         return localStorage.set(HAS_AUTHENTICATED_BEFORE_KEY, 'true')
     }
+
+    // When the auth status is updated, we serialize the current configuration to disk,
+    // so that it can be sent with Telemetry when the post-uninstall script runs.
+    // we only write on auth change as that is the only significantly important factor
+    // and we don't want to write too frequently (so we don't react to config changes)
+    // The vscode API is not available in the post-uninstall script.
+    // Public so that it can be mocked for testing
+    public async serializeUninstallerInfo(authStatus: AuthStatus): Promise<void> {
+        if (!authStatus.authenticated) return
+        let clientCapabilities: ClientCapabilitiesWithLegacyFields | undefined
+        try {
+            clientCapabilities = getClientCapabilities()
+        } catch {
+            // If client capabilities cannot be retrieved, we will just synthesize
+            // them from defaults in the post-uninstall script.
+        }
+        // TODO: put this behind a proper client capability if any other IDE's need to uninstall
+        // the same way as VSCode (most editors have a proper uninstall hook)
+        if (clientCapabilities?.isVSCode) {
+            const config = localStorage.getConfig() ?? (await currentResolvedConfig())
+            await serializeConfigSnapshot({
+                config,
+                authStatus,
+                clientCapabilities,
+                version,
+            })
+        }
+    }
 }
 
 export const authProvider = new AuthProvider()
@@ -225,6 +276,9 @@ function startAuthTelemetryReporter(): Unsubscribable {
 }
 
 function reportAuthTelemetryEvent(authStatus: AuthStatus): void {
+    if (authStatus.pendingValidation) {
+        return // Not a valid event to report.
+    }
     let eventValue: 'disconnected' | 'connected' | 'failed'
     if (
         !authStatus.authenticated &&

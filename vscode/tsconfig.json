@@ -16,12 +16,14 @@
     "src/commands/execute/cody.json",
     "test/fixtures",
     "playwright.config.ts",
+    "playwright.v2.config.ts",
     "test/e2e",
     "test/e2e/utils/commands.json",
     "e2e",
     "webviews",
     "webviews/*.d.ts",
-    "package.json"
+    "package.json",
+    "uninstall"
   ],
   "exclude": [
     "typehacks",

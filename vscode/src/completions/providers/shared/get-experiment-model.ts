@@ -11,11 +11,11 @@ import {
 import { Observable, map } from 'observable-fns'
 import * as vscode from 'vscode'
 import {
+    CODE_QWEN_7B_V2P5,
     DEEPSEEK_CODER_V2_LITE_BASE,
     DEEPSEEK_CODER_V2_LITE_BASE_WINDOW_4096,
-    FIREWORKS_DEEPSEEK_7B_LANG_ALL,
-    FIREWORKS_DEEPSEEK_7B_LANG_SPECIFIC_V0,
-    FIREWORKS_DEEPSEEK_7B_LANG_SPECIFIC_V1,
+    DEEPSEEK_CODER_V2_LITE_BASE_WINDOW_8192,
+    DEEPSEEK_CODER_V2_LITE_BASE_WINDOW_16384,
 } from '../fireworks'
 
 interface ProviderConfigFromFeatureFlags {
@@ -35,13 +35,12 @@ export function getDotComExperimentModel({
 
     return combineLatest(
         featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyAutocompleteStarCoderHybrid),
-        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyAutocompleteClaude3),
         featureFlagProvider.evaluatedFeatureFlag(
             FeatureFlag.CodyAutocompleteFIMModelExperimentBaseFeatureFlag
         ),
         featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyAutocompleteDeepseekV2LiteBase)
     ).pipe(
-        switchMap(([starCoderHybrid, claude3, fimModelExperimentFlag, deepseekV2LiteBase]) => {
+        switchMap(([starCoderHybrid, fimModelExperimentFlag, deepseekV2LiteBase]) => {
             // We run fine tuning experiment for VSC client only.
             // We disable for all agent clients like the JetBrains plugin.
             const isFinetuningExperimentDisabled = vscode.workspace
@@ -67,13 +66,6 @@ export function getDotComExperimentModel({
                 })
             }
 
-            if (claude3) {
-                return Observable.of({
-                    provider: 'anthropic',
-                    model: 'anthropic/claude-3-haiku-20240307',
-                })
-            }
-
             return Observable.of(null)
         }),
         distinctUntilChanged()
@@ -90,10 +82,7 @@ function resolveFIMModelExperimentFromFeatureFlags(): ReturnType<typeof getDotCo
         featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyAutocompleteFIMModelExperimentVariant1),
         featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyAutocompleteFIMModelExperimentVariant2),
         featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyAutocompleteFIMModelExperimentVariant3),
-        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyAutocompleteFIMModelExperimentVariant4),
-        featureFlagProvider.evaluatedFeatureFlag(
-            FeatureFlag.CodyAutocompleteFIMModelExperimentCurrentBest
-        )
+        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyAutocompleteFIMModelExperimentVariant4)
     ).pipe(
         map(
             ([
@@ -102,28 +91,23 @@ function resolveFIMModelExperimentFromFeatureFlags(): ReturnType<typeof getDotCo
                 fimModelVariant2,
                 fimModelVariant3,
                 fimModelVariant4,
-                fimModelCurrentBest,
             ]) => {
                 if (fimModelVariant1) {
-                    return { provider: 'fireworks', model: DEEPSEEK_CODER_V2_LITE_BASE }
+                    return { provider: 'fireworks', model: DEEPSEEK_CODER_V2_LITE_BASE_WINDOW_4096 }
                 }
                 if (fimModelVariant2) {
-                    return { provider: 'fireworks', model: FIREWORKS_DEEPSEEK_7B_LANG_SPECIFIC_V0 }
+                    return { provider: 'fireworks', model: CODE_QWEN_7B_V2P5 }
                 }
                 if (fimModelVariant3) {
-                    return { provider: 'fireworks', model: FIREWORKS_DEEPSEEK_7B_LANG_SPECIFIC_V1 }
+                    return { provider: 'fireworks', model: DEEPSEEK_CODER_V2_LITE_BASE_WINDOW_8192 }
                 }
                 if (fimModelVariant4) {
-                    return { provider: 'fireworks', model: FIREWORKS_DEEPSEEK_7B_LANG_ALL }
-                }
-                if (fimModelCurrentBest) {
-                    return { provider: 'fireworks', model: DEEPSEEK_CODER_V2_LITE_BASE_WINDOW_4096 }
+                    return { provider: 'fireworks', model: DEEPSEEK_CODER_V2_LITE_BASE_WINDOW_16384 }
                 }
                 if (fimModelControl) {
                     // Current production model
                     return { provider: 'fireworks', model: DEEPSEEK_CODER_V2_LITE_BASE }
                 }
-
                 // Extra free traffic - redirect to the current production model which could be different than control
                 return { provider: 'fireworks', model: DEEPSEEK_CODER_V2_LITE_BASE }
             }

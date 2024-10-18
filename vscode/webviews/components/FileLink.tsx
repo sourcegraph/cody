@@ -37,6 +37,7 @@ const IGNORE_WARNING = 'File ignored by an admin setting'
 
 const hoverSourceLabels: Record<ContextItemSource, string | undefined> = {
     // Shown in the format `Included ${label}`
+    agentic: 'via Deep Cody',
     unified: 'via remote repository search',
     search: 'via local repository index (symf)',
     editor: 'from workspace files',
@@ -45,6 +46,7 @@ const hoverSourceLabels: Record<ContextItemSource, string | undefined> = {
     terminal: 'from terminal output',
     history: 'from git history',
     initial: 'from open repo or file',
+    priority: 'via query matching',
 }
 
 export const FileLink: React.FunctionComponent<
@@ -120,8 +122,8 @@ export const FileLink: React.FunctionComponent<
         const external = uri.scheme === 'http' || uri.scheme === 'https'
         telemetryRecorder.recordEvent('onebox.searchResult', 'clicked', {
             metadata: {
-                is_local: external ? 0 : 1,
-                is_remote: external ? 1 : 0,
+                isLocal: external ? 0 : 1,
+                isRemote: external ? 1 : 0,
             },
             privateMetadata: {
                 filename: displayPath(uri),

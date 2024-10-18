@@ -32,7 +32,7 @@ data class ContextItemFile(
   val revision: String? = null,
   val title: String? = null,
   val description: String? = null,
-  val source: ContextItemSource? = null, // Oneof: embeddings, user, editor, search, initial, unified, selection, terminal, history
+  val source: ContextItemSource? = null, // Oneof: user, editor, search, initial, priority, unified, selection, terminal, history, agentic
   val size: Long? = null,
   val isIgnored: Boolean? = null,
   val isTooLarge: Boolean? = null,
@@ -42,6 +42,7 @@ data class ContextItemFile(
   val metadata: List<String>? = null,
   val type: TypeEnum, // Oneof: file
   val remoteRepositoryName: String? = null,
+  val ranges: List<Range>? = null,
 ) : ContextItem() {
 
   enum class TypeEnum {
@@ -57,7 +58,7 @@ data class ContextItemRepository(
   val revision: String? = null,
   val title: String? = null,
   val description: String? = null,
-  val source: ContextItemSource? = null, // Oneof: embeddings, user, editor, search, initial, unified, selection, terminal, history
+  val source: ContextItemSource? = null, // Oneof: user, editor, search, initial, priority, unified, selection, terminal, history, agentic
   val size: Long? = null,
   val isIgnored: Boolean? = null,
   val isTooLarge: Boolean? = null,
@@ -82,7 +83,7 @@ data class ContextItemTree(
   val revision: String? = null,
   val title: String? = null,
   val description: String? = null,
-  val source: ContextItemSource? = null, // Oneof: embeddings, user, editor, search, initial, unified, selection, terminal, history
+  val source: ContextItemSource? = null, // Oneof: user, editor, search, initial, priority, unified, selection, terminal, history, agentic
   val size: Long? = null,
   val isIgnored: Boolean? = null,
   val isTooLarge: Boolean? = null,
@@ -108,7 +109,7 @@ data class ContextItemSymbol(
   val revision: String? = null,
   val title: String? = null,
   val description: String? = null,
-  val source: ContextItemSource? = null, // Oneof: embeddings, user, editor, search, initial, unified, selection, terminal, history
+  val source: ContextItemSource? = null, // Oneof: user, editor, search, initial, priority, unified, selection, terminal, history, agentic
   val size: Long? = null,
   val isIgnored: Boolean? = null,
   val isTooLarge: Boolean? = null,
@@ -135,7 +136,7 @@ data class ContextItemOpenCtx(
   val revision: String? = null,
   val title: String? = null,
   val description: String? = null,
-  val source: ContextItemSource? = null, // Oneof: embeddings, user, editor, search, initial, unified, selection, terminal, history
+  val source: ContextItemSource? = null, // Oneof: user, editor, search, initial, priority, unified, selection, terminal, history, agentic
   val size: Long? = null,
   val isIgnored: Boolean? = null,
   val isTooLarge: Boolean? = null,

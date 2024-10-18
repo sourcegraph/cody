@@ -14,11 +14,11 @@ import { type MockInstance, beforeAll, beforeEach, describe, expect, it, vi } fr
 import type * as vscode from 'vscode'
 import { mockLocalStorage } from '../services/LocalStorageProvider'
 import { DEFAULT_VSCODE_SETTINGS, vsCodeMocks } from '../testutils/mocks'
+import * as CompletionAnalyticsLogger from './analytics-logger'
 import { getCurrentDocContext } from './get-current-doc-context'
 import { TriggerKind } from './get-inline-completions'
 import { initCompletionProviderConfig, params } from './get-inline-completions-tests/helpers'
 import { InlineCompletionItemProvider } from './inline-completion-item-provider'
-import * as CompletionLogger from './logger'
 import { createProvider } from './providers/anthropic'
 import type { FetchCompletionResult } from './providers/shared/fetch-and-process-completions'
 import {
@@ -149,6 +149,7 @@ function getInlineCompletionProvider(
             authStatus: currentAuthStatus(),
             provider: 'default',
             source: 'local-editor-settings',
+            configOverwrites: null,
         }),
         firstCompletionTimeout:
             args?.firstCompletionTimeout ?? DEFAULT_VSCODE_SETTINGS.autocompleteFirstCompletionTimeout,
@@ -165,7 +166,7 @@ function createNetworkProvider(params: RequestParams): MockRequestProvider {
         numberOfCompletionsToGenerate: 1,
         firstCompletionTimeout: 1500,
         triggerKind: TriggerKind.Automatic,
-        completionLogId: 'mock-log-id' as CompletionLogger.CompletionLogID,
+        completionLogId: 'mock-log-id' as CompletionAnalyticsLogger.CompletionLogID,
         snippets: [],
     }
 
@@ -174,6 +175,7 @@ function createNetworkProvider(params: RequestParams): MockRequestProvider {
             id: 'mock-provider',
             legacyModel: 'test-model',
             source: 'local-editor-settings',
+            configOverwrites: null,
         },
         providerOptions
     )
@@ -253,7 +255,7 @@ describe.skip('InlineCompletionItemProvider E2E', () => {
 
             // Enough for completion events to be logged
             vi.advanceTimersByTime(1000)
-            CompletionLogger.logSuggestionEvents(true)
+            CompletionAnalyticsLogger.logSuggestionEvents(true)
 
             expect(getAnalyticEventCalls(logSpy)).toMatchInlineSnapshot(`
               [
@@ -305,7 +307,7 @@ describe.skip('InlineCompletionItemProvider E2E', () => {
 
             // Enough for completion events to be logged
             vi.advanceTimersByTime(1000)
-            CompletionLogger.logSuggestionEvents(true)
+            CompletionAnalyticsLogger.logSuggestionEvents(true)
 
             expect(getAnalyticEventCalls(logSpy)).toMatchInlineSnapshot(`
               [
@@ -374,7 +376,7 @@ describe.skip('InlineCompletionItemProvider E2E', () => {
 
             // Enough for completion events to be logged
             vi.advanceTimersByTime(1000)
-            CompletionLogger.logSuggestionEvents(true)
+            CompletionAnalyticsLogger.logSuggestionEvents(true)
 
             expect(getAnalyticEventCalls(logSpy)).toMatchInlineSnapshot(`
               [

@@ -1,4 +1,7 @@
-import { AUTH_STATUS_FIXTURE_AUTHED, type ClientCapabilities } from '@sourcegraph/cody-shared'
+import {
+    AUTH_STATUS_FIXTURE_AUTHED,
+    type ClientCapabilitiesWithLegacyFields,
+} from '@sourcegraph/cody-shared'
 import { fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, test, vi } from 'vitest'
 import { AppWrapperForTest } from '../../AppWrapperForTest'
@@ -11,8 +14,8 @@ vi.mock('../../components/promptList/usePromptsQuery')
 vi.mocked(usePromptsQuery).mockReturnValue({
     value: {
         query: '',
-        commands: [],
-        prompts: { type: 'results', results: [FIXTURE_PROMPTS[0]] },
+        arePromptsSupported: true,
+        actions: [{ ...FIXTURE_PROMPTS[0], actionType: 'prompt' }],
     },
     done: false,
     error: null,
@@ -29,7 +32,7 @@ describe('WelcomeMessage', () => {
         vi.spyOn(useConfigModule, 'useConfig').mockReturnValue({
             clientCapabilities: {
                 isVSCode: true,
-            } satisfies Partial<ClientCapabilities> as ClientCapabilities,
+            } satisfies Partial<ClientCapabilitiesWithLegacyFields> as ClientCapabilitiesWithLegacyFields,
             authStatus: AUTH_STATUS_FIXTURE_AUTHED,
         } satisfies Partial<useConfigModule.Config> as useConfigModule.Config)
         render(<WelcomeMessage setView={() => {}} />, {
@@ -38,20 +41,14 @@ describe('WelcomeMessage', () => {
         openCollapsiblePanels()
 
         // Check common elements
-        expect(screen.getByText(/Chat Help/)).toBeInTheDocument()
         expect(screen.getByText(FIXTURE_PROMPTS[0].name)).toBeInTheDocument()
-
-        // Check elements specific to CodyIDE.VSCode
-        expect(screen.getByText(/To add code context from an editor/)).toBeInTheDocument()
-        expect(screen.getByText(/Start a new chat using/)).toBeInTheDocument()
-        expect(screen.getByText(/Customize chat settings/)).toBeInTheDocument()
     })
 
     test('renders for CodyIDE.JetBrains', () => {
         vi.spyOn(useConfigModule, 'useConfig').mockReturnValue({
             clientCapabilities: {
                 isVSCode: false,
-            } satisfies Partial<ClientCapabilities> as ClientCapabilities,
+            } satisfies Partial<ClientCapabilitiesWithLegacyFields> as ClientCapabilitiesWithLegacyFields,
             authStatus: AUTH_STATUS_FIXTURE_AUTHED,
         } satisfies Partial<useConfigModule.Config> as useConfigModule.Config)
         render(<WelcomeMessage setView={() => {}} />, {
@@ -60,12 +57,6 @@ describe('WelcomeMessage', () => {
         openCollapsiblePanels()
 
         // Check common elements
-        expect(screen.getByText(/Chat Help/)).toBeInTheDocument()
         expect(screen.getByText(FIXTURE_PROMPTS[0].name)).toBeInTheDocument()
-
-        // Check elements specific to CodyIDE.JetBrains
-        expect(screen.queryByText(/To add code context from an editor/)).not.toBeInTheDocument()
-        expect(screen.queryByText(/Start a new chat using/)).not.toBeInTheDocument()
-        expect(screen.queryByText(/Customize chat settings/)).not.toBeInTheDocument()
     })
 })

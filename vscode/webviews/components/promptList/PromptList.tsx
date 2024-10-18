@@ -1,29 +1,41 @@
-import { type CodyCommand, CustomCommandType, type Prompt } from '@sourcegraph/cody-shared'
 import clsx from 'clsx'
-import { PlusIcon } from 'lucide-react'
-import { type ComponentProps, type FunctionComponent, useCallback, useState } from 'react'
+import { type FC, useCallback, useState } from 'react'
+
+import type { Action } from '@sourcegraph/cody-shared'
+
 import { useTelemetryRecorder } from '../../utils/telemetry'
 import { useConfig } from '../../utils/useConfig'
 import { useDebounce } from '../../utils/useDebounce'
-import { Badge } from '../shadcn/ui/badge'
-import { Button } from '../shadcn/ui/button'
 import {
     Command,
-    CommandGroup,
     CommandInput,
-    CommandItem,
     CommandList,
     CommandLoading,
     CommandSeparator,
 } from '../shadcn/ui/command'
-import { Tooltip, TooltipContent, TooltipTrigger } from '../shadcn/ui/tooltip'
+import { ActionItem } from './ActionItem'
 import { usePromptsQuery } from './usePromptsQuery'
+import { commandRowValue } from './utils'
 
-export type PromptOrDeprecatedCommand =
-    | { type: 'prompt'; value: Prompt }
-    | { type: 'command'; value: CodyCommand }
+import { useLocalStorage } from '../../components/hooks'
+import styles from './PromptList.module.css'
 
-type SelectActionLabel = 'insert' | 'run'
+interface PromptListProps {
+    showSearch: boolean
+    showFirstNItems?: number
+    telemetryLocation: 'PromptSelectField' | 'PromptsTab'
+    showOnlyPromptInsertableCommands?: boolean
+    showInitialSelectedItem?: boolean
+    showCommandOrigins?: boolean
+    showPromptLibraryUnsupportedMessage?: boolean
+    className?: string
+    inputClassName?: string
+    paddingLevels?: 'none' | 'middle' | 'big'
+    appearanceMode?: 'flat-list' | 'chips-list'
+    lastUsedSorting?: boolean
+    includeEditCommandOnTop?: boolean
+    onSelect: (item: Action) => void
+}
 
 /**
  * A list of prompts from the Prompt Library. For backcompat, it also displays built-in commands and
@@ -32,30 +44,27 @@ type SelectActionLabel = 'insert' | 'run'
  * It is used in the {@link PromptSelectField} in a popover and in {@link PromptsTab} as a list (not
  * in a popover).
  */
-export const PromptList: React.FunctionComponent<{
-    onSelect: (item: PromptOrDeprecatedCommand) => void
-    onSelectActionLabels?: { prompt: SelectActionLabel; command: SelectActionLabel }
-    showSearch?: boolean
-    showOnlyPromptInsertableCommands?: boolean
-    showInitialSelectedItem?: boolean
-    showPromptLibraryUnsupportedMessage?: boolean
-    showCommandOrigins?: boolean
-    className?: string
-    commandListClassName?: string
-    telemetryLocation: 'PromptSelectField' | 'PromptsTab'
-}> = ({
-    onSelect: parentOnSelect,
-    onSelectActionLabels,
-    showSearch = true,
-    showOnlyPromptInsertableCommands,
-    showInitialSelectedItem = true,
-    showPromptLibraryUnsupportedMessage = true,
-    showCommandOrigins = false,
-    className,
-    commandListClassName,
-    telemetryLocation,
-}) => {
+export const PromptList: FC<PromptListProps> = props => {
+    const {
+        showSearch,
+        showFirstNItems,
+        telemetryLocation,
+        showOnlyPromptInsertableCommands,
+        showInitialSelectedItem = true,
+        showPromptLibraryUnsupportedMessage = true,
+        className,
+        inputClassName,
+        paddingLevels = 'none',
+        appearanceMode = 'flat-list',
+        lastUsedSorting,
+        includeEditCommandOnTop,
+        onSelect: parentOnSelect,
+    } = props
+
+    const endpointURL = new URL(useConfig().authStatus.endpoint)
     const telemetryRecorder = useTelemetryRecorder()
+    const [lastUsedActions = {}] = useLocalStorage<Record<string, number>>('last-used-actions-v2', {})
+
     const telemetryPublicMetadata: Record<string, number> = {
         [`in${telemetryLocation}`]: 1,
     }
@@ -66,68 +75,52 @@ export const PromptList: React.FunctionComponent<{
 
     const onSelect = useCallback(
         (rowValue: string): void => {
-            const prompt =
-                result?.prompts.type === 'results'
-                    ? result.prompts.results.find(
-                          p => commandRowValue({ type: 'prompt', value: p }) === rowValue
-                      )
-                    : undefined
+            const action = result?.actions.find(p => commandRowValue(p) === rowValue)
 
-            const standardPromptCommand =
-                prompt === undefined
-                    ? result?.standardPrompts?.find(
-                          c => commandRowValue({ type: 'command', value: c }) === rowValue
-                      )
-                    : undefined
-
-            const codyCommand =
-                standardPromptCommand ??
-                result?.commands?.find(c => commandRowValue({ type: 'command', value: c }) === rowValue)
-
-            const entry: PromptOrDeprecatedCommand | undefined = prompt
-                ? { type: 'prompt', value: prompt }
-                : codyCommand
-                  ? { type: 'command', value: codyCommand }
-                  : undefined
-            if (!entry) {
+            if (!action || !result) {
                 return
             }
+
+            const isPrompt = action.actionType === 'prompt'
+            const isPromptAutoSubmit = action.actionType === 'prompt' && action.autoSubmit
+            const isCommand = action.actionType === 'command'
+            const isBuiltInCommand = isCommand && action.type === 'default'
+
             telemetryRecorder.recordEvent('cody.promptList', 'select', {
                 metadata: {
-                    isPrompt: prompt ? 1 : 0,
-                    isCommand: codyCommand ? 1 : 0,
-                    isCommandBuiltin: codyCommand?.type === 'default' ? 1 : 0,
-                    isCommandCustom: codyCommand?.type !== 'default' ? 1 : 0,
+                    isPrompt: isPrompt ? 1 : 0,
+                    isPromptAutoSubmit: isPromptAutoSubmit ? 1 : 0,
+                    isCommand: isCommand ? 1 : 0,
+                    isCommandBuiltin: isBuiltInCommand ? 1 : 0,
+                    isCommandCustom: !isBuiltInCommand ? 1 : 0,
                     ...telemetryPublicMetadata,
                 },
                 privateMetadata: {
-                    nameWithOwner: prompt ? prompt.nameWithOwner : undefined,
+                    nameWithOwner: isPrompt ? action.nameWithOwner : undefined,
                 },
             })
-            if (result) {
-                telemetryRecorder.recordEvent('cody.promptList', 'query', {
-                    metadata: {
-                        queryLength: debouncedQuery.length,
-                        resultCount:
-                            (result.prompts.type === 'results' ? result.prompts.results.length : 0) +
-                            (result.commands?.length ?? 0),
-                        resultCountPromptsOnly:
-                            result.prompts.type === 'results' ? result.prompts.results.length : 0,
-                        resultCountCommandsOnly: result.commands?.length ?? 0,
-                        supportsPrompts: result.prompts.type !== 'unsupported' ? 1 : 0,
-                        hasUsePromptsQueryError: error ? 1 : 0,
-                        hasPromptsResultError: result.prompts.type === 'error' ? 1 : 0,
-                        ...telemetryPublicMetadata,
-                    },
-                    privateMetadata: {
-                        query: debouncedQuery,
-                        usePromptsQueryErrorMessage: error?.message,
-                        promptsResultErrorMessage:
-                            result.prompts.type === 'error' ? result.prompts.error : undefined,
-                    },
-                })
-            }
-            parentOnSelect(entry)
+
+            const prompts = result.actions.filter(action => action.actionType === 'prompt')
+            const commands = result.actions.filter(action => action.actionType === 'command')
+
+            telemetryRecorder.recordEvent('cody.promptList', 'query', {
+                metadata: {
+                    queryLength: debouncedQuery.length,
+                    resultCount: result.actions.length,
+                    resultCountPromptsOnly: prompts.length,
+                    resultCountCommandsOnly: commands.length,
+                    hasUsePromptsQueryError: error ? 1 : 0,
+                    supportsPrompts: 1,
+                    hasPromptsResultError: 0,
+                    ...telemetryPublicMetadata,
+                },
+                privateMetadata: {
+                    query: debouncedQuery,
+                    usePromptsQueryErrorMessage: error?.message,
+                },
+            })
+
+            parentOnSelect(action)
         },
         [
             result,
@@ -139,166 +132,95 @@ export const PromptList: React.FunctionComponent<{
         ]
     )
 
-    const endpointURL = new URL(useConfig().authStatus.endpoint)
-
     // Don't show builtin commands to insert in the prompt editor.
-    const filteredCommands = showOnlyPromptInsertableCommands
-        ? result?.commands.filter(c => c.type !== 'default')
-        : result?.commands
+    const allActions = showOnlyPromptInsertableCommands
+        ? result?.actions.filter(action => action.actionType === 'prompt' || action.mode === 'ask') ?? []
+        : result?.actions ?? []
+
+    const sortedActions = lastUsedSorting ? getSortedActions(allActions, lastUsedActions) : allActions
+
+    const editCommandIndex = sortedActions.findIndex(
+        action => action.actionType === 'command' && action.key === 'edit'
+    )
+
+    // Bring Edit command on top of the command list
+    if (includeEditCommandOnTop && editCommandIndex !== -1) {
+        sortedActions.unshift(sortedActions.splice(editCommandIndex, 1)[0])
+    }
+
+    const actions = showFirstNItems ? sortedActions.slice(0, showFirstNItems) : sortedActions
+
+    const inputPaddingClass =
+        paddingLevels !== 'none' ? (paddingLevels === 'middle' ? '!tw-p-2' : '!tw-p-4') : ''
+
+    const itemPaddingClass =
+        paddingLevels !== 'none' ? (paddingLevels === 'middle' ? '!tw-px-6' : '!tw-px-8') : ''
 
     return (
         <Command
             loop={true}
             tabIndex={0}
-            className={clsx('focus:tw-outline-none', className)}
             shouldFilter={false}
             defaultValue={showInitialSelectedItem ? undefined : 'xxx-no-item'}
+            className={clsx(styles.list, {
+                [styles.listChips]: appearanceMode === 'chips-list',
+            })}
         >
-            <CommandList
-                className={clsx(
-                    '[&_[cmdk-group]]:tw-pt-0 [&_[cmdk-group-heading]]:tw-flex [&_[cmdk-group-heading]]:tw-gap-2 [&_[cmdk-group-heading]]:tw-items-center [&_[cmdk-group-heading]]:!tw-min-h-[30px] [&_[cmdk-group-heading]]:tw--mx-2 [&_[cmdk-group-heading]]:tw-px-4 [&_[cmdk-group-heading]]:tw-mb-2 [&_[cmdk-group-heading]]:tw-bg-muted [&_[cmdk-group]]:!tw-border-0',
-                    commandListClassName
-                )}
-            >
+            <CommandList className={className}>
                 {showSearch && (
-                    <CommandInput
-                        value={query}
-                        onValueChange={setQuery}
-                        placeholder="Search..."
-                        autoFocus={true}
-                    />
+                    <div className={clsx(inputPaddingClass, inputClassName, styles.listInputContainer)}>
+                        <CommandInput
+                            value={query}
+                            onValueChange={setQuery}
+                            placeholder="Search..."
+                            autoFocus={true}
+                            className={styles.listInput}
+                        />
+                    </div>
                 )}
-                {result && result.prompts.type !== 'unsupported' && (
-                    <CommandGroup
-                        heading={
+
+                {!result && !error && (
+                    <CommandLoading className={itemPaddingClass}>Loading...</CommandLoading>
+                )}
+                {result && allActions.filter(action => action.actionType === 'prompt').length === 0 && (
+                    <CommandLoading className={itemPaddingClass}>
+                        {result?.query === '' ? (
                             <>
-                                <span>Prompt Library</span>
-                                <div className="tw-flex-grow" />
-                                <Button variant="ghost" size="sm" asChild>
-                                    <a
-                                        href={new URL('/prompts', endpointURL).toString()}
-                                        target="_blank"
-                                        rel="noreferrer"
-                                        className="!tw-text-[unset]"
-                                    >
-                                        Manage
-                                    </a>
-                                </Button>
-                                <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="tw-flex tw-items-center tw-gap-0.5"
-                                    asChild
+                                Your Prompt Library is empty.{' '}
+                                <a
+                                    href={new URL('/prompts/new', endpointURL).toString()}
+                                    target="_blank"
+                                    rel="noreferrer"
                                 >
-                                    <a
-                                        href={new URL('/prompts/new', endpointURL).toString()}
-                                        target="_blank"
-                                        rel="noreferrer"
-                                        className="!tw-text-[unset]"
-                                    >
-                                        <PlusIcon size={12} strokeWidth={1.25} />
-                                        New
-                                    </a>
-                                </Button>
+                                    Add a prompt
+                                </a>{' '}
+                                to reuse and share it.
                             </>
-                        }
-                    >
-                        {result.prompts.type === 'results' ? (
-                            <>
-                                {result.prompts.results.length === 0 && (
-                                    <CommandLoading>
-                                        {result.query === '' ? (
-                                            <>
-                                                Your Prompt Library is empty.{' '}
-                                                <a
-                                                    href={new URL(
-                                                        '/prompts/new',
-                                                        endpointURL
-                                                    ).toString()}
-                                                    target="_blank"
-                                                    rel="noreferrer"
-                                                >
-                                                    Add a prompt
-                                                </a>{' '}
-                                                to reuse and share it.
-                                            </>
-                                        ) : (
-                                            <>No prompts found</>
-                                        )}
-                                    </CommandLoading>
-                                )}
-                                {result.prompts.results.map(prompt => (
-                                    <PromptCommandItem
-                                        key={prompt.id}
-                                        prompt={prompt}
-                                        onSelect={onSelect}
-                                        selectActionLabel={onSelectActionLabels?.prompt}
-                                    />
-                                ))}
-                            </>
-                        ) : null}
-                        {result.prompts.type === 'error' && (
-                            <CommandLoading>Error: {result.prompts.error}</CommandLoading>
+                        ) : (
+                            <>No prompts found</>
                         )}
-                    </CommandGroup>
+                    </CommandLoading>
                 )}
-                {!showOnlyPromptInsertableCommands &&
-                    result?.standardPrompts &&
-                    result.standardPrompts.length > 0 && (
-                        <CommandGroup heading={<span>Standard Prompts</span>}>
-                            {result.standardPrompts.map(command => (
-                                <CodyCommandItem
-                                    key={command.key}
-                                    command={command}
-                                    onSelect={onSelect}
-                                    selectActionLabel={onSelectActionLabels?.prompt}
-                                    showCommandOrigins={false}
-                                />
-                            ))}
-                        </CommandGroup>
-                    )}
-                {result && filteredCommands && filteredCommands.length > 0 && (
-                    <CommandGroup
-                        heading={
-                            <>
-                                <span>Commands</span>
-                                <div className="tw-flex-grow" />
-                                {hasCustomCommands(filteredCommands) && (
-                                    <Button variant="ghost" size="sm" asChild>
-                                        <a
-                                            className="!tw-text-[unset]"
-                                            href="command:cody.menu.commands-settings"
-                                        >
-                                            Manage
-                                        </a>
-                                    </Button>
-                                )}
-                            </>
-                        }
-                    >
-                        {filteredCommands.map(command => (
-                            <CodyCommandItem
-                                key={command.key}
-                                command={command}
-                                onSelect={onSelect}
-                                selectActionLabel={onSelectActionLabels?.command}
-                                showCommandOrigins={showCommandOrigins}
-                            />
-                        ))}
-                    </CommandGroup>
+
+                {actions.map(action => (
+                    <ActionItem
+                        key={commandRowValue(action)}
+                        action={action}
+                        onSelect={onSelect}
+                        className={clsx(itemPaddingClass, styles.listItem)}
+                    />
+                ))}
+
+                {showPromptLibraryUnsupportedMessage && result && !result.arePromptsSupported && (
+                    <>
+                        <CommandSeparator alwaysRender={true} />
+                        <CommandLoading className="tw-px-4">
+                            Prompt Library is not yet available on {endpointURL.hostname}. Ask your site
+                            admin to upgrade to Sourcegraph 5.6 or later.
+                        </CommandLoading>
+                    </>
                 )}
-                {showPromptLibraryUnsupportedMessage &&
-                    result &&
-                    result.prompts.type === 'unsupported' && (
-                        <>
-                            <CommandSeparator alwaysRender={true} />
-                            <CommandLoading className="tw-px-4">
-                                Prompt Library is not yet available on {endpointURL.hostname}. Ask your
-                                site admin to upgrade to Sourcegraph 5.6 or later.
-                            </CommandLoading>
-                        </>
-                    )}
-                {!result && !error && <CommandLoading className="tw-px-4">Loading...</CommandLoading>}
+
                 {error && (
                     <CommandLoading className="tw-px-4">
                         Error: {error.message || 'unknown'}
@@ -309,123 +231,13 @@ export const PromptList: React.FunctionComponent<{
     )
 }
 
-function hasCustomCommands(commands: CodyCommand[]): boolean {
-    return commands.some(
-        command =>
-            command.type === CustomCommandType.Workspace || command.type === CustomCommandType.User
-    )
+function getSortedActions(actions: Action[], lastUsedActions: Record<string, number>): Action[] {
+    return [...actions].sort((action1, action2) => {
+        const action1Key = action1.actionType === 'prompt' ? action1.id : action1.key
+        const action2Key = action2.actionType === 'prompt' ? action2.id : action2.key
+        const action1Count = lastUsedActions[action1Key] ?? 0
+        const action2Count = lastUsedActions[action2Key] ?? 0
+
+        return action2Count - action1Count
+    })
 }
-
-function commandRowValue(row: PromptOrDeprecatedCommand): string {
-    return row.type === 'prompt' ? `prompt-${row.value.id}` : `command-${row.value.key}`
-}
-
-const PromptCommandItem: FunctionComponent<{
-    prompt: Prompt
-    onSelect: (value: string) => void
-    selectActionLabel: SelectActionLabel | undefined
-}> = ({ prompt, onSelect, selectActionLabel }) => (
-    <CommandItem
-        value={commandRowValue({ type: 'prompt', value: prompt })}
-        onSelect={onSelect}
-        className="!tw-items-start tw-group/[cmdk-item]"
-    >
-        <div>
-            <div className="tw-flex tw-gap-3 tw-w-full tw-items-start">
-                <span>
-                    <span className="tw-text-muted-foreground">{prompt.owner.namespaceName} / </span>
-                    <strong>{prompt.name}</strong>
-                </span>
-                {prompt.draft && (
-                    <Badge variant="secondary" className="tw-text-xxs tw-mt-0.5">
-                        Draft
-                    </Badge>
-                )}
-            </div>
-            {prompt.description && (
-                <span className="tw-text-xs tw-text-muted-foreground tw-text-nowrap tw-overflow-hidden tw-text-ellipsis tw-w-full">
-                    {prompt.description}
-                </span>
-            )}
-        </div>
-        <div className="tw-flex-grow" />
-        {selectActionLabel && <CommandItemAction label={selectActionLabel} />}
-    </CommandItem>
-)
-
-const CodyCommandItem: FunctionComponent<{
-    command: CodyCommand
-    onSelect: (value: string) => void
-    selectActionLabel: SelectActionLabel | undefined
-    showCommandOrigins: boolean
-}> = ({ command, onSelect, selectActionLabel, showCommandOrigins }) => (
-    <CommandItem
-        value={commandRowValue({ type: 'command', value: command })}
-        onSelect={onSelect}
-        className="!tw-items-start tw-group/[cmdk-item]"
-    >
-        <div>
-            <div className="tw-flex tw-flex-wrap tw-gap-3 tw-w-full tw-items-start">
-                <strong className="tw-whitespace-nowrap">
-                    {command.type === 'default' ? command.description : command.key}
-                </strong>
-                {showCommandOrigins && command.type !== 'default' && (
-                    <Badge variant="secondary" className="tw-text-xxs tw-mt-0.5 tw-whitespace-nowrap">
-                        {command.type === CustomCommandType.User
-                            ? 'Local User Settings'
-                            : 'Workspace Settings'}
-                    </Badge>
-                )}
-            </div>
-            {command.type !== 'default' && command.description && (
-                <span className="tw-text-xs tw-text-muted-foreground tw-text-nowrap tw-overflow-hidden tw-text-ellipsis tw-w-full">
-                    {command.description}
-                </span>
-            )}
-        </div>
-        <div className="tw-flex-grow" />
-        {selectActionLabel && <CommandItemAction label={selectActionLabel} />}
-    </CommandItem>
-)
-
-/** Indicator for what will occur when a CommandItem is selected. */
-const CommandItemAction: FunctionComponent<{ label: SelectActionLabel; className?: string }> = ({
-    label,
-    className,
-}) => (
-    <Tooltip>
-        <TooltipTrigger asChild>
-            <Button
-                type="button"
-                variant="default"
-                size="xs"
-                className={clsx(
-                    'tw-tracking-tight tw-text-accent-foreground tw-opacity-30 tw-bg-transparent hover:tw-bg-transparent tw-invisible group-[[aria-selected="true"]]/[cmdk-item]:tw-visible group-hover/[cmdk-item]:tw-visible',
-                    className
-                )}
-            >
-                {label === 'insert' ? 'Insert' : 'Run'}
-            </Button>
-        </TooltipTrigger>
-        <TooltipContent>
-            {label === 'insert'
-                ? 'Append prompt text to chat message'
-                : 'Run command on current selection in editor'}
-        </TooltipContent>
-    </Tooltip>
-)
-
-/**
- * A variant of {@link PromptList} that is visually more suited for a non-popover.
- */
-export const PromptListSuitedForNonPopover: FunctionComponent<
-    Omit<ComponentProps<typeof PromptList>, 'showSearch' | 'showInitialSelectedItem'>
-> = ({ className, commandListClassName, ...props }) => (
-    <PromptList
-        {...props}
-        showSearch={false}
-        showInitialSelectedItem={false}
-        className={clsx('tw-w-full !tw-max-w-[unset] !tw-bg-[unset]', className)}
-        commandListClassName={clsx('!tw-max-h-[unset]', commandListClassName)}
-    />
-)

@@ -19,6 +19,10 @@ import { currentAuthStatusOrNotReadyYet } from '../auth/authStatus'
 import type { AuthStatus } from '../auth/types'
 import { clientCapabilities } from '../configuration/clientCapabilities'
 import type { PickResolvedConfiguration } from '../configuration/resolver'
+import {
+    type UserProductSubscription,
+    cachedUserProductSubscription,
+} from '../sourcegraph-api/userProductSubscription'
 import { getTier } from './cody-tier'
 
 export interface ExtensionDetails {
@@ -85,7 +89,7 @@ export class TelemetryRecorderProvider extends BaseTelemetryRecorderProvider<
             ],
             {
                 ...defaultEventRecordingOptions,
-                bufferTimeMs: 0, // disable buffering for now
+                bufferTimeMs: 0, // disable buffering for now. If this is enabled tests might need to be updated to be able to handle the delay between an action and the telemetry being fired.
             }
         )
     }
@@ -184,13 +188,15 @@ class ConfigurationMetadataProcessor implements TelemetryProcessor {
         // The tier is not known yet when the user is not authed, and
         // `this.authStatusProvider.status` will throw, so omit it.
         let authStatus: AuthStatus | undefined
+        let sub: UserProductSubscription | null = null
         try {
             authStatus = currentAuthStatusOrNotReadyYet()
+            sub = cachedUserProductSubscription()
         } catch {}
         if (authStatus) {
             event.parameters.metadata.push({
                 key: 'tier',
-                value: getTier(authStatus),
+                value: getTier(authStatus, sub),
             })
         }
     }

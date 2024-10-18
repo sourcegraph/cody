@@ -9,13 +9,12 @@ import {
     switchMap,
 } from '@sourcegraph/cody-shared'
 import { Observable, map } from 'observable-fns'
-import { logDebug } from '../log'
+import { logDebug } from '../output-channel-logger'
 import { remoteReposForAllWorkspaceFolders } from './remoteRepos'
 
 interface GitHubDotComRepoMetaData {
     // The full uniquely identifying name on github.com, e.g., "github.com/sourcegraph/cody"
     repoName: string
-
     isPublic: boolean
 }
 
@@ -33,29 +32,34 @@ export class GitHubDotComRepoMetadata {
         return GitHubDotComRepoMetadata.instance
     }
 
-    public getRepoMetadataIfCached(repoName: string): GitHubDotComRepoMetaData | undefined {
-        return this.cache.get(repoName)
+    public getRepoMetadataIfCached(repoBaseName: string): GitHubDotComRepoMetaData | undefined {
+        const normalizedRepoName = this.getNormalizedRepoNameFromBaseRepoName(repoBaseName)
+        if (!normalizedRepoName) {
+            return undefined
+        }
+        return this.cache.get(normalizedRepoName)
     }
 
     public async getRepoMetadataUsingRepoName(
-        repoName: string,
+        repoBaseName: string,
         signal?: AbortSignal
     ): Promise<GitHubDotComRepoMetaData | undefined> {
-        if (this.cache.has(repoName)) {
-            return this.cache.get(repoName)
+        const repoMetadata = this.getRepoMetadataIfCached(repoBaseName)
+        if (repoMetadata) {
+            return repoMetadata
         }
-        const repoMetaData = await this.ghMetadataFromGit(repoName, signal)
+        const repoMetaData = await this.ghMetadataFromGit(repoBaseName, signal)
         if (repoMetaData) {
-            this.cache.set(repoName, repoMetaData)
+            this.cache.set(repoMetaData.repoName, repoMetaData)
         }
         return repoMetaData
     }
 
     private async ghMetadataFromGit(
-        repoName: string,
+        repoBaseName: string,
         signal?: AbortSignal
     ): Promise<GitHubDotComRepoMetaData | undefined> {
-        const ownerAndRepoName = this.parseOwnerAndRepoName(repoName)
+        const ownerAndRepoName = this.parseOwnerAndRepoName(repoBaseName)
         if (!ownerAndRepoName) {
             return undefined
         }
@@ -69,11 +73,12 @@ export class GitHubDotComRepoMetadata {
 
     private async queryGitHubApi(
         owner: string,
-        repoBasename: string,
+        repoName: string,
         signal?: AbortSignal
     ): Promise<GitHubDotComRepoMetaData | undefined> {
-        const apiUrl = `https://api.github.com/repos/${owner}/${repoBasename}`
-        const metadata = { repoName: `github.com/${owner}/${repoBasename}`, isPublic: false }
+        const apiUrl = `https://api.github.com/repos/${owner}/${repoName}`
+        const normalizedRepoName = this.getNormalizedRepoNameFromOwnerAndRepoName(owner, repoName)
+        const metadata = { repoName: normalizedRepoName, isPublic: false }
         try {
             const response = await fetch(apiUrl, { method: 'HEAD', signal })
             metadata.isPublic = response.ok
@@ -82,7 +87,7 @@ export class GitHubDotComRepoMetadata {
                 logDebug(
                     'queryGitHubApi',
                     'error querying GitHub API (assuming repository is non-public',
-                    `${owner}/${repoBasename}`,
+                    `${owner}/${repoName}`,
                     error
                 )
             }
@@ -90,13 +95,30 @@ export class GitHubDotComRepoMetadata {
         return metadata
     }
 
-    private parseOwnerAndRepoName(repoName: string): { owner: string; repoName: string } | undefined {
-        const match = repoName?.match(/github\.com\/([^/]+)\/([^/]+?)(?:\.git)?$/)
+    private getNormalizedRepoNameFromBaseRepoName(repoBaseName: string): string | undefined {
+        const ownerAndRepoName = this.parseOwnerAndRepoName(repoBaseName)
+        if (!ownerAndRepoName) {
+            return undefined
+        }
+        return this.getNormalizedRepoNameFromOwnerAndRepoName(
+            ownerAndRepoName.owner,
+            ownerAndRepoName.repoName
+        )
+    }
+
+    private getNormalizedRepoNameFromOwnerAndRepoName(owner: string, repoName: string): string {
+        return `github.com/${owner}/${repoName}`
+    }
+
+    private parseOwnerAndRepoName(
+        repoBaseName: string
+    ): { owner: string; repoName: string } | undefined {
+        const match = repoBaseName?.match(/github\.com\/([^/]+)\/([^/]+?)(?:\.git)?$/)
         if (!match) {
             return undefined
         }
-        const [, owner, repoBasename] = match
-        return { owner, repoName: repoBasename }
+        const [, owner, repoName] = match
+        return { owner, repoName: repoName }
     }
 }
 

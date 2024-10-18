@@ -11,11 +11,16 @@ import type { ContentMatch } from './codeSnippet/types'
 
 interface FileSnippetProps {
     item: ContextItemFile
+    onAddToFollowupChat?: (props: {
+        repoName: string
+        filePath: string
+        fileURL: string
+    }) => void
     className?: string
 }
 
 export const FileSnippet: FC<FileSnippetProps> = props => {
-    const { item, className } = props
+    const { item, className, onAddToFollowupChat } = props
 
     const highlights = useExtensionAPI().highlights
     const {
@@ -39,7 +44,7 @@ export const FileSnippet: FC<FileSnippetProps> = props => {
             chunkMatches: [
                 {
                     content: item.content ?? '',
-                    contentStart: { line: Math.max(startLine - 1, 0), column: 0 },
+                    contentStart: { line: Math.max(startLine - 1, 0), character: 0 },
                     ranges: item.ranges ?? [],
                 },
             ],
@@ -71,6 +76,7 @@ export const FileSnippet: FC<FileSnippetProps> = props => {
             fetchHighlightedFileLineRanges={fetchHighlights}
             className={className}
             onSelect={logSelection}
+            onAddToFollowupChat={onAddToFollowupChat}
         />
     )
 }

@@ -10,7 +10,6 @@ import {
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
 
-import { logError } from '../log'
 import type { CompletionIntent } from '../tree-sitter/query-sdk'
 
 import { isValidTestFile } from '../commands/utils/test-commands'
@@ -19,10 +18,11 @@ import {
     gitMetadataForCurrentEditor,
 } from '../repository/git-metadata-for-editor'
 import { GitHubDotComRepoMetadata } from '../repository/githubRepoMetadata'
+import * as CompletionAnalyticsLogger from './analytics-logger'
+import type { CompletionLogID } from './analytics-logger'
 import type { ContextMixer } from './context/context-mixer'
 import { insertIntoDocContext } from './get-current-doc-context'
-import * as CompletionLogger from './logger'
-import type { CompletionLogID } from './logger'
+import { autocompleteOutputChannelLogger } from './output-channel-logger'
 import type {
     CompletionProviderTracer,
     GenerateCompletionsOptions,
@@ -51,7 +51,7 @@ export interface InlineCompletionsParams {
     requestManager: RequestManager
     contextMixer: ContextMixer
     smartThrottleService: SmartThrottleService | null
-    stageRecorder: CompletionLogger.AutocompleteStageRecorder
+    stageRecorder: CompletionAnalyticsLogger.AutocompleteStageRecorder
 
     // UI state
     lastCandidate?: LastInlineCompletionCandidate
@@ -204,8 +204,11 @@ export async function getInlineCompletions(
             console.error(error)
         }
 
-        logError('getInlineCompletions:error', error.message, error.stack, { verbose: { error } })
-        CompletionLogger.logError(error)
+        autocompleteOutputChannelLogger.logError('getInlineCompletions', error.message, error.stack, {
+            verbose: { error },
+        })
+
+        CompletionAnalyticsLogger.logError(error)
 
         throw error
     } finally {
@@ -247,8 +250,9 @@ async function doGetInlineCompletions(
 
     const isDotComUser = isDotComAuthed()
 
-    const gitIdentifiersForFile =
-        isDotComUser === true ? gitMetadataForCurrentEditor.getGitIdentifiersForFile() : undefined
+    const gitIdentifiersForFile = isDotComUser
+        ? gitMetadataForCurrentEditor.getGitIdentifiersForFile()
+        : undefined
     if (gitIdentifiersForFile?.repoName) {
         const repoMetadataInstance = GitHubDotComRepoMetadata.getInstance()
         // Calling this so that it precomputes the `gitRepoUrl` and store in its cache for query later.
@@ -307,9 +311,9 @@ async function doGetInlineCompletions(
     // Only log a completion as started if it's either served from cache _or_ the debounce interval
     // has passed to ensure we don't log too many start events where we end up not doing any work at
     // all.
-    CompletionLogger.flushActiveSuggestionRequests(isDotComUser)
+    CompletionAnalyticsLogger.flushActiveSuggestionRequests(isDotComUser)
     const multiline = Boolean(multilineTrigger)
-    const logId = CompletionLogger.create({
+    const logId = CompletionAnalyticsLogger.create({
         multiline,
         triggerKind,
         providerIdentifier: provider.id,
@@ -339,8 +343,8 @@ async function doGetInlineCompletions(
     if (cachedResult) {
         const { completions, source, isFuzzyMatch } = cachedResult
 
-        CompletionLogger.start(logId)
-        CompletionLogger.loaded({
+        CompletionAnalyticsLogger.start(logId)
+        CompletionAnalyticsLogger.loaded({
             logId,
             requestParams,
             completions,
@@ -434,7 +438,7 @@ async function doGetInlineCompletions(
     }
 
     setIsLoading?.(true)
-    CompletionLogger.start(logId)
+    CompletionAnalyticsLogger.start(logId)
     stageRecorder.record('preContextRetrieval')
 
     // Fetch context and apply remaining debounce time
@@ -499,7 +503,7 @@ async function doGetInlineCompletions(
         ],
     })
 
-    CompletionLogger.networkRequestStarted(logId, contextResult?.logSummary)
+    CompletionAnalyticsLogger.networkRequestStarted(logId, contextResult?.logSummary)
     stageRecorder.record('preNetworkRequest')
 
     // Get the processed completions from providers
@@ -556,7 +560,7 @@ function processRequestManagerResult(
         logId = updatedLogId
     }
 
-    CompletionLogger.loaded({
+    CompletionAnalyticsLogger.loaded({
         logId,
         requestParams,
         completions,

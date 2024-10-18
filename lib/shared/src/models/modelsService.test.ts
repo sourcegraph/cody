@@ -4,6 +4,8 @@ import { currentAuthStatus, mockAuthStatus } from '../auth/authStatus'
 import { AUTH_STATUS_FIXTURE_AUTHED, type AuthenticatedAuthStatus } from '../auth/types'
 import { firstValueFrom } from '../misc/observable'
 import { DOTCOM_URL } from '../sourcegraph-api/environments'
+import * as userProductSubscriptionModule from '../sourcegraph-api/userProductSubscription'
+import type { UserProductSubscription } from '../sourcegraph-api/userProductSubscription'
 import { CHAT_INPUT_TOKEN_BUDGET, CHAT_OUTPUT_TOKEN_BUDGET } from '../token/constants'
 import { getMockedDotComClientModels } from './dotcom'
 import type { Model } from './model'
@@ -31,11 +33,15 @@ describe('modelsService', () => {
         ...AUTH_STATUS_FIXTURE_AUTHED,
         endpoint: DOTCOM_URL.toString(),
         authenticated: true,
+    }
+    const freeUserSub: UserProductSubscription = {
         userCanUpgrade: true,
     }
 
     const codyProAuthStatus: AuthenticatedAuthStatus = {
         ...freeUserAuthStatus,
+    }
+    const codyProSub: UserProductSubscription = {
         userCanUpgrade: false,
     }
 
@@ -158,6 +164,9 @@ describe('modelsService', () => {
         let modelsService: ModelsService
         beforeEach(() => {
             mockAuthStatus(codyProAuthStatus)
+            vi.spyOn(userProductSubscriptionModule, 'userProductSubscription', 'get').mockReturnValue(
+                Observable.of(codyProSub)
+            )
             modelsService = modelsServiceWithModels([model1chat, model2chat, model3all, model4edit])
         })
 
@@ -245,11 +254,17 @@ describe('modelsService', () => {
 
         it('returns false for unknown model', async () => {
             mockAuthStatus(codyProAuthStatus)
+            vi.spyOn(userProductSubscriptionModule, 'userProductSubscription', 'get').mockReturnValue(
+                Observable.of(codyProSub)
+            )
             expect(await firstValueFrom(modelsService.isModelAvailable('unknown-model'))).toBe(false)
         })
 
         it('allows enterprise user to use any model', async () => {
             mockAuthStatus(enterpriseAuthStatus)
+            vi.spyOn(userProductSubscriptionModule, 'userProductSubscription', 'get').mockReturnValue(
+                Observable.of(null)
+            )
             expect(await firstValueFrom(modelsService.isModelAvailable(enterpriseModel))).toBe(true)
             expect(await firstValueFrom(modelsService.isModelAvailable(proModel))).toBe(true)
             expect(await firstValueFrom(modelsService.isModelAvailable(freeModel))).toBe(true)
@@ -257,6 +272,9 @@ describe('modelsService', () => {
 
         it('allows Cody Pro user to use Pro and Free models', async () => {
             mockAuthStatus(codyProAuthStatus)
+            vi.spyOn(userProductSubscriptionModule, 'userProductSubscription', 'get').mockReturnValue(
+                Observable.of(codyProSub)
+            )
             expect(await firstValueFrom(modelsService.isModelAvailable(enterpriseModel))).toBe(false)
             expect(await firstValueFrom(modelsService.isModelAvailable(proModel))).toBe(true)
             expect(await firstValueFrom(modelsService.isModelAvailable(freeModel))).toBe(true)
@@ -264,6 +282,9 @@ describe('modelsService', () => {
 
         it('allows free user to use only Free models', async () => {
             mockAuthStatus(freeUserAuthStatus)
+            vi.spyOn(userProductSubscriptionModule, 'userProductSubscription', 'get').mockReturnValue(
+                Observable.of(freeUserSub)
+            )
             expect(await firstValueFrom(modelsService.isModelAvailable(enterpriseModel))).toBe(false)
             expect(await firstValueFrom(modelsService.isModelAvailable(proModel))).toBe(false)
             expect(await firstValueFrom(modelsService.isModelAvailable(freeModel))).toBe(true)
@@ -271,11 +292,122 @@ describe('modelsService', () => {
 
         it('handles model passed as string', async () => {
             mockAuthStatus(freeUserAuthStatus)
+            vi.spyOn(userProductSubscriptionModule, 'userProductSubscription', 'get').mockReturnValue(
+                Observable.of(freeUserSub)
+            )
             expect(await firstValueFrom(modelsService.isModelAvailable(freeModel.id))).toBe(true)
             expect(await firstValueFrom(modelsService.isModelAvailable(proModel.id))).toBe(false)
 
             mockAuthStatus(codyProAuthStatus)
+            vi.spyOn(userProductSubscriptionModule, 'userProductSubscription', 'get').mockReturnValue(
+                Observable.of(codyProSub)
+            )
             expect(await firstValueFrom(modelsService.isModelAvailable(proModel.id))).toBe(true)
+        })
+    })
+
+    describe('ModelCategory', () => {
+        it('includes ModelTag.Other', () => {
+            const otherModel = createModel({
+                id: 'other-model',
+                usage: [ModelUsage.Chat],
+                tags: [ModelTag.Other],
+            })
+
+            const modelsService = modelsServiceWithModels([otherModel])
+
+            vi.spyOn(modelsService, 'modelsChanges', 'get').mockReturnValue(
+                Observable.of({
+                    ...EMPTY_MODELS_DATA,
+                    primaryModels: [otherModel],
+                })
+            )
+
+            expect(otherModel.tags).toContain(ModelTag.Other)
+            expect(modelsService.models).toContain(otherModel)
+        })
+
+        it('correctly categorizes models with different tags', () => {
+            const powerModel = createModel({
+                id: 'power-model',
+                usage: [ModelUsage.Chat],
+                tags: [ModelTag.Power],
+            })
+            const balancedModel = createModel({
+                id: 'balanced-model',
+                usage: [ModelUsage.Chat],
+                tags: [ModelTag.Balanced],
+            })
+            const speedModel = createModel({
+                id: 'speed-model',
+                usage: [ModelUsage.Chat],
+                tags: [ModelTag.Speed],
+            })
+            const accuracyModel = createModel({
+                id: 'accuracy-model',
+                usage: [ModelUsage.Chat],
+                tags: ['accuracy' as ModelTag],
+            })
+
+            const modelsService = modelsServiceWithModels([
+                powerModel,
+                balancedModel,
+                speedModel,
+                accuracyModel,
+            ])
+
+            vi.spyOn(modelsService, 'modelsChanges', 'get').mockReturnValue(
+                Observable.of({
+                    ...EMPTY_MODELS_DATA,
+                    primaryModels: [powerModel, balancedModel, speedModel, accuracyModel],
+                })
+            )
+
+            expect(modelsService.models).toContain(powerModel)
+            expect(modelsService.models).toContain(balancedModel)
+            expect(modelsService.models).toContain(speedModel)
+            expect(modelsService.models).toContain(accuracyModel)
+        })
+
+        it('handles models with multiple category tags', () => {
+            const multiCategoryModel = createModel({
+                id: 'multi-category-model',
+                usage: [ModelUsage.Chat],
+                tags: [ModelTag.Power, ModelTag.Balanced],
+            })
+
+            const modelsService = modelsServiceWithModels([multiCategoryModel])
+
+            vi.spyOn(modelsService, 'modelsChanges', 'get').mockReturnValue(
+                Observable.of({
+                    ...EMPTY_MODELS_DATA,
+                    primaryModels: [multiCategoryModel],
+                })
+            )
+
+            expect(multiCategoryModel.tags).toContain(ModelTag.Power)
+            expect(multiCategoryModel.tags).toContain(ModelTag.Balanced)
+            expect(modelsService.models).toContain(multiCategoryModel)
+        })
+
+        it('correctly handles models without category tags', () => {
+            const uncategorizedModel = createModel({
+                id: 'uncategorized-model',
+                usage: [ModelUsage.Chat],
+                tags: [],
+            })
+
+            const modelsService = modelsServiceWithModels([uncategorizedModel])
+
+            vi.spyOn(modelsService, 'modelsChanges', 'get').mockReturnValue(
+                Observable.of({
+                    ...EMPTY_MODELS_DATA,
+                    primaryModels: [uncategorizedModel],
+                })
+            )
+
+            expect(uncategorizedModel.tags).toHaveLength(0)
+            expect(modelsService.models).toContain(uncategorizedModel)
         })
     })
 })

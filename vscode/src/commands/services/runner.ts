@@ -13,7 +13,7 @@ import {
 import { telemetryRecorder } from '@sourcegraph/cody-shared'
 import { type ExecuteEditArguments, executeEdit } from '../../edit/execute'
 import type { EditMode } from '../../edit/types'
-import { logDebug } from '../../log'
+import { logDebug } from '../../output-channel-logger'
 
 import type { CommandResult } from '../../CommandResult'
 import type { ChatCommandResult, EditCommandResult } from '../../CommandResult'
@@ -123,7 +123,6 @@ export class CommandRunner implements vscode.Disposable {
             type: 'chat',
             session: await executeChat({
                 text: prompt,
-                submitType: 'user-newchat',
                 contextItems,
                 source: 'custom-commands',
                 command: DefaultChatCommands.Custom,

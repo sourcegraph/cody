@@ -270,7 +270,7 @@ describe('PromptBuilder', () => {
             const partialFile: ContextItem = {
                 ...fileWithSameUri,
                 range: { start: { line: 1, character: 0 }, end: { line: 2, character: 1 } },
-                source: ContextItemSource.Terminal,
+                source: ContextItemSource.Search,
             }
 
             const fullFile: ContextItem = {

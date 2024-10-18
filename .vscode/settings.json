@@ -3,9 +3,11 @@
     "**/node_modules": true,
     "**/dist": true,
     "**/.vscode-test": true,
-    "**/.vscode-test-web": true
+    "**/.vscode-test-web": true,
+    "**/.test": true
   },
   "files.exclude": {
+    "node_modules": false,
     "**/.vscode-test": true,
     "**/.vscode-test-web": true
   },
@@ -19,23 +21,25 @@
   "typescript.tsdk": "node_modules/typescript/lib",
   "task.allowAutomaticTasks": "on",
   "biome.enabled": true,
-  "editor.defaultFormatter": "biomejs.biome",
   "editor.codeActionsOnSave": {
     "source.organizeImports": "never",
     "source.organizeImports.biome": "explicit"
   },
   "editor.insertSpaces": true,
   "cSpell.words": ["Supercompletion", "Supercompletions"],
-  "[json]": {
-    "editor.defaultFormatter": "biomejs.biome",
+  "[javascript][javascriptreact][json][jsonc][typescript][typescriptreact][graphql]": {
+    "editor.defaultFormatter": "biomejs.biome"
+  },
+  "[css]": {
+    "editor.defaultFormatter": "stylelint.vscode-stylelint"
+  },
+  "[javascript]": {
+    "editor.defaultFormatter": "vscode.typescript-language-features"
   },
   "[typescript]": {
     "editor.defaultFormatter": "biomejs.biome"
   },
   "[typescriptreact]": {
     "editor.defaultFormatter": "biomejs.biome"
-  },
-  "[css]": {
-    "editor.defaultFormatter": "stylelint.vscode-stylelint"
   }
 }

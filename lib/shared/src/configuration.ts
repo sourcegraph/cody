@@ -1,8 +1,15 @@
-import type { ClientCapabilities } from './configuration/clientCapabilities'
+import type { ClientCapabilitiesWithLegacyFields } from './configuration/clientCapabilities'
 import type { ChatModelProviderConfig } from './models/sync'
 
 import type { PromptString } from './prompt/prompt-string'
 import type { ReadonlyDeep } from './utils'
+
+/**
+ * Represents the source of an authentication token generation, either a redirect or paste flow.
+ * A redirect flow is initiated by the user clicking a link in the browser, while a paste flow is initiated by the user
+ * manually entering the access from into the VsCode App.
+ */
+export type TokenSource = 'redirect' | 'paste'
 
 /**
  * The user's authentication credentials, which are stored separately from the rest of the
@@ -11,26 +18,52 @@ import type { ReadonlyDeep } from './utils'
 export interface AuthCredentials {
     serverEndpoint: string
     accessToken: string | null
+    tokenSource?: TokenSource | undefined
+}
+
+export interface AutoEditsTokenLimit {
+    prefixTokens: number
+    suffixTokens: number
+    maxPrefixLinesInArea: number
+    maxSuffixLinesInArea: number
+    codeToRewritePrefixLines: number
+    codeToRewriteSuffixLines: number
+    contextSpecificTokenLimit: Record<string, number>
+}
+
+export interface AutoEditsModelConfig {
+    provider: string
+    model: string
+    apiKey: string
+    tokenLimit: AutoEditsTokenLimit
+}
+
+export interface NetConfiguration {
+    mode?: string | undefined | null
+    proxy?: {
+        endpoint?: string | undefined | null
+        cacert?: string | undefined | null
+        skipCertValidation?: boolean | null
+    }
+    vscode?: string | undefined | null
 }
 
 interface RawClientConfiguration {
-    proxy?: string | null
+    net: NetConfiguration
     codebase?: string
     debugFilter: RegExp | null
     debugVerbose: boolean
     telemetryLevel: 'all' | 'off' | 'agent'
 
-    serverEndpoint: string
+    serverEndpoint?: string
     customHeaders?: Record<string, string>
-    chatPreInstruction: PromptString
-    editPreInstruction: PromptString
+    chatPreInstruction?: PromptString
+    editPreInstruction?: PromptString
     codeActions: boolean
     commandHints: boolean
     commandCodeLenses: boolean
 
-    /**
-     * Autocomplete
-     */
+    //#region Autocomplete
     autocomplete: boolean
     autocompleteLanguages: Record<string, boolean>
     autocompleteAdvancedProvider: AutocompleteProviderID | string
@@ -38,62 +71,54 @@ interface RawClientConfiguration {
     autocompleteFormatOnAccept?: boolean
     autocompleteDisableInsideComments: boolean
 
-    /**
-     * Experimental
-     */
-    experimentalTracing: boolean
-    experimentalSupercompletions: boolean
-    experimentalCommitMessage: boolean
-    experimentalNoodle: boolean
-    experimentalMinionAnthropicKey: string | undefined
-    experimentalGuardrailsTimeoutSeconds: number | undefined
-
-    /**
-     * Unstable Features for internal testing only
-     */
-    internalUnstable: boolean
-    internalDebugContext?: boolean
-    internalDebugState?: boolean
-
-    /**
-     * Experimental autocomplete
-     */
+    //#region Experimental
     autocompleteExperimentalGraphContext: 'lsp-light' | 'tsc' | 'tsc-mixed' | null
     autocompleteExperimentalOllamaOptions: OllamaOptions
     autocompleteExperimentalFireworksOptions?: ExperimentalFireworksConfig
     autocompleteExperimentalPreloadDebounceInterval?: number
 
-    /**
-     * Hidden settings
-     */
+    experimentalTracing: boolean
+    experimentalSupercompletions: boolean
+    experimentalAutoedits: AutoEditsModelConfig | undefined
+    experimentalCommitMessage: boolean
+    experimentalNoodle: boolean
+    experimentalMinionAnthropicKey: string | undefined
+    experimentalGuardrailsTimeoutSeconds: number | undefined
+
+    //#region Unstable
+    internalUnstable: boolean
+    internalDebugContext?: boolean
+    internalDebugState?: boolean
+
+    //#region Hidden Settings
     hasNativeWebview: boolean
     isRunningInsideAgent?: boolean
 
     /**
      * @deprecated Do not use directly. Call {@link clientCapabilities} instead
      * (`clientCapabilities().agentIDE`) and see the docstring on
-     * {@link ClientCapabilities.agentIDE}.
+     * {@link ClientCapabilitiesWithLegacyFields.agentIDE}.
      */
     agentIDE?: CodyIDE
 
     /**
      * @deprecated Do not use directly. Call {@link clientCapabilities} instead
      * (`clientCapabilities().agentIDEVersion`) and see the docstring on
-     * {@link ClientCapabilities.agentIDEVersion}.
+     * {@link ClientCapabilitiesWithLegacyFields.agentIDEVersion}.
      */
-    agentIDEVersion?: ClientCapabilities['agentIDEVersion']
+    agentIDEVersion?: ClientCapabilitiesWithLegacyFields['agentIDEVersion']
 
     /**
      * @deprecated Do not use directly. Call {@link clientCapabilities} instead
      * (`clientCapabilities().agentExtensionVersion`) and see the docstring on
-     * {@link ClientCapabilities.agentExtensionVersion}.
+     * {@link ClientCapabilitiesWithLegacyFields.agentExtensionVersion}.
      */
-    agentExtensionVersion?: ClientCapabilities['agentExtensionVersion']
+    agentExtensionVersion?: ClientCapabilitiesWithLegacyFields['agentExtensionVersion']
 
     /**
      * @deprecated Do not use directly. Call {@link clientCapabilities} instead
      * (`clientCapabilities().agentIDEVersion`) and see the docstring on
-     * {@link ClientCapabilities.agentIDEVersion}.
+     * {@link ClientCapabilitiesWithLegacyFields.agentIDEVersion}.
      */
     telemetryClientName?: string
 
@@ -102,6 +127,16 @@ interface RawClientConfiguration {
     autocompleteAdvancedModel: string | null
     providerLimitPrompt?: number
     devModels?: ChatModelProviderConfig[]
+
+    //#region Forced Overrides
+    /**
+     * Overrides always take precedence over other configuration. Specific
+     * override flags should be preferred over opaque broad settings /
+     * environment variables such as TESTING_MODE which can make it difficult to
+     * understand the broad implications such a setting can have.
+     */
+    overrideServerEndpoint?: string | undefined
+    overrideAuthToken?: string | undefined
 }
 
 /**
@@ -117,6 +152,11 @@ export enum CodyIDE {
     Web = 'Web',
     VisualStudio = 'VisualStudio',
     Eclipse = 'Eclipse',
+
+    /**
+     * The standalone web client in the Cody repository's `web/` tree.
+     */
+    StandaloneWeb = 'StandaloneWeb',
 }
 
 export type AutocompleteProviderID = keyof typeof AUTOCOMPLETE_PROVIDER_ID
@@ -159,16 +199,6 @@ export const AUTOCOMPLETE_PROVIDER_ID = {
      * @deprecated use `openai` instead
      */
     'azure-openai': 'azure-openai',
-
-    /**
-     * Cody talking to customer's custom proxy service.
-     *
-     * TODO(slimsag): self-hosted models: deprecate and remove this
-     * once customers are upgraded to non-experimental version.
-     *
-     * @deprecated use `openaicompatible` instead
-     */
-    'experimental-openaicompatible': 'experimental-openaicompatible',
 
     /**
      * This refers to either Anthropic models re-sold by AWS,
@@ -354,12 +384,7 @@ export interface ExperimentalFireworksConfig {
     url: string
     token: string
     model: string
-    parameters?: {
-        temperature?: number
-        top_k?: number
-        top_p?: number
-        stop?: string[]
-    }
+    parameters?: FireworksCodeCompletionParams
 }
 
 /**
@@ -394,4 +419,18 @@ export interface GroqCompletionOptions {
      *A stop sequence is a predefined or user-specified text string that signals an AI to stop generating content, ensuring its responses remain focused and concise.
      */
     stop?: string[]
+}
+
+export interface FireworksCodeCompletionParams {
+    model: string | undefined
+    prompt: string
+    max_tokens: number
+    echo: boolean
+    temperature: number | undefined
+    top_p: number | undefined
+    top_k: number | undefined
+    stop: string[]
+    stream: boolean
+    languageId: string
+    user: string | null
 }

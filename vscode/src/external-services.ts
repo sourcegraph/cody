@@ -5,13 +5,13 @@ import {
     type Guardrails,
     type SourcegraphCompletionsClient,
     SourcegraphGuardrailsClient,
-    currentAuthStatusAuthed,
     graphqlClient,
 } from '@sourcegraph/cody-shared'
+
 import { ChatIntentAPIClient } from './chat/context/chatIntentAPIClient'
+import { autocompleteLifecycleOutputChannelLogger } from './completions/output-channel-logger'
 import type { PlatformContext } from './extension.common'
 import type { SymfRunner } from './local-context/symf'
-import { logger } from './log'
 
 interface ExternalServices {
     chatClient: ChatClient
@@ -40,12 +40,12 @@ export async function configureExternalServices(
     const openTelemetryService = platform.createOpenTelemetryService?.()
     if (openTelemetryService) disposables.push(openTelemetryService)
 
-    const completionsClient = platform.createCompletionsClient(logger)
+    const completionsClient = platform.createCompletionsClient(autocompleteLifecycleOutputChannelLogger)
 
     const symfRunner = platform.createSymfRunner?.(context, completionsClient)
     if (symfRunner) disposables.push(symfRunner)
 
-    const chatClient = new ChatClient(completionsClient, () => currentAuthStatusAuthed())
+    const chatClient = new ChatClient(completionsClient)
 
     const guardrails = new SourcegraphGuardrailsClient()
 

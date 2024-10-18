@@ -5,9 +5,11 @@ import {
     DOTCOM_URL,
     type PickResolvedConfiguration,
     SourcegraphGraphQLAPIClient,
+    cenv,
     clientCapabilities,
     currentAuthStatus,
     getCodyAuthReferralCode,
+    graphqlClient,
     isDotCom,
     isError,
     isNetworkLikeError,
@@ -15,7 +17,7 @@ import {
 } from '@sourcegraph/cody-shared'
 import { isSourcegraphToken } from '../chat/protocol'
 import { newAuthStatus } from '../chat/utils'
-import { logDebug } from '../log'
+import { logDebug } from '../output-channel-logger'
 import { authProvider } from '../services/AuthProvider'
 import { localStorage } from '../services/LocalStorageProvider'
 import { secretStorage } from '../services/SecretStorageProvider'
@@ -79,9 +81,10 @@ export async function showSignInMenu(
             // Auto log user if token for the selected instance was found in secret
             const selectedEndpoint = item.uri
             const token = await secretStorage.getToken(selectedEndpoint)
+            const tokenSource = await secretStorage.getTokenSource(selectedEndpoint)
             let { authStatus } = token
                 ? await authProvider.validateAndStoreCredentials(
-                      { serverEndpoint: selectedEndpoint, accessToken: token },
+                      { serverEndpoint: selectedEndpoint, accessToken: token, tokenSource },
                       'store-if-valid'
                   )
                 : { authStatus: undefined }
@@ -92,7 +95,11 @@ export async function showSignInMenu(
                 }
                 authStatus = (
                     await authProvider.validateAndStoreCredentials(
-                        { serverEndpoint: selectedEndpoint, accessToken: newToken },
+                        {
+                            serverEndpoint: selectedEndpoint,
+                            accessToken: newToken,
+                            tokenSource: 'paste',
+                        },
                         'store-if-valid'
                     )
                 ).authStatus
@@ -223,7 +230,7 @@ async function signinMenuForInstanceUrl(instanceUrl: string): Promise<void> {
         return
     }
     const { authStatus } = await authProvider.validateAndStoreCredentials(
-        { serverEndpoint: instanceUrl, accessToken: accessToken },
+        { serverEndpoint: instanceUrl, accessToken: accessToken, tokenSource: 'paste' },
         'store-if-valid'
     )
     telemetryRecorder.recordEvent('cody.auth.signin.token', 'clicked', {
@@ -245,7 +252,10 @@ export function redirectToEndpointLogin(uri: string): void {
         return
     }
 
-    if (clientCapabilities().isVSCode && vscode.env.uiKind === vscode.UIKind.Web) {
+    if (
+        clientCapabilities().isVSCode &&
+        (cenv.CODY_OVERRIDE_UI_KIND ?? vscode.env.uiKind) === vscode.UIKind.Web
+    ) {
         // VS Code Web needs a different kind of callback using asExternalUri and changes to our
         // UserSettingsCreateAccessTokenCallbackPage.tsx page in the Sourcegraph web app. So,
         // just require manual token entry for now.
@@ -298,7 +308,7 @@ export async function tokenCallbackHandler(uri: vscode.Uri): Promise<void> {
     }
 
     const { authStatus } = await authProvider.validateAndStoreCredentials(
-        { serverEndpoint: endpoint, accessToken: token },
+        { serverEndpoint: endpoint, accessToken: token, tokenSource: 'redirect' },
         'store-if-valid'
     )
     telemetryRecorder.recordEvent('cody.auth.fromCallback.web', 'succeeded', {
@@ -361,8 +371,17 @@ export async function showSignOutMenu(): Promise<void> {
  * Log user out of the selected endpoint (remove token from secret).
  */
 async function signOut(endpoint: string): Promise<void> {
+    const token = await secretStorage.getToken(endpoint)
+    const tokenSource = await secretStorage.getTokenSource(endpoint)
+    // Delete the access token from the Sourcegraph instance on signout if it was created
+    // through automated redirect. We don't delete manually entered tokens as they may be
+    // used for other purposes, such as the Cody CLI etc.
+    if (token && tokenSource === 'redirect') {
+        await graphqlClient.DeleteAccessToken(token)
+    }
     await secretStorage.deleteToken(endpoint)
     await localStorage.deleteEndpoint()
+    authProvider.refresh()
 }
 
 /**
@@ -386,6 +405,8 @@ export async function validateCredentials(
         return { authenticated: false, endpoint: config.auth.serverEndpoint, pendingValidation: false }
     }
 
+    logDebug('auth', `Authenticating to ${config.auth.serverEndpoint}...`)
+
     // Check if credentials are valid and if Cody is enabled for the credentials and endpoint.
     const client = SourcegraphGraphQLAPIClient.withStaticConfig({
         configuration: {
@@ -395,19 +416,16 @@ export async function validateCredentials(
         auth: config.auth,
         clientState: config.clientState,
     })
-    const [{ enabled: siteHasCodyEnabled, version: siteVersion }, codyLLMConfiguration, userInfo] =
-        await Promise.all([
-            client.isCodyEnabled(signal),
-            client.getCodyLLMConfiguration(signal),
-            client.getCurrentUserInfo(signal),
-        ])
+
+    const userInfo = await client.getCurrentUserInfo(signal)
     signal?.throwIfAborted()
 
-    logDebug(
-        'CodyLLMConfiguration',
-        JSON.stringify({ siteHasCodyEnabled, siteVersion, codyLLMConfiguration, userInfo })
-    )
     if (isError(userInfo) && isNetworkLikeError(userInfo)) {
+        logDebug(
+            'auth',
+            `Failed to authenticate to ${config.auth.serverEndpoint} due to likely network error`,
+            userInfo.message
+        )
         return {
             authenticated: false,
             showNetworkError: true,
@@ -416,6 +434,11 @@ export async function validateCredentials(
         }
     }
     if (!userInfo || isError(userInfo)) {
+        logDebug(
+            'auth',
+            `Failed to authenticate to ${config.auth.serverEndpoint} due to invalid credentials or other endpoint error`,
+            userInfo?.message
+        )
         return {
             authenticated: false,
             endpoint: config.auth.serverEndpoint,
@@ -423,40 +446,12 @@ export async function validateCredentials(
             pendingValidation: false,
         }
     }
-    if (!siteHasCodyEnabled) {
-        vscode.window.showErrorMessage(
-            `Cody is not enabled on this Sourcegraph instance (${config.auth.serverEndpoint}). Ask a site administrator to enable it.`
-        )
-        return { authenticated: false, endpoint: config.auth.serverEndpoint, pendingValidation: false }
-    }
 
-    const configOverwrites = isError(codyLLMConfiguration) ? undefined : codyLLMConfiguration
-
-    if (!isDotCom(config.auth.serverEndpoint)) {
-        return newAuthStatus({
-            ...userInfo,
-            endpoint: config.auth.serverEndpoint,
-            siteVersion,
-            configOverwrites,
-            authenticated: true,
-            hasVerifiedEmail: false,
-            userCanUpgrade: false,
-        })
-    }
-
-    const proStatus = await client.getCurrentUserCodySubscription()
-    signal?.throwIfAborted()
-    const isActiveProUser =
-        proStatus !== null &&
-        'plan' in proStatus &&
-        proStatus.plan === 'PRO' &&
-        proStatus.status !== 'PENDING'
+    logDebug('auth', `Authentication succeeed to endpoint ${config.auth.serverEndpoint}`)
     return newAuthStatus({
         ...userInfo,
-        authenticated: true,
         endpoint: config.auth.serverEndpoint,
-        siteVersion,
-        configOverwrites,
-        userCanUpgrade: !isActiveProUser,
+        authenticated: true,
+        hasVerifiedEmail: false,
     })
 }

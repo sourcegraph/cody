@@ -18,17 +18,17 @@ const meta: Meta<typeof FileContentSearchResult> = {
                     content: '\nclass SnippetBodyInsights {\n\n',
                     contentStart: {
                         line: 19,
-                        column: 0,
+                        character: 0,
                     },
                     ranges: [
                         {
                             start: {
                                 line: 20,
-                                column: 17,
+                                character: 17,
                             },
                             end: {
                                 line: 20,
-                                column: 24,
+                                character: 24,
                             },
                         },
                     ],
@@ -38,27 +38,27 @@ const meta: Meta<typeof FileContentSearchResult> = {
                         '\n\tprivate readonly _bodyInsights: WindowIdleValue<SnippetBodyInsights>;\n\n',
                     contentStart: {
                         line: 101,
-                        column: 0,
+                        character: 0,
                     },
                     ranges: [
                         {
                             start: {
                                 line: 102,
-                                column: 23,
+                                character: 23,
                             },
                             end: {
                                 line: 102,
-                                column: 30,
+                                character: 30,
                             },
                         },
                         {
                             start: {
                                 line: 102,
-                                column: 60,
+                                character: 60,
                             },
                             end: {
                                 line: 102,
-                                column: 67,
+                                character: 67,
                             },
                         },
                     ],
@@ -68,27 +68,27 @@ const meta: Meta<typeof FileContentSearchResult> = {
                         '\t\tthis.prefixLow = prefix.toLowerCase();\n\t\tthis._bodyInsights = new WindowIdleValue(getActiveWindow(), () => new SnippetBodyInsights(this.body));\n\t}\n',
                     contentStart: {
                         line: 118,
-                        column: 0,
+                        character: 0,
                     },
                     ranges: [
                         {
                             start: {
                                 line: 119,
-                                column: 12,
+                                character: 12,
                             },
                             end: {
                                 line: 119,
-                                column: 19,
+                                character: 19,
                             },
                         },
                         {
                             start: {
                                 line: 119,
-                                column: 83,
+                                character: 83,
                             },
                             end: {
                                 line: 119,
-                                column: 90,
+                                character: 90,
                             },
                         },
                     ],
@@ -98,17 +98,17 @@ const meta: Meta<typeof FileContentSearchResult> = {
                         '\tget codeSnippet(): string {\n\t\treturn this._bodyInsights.value.codeSnippet;\n\t}\n',
                     contentStart: {
                         line: 122,
-                        column: 0,
+                        character: 0,
                     },
                     ranges: [
                         {
                             start: {
                                 line: 123,
-                                column: 19,
+                                character: 19,
                             },
                             end: {
                                 line: 123,
-                                column: 26,
+                                character: 26,
                             },
                         },
                     ],
@@ -118,17 +118,17 @@ const meta: Meta<typeof FileContentSearchResult> = {
                         '\tget isBogous(): boolean {\n\t\treturn this._bodyInsights.value.isBogous;\n\t}\n',
                     contentStart: {
                         line: 126,
-                        column: 0,
+                        character: 0,
                     },
                     ranges: [
                         {
                             start: {
                                 line: 127,
-                                column: 19,
+                                character: 19,
                             },
                             end: {
                                 line: 127,
-                                column: 26,
+                                character: 26,
                             },
                         },
                     ],
@@ -138,17 +138,17 @@ const meta: Meta<typeof FileContentSearchResult> = {
                         '\tget isTrivial(): boolean {\n\t\treturn this._bodyInsights.value.isTrivial;\n\t}\n',
                     contentStart: {
                         line: 130,
-                        column: 0,
+                        character: 0,
                     },
                     ranges: [
                         {
                             start: {
                                 line: 131,
-                                column: 19,
+                                character: 19,
                             },
                             end: {
                                 line: 131,
-                                column: 26,
+                                character: 26,
                             },
                         },
                     ],
@@ -158,17 +158,17 @@ const meta: Meta<typeof FileContentSearchResult> = {
                         '\tget needsClipboard(): boolean {\n\t\treturn this._bodyInsights.value.usesClipboardVariable;\n\t}\n',
                     contentStart: {
                         line: 134,
-                        column: 0,
+                        character: 0,
                     },
                     ranges: [
                         {
                             start: {
                                 line: 135,
-                                column: 19,
+                                character: 19,
                             },
                             end: {
                                 line: 135,
-                                column: 26,
+                                character: 26,
                             },
                         },
                     ],
@@ -178,17 +178,17 @@ const meta: Meta<typeof FileContentSearchResult> = {
                         '\tget usesSelection(): boolean {\n\t\treturn this._bodyInsights.value.usesSelectionVariable;\n\t}\n',
                     contentStart: {
                         line: 138,
-                        column: 0,
+                        character: 0,
                     },
                     ranges: [
                         {
                             start: {
                                 line: 139,
-                                column: 19,
+                                character: 19,
                             },
                             end: {
                                 line: 139,
-                                column: 26,
+                                character: 26,
                             },
                         },
                     ],

@@ -1,35 +1,39 @@
+import type * as vscode from 'vscode'
+
 import {
     type AuthenticatedAuthStatus,
     type CodeCompletionsParams,
     type CompletionResponseGenerator,
+    FeatureFlag,
     currentAuthStatusAuthed,
     currentResolvedConfig,
     dotcomTokenToGatewayToken,
+    featureFlagProvider,
     isDotCom,
     isDotComAuthed,
+    subscriptionDisposable,
     tokensToChars,
 } from '@sourcegraph/cody-shared'
+
 import { defaultCodeCompletionsClient } from '../default-client'
 import { createFastPathClient } from '../fast-path-client'
 import { TriggerKind } from '../get-inline-completions'
+
 import {
     type GenerateCompletionsOptions,
     MAX_RESPONSE_TOKENS,
     Provider,
     type ProviderFactoryParams,
+    type ProviderOptions,
 } from './shared/provider'
 
-export const FIREWORKS_DEEPSEEK_7B_LANG_SPECIFIC_V0 = 'deepseek-finetuned-lang-specific-v0'
-export const FIREWORKS_DEEPSEEK_7B_LANG_SPECIFIC_V1 = 'deepseek-finetuned-lang-specific-v1'
-export const FIREWORKS_DEEPSEEK_7B_LANG_ALL = 'deepseek-finetuned-lang-all-v0'
-
 export const DEEPSEEK_CODER_V2_LITE_BASE = 'deepseek-coder-v2-lite-base'
-
 // Context window experiments with DeepSeek Model
 export const DEEPSEEK_CODER_V2_LITE_BASE_WINDOW_4096 = 'deepseek-coder-v2-lite-base-context-4096'
-const DEEPSEEK_CODER_V2_LITE_BASE_WINDOW_8192 = 'deepseek-coder-v2-lite-base-context-8192'
-const DEEPSEEK_CODER_V2_LITE_BASE_WINDOW_16384 = 'deepseek-coder-v2-lite-base-context-16383'
-const DEEPSEEK_CODER_V2_LITE_BASE_WINDOW_32768 = 'deepseek-coder-v2-lite-base-context-32768'
+export const DEEPSEEK_CODER_V2_LITE_BASE_WINDOW_8192 = 'deepseek-coder-v2-lite-base-context-8192'
+export const DEEPSEEK_CODER_V2_LITE_BASE_WINDOW_16384 = 'deepseek-coder-v2-lite-base-context-16384'
+
+export const CODE_QWEN_7B_V2P5 = 'code-qwen-7b-v2p5'
 
 // Model identifiers can be found in https://docs.fireworks.ai/explore/ and in our internal
 // conversations
@@ -41,17 +45,11 @@ const MODEL_MAP = {
 
     // Fireworks model identifiers
     'llama-code-13b': 'fireworks/accounts/fireworks/models/llama-v2-13b-code',
-
-    [FIREWORKS_DEEPSEEK_7B_LANG_SPECIFIC_V0]: 'fireworks/finetuned-fim-lang-specific-model-ds2-v0',
-    [FIREWORKS_DEEPSEEK_7B_LANG_SPECIFIC_V1]: 'fireworks/finetuned-fim-lang-specific-model-ds2-v1',
-    [FIREWORKS_DEEPSEEK_7B_LANG_ALL]: 'accounts/sourcegraph/models/finetuned-fim-lang-all-model-ds2-v0',
     [DEEPSEEK_CODER_V2_LITE_BASE]: 'fireworks/deepseek-coder-v2-lite-base',
-    [DEEPSEEK_CODER_V2_LITE_BASE_WINDOW_4096]: 'accounts/sourcegraph/models/deepseek-coder-v2-lite-base',
-    [DEEPSEEK_CODER_V2_LITE_BASE_WINDOW_8192]: 'accounts/sourcegraph/models/deepseek-coder-v2-lite-base',
-    [DEEPSEEK_CODER_V2_LITE_BASE_WINDOW_16384]:
-        'accounts/sourcegraph/models/deepseek-coder-v2-lite-base',
-    [DEEPSEEK_CODER_V2_LITE_BASE_WINDOW_32768]:
-        'accounts/sourcegraph/models/deepseek-coder-v2-lite-base',
+    [DEEPSEEK_CODER_V2_LITE_BASE_WINDOW_4096]: 'accounts/fireworks/models/deepseek-coder-v2-lite-base',
+    [DEEPSEEK_CODER_V2_LITE_BASE_WINDOW_8192]: 'accounts/fireworks/models/deepseek-coder-v2-lite-base',
+    [DEEPSEEK_CODER_V2_LITE_BASE_WINDOW_16384]: 'accounts/fireworks/models/deepseek-coder-v2-lite-base',
+    [CODE_QWEN_7B_V2P5]: 'accounts/fireworks/models/qwen-v2p5-7b',
 } as const
 
 type FireworksModel =
@@ -73,10 +71,8 @@ function getMaxContextTokens(model: FireworksModel): number {
             // Llama 2 on Fireworks supports up to 4k tokens. We're constraining it here to better
             // compare the results
             return 2048
-        case FIREWORKS_DEEPSEEK_7B_LANG_SPECIFIC_V0:
-        case FIREWORKS_DEEPSEEK_7B_LANG_SPECIFIC_V1:
-        case FIREWORKS_DEEPSEEK_7B_LANG_ALL:
-        case DEEPSEEK_CODER_V2_LITE_BASE: {
+        case DEEPSEEK_CODER_V2_LITE_BASE:
+        case CODE_QWEN_7B_V2P5: {
             return 2048
         }
         case DEEPSEEK_CODER_V2_LITE_BASE_WINDOW_4096:
@@ -85,14 +81,28 @@ function getMaxContextTokens(model: FireworksModel): number {
             return 8192
         case DEEPSEEK_CODER_V2_LITE_BASE_WINDOW_16384:
             return 16384
-        case DEEPSEEK_CODER_V2_LITE_BASE_WINDOW_32768:
-            return 32768
         default:
             return 1200
     }
 }
 
 class FireworksProvider extends Provider {
+    private disposables: vscode.Disposable[] = []
+    private isFastPathEnabled = true
+
+    constructor(public readonly options: Readonly<ProviderOptions>) {
+        super(options)
+
+        this.disposables.push(
+            subscriptionDisposable(
+                featureFlagProvider
+                    .evaluatedFeatureFlag(FeatureFlag.CodyAutocompleteTracing)
+                    .subscribe(isFastPathEnabled => {
+                        this.isFastPathEnabled = Boolean(isFastPathEnabled)
+                    })
+            )
+        )
+    }
     public getRequestParams(options: GenerateCompletionsOptions): CodeCompletionsParams {
         const { multiline, docContext, document, triggerKind, snippets } = options
         const useMultilineModel = multiline || triggerKind !== TriggerKind.Automatic
@@ -149,7 +159,7 @@ class FireworksProvider extends Provider {
                     ? config.configuration.autocompleteExperimentalFireworksOptions?.token
                     : undefined
 
-            if (fastPathAccessToken || localFastPathAccessToken) {
+            if ((fastPathAccessToken && this.isFastPathEnabled) || localFastPathAccessToken) {
                 return createFastPathClient(requestParams, abortController, {
                     isLocalInstance,
                     fireworksConfig: localFastPathAccessToken
@@ -179,6 +189,13 @@ class FireworksProvider extends Provider {
 
         return customHeaders
     }
+
+    public dispose(): void {
+        for (const disposable of this.disposables) {
+            disposable.dispose()
+        }
+        this.disposables = []
+    }
 }
 
 function getClientModel(
@@ -196,7 +213,12 @@ function getClientModel(
     throw new Error(`Unknown model: '${model}'`)
 }
 
-export function createProvider({ legacyModel, source, authStatus }: ProviderFactoryParams): Provider {
+export function createProvider({
+    legacyModel,
+    source,
+    authStatus,
+    configOverwrites,
+}: ProviderFactoryParams): Provider {
     const clientModel = getClientModel(legacyModel, authStatus)
 
     return new FireworksProvider({
@@ -204,5 +226,6 @@ export function createProvider({ legacyModel, source, authStatus }: ProviderFact
         legacyModel: clientModel,
         maxContextTokens: getMaxContextTokens(clientModel),
         source,
+        configOverwrites,
     })
 }

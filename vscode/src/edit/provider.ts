@@ -5,7 +5,7 @@ import {
     type CompletionParameters,
     Typewriter,
     currentAuthStatus,
-    currentAuthStatusAuthed,
+    currentSiteVersion,
     isAbortError,
     isDotCom,
     isNetworkLikeError,
@@ -16,9 +16,9 @@ import {
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
 
-import { logError } from '../log'
 import type { FixupController } from '../non-stop/FixupController'
 import type { FixupTask } from '../non-stop/FixupTask'
+import { logError } from '../output-channel-logger'
 
 import {
     DEFAULT_EVENT_SOURCE,
@@ -26,9 +26,11 @@ import {
 } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { workspace } from 'vscode'
 import { doesFileExist } from '../commands/utils/workspace-files'
+import { getEditor } from '../editor/active-editor'
 import { CodyTaskState } from '../non-stop/state'
 import { splitSafeMetadata } from '../services/telemetry-v2'
 import { countCode } from '../services/utils/code-count'
+import { resolveRelativeOrAbsoluteUri } from '../services/utils/edit-create-file'
 import type { EditManagerOptions } from './manager'
 import { responseTransformer } from './output/response-transformer'
 import { buildInteraction } from './prompt'
@@ -56,7 +58,10 @@ export class EditProvider {
             this.config.controller.startTask(this.config.task)
             const model = this.config.task.model
             const contextWindow = modelsService.getContextWindowByID(model)
-            const authStatus = currentAuthStatusAuthed()
+            const versions = await currentSiteVersion()
+            if (!versions) {
+                throw new Error('unable to determine site version')
+            }
             const {
                 messages,
                 stopSequences,
@@ -64,7 +69,7 @@ export class EditProvider {
                 responsePrefix = '',
             } = await buildInteraction({
                 model,
-                codyApiVersion: authStatus.codyApiVersion,
+                codyApiVersion: versions.codyAPIVersion,
                 contextWindow: contextWindow.input,
                 task: this.config.task,
                 editor: this.config.editor,
@@ -133,7 +138,11 @@ export class EditProvider {
             if (modelsService.isStreamDisabled(model)) {
                 params.stream = false
             }
-            const stream = this.config.chat.chat(messages, { ...params }, this.abortController.signal)
+            const stream = await this.config.chat.chat(
+                messages,
+                { ...params },
+                this.abortController.signal
+            )
 
             let textConsumed = 0
             for await (const message of stream) {
@@ -312,18 +321,24 @@ export class EditProvider {
         const closetag = `</${PROMPT_TOPICS.FILENAME}>`
 
         const currentFileUri = task.fixupFile.uri
-        const currentFileName = uriBasename(currentFileUri)
         // remove open and close tags from text
         const newFilePath = text.trim().replaceAll(new RegExp(`${opentag}(.*)${closetag}`, 'g'), '$1')
-        const haveSameExtensions =
-            posixFilePaths.extname(currentFileName) === posixFilePaths.extname(newFilePath)
 
         // Get workspace uri using the current file uri
         const workspaceUri = workspace.getWorkspaceFolder(currentFileUri)?.uri
         const currentDirUri = Utils.joinPath(currentFileUri, '..')
+        const activeEditor = getEditor()?.active?.document?.uri
+        let newFileUri = await resolveRelativeOrAbsoluteUri(
+            workspaceUri ?? currentDirUri,
+            newFilePath,
+            activeEditor
+        )
+        if (!newFileUri) {
+            throw new Error('No editor found to insert text')
+        }
 
-        // Create a new file uri by replacing the file name of the currentFileUri with fileName
-        let newFileUri = Utils.joinPath(workspaceUri ?? currentDirUri, newFilePath)
+        const haveSameExtensions =
+            posixFilePaths.extname(uriBasename(currentFileUri)) === posixFilePaths.extname(newFilePath)
         if (haveSameExtensions && !task.destinationFile) {
             const fileIsFound = await doesFileExist(newFileUri)
             if (!fileIsFound) {

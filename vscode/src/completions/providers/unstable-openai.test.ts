@@ -46,6 +46,7 @@ describe('unstable-openai autocomplete provider', () => {
             getAutocompleteProviderFromServerSideModelConfig({
                 modelRef: 'unstable-openai::2024-02-01::gpt-4o',
                 isDotCom,
+                isBYOK: !isDotCom,
             })
         )
 
@@ -100,6 +101,7 @@ describe('unstable-openai autocomplete provider', () => {
             getAutocompleteProviderFromServerSideModelConfig({
                 modelRef: 'azure-openai::v1::gpt-4o-mini-test',
                 isDotCom,
+                isBYOK: !isDotCom,
             })
         )
 

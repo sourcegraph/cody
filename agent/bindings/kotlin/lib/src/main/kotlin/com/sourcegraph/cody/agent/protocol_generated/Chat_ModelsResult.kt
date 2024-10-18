@@ -2,6 +2,6 @@
 package com.sourcegraph.cody.agent.protocol_generated;
 
 data class Chat_ModelsResult(
-  val models: List<Model>,
+  val models: List<ModelAvailabilityStatus>,
 )
 

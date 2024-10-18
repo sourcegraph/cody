@@ -6,10 +6,12 @@ import {
     BookTextIcon,
     CircleUserIcon,
     DownloadIcon,
+    ExternalLink,
     HistoryIcon,
     type LucideProps,
     MessageSquarePlusIcon,
     MessagesSquareIcon,
+    PlusCircle,
     SettingsIcon,
     Trash2Icon,
 } from 'lucide-react'
@@ -17,12 +19,13 @@ import { getVSCodeAPI } from '../utils/VSCodeApi'
 import { View } from './types'
 
 import { CodyIDE, FeatureFlag, isDefined } from '@sourcegraph/cody-shared'
-import { type FC, Fragment, forwardRef, useCallback, useMemo, useState } from 'react'
+import { type FC, Fragment, forwardRef, memo, useCallback, useMemo, useState } from 'react'
 import { Kbd } from '../components/Kbd'
 import { Tooltip, TooltipContent, TooltipTrigger } from '../components/shadcn/ui/tooltip'
 import { useConfig } from '../utils/useConfig'
 
 import { useExtensionAPI } from '@sourcegraph/prompt-editor'
+import { isEqual } from 'lodash'
 import { downloadChatHistory } from '../chat/downloadChatHistory'
 import { Button } from '../components/shadcn/ui/button'
 import { useFeatureFlag } from '../utils/useFeatureFlags'
@@ -49,6 +52,7 @@ interface TabSubAction {
     arg?: string | undefined | null
     callback?: () => void
     changesView?: View
+    uri?: string
     confirmation?: {
         title: string
         description: string
@@ -65,7 +69,8 @@ interface TabConfig {
     subActions?: TabSubAction[]
 }
 
-export const TabsBar: React.FC<TabsBarProps> = ({ currentView, setView, IDE }) => {
+export const TabsBar = memo<TabsBarProps>(props => {
+    const { currentView, setView, IDE } = props
     const tabItems = useTabs({ IDE })
     const {
         config: { webviewType, multipleWebviewsEnabled },
@@ -150,7 +155,7 @@ export const TabsBar: React.FC<TabsBarProps> = ({ currentView, setView, IDE }) =
                 </div>
                 <div className={styles.subTabs}>
                     {currentViewSubActions.map(subAction => (
-                        <Fragment key={subAction.command}>
+                        <Fragment key={`${subAction.command}/${subAction.uri ?? ''}`}>
                             {subAction.confirmation ? (
                                 <ActionButtonWithConfirmation
                                     title={subAction.title}
@@ -168,6 +173,7 @@ export const TabsBar: React.FC<TabsBarProps> = ({ currentView, setView, IDE }) =
                                     Icon={subAction.Icon}
                                     title={subAction.title}
                                     IDE={IDE}
+                                    uri={subAction.uri}
                                     alwaysShowTitle={true}
                                     tooltipExtra={subAction.tooltipExtra}
                                     onClick={() => handleSubActionClick(subAction)}
@@ -179,7 +185,7 @@ export const TabsBar: React.FC<TabsBarProps> = ({ currentView, setView, IDE }) =
             </Tabs.List>
         </div>
     )
-}
+}, isEqual)
 
 interface ActionButtonWithConfirmationProps {
     title: string
@@ -261,6 +267,7 @@ interface TabButtonProps {
     title: string
     Icon: IconComponent
     IDE: CodyIDE
+    uri?: string
     view?: View
     isActive?: boolean
     onClick?: () => void
@@ -277,6 +284,7 @@ const TabButton = forwardRef<HTMLButtonElement, TabButtonProps>((props, ref) => 
         IDE,
         Icon,
         isActive,
+        uri,
         onClick,
         title,
         alwaysShowTitle,
@@ -285,15 +293,20 @@ const TabButton = forwardRef<HTMLButtonElement, TabButtonProps>((props, ref) => 
         'data-testid': dataTestId,
     } = props
 
+    const Component = uri ? 'a' : 'button'
+
     return (
         <Tooltip>
             <TooltipTrigger asChild>
-                <button
-                    type="button"
-                    onClick={onClick}
-                    ref={ref}
+                <Component
+                    type={uri ? undefined : 'button'}
+                    onClick={uri ? undefined : onClick}
+                    href={uri}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    ref={ref as any}
                     className={clsx(
-                        'tw-flex tw-gap-3 tw-items-center tw-leading-none tw-py-3 tw-px-2 tw-opacity-80 hover:tw-opacity-100 tw-border-b-[1px] tw-border-transparent tw-transition tw-translate-y-[1px]',
+                        'tw-flex tw-gap-3 tw-items-center !tw-font-normal !tw-text-inherit tw-leading-none tw-py-3 tw-px-2 tw-opacity-80 hover:tw-opacity-100 tw-border-b-[1px] tw-border-transparent tw-transition tw-translate-y-[1px]',
                         {
                             '!tw-opacity-100 !tw-border-[var(--vscode-tab-activeBorderTop)]': isActive,
                             '!tw-opacity-100': prominent,
@@ -303,7 +316,7 @@ const TabButton = forwardRef<HTMLButtonElement, TabButtonProps>((props, ref) => 
                 >
                     <Icon size={16} strokeWidth={1.25} className="tw-w-8 tw-h-8" />
                     <span className={alwaysShowTitle ? '' : styles.tabActionLabel}>{title}</span>
-                </button>
+                </Component>
             </TooltipTrigger>
             <TooltipContent portal={IDE === CodyIDE.Web}>
                 {title} {tooltipExtra}
@@ -321,7 +334,7 @@ TabButton.displayName = 'TabButton'
 function useTabs(input: Pick<TabsBarProps, 'IDE'>): TabConfig[] {
     const { IDE } = input
     const {
-        config: { multipleWebviewsEnabled },
+        config: { multipleWebviewsEnabled, serverEndpoint },
     } = useConfig()
     const isUnifiedPromptsAvailable = useFeatureFlag(FeatureFlag.CodyUnifiedPrompts)
 
@@ -382,6 +395,20 @@ function useTabs(input: Pick<TabsBarProps, 'IDE'>): TabConfig[] {
                                 : 'Prompts & Commands',
                         Icon: BookTextIcon,
                         changesView: true,
+                        subActions: [
+                            {
+                                title: 'Create Prompt',
+                                Icon: PlusCircle,
+                                command: '',
+                                uri: `${serverEndpoint}prompts/new`,
+                            },
+                            {
+                                title: 'Prompts Library',
+                                Icon: ExternalLink,
+                                command: '',
+                                uri: `${serverEndpoint}prompts`,
+                            },
+                        ],
                     },
                     multipleWebviewsEnabled
                         ? {
@@ -402,6 +429,6 @@ function useTabs(input: Pick<TabsBarProps, 'IDE'>): TabConfig[] {
                         : null,
                 ] as (TabConfig | null)[]
             ).filter(isDefined),
-        [IDE, multipleWebviewsEnabled, isUnifiedPromptsAvailable, extensionAPI]
+        [IDE, multipleWebviewsEnabled, isUnifiedPromptsAvailable, extensionAPI, serverEndpoint]
     )
 }

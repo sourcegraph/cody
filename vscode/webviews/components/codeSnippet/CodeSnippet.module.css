@@ -1,6 +1,6 @@
 :root {
-    --cody-chat-code-background: var(--vscode-textCodeBlock-background);
-    --cody-chat-code-header-background: var(--vscode-titleBar-inactiveBackground);
+    --cody-chat-code-background: var(--code-background);
+    --cody-chat-code-header-background: var(--vscode-editorGroupHeader-tabsBackground);
     --cody-chat-code-subtle-background: var(--vscode-titleBar-inactiveBackground);
     --cody-chat-code-border-color: var(--vscode-widget-border);
     --cody-chat-code-text-muted: var(--vscode-input-placeholderForeground);
@@ -11,12 +11,9 @@
 
 .result-container {
     contain: paint;
-    border-radius: 4px;
-    border: solid 1px var(--cody-chat-code-border-color);
-
     :global(.match-highlight) {
         color: var(--cody-chat-code-text-highlighted);
-        background-color: var(--cody-chat-code-mark-background);
+        background-color: var(--cody-chat-code-mark-background) !important;
     }
 
     :global(.sr-only) {
@@ -37,14 +34,11 @@
     display: flex;
     align-items: center;
     flex-wrap: wrap;
-
     position: sticky;
     top: 0;
 
     /* Show on top of search result contents */
     z-index: 1;
-
-    border-bottom: 1px solid var(--cody-chat-code-border-color);
     background-color: var(--cody-chat-code-header-background);
 
     &-title {
@@ -55,7 +49,13 @@
 }
 
 .result {
+    border-radius: 4px;
+    border: solid 1px var(--cody-chat-code-border-color);
     background-color: var(--cody-chat-code-background);
+
+    code {
+        padding: 0 !important;
+    }
 }
 
 .search-result-match {
@@ -84,7 +84,6 @@
     cursor: pointer;
     &:hover {
         text-decoration: none;
-        background-color: var(--cody-chat-code-subtle-background);
     }
 }
 

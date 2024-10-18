@@ -33,7 +33,6 @@ export class ExplainCodeAction implements vscode.CodeActionProvider {
                 {
                     text: instruction,
                     source: 'code-action:explain',
-                    submitType: 'user',
                 } satisfies ExecuteChatArguments,
             ],
             title: 'Ask Cody to Explain',

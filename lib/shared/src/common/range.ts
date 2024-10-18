@@ -97,3 +97,73 @@ export function displayRange(range: RangeData): PromptString {
         range.end.character + 1
     }`
 }
+
+interface Position {
+    line: number
+    character: number
+}
+
+// Utility functions for Position comparison
+function isPositionEqual(a: Position, b: Position): boolean {
+    return a.line === b.line && a.character === b.character
+}
+
+function isPositionLessThan(a: Position, b: Position): boolean {
+    return a.line < b.line || (a.line === b.line && a.character < b.character)
+}
+
+function isPositionGreaterThan(a: Position, b: Position): boolean {
+    return a.line > b.line || (a.line === b.line && a.character > b.character)
+}
+
+function minPosition(a: Position, b: Position): Position {
+    return isPositionLessThan(a, b) ? a : b
+}
+
+function maxPosition(a: Position, b: Position): Position {
+    return isPositionGreaterThan(a, b) ? a : b
+}
+
+// RangeData comparison functions
+export function isRangeEqual(a: RangeData, b: RangeData): boolean {
+    return isPositionEqual(a.start, b.start) && isPositionEqual(a.end, b.end)
+}
+
+export function isRangeLessThan(a: RangeData, b: RangeData): boolean {
+    return isPositionLessThan(a.end, b.start)
+}
+
+export function isRangeGreaterThan(a: RangeData, b: RangeData): boolean {
+    return isPositionGreaterThan(a.start, b.end)
+}
+
+export function doRangesIntersect(a: RangeData, b: RangeData): boolean {
+    return !(isRangeLessThan(a, b) || isRangeGreaterThan(a, b))
+}
+
+export function isRangeContained(inner: RangeData, outer: RangeData): boolean {
+    return (
+        (isPositionLessThan(outer.start, inner.start) || isPositionEqual(outer.start, inner.start)) &&
+        (isPositionGreaterThan(outer.end, inner.end) || isPositionEqual(outer.end, inner.end))
+    )
+}
+
+// checks if inner is wholly contained withing outer (i.e. not equal)
+export const isRangeProperSubset = (inner: RangeData, outer: RangeData) =>
+    isRangeContained(inner, outer) && !isRangeEqual(inner, outer)
+
+export function mergeRanges(a: RangeData, b: RangeData): RangeData {
+    if (!doRangesIntersect(a, b)) {
+        throw new Error('Cannot merge ranges that do not intersect')
+    }
+    return {
+        start: minPosition(a.start, b.start),
+        end: maxPosition(a.end, b.end),
+    }
+}
+
+export function compareRanges(a: RangeData, b: RangeData): -1 | 0 | 1 {
+    if (isRangeEqual(a, b)) return 0
+    if (isRangeLessThan(a, b)) return -1
+    return 1
+}

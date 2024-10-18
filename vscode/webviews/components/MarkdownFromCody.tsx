@@ -77,14 +77,8 @@ function wrapLinksWithCodyOpenCommand(url: string): string {
     return `command:_cody.vscode.open?${encodedURL}`
 }
 
-const URL_PROCESSORS: Record<CodyIDE, UrlTransform> = {
-    [CodyIDE.Web]: defaultUrlProcessor,
-    [CodyIDE.JetBrains]: defaultUrlProcessor,
-    [CodyIDE.Neovim]: defaultUrlProcessor,
-    [CodyIDE.Emacs]: defaultUrlProcessor,
+const URL_PROCESSORS: Partial<Record<CodyIDE, UrlTransform>> = {
     [CodyIDE.VSCode]: wrapLinksWithCodyOpenCommand,
-    [CodyIDE.VisualStudio]: defaultUrlProcessor,
-    [CodyIDE.Eclipse]: defaultUrlProcessor,
 }
 
 export const MarkdownFromCody: FunctionComponent<{ className?: string; children: string }> = ({
@@ -92,7 +86,7 @@ export const MarkdownFromCody: FunctionComponent<{ className?: string; children:
     children,
 }) => {
     const clientType = useConfig().clientCapabilities.agentIDE
-    const urlTransform = useMemo(() => URL_PROCESSORS[clientType], [clientType])
+    const urlTransform = useMemo(() => URL_PROCESSORS[clientType] ?? defaultUrlProcessor, [clientType])
 
     return (
         <Markdown className={className} {...markdownPluginProps()} urlTransform={urlTransform}>

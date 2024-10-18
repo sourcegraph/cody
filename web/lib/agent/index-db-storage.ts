@@ -1,7 +1,8 @@
+import { forceHydration } from '@sourcegraph/cody-shared'
 import { type IDBPDatabase, openDB } from 'idb'
 import type * as vscode from 'vscode'
 
-// Be default cody agent and vscode extension logic internally uses
+// By default cody agent and vscode extension logic internally uses
 // Local Storage as a default store to persist chat history and chats
 // Since we're running agent in web-worker for cody web we have to use
 // Index DB since it's the only store which can be run within Web Worker
@@ -66,7 +67,7 @@ export class IndexDBStorage implements vscode.Memento {
         const store = this.db
             .transaction(IndexDBStorage.DATABASE_STORE_NAME, 'readwrite')
             .objectStore(IndexDBStorage.DATABASE_STORE_NAME)
-        await store.put(value, key)
+        await store.put(forceHydration(value), key)
 
         // Update in memory storage for sync memento get method API
         IndexDBStorage.IN_MEMORY_STORAGE.set(key, value)

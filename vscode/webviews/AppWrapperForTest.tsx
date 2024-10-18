@@ -14,6 +14,7 @@ import {
     type UserLocalHistory,
     getMockedDotComClientModels,
     promiseFactoryToObservable,
+    serializedPromptEditorStateFromText,
 } from '@sourcegraph/cody-shared'
 import { ExtensionAPIProviderForTestsOnly } from '@sourcegraph/prompt-editor'
 import { Observable } from 'observable-fns'
@@ -80,7 +81,7 @@ export const AppWrapperForTest: FunctionComponent<{ children: ReactNode }> = ({ 
                         }),
                     evaluatedFeatureFlag: _flag => Observable.of(true),
                     prompts: makePromptsAPIWithData({
-                        prompts: { type: 'results', results: FIXTURE_PROMPTS },
+                        prompts: FIXTURE_PROMPTS,
                         commands: FIXTURE_COMMANDS,
                     }),
                     highlights: () => Observable.of([]),
@@ -93,6 +94,8 @@ export const AppWrapperForTest: FunctionComponent<{ children: ReactNode }> = ({ 
                     chatModels: () => Observable.of(getMockedDotComClientModels()),
                     setChatModel: () => EMPTY,
                     initialContext: () => Observable.of([]),
+                    hydratePromptMessage: text =>
+                        Observable.of(serializedPromptEditorStateFromText(text)),
                     detectIntent: () => Observable.of(),
                     resolvedConfig: () =>
                         Observable.of({
@@ -119,6 +122,7 @@ export const AppWrapperForTest: FunctionComponent<{ children: ReactNode }> = ({ 
                                 },
                             },
                         }),
+                    userProductSubscription: () => Observable.of(null),
                 },
             } satisfies Wrapper<ComponentProps<typeof ExtensionAPIProviderForTestsOnly>['value']>,
             {
@@ -129,6 +133,7 @@ export const AppWrapperForTest: FunctionComponent<{ children: ReactNode }> = ({ 
                             endpoint: 'https://sourcegraph.example.com',
                             authenticated: true,
                         } satisfies Partial<AuthStatus> as any,
+                        userProductSubscription: null,
                         config: {} as any,
                         clientCapabilities: CLIENT_CAPABILITIES_FIXTURE,
                         configFeatures: {

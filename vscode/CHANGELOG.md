@@ -6,6 +6,60 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 ### Added
 
+- Proxy: Support for `cody.net.proxy` settings that enable configuation a cody specific proxy server. This also supports `cody.net.proxy.path` to provide a UNIX domain socket directly. [pull/5883](https://github.com/sourcegraph/cody/pull/5883)
+
+### Fixed 
+
+- Chat: Improved handling of duplicated priority context items. [pull/5860](https://github.com/sourcegraph/cody/pull/5860)
+
+- Chat: Improved handling of duplicated priority context items. [pull/5860](https://github.com/sourcegraph/cody/pull/5860)
+
+### Changed
+
+- Network: Changed configuration of network libraries to better support VSCode's patching of `http` and `https` modules. Also disabled the use of `keep-alive` headers until more robust testing is in place around VSCode's ongoing network changes. No performance changes are expected as the previous use of `keep-alive` didn't properly create re-usable connections.
+
+## 1.38.1
+
+### Changed
+
+- Telemetry: Add document change reasons to characters logger. [pull/5855](https://github.com/sourcegraph/cody/pull/5855)
+- Autocomplete: Prepare for the fast-path and completion-preloading A/B tests. [pull/5905](https://github.com/sourcegraph/cody/pull/5905)
+
+## 1.38.0
+
+### Fixed
+
+- Chat: Improve webview performance in long chats. [pull/5866](https://github.com/sourcegraph/cody/pull/5866), [pull/5875](https://github.com/sourcegraph/cody/pull/5875), [pull/5879](https://github.com/sourcegraph/cody/pull/5879)
+- Autocomplete: Remove support for the deprecated `experimental-openaicompatible` provider. Use `openaicompatible` instead. [pull/5872](https://github.com/sourcegraph/cody/pull/5872)
+
+## 1.36.3
+
+### Added
+
+- Autocomplete: re-enable the agent tests. [pull/5784](https://github.com/sourcegraph/cody/pull/5784)
+- Autocomplete: Using the current document instead of precalculated text to get insertion text. [pull/5812](https://github.com/sourcegraph/cody/pull/5812)
+
+## 1.36.2
+
+### Added
+
+- Autocomplete: Change the feature flag names for experiment to prevent older client quering deprecated models. [pull/5805](https://github.com/sourcegraph/cody/pull/5805)
+
+### Fixed
+
+- Chat: Fix an issue in repository name resolution for workspaces that caused Chat to hang. [pull/5808](https://github.com/sourcegraph/cody/pull/5808)
+
+## 1.36.1
+
+### Fixed
+
+- Autocomplete: The PR fixes the slowness in vscode because because of completions by using local cache instead of querying vscode localStorage. [pull/5798](https://github.com/sourcegraph/cody/pull/5798)
+- Sourcegraph API GraphQL: Increase the default timeout from 6sec to 20sec. [pull/5789](https://github.com/sourcegraph/cody/pull/5789)
+
+## 1.36.0
+
+### Added
+
 - The [new OpenAI models (OpenAI o1-preview & OpenAI o1-mini)](https://sourcegraph.com/blog/openai-o1-for-cody) are now available to selected Cody Pro users for early access. [pull/5508](https://github.com/sourcegraph/cody/pull/5508)
 - Cody Pro users can join the waitlist for the new models by clicking the "Join Waitlist" button. [pull/5508](https://github.com/sourcegraph/cody/pull/5508)
 - Chat: Support non-streaming requests. [pull/5565](https://github.com/sourcegraph/cody/pull/5565)
@@ -16,6 +70,7 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 - Chat: Fixed feedback buttons not working in chat. [pull/5509](https://github.com/sourcegraph/cody/pull/5509)
 - Command: Removed duplicated default commands from the Cody Commands menu that were incorrectly listed as custom commands.
 - Enterprise: Smart context window is now correctly set for all Claude Sonnet models configured on the server side. [pull/5677](https://github.com/sourcegraph/cody/pull/5677)
+- Chat: Display the correct loading state during codebase context retrieval instead of 0 item by default. [pull/5761](https://github.com/sourcegraph/cody/pull/5761)
 
 ### Changed
 

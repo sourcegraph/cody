@@ -6,7 +6,7 @@ import {
     OLLAMA_DEFAULT_URL,
     type PickResolvedConfiguration,
     PromptString,
-    ps,
+    cenv,
     setStaticResolvedConfigurationValue,
 } from '@sourcegraph/cody-shared'
 
@@ -24,8 +24,6 @@ interface ConfigGetter {
 export function getConfiguration(
     config: ConfigGetter = vscode.workspace.getConfiguration()
 ): ClientConfiguration {
-    const isTesting = process.env.CODY_TESTING === 'true'
-
     function getHiddenSetting<T>(configKey: string, defaultValue?: T): T {
         return config.get<T>(`cody.${configKey}` as any, defaultValue)
     }
@@ -48,12 +46,24 @@ export function getConfiguration(
         debugRegex = /.*/
     }
 
-    const vsCodeConfig = vscode.workspace.getConfiguration()
-
     return {
-        proxy: vsCodeConfig.get<string>('http.proxy'),
+        net: {
+            mode: config.get<string | null | undefined>(CONFIG_KEY.netMode, undefined),
+            proxy: {
+                endpoint: config.get<string | null | undefined>(CONFIG_KEY.netProxyEndpoint, undefined),
+                cacert: config.get<string | null | undefined>(CONFIG_KEY.netProxyCacert, undefined),
+                skipCertValidation: config.get<boolean | null | undefined>(
+                    CONFIG_KEY.netProxySkipCertValidation,
+                    false
+                ),
+            },
+            // this is vscode's config that we need to watch. This is because it
+            // might require us to re-try auth. Settings aren't actually used so
+            // we stringify them.
+            vscode: JSON.stringify(config.get<object>('http' as any, {})),
+        },
         codebase: sanitizeCodebase(config.get(CONFIG_KEY.codebase)),
-        serverEndpoint: config.get<string>(CONFIG_KEY.serverEndpoint, 'https://sourcegraph.com'),
+        serverEndpoint: config.get<string>(CONFIG_KEY.serverEndpoint),
         customHeaders: config.get<Record<string, string>>(CONFIG_KEY.customHeaders),
         debugVerbose: config.get<boolean>(CONFIG_KEY.debugVerbose, false),
         debugFilter: debugRegex,
@@ -62,8 +72,8 @@ export function getConfiguration(
         autocompleteLanguages: config.get(CONFIG_KEY.autocompleteLanguages, {
             '*': true,
         }),
-        chatPreInstruction: PromptString.fromConfig(config, CONFIG_KEY.chatPreInstruction, ps``),
-        editPreInstruction: PromptString.fromConfig(config, CONFIG_KEY.editPreInstruction, ps``),
+        chatPreInstruction: PromptString.fromConfig(config, CONFIG_KEY.chatPreInstruction, undefined),
+        editPreInstruction: PromptString.fromConfig(config, CONFIG_KEY.editPreInstruction, undefined),
         commandCodeLenses: config.get(CONFIG_KEY.commandCodeLenses, false),
         autocompleteAdvancedProvider: config.get<ClientConfiguration['autocompleteAdvancedProvider']>(
             CONFIG_KEY.autocompleteAdvancedProvider,
@@ -85,7 +95,10 @@ export function getConfiguration(
          * Hidden settings for internal use only.
          */
 
-        internalUnstable: getHiddenSetting('internal.unstable', isTesting),
+        internalUnstable: getHiddenSetting(
+            'internal.unstable',
+            cenv.CODY_CONFIG_ENABLE_INTERNAL_UNSTABLE
+        ),
         internalDebugContext: getHiddenSetting('internal.debug.context', false),
         internalDebugState: getHiddenSetting('internal.debug.state', false),
 
@@ -99,6 +112,7 @@ export function getConfiguration(
         experimentalTracing: getHiddenSetting('experimental.tracing', false),
 
         experimentalSupercompletions: getHiddenSetting('experimental.supercompletions', false),
+        experimentalAutoedits: getHiddenSetting('experimental.autoedit', undefined),
         experimentalMinionAnthropicKey: getHiddenSetting('experimental.minion.anthropicKey', undefined),
 
         experimentalGuardrailsTimeoutSeconds: getHiddenSetting('experimental.guardrailsTimeoutSeconds'),
@@ -137,6 +151,15 @@ export function getConfiguration(
         devModels: getHiddenSetting<ChatModelProviderConfig[] | undefined>('dev.models', undefined),
 
         telemetryClientName: getHiddenSetting<string | undefined>('telemetry.clientName'),
+
+        /**
+         * Overrides always take precedence over other configuration. Specific
+         * override flags should be preferred over opaque blanket settings /
+         * environment variables such as TESTING_MODE which can make it
+         * difficult to understand the broad impact such a setting can have.
+         */
+        overrideAuthToken: getHiddenSetting<string | undefined>('override.authToken'),
+        overrideServerEndpoint: getHiddenSetting<string | undefined>('override.serverEndpoint'),
     }
 }
 
@@ -164,5 +187,6 @@ export function setStaticResolvedConfigurationWithAuthCredentials({
         configuration: { ...getConfiguration(), customHeaders: configuration.customHeaders },
         auth,
         clientState: localStorage.getClientState(),
+        isReinstall: false,
     })
 }

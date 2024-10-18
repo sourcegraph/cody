@@ -5,6 +5,7 @@ out/
 *.tsbuildinfo
 .DS_Store
 .env
+.*.env
 .idea/
 .run/
 .test/

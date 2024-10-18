@@ -6,6 +6,7 @@ import {
     AUTH_STATUS_FIXTURE_AUTHED_DOTCOM,
     type CodyLLMSiteConfiguration,
     type ModelsData,
+    type UserProductSubscription,
     featureFlagProvider,
     firstValueFrom,
     mockAuthStatus,
@@ -15,10 +16,14 @@ import {
 
 import { mockLocalStorage } from '../../../services/LocalStorageProvider'
 
+import * as userProductSubscriptionModule from '../../../../../lib/shared/src/sourcegraph-api/userProductSubscription'
 import { createProvider } from './create-provider'
 import type { Provider } from './provider'
 
 async function createProviderForTest(...args: Parameters<typeof createProvider>): Promise<Provider> {
+    vi.spyOn(userProductSubscriptionModule, 'userProductSubscription', 'get').mockReturnValue(
+        Observable.of<UserProductSubscription | null>({ userCanUpgrade: false })
+    )
     const providerOrError = await firstValueFrom(createProvider(...args).pipe(skipPendingOperation()))
 
     if (providerOrError instanceof Error) {
@@ -57,6 +62,7 @@ describe('createProvider', () => {
                     },
                 },
                 authStatus: AUTH_STATUS_FIXTURE_AUTHED,
+                configOverwrites: Observable.of<CodyLLMSiteConfiguration | null>(null),
             })
 
             await expect(createCall).rejects.toThrowErrorMatchingInlineSnapshot(
@@ -73,6 +79,7 @@ describe('createProvider', () => {
                     },
                 },
                 authStatus: AUTH_STATUS_FIXTURE_AUTHED,
+                configOverwrites: Observable.of<CodyLLMSiteConfiguration | null>(null),
             })
             expect(provider.id).toBe('unstable-openai')
             expect(provider.legacyModel).toBe(
@@ -109,10 +116,8 @@ describe('createProvider', () => {
                             autocompleteAdvancedModel: null,
                         },
                     },
-                    authStatus: {
-                        ...AUTH_STATUS_FIXTURE_AUTHED_DOTCOM,
-                        configOverwrites,
-                    },
+                    authStatus: AUTH_STATUS_FIXTURE_AUTHED_DOTCOM,
+                    configOverwrites: Observable.of<CodyLLMSiteConfiguration | null>(configOverwrites),
                 })
 
                 await expect(createCall).rejects.toThrow()

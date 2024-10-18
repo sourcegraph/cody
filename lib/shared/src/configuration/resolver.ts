@@ -8,7 +8,7 @@ import {
     promiseToObservable,
 } from '../misc/observable'
 import { skipPendingOperation, switchMapReplayOperation } from '../misc/observableOperation'
-import type { PerSitePreferences } from '../models/modelsService'
+import type { DefaultsAndUserPreferencesByEndpoint } from '../models/modelsService'
 import { DOTCOM_URL } from '../sourcegraph-api/environments'
 import { type PartialDeep, type ReadonlyDeep, isError } from '../utils'
 
@@ -19,6 +19,10 @@ export interface ConfigurationInput {
     clientConfiguration: ClientConfiguration
     clientSecrets: ClientSecrets
     clientState: ClientState
+    reinstall: {
+        isReinstalling(): Promise<boolean>
+        onReinstall(): Promise<void>
+    }
 }
 
 export interface ClientSecrets {
@@ -29,7 +33,7 @@ export interface ClientState {
     lastUsedEndpoint: string | null
     anonymousUserID: string | null
     lastUsedChatModality: 'sidebar' | 'editor'
-    modelPreferences: PerSitePreferences
+    modelPreferences: DefaultsAndUserPreferencesByEndpoint
     waitlist_o1: boolean | null
 }
 
@@ -42,6 +46,7 @@ export type ResolvedConfiguration = ReadonlyDeep<{
     configuration: ClientConfiguration
     auth: AuthCredentials
     clientState: ClientState
+    isReinstall: boolean
 }>
 
 /**
@@ -67,25 +72,39 @@ export type PickResolvedConfiguration<Keys extends KeysSpec> = {
           : undefined
 }
 
-async function resolveConfiguration(input: ConfigurationInput): Promise<ResolvedConfiguration> {
+async function resolveConfiguration({
+    clientConfiguration,
+    clientSecrets,
+    clientState,
+    reinstall: { isReinstalling, onReinstall },
+}: ConfigurationInput): Promise<ResolvedConfiguration> {
+    const isReinstall = await isReinstalling()
+    if (isReinstall) {
+        await onReinstall()
+    }
+    // we allow for overriding the server endpoint from config if we haven't
+    // manually signed in somewhere else
     const serverEndpoint = normalizeServerEndpointURL(
-        input.clientState.lastUsedEndpoint ?? DOTCOM_URL.toString()
+        clientConfiguration.overrideServerEndpoint ||
+            (clientState.lastUsedEndpoint ?? DOTCOM_URL.toString())
     )
 
     // We must not throw here, because that would result in the `resolvedConfig` observable
     // terminating and all callers receiving no further config updates.
-    const accessToken =
-        (await input.clientSecrets.getToken(serverEndpoint).catch(error => {
+    const loadTokenFn = () =>
+        clientSecrets.getToken(serverEndpoint).catch(error => {
             logError(
                 'resolveConfiguration',
                 `Failed to get access token for endpoint ${serverEndpoint}: ${error}`
             )
             return null
-        })) ?? null
+        })
+    const accessToken = clientConfiguration.overrideAuthToken || ((await loadTokenFn()) ?? null)
     return {
-        configuration: input.clientConfiguration,
-        clientState: input.clientState,
+        configuration: clientConfiguration,
+        clientState,
         auth: { accessToken, serverEndpoint },
+        isReinstall,
     }
 }
 

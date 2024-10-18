@@ -4,6 +4,7 @@ import {
     type ChatClient,
     ClientConfigSingleton,
     type ConfigurationInput,
+    DOTCOM_URL,
     type DefaultCodyCommands,
     FeatureFlag,
     type Guardrails,
@@ -17,6 +18,7 @@ import {
     contextFiltersProvider,
     createDisposables,
     currentAuthStatus,
+    currentUserProductSubscription,
     distinctUntilChanged,
     featureFlagProvider,
     fromVSCodeEvent,
@@ -24,7 +26,7 @@ import {
     isDotCom,
     modelsService,
     resolvedConfig,
-    setClientCapabilitiesFromConfiguration,
+    setClientCapabilities,
     setClientNameVersion,
     setEditorWindowIsFocused,
     setLogger,
@@ -35,11 +37,14 @@ import {
     take,
     telemetryRecorder,
 } from '@sourcegraph/cody-shared'
+import _ from 'lodash'
 import { isEqual } from 'lodash'
 import { filter, map } from 'observable-fns'
+import { isReinstalling } from '../uninstall/reinstall'
 import type { CommandResult } from './CommandResult'
 import { showAccountMenu } from './auth/account-menu'
 import { showSignInMenu, showSignOutMenu, tokenCallbackHandler } from './auth/auth'
+import { AutoeditsProvider } from './autoedits/autoedits-provider'
 import type { MessageProviderOptions } from './chat/MessageProvider'
 import { ChatsController, CodyChatEditorViewType } from './chat/chat-view/ChatsController'
 import { ContextRetriever } from './chat/chat-view/ContextRetriever'
@@ -78,11 +83,11 @@ import type { PlatformContext } from './extension.common'
 import { configureExternalServices } from './external-services'
 import { isRunningInsideAgent } from './jsonrpc/isRunningInsideAgent'
 import type { SymfRunner } from './local-context/symf'
-import { logDebug, logError } from './log'
 import { MinionOrchestrator } from './minion/MinionOrchestrator'
 import { PoorMansBash } from './minion/environment'
 import { CodyProExpirationNotifications } from './notifications/cody-pro-expiration'
 import { showSetupNotification } from './notifications/setup-notification'
+import { logDebug, logError } from './output-channel-logger'
 import { initVSCodeGitApi } from './repository/git-extension-api'
 import { authProvider } from './services/AuthProvider'
 import { CharactersLogger } from './services/CharactersLogger'
@@ -90,6 +95,7 @@ import { CodyTerminal } from './services/CodyTerminal'
 import { showFeedbackSupportQuickPick } from './services/FeedbackOptions'
 import { displayHistoryQuickPick } from './services/HistoryChat'
 import { localStorage } from './services/LocalStorageProvider'
+import { NetworkDiagnostics } from './services/NetworkDiagnostics'
 import { VSCodeSecretStorage, secretStorage } from './services/SecretStorageProvider'
 import { registerSidebarCommands } from './services/SidebarCommands'
 import { CodyStatusBar } from './services/StatusBar'
@@ -112,6 +118,9 @@ export async function start(
     context: vscode.ExtensionContext,
     platform: PlatformContext
 ): Promise<vscode.Disposable> {
+    const disposables: vscode.Disposable[] = []
+
+    //TODO: Add override flag
     const isExtensionModeDevOrTest =
         context.extensionMode === vscode.ExtensionMode.Development ||
         context.extensionMode === vscode.ExtensionMode.Test
@@ -127,15 +136,21 @@ export async function start(
 
     setLogger({ logDebug, logError })
 
-    const disposables: vscode.Disposable[] = []
+    setClientCapabilities({
+        configuration: getConfiguration(),
+        agentCapabilities: platform.extensionClient.capabilities,
+    })
 
-    setClientCapabilitiesFromConfiguration(getConfiguration())
+    let hasReinstallCleanupRun = false
 
     setResolvedConfigurationObservable(
         combineLatest(
             fromVSCodeEvent(vscode.workspace.onDidChangeConfiguration).pipe(
                 filter(
-                    event => event.affectsConfiguration('cody') || event.affectsConfiguration('openctx')
+                    event =>
+                        event.affectsConfiguration('cody') ||
+                        event.affectsConfiguration('openctx') ||
+                        event.affectsConfiguration('http')
                 ),
                 startWith(undefined),
                 map(() => getConfiguration()),
@@ -153,10 +168,35 @@ export async function start(
                         clientConfiguration,
                         clientSecrets,
                         clientState,
+                        reinstall: {
+                            isReinstalling,
+                            onReinstall: async () => {
+                                // short circuit so that we only run this cleanup once, not every time the config updates
+                                if (hasReinstallCleanupRun) return
+                                logDebug('start', 'Reinstalling Cody')
+                                // VSCode does not provide a way to simply clear all secrets
+                                // associated with the extension (https://github.com/microsoft/vscode/issues/123817)
+                                // So we have to build a list of all endpoints we'd expect to have been populated
+                                // and clear them individually.
+                                const history = await localStorage.deleteEndpointHistory()
+                                const additionalEndpointsToClear = [
+                                    clientConfiguration.overrideServerEndpoint,
+                                    clientState.lastUsedEndpoint,
+                                    DOTCOM_URL.toString(),
+                                ].filter(_.isString)
+                                await Promise.all(
+                                    history
+                                        .concat(additionalEndpointsToClear)
+                                        .map(clientSecrets.deleteToken.bind(clientSecrets))
+                                )
+                                hasReinstallCleanupRun = true
+                            },
+                        },
                     }) satisfies ConfigurationInput
             )
         )
     )
+
     setEditorWindowIsFocused(() => vscode.window.state.focused)
 
     if (process.env.LOG_GLOBAL_STATE_EMISSIONS) {
@@ -175,10 +215,12 @@ const register = async (
     isExtensionModeDevOrTest: boolean
 ): Promise<vscode.Disposable> => {
     const disposables: vscode.Disposable[] = []
-    setClientNameVersion(
-        platform.extensionClient.httpClientNameForLegacyReasons ?? platform.extensionClient.clientName,
-        platform.extensionClient.clientVersion
-    )
+    setClientNameVersion({
+        newClientName: platform.extensionClient.clientName,
+        newClientCompletionsStreamQueryParameterName:
+            platform.extensionClient.httpClientNameForLegacyReasons,
+        newClientVersion: platform.extensionClient.clientVersion,
+    })
 
     // Initialize `displayPath` first because it might be used to display paths in error messages
     // from the subsequent initialization.
@@ -221,11 +263,21 @@ const register = async (
     )
     disposables.push(chatsController)
 
-    const statusBar = CodyStatusBar.init(disposables)
     disposables.push(
         subscriptionDisposable(
             exposeOpenCtxClient(context, platform.createOpenCtxController).subscribe({})
         )
+    )
+
+    const statusBar = CodyStatusBar.init()
+    disposables.push(statusBar)
+
+    disposables.push(
+        NetworkDiagnostics.init({
+            statusBar,
+            agent: platform.networkAgent ?? null,
+            authProvider,
+        })
     )
 
     registerAutocomplete(platform, statusBar, disposables)
@@ -415,6 +467,14 @@ async function registerCodyCommands(
         )
     )
 
+    // Initialize autoedit provider if experimental feature is enabled
+    disposables.push(
+        enableFeature(
+            ({ configuration }) => configuration.experimentalAutoedits !== undefined,
+            () => new AutoeditsProvider()
+        )
+    )
+
     // Experimental Command: Auto Edit
     disposables.push(
         vscode.commands.registerCommand('cody.command.auto-edit', a => executeAutoEditCommand(a))
@@ -574,6 +634,7 @@ function registerUpgradeHandlers(disposables: vscode.Disposable[]): void {
         // Check if user has just moved back from a browser window to upgrade cody pro
         vscode.window.onDidChangeWindowState(async ws => {
             const authStatus = currentAuthStatus()
+            const sub = await currentUserProductSubscription()
             if (ws.focused && isDotCom(authStatus) && authStatus.authenticated) {
                 const res = await graphqlClient.getCurrentUserCodyProEnabled()
                 if (res instanceof Error) {
@@ -581,7 +642,7 @@ function registerUpgradeHandlers(disposables: vscode.Disposable[]): void {
                     return
                 }
                 // Re-auth if user's cody pro status has changed
-                const isCurrentCodyProUser = !authStatus.userCanUpgrade
+                const isCurrentCodyProUser = sub && !sub.userCanUpgrade
                 if (res && res.codyProEnabled !== isCurrentCodyProUser) {
                     authProvider.refresh()
                 }

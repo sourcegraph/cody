@@ -9,11 +9,12 @@ import {
 } from '@sourcegraph/cody-shared'
 import { getEditor } from '../../editor/active-editor'
 
-import path from 'node:path'
+import { workspace } from 'vscode'
 import { doesFileExist } from '../../commands/utils/workspace-files'
 import { executeSmartApply } from '../../edit/smart-apply'
 import type { VSCodeEditor } from '../../editor/vscode-editor'
 import { countCode, matchCodeSnippets } from './code-count'
+import { resolveRelativeOrAbsoluteUri } from './edit-create-file'
 
 /**
  * It tracks the last stored code snippet and metadata like lines, chars, event, source etc.
@@ -139,25 +140,6 @@ function getSmartApplyModel(authStatus: AuthStatus): EditModel | undefined {
     return 'anthropic/claude-3-5-sonnet-20240620'
 }
 
-function smartJoinPath(workspaceUri: vscode.Uri, fileUri: string): vscode.Uri {
-    const workspacePath = workspaceUri.fsPath.split(path.sep)
-    const filePath = fileUri.split(path.sep)
-
-    let commonIndex = 0
-    while (
-        commonIndex < workspacePath.length &&
-        commonIndex < filePath.length &&
-        workspacePath[workspacePath.length - 1 - commonIndex] === filePath[commonIndex]
-    ) {
-        commonIndex++
-    }
-
-    const uniqueFilePath = filePath.slice(commonIndex)
-    const resultPath = path.join(workspaceUri.fsPath, ...uniqueFilePath)
-
-    return vscode.Uri.file(resultPath)
-}
-
 export async function handleSmartApply(
     id: string,
     code: string,
@@ -166,14 +148,8 @@ export async function handleSmartApply(
     fileUri?: string | null
 ): Promise<void> {
     const activeEditor = getEditor()?.active
-    const workspaceUri = vscode.workspace.workspaceFolders?.[0].uri
-
-    const uri =
-        fileUri && workspaceUri
-            ? path.isAbsolute(fileUri)
-                ? vscode.Uri.file(fileUri)
-                : smartJoinPath(workspaceUri, fileUri)
-            : activeEditor?.document.uri
+    const workspaceUri = workspace.workspaceFolders?.[0].uri
+    const uri = await resolveRelativeOrAbsoluteUri(workspaceUri, fileUri, activeEditor?.document?.uri)
 
     const isNewFile = uri && !(await doesFileExist(uri))
     if (isNewFile) {

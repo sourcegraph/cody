@@ -98,6 +98,25 @@ export async function getSelectionOrFileContext(): Promise<ContextItem[]> {
     })
 }
 
+export async function getFileContext(): Promise<ContextItem | null> {
+    const editor = getEditor()?.active
+    const document = editor?.document
+
+    if (!document || (await shouldIgnore(document.uri))) {
+        return null
+    }
+
+    const content = editor.document.getText()
+
+    return {
+        type: 'file',
+        uri: document.uri,
+        content,
+        source: ContextItemSource.Editor,
+        size: await TokenCounterUtils.countTokens(content),
+    } satisfies ContextItemFile
+}
+
 async function shouldIgnore(uri: URI): Promise<boolean> {
     return Boolean(await contextFiltersProvider.isUriIgnored(uri))
 }

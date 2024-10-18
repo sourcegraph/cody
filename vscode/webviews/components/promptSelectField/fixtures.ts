@@ -10,6 +10,12 @@ export const FIXTURE_PROMPTS: Prompt[] = [
         draft: false,
         definition: { text: 'Generate unit tests for vitest' },
         url: 'https://example.com',
+        createdBy: {
+            id: '001',
+            username: 'kevin.chen',
+            avatarURL: 'https://avatars.githubusercontent.com/u/3654603?v=4',
+            displayName: 'Kevin Chen',
+        },
     },
     {
         id: '2',
@@ -20,6 +26,12 @@ export const FIXTURE_PROMPTS: Prompt[] = [
         draft: true,
         definition: { text: 'Review the following OpenCtx provider code' },
         url: 'https://example.com',
+        createdBy: {
+            id: '001',
+            username: 'kevin.chen',
+            avatarURL: '',
+            displayName: 'Kevin Chen',
+        },
     },
     {
         id: '3',
@@ -29,6 +41,12 @@ export const FIXTURE_PROMPTS: Prompt[] = [
         draft: false,
         definition: { text: 'Generate a JUnit integration test' },
         url: 'https://example.com',
+        createdBy: {
+            id: '001',
+            username: 'kevin.chen',
+            avatarURL: 'https://avatars.githubusercontent.com/u/3654603?v=4',
+            displayName: 'Kevin Chen',
+        },
     },
     {
         id: '4',
@@ -38,6 +56,12 @@ export const FIXTURE_PROMPTS: Prompt[] = [
         draft: false,
         definition: { text: 'Fix common issues in this Bazel BUILD file' },
         url: 'https://example.com',
+        createdBy: {
+            id: '001',
+            username: 'kevin.chen',
+            avatarURL: 'https://avatars.githubusercontent.com/u/3654603?v=4',
+            displayName: 'Kevin Chen',
+        },
     },
     {
         id: '5',
@@ -49,5 +73,11 @@ export const FIXTURE_PROMPTS: Prompt[] = [
         draft: false,
         definition: { text: 'Convert from a React class component to a function component' },
         url: 'https://example.com',
+        createdBy: {
+            id: '001',
+            username: 'kevin.chen',
+            avatarURL: 'https://avatars.githubusercontent.com/u/3654603?v=4',
+            displayName: 'Kevin Chen',
+        },
     },
 ]

@@ -1,6 +1,8 @@
 import fs from 'node:fs/promises'
 import path from 'node:path'
 import process from 'node:process'
+// @ts-ignore this is not compiled by typescript so it can import files from outside the rootDir
+import { detectForbiddenImportPlugin } from '../../lib/shared/esbuild.utils.mjs'
 
 import { build } from 'esbuild'
 
@@ -11,9 +13,7 @@ main().catch(err => {
 
 async function main() {
     await verifyShim()
-
-    const minify = process.argv.includes('--minify')
-    await buildAgent(minify)
+    await buildAgent()
 }
 
 async function verifyShim() {
@@ -44,10 +44,9 @@ async function verifyShim() {
 
 /**
  * Builds the Cody agent using esbuild.
- * @param {boolean} minify - Whether to minify the output or not.
  * @returns {Promise<void>} - A promise that resolves when the build process is complete.
  */
-async function buildAgent(minify) {
+async function buildAgent() {
     /** @type {import('esbuild').BuildOptions} */
     const esbuildOptions = {
         entryPoints: ['./src/index.ts'],
@@ -57,7 +56,6 @@ async function buildAgent(minify) {
         sourcemap: true,
         logLevel: 'error',
         external: ['typescript'],
-        minify: minify,
 
         alias: {
             vscode: path.resolve(process.cwd(), 'src', 'vscode-shim.ts'),
@@ -69,7 +67,7 @@ async function buildAgent(minify) {
             '@sourcegraph/cody-shared/src': '@sourcegraph/cody-shared/src',
         },
     }
-    const res = await build(esbuildOptions)
+    await build(esbuildOptions)
 
     // Copy all .wasm files to the dist/ directory
     const distDir = path.join(process.cwd(), '..', 'vscode', 'dist')
@@ -85,26 +83,5 @@ async function buildAgent(minify) {
         const src = path.join(distDir, file)
         const dest = path.join(process.cwd(), 'dist', file)
         await fs.copyFile(src, dest)
-    }
-}
-
-function detectForbiddenImportPlugin(allForbiddenModules) {
-    return {
-        name: 'detect-forbidden-import-plugin',
-        setup(build) {
-            build.onResolve({ filter: /.*/ }, args => {
-                for (const forbidden of allForbiddenModules) {
-                    if (args.path === forbidden) {
-                        throw new Error(`'${forbidden}' module is imported in file: ${args.importer}`)
-                    }
-                }
-                args
-            })
-
-            build.onLoad({ filter: /.*/ }, async args => {
-                const contents = await fs.readFile(args.path, 'utf8')
-                return { contents, loader: 'default' }
-            })
-        },
     }
 }

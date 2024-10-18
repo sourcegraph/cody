@@ -21,6 +21,7 @@ import { type UseObservableResult, useObservable } from '../../useObservable'
 
 export interface MentionMenuParams {
     query: string | null
+    interactionID?: number | null | undefined
     parentItem: ContextMentionProviderMetadata | null
 }
 
@@ -30,7 +31,11 @@ export function useMentionMenuParams(): {
     updateMentionMenuParams: MentionMenuContextValue['updateMentionMenuParams']
 } {
     const mentionSettings = useContext(ChatMentionContext)
-    const [params, setParams] = useState<MentionMenuParams>({ query: null, parentItem: null })
+    const [params, setParams] = useState<MentionMenuParams>({
+        query: null,
+        parentItem: null,
+        interactionID: null,
+    })
 
     const isRemoteLikeProviderActive =
         mentionSettings.resolutionMode === 'remote' ||
@@ -74,7 +79,9 @@ export function useMentionMenuParams(): {
 }
 
 interface MentionMenuContextValue {
-    updateMentionMenuParams: (update: Partial<Pick<MentionMenuParams, 'parentItem'>>) => void
+    updateMentionMenuParams: (
+        update: Partial<Pick<MentionMenuParams, 'parentItem' | 'interactionID'>>
+    ) => void
     setEditorQuery: (query: string) => void
 }
 
@@ -140,6 +147,7 @@ function prepareUserContextItem(item: ContextItem, remainingTokenBudget: number)
 export function useCallMentionMenuData({
     query,
     parentItem: provider,
+    interactionID,
 }: MentionMenuParams): UseObservableResult<MentionMenuData> {
     const mentionSettings = useContext(ChatMentionContext)
     const unmemoizedCall = useExtensionAPI().mentionMenuData
@@ -154,9 +162,10 @@ export function useCallMentionMenuData({
     const mentionQuery: MentionQuery = useMemo(
         () => ({
             ...parseMentionQuery(query ?? '', provider),
+            interactionID: interactionID ?? undefined,
             contextRemoteRepositoriesNames: mentionSettings.remoteRepositoriesNames,
         }),
-        [query, provider, mentionSettings]
+        [query, provider, interactionID, mentionSettings]
     )
 
     return useObservable(

@@ -5,7 +5,7 @@ import {
     subscriptionDisposable,
 } from '@sourcegraph/cody-shared'
 import type * as vscode from 'vscode'
-import { logDebug } from '../../log'
+import { logDebug } from '../../output-channel-logger'
 import { GitHubDotComRepoMetadata } from '../../repository/githubRepoMetadata'
 import { completionProviderConfig } from '../completion-provider-config'
 import type { ContextRetriever } from '../types'
@@ -27,6 +27,7 @@ export class ContextRetrieverDataCollection implements vscode.Disposable {
     private disposables: vscode.Disposable[] = []
     private static readonly MAX_PAYLOAD_SIZE_BYTES = 1024 * 1024 // 1 MB
     private dataCollectionFlagState = false
+    private gitMetadataInstance = GitHubDotComRepoMetadata.getInstance()
 
     private readonly retrieverConfigs: RetrieverConfig[] = [
         { identifier: RetrieverIdentifier.RecentCopyRetriever, maxSnippets: 1 },
@@ -96,16 +97,21 @@ export class ContextRetrieverDataCollection implements vscode.Disposable {
         if (!repoName || !isDotComAuthed() || this.dataCollectionRetrievers.length === 0) {
             return false
         }
-        const gitRepoMetadata = GitHubDotComRepoMetadata.getInstance().getRepoMetadataIfCached(repoName)
+        const gitRepoMetadata = this.gitMetadataInstance.getRepoMetadataIfCached(repoName)
         return gitRepoMetadata?.isPublic ?? false
     }
 
     private createRetriever(config: RetrieverConfig): ContextRetriever | undefined {
         switch (config.identifier) {
             case RetrieverIdentifier.RecentEditsRetriever:
-                return new RecentEditsRetriever(10 * 60 * 1000)
+                return new RecentEditsRetriever({
+                    maxAgeMs: 10 * 60 * 1000,
+                })
             case RetrieverIdentifier.DiagnosticsRetriever:
-                return new DiagnosticsRetriever()
+                return new DiagnosticsRetriever({
+                    contextLines: 3,
+                    useXMLForPromptRendering: true,
+                })
             case RetrieverIdentifier.RecentViewPortRetriever:
                 return new RecentViewPortRetriever({
                     maxTrackedViewPorts: 50,

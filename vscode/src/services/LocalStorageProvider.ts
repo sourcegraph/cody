@@ -9,8 +9,8 @@ import {
     type AuthenticatedAuthStatus,
     type ChatHistoryKey,
     type ClientState,
+    type DefaultsAndUserPreferencesByEndpoint,
     type LocalStorageForModelPreferences,
-    type PerSitePreferences,
     type ResolvedConfiguration,
     type UserLocalHistory,
     distinctUntilChanged,
@@ -110,7 +110,7 @@ class LocalStorage implements LocalStorageForModelPreferences {
      * would give an inconsistent view of the state.
      */
     public async saveEndpointAndToken(
-        credentials: Pick<AuthCredentials, 'serverEndpoint' | 'accessToken'>
+        credentials: Pick<AuthCredentials, 'serverEndpoint' | 'accessToken' | 'tokenSource'>
     ): Promise<void> {
         if (!credentials.serverEndpoint) {
             return
@@ -126,13 +126,24 @@ class LocalStorage implements LocalStorageForModelPreferences {
         await this.set(this.LAST_USED_ENDPOINT, serverEndpoint, false)
         await this.addEndpointHistory(serverEndpoint, false)
         if (credentials.accessToken) {
-            await secretStorage.storeToken(serverEndpoint, credentials.accessToken)
+            await secretStorage.storeToken(
+                serverEndpoint,
+                credentials.accessToken,
+                credentials.tokenSource
+            )
         }
         this.onChange.fire()
     }
 
     public async deleteEndpoint(): Promise<void> {
         await this.set(this.LAST_USED_ENDPOINT, null)
+    }
+
+    // Deletes and returns the endpoint history
+    public async deleteEndpointHistory(): Promise<string[]> {
+        const history = this.getEndpointHistory()
+        await Promise.all([this.deleteEndpoint(), this.set(this.CODY_ENDPOINT_HISTORY, null)])
+        return history || []
     }
 
     public getEndpointHistory(): string[] | null {
@@ -291,11 +302,11 @@ class LocalStorage implements LocalStorageForModelPreferences {
         return this.get(this.LAST_USED_CHAT_MODALITY) ?? 'sidebar'
     }
 
-    public getModelPreferences(): PerSitePreferences {
-        return this.get<PerSitePreferences>(this.MODEL_PREFERENCES_KEY) ?? {}
+    public getModelPreferences(): DefaultsAndUserPreferencesByEndpoint {
+        return this.get<DefaultsAndUserPreferencesByEndpoint>(this.MODEL_PREFERENCES_KEY) ?? {}
     }
 
-    public async setModelPreferences(preferences: PerSitePreferences): Promise<void> {
+    public async setModelPreferences(preferences: DefaultsAndUserPreferencesByEndpoint): Promise<void> {
         await this.set(this.MODEL_PREFERENCES_KEY, preferences)
     }
 

@@ -4,7 +4,6 @@ package com.sourcegraph.cody.agent.protocol_generated;
 data class ServerInfo(
   val name: String,
   val authenticated: Boolean? = null,
-  val codyVersion: String? = null,
-  val authStatus: AuthStatus? = null,
+  val authStatus: ProtocolAuthStatus? = null,
 )
 

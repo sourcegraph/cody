@@ -4,7 +4,7 @@ import { mockAuthStatus } from '../auth/authStatus'
 import { AUTH_STATUS_FIXTURE_AUTHED, type AuthStatus } from '../auth/types'
 import { CLIENT_CAPABILITIES_FIXTURE, mockClientCapabilities } from '../configuration/clientCapabilities'
 import type { ResolvedConfiguration } from '../configuration/resolver'
-import { featureFlagProvider } from '../experimentation/FeatureFlagProvider'
+import { FeatureFlag, featureFlagProvider } from '../experimentation/FeatureFlagProvider'
 import {
     firstValueFrom,
     readValuesFrom,
@@ -13,7 +13,10 @@ import {
 } from '../misc/observable'
 import { pendingOperation, skipPendingOperation } from '../misc/observableOperation'
 import type { CodyClientConfig } from '../sourcegraph-api/clientConfig'
+import type { CodyLLMSiteConfiguration } from '../sourcegraph-api/graphql/client'
+import * as userProductSubscriptionModule from '../sourcegraph-api/userProductSubscription'
 import type { PartialDeep } from '../utils'
+import { getExperimentalClientModelByFeatureFlag } from './client'
 import {
     type Model,
     type ServerModel,
@@ -36,6 +39,9 @@ import { ModelUsage } from './types'
 vi.mock('graphqlClient')
 vi.mock('../services/LocalStorageProvider')
 vi.mock('../experimentation/FeatureFlagProvider')
+
+// Returns true for all feature flags enabled during synctests.
+vi.spyOn(featureFlagProvider, 'evaluatedFeatureFlag').mockReturnValue(Observable.of(true))
 
 mockClientCapabilities(CLIENT_CAPABILITIES_FIXTURE)
 
@@ -186,6 +192,7 @@ describe('server sent models', async () => {
     }
 
     const mockFetchServerSideModels = vi.fn(() => Promise.resolve(SERVER_MODELS))
+    vi.mocked(featureFlagProvider).evaluatedFeatureFlag.mockReturnValue(Observable.of(false))
 
     const result = await firstValueFrom(
         syncModels({
@@ -194,6 +201,7 @@ describe('server sent models', async () => {
                 clientState: { modelPreferences: {} },
             } satisfies PartialDeep<ResolvedConfiguration> as ResolvedConfiguration),
             authStatus: Observable.of(AUTH_STATUS_FIXTURE_AUTHED),
+            configOverwrites: Observable.of(null),
             clientConfig: Observable.of({
                 modelsAPIEnabled: true,
             } satisfies Partial<CodyClientConfig> as CodyClientConfig),
@@ -214,6 +222,9 @@ describe('server sent models', async () => {
     })
 
     it("sets server models and default models if they're not already set", async () => {
+        vi.spyOn(userProductSubscriptionModule, 'userProductSubscription', 'get').mockReturnValue(
+            Observable.of({ userCanUpgrade: true })
+        )
         // expect all defaults to be set
         expect(await firstValueFrom(modelsService.getDefaultChatModel())).toBe(opus.id)
         expect(await firstValueFrom(modelsService.getDefaultEditModel())).toBe(opus.id)
@@ -225,7 +236,7 @@ describe('server sent models', async () => {
     it('allows updating the selected model', async () => {
         vi.spyOn(modelsService, 'modelsChanges', 'get').mockReturnValue(Observable.of(result))
         await modelsService.setSelectedModel(ModelUsage.Chat, titan)
-        expect(storage.data?.[AUTH_STATUS_FIXTURE_AUTHED.endpoint].selected.chat).toBe(titan.id)
+        expect(storage.data?.[AUTH_STATUS_FIXTURE_AUTHED.endpoint]!.selected.chat).toBe(titan.id)
     })
 })
 
@@ -235,11 +246,11 @@ describe('syncModels', () => {
         { repeats: 100 },
         async () => {
             vi.useFakeTimers()
-            vi.mocked(featureFlagProvider).evaluatedFeatureFlag.mockReturnValue(Observable.of(false))
             const mockFetchServerSideModels = vi.fn(
                 (): Promise<ServerModelConfiguration | undefined> => Promise.resolve(undefined)
             )
             const authStatusSubject = new Subject<AuthStatus>()
+            const configOverwritesSubject = new Subject<CodyLLMSiteConfiguration | null>()
             const clientConfigSubject = new Subject<CodyClientConfig>()
             const syncModelsObservable = syncModels({
                 resolvedConfig: Observable.of({
@@ -247,6 +258,7 @@ describe('syncModels', () => {
                     clientState: { modelPreferences: {} },
                 } satisfies PartialDeep<ResolvedConfiguration> as ResolvedConfiguration),
                 authStatus: authStatusSubject.pipe(shareReplay()),
+                configOverwrites: configOverwritesSubject.pipe(shareReplay()),
                 clientConfig: clientConfigSubject.pipe(shareReplay()),
                 fetchServerSideModels_: mockFetchServerSideModels,
             })
@@ -276,15 +288,14 @@ describe('syncModels', () => {
                 } satisfies Partial<ServerModel> as ServerModel
             }
 
-            // Emits when authStatus emits.
-            authStatusSubject.next({
-                ...AUTH_STATUS_FIXTURE_AUTHED,
-                configOverwrites: { chatModel: 'foo' },
-            })
+            // Emits when authStatus configOverwrites emits.
+            authStatusSubject.next(AUTH_STATUS_FIXTURE_AUTHED)
             await vi.advanceTimersByTimeAsync(0)
             clientConfigSubject.next({
                 modelsAPIEnabled: false,
             } satisfies Partial<CodyClientConfig> as CodyClientConfig)
+            await vi.advanceTimersByTimeAsync(0)
+            configOverwritesSubject.next({ chatModel: 'foo' })
             await vi.advanceTimersByTimeAsync(0)
             await vi.runOnlyPendingTimersAsync()
             expect(values).toStrictEqual<typeof values>([
@@ -301,14 +312,11 @@ describe('syncModels', () => {
             clearValues()
 
             // Emits immediately when the new data can be computed synchronously.
-            authStatusSubject.next({
-                ...AUTH_STATUS_FIXTURE_AUTHED,
-                configOverwrites: { chatModel: 'bar' },
-            })
-            await vi.advanceTimersByTimeAsync(0)
             clientConfigSubject.next({
                 modelsAPIEnabled: false,
             } satisfies Partial<CodyClientConfig> as CodyClientConfig)
+            await vi.advanceTimersByTimeAsync(0)
+            configOverwritesSubject.next({ chatModel: 'bar' })
             await vi.advanceTimersByTimeAsync(0)
             const result0: ModelsData = {
                 localModels: [],
@@ -450,4 +458,68 @@ describe('syncModels', () => {
             await done
         }
     )
+
+    it('sets DeepCody as default chat model when feature flag is enabled', async () => {
+        const serverOpus: ServerModel = {
+            modelRef: 'anthropic::unknown::anthropic.claude-3-opus',
+            displayName: 'Opus',
+            modelName: 'anthropic.claude-3-opus',
+            capabilities: ['chat'],
+            category: 'balanced' as ModelCategory,
+            status: 'stable',
+            tier: 'enterprise' as ModelTier,
+            contextWindow: {
+                maxInputTokens: 9000,
+                maxOutputTokens: 4000,
+            },
+        }
+
+        const SERVER_MODELS: ServerModelConfiguration = {
+            schemaVersion: '0.0',
+            revision: '-',
+            providers: [],
+            models: [serverOpus],
+            defaultModels: {
+                chat: serverOpus.modelRef,
+                fastChat: serverOpus.modelRef,
+                codeCompletion: serverOpus.modelRef,
+            },
+        }
+
+        const mockFetchServerSideModels = vi.fn(() => Promise.resolve(SERVER_MODELS))
+        vi.mocked(featureFlagProvider).evaluatedFeatureFlag.mockReturnValue(Observable.of(true))
+
+        const DEEPCODY_MODEL = getExperimentalClientModelByFeatureFlag(FeatureFlag.DeepCody)!
+
+        const result = await firstValueFrom(
+            syncModels({
+                resolvedConfig: Observable.of({
+                    configuration: {},
+                    clientState: { modelPreferences: {} },
+                } satisfies PartialDeep<ResolvedConfiguration> as ResolvedConfiguration),
+                authStatus: Observable.of(AUTH_STATUS_FIXTURE_AUTHED),
+                configOverwrites: Observable.of(null),
+                clientConfig: Observable.of({
+                    modelsAPIEnabled: true,
+                } satisfies Partial<CodyClientConfig> as CodyClientConfig),
+                fetchServerSideModels_: mockFetchServerSideModels,
+            }).pipe(skipPendingOperation())
+        )
+
+        const storage = new TestLocalStorageForModelPreferences()
+        modelsService.storage = storage
+        mockAuthStatus(AUTH_STATUS_FIXTURE_AUTHED)
+        expect(storage.data?.[AUTH_STATUS_FIXTURE_AUTHED.endpoint]!.selected.chat).toBe(undefined)
+        vi.spyOn(modelsService, 'modelsChanges', 'get').mockReturnValue(Observable.of(result))
+
+        // Check if DeepCody model is in the primary models
+        expect(result.primaryModels.some(model => model.id === DEEPCODY_MODEL.modelRef)).toBe(true)
+
+        // Check if DeepCody is set as the default chat model
+        expect(result.preferences.defaults.chat).toBe(DEEPCODY_MODEL.modelRef)
+
+        // user preference should not be affected and remains unchanged as this is handled in a later step.
+        expect(result.preferences.selected.chat).toBe(undefined)
+        expect(storage.data?.[AUTH_STATUS_FIXTURE_AUTHED.endpoint]!.selected.chat).toBe(undefined)
+    })
 })

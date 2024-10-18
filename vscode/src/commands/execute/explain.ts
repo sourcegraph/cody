@@ -50,7 +50,6 @@ export async function explainCommand(
 
     return {
         text: prompt,
-        submitType: 'user',
         contextItems,
         source: args?.source,
         command: DefaultChatCommands.Explain,

@@ -39,12 +39,6 @@
     border-radius: 2px;
     padding: 0 5px;
     border: 1px solid var(--vscode-contrastBorder);
-    background: var(--vscode-badge-background);
-    color: var(--vscode-badge-foreground);
-}
-
-.badge-pro {
-    opacity: 0.75;
 }
 
 button > .model-title-with-icon .model-name {

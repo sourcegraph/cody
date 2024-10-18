@@ -17,6 +17,7 @@ import { withPosixPaths } from '../testutils/textDocument'
 import { SupportedLanguage } from '../tree-sitter/grammars'
 import { updateParseTreeCache } from '../tree-sitter/parse-tree-cache'
 import { getParser, resetParsersCache } from '../tree-sitter/parser'
+import * as CompletionAnalyticsLogger from './analytics-logger'
 import {
     getInlineCompletions,
     getInlineCompletionsFullResponse,
@@ -24,7 +25,6 @@ import {
     params,
 } from './get-inline-completions-tests/helpers'
 import { InlineCompletionItemProvider } from './inline-completion-item-provider'
-import * as CompletionLogger from './logger'
 import { createProvider } from './providers/anthropic'
 import { completion, initTreeSitterParser } from './test-helpers'
 
@@ -48,6 +48,7 @@ class MockableInlineCompletionItemProvider extends InlineCompletionItemProvider 
                 provider: 'anthropic',
                 source: 'local-editor-settings',
                 authStatus: currentAuthStatusAuthed(),
+                configOverwrites: null,
             }),
             firstCompletionTimeout:
                 superArgs?.firstCompletionTimeout ??
@@ -66,7 +67,7 @@ describe('InlineCompletionItemProvider', () => {
         initCompletionProviderConfig({})
         mockLocalStorage()
         vi.spyOn(contextFiltersProvider, 'isUriIgnored').mockResolvedValue(false)
-        CompletionLogger.reset_testOnly()
+        CompletionAnalyticsLogger.reset_testOnly()
     })
 
     afterEach(() => {
@@ -141,7 +142,7 @@ describe('InlineCompletionItemProvider', () => {
         vi.advanceTimersByTime(250)
 
         // Check if telemetry event is recorded
-        CompletionLogger.logSuggestionEvents(true)
+        CompletionAnalyticsLogger.logSuggestionEvents(true)
         expect(spy).toHaveBeenCalledTimes(1)
         expect(spy).toHaveBeenCalledWith(
             'cody.completion',
@@ -289,7 +290,7 @@ describe('InlineCompletionItemProvider', () => {
 
     describe('logger', () => {
         it('logs a completion as shown', async () => {
-            const spy = vi.spyOn(CompletionLogger, 'prepareSuggestionEvent')
+            const spy = vi.spyOn(CompletionAnalyticsLogger, 'prepareSuggestionEvent')
 
             const completionParams = params('const foo = █', [completion`bar`])
             const provider = new MockableInlineCompletionItemProvider(() =>
@@ -305,7 +306,7 @@ describe('InlineCompletionItemProvider', () => {
         })
 
         it('does not log a completion when the abort handler was triggered after a network fetch', async () => {
-            const spy = vi.spyOn(CompletionLogger, 'prepareSuggestionEvent')
+            const spy = vi.spyOn(CompletionAnalyticsLogger, 'prepareSuggestionEvent')
 
             let onCancel = () => {}
             const token: vscode.CancellationToken = {
@@ -336,7 +337,7 @@ describe('InlineCompletionItemProvider', () => {
         })
 
         it('does not log a completion if it does not overlap the completion popup', async () => {
-            const spy = vi.spyOn(CompletionLogger, 'prepareSuggestionEvent')
+            const spy = vi.spyOn(CompletionAnalyticsLogger, 'prepareSuggestionEvent')
 
             const completionParams = params('console.█', [completion`log()`])
             const provider = new MockableInlineCompletionItemProvider(() =>
@@ -355,7 +356,7 @@ describe('InlineCompletionItemProvider', () => {
         })
 
         it('log a completion if the suffix is inside the completion', async () => {
-            const spy = vi.spyOn(CompletionLogger, 'prepareSuggestionEvent')
+            const spy = vi.spyOn(CompletionAnalyticsLogger, 'prepareSuggestionEvent')
 
             const completionParams = params('const a = [1, █];', [completion`2] ;`])
             const provider = new MockableInlineCompletionItemProvider(() =>
@@ -371,7 +372,7 @@ describe('InlineCompletionItemProvider', () => {
         })
 
         it('log a completion if the suffix is inside the completion in CRLF format', async () => {
-            const spy = vi.spyOn(CompletionLogger, 'prepareSuggestionEvent')
+            const spy = vi.spyOn(CompletionAnalyticsLogger, 'prepareSuggestionEvent')
 
             const completionParams = params('const a = [1, █];\r\nconsol.log(1234);\r\n', [
                 completion`2] ;`,
@@ -389,7 +390,7 @@ describe('InlineCompletionItemProvider', () => {
         })
 
         it('does not log a completion if the suffix does not match', async () => {
-            const spy = vi.spyOn(CompletionLogger, 'prepareSuggestionEvent')
+            const spy = vi.spyOn(CompletionAnalyticsLogger, 'prepareSuggestionEvent')
 
             const completionParams = params('const a = [1, █)(123);', [completion`2];`])
             const provider = new MockableInlineCompletionItemProvider(() =>
@@ -405,7 +406,7 @@ describe('InlineCompletionItemProvider', () => {
         })
 
         it('does not log a completion if it is marked as stale', async () => {
-            const spy = vi.spyOn(CompletionLogger, 'prepareSuggestionEvent')
+            const spy = vi.spyOn(CompletionAnalyticsLogger, 'prepareSuggestionEvent')
 
             const completionParams = params('const foo = █', [completion`bar`])
             const provider = new MockableInlineCompletionItemProvider(async () => {
@@ -426,7 +427,7 @@ describe('InlineCompletionItemProvider', () => {
         })
 
         it('does not log a completion if the prefix no longer matches due to a cursor change', async () => {
-            const spy = vi.spyOn(CompletionLogger, 'prepareSuggestionEvent')
+            const spy = vi.spyOn(CompletionAnalyticsLogger, 'prepareSuggestionEvent')
 
             // Ensure the mock returns a completion item that requires the original
             // prefix to be present.
@@ -486,7 +487,7 @@ describe('InlineCompletionItemProvider', () => {
                 expect(spy).toHaveBeenCalledTimes(0) // Not waited long enough
 
                 vi.advanceTimersByTime(250) // 500 + 250 = 750ms (time until completion is considered visible)
-                CompletionLogger.logSuggestionEvents(true)
+                CompletionAnalyticsLogger.logSuggestionEvents(true)
                 expect(spy).toHaveBeenCalledTimes(1)
                 expect(spy).toHaveBeenCalledWith(
                     'cody.completion',
@@ -521,7 +522,7 @@ describe('InlineCompletionItemProvider', () => {
                 } as any)
 
                 vi.advanceTimersByTime(250) // 500 + 250 = 750ms (time until completion is considered visible)
-                CompletionLogger.logSuggestionEvents(true)
+                CompletionAnalyticsLogger.logSuggestionEvents(true)
                 expect(spy).toHaveBeenCalledTimes(1)
                 expect(spy).toHaveBeenCalledWith(
                     'cody.completion',
@@ -556,7 +557,7 @@ describe('InlineCompletionItemProvider', () => {
                 } as any)
 
                 vi.advanceTimersByTime(250) // 500 + 250 = 750ms (time until completion is considered visible)
-                CompletionLogger.logSuggestionEvents(true)
+                CompletionAnalyticsLogger.logSuggestionEvents(true)
                 expect(spy).toHaveBeenCalledTimes(1)
                 expect(spy).toHaveBeenCalledWith(
                     'cody.completion',

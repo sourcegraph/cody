@@ -1,10 +1,12 @@
-import type { AuthenticatedAuthStatus } from '../auth/types'
+import { authStatus } from '../auth/authStatus'
+import { firstValueFrom } from '../misc/observable'
 import type { Message } from '../sourcegraph-api'
 import type { SourcegraphCompletionsClient } from '../sourcegraph-api/completions/client'
 import type {
     CompletionGeneratorValue,
     CompletionParameters,
 } from '../sourcegraph-api/completions/types'
+import { currentSiteVersion } from '../sourcegraph-api/siteVersion'
 
 type ChatParameters = Omit<CompletionParameters, 'messages'>
 
@@ -15,25 +17,31 @@ const DEFAULT_CHAT_COMPLETION_PARAMETERS: Omit<ChatParameters, 'maxTokensToSampl
 }
 
 export class ChatClient {
-    constructor(
-        private completions: SourcegraphCompletionsClient,
-        private getAuthStatus: () => Pick<
-            AuthenticatedAuthStatus,
-            | 'authenticated'
-            | 'userCanUpgrade'
-            | 'endpoint'
-            | 'codyApiVersion'
-            | 'isFireworksTracingEnabled'
-        >
-    ) {}
+    constructor(private completions: SourcegraphCompletionsClient) {}
 
-    public chat(
+    public async chat(
         messages: Message[],
         params: Partial<ChatParameters> & Pick<ChatParameters, 'maxTokensToSample'>,
         abortSignal?: AbortSignal
-    ): AsyncGenerator<CompletionGeneratorValue> {
-        const authStatus = this.getAuthStatus()
-        const useApiV1 = authStatus.codyApiVersion >= 1 && params.model?.includes('claude-3')
+    ): Promise<AsyncGenerator<CompletionGeneratorValue>> {
+        // Replace internal models used for wrapper models with the actual model ID.
+        params.model = params.model?.replace(
+            'sourcegraph::2023-06-01::deep-cody',
+            'anthropic::2023-06-01::claude-3.5-sonnet'
+        )
+
+        const [versions, authStatus_] = await Promise.all([
+            currentSiteVersion(),
+            await firstValueFrom(authStatus),
+        ])
+        if (!versions) {
+            throw new Error('unable to determine Cody API version')
+        }
+        if (!authStatus_.authenticated) {
+            throw new Error('not authenticated')
+        }
+
+        const useApiV1 = versions.codyAPIVersion >= 1 && params.model?.includes('claude-3')
         const isLastMessageFromHuman = messages.length > 0 && messages.at(-1)!.speaker === 'human'
 
         const isFireworks = params?.model?.startsWith('fireworks/')
@@ -59,13 +67,14 @@ export class ChatClient {
 
         // Enabled Fireworks tracing for Sourcegraph teammates.
         // https://readme.fireworks.ai/docs/enabling-tracing
+
         const customHeaders: Record<string, string> =
-            isFireworks && authStatus.isFireworksTracingEnabled ? { 'X-Fireworks-Genie': 'true' } : {}
+            isFireworks && authStatus_.isFireworksTracingEnabled ? { 'X-Fireworks-Genie': 'true' } : {}
 
         return this.completions.stream(
             completionParams,
             {
-                apiVersion: useApiV1 ? authStatus.codyApiVersion : 0,
+                apiVersion: useApiV1 ? versions.codyAPIVersion : 0,
                 customHeaders,
             },
             abortSignal

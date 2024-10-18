@@ -5,12 +5,12 @@ import type { Polly, Request } from '@pollyjs/core'
 import {
     type AccountKeyedChatHistory,
     type ChatHistoryKey,
+    type ClientCapabilities,
     type CodyCommand,
     CodyIDE,
     ModelUsage,
     currentAuthStatus,
     currentAuthStatusAuthed,
-    currentAuthStatusOrNotReadyYet,
     firstResultFromOperation,
     telemetryRecorder,
     waitUntilComplete,
@@ -35,10 +35,7 @@ import {
     logDebug,
     logError,
     modelsService,
-    setUserAgent,
 } from '@sourcegraph/cody-shared'
-
-import { ChatBuilder } from '../../vscode/src/chat/chat-view/ChatBuilder'
 import { chatHistory } from '../../vscode/src/chat/chat-view/ChatHistoryManager'
 import type { ExtensionMessage, WebviewMessage } from '../../vscode/src/chat/protocol'
 import { ProtocolTextDocumentWithUri } from '../../vscode/src/jsonrpc/TextDocumentWithUri'
@@ -47,6 +44,7 @@ import type * as agent_protocol from '../../vscode/src/jsonrpc/agent-protocol'
 import { mkdirSync, statSync } from 'node:fs'
 import { PassThrough } from 'node:stream'
 import type { Har } from '@pollyjs/persister'
+import { codyPaths } from '@sourcegraph/cody-shared'
 import { TESTING_TELEMETRY_EXPORTER } from '@sourcegraph/cody-shared/src/telemetry-v2/TelemetryRecorderProvider'
 import { type TelemetryEventParameters, TestTelemetryExporter } from '@sourcegraph/telemetry'
 import { copySync } from 'fs-extra'
@@ -55,9 +53,11 @@ import * as uuid from 'uuid'
 import type { MessageConnection } from 'vscode-jsonrpc'
 import type { CommandResult } from '../../vscode/src/CommandResult'
 import { formatURL } from '../../vscode/src/auth/auth'
+import { executeExplainCommand, executeSmellCommand } from '../../vscode/src/commands/execute'
+import type { CodyCommandArgs } from '../../vscode/src/commands/types'
+import type { CompletionItemID } from '../../vscode/src/completions/analytics-logger'
 import { loadTscRetriever } from '../../vscode/src/completions/context/retrievers/tsc/load-tsc-retriever'
 import { supportedTscLanguages } from '../../vscode/src/completions/context/retrievers/tsc/supportedTscLanguages'
-import type { CompletionItemID } from '../../vscode/src/completions/logger'
 import { type ExecuteEditArguments, executeEdit } from '../../vscode/src/edit/execute'
 import type { QuickPickInput } from '../../vscode/src/edit/input/get-input'
 import { getModelOptionItems } from '../../vscode/src/edit/input/get-items/model'
@@ -77,7 +77,10 @@ import { AgentWorkspaceConfiguration } from './AgentWorkspaceConfiguration'
 import { AgentWorkspaceDocuments } from './AgentWorkspaceDocuments'
 import { registerNativeWebviewHandlers, resolveWebviewView } from './NativeWebview'
 import type { PollyRequestError } from './cli/command-jsonrpc-stdio'
-import { codyPaths } from './codyPaths'
+import {
+    currentProtocolAuthStatus,
+    currentProtocolAuthStatusOrNotReadyYet,
+} from './currentProtocolAuthStatus'
 import { AgentGlobalState } from './global-state/AgentGlobalState'
 import {
     MessageHandler,
@@ -138,7 +141,12 @@ function copyExtensionRelativeResources(extensionPath: string, extensionClient: 
         }
     }
     copySources('win-ca-roots.exe')
-    if (extensionClient.capabilities?.webview === 'native') {
+    // Only copy the files if the client is using the native webview and they haven't opted
+    // to manage the resource files themselves.
+    if (
+        extensionClient.capabilities?.webview === 'native' &&
+        !extensionClient.capabilities?.webviewNativeConfig?.skipResourceRelativization
+    ) {
         copySources('webviews')
     }
 }
@@ -426,7 +434,6 @@ export class Agent extends MessageHandler implements ExtensionClient {
 
             vscode_shim.setClientInfo(clientInfo)
             this.clientInfo = clientInfo
-            setUserAgent(`${clientInfo?.name} / ${clientInfo?.version}`)
 
             try {
                 const secrets =
@@ -473,11 +480,10 @@ export class Agent extends MessageHandler implements ExtensionClient {
                     this.registerWebviewHandlers()
                 }
 
-                const authStatus = currentAuthStatusOrNotReadyYet()
+                const authStatus = currentProtocolAuthStatusOrNotReadyYet()
                 return {
                     name: 'cody-agent',
                     authenticated: authStatus?.authenticated ?? false,
-                    codyVersion: authStatus?.authenticated ? authStatus.siteVersion : undefined,
                     authStatus,
                 }
             } catch (error) {
@@ -572,12 +578,12 @@ export class Agent extends MessageHandler implements ExtensionClient {
         this.registerRequest('extensionConfiguration/change', async config => {
             this.authenticationPromise = this.handleConfigChanges(config)
             await this.authenticationPromise
-            return currentAuthStatus()
+            return currentProtocolAuthStatus()
         })
 
         this.registerRequest('extensionConfiguration/status', async () => {
             await this.authenticationPromise
-            return currentAuthStatus()
+            return currentProtocolAuthStatus()
         })
 
         this.registerRequest('extensionConfiguration/getSettingsSchema', async () => {
@@ -845,7 +851,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
 
         this.registerAuthenticatedRequest('testing/reset', async () => {
             await this.workspace.reset()
-            this.globalState?.reset()
+            await this.globalState?.reset()
             // reset the telemetry recorded events
             TESTING_TELEMETRY_EXPORTER.reset()
             return null
@@ -966,6 +972,11 @@ export class Agent extends MessageHandler implements ExtensionClient {
             }
         })
 
+        this.registerAuthenticatedRequest('extension/reset', async () => {
+            await this.globalState?.reset()
+            return null
+        })
+
         this.registerNotification('autocomplete/completionAccepted', async ({ completionID }) => {
             const provider = await vscode_shim.completionProvider()
             await provider.handleDidAcceptCompletionItem(completionID as CompletionItemID)
@@ -974,6 +985,28 @@ export class Agent extends MessageHandler implements ExtensionClient {
         this.registerNotification('autocomplete/completionSuggested', async ({ completionID }) => {
             const provider = await vscode_shim.completionProvider()
             provider.unstable_handleDidShowCompletionItem(completionID as CompletionItemID)
+        })
+
+        this.registerAuthenticatedRequest(
+            'testing/autocomplete/awaitPendingVisibilityTimeout',
+            async () => {
+                const provider = await vscode_shim.completionProvider()
+                return provider.testing_completionSuggestedPromise
+            }
+        )
+
+        this.registerAuthenticatedRequest(
+            'testing/autocomplete/setCompletionVisibilityDelay',
+            async ({ delay }) => {
+                const provider = await vscode_shim.completionProvider()
+                provider.testing_setCompletionVisibilityDelay(delay)
+                return null
+            }
+        )
+
+        this.registerAuthenticatedRequest('testing/autocomplete/providerConfig', async () => {
+            const provider = await vscode_shim.completionProvider()
+            return provider.config.provider
         })
 
         this.registerAuthenticatedRequest('graphql/getRepoIds', async ({ names, first }) => {
@@ -1082,12 +1115,10 @@ export class Agent extends MessageHandler implements ExtensionClient {
         })
 
         // The arguments to pass to the command to make sure edit commands would also run in chat mode
-        const commandArgs = [{ source: 'editor' }]
+        const commandArgs: Partial<CodyCommandArgs> = { source: 'editor' }
 
         this.registerAuthenticatedRequest('commands/explain', () => {
-            return this.createChatPanel(
-                vscode.commands.executeCommand('cody.command.explain-code', commandArgs)
-            )
+            return this.createChatPanel(executeExplainCommand(commandArgs))
         })
 
         this.registerAuthenticatedRequest('editTask/accept', async ({ id }) => {
@@ -1179,9 +1210,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
         })
 
         this.registerAuthenticatedRequest('commands/smell', () => {
-            return this.createChatPanel(
-                vscode.commands.executeCommand('cody.command.smell-code', commandArgs)
-            )
+            return this.createChatPanel(executeSmellCommand(commandArgs))
         })
 
         this.registerAuthenticatedRequest('commands/custom', ({ key }) => {
@@ -1227,27 +1256,9 @@ export class Agent extends MessageHandler implements ExtensionClient {
             return { panelId, chatId }
         })
 
-        // TODO: JetBrains no longer uses this, consider deleting it.
-        this.registerAuthenticatedRequest('chat/restore', async ({ modelID, messages, chatID }) => {
-            const authStatus = currentAuthStatusAuthed()
-            modelID ??= (await firstResultFromOperation(modelsService.getDefaultChatModel())) ?? ''
-            const chatMessages = messages?.map(PromptString.unsafe_deserializeChatMessage) ?? []
-            const chatBuilder = new ChatBuilder(modelID, chatID, chatMessages)
-            const chat = chatBuilder.toSerializedChatTranscript()
-            if (chat) {
-                await chatHistory.saveChat(authStatus, chat)
-            }
-            return this.createChatPanel(
-                Promise.resolve({
-                    type: 'chat',
-                    session: await vscode.commands.executeCommand('cody.chat.panel.restore', [chatID]),
-                })
-            )
-        })
-
         this.registerAuthenticatedRequest('chat/models', async ({ modelUsage }) => {
             return {
-                models: await firstResultFromOperation(modelsService.getModels(modelUsage)),
+                models: await modelsService.getModelsAvailabilityStatus(modelUsage),
             }
         })
 
@@ -1477,7 +1488,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
         return this.clientInfo?.version || '0.0.0'
     }
 
-    get capabilities(): agent_protocol.ClientCapabilities | undefined {
+    get capabilities(): ClientCapabilities | undefined {
         return this.clientInfo?.capabilities ?? undefined
     }
 

@@ -1,4 +1,5 @@
 import { CallbackTelemetryProcessor } from '@sourcegraph/telemetry'
+import { cenv } from '../configuration/environment'
 import { logDebug } from '../logger'
 import {
     NoOpTelemetryRecorderProvider,
@@ -24,7 +25,7 @@ export let telemetryRecorderProvider: TelemetryRecorderProvider | undefined
  */
 export let telemetryRecorder: TelemetryRecorder = new NoOpTelemetryRecorderProvider().getRecorder([
     new CallbackTelemetryProcessor(() => {
-        if (!process.env.VITEST) {
+        if (!cenv.CODY_TESTING_IGNORE_TELEMETRY_PROVIDER_ERROR) {
             throw new Error('telemetry-v2: recorder used before initialization')
         }
     }),

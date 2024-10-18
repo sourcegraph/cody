@@ -11,11 +11,13 @@ import {
     AccordionItem,
     AccordionTrigger,
 } from '../../../components/shadcn/ui/accordion'
+import { Button } from '../../../components/shadcn/ui/button'
 import { Tooltip, TooltipContent, TooltipTrigger } from '../../../components/shadcn/ui/tooltip'
 import { SourcegraphLogo } from '../../../icons/SourcegraphLogo'
 import { useTelemetryRecorder } from '../../../utils/telemetry'
 import { useConfig } from '../../../utils/useConfig'
 import { useExperimentalOneBox } from '../../../utils/useExperimentalOneBox'
+import { CodyIcon } from '../../components/CodyIcon'
 import { LoadingDots } from '../../components/LoadingDots'
 import { Cell } from '../Cell'
 import { NON_HUMAN_CELL_AVATAR_SIZE } from '../messageCell/assistant/AssistantMessageCell'
@@ -27,11 +29,18 @@ import styles from './ContextCell.module.css'
 export const ContextCell: FunctionComponent<{
     contextItems: ContextItem[] | undefined
     contextAlternatives?: RankedContext[]
+    isContextLoading: boolean
     model?: Model['id']
     isForFirstMessage: boolean
     className?: string
     defaultOpen?: boolean
     showSnippets?: boolean
+    reSubmitWithChatIntent?: () => void
+    onAddToFollowupChat?: (props: {
+        repoName: string
+        filePath: string
+        fileURL: string
+    }) => void
 
     /** For use in storybooks only. */
     __storybook__initialOpen?: boolean
@@ -44,7 +53,10 @@ export const ContextCell: FunctionComponent<{
         className,
         defaultOpen,
         __storybook__initialOpen,
+        reSubmitWithChatIntent,
         showSnippets = false,
+        isContextLoading,
+        onAddToFollowupChat,
     }) => {
         const [selectedAlternative, setSelectedAlternative] = useState<number | undefined>(undefined)
         const incrementSelectedAlternative = useCallback(
@@ -103,6 +115,9 @@ export const ContextCell: FunctionComponent<{
             },
             [telemetryRecorder, oneboxEnabled]
         )
+
+        const [showAllResults, setShowAllResults] = useState(false)
+
         return (
             <div>
                 {(contextItemsToDisplay === undefined || contextItemsToDisplay.length !== 0) && (
@@ -123,6 +138,7 @@ export const ContextCell: FunctionComponent<{
                                         onKeyUp={logContextOpening}
                                         title={itemCountLabel}
                                         className="tw-flex tw-items-center tw-gap-4"
+                                        disabled={isContextLoading}
                                     >
                                         <SourcegraphLogo
                                             width={NON_HUMAN_CELL_AVATAR_SIZE}
@@ -131,7 +147,13 @@ export const ContextCell: FunctionComponent<{
                                         <span className="tw-flex tw-items-baseline">
                                             Context
                                             <span className="tw-opacity-60 tw-text-sm tw-ml-2">
-                                                &mdash; {itemCountLabel}
+                                                &mdash;{' '}
+                                                {isContextLoading
+                                                    ? // TODO: Removes hardcoded model.
+                                                      model?.includes('deep-cody')
+                                                        ? 'Thinking...'
+                                                        : 'Retrieving codebase files…'
+                                                    : itemCountLabel}
                                             </span>
                                         </span>
                                     </AccordionTrigger>
@@ -171,29 +193,56 @@ export const ContextCell: FunctionComponent<{
                                                 </div>
                                             )}
                                             <ul className="tw-list-none tw-flex tw-flex-col tw-gap-2 tw-pt-2">
-                                                {contextItemsToDisplay?.map((item, i) => (
-                                                    <li
-                                                        // biome-ignore lint/suspicious/noArrayIndexKey: stable order
-                                                        key={i}
-                                                        data-testid="context-item"
-                                                    >
-                                                        <FileContextItem
-                                                            item={item}
-                                                            showSnippets={showSnippets}
-                                                        />
-                                                        {internalDebugContext &&
-                                                            item.metadata &&
-                                                            item.metadata.length > 0 && (
-                                                                <span
-                                                                    className={
-                                                                        styles.contextItemMetadata
-                                                                    }
-                                                                >
-                                                                    {item.metadata.join(', ')}
-                                                                </span>
-                                                            )}
-                                                    </li>
-                                                ))}
+                                                {contextItemsToDisplay?.map((item, i) =>
+                                                    !showSnippets || showAllResults || i < 5 ? (
+                                                        <li
+                                                            // biome-ignore lint/correctness/useJsxKeyInIterable:
+                                                            // biome-ignore lint/suspicious/noArrayIndexKey: stable order
+                                                            key={i}
+                                                            data-testid="context-item"
+                                                        >
+                                                            <FileContextItem
+                                                                item={item}
+                                                                showSnippets={showSnippets}
+                                                                onAddToFollowupChat={onAddToFollowupChat}
+                                                            />
+                                                            {internalDebugContext &&
+                                                                item.metadata &&
+                                                                item.metadata.length > 0 && (
+                                                                    <span
+                                                                        className={
+                                                                            styles.contextItemMetadata
+                                                                        }
+                                                                    >
+                                                                        {item.metadata.join(', ')}
+                                                                    </span>
+                                                                )}
+                                                        </li>
+                                                    ) : null
+                                                )}
+                                                {showSnippets &&
+                                                !showAllResults &&
+                                                contextItemsToDisplay &&
+                                                contextItemsToDisplay.length > 5 ? (
+                                                    <div className="tw-flex tw-justify-between">
+                                                        <Button
+                                                            variant="link"
+                                                            onClick={() => setShowAllResults(true)}
+                                                        >
+                                                            Show {contextItemsToDisplay.length - 5} more
+                                                            results
+                                                        </Button>
+                                                        <Button
+                                                            size="sm"
+                                                            variant="outline"
+                                                            className="tw-text-prmary tw-flex tw-gap-2 tw-items-center"
+                                                            onClick={reSubmitWithChatIntent}
+                                                        >
+                                                            <CodyIcon className="tw-text-link" />
+                                                            Ask the LLM
+                                                        </Button>
+                                                    </div>
+                                                ) : null}
                                                 {!isForFirstMessage && (
                                                     <span
                                                         className={clsx(

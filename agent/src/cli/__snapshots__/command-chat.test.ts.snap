@@ -4,21 +4,26 @@ exports[`--context-file (animal test) 1`] = `
 "command: cody chat chat --context-file animal.ts --show-context -m implement a
   cow. Only print the code without any explanation.
 exitCode: 0
-stdout: |+
+stdout: >+
   > Context items:
+
 
   > 1. WORKING_DIRECTORY/animal.ts
 
 
 
-  Here's the implementation of a cow based on the provided interface:
+
+  Certainly! Here's the implementation of a cow based on the provided codebase context:
+
 
   \`\`\`typescript:animal.ts
+
   class Cow implements StrangeAnimal {
       makesSound(): 'coo' | 'moo' {
           return 'moo';
       }
   }
+
   \`\`\`
 
 stderr: ""
@@ -29,21 +34,26 @@ exports[`--context-file (animal test) 2`] = `
 "command: cody chat chat --context-file animal.ts --show-context -m implement a
   cow. Only print the code without any explanation.
 exitCode: 0
-stdout: |+
+stdout: >+
   > Context items:
+
 
   > 1. WORKING_DIRECTORY/animal.ts
 
 
 
-  Here's the implementation of a cow based on the provided interface:
+
+  Certainly! Here's the implementation of a cow based on the provided codebase context:
+
 
   \`\`\`typescript:animal.ts
+
   class Cow implements StrangeAnimal {
       makesSound(): 'coo' | 'moo' {
           return 'moo';
       }
   }
+
   \`\`\`
 
 stderr: ""
@@ -54,21 +64,26 @@ exports[`--context-file (animal test) 3`] = `
 "command: cody chat chat --context-file animal.ts --show-context -m implement a
   cow. Only print the code without any explanation.
 exitCode: 0
-stdout: |+
+stdout: >+
   > Context items:
+
 
   > 1. WORKING_DIRECTORY/animal.ts
 
 
 
-  Here's the implementation of a cow based on the provided interface:
+
+  Certainly! Here's the implementation of a cow based on the provided codebase context:
+
 
   \`\`\`typescript:animal.ts
+
   class Cow implements StrangeAnimal {
       makesSound(): 'coo' | 'moo' {
           return 'moo';
       }
   }
+
   \`\`\`
 
 stderr: ""
@@ -79,9 +94,7 @@ exports[`--message (hello world test) 1`] = `
 "command: cody chat chat -m respond with "hello" and nothing else
 exitCode: 0
 stdout: |+
-  \`\`\`bash
-  echo "hello"
-  \`\`\`
+  Hello
 
 stderr: ""
 "
@@ -91,9 +104,7 @@ exports[`--message (hello world test) 2`] = `
 "command: cody chat chat -m respond with "hello" and nothing else
 exitCode: 0
 stdout: |+
-  \`\`\`bash
-  echo "hello"
-  \`\`\`
+  Hello
 
 stderr: ""
 "
@@ -103,9 +114,7 @@ exports[`--message (hello world test) 3`] = `
 "command: cody chat chat -m respond with "hello" and nothing else
 exitCode: 0
 stdout: |+
-  \`\`\`bash
-  echo "hello"
-  \`\`\`
+  Hello
 
 stderr: ""
 "

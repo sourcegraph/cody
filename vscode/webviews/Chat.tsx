@@ -4,7 +4,9 @@ import { useCallback, useEffect, useMemo, useRef } from 'react'
 import type {
     AuthenticatedAuthStatus,
     ChatMessage,
+    CodyIDE,
     Guardrails,
+    Model,
     PromptString,
 } from '@sourcegraph/cody-shared'
 import { Transcript, focusLastHumanMessageEditor } from './chat/Transcript'
@@ -13,6 +15,7 @@ import type { VSCodeWrapper } from './utils/VSCodeApi'
 import { truncateTextStart } from '@sourcegraph/cody-shared/src/prompt/truncation'
 import { CHAT_INPUT_TOKEN_BUDGET } from '@sourcegraph/cody-shared/src/token/constants'
 import styles from './Chat.module.css'
+import WelcomeFooter from './chat/components/WelcomeFooter'
 import { WelcomeMessage } from './chat/components/WelcomeMessage'
 import { ScrollDown } from './components/ScrollDown'
 import type { View } from './tabs'
@@ -23,6 +26,7 @@ interface ChatboxProps {
     chatEnabled: boolean
     messageInProgress: ChatMessage | null
     transcript: ChatMessage[]
+    models: Model[]
     vscodeAPI: Pick<VSCodeWrapper, 'postMessage' | 'onMessage'>
     guardrails?: Guardrails
     scrollableParent?: HTMLElement | null
@@ -35,6 +39,7 @@ interface ChatboxProps {
 export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>> = ({
     messageInProgress,
     transcript,
+    models,
     vscodeAPI,
     chatEnabled = true,
     guardrails,
@@ -212,6 +217,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             )}
             <Transcript
                 transcript={transcript}
+                models={models}
                 messageInProgress={messageInProgress}
                 feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
                 copyButtonOnSubmit={copyButtonOnSubmit}
@@ -223,7 +229,13 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                 guardrails={guardrails}
                 smartApplyEnabled={smartApplyEnabled}
             />
-            {transcript.length === 0 && showWelcomeMessage && <WelcomeMessage setView={setView} />}
+            {transcript.length === 0 && showWelcomeMessage && (
+                <>
+                    <WelcomeMessage setView={setView} />
+                    <WelcomeFooter IDE={userInfo.IDE} />
+                </>
+            )}
+
             {scrollableParent && (
                 <ScrollDown scrollableParent={scrollableParent} onClick={handleScrollDownClick} />
             )}
@@ -236,8 +248,9 @@ export interface UserAccountInfo {
     isCodyProUser: boolean
     user: Pick<
         AuthenticatedAuthStatus,
-        'username' | 'displayName' | 'avatarURL' | 'endpoint' | 'primaryEmail'
+        'username' | 'displayName' | 'avatarURL' | 'endpoint' | 'primaryEmail' | 'organizations'
     >
+    IDE: CodyIDE
 }
 
 export type ApiPostMessage = (message: any) => void
