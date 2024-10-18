@@ -1,5 +1,5 @@
 import classNames from 'classnames'
-import { type FC, type FunctionComponent, useLayoutEffect, useMemo, useState } from 'react'
+import { type FC, type FunctionComponent, useEffect, useLayoutEffect, useMemo, useState } from 'react'
 import { URI } from 'vscode-uri'
 
 import {
@@ -20,10 +20,8 @@ import { ChatMentionContext, type ChatMentionsSettings } from '@sourcegraph/prom
 import { getAppWrappers } from 'cody-ai/webviews/App'
 import { CodyPanel } from 'cody-ai/webviews/CodyPanel'
 import { useClientActionDispatcher } from 'cody-ai/webviews/client/clientState'
-import type { View } from 'cody-ai/webviews/tabs'
+import { View } from 'cody-ai/webviews/tabs'
 import { ComposedWrappers, type Wrapper } from 'cody-ai/webviews/utils/composeWrappers'
-import { createWebviewTelemetryRecorder } from 'cody-ai/webviews/utils/telemetry'
-import type { Config } from 'cody-ai/webviews/utils/useConfig'
 
 import type { InitialContext } from '../types'
 
@@ -109,8 +107,7 @@ const CodyWebPanel: FC<CodyWebPanelProps> = props => {
     const [errorMessages, setErrorMessages] = useState<string[]>([])
     const [messageInProgress, setMessageInProgress] = useState<ChatMessage | null>(null)
     const [transcript, setTranscript] = useState<ChatMessage[]>([])
-    const [config, setConfig] = useState<Config | null>(null)
-    const [view, setView] = useState<View | undefined>()
+    const [view, setView] = useState<View>(View.Chat)
 
     useLayoutEffect(() => {
         vscodeAPI.onMessage(message => {
@@ -135,11 +132,6 @@ const CodyWebPanel: FC<CodyWebPanelProps> = props => {
                 case 'view':
                     setView(message.view)
                     break
-                case 'config':
-                    message.config.webviewType = 'sidebar'
-                    message.config.multipleWebviewsEnabled = false
-                    setConfig(message)
-                    break
                 case 'clientAction':
                     dispatchClientAction(message)
                     break
@@ -147,8 +139,9 @@ const CodyWebPanel: FC<CodyWebPanelProps> = props => {
         })
     }, [vscodeAPI, dispatchClientAction])
 
-    // V2 telemetry recorder
-    const telemetryRecorder = useMemo(() => createWebviewTelemetryRecorder(vscodeAPI), [vscodeAPI])
+    useEffect(() => {
+        vscodeAPI.postMessage({ command: 'initialized' })
+    }, [vscodeAPI])
 
     const initialContext = useMemo<ContextItem[]>(() => {
         const { repository, fileURL, isDirectory } = initialContextData ?? {}
@@ -216,8 +209,8 @@ const CodyWebPanel: FC<CodyWebPanelProps> = props => {
     }, [initialContextData])
 
     const wrappers = useMemo<Wrapper[]>(
-        () => getAppWrappers(vscodeAPI, telemetryRecorder, config, initialContext),
-        [vscodeAPI, telemetryRecorder, config, initialContext]
+        () => getAppWrappers(vscodeAPI, initialContext),
+        [vscodeAPI, initialContext]
     )
 
     const CONTEXT_MENTIONS_SETTINGS = useMemo<ChatMentionsSettings>(() => {
@@ -229,30 +222,25 @@ const CodyWebPanel: FC<CodyWebPanelProps> = props => {
         }
     }, [initialContextData])
 
-    const isLoading = !config || !view
-
     return (
         <div className={className} data-cody-web-chat={true}>
-            {!isLoading && (
-                <ChatMentionContext.Provider value={CONTEXT_MENTIONS_SETTINGS}>
-                    <ComposedWrappers wrappers={wrappers}>
-                        <CodyPanel
-                            view={view}
-                            setView={setView}
-                            errorMessages={errorMessages}
-                            setErrorMessages={setErrorMessages}
-                            attributionEnabled={false}
-                            configuration={config}
-                            chatEnabled={true}
-                            showWelcomeMessage={true}
-                            showIDESnippetActions={false}
-                            messageInProgress={messageInProgress}
-                            transcript={transcript}
-                            vscodeAPI={vscodeAPI}
-                        />
-                    </ComposedWrappers>
-                </ChatMentionContext.Provider>
-            )}
+            <ChatMentionContext.Provider value={CONTEXT_MENTIONS_SETTINGS}>
+                <ComposedWrappers wrappers={wrappers}>
+                    <CodyPanel
+                        view={view}
+                        setView={setView}
+                        errorMessages={errorMessages}
+                        setErrorMessages={setErrorMessages}
+                        attributionEnabled={false}
+                        chatEnabled={true}
+                        showWelcomeMessage={true}
+                        showIDESnippetActions={false}
+                        messageInProgress={messageInProgress}
+                        transcript={transcript}
+                        vscodeAPI={vscodeAPI}
+                    />
+                </ComposedWrappers>
+            </ChatMentionContext.Provider>
         </div>
     )
 }

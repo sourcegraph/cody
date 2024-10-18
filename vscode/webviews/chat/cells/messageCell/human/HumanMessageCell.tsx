@@ -16,7 +16,7 @@ import { HumanMessageEditor } from './editor/HumanMessageEditor'
 
 import { Tooltip, TooltipContent, TooltipTrigger } from '../../../../components/shadcn/ui/tooltip'
 import { getVSCodeAPI } from '../../../../utils/VSCodeApi'
-import { useConfig } from '../../../../utils/useConfig'
+import { useLegacyWebviewConfig } from '../../../../utils/useLegacyWebviewConfig'
 
 interface HumanMessageCellProps {
     message: ChatMessage
@@ -128,7 +128,7 @@ const HumanMessageCellContent = memo<HumanMessageCellContent>(props => {
 const OpenInNewEditorAction = () => {
     const {
         config: { multipleWebviewsEnabled },
-    } = useConfig()
+    } = useLegacyWebviewConfig()
 
     if (!multipleWebviewsEnabled) {
         return null

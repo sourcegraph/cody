@@ -10,7 +10,7 @@ import { ChevronDown, ChevronUp, EllipsisIcon, MessageSquareDiff, MessageSquareP
 import { URI } from 'vscode-uri'
 import { getCreateNewChatCommand } from '../../../tabs/utils'
 import { getVSCodeAPI } from '../../../utils/VSCodeApi'
-import { useConfig } from '../../../utils/useConfig'
+import { useLegacyWebviewConfig } from '../../../utils/useLegacyWebviewConfig'
 import { Button } from '../../shadcn/ui/button'
 import { Popover, PopoverContent, PopoverTrigger } from '../../shadcn/ui/popover'
 import { cn } from '../../shadcn/utils'
@@ -69,7 +69,7 @@ export const RepoFileLink: React.FunctionComponent<React.PropsWithChildren<Props
         }
     }, [pathMatchRanges, fileName])
 
-    const config = useConfig()
+    const config = useLegacyWebviewConfig()
 
     const addToNewChat = () => {
         const command = getCreateNewChatCommand({

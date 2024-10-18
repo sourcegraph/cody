@@ -1,9 +1,5 @@
 import type {
-    AuthCredentials,
-    AuthStatus,
     ChatMessage,
-    ClientCapabilitiesWithLegacyFields,
-    ClientConfiguration,
     CodyIDE,
     ContextItem,
     ContextItemSource,
@@ -11,7 +7,6 @@ import type {
     RequestMessage,
     ResponseMessage,
     SerializedChatMessage,
-    UserProductSubscription,
 } from '@sourcegraph/cody-shared'
 
 import type { BillingCategory, BillingProduct } from '@sourcegraph/cody-shared/src/telemetry-v2'
@@ -40,15 +35,9 @@ export type WebviewRecordEventParameters = TelemetryEventParameters<
 >
 
 /**
- * The location of where the webview is displayed.
- */
-export type WebviewType = 'sidebar' | 'editor'
-
-/**
  * A message sent from the webview to the extension host.
  */
 export type WebviewMessage =
-    | { command: 'ready' }
     | { command: 'initialized' }
     | {
           /**
@@ -143,20 +132,6 @@ export interface SmartApplyResult {
  */
 export type ExtensionMessage =
     | {
-          type: 'config'
-          config: ConfigurationSubsetForWebview & LocalEnv
-          clientCapabilities: ClientCapabilitiesWithLegacyFields
-          authStatus: AuthStatus
-          userProductSubscription?: UserProductSubscription | null | undefined
-          configFeatures: {
-              chat: boolean
-              attribution: boolean
-              serverSentModels: boolean
-          }
-          isDotComUser: boolean
-          workspaceFolderUris: string[]
-      }
-    | {
           /** Used by JetBrains and not VS Code. */
           type: 'ui/theme'
           agentIDE: CodyIDE
@@ -219,19 +194,6 @@ export interface ExtensionTranscriptMessage {
 }
 
 /**
- * The subset of configuration that is visible to the webview.
- */
-export interface ConfigurationSubsetForWebview
-    extends Pick<ClientConfiguration, 'experimentalNoodle' | 'internalDebugContext'>,
-        Pick<AuthCredentials, 'serverEndpoint'> {
-    smartApply: boolean
-    // Type/location of the current webview.
-    webviewType?: WebviewType | undefined | null
-    // Whether support running multiple webviews (e.g. sidebar w/ multiple editor panels).
-    multipleWebviewsEnabled?: boolean | undefined | null
-}
-
-/**
  * URLs for the Sourcegraph instance and app.
  */
 export const CODY_DOC_URL = new URL('https://sourcegraph.com/docs/cody')
@@ -252,12 +214,6 @@ export const ACCOUNT_LIMITS_INFO_URL = new URL(
 )
 // TODO: Update this URL to the correct one when the Cody model waitlist is available
 export const CODY_BLOG_URL_o1_WAITLIST = new URL('https://sourcegraph.com/blog/openai-o1-for-cody')
-
-/** The local environment of the editor. */
-export interface LocalEnv {
-    /** Whether the extension is running in VS Code Web (as opposed to VS Code Desktop). */
-    uiKindIsWeb: boolean
-}
 
 export type AuthMethod = 'dotcom' | 'github' | 'gitlab' | 'google'
 

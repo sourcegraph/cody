@@ -2,11 +2,11 @@ import {
     type AuthenticatedAuthStatus,
     type ClientCapabilitiesWithLegacyFields,
     CodyIDE,
+    type LegacyWebviewConfig,
 } from '@sourcegraph/cody-shared'
 import type { Meta, StoryObj } from '@storybook/react'
-import type { ConfigurationSubsetForWebview, LocalEnv } from '../../src/chat/protocol'
 import { VSCodeStandaloneComponent } from '../storybook/VSCodeStoryDecorator'
-import { ConfigProvider } from '../utils/useConfig'
+import { LegacyWebviewConfigProviderForTestsOnly } from '../utils/useLegacyWebviewConfig'
 import { AccountTab } from './AccountTab'
 
 const meta: Meta<typeof AccountTab> = {
@@ -33,7 +33,7 @@ const createMockConfig = (overrides = {}) => ({
         experimentalNoodle: false,
         serverEndpoint: 'https://sourcegraph.com',
         uiKindIsWeb: false,
-    } as ConfigurationSubsetForWebview & LocalEnv,
+    } satisfies LegacyWebviewConfig['config'],
     clientCapabilities: {
         isVSCode: false,
         agentIDE: CodyIDE.VSCode,
@@ -59,31 +59,31 @@ const createMockConfig = (overrides = {}) => ({
 
 export const CodyProUser: Story = {
     render: args => (
-        <ConfigProvider
+        <LegacyWebviewConfigProviderForTestsOnly
             value={createMockConfig({
                 userProductSubscription: { plan: 'PRO' },
             })}
         >
             <AccountTab {...args} />
-        </ConfigProvider>
+        </LegacyWebviewConfigProviderForTestsOnly>
     ),
 }
 
 export const CodyFreeUser: Story = {
     render: args => (
-        <ConfigProvider
+        <LegacyWebviewConfigProviderForTestsOnly
             value={createMockConfig({
                 userProductSubscription: undefined,
             })}
         >
             <AccountTab {...args} />
-        </ConfigProvider>
+        </LegacyWebviewConfigProviderForTestsOnly>
     ),
 }
 
 export const EnterpriseUser: Story = {
     render: args => (
-        <ConfigProvider
+        <LegacyWebviewConfigProviderForTestsOnly
             value={createMockConfig({
                 isDotComUser: false,
                 authStatus: {
@@ -99,6 +99,6 @@ export const EnterpriseUser: Story = {
             })}
         >
             <AccountTab {...args} />
-        </ConfigProvider>
+        </LegacyWebviewConfigProviderForTestsOnly>
     ),
 }

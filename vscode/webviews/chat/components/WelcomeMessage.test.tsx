@@ -1,13 +1,14 @@
 import {
     AUTH_STATUS_FIXTURE_AUTHED,
     type ClientCapabilitiesWithLegacyFields,
+    type LegacyWebviewConfig,
 } from '@sourcegraph/cody-shared'
 import { fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, test, vi } from 'vitest'
 import { AppWrapperForTest } from '../../AppWrapperForTest'
 import { usePromptsQuery } from '../../components/promptList/usePromptsQuery'
 import { FIXTURE_PROMPTS } from '../../components/promptSelectField/fixtures'
-import * as useConfigModule from '../../utils/useConfig'
+import * as useConfigModule from '../../utils/useLegacyWebviewConfig'
 import { WelcomeMessage } from './WelcomeMessage'
 
 vi.mock('../../components/promptList/usePromptsQuery')
@@ -29,12 +30,12 @@ describe('WelcomeMessage', () => {
         }
     }
     test('renders for CodyIDE.VSCode', () => {
-        vi.spyOn(useConfigModule, 'useConfig').mockReturnValue({
+        vi.spyOn(useConfigModule, 'useLegacyWebviewConfig').mockReturnValue({
             clientCapabilities: {
                 isVSCode: true,
             } satisfies Partial<ClientCapabilitiesWithLegacyFields> as ClientCapabilitiesWithLegacyFields,
             authStatus: AUTH_STATUS_FIXTURE_AUTHED,
-        } satisfies Partial<useConfigModule.Config> as useConfigModule.Config)
+        } satisfies Partial<LegacyWebviewConfig> as LegacyWebviewConfig)
         render(<WelcomeMessage setView={() => {}} />, {
             wrapper: AppWrapperForTest,
         })
@@ -45,12 +46,12 @@ describe('WelcomeMessage', () => {
     })
 
     test('renders for CodyIDE.JetBrains', () => {
-        vi.spyOn(useConfigModule, 'useConfig').mockReturnValue({
+        vi.spyOn(useConfigModule, 'useLegacyWebviewConfig').mockReturnValue({
             clientCapabilities: {
                 isVSCode: false,
             } satisfies Partial<ClientCapabilitiesWithLegacyFields> as ClientCapabilitiesWithLegacyFields,
             authStatus: AUTH_STATUS_FIXTURE_AUTHED,
-        } satisfies Partial<useConfigModule.Config> as useConfigModule.Config)
+        } satisfies Partial<LegacyWebviewConfig> as LegacyWebviewConfig)
         render(<WelcomeMessage setView={() => {}} />, {
             wrapper: AppWrapperForTest,
         })
