@@ -83,7 +83,6 @@ import type { TelemetryEventParameters } from '@sourcegraph/telemetry'
 import { map } from 'observable-fns'
 import type { URI } from 'vscode-uri'
 import { View } from '../../../webviews/tabs/types'
-import { tryAuthenticateEndpoint } from '../../auth/auth'
 import { redirectToEndpointLogin, showSignInMenu, showSignOutMenu } from '../../auth/auth'
 import {
     closeAuthProgressIndicator,
@@ -136,6 +135,7 @@ import { InitDoer } from './InitDoer'
 import { getChatPanelTitle } from './chat-helpers'
 import { type HumanInput, getPriorityContext } from './context'
 import { DefaultPrompter, type PromptInfo } from './prompt'
+import {secretStorage} from "../../services/SecretStorageProvider";
 
 export interface ChatControllerOptions {
     extensionUri: vscode.Uri
@@ -439,19 +439,17 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     }
                     break
                 }
-                if (message.authKind === 'signin' && message.endpoint && message.value) {
-                    await authProvider.validateAndStoreCredentials(
-                        {
-                            serverEndpoint: message.endpoint,
-                            accessToken: message.value,
-                            tokenSource: 'paste',
-                        },
+                if (message.authKind === 'signin' && message.endpoint) {
+                    const serverEndpoint = message.endpoint
+                    const accessToken = message.value ? message.value : (await secretStorage.getToken(serverEndpoint)) ?? ''
+                    const tokenSource = message.value ? 'paste' : await secretStorage.getTokenSource(serverEndpoint)
+                    const validationResult = await authProvider.validateAndStoreCredentials(
+                        { serverEndpoint, accessToken, tokenSource },
                         'always-store'
                     )
-                    break
-                }
-                if (message.authKind === 'signin' && message.endpoint) {
-                    await tryAuthenticateEndpoint(message.endpoint)
+                    if (!validationResult.authStatus.authenticated) {
+                        await showSignInMenu()
+                    }
                     break
                 }
                 if (message.authKind === 'signout') {

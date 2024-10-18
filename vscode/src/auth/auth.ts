@@ -110,17 +110,6 @@ export async function showSignInMenu(
     }
 }
 
-export async function tryAuthenticateEndpoint(serverEndpoint: string): Promise<void> {
-    const accessToken = (await secretStorage.getToken(serverEndpoint)) ?? ''
-    const tokenSource = await secretStorage.getTokenSource(serverEndpoint)
-    if (accessToken) {
-        await authProvider.validateAndStoreCredentials(
-            { serverEndpoint, accessToken, tokenSource },
-            'always-store'
-        )
-    }
-}
-
 function getEndpointItemLabel(uri: string, isAuthenticated: boolean): string {
     const icon = isAuthenticated ? '$(check) ' : ''
     return isDotCom(uri) ? `${icon}Sourcegraph.com` : `${icon}${uri}`
