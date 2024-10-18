@@ -8,3 +8,16 @@
     padding-left: 0.1rem;
     text-wrap: nowrap;
 }
+
+.context-item-edit-button {
+    display: flex;
+    align-items: center;
+
+    flex-wrap: nowrap;
+
+}
+
+.context-item-edit-button-icon {
+    height: 20%;
+    margin-right: 0.5rem;
+}

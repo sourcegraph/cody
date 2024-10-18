@@ -2,7 +2,7 @@ import type { ContextItem, Model } from '@sourcegraph/cody-shared'
 import { pluralize } from '@sourcegraph/cody-shared'
 import type { RankedContext } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { clsx } from 'clsx'
-import { BrainIcon, MessagesSquareIcon } from 'lucide-react'
+import { BrainIcon, MessagesSquareIcon, Pencil } from 'lucide-react'
 import { type FunctionComponent, memo, useCallback, useState } from 'react'
 import { FileContextItem } from '../../../components/FileContextItem'
 import {
@@ -167,6 +167,16 @@ export const ContextCell: FunctionComponent<{
                                 ) : (
                                     <>
                                         <AccordionContent overflow={showSnippets}>
+                                            <button
+                                                type="button"
+                                                className={styles.contextItemEditButton}
+                                            >
+                                                <div className={styles.contextItemEditButtonIcon}>
+                                                    <Pencil size={'1rem'} />
+                                                </div>
+                                                <div>Edit context manually</div>
+                                            </button>
+
                                             {internalDebugContext && contextAlternatives && (
                                                 <div>
                                                     <button
