@@ -329,6 +329,8 @@ export class ChatsController implements vscode.Disposable {
         // If the sidebar panel is visible and empty, use it instead of creating a new panel
         if (this.panel.isVisible() && this.panel.isEmpty()) {
             provider = this.panel
+        } else if (this.activeEditor?.webviewPanelOrView?.visible) {
+            provider = this.activeEditor
         } else {
             provider = await this.getOrCreateEditorChatController()
         }
