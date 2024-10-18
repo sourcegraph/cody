@@ -30,8 +30,8 @@ in `lib/shared/src/index.ts`.
 
 **Avoid `as` outside test code:** It is not a checked cast, it is an assertion that turns off
 TypeScript's type checking. Any inaccuracies in the type you are asserting can ripple out to create
-difficult to bugs elsewhere that are difficult to debug. Using the TypeScript type system is far
-better because it is checked now **and** with every change that comes *after* yours.
+difficult to diagnose bugs elsewhere. Use the TypeScript type system: it is far better because it is
+checked now **and** with every change that comes *after* yours.
 
 If you want the type checker to ensure that an expression conforms to a type, use
 [`satisfies`.](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-4-9.html#the-satisfies-operator)
