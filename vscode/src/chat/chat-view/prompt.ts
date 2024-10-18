@@ -58,7 +58,7 @@ export class DefaultPrompter {
             }
 
             // Add existing chat transcript messages
-            const reverseTranscript = [...chat.getDehydratedMessages()].reverse()
+            const reverseTranscript = [...chat.getMessages()].reverse()
             const historyItems = reverseTranscript
                 .flatMap(m => (m.contextFiles ? [...m.contextFiles].reverse() : []))
                 .filter(isDefined)

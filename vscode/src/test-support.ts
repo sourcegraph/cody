@@ -1,6 +1,6 @@
 import {
     type AuthStatus,
-    type ChatMessage,
+    type SerializedChatMessage,
     currentAuthStatusOrNotReadyYet,
     ps,
 } from '@sourcegraph/cody-shared'
@@ -43,7 +43,7 @@ export class TestSupport {
 
     public ps = ps
 
-    public async chatMessages(): Promise<readonly ChatMessage[]> {
+    public async chatMessages(): Promise<readonly SerializedChatMessage[]> {
         return (await this.chatPanelProvider.get()).getViewTranscript()
     }
 

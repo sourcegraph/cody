@@ -2,6 +2,13 @@ import type { ContextItem } from '../../codebase-context/messages'
 import type { Message } from '../../sourcegraph-api'
 
 import type { SerializedChatTranscript } from '.'
+import {
+    type SerializedContextItem,
+    deserializeContextItem,
+    isSerializedContextItem,
+    serializeContextItem,
+} from '../../lexicalEditor/nodes'
+import { PromptString } from '../../prompt/prompt-string'
 
 /**
  * The list of context items (most important first) along with
@@ -10,7 +17,7 @@ import type { SerializedChatTranscript } from '.'
  */
 export type RankedContext = {
     strategy: string
-    items: ContextItem[]
+    items: SerializedContextItem[]
 }
 
 export interface ChatMessage extends Message {
@@ -44,13 +51,46 @@ export interface ChatMessage extends Message {
 // Note: This is created as an interface so that the Kotlin type-gen does not
 // break.
 export interface SerializedChatMessage {
-    contextFiles?: ContextItem[]
+    contextFiles?: SerializedContextItem[]
+    contextAlternatives?: RankedContext[]
     error?: ChatError
     editorState?: unknown
     speaker: 'human' | 'assistant' | 'system'
     text?: string // Changed from PromptString
     model?: string
     intent?: ChatMessage['intent']
+}
+
+export function serializeChatMessage(chatMessage: ChatMessage): SerializedChatMessage {
+    return {
+        speaker: chatMessage.speaker,
+        model: chatMessage.model,
+        contextFiles: chatMessage.contextFiles?.map(serializeContextItem),
+        contextAlternatives: chatMessage.contextAlternatives?.map(({ items, strategy }) => ({
+            strategy,
+            items: items.map(serializeContextItem),
+        })),
+        editorState: chatMessage.editorState,
+        error: chatMessage.error,
+        text: chatMessage.text ? chatMessage.text.toString() : undefined,
+        intent: chatMessage.intent,
+    }
+}
+
+export function deserializeChatMessage(
+    message: Omit<SerializedChatMessage, 'contextFiles'> & {
+        // Prior to ~2024-10-15, this field's type was ContextItem[], so deserialization needs to
+        // handle either.
+        contextFiles?: ContextItem[] | SerializedContextItem[]
+    }
+): ChatMessage {
+    return {
+        ...message,
+        text: PromptString.unsafe_deserializeChatMessageText(message.text),
+        contextFiles: message.contextFiles?.map(f =>
+            isSerializedContextItem(f) ? deserializeContextItem(f) : f
+        ),
+    }
 }
 
 export interface ChatError {

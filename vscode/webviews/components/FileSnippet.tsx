@@ -1,7 +1,7 @@
 import { useExtensionAPI } from '@sourcegraph/prompt-editor'
 import { type FC, useCallback, useMemo } from 'react'
 
-import type { ContextItemFile } from '@sourcegraph/cody-shared'
+import type { ContextItemFile, SerializedContextItem } from '@sourcegraph/cody-shared'
 import type { Observable } from 'observable-fns'
 import { useTelemetryRecorder } from '../utils/telemetry'
 import { useConfig } from '../utils/useConfig'
@@ -10,7 +10,7 @@ import { type FetchFileParameters, FileContentSearchResult } from './codeSnippet
 import type { ContentMatch } from './codeSnippet/types'
 
 interface FileSnippetProps {
-    item: ContextItemFile
+    item: SerializedContextItem & Pick<ContextItemFile, 'ranges'>
     onAddToFollowupChat?: (props: {
         repoName: string
         filePath: string

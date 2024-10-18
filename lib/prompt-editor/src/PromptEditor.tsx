@@ -1,5 +1,5 @@
 import {
-    type ContextItem,
+    type SerializedContextItem,
     type SerializedPromptEditorState,
     type SerializedPromptEditorValue,
     getMentionOperations,
@@ -53,8 +53,8 @@ export interface PromptEditorRefAPI {
     getSerializedValue(): SerializedPromptEditorValue
     setFocus(focus: boolean, options?: { moveCursorToEnd?: boolean }, cb?: () => void): void
     appendText(text: string, cb?: () => void): void
-    addMentions(items: ContextItem[], cb?: () => void): void
-    setInitialContextMentions(items: ContextItem[], cb?: () => void): void
+    addMentions(items: SerializedContextItem[], cb?: () => void): void
+    setInitialContextMentions(items: SerializedContextItem[], cb?: () => void): void
     setEditorState(state: SerializedPromptEditorState, cb?: () => void): void
 }
 
@@ -146,7 +146,7 @@ export const PromptEditor: FunctionComponent<Props> = ({
                     { onUpdate: cb }
                 )
             },
-            addMentions(items: ContextItem[], cb?: () => void): void {
+            addMentions(items: SerializedContextItem[], cb?: () => void): void {
                 const editor = editorRef.current
                 if (!editor) {
                     cb?.()
@@ -188,7 +188,7 @@ export const PromptEditor: FunctionComponent<Props> = ({
                     { onUpdate: cb }
                 )
             },
-            setInitialContextMentions(items: ContextItem[], cb?: () => void): void {
+            setInitialContextMentions(items: SerializedContextItem[], cb?: () => void): void {
                 const editor = editorRef.current
                 if (!editor) {
                     cb?.()

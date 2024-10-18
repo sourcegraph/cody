@@ -6,7 +6,11 @@ import { createPatch } from 'diff'
 import { execSync, spawn } from 'node:child_process'
 import fspromises from 'node:fs/promises'
 import path from 'node:path'
-import { type ContextItem, type SerializedChatMessage, logError } from '@sourcegraph/cody-shared'
+import {
+    type SerializedChatMessage,
+    type SerializedContextItem,
+    logError,
+} from '@sourcegraph/cody-shared'
 import dedent from 'dedent'
 import { applyPatch } from 'fast-myers-diff'
 import * as vscode from 'vscode'
@@ -749,7 +753,7 @@ export class TestClient extends MessageHandler {
         id: string,
         text: string,
         params?: {
-            contextFiles?: ContextItem[]
+            contextFiles?: SerializedContextItem[]
             index?: number
         }
     ): Promise<SerializedChatMessage | undefined> {
@@ -770,7 +774,7 @@ export class TestClient extends MessageHandler {
     public async sendMessage(
         id: string,
         text: string,
-        params?: { contextFiles?: ContextItem[] }
+        params?: { contextFiles?: SerializedContextItem[] }
     ): Promise<SerializedChatMessage | undefined> {
         return (
             await this.sendSingleMessageToNewChatWithFullTranscript(text, {
@@ -782,7 +786,7 @@ export class TestClient extends MessageHandler {
 
     public async sendSingleMessageToNewChat(
         text: string,
-        params?: { contextFiles?: ContextItem[] }
+        params?: { contextFiles?: SerializedContextItem[] }
     ): Promise<SerializedChatMessage | undefined> {
         return (await this.sendSingleMessageToNewChatWithFullTranscript(text, params))?.lastMessage
     }
@@ -790,7 +794,7 @@ export class TestClient extends MessageHandler {
     public async sendSingleMessageToNewChatWithFullTranscript(
         text: string,
         params?: {
-            contextFiles?: ContextItem[]
+            contextFiles?: SerializedContextItem[]
             id?: string
         }
     ): Promise<{

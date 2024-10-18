@@ -1,3 +1,4 @@
+import { type URIString, uriStringFromKnownValidString } from '@sourcegraph/cody-shared'
 import type * as React from 'react'
 import type { ContentMatch } from './types'
 
@@ -51,10 +52,12 @@ export const formatRepositoryStarCount = (repoStars?: number): string | undefine
     return undefined
 }
 
-export function getFileMatchUrl(base: string, fileMatch: ContentMatch): string {
+export function getFileMatchUrl(base: string, fileMatch: ContentMatch): URIString {
     const revision = getRevision(fileMatch.branches, fileMatch.commit)
     const encodedFilePath = fileMatch.path.split('/').map(encodeURIComponent).join('/')
-    return `${base}${fileMatch.repository}${revision ? '@' + revision : ''}/-/blob/${encodedFilePath}`
+    return uriStringFromKnownValidString(
+        `${base}${fileMatch.repository}${revision ? '@' + revision : ''}/-/blob/${encodedFilePath}`
+    )
 }
 
 export function getRevision(branches?: string[], version?: string): string {

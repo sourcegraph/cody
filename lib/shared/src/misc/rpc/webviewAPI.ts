@@ -1,8 +1,17 @@
 import { Observable } from 'observable-fns'
-import type { AuthStatus, ModelsData, ResolvedConfiguration, UserProductSubscription } from '../..'
-import type { SerializedPromptEditorState } from '../..'
-import type { ChatMessage, UserLocalHistory } from '../../chat/transcript/messages'
-import type { ContextItem } from '../../codebase-context/messages'
+import type {
+    AuthStatus,
+    ModelsData,
+    ResolvedConfiguration,
+    SerializedContextItem,
+    SerializedPromptEditorState,
+    UserProductSubscription,
+} from '../..'
+import type {
+    ChatMessage,
+    SerializedChatMessage,
+    UserLocalHistory,
+} from '../../chat/transcript/messages'
 import type { CodyCommand } from '../../commands/types'
 import type { FeatureFlag } from '../../experimentation/FeatureFlagProvider'
 import type { ContextMentionProviderMetadata } from '../../mentions/api'
@@ -43,7 +52,7 @@ export interface WebviewToExtensionAPI {
 
     hydratePromptMessage(
         promptText: string,
-        initialContext?: ContextItem[]
+        initialContext?: SerializedContextItem[]
     ): Observable<SerializedPromptEditorState>
 
     /**
@@ -54,7 +63,7 @@ export interface WebviewToExtensionAPI {
     /**
      * Observe the initial context that should be populated in the chat message input field.
      */
-    initialContext(): Observable<ContextItem[]>
+    initialContext(): Observable<SerializedContextItem[]>
 
     detectIntent(
         text: string
@@ -76,7 +85,7 @@ export interface WebviewToExtensionAPI {
     /**
      * Observe the current transcript.
      */
-    transcript(): Observable<readonly ChatMessage[]>
+    transcript(): Observable<readonly SerializedChatMessage[]>
 
     /**
      * The current user's chat history.
@@ -93,7 +102,7 @@ export function createExtensionAPI(
     messageAPI: ReturnType<typeof createMessageAPIForWebview>,
 
     // As a workaround for Cody Web, support providing static initial context.
-    staticInitialContext?: ContextItem[]
+    staticInitialContext?: SerializedContextItem[]
 ): WebviewToExtensionAPI {
     const hydratePromptMessage = proxyExtensionAPI(messageAPI, 'hydratePromptMessage')
     return {
@@ -119,7 +128,7 @@ export function createExtensionAPI(
 
 export interface MentionMenuData {
     providers: ContextMentionProviderMetadata[]
-    items: (ContextItem & { icon?: string })[] | undefined
+    items: (SerializedContextItem & { icon?: string })[] | undefined
 
     /**
      * If an error is present, the client should display the error *and* still display the other

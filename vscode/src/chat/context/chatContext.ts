@@ -19,6 +19,7 @@ import {
     openCtx,
     pendingOperation,
     promiseFactoryToObservable,
+    serializeContextItem,
     skipPendingOperation,
     startWith,
     switchMapReplayOperation,
@@ -84,7 +85,7 @@ export function getMentionMenuData(options: {
 
         const results = combineLatest(providers, items).map(([providers, items]) => ({
             providers,
-            items,
+            items: items.map(serializeContextItem),
         }))
 
         //telemetry

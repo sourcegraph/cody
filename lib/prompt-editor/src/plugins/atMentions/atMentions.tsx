@@ -15,7 +15,7 @@ import { createPortal } from 'react-dom'
 import styles from './atMentions.module.css'
 
 import {
-    type ContextItem,
+    type SerializedContextItem,
     scanForMentionTriggerInUserTextInput,
     toSerializedPromptEditorValue,
 } from '@sourcegraph/cody-shared'
@@ -32,10 +32,10 @@ import { contextItemID } from './util'
 const SUGGESTION_LIST_LENGTH_LIMIT = 20
 
 export interface MentionMenuOption extends MenuOption {
-    item: ContextItem
+    item: SerializedContextItem
 }
 
-export function createMentionMenuOption(item: ContextItem): MentionMenuOption {
+export function createMentionMenuOption(item: SerializedContextItem): MentionMenuOption {
     return {
         item,
         key: contextItemID(item),

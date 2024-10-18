@@ -1,6 +1,5 @@
 import type { MenuRenderFn } from '@lexical/react/LexicalTypeaheadMenuPlugin'
 import {
-    type ContextItem,
     type ContextMentionProviderMetadata,
     FILE_CONTEXT_MENTION_PROVIDER,
     FILE_RANGE_TOOLTIP_LABEL,
@@ -10,6 +9,7 @@ import {
     REMOTE_DIRECTORY_PROVIDER_URI,
     REMOTE_FILE_PROVIDER_URI,
     SYMBOL_CONTEXT_MENTION_PROVIDER,
+    type SerializedContextItem,
     parseMentionQuery,
 } from '@sourcegraph/cody-shared'
 import { clsx } from 'clsx'
@@ -321,7 +321,7 @@ function commandRowValue(
         return `provider:${row.id}`
     }
 
-    row satisfies ContextItem
+    row satisfies SerializedContextItem
     return contextItemID(row)
 }
 

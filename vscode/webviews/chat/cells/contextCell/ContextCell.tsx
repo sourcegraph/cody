@@ -1,4 +1,4 @@
-import type { ContextItem, Model } from '@sourcegraph/cody-shared'
+import type { Model, SerializedContextItem } from '@sourcegraph/cody-shared'
 import { pluralize } from '@sourcegraph/cody-shared'
 import type { RankedContext } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { clsx } from 'clsx'
@@ -27,7 +27,7 @@ import styles from './ContextCell.module.css'
  * A component displaying the context for a human message.
  */
 export const ContextCell: FunctionComponent<{
-    contextItems: ContextItem[] | undefined
+    contextItems: SerializedContextItem[] | undefined
     contextAlternatives?: RankedContext[]
     isContextLoading: boolean
     model?: Model['id']
@@ -305,7 +305,7 @@ export const ContextCell: FunctionComponent<{
     }
 )
 
-const getContextInfo = (items?: ContextItem[], isFirst?: boolean) => {
+const getContextInfo = (items?: SerializedContextItem[], isFirst?: boolean) => {
     const { usedContext, excludedContext, count } = (items ?? []).reduce(
         (acc, item) => {
             if (item.isTooLarge || item.isIgnored) {
@@ -318,8 +318,8 @@ const getContextInfo = (items?: ContextItem[], isFirst?: boolean) => {
             return acc
         },
         {
-            usedContext: [] as ContextItem[],
-            excludedContext: [] as ContextItem[],
+            usedContext: [] as SerializedContextItem[],
+            excludedContext: [] as SerializedContextItem[],
             count: { used: 0, token: 0, filtered: 0 },
         }
     )

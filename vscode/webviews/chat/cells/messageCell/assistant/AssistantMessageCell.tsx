@@ -1,10 +1,9 @@
 import {
-    type ChatMessage,
     ContextItemSource,
     type Guardrails,
     type Model,
     ModelTag,
-    type PromptString,
+    type SerializedChatMessage,
     contextItemsFromPromptEditorValue,
     filterContextItemsFromPromptEditorValue,
     isAbortErrorOrSocketHangUp,
@@ -31,7 +30,7 @@ import { ContextFocusActions } from './ContextFocusActions'
  * A component that displays a chat message from the assistant.
  */
 export const AssistantMessageCell: FunctionComponent<{
-    message: ChatMessage
+    message: SerializedChatMessage
     models: Model[]
     /** Information about the human message that led to this assistant response. */
     humanMessage: PriorHumanMessageInfo | null
@@ -174,7 +173,7 @@ export interface HumanMessageInitialContextInfo {
 }
 
 export interface PriorHumanMessageInfo {
-    text?: PromptString
+    text?: string
     hasInitialContext: HumanMessageInitialContextInfo
     rerunWithDifferentContext: (withInitialContext: HumanMessageInitialContextInfo) => void
 

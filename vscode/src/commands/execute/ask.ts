@@ -1,5 +1,6 @@
 import {
     ClientConfigSingleton,
+    type ContextItem,
     type DefaultChatCommands,
     type EventSource,
     type PromptString,
@@ -10,10 +11,12 @@ import type { WebviewSubmitMessage } from '../../chat/protocol'
 import { isUriIgnoredByContextFilterWithNotification } from '../../cody-ignore/context-filter'
 import { getEditor } from '../../editor/active-editor'
 
-export interface ExecuteChatArguments extends Omit<WebviewSubmitMessage, 'text' | 'editorState'> {
+export interface ExecuteChatArguments
+    extends Omit<WebviewSubmitMessage, 'text' | 'editorState' | 'contextItems'> {
     source?: EventSource
     command?: DefaultChatCommands
     text: PromptString
+    contextItems?: ContextItem[] | undefined | null
 }
 
 /**

@@ -5,10 +5,11 @@ import path from 'node:path'
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
 import {
-    type ContextItem,
     DOTCOM_URL,
     ModelUsage,
     type SerializedChatTranscript,
+    type SerializedContextItem,
+    uriString,
 } from '@sourcegraph/cody-shared'
 
 import * as uuid from 'uuid'
@@ -18,7 +19,6 @@ import { TESTING_CREDENTIALS } from '../../vscode/src/testutils/testing-credenti
 import { logTestingData } from '../../vscode/test/fixtures/mock-server'
 import { TestClient } from './TestClient'
 import { TestWorkspace } from './TestWorkspace'
-import { decodeURIs } from './decodeURIs'
 import type { ChatExportResult } from './protocol-alias'
 import { trimEndOfLine } from './trimEndOfLine'
 const workspace = new TestWorkspace(path.join(__dirname, '__tests__', 'example-ts'))
@@ -61,7 +61,7 @@ describe('Agent', () => {
         credentials: TESTING_CREDENTIALS.dotcomProUserRateLimited,
     })
 
-    const mockContextItems: ContextItem[] = []
+    const mockContextItems: SerializedContextItem[] = []
 
     // Initialize inside beforeAll so that subsequent tests are skipped if initialization fails.
     beforeAll(async () => {
@@ -98,10 +98,15 @@ describe('Agent', () => {
             'src/Heading.tsx',
             'src/squirrel.ts',
         ]) {
-            const item = await workspace.loadContextItem(name)
-            // Trim content to the first 20 lines to imitate our context-fetching, which only includes file chunks
-            item.content = item.content?.split('\n').slice(0, 20).join('\n')
-            mockContextItems.push(item)
+            mockContextItems.push({
+                type: 'file',
+                uri: uriString(workspace.file(name)),
+                range: {
+                    // Trim content to the first 20 lines to imitate our context fetching.
+                    start: { line: 0, character: 0 },
+                    end: { line: 20, character: 0 },
+                },
+            })
         }
     }, 20_000)
 
@@ -370,7 +375,6 @@ describe('Agent', () => {
                 )
             expect(lastMessage?.text?.toLocaleLowerCase() ?? '').includes('code nav')
             expect(lastMessage?.text?.toLocaleLowerCase() ?? '').includes('sourcegraph')
-            decodeURIs(transcript)
             const contextFiles = transcript.messages.flatMap(m => m.contextFiles ?? [])
             expect(contextFiles).not.toHaveLength(0)
             expect(contextFiles.map(file => file.uri.toString())).includes(squirrelUri.toString())

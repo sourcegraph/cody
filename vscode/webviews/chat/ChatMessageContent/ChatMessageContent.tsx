@@ -1,4 +1,4 @@
-import { type Guardrails, type PromptString, isError } from '@sourcegraph/cody-shared'
+import { type Guardrails, isError } from '@sourcegraph/cody-shared'
 import type React from 'react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
@@ -18,7 +18,7 @@ export interface CodeBlockActionsProps {
     copyButtonOnSubmit: (text: string, event?: 'Keydown' | 'Button') => void
     insertButtonOnSubmit: (text: string, newFile?: boolean) => void
     smartApply: {
-        onSubmit: (id: string, text: string, instruction?: PromptString, fileName?: string) => void
+        onSubmit: (id: string, text: string, instruction?: string, fileName?: string) => void
         onAccept: (id: string) => void
         onReject: (id: string) => void
     }

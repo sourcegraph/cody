@@ -9,10 +9,12 @@ import {
     type CodyCommand,
     CodyIDE,
     ModelUsage,
+    type URIString,
     currentAuthStatus,
     currentAuthStatusAuthed,
     firstResultFromOperation,
     telemetryRecorder,
+    uriString,
     waitUntilComplete,
 } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
@@ -677,11 +679,11 @@ export class Agent extends MessageHandler implements ExtensionClient {
         })
 
         this.registerAuthenticatedRequest('diagnostics/publish', async params => {
-            const result = new Map<vscode_shim.UriString, vscode.Diagnostic[]>()
+            const result = new Map<URIString, vscode.Diagnostic[]>()
             for (const diagnostic of params.diagnostics) {
                 const location = vscodeLocation(diagnostic.location)
 
-                const diagnostics = result.get(vscode_shim.UriString.fromUri(location.uri)) ?? []
+                const diagnostics = result.get(uriString(location.uri)) ?? []
 
                 const relatedInformation: vscode.DiagnosticRelatedInformation[] = []
                 for (const related of diagnostic.relatedInformation ?? []) {
@@ -699,7 +701,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
                     relatedInformation,
                 })
                 //this ensures it's added to the map if it didn't already
-                result.set(vscode_shim.UriString.fromUri(location.uri), diagnostics)
+                result.set(uriString(location.uri), diagnostics)
             }
             vscode_shim.diagnostics.publish(result)
             return null

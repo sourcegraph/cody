@@ -1,6 +1,6 @@
-import type { ContextItem } from '@sourcegraph/cody-shared'
+import type { SerializedContextItem } from '@sourcegraph/cody-shared'
 
-export function contextItemID(item: ContextItem): string {
+export function contextItemID(item: SerializedContextItem): string {
     return JSON.stringify([
         `${item.type}`,
         `${item.type === 'repository' ? item.repoID : ''}`,

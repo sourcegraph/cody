@@ -2,6 +2,7 @@ import type { SerializedLexicalNode, SerializedRootNode } from 'lexical'
 import { describe, expect, test } from 'vitest'
 import { URI } from 'vscode-uri'
 import { ContextItemSource } from '../codebase-context/messages'
+import { uriStringFromKnownValidString } from '../common/uriString'
 import { PromptString, ps } from '../prompt/prompt-string'
 import { editorStateFromPromptString, textContentFromSerializedLexicalNode } from './editorState'
 import {
@@ -79,7 +80,7 @@ describe('editorStateFromPromptString', () => {
                             version: 1,
                             contextItem: {
                                 type: 'file',
-                                uri: 'file:///foo.go',
+                                uri: uriStringFromKnownValidString('file:///foo.go'),
                                 content: undefined,
                                 source: ContextItemSource.User,
                                 range: {
@@ -110,7 +111,7 @@ describe('editorStateFromPromptString', () => {
                             version: 1,
                             contextItem: {
                                 type: 'file',
-                                uri: 'file:///bar.go',
+                                uri: uriStringFromKnownValidString('file:///bar.go'),
                                 content: undefined,
                                 range: undefined,
                                 source: ContextItemSource.Editor,

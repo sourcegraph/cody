@@ -1,8 +1,8 @@
 import type {
-    ContextItem,
     ContextMentionProviderMetadata,
     MentionMenuData,
     MentionQuery,
+    SerializedContextItem,
 } from '@sourcegraph/cody-shared'
 import {
     ContextItemSource,
@@ -131,7 +131,10 @@ export function useMentionMenuData(
     )
 }
 
-function prepareUserContextItem(item: ContextItem, remainingTokenBudget: number): ContextItem {
+function prepareUserContextItem(
+    item: SerializedContextItem,
+    remainingTokenBudget: number
+): SerializedContextItem {
     return {
         ...item,
         isTooLarge: item.size !== undefined ? item.size > remainingTokenBudget : item.isTooLarge,

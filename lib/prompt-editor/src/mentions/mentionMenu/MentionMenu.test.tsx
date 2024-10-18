@@ -1,8 +1,9 @@
 import {
-    type ContextItem,
     type ContextMentionProviderMetadata,
     type MentionMenuData,
+    type SerializedContextItem,
     displayPathBasename,
+    uriStringFromKnownValidString,
 } from '@sourcegraph/cody-shared'
 import { fireEvent, render, screen } from '@testing-library/react'
 import {
@@ -16,12 +17,11 @@ import {
 } from 'cmdk'
 import type { ComponentProps, FunctionComponent } from 'react'
 import { type Mock, describe, expect, test, vi } from 'vitest'
-import { URI } from 'vscode-uri'
 import { type PromptEditorConfig, PromptEditorConfigProvider } from '../../config'
 import { MentionMenu } from './MentionMenu'
 
 vi.mock('./MentionMenuItem', () => ({
-    MentionMenuContextItemContent: ({ item }: { item: ContextItem }) =>
+    MentionMenuContextItemContent: ({ item }: { item: SerializedContextItem }) =>
         `item ${item.type} ${displayPathBasename(item.uri)}`,
     MentionMenuProviderItemContent: ({ provider }: { provider: ContextMentionProviderMetadata }) =>
         `provider ${provider.id}`,
@@ -41,14 +41,14 @@ const PROVIDER_P2: ContextMentionProviderMetadata = {
     emptyLabel: 'p2 emptyLabel',
 }
 
-const ITEM_FILE1: ContextItem = {
+const ITEM_FILE1: SerializedContextItem = {
     type: 'file',
-    uri: URI.file('file1.go'),
+    uri: uriStringFromKnownValidString('file:///file1.go'),
 }
 
-const ITEM_FILE2: ContextItem = {
+const ITEM_FILE2: SerializedContextItem = {
     type: 'file',
-    uri: URI.file('file2.ts'),
+    uri: uriStringFromKnownValidString('file:///file2.ts'),
 }
 
 const PROPS: Pick<

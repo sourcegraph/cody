@@ -3,18 +3,19 @@ import {
     type AuthStatus,
     CLIENT_CAPABILITIES_FIXTURE,
     type ClientConfiguration,
-    type ContextItem,
     type ContextItemSymbol,
     EMPTY,
     FILE_CONTEXT_MENTION_PROVIDER,
     type ModelsData,
     type ResolvedConfiguration,
     SYMBOL_CONTEXT_MENTION_PROVIDER,
+    type SerializedContextItem,
     type SymbolKind,
     type UserLocalHistory,
     getMockedDotComClientModels,
     promiseFactoryToObservable,
     serializedPromptEditorStateFromText,
+    uriString,
 } from '@sourcegraph/cody-shared'
 import { ExtensionAPIProviderForTestsOnly } from '@sourcegraph/prompt-editor'
 import { Observable } from 'observable-fns'
@@ -66,17 +67,19 @@ export const AppWrapperForTest: FunctionComponent<{ children: ReactNode }> = ({ 
                                         ? DUMMY_SYMBOLS.filter(
                                               f =>
                                                   f.symbolName.toLowerCase().includes(queryTextLower) ||
-                                                  f.uri.path.includes(queryTextLower)
+                                                  f.uri.includes(queryTextLower)
                                           )
                                         : query.provider === null ||
                                             query.provider === FILE_CONTEXT_MENTION_PROVIDER.id
-                                          ? DUMMY_FILES.filter(f => f.uri.path.includes(queryTextLower))
+                                          ? DUMMY_FILES.filter(f => f.uri.includes(queryTextLower))
                                           : [
                                                 {
                                                     type: 'file',
-                                                    uri: URI.file(`sample-${query.provider}-result`),
-                                                } satisfies ContextItem,
-                                            ].filter(f => f.uri.path.includes(queryTextLower)),
+                                                    uri: uriString(
+                                                        URI.file(`sample-${query.provider}-result`)
+                                                    ),
+                                                } satisfies SerializedContextItem,
+                                            ].filter(f => f.uri.includes(queryTextLower)),
                             }
                         }),
                     evaluatedFeatureFlag: _flag => Observable.of(true),
@@ -151,24 +154,26 @@ export const AppWrapperForTest: FunctionComponent<{ children: ReactNode }> = ({ 
     return <ComposedWrappers wrappers={wrappers}>{children}</ComposedWrappers>
 }
 
-const DUMMY_FILES: ContextItem[] = [
-    { type: 'file', uri: URI.file('a.go') },
+const DUMMY_FILES: SerializedContextItem[] = [
+    { type: 'file', uri: uriString(URI.file('a.go')) },
     ...Array.from(new Array(20).keys()).map(
         i =>
             ({
-                uri: URI.file(`${i ? `${'dir/'.repeat(i + 1)}` : ''}file-a-${i}.py`),
+                uri: uriString(URI.file(`${i ? `${'dir/'.repeat(i + 1)}` : ''}file-a-${i}.py`)),
                 type: 'file',
-            }) satisfies ContextItem
+            }) satisfies SerializedContextItem
     ),
-    { type: 'file', uri: URI.file('dir/file-large.py'), isTooLarge: true },
+    { type: 'file', uri: uriString(URI.file('dir/file-large.py')), isTooLarge: true },
 ]
 
-const DUMMY_SYMBOLS: ContextItemSymbol[] = Array.from(new Array(20).keys()).map(
+const DUMMY_SYMBOLS: (SerializedContextItem & Pick<ContextItemSymbol, 'symbolName'>)[] = Array.from(
+    new Array(20).keys()
+).map(
     i =>
         ({
             symbolName: `Symbol${i}`,
             kind: ['function', 'class', 'method'][i % 3] as SymbolKind,
-            uri: URI.file(`a/b/file${i}.go`),
+            uri: uriString(URI.file(`a/b/file${i}.go`)),
             range: {
                 start: {
                     line: i + 1,
@@ -180,5 +185,5 @@ const DUMMY_SYMBOLS: ContextItemSymbol[] = Array.from(new Array(20).keys()).map(
                 },
             },
             type: 'symbol',
-        }) satisfies ContextItemSymbol
+        }) satisfies SerializedContextItem
 )

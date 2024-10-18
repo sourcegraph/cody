@@ -1,7 +1,8 @@
-import type { FileURI, URI } from 'vscode-uri'
+import { type FileURI, URI } from 'vscode-uri'
 // we re-export this type as it doesn't actually exist in the original module.
 export type { FileURI } from 'vscode-uri'
 import { pathFunctionsForURI } from './path'
+import type { URIString } from './uriString'
 
 export const SUPPORTED_URI_SCHEMAS = new Set([
     'file',
@@ -16,7 +17,8 @@ export const SUPPORTED_URI_SCHEMAS = new Set([
  * Use this instead of Node's `path` module because on Windows, Node `path` uses '\' as path
  * separators, which will break because URI paths are always separated with '/'.
  */
-export function uriDirname(uri: URI): URI {
+export function uriDirname(uri: URI | URIString): URI {
+    uri = typeof uri === 'string' ? URI.parse(uri) : uri
     return uri.with({ path: pathFunctionsForURI(uri).dirname(uri.path) })
 }
 
@@ -25,7 +27,8 @@ export function uriDirname(uri: URI): URI {
  *
  * See {@link uriDirname} for why we use this instead of Node's `path` module.
  */
-export function uriBasename(uri: URI, suffix?: string): string {
+export function uriBasename(uri: URI | URIString, suffix?: string): string {
+    uri = typeof uri === 'string' ? URI.parse(uri) : uri
     return pathFunctionsForURI(uri).basename(uri.path, suffix)
 }
 
@@ -34,7 +37,8 @@ export function uriBasename(uri: URI, suffix?: string): string {
  *
  * See {@link uriDirname} for why we use this instead of Node's `path` module.
  */
-export function uriExtname(uri: URI): string {
+export function uriExtname(uri: URI | URIString): string {
+    uri = typeof uri === 'string' ? URI.parse(uri) : uri
     return pathFunctionsForURI(uri).extname(uri.path)
 }
 
@@ -51,6 +55,10 @@ export function uriParseNameAndExtension(uri: URI): { name: string; ext: string 
 
 export function isFileURI(uri: URI): uri is FileURI {
     return uri.scheme === 'file'
+}
+
+export function isFileURIString(uri: URIString): boolean {
+    return uri.startsWith('file://')
 }
 
 export function assertFileURI(uri: URI): FileURI {

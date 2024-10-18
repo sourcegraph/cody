@@ -1,7 +1,7 @@
 import type * as vscode from 'vscode'
-import type { URI } from 'vscode-uri'
-import type { ContextItem } from '../../codebase-context/messages'
 import type { RangeData } from '../../common/range'
+import type { URIString } from '../../common/uriString'
+import type { SerializedContextItem } from '../../lexicalEditor/nodes'
 
 /**
  * VS Code intentionally limits what `command:vscode.open?ARGS` can have for args (see
@@ -16,7 +16,7 @@ export const CODY_PASSTHROUGH_VSCODE_OPEN_COMMAND_ID = '_cody.vscode.open'
  * Return a `command:` URI for use within VS Code webviews that invokes `vscode.open` (proxied via
  * {@link CODY_PASSTHROUGH_VSCODE_OPEN_COMMAND_ID}).
  */
-function commandURIForVSCodeOpen(resource: URI, range?: RangeData): string {
+function commandURIForVSCodeOpen(resource: URIString, range?: RangeData): string {
     return `command:${CODY_PASSTHROUGH_VSCODE_OPEN_COMMAND_ID}?${encodeURIComponent(
         JSON.stringify([
             resource,
@@ -36,13 +36,13 @@ function commandURIForVSCodeOpen(resource: URI, range?: RangeData): string {
  * just calls {@link commandURIForVSCodeOpen}. However, if {@link resource} is a web page (`http` or
  * `https` protocol), then the URL itself is used with `target="_blank"`.
  */
-export function webviewOpenURIForContextItem(item: Pick<ContextItem, 'uri' | 'range'>): {
+export function webviewOpenURIForContextItem(item: Pick<SerializedContextItem, 'uri' | 'range'>): {
     href: string
     target: '_blank' | undefined
 } {
-    if (item.uri.scheme === 'http' || item.uri.scheme === 'https') {
+    if (item.uri.startsWith('http://') || item.uri.startsWith('https://')) {
         return {
-            href: item.uri.toString(),
+            href: item.uri,
             target: '_blank',
         }
     }
