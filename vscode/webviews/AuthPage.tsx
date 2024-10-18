@@ -21,7 +21,6 @@ import {
     SelectValue,
 } from './components/shadcn/ui/select'
 import { useTelemetryRecorder } from './utils/telemetry'
-import { useConfig } from './utils/useConfig'
 
 /**
  * A component that shows the available ways for the user to sign in or sign up.
@@ -32,8 +31,8 @@ export const AuthPage: React.FunctionComponent<React.PropsWithoutRef<LoginProps>
     vscodeAPI,
     codyIDE,
     endpoints,
+    authStatus,
 }) => {
-    const authStatus = useConfig().authStatus
     const telemetryRecorder = useTelemetryRecorder()
     const otherSignInClick = (): void => {
         vscodeAPI.postMessage({ command: 'auth', authKind: 'signin' })
@@ -114,23 +113,6 @@ export const AuthPage: React.FunctionComponent<React.PropsWithoutRef<LoginProps>
                     )}
                 </div>
             </section>
-            <section className="tw-bg-sidebar-background tw-text-sidebar-foreground tw-border tw-border-border tw-rounded-lg tw-p-6 tw-w-full tw-max-w-md">
-                <h2 className="tw-font-semibold tw-text-lg tw-mb-4">Cody Enterprise</h2>
-                <div className="tw-flex tw-flex-col tw-gap-6 tw-w-full">
-                    {isNonVSCodeIDE ? (
-                        <ClientSignInForm
-                            authStatus={authStatus}
-                            vscodeAPI={vscodeAPI}
-                            endpoints={endpoints}
-                        />
-                    ) : (
-                        <Button onClick={otherSignInClick}>Sign In to Your Enterprise Instance</Button>
-                    )}
-                </div>
-                <p className="tw-mt-4 tw-mb-0 tw-text-muted-foreground">
-                    Learn more about <a href="https://sourcegraph.com/cloud">Sourcegraph Enterprise</a>.
-                </p>
-            </section>
             {endpoints?.length && (
                 <section className="tw-bg-sidebar-background tw-text-sidebar-foreground tw-border tw-border-border tw-rounded-lg tw-p-6 tw-w-full tw-max-w-md">
                     <h2 className="tw-font-semibold tw-text-lg tw-mb-4">Account History</h2>
@@ -164,6 +146,7 @@ interface LoginProps {
     vscodeAPI: VSCodeWrapper
     codyIDE: CodyIDE
     endpoints: string[]
+    authStatus: AuthStatus
 }
 
 const WebLogin: React.FunctionComponent<
@@ -258,6 +241,14 @@ const ClientSignInForm: React.FC<ClientSignInFormProps> = ({ className, authStat
         }
     }, [formData.accessToken, onAccessTokenSignInClick, onBrowserSignInClick])
 
+    const serverInvalid =
+        authStatus &&
+        !authStatus.authenticated &&
+        !authStatus.pendingValidation &&
+        (authStatus.showNetworkError || authStatus.showInvalidAccessTokenError)
+    const showNetworkError = serverInvalid && authStatus.showNetworkError
+    const invalidToken = (serverInvalid && authStatus.showInvalidAccessTokenError) || false
+
     return (
         <Form className={className} onSubmit={onSubmit}>
             <FormField name="endpoint">
@@ -277,10 +268,7 @@ const ClientSignInForm: React.FC<ClientSignInFormProps> = ({ className, authStat
                 <GlobeIcon size={16} /> Sign In with Browser
             </Button>
 
-            <FormField
-                name="accessToken"
-                serverInvalid={authStatus && !authStatus.authenticated && authStatus.showNetworkError}
-            >
+            <FormField name="accessToken" serverInvalid={serverInvalid}>
                 <FormLabel title="Access Token" />
                 <FormControl
                     type="password"
@@ -291,9 +279,15 @@ const ClientSignInForm: React.FC<ClientSignInFormProps> = ({ className, authStat
                     autoComplete="current-password"
                     required
                 />
-                <FormMessage match={() => !isSourcegraphToken(formData.accessToken)}>
+                <FormMessage
+                    match={() => !isSourcegraphToken(formData.accessToken)}
+                    forceMatch={invalidToken}
+                >
                     Invalid access token.
                 </FormMessage>
+                {showNetworkError && (
+                    <FormMessage>Network error. Please check your connection and try again.</FormMessage>
+                )}
                 <FormMessage match="valueMissing">Access token is required.</FormMessage>
             </FormField>
             <Button

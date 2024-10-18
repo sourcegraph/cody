@@ -26,6 +26,15 @@ export const AccountTab: React.FC<AccountTabProps> = ({ setView, endpointHistory
     const { displayName, username, primaryEmail, endpoint } = user
 
     const actions: AccountAction[] = []
+    // Create this at the top level to "Rendered more hooks than during previous render" error
+    const manageAccountCallback = useCallback(() => {
+        if (userInfo.user.username) {
+            const uri = URI.parse(ACCOUNT_USAGE_URL.toString()).with({
+                query: `cody_client_user=${encodeURIComponent(userInfo.user.username)}`,
+            })
+            getVSCodeAPI().postMessage({ command: 'links', value: uri.toString() })
+        }
+    }, [userInfo])
 
     if (isDotComUser && !isCodyProUser) {
         actions.push({
@@ -37,14 +46,7 @@ export const AccountTab: React.FC<AccountTabProps> = ({ setView, endpointHistory
     if (isDotComUser) {
         actions.push({
             text: 'Manage Account',
-            onClick: useCallback(() => {
-                if (userInfo.user.username) {
-                    const uri = URI.parse(ACCOUNT_USAGE_URL.toString()).with({
-                        query: `cody_client_user=${encodeURIComponent(userInfo.user.username)}`,
-                    })
-                    getVSCodeAPI().postMessage({ command: 'links', value: uri.toString() })
-                }
-            }, [userInfo]),
+            onClick: manageAccountCallback,
         })
     }
     actions.push({
@@ -97,7 +99,7 @@ export const AccountTab: React.FC<AccountTabProps> = ({ setView, endpointHistory
                     </div>
                 </div>
             </div>
-            {endpointHistory.length && (
+            {endpointHistory.length > 0 && (
                 <div className="tw-w-full tw-bg-popover tw-border tw-border-border">
                     <EndpointSelection authStatus={config.authStatus} endpoints={endpointHistory} />
                 </div>

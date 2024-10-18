@@ -169,6 +169,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                     <AuthPage
                         simplifiedLoginRedirect={loginRedirect}
                         uiKindIsWeb={config.config.uiKindIsWeb}
+                        authStatus={config.authStatus}
                         vscodeAPI={vscodeAPI}
                         endpoints={config.config.endpointHistory ?? []}
                         codyIDE={config.clientCapabilities.agentIDE}

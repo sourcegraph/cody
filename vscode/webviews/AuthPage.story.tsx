@@ -21,6 +21,12 @@ const meta: Meta<typeof AuthPage> = {
         uiKindIsWeb: false,
         vscodeAPI: vscodeAPI,
         codyIDE: CodyIDE.VSCode,
+        authStatus: {
+            authenticated: false,
+            endpoint: '',
+            pendingValidation: false,
+            showInvalidAccessTokenError: true,
+        },
     },
 }
 

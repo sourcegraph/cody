@@ -440,10 +440,14 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     break
                 }
                 if (message.authKind === 'signin' && message.endpoint && message.value) {
-                    await localStorage.saveEndpointAndToken({
-                        serverEndpoint: message.endpoint,
-                        accessToken: message.value,
-                    })
+                    await authProvider.validateAndStoreCredentials(
+                        {
+                            serverEndpoint: message.endpoint,
+                            accessToken: message.value,
+                            tokenSource: 'paste',
+                        },
+                        'always-store'
+                    )
                     break
                 }
                 if (message.authKind === 'signin' && message.endpoint) {
