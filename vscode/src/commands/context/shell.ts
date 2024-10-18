@@ -1,7 +1,4 @@
-import { exec } from 'node:child_process'
-import os from 'node:os'
-import path from 'node:path'
-import { promisify } from 'node:util'
+import { spawn } from 'node:child_process'
 import {
     type ContextItem,
     ContextItemSource,
@@ -11,7 +8,7 @@ import {
 import * as vscode from 'vscode'
 import { logError } from '../../output-channel-logger'
 
-const execAsync = promisify(exec)
+// const execAsync = promisify(exec)
 const config = vscode.workspace.getConfiguration('cody')
 const isDisabled = Boolean(config.get('context.shell.disabled'))
 
@@ -20,6 +17,79 @@ Terminal output from the \`{command}\` command enclosed between <OUTPUT0412> tag
 <OUTPUT0412>
 {output}
 </OUTPUT0412>`
+
+// A persistent shell session that maintains state between commands
+class PersistentShell {
+    private shell: ReturnType<typeof spawn> | null = null
+    private buffer = ''
+
+    constructor() {
+        this.init()
+    }
+
+    private init() {
+        const shell = process.platform === 'win32' ? 'powershell.exe' : 'bash'
+        this.shell = spawn(shell, [], { stdio: ['pipe', 'pipe', 'pipe'] })
+
+        this.shell.stdout?.on('data', data => {
+            this.buffer += data.toString()
+        })
+
+        this.shell.stderr?.on('data', data => {
+            this.buffer += data.toString()
+        })
+    }
+
+    async execute(cmd: string): Promise<string> {
+        return new Promise((resolve, reject) => {
+            const command = sanitizeCommand(cmd)
+            if (!this.shell) {
+                reject(new Error('Shell not initialized'))
+                return
+            }
+
+            this.buffer = ''
+            this.shell.stdin?.write(command + '\n')
+
+            // Use a unique marker to identify the end of command output
+            const endMarker = `__END_OF_COMMAND_${Date.now()}__`
+            this.shell.stdin?.write(`echo "${endMarker}"\n`)
+
+            const timeout = 30000 // 30 seconds timeout
+
+            const timeoutId = setTimeout(() => {
+                reject(new Error('Command execution timed out'))
+                this.dispose() // Kill the frozen shell
+                this.init() // Reinitialize the shell
+            }, timeout)
+
+            const checkBuffer = () => {
+                if (this.buffer.includes(endMarker)) {
+                    clearTimeout(timeoutId)
+                    const output = this.buffer.split(endMarker)[0].trim()
+                    resolve(output)
+                } else {
+                    setTimeout(checkBuffer, 100)
+                }
+            }
+
+            checkBuffer()
+        })
+    }
+
+    public dispose(): void {
+        if (this.shell) {
+            this.shell.stdin?.end()
+            this.shell.stdout?.removeAllListeners()
+            this.shell.stderr?.removeAllListeners()
+            this.shell.kill()
+            this.shell = null
+        }
+        this.buffer = ''
+    }
+}
+
+const shell = new PersistentShell()
 
 export async function getContextFileFromShell(command: string): Promise<ContextItem[]> {
     return wrapInActiveSpan('commands.context.command', async () => {
@@ -30,19 +100,14 @@ export async function getContextFileFromShell(command: string): Promise<ContextI
             return []
         }
 
-        const homeDir = os.homedir() || process.env.HOME || process.env.USERPROFILE || ''
-        const cwd = vscode.workspace.workspaceFolders?.[0]?.uri?.fsPath
-        const filteredCommand = command.replaceAll(/(\s~\/)/g, ` ${homeDir}${path.sep}`)
-
         try {
-            if (commandsNotAllowed.some(cmd => filteredCommand.startsWith(cmd))) {
+            if (commandsNotAllowed.some(cmd => command.startsWith(cmd))) {
                 void vscode.window.showErrorMessage('Cody cannot execute this command')
                 throw new Error('Cody cannot execute this command')
             }
 
-            const { stdout, stderr } = await execAsync(filteredCommand, { cwd, encoding: 'utf8' })
-            const output = JSON.stringify(stdout || stderr).trim()
-            if (!output || output === '""') {
+            const output = await shell.execute(command)
+            if (!output || output === '') {
                 throw new Error('Empty output')
             }
 
@@ -105,3 +170,8 @@ const commandsNotAllowed = [
     'lsusb',
     'lspci',
 ]
+
+function sanitizeCommand(command: string): string {
+    // Basic sanitization, should be more comprehensive in production
+    return command.trim().replace(/[;&|]/g, '')
+}
