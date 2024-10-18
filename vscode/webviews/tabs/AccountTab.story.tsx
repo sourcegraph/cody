@@ -20,6 +20,7 @@ const meta: Meta<typeof AccountTab> = {
         setView: () => {
             console.log('setView called')
         },
+        endpointHistory: [],
     },
 }
 
@@ -98,7 +99,10 @@ export const EnterpriseUser: Story = {
                 } as AuthenticatedAuthStatus,
             })}
         >
-            <AccountTab {...args} />
+            <AccountTab
+                {...args}
+                endpointHistory={['https://int1.sg.bigcorp.com', 'https://int2.sg.bigcorp.com']}
+            />
         </ConfigProvider>
     ),
 }
