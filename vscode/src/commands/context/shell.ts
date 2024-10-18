@@ -29,7 +29,11 @@ class PersistentShell {
 
     private init() {
         const shell = process.platform === 'win32' ? 'powershell.exe' : 'bash'
-        this.shell = spawn(shell, [], { stdio: ['pipe', 'pipe', 'pipe'] })
+        const cwd = vscode.workspace.workspaceFolders?.[0]?.uri?.fsPath
+        this.shell = spawn(shell, [], {
+            cwd,
+            stdio: ['pipe', 'pipe', 'pipe'],
+        })
 
         this.shell.stdout?.on('data', data => {
             this.buffer += data.toString()
