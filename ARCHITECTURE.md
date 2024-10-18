@@ -1,4 +1,4 @@
-# Architecture
+# Architecture & Style
 
 This documents practical principles we follow in the Cody
 client. These principles help sustain Cody for long term success.
@@ -9,8 +9,48 @@ done.
 
 ## Contents
 
+* [Style](#style)
 * [Telemetry](#telemetry)
 * [Token Counting](#token-counting)
+
+## Style
+
+The following guidelines are not exhaustive. Please contribute if you see the same issue over and
+over in code review.
+
+### Documentation
+
+- **Do** document "API" methods with `/**`-style doc comments. An "API" method is one that is 
+re-exported by a library, for example from within `lib/shared` to other libraries through re-exports
+in `lib/shared/src/index.ts`.
+- Feel free to document other methods with comments, but this is not mandatory.
+- **Do not** write `/**`-style comments in the middle of function bodies.
+
+### Type Safety
+
+**Avoid `as` outside test code:** It is not a checked cast, it is an assertion that turns off
+TypeScript's type checking. Any inaccuracies in the type you are asserting can ripple out to create
+difficult to bugs elsewhere that are difficult to debug. Using the TypeScript type system is far
+better because it is checked now **and** with every change that comes *after* yours.
+
+If you want the type checker to ensure that an expression conforms to a type, use
+[`satisfies`.](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-4-9.html#the-satisfies-operator)
+
+`as` may be ok in test code, where it doesn't pose a systemic risk to evolving the codebase. But
+still try to avoid it.
+
+### When to use Values, Promises, Observables and Callbacks
+
+- For methods that produce a single result synchronously, simply return a value.
+- For methods that produce a single asynchronous result, return a Promise. If the method has no arguments or side effects, consider a property that is a Promise.
+- For methods where the caller should keep up to date with a changing value, use an Observable.
+- For methods that produce multiple values which should be pulled by the caller (demand driven), use a generator (`function*`).
+- For discrete events, multiplexed to multiple subscribers, use the event listener pattern.
+- For more complicated protocols, consider using callbacks.
+
+These more complicated protocols include:
+- Values must be pushed by the callee (supply driven) and handled synchronously. For example, the API operates with a filter and needs a result; the API needs to enforce the ordering of a cleanup operation.
+- When there are multiple kinds of callbacks that don't fit neatly into Promise resolve/reject, Observable next/error, etc. For example a network connection may have different lifecycle events like connect, header, body, closed, errored, etc.
 
 ## Telemetry
 
