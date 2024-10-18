@@ -34,6 +34,7 @@ const SPECIAL_DOCUMENT_CHANGE_TYPES = [
     'unexpected', // should not be logged because all the change sizes are covered by the keys above
 ] as const
 
+vscode.window.activeTextEditor
 const DOCUMENT_CHANGE_TYPES = [
     ...SPECIAL_DOCUMENT_CHANGE_TYPES,
     ...changeBoundariesKeys,
@@ -163,10 +164,6 @@ export class CharactersLogger implements vscode.Disposable {
         if (totalChangeSize > 0) {
             this.lastChangeTimestamp = Date.now()
         }
-        // console.log(
-        //     `changes: [${event.contentChanges.map(c => c.text).join(',')}]`,
-        //     JSON.stringify(this.changeCounters, null, 2)
-        // )
     }
 
     private getDocumentChangeType(
