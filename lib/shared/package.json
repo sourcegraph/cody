@@ -39,14 +39,14 @@
   },
   "devDependencies": {
     "@sourcegraph/cody-context-filters-test-dataset": "^1.0.0",
-    "@types/crypto-js": "^4.2.2",
-    "@types/dedent": "^0.7.0",
-    "@types/diff": "^5.0.9",
-    "@types/isomorphic-fetch": "^0.0.39",
-    "@types/lodash": "^4.14.195",
-    "@types/node-fetch": "^2.6.4",
-    "@types/semver": "^7.5.8",
-    "@types/vscode": "^1.80.0",
+    "@types/crypto-js": "4.2.2",
+    "@types/dedent": "0.7.0",
+    "@types/diff": "5.0.9",
+    "@types/isomorphic-fetch": "0.0.39",
+    "@types/lodash": "4.14.195",
+    "@types/node-fetch": "2.6.4",
+    "@types/semver": "7.5.8",
+    "@types/vscode": "1.80.0",
     "agent-base": "^7.1.1",
     "type-fest": "^4.26.1"
   }
