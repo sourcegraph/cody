@@ -9,7 +9,7 @@ import type { Codegen } from '../Codegen'
 import { Formatter, type LanguageOptions } from '../Formatter'
 import type { SymbolTable } from '../SymbolTable'
 import type { CodegenOptions } from '../command'
-import { TypescriptKeyword } from '../utils'
+import { TypescriptKeyword, capitalize } from '../utils'
 import type {
     DataClassOptions,
     Emitter,
@@ -122,8 +122,7 @@ export class JavaEmitter implements Emitter {
             p.line('public final class Date {}')
         } else if (info.display_name === 'Null') {
             p.line('public final class Null {}')
-        }
-        if (enum_) {
+        } else if (enum_) {
             this.emitEnum(p, enum_)
         } else {
             p.line(`public final class ${name} {} // TODO: fixme`)
@@ -260,7 +259,7 @@ export class JavaEmitter implements Emitter {
     }
 
     getFileNameForType(tpe: string): string {
-        return `${tpe}.${this.getFileType()}`
+        return `${capitalize(tpe)}.${this.getFileType()}`
     }
 
     getFileType(): string {

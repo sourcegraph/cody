@@ -1,6 +1,8 @@
 import { PromptString, contextFiltersProvider } from '@sourcegraph/cody-shared'
 import type { AutocompleteContextSnippet } from '@sourcegraph/cody-shared'
+import { structuredPatch } from 'diff'
 import * as vscode from 'vscode'
+import { displayPath } from '../../../../../../lib/shared/src/editor/displayPath'
 import type { ContextRetriever, ContextRetrieverOptions } from '../../../types'
 import { RetrieverIdentifier, type ShouldUseContextParams, shouldBeUsedAsContext } from '../../utils'
 
@@ -9,6 +11,11 @@ interface TrackedDocument {
     languageId: string
     uri: vscode.Uri
     changes: { timestamp: number; change: vscode.TextDocumentContentChangeEvent }[]
+}
+
+export interface RecentEditsRetrieverOptions {
+    maxAgeMs: number
+    addLineNumbersForDiff?: boolean
 }
 
 interface DiffAcrossDocuments {
@@ -24,14 +31,18 @@ export class RecentEditsRetriever implements vscode.Disposable, ContextRetriever
     private trackedDocuments: Map<string, TrackedDocument> = new Map()
     public identifier = RetrieverIdentifier.RecentEditsRetriever
     private disposables: vscode.Disposable[] = []
+    private readonly maxAgeMs: number
+    private readonly addLineNumbersForDiff: boolean
 
     constructor(
-        private readonly maxAgeMs: number,
+        options: RecentEditsRetrieverOptions,
         readonly workspace: Pick<
             typeof vscode.workspace,
             'onDidChangeTextDocument' | 'onDidRenameFiles' | 'onDidDeleteFiles'
         > = vscode.workspace
     ) {
+        this.maxAgeMs = options.maxAgeMs
+        this.addLineNumbersForDiff = options.addLineNumbersForDiff ?? false
         this.disposables.push(workspace.onDidChangeTextDocument(this.onDidChangeTextDocument.bind(this)))
         this.disposables.push(workspace.onDidRenameFiles(this.onDidRenameFiles.bind(this)))
         this.disposables.push(workspace.onDidDeleteFiles(this.onDidDeleteFiles.bind(this)))
@@ -121,8 +132,49 @@ export class RecentEditsRetriever implements vscode.Disposable, ContextRetriever
             oldContent,
             trackedDocument.changes.map(c => c.change)
         )
-
+        if (this.addLineNumbersForDiff) {
+            return this.computeDiffWithLineNumbers(uri, oldContent, newContent)
+        }
         return PromptString.fromGitDiff(uri, oldContent, newContent)
+    }
+
+    private computeDiffWithLineNumbers(
+        uri: vscode.Uri,
+        originalContent: string,
+        modifiedContent: string
+    ): PromptString {
+        const hunkDiffs = []
+        const filename = displayPath(uri)
+        const patch = structuredPatch(`a/${filename}`, `b/${filename}`, originalContent, modifiedContent)
+        for (const hunk of patch.hunks) {
+            const diffString = this.getDiffStringForHunkWithLineNumbers(hunk)
+            hunkDiffs.push(diffString)
+        }
+        const gitDiff = PromptString.fromStructuredGitDiff(uri, hunkDiffs.join('\nthen\n'))
+        return gitDiff
+    }
+
+    private getDiffStringForHunkWithLineNumbers(hunk: Diff.Hunk): string {
+        const lines = []
+        let oldLineNumber = hunk.oldStart
+        let newLineNumber = hunk.newStart
+        for (const line of hunk.lines) {
+            if (line.length === 0) {
+                continue
+            }
+            if (line[0] === '-') {
+                lines.push(`${oldLineNumber}${line[0]}| ${line.slice(1)}`)
+                oldLineNumber++
+            } else if (line[0] === '+') {
+                lines.push(`${newLineNumber}${line[0]}| ${line.slice(1)}`)
+                newLineNumber++
+            } else if (line[0] === ' ') {
+                lines.push(`${newLineNumber}${line[0]}| ${line.slice(1)}`)
+                oldLineNumber++
+                newLineNumber++
+            }
+        }
+        return lines.join('\n')
     }
 
     private onDidChangeTextDocument(event: vscode.TextDocumentChangeEvent): void {

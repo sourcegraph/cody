@@ -49,7 +49,7 @@ const MOCKED_SERVER_MODELS_CONFIG = {
             displayName: 'Claude 3 Opus',
             modelName: 'claude-3-opus-20240229',
             capabilities: ['edit', 'chat'],
-            category: 'other',
+            category: 'other' as ModelTag.Other,
             status: 'stable',
             tier: 'pro' as ModelTag.Pro,
             contextWindow: {

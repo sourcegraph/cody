@@ -209,7 +209,10 @@ export class InlineCompletionItemProvider
         )
         this.disposables.push(strategyFactory)
 
-        this.contextMixer = new ContextMixer(strategyFactory)
+        this.contextMixer = new ContextMixer({
+            strategyFactory,
+            dataCollectionEnabled: true,
+        })
         this.disposables.push(this.contextMixer)
 
         this.smartThrottleService = new SmartThrottleService()
@@ -632,7 +635,7 @@ export class InlineCompletionItemProvider
                 // return `CompletionEvent` telemetry data to the agent command `autocomplete/execute`.
                 const autocompleteResult: AutocompleteResult = {
                     logId: result.logId,
-                    items: updateInsertRangeForVSCode(visibleItems),
+                    items: visibleItems,
                     completionEvent: CompletionAnalyticsLogger.getCompletionEvent(result.logId),
                 }
 
@@ -641,6 +644,12 @@ export class InlineCompletionItemProvider
                     // that if we pass the above visibility tests, the completion is going to be
                     // rendered in the UI
                     this.unstable_handleDidShowCompletionItem(visibleItems[0])
+
+                    // Adjust the completion insert text and range to start from beginning of the current line
+                    // (instead of starting at the given position). This avoids UI jitter in VS Code; when
+                    // typing or deleting individual characters, VS Code reuses the existing completion
+                    // while it waits for the new one to come in.
+                    autocompleteResult.items = updateInsertRangeForVSCode(visibleItems)
                 }
 
                 recordExposedExperimentsToSpan(span)
@@ -660,6 +669,7 @@ export class InlineCompletionItemProvider
                         return null // Exit early if the request has been aborted
                     }
                 }
+
                 return autocompleteResult
             } catch (error) {
                 this.onError(error as Error)

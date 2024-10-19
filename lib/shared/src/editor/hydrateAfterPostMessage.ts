@@ -1,5 +1,6 @@
 import type * as vscode from 'vscode'
 import type { URI } from 'vscode-uri'
+import { PromptString } from '../prompt/prompt-string'
 
 /**
  * Forces hydration by cloning any part that may be lazily hydrated. This is necessary before using
@@ -8,6 +9,11 @@ import type { URI } from 'vscode-uri'
  */
 export function forceHydration(object: any): any {
     if (typeof object !== 'object' || object === null) {
+        return object
+    }
+    if (object instanceof PromptString) {
+        // Return as-is, because PromptString object references are used as keys in a WeakMap that
+        // implements immutability and encapsulation for PromptString.
         return object
     }
     if (Array.isArray(object)) {

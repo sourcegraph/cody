@@ -95,9 +95,6 @@ export function createFastPathClient(
         } satisfies FireworksCodeCompletionParams
 
         const headers = new Headers(fireworksCustomHeaders)
-        // Force HTTP connection reuse to reduce latency.
-        // c.f. https://github.com/microsoft/vscode/issues/173861
-        headers.set('Connection', 'keep-alive')
         headers.set('Content-Type', `application/json${fireworksConfig ? '' : '; charset=utf-8'}`)
         headers.set('Authorization', `Bearer ${fastPathAccessToken}`)
         headers.set('X-Sourcegraph-Feature', 'code_completions')

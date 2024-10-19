@@ -13,6 +13,7 @@ import { logDebug, logError } from '../../logger'
 import { firstValueFrom } from '../../misc/observable'
 import { addTraceparent, wrapInActiveSpan } from '../../tracing'
 import { isError } from '../../utils'
+import { addCodyClientIdentificationHeaders } from '../client-name-version'
 import { DOTCOM_URL, isDotCom } from '../environments'
 import { isAbortError } from '../errors'
 import {
@@ -44,6 +45,7 @@ import {
     HIGHLIGHTED_FILE_QUERY,
     LEGACY_CHAT_INTENT_QUERY,
     LEGACY_CONTEXT_SEARCH_QUERY,
+    LEGACY_PROMPTS_QUERY_5_8,
     LOG_EVENT_MUTATION,
     LOG_EVENT_MUTATION_DEPRECATED,
     PACKAGE_LIST_QUERY,
@@ -412,6 +414,7 @@ export interface Prompt {
     }
     description?: string
     draft: boolean
+    autoSubmit?: boolean
     definition: {
         text: string
     }
@@ -568,16 +571,6 @@ type GraphQLAPIClientConfig = PickResolvedConfiguration<{
     configuration: 'telemetryLevel' | 'customHeaders'
     clientState: 'anonymousUserID'
 }>
-
-export let customUserAgent: string | undefined
-export function addCustomUserAgent(headers: Headers): void {
-    if (customUserAgent) {
-        headers.set('User-Agent', customUserAgent)
-    }
-}
-export function setUserAgent(newUseragent: string): void {
-    customUserAgent = newUseragent
-}
 
 const QUERY_TO_NAME_REGEXP = /^\s*(?:query|mutation)\s+(\w+)/m
 
@@ -1120,8 +1113,10 @@ export class SourcegraphGraphQLAPIClient {
     }
 
     public async queryPrompts(query: string, signal?: AbortSignal): Promise<Prompt[]> {
+        const hasIncludeViewerDraftsArg = await this.isValidSiteVersion({ minimumVersion: '5.9.0' })
+
         const response = await this.fetchSourcegraphAPI<APIResponse<{ prompts: { nodes: Prompt[] } }>>(
-            PROMPTS_QUERY,
+            hasIncludeViewerDraftsArg ? PROMPTS_QUERY : LEGACY_PROMPTS_QUERY_5_8,
             { query },
             signal
         )
@@ -1384,7 +1379,7 @@ export class SourcegraphGraphQLAPIClient {
         }
 
         addTraceparent(headers)
-        addCustomUserAgent(headers)
+        addCodyClientIdentificationHeaders(headers)
 
         const queryName = query.match(QUERY_TO_NAME_REGEXP)?.[1]
 
@@ -1416,7 +1411,7 @@ export class SourcegraphGraphQLAPIClient {
             baseUrl: this.dotcomUrl.href,
         })
         const headers = new Headers()
-        addCustomUserAgent(headers)
+        addCodyClientIdentificationHeaders(headers)
         addTraceparent(headers)
 
         const queryName = query.match(QUERY_TO_NAME_REGEXP)?.[1]
@@ -1439,7 +1434,7 @@ export class SourcegraphGraphQLAPIClient {
         const headers = new Headers({
             'Content-Type': 'application/json',
         })
-        addCustomUserAgent(headers)
+        addCodyClientIdentificationHeaders(headers)
 
         return fetch(url, {
             method: 'POST',
@@ -1475,7 +1470,7 @@ export class SourcegraphGraphQLAPIClient {
         }
 
         addTraceparent(headers)
-        addCustomUserAgent(headers)
+        addCodyClientIdentificationHeaders(headers)
 
         const url = new URL(urlPath, config.auth.serverEndpoint).href
 
@@ -1527,7 +1522,8 @@ function catchHTTPError(
             }
             error = `ETIMEDOUT: timed out after ${DEFAULT_TIMEOUT_MSEC}ms`
         }
-        return new Error(`accessing Sourcegraph HTTP API: ${error} (${url})`)
+        const code = `${(typeof error === 'object' && error ? (error as any).code : undefined) ?? ''} `
+        return new Error(`accessing Sourcegraph HTTP API: ${code}${error} (${url})`)
     }
 }
 

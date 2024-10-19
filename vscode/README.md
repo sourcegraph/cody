@@ -1,14 +1,14 @@
 # AI that uses your codebase as context
 
-[Cody](https://about.sourcegraph.com/cody?utm_source=marketplace.visualstudio.com&utm_medium=referral) is an AI coding assistant that helps you understand, write, and fix code faster. It uses advanced search to pull context from both local and remote codebases so that you can use context about APIs, symbols, and usage patterns from across your entire codebase at any scale, all from within VS Code. Plus, Cody Pro users can choose from the latest large language models—like GPT-4o and Claude 3 Opus—to customize Cody to their needs.
+[Cody](https://about.sourcegraph.com/cody?utm_source=marketplace.visualstudio.com&utm_medium=referral) is an AI coding assistant that helps you understand, write, and fix code faster. It uses advanced search to pull context from both local and remote codebases so that you can use context about APIs, symbols, and usage patterns from across your entire codebase at any scale, all from within VS Code. Plus, Cody users can choose from the latest large language models—like GPT-4o and Claude 3.5 Sonnet—to customize Cody to their needs.
 
-Install Cody to get started with free AI-powered autocomplete, chat, commands, and more.
+Install Cody to get started with free AI-powered autocomplete, chat, prompts, and more.
 
 ## Autocomplete
 
 Cody autocompletes single lines, or whole functions, in any programming language, configuration file, or documentation. It’s powered by the latest instant LLM models, for accuracy and performance.
 
-<img src="https://storage.googleapis.com/sourcegraph-assets/blog/vs-code-onboarding-walkthrough-dec-2023-cody-autocomplete-tsx.gif" width="480" alt="Cody autocomplete">
+<img src="https://storage.googleapis.com/sourcegraph-assets/vscode-marketplace/cody-autocomplete.gif" width="700" alt="Cody autocomplete">
 
 ## Chat
 
@@ -23,25 +23,23 @@ For example, you can ask Cody:
 - "Add helpful debug log statements"
 - "Make this work" _(seriously, it often works—try it!)_
 
-<img src="https://storage.googleapis.com/sourcegraph-assets/blog/blog-vscode-v018-release/blog-v018-context-controls-002.gif" width="480" alt="Cody Chat">
+<img src="https://storage.googleapis.com/sourcegraph-assets/vscode-marketplace/cody-chat.gif" width="700" alt="Cody Chat">
 
-## Built-In Commands
+## Built-In Prompts
 
-Streamline your development process by using Cody commands to understand, improve, fix, document, and generate unit tests for your code.
+Streamline your development process by using prompts to understand, improve, fix, document, and generate unit tests for your code.
 
-<img src="https://storage.googleapis.com/sourcegraph-assets/blog/vs-code-onboarding-walkthrough-dec-2023-explain.gif" width="480" alt="Explain Code command">
+<img src="https://storage.googleapis.com/sourcegraph-assets/vscode-marketplace/cody-prompts.gif" width="700" alt="Explain Code command">
 
-## Custom Commands (Beta)
+## Prompt Library
 
-You can also build your own [Custom Commands (Beta)](https://sourcegraph.com/docs/cody/capabilities/commands#custom-commands) to tailor Cody to your workflow. Custom Commands are defined as JSON within your repository and can be saved to your workspace for your teammates to reuse.
-
-<img src="https://storage.googleapis.com/sourcegraph-assets/blog/vs-code-onboarding-walkthrough-dec-2023-convert-html-to-md.gif" width="480" alt="Custom command">
+You can also create your own prompts and save them in the [Prompt Library](https://sourcegraph.com/docs/cody/capabilities/commands#prompt-library) to tailor Cody to your workflow. 
 
 ## Choose Your LLM
 
-Cody Pro users can now select the LLM they want to use for chat and experiment to choose the best model for the job. Choose from Claude 3 Opus, Claude 3.5 Sonnet, Claude 3 Sonnet, Claude 3 Haiku, ChatGPT 4o, ChatGPT 4 Turbo, ChatGPT 3.5 Turbo, Google Gemini 1.5 Pro, Gemini 1.5 Flash, and Mixtral.
+Cody users can select the LLM they want to use for chat and experiment to choose the best model for the job. Choose from multiple options including Claude 3.5 Sonnet, Gemini 1.5 Pro, and Mixtral 8x7B. Cody Pro users can also select Claude 3 Opus and GPT-4o. [See the full list of model options here](https://sourcegraph.com/docs/cody/capabilities/supported-models).
 
-Administrators for Sourcegraph Enterprise instances can choose betweeen Claude and ChatGPT models to set for their teams as well.
+Administrators for Sourcegraph Enterprise instances can configure which model options to let team members choose from.
 
 ## Usage
 

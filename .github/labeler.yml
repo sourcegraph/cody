@@ -1,2 +1,4 @@
 bug:
     - '(bug:)'
+repo/cody:
+    - '/.*/'

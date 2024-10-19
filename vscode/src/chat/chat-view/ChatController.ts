@@ -97,6 +97,7 @@ import type { ExtensionClient } from '../../extension-client'
 import { migrateAndNotifyForOutdatedModels } from '../../models/modelMigrator'
 import { logDebug } from '../../output-channel-logger'
 import { getCategorizedMentions } from '../../prompt-builder/utils'
+import { hydratePromptText } from '../../prompts/prompt-hydration'
 import { mergedPromptsAndLegacyCommands } from '../../prompts/prompts'
 import { publicRepoMetadataIfAllWorkspaceReposArePublic } from '../../repository/githubRepoMetadata'
 import { authProvider } from '../../services/AuthProvider'
@@ -112,7 +113,7 @@ import {
 import { openExternalLinks } from '../../services/utils/workspace-action'
 import { TestSupport } from '../../test-support'
 import type { MessageErrorType } from '../MessageProvider'
-import { getCodyTools } from '../agentic/CodyTool'
+import { CodyToolProvider } from '../agentic/CodyToolProvider'
 import { DeepCodyAgent } from '../agentic/DeepCody'
 import { getMentionMenuData } from '../context/chatContext'
 import type { ChatIntentAPIClient } from '../context/chatIntentAPIClient'
@@ -187,6 +188,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
     private readonly chatClient: ChatControllerOptions['chatClient']
 
     private readonly contextRetriever: ChatControllerOptions['contextRetriever']
+    private readonly toolProvider: CodyToolProvider
 
     private readonly editor: ChatControllerOptions['editor']
     private readonly extensionClient: ChatControllerOptions['extensionClient']
@@ -218,6 +220,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         this.editor = editor
         this.extensionClient = extensionClient
         this.contextRetriever = contextRetriever
+        this.toolProvider = CodyToolProvider.instance(this.contextRetriever)
 
         this.chatBuilder = new ChatBuilder(undefined)
 
@@ -786,7 +789,8 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 const agenticContext = await new DeepCodyAgent(
                     this.chatBuilder,
                     this.chatClient,
-                    getCodyTools(this.contextRetriever, span),
+                    await this.toolProvider.getTools(),
+                    span,
                     corpusContext
                 ).getContext(signal)
                 corpusContext.push(...agenticContext)
@@ -881,6 +885,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         signal.throwIfAborted()
 
         this.chatBuilder.setLastMessageContext(context, contextAlternatives)
+        this.chatBuilder.setLastMessageIntent('search')
         this.chatBuilder.addBotMessage(
             {
                 text: ps`"cody-experimental-one-box" feature flag is turned on.`,
@@ -1047,6 +1052,15 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 category: 'billable',
                 product: 'cody',
             },
+        })
+    }
+
+    public async addContextItemsToLastHumanInput(
+        contextItems: ContextItem[]
+    ): Promise<boolean | undefined> {
+        return this.postMessage({
+            type: 'clientAction',
+            addContextItemsToLastHumanInput: contextItems,
         })
     }
 
@@ -1462,11 +1476,11 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         telemetryRecorder.recordEvent('cody.duplicateSession', 'clicked')
     }
 
-    public async clearAndRestartSession(): Promise<void> {
+    public async clearAndRestartSession(chatMessages?: ChatMessage[]): Promise<void> {
         this.cancelSubmitOrEditOperation()
         await this.saveSession()
 
-        this.chatBuilder = new ChatBuilder()
+        this.chatBuilder = new ChatBuilder(this.chatBuilder.selectedModel, undefined, chatMessages)
         this.postViewTranscript()
     }
 
@@ -1598,6 +1612,10 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                         })
                     },
                     evaluatedFeatureFlag: flag => featureFlagProvider.evaluatedFeatureFlag(flag),
+                    hydratePromptMessage: (promptText, initialContext) =>
+                        promiseFactoryToObservable(() =>
+                            hydratePromptText(promptText, initialContext ?? [])
+                        ),
                     prompts: query =>
                         promiseFactoryToObservable(signal =>
                             mergedPromptsAndLegacyCommands(query, signal)

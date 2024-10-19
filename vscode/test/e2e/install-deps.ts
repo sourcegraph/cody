@@ -1,12 +1,6 @@
 import { spawn } from 'node:child_process'
 
-import {
-    ConsoleReporter,
-    type ProgressReport,
-    ProgressReportStage,
-    downloadAndUnzipVSCode as _downloadAndUnzipVSCode,
-} from '@vscode/test-electron'
-import type { DownloadOptions } from '@vscode/test-electron/out/download'
+import { SilentReporter, downloadAndUnzipVSCode } from '@vscode/test-electron'
 
 // The VS Code version to use for e2e tests (there is also a version in ../integration/main.ts used for integration tests).
 //
@@ -15,38 +9,8 @@ import type { DownloadOptions } from '@vscode/test-electron/out/download'
 // missed because we're running on an older version than users.
 const vscodeVersion = 'stable'
 
-// A custom version of the VS Code download reporter that silences matching installation
-// notifications as these otherwise are emitted on every test run
-class CustomConsoleReporter extends ConsoleReporter {
-    public report(report: ProgressReport): void {
-        if (report.stage !== ProgressReportStage.FoundMatchingInstall) {
-            super.report(report)
-        }
-    }
-}
-
-/**
- * Patches the default logger but otherwise leaves all options available
- * @param opts
- */
-export function downloadAndUnzipVSCode(opts: Partial<DownloadOptions>) {
-    return _downloadAndUnzipVSCode(
-        Object.assign(
-            {
-                version: vscodeVersion,
-                reporter: new CustomConsoleReporter(process.stdout.isTTY),
-            } satisfies Partial<DownloadOptions>,
-            opts
-        )
-    )
-}
-
-export function installVsCode(): Promise<string> {
-    return _downloadAndUnzipVSCode(
-        vscodeVersion,
-        undefined,
-        new CustomConsoleReporter(process.stdout.isTTY)
-    )
+export async function installVsCode(): Promise<string> {
+    return downloadAndUnzipVSCode(vscodeVersion, undefined, new SilentReporter())
 }
 
 function installChromium(): Promise<void> {
