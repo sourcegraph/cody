@@ -1,6 +1,7 @@
 import type { ContextItem, Model } from '@sourcegraph/cody-shared'
 import { pluralize } from '@sourcegraph/cody-shared'
 import type { RankedContext } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import { useExtensionAPI } from '@sourcegraph/prompt-editor'
 import { clsx } from 'clsx'
 import { BrainIcon, MessagesSquareIcon, Pencil } from 'lucide-react'
 import { type FunctionComponent, memo, useCallback, useState } from 'react'
@@ -118,6 +119,15 @@ export const ContextCell: FunctionComponent<{
 
         const [showAllResults, setShowAllResults] = useState(false)
 
+        const api = useExtensionAPI()
+        const onEditContext = useCallback(() => {
+            api.manuallyEditContext().subscribe({
+                error: error => {
+                    console.error('Error editing context', error)
+                },
+            })
+        }, [api])
+
         return (
             <div>
                 {(contextItemsToDisplay === undefined || contextItemsToDisplay.length !== 0) && (
@@ -170,6 +180,7 @@ export const ContextCell: FunctionComponent<{
                                             <button
                                                 type="button"
                                                 className={styles.contextItemEditButton}
+                                                onClick={onEditContext}
                                             >
                                                 <div className={styles.contextItemEditButtonIcon}>
                                                     <Pencil size={'1rem'} />

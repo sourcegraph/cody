@@ -1,6 +1,7 @@
 import {
     type ChatModel,
     type CodyClientConfig,
+    EMPTY,
     cenv,
     clientCapabilities,
     currentSiteVersion,
@@ -1667,6 +1668,10 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                         userProductSubscription.pipe(
                             map(value => (value === pendingOperation ? null : value))
                         ),
+                    manuallyEditContext: () => {
+                        console.log('# ChatController.manuallyEditContext')
+                        return EMPTY
+                    },
                 }
             )
         )
