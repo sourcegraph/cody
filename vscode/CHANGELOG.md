@@ -8,6 +8,13 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 - Proxy: Support for `cody.net.proxy` settings that enable configuation a cody specific proxy server. This also supports `cody.net.proxy.path` to provide a UNIX domain socket directly. [pull/5883](https://github.com/sourcegraph/cody/pull/5883)
 
+### Changed
+
+## 1.38.2
+
+### Changed
+
+- Telemetry: Account for visible ranges in the characters logger. [pull/5931](https://github.com/sourcegraph/cody/pull/5931)
 ### Fixed 
 
 - Chat: Improved handling of duplicated priority context items. [pull/5860](https://github.com/sourcegraph/cody/pull/5860)
@@ -30,6 +37,7 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 ### Fixed
 
 - Chat: Improve webview performance in long chats. [pull/5866](https://github.com/sourcegraph/cody/pull/5866), [pull/5875](https://github.com/sourcegraph/cody/pull/5875), [pull/5879](https://github.com/sourcegraph/cody/pull/5879)
+
 - Autocomplete: Remove support for the deprecated `experimental-openaicompatible` provider. Use `openaicompatible` instead. [pull/5872](https://github.com/sourcegraph/cody/pull/5872)
 
 ## 1.36.3
