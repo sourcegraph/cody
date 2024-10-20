@@ -97,7 +97,10 @@ export default defineConfig<WorkerOptions & TestOptions & TmpDirOptions>({
         geolocation: { longitude: -122.40825783227943, latitude: 37.78124453182266 },
         acceptDownloads: false,
         trace: {
-            mode: isCI ? 'retain-on-failure' : 'on',
+            // we always collect traces, we'll just choose later wether to
+            // retain them. That is because sometimes it's useful to see why a
+            // test didn't fail too!
+            mode: 'on',
             attachments: true,
             screenshots: true,
             snapshots: true,
@@ -143,8 +146,17 @@ export default defineConfig<WorkerOptions & TestOptions & TmpDirOptions>({
             },
         },
     ],
+    outputDir: '.test/e2e/results',
     reporter: [
-        ['json', { outputFile: '.test-reports/report.json', open: 'never' }],
+        [
+            'html',
+            {
+                outputFolder: '.test/e2e/reports/html',
+                fileName: 'report.html',
+                open: 'never',
+            },
+        ],
+        ['blob', { outputDir: '.test/e2e/reports/blob' }],
         ...(isCI
             ? ([
                   ['github', {}],
@@ -154,14 +166,6 @@ export default defineConfig<WorkerOptions & TestOptions & TmpDirOptions>({
                   debugMode
                       ? ['line', { printSteps: true, includeProjectInTestName: true }]
                       : ['list', { open: 'never' }],
-                  [
-                      'html',
-                      {
-                          outputFolder: '.test-reports',
-                          fileName: 'report.html',
-                          open: 'never',
-                      },
-                  ],
               ] satisfies Array<ReporterDescription>)),
     ],
     // Disabled until https://github.com/microsoft/playwright/issues/32387 is resolved

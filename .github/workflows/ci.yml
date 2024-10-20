@@ -9,7 +9,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  # Sets a variable that is used to determine the matrix to run fast tests (unit & integration) on.
+  # Sets a variable that is used to determine the matrix to run tests on.
   # Everything runs on ubuntu and windows, only commits to main run on macos.
   fast_tests_matrix_prep:
     runs-on: ubuntu-latest
@@ -99,9 +99,74 @@ jobs:
       - run: pnpm -C vscode run test:integration
         if: matrix.runner == 'windows' || matrix.runner == 'macos'
 
+  test-e2e:
+    needs: fast_tests_matrix_prep
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: ${{ fromJson(needs.fast_tests_matrix_prep.outputs.matrix) }}
+    runs-on: ${{ matrix.runner }}-latest
+    timeout-minutes: 15
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .tool-versions
+      - uses: pnpm/action-setup@fe02b34f77f8bc703788d5817da081398fad5dd2 # SECURITY: pin third-party action hashes
+      - id: auth
+        uses: google-github-actions/auth@v2
+        # Skip auth if PR is from a fork
+        if: ${{ !github.event.pull_request.head.repo.fork }}
+        with:
+          workload_identity_provider: ${{ secrets.DATA_TEAM_PROVIDER_NAME }}
+          service_account: ${{ secrets.DATA_TEAM_SA_EMAIL }}
+      - uses: google-github-actions/setup-gcloud@v2
+      - run: echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
+        shell: bash
+        id: pnpm-cache
+      - name: Cache pnpm store
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: ${{ runner.os }}-pnpm-store-
+      - name: Install dependencies
+        run: pnpm install
+      - name: Setup Playwright browser dependencies
+        run: pnpm -C vscode run test:e2e2:deps # this installs chromium etc
+      - name: Run E2E tests
+        run: pnpm -C vscode run test:e2e2 --project e2e
+        env:
+            BUILDKITE_ANALYTICS_TOKEN: ${{ secrets.BUILDKITE_ANALYTICS_TOKEN }}
+            # This is required because the test collector from Buildkite is imprecise when it
+            # comes to infer the branch name on GitHub action.
+            BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
+            GITHUB_REF: ${{ github.head_ref || github.ref_name }}
+      - name: Upload Playwright report (success)
+        # Sometimes it's very useful to be able to look back at why a test didn't fail.
+        if: ${{ success() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright report ${{matrix.runner}}
+          path: vscode/.test/e2e/reports/html
+          retention-days: 5
+      - name: Upload Playwright report (failure)
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright report ${{matrix.runner}}
+          path: vscode/.test/e2e/reports/html
+          retention-days: 30
+      # TODO: Trigger another workflow / daily workflow to pipe the telemetry
+      # events to pubsub so that we can keep historical records even if not
+      # tested
+
   # Sets a variable that is used to determine the matrix to run slow tests (e2e) on.
   # Everything runs on ubuntu, only commits to main run on macos and windows.
-  slow_tests_matrix_prep:
+  legacy_slow_tests_matrix_prep:
     runs-on: ubuntu-latest
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
@@ -114,8 +179,8 @@ jobs:
             echo 'matrix=[{"runner":"ubuntu","shard":"1/5"},{"runner":"ubuntu","shard":"2/5"},{"runner":"ubuntu","shard":"3/5"},{"runner":"ubuntu","shard":"4/5"},{"runner":"ubuntu","shard":"5/5"}]' >> $GITHUB_OUTPUT
           fi
 
-  test-e2e:
-    needs: slow_tests_matrix_prep
+  test-e2e-legacy:
+    needs: legacy_slow_tests_matrix_prep
     strategy:
       fail-fast: false
       matrix:
