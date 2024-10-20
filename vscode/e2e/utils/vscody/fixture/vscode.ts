@@ -16,7 +16,6 @@ import type { UIKind } from 'vscode'
 import type { TestContext, WorkerContext } from '.'
 import { downloadFile } from '../../../../src/local-context/utils'
 import { waitForLock } from '../../../../src/lockfile'
-import { withTempDir } from '../../../../test/e2e/helpers'
 import { CODY_VSCODE_ROOT_DIR, retry, stretchTimeout } from '../../helpers'
 import { killChildrenSync, killSync } from './kill'
 import { rangeOffset } from './util'
@@ -126,12 +125,6 @@ export const vscodeFixture = _test.extend<TestContext, WorkerContext>({
                 )
             )
 
-            // extensions sadly can't live in the Cody dir because it would mess
-            // up pnpm node_module symlink references. Instead we create a tmpdir
-            // and and save a symlink to it here for easy access
-            // const isolatedExtensionsDir = await fs.mkdtemp(path.join(os.tmpdir(), 'vsc-extensions'))
-            // const extensionsDir = isolatedExtensionsDir
-            // console.log('extensionsDir', extensionsDir)
             const extensionsDir = path.join(portableDataDir, 'extensions')
             await fs.mkdir(extensionsDir, { recursive: true })
 
@@ -295,8 +288,9 @@ async function downloadVSCodeServer(
 
     const releaseLock = await waitForLock(config.serverExecutableDir, {
         lockfilePath: path.join(config.serverExecutableDir, `${commitSha}.lock`),
-        delay: 100,
+        delay: 300,
     })
+    let tmpDir: string | null = null
     try {
         const ok = await fs.readFile(path.join(versionedExecutableDir, 'ok'), 'utf-8').catch(() => null)
 
@@ -307,31 +301,45 @@ async function downloadVSCodeServer(
                 retryDelay: 1000,
                 maxRetries: 3,
             })
-            console.log(`Downloading VSCode server for commit ${commitSha}`)
             await fs.mkdir(versionedExecutableDir, { recursive: true })
             const directoryName = `server-${vscodeArtifactName}-web`
             const downloadUrl = `https://update.code.visualstudio.com/commit:${commitSha}/${directoryName}/stable`
-            await withTempDir(async tmpDir => {
-                //can be either zip or gzip
-                const archiveFile = path.join(tmpDir, 'archive')
-                await downloadFile(downloadUrl, archiveFile)
-                const unpackedPath = path.join(tmpDir, 'unzip')
-                await new Promise((ok, fail) =>
-                    szip.unpack(archiveFile, unpackedPath, err => {
-                        if (err) {
-                            fail(err)
-                        }
-                        ok(void 0)
-                    })
-                )
-                await move(path.join(unpackedPath, `vscode-${directoryName}`), versionedExecutableDir, {
-                    overwrite: true,
+            console.log(`Downloading VSCode server for commit ${commitSha} from ${downloadUrl}`)
+            tmpDir = path.join(config.serverExecutableDir, `tmp-${commitSha}`)
+            await fs.mkdir(tmpDir, { recursive: true })
+            //can be either zip or gzip
+            const archiveFile = path.join(tmpDir, 'archive')
+            await downloadFile(downloadUrl, archiveFile)
+            const unpackedPath = path.join(tmpDir, 'unzip')
+            await new Promise((ok, fail) =>
+                szip.unpack(archiveFile, unpackedPath, err => {
+                    if (err) {
+                        fail(err)
+                    }
+                    ok(void 0)
                 })
-                await fs.writeFile(path.join(versionedExecutableDir, 'ok'), 'ok')
+            )
+            await move(path.join(unpackedPath, `vscode-${directoryName}`), versionedExecutableDir, {
+                overwrite: true,
             })
+            await fs.writeFile(path.join(versionedExecutableDir, 'ok'), 'ok')
+            console.log(`Download for ${commitSha} complete`)
         }
+    } catch (e) {
+        console.error('Could not download/unpack VSCode', e)
+        throw e
     } finally {
         await releaseLock()
+        if (tmpDir) {
+            await fs
+                .rm(tmpDir, {
+                    recursive: true,
+                    force: true,
+                    retryDelay: 1000,
+                    maxRetries: 3,
+                })
+                .catch(() => {})
+        }
     }
     if ((await fs.readFile(path.join(versionedExecutableDir, 'ok'), 'utf-8')) !== 'ok') {
         throw new Error('VSCode server not found')
