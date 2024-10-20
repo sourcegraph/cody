@@ -157,16 +157,12 @@ export default defineConfig<WorkerOptions & TestOptions & TmpDirOptions>({
             },
         ],
         ['blob', { outputDir: '.test/e2e/reports/blob' }],
+        debugMode
+            ? ['line', { printSteps: true, includeProjectInTestName: true }]
+            : ['list', { open: 'never' }],
         ...(isCI
-            ? ([
-                  ['github', {}],
-                  ['buildkite-test-collector/playwright/reporter'],
-              ] satisfies Array<ReporterDescription>)
-            : ([
-                  debugMode
-                      ? ['line', { printSteps: true, includeProjectInTestName: true }]
-                      : ['list', { open: 'never' }],
-              ] satisfies Array<ReporterDescription>)),
+            ? ([['buildkite-test-collector/playwright/reporter']] satisfies Array<ReporterDescription>)
+            : []),
     ],
     // Disabled until https://github.com/microsoft/playwright/issues/32387 is resolved
     // globalSetup: require.resolve(path.resolve(CODY_VSCODE_ROOT_DIR, './e2e/utils/global.setup')),
