@@ -5,3 +5,4 @@ packages:
   - lib/*
   - vscode
   - web
+  - vscode/e2e/utils/extension
