@@ -272,18 +272,18 @@ jobs:
           path: vscode/.test/e2e/reports/blob
           pattern: e2e-blob-report-*
           merge-multiple: true
-      - name: Report to GitHub
-        run: pnpm -C vscode exec playwright merge-reports --reporter github,@estruyf/github-actions-reporter
       - name: Merge into HTML Report
-        run: pnpm -C vscode exec playwright merge-reports --reporter html vscode/.test/e2e/reports/html
+        run: pnpm -C vscode exec playwright merge-reports --reporter html vscode/.test/e2e/reports/blob
+        env:
+          PLAYWRIGHT_HTML_OUTPUT_DIR: vscode/.test/e2e/reports/html
       - name: Upload HTML report
         uses: actions/upload-artifact@v4
         with:
           name: e2e-html-report
           path: vscode/.test/e2e/reports/html
           retention-days: 7
-      - name: Report to Buildkite
-        run: pnpm -C vscode exec playwright merge-reports --reporter buildkite-test-collector/playwright/reporter
+      - name: Report to Services
+        run: pnpm -C vscode exec playwright merge-reports --reporter github,buildkite-test-collector/playwright/reporter,@estruyf/github-actions-reporter vscode/.test/e2e/reports/blob
         env:
           BUILDKITE_ANALYTICS_TOKEN: ${{ secrets.BUILDKITE_ANALYTICS_TOKEN }}
           # This is required because the test collector from Buildkite is imprecise when it
