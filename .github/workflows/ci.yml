@@ -222,6 +222,8 @@ jobs:
           path: vscode/dist
       - name: Run E2E tests
         run: pnpm -C vscode run test:e2e2:run --project e2e --shard=${{ matrix.shardIndex }}/${{ matrix.shardTotal }}
+        env:
+          PLAYWRIGHT_BLOB_OUTPUT_NAME: report-${{matrix.os}}-${{matrix.shardIndex}}
       - name: Upload blob report to GitHub Actions Artifacts
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4
@@ -284,7 +286,7 @@ jobs:
           path: vscode/.test/e2e/reports/html
           retention-days: 7
       - name: Report to Services
-        run: pnpm -C vscode exec playwright merge-reports --reporter github,buildkite-test-collector/playwright/reporter,@estruyf/github-actions-reporter .test/e2e/reports/blob
+        run: pnpm -C vscode exec playwright merge-reports --reporter github,@estruyf/github-actions-reporter .test/e2e/reports/blob
         env:
           BUILDKITE_ANALYTICS_TOKEN: ${{ secrets.BUILDKITE_ANALYTICS_TOKEN }}
           # This is required because the test collector from Buildkite is imprecise when it
