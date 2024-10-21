@@ -19,6 +19,7 @@ import { isAbortError } from '../errors'
 import {
     CHANGE_PROMPT_VISIBILITY,
     CHAT_INTENT_QUERY,
+    CODEGRAPH_DATA_QUERY,
     CONTEXT_FILTERS_QUERY,
     CONTEXT_SEARCH_QUERY,
     CONTEXT_SEARCH_QUERY_WITH_RANGES,
@@ -61,6 +62,7 @@ import {
     REPOS_SUGGESTIONS_QUERY,
     REPO_NAME_QUERY,
     SEARCH_ATTRIBUTION_QUERY,
+    SYMBOL_USAGES_QUERY,
     VIEWER_SETTINGS_QUERY,
 } from './queries'
 import { buildGraphQLUrl } from './url'
@@ -319,6 +321,63 @@ interface FileContentsResponse {
                 path: string
                 url: string
                 content: string
+            } | null
+        } | null
+    } | null
+}
+
+interface SymbolUsage {
+    provenance: string,
+    usageRange: {
+        repository: string,
+        revision: string,
+        path: string,
+        range: {
+            start: {
+                line: number,
+                character: number
+            },
+            end: {
+                line: number,
+                character: number
+            }
+        },
+        surroundingContent: string,
+        usageKind: string,
+    }
+}
+
+interface SymbolUsagesResponse {
+    usagesForSymbol: {
+        nodes: SymbolUsage[],
+        pageInfo: {
+            hasNextPage: boolean,
+            endCursor: string
+        }
+    },
+}
+
+interface CodeGraphDataResponse {
+    repository: {
+        commit: {
+            blob: {
+                codeGraphData: {
+                    occurrences: {
+                        nodes: {
+                            symbol: string,
+                            range: {
+                                start: {
+                                    line: number,
+                                    character: number
+                                },
+                                end: {
+                                    line: number,
+                                    character: number
+                                }
+                            }
+                        }[]
+                    } | null
+                } | null
             } | null
         } | null
     } | null
@@ -947,6 +1006,50 @@ export class SourcegraphGraphQLAPIClient {
             filePath,
             rev,
         }).then(response => extractDataOrError(response, data => data))
+    }
+
+    public async getCodeGraphData(
+        path: string,
+        repoName: string,
+        revspec: string
+    ): Promise<CodeGraphDataResponse | Error> {
+        return this.fetchSourcegraphAPI<APIResponse<CodeGraphDataResponse>>(CODEGRAPH_DATA_QUERY, { path, repoName, revspec})
+        .then(response => extractDataOrError(response, data => data))
+    }
+
+    public async getSymbolUsages(
+        repoName: string,
+        revspec: string,
+        filePath: string,
+        occurrence: CodeGraphOccurrence,
+        cursor?: string
+    ): Promise<SymbolUsagesResponse | Error> {
+        const { range, symbol } = occurrence
+        const parameters = {
+          afterCursor: cursor,
+          first: 100,
+          filePath,
+          rangeEnd: {
+            character: range.end.character,
+            line: range.end.line,
+          },
+          rangeStart: {
+            character: range.start.character,
+            line: range.start.line,
+          },
+          repoName,
+          revspec,
+          symbolComparator: {
+            name: {
+              equals: symbol
+            },
+            provenance: {
+              equals: "PRECISE"
+            }
+          }
+        }
+        return this.fetchSourcegraphAPI<APIResponse<SymbolUsagesResponse>>(SYMBOL_USAGES_QUERY, parameters)
+        .then(response => extractDataOrError(response, data => data))
     }
 
     public async getRepoId(repoName: string): Promise<string | null | Error> {

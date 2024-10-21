@@ -159,7 +159,7 @@ export const REPOS_SUGGESTIONS_QUERY = `
 
 export const FILE_CONTENTS_QUERY = `
 query FileContentsQuery($repoName: String!, $filePath: String!, $rev: String!) {
-    repository(name: $repoName){
+    repository(name: $repoName) {
         commit(rev: $rev) {
             file(path: $filePath) {
                 path
@@ -169,6 +169,135 @@ query FileContentsQuery($repoName: String!, $filePath: String!, $rev: String!) {
         }
     }
 }`
+
+export const CODEGRAPH_DATA_QUERY = `
+query CodegraphDataQuery($repoName: String!, $revspec: String!, $path: String!) {
+  repository(name: $repoName) {
+    id
+    commit(rev: $revspec) {
+      id
+      blob(path: $path) {
+        codeGraphData {
+           id
+            provenance
+            commit
+            toolInfo {
+              name
+              version 
+            }
+            occurrences {
+              nodes {
+                symbol
+                range {
+                  start {
+                    line
+                    character 
+                  }
+                  end {
+                    line
+                    character 
+                  } 
+                }
+                roles 
+              }
+              pageInfo {
+                endCursor
+                hasNextPage 
+              } 
+            } 
+        }
+      }
+    }
+  }
+} 
+ 
+`
+
+export const SYMBOL_USAGES_QUERY = `
+query SymbolUsagesQuery($repoName: String!, $revspec: String!, $filePath: String!, $rangeStart: PositionInput!, $rangeEnd: PositionInput!, $symbolComparator: SymbolComparator, $first: Int!, $afterCursor: String) {
+  usagesForSymbol(
+    symbol: $symbolComparator
+    range: {repository: $repoName, revision: $revspec, path: $filePath, start: $rangeStart, end: $rangeEnd}
+    first: $first
+    after: $afterCursor
+  ) {
+    ...SymbolUsagesConnection
+    pageInfo {
+      hasNextPage
+      endCursor
+      __typename
+    }
+    __typename
+  }
+}
+fragment SymbolUsage on Usage {
+  provenance
+  usageRange {
+    repository
+    revision
+    path
+    range {
+      start {
+        line
+        character
+        __typename
+      }
+      end {
+        line
+        character
+        __typename
+      }
+      __typename
+    }
+    __typename
+  }
+  surroundingContent
+  usageKind
+  __typename
+}
+fragment SymbolUsagesConnection on UsageConnection {
+  nodes {
+    ...SymbolUsage
+    __typename
+  }
+  __typename
+}
+`
+
+export const SYMBOL_USAGES_QUERY1 = `
+query SymbolUsagesQuery($repoName: String!, $revspec: String!, $filePath: String!, $rangeStart: PositionInput!, $rangeEnd: PositionInput!, $symbolComparator: SymbolComparator, $first: Int!, $afterCursor: String) {
+  usagesForSymbol(
+    symbol: $symbolComparator
+    range: {repository: $repoName, revision: $revspec, path: $filePath, start: $rangeStart, end: $rangeEnd}
+    first: $first
+    after: $afterCursor
+  ) {
+  nodes {
+    provenance
+    usageRange {
+      repository
+      revision
+      path
+      range {
+        start {
+          line
+          character 
+        }
+        end {
+          line
+          character 
+        } 
+      } 
+    }
+    surroundingContent
+    usageKind 
+  } 
+  pageInfo {
+    hasNextPage
+    endCursor 
+  } 
+}
+`
 
 export const FILE_MATCH_SEARCH_QUERY = `
 query FileMatchSearchQuery($query: String!) {
