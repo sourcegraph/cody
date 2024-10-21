@@ -1,3 +1,4 @@
+import { $insertFirst } from '@lexical/utils'
 import {
     type ContextItem,
     type SerializedPromptEditorState,
@@ -8,6 +9,7 @@ import {
 } from '@sourcegraph/cody-shared'
 import { clsx } from 'clsx'
 import {
+    $createParagraphNode,
     $createTextNode,
     $getRoot,
     $getSelection,
@@ -53,7 +55,7 @@ export interface PromptEditorRefAPI {
     getSerializedValue(): SerializedPromptEditorValue
     setFocus(focus: boolean, options?: { moveCursorToEnd?: boolean }, cb?: () => void): void
     appendText(text: string, cb?: () => void): void
-    addMentions(items: ContextItem[], cb?: () => void): void
+    addMentions(items: ContextItem[], cb?: () => void, position?: 'before' | 'after', sep?: string): void
     setInitialContextMentions(items: ContextItem[], cb?: () => void): void
     setEditorState(state: SerializedPromptEditorState, cb?: () => void): void
 }
@@ -146,7 +148,12 @@ export const PromptEditor: FunctionComponent<Props> = ({
                     { onUpdate: cb }
                 )
             },
-            addMentions(items: ContextItem[], cb?: () => void): void {
+            addMentions(
+                items: ContextItem[],
+                cb?: () => void,
+                position: 'before' | 'after' = 'after',
+                sep = ' '
+            ): void {
                 const editor = editorRef.current
                 if (!editor) {
                     cb?.()
@@ -176,13 +183,40 @@ export const PromptEditor: FunctionComponent<Props> = ({
 
                 editorRef.current?.update(
                     () => {
-                        const nodesToInsert = lexicalNodesForContextItems(ops.create, {
-                            isFromInitialContext: false,
-                        })
-                        $insertNodes([$createTextNode(getWhitespace($getRoot())), ...nodesToInsert])
-                        const lastNode = nodesToInsert.at(-1)
-                        if (lastNode) {
-                            $selectAfter(lastNode)
+                        switch (position) {
+                            case 'before': {
+                                const nodesToInsert = lexicalNodesForContextItems(
+                                    ops.create,
+                                    {
+                                        isFromInitialContext: false,
+                                    },
+                                    sep
+                                )
+                                const pNode = $createParagraphNode()
+                                pNode.append(...nodesToInsert)
+                                $insertFirst($getRoot(), pNode)
+                                $selectEnd()
+                                break
+                            }
+                            case 'after': {
+                                const nodesToInsert = lexicalNodesForContextItems(
+                                    ops.create,
+                                    {
+                                        isFromInitialContext: false,
+                                    },
+                                    sep
+                                )
+                                $insertNodes([
+                                    $createTextNode(getWhitespace($getRoot())),
+                                    $createTextNode('\n'),
+                                    ...nodesToInsert,
+                                ])
+                                const lastNode = nodesToInsert.at(-1)
+                                if (lastNode) {
+                                    $selectAfter(lastNode)
+                                }
+                                break
+                            }
                         }
                     },
                     { onUpdate: cb }
@@ -206,6 +240,7 @@ export const PromptEditor: FunctionComponent<Props> = ({
                             const nodesToInsert = lexicalNodesForContextItems(items, {
                                 isFromInitialContext: true,
                             })
+                            nodesToInsert.push($createTextNode(' '))
                             $setSelection($getRoot().selectStart()) // insert at start
                             $insertNodes(nodesToInsert)
                             $selectEnd()

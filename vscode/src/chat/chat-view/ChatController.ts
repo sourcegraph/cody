@@ -1668,8 +1668,9 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                         userProductSubscription.pipe(
                             map(value => (value === pendingOperation ? null : value))
                         ),
-                    manuallyEditContext: () => {
-                        console.log('# ChatController.manuallyEditContext')
+                    clearFetchedContext: (index: number) => {
+                        this.chatBuilder.removeContextForHumanMessage(index)
+                        this.postViewTranscript()
                         return EMPTY
                     },
                 }

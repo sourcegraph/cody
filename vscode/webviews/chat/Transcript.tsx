@@ -358,6 +358,22 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
 
     const resetIntent = useCallback(() => setIntentResults(undefined), [setIntentResults])
 
+    const manuallyEditContext = useCallback(() => {
+        const contextFiles = humanMessage.contextFiles
+        if (!contextFiles) {
+            return
+        }
+
+        humanEditorRef.current?.addMentions(contextFiles, undefined, 'before', '\n')
+
+        // Clear the listed context files
+        extensionAPI.clearFetchedContext(humanMessage.index).subscribe({
+            error: error => {
+                console.error('Error editing context', error)
+            },
+        })
+    }, [extensionAPI, humanMessage.contextFiles, humanMessage.index])
+
     return (
         <>
             <HumanMessageCell
@@ -428,6 +444,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                     reSubmitWithChatIntent={reSubmitWithChatIntent}
                     isContextLoading={isContextLoading}
                     onAddToFollowupChat={onAddToFollowupChat}
+                    onManuallyEditContext={manuallyEditContext}
                 />
             )}
             {(!experimentalOneBoxEnabled || humanMessage.intent !== 'search') &&

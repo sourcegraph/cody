@@ -91,7 +91,7 @@ export interface WebviewToExtensionAPI {
     /**
      * Move the fetched context into the previous input
      */
-    manuallyEditContext(): Observable<void>
+    clearFetchedContext(index: number): Observable<void>
 }
 
 export function createExtensionAPI(
@@ -119,7 +119,7 @@ export function createExtensionAPI(
         transcript: proxyExtensionAPI(messageAPI, 'transcript'),
         userHistory: proxyExtensionAPI(messageAPI, 'userHistory'),
         userProductSubscription: proxyExtensionAPI(messageAPI, 'userProductSubscription'),
-        manuallyEditContext: proxyExtensionAPI(messageAPI, 'manuallyEditContext'),
+        clearFetchedContext: proxyExtensionAPI(messageAPI, 'clearFetchedContext'),
     }
 }
 
