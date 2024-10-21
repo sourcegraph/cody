@@ -1,11 +1,7 @@
 import { diff } from 'fast-myers-diff'
 import * as vscode from 'vscode'
 import { GHOST_TEXT_COLOR } from '../commands/GhostHintDecorator'
-import {
-    CURRENT_LINE_DECORATION,
-    INSERTED_CODE_DECORATION,
-    REMOVED_CODE_DECORATION,
-} from '../non-stop/decorations/constants'
+const RANGE_BEHAVIOUR = vscode.DecorationRangeBehavior.ClosedClosed
 
 const STRIKETHROUGH_DECORATION_TYPE = vscode.window.createTextEditorDecorationType({
     textDecoration: 'line-through',
@@ -15,6 +11,32 @@ const GHOSTTEXT_DECORATION_TYPE = vscode.window.createTextEditorDecorationType({
     before: { color: GHOST_TEXT_COLOR },
     after: { color: GHOST_TEXT_COLOR },
 })
+const CURRENT_LINE_DECORATION = vscode.window.createTextEditorDecorationType({
+    isWholeLine: true,
+    backgroundColor: new vscode.ThemeColor('editor.wordHighlightTextBackground'),
+    borderColor: new vscode.ThemeColor('editor.wordHighlightTextBorder'),
+    rangeBehavior: RANGE_BEHAVIOUR,
+})
+
+const INSERTED_CODE_DECORATION = vscode.window.createTextEditorDecorationType({
+    backgroundColor: new vscode.ThemeColor('diffEditor.insertedLineBackground'),
+    isWholeLine: true,
+    rangeBehavior: RANGE_BEHAVIOUR,
+})
+
+const REMOVED_CODE_DECORATION = vscode.window.createTextEditorDecorationType({
+    backgroundColor: new vscode.ThemeColor('diffEditor.removedLineBackground'),
+    isWholeLine: true,
+    rangeBehavior: RANGE_BEHAVIOUR,
+})
+
+const allDecorations = [
+    REMOVED_CODE_DECORATION,
+    INSERTED_CODE_DECORATION,
+    CURRENT_LINE_DECORATION,
+    GHOSTTEXT_DECORATION_TYPE,
+    STRIKETHROUGH_DECORATION_TYPE,
+]
 
 export class AutoeditTestingProvider implements vscode.Disposable {
     disposables: vscode.Disposable[] = []
@@ -41,8 +63,17 @@ export class AutoeditTestingProvider implements vscode.Disposable {
         )
     }
 
+    private clearDecorations(editor: vscode.TextEditor): void {
+        for (const decorationType of allDecorations) {
+            editor.setDecorations(decorationType, [])
+        }
+    }
     private onChange(editor: vscode.TextEditor): void {
         if (!editor.document.uri.toString().includes('-autoedit')) {
+            return
+        }
+        if (editor.document.getText().includes('autoedit:pause')) {
+            this.clearDecorations(editor)
             return
         }
         const split = this.findSplitMarker(editor.document)
@@ -104,7 +135,7 @@ export class AutoeditTestingProvider implements vscode.Disposable {
                     ghosttextRanges.push({
                         range: new vscode.Range(line, b1, line, b2),
                         renderOptions: {
-                            after: {
+                            before: {
                                 contentText: afterLines[j].slice(b1, b2),
                             },
                         },
