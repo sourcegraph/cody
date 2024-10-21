@@ -70,31 +70,44 @@ export class AutoeditTestingProvider implements vscode.Disposable {
             })
         )
     }
+
     public dispose() {
         vscode.Disposable.from(...this.disposables).dispose()
     }
 }
+
 class DiffDecorationManager implements vscode.Disposable {
+    syntheticBlankLinks = new Set<number>()
     constructor(
         private readonly outputChannel: vscode.OutputChannel,
         private readonly editor: vscode.TextEditor
     ) {}
 
     public dispose() {
-        this.clearDecorations()
+        this.reset()
     }
 
-    private clearDecorations(): void {
+    private reset(): void {
         for (const decorationType of allDecorations) {
             this.editor.setDecorations(decorationType, [])
         }
+        this.editor.edit(edit => {
+            for (const lineNumber of this.syntheticBlankLinks) {
+                const line = this.editor.document.lineAt(lineNumber)
+                if (line.text !== '') {
+                    this.outputChannel.appendLine('Skipping non-blank line: ' + lineNumber)
+                } else {
+                    edit.replace(line.range, '')
+                }
+            }
+        })
     }
     public onChange(): void {
         if (!this.editor.document.uri.toString().includes('-autoedit')) {
             return
         }
+        this.reset()
         if (this.editor.document.getText().includes('autoedit:pause')) {
-            this.clearDecorations()
             return
         }
         const split = this.findSplitMarker(this.editor.document)
@@ -129,7 +142,7 @@ class DiffDecorationManager implements vscode.Disposable {
         const strikethroughRanges: vscode.Range[] = []
         const ghosttextRanges: vscode.DecorationOptions[] = []
         const modifiedRanges: vscode.Range[] = []
-        const insertedRanges: vscode.Range[] = []
+        const insertedRanges: vscode.DecorationOptions[] = []
         const deletedRanges: vscode.Range[] = []
         this.outputChannel.appendLine(JSON.stringify({ beforeLines, afterLines }, null, 2))
         for (const [x1, x2, y1, y2] of diff(beforeLines, afterLines)) {
@@ -177,11 +190,24 @@ class DiffDecorationManager implements vscode.Disposable {
                 deletedRanges.push(range)
             }
             for (let j = y1 + i; j < y2; j++) {
-                const line = before.start.line + j
-                const lineLength = document.lineAt(line).text.length
-                const range = new vscode.Range(line, 0, line, lineLength)
-                this.outputChannel.appendLine('insert: ' + document.getText(range))
-                insertedRanges.push(range)
+                const lineNumber = before.start.line + j
+                const lineLength = document.lineAt(lineNumber).text.length
+                const range = new vscode.Range(lineNumber, 0, lineNumber, lineLength)
+                this.syntheticBlankLinks.add(lineNumber)
+                this.editor.edit(edit => {
+                    edit.insert(range.start, '\n')
+                })
+                this.outputChannel.appendLine(
+                    JSON.stringify({ range, afterLines: afterLines[j] }, null, 2)
+                )
+                insertedRanges.push({
+                    range,
+                    renderOptions: {
+                        after: {
+                            contentText: afterLines[j],
+                        },
+                    },
+                })
             }
         }
         this.editor.setDecorations(CURRENT_LINE_DECORATION, modifiedRanges)
