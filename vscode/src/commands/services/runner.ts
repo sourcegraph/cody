@@ -80,7 +80,12 @@ export class CommandRunner implements vscode.Disposable {
 
         // Conditions checks
         const clientConfig = await ClientConfigSingleton.getInstance().getConfig()
-        if (!clientConfig?.customCommandsEnabled) {
+        if (!clientConfig) {
+            this.span.addEvent('Cancel request as clientConfig is not available yet')
+            this.span.end()
+            return
+        }
+        if (!clientConfig.customCommandsEnabled) {
             const disabledMsg = 'This feature has been disabled by your Sourcegraph site admin.'
             void vscode.window.showErrorMessage(disabledMsg)
             this.span.end()
