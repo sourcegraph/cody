@@ -44,6 +44,7 @@ import { isReinstalling } from '../uninstall/reinstall'
 import type { CommandResult } from './CommandResult'
 import { showAccountMenu } from './auth/account-menu'
 import { showSignInMenu, showSignOutMenu, tokenCallbackHandler } from './auth/auth'
+import { AutoeditTestingProvider } from './autoedits/AutoeditTestingProvider'
 import { AutoeditsProvider } from './autoedits/autoedits-provider'
 import type { MessageProviderOptions } from './chat/MessageProvider'
 import { ChatsController, CodyChatEditorViewType } from './chat/chat-view/ChatsController'
@@ -474,6 +475,7 @@ async function registerCodyCommands(
             () => new AutoeditsProvider()
         )
     )
+    disposables.push(new AutoeditTestingProvider())
 
     // Experimental Command: Auto Edit
     disposables.push(

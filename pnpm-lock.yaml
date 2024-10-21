@@ -549,6 +549,9 @@ importers:
       diff:
         specifier: ^5.2.0
         version: 5.2.0
+      fast-myers-diff:
+        specifier: ^3.2.0
+        version: 3.2.0
       fast-xml-parser:
         specifier: ^4.3.2
         version: 4.3.2
@@ -9416,7 +9419,6 @@ packages:
 
   /fast-myers-diff@3.2.0:
     resolution: {integrity: sha512-DxNm4a3gnV35AluvqjeAV3Zx3CAySs0tsaDjnex5JhnJAa2rxEUVCwmaL2gpz42ea1B+IJorlo7XLThXUaTQog==}
-    dev: true
 
   /fast-text-encoding@1.0.6:
     resolution: {integrity: sha512-VhXlQgj9ioXCqGstD37E/HBeqEGV/qOD/kmbVG8h5xKBYvM1L3lR1Zn4555cQ8GkYbJa8aJSipLPndE1k6zK2w==}
