@@ -31,6 +31,8 @@ export const Toolbar: FunctionComponent<{
 
     hidden?: boolean
     className?: string
+    intent?: ChatMessage['intent']
+    onSelectIntent?: (intent: ChatMessage['intent']) => void
 }> = ({
     userInfo,
     isEditorFocused,
@@ -42,6 +44,8 @@ export const Toolbar: FunctionComponent<{
     hidden,
     className,
     models,
+    intent,
+    onSelectIntent,
 }) => {
     /**
      * If the user clicks in a gap or on the toolbar outside of any of its buttons, report back to
@@ -94,6 +98,8 @@ export const Toolbar: FunctionComponent<{
                     onClick={onSubmitClick}
                     isEditorFocused={isEditorFocused}
                     state={submitState}
+                    intent={intent}
+                    onSelectIntent={onSelectIntent}
                 />
             </div>
         </menu>

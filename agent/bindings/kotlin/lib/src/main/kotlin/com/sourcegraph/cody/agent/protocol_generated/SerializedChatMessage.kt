@@ -10,7 +10,7 @@ data class SerializedChatMessage(
   val speaker: SpeakerEnum, // Oneof: human, assistant, system
   val text: String? = null,
   val model: String? = null,
-  val intent: IntentEnum? = null, // Oneof: search, chat
+  val intent: IntentEnum? = null, // Oneof: search, chat, edit, insert
 ) {
 
   enum class SpeakerEnum {
@@ -22,6 +22,8 @@ data class SerializedChatMessage(
   enum class IntentEnum {
     @SerializedName("search") Search,
     @SerializedName("chat") Chat,
+    @SerializedName("edit") Edit,
+    @SerializedName("insert") Insert,
   }
 }
 

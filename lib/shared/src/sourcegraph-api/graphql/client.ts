@@ -415,6 +415,7 @@ export interface Prompt {
     description?: string
     draft: boolean
     autoSubmit?: boolean
+    mode?: PromptMode
     definition: {
         text: string
     }
@@ -426,6 +427,8 @@ export interface Prompt {
         avatarURL: string
     }
 }
+
+export type PromptMode = 'CHAT' | 'EDIT' | 'INSERT'
 
 interface ContextFiltersResponse {
     site: {

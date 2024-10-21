@@ -8,6 +8,7 @@ import {
 } from '@sourcegraph/cody-shared'
 import type { CommandResult } from '../../CommandResult'
 import { executeEdit } from '../../edit/execute'
+import type { CodyCommandArgs } from '../types'
 import { executeDocCommand } from './doc'
 import { executeExplainCommand } from './explain'
 import { executeSmellCommand } from './smell'
@@ -47,20 +48,20 @@ export function isDefaultEditCommand(id: string): DefaultEditCommands | undefine
  */
 export async function executeDefaultCommand(
     id: DefaultCodyCommands | string,
-    additionalInstruction?: PromptString
+    args?: CodyCommandArgs
 ): Promise<CommandResult | undefined> {
     const key = id.replace(/^\//, '').trim() as DefaultCodyCommands
     switch (key) {
         case DefaultChatCommands.Explain:
-            return executeExplainCommand({ additionalInstruction })
+            return executeExplainCommand(args)
         case DefaultChatCommands.Smell:
-            return executeSmellCommand({ additionalInstruction })
+            return executeSmellCommand(args)
         case DefaultEditCommands.Test:
-            return executeTestEditCommand({ additionalInstruction })
+            return executeTestEditCommand(args)
         case DefaultEditCommands.Doc:
-            return executeDocCommand({ additionalInstruction })
+            return executeDocCommand(args)
         case DefaultEditCommands.Edit:
-            return { task: await executeEdit({}), type: 'edit' }
+            return { task: await executeEdit(args || {}), type: 'edit' }
         default:
             console.log('not a default command')
             return undefined

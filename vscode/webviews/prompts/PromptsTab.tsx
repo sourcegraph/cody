@@ -1,4 +1,4 @@
-import type { Action } from '@sourcegraph/cody-shared'
+import type { Action, ChatMessage } from '@sourcegraph/cody-shared'
 import { useClientActionDispatcher } from '../client/clientState'
 import { useLocalStorage } from '../components/hooks'
 import { PromptList } from '../components/promptList/PromptList'
@@ -6,6 +6,7 @@ import { View } from '../tabs/types'
 import { getVSCodeAPI } from '../utils/VSCodeApi'
 
 import { firstValueFrom } from '@sourcegraph/cody-shared'
+import type { PromptMode } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
 import { useExtensionAPI } from '@sourcegraph/prompt-editor'
 import styles from './PromptsTab.module.css'
 
@@ -28,6 +29,19 @@ export const PromptsTab: React.FC<{
             />
         </div>
     )
+}
+
+const promptModeToIntent = (mode?: PromptMode): ChatMessage['intent'] => {
+    switch (mode) {
+        case 'CHAT':
+            return 'chat'
+        case 'EDIT':
+            return 'edit'
+        case 'INSERT':
+            return 'insert'
+        default:
+            return 'chat'
+    }
 }
 
 export function useActionSelect() {
@@ -56,6 +70,7 @@ export function useActionSelect() {
                 dispatchClientAction(
                     {
                         editorState: promptEditorState,
+                        setLastHumanInputIntent: promptModeToIntent(action.mode),
                         submitHumanInput: action.autoSubmit,
                     },
                     // Buffer because PromptEditor is not guaranteed to be mounted after the `setView`
