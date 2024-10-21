@@ -41,6 +41,7 @@ query CurrentUser {
         displayName
         username
         avatarURL
+        siteAdmin
         primaryEmail {
             email
         }
@@ -432,6 +433,22 @@ mutation RecordTelemetryEvents($events: [TelemetryEventInput!]!) {
 			alwaysNil
 		}
 	}
+}
+`
+
+export const CREATE_PROMPT_MUTATION = `
+mutation CreatePrompt($input: PromptInput!) {
+    createPrompt(input: $input) {
+        id
+    }
+}
+`
+
+export const CHANGE_PROMPT_VISIBILITY = `
+mutation ChangePromptVisibility($id: ID!, $newVisibility: PromptVisibility!) {
+    changePromptVisibility(id: $id, newVisibility: $newVisibility) {
+        id
+    }
 }
 `
 
