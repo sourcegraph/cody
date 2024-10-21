@@ -181,11 +181,8 @@ jobs:
       fail-fast: false
       matrix:
         os: ['windows', 'ubuntu', 'macos']
-        # todo: allow for multiple VSCode Versions
-        # todo: allow modifying from workflow_dispatch args
-        # todo: build caching between shards (alternatively just speed up builds)
-        shardIndex: ['1', '2', '3', '4']
-        shardTotal: ['4']
+        shardIndex: ['1', '2'] # increase this as test total increases
+        shardTotal: ['2']
         exclude:
           - os: ${{ github.event_name == 'pull_request' && github.event.pull_request.draft && 'windows' }}
           - os: ${{ github.event_name == 'pull_request' && github.event.pull_request.draft && 'macos' }}
