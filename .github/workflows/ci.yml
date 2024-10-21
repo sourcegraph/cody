@@ -125,7 +125,7 @@ jobs:
         with:
           workload_identity_provider: ${{ secrets.DATA_TEAM_PROVIDER_NAME }}
           service_account: ${{ secrets.DATA_TEAM_SA_EMAIL }}
-      - uses: google-github-actions/setup-gcloud@v0
+      - uses: google-github-actions/setup-gcloud@v2
       - run: echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
         shell: bash
         id: pnpm-cache
@@ -187,8 +187,8 @@ jobs:
         shardIndex: ['1', '2', '3', '4']
         shardTotal: ['4']
         exclude:
-          - os: ${{ github.event_name == 'pull_request' && github.event.pull_request.draft == true && 'windows' }}
-          - os: ${{ github.event_name == 'pull_request' && github.event.pull_request.draft == true && 'macos' }}
+          - os: ${{ github.event_name == 'pull_request' && github.event.pull_request.draft && 'windows' }}
+          - os: ${{ github.event_name == 'pull_request' && github.event.pull_request.draft && 'macos' }}
     runs-on: ${{ matrix.os }}-latest
     timeout-minutes: 10
     steps:
@@ -219,6 +219,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: vscode_dist
+          path: vscode/dist
       - name: Run E2E tests
         run: pnpm -C vscode run test:e2e2:run --project e2e --shard=${{ matrix.shardIndex }}/${{ matrix.shardTotal }}
       - name: Upload blob report to GitHub Actions Artifacts
@@ -269,13 +270,12 @@ jobs:
       - name: Download E2E reports
         uses: actions/download-artifact@v4
         with:
-          path: vscode/.test/e2e/reports/blob
           pattern: e2e-blob-report-*
           merge-multiple: true
       - name: Merge into HTML Report
-        run: pnpm -C vscode exec playwright merge-reports --reporter html vscode/.test/e2e/reports/blob
+        run: pnpm -C vscode exec playwright merge-reports --reporter html .test/e2e/reports/blob
         env:
-          PLAYWRIGHT_HTML_OUTPUT_DIR: vscode/.test/e2e/reports/html
+          PLAYWRIGHT_HTML_OUTPUT_DIR: .test/e2e/reports/html
       - name: Upload HTML report
         uses: actions/upload-artifact@v4
         with:
@@ -283,7 +283,7 @@ jobs:
           path: vscode/.test/e2e/reports/html
           retention-days: 7
       - name: Report to Services
-        run: pnpm -C vscode exec playwright merge-reports --reporter github,buildkite-test-collector/playwright/reporter,@estruyf/github-actions-reporter vscode/.test/e2e/reports/blob
+        run: pnpm -C vscode exec playwright merge-reports --reporter github,buildkite-test-collector/playwright/reporter,@estruyf/github-actions-reporter .test/e2e/reports/blob
         env:
           BUILDKITE_ANALYTICS_TOKEN: ${{ secrets.BUILDKITE_ANALYTICS_TOKEN }}
           # This is required because the test collector from Buildkite is imprecise when it
