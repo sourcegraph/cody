@@ -84,7 +84,7 @@ export async function startPromptsMigration(): Promise<void> {
         const commandKey = command.key ?? command.slashCommand
 
         try {
-            const prompts = await graphqlClient.queryPrompts(commandKey)
+            const prompts = await graphqlClient.queryPrompts(commandKey.replace(/\s+/g,'-'))
 
             // If there is no prompts associated with the command include this
             // command to migration
@@ -105,7 +105,7 @@ export async function startPromptsMigration(): Promise<void> {
 
     for (let index = 0; index < commands.length; index++) {
         const command = commands[index]
-        const commandKey = command.key ?? command.slashCommand
+        const commandKey = (command.key ?? command.slashCommand).replace(/\s+/g,'-')
 
         const newPrompt = await graphqlClient.createPrompt({
             ownerId: currentUserId,
