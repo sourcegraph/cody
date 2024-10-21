@@ -109,7 +109,7 @@ export default defineProjectWithDefaults(__dirname, {
             entry: [resolve(__dirname, 'lib/index.ts'), resolve(__dirname, 'lib/agent/agent.worker.ts')],
         },
         rollupOptions: {
-            external: ['react', 'react/jsx-runtime'],
+            external: ['react', 'react/jsx-runtime', /^highlight\.js\/lib\/languages\/.+$/],
             watch: {
                 include: ['demo/**', 'lib/**'],
                 exclude: ['node_modules'],
