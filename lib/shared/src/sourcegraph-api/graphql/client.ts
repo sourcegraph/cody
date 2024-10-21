@@ -17,10 +17,12 @@ import { addCodyClientIdentificationHeaders } from '../client-name-version'
 import { DOTCOM_URL, isDotCom } from '../environments'
 import { isAbortError } from '../errors'
 import {
+    CHANGE_PROMPT_VISIBILITY,
     CHAT_INTENT_QUERY,
     CONTEXT_FILTERS_QUERY,
     CONTEXT_SEARCH_QUERY,
     CONTEXT_SEARCH_QUERY_WITH_RANGES,
+    CREATE_PROMPT_MUTATION,
     CURRENT_SITE_CODY_CONFIG_FEATURES,
     CURRENT_SITE_CODY_LLM_CONFIGURATION,
     CURRENT_SITE_CODY_LLM_CONFIGURATION_SMART_CONTEXT,
@@ -188,6 +190,7 @@ interface CurrentUserInfoResponse {
         hasVerifiedEmail: boolean
         displayName?: string
         username: string
+        siteAdmin: boolean
         avatarURL: string
         codyProEnabled: boolean
         primaryEmail?: { email: string } | null
@@ -427,6 +430,14 @@ export interface Prompt {
     }
 }
 
+export interface PromptInput {
+    ownerId: string
+    name: string
+    description: string
+    definitionText: string
+    visibility?: 'PUBLIC' | 'SECRET'
+}
+
 interface ContextFiltersResponse {
     site: {
         codyContextFilters: {
@@ -492,6 +503,7 @@ export interface CurrentUserInfo {
     hasVerifiedEmail: boolean
     username: string
     displayName?: string
+    siteAdmin: boolean
     avatarURL: string
     primaryEmail?: { email: string } | null
     organizations: {
@@ -1125,6 +1137,39 @@ export class SourcegraphGraphQLAPIClient {
             throw result
         }
         return result
+    }
+
+    public async createPrompt(input: PromptInput): Promise<{ id: string }> {
+        const response = await this.fetchSourcegraphAPI<APIResponse<{ createPrompt: { id: string } }>>(
+            CREATE_PROMPT_MUTATION,
+            { input }
+        )
+
+        const result = extractDataOrError(response, data => data.createPrompt)
+
+        if (result instanceof Error) {
+            throw result
+        }
+
+        return result
+    }
+
+    public async transferPromptOwnership(input: {
+        id: string
+        visibility: 'PUBLIC' | 'SECRET'
+    }): Promise<void> {
+        const response = await this.fetchSourcegraphAPI<APIResponse<unknown>>(CHANGE_PROMPT_VISIBILITY, {
+            id: input.id,
+            newVisibility: input.visibility,
+        })
+
+        const result = extractDataOrError(response, data => data)
+
+        if (result instanceof Error) {
+            throw result
+        }
+
+        return
     }
 
     /**

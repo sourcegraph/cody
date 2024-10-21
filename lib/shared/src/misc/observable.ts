@@ -245,7 +245,7 @@ export function promiseFactoryToObservable<T>(
                 }
             }
         }
-        run()
+        void run()
 
         return () => {
             unsubscribed = true
