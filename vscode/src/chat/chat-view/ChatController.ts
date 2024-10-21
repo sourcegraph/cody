@@ -1,6 +1,7 @@
 import {
     type ChatModel,
     type CodyClientConfig,
+    DefaultEditCommands,
     cenv,
     clientCapabilities,
     currentSiteVersion,
@@ -89,6 +90,7 @@ import {
     startAuthProgressIndicator,
 } from '../../auth/auth-progress-indicator'
 import type { startTokenReceiver } from '../../auth/token-receiver'
+import { executeCodyCommand } from '../../commands/CommandsController'
 import { getContextFileFromUri } from '../../commands/context/file-path'
 import { getContextFileFromCursor } from '../../commands/context/selection'
 import { resolveContextItems } from '../../editor/utils/editor-context'
@@ -719,6 +721,12 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             signal.throwIfAborted()
             const corpusContext = contextAlternatives[0].items
 
+            const inputTextWithoutContextChips = editorState
+                ? PromptString.unsafe_fromUserQuery(
+                      inputTextWithoutContextChipsFromPromptEditorState(editorState)
+                  )
+                : inputText
+
             const repositoryMentioned = mentions.find(contextItem =>
                 ['repository', 'tree'].includes(contextItem.type)
             )
@@ -733,55 +741,64 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 ? detectedIntentScores
                 : undefined
 
-            const userSpecifiedIntent = this.featureCodyExperimentalOneBox
-                ? manuallySelectedIntent && detectedIntent
+            const userSpecifiedIntent =
+                manuallySelectedIntent && detectedIntent
                     ? detectedIntent
-                    : 'auto'
-                : undefined
+                    : this.featureCodyExperimentalOneBox
+                      ? 'auto'
+                      : 'chat'
 
-            if (this.featureCodyExperimentalOneBox && repositoryMentioned) {
-                const inputTextWithoutContextChips = editorState
-                    ? PromptString.unsafe_fromUserQuery(
-                          inputTextWithoutContextChipsFromPromptEditorState(editorState)
-                      )
-                    : inputText
-
-                const finalIntentDetectionResponse = detectedIntent
-                    ? { intent: detectedIntent, allScores: detectedIntentScores }
-                    : await this.detectChatIntent({
-                          requestID,
-                          text: inputTextWithoutContextChips.toString(),
-                      })
-                          .then(async response => {
-                              signal.throwIfAborted()
-                              this.chatBuilder.setLastMessageIntent(response?.intent)
-                              this.postEmptyMessageInProgress(model)
-                              return response
-                          })
-                          .catch(() => undefined)
-
-                intent = finalIntentDetectionResponse?.intent
-                intentScores = finalIntentDetectionResponse?.allScores
-                signal.throwIfAborted()
-                if (intent === 'search') {
-                    telemetryEvents['cody.chat-question/executed'].record(
-                        {
-                            ...telemetryProperties,
-                            context: corpusContext,
-                            userSpecifiedIntent,
-                            detectedIntent: intent,
-                            detectedIntentScores: intentScores,
-                        },
-                        { current: span, firstToken: firstTokenSpan, addMetadata: true },
-                        tokenCounterUtils
-                    )
-
-                    return await this.handleSearchIntent({
-                        context: corpusContext,
-                        signal,
-                        contextAlternatives,
+            const finalIntentDetectionResponse = detectedIntent
+                ? { intent: detectedIntent, allScores: detectedIntentScores }
+                : this.featureCodyExperimentalOneBox && repositoryMentioned
+                  ? await this.detectChatIntent({
+                        requestID,
+                        text: inputTextWithoutContextChips.toString(),
                     })
-                }
+                        .then(async response => {
+                            signal.throwIfAborted()
+                            this.chatBuilder.setLastMessageIntent(response?.intent)
+                            this.postEmptyMessageInProgress(model)
+                            return response
+                        })
+                        .catch(() => undefined)
+                  : undefined
+
+            intent = finalIntentDetectionResponse?.intent
+            intentScores = finalIntentDetectionResponse?.allScores
+            signal.throwIfAborted()
+
+            if (['search', 'edit', 'insert'].includes(intent || '')) {
+                telemetryEvents['cody.chat-question/executed'].record(
+                    {
+                        ...telemetryProperties,
+                        context: corpusContext,
+                        userSpecifiedIntent,
+                        detectedIntent: intent,
+                        detectedIntentScores: intentScores,
+                    },
+                    { current: span, firstToken: firstTokenSpan, addMetadata: true },
+                    tokenCounterUtils
+                )
+            }
+
+            if (intent === 'edit' || intent === 'insert') {
+                return await this.handleEditMode({
+                    requestID,
+                    mode: intent,
+                    instruction: inputTextWithoutContextChips,
+                    context: corpusContext,
+                    signal,
+                    contextAlternatives,
+                })
+            }
+
+            if (intent === 'search') {
+                return await this.handleSearchIntent({
+                    context: corpusContext,
+                    signal,
+                    contextAlternatives,
+                })
             }
 
             // Experimental Feature: Deep Cody
@@ -889,6 +906,84 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         this.chatBuilder.addBotMessage(
             {
                 text: ps`"cody-experimental-one-box" feature flag is turned on.`,
+            },
+            ChatBuilder.NO_MODEL
+        )
+
+        void this.saveSession()
+        this.postViewTranscript()
+    }
+
+    private async handleEditMode({
+        requestID,
+        mode,
+        instruction,
+        context,
+        signal,
+        contextAlternatives,
+    }: {
+        requestID: string
+        instruction: PromptString
+        mode: 'edit' | 'insert'
+        context: ContextItem[]
+        signal: AbortSignal
+        contextAlternatives: RankedContext[]
+    }): Promise<void> {
+        signal.throwIfAborted()
+
+        this.chatBuilder.setLastMessageContext(context, contextAlternatives)
+        this.chatBuilder.setLastMessageIntent(mode)
+
+        const result = await executeCodyCommand(DefaultEditCommands.Edit, {
+            requestID,
+            runInChatMode: true,
+            userContextFiles: context,
+            configuration: {
+                instruction,
+                mode,
+                intent: mode === 'edit' ? 'edit' : 'add',
+            },
+        })
+
+        if (result?.type !== 'edit' || !result.task) {
+            this.postError(new Error('Failed to execute edit command'), 'transcript')
+            return
+        }
+
+        const task = result.task
+
+        let responseMessage = `Following is the response for the ${task.intent} instruction:\n`
+        task.diff?.map(diff => {
+            responseMessage += '\n```diff\n'
+            if (diff.type === 'deletion') {
+                responseMessage += task.document
+                    .getText(diff.range)
+                    .split('\n')
+                    .map(line => `- ${line}`)
+                    .join('\n')
+            }
+            if (diff.type === 'decoratedReplacement') {
+                responseMessage += diff.oldText
+                    .split('\n')
+                    .map(line => `- ${line}`)
+                    .join('\n')
+                responseMessage += diff.text
+                    .split('\n')
+                    .map(line => `+ ${line}`)
+                    .join('\n')
+            }
+            if (diff.type === 'insertion') {
+                responseMessage += diff.text
+                    .split('\n')
+                    .map(line => `+ ${line}`)
+                    .join('\n')
+            }
+            responseMessage += '\n```'
+        })
+
+        this.chatBuilder.addBotMessage(
+            {
+                text: ps`${PromptString.unsafe_fromLLMResponse(responseMessage)}`,
             },
             ChatBuilder.NO_MODEL
         )
