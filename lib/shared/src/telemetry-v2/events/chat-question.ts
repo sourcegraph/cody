@@ -55,6 +55,7 @@ export const events = [
                         // See https://github.com/sourcegraph/sourcegraph/pull/59524
                         recordsPrivateMetadataTranscript: recordTranscript ? 1 : 0,
                         isPublicRepo: params.repoIsPublic ? 1 : 0,
+                        isCommand: params.command ? 1 : 0,
                     },
                     privateMetadata: {
                         chatModel: params.chatModel,
@@ -139,6 +140,7 @@ export const events = [
                         detectedIntent: params.detectedIntent
                             ? map.intent(params.detectedIntent)
                             : undefined,
+                        isCommand: params.command ? 1 : 0,
                         ...metadata,
                         recordsPrivateMetadataTranscript: recordTranscript ? 1 : 0,
                     }),
@@ -153,6 +155,7 @@ export const events = [
                               )
                             : undefined,
                         detectedIntent: params.detectedIntent,
+                        command: params.command,
                         userSpecifiedIntent: params.userSpecifiedIntent,
                         traceId: spans.current.spanContext().traceId,
                         gitMetadata,
