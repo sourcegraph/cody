@@ -1,9 +1,9 @@
 name: Bug report (VS Code)
 description: File a bug report to help us improve
-title: 'bug: '
+title: ''
 labels:
   - bug
-  - clients/vscode
+  - repo/cody
 projects:
   - sourcegraph/387
 body:
