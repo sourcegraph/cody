@@ -171,6 +171,4 @@ interface _LegacyAgentServer {
 
   @JsonRequest("testing/requestErrors")
   fun testingRequestErrors(): CompletableFuture<List<NetworkRequest>>
-
-  @JsonRequest("extension/reset") fun extension_reset(params: Null?): CompletableFuture<Null?>
 }
