@@ -210,6 +210,9 @@ jobs:
           restore-keys: ${{ runner.os }}-pnpm-store-
       - name: Install dependencies
         run: pnpm install
+      - name: Build lib/shared
+        run: pnpm -C lib/shared build --force
+        # lib shared is used by the test framework
       - name: Setup Playwright browser dependencies
         run: pnpm -C vscode run test:e2e2:deps # this installs chromium etc
       - name: Download build artifact
