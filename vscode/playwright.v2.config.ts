@@ -1,5 +1,5 @@
 import * as path from 'node:path'
-import { type ReporterDescription, defineConfig } from '@playwright/test'
+import { defineConfig } from '@playwright/test'
 import * as dotenv from 'dotenv'
 import { ulid } from 'ulidx'
 import { CODY_ROOT_DIR, CODY_VSCODE_ROOT_DIR } from './e2e/utils/helpers'
@@ -147,23 +147,24 @@ export default defineConfig<WorkerOptions & TestOptions & TmpDirOptions>({
         },
     ],
     outputDir: '.test/e2e/results',
-    reporter: [
-        [
-            'html',
-            {
-                outputFolder: '.test/e2e/reports/html',
-                fileName: 'report.html',
-                open: 'never',
-            },
-        ],
-        ['blob', { outputDir: '.test/e2e/reports/blob' }],
-        debugMode
-            ? ['line', { printSteps: true, includeProjectInTestName: true }]
-            : ['list', { open: 'never' }],
-        ...(isCI
-            ? ([['buildkite-test-collector/playwright/reporter']] satisfies Array<ReporterDescription>)
-            : []),
-    ],
+    reporter: isCI
+        ? [
+              ['dot', {}],
+              ['blob', { outputDir: '.test/e2e/reports/blob' }],
+          ]
+        : [
+              [
+                  'html',
+                  {
+                      outputFolder: '.test/e2e/reports/html',
+                      fileName: 'report.html',
+                      open: 'never',
+                  },
+              ],
+              debugMode
+                  ? ['line', { printSteps: true, includeProjectInTestName: true }]
+                  : ['list', { open: 'never' }],
+          ],
     // Disabled until https://github.com/microsoft/playwright/issues/32387 is resolved
     // globalSetup: require.resolve(path.resolve(CODY_VSCODE_ROOT_DIR, './e2e/utils/global.setup')),
     // globalTeardown: require.resolve(path.resolve(CODY_VSCODE_ROOT_DIR, './e2e/utils/global.teardown')),
