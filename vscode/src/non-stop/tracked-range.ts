@@ -45,9 +45,11 @@ export function updateRangeMultipleChanges(
     return range
 }
 
-// Given a range and an edit, updates the range for the edit. Edits at the
-// start or end of the range shrink the range. If the range is deleted, return a
-// zero-width range at the start of the edit.
+/**
+ * Given a range and an edit, updates the range for the edit. Edits at the
+ * start or end of the range shrink the range. If the range is deleted, return a
+ * zero-width range at the start of the edit.
+ */
 export function updateRange(
     range: vscode.Range,
     change: TextChange,
