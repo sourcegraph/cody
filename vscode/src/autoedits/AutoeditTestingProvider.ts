@@ -45,30 +45,39 @@ export class AutoeditTestingProvider implements vscode.Disposable {
     constructor() {
         this.outputChannel = vscode.window.createOutputChannel('Autoedit Testing')
         this.disposables.push(
-            vscode.window.onDidChangeTextEditorSelection(e => {
-                const uri = e.textEditor.document.uri.toString()
-                let manager = this.documents.get(uri)
-                if (!manager) {
-                    manager = new DiffDecorationManager(this.outputChannel, e.textEditor)
-                    this.disposables.push(manager)
-                    this.documents.set(uri, manager)
-                }
-                try {
-                    manager.onChange()
-                } catch (error) {
-                    if (error instanceof Error) {
-                        this.outputChannel.appendLine(
-                            JSON.stringify({
-                                message: error.message,
-                                stack: error.stack,
-                            })
-                        )
-                    } else {
-                        this.outputChannel.appendLine(String(error))
-                    }
-                }
-            })
+            vscode.window.onDidChangeTextEditorSelection(async e => this.onChange(e.textEditor))
         )
+        // this.disposables.push(
+        //     vscode.workspace.onDidChangeTextDocument(async e => {
+        //         const manager = this.documents.get(e.document.uri.toString())
+        //         if (manager) {
+        //             await this.onChange(manager.editor)
+        //         }
+        //     })
+        // )
+    }
+    public async onChange(editor: vscode.TextEditor): Promise<void> {
+        const uri = editor.document.uri.toString()
+        let manager = this.documents.get(uri)
+        if (!manager) {
+            manager = new DiffDecorationManager(this.outputChannel, editor)
+            this.disposables.push(manager)
+            this.documents.set(uri, manager)
+        }
+        try {
+            await manager.onChange()
+        } catch (error) {
+            if (error instanceof Error) {
+                this.outputChannel.appendLine(
+                    JSON.stringify({
+                        message: error.message,
+                        stack: error.stack,
+                    })
+                )
+            } else {
+                this.outputChannel.appendLine(String(error))
+            }
+        }
     }
 
     public dispose() {
@@ -80,7 +89,7 @@ class DiffDecorationManager implements vscode.Disposable {
     syntheticBlankLinks = new Set<number>()
     constructor(
         private readonly outputChannel: vscode.OutputChannel,
-        private readonly editor: vscode.TextEditor
+        public readonly editor: vscode.TextEditor
     ) {}
 
     public dispose() {
@@ -102,7 +111,7 @@ class DiffDecorationManager implements vscode.Disposable {
             }
         })
     }
-    public onChange(): void {
+    public async onChange(): Promise<void> {
         if (!this.editor.document.uri.toString().includes('-autoedit')) {
             return
         }
@@ -117,7 +126,7 @@ class DiffDecorationManager implements vscode.Disposable {
         const before = new vscode.Range(0, 0, split.start.line, 0)
         const after = new vscode.Range(split.end.line + 1, 0, this.editor.document.lineCount, 0)
         // this.outputChannel.appendLine(JSON.stringify({ before, after }, null, 2))
-        this.setDecorations(before, after)
+        await this.setDecorations(before, after)
     }
 
     private findText(range: vscode.Range): string {
@@ -133,7 +142,7 @@ class DiffDecorationManager implements vscode.Disposable {
         return out.join('\n')
     }
 
-    private setDecorations(before: vscode.Range, after: vscode.Range) {
+    private async setDecorations(before: vscode.Range, after: vscode.Range): Promise<void> {
         const document = this.editor.document
         const beforeText = this.findText(before)
         const beforeLines = beforeText.split('\n')
@@ -164,6 +173,7 @@ class DiffDecorationManager implements vscode.Disposable {
                             2
                         )
                 )
+                // TODO: diff by words, not characters
                 for (const [a1, a2, b1, b2] of diff(beforeLines[j], afterLines[j])) {
                     strikethroughRanges.push(new vscode.Range(line, a1, line, a2))
                     ghosttextRanges.push({
@@ -194,7 +204,7 @@ class DiffDecorationManager implements vscode.Disposable {
                 const lineLength = document.lineAt(lineNumber).text.length
                 const range = new vscode.Range(lineNumber, 0, lineNumber, lineLength)
                 this.syntheticBlankLinks.add(lineNumber)
-                this.editor.edit(edit => {
+                await this.editor.edit(edit => {
                     edit.insert(range.start, '\n')
                 })
                 this.outputChannel.appendLine(
