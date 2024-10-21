@@ -174,7 +174,14 @@ class DiffDecorationManager implements vscode.Disposable {
                         )
                 )
                 // TODO: diff by words, not characters
-                for (const [a1, a2, b1, b2] of diff(beforeLines[j], afterLines[j])) {
+                const beforeWords = splitIntoWordsIsh(beforeLines[j])
+                const afterWords = splitIntoWordsIsh(afterLines[j])
+                for (const [c1, c2, d1, d2] of diff(beforeWords, afterWords)) {
+                    const a1 = findIndex(beforeWords, c1)
+                    const a2 = findIndex(beforeWords, c2)
+                    const b1 = findIndex(afterWords, d1)
+                    const b2 = findIndex(afterWords, d2)
+
                     strikethroughRanges.push(new vscode.Range(line, a1, line, a2))
                     ghosttextRanges.push({
                         range: new vscode.Range(line, b1, line, b2),
@@ -256,4 +263,16 @@ class DiffDecorationManager implements vscode.Disposable {
         }
         return results
     }
+}
+
+function findIndex(parts: string[], i: number): number {
+    let sum = 0
+    for (let a = 0; a < i; a++) {
+        sum += parts[a].length
+    }
+    return sum
+}
+
+function splitIntoWordsIsh(line: string): string[] {
+    return line.split(/(?=[^a-zA-Z0-9])|(?<=[^a-zA-Z0-9])/)
 }
