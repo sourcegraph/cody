@@ -8,7 +8,7 @@ import {
     type SerializedTextNode,
 } from 'lexical'
 import type { ChatMessage } from '../chat/transcript/messages'
-import { ContextItemSource } from '../codebase-context/messages'
+import { type ContextItem, ContextItemSource } from '../codebase-context/messages'
 import type { RangeData } from '../common/range'
 import { displayPath } from '../editor/displayPath'
 import type { PromptString } from '../prompt/prompt-string'
@@ -246,7 +246,15 @@ interface EditorStateFromPromptStringOptions {
     /**
      * Experimental support for template values. These are placeholder values between "{{" and "}}".
      */
-    parseTemplates: boolean
+    parseTemplates?: boolean
+
+    /**
+     * Context item map for better context item serialization (by default serialization
+     * uses PromptString references, which don't contain enough information to serialize
+     * non-file (non-standard) mentions properly, this map provides additional info for these
+     * non-standard prompts (like repository, directory or openctx mentions)
+     */
+    additionalContextItemsMap?: Map<string, ContextItem>
 }
 
 export function editorStateFromPromptString(
@@ -297,6 +305,7 @@ function lexicalEditorStateFromPromptString(
     // parts.
     const refs = input.getReferences()
     const refsByDisplayPath = new Map()
+
     for (const ref of refs) {
         refsByDisplayPath.set(displayPath(ref), ref)
     }
@@ -304,17 +313,37 @@ function lexicalEditorStateFromPromptString(
     let children: SupportedSerializedNodes[] = []
     let lastTextNode: SerializedTextNode | undefined
     const words = input.toString().split(' ')
+
     for (const word of words) {
         if (word.startsWith('@')) {
             const [displayPath, maybeRange] = word.slice(1).split(':', 2)
             const range = maybeRange ? parseRangeString(maybeRange) : undefined
             const uri = refsByDisplayPath.get(displayPath)
-            if (uri) {
-                if (lastTextNode) {
-                    children.push(lastTextNode)
-                    lastTextNode = undefined
-                }
+            const originalContextItem = opts?.additionalContextItemsMap?.get(word.slice(1))
 
+            // Save previous last text or mention node before adding new mention
+            if ((originalContextItem || uri) && lastTextNode) {
+                children.push(lastTextNode)
+                lastTextNode = undefined
+            }
+
+            if (originalContextItem) {
+                const contextItem = serializeContextItem(originalContextItem)
+
+                children.push({
+                    contextItem,
+                    version: 1,
+                    isFromInitialContext: false,
+                    type: CONTEXT_ITEM_MENTION_NODE_TYPE,
+                    text: contextItemMentionNodeDisplayText(contextItem),
+                } satisfies SerializedContextItemMentionNode)
+
+                // Add whitespace after inserted mention node
+                lastTextNode = textNode(' ')
+                continue
+            }
+
+            if (uri) {
                 const contextItem = serializeContextItem({
                     type: 'file',
                     uri,
@@ -322,13 +351,16 @@ function lexicalEditorStateFromPromptString(
                     // HACK(sqs): makes Explain work, but see HACK note above.
                     source: range ? ContextItemSource.User : ContextItemSource.Editor,
                 })
+
                 children.push({
-                    type: CONTEXT_ITEM_MENTION_NODE_TYPE,
                     contextItem,
-                    text: contextItemMentionNodeDisplayText(contextItem),
-                    isFromInitialContext: false,
                     version: 1,
+                    isFromInitialContext: false,
+                    type: CONTEXT_ITEM_MENTION_NODE_TYPE,
+                    text: contextItemMentionNodeDisplayText(contextItem),
                 } satisfies SerializedContextItemMentionNode)
+
+                // Add whitespace after inserted mention node
                 lastTextNode = textNode(' ')
                 continue
             }
@@ -339,6 +371,7 @@ function lexicalEditorStateFromPromptString(
         }
         lastTextNode.text += `${word} `
     }
+
     if (lastTextNode) {
         lastTextNode.text = lastTextNode.text.trimEnd()
         children.push(lastTextNode)

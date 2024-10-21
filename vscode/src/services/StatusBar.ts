@@ -29,8 +29,6 @@ import { version } from '../version'
 import { FeedbackOptionItems, SupportOptionItems } from './FeedbackOptions'
 import { enableVerboseDebugMode } from './utils/export-logs'
 
-let singleton: CodyStatusBar | undefined = undefined
-
 const QUICK_PICK_ITEM_CHECKED_PREFIX = '$(check) '
 const QUICK_PICK_ITEM_EMPTY_INDENT_PREFIX = '\u00A0\u00A0\u00A0\u00A0\u00A0 '
 
@@ -47,7 +45,9 @@ interface StatusBarState {
 
     interact: (abortSignal: AbortSignal) => Promise<void> | void
 }
-export class CodyStatusBar {
+export class CodyStatusBar implements vscode.Disposable {
+    private static singleton: CodyStatusBar | null = null
+
     private errors = new Mutable<Set<StatusBarError>>(new Set())
     private loaders = new Mutable<Set<StatusBarLoader>>(new Set())
     private renderSubscription: Subscription<any>
@@ -104,16 +104,12 @@ export class CodyStatusBar {
         })
     }
 
-    static init(disposables: vscode.Disposable[]): CodyStatusBar {
-        if (singleton) {
+    static init(): CodyStatusBar {
+        if (CodyStatusBar.singleton) {
             throw new Error('CodyStatusBar already initialized')
         }
-        singleton = new CodyStatusBar()
-        // by returning a separate disposable we ensure that only the component
-        // that initialized it can dispose of it.
-        const disposable = vscode.Disposable.from({ dispose: singleton.dispose.bind(singleton) })
-        disposables.push(disposable)
-        return singleton
+        CodyStatusBar.singleton = new CodyStatusBar()
+        return CodyStatusBar.singleton
     }
 
     addError(args: StatusBarErrorArgs) {
@@ -289,16 +285,11 @@ export class CodyStatusBar {
                 interact: interactAuth,
             }
         }
-        if (!authStatus.authenticated && authStatus.showNetworkError) {
-            return {
-                icon: 'disabled',
-                tooltip: 'Network issues prevented Cody from signing in.',
-                style: 'error',
-                tags,
-                interact: interactAuth,
-            }
-        }
-        if (!authStatus.authenticated && authStatus.showInvalidAccessTokenError) {
+        if (
+            !authStatus.authenticated &&
+            !authStatus.showNetworkError &&
+            authStatus.showInvalidAccessTokenError
+        ) {
             return {
                 icon: 'disabled',
                 tooltip: 'Your authentication has expired.\nSign in again to continue using Cody.',
@@ -307,22 +298,17 @@ export class CodyStatusBar {
                 interact: interactAuth,
             }
         }
-        if (!authStatus.authenticated) {
-            return {
-                text: 'Sign In',
-                tooltip: 'Sign in to get started with Cody.',
-                style: 'warning',
-                tags,
-                interact: interactAuth,
-            }
-        }
 
         if (errors.size > 0) {
             const [firstError, ...otherErrors] = [...errors.values()]
-            const hasDisabilitatingError = [...errors.values()].some(
-                error =>
-                    error.errorType in
-                    (['AutoCompleteDisabledByAdmin', 'RateLimitError'] satisfies StatusBarErrorType[])
+            const hasDisabilitatingError = [...errors.values()].some(error =>
+                (
+                    [
+                        'AutoCompleteDisabledByAdmin',
+                        'RateLimitError',
+                        'Networking',
+                    ] satisfies StatusBarErrorType[]
+                ).includes(error.errorType as any)
             )
             return {
                 text: '',
@@ -338,6 +324,26 @@ export class CodyStatusBar {
                     errors,
                     isIgnored: ignoreStatus,
                 }),
+            }
+        }
+
+        if (!authStatus.authenticated && authStatus.showNetworkError) {
+            return {
+                icon: 'disabled',
+                tooltip: 'Network issues prevented Cody from signing in.',
+                style: 'error',
+                tags,
+                interact: interactNetworkIssues,
+            }
+        }
+
+        if (!authStatus.authenticated) {
+            return {
+                text: 'Sign In',
+                tooltip: 'Sign in to get started with Cody.',
+                style: 'warning',
+                tags,
+                interact: interactAuth,
             }
         }
 
@@ -382,18 +388,22 @@ export class CodyStatusBar {
         }
     }
 
-    private dispose() {
+    dispose() {
         this.errors.complete()
         this.loaders.complete()
         this.statusBarItem.dispose()
         this.command.dispose()
         this.renderSubscription?.unsubscribe()
-        singleton = undefined
+        CodyStatusBar.singleton = null
     }
 }
 
 async function interactAuth(abort: AbortSignal) {
     void vscode.commands.executeCommand('cody.chat.focus')
+}
+
+async function interactNetworkIssues(abort: AbortSignal) {
+    void vscode.commands.executeCommand('cody.debug.net.showOutputChannel')
 }
 
 function interactDefault({
@@ -654,7 +664,7 @@ interface StatusBarLoader {
     kind: 'startup' | 'feature'
 }
 
-type StatusBarErrorType = 'auth' | 'RateLimitError' | 'AutoCompleteDisabledByAdmin'
+type StatusBarErrorType = 'auth' | 'RateLimitError' | 'AutoCompleteDisabledByAdmin' | 'Networking'
 
 interface StatusBarItem extends vscode.QuickPickItem {
     onSelect: () => Promise<void>

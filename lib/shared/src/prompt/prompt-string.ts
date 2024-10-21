@@ -254,6 +254,10 @@ export class PromptString {
         return internal_createPromptString(document.getText(range), [document.uri])
     }
 
+    public static fromStructuredGitDiff(uri: vscode.Uri, diff: string) {
+        return internal_createPromptString(diff, [uri])
+    }
+
     public static fromGitDiff(uri: vscode.Uri, oldContent: string, newContent: string) {
         const diff = createGitDiff(displayPath(uri), oldContent, newContent)
         return internal_createPromptString(diff, [uri])

@@ -12,6 +12,7 @@ import { outputChannelManager } from '../output-channel-logger'
  * - `cody.dev.openAutocompleteTraceView`: boolean
  * - `cody.dev.openOutputConsole`: boolean
  */
+//TODO(rnauta): Move this to a seperate Doctor Service
 export function onActivationDevelopmentHelpers(): void {
     const settings = vscode.workspace.getConfiguration('cody.dev')
 

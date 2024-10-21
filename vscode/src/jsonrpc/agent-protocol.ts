@@ -284,6 +284,10 @@ export type ClientRequests = {
     // which match the specified regular expressions. Pass `undefined` to remove
     // the override.
     'testing/ignore/overridePolicy': [ContextFilters | null, null]
+
+    // Called after the extension has been uninstalled by a user action.
+    // Attempts to wipe out any state that the extension has stored.
+    'extension/reset': [null, null]
 }
 
 // ================

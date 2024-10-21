@@ -197,8 +197,8 @@ const CodyWebPanel: FC<CodyWebPanelProps> = props => {
                 // Common file mention with possible file range positions
                 mentions.push({
                     type: 'file',
-                    title: initialContextData?.fileRange ? 'Current Selection' : 'Current File',
                     isIgnored: false,
+                    title: initialContextData?.fileRange ? 'Current Selection' : 'Current File',
                     range: initialContextData?.fileRange
                         ? {
                               start: { line: initialContextData.fileRange.startLine, character: 0 },

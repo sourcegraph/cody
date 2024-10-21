@@ -8,10 +8,12 @@ import { document } from '../completions/test-helpers'
 import { range } from '../testutils/textDocument'
 
 import {
+    type CharacterLoggerCounters,
     CharactersLogger,
     DEFAULT_COUNTERS,
-    type DocumentChangeCounters,
     LOG_INTERVAL,
+    RAPID_CHANGE_TIMEOUT,
+    SELECTION_TIMEOUT,
 } from './CharactersLogger'
 
 const testDocument = document('foo')
@@ -20,24 +22,26 @@ describe('CharactersLogger', () => {
     let recordSpy: MockInstance
     let tracker: CharactersLogger
 
+    let onDidChangeActiveTextEditor: (event: vscode.TextEditor | undefined) => void
     let onDidChangeTextDocument: (event: vscode.TextDocumentChangeEvent) => void
+    let onDidCloseTextDocument: (document: vscode.TextDocument) => void
     let onDidChangeWindowState: (state: vscode.WindowState) => void
-    let onDidChangeVisibleTextEditors: (editors: vscode.TextEditor[]) => void
     let onDidChangeTextEditorSelection: (event: vscode.TextEditorSelectionChangeEvent) => void
 
     let mockWindowState: Writable<vscode.WindowState>
-    let mockVisibleTextEditors: vscode.TextEditor[]
+    let mockActiveTextEditor: Writable<vscode.TextEditor> | undefined
     let mockTextEditorSelectionEvent: vscode.TextEditorSelectionChangeEvent
 
     beforeEach(() => {
         vi.useFakeTimers()
-        vi.setSystemTime(0) // Start at timestamp 0 for consistency
 
         recordSpy = vi.spyOn(telemetryRecorder, 'recordEvent')
 
-        // Mock functions and variables
         mockWindowState = { focused: true }
-        mockVisibleTextEditors = [{ document: testDocument } as vscode.TextEditor]
+        mockActiveTextEditor = {
+            document: testDocument,
+            visibleRanges: [range(0, 0, 1000, 1000)],
+        } as unknown as vscode.TextEditor
 
         mockTextEditorSelectionEvent = {
             textEditor: { document: testDocument } as vscode.TextEditor,
@@ -51,21 +55,26 @@ describe('CharactersLogger', () => {
                     onDidChangeTextDocument = listener
                     return { dispose: () => {} }
                 },
+                onDidCloseTextDocument(listener) {
+                    onDidCloseTextDocument = listener
+                    return { dispose: () => {} }
+                },
             },
             {
+                state: mockWindowState,
+                activeTextEditor: mockActiveTextEditor,
                 onDidChangeWindowState(listener) {
                     onDidChangeWindowState = listener
                     return { dispose: () => {} }
                 },
-                onDidChangeVisibleTextEditors(listener) {
-                    onDidChangeVisibleTextEditors = listener
+                onDidChangeActiveTextEditor(listener) {
+                    onDidChangeActiveTextEditor = listener
                     return { dispose: () => {} }
                 },
                 onDidChangeTextEditorSelection(listener) {
                     onDidChangeTextEditorSelection = listener
                     return { dispose: () => {} }
                 },
-                visibleTextEditors: mockVisibleTextEditors,
             }
         )
     })
@@ -103,264 +112,174 @@ describe('CharactersLogger', () => {
         }
     }
 
-    // Helper function to create default metadata counters with expected values
-    function expectedCounters(expected: Partial<DocumentChangeCounters>): Record<string, number> {
+    // Helper function to create expected counters
+    function expectedCharCounters(expected: Partial<CharacterLoggerCounters>): Record<string, number> {
         return { ...DEFAULT_COUNTERS, ...expected }
     }
 
-    it('logs inserted and deleted characters for user edits', () => {
+    it('should handle insertions, deletions, rapid and stale changes, and changes outside of visible range', () => {
+        // Simulate user typing in the active text editor
+        onDidChangeActiveTextEditor(mockActiveTextEditor)
         onDidChangeTextEditorSelection(mockTextEditorSelectionEvent)
-        onDidChangeTextDocument(createChange({ text: 'foo', range: range(0, 0, 0, 0), rangeLength: 0 }))
-        onDidChangeTextEditorSelection(mockTextEditorSelectionEvent)
-        onDidChangeTextDocument(createChange({ text: 'bar', range: range(0, 3, 0, 3), rangeLength: 0 }))
 
+        // Scenario 1: User types 'hello' (insertion)
+        onDidChangeTextDocument(
+            createChange({ text: 'hello', range: range(0, 0, 0, 0), rangeLength: 0 })
+        )
+
+        // Advance time less than RAPID_CHANGE_TIMEOUT to simulate rapid change
+        vi.advanceTimersByTime(RAPID_CHANGE_TIMEOUT - 5)
+
+        // Scenario 2: User deletes 'he' (deletion)
+        onDidChangeTextDocument(createChange({ text: '', range: range(0, 0, 0, 2), rangeLength: 2 }))
+
+        // Now, advance time beyond SELECTION_TIMEOUT to make selection stale
+        vi.advanceTimersByTime(SELECTION_TIMEOUT + 1000)
+
+        // Scenario 3: User types 'there' (stale insertion)
+        onDidChangeTextDocument(
+            createChange({ text: 'there', range: range(0, 3, 0, 3), rangeLength: 0 })
+        )
+        // Should be counted as an insertion, stale change
+
+        // Scenario 4: Change outside of visible range
+        // Simulate that the change is outside the visible range
+        mockActiveTextEditor!.visibleRanges = [range(1, 0, 1, 0)] // Lines 1 to 1 (empty range)
+        onDidChangeActiveTextEditor(mockActiveTextEditor)
+
+        // User types 'hidden' at line 50 (outside visible range)
+        onDidChangeTextDocument(
+            createChange({
+                text: 'hidden',
+                range: range(50, 0, 50, 0), // Line 50, start
+                rangeLength: 0,
+            })
+        )
+
+        // Restore the visible ranges
+        mockActiveTextEditor!.visibleRanges = [range(0, 0, 1000, 0)]
+
+        // Flush the log
         vi.advanceTimersByTime(LOG_INTERVAL)
 
+        // Expected counters:
         expect(recordSpy).toHaveBeenCalledWith('cody.characters', 'flush', {
-            metadata: expectedCounters({
-                normal_inserted: 6,
-                normal_deleted: 0,
+            metadata: expectedCharCounters({
+                xxs_change: 1,
+                xxs_change_inserted: 5, // 'hello'
+
+                rapid_xxxs_change: 1,
+                rapid_xxxs_change_deleted: 2, // 'he'
+
+                stale_xxs_change: 1,
+                stale_xxs_change_inserted: 5, // 'there'
+
+                outside_of_visible_ranges: 1,
+                outside_of_visible_ranges_inserted: 6, // 'hidden'
             }),
         })
     })
 
-    it('logs changes under "windowNotFocused" when window is not focused', () => {
+    it('should handle undo, redo, window not focused, no active editor, outside of active editor, and document closing', () => {
+        onDidChangeActiveTextEditor(mockActiveTextEditor)
         onDidChangeTextEditorSelection(mockTextEditorSelectionEvent)
-        onDidChangeTextDocument(createChange({ text: 'foo', range: range(0, 0, 0, 0), rangeLength: 0 }))
 
-        // Simulate window losing focus
-        mockWindowState.focused = false
-        onDidChangeWindowState(mockWindowState)
+        const changeReasons = { Undo: 1, Redo: 2 } as const
 
-        onDidChangeTextDocument(createChange({ text: 'bar', range: range(0, 3, 0, 3), rangeLength: 0 }))
+        onDidChangeTextDocument(createChange({ text: 'test', range: range(0, 0, 0, 0), rangeLength: 0 }))
 
-        vi.advanceTimersByTime(LOG_INTERVAL)
-
-        // Changes while focused and not focused are logged under different types
-        expect(recordSpy).toHaveBeenCalledWith('cody.characters', 'flush', {
-            metadata: expectedCounters({
-                normal_inserted: 3,
-                normal_deleted: 0,
-                windowNotFocused_inserted: 3,
-                windowNotFocused_deleted: 0,
-            }),
-        })
-    })
-
-    it('logs changes under "nonVisibleDocument" when in non-visible documents', () => {
-        // Remove testDocument from visible editors
-        mockVisibleTextEditors = []
-        onDidChangeVisibleTextEditors(mockVisibleTextEditors)
-
-        onDidChangeTextEditorSelection(mockTextEditorSelectionEvent)
-        onDidChangeTextDocument(createChange({ text: 'foo', range: range(0, 0, 0, 0), rangeLength: 0 }))
-
-        vi.advanceTimersByTime(LOG_INTERVAL)
-
-        // Change is logged under 'nonVisibleDocument'
-        expect(recordSpy).toHaveBeenCalledWith('cody.characters', 'flush', {
-            metadata: expectedCounters({
-                nonVisibleDocument_inserted: 3,
-                nonVisibleDocument_deleted: 0,
-            }),
-        })
-    })
-
-    it('logs changes under "inactiveSelection" when there has been no recent cursor movement', () => {
-        // Simulate last selection happened 6 seconds ago
-        onDidChangeTextEditorSelection(mockTextEditorSelectionEvent)
-        vi.advanceTimersByTime(6000)
-
-        onDidChangeTextDocument(createChange({ text: 'foo', range: range(0, 0, 0, 0), rangeLength: 0 }))
-
-        vi.advanceTimersByTime(LOG_INTERVAL - 6000)
-
-        // Change is logged under 'inactiveSelection'
-        expect(recordSpy).toHaveBeenCalledWith('cody.characters', 'flush', {
-            metadata: expectedCounters({
-                inactiveSelection_inserted: 3,
-                inactiveSelection_deleted: 0,
-            }),
-        })
-    })
-
-    it('logs undo and redo changes under their respective types', () => {
-        onDidChangeTextEditorSelection(mockTextEditorSelectionEvent)
-        const textDocumentChangeReason = {
-            undo: 1,
-            redo: 2,
-        }
-
-        // Simulate undo change
+        // Simulate undo
         onDidChangeTextDocument(
             createChange({
                 text: '',
-                range: range(0, 3, 0, 0),
-                rangeLength: 3,
-                document: testDocument,
-                reason: textDocumentChangeReason.undo,
+                range: range(0, 4, 0, 0),
+                rangeLength: 4,
+                reason: changeReasons.Undo,
             })
         )
 
-        // Simulate redo change
+        // Simulate redo
         onDidChangeTextDocument(
             createChange({
-                text: 'foo',
+                text: 'test',
                 range: range(0, 0, 0, 0),
                 rangeLength: 0,
-                document: testDocument,
-                reason: textDocumentChangeReason.redo,
+                reason: changeReasons.Redo,
             })
         )
 
-        vi.advanceTimersByTime(LOG_INTERVAL)
+        mockWindowState.focused = false
+        onDidChangeWindowState(mockWindowState)
 
-        // Changes are logged under 'undo' and 'redo'
-        expect(recordSpy).toHaveBeenCalledWith('cody.characters', 'flush', {
-            metadata: expectedCounters({
-                undo_inserted: 0,
-                undo_deleted: 3,
-                redo_inserted: 3,
-                redo_deleted: 0,
-            }),
-        })
-    })
-
-    it('logs rapid, large changes under "rapidLargeChange"', () => {
-        onDidChangeTextEditorSelection(mockTextEditorSelectionEvent)
-
-        // Simulate large change (e.g., 2000 characters inserted)
-        const largeText = 'a'.repeat(2000)
+        // User types ' window not focused' when window not focused
         onDidChangeTextDocument(
-            createChange({ text: largeText, range: range(0, 0, 0, 0), rangeLength: 0 })
+            createChange({ text: 'window not focused', range: range(0, 4, 0, 4), rangeLength: 0 })
         )
 
-        vi.advanceTimersByTime(LOG_INTERVAL)
+        // Simulate window gaining focus
+        mockWindowState.focused = true
+        onDidChangeWindowState(mockWindowState)
 
-        // Change is logged under 'rapidLargeChange'
-        expect(recordSpy).toHaveBeenCalledWith('cody.characters', 'flush', {
-            metadata: expectedCounters({
-                rapidLargeChange_inserted: 2000,
-                rapidLargeChange_deleted: 0,
-            }),
-        })
-    })
-
-    it('counts large changes as "normal" if they are not rapid', () => {
-        onDidChangeTextEditorSelection(mockTextEditorSelectionEvent)
-
-        // Simulate large change after some time has passed
-        vi.advanceTimersByTime(2000) // Advance time beyond LARGE_CHANGE_TIMEOUT
-        const largeText = 'a'.repeat(2000)
+        // Simulate no active editor
+        onDidChangeActiveTextEditor(undefined)
         onDidChangeTextDocument(
-            createChange({ text: largeText, range: range(0, 0, 0, 0), rangeLength: 0 })
+            createChange({ text: 'no active editor', range: range(0, 21, 0, 21), rangeLength: 0 })
         )
 
-        vi.advanceTimersByTime(LOG_INTERVAL - 2000)
+        // Simulate editor for different document
+        const anotherDocument = {
+            uri: { toString: () => 'file://anotherdocument' },
+        } as vscode.TextDocument
 
-        // The large change is logged under 'normal'
-        expect(recordSpy).toHaveBeenCalledWith('cody.characters', 'flush', {
-            metadata: expectedCounters({
-                normal_inserted: 2000,
-                normal_deleted: 0,
-            }),
-        })
-    })
-
-    it('resets counter after flushing', () => {
-        onDidChangeTextEditorSelection(mockTextEditorSelectionEvent)
-        onDidChangeTextDocument(createChange({ text: 'foo', range: range(0, 0, 0, 0), rangeLength: 0 }))
-
-        vi.advanceTimersByTime(LOG_INTERVAL)
-
-        expect(recordSpy).toHaveBeenCalledTimes(1)
-        expect(recordSpy).toHaveBeenCalledWith('cody.characters', 'flush', {
-            metadata: expectedCounters({
-                normal_inserted: 3,
-                normal_deleted: 0,
-            }),
-        })
-
-        onDidChangeTextEditorSelection(mockTextEditorSelectionEvent)
-        onDidChangeTextDocument(createChange({ text: 'bar', range: range(0, 3, 0, 3), rangeLength: 0 }))
-
-        vi.advanceTimersByTime(LOG_INTERVAL)
-
-        expect(recordSpy).toHaveBeenCalledTimes(2)
-        expect(recordSpy).toHaveBeenCalledWith('cody.characters', 'flush', {
-            metadata: expectedCounters({
-                normal_inserted: 3,
-                normal_deleted: 0,
-            }),
-        })
-    })
-
-    it('logs user typing under "normal" after cursor movement', () => {
-        // Simulate user moving the cursor
-        onDidChangeTextEditorSelection(mockTextEditorSelectionEvent)
-
-        // Simulate user typing
-        onDidChangeTextDocument(createChange({ text: 'foo', range: range(0, 0, 0, 0), rangeLength: 0 }))
-
-        vi.advanceTimersByTime(LOG_INTERVAL)
-
-        // Changes are logged under 'normal'
-        expect(recordSpy).toHaveBeenCalledWith('cody.characters', 'flush', {
-            metadata: expectedCounters({
-                normal_inserted: 3,
-                normal_deleted: 0,
-            }),
-        })
-    })
-
-    it('handles multiple documents and selections', () => {
-        const anotherDocument = document('bar')
-        mockVisibleTextEditors.push({
+        const anotherEditor = {
             document: anotherDocument,
-        } as vscode.TextEditor)
-        onDidChangeVisibleTextEditors(mockVisibleTextEditors)
+            visibleRanges: [range(0, 0, 1000, 0)],
+        } as unknown as vscode.TextEditor
 
-        // Simulate cursor movement in both documents
-        onDidChangeTextEditorSelection({
-            textEditor: {
-                document: testDocument,
-            } as vscode.TextEditor,
-            selections: [],
-            kind: undefined,
-        })
-        onDidChangeTextEditorSelection({
-            textEditor: {
-                document: anotherDocument,
-            } as vscode.TextEditor,
-            selections: [],
-            kind: undefined,
-        })
+        onDidChangeActiveTextEditor(anotherEditor)
 
-        // Simulate changes in both documents
+        // User types in original document (not the active editor's document)
         onDidChangeTextDocument(
             createChange({
-                text: 'foo',
-                range: range(0, 0, 0, 0),
+                text: 'outside active editor',
+                range: range(0, 21, 0, 21),
                 rangeLength: 0,
                 document: testDocument,
             })
         )
+
+        onDidCloseTextDocument(testDocument)
         onDidChangeTextDocument(
             createChange({
-                text: 'baz',
-                range: range(0, 0, 0, 0),
+                text: '!',
+                range: range(0, 50, 0, 50),
                 rangeLength: 0,
-                document: anotherDocument,
+                document: testDocument,
             })
         )
 
         vi.advanceTimersByTime(LOG_INTERVAL)
 
-        // Changes in both documents should be counted under 'normal'
+        // Expected counters:
         expect(recordSpy).toHaveBeenCalledWith('cody.characters', 'flush', {
-            metadata: expectedCounters({
-                normal_inserted: 6,
-                normal_deleted: 0,
+            metadata: expectedCharCounters({
+                xxs_change: 1,
+                xxs_change_inserted: 4, // 'test'
+
+                undo: 1,
+                undo_deleted: 4, // 'test' deleted
+
+                redo: 1,
+                redo_inserted: 4, // 'test' re-inserted
+
+                window_not_focused: 1,
+                window_not_focused_inserted: 18, // ' window not focused'
+
+                no_active_editor: 1,
+                no_active_editor_inserted: 16, // 'no active editor'
+
+                outside_of_active_editor: 2,
+                outside_of_active_editor_inserted: 22, //'outside active editor'
             }),
         })
     })

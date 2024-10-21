@@ -95,6 +95,8 @@ describe('getConfiguration', () => {
                         return false
                     case 'cody.experimental.supercompletions':
                         return false
+                    case 'cody.experimental.autoedit':
+                        return undefined
                     case 'cody.experimental.noodle':
                         return false
                     case 'cody.experimental.minion.anthropicKey':
@@ -111,9 +113,19 @@ describe('getConfiguration', () => {
                         return 123
                     case 'cody.dev.models':
                         return [{ model: 'm', provider: 'p' }] satisfies ChatModelProviderConfig[]
+                    case 'cody.net.mode':
+                        return 'auto'
+                    case 'cody.net.proxy.endpoint':
+                        return 'https://localhost:8080'
+                    case 'cody.net.proxy.cacert':
+                        return '~/cody-proxy.pem'
+                    case 'cody.net.proxy.skipCertValidation':
+                        return false
                     case 'cody.override.authToken':
                         return undefined
                     case 'cody.override.serverEndpoint':
+                        return undefined
+                    case 'http':
                         return undefined
                     default:
                         throw new Error(`unexpected key: ${key}`)
@@ -121,7 +133,15 @@ describe('getConfiguration', () => {
             },
         }
         expect(getConfiguration(config)).toEqual({
-            proxy: undefined,
+            net: {
+                mode: 'auto',
+                proxy: {
+                    cacert: '~/cody-proxy.pem',
+                    endpoint: 'https://localhost:8080',
+                    skipCertValidation: false,
+                },
+                vscode: undefined,
+            },
             codebase: 'my/codebase',
             serverEndpoint: 'http://example.com',
             customHeaders: {
@@ -136,6 +156,7 @@ describe('getConfiguration', () => {
             },
             commandCodeLenses: true,
             experimentalSupercompletions: false,
+            experimentalAutoedits: undefined,
             experimentalMinionAnthropicKey: undefined,
             experimentalTracing: true,
             experimentalCommitMessage: true,

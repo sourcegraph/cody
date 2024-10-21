@@ -1,11 +1,14 @@
 import {
     type ContextItem,
+    ContextItemSource,
+    type ContextItemTree,
     contextFiltersProvider,
     isDefined,
     logError,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
 import { CancellationTokenSource, workspace } from 'vscode'
+import * as vscode from 'vscode'
 import { createContextFile } from '../utils/create-context-file'
 import { getDocText } from '../utils/workspace-files'
 
@@ -55,4 +58,24 @@ export async function getWorkspaceFilesContext(
             return []
         }
     })
+}
+
+export function getWorkspaceContext(): ContextItemTree | null {
+    const workspaceFolder = vscode.workspace.workspaceFolders?.at(0)
+
+    if (workspaceFolder) {
+        return {
+            type: 'tree',
+            uri: workspaceFolder.uri,
+            title: 'Current Repository',
+            name: workspaceFolder.name,
+            description: workspaceFolder.name,
+            isWorkspaceRoot: true,
+            content: null,
+            source: ContextItemSource.Editor,
+            icon: 'folder',
+        } satisfies ContextItemTree
+    }
+
+    return null
 }

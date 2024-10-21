@@ -357,6 +357,14 @@ export class Location implements VSCodeLocation {
     }
 }
 
+const isSmallerOrEqualPosition = (a: Position, b: Position): boolean => {
+    return a.line < b.line || (a.line === b.line && a.character <= b.character)
+}
+
+const isBiggerOrEqualPosition = (a: Position, b: Position): boolean => {
+    return a.line > b.line || (a.line === b.line && a.character >= b.character)
+}
+
 export class Range implements VSCodeRange {
     public start: Position
     public end: Position
@@ -418,21 +426,17 @@ export class Range implements VSCodeRange {
         return this.start.line === this.end.line
     }
     public contains(positionOrRange: Position | Range): boolean {
-        const isSmallerOrEqual = (a: Position, b: Position): boolean => {
-            return a.line < b.line || (a.line === b.line && a.character <= b.character)
-        }
-
         if ('line' in positionOrRange) {
             return (
-                isSmallerOrEqual(this.start, positionOrRange) &&
-                isSmallerOrEqual(positionOrRange, this.end)
+                isSmallerOrEqualPosition(this.start, positionOrRange) &&
+                isSmallerOrEqualPosition(positionOrRange, this.end)
             )
         }
         if ('start' in positionOrRange && 'end' in positionOrRange) {
             return (
-                isSmallerOrEqual(this.start, positionOrRange.start) &&
-                isSmallerOrEqual(positionOrRange.start, this.end) &&
-                isSmallerOrEqual(this.end, positionOrRange.end)
+                isSmallerOrEqualPosition(this.start, positionOrRange.start) &&
+                isSmallerOrEqualPosition(positionOrRange.start, this.end) &&
+                isBiggerOrEqualPosition(this.end, positionOrRange.end)
             )
         }
 
@@ -869,7 +873,15 @@ export const vsCodeMocks = {
 } as const
 
 export const DEFAULT_VSCODE_SETTINGS = {
-    proxy: undefined,
+    net: {
+        mode: undefined,
+        proxy: {
+            cacert: undefined,
+            endpoint: undefined,
+            skipCertValidation: false,
+        },
+        vscode: '{}',
+    },
     codebase: '',
     serverEndpoint: undefined,
     customHeaders: undefined,
@@ -879,6 +891,7 @@ export const DEFAULT_VSCODE_SETTINGS = {
     },
     commandCodeLenses: false,
     experimentalSupercompletions: false,
+    experimentalAutoedits: undefined,
     experimentalMinionAnthropicKey: undefined,
     experimentalTracing: false,
     experimentalCommitMessage: true,
