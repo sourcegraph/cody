@@ -2,6 +2,7 @@ import { CodyIDE } from '@sourcegraph/cody-shared'
 import { useCallback } from 'react'
 import { URI } from 'vscode-uri'
 import { ACCOUNT_UPGRADE_URL, ACCOUNT_USAGE_URL } from '../../src/chat/protocol'
+import { EndpointSelection } from '../AuthPage'
 import { UserAvatar } from '../components/UserAvatar'
 import { Button } from '../components/shadcn/ui/button'
 import { getVSCodeAPI } from '../utils/VSCodeApi'
@@ -14,21 +15,26 @@ interface AccountAction {
 }
 interface AccountTabProps {
     setView: (view: View) => void
+    endpointHistory: string[]
 }
 
 // TODO: Implement the AccountTab component once the design is ready.
-export const AccountTab: React.FC<AccountTabProps> = ({ setView }) => {
+export const AccountTab: React.FC<AccountTabProps> = ({ setView, endpointHistory }) => {
     const config = useConfig()
     const userInfo = useUserAccountInfo()
     const { user, isCodyProUser, isDotComUser } = userInfo
     const { displayName, username, primaryEmail, endpoint } = user
 
-    // We open the native system pop-up for VS Code.
-    if (config.clientCapabilities.isVSCode) {
-        return null
-    }
-
     const actions: AccountAction[] = []
+    // Create this at the top level to "Rendered more hooks than during previous render" error
+    const manageAccountCallback = useCallback(() => {
+        if (userInfo.user.username) {
+            const uri = URI.parse(ACCOUNT_USAGE_URL.toString()).with({
+                query: `cody_client_user=${encodeURIComponent(userInfo.user.username)}`,
+            })
+            getVSCodeAPI().postMessage({ command: 'links', value: uri.toString() })
+        }
+    }, [userInfo])
 
     if (isDotComUser && !isCodyProUser) {
         actions.push({
@@ -40,14 +46,7 @@ export const AccountTab: React.FC<AccountTabProps> = ({ setView }) => {
     if (isDotComUser) {
         actions.push({
             text: 'Manage Account',
-            onClick: useCallback(() => {
-                if (userInfo.user.username) {
-                    const uri = URI.parse(ACCOUNT_USAGE_URL.toString()).with({
-                        query: `cody_client_user=${encodeURIComponent(userInfo.user.username)}`,
-                    })
-                    getVSCodeAPI().postMessage({ command: 'links', value: uri.toString() })
-                }
-            }, [userInfo]),
+            onClick: manageAccountCallback,
         })
     }
     actions.push({
@@ -100,6 +99,11 @@ export const AccountTab: React.FC<AccountTabProps> = ({ setView }) => {
                     </div>
                 </div>
             </div>
+            {endpointHistory.length > 0 && (
+                <div className="tw-w-full tw-bg-popover tw-border tw-border-border">
+                    <EndpointSelection authStatus={config.authStatus} endpoints={endpointHistory} />
+                </div>
+            )}
             {actions.map(a => (
                 <Button
                     key={a.text}
