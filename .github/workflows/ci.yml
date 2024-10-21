@@ -80,7 +80,7 @@ jobs:
   # Sets a variable that is used to determine the matrix to run tests on.
   # Everything runs on ubuntu and windows, only commits to main run on macos.
   fast_tests_matrix_prep:
-    name: 'Test Matrix (Fast)'
+    name: 'Test Matrix (Unit, Integration)'
     runs-on: ubuntu-latest
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
@@ -239,6 +239,7 @@ jobs:
     permissions:
       id-token: write
       contents: read
+      pull-requests: write
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -301,7 +302,7 @@ jobs:
   # Sets a variable that is used to determine the matrix to run slow tests (e2e) on.
   # Everything runs on ubuntu, only commits to main run on macos and windows.
   legacy_slow_tests_matrix_prep:
-    name: Test Matrix (Slow)
+    name: Test Matrix (E2E legacy)
     runs-on: ubuntu-latest
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
