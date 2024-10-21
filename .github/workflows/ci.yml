@@ -176,7 +176,7 @@ jobs:
   test-e2e:
     name: 'Test - E2E (${{ matrix.os }} - ${{ matrix.shardIndex }}/${{ matrix.shardTotal }})'
     needs: build
-    if: ${{ !cancelled() }}
+    if: ${{ success() }}
     strategy:
       fail-fast: false
       matrix:
@@ -270,6 +270,7 @@ jobs:
       - name: Download E2E reports
         uses: actions/download-artifact@v4
         with:
+          path: vscode/.test/e2e/reports/blob
           pattern: e2e-blob-report-*
           merge-multiple: true
       - name: Merge into HTML Report
