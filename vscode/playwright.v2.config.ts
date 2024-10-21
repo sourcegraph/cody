@@ -1,5 +1,5 @@
 import * as path from 'node:path'
-import { type ReporterDescription, defineConfig } from '@playwright/test'
+import { defineConfig } from '@playwright/test'
 import * as dotenv from 'dotenv'
 import { ulid } from 'ulidx'
 import { CODY_ROOT_DIR, CODY_VSCODE_ROOT_DIR } from './e2e/utils/helpers'
@@ -97,7 +97,10 @@ export default defineConfig<WorkerOptions & TestOptions & TmpDirOptions>({
         geolocation: { longitude: -122.40825783227943, latitude: 37.78124453182266 },
         acceptDownloads: false,
         trace: {
-            mode: isCI ? 'retain-on-failure' : 'on',
+            // we always collect traces, we'll just choose later wether to
+            // retain them. That is because sometimes it's useful to see why a
+            // test didn't fail too!
+            mode: 'on',
             attachments: true,
             screenshots: true,
             snapshots: true,
@@ -143,27 +146,25 @@ export default defineConfig<WorkerOptions & TestOptions & TmpDirOptions>({
             },
         },
     ],
-    reporter: [
-        ['json', { outputFile: '.test-reports/report.json', open: 'never' }],
-        ...(isCI
-            ? ([
-                  ['github', {}],
-                  ['buildkite-test-collector/playwright/reporter'],
-              ] satisfies Array<ReporterDescription>)
-            : ([
-                  debugMode
-                      ? ['line', { printSteps: true, includeProjectInTestName: true }]
-                      : ['list', { open: 'never' }],
-                  [
-                      'html',
-                      {
-                          outputFolder: '.test-reports',
-                          fileName: 'report.html',
-                          open: 'never',
-                      },
-                  ],
-              ] satisfies Array<ReporterDescription>)),
-    ],
+    outputDir: '.test/e2e/results',
+    reporter: isCI
+        ? [
+              ['list', { printSteps: false, includeProjectInTestName: false }],
+              ['blob', { outputDir: '.test/e2e/reports/blob' }],
+          ]
+        : [
+              [
+                  'html',
+                  {
+                      outputFolder: '.test/e2e/reports/html',
+                      fileName: 'report.html',
+                      open: 'never',
+                  },
+              ],
+              debugMode
+                  ? ['line', { printSteps: true, includeProjectInTestName: true }]
+                  : ['list', { open: 'never' }],
+          ],
     // Disabled until https://github.com/microsoft/playwright/issues/32387 is resolved
     // globalSetup: require.resolve(path.resolve(CODY_VSCODE_ROOT_DIR, './e2e/utils/global.setup')),
     // globalTeardown: require.resolve(path.resolve(CODY_VSCODE_ROOT_DIR, './e2e/utils/global.teardown')),

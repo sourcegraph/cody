@@ -12,9 +12,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        runner: [ubuntu, windows]
+        runner: [ubuntu, windows, macos]
     runs-on: ${{ matrix.runner }}-latest
-    timeout-minutes: 120
+    timeout-minutes: 60
     permissions:
       id-token: write
       contents: read
@@ -24,6 +24,13 @@ jobs:
         with:
           node-version-file: .tool-versions
       - uses: pnpm/action-setup@fe02b34f77f8bc703788d5817da081398fad5dd2 # SECURITY: pin third-party action hashes
+      - id: auth
+        uses: google-github-actions/auth@v2
+        # Skip auth if PR is from a fork
+        with:
+          workload_identity_provider: ${{ secrets.DATA_TEAM_PROVIDER_NAME }}
+          service_account: ${{ secrets.DATA_TEAM_SA_EMAIL }}
+      - uses: google-github-actions/setup-gcloud@v2
       - run: echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
         shell: bash
         id: pnpm-cache
@@ -33,17 +40,22 @@ jobs:
           path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
           key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
           restore-keys: ${{ runner.os }}-pnpm-store-
-      - run: pnpm install
-      - run: xvfb-run -a pnpm -C vscode run test:e2e --repeat-each 10 --retries 0
-        if: matrix.runner == 'ubuntu'
+      - name: Install dependencies
+        run: pnpm install
+      - name: Setup Playwright browser dependencies
+        run: pnpm -C vscode run test:e2e2:deps # this installs chromium etc
+      - name: Run E2E tests
+        run: pnpm -C vscode run test:e2e2 --project e2e --repeat-each 10
         env:
-          NO_LOG_TESTING_TELEMETRY_CALLS: "1"
-      - run: pnpm -C vscode run test:e2e --repeat-each 4 --retries 0
-        if: matrix.runner != 'ubuntu'
-        env:
-          NO_LOG_TESTING_TELEMETRY_CALLS: "1"
-      - uses: actions/upload-artifact@v4
+            BUILDKITE_ANALYTICS_TOKEN: ${{ secrets.BUILDKITE_ANALYTICS_TOKEN }}
+            # This is required because the test collector from Buildkite is imprecise when it
+            # comes to infer the branch name on GitHub action.
+            BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
+            GITHUB_REF: ${{ github.head_ref || github.ref_name }}
+      - name: Upload Playwright report (failure)
         if: ${{ failure() }}
+        uses: actions/upload-artifact@v4
         with:
-          name: playwright-recordings ${{ matrix.runner }}
-          path: playwright/
+          name: playwright report ${{matrix.runner}}
+          path: vscode/.test/e2e/reports/html
+          retention-days: 30

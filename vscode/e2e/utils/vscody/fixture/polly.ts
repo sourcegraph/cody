@@ -112,7 +112,6 @@ export const pollyFixture = _test.extend<TestContext, WorkerContext>({
                     },
                 },
             })
-
             polly.server
                 .any()
                 .filter(req => !req.getHeader(MITM_PROXY_SERVICE_NAME_HEADER))

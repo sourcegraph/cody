@@ -1,20 +1,21 @@
 import { spawn } from 'node:child_process'
 import type { Dirent } from 'node:fs'
+import fs_sync from 'node:fs'
 import fs from 'node:fs/promises'
-import szip from '7zip-min'
-import pspawn from '@npmcli/promise-spawn'
-import { test as _test } from '@playwright/test'
-import { isWindows } from '@sourcegraph/cody-shared'
-import { move } from 'fs-extra'
 import 'node:http'
 import 'node:https'
 import os from 'node:os'
 import path from 'node:path'
+import szip from '7zip-min'
+import pspawn from '@npmcli/promise-spawn'
+import { test as _test } from '@playwright/test'
+import { isWindows } from '@sourcegraph/cody-shared'
+import axios from 'axios'
+import { move } from 'fs-extra'
 import { onExit } from 'signal-exit'
 import symlinkDir from 'symlink-dir'
 import type { UIKind } from 'vscode'
 import type { TestContext, WorkerContext } from '.'
-import { downloadFile } from '../../../../src/local-context/utils'
 import { waitForLock } from '../../../../src/lockfile'
 import { withTempDir } from '../../../../test/e2e/helpers'
 import { CODY_VSCODE_ROOT_DIR, retry, stretchTimeout } from '../../helpers'
@@ -126,12 +127,6 @@ export const vscodeFixture = _test.extend<TestContext, WorkerContext>({
                 )
             )
 
-            // extensions sadly can't live in the Cody dir because it would mess
-            // up pnpm node_module symlink references. Instead we create a tmpdir
-            // and and save a symlink to it here for easy access
-            // const isolatedExtensionsDir = await fs.mkdtemp(path.join(os.tmpdir(), 'vsc-extensions'))
-            // const extensionsDir = isolatedExtensionsDir
-            // console.log('extensionsDir', extensionsDir)
             const extensionsDir = path.join(portableDataDir, 'extensions')
             await fs.mkdir(extensionsDir, { recursive: true })
 
@@ -307,23 +302,14 @@ async function downloadVSCodeServer(
                 retryDelay: 1000,
                 maxRetries: 3,
             })
-            console.log(`Downloading VSCode server for commit ${commitSha}`)
             await fs.mkdir(versionedExecutableDir, { recursive: true })
             const directoryName = `server-${vscodeArtifactName}-web`
             const downloadUrl = `https://update.code.visualstudio.com/commit:${commitSha}/${directoryName}/stable`
             await withTempDir(async tmpDir => {
                 //can be either zip or gzip
-                const archiveFile = path.join(tmpDir, 'archive')
-                await downloadFile(downloadUrl, archiveFile)
+                const archiveFile = await downloadFile(downloadUrl, tmpDir)
                 const unpackedPath = path.join(tmpDir, 'unzip')
-                await new Promise((ok, fail) =>
-                    szip.unpack(archiveFile, unpackedPath, err => {
-                        if (err) {
-                            fail(err)
-                        }
-                        ok(void 0)
-                    })
-                )
+                await unpackZipOrTarGz(archiveFile, unpackedPath)
                 await move(path.join(unpackedPath, `vscode-${directoryName}`), versionedExecutableDir, {
                     overwrite: true,
                 })
@@ -337,6 +323,62 @@ async function downloadVSCodeServer(
         throw new Error('VSCode server not found')
     }
     return versionedExecutableDir
+}
+
+async function downloadFile(url: string, outputPath: string): Promise<string> {
+    const { data, headers } = await axios({
+        url,
+        method: 'GET',
+        responseType: 'stream',
+        maxRedirects: 10,
+    })
+
+    const filename = getFilenameFromContentDisposition(headers['content-disposition'])
+    if (!filename) {
+        throw new Error('No filename found in content disposition')
+    }
+    const outputFile = path.join(outputPath, filename)
+    const stream = fs_sync.createWriteStream(outputFile, { autoClose: true })
+    data.pipe(stream)
+
+    await new Promise((resolve, reject) => {
+        stream.on('finish', resolve)
+        stream.on('error', reject)
+        stream.on('close', () => {
+            if (!stream.writableFinished) {
+                reject(new Error('Stream closed before finishing'))
+            }
+        })
+    })
+
+    return outputFile
+}
+
+function getFilenameFromContentDisposition(contentDisposition: string) {
+    if (!contentDisposition) return null
+    const filenameRegex = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/
+    const matches = filenameRegex.exec(contentDisposition)
+    if (matches?.[1]) {
+        return matches[1].replace(/['"]/g, '')
+    }
+    return null
+}
+
+async function unpackZipOrTarGz(archiveFile: string, outputPath: string): Promise<void> {
+    if (archiveFile.endsWith('.zip')) {
+        await new Promise((ok, fail) =>
+            szip.unpack(archiveFile, outputPath, err => {
+                if (err) {
+                    fail(err)
+                }
+                ok(void 0)
+            })
+        )
+    }
+    if (archiveFile.endsWith('.tar.gz')) {
+        await fs.mkdir(outputPath, { recursive: true })
+        await pspawn('tar', ['-xzf', archiveFile, '-C', outputPath], { stdio: 'inherit' })
+    }
 }
 
 async function waitForVSCodeServerV2(
