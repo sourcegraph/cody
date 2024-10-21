@@ -287,18 +287,19 @@ jobs:
           name: e2e-html-report
           path: vscode/.test/e2e/reports/html
           retention-days: 7
+      - name: Comment on PR
+        uses: daun/playwright-report-summary@v3
+        with:
+          report-file: vscode/.test/e2e/reports/json/report.json
+      # TODO: Pipe telemetry to PubSub
       - name: Report to Services
-        run: pnpm -C vscode exec playwright merge-reports --reporter github,@estruyf/github-actions-reporter .test/e2e/reports/blob
+        run: pnpm -C vscode exec playwright merge-reports --reporter github,@estruyf/github-actions-reporter -c .test/e2e/reports/blob .test/e2e/reports/blob
         env:
           BUILDKITE_ANALYTICS_TOKEN: ${{ secrets.BUILDKITE_ANALYTICS_TOKEN }}
           # This is required because the test collector from Buildkite is imprecise when it
           # comes to infer the branch name on GitHub action.
           BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
           GITHUB_REF: ${{ github.head_ref || github.ref_name }}
-      - name: Comment on PR
-        uses: daun/playwright-report-summary@v3
-        with:
-          report-file: vscode/.test/e2e/reports/json/report.json
 
   # Sets a variable that is used to determine the matrix to run slow tests (e2e) on.
   # Everything runs on ubuntu, only commits to main run on macos and windows.

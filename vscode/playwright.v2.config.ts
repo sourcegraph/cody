@@ -149,7 +149,7 @@ export default defineConfig<WorkerOptions & TestOptions & TmpDirOptions>({
     outputDir: '.test/e2e/results',
     reporter: isCI
         ? [
-              ['dot', {}],
+              ['line', { printSteps: false, includeProjectInTestName: false }],
               ['blob', { outputDir: '.test/e2e/reports/blob' }],
           ]
         : [
