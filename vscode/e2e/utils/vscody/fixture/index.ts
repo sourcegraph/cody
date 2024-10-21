@@ -13,6 +13,7 @@ import { vscodeFixture } from './vscode'
 
 export interface WorkerContext {
     validWorkerOptions: WorkerOptions
+    gitconfigPath: string
 }
 export type Directory = string
 export interface TestContext {

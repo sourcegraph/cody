@@ -49,5 +49,5 @@ export async function gitInit(
     }
     const combinedCommands = commands.join(' && ')
 
-    await promisify(exec)(combinedCommands, { cwd: workspaceDir })
+    await promisify(exec)(combinedCommands, { cwd: workspaceDir, env: process.env })
 }

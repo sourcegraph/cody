@@ -14,6 +14,7 @@ setup.extend<{}, TmpDirOptions & WorkerOptions>({
     if (globalTmpDir) {
         const resolvedGlobalTmpDir = path.resolve(CODY_VSCODE_ROOT_DIR, globalTmpDir)
         await fs.mkdir(resolvedGlobalTmpDir, { recursive: true })
+
         if (clearGlobalTmpDirParent) {
             const parentDir = path.resolve(resolvedGlobalTmpDir, '..')
             const currentDirName = path.parse(resolvedGlobalTmpDir).name
