@@ -223,7 +223,7 @@ jobs:
       - name: Run E2E tests
         run: pnpm -C vscode run test:e2e2:run --project e2e --shard=${{ matrix.shardIndex }}/${{ matrix.shardTotal }}
         env:
-          PLAYWRIGHT_BLOB_OUTPUT_NAME: report-${{matrix.os}}-${{matrix.shardIndex}}
+          PLAYWRIGHT_BLOB_OUTPUT_NAME: report-${{matrix.os}}-${{matrix.shardIndex}}.zip
       - name: Upload blob report to GitHub Actions Artifacts
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4
