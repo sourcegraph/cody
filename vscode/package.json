@@ -1380,6 +1380,7 @@
     "@radix-ui/react-dialog": "^1.0.5",
     "@radix-ui/react-form": "^0.1.0",
     "@radix-ui/react-popover": "^1.0.7",
+    "@radix-ui/react-progress": "^1.1.0",
     "@radix-ui/react-slot": "^1.0.2",
     "@radix-ui/react-tabs": "^1.1.0",
     "@radix-ui/react-tooltip": "^1.0.7",
