@@ -115,6 +115,10 @@ export const mitmProxyFixture = _test.extend<TestContext, WorkerContext>({
                 if (err.name === 'PollyError') {
                     if (err.message.includes('`recordIfMissing` is `false`')) {
                         if (!missingRecordingTriggered) {
+                            console.error(
+                                'Recordings Missing',
+                                'Try enabeling CODY_RECORD_IF_MISSING=true in your .env file or setting the recordMissing playwright setting.'
+                            )
                             void page
                                 .goto('about:blank')
                                 .then(() =>
