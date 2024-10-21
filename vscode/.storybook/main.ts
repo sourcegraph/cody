@@ -1,3 +1,4 @@
+import { resolve } from 'node:path'
 import type { StorybookConfig } from '@storybook/react-vite'
 import { defineProjectWithDefaults } from '../../.config/viteShared'
 
@@ -32,6 +33,14 @@ const config: StorybookConfig = {
             define: { 'process.env': '{}' },
             css: {
                 postcss: __dirname + '/../webviews',
+            },
+            resolve: {
+                alias: [
+                    {
+                        find: 'env-paths',
+                        replacement: resolve(__dirname, '../../web/lib/agent/shims/env-paths.ts'),
+                    },
+                ],
             },
         }),
     staticDirs: ['./static'],
