@@ -6,12 +6,13 @@ import { GHOST_TEXT_COLOR } from '../commands/GhostHintDecorator'
 import type { AutoEditsProviderOptions } from './autoedits-provider'
 import type { CodeToReplaceData } from './prompt-utils'
 import { ThemeColor } from 'vscode'
-import { calcPatch, calcSlices, diff } from 'fast-myers-diff'
+import { diff } from 'fast-myers-diff'
 
 
 interface ProposedChange {
     range: vscode.Range
     newText: string
+    originalTextInRange: string
 }
 
 interface DecorationLine {
@@ -30,8 +31,6 @@ const suggesterType = vscode.window.createTextEditorDecorationType({
 
 function combineRanges(ranges: vscode.Range[], n: number): vscode.Range[] {
     if (ranges.length === 0) return [];
-
-    // Sort ranges by start position
     const sortedRanges = ranges.sort((a, b) =>
         a.start.line !== b.start.line ? a.start.line - b.start.line : a.start.character - b.start.character
     );
@@ -44,7 +43,6 @@ function combineRanges(ranges: vscode.Range[], n: number): vscode.Range[] {
 
         if (currentRange.end.line === nextRange.start.line &&
             (nextRange.start.character - currentRange.end.character <= n || currentRange.intersection(nextRange))) {
-            // Combine ranges
             currentRange = new vscode.Range(
                 currentRange.start,
                 nextRange.end.character > currentRange.end.character ? nextRange.end : currentRange.end
@@ -85,22 +83,29 @@ export class AutoEditsRenderer implements vscode.Disposable {
         codeToReplace: CodeToReplaceData,
         predictedText: string
     ) {
+        // Trim only a single "\n" char at the end of the predicted text
+        predictedText = predictedText.replace(/\n$/, '')
+
+        if (this.activeProposedChange) {
+            await this.dismissProposedChange()
+        }
         const editor = vscode.window.activeTextEditor
         const document = editor?.document
-        if (!editor || !document || this.activeProposedChange) {
+        if (!editor || !document) {
             return
         }
 
-        const prevSuffixLine = codeToReplace.endLine - 1
         const range = new vscode.Range(
             codeToReplace.startLine,
             0,
-            prevSuffixLine,
-            options.document.lineAt(prevSuffixLine).range.end.character
+            codeToReplace.endLine,
+            options.document.lineAt(codeToReplace.endLine).range.end.character
         )
+        const originalTextInRange = options.document.getText(range)
         this.activeProposedChange = {
             range: range,
             newText: predictedText,
+            originalTextInRange: originalTextInRange,
         }
 
         const currentFileText = options.document.getText()
@@ -119,7 +124,7 @@ export class AutoEditsRenderer implements vscode.Disposable {
         }
 
         // Combine ranges with a threshold of 5 characters
-        const combinedRangesToRemove = combineRanges(allRangesToRemove, 5);
+        const combinedRangesToRemove = combineRanges(allRangesToRemove, 2);
 
         const filename = displayPath(document.uri)
         const patch = structuredPatch(
@@ -195,6 +200,7 @@ export class AutoEditsRenderer implements vscode.Disposable {
             await this.dismissProposedChange()
             return
         }
+        console.log(this.activeProposedChange.originalTextInRange)
         const currentActiveChange = this.activeProposedChange
         await editor.edit(editBuilder => {
             editBuilder.replace(currentActiveChange.range, currentActiveChange.newText)

@@ -184,7 +184,7 @@ export function getCurrentFilePromptComponents(
     const codeToReplace = {
         codeToRewrite: codeToRewrite,
         startLine: completePrefixLines - prefixContext.codeToRewriteStartLines,
-        endLine: completePrefixLines + suffixContext.codeToRewriteEndLines,
+        endLine: completePrefixLines + suffixContext.codeToRewriteEndLines - 1,
     }
 
     const fileWithMarker = ps`${prefixContext.prefixBeforeArea}
