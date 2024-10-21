@@ -63,7 +63,7 @@ test.describe('Workspace', () => {
     test('It can initialize a git repository', async ({ workspaceDir }) => {
         await uix.workspace.gitInit(
             {
-                origin: 'https://github.com/sourcegraph/cody',
+                origin: 'https://github.com/sourcegraph/cody.git',
             },
             { workspaceDir }
         )

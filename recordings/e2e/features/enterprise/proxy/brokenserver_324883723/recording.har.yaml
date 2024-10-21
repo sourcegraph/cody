@@ -18,10 +18,10 @@ log:
             value: demo.sourcegraph.com
           - name: accept-encoding
             value: identity
-          - name: user-agent
-            value: node-fetch/1.0 (+https://github.com/bitinn/node-fetch)
           - name: accept
             value: "*/*"
+          - name: user-agent
+            value: vscode/1.38.2 (Node.js v20.16.0)
           - name: content-type
             value: application/json; charset=utf-8
           - name: authorization
@@ -31,7 +31,7 @@ log:
             value: sourcegraph.enterprise
           - name: x-mitm-auth-token-name
             value: sourcegraph.enterprise
-        headersSize: 597
+        headersSize: 575
         httpVersion: HTTP/1.1
         method: GET
         queryString: []
@@ -55,7 +55,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 14 Oct 2024 17:21:45 GMT
+            value: Mon, 21 Oct 2024 19:36:29 GMT
           - name: content-type
             value: text/plain; charset=utf-8
           - name: content-length
@@ -63,7 +63,7 @@ log:
           - name: connection
             value: close
           - name: retry-after
-            value: "599"
+            value: "596"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -86,8 +86,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-10-14T17:21:45.232Z
-      time: 228
+      startedDateTime: 2024-10-21T19:36:29.494Z
+      time: 199
       timings:
         blocked: -1
         connect: -1
@@ -95,7 +95,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 228
+        wait: 199
     - _id: fa5b795606a9596f1b7383979e00bde6
       _order: 0
       cache: {}
@@ -109,12 +109,12 @@ log:
             value: demo.sourcegraph.com
           - name: accept-encoding
             value: identity
-          - name: user-agent
-            value: node-fetch/1.0 (+https://github.com/bitinn/node-fetch)
           - name: content-length
             value: "318"
           - name: accept
             value: "*/*"
+          - name: user-agent
+            value: vscode/1.38.2 (Node.js v20.16.0)
           - name: content-type
             value: application/json; charset=utf-8
           - name: authorization
@@ -124,7 +124,7 @@ log:
             value: sourcegraph.enterprise
           - name: x-mitm-auth-token-name
             value: sourcegraph.enterprise
-        headersSize: 645
+        headersSize: 623
         httpVersion: HTTP/1.1
         method: POST
         postData:
@@ -163,7 +163,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 14 Oct 2024 17:21:45 GMT
+            value: Mon, 21 Oct 2024 19:36:29 GMT
           - name: content-type
             value: application/json
           - name: content-length
@@ -171,7 +171,7 @@ log:
           - name: connection
             value: close
           - name: retry-after
-            value: "600"
+            value: "596"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -194,8 +194,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-10-14T17:21:44.987Z
-      time: 219
+      startedDateTime: 2024-10-21T19:36:29.244Z
+      time: 338
       timings:
         blocked: -1
         connect: -1
@@ -203,7 +203,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 219
+        wait: 338
     - _id: 1567a774f8955f42799016aceb946e19
       _order: 0
       cache: {}
@@ -217,12 +217,12 @@ log:
             value: demo.sourcegraph.com
           - name: accept-encoding
             value: identity
-          - name: user-agent
-            value: node-fetch/1.0 (+https://github.com/bitinn/node-fetch)
           - name: content-length
             value: "165"
           - name: accept
             value: "*/*"
+          - name: user-agent
+            value: vscode/1.38.2 (Node.js v20.16.0)
           - name: content-type
             value: application/json; charset=utf-8
           - name: authorization
@@ -232,7 +232,7 @@ log:
             value: sourcegraph.enterprise
           - name: x-mitm-auth-token-name
             value: sourcegraph.enterprise
-        headersSize: 645
+        headersSize: 623
         httpVersion: HTTP/1.1
         method: POST
         postData:
@@ -263,7 +263,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 14 Oct 2024 17:21:45 GMT
+            value: Mon, 21 Oct 2024 19:36:29 GMT
           - name: content-type
             value: application/json
           - name: content-length
@@ -271,7 +271,7 @@ log:
           - name: connection
             value: close
           - name: retry-after
-            value: "600"
+            value: "596"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -294,8 +294,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-10-14T17:21:44.989Z
-      time: 271
+      startedDateTime: 2024-10-21T19:36:29.247Z
+      time: 292
       timings:
         blocked: -1
         connect: -1
@@ -303,7 +303,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 271
+        wait: 292
     - _id: cf3c3975c58a7fd1491c89c4bdda15e9
       _order: 0
       cache: {}
@@ -317,12 +317,12 @@ log:
             value: demo.sourcegraph.com
           - name: accept-encoding
             value: identity
-          - name: user-agent
-            value: node-fetch/1.0 (+https://github.com/bitinn/node-fetch)
           - name: content-length
             value: "150"
           - name: accept
             value: "*/*"
+          - name: user-agent
+            value: vscode/1.38.2 (Node.js v20.16.0)
           - name: content-type
             value: application/json; charset=utf-8
           - name: authorization
@@ -332,7 +332,7 @@ log:
             value: sourcegraph.enterprise
           - name: x-mitm-auth-token-name
             value: sourcegraph.enterprise
-        headersSize: 640
+        headersSize: 618
         httpVersion: HTTP/1.1
         method: POST
         postData:
@@ -363,7 +363,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 14 Oct 2024 17:21:45 GMT
+            value: Mon, 21 Oct 2024 19:36:29 GMT
           - name: content-type
             value: application/json
           - name: content-length
@@ -371,7 +371,7 @@ log:
           - name: connection
             value: close
           - name: retry-after
-            value: "600"
+            value: "596"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -394,8 +394,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-10-14T17:21:44.988Z
-      time: 224
+      startedDateTime: 2024-10-21T19:36:29.246Z
+      time: 294
       timings:
         blocked: -1
         connect: -1
@@ -403,7 +403,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 224
+        wait: 294
     - _id: c7a96a6928009c667645b21de5a28adf
       _order: 0
       cache: {}
@@ -417,12 +417,12 @@ log:
             value: demo.sourcegraph.com
           - name: accept-encoding
             value: identity
-          - name: user-agent
-            value: node-fetch/1.0 (+https://github.com/bitinn/node-fetch)
           - name: content-length
             value: "341"
           - name: accept
             value: "*/*"
+          - name: user-agent
+            value: vscode/1.38.2 (Node.js v20.16.0)
           - name: content-type
             value: application/json; charset=utf-8
           - name: authorization
@@ -432,7 +432,7 @@ log:
             value: sourcegraph.enterprise
           - name: x-mitm-auth-token-name
             value: sourcegraph.enterprise
-        headersSize: 625
+        headersSize: 603
         httpVersion: HTTP/1.1
         method: POST
         postData:
@@ -476,13 +476,15 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 14 Oct 2024 17:21:44 GMT
+            value: Mon, 21 Oct 2024 19:36:29 GMT
           - name: content-type
             value: application/json
           - name: content-length
             value: "225"
           - name: connection
             value: close
+          - name: retry-after
+            value: "596"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -500,13 +502,13 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1352
+        headersSize: 1459
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-10-14T17:21:44.751Z
-      time: 216
+      startedDateTime: 2024-10-21T19:36:28.779Z
+      time: 394
       timings:
         blocked: -1
         connect: -1
@@ -514,7 +516,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 216
+        wait: 394
     - _id: 322e0aeead43ccccbd57ad162a64fde3
       _order: 0
       cache: {}
@@ -528,12 +530,12 @@ log:
             value: demo.sourcegraph.com
           - name: accept-encoding
             value: identity
-          - name: user-agent
-            value: node-fetch/1.0 (+https://github.com/bitinn/node-fetch)
           - name: content-length
             value: "101"
           - name: accept
             value: "*/*"
+          - name: user-agent
+            value: vscode/1.38.2 (Node.js v20.16.0)
           - name: content-type
             value: application/json; charset=utf-8
           - name: authorization
@@ -543,7 +545,7 @@ log:
             value: sourcegraph.enterprise
           - name: x-mitm-auth-token-name
             value: sourcegraph.enterprise
-        headersSize: 632
+        headersSize: 610
         httpVersion: HTTP/1.1
         method: POST
         postData:
@@ -563,23 +565,23 @@ log:
             value: null
         url: https://demo.sourcegraph.com/.api/graphql?SiteProductVersion
       response:
-        bodySize: 44
+        bodySize: 47
         content:
           mimeType: application/json
-          size: 44
-          text: "{\"data\":{\"site\":{\"productVersion\":\"5.8.0\"}}}"
+          size: 47
+          text: "{\"data\":{\"site\":{\"productVersion\":\"5.8.1579\"}}}"
         cookies: []
         headers:
           - name: date
-            value: Mon, 14 Oct 2024 17:21:44 GMT
+            value: Mon, 21 Oct 2024 19:36:29 GMT
           - name: content-type
             value: application/json
           - name: content-length
-            value: "44"
+            value: "47"
           - name: connection
             value: close
           - name: retry-after
-            value: "600"
+            value: "596"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -602,8 +604,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-10-14T17:21:44.735Z
-      time: 239
+      startedDateTime: 2024-10-21T19:36:29.243Z
+      time: 242
       timings:
         blocked: -1
         connect: -1
@@ -611,7 +613,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 239
+        wait: 242
     - _id: 49bed0d771a2067eccdc72b3a59f37ba
       _order: 0
       cache: {}
@@ -625,10 +627,10 @@ log:
             value: demo.sourcegraph.com
           - name: accept-encoding
             value: identity
-          - name: user-agent
-            value: node-fetch/1.0 (+https://github.com/bitinn/node-fetch)
           - name: accept
             value: "*/*"
+          - name: user-agent
+            value: vscode/1.38.2 (Node.js v20.16.0)
           - name: authorization
             value: token
               REDACTED_69e9f79ce29352d014eeb80b56510341844eb82ad9abac7cab3631c7e873e4ce
@@ -636,7 +638,7 @@ log:
             value: sourcegraph.enterprise
           - name: x-mitm-auth-token-name
             value: sourcegraph.enterprise
-        headersSize: 497
+        headersSize: 475
         httpVersion: HTTP/1.1
         method: GET
         queryString: []
@@ -856,7 +858,7 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 14 Oct 2024 17:21:45 GMT
+            value: Mon, 21 Oct 2024 19:36:29 GMT
           - name: content-type
             value: text/plain; charset=utf-8
           - name: transfer-encoding
@@ -864,7 +866,7 @@ log:
           - name: connection
             value: close
           - name: retry-after
-            value: "599"
+            value: "595"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -887,8 +889,8 @@ log:
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-10-14T17:21:45.465Z
-      time: 199
+      startedDateTime: 2024-10-21T19:36:29.711Z
+      time: 299
       timings:
         blocked: -1
         connect: -1
@@ -896,6 +898,6 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 199
+        wait: 299
   pages: []
   version: "1.2"

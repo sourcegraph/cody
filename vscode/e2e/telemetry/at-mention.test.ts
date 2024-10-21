@@ -21,7 +21,7 @@ test.describe('cody.at-mention', () => {
 
                 if (repoVariant === 'private') {
                     await uix.workspace.gitInit(
-                        { origin: 'https://github.com/sourcegraph/private-invisible' },
+                        { origin: 'https://github.com/sourcegraph/private-invisible.git' },
                         { workspaceDir }
                     )
                 }

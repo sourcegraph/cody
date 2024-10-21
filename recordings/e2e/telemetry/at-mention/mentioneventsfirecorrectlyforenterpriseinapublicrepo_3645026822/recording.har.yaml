@@ -21,7 +21,7 @@ log:
           - name: accept
             value: "*/*"
           - name: user-agent
-            value: vscode/1.38.1 (Node.js v20.16.0)
+            value: vscode/1.38.2 (Node.js v20.16.0)
           - name: content-type
             value: application/json; charset=utf-8
           - name: authorization
@@ -55,13 +55,15 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 17 Oct 2024 22:23:27 GMT
+            value: Mon, 21 Oct 2024 19:36:31 GMT
           - name: content-type
             value: text/plain; charset=utf-8
           - name: content-length
             value: "275"
           - name: connection
             value: close
+          - name: retry-after
+            value: "600"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -79,13 +81,13 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1221
+        headersSize: 1328
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-10-17T22:23:27.267Z
-      time: 222
+      startedDateTime: 2024-10-21T19:36:31.670Z
+      time: 290
       timings:
         blocked: -1
         connect: -1
@@ -93,7 +95,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 222
+        wait: 290
     - _id: 9b8c9f5ea1381cac85093e502a8c7156
       _order: 0
       cache: {}
@@ -106,9 +108,9 @@ log:
           - name: host
             value: demo.sourcegraph.com
           - name: user-agent
-            value: vscode/1.38.1 (Node.js v20.16.0)
+            value: vscode/1.38.2 (Node.js v20.16.0)
           - name: traceparent
-            value: 00-0f8d2701aebfd59da920e210b05cbd6f-4852a8065ab8f9f3-01
+            value: 00-1bc80926239037570546b87adc7e9df5-42676f4d6e3e5d35-01
           - name: content-type
             value: application/json
           - name: connection
@@ -178,17 +180,17 @@ log:
           - name: client-name
             value: vscode
           - name: client-version
-            value: 1.38.1
-        url: https://demo.sourcegraph.com/.api/completions/stream?api-version=2&client-name=vscode&client-version=1.38.1
+            value: 1.38.2
+        url: https://demo.sourcegraph.com/.api/completions/stream?api-version=2&client-name=vscode&client-version=1.38.2
       response:
-        bodySize: 4662
+        bodySize: 4573
         content:
           mimeType: text/event-stream
-          size: 4662
+          size: 4573
           text: >+
             event: completion
 
-            data: {"deltaText":"Certainly! I'd be happy to discuss the `buzz.ts` file you've provided. This file contains a TypeScript implementation of the classic FizzBuzz problem. Here's a breakdown of what the code does:\n\n1. It exports a function called `fizzbuzz()`.\n2. Inside the function, an empty array called `fizzbuzz` is initialized.\n3. The function uses a for loop to iterate from 1 to 100.\n4. For each number, it applies the FizzBuzz rules:\n   - If the number is divisible by both 3 and 5 (i.e., divisible by 15), it adds 'FizzBuzz' to the array.\n   - If the number is only divisible by 3, it adds 'Fizz' to the array.\n   - If the number is only divisible by 5, it adds 'Buzz' to the array.\n   - For any other number, it adds the number itself (as a string) to the array.\n5. Finally, the function returns the completed `fizzbuzz` array.\n\nThis implementation is concise and follows the standard FizzBuzz rules. It's a good example of how to solve this common programming challenge in TypeScript. Is there anything specific about this file you'd like to explore further?","stopReason":"end_turn"}
+            data: {"deltaText":"Certainly! I'd be happy to discuss the `buzz.ts` file you've provided. This file contains a TypeScript implementation of the classic FizzBuzz problem. Here's a breakdown of what the code does:\n\n1. It exports a function called `fizzbuzz()`.\n2. Inside the function, an empty array called `fizzbuzz` is initialized.\n3. The function uses a for loop to iterate from 1 to 100.\n4. For each number:\n   - If it's divisible by both 3 and 5 (i.e., divisible by 15), it adds 'FizzBuzz' to the array.\n   - If it's only divisible by 3, it adds 'Fizz' to the array.\n   - If it's only divisible by 5, it adds 'Buzz' to the array.\n   - If it's not divisible by 3 or 5, it adds the number itself (as a string) to the array.\n5. Finally, the function returns the completed `fizzbuzz` array.\n\nThis implementation is concise and follows the standard FizzBuzz rules. It's a good example of how to solve this common programming challenge in TypeScript. Is there anything specific about this file you'd like to explore further?","stopReason":"end_turn"}
 
 
             event: done
@@ -198,13 +200,15 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 17 Oct 2024 22:23:33 GMT
+            value: Mon, 21 Oct 2024 19:36:39 GMT
           - name: content-type
             value: text/event-stream
           - name: transfer-encoding
             value: chunked
           - name: connection
             value: close
+          - name: retry-after
+            value: "596"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -222,13 +226,13 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1209
+        headersSize: 1316
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-10-17T22:23:31.748Z
-      time: 5235
+      startedDateTime: 2024-10-21T19:36:36.133Z
+      time: 6473
       timings:
         blocked: -1
         connect: -1
@@ -236,7 +240,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 5235
+        wait: 6473
     - _id: 37a9b2bda053ce2763b93244ff1af838
       _order: 0
       cache: {}
@@ -255,7 +259,7 @@ log:
           - name: accept
             value: "*/*"
           - name: user-agent
-            value: vscode/1.38.1 (Node.js v20.16.0)
+            value: vscode/1.38.2 (Node.js v20.16.0)
           - name: content-type
             value: application/json; charset=utf-8
           - name: authorization
@@ -295,13 +299,15 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 17 Oct 2024 22:23:29 GMT
+            value: Mon, 21 Oct 2024 19:36:33 GMT
           - name: content-type
             value: application/json
           - name: content-length
             value: "53"
           - name: connection
             value: close
+          - name: retry-after
+            value: "599"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -319,13 +325,13 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1351
+        headersSize: 1458
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-10-17T22:23:28.957Z
-      time: 184
+      startedDateTime: 2024-10-21T19:36:33.597Z
+      time: 205
       timings:
         blocked: -1
         connect: -1
@@ -333,7 +339,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 184
+        wait: 205
     - _id: fa5b795606a9596f1b7383979e00bde6
       _order: 0
       cache: {}
@@ -352,7 +358,7 @@ log:
           - name: accept
             value: "*/*"
           - name: user-agent
-            value: vscode/1.38.1 (Node.js v20.16.0)
+            value: vscode/1.38.2 (Node.js v20.16.0)
           - name: content-type
             value: application/json; charset=utf-8
           - name: authorization
@@ -401,13 +407,15 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 17 Oct 2024 22:23:27 GMT
+            value: Mon, 21 Oct 2024 19:36:31 GMT
           - name: content-type
             value: application/json
           - name: content-length
             value: "282"
           - name: connection
             value: close
+          - name: retry-after
+            value: "594"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -425,13 +433,13 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1352
+        headersSize: 1459
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-10-17T22:23:27.039Z
-      time: 275
+      startedDateTime: 2024-10-21T19:36:31.456Z
+      time: 195
       timings:
         blocked: -1
         connect: -1
@@ -439,7 +447,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 275
+        wait: 195
     - _id: 1567a774f8955f42799016aceb946e19
       _order: 0
       cache: {}
@@ -458,7 +466,7 @@ log:
           - name: accept
             value: "*/*"
           - name: user-agent
-            value: vscode/1.38.1 (Node.js v20.16.0)
+            value: vscode/1.38.2 (Node.js v20.16.0)
           - name: content-type
             value: application/json; charset=utf-8
           - name: authorization
@@ -499,13 +507,15 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 17 Oct 2024 22:23:27 GMT
+            value: Mon, 21 Oct 2024 19:36:31 GMT
           - name: content-type
             value: application/json
           - name: content-length
             value: "76"
           - name: connection
             value: close
+          - name: retry-after
+            value: "594"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -523,13 +533,13 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1351
+        headersSize: 1458
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-10-17T22:23:27.042Z
-      time: 217
+      startedDateTime: 2024-10-21T19:36:31.457Z
+      time: 205
       timings:
         blocked: -1
         connect: -1
@@ -537,7 +547,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 217
+        wait: 205
     - _id: cf3c3975c58a7fd1491c89c4bdda15e9
       _order: 0
       cache: {}
@@ -556,7 +566,7 @@ log:
           - name: accept
             value: "*/*"
           - name: user-agent
-            value: vscode/1.38.1 (Node.js v20.16.0)
+            value: vscode/1.38.2 (Node.js v20.16.0)
           - name: content-type
             value: application/json; charset=utf-8
           - name: authorization
@@ -597,13 +607,15 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 17 Oct 2024 22:23:27 GMT
+            value: Mon, 21 Oct 2024 19:36:31 GMT
           - name: content-type
             value: application/json
           - name: content-length
             value: "69"
           - name: connection
             value: close
+          - name: retry-after
+            value: "594"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -621,13 +633,13 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1351
+        headersSize: 1458
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-10-17T22:23:27.041Z
-      time: 199
+      startedDateTime: 2024-10-21T19:36:31.457Z
+      time: 281
       timings:
         blocked: -1
         connect: -1
@@ -635,7 +647,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 199
+        wait: 281
     - _id: c7a96a6928009c667645b21de5a28adf
       _order: 0
       cache: {}
@@ -654,7 +666,7 @@ log:
           - name: accept
             value: "*/*"
           - name: user-agent
-            value: vscode/1.38.1 (Node.js v20.16.0)
+            value: vscode/1.38.2 (Node.js v20.16.0)
           - name: content-type
             value: application/json; charset=utf-8
           - name: authorization
@@ -708,13 +720,15 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 17 Oct 2024 22:23:27 GMT
+            value: Mon, 21 Oct 2024 19:36:31 GMT
           - name: content-type
             value: application/json
           - name: content-length
             value: "225"
           - name: connection
             value: close
+          - name: retry-after
+            value: "594"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -732,13 +746,13 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1352
+        headersSize: 1459
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-10-17T22:23:26.658Z
-      time: 309
+      startedDateTime: 2024-10-21T19:36:31.218Z
+      time: 214
       timings:
         blocked: -1
         connect: -1
@@ -746,7 +760,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 309
+        wait: 214
     - _id: 1e209adfd88a7c3370cadedc009a0fec
       _order: 0
       cache: {}
@@ -765,7 +779,7 @@ log:
           - name: accept
             value: "*/*"
           - name: user-agent
-            value: vscode/1.38.1 (Node.js v20.16.0)
+            value: vscode/1.38.2 (Node.js v20.16.0)
           - name: content-type
             value: application/json; charset=utf-8
           - name: authorization
@@ -810,13 +824,15 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 17 Oct 2024 22:23:31 GMT
+            value: Mon, 21 Oct 2024 19:36:35 GMT
           - name: content-type
             value: application/json
           - name: content-length
             value: "108"
           - name: connection
             value: close
+          - name: retry-after
+            value: "597"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -834,13 +850,13 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1352
+        headersSize: 1459
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-10-17T22:23:30.848Z
-      time: 234
+      startedDateTime: 2024-10-21T19:36:35.141Z
+      time: 192
       timings:
         blocked: -1
         connect: -1
@@ -848,7 +864,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 234
+        wait: 192
     - _id: 9c4b76804bef86c8486302441185d976
       _order: 0
       cache: {}
@@ -867,7 +883,7 @@ log:
           - name: accept
             value: "*/*"
           - name: user-agent
-            value: vscode/1.38.1 (Node.js v20.16.0)
+            value: vscode/1.38.2 (Node.js v20.16.0)
           - name: content-type
             value: application/json; charset=utf-8
           - name: authorization
@@ -906,13 +922,15 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 17 Oct 2024 22:23:29 GMT
+            value: Mon, 21 Oct 2024 19:36:33 GMT
           - name: content-type
             value: application/json
           - name: content-length
             value: "62"
           - name: connection
             value: close
+          - name: retry-after
+            value: "599"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -930,13 +948,13 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1351
+        headersSize: 1458
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-10-17T22:23:29.045Z
-      time: 214
+      startedDateTime: 2024-10-21T19:36:33.644Z
+      time: 260
       timings:
         blocked: -1
         connect: -1
@@ -944,7 +962,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 214
+        wait: 260
     - _id: 322e0aeead43ccccbd57ad162a64fde3
       _order: 0
       cache: {}
@@ -963,7 +981,7 @@ log:
           - name: accept
             value: "*/*"
           - name: user-agent
-            value: vscode/1.38.1 (Node.js v20.16.0)
+            value: vscode/1.38.2 (Node.js v20.16.0)
           - name: content-type
             value: application/json; charset=utf-8
           - name: authorization
@@ -1001,13 +1019,15 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 17 Oct 2024 22:23:26 GMT
+            value: Mon, 21 Oct 2024 19:36:31 GMT
           - name: content-type
             value: application/json
           - name: content-length
             value: "47"
           - name: connection
             value: close
+          - name: retry-after
+            value: "594"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -1025,13 +1045,13 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1351
+        headersSize: 1458
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-10-17T22:23:26.619Z
-      time: 341
+      startedDateTime: 2024-10-21T19:36:31.217Z
+      time: 249
       timings:
         blocked: -1
         connect: -1
@@ -1039,7 +1059,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 341
+        wait: 249
     - _id: e9670a64916bf997b5971f1de757b0c8
       _order: 0
       cache: {}
@@ -1058,7 +1078,7 @@ log:
           - name: accept
             value: "*/*"
           - name: user-agent
-            value: vscode/1.38.1 (Node.js v20.16.0)
+            value: vscode/1.38.2 (Node.js v20.16.0)
           - name: content-type
             value: application/json; charset=utf-8
           - name: authorization
@@ -1113,86 +1133,61 @@ log:
             value: null
         url: https://demo.sourcegraph.com/.api/graphql?ViewerPrompts
       response:
-        bodySize: 9450
+        bodySize: 7828
         content:
           mimeType: application/json
-          size: 9450
-          text: "{\"data\":{\"prompts\":{\"nodes\":[{\"id\":\"UHJvbXB0OjUy\",\"name\":\"r\
-            eview-typescript-code\",\"nameWithOwner\":\"dan.diemer/review-types\
-            cript-code\",\"owner\":{\"namespaceName\":\"dan.diemer\"},\"descrip\
-            tion\":\"\",\"draft\":false,\"definition\":{\"text\":\"Please review
-            the following TypeScript code for best practices, potential bugs,
-            and improvements. Provide feedback on code readability, performance,
-            security, and adherence to TypeScript conventions. Suggest any
-            refactoring where necessary and recommend improvements for type
-            safety and error handling. Ensure the code follows clean coding
-            principles.\\n\\nadd a joke about
+          size: 7828
+          text: "{\"data\":{\"prompts\":{\"nodes\":[{\"id\":\"UHJvbXB0OjU3\",\"name\":\"g\
+            enerate-go-unit-test\",\"nameWithOwner\":\"sara.dam/generate-go-uni\
+            t-test\",\"owner\":{\"namespaceName\":\"sara.dam\"},\"description\":\
+            \"Generate a Go unit
+            test\",\"draft\":false,\"definition\":{\"text\":\"Generate a Go unit
+            test for the following Go code. Ensure that:\\n\\nError conditions
+            are tested wherever applicable, using Go's error type.\\nTest
+            functions are split logically, with each function testing a specific
+            scenario (e.g., success, error cases).\\nA setup() function is used
+            to initialize shared test data if necessary.\\nUse Go's testing
+            package for all assertions and
+            checks.\"},\"url\":\"/prompts/UHJvbXB0OjU3\",\"createdBy\":{\"id\":\
+            \"VXNlcjozMDQ=\",\"username\":\"sara.dam\",\"displayName\":\"Sara\",\
+            \"avatarURL\":\"https://lh3.googleusercontent.com/a/AGNmyxZeAP4iHdf\
+            TovIuavCIHBGktVqmpMzTyjtnh9iT=s96-c\"}},{\"id\":\"UHJvbXB0OjUy\",\"\
+            name\":\"review-typescript-code\",\"nameWithOwner\":\"dan.diemer/re\
+            view-typescript-code\",\"owner\":{\"namespaceName\":\"dan.diemer\"},\
+            \"description\":\"\",\"draft\":false,\"definition\":{\"text\":\"Ple\
+            ase review the following TypeScript code for best practices,
+            potential bugs, and improvements. Provide feedback on code
+            readability, performance, security, and adherence to TypeScript
+            conventions. Suggest any refactoring where necessary and recommend
+            improvements for type safety and error handling. Ensure the code
+            follows clean coding principles.\\n\\nadd a joke about
             typescript\"},\"url\":\"/prompts/UHJvbXB0OjUy\",\"createdBy\":{\"id\
             \":\"VXNlcjoxMDk=\",\"username\":\"dan.diemer\",\"displayName\":\"D\
             an\",\"avatarURL\":\"https://lh3.googleusercontent.com/a/AATXAJwyll\
-            ByWju65ODeEJNJzSptjJ7xOb4VsrsKQKIl=s96-c\"}},{\"id\":\"UHJvbXB0OjU0\
-            \",\"name\":\"Account-Success-Plan\",\"nameWithOwner\":\"cameron.ho\
-            lloway/Account-Success-Plan\",\"owner\":{\"namespaceName\":\"camero\
-            n.holloway\"},\"description\":\"Use this for building beginner
-            account plans \",\"draft\":false,\"definition\":{\"text\":\"Create
-            an account plan for {CUSTOMER NAME} using the following questions
-            and references:\\n\\nSummary of What the Company Does: A brief
-            description of the company's core business, its mission, and its
-            market position.\\n\\nProducts/Services They Sell and Revenue
-            Streams: Details of the company's main products or services and how
-            they generate revenue.\\n\\nChallenges They Are Trying to Solve from
-            a Data and Development Perspective: Key issues the company faces in
-            data management, product management, devops, customer engagement, or
-            technology adoption.\\n\\nMain Competitors: Identification of the
-            company's primary competitors and their market
-            positioning.\\n\\nMain Opportunities and Challenges for Sourcegraph:
-            Specific opportunities for Sourcegraph to add value to the company,
-            as well as potential challenges.\\n\\nMain KPIs for Head of
-            Development: Key performance indicators that the Head of Development
-            would focus on, such as developer productivity, code quality, time
-            to resolution for issues, collaboration efficiency, release
-            velocity, onboarding time for new developers, codebase
-            maintainability, security and compliance and technical debt
-            management. Provide practical examples of how Sourcegraph's products
-            or services could be implemented to address the company’s
-            needs.\\n\\nMain KPIs for Head of Data: Important metrics for the
-            Head of Data, including data quality, data accessibility, and
-            insights generation.\\n\\nSummary of News Mentions Over the Last 6
-            Months: A recap of major news stories involving the company,
-            highlighting any significant developments or
-            challenges.\\n\\nGeneral Trends in the Industry in Which This
-            Company Operates: Insights into broader industry trends that could
-            impact the company, including market shifts, emerging technologies,
-            and competitive dynamics.\\n\\nAny Other Areas of Feedback:
-            Additional relevant information or insights that could be useful for
-            account planning and client relationship
-            management.\"},\"url\":\"/prompts/UHJvbXB0OjU0\",\"createdBy\":{\"id\
-            \":\"VXNlcjozODk=\",\"username\":\"cameron.holloway\",\"displayName\
-            \":\"Cameron\",\"avatarURL\":\"https://lh3.googleusercontent.com/a/\
-            ACg8ocKsExtvgiOXEASvoBW1vuWHcsXcTmvJbtfGHRdKk7C1w8NbEBA=s96-c\"}},{\
-            \"id\":\"UHJvbXB0OjUz\",\"name\":\"spring-boot-unit-test\",\"nameWi\
-            thOwner\":\"swaterer/spring-boot-unit-test\",\"owner\":{\"namespace\
-            Name\":\"swaterer\"},\"description\":\"\",\"draft\":false,\"definit\
-            ion\":{\"text\":\"Review the shared context to identify the testing
-            framework and libraries in use. Then, generate a suite of multiple
-            unit tests for the selected testfile using the detected test
-            framework and libraries. Be sure to import the function being
-            tested. Use the same patterns, testing framework, conventions, and
-            libraries as shown in the shared context. Only import modules,
-            functions, dependencies, and mocks based on shared code. If a test
-            suite for the selected code is in the shared context, focus on
-            generating new tests for uncovered cases. If none are detected,
-            import common unit test libraries for Java. Focus on validating key
-            functionality with simple and complete assertions. Before writing
-            the tests, identify which testing libraries and frameworks to use
-            and import. At the end, enclose the fully completed code for the new
-            unit tests without any comments, fragments, or TODOs. The new tests
-            should validate the expected functionality and cover edge cases for
-            with all required imports, including the function being tested. Do
-            not repeat tests from the shared context. Enclose only the complete
-            runnable tests. In this case this is a Java Spring Boot application.
-            Apart from generating the updated code document the additional tests
-            that you have
+            ByWju65ODeEJNJzSptjJ7xOb4VsrsKQKIl=s96-c\"}},{\"id\":\"UHJvbXB0OjUz\
+            \",\"name\":\"spring-boot-unit-test\",\"nameWithOwner\":\"swaterer/\
+            spring-boot-unit-test\",\"owner\":{\"namespaceName\":\"swaterer\"},\
+            \"description\":\"\",\"draft\":false,\"definition\":{\"text\":\"Rev\
+            iew the shared context to identify the testing framework and
+            libraries in use. Then, generate a suite of multiple unit tests for
+            the selected testfile using the detected test framework and
+            libraries. Be sure to import the function being tested. Use the same
+            patterns, testing framework, conventions, and libraries as shown in
+            the shared context. Only import modules, functions, dependencies,
+            and mocks based on shared code. If a test suite for the selected
+            code is in the shared context, focus on generating new tests for
+            uncovered cases. If none are detected, import common unit test
+            libraries for Java. Focus on validating key functionality with
+            simple and complete assertions. Before writing the tests, identify
+            which testing libraries and frameworks to use and import. At the
+            end, enclose the fully completed code for the new unit tests without
+            any comments, fragments, or TODOs. The new tests should validate the
+            expected functionality and cover edge cases for with all required
+            imports, including the function being tested. Do not repeat tests
+            from the shared context. Enclose only the complete runnable tests.
+            In this case this is a Java Spring Boot application. Apart from
+            generating the updated code document the additional tests that you
+            have
             generated.\"},\"url\":\"/prompts/UHJvbXB0OjUz\",\"createdBy\":{\"id\
             \":\"VXNlcjo5NQ==\",\"username\":\"swaterer\",\"displayName\":\"Sim\
             on
@@ -1279,13 +1274,15 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 17 Oct 2024 22:23:31 GMT
+            value: Mon, 21 Oct 2024 19:36:35 GMT
           - name: content-type
             value: application/json
           - name: transfer-encoding
             value: chunked
           - name: connection
             value: close
+          - name: retry-after
+            value: "597"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -1303,13 +1300,13 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1359
+        headersSize: 1466
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-10-17T22:23:30.817Z
-      time: 208
+      startedDateTime: 2024-10-21T19:36:35.134Z
+      time: 227
       timings:
         blocked: -1
         connect: -1
@@ -1317,7 +1314,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 208
+        wait: 227
     - _id: 49bed0d771a2067eccdc72b3a59f37ba
       _order: 0
       cache: {}
@@ -1334,7 +1331,7 @@ log:
           - name: accept
             value: "*/*"
           - name: user-agent
-            value: vscode/1.38.1 (Node.js v20.16.0)
+            value: vscode/1.38.2 (Node.js v20.16.0)
           - name: authorization
             value: token
               REDACTED_69e9f79ce29352d014eeb80b56510341844eb82ad9abac7cab3631c7e873e4ce
@@ -1562,13 +1559,15 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Thu, 17 Oct 2024 22:23:27 GMT
+            value: Mon, 21 Oct 2024 19:36:32 GMT
           - name: content-type
             value: text/plain; charset=utf-8
           - name: transfer-encoding
             value: chunked
           - name: connection
             value: close
+          - name: retry-after
+            value: "600"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -1586,13 +1585,13 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1228
+        headersSize: 1335
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-10-17T22:23:27.501Z
-      time: 193
+      startedDateTime: 2024-10-21T19:36:31.967Z
+      time: 250
       timings:
         blocked: -1
         connect: -1
@@ -1600,6 +1599,6 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 193
+        wait: 250
   pages: []
   version: "1.2"
