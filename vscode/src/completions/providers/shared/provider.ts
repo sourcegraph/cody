@@ -13,10 +13,15 @@ import {
     type GitContext,
     type LegacyModelRefStr,
     type Model,
+    currentAuthStatus,
+    firstResultFromOperation,
+    isDotCom,
+    pathFunctionsForURI,
     toLegacyModel,
     tokensToChars,
 } from '@sourcegraph/cody-shared'
 
+import { repoNameResolver } from '../../../repository/repo-name-resolver'
 import type * as CompletionAnalyticsLogger from '../../analytics-logger'
 import { defaultCodeCompletionsClient } from '../../default-client'
 import type { TriggerKind } from '../../get-inline-completions'
@@ -232,14 +237,38 @@ export abstract class Provider {
         return Promise.resolve(this.client.complete(requestParams, abortController))
     }
 
+    protected async getRequestParamsMetadata(
+        document: TextDocument,
+        abortSignal: AbortSignal
+    ): Promise<CodeCompletionsParams['metadata']> {
+        const repoInfo = await firstResultFromOperation(
+            repoNameResolver.getRepoInfoContainingUri(document.uri),
+            abortSignal
+        )
+
+        const gitFilePath = repoInfo?.rootUri
+            ? pathFunctionsForURI(document.uri).relative(repoInfo?.rootUri.path, document.uri.path)
+            : undefined
+
+        // TODO: add git commit hash
+        return {
+            gitFilePath,
+            gitRepoNames: repoInfo?.repoNames,
+        }
+    }
+
     public async generateCompletions(
         generateOptions: GenerateCompletionsOptions,
         abortSignal: AbortSignal,
         tracer?: CompletionProviderTracer
     ): Promise<AsyncGenerator<FetchCompletionResult[]>> {
-        const { docContext, numberOfCompletionsToGenerate } = generateOptions
+        const { docContext, numberOfCompletionsToGenerate, document } = generateOptions
 
         const requestParams = this.getRequestParams(generateOptions) as CodeCompletionsParams
+        // Add git metadata for enterprise users.
+        if (!('metadata' in requestParams) && !isDotCom(currentAuthStatus())) {
+            requestParams.metadata = await this.getRequestParamsMetadata(document, abortSignal)
+        }
         tracer?.params(requestParams)
 
         const completionsGenerators = Array.from({ length: numberOfCompletionsToGenerate }).map(

@@ -3,10 +3,15 @@ import * as vscode from 'vscode'
 import { URI } from 'vscode-uri'
 
 import { vscodeGitAPI } from './git-extension-api'
-import { gitRemoteUrlsForUri } from './remote-urls-from-parent-dirs'
+import { gitRemoteUrlsInfoForUri } from './remote-urls-from-parent-dirs'
 import { mockFsCalls } from './test-helpers'
 
-describe('gitRemoteUrlsForUri', () => {
+async function gitRemoteUrlsForUri(uri: vscode.Uri): Promise<string[] | undefined> {
+    const repoInfo = await gitRemoteUrlsInfoForUri(uri)
+    return repoInfo?.remoteUrls
+}
+
+describe('gitRemoteUrlsInfoForUri', () => {
     beforeAll(() => {
         // Ensure that the `vscodeGitAPI` is not somehow set, because these tests were written to
         // test the behavior that is the fallback for when it is not set.
@@ -75,9 +80,9 @@ describe('gitRemoteUrlsForUri', () => {
 
         const remoteUrls = await gitRemoteUrlsForUri(fileUri)
         expect(remoteUrls).toEqual([
-            'https://github.com/username/yourproject.git',
-            'https://github.com/originalauthor/yourproject.git',
             'git@backupserver:repositories/yourproject.git',
+            'https://github.com/originalauthor/yourproject.git',
+            'https://github.com/username/yourproject.git',
         ])
     })
 
@@ -109,7 +114,7 @@ describe('gitRemoteUrlsForUri', () => {
             .mockRejectedValue(new vscode.FileSystemError('file does not exist'))
 
         const uri = URI.file('repo/src/dir/foo.ts')
-        const remoteUrls = await gitRemoteUrlsForUri(uri)
+        const remoteUrls = await gitRemoteUrlsInfoForUri(uri)
 
         expect(statMock).toBeCalledTimes(5)
         expect(remoteUrls).toBe(undefined)
@@ -209,10 +214,12 @@ describe('gitRemoteUrlsForUri', () => {
             gitConfig: 'a',
         })
 
-        expect(await gitRemoteUrlsForUri(URI.parse('https://example.com/foo/bar'))).toBe(undefined)
-        expect(await gitRemoteUrlsForUri(URI.parse('https://gitlab.com/foo/bar'))).toBe(undefined)
-        expect(await gitRemoteUrlsForUri(URI.parse('https://github.com/foo/bar'))).toBe(undefined)
-        expect(await gitRemoteUrlsForUri(URI.parse('ssh://git@github.com:foo/bar.git'))).toBe(undefined)
+        expect(await gitRemoteUrlsInfoForUri(URI.parse('https://example.com/foo/bar'))).toBe(undefined)
+        expect(await gitRemoteUrlsInfoForUri(URI.parse('https://gitlab.com/foo/bar'))).toBe(undefined)
+        expect(await gitRemoteUrlsInfoForUri(URI.parse('https://github.com/foo/bar'))).toBe(undefined)
+        expect(await gitRemoteUrlsInfoForUri(URI.parse('ssh://git@github.com:foo/bar.git'))).toBe(
+            undefined
+        )
         expect(statMock).toBeCalledTimes(0)
         expect(readFileMock).toBeCalledTimes(0)
     })

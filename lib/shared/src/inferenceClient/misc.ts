@@ -28,6 +28,20 @@ export type CodeCompletionsParams = Omit<CompletionParameters, 'fast'> & {
     timeoutMs: number
     // TODO: apply the same type to the underlying `CompletionParameters`
     model?: LegacyModelRefStr | ModelRefStr
+    metadata?: {
+        /**
+         * File path relative to the git root.
+         */
+        gitFilePath?: string
+        /**
+         * Repository names resolved using Sourcegraph API based on remote URLs (such as `github.com/foo/bar`).
+         */
+        gitRepoNames?: string[]
+        /**
+         * git rev-parse HEAD
+         */
+        gitCommitHash?: string
+    }
 }
 export type SerializedCodeCompletionsParams = Omit<SerializedCompletionParameters, 'fast'>
 

@@ -1,7 +1,10 @@
+import { LRUCache } from 'lru-cache'
+import { Observable, map } from 'observable-fns'
 import type * as vscode from 'vscode'
 
 import {
     ContextFiltersProvider,
+    type MaybePendingObservable,
     authStatus,
     combineLatest,
     convertGitCloneURLToCodebaseName,
@@ -19,9 +22,18 @@ import {
     switchMapReplayOperation,
 } from '@sourcegraph/cody-shared'
 
-import { Observable, map } from 'observable-fns'
 import { logDebug } from '../output-channel-logger'
-import { gitRemoteUrlsForUri } from './remote-urls-from-parent-dirs'
+
+import { type GitRemoteUrlsInfo, gitRemoteUrlsInfoForUri } from './remote-urls-from-parent-dirs'
+
+type RemoteUrl = string
+type RepoName = string
+type UriFsPath = string
+
+type GitRepoInfo = {
+    repoNames: string[]
+    rootUri?: vscode.Uri
+}
 
 export class RepoNameResolver {
     /**
@@ -31,74 +43,104 @@ export class RepoNameResolver {
      * ❗️ For enterprise, this uses the Sourcegraph API to resolve repo names instead of the local
      * conversion function. ❗️
      */
-    public getRepoNamesContainingUri(uri: vscode.Uri): Observable<string[] | typeof pendingOperation> {
+    public getRepoNamesContainingUri(uri: vscode.Uri): MaybePendingObservable<RepoName[]> {
+        return this.getRepoInfoContainingUri(uri).map(repoInfo => {
+            if (repoInfo && repoInfo !== pendingOperation) {
+                return repoInfo.repoNames
+            }
+            return repoInfo || []
+        })
+    }
+
+    /**
+     * Get repo root URI and the names of repositories (such as `github.com/foo/bar`)
+     * that contain the given file URI. The file URI can also be a folder within
+     * a workspace or a workspace root folder.
+     *
+     * ❗️ For enterprise, this uses the Sourcegraph API to resolve repo names instead of the local
+     * conversion function. ❗️
+     */
+    public getRepoInfoContainingUri(uri: vscode.Uri): MaybePendingObservable<GitRepoInfo | null> {
         return combineLatest(
-            promiseFactoryToObservable(signal => this.getUniqueRemoteUrlsCached(uri, signal)),
+            promiseFactoryToObservable(signal => this.getRemoteUrlsInfoCached(uri, signal)),
             authStatus
         ).pipe(
             switchMapReplayOperation(
-                ([uniqueRemoteUrls, authStatus]): Observable<string[] | typeof pendingOperation> => {
+                ([repoInfo, authStatus]): MaybePendingObservable<GitRepoInfo | null> => {
+                    const remoteUrls = repoInfo?.remoteUrls || []
+
                     // Use local conversion function for non-enterprise accounts.
                     if (isDotCom(authStatus)) {
+                        const repoNames = remoteUrls
+                            .map(convertGitCloneURLToCodebaseName)
+                            .filter(isDefined)
+
                         return Observable.of(
-                            uniqueRemoteUrls.map(convertGitCloneURLToCodebaseName).filter(isDefined)
+                            repoNames.length ? { rootUri: repoInfo?.rootUri, repoNames } : null
                         )
                     }
 
                     return combineLatest(
-                        ...uniqueRemoteUrls.map(remoteUrl => this.getRepoNameCached(remoteUrl))
+                        ...remoteUrls.map(remoteUrl => this.getRepoNameCached(remoteUrl))
                     ).pipe(
-                        map(repoNames =>
-                            repoNames.includes(pendingOperation)
-                                ? pendingOperation
-                                : (
-                                      repoNames as Exclude<
-                                          (typeof repoNames)[number],
-                                          typeof pendingOperation
-                                      >[]
-                                  ).filter(isDefined)
-                        )
+                        map(maybeRepoNames => {
+                            if (maybeRepoNames.includes(pendingOperation)) {
+                                return pendingOperation
+                            }
+
+                            const repoNames = (
+                                maybeRepoNames as Exclude<
+                                    (typeof maybeRepoNames)[number],
+                                    typeof pendingOperation
+                                >[]
+                            ).filter(isDefined)
+
+                            return repoNames.length ? { rootUri: repoInfo?.rootUri, repoNames } : null
+                        })
                     )
                 }
             ),
             map(value => {
                 if (isError(value)) {
                     logDebug('RepoNameResolver:getRepoNamesContainingUri', 'error', { verbose: value })
-                    return []
+                    return null
                 }
                 return value
             })
         )
     }
 
-    private getUniqueRemoteUrlsCache: Partial<Record<string, Promise<string[]>>> = {}
-    private async getUniqueRemoteUrlsCached(uri: vscode.Uri, signal?: AbortSignal): Promise<string[]> {
+    private fsPathToRemoteUrlsInfo = new LRUCache<UriFsPath, ReturnType<typeof gitRemoteUrlsInfoForUri>>(
+        { max: 1000 }
+    )
+
+    private async getRemoteUrlsInfoCached(
+        uri: vscode.Uri,
+        signal?: AbortSignal
+    ): Promise<GitRemoteUrlsInfo | undefined> {
         const key = uri.toString()
-        let uniqueRemoteUrls: Promise<string[]> | undefined = this.getUniqueRemoteUrlsCache[key]
-        if (!uniqueRemoteUrls) {
-            uniqueRemoteUrls = gitRemoteUrlsForUri(uri, signal)
-                .then(remoteUrls => {
-                    const uniqueRemoteUrls = Array.from(new Set(remoteUrls ?? [])).sort()
-                    return uniqueRemoteUrls
+        let remoteUrlsInfo = this.fsPathToRemoteUrlsInfo.get(key)
+
+        if (!remoteUrlsInfo) {
+            remoteUrlsInfo = gitRemoteUrlsInfoForUri(uri, signal).catch(error => {
+                logError('RepoNameResolver:getRemoteUrlsInfoCached', 'error', {
+                    verbose: error,
                 })
-                .catch(error => {
-                    logError('RepoNameResolver:getUniqueRemoteUrlsCached', 'error', {
-                        verbose: error,
-                    })
-                    return []
-                })
-            this.getUniqueRemoteUrlsCache[key] = uniqueRemoteUrls
+                return undefined
+            })
+            this.fsPathToRemoteUrlsInfo.set(key, remoteUrlsInfo)
         }
-        return uniqueRemoteUrls
+        return remoteUrlsInfo
     }
 
-    private getRepoNameCache: Partial<
-        Record<string, Observable<string | null | typeof pendingOperation>>
-    > = {}
-    private getRepoNameCached(remoteUrl: string): Observable<string | null | typeof pendingOperation> {
+    private remoteUrlToRepoName = new LRUCache<RemoteUrl, ReturnType<typeof this.getRepoNameCached>>({
+        max: 1000,
+    })
+
+    private getRepoNameCached(remoteUrl: string): MaybePendingObservable<RepoName | null> {
         const key = remoteUrl
-        let observable: ReturnType<typeof this.getRepoNameCached> | undefined =
-            this.getRepoNameCache[key]
+        let observable = this.remoteUrlToRepoName.get(key)
+
         if (!observable) {
             observable = resolvedConfig.pipe(
                 pluck('auth'),
@@ -114,7 +156,7 @@ export class RepoNameResolver {
                     return value
                 })
             )
-            this.getRepoNameCache[key] = observable
+            this.remoteUrlToRepoName.set(key, observable)
         }
         return observable
     }

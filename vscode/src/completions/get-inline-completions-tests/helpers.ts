@@ -1,7 +1,7 @@
 import dedent from 'dedent'
 import { Observable } from 'observable-fns'
 import { vi } from 'vitest'
-import type { URI } from 'vscode-uri'
+import { URI } from 'vscode-uri'
 
 import {
     AUTH_STATUS_FIXTURE_AUTHED,
@@ -28,7 +28,7 @@ import type {
     CodeCompletionsParams,
     CompletionResponseWithMetaData,
 } from '@sourcegraph/cody-shared/src/inferenceClient/misc'
-
+import { repoNameResolver } from '../../repository/repo-name-resolver'
 import { DEFAULT_VSCODE_SETTINGS } from '../../testutils/mocks'
 import type { SupportedLanguage } from '../../tree-sitter/grammars'
 import { updateParseTreeCache } from '../../tree-sitter/parse-tree-cache'
@@ -411,6 +411,14 @@ export function initCompletionProviderConfig({
     authStatus,
 }: Partial<Pick<ParamsResult, 'configuration' | 'authStatus'>>): void {
     setEditorWindowIsFocused(() => true)
+
+    vi.spyOn(repoNameResolver, 'getRepoInfoContainingUri').mockReturnValue(
+        Observable.of({
+            rootUri: URI.file('/repoName'),
+            repoNames: ['sourcegraph/repoName'],
+        })
+    )
+
     vi.spyOn(featureFlagProvider, 'evaluateFeatureFlagEphemerally').mockResolvedValue(false)
     vi.spyOn(featureFlagProvider, 'evaluatedFeatureFlag').mockReturnValue(Observable.of(false))
     vi.spyOn(ClientConfigSingleton.getInstance(), 'getConfig').mockResolvedValue({
