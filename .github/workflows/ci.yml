@@ -7,8 +7,75 @@ on:
   pull_request:
     types: [opened, reopened, synchronize, ready_for_review]
   workflow_dispatch:
+    inputs:
+      unit_tests:
+        type: boolean
+        description: 'Run unit tests'
+        required: false
+        default: true
+      integration_tests:
+        type: boolean
+        description: 'Run integration tests'
+        required: false
+        default: true
+      e2e_tests:
+        type: boolean
+        description: 'Run e2e tests'
+        required: false
+        default: true
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .tool-versions
+      - uses: pnpm/action-setup@fe02b34f77f8bc703788d5817da081398fad5dd2 # SECURITY: pin third-party action hashes
+      - run: echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
+        shell: bash
+        id: pnpm-cache
+      - name: Cache pnpm store
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: ${{ runner.os }}-pnpm-store-
+      - run: pnpm install
+      # Run Biome and capture the output. If biome crashes, it still reports a
+      # successful CI run (exit code 0) but that will ripple down to errors in
+      # the Biome VS Code extension. This ensures that we don't accidentally
+      # break Biome.
+      - name: Biome
+        run: |
+          set +e
+          output=$(pnpm exec biome ci --error-on-warnings . 2>&1)
+          status=$?
+          echo "$output"
+          if [ $status -ne 0 ]; then
+            exit $status
+          fi
+          if echo "$output" | grep -q "Biome encountered an unexpected error"; then
+            echo "Error string 'Biome encountered an unexpected error' detected in output."
+            exit 1
+          fi
+        shell: bash
+      - run: pnpm run build
+      - run: pnpm -C vscode run build
+      - run: CODY_RELEASE_TYPE=stable pnpm -C vscode run release:dry-run
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: vscode_dist
+          path: vscode/dist
+          retention-days: 1
+
   # Sets a variable that is used to determine the matrix to run tests on.
   # Everything runs on ubuntu and windows, only commits to main run on macos.
   fast_tests_matrix_prep:
@@ -26,6 +93,7 @@ jobs:
 
   test-unit:
     needs: fast_tests_matrix_prep
+    if: ${{ !cancelled() }}
     strategy:
       fail-fast: false
       matrix:
@@ -72,6 +140,7 @@ jobs:
 
   test-integration:
     needs: fast_tests_matrix_prep
+    if: ${{ !cancelled() }}
     strategy:
       fail-fast: false
       matrix:
@@ -99,14 +168,67 @@ jobs:
       - run: pnpm -C vscode run test:integration
         if: matrix.runner == 'windows' || matrix.runner == 'macos'
 
+
   test-e2e:
-    needs: fast_tests_matrix_prep
+    name: 'E2E Tests (${{ matrix.os }} - ${{ matrix.shardIndex }}/${{ matrix.shardTotal }})'
+    needs: build
+    if: ${{ !cancelled() }}
     strategy:
       fail-fast: false
       matrix:
-        runner: ${{ fromJson(needs.fast_tests_matrix_prep.outputs.matrix) }}
-    runs-on: ${{ matrix.runner }}-latest
-    timeout-minutes: 15
+        os: ['windows', 'ubuntu', 'macos']
+        # todo: allow for multiple VSCode Versions
+        # todo: allow modifying from workflow_dispatch args
+        # todo: build caching between shards (alternatively just speed up builds)
+        shardIndex: ['1', '2', '3', '4']
+        shardTotal: ['4']
+        exclude:
+          - os: ${{ github.event_name == 'pull_request' && github.event.pull_request.draft == true && 'windows' }}
+          - os: ${{ github.event_name == 'pull_request' && github.event.pull_request.draft == true && 'macos' }}
+    runs-on: ${{ matrix.os }}-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .tool-versions
+      - uses: pnpm/action-setup@fe02b34f77f8bc703788d5817da081398fad5dd2 # SECURITY: pin third-party action hashes
+      - run: echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
+        shell: bash
+        id: pnpm-cache
+      - name: Cache pnpm store
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+          # we use a different key here because we install the Playwright dependencies
+          # however, we can still restore from the shared cache if there's a miss
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: ${{ runner.os }}-pnpm-store-
+      - name: Install dependencies
+        run: pnpm install
+      - name: Setup Playwright browser dependencies
+        run: pnpm -C vscode run test:e2e2:deps # this installs chromium etc
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: build
+      - name: Run E2E tests
+        run: pnpm -C vscode run test:e2e2:run --project e2e --shard=${{ matrix.shardIndex }}/${{ matrix.shardTotal }}
+      - name: Upload blob report to GitHub Actions Artifacts
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-blob-report-${{matrix.os}}-${{ matrix.shardIndex }}
+          path: vscode/.test/e2e/reports/blob
+          retention-days: 1
+      # TODO: Trigger another workflow / daily workflow to pipe the telemetry
+      # events to pubsub so that we can keep historical records even if not
+      # tested
+  test-e2e-report:
+    name: 'E2E Tests Report'
+    runs-on: ubuntu-latest
+    if: ${{ !cancelled() }}
+    needs: [test-e2e]
     permissions:
       id-token: write
       contents: read
@@ -131,38 +253,36 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+          # we use a different key here because we install the Playwright dependencies
+          # however, we can still restore from the shared cache if there's a miss
           key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
           restore-keys: ${{ runner.os }}-pnpm-store-
       - name: Install dependencies
         run: pnpm install
-      - name: Setup Playwright browser dependencies
-        run: pnpm -C vscode run test:e2e2:deps # this installs chromium etc
-      - name: Run E2E tests
-        run: pnpm -C vscode run test:e2e2 --project e2e
+      - name: Download E2E reports
+        uses: actions/download-artifact@v4
+        with:
+          path: vscode/.test/e2e/reports/blob
+          pattern: e2e-blob-report-*
+          merge-multiple: true
+      - name: Report to GitHub
+        run: pnpm -C vscode exec playwright merge-reports --reporter github,@estruyf/github-actions-reporter
+      - name: Merge into HTML Report
+        run: pnpm -C vscode exec playwright merge-reports --reporter html vscode/.test/e2e/reports/html
+      - name: Upload HTML report
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-html-report
+          path: vscode/.test/e2e/reports/html
+          retention-days: 7
+      - name: Report to Buildkite
+        run: pnpm -C vscode exec playwright merge-reports --reporter buildkite-test-collector/playwright/reporter
         env:
-            BUILDKITE_ANALYTICS_TOKEN: ${{ secrets.BUILDKITE_ANALYTICS_TOKEN }}
-            # This is required because the test collector from Buildkite is imprecise when it
-            # comes to infer the branch name on GitHub action.
-            BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
-            GITHUB_REF: ${{ github.head_ref || github.ref_name }}
-      - name: Upload Playwright report (success)
-        # Sometimes it's very useful to be able to look back at why a test didn't fail.
-        if: ${{ success() }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: playwright report ${{matrix.runner}}
-          path: vscode/.test/e2e/reports/html
-          retention-days: 5
-      - name: Upload Playwright report (failure)
-        if: ${{ failure() }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: playwright report ${{matrix.runner}}
-          path: vscode/.test/e2e/reports/html
-          retention-days: 30
-      # TODO: Trigger another workflow / daily workflow to pipe the telemetry
-      # events to pubsub so that we can keep historical records even if not
-      # tested
+          BUILDKITE_ANALYTICS_TOKEN: ${{ secrets.BUILDKITE_ANALYTICS_TOKEN }}
+          # This is required because the test collector from Buildkite is imprecise when it
+          # comes to infer the branch name on GitHub action.
+          BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
+          GITHUB_REF: ${{ github.head_ref || github.ref_name }}
 
   # Sets a variable that is used to determine the matrix to run slow tests (e2e) on.
   # Everything runs on ubuntu, only commits to main run on macos and windows.
@@ -180,11 +300,12 @@ jobs:
           fi
 
   test-e2e-legacy:
-    needs: legacy_slow_tests_matrix_prep
+    needs: [legacy_slow_tests_matrix_prep, test-e2e-report]
+    if: ${{ !cancelled() }}
     strategy:
       fail-fast: false
       matrix:
-        include: ${{ fromJson(needs.slow_tests_matrix_prep.outputs.matrix) }}
+        include: ${{ fromJson(needs.legacy_slow_tests_matrix_prep.outputs.matrix) }}
     runs-on: ${{ matrix.runner }}-latest
     timeout-minutes: 20
     permissions:
@@ -240,44 +361,3 @@ jobs:
         with:
           name: playwright-recordings ${{ matrix.runner }}
           path: playwright/
-
-  build:
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version-file: .tool-versions
-      - uses: pnpm/action-setup@fe02b34f77f8bc703788d5817da081398fad5dd2 # SECURITY: pin third-party action hashes
-      - run: echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
-        shell: bash
-        id: pnpm-cache
-      - name: Cache pnpm store
-        uses: actions/cache@v4
-        with:
-          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: ${{ runner.os }}-pnpm-store-
-      - run: pnpm install
-      # Run Biome and capture the output. If biome crashes, it still reports a
-      # successful CI run (exit code 0) but that will ripple down to errors in
-      # the Biome VS Code extension. This ensures that we don't accidentally
-      # break Biome.
-      - name: Biome
-        run: |
-          set +e
-          output=$(pnpm exec biome ci --error-on-warnings . 2>&1)
-          status=$?
-          echo "$output"
-          if [ $status -ne 0 ]; then
-            exit $status
-          fi
-          if echo "$output" | grep -q "Biome encountered an unexpected error"; then
-            echo "Error string 'Biome encountered an unexpected error' detected in output."
-            exit 1
-          fi
-        shell: bash
-      - run: pnpm run build
-      - run: pnpm -C vscode run build
-      - run: CODY_RELEASE_TYPE=stable pnpm -C vscode run release:dry-run
