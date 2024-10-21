@@ -137,6 +137,7 @@ import { InitDoer } from './InitDoer'
 import { getChatPanelTitle } from './chat-helpers'
 import { type HumanInput, getPriorityContext } from './context'
 import { DefaultPrompter, type PromptInfo } from './prompt'
+import { getPromptsMigrationInfo, startPromptsMigration } from './prompts-migration'
 
 export interface ChatControllerOptions {
     extensionUri: vscode.Uri
@@ -1650,13 +1651,9 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         return this.resolveWebviewViewOrPanel(panel)
     }
 
-    private async resolveWebviewViewOrPanel(viewOrPanel: vscode.WebviewView): Promise<vscode.WebviewView>
-    private async resolveWebviewViewOrPanel(
-        viewOrPanel: vscode.WebviewPanel
-    ): Promise<vscode.WebviewPanel>
-    private async resolveWebviewViewOrPanel(
-        viewOrPanel: vscode.WebviewView | vscode.WebviewPanel
-    ): Promise<vscode.WebviewView | vscode.WebviewPanel> {
+    private async resolveWebviewViewOrPanel<T extends vscode.WebviewView | vscode.WebviewPanel>(
+        viewOrPanel: T
+    ): Promise<T> {
         this._webviewPanelOrView = viewOrPanel
         this.syncPanelTitle()
 
@@ -1687,6 +1684,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         const initialContext = observeInitialContext({
             chatBuilder: this.chatBuilder.changes,
         }).pipe(shareReplay())
+
         this.disposables.push(
             addMessageListenersForExtensionAPI(
                 createMessageAPIForExtension({
@@ -1711,6 +1709,8 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                         promiseFactoryToObservable(() =>
                             hydratePromptText(promptText, initialContext ?? [])
                         ),
+                    promptsMigrationStatus: () => getPromptsMigrationInfo(),
+                    startPromptsMigration: () => promiseFactoryToObservable(startPromptsMigration),
                     prompts: query =>
                         promiseFactoryToObservable(signal =>
                             mergedPromptsAndLegacyCommands(query, signal)

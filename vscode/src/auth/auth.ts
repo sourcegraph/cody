@@ -447,7 +447,7 @@ export async function validateCredentials(
         }
     }
 
-    logDebug('auth', `Authentication succeeed to endpoint ${config.auth.serverEndpoint}`)
+    logDebug('auth', `Authentication succeed to endpoint ${config.auth.serverEndpoint}`)
     return newAuthStatus({
         ...userInfo,
         endpoint: config.auth.serverEndpoint,

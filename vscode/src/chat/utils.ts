@@ -5,7 +5,7 @@ type NewAuthStatusOptions = { endpoint: string } & (
     | { authenticated: false; showNetworkError?: boolean; showInvalidAccessTokenError?: boolean }
     | (Pick<
           AuthenticatedAuthStatus,
-          'authenticated' | 'username' | 'hasVerifiedEmail' | 'displayName' | 'avatarURL'
+          'authenticated' | 'username' | 'hasVerifiedEmail' | 'displayName' | 'avatarURL' | 'siteAdmin'
       > & {
           organizations?: CurrentUserInfo['organizations']
           primaryEmail?:
