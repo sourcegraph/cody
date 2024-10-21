@@ -4,8 +4,6 @@ title: ''
 labels:
   - bug
   - repo/cody
-projects:
-  - sourcegraph/387
 body:
   - type: markdown
     attributes:
