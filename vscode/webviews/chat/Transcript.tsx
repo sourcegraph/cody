@@ -360,11 +360,12 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
 
     const manuallyEditContext = useCallback(() => {
         const contextFiles = humanMessage.contextFiles
-        if (!contextFiles) {
+        const editor = humanEditorRef.current
+        if (!contextFiles || !editor) {
             return
         }
-
-        humanEditorRef.current?.addMentions(contextFiles, undefined, 'before', '\n')
+        editor.removeMentions(item => item.type !== 'repository')
+        editor.addMentions(contextFiles, undefined, 'before', '\n')
 
         // Clear the listed context files
         extensionAPI.clearFetchedContext(humanMessage.index).subscribe({

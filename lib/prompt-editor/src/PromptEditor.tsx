@@ -1,6 +1,7 @@
 import { $insertFirst } from '@lexical/utils'
 import {
     type ContextItem,
+    type SerializedContextItem,
     type SerializedPromptEditorState,
     type SerializedPromptEditorValue,
     getMentionOperations,
@@ -56,6 +57,7 @@ export interface PromptEditorRefAPI {
     setFocus(focus: boolean, options?: { moveCursorToEnd?: boolean }, cb?: () => void): void
     appendText(text: string, cb?: () => void): void
     addMentions(items: ContextItem[], cb?: () => void, position?: 'before' | 'after', sep?: string): void
+    removeMentions(filter: (item: SerializedContextItem) => boolean, cb?: () => void): void
     setInitialContextMentions(items: ContextItem[], cb?: () => void): void
     setEditorState(state: SerializedPromptEditorState, cb?: () => void): void
 }
@@ -147,6 +149,17 @@ export const PromptEditor: FunctionComponent<Props> = ({
                     },
                     { onUpdate: cb }
                 )
+            },
+            removeMentions(filter: (item: SerializedContextItem) => boolean, cb?: () => void): void {
+                if (!editorRef.current) {
+                    cb?.()
+                    return
+                }
+                visitContextItemsForEditor(editorRef.current, node => {
+                    if (!filter(node.contextItem)) {
+                        node.remove()
+                    }
+                })
             },
             addMentions(
                 items: ContextItem[],
