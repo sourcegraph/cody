@@ -53,7 +53,7 @@ export class FireworksPromptProvider implements PromptProvider {
     ): Promise<string> {
         try {
             const response = await getModelResponse(
-                'https://sourcegraph-5c7cf074.direct.fireworks.ai/v1/chat/completions',
+                'https://api.fireworks.ai/inference/v1/chat/completions',
                 JSON.stringify({
                     model: model,
                     messages: prompt,
