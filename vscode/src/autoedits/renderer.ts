@@ -5,10 +5,14 @@ import { createGitDiff } from '../../../lib/shared/src/editor/create-git-diff'
 import { GHOST_TEXT_COLOR } from '../commands/GhostHintDecorator'
 import type { AutoEditsProviderOptions } from './autoedits-provider'
 import type { CodeToReplaceData } from './prompt-utils'
+import { ThemeColor } from 'vscode'
+import { diff } from 'fast-myers-diff'
+
 
 interface ProposedChange {
     range: vscode.Range
     newText: string
+    originalTextInRange: string
 }
 
 interface DecorationLine {
@@ -16,14 +20,42 @@ interface DecorationLine {
     text: string
 }
 
-const strikeThroughDecorationType = vscode.window.createTextEditorDecorationType({
-    textDecoration: 'line-through',
+const removedTextDecorationType = vscode.window.createTextEditorDecorationType({
+    backgroundColor: new ThemeColor('diffEditor.removedTextBackground'),
 })
 
 const suggesterType = vscode.window.createTextEditorDecorationType({
     before: { color: GHOST_TEXT_COLOR },
     after: { color: GHOST_TEXT_COLOR },
 })
+
+function combineRanges(ranges: vscode.Range[], n: number): vscode.Range[] {
+    if (ranges.length === 0) return [];
+    const sortedRanges = ranges.sort((a, b) =>
+        a.start.line !== b.start.line ? a.start.line - b.start.line : a.start.character - b.start.character
+    );
+
+    const combinedRanges: vscode.Range[] = [];
+    let currentRange = sortedRanges[0];
+
+    for (let i = 1; i < sortedRanges.length; i++) {
+        const nextRange = sortedRanges[i];
+
+        if (currentRange.end.line === nextRange.start.line &&
+            (nextRange.start.character - currentRange.end.character <= n || currentRange.intersection(nextRange))) {
+            currentRange = new vscode.Range(
+                currentRange.start,
+                nextRange.end.character > currentRange.end.character ? nextRange.end : currentRange.end
+            );
+        } else {
+            combinedRanges.push(currentRange);
+            currentRange = nextRange;
+        }
+    }
+
+    combinedRanges.push(currentRange);
+    return combinedRanges;
+}
 
 export class AutoEditsRenderer implements vscode.Disposable {
     private disposables: vscode.Disposable[] = []
@@ -51,22 +83,29 @@ export class AutoEditsRenderer implements vscode.Disposable {
         codeToReplace: CodeToReplaceData,
         predictedText: string
     ) {
+        // Trim only a single "\n" char at the end of the predicted text
+        predictedText = predictedText.replace(/\n$/, '')
+
+        if (this.activeProposedChange) {
+            await this.dismissProposedChange()
+        }
         const editor = vscode.window.activeTextEditor
         const document = editor?.document
-        if (!editor || !document || this.activeProposedChange) {
+        if (!editor || !document) {
             return
         }
 
-        const prevSuffixLine = codeToReplace.endLine - 1
         const range = new vscode.Range(
             codeToReplace.startLine,
             0,
-            prevSuffixLine,
-            options.document.lineAt(prevSuffixLine).range.end.character
+            codeToReplace.endLine,
+            options.document.lineAt(codeToReplace.endLine).range.end.character
         )
+        const originalTextInRange = options.document.getText(range)
         this.activeProposedChange = {
             range: range,
             newText: predictedText,
+            originalTextInRange: originalTextInRange,
         }
 
         const currentFileText = options.document.getText()
@@ -75,6 +114,17 @@ export class AutoEditsRenderer implements vscode.Disposable {
             predictedText +
             currentFileText.slice(document.offsetAt(range.end))
         this.logDiff(options.document.uri, currentFileText, predictedText, predictedFileText)
+
+        const edits = diff(currentFileText, predictedFileText)
+        const allRangesToRemove: vscode.Range[] = []
+        for (const [from1, to1] of edits) {
+            const startPos = document.positionAt(from1)
+            const endPos = document.positionAt(to1)
+            allRangesToRemove.push(new vscode.Range(startPos, endPos))
+        }
+
+        // Combine ranges with a threshold of 5 characters
+        const combinedRangesToRemove = combineRanges(allRangesToRemove, 2);
 
         const filename = displayPath(document.uri)
         const patch = structuredPatch(
@@ -85,8 +135,9 @@ export class AutoEditsRenderer implements vscode.Disposable {
         )
         let isChanged = false
 
-        const removedLines: DecorationLine[] = []
+        // const removedRanges: vscode.Range[] = []
         const addedLines: DecorationLine[] = []
+
         for (const hunk of patch.hunks) {
             let oldLineNumber = hunk.oldStart
             let newLineNumber = hunk.newStart
@@ -97,7 +148,16 @@ export class AutoEditsRenderer implements vscode.Disposable {
                 }
                 if (line[0] === '-') {
                     isChanged = true
-                    removedLines.push({ line: oldLineNumber - 1, text: line.slice(1) })
+                    const lineText = document.lineAt(oldLineNumber - 1).text
+                    const startChar = lineText.indexOf(line.slice(1))
+                    if (startChar !== -1) {
+                        // removedRanges.push(new vscode.Range(
+                        //     oldLineNumber - 1,
+                        //     startChar,
+                        //     oldLineNumber - 1,
+                        //     startChar + line.slice(1).length
+                        // ))
+                    }
                     oldLineNumber++
                 } else if (line[0] === '+') {
                     isChanged = true
@@ -115,12 +175,7 @@ export class AutoEditsRenderer implements vscode.Disposable {
             return
         }
 
-        editor.setDecorations(
-            strikeThroughDecorationType,
-            removedLines.map(line => ({
-                range: new vscode.Range(line.line, 0, line.line, document.lineAt(line.line).text.length),
-            }))
-        )
+        editor.setDecorations(removedTextDecorationType, combinedRangesToRemove)
         editor.setDecorations(
             suggesterType,
             addedLines.map(line => ({
@@ -128,6 +183,7 @@ export class AutoEditsRenderer implements vscode.Disposable {
                 renderOptions: {
                     after: {
                         contentText: line.text,
+                        backgroundColor: new ThemeColor('diffEditor.insertedTextBackground'),
                     },
                 },
             }))
@@ -144,6 +200,7 @@ export class AutoEditsRenderer implements vscode.Disposable {
             await this.dismissProposedChange()
             return
         }
+        console.log(this.activeProposedChange.originalTextInRange)
         const currentActiveChange = this.activeProposedChange
         await editor.edit(editBuilder => {
             editBuilder.replace(currentActiveChange.range, currentActiveChange.newText)
@@ -158,7 +215,7 @@ export class AutoEditsRenderer implements vscode.Disposable {
         if (!editor) {
             return
         }
-        editor.setDecorations(strikeThroughDecorationType, [])
+        editor.setDecorations(removedTextDecorationType, [])
         editor.setDecorations(suggesterType, [])
     }
 
