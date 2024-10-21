@@ -39,14 +39,22 @@ const allDecorations = [
 ]
 
 export class AutoeditTestingProvider implements vscode.Disposable {
+    documents = new Map<string, DiffDecorationManager>()
     disposables: vscode.Disposable[] = []
     outputChannel: vscode.OutputChannel
     constructor() {
         this.outputChannel = vscode.window.createOutputChannel('Autoedit Testing')
         this.disposables.push(
             vscode.window.onDidChangeTextEditorSelection(e => {
+                const uri = e.textEditor.document.uri.toString()
+                let manager = this.documents.get(uri)
+                if (!manager) {
+                    manager = new DiffDecorationManager(this.outputChannel, e.textEditor)
+                    this.disposables.push(manager)
+                    this.documents.set(uri, manager)
+                }
                 try {
-                    this.onChange(e.textEditor)
+                    manager.onChange()
                 } catch (error) {
                     if (error instanceof Error) {
                         this.outputChannel.appendLine(
@@ -62,34 +70,47 @@ export class AutoeditTestingProvider implements vscode.Disposable {
             })
         )
     }
+    public dispose() {
+        vscode.Disposable.from(...this.disposables).dispose()
+    }
+}
+class DiffDecorationManager implements vscode.Disposable {
+    constructor(
+        private readonly outputChannel: vscode.OutputChannel,
+        private readonly editor: vscode.TextEditor
+    ) {}
 
-    private clearDecorations(editor: vscode.TextEditor): void {
+    public dispose() {
+        this.clearDecorations()
+    }
+
+    private clearDecorations(): void {
         for (const decorationType of allDecorations) {
-            editor.setDecorations(decorationType, [])
+            this.editor.setDecorations(decorationType, [])
         }
     }
-    private onChange(editor: vscode.TextEditor): void {
-        if (!editor.document.uri.toString().includes('-autoedit')) {
+    public onChange(): void {
+        if (!this.editor.document.uri.toString().includes('-autoedit')) {
             return
         }
-        if (editor.document.getText().includes('autoedit:pause')) {
-            this.clearDecorations(editor)
+        if (this.editor.document.getText().includes('autoedit:pause')) {
+            this.clearDecorations()
             return
         }
-        const split = this.findSplitMarker(editor.document)
+        const split = this.findSplitMarker(this.editor.document)
         if (!split) {
             return
         }
         const before = new vscode.Range(0, 0, split.start.line, 0)
-        const after = new vscode.Range(split.end.line + 1, 0, editor.document.lineCount, 0)
+        const after = new vscode.Range(split.end.line + 1, 0, this.editor.document.lineCount, 0)
         // this.outputChannel.appendLine(JSON.stringify({ before, after }, null, 2))
-        this.setDecorations(editor, before, after)
+        this.setDecorations(before, after)
     }
 
-    private findText(document: vscode.TextDocument, range: vscode.Range): string {
+    private findText(range: vscode.Range): string {
         const out: string[] = []
         for (let i = range.start.line; i < range.end.line; i++) {
-            const line = document.lineAt(i).text
+            const line = this.editor.document.lineAt(i).text
             if (line.includes('autoedit:skip')) {
                 out.push('')
             } else {
@@ -99,11 +120,11 @@ export class AutoeditTestingProvider implements vscode.Disposable {
         return out.join('\n')
     }
 
-    private setDecorations(editor: vscode.TextEditor, before: vscode.Range, after: vscode.Range) {
-        const document = editor.document
-        const beforeText = this.findText(document, before)
+    private setDecorations(before: vscode.Range, after: vscode.Range) {
+        const document = this.editor.document
+        const beforeText = this.findText(before)
         const beforeLines = beforeText.split('\n')
-        const afterText = this.findText(document, after)
+        const afterText = this.findText(after)
         const afterLines = afterText.split('\n')
         const strikethroughRanges: vscode.Range[] = []
         const ghosttextRanges: vscode.DecorationOptions[] = []
@@ -163,18 +184,14 @@ export class AutoeditTestingProvider implements vscode.Disposable {
                 insertedRanges.push(range)
             }
         }
-        editor.setDecorations(CURRENT_LINE_DECORATION, modifiedRanges)
-        editor.setDecorations(INSERTED_CODE_DECORATION, insertedRanges)
-        editor.setDecorations(REMOVED_CODE_DECORATION, deletedRanges)
-        editor.setDecorations(STRIKETHROUGH_DECORATION_TYPE, strikethroughRanges)
-        editor.setDecorations(GHOSTTEXT_DECORATION_TYPE, ghosttextRanges)
+        this.editor.setDecorations(CURRENT_LINE_DECORATION, modifiedRanges)
+        this.editor.setDecorations(INSERTED_CODE_DECORATION, insertedRanges)
+        this.editor.setDecorations(REMOVED_CODE_DECORATION, deletedRanges)
+        this.editor.setDecorations(STRIKETHROUGH_DECORATION_TYPE, strikethroughRanges)
+        this.editor.setDecorations(GHOSTTEXT_DECORATION_TYPE, ghosttextRanges)
         // const beforeDecorations = this.computeDecoration(document, before)
         // const afterDecorations = this.computeDecoration(document, after)
         // return [...beforeDecorations, ...afterDecorations]
-    }
-
-    public dispose() {
-        vscode.Disposable.from(...this.disposables).dispose()
     }
 
     private findSplitMarker(document: vscode.TextDocument): vscode.Range | undefined {
