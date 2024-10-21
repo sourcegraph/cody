@@ -6,6 +6,7 @@ import 'node:http'
 import type { Server as HTTPServer, IncomingMessage, ServerResponse } from 'node:http'
 import 'node:https'
 import { setTimeout as setPromiseTimeout } from 'node:timers/promises'
+import { inspect } from 'node:util'
 import onHeaders from 'on-headers'
 import type { TestContext, WorkerContext } from '.'
 import type {
@@ -114,26 +115,30 @@ export const mitmProxyFixture = _test.extend<TestContext, WorkerContext>({
             const handleError = (err: Error) => {
                 if (err.name === 'PollyError') {
                     if (err.message.includes('`recordIfMissing` is `false`')) {
+                        err.stack = undefined
                         if (!missingRecordingTriggered) {
-                            console.error(
-                                'Recordings Missing',
-                                'Try enabeling CODY_RECORD_IF_MISSING=true in your .env file or setting the recordMissing playwright setting.'
-                            )
                             void page
                                 .goto('about:blank')
                                 .then(() =>
                                     page.setContent(
                                         errorPage(
                                             'Recording Missing',
-                                            'Try enabeling CODY_RECORD_IF_MISSING=true in your .env file or setting the recordMissing playwright setting.'
+                                            `Try enabeling CODY_RECORD_IF_MISSING=true in your .env file or setting the recordMissing playwright setting.\n\n${inspect(
+                                                err
+                                            )}`
                                         )
                                     )
                                 )
-                                .then(() =>
+                                .then(() => {
                                     // @ts-ignore: This is a hacky way to ensure that we cancel any pending timeouts.
                                     // Since the test is already set as a failure this should now exit early!
                                     testInfo._interrupt()
-                                )
+                                    testInfo.errors.push({
+                                        message: `Missing Recording\n\n${inspect(err, {
+                                            colors: true,
+                                        })}`,
+                                    })
+                                })
                             missingRecordingTriggered = true
                         }
                     }
