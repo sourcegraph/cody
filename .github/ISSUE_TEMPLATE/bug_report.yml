@@ -1,11 +1,9 @@
 name: Bug report (VS Code)
-description: File a bug report to help us improve
-title: 'bug: '
+description: File a bug report to help us improve the VS Code plugin
+title: ''
 labels:
   - bug
-  - clients/vscode
-projects:
-  - sourcegraph/387
+  - repo/cody
 body:
   - type: markdown
     attributes:
