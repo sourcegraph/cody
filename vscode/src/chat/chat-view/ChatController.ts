@@ -952,7 +952,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
 
         const task = result.task
 
-        let responseMessage = `Following is the response for the ${task.intent} instruction:\n`
+        let responseMessage = `Here is the response for the ${task.intent} instruction:\n`
         task.diff?.map(diff => {
             responseMessage += '\n```diff\n'
             if (diff.type === 'deletion') {
@@ -985,7 +985,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             {
                 text: ps`${PromptString.unsafe_fromLLMResponse(responseMessage)}`,
             },
-            ChatBuilder.NO_MODEL
+            this.chatBuilder.selectedModel || ChatBuilder.NO_MODEL
         )
 
         void this.saveSession()

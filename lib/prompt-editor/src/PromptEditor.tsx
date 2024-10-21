@@ -157,8 +157,6 @@ export const PromptEditor: FunctionComponent<Props> = ({
                 const existingMentions = getContextItemsForEditor(editor)
                 const ops = getMentionOperations(existingMentions, newContextItems)
 
-                console.log(newContextItems, existingMentions, ops)
-
                 if (ops.modify.size + ops.delete.size > 0) {
                     visitContextItemsForEditor(editor, existing => {
                         const update = ops.modify.get(existing.contextItem)
