@@ -30,6 +30,7 @@ concurrency:
 
 jobs:
   build:
+    name: Build
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -79,6 +80,7 @@ jobs:
   # Sets a variable that is used to determine the matrix to run tests on.
   # Everything runs on ubuntu and windows, only commits to main run on macos.
   fast_tests_matrix_prep:
+    name: 'Test Matrix (Fast)'
     runs-on: ubuntu-latest
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
@@ -92,6 +94,7 @@ jobs:
           fi
 
   test-unit:
+    name: Test - Unit (${{matrix.runner}}, Node v${{matrix.node}})
     needs: fast_tests_matrix_prep
     if: ${{ !cancelled() }}
     strategy:
@@ -139,6 +142,7 @@ jobs:
           CODY_NODE_VERSION: ${{ matrix.node }}
 
   test-integration:
+    name: Test - Integration (${{matrix.runner}})
     needs: fast_tests_matrix_prep
     if: ${{ !cancelled() }}
     strategy:
@@ -170,7 +174,7 @@ jobs:
 
 
   test-e2e:
-    name: 'E2E Tests (${{ matrix.os }} - ${{ matrix.shardIndex }}/${{ matrix.shardTotal }})'
+    name: 'Test - E2E (${{ matrix.os }} - ${{ matrix.shardIndex }}/${{ matrix.shardTotal }})'
     needs: build
     if: ${{ !cancelled() }}
     strategy:
@@ -211,7 +215,7 @@ jobs:
       - name: Download build artifact
         uses: actions/download-artifact@v4
         with:
-          name: build
+          name: vscode_dist
       - name: Run E2E tests
         run: pnpm -C vscode run test:e2e2:run --project e2e --shard=${{ matrix.shardIndex }}/${{ matrix.shardTotal }}
       - name: Upload blob report to GitHub Actions Artifacts
@@ -225,7 +229,7 @@ jobs:
       # events to pubsub so that we can keep historical records even if not
       # tested
   test-e2e-report:
-    name: 'E2E Tests Report'
+    name: 'Test - E2E (Report)'
     runs-on: ubuntu-latest
     if: ${{ !cancelled() }}
     needs: [test-e2e]
@@ -287,6 +291,7 @@ jobs:
   # Sets a variable that is used to determine the matrix to run slow tests (e2e) on.
   # Everything runs on ubuntu, only commits to main run on macos and windows.
   legacy_slow_tests_matrix_prep:
+    name: Test Matrix (Slow)
     runs-on: ubuntu-latest
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
@@ -300,6 +305,7 @@ jobs:
           fi
 
   test-e2e-legacy:
+    name: 'Test - Legacy E2E'
     needs: [legacy_slow_tests_matrix_prep, test-e2e-report]
     if: ${{ !cancelled() }}
     strategy:
