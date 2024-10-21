@@ -6,6 +6,11 @@ import { vscodeGitAPI } from './git-extension-api'
 
 const textDecoder = new TextDecoder('utf-8')
 
+export interface GitRemoteUrlsInfo {
+    rootUri: vscode.Uri
+    remoteUrls: string[]
+}
+
 /**
  * Get the Git remote URLs for a given URI, which is assumed to be a file or path in a Git
  * repository. If it's not in a Git repository or there are no remote URLs, it returns `undefined`.
@@ -13,25 +18,32 @@ const textDecoder = new TextDecoder('utf-8')
  * This function tries 2 different ways to get the remote URLs: (1) by using the Git extension API
  * available in VS Code only, and (2) by crawling the file system for the `.git/config` file.
  */
-export async function gitRemoteUrlsForUri(
+export async function gitRemoteUrlsInfoForUri(
     uri: vscode.Uri,
     signal?: AbortSignal
-): Promise<string[] | undefined> {
-    const fromGitExtension = gitRemoteUrlsFromGitExtension(uri)
-    if (fromGitExtension && fromGitExtension.length > 0) {
-        return fromGitExtension
+): Promise<GitRemoteUrlsInfo | undefined> {
+    let remoteUrlsInfo = gitRemoteUrlsInfoFromGitExtension(uri)
+
+    if (!remoteUrlsInfo || remoteUrlsInfo.remoteUrls.length === 0) {
+        remoteUrlsInfo = await gitRemoteUrlsInfoFromParentDirs(uri, signal)
     }
-    return await gitRemoteUrlsFromParentDirs(uri, signal)
+
+    if (remoteUrlsInfo && remoteUrlsInfo.remoteUrls.length > 0) {
+        remoteUrlsInfo.remoteUrls = Array.from(new Set(remoteUrlsInfo.remoteUrls)).sort()
+        return remoteUrlsInfo
+    }
+
+    return undefined
 }
 
 /**
  * Walks the tree from the current directory to find the `.git` folder and
  * extracts remote URLs.
  */
-async function gitRemoteUrlsFromParentDirs(
+async function gitRemoteUrlsInfoFromParentDirs(
     uri: vscode.Uri,
     signal?: AbortSignal
-): Promise<string[] | undefined> {
+): Promise<GitRemoteUrlsInfo | undefined> {
     if (!isFileURI(uri)) {
         return undefined
     }
@@ -40,15 +52,25 @@ async function gitRemoteUrlsFromParentDirs(
     const dirUri = isFile ? vscode.Uri.joinPath(uri, '..') : uri
 
     const gitRepoURIs = await gitRepoURIsFromParentDirs(dirUri, signal)
-    return gitRepoURIs
-        ? await gitRemoteUrlsFromGitConfigUri(gitRepoURIs.gitConfigUri, signal)
-        : undefined
+
+    if (gitRepoURIs) {
+        const remoteUrls = await gitRemoteUrlsFromGitConfigUri(gitRepoURIs.gitConfigUri, signal)
+
+        if (remoteUrls && remoteUrls.length > 0) {
+            return {
+                rootUri: gitRepoURIs.rootUri,
+                remoteUrls: remoteUrls || [],
+            }
+        }
+    }
+
+    return undefined
 }
 
 /**
  * ❗️ The Git extension API instance is only available in the VS Code extension. ️️❗️
  */
-function gitRemoteUrlsFromGitExtension(uri: vscode.Uri): string[] | undefined {
+function gitRemoteUrlsInfoFromGitExtension(uri: vscode.Uri): GitRemoteUrlsInfo | undefined {
     const repository = vscodeGitAPI?.getRepository(uri)
     if (!repository) {
         return undefined
@@ -63,7 +85,11 @@ function gitRemoteUrlsFromGitExtension(uri: vscode.Uri): string[] | undefined {
             remoteUrls.add(remote.pushUrl)
         }
     }
-    return remoteUrls.size ? Array.from(remoteUrls) : undefined
+    repository.state.HEAD?.commit
+
+    return remoteUrls.size
+        ? { rootUri: repository.rootUri, remoteUrls: Array.from(remoteUrls) }
+        : undefined
 }
 
 interface GitRepoURIs {

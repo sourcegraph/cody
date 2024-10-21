@@ -11,6 +11,7 @@ import {
     mockResolvedConfig,
 } from '@sourcegraph/cody-shared'
 
+import { URI } from 'vscode-uri'
 import * as remoteUrlsFromParentDirs from './remote-urls-from-parent-dirs'
 import { RepoNameResolver } from './repo-name-resolver'
 import { mockFsCalls } from './test-helpers'
@@ -24,9 +25,10 @@ describe('getRepoNamesContainingUri', () => {
         mockResolvedConfig({ auth: {} })
         mockClientCapabilities(CLIENT_CAPABILITIES_FIXTURE)
 
-        vi.spyOn(remoteUrlsFromParentDirs, 'gitRemoteUrlsForUri').mockResolvedValue([
-            'git@github.com:sourcegraph/cody.git',
-        ])
+        vi.spyOn(remoteUrlsFromParentDirs, 'gitRemoteUrlsInfoForUri').mockResolvedValue({
+            rootUri: URI.file('/repo'),
+            remoteUrls: ['git@github.com:sourcegraph/cody.git'],
+        })
 
         const { fileUri } = mockFsCalls({
             filePath: '/repo/submodule/foo.ts',
@@ -55,9 +57,10 @@ describe('getRepoNamesContainingUri', () => {
         const repoNameResolver = new RepoNameResolver()
         mockAuthStatus(AUTH_STATUS_FIXTURE_AUTHED_DOTCOM)
 
-        vi.spyOn(remoteUrlsFromParentDirs, 'gitRemoteUrlsForUri').mockResolvedValue([
-            'git@github.com:sourcegraph/cody.git',
-        ])
+        vi.spyOn(remoteUrlsFromParentDirs, 'gitRemoteUrlsInfoForUri').mockResolvedValue({
+            rootUri: URI.file('/repo'),
+            remoteUrls: ['git@github.com:sourcegraph/cody.git'],
+        })
 
         const { fileUri } = mockFsCalls({
             filePath: '/repo/submodule/foo.ts',

@@ -4,6 +4,7 @@ import { catchError, filter, firstValueFrom, shareReplay, startWith, switchMap }
 
 /** A sentinel value to indicate that the value has not yet been emitted. */
 export const pendingOperation = Symbol.for('@@pendingOperation')
+export type MaybePendingObservable<T> = Observable<T | typeof pendingOperation>
 
 /**
  * Run an operation with the outer observable as input. The result is replayed to all subscribers
