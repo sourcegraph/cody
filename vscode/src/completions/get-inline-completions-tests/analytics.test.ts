@@ -133,7 +133,6 @@ describe('[getInlineCompletions] completion event', () => {
                 ],
                 "loggedPartialAcceptedLength": 0,
                 "params": {
-                  "artificialDelay": undefined,
                   "completionIntent": "function.body",
                   "contextSummary": {
                     "prefixChars": 16,
@@ -205,7 +204,6 @@ describe('[getInlineCompletions] completion event', () => {
                 ],
                 "loggedPartialAcceptedLength": 0,
                 "params": {
-                  "artificialDelay": undefined,
                   "completionIntent": "return_statement",
                   "contextSummary": {
                     "prefixChars": 25,
