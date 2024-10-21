@@ -1,6 +1,20 @@
 import { diff } from 'fast-myers-diff'
 import * as vscode from 'vscode'
-import { INSERTED_CODE_DECORATION, REMOVED_CODE_DECORATION } from '../non-stop/decorations/constants'
+import { GHOST_TEXT_COLOR } from '../commands/GhostHintDecorator'
+import {
+    CURRENT_LINE_DECORATION,
+    INSERTED_CODE_DECORATION,
+    REMOVED_CODE_DECORATION,
+} from '../non-stop/decorations/constants'
+
+const STRIKETHROUGH_DECORATION_TYPE = vscode.window.createTextEditorDecorationType({
+    textDecoration: 'line-through',
+})
+
+const GHOSTTEXT_DECORATION_TYPE = vscode.window.createTextEditorDecorationType({
+    before: { color: GHOST_TEXT_COLOR },
+    after: { color: GHOST_TEXT_COLOR },
+})
 
 export class AutoeditTestingProvider implements vscode.Disposable {
     disposables: vscode.Disposable[] = []
@@ -46,9 +60,10 @@ export class AutoeditTestingProvider implements vscode.Disposable {
         for (let i = range.start.line; i < range.end.line; i++) {
             const line = document.lineAt(i).text
             if (line.includes('autoedit:skip')) {
-                continue
+                out.push('')
+            } else {
+                out.push(line)
             }
-            out.push(line)
         }
         return out.join('\n')
     }
@@ -59,24 +74,69 @@ export class AutoeditTestingProvider implements vscode.Disposable {
         const beforeLines = beforeText.split('\n')
         const afterText = this.findText(document, after)
         const afterLines = afterText.split('\n')
+        const strikethroughRanges: vscode.Range[] = []
+        const ghosttextRanges: vscode.DecorationOptions[] = []
+        const modifiedRanges: vscode.Range[] = []
         const insertedRanges: vscode.Range[] = []
         const deletedRanges: vscode.Range[] = []
+        this.outputChannel.appendLine(JSON.stringify({ beforeLines, afterLines }, null, 2))
         for (const [x1, x2, y1, y2] of diff(beforeLines, afterLines)) {
-            for (let i = x1; i < x2; i++) {
-                const line = before.start.line + 1
+            this.outputChannel.appendLine('diff: ' + x1 + ' ' + x2 + ' ' + y1 + ' ' + y2)
+            let i = 0
+            while (x1 + i < x2 && y1 + i < y2) {
+                const j = x1 + i
+                const line = before.start.line + j
                 const lineLength = document.lineAt(line).text.length
-                this.outputChannel.appendLine('delete: ' + line)
-                deletedRanges.push(new vscode.Range(line, 0, line, lineLength))
+                const range = new vscode.Range(line, 0, line, lineLength)
+                this.outputChannel.appendLine(
+                    'modified: ' +
+                        JSON.stringify(
+                            {
+                                a: beforeLines[j],
+                                b: afterLines[j],
+                            },
+                            null,
+                            2
+                        )
+                )
+                for (const [a1, a2, b1, b2] of diff(beforeLines[j], afterLines[j])) {
+                    strikethroughRanges.push(new vscode.Range(line, a1, line, a2))
+                    ghosttextRanges.push({
+                        range: new vscode.Range(line, b1, line, b2),
+                        renderOptions: {
+                            after: {
+                                contentText: afterLines[j].slice(b1, b2),
+                            },
+                        },
+                    })
+                    this.outputChannel.appendLine(
+                        'character-hunk: ' + a1 + ' ' + a2 + ' ' + b1 + ' ' + b2
+                    )
+                }
+                modifiedRanges.push(range)
+                i++
             }
-            for (let i = y1; i < y2; i++) {
-                const line = before.start.line + 1
+            this.outputChannel.appendLine('modified: ' + i)
+            for (let j = x1 + i; j < x2; j++) {
+                const line = before.start.line + j
                 const lineLength = document.lineAt(line).text.length
-                this.outputChannel.appendLine('add: ' + line)
-                insertedRanges.push(new vscode.Range(line, 0, line, lineLength))
+                const range = new vscode.Range(line, 0, line, lineLength)
+                this.outputChannel.appendLine('delete: ' + document.getText(range))
+                deletedRanges.push(range)
+            }
+            for (let j = y1 + i; j < y2; j++) {
+                const line = before.start.line + j
+                const lineLength = document.lineAt(line).text.length
+                const range = new vscode.Range(line, 0, line, lineLength)
+                this.outputChannel.appendLine('insert: ' + document.getText(range))
+                insertedRanges.push(range)
             }
         }
+        editor.setDecorations(CURRENT_LINE_DECORATION, modifiedRanges)
         editor.setDecorations(INSERTED_CODE_DECORATION, insertedRanges)
         editor.setDecorations(REMOVED_CODE_DECORATION, deletedRanges)
+        editor.setDecorations(STRIKETHROUGH_DECORATION_TYPE, strikethroughRanges)
+        editor.setDecorations(GHOSTTEXT_DECORATION_TYPE, ghosttextRanges)
         // const beforeDecorations = this.computeDecoration(document, before)
         // const afterDecorations = this.computeDecoration(document, after)
         // return [...beforeDecorations, ...afterDecorations]
