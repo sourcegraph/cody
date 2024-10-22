@@ -1,7 +1,6 @@
 import {
     type CodyCommandMode,
     type PromptsMigrationStatus,
-    currentAuthStatusAuthed,
     distinctUntilChanged,
     firstResultFromOperation,
     graphqlClient,
@@ -62,17 +61,11 @@ export function getPromptsMigrationInfo(): Observable<PromptsMigrationStatus> {
 export async function startPromptsMigration(): Promise<void> {
     // Custom commands list
     const commands = getCodyCommandList().filter(command => command.type !== 'default')
-    const authStatus = currentAuthStatusAuthed()
-    const currentUserId = await graphqlClient.getCurrentUserId()
+    const currentUser = await graphqlClient.getCurrentUserRole()
     const isValidInstance = await graphqlClient.isValidSiteVersion({ minimumVersion: '5.9.0' })
 
     // Skip migration if there are no commands to migrate
-    if (
-        commands.length === 0 ||
-        !isValidInstance ||
-        isErrorLike(currentUserId) ||
-        currentUserId === null
-    ) {
+    if (commands.length === 0 || !isValidInstance || isErrorLike(currentUser) || currentUser === null) {
         PROMPTS_MIGRATION_STATUS.next({
             type: 'migration_skip',
         })
@@ -117,7 +110,7 @@ export async function startPromptsMigration(): Promise<void> {
             const commandKey = (command.key ?? command.slashCommand).replace(/\s+/g, '-')
 
             const newPrompt = await graphqlClient.createPrompt({
-                owner: currentUserId,
+                owner: currentUser.id,
                 name: commandKey,
                 description: `Migrated from command ${commandKey}`,
                 definitionText: command.prompt,
@@ -129,7 +122,7 @@ export async function startPromptsMigration(): Promise<void> {
 
             // Change prompt visibility to PUBLIC if it's admin performing migration
             // TODO: [VK] Remove it and use visibility field in prompt creation (current API limitation)
-            if (authStatus.siteAdmin) {
+            if (currentUser.siteAdmin) {
                 await graphqlClient.transferPromptOwnership({ id: newPrompt.id, visibility: 'PUBLIC' })
             }
 

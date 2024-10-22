@@ -5,6 +5,14 @@ query CurrentUser {
     }
 }`
 
+export const CURRENT_USER_ROLE_QUERY = `
+query CurrentUserRole {
+    currentUser {
+        id
+        siteAdmin
+    }
+}`
+
 export const CURRENT_USER_CODY_PRO_ENABLED_QUERY = `
 query CurrentUserCodyProEnabled {
     currentUser {
@@ -41,7 +49,6 @@ query CurrentUser {
         displayName
         username
         avatarURL
-        siteAdmin
         primaryEmail {
             email
         }

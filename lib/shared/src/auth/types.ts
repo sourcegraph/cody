@@ -17,8 +17,6 @@ export interface AuthenticatedAuthStatus {
 
     username: string
 
-    siteAdmin: boolean
-
     /**
      * Used to enable Fireworks tracing for Sourcegraph teammates on DotCom.
      * https://readme.fireworks.ai/docs/enabling-tracing
@@ -57,7 +55,6 @@ export const AUTH_STATUS_FIXTURE_AUTHED: AuthenticatedAuthStatus = {
     authenticated: true,
     username: 'alice',
     pendingValidation: false,
-    siteAdmin: true,
 }
 
 export const AUTH_STATUS_FIXTURE_UNAUTHED: AuthStatus & { authenticated: false } = {

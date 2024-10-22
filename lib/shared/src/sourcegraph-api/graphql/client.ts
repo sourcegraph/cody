@@ -35,6 +35,7 @@ import {
     CURRENT_USER_CODY_SUBSCRIPTION_QUERY,
     CURRENT_USER_ID_QUERY,
     CURRENT_USER_INFO_QUERY,
+    CURRENT_USER_ROLE_QUERY,
     DELETE_ACCESS_TOKEN_MUTATION,
     EVALUATE_FEATURE_FLAG_QUERY,
     FILE_CONTENTS_QUERY,
@@ -182,6 +183,10 @@ interface SiteHasCodyEnabledResponse {
 
 interface CurrentUserIdResponse {
     currentUser: { id: string } | null
+}
+
+interface CurrentUserRoleResponse {
+    currentUser: { id: string; siteAdmin: boolean } | null
 }
 
 interface CurrentUserInfoResponse {
@@ -768,6 +773,15 @@ export class SourcegraphGraphQLAPIClient {
             {}
         ).then(response =>
             extractDataOrError(response, data => (data.currentUser ? data.currentUser.id : null))
+        )
+    }
+
+    public async getCurrentUserRole(): Promise<CurrentUserRoleResponse['currentUser'] | null | Error> {
+        return this.fetchSourcegraphAPI<APIResponse<CurrentUserRoleResponse>>(
+            CURRENT_USER_ROLE_QUERY,
+            {}
+        ).then(response =>
+            extractDataOrError(response, data => (data.currentUser ? data.currentUser : null))
         )
     }
 
