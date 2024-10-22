@@ -16,7 +16,6 @@ import { Observable, Subject } from 'observable-fns'
 
 import { PromptMode } from '@sourcegraph/cody-shared'
 import { getCodyCommandList } from '../../commands/CommandsController'
-import { sleep } from '../../completions/utils'
 import { remoteReposForAllWorkspaceFolders } from '../../repository/remoteRepos'
 import { localStorage } from '../../services/LocalStorageProvider'
 
@@ -41,7 +40,7 @@ export function getPromptsMigrationInfo(): Observable<PromptsMigrationStatus> {
             // Don't run migration if you're already run this before (ignore any other new commands
             // that had been added after first migration run
             const migrationMap = localStorage.get<Record<string, boolean>>(PROMPTS_MIGRATION_KEY) ?? {}
-            const commands = [] // getCodyCommandList().filter(command => command.type !== 'default')
+            const commands = getCodyCommandList().filter(command => command.type !== 'default')
 
             if (!repository || migrationMap[repoKey(repository?.id ?? '')]) {
                 return Observable.of<PromptsMigrationStatus>({
@@ -95,8 +94,6 @@ export async function startPromptsMigration(): Promise<void> {
         try {
             const prompts = await graphqlClient.queryPrompts(commandKey.replace(/\s+/g, '-'))
 
-            await sleep(3000)
-
             // If there is no prompts associated with the command include this
             // command to migration
             if (prompts.length === 0) {
@@ -129,8 +126,6 @@ export async function startPromptsMigration(): Promise<void> {
                 mode: commandModeToPromptMode(command.mode),
                 visibility: 'SECRET',
             })
-
-            await sleep(3000)
 
             // Change prompt visibility to PUBLIC if it's admin performing migration
             // TODO: [VK] Remove it and use visibility field in prompt creation (current API limitation)
