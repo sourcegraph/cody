@@ -1,7 +1,6 @@
 import {
     type ChatModel,
     type CodyClientConfig,
-    EMPTY,
     cenv,
     clientCapabilities,
     currentSiteVersion,
@@ -1668,11 +1667,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                         userProductSubscription.pipe(
                             map(value => (value === pendingOperation ? null : value))
                         ),
-                    clearFetchedContext: (index: number) => {
-                        this.chatBuilder.removeContextForHumanMessage(index)
-                        this.postViewTranscript()
-                        return EMPTY
-                    },
                 }
             )
         )

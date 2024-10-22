@@ -123,7 +123,6 @@ export const AppWrapperForTest: FunctionComponent<{ children: ReactNode }> = ({ 
                             },
                         }),
                     userProductSubscription: () => Observable.of(null),
-                    clearFetchedContext: () => EMPTY,
                 },
             } satisfies Wrapper<ComponentProps<typeof ExtensionAPIProviderForTestsOnly>['value']>,
             {

@@ -366,14 +366,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
         }
         editor.removeMentions(item => item.type !== 'repository')
         editor.addMentions(contextFiles, undefined, 'before', '\n')
-
-        // Clear the listed context files
-        extensionAPI.clearFetchedContext(humanMessage.index).subscribe({
-            error: error => {
-                console.error('Error editing context', error)
-            },
-        })
-    }, [extensionAPI, humanMessage.contextFiles, humanMessage.index])
+    }, [humanMessage.contextFiles])
 
     return (
         <>
