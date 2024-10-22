@@ -1,6 +1,7 @@
+import os from 'node:os'
 import { CodyIDE } from '@sourcegraph/cody-shared'
-import { beforeEach, describe, expect, it } from 'vitest'
-import { AgentGlobalState } from './AgentGlobalState'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { AgentGlobalState, LocalStorageDB } from './AgentGlobalState'
 
 describe('AgentGlobalState', () => {
     let globalState: AgentGlobalState
@@ -36,5 +37,74 @@ describe('AgentGlobalState', () => {
 
     it('should return default value if key does not exist', () => {
         expect(globalState.get('nonExistentKey', 'defaultValue')).toBe('defaultValue')
+    })
+})
+
+describe('LocalStorageDB', () => {
+    let localStorageDB: LocalStorageDB
+
+    beforeEach(() => {
+        localStorageDB = new LocalStorageDB('testIDE', os.tmpdir())
+    })
+
+    afterEach(() => {
+        localStorageDB.clear()
+    })
+
+    it('should set and get values correctly', () => {
+        localStorageDB.set('testKey', 'testValue')
+        expect(localStorageDB.get('testKey')).toBe('testValue')
+    })
+
+    it('should handle complex objects', () => {
+        const complexObject = { a: 1, b: { c: 'test' }, d: [1, 2, 3] }
+        localStorageDB.set('complexKey', complexObject)
+        expect(localStorageDB.get('complexKey')).toEqual(complexObject)
+    })
+
+    it('should return undefined for non-existent keys', () => {
+        expect(localStorageDB.get('nonExistentKey')).toBeUndefined()
+    })
+
+    it('should overwrite existing values', () => {
+        localStorageDB.set('overwriteKey', 'initialValue')
+        localStorageDB.set('overwriteKey', 'newValue')
+        expect(localStorageDB.get('overwriteKey')).toBe('newValue')
+    })
+
+    it('should clear all stored values', () => {
+        localStorageDB.set('key1', 'value1')
+        localStorageDB.set('key2', 'value2')
+        localStorageDB.clear()
+        expect(localStorageDB.get('key1')).toBeUndefined()
+        expect(localStorageDB.get('key2')).toBeUndefined()
+    })
+
+    it('should return all keys', () => {
+        localStorageDB.set('key1', 'value1')
+        localStorageDB.set('key2', 'value2')
+        const keys = localStorageDB.keys()
+        expect(keys).toContain('key1')
+        expect(keys).toContain('key2')
+        expect(keys.length).toBe(2)
+    })
+
+    it('should handle different data types', () => {
+        localStorageDB.set('numberKey', 42)
+        localStorageDB.set('booleanKey', true)
+        localStorageDB.set('nullKey', null)
+        expect(localStorageDB.get('numberKey')).toBe(42)
+        expect(localStorageDB.get('booleanKey')).toBe(true)
+        expect(localStorageDB.get('nullKey')).toBeUndefined()
+    })
+
+    it('should threat setting null values as removing the key', () => {
+        localStorageDB.set('nullKey', null)
+        expect(localStorageDB.get('nullKey')).toBeUndefined()
+    })
+
+    it('should threat setting undefined values as removing the key', () => {
+        localStorageDB.set('undefinedKey', undefined)
+        expect(localStorageDB.get('undefinedKey')).toBeUndefined()
     })
 })
