@@ -34,6 +34,7 @@ export const WelcomeMessage: FunctionComponent<WelcomeMessageProps> = ({
                     showPromptLibraryUnsupportedMessage={false}
                     showOnlyPromptInsertableCommands={false}
                     includeEditCommandOnTop={true}
+                    className="tw-w-full"
                     onSelect={item => runAction(item, setView)}
                 />
 

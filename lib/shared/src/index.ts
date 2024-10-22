@@ -381,5 +381,10 @@ export {
     cachedUserProductSubscription,
     userProductSubscription,
 } from './sourcegraph-api/userProductSubscription'
-export { siteVersion, currentSiteVersion } from './sourcegraph-api/siteVersion'
+export {
+    siteVersion,
+    currentSiteVersion,
+    isValidVersion,
+    checkVersion,
+} from './sourcegraph-api/siteVersion'
 export { configOverwrites } from './models/configOverwrites'

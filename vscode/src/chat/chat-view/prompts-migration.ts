@@ -1,12 +1,15 @@
 import {
+    type CodyCommand,
     type CodyCommandMode,
     type PromptsMigrationStatus,
+    checkVersion,
     combineLatest,
     distinctUntilChanged,
     firstResultFromOperation,
     graphqlClient,
     isError,
     isErrorLike,
+    isValidVersion,
     shareReplay,
     siteVersion,
     skipPendingOperation,
@@ -16,8 +19,13 @@ import {
 import { Observable, Subject } from 'observable-fns'
 
 import { PromptMode } from '@sourcegraph/cody-shared'
-import { checkVersion, isValidVersion } from '@sourcegraph/cody-shared/dist/sourcegraph-api/siteVersion'
 import { getCodyCommandList } from '../../commands/CommandsController'
+import {
+    PROMPT_CURRENT_DIRECTORY_PLACEHOLDER,
+    PROMPT_CURRENT_FILE_PLACEHOLDER,
+    PROMPT_CURRENT_SELECTION_PLACEHOLDER,
+    PROMPT_EDITOR_OPEN_TABS_PLACEHOLDER,
+} from '../../prompts/prompt-hydration'
 import { remoteReposForAllWorkspaceFolders } from '../../repository/remoteRepos'
 import { localStorage } from '../../services/LocalStorageProvider'
 
@@ -119,12 +127,18 @@ export async function startPromptsMigration(): Promise<void> {
         try {
             const command = commandsToMigrate[index]
             const commandKey = (command.key ?? command.slashCommand).replace(/\s+/g, '-')
+            const promptText = generatePromptTextFromCommand(command)
+
+            // skip commands with no prompt text
+            if (!promptText) {
+                continue
+            }
 
             const newPrompt = await graphqlClient.createPrompt({
                 owner: currentUser.id,
                 name: commandKey,
                 description: `Migrated from command ${commandKey}`,
-                definitionText: command.prompt,
+                definitionText: promptText,
                 draft: false,
                 autoSubmit: false,
                 mode: commandModeToPromptMode(command.mode),
@@ -178,6 +192,35 @@ function commandModeToPromptMode(commandMode?: CodyCommandMode): PromptMode {
     }
 }
 
+function generatePromptTextFromCommand(command: CodyCommand): string {
+    let promptText = command.prompt
+
+    // If there is no additional context use just original prompt text
+    if (!command.context || command.context.none) {
+        return promptText
+    }
+
+    promptText += '\nContext: \n'
+
+    if (command.context.openTabs) {
+        promptText += `Open tabs files ${PROMPT_EDITOR_OPEN_TABS_PLACEHOLDER} \n`
+    }
+
+    if (command.context.currentDir) {
+        promptText += `Current directory ${PROMPT_CURRENT_DIRECTORY_PLACEHOLDER} \n`
+    }
+
+    if (command.context.currentFile) {
+        promptText += `Current file ${PROMPT_CURRENT_FILE_PLACEHOLDER} \n`
+    }
+
+    if (command.context.selection) {
+        promptText += `Selection ${PROMPT_CURRENT_SELECTION_PLACEHOLDER} \n`
+    }
+
+    return promptText
+}
+
 function repoKey(repositoryId: string) {
-    return `prefix9-${repositoryId}`
+    return `prefix11-${repositoryId}`
 }
