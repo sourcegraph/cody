@@ -99,12 +99,18 @@ export class RepoNameResolver {
         const key = remoteUrl
         let observable: ReturnType<typeof this.getRepoNameCached> | undefined =
             this.getRepoNameCache[key]
+
+        console.log('getRepoNameCached', key, observable)
+
         if (!observable) {
             observable = resolvedConfig.pipe(
                 pluck('auth'),
                 distinctUntilChanged(),
                 switchMapReplayOperation(() =>
-                    promiseFactoryToObservable(signal => graphqlClient.getRepoName(remoteUrl, signal))
+                    promiseFactoryToObservable(signal => {
+                        console.log('graphqlClient.getRepoName()')
+                        return graphqlClient.getRepoName(remoteUrl, signal)
+                    })
                 ),
                 map(value => {
                     if (isError(value)) {

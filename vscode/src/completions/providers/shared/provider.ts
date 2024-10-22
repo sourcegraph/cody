@@ -13,6 +13,7 @@ import {
     type GitContext,
     type LegacyModelRefStr,
     type Model,
+    firstResultFromOperation,
     toLegacyModel,
     tokensToChars,
 } from '@sourcegraph/cody-shared'
@@ -24,6 +25,7 @@ import { type DefaultModel, getModelHelpers } from '../../model-helpers'
 import type { InlineCompletionItemWithAnalytics } from '../../text-processing/process-inline-completions'
 import { forkSignal, generatorWithErrorObserver, generatorWithTimeout, zipGenerators } from '../../utils'
 
+import { repoNameResolver } from '../../../repository/repo-name-resolver'
 import type { AutocompleteProviderConfigSource } from './create-provider'
 import {
     type FetchCompletionResult,
@@ -237,10 +239,19 @@ export abstract class Provider {
         abortSignal: AbortSignal,
         tracer?: CompletionProviderTracer
     ): Promise<AsyncGenerator<FetchCompletionResult[]>> {
-        const { docContext, numberOfCompletionsToGenerate } = generateOptions
+        const { docContext, numberOfCompletionsToGenerate, document } = generateOptions
 
         const requestParams = this.getRequestParams(generateOptions) as CodeCompletionsParams
         tracer?.params(requestParams)
+
+        const start = performance.now()
+        const value = await firstResultFromOperation(
+            repoNameResolver.getRepoNamesContainingUri(document.uri)
+        )
+        console.log(
+            `repoNameResolver.getRepoNamesContainingUri finished in ${performance.now() - start}ms`,
+            value
+        )
 
         const completionsGenerators = Array.from({ length: numberOfCompletionsToGenerate }).map(
             async () => {
