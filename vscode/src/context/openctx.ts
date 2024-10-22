@@ -72,7 +72,7 @@ export function exposeOpenCtxClient(
     ).pipe(
         createDisposables(([{ experimentalNoodle }, isValidSiteVersion, createController]) => {
             try {
-                // Enable fetching of openctx configuration from Sourcegraph instance
+                // Enable fetching of OpenCtx configuration from client's cody_settings.json and form Sourcegraph instance
                 const mergeConfiguration = getMergeConfigurationFunction(experimentalNoodle)
 
                 if (!openctxOutputChannel) {
