@@ -2,16 +2,11 @@ import {
     type ChatMessage,
     FAST_CHAT_INPUT_TOKEN_BUDGET,
     type Model,
-    ModelTag,
     type SerializedPromptEditorState,
     type SerializedPromptEditorValue,
     textContentFromSerializedLexicalNode,
 } from '@sourcegraph/cody-shared'
-import {
-    PromptEditor,
-    type PromptEditorRefAPI,
-    useInitialContextForChat,
-} from '@sourcegraph/prompt-editor'
+import { PromptEditor, type PromptEditorRefAPI } from '@sourcegraph/prompt-editor'
 import clsx from 'clsx'
 import {
     type FocusEventHandler,
@@ -319,21 +314,6 @@ export const HumanMessageEditor: FunctionComponent<{
     )
 
     const currentChatModel = useMemo(() => models[0], [models[0]])
-
-    let initialContext = useInitialContextForChat()
-    useEffect(() => {
-        if (!isSent && isFirstMessage) {
-            const editor = editorRef.current
-            if (editor) {
-                // Don't show the initial codebase context if the model doesn't support streaming
-                // as including context result in longer processing time.
-                if (currentChatModel?.tags?.includes(ModelTag.StreamDisabled)) {
-                    initialContext = initialContext.filter(item => item.type !== 'tree')
-                }
-                editor.setInitialContextMentions(initialContext)
-            }
-        }
-    }, [initialContext, isSent, isFirstMessage, currentChatModel])
 
     const focusEditor = useCallback(() => editorRef.current?.setFocus(true), [])
 
