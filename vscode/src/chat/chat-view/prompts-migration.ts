@@ -1,4 +1,5 @@
 import {
+    type CodyCommandMode,
     type PromptsMigrationStatus,
     currentAuthStatusAuthed,
     distinctUntilChanged,
@@ -13,7 +14,9 @@ import {
 } from '@sourcegraph/cody-shared'
 import { Observable, Subject } from 'observable-fns'
 
+import { PromptMode } from '@sourcegraph/cody-shared'
 import { getCodyCommandList } from '../../commands/CommandsController'
+import { sleep } from '../../completions/utils'
 import { remoteReposForAllWorkspaceFolders } from '../../repository/remoteRepos'
 import { localStorage } from '../../services/LocalStorageProvider'
 
@@ -38,11 +41,17 @@ export function getPromptsMigrationInfo(): Observable<PromptsMigrationStatus> {
             // Don't run migration if you're already run this before (ignore any other new commands
             // that had been added after first migration run
             const migrationMap = localStorage.get<Record<string, boolean>>(PROMPTS_MIGRATION_KEY) ?? {}
-            const commands = getCodyCommandList().filter(command => command.type !== 'default')
+            const commands = [] // getCodyCommandList().filter(command => command.type !== 'default')
 
-            if (!repository || migrationMap[repository?.id ?? ''] || commands.length === 0) {
-                return Observable.of({
+            if (!repository || migrationMap[repoKey(repository?.id ?? '')]) {
+                return Observable.of<PromptsMigrationStatus>({
                     type: 'migration_skip',
+                })
+            }
+
+            if (commands.length === 0) {
+                return Observable.of<PromptsMigrationStatus>({
+                    type: 'no_migration_needed',
                 })
             }
 
@@ -86,6 +95,8 @@ export async function startPromptsMigration(): Promise<void> {
         try {
             const prompts = await graphqlClient.queryPrompts(commandKey.replace(/\s+/g, '-'))
 
+            await sleep(3000)
+
             // If there is no prompts associated with the command include this
             // command to migration
             if (prompts.length === 0) {
@@ -103,29 +114,43 @@ export async function startPromptsMigration(): Promise<void> {
         allCommandsToMigrate: commandsToMigrate.length,
     })
 
-    for (let index = 0; index < commands.length; index++) {
-        const command = commands[index]
-        const commandKey = (command.key ?? command.slashCommand).replace(/\s+/g, '-')
+    for (let index = 0; index < commandsToMigrate.length; index++) {
+        try {
+            const command = commandsToMigrate[index]
+            const commandKey = (command.key ?? command.slashCommand).replace(/\s+/g, '-')
 
-        const newPrompt = await graphqlClient.createPrompt({
-            ownerId: currentUserId,
-            name: `migrated-command-${commandKey}`,
-            description: `Migrated from command ${commandKey}`,
-            definitionText: command.prompt,
-            visibility: 'SECRET',
-        })
+            const newPrompt = await graphqlClient.createPrompt({
+                owner: currentUserId,
+                name: commandKey,
+                description: `Migrated from command ${commandKey}`,
+                definitionText: command.prompt,
+                draft: false,
+                autoSubmit: false,
+                mode: commandModeToPromptMode(command.mode),
+                visibility: 'SECRET',
+            })
 
-        // Change prompt visibility to PUBLIC if it's admin performing migration
-        // TODO: [VK] Remove it and use visibility field in prompt creation (current API limitation)
-        if (authStatus.siteAdmin) {
-            await graphqlClient.transferPromptOwnership({ id: newPrompt.id, visibility: 'PUBLIC' })
+            await sleep(3000)
+
+            // Change prompt visibility to PUBLIC if it's admin performing migration
+            // TODO: [VK] Remove it and use visibility field in prompt creation (current API limitation)
+            if (authStatus.siteAdmin) {
+                await graphqlClient.transferPromptOwnership({ id: newPrompt.id, visibility: 'PUBLIC' })
+            }
+
+            PROMPTS_MIGRATION_STATUS.next({
+                type: 'migrating',
+                commandsMigrated: index + 1,
+                allCommandsToMigrate: commandsToMigrate.length,
+            })
+        } catch (error: any) {
+            PROMPTS_MIGRATION_STATUS.next({
+                type: 'migration_failed',
+                errorMessage: error.toString(),
+            })
+
+            return
         }
-
-        PROMPTS_MIGRATION_STATUS.next({
-            type: 'migrating',
-            commandsMigrated: index + 1,
-            allCommandsToMigrate: commandsToMigrate.length,
-        })
     }
 
     const repositories = (await firstResultFromOperation(remoteReposForAllWorkspaceFolders)) ?? []
@@ -133,9 +158,27 @@ export async function startPromptsMigration(): Promise<void> {
 
     if (repository) {
         const migrationMap = localStorage.get<Record<string, boolean>>(PROMPTS_MIGRATION_KEY) ?? {}
-        migrationMap[repository.id] = true
+        migrationMap[repoKey(repository.id)] = true
         await localStorage.set(PROMPTS_MIGRATION_KEY, migrationMap)
     }
 
     PROMPTS_MIGRATION_STATUS.next({ type: 'migration_success' })
+}
+
+function commandModeToPromptMode(commandMode?: CodyCommandMode): PromptMode {
+    switch (commandMode) {
+        case 'ask':
+            return PromptMode.CHAT
+        case 'edit':
+            return PromptMode.EDIT
+        case 'insert':
+            return PromptMode.INSERT
+
+        default:
+            return PromptMode.CHAT
+    }
+}
+
+function repoKey(repositoryId: string) {
+    return `prefix8-${repositoryId}`
 }

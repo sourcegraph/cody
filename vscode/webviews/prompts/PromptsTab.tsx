@@ -8,6 +8,7 @@ import { getVSCodeAPI } from '../utils/VSCodeApi'
 import { firstValueFrom } from '@sourcegraph/cody-shared'
 import type { PromptMode } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
 import { useExtensionAPI } from '@sourcegraph/prompt-editor'
+import { PromptMigrationWidget } from '../components/promptsMigration/PromptsMigration'
 import styles from './PromptsTab.module.css'
 
 export const PromptsTab: React.FC<{
@@ -16,7 +17,8 @@ export const PromptsTab: React.FC<{
     const runAction = useActionSelect()
 
     return (
-        <div className="tw-overflow-auto tw-h-full">
+        <div className="tw-overflow-auto tw-h-full tw-flex tw-flex-col tw-gap-6">
+            <PromptMigrationWidget dismissible={false} className={styles.promptMigrationWidget} />
             <PromptList
                 showSearch={true}
                 showCommandOrigins={true}
@@ -25,6 +27,7 @@ export const PromptsTab: React.FC<{
                 showPromptLibraryUnsupportedMessage={true}
                 showOnlyPromptInsertableCommands={false}
                 onSelect={item => runAction(item, setView)}
+                className={styles.promptsContainer}
                 inputClassName={styles.promptsInput}
             />
         </div>

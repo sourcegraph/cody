@@ -96,6 +96,8 @@ export const AppWrapperForTest: FunctionComponent<{ children: ReactNode }> = ({ 
                     initialContext: () => Observable.of([]),
                     hydratePromptMessage: text =>
                         Observable.of(serializedPromptEditorStateFromText(text)),
+                    promptsMigrationStatus: () => Observable.of({ type: 'no_migration_needed' }),
+                    startPromptsMigration: () => Observable.of(),
                     detectIntent: () => Observable.of(),
                     resolvedConfig: () =>
                         Observable.of({

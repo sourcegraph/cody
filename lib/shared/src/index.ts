@@ -256,6 +256,7 @@ export {
     isNodeResponse,
     INCLUDE_EVERYTHING_CONTEXT_FILTERS,
     EXCLUDE_EVERYTHING_CONTEXT_FILTERS,
+    PromptMode,
     type BrowserOrNodeResponse,
     type LogEventMode,
     type ContextFilters,

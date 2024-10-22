@@ -17,43 +17,49 @@ type Story = StoryObj<typeof PromptsMigration>
 
 export const DefaultInitialState: Story = {
     args: {
-        status: 'initial',
-        isMigrationAvailable: false,
+        status: { type: 'no_migration_needed' },
     },
 }
 
 export const InitialStateWithAvailableMigration: Story = {
     args: {
-        status: 'initial',
-        isMigrationAvailable: true,
+        status: { type: 'initial_migration' },
     },
 }
 
 export const LoadingStateScanning: Story = {
     args: {
-        status: 'loading',
-        migratedPrompts: 0,
-        promptsToMigrate: undefined,
+        status: {
+            type: 'migrating',
+            commandsMigrated: 0,
+            allCommandsToMigrate: undefined,
+        },
     },
 }
 
 export const LoadingStateMigrating: Story = {
     args: {
-        status: 'loading',
-        migratedPrompts: 1,
-        promptsToMigrate: 10,
+        status: {
+            type: 'migrating',
+            commandsMigrated: 0,
+            allCommandsToMigrate: 10,
+        },
     },
 }
 
 export const ErroredStateMigrating: Story = {
     args: {
-        status: 'error',
-        errorMessage: 'some migration error happened',
+        status: {
+            type: 'migration_failed',
+            errorMessage: 'some migration error happened',
+        },
     },
 }
 
 export const SuccessfulStateMigrating: Story = {
     args: {
-        status: 'finished',
+        status: {
+            type: 'migration_success',
+        },
     },
 }

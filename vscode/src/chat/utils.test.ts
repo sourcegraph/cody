@@ -25,6 +25,7 @@ describe('validateAuthStatus', () => {
                 endpoint: DOTCOM_URL.toString(),
                 primaryEmail: 'alice@example.com',
                 hasVerifiedEmail: true,
+                siteAdmin: true,
                 username: 'alice',
                 organizations: { nodes: [{ id: 'x', name: 'foo' }] },
             })
@@ -32,6 +33,7 @@ describe('validateAuthStatus', () => {
             endpoint: DOTCOM_URL.toString(),
             authenticated: true,
             username: 'alice',
+            siteAdmin: true,
             hasVerifiedEmail: true,
             requiresVerifiedEmail: true,
             isFireworksTracingEnabled: false,
@@ -46,6 +48,7 @@ describe('validateAuthStatus', () => {
             newAuthStatus({
                 authenticated: true,
                 endpoint: 'https://example.com',
+                siteAdmin: true,
                 username: 'alice',
             })
         ).toStrictEqual<AuthStatus>({
@@ -53,6 +56,7 @@ describe('validateAuthStatus', () => {
             hasVerifiedEmail: false,
             endpoint: 'https://example.com',
             isFireworksTracingEnabled: false,
+            siteAdmin: true,
             primaryEmail: undefined,
             requiresVerifiedEmail: false,
             pendingValidation: false,

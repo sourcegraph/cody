@@ -162,6 +162,7 @@ export type PromptsMigrationStatus =
     | SuccessfulPromptsMigrationStatus
     | FailedPromptsMigrationStatus
     | PromptsMigrationSkipStatus
+    | NoPromptsMigrationNeeded
 
 interface InitialPromptsMigrationStatus {
     type: 'initial_migration'
@@ -194,4 +195,8 @@ interface FailedPromptsMigrationStatus {
 
 interface PromptsMigrationSkipStatus {
     type: 'migration_skip'
+}
+
+interface NoPromptsMigrationNeeded {
+    type: 'no_migration_needed'
 }

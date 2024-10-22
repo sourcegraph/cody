@@ -434,11 +434,20 @@ export interface Prompt {
 export type PromptMode = 'CHAT' | 'EDIT' | 'INSERT'
 
 export interface PromptInput {
-    ownerId: string
+    owner: string
     name: string
     description: string
     definitionText: string
+    draft: boolean
+    autoSubmit: boolean
+    mode: PromptMode
     visibility?: 'PUBLIC' | 'SECRET'
+}
+
+export enum PromptMode {
+    CHAT = 'CHAT',
+    EDIT = 'EDIT',
+    INSERT = 'INSERT',
 }
 
 interface ContextFiltersResponse {

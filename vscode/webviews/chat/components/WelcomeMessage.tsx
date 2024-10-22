@@ -3,6 +3,7 @@ import { PromptList } from '../../components/promptList/PromptList'
 import { Button } from '../../components/shadcn/ui/button'
 import { useActionSelect } from '../../prompts/PromptsTab'
 import { View } from '../../tabs'
+import { PromptMigrationWidget } from './../../components/promptsMigration/PromptsMigration'
 
 const localStorageKey = 'chat.welcome-message-dismissed'
 
@@ -17,7 +18,8 @@ export const WelcomeMessage: FunctionComponent<WelcomeMessageProps> = ({ setView
     const runAction = useActionSelect()
 
     return (
-        <div className="tw-flex-1 tw-flex tw-flex-col tw-items-start tw-w-full tw-px-6 tw-gap-6 tw-transition-all">
+        <div className="tw-flex-1 tw-flex tw-flex-col tw-items-start tw-w-full tw-px-6 tw-gap-4 tw-transition-all">
+            <PromptMigrationWidget dismissible={true} />
             <div className="tw-flex tw-flex-col tw-gap-4 tw-w-full">
                 <PromptList
                     showSearch={false}

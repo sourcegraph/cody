@@ -18,11 +18,13 @@
     font-size: 1rem;
     font-weight: 500;
     margin-bottom: 0.25rem;
+    color: var(--vscode-dropdown-foreground);
 }
 
 .description-text {
-    margin-bottom: 0.75rem;
     line-height: 1rem;
+    margin-bottom: 0.75rem;
+    color: var(--vscode-dropdown-foreground);
 }
 
 .actions {
@@ -76,4 +78,10 @@
     word-break: break-word;
     border-left: 0.5rem solid #d8000c;
     font-weight: bold;
+}
+
+.close {
+    padding: 0.25rem;
+    align-self: flex-start;
+    margin: -0.25rem -0.25rem 0 auto;
 }
