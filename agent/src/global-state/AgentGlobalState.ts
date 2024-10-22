@@ -128,9 +128,6 @@ export class LocalStorageDB implements DB {
         try {
             return item ? JSON.parse(item) : undefined
         } catch (error) {
-            // That should never happen now, but in past it was possible to store incorrectly serialized
-            // undefined values, which were failing to deserialize during the get operation
-            this.storage.removeItem(key)
             return undefined
         }
     }
