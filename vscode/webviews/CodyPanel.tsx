@@ -1,4 +1,3 @@
-import { useFeatureFlag } from '@/utils/useFeatureFlags'
 import {
     type AuthStatus,
     type ClientCapabilitiesWithLegacyFields,
@@ -16,6 +15,7 @@ import { Notices } from './components/Notices'
 import { StateDebugOverlay } from './components/StateDebugOverlay'
 import { TabContainer, TabRoot } from './components/shadcn/ui/tabs'
 import { AccountTab, HistoryTab, PromptsTab, SettingsTab, TabsBar, View } from './tabs'
+import { useFeatureFlag } from './utils/useFeatureFlags'
 import { TabViewContext } from './utils/useTabView'
 
 /**
