@@ -13,12 +13,15 @@ import styles from './PromptsTab.module.css'
 
 export const PromptsTab: React.FC<{
     setView: (view: View) => void
-}> = ({ setView }) => {
+    isUnifiedPromptsEnabled?: boolean
+}> = ({ setView, isUnifiedPromptsEnabled }) => {
     const runAction = useActionSelect()
 
     return (
         <div className="tw-overflow-auto tw-h-full tw-flex tw-flex-col tw-gap-6">
-            <PromptMigrationWidget dismissible={false} className={styles.promptMigrationWidget} />
+            {isUnifiedPromptsEnabled && (
+                <PromptMigrationWidget dismissible={false} className={styles.promptMigrationWidget} />
+            )}
             <PromptList
                 showSearch={true}
                 showCommandOrigins={true}

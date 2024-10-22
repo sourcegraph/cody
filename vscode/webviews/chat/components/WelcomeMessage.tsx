@@ -9,9 +9,13 @@ const localStorageKey = 'chat.welcome-message-dismissed'
 
 interface WelcomeMessageProps {
     setView: (view: View) => void
+    isUnifiedPromptsEnabled?: boolean
 }
 
-export const WelcomeMessage: FunctionComponent<WelcomeMessageProps> = ({ setView }) => {
+export const WelcomeMessage: FunctionComponent<WelcomeMessageProps> = ({
+    setView,
+    isUnifiedPromptsEnabled,
+}) => {
     // Remove the old welcome message dismissal key that is no longer used.
     localStorage.removeItem(localStorageKey)
 
@@ -19,7 +23,7 @@ export const WelcomeMessage: FunctionComponent<WelcomeMessageProps> = ({ setView
 
     return (
         <div className="tw-flex-1 tw-flex tw-flex-col tw-items-start tw-w-full tw-px-6 tw-gap-4 tw-transition-all">
-            <PromptMigrationWidget dismissible={true} />
+            {isUnifiedPromptsEnabled && <PromptMigrationWidget dismissible={true} />}
             <div className="tw-flex tw-flex-col tw-gap-4 tw-w-full">
                 <PromptList
                     showSearch={false}

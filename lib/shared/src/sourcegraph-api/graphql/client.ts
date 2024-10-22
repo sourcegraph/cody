@@ -776,7 +776,9 @@ export class SourcegraphGraphQLAPIClient {
         )
     }
 
-    public async getCurrentUserRole(): Promise<CurrentUserRoleResponse['currentUser'] | null | Error> {
+    public async isCurrentUserSideAdmin(): Promise<
+        CurrentUserRoleResponse['currentUser'] | null | Error
+    > {
         return this.fetchSourcegraphAPI<APIResponse<CurrentUserRoleResponse>>(
             CURRENT_USER_ROLE_QUERY,
             {}

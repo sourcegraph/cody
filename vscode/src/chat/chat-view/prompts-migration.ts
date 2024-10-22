@@ -61,7 +61,7 @@ export function getPromptsMigrationInfo(): Observable<PromptsMigrationStatus> {
 export async function startPromptsMigration(): Promise<void> {
     // Custom commands list
     const commands = getCodyCommandList().filter(command => command.type !== 'default')
-    const currentUser = await graphqlClient.getCurrentUserRole()
+    const currentUser = await graphqlClient.isCurrentUserSideAdmin()
     const isValidInstance = await graphqlClient.isValidSiteVersion({ minimumVersion: '5.9.0' })
 
     // Skip migration if there are no commands to migrate
