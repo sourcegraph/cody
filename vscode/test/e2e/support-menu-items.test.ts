@@ -6,7 +6,8 @@ import { type DotcomUrlOverride, test as baseTest } from './helpers'
 
 const test = baseTest.extend<DotcomUrlOverride>({ dotcomUrl: mockServer.SERVER_URL })
 
-test('shows support link for free users', async ({ page, sidebar }) => {
+//TODO(@RXminuS) These tests are flaky and now migrated to E2Ev2, migrate once in CI
+test.fixme('shows support link for free users', async ({ page, sidebar }) => {
     await sidebarSignin(page, sidebar)
 
     // Check it's in settings quickpick
@@ -20,8 +21,8 @@ test('shows support link for free users', async ({ page, sidebar }) => {
     const supportItem = page.getByLabel('question  Cody Support')
     expect(supportItem).toBeVisible()
 })
-
-test('shows support link for pro users', async ({ page, sidebar }) => {
+//TODO(@RXminuS) These tests are flaky and now migrated to E2Ev2, migrate once in CI
+test.fixme('shows support link for pro users', async ({ page, sidebar }) => {
     await fetch(`${mockServer.SERVER_URL}/.test/currentUser/codyProEnabled`, { method: 'POST' })
 
     await sidebarSignin(page, sidebar)
