@@ -363,24 +363,17 @@ interface CodeGraphDataResponse {
             blob: {
                 codeGraphData: {
                     occurrences: {
-                        nodes: {
-                            symbol: string,
-                            range: {
-                                start: {
-                                    line: number,
-                                    character: number
-                                },
-                                end: {
-                                    line: number,
-                                    character: number
-                                }
-                            }
-                        }[]
-                    } | null
-                } | null
+                        nodes: CodeGraphOccurrence[]
+                    } 
+                }[] | null
             } | null
         } | null
     } | null
+}
+
+export interface CodeGraphOccurrence {
+    symbol: string
+    range: Range 
 }
 
 export interface RepositoryIdResponse {
@@ -1009,12 +1002,12 @@ export class SourcegraphGraphQLAPIClient {
     }
 
     public async getCodeGraphData(
-        path: string,
         repoName: string,
-        revspec: string
-    ): Promise<CodeGraphDataResponse | Error> {
+        revspec: string,
+        path: string,
+    ): Promise<CodeGraphOccurrence[] | Error> {
         return this.fetchSourcegraphAPI<APIResponse<CodeGraphDataResponse>>(CODEGRAPH_DATA_QUERY, { path, repoName, revspec})
-        .then(response => extractDataOrError(response, data => data))
+          .then(response => extractDataOrError(response, data => data.repository?.commit?.blob?.codeGraphData?.at(0)?.occurrences.nodes ?? []))
     }
 
     public async getSymbolUsages(
