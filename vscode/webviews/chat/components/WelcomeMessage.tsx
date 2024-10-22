@@ -3,21 +3,29 @@ import { PromptList } from '../../components/promptList/PromptList'
 import { Button } from '../../components/shadcn/ui/button'
 import { useActionSelect } from '../../prompts/PromptsTab'
 import { View } from '../../tabs'
+import { PromptMigrationWidget } from './../../components/promptsMigration/PromptsMigration'
 
 const localStorageKey = 'chat.welcome-message-dismissed'
 
 interface WelcomeMessageProps {
     setView: (view: View) => void
+    isUnifiedPromptsEnabled?: boolean
 }
 
-export const WelcomeMessage: FunctionComponent<WelcomeMessageProps> = ({ setView }) => {
+export const WelcomeMessage: FunctionComponent<WelcomeMessageProps> = ({
+    setView,
+    isUnifiedPromptsEnabled,
+}) => {
     // Remove the old welcome message dismissal key that is no longer used.
     localStorage.removeItem(localStorageKey)
 
     const runAction = useActionSelect()
 
     return (
-        <div className="tw-flex-1 tw-flex tw-flex-col tw-items-start tw-w-full tw-px-6 tw-gap-6 tw-transition-all">
+        <div className="tw-flex-1 tw-flex tw-flex-col tw-items-start tw-w-full tw-px-6 tw-gap-4 tw-transition-all">
+            {isUnifiedPromptsEnabled && (
+                <PromptMigrationWidget dismissible={true} className="tw-w-full" />
+            )}
             <div className="tw-flex tw-flex-col tw-gap-4 tw-w-full">
                 <PromptList
                     showSearch={false}

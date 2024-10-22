@@ -17,6 +17,7 @@ body {
 }
 
 .container--webview {
+    padding: 0.5rem;
     max-height: max(500px, calc(100vh - 6rem));
     overflow: auto;
 }

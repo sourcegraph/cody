@@ -162,7 +162,7 @@ export const PromptList: FC<PromptListProps> = props => {
             tabIndex={0}
             shouldFilter={false}
             defaultValue={showInitialSelectedItem ? undefined : 'xxx-no-item'}
-            className={clsx(styles.list, {
+            className={clsx(className, styles.list, {
                 [styles.listChips]: appearanceMode === 'chips-list',
             })}
         >
