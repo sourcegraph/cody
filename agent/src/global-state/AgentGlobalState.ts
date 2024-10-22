@@ -132,7 +132,7 @@ export class LocalStorageDB implements DB {
         }
     }
     set(key: string, value: any): void {
-        if (value != null) {
+        if (value !== null && value !== undefined) {
             this.storage.setItem(key, JSON.stringify(value))
         } else {
             this.storage.removeItem(key)
