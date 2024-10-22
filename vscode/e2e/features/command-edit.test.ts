@@ -125,8 +125,9 @@ test.describe('edit command', {}, () => {
 
     // TODO(@RXminuS): #flake There's some flake here as the selection range is dependent on the
     // indexing status of the file within Cody
-    test.fixme(
+    test(
         'can change edit ranges',
+        { tag: ['@flaky'] },
         async ({ workspaceDir, page, vscodeUI, mitmProxy, polly, context }, testInfo) => {
             const { vsc } = await uix.vscode.Session.startWithCody(
                 { page, vscodeUI, workspaceDir, polly },
@@ -138,7 +139,13 @@ test.describe('edit command', {}, () => {
                 workspaceFile: 'type.ts',
                 selection: { start: { line: 2, col: 1 }, end: { line: 3, col: 1 } },
             })
-            await expect(selectionStatus).toHaveText('Ln 3, Col 1 (22 selected)')
+            try {
+                await expect(selectionStatus).toHaveText('Ln 3, Col 1 (22 selected)')
+            } catch (e) {
+                console.error(e)
+                testInfo.fixme()
+                return
+            }
 
             await vsc.runCommand({ command: 'cody.command.edit-code', skipResult: true })
 
@@ -146,7 +153,13 @@ test.describe('edit command', {}, () => {
             // Just run this test with retry-each 10 and about 10% should fail.
             await vsc.QuickPick.items({ hasText: /Range/ }).click()
             await vsc.QuickPick.items({ hasText: /Selection/ }).click()
-            await expect(selectionStatus).toHaveText('Ln 3, Col 21 (38 selected)')
+            try {
+                await expect(selectionStatus).toHaveText('Ln 3, Col 21 (38 selected)')
+            } catch (e) {
+                console.error(e)
+                testInfo.fixme()
+                return
+            }
 
             // We now change to code-block
             await vsc.QuickPick.items({ hasText: /Range/ }).click()
