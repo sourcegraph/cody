@@ -12,8 +12,15 @@ import { GlobeIcon, LockKeyholeIcon } from 'lucide-react'
 import { useCallback, useState } from 'react'
 import { Button } from './components/shadcn/ui/button'
 import { Form, FormControl, FormField, FormLabel, FormMessage } from './components/shadcn/ui/form'
+import {
+    Select,
+    SelectContent,
+    SelectGroup,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from './components/shadcn/ui/select'
 import { useTelemetryRecorder } from './utils/telemetry'
-import { useConfig } from './utils/useConfig'
 
 /**
  * A component that shows the available ways for the user to sign in or sign up.
@@ -23,8 +30,9 @@ export const AuthPage: React.FunctionComponent<React.PropsWithoutRef<LoginProps>
     uiKindIsWeb,
     vscodeAPI,
     codyIDE,
+    endpoints,
+    authStatus,
 }) => {
-    const authStatus = useConfig().authStatus
     const telemetryRecorder = useTelemetryRecorder()
     const otherSignInClick = (): void => {
         vscodeAPI.postMessage({ command: 'auth', authKind: 'signin' })
@@ -43,7 +51,11 @@ export const AuthPage: React.FunctionComponent<React.PropsWithoutRef<LoginProps>
                         <Button onClick={otherSignInClick}>Sign In to Your Enterprise Instance</Button>
                     </div>
                 ) : (
-                    <ClientSignInForm authStatus={authStatus} vscodeAPI={vscodeAPI} />
+                    <ClientSignInForm
+                        authStatus={authStatus}
+                        vscodeAPI={vscodeAPI}
+                        endpoints={endpoints}
+                    />
                 )}
                 <p className="tw-mt-4 tw-mb-0 tw-text-muted-foreground">
                     Learn more about <a href="https://sourcegraph.com/cloud">Sourcegraph Enterprise</a>.
@@ -101,6 +113,14 @@ export const AuthPage: React.FunctionComponent<React.PropsWithoutRef<LoginProps>
                     )}
                 </div>
             </section>
+            {endpoints?.length && (
+                <section className="tw-bg-sidebar-background tw-text-sidebar-foreground tw-border tw-border-border tw-rounded-lg tw-p-6 tw-w-full tw-max-w-md">
+                    <h2 className="tw-font-semibold tw-text-lg tw-mb-4">Account History</h2>
+                    <div className="tw-flex tw-flex-col tw-gap-6 tw-w-full">
+                        <EndpointSelection authStatus={authStatus} endpoints={endpoints} />
+                    </div>
+                </section>
+            )}
             <footer className="tw-text-sm tw-text-muted-foreground">
                 Cody is proudly built by Sourcegraph. By signing in to Cody, you agree to our{' '}
                 <a target="_blank" rel="noopener noreferrer" href="https://about.sourcegraph.com/terms">
@@ -125,6 +145,8 @@ interface LoginProps {
     uiKindIsWeb: boolean
     vscodeAPI: VSCodeWrapper
     codyIDE: CodyIDE
+    endpoints: string[]
+    authStatus: AuthStatus
 }
 
 const WebLogin: React.FunctionComponent<
@@ -171,6 +193,7 @@ const WebLogin: React.FunctionComponent<
 
 interface ClientSignInFormProps {
     vscodeAPI: VSCodeWrapper
+    endpoints: string[]
     authStatus?: AuthStatus
     className?: string
 }
@@ -182,9 +205,9 @@ interface ClientSignInFormProps {
  * It validates the input and sends the authentication information to the VSCode extension
  * when the user clicks the "Sign In with Access Token" button.
  */
-const ClientSignInForm: React.FC<ClientSignInFormProps> = ({ className, authStatus }) => {
+const ClientSignInForm: React.FC<ClientSignInFormProps> = ({ className, authStatus, endpoints }) => {
     const [formData, setFormData] = useState({
-        endpoint: authStatus?.endpoint ?? '',
+        endpoint: authStatus?.endpoint ?? endpoints?.[0] ?? '',
         accessToken: '',
     })
 
@@ -218,6 +241,14 @@ const ClientSignInForm: React.FC<ClientSignInFormProps> = ({ className, authStat
         }
     }, [formData.accessToken, onAccessTokenSignInClick, onBrowserSignInClick])
 
+    const serverInvalid =
+        authStatus &&
+        !authStatus.authenticated &&
+        !authStatus.pendingValidation &&
+        (authStatus.showNetworkError || authStatus.showInvalidAccessTokenError)
+    const showNetworkError = serverInvalid && authStatus.showNetworkError
+    const invalidToken = (serverInvalid && authStatus.showInvalidAccessTokenError) || false
+
     return (
         <Form className={className} onSubmit={onSubmit}>
             <FormField name="endpoint">
@@ -237,10 +268,7 @@ const ClientSignInForm: React.FC<ClientSignInFormProps> = ({ className, authStat
                 <GlobeIcon size={16} /> Sign In with Browser
             </Button>
 
-            <FormField
-                name="accessToken"
-                serverInvalid={authStatus && !authStatus.authenticated && authStatus.showNetworkError}
-            >
+            <FormField name="accessToken" serverInvalid={serverInvalid}>
                 <FormLabel title="Access Token" />
                 <FormControl
                     type="password"
@@ -251,9 +279,15 @@ const ClientSignInForm: React.FC<ClientSignInFormProps> = ({ className, authStat
                     autoComplete="current-password"
                     required
                 />
-                <FormMessage match={() => !isSourcegraphToken(formData.accessToken)}>
+                <FormMessage
+                    match={() => !isSourcegraphToken(formData.accessToken)}
+                    forceMatch={invalidToken}
+                >
                     Invalid access token.
                 </FormMessage>
+                {showNetworkError && (
+                    <FormMessage>Network error. Please check your connection and try again.</FormMessage>
+                )}
                 <FormMessage match="valueMissing">Access token is required.</FormMessage>
             </FormField>
             <Button
@@ -265,5 +299,59 @@ const ClientSignInForm: React.FC<ClientSignInFormProps> = ({ className, authStat
                 <LockKeyholeIcon size={16} /> Sign In with Access Token
             </Button>
         </Form>
+    )
+}
+
+export const EndpointSelection: React.FunctionComponent<
+    React.PropsWithoutRef<{
+        authStatus: AuthStatus
+        endpoints: string[]
+    }>
+> = ({ authStatus, endpoints }) => {
+    // No endpoint history to show.
+    if (!endpoints.length) {
+        return null
+    }
+
+    const [selectedEndpoint, setSelectedEndpoint] = useState<string | undefined>(authStatus.endpoint)
+
+    const onChange = useCallback(
+        (endpoint: string) => {
+            setSelectedEndpoint(endpoint)
+            // The user was already authenticated with an invalid token. Let's not send another auth request.
+            if (endpoint === authStatus?.endpoint) {
+                return
+            }
+            getVSCodeAPI().postMessage({
+                command: 'auth',
+                authKind: 'signin',
+                endpoint: endpoint,
+            })
+        },
+        [authStatus]
+    )
+
+    return (
+        <div className="tw-flex tw-flex-col tw-gap-6 tw-w-full">
+            <Select onValueChange={(v: string) => onChange(v)} value="">
+                <SelectTrigger className="tw-w-full">
+                    <SelectValue className="tw-w-full" placeholder={selectedEndpoint} />
+                </SelectTrigger>
+                <SelectContent position="item-aligned" className="tw-w-full tw-m-2 tw-bg-muted">
+                    <SelectGroup className="tw-w-full" key="instances">
+                        {endpoints?.map(endpoint => (
+                            <SelectItem key={endpoint} value={endpoint} className="tw-w-full tw-p-3">
+                                {endpoint}
+                            </SelectItem>
+                        ))}
+                    </SelectGroup>
+                </SelectContent>
+            </Select>
+            {!authStatus.authenticated && authStatus.endpoint === selectedEndpoint && (
+                <p className="tw-mt-2 tw-mb-0 tw-text-red-500">
+                    Sign in failed. Try re-authenticate again with the forms above.
+                </p>
+            )}
+        </div>
     )
 }

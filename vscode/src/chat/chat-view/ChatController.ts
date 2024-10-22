@@ -137,6 +137,7 @@ import { InitDoer } from './InitDoer'
 import { getChatPanelTitle } from './chat-helpers'
 import { type HumanInput, getPriorityContext } from './context'
 import { DefaultPrompter, type PromptInfo } from './prompt'
+import {secretStorage} from "../../services/SecretStorageProvider";
 
 export interface ChatControllerOptions {
     extensionUri: vscode.Uri
@@ -440,11 +441,17 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     }
                     break
                 }
-                if (message.authKind === 'signin' && message.endpoint && message.value) {
-                    await localStorage.saveEndpointAndToken({
-                        serverEndpoint: message.endpoint,
-                        accessToken: message.value,
-                    })
+                if (message.authKind === 'signin' && message.endpoint) {
+                    const serverEndpoint = message.endpoint
+                    const accessToken = message.value ? message.value : (await secretStorage.getToken(serverEndpoint)) ?? ''
+                    const tokenSource = message.value ? 'paste' : await secretStorage.getTokenSource(serverEndpoint)
+                    const validationResult = await authProvider.validateAndStoreCredentials(
+                        { serverEndpoint, accessToken, tokenSource },
+                        'always-store'
+                    )
+                    if (!validationResult.authStatus.authenticated) {
+                        await showSignInMenu()
+                    }
                     break
                 }
                 if (message.authKind === 'signout') {
@@ -507,10 +514,13 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         const sidebarViewOnly = this.extensionClient.capabilities?.webviewNativeConfig?.view === 'single'
         const isEditorViewType = this.webviewPanelOrView?.viewType === 'cody.editorPanel'
         const webviewType = isEditorViewType && !sidebarViewOnly ? 'editor' : 'sidebar'
+        const endpoints = localStorage.getEndpointHistory() ?? []
+
         const uiKindIsWeb = (cenv.CODY_OVERRIDE_UI_KIND ?? vscode.env.uiKind) === vscode.UIKind.Web
         return {
             uiKindIsWeb,
             serverEndpoint: auth.serverEndpoint,
+            endpointHistory: [...endpoints].reverse(),
             experimentalNoodle: configuration.experimentalNoodle,
             smartApply: this.isSmartApplyEnabled(),
             webviewType,
