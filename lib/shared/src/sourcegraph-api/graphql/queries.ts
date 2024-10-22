@@ -354,6 +354,7 @@ query ViewerPrompts($query: String!) {
             description
             draft
             autoSubmit
+            mode
             definition {
                 text
             }
