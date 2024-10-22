@@ -222,5 +222,5 @@ function generatePromptTextFromCommand(command: CodyCommand): string {
 }
 
 function repoKey(repositoryId: string) {
-    return `prefix11-${repositoryId}`
+    return `prefix12-${repositoryId}`
 }

@@ -436,8 +436,6 @@ export interface Prompt {
     }
 }
 
-export type PromptMode = 'CHAT' | 'EDIT' | 'INSERT'
-
 export interface PromptInput {
     owner: string
     name: string
