@@ -6,15 +6,20 @@ import {
     Typewriter,
     currentAuthStatus,
     currentSiteVersion,
+    firstValueFrom,
     isAbortError,
     isDotCom,
     isNetworkLikeError,
+    logDebug,
     modelsService,
     posixFilePaths,
     telemetryRecorder,
     uriBasename,
     wrapInActiveSpan,
+    graphqlClient,
+    isError,
 } from '@sourcegraph/cody-shared'
+
 
 import type { FixupController } from '../non-stop/FixupController'
 import type { FixupTask } from '../non-stop/FixupTask'
@@ -37,6 +42,9 @@ import { buildInteraction } from './prompt'
 import { PROMPT_TOPICS } from './prompt/constants'
 import { EditIntentTelemetryMetadataMapping, EditModeTelemetryMetadataMapping } from './types'
 import { isStreamedIntent } from './utils/edit-intent'
+import { remoteReposForAllWorkspaceFolders } from '../repository/remoteRepos'
+import { doRangesIntersect } from '@sourcegraph/cody-shared/src/common/range'
+import { oc } from 'date-fns/locale'
 
 interface EditProviderOptions extends EditManagerOptions {
     task: FixupTask
@@ -55,6 +63,42 @@ export class EditProvider {
 
     public async startEdit(): Promise<void> {
         return wrapInActiveSpan('command.edit.start', async span => {
+            // FixupController <= creates fixup tasks
+            let currentRepo : string | undefined;
+            const repos = await firstValueFrom(remoteReposForAllWorkspaceFolders)
+            if (Array.isArray(repos) && repos.length > 0) {
+                logDebug("FOUND A REPO", JSON.stringify(repos[0]))
+                currentRepo = repos[0].name
+            }
+            // TODO: make relative to workspace root
+            let currentFile : string | undefined; 
+            {
+                let currentUri = getEditor()?.active?.document?.uri
+                if (currentUri !== undefined) {
+                    currentFile = workspace.asRelativePath(currentUri)
+                }
+            }
+            logDebug("CURRENT FILE", currentFile ?? "NO FILE")
+            // TODO: Resolve the actual revision here
+            let currentCommit = "bca0a8b398de1ca8c8957eecba3f42e622ca5d2a"
+            logDebug("CURRENT COMMIT", currentCommit ?? "NO COMMIT")
+
+            let currentRange = this.config.task.selectionRange
+            logDebug("CURRENT RANGE", JSON.stringify(currentRange))
+
+            if (currentRepo !== undefined && currentCommit !== undefined && currentFile !== undefined) {
+                const codeGraphOccurrences = await graphqlClient.getCodeGraphData(currentRepo, currentCommit, currentFile)
+                if (isError(codeGraphOccurrences)) {
+                    logDebug("CODEGRAPH ERROR", codeGraphOccurrences.message)
+                } else {
+                    const occurrencesInRange = 
+                      codeGraphOccurrences.filter(occurrence => 
+                        !occurrence.symbol.startsWith("local ") && doRangesIntersect(occurrence.range, currentRange)
+                      )
+                    logDebug("MATCHED SYMBOLS", JSON.stringify(occurrencesInRange.map(occ => occ.symbol)))
+                }
+            }
+
             this.config.controller.startTask(this.config.task)
             const model = this.config.task.model
             const contextWindow = modelsService.getContextWindowByID(model)
