@@ -289,6 +289,7 @@ jobs:
         uses: daun/playwright-report-summary@v3
         with:
           report-file: vscode/.test/e2e/reports/json/report.json
+          job-summary: true
       # TODO: Pipe telemetry to PubSub
       - name: Report to Services
         run: pnpm -C vscode exec playwright merge-reports --reporter github,@estruyf/github-actions-reporter -c .test/e2e/reports/blob .test/e2e/reports/blob
