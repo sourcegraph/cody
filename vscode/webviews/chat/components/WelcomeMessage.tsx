@@ -23,7 +23,7 @@ export const WelcomeMessage: FunctionComponent<WelcomeMessageProps> = ({
 
     return (
         <div className="tw-flex-1 tw-flex tw-flex-col tw-items-start tw-w-full tw-px-6 tw-gap-4 tw-transition-all">
-            {isUnifiedPromptsEnabled && <PromptMigrationWidget dismissible={true} />}
+            {isUnifiedPromptsEnabled && <PromptMigrationWidget dismissible={true} className="tw-w-full"/>}
             <div className="tw-flex tw-flex-col tw-gap-4 tw-w-full">
                 <PromptList
                     showSearch={false}
@@ -34,7 +34,6 @@ export const WelcomeMessage: FunctionComponent<WelcomeMessageProps> = ({
                     showPromptLibraryUnsupportedMessage={false}
                     showOnlyPromptInsertableCommands={false}
                     includeEditCommandOnTop={true}
-                    className="tw-w-full"
                     onSelect={item => runAction(item, setView)}
                 />
 
