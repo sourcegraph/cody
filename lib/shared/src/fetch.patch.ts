@@ -2,14 +2,15 @@
  * In node environments, it might be necessary to set up a custom agent to
  * control the network requests being made.
  *
- * To do this, we have a mutable agent variable that can be set externally. For
- * this to work we need to ensure no other dependencies have loaded yet. That's
- * why this module is seperate from the fetch.ts file which simply re-exports
- * this variable. This way the patching code can simply import this specific
- * file and gain early access to the agentRef
+ * To do this, we expose the globalAgentRef variable that can be mutated
+ * externally.
  *
  * 🚨 Do not import this file unless you're specifically patching the variable.
- * For read-only access simply import the fetch.ts file
+ * For read-only access simply import the fetch.ts file. This variable was only
+ * isolated into this separate .patch file so that patching code can import this
+ * without bringing in transitive dependencies.
+ *
+ * An example of such a patch where this is critical is in `vscode/src/net/net.patch.ts`
  */
 
 import type EventEmitter from 'node:events'
@@ -19,12 +20,8 @@ import type { Agent } from 'agent-base'
 
 let _globalAgent: Agent | undefined
 let _eventEmitter: EventEmitter<NetEventMap> | undefined
-let _blockEarlyAccess = false
 export const globalAgentRef = {
     get agent() {
-        if (_blockEarlyAccess && !_globalAgent) {
-            throw new Error('Agent was used before it was initialized')
-        }
         return _globalAgent
     },
 
@@ -39,10 +36,6 @@ export const globalAgentRef = {
 
     set netEvents(v: EventEmitter<NetEventMap> | undefined) {
         _eventEmitter = v
-    },
-
-    set blockEarlyAccess(v: boolean) {
-        _blockEarlyAccess = v
     },
 
     get isSet() {
