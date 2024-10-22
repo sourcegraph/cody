@@ -281,6 +281,7 @@ jobs:
           PLAYWRIGHT_JSON_OUTPUT_DIR: .test/e2e/reports/json
       - name: Upload HTML report
         uses: actions/upload-artifact@v4
+        id: e2e-final-html-report
         with:
           name: e2e-html-report
           path: vscode/.test/e2e/reports/html
@@ -289,7 +290,10 @@ jobs:
         uses: daun/playwright-report-summary@v3
         with:
           report-file: vscode/.test/e2e/reports/json/report.json
-          job-summary: true
+          comment-title: "E2E Test - Summary"
+          report-tag: "e2e"
+          report-url: ${{ steps.e2e-final-html-report.outputs.artifact-url }}
+          custom-info: "[Pipeline Summary](${{github.server_url}}/${{github.repository}}/actions/runs/${{github.run_id}})"
       # TODO: Pipe telemetry to PubSub
       - name: Report to Services
         run: pnpm -C vscode exec playwright merge-reports --reporter github,@estruyf/github-actions-reporter -c .test/e2e/reports/blob .test/e2e/reports/blob

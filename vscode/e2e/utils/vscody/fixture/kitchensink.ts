@@ -3,11 +3,26 @@ import { test as _test } from '@playwright/test'
 import { copy as copyExt } from 'fs-extra'
 import 'node:http'
 import 'node:https'
+import { platform } from 'node:os'
 import path from 'node:path'
 import type { TestContext, WorkerContext } from '.'
 import { CODY_VSCODE_ROOT_DIR, retry } from '../../helpers'
 
 export const kitchensinkFixture = _test.extend<TestContext, WorkerContext>({
+    platformTags: [
+        async ({}, use, testInfo) => {
+            const tags = {
+                platform: platform(),
+            }
+
+            testInfo.annotations.push({
+                type: 'platform',
+                description: tags.platform,
+            })
+            use(tags)
+        },
+        { scope: 'test', auto: true },
+    ],
     gitconfigPath: [
         async ({ validWorkerOptions }, use, testInfo) => {
             const configPath = path.resolve(

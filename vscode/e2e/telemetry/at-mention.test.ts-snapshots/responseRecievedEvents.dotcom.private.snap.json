@@ -131,6 +131,10 @@
             "value": 1
           },
           {
+            "key": "detectedIntent",
+            "value": 2
+          },
+          {
             "key": "recordsPrivateMetadataTranscript",
             "value": 1
           },
@@ -140,13 +144,14 @@
           },
           {
             "key": "userSpecifiedIntent",
-            "value": 1
+            "value": 2
           }
         ],
         "privateMetadata": {
+          "detectedIntent": "chat",
           "promptText": "<string>",
           "traceId": "<string>",
-          "userSpecifiedIntent": "auto"
+          "userSpecifiedIntent": "chat"
         },
         "version": 0
       },

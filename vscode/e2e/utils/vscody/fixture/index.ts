@@ -31,6 +31,9 @@ export interface TestContext {
     mitmProxy: MitMProxy
     //sourcegraphMitM: { endpoint: string; target: string }
     workspaceDir: Directory
+    platformTags: {
+        platform: NodeJS.Platform
+    }
 }
 
 export const fixture = mergeTests(
