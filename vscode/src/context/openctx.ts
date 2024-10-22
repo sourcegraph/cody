@@ -72,10 +72,8 @@ export function exposeOpenCtxClient(
     ).pipe(
         createDisposables(([{ experimentalNoodle }, isValidSiteVersion, createController]) => {
             try {
-                // Enable fetching of openctx configuration from Sourcegraph instance
-                const mergeConfiguration = experimentalNoodle
-                    ? getMergeConfigurationFunction()
-                    : undefined
+                // Enable fetching of OpenCtx configuration from client's cody_settings.json and form Sourcegraph instance
+                const mergeConfiguration = getMergeConfigurationFunction(experimentalNoodle)
 
                 if (!openctxOutputChannel) {
                     // Don't dispose this, so that it stays around for easier debugging even if the
@@ -201,22 +199,43 @@ function getCodyWebOpenCtxProviders(): ImportedProviderConfiguration[] {
     ]
 }
 
-function getMergeConfigurationFunction(): Parameters<typeof createController>[0]['mergeConfiguration'] {
+function getMergeConfigurationFunction(
+    experimentalNoodle: boolean
+): Parameters<typeof createController>[0]['mergeConfiguration'] {
     // Cache viewerSettings response since this function can be called
     // multiple times.
     //
     // TODO before this is regarded as ready, we need to introduce some sort
     // of retry and expiry like we do for feature flags. For now we log once.
-    const viewerSettingsProvidersCached = getViewerSettingsProviders()
+    const viewerSettingsProvidersCached = experimentalNoodle ? getViewerSettingsProviders() : []
+    const localSettingsProviders = getLocalConfigurationSettingsProviders()
     return async (configuration: OpenCtxClientConfiguration) => {
-        const providers = await viewerSettingsProvidersCached
-        if (!providers) {
+        const viewerSettingsProviders = await viewerSettingsProvidersCached
+        if (!viewerSettingsProviders && !localSettingsProviders) {
             return configuration
         }
-        // Prefer user configured providers
-        for (const [k, v] of Object.entries(configuration.providers || {})) {
-            providers[k] = v
+
+        // Merge all providers in priority order
+        const providers: OpenCtxClientConfiguration['providers'] = {}
+        // 1. Viewer settings (lowest priority)
+        if (viewerSettingsProviders) {
+            Object.entries(viewerSettingsProviders).forEach(([k, v]) => {
+                providers[k] = v
+            })
         }
+        // 2. Configuration providers (middle priority)
+        if (configuration.providers) {
+            Object.entries(configuration.providers).forEach(([k, v]) => {
+                providers[k] = v
+            })
+        }
+        // 3. Local settings (highest priority)
+        if (localSettingsProviders) {
+            Object.entries(localSettingsProviders).forEach(([k, v]) => {
+                providers[k] = v
+            })
+        }
+
         return {
             ...configuration,
             providers,
@@ -241,6 +260,15 @@ async function getViewerSettingsProviders(): Promise<OpenCtxClientConfiguration[
         logError('OpenCtx', 'failed to fetch viewer settings from Sourcegraph', error)
         return undefined
     }
+}
+
+function getLocalConfigurationSettingsProviders(): OpenCtxClientConfiguration['providers'] {
+    const configuration = vscode.workspace.getConfiguration()
+    const providers = configuration.get<OpenCtxClientConfiguration['providers']>('openctx.providers')
+    if (!providers) {
+        return undefined
+    }
+    return providers
 }
 
 async function warnIfOpenCtxExtensionConflict(): Promise<void> {
