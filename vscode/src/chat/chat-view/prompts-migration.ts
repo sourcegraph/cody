@@ -1,12 +1,14 @@
 import {
     type CodyCommandMode,
     type PromptsMigrationStatus,
+    combineLatest,
     distinctUntilChanged,
     firstResultFromOperation,
     graphqlClient,
     isError,
     isErrorLike,
     shareReplay,
+    siteVersion,
     skipPendingOperation,
     startWith,
     switchMap,
@@ -14,6 +16,7 @@ import {
 import { Observable, Subject } from 'observable-fns'
 
 import { PromptMode } from '@sourcegraph/cody-shared'
+import { checkVersion, isValidVersion } from '@sourcegraph/cody-shared/dist/sourcegraph-api/siteVersion'
 import { getCodyCommandList } from '../../commands/CommandsController'
 import { remoteReposForAllWorkspaceFolders } from '../../repository/remoteRepos'
 import { localStorage } from '../../services/LocalStorageProvider'
@@ -27,21 +30,29 @@ const PROMPTS_MIGRATION_RESULT = PROMPTS_MIGRATION_STATUS.pipe(
 )
 
 export function getPromptsMigrationInfo(): Observable<PromptsMigrationStatus> {
-    return remoteReposForAllWorkspaceFolders.pipe(
-        skipPendingOperation(),
-        switchMap(repositories => {
+    return combineLatest(
+        siteVersion.pipe(skipPendingOperation()),
+        remoteReposForAllWorkspaceFolders.pipe(skipPendingOperation())
+    ).pipe(
+        switchMap(([siteVersion, repositories]) => {
             if (isError(repositories)) {
                 throw repositories
             }
 
             const repository = repositories[0]
+            const isPromptSupportVersion =
+                siteVersion &&
+                checkVersion({
+                    currentVersion: siteVersion.siteVersion,
+                    minimumVersion: '5.9.0',
+                })
 
             // Don't run migration if you're already run this before (ignore any other new commands
             // that had been added after first migration run
             const migrationMap = localStorage.get<Record<string, boolean>>(PROMPTS_MIGRATION_KEY) ?? {}
             const commands = getCodyCommandList().filter(command => command.type !== 'default')
 
-            if (!repository || migrationMap[repoKey(repository?.id ?? '')]) {
+            if (!isPromptSupportVersion || !repository || migrationMap[repoKey(repository?.id ?? '')]) {
                 return Observable.of<PromptsMigrationStatus>({
                     type: 'migration_skip',
                 })
@@ -62,7 +73,7 @@ export async function startPromptsMigration(): Promise<void> {
     // Custom commands list
     const commands = getCodyCommandList().filter(command => command.type !== 'default')
     const currentUser = await graphqlClient.isCurrentUserSideAdmin()
-    const isValidInstance = await graphqlClient.isValidSiteVersion({ minimumVersion: '5.9.0' })
+    const isValidInstance = await isValidVersion({ minimumVersion: '5.9.0' })
 
     // Skip migration if there are no commands to migrate
     if (commands.length === 0 || !isValidInstance || isErrorLike(currentUser) || currentUser === null) {
@@ -168,5 +179,5 @@ function commandModeToPromptMode(commandMode?: CodyCommandMode): PromptMode {
 }
 
 function repoKey(repositoryId: string) {
-    return `prefix8-${repositoryId}`
+    return `prefix9-${repositoryId}`
 }
