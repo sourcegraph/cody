@@ -285,9 +285,7 @@ export const PromptEditor: FunctionComponent<Props> = ({
                 const currentEditorState = normalizeEditorStateJSON(editor.getEditorState().toJSON())
                 const newEditorState = initialEditorState.lexicalEditorState
                 if (!isEqual(currentEditorState, newEditorState)) {
-                    queueMicrotask(() => {
-                        editor.setEditorState(editor.parseEditorState(newEditorState))
-                    })
+                    editor.setEditorState(editor.parseEditorState(newEditorState))
                 }
             }
         }
