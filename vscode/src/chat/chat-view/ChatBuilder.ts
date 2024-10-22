@@ -152,18 +152,6 @@ export class ChatBuilder {
         this.changeNotifications.next()
     }
 
-    public removeContextForHumanMessage(index: number): void {
-        const humanMessage = this.messages.at(index)
-        if (!humanMessage || humanMessage.speaker !== 'human') {
-            throw new Error(`no human message at index ${index}`)
-        }
-
-        humanMessage.contextFiles = []
-        humanMessage.contextAlternatives = []
-
-        this.changeNotifications.next()
-    }
-
     public addHumanMessage(message: Omit<ChatMessage, 'speaker'>): void {
         if (this.messages.at(-1)?.speaker === 'human') {
             throw new Error('Cannot add a user message after a user message')
