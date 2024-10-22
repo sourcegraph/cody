@@ -107,4 +107,9 @@ describe('LocalStorageDB', () => {
         localStorageDB.set('undefinedKey', undefined)
         expect(localStorageDB.get('undefinedKey')).toBeUndefined()
     })
+
+    it('should handle empty string value', () => {
+        localStorageDB.set('emptyStringKey', '')
+        expect(localStorageDB.get('emptyStringKey')).toBe('')
+    })
 })
