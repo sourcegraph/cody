@@ -52,18 +52,20 @@ log:
         content:
           mimeType: application/json
           size: 73
-          text: "{\"data\":{\"site\":{\"productVersion\":\"296413_2024-10-21_5.8-290ab0f6\
-            c624\"}}}"
+          text: "{\"data\":{\"site\":{\"productVersion\":\"296541_2024-10-22_5.8-74e3dabd\
+            f9a8\"}}}"
         cookies: []
         headers:
           - name: date
-            value: Mon, 21 Oct 2024 19:36:19 GMT
+            value: Tue, 22 Oct 2024 18:25:13 GMT
           - name: content-type
             value: application/json
           - name: content-length
             value: "73"
           - name: connection
             value: close
+          - name: retry-after
+            value: "469"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -85,13 +87,13 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1537
+        headersSize: 1644
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-10-21T19:36:19.454Z
-      time: 259
+      startedDateTime: 2024-10-22T18:25:13.038Z
+      time: 253
       timings:
         blocked: -1
         connect: -1
@@ -99,6 +101,6 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 259
+        wait: 253
   pages: []
   version: "1.2"

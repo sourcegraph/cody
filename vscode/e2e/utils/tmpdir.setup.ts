@@ -30,5 +30,8 @@ setup.extend<{}, TmpDirOptions & WorkerOptions>({
                 await Promise.all(promises)
             }
         }
+
+        // We create a .git file to prevent git from traversing outsideof the tmpdir
+        await fs.writeFile(path.resolve(resolvedGlobalTmpDir, '.git'), '')
     }
 })

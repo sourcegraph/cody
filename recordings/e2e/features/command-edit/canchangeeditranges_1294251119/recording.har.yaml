@@ -55,13 +55,15 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 21 Oct 2024 19:36:20 GMT
+            value: Tue, 22 Oct 2024 18:25:15 GMT
           - name: content-type
             value: text/plain; charset=utf-8
           - name: content-length
             value: "277"
           - name: connection
             value: close
+          - name: retry-after
+            value: "467"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -83,13 +85,13 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1407
+        headersSize: 1514
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-10-21T19:36:20.057Z
-      time: 197
+      startedDateTime: 2024-10-22T18:25:15.380Z
+      time: 392
       timings:
         blocked: -1
         connect: -1
@@ -97,7 +99,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 197
+        wait: 392
     - _id: 28c346c4c160958f92e8f989a1737e5e
       _order: 0
       cache: {}
@@ -165,13 +167,15 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 21 Oct 2024 19:36:19 GMT
+            value: Tue, 22 Oct 2024 18:25:14 GMT
           - name: content-type
             value: application/json
           - name: content-length
             value: "282"
           - name: connection
             value: close
+          - name: retry-after
+            value: "468"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -193,13 +197,13 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1538
+        headersSize: 1645
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-10-21T19:36:19.742Z
-      time: 233
+      startedDateTime: 2024-10-22T18:25:14.299Z
+      time: 214
       timings:
         blocked: -1
         connect: -1
@@ -207,7 +211,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 233
+        wait: 214
     - _id: a4d641ac3093a4efbffe59352b351757
       _order: 0
       cache: {}
@@ -267,13 +271,15 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 21 Oct 2024 19:36:19 GMT
+            value: Tue, 22 Oct 2024 18:25:14 GMT
           - name: content-type
             value: application/json
           - name: content-length
             value: "76"
           - name: connection
             value: close
+          - name: retry-after
+            value: "468"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -295,13 +301,13 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1537
+        headersSize: 1644
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-10-21T19:36:19.743Z
-      time: 222
+      startedDateTime: 2024-10-22T18:25:14.300Z
+      time: 232
       timings:
         blocked: -1
         connect: -1
@@ -309,7 +315,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 222
+        wait: 232
     - _id: 06568f66a76daea32430b82552305046
       _order: 0
       cache: {}
@@ -369,13 +375,15 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 21 Oct 2024 19:36:19 GMT
+            value: Tue, 22 Oct 2024 18:25:14 GMT
           - name: content-type
             value: application/json
           - name: content-length
             value: "69"
           - name: connection
             value: close
+          - name: retry-after
+            value: "468"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -397,13 +405,13 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1537
+        headersSize: 1644
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-10-21T19:36:19.742Z
-      time: 230
+      startedDateTime: 2024-10-22T18:25:14.299Z
+      time: 240
       timings:
         blocked: -1
         connect: -1
@@ -411,7 +419,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 230
+        wait: 240
     - _id: d1e9e9d8ae116eb7e71823b775d35828
       _order: 0
       cache: {}
@@ -486,13 +494,15 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 21 Oct 2024 19:36:19 GMT
+            value: Tue, 22 Oct 2024 18:25:14 GMT
           - name: content-type
             value: application/json
           - name: content-length
             value: "334"
           - name: connection
             value: close
+          - name: retry-after
+            value: "468"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -514,13 +524,13 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1538
+        headersSize: 1645
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-10-21T19:36:19.455Z
-      time: 259
+      startedDateTime: 2024-10-22T18:25:13.726Z
+      time: 545
       timings:
         blocked: -1
         connect: -1
@@ -528,7 +538,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 259
+        wait: 545
     - _id: 9fdf3418a505d251116e020fda591c55
       _order: 0
       cache: {}
@@ -594,13 +604,15 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 21 Oct 2024 19:36:20 GMT
+            value: Tue, 22 Oct 2024 18:25:15 GMT
           - name: content-type
             value: application/json
           - name: content-length
             value: "194"
           - name: connection
             value: close
+          - name: retry-after
+            value: "468"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -622,13 +634,13 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1538
+        headersSize: 1645
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-10-21T19:36:19.747Z
-      time: 434
+      startedDateTime: 2024-10-22T18:25:14.303Z
+      time: 1205
       timings:
         blocked: -1
         connect: -1
@@ -636,7 +648,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 434
+        wait: 1205
     - _id: a4f06f44ac6627e56ffe62ff40b4aaa9
       _order: 0
       cache: {}
@@ -689,18 +701,20 @@ log:
         content:
           mimeType: application/json
           size: 73
-          text: "{\"data\":{\"site\":{\"productVersion\":\"296413_2024-10-21_5.8-290ab0f6\
-            c624\"}}}"
+          text: "{\"data\":{\"site\":{\"productVersion\":\"296541_2024-10-22_5.8-74e3dabd\
+            f9a8\"}}}"
         cookies: []
         headers:
           - name: date
-            value: Mon, 21 Oct 2024 19:36:19 GMT
+            value: Tue, 22 Oct 2024 18:25:14 GMT
           - name: content-type
             value: application/json
           - name: content-length
             value: "73"
           - name: connection
             value: close
+          - name: retry-after
+            value: "468"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -722,13 +736,13 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1537
+        headersSize: 1644
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-10-21T19:36:19.415Z
-      time: 265
+      startedDateTime: 2024-10-22T18:25:13.706Z
+      time: 379
       timings:
         blocked: -1
         connect: -1
@@ -736,7 +750,7 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 265
+        wait: 379
     - _id: 5bf27035df04d471d88a6d6cb52a0dd6
       _order: 0
       cache: {}
@@ -981,13 +995,15 @@ log:
         cookies: []
         headers:
           - name: date
-            value: Mon, 21 Oct 2024 19:36:20 GMT
+            value: Tue, 22 Oct 2024 18:25:16 GMT
           - name: content-type
             value: text/plain; charset=utf-8
           - name: transfer-encoding
             value: chunked
           - name: connection
             value: close
+          - name: retry-after
+            value: "466"
           - name: access-control-allow-credentials
             value: "true"
           - name: access-control-allow-origin
@@ -1009,13 +1025,13 @@ log:
             value: 1; mode=block
           - name: strict-transport-security
             value: max-age=31536000; includeSubDomains; preload
-        headersSize: 1414
+        headersSize: 1521
         httpVersion: HTTP/1.1
         redirectURL: ""
         status: 200
         statusText: OK
-      startedDateTime: 2024-10-21T19:36:20.261Z
-      time: 198
+      startedDateTime: 2024-10-22T18:25:15.788Z
+      time: 308
       timings:
         blocked: -1
         connect: -1
@@ -1023,6 +1039,6 @@ log:
         receive: 0
         send: 0
         ssl: -1
-        wait: 198
+        wait: 308
   pages: []
   version: "1.2"

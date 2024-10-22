@@ -123,40 +123,38 @@ test.describe('edit command', {}, () => {
         ])
     })
 
-    test('can change edit ranges', async ({
-        workspaceDir,
-        page,
-        vscodeUI,
-        mitmProxy,
-        polly,
-        context,
-    }, testInfo) => {
-        const { vsc } = await uix.vscode.Session.startWithCody(
-            { page, vscodeUI, workspaceDir, polly },
-            { codyEndpoint: mitmProxy.sourcegraph.dotcom.endpoint }
-        )
+    // TODO(@RXminuS): #flake There's some flake here as the selection range is dependent on the
+    // indexing status of the file within Cody
+    test.fixme(
+        'can change edit ranges',
+        async ({ workspaceDir, page, vscodeUI, mitmProxy, polly, context }, testInfo) => {
+            const { vsc } = await uix.vscode.Session.startWithCody(
+                { page, vscodeUI, workspaceDir, polly },
+                { codyEndpoint: mitmProxy.sourcegraph.dotcom.endpoint }
+            )
 
-        const selectionStatus = vsc.StatusBarItems.editorSelection
-        await vsc.editor.openFile({
-            workspaceFile: 'type.ts',
-            selection: { start: { line: 2, col: 1 }, end: { line: 3, col: 1 } },
-        })
-        await expect(selectionStatus).toHaveText('Ln 3, Col 1 (22 selected)')
+            const selectionStatus = vsc.StatusBarItems.editorSelection
+            await vsc.editor.openFile({
+                workspaceFile: 'type.ts',
+                selection: { start: { line: 2, col: 1 }, end: { line: 3, col: 1 } },
+            })
+            await expect(selectionStatus).toHaveText('Ln 3, Col 1 (22 selected)')
 
-        await vsc.runCommand({ command: 'cody.command.edit-code', skipResult: true })
+            await vsc.runCommand({ command: 'cody.command.edit-code', skipResult: true })
 
-        // TODO: There seems to be some flake because the document isn't indexed yet?
-        // Just run this test with retry-each 10 and about 10% should fail.
-        await vsc.QuickPick.items({ hasText: /Range/ }).click()
-        await vsc.QuickPick.items({ hasText: /Selection/ }).click()
-        await expect(selectionStatus).toHaveText('Ln 3, Col 21 (38 selected)')
+            // TODO: There seems to be some flake because the document isn't indexed yet?
+            // Just run this test with retry-each 10 and about 10% should fail.
+            await vsc.QuickPick.items({ hasText: /Range/ }).click()
+            await vsc.QuickPick.items({ hasText: /Selection/ }).click()
+            await expect(selectionStatus).toHaveText('Ln 3, Col 21 (38 selected)')
 
-        // We now change to code-block
-        await vsc.QuickPick.items({ hasText: /Range/ }).click()
-        await vsc.QuickPick.items({ hasText: /Nearest Code Block/ }).click()
-        await expect(vsc.QuickPick.items({ hasText: /Range/ })).toBeVisible() // this indicates we've handled the click
-        await expect(selectionStatus).toHaveText('Ln 4, Col 2 (62 selected)')
-    })
+            // We now change to code-block
+            await vsc.QuickPick.items({ hasText: /Range/ }).click()
+            await vsc.QuickPick.items({ hasText: /Nearest Code Block/ }).click()
+            await expect(vsc.QuickPick.items({ hasText: /Range/ })).toBeVisible() // this indicates we've handled the click
+            await expect(selectionStatus).toHaveText('Ln 4, Col 2 (62 selected)')
+        }
+    )
 
     // TODO: For some reason this has been disabled
     test('can switch models', async ({ workspaceDir, page, vscodeUI, mitmProxy, polly }) => {

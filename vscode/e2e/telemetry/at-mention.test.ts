@@ -19,12 +19,15 @@ test.describe('cody.at-mention', () => {
                 // Behavior is described here:
                 // https://linear.app/sourcegraph/issue/CODY-3405/fix-mention-telemetry
 
-                if (repoVariant === 'private') {
-                    await uix.workspace.gitInit(
-                        { origin: 'https://github.com/sourcegraph/private-invisible.git' },
-                        { workspaceDir }
-                    )
-                }
+                await uix.workspace.gitInit(
+                    {
+                        origin:
+                            repoVariant === 'private'
+                                ? 'https://github.com/sourcegraph/private-invisible.git'
+                                : 'https://github.com/sourcegraph/cody.git',
+                    },
+                    { workspaceDir }
+                )
 
                 if (endpointVariant === 'enterprise') {
                     mitmProxy.sourcegraph.enterprise.authName = 'enterprise'
