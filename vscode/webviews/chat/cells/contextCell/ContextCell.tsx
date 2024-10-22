@@ -92,7 +92,10 @@ export const ContextCell: FunctionComponent<{
             isForFirstMessage
         )
 
-        const logContextOpening = useCallback(() => {
+        const [isExpanded, setExpandedd] = useState(false)
+
+        const triggerAccordion = useCallback(() => {
+            setExpandedd(prev => !prev)
             telemetryRecorder.recordEvent('cody.contextCell', 'opened', {
                 metadata: {
                     fileCount: new Set(usedContext.map(file => file.uri.toString())).size,
@@ -100,6 +103,11 @@ export const ContextCell: FunctionComponent<{
                 },
             })
         }, [excludedContext.length, usedContext])
+
+        const onEditContext = useCallback(() => {
+            triggerAccordion()
+            onManuallyEditContext()
+        }, [triggerAccordion, onManuallyEditContext])
 
         const {
             config: { internalDebugContext },
@@ -120,6 +128,8 @@ export const ContextCell: FunctionComponent<{
 
         const [showAllResults, setShowAllResults] = useState(false)
 
+        const accordianValue = isExpanded ? 'item-1' : ''
+
         return (
             <div>
                 {(contextItemsToDisplay === undefined || contextItemsToDisplay.length !== 0) && (
@@ -131,13 +141,14 @@ export const ContextCell: FunctionComponent<{
                         }
                         onValueChange={logValueChange}
                         asChild={true}
+                        value={accordianValue}
                     >
                         <AccordionItem value="item-1" asChild>
                             <Cell
                                 header={
                                     <AccordionTrigger
-                                        onClick={logContextOpening}
-                                        onKeyUp={logContextOpening}
+                                        onClick={triggerAccordion}
+                                        onKeyUp={triggerAccordion}
                                         title={itemCountLabel}
                                         className="tw-flex tw-items-center tw-gap-4"
                                         disabled={isContextLoading}
@@ -172,7 +183,7 @@ export const ContextCell: FunctionComponent<{
                                             <button
                                                 type="button"
                                                 className={styles.contextItemEditButton}
-                                                onClick={onManuallyEditContext}
+                                                onClick={onEditContext}
                                             >
                                                 <div className={styles.contextItemEditButtonIcon}>
                                                     <Pencil size={'1rem'} />
