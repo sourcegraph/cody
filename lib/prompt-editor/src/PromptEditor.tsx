@@ -25,12 +25,7 @@ import { BaseEditor } from './BaseEditor'
 import styles from './PromptEditor.module.css'
 import { useSetGlobalPromptEditorConfig } from './config'
 import { isEditorContentOnlyInitialContext, lexicalNodesForContextItems } from './initialContext'
-import {
-    $selectAfter,
-    $selectEnd,
-    getContextItemsForEditor,
-    visitContextItemsForEditor,
-} from './lexicalUtils'
+import { $selectEnd, getContextItemsForEditor, visitContextItemsForEditor } from './lexicalUtils'
 import { $createContextItemMentionNode } from './nodes/ContextItemMentionNode'
 import type { KeyboardEventPluginProps } from './plugins/keyboardEvent'
 
@@ -212,22 +207,21 @@ export const PromptEditor: FunctionComponent<Props> = ({
                                 break
                             }
                             case 'after': {
-                                const nodesToInsert = lexicalNodesForContextItems(
+                                const lexicalNodes = lexicalNodesForContextItems(
                                     ops.create,
                                     {
                                         isFromInitialContext: false,
                                     },
                                     sep
                                 )
-                                $insertNodes([
+                                const pNode = $createParagraphNode()
+                                pNode.append(
                                     $createTextNode(getWhitespace($getRoot())),
-                                    $createTextNode('\n'),
-                                    ...nodesToInsert,
-                                ])
-                                const lastNode = nodesToInsert.at(-1)
-                                if (lastNode) {
-                                    $selectAfter(lastNode)
-                                }
+                                    ...lexicalNodes,
+                                    $createTextNode(sep)
+                                )
+                                $insertNodes([pNode])
+                                $selectEnd()
                                 break
                             }
                         }
