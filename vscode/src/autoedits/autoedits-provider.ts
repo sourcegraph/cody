@@ -12,8 +12,8 @@ import { getCurrentDocContext } from '../completions/get-current-doc-context'
 import { getConfiguration } from '../configuration'
 import type { PromptProvider } from './prompt-provider'
 import { DeepSeekPromptProvider } from './providers/deepseek'
+import { FireworksPromptProvider } from './providers/fireworks'
 import { OpenAIPromptProvider } from './providers/openai'
-import {FireworksPromptProvider} from './providers/fireworks'
 import { AutoEditsRenderer } from './renderer'
 
 const AUTOEDITS_CONTEXT_STRATEGY = 'auto-edits'
@@ -57,7 +57,7 @@ export class AutoeditsProvider implements vscode.Disposable {
             this.provider = new OpenAIPromptProvider()
         } else if (provider === 'deepseek') {
             this.provider = new DeepSeekPromptProvider()
-        } else if (provider == 'fireworks') {
+        } else if (provider === 'fireworks') {
             this.provider = new FireworksPromptProvider()
         }
         logDebug('AutoEdits', `provider ${provider} not supported`)

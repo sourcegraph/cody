@@ -1,13 +1,12 @@
 import { displayPath, logDebug } from '@sourcegraph/cody-shared'
 import { structuredPatch } from 'diff'
+import { diff } from 'fast-myers-diff'
 import * as vscode from 'vscode'
+import { ThemeColor } from 'vscode'
 import { createGitDiff } from '../../../lib/shared/src/editor/create-git-diff'
 import { GHOST_TEXT_COLOR } from '../commands/GhostHintDecorator'
 import type { AutoEditsProviderOptions } from './autoedits-provider'
 import type { CodeToReplaceData } from './prompt-utils'
-import { ThemeColor } from 'vscode'
-import { diff } from 'fast-myers-diff'
-
 
 interface ProposedChange {
     range: vscode.Range
@@ -30,31 +29,36 @@ const suggesterType = vscode.window.createTextEditorDecorationType({
 })
 
 function combineRanges(ranges: vscode.Range[], n: number): vscode.Range[] {
-    if (ranges.length === 0) return [];
+    if (ranges.length === 0) return []
     const sortedRanges = ranges.sort((a, b) =>
-        a.start.line !== b.start.line ? a.start.line - b.start.line : a.start.character - b.start.character
-    );
+        a.start.line !== b.start.line
+            ? a.start.line - b.start.line
+            : a.start.character - b.start.character
+    )
 
-    const combinedRanges: vscode.Range[] = [];
-    let currentRange = sortedRanges[0];
+    const combinedRanges: vscode.Range[] = []
+    let currentRange = sortedRanges[0]
 
     for (let i = 1; i < sortedRanges.length; i++) {
-        const nextRange = sortedRanges[i];
+        const nextRange = sortedRanges[i]
 
-        if (currentRange.end.line === nextRange.start.line &&
-            (nextRange.start.character - currentRange.end.character <= n || currentRange.intersection(nextRange))) {
+        if (
+            currentRange.end.line === nextRange.start.line &&
+            (nextRange.start.character - currentRange.end.character <= n ||
+                currentRange.intersection(nextRange))
+        ) {
             currentRange = new vscode.Range(
                 currentRange.start,
                 nextRange.end.character > currentRange.end.character ? nextRange.end : currentRange.end
-            );
+            )
         } else {
-            combinedRanges.push(currentRange);
-            currentRange = nextRange;
+            combinedRanges.push(currentRange)
+            currentRange = nextRange
         }
     }
 
-    combinedRanges.push(currentRange);
-    return combinedRanges;
+    combinedRanges.push(currentRange)
+    return combinedRanges
 }
 
 export class AutoEditsRenderer implements vscode.Disposable {
@@ -122,9 +126,7 @@ export class AutoEditsRenderer implements vscode.Disposable {
             const endPos = document.positionAt(to1)
             allRangesToRemove.push(new vscode.Range(startPos, endPos))
         }
-
-        // Combine ranges with a threshold of 5 characters
-        const combinedRangesToRemove = combineRanges(allRangesToRemove, 2);
+        const combinedRangesToRemove = combineRanges(allRangesToRemove, 0)
 
         const filename = displayPath(document.uri)
         const patch = structuredPatch(
@@ -134,10 +136,7 @@ export class AutoEditsRenderer implements vscode.Disposable {
             predictedFileText
         )
         let isChanged = false
-
-        // const removedRanges: vscode.Range[] = []
         const addedLines: DecorationLine[] = []
-
         for (const hunk of patch.hunks) {
             let oldLineNumber = hunk.oldStart
             let newLineNumber = hunk.newStart
@@ -148,16 +147,6 @@ export class AutoEditsRenderer implements vscode.Disposable {
                 }
                 if (line[0] === '-') {
                     isChanged = true
-                    const lineText = document.lineAt(oldLineNumber - 1).text
-                    const startChar = lineText.indexOf(line.slice(1))
-                    if (startChar !== -1) {
-                        // removedRanges.push(new vscode.Range(
-                        //     oldLineNumber - 1,
-                        //     startChar,
-                        //     oldLineNumber - 1,
-                        //     startChar + line.slice(1).length
-                        // ))
-                    }
                     oldLineNumber++
                 } else if (line[0] === '+') {
                     isChanged = true
@@ -169,12 +158,10 @@ export class AutoEditsRenderer implements vscode.Disposable {
                 }
             }
         }
-
         if (!isChanged) {
             await this.showNoChangeMessageAtCursor()
             return
         }
-
         editor.setDecorations(removedTextDecorationType, combinedRangesToRemove)
         editor.setDecorations(
             suggesterType,
