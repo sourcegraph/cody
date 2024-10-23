@@ -75,9 +75,9 @@ describe('gitRemoteUrlsForUri', () => {
 
         const remoteUrls = await gitRemoteUrlsForUri(fileUri)
         expect(remoteUrls).toEqual([
-            'https://github.com/username/yourproject.git',
-            'https://github.com/originalauthor/yourproject.git',
             'git@backupserver:repositories/yourproject.git',
+            'https://github.com/originalauthor/yourproject.git',
+            'https://github.com/username/yourproject.git',
         ])
     })
 
