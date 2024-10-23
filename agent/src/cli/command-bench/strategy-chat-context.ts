@@ -116,29 +116,35 @@ async function runContextCommand(
             )
         }
 
-        const resultsResp = await graphqlClient.contextSearch({
+        const resultsResp = await graphqlClient.contextSearchAlternatives({
             repoIDs,
             query,
             filePatterns: [],
+            codeResultsCount: 15,
+            textResultsCount: 5,
         })
+
         if (isError(resultsResp)) {
             throw new Error(`contextSearch failed for [${repoNames.join(',')}]: ${resultsResp}`)
         }
         if (resultsResp === null) {
             throw new Error(`contextSearch failed for [${repoNames.join(',')}]: null results`)
         }
-        const results = resultsResp ?? []
-        const actualContext: EvalContextItem[] = results.map(result => ({
-            repoName: result.repoName,
-            path: result.path,
-            startLine: result.startLine,
-            endLine: result.endLine,
-            content: result.content,
-        }))
 
-        exampleOutputs.push({
-            ...example,
-            actualContext,
+        const results = resultsResp ?? []
+        results.map(contextList => {
+            // TODO: use the name of the retriever as well
+            const actualContext: EvalContextItem[] = contextList.contextList.map(result => ({
+                repoName: result.repoName,
+                path: result.path,
+                startLine: result.startLine,
+                endLine: result.endLine,
+                content: result.content,
+            }))
+            exampleOutputs.push({
+                ...example,
+                actualContext,
+            })
         })
     }
 
