@@ -4,6 +4,7 @@ import type {
     AutocompleteContextSnippet,
     DocumentContext,
 } from '../../../../lib/shared/src/completions/types'
+import { lines } from '../../completions/text-processing'
 import type {
     ChatPrompt,
     PromptProvider,
@@ -11,7 +12,7 @@ import type {
     PromptResponseData,
 } from '../prompt-provider'
 import { getModelResponse } from '../prompt-provider'
-import { SYSTEM_PROMPT, getBaseUserPrompt } from '../prompt-utils'
+import { type CodeToReplaceData, SYSTEM_PROMPT, getBaseUserPrompt } from '../prompt-utils'
 
 export class FireworksPromptProvider implements PromptProvider {
     getPrompt(
@@ -42,8 +43,17 @@ export class FireworksPromptProvider implements PromptProvider {
         }
     }
 
-    postProcessResponse(response: string): string {
-        return response
+    postProcessResponse(codeToReplace: CodeToReplaceData, response: string): string {
+        // todo (hitesh): The finetuned model is messing up the identation of the first line.
+        // todo: correct it manully for now, by checking the first line of the code to rewrite and adding the same indentation to the first line of the completion
+        const codeToRewrite = codeToReplace.codeToRewrite.toString()
+        const codeToRewriteLines = lines(codeToRewrite)
+        const completionLines = lines(response)
+        const firstLineMatch = codeToRewriteLines[0].match(/^(\s*)/)
+        const firstLineIndentation = firstLineMatch ? firstLineMatch[1] : ''
+        completionLines[0] = firstLineIndentation + completionLines[0].trimLeft()
+        const completion = completionLines.join('\n')
+        return completion
     }
 
     async getModelResponse(
@@ -53,11 +63,11 @@ export class FireworksPromptProvider implements PromptProvider {
     ): Promise<string> {
         try {
             const response = await getModelResponse(
-                'https://api.fireworks.ai/inference/v1/chat/completions',
+                'https://sourcegraph-6c39ed29.direct.fireworks.ai/v1/chat/completions',
                 JSON.stringify({
                     model: model,
                     messages: prompt,
-                    temperature: 0.5,
+                    temperature: 0.2,
                     max_tokens: 256,
                     response_format: {
                         type: 'text',
