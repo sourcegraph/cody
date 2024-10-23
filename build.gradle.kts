@@ -63,6 +63,7 @@ plugins {
 val platformVersion: String by project
 val platformType: String by project
 val javaVersion: String by project
+val majorPlatformVersion = platformVersion.split(".").first()
 
 group = properties("pluginGroup")!!
 
@@ -126,6 +127,10 @@ dependencies {
     instrumentationTools()
     pluginVerifier()
     testFramework(TestFrameworkType.Platform)
+
+    if (majorPlatformVersion.toInt() >= 2024) {
+      bundledModule("intellij.platform.vcs.dvcs.impl")
+    }
   }
 
   implementation("org.commonmark:commonmark:0.22.0")
@@ -256,6 +261,8 @@ fun Test.sharedIntegrationTestConfig(buildCodyDir: File, mode: String) {
   classpath = sourceSets["integrationTest"].runtimeClasspath
 
   include("**/AllSuites.class")
+
+  maxHeapSize = "8G"
 
   jvmArgs(
       "-Djava.system.class.loader=com.intellij.util.lang.PathClassLoader",
@@ -586,6 +593,8 @@ tasks {
   test { dependsOn(project.tasks.getByPath("buildCody")) }
 
   sourceSets {
+    main { kotlin.srcDir("src/intellij${majorPlatformVersion}/kotlin") }
+
     create("integrationTest") {
       kotlin.srcDir("src/integrationTest/kotlin")
       compileClasspath += main.get().output + configurations.testCompileClasspath.get()
