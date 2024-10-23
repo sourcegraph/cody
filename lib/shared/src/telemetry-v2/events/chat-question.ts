@@ -55,10 +55,12 @@ export const events = [
                         // See https://github.com/sourcegraph/sourcegraph/pull/59524
                         recordsPrivateMetadataTranscript: recordTranscript ? 1 : 0,
                         isPublicRepo: params.repoIsPublic ? 1 : 0,
+                        // TODO: Remove this field when the transition from commands to prompts is complete
                         isCommand: params.command ? 1 : 0,
                     },
                     privateMetadata: {
                         chatModel: params.chatModel,
+                        // TODO: Remove this field when the transition from commands to prompts is complete
                         command: params.command,
                         requestID: params.requestID,
                         sessionID: params.sessionID,
@@ -140,6 +142,7 @@ export const events = [
                         detectedIntent: params.detectedIntent
                             ? map.intent(params.detectedIntent)
                             : undefined,
+                        // TODO: Remove this field when the transition from commands to prompts is complete
                         isCommand: params.command ? 1 : 0,
                         ...metadata,
                         recordsPrivateMetadataTranscript: recordTranscript ? 1 : 0,
@@ -155,6 +158,7 @@ export const events = [
                               )
                             : undefined,
                         detectedIntent: params.detectedIntent,
+                        // TODO: Remove this field when the transition from commands to prompts is complete
                         command: params.command,
                         userSpecifiedIntent: params.userSpecifiedIntent,
                         traceId: spans.current.spanContext().traceId,
