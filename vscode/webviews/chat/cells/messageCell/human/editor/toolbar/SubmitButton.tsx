@@ -1,48 +1,63 @@
 import type { ChatMessage } from '@sourcegraph/cody-shared'
+import { CodyIDE } from '@sourcegraph/cody-shared'
 import clsx from 'clsx'
 import { BadgeCheck, BetweenHorizonalEnd, Pencil, Search } from 'lucide-react'
 import type { FC } from 'react'
+import { useMemo } from 'react'
 import { Kbd } from '../../../../../../components/Kbd'
 import { Button } from '../../../../../../components/shadcn/ui/button'
 import { Command, CommandItem, CommandList } from '../../../../../../components/shadcn/ui/command'
 import { ToolbarPopoverItem } from '../../../../../../components/shadcn/ui/toolbar'
 import { Tooltip, TooltipContent, TooltipTrigger } from '../../../../../../components/shadcn/ui/tooltip'
+import { useConfig } from '../../../../../../utils/useConfig'
 import { useExperimentalOneBox } from '../../../../../../utils/useExperimentalOneBox'
 import { CodyIcon } from '../../../../../components/CodyIcon'
 
 export type SubmitButtonState = 'submittable' | 'emptyEditorValue' | 'waitingResponseComplete'
 
-const IntentOptions: {
+interface IntentOption {
     title: string
     icon: React.FC<{ className?: string }>
     intent: ChatMessage['intent']
-}[] = [
-    {
-        title: 'Best for question',
-        icon: BadgeCheck,
-        intent: undefined,
-    },
-    {
-        title: 'Ask the LLM',
-        icon: CodyIcon,
-        intent: 'chat',
-    },
-    {
-        title: 'Search Code',
-        icon: Search,
-        intent: 'search',
-    },
-    {
-        title: 'Edit Code',
-        icon: Pencil,
-        intent: 'edit',
-    },
-    {
-        title: 'Insert Code',
-        icon: BetweenHorizonalEnd,
-        intent: 'insert',
-    },
-]
+}
+
+function getIntentOptions(ide: CodyIDE): IntentOption[] {
+    const standardOneBoxIntents: IntentOption[] = [
+        {
+            title: 'Best for question',
+            icon: BadgeCheck,
+            intent: undefined,
+        },
+        {
+            title: 'Ask the LLM',
+            icon: CodyIcon,
+            intent: 'chat',
+        },
+        {
+            title: 'Search Code',
+            icon: Search,
+            intent: 'search',
+        },
+    ]
+
+    if (ide === CodyIDE.Web) {
+        return standardOneBoxIntents
+    }
+
+    return [
+        ...standardOneBoxIntents,
+        {
+            title: 'Edit Code',
+            icon: Pencil,
+            intent: 'edit',
+        },
+        {
+            title: 'Insert Code',
+            icon: BetweenHorizonalEnd,
+            intent: 'insert',
+        },
+    ]
+}
 
 export const SubmitButton: FC<{
     onClick: (intent?: ChatMessage['intent']) => void
@@ -53,6 +68,11 @@ export const SubmitButton: FC<{
     onSelectIntent?: (intent: ChatMessage['intent']) => void
 }> = ({ onClick, state = 'submittable', className, intent, onSelectIntent }) => {
     const experimentalOneBoxEnabled = useExperimentalOneBox()
+    const {
+        clientCapabilities: { agentIDE },
+    } = useConfig()
+
+    const intentOptions = useMemo(() => getIntentOptions(agentIDE), [agentIDE])
 
     if (state === 'waitingResponseComplete') {
         return (
@@ -79,7 +99,7 @@ export const SubmitButton: FC<{
         )
     }
 
-    const selectedIntent = IntentOptions.find(option => option.intent === intent)
+    const selectedIntent = intentOptions.find(option => option.intent === intent)
 
     return (
         <div className="tw-flex tw-items-center">
@@ -125,7 +145,7 @@ export const SubmitButton: FC<{
                     popoverContent={close => (
                         <Command>
                             <CommandList>
-                                {IntentOptions.map(option => (
+                                {intentOptions.map(option => (
                                     <CommandItem
                                         key={option.intent}
                                         onSelect={() => {
