@@ -117,7 +117,7 @@ export class RepoNameResolver {
                         // even without active subscribers. It's essential for
                         // `getRepoNameCached` in `ContextFiltersProvider`, which is
                         // part of the latency-sensitive autocomplete critical path.
-                        shouldRefCount: false,
+                        shouldCountRefs: false,
                     }
                 ),
                 map(value => {
