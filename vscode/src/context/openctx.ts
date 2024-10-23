@@ -216,7 +216,9 @@ function getMergeConfigurationFunction(
         }
         const providers: OpenCtxClientConfiguration['providers'] = {}
         // Prefer user configured providers
-        for (const [k, v] of Object.entries(configuration.providers || localSettingsProviders || {})) {
+        for (const [k, v] of Object.entries(
+            viewerSettingsProviders || configuration.providers || localSettingsProviders || {}
+        )) {
             providers[k] = v
         }
         return {
