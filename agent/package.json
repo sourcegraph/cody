@@ -103,6 +103,22 @@
     "yaml": "^2.3.4"
   },
   "dependencies": {
+    "@openctx/provider-azure-devops-workitems": "^0.0.6",
+    "@openctx/provider-confluence": "^0.0.7",
+    "@openctx/provider-devdocs": "^0.0.10",
+    "@openctx/provider-github": "^0.0.9",
+    "@openctx/provider-google-docs": "^0.0.15",
+    "@openctx/provider-jira": "^0.0.13",
+    "@openctx/provider-linear-docs": "^0.0.5",
+    "@openctx/provider-linear-issues": "^0.0.9",
+    "@openctx/provider-links": "^0.0.20",
+    "@openctx/provider-notion": "^0.0.6",
+    "@openctx/provider-prometheus": "^0.0.18",
+    "@openctx/provider-semgrep": "^0.0.7",
+    "@openctx/provider-slack": "^0.0.9",
+    "@openctx/provider-sourcegraph-search": "^0.0.11",
+    "@openctx/provider-storybook": "^0.0.17",
+    "@openctx/provider-web": "^0.0.11",
     "csv-parse": "^5.5.6"
   }
 }
