@@ -132,9 +132,15 @@ const PromptsMigrationInitial: FC<PromptsMigrationInitial> = props => {
                     </Button>
                 )}
 
-                <Button variant="outline" className={styles.action}>
-                    Explore docs
-                    <LucideExternalLink size={16} />
+                <Button variant="outline" className={styles.action} asChild={true}>
+                    <a
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        href="https://sourcegraph.com/docs/cody/capabilities/commands#prompt-library"
+                    >
+                        Explore docs
+                        <LucideExternalLink size={16} />
+                    </a>
                 </Button>
             </div>
 

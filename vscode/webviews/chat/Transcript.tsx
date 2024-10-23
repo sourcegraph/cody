@@ -395,7 +395,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                     {humanMessage.intent === 'search' ? (
                         <div className="tw-flex tw-justify-between tw-gap-4 tw-items-center">
                             <span>Intent detection selected a code search response.</span>
-                            <div>
+                            <div className="tw-shrink-0 tw-self-start">
                                 <Button
                                     size="sm"
                                     variant="outline"
@@ -410,7 +410,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                     ) : (
                         <div className="tw-flex tw-justify-between tw-gap-4 tw-items-center">
                             <span>Intent detection selected an LLM response.</span>
-                            <div>
+                            <div className="tw-shrink-0 tw-self-start">
                                 <Button
                                     size="sm"
                                     variant="outline"
