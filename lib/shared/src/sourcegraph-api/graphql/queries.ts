@@ -5,6 +5,14 @@ query CurrentUser {
     }
 }`
 
+export const CURRENT_USER_ROLE_QUERY = `
+query CurrentUserRole {
+    currentUser {
+        id
+        siteAdmin
+    }
+}`
+
 export const CURRENT_USER_CODY_PRO_ENABLED_QUERY = `
 query CurrentUserCodyProEnabled {
     currentUser {
@@ -354,6 +362,7 @@ query ViewerPrompts($query: String!) {
             description
             draft
             autoSubmit
+            mode
             definition {
                 text
             }
@@ -432,6 +441,22 @@ mutation RecordTelemetryEvents($events: [TelemetryEventInput!]!) {
 			alwaysNil
 		}
 	}
+}
+`
+
+export const CREATE_PROMPT_MUTATION = `
+mutation CreatePrompt($input: PromptInput!) {
+    createPrompt(input: $input) {
+        id
+    }
+}
+`
+
+export const CHANGE_PROMPT_VISIBILITY = `
+mutation ChangePromptVisibility($id: ID!, $newVisibility: PromptVisibility!) {
+    changePromptVisibility(id: $id, newVisibility: $newVisibility) {
+        id
+    }
 }
 `
 

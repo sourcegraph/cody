@@ -76,7 +76,7 @@ class CommandsController implements vscode.Disposable {
 
             // Process default commands
             if (isDefaultChatCommand(commandKey) || isDefaultEditCommand(commandKey)) {
-                return executeDefaultCommand(commandKey, additionalInstruction)
+                return executeDefaultCommand(commandKey, { ...args, additionalInstruction })
             }
 
             const command = this.provider?.get(commandKey)

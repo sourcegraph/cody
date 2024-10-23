@@ -70,6 +70,40 @@ export function currentSiteVersion(): Promise<SiteAndCodyAPIVersions | null> {
     return firstResultFromOperation(siteVersionStorage.observable)
 }
 
+interface CheckVersionInput {
+    currentVersion: string
+    minimumVersion: string
+    insider?: boolean
+}
+
+export async function isValidVersion({ minimumVersion }: { minimumVersion: string }): Promise<boolean> {
+    const currentVersion = await currentSiteVersion()
+
+    if (currentVersion === null) {
+        return false
+    }
+
+    return checkVersion({ minimumVersion, currentVersion: currentVersion.siteVersion })
+}
+
+/**
+ * Checks if the current site version is valid based on the given criteria.
+ *
+ * @param options - The options for version validation.
+ * @param options.minimumVersion - The minimum version required.
+ * @param options.insider - Whether to consider insider builds as valid. Defaults to true.
+ * @returns A promise that resolves to a boolean indicating if the version is valid.
+ */
+export function checkVersion({
+    minimumVersion,
+    currentVersion,
+    insider = true,
+}: CheckVersionInput): boolean {
+    const isInsiderBuild = currentVersion.length > 12 || currentVersion.includes('dev')
+
+    return (insider && isInsiderBuild) || semver.gte(currentVersion, minimumVersion)
+}
+
 type CodyApiVersion = 0 | 1 | 2
 
 /** @internal Exported for testing only. */

@@ -49,7 +49,7 @@ interface Options extends MessageProviderOptions {
 
 export class ChatsController implements vscode.Disposable {
     // Chat view in the panel (typically in the sidebar)
-    private panel: ChatController
+    private readonly panel: ChatController
 
     // Chat views in editor panels
     private editors: ChatController[] = []
@@ -65,9 +65,7 @@ export class ChatsController implements vscode.Disposable {
     constructor(
         private options: Options,
         private chatClient: ChatClient,
-
         private readonly contextRetriever: ContextRetriever,
-
         private readonly guardrails: Guardrails,
         private readonly chatIntentAPIClient: ChatIntentAPIClient | null,
         private readonly extensionClient: ExtensionClient

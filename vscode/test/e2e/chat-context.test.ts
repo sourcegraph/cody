@@ -20,7 +20,7 @@ test('chat followup context', async ({ page, sidebar }) => {
 
     const contextCells = getContextCell(chatFrame)
     expect(contextCells).toHaveCount(1)
-    expect(contextCells.first()).toHaveText(/Context/)
+    expect(contextCells.first()).toHaveText(/Fetched context/)
     await openContextCell(contextCells.first())
     await expect(contextCells.first()).toHaveText(/Main\.java/)
 

@@ -1,4 +1,4 @@
-import type { Action } from '@sourcegraph/cody-shared'
+import type { Action, ChatMessage } from '@sourcegraph/cody-shared'
 import { useClientActionDispatcher } from '../client/clientState'
 import { useLocalStorage } from '../components/hooks'
 import { PromptList } from '../components/promptList/PromptList'
@@ -6,16 +6,22 @@ import { View } from '../tabs/types'
 import { getVSCodeAPI } from '../utils/VSCodeApi'
 
 import { firstValueFrom } from '@sourcegraph/cody-shared'
+import type { PromptMode } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
 import { useExtensionAPI } from '@sourcegraph/prompt-editor'
+import { PromptMigrationWidget } from '../components/promptsMigration/PromptsMigration'
 import styles from './PromptsTab.module.css'
 
 export const PromptsTab: React.FC<{
     setView: (view: View) => void
-}> = ({ setView }) => {
+    isUnifiedPromptsEnabled?: boolean
+}> = ({ setView, isUnifiedPromptsEnabled }) => {
     const runAction = useActionSelect()
 
     return (
-        <div className="tw-overflow-auto tw-h-full">
+        <div className="tw-overflow-auto tw-h-full tw-flex tw-flex-col tw-gap-6">
+            {isUnifiedPromptsEnabled && (
+                <PromptMigrationWidget dismissible={false} className={styles.promptMigrationWidget} />
+            )}
             <PromptList
                 showSearch={true}
                 showCommandOrigins={true}
@@ -24,10 +30,24 @@ export const PromptsTab: React.FC<{
                 showPromptLibraryUnsupportedMessage={true}
                 showOnlyPromptInsertableCommands={false}
                 onSelect={item => runAction(item, setView)}
+                className={styles.promptsContainer}
                 inputClassName={styles.promptsInput}
             />
         </div>
     )
+}
+
+const promptModeToIntent = (mode?: PromptMode): ChatMessage['intent'] => {
+    switch (mode) {
+        case 'CHAT':
+            return 'chat'
+        case 'EDIT':
+            return 'edit'
+        case 'INSERT':
+            return 'insert'
+        default:
+            return 'chat'
+    }
 }
 
 export function useActionSelect() {
@@ -56,6 +76,7 @@ export function useActionSelect() {
                 dispatchClientAction(
                     {
                         editorState: promptEditorState,
+                        setLastHumanInputIntent: promptModeToIntent(action.mode),
                         submitHumanInput: action.autoSubmit,
                     },
                     // Buffer because PromptEditor is not guaranteed to be mounted after the `setView`

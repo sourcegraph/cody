@@ -177,7 +177,9 @@ function iconForContextItem(contextItem: SerializedContextItem): React.Component
               ? SYMBOL_CONTEXT_MENTION_PROVIDER.id
               : contextItem.type === 'repository' || contextItem.type === 'tree'
                 ? REMOTE_REPOSITORY_PROVIDER_URI
-                : contextItem.providerUri
+                : contextItem.type === 'openctx'
+                  ? contextItem.providerUri
+                  : 'unknown'
     return iconForProvider[providerUri] ?? AtSignIcon
 }
 

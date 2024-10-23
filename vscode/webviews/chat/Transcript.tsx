@@ -13,7 +13,7 @@ import { type PromptEditorRefAPI, useExtensionAPI } from '@sourcegraph/prompt-ed
 import { clsx } from 'clsx'
 import debounce from 'lodash/debounce'
 import isEqual from 'lodash/isEqual'
-import { Search } from 'lucide-react'
+import { ArrowBigUp, AtSign, Search } from 'lucide-react'
 import {
     type FC,
     type MutableRefObject,
@@ -358,6 +358,16 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
 
     const resetIntent = useCallback(() => setIntentResults(undefined), [setIntentResults])
 
+    const manuallyEditContext = useCallback(() => {
+        const contextFiles = humanMessage.contextFiles
+        const editor = humanEditorRef.current
+        if (!contextFiles || !editor) {
+            return
+        }
+        editor.filterMentions(item => item.type !== 'repository')
+        editor.addMentions(contextFiles, undefined, 'before', '\n')
+    }, [humanMessage.contextFiles])
+
     return (
         <>
             <HumanMessageCell
@@ -428,6 +438,22 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                     reSubmitWithChatIntent={reSubmitWithChatIntent}
                     isContextLoading={isContextLoading}
                     onAddToFollowupChat={onAddToFollowupChat}
+                    onManuallyEditContext={manuallyEditContext}
+                    editContextText={
+                        humanMessage.intent === 'search' ? (
+                            <>
+                                <ArrowBigUp className="-tw-mr-6 tw-py-0" />
+                                <AtSign className="-tw-mr-2 tw-py-2" />
+                                <div>Edit results as mentions</div>
+                            </>
+                        ) : (
+                            <>
+                                <ArrowBigUp className="-tw-mr-6 tw-py-0" />
+                                <AtSign className="-tw-mr-2 tw-py-2" />
+                                <div>Copy and edit as mentions</div>
+                            </>
+                        )
+                    }
                 />
             )}
             {(!experimentalOneBoxEnabled || humanMessage.intent !== 'search') &&

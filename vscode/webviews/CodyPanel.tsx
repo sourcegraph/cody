@@ -2,6 +2,7 @@ import {
     type AuthStatus,
     type ClientCapabilitiesWithLegacyFields,
     CodyIDE,
+    FeatureFlag,
 } from '@sourcegraph/cody-shared'
 import { useExtensionAPI, useObservable } from '@sourcegraph/prompt-editor'
 import type React from 'react'
@@ -14,6 +15,7 @@ import { Notices } from './components/Notices'
 import { StateDebugOverlay } from './components/StateDebugOverlay'
 import { TabContainer, TabRoot } from './components/shadcn/ui/tabs'
 import { AccountTab, HistoryTab, PromptsTab, SettingsTab, TabsBar, View } from './tabs'
+import { useFeatureFlag } from './utils/useFeatureFlags'
 import { TabViewContext } from './utils/useTabView'
 
 /**
@@ -62,6 +64,7 @@ export const CodyPanel: FunctionComponent<
 
     const api = useExtensionAPI()
     const { value: chatModels } = useObservable(useMemo(() => api.chatModels(), [api.chatModels]))
+    const isUnifiedPromptsEnabled = useFeatureFlag(FeatureFlag.CodyUnifiedPrompts)
 
     return (
         <TabViewContext.Provider value={useMemo(() => ({ view, setView }), [view, setView])}>
@@ -94,6 +97,7 @@ export const CodyPanel: FunctionComponent<
                             showWelcomeMessage={showWelcomeMessage}
                             scrollableParent={tabContainerRef.current}
                             smartApplyEnabled={smartApplyEnabled}
+                            isUnifiedPromptsEnabled={isUnifiedPromptsEnabled}
                             setView={setView}
                         />
                     )}
@@ -105,7 +109,12 @@ export const CodyPanel: FunctionComponent<
                             multipleWebviewsEnabled={config.multipleWebviewsEnabled}
                         />
                     )}
-                    {view === View.Prompts && <PromptsTab setView={setView} />}
+                    {view === View.Prompts && (
+                        <PromptsTab
+                            setView={setView}
+                            isUnifiedPromptsEnabled={isUnifiedPromptsEnabled}
+                        />
+                    )}
                     {view === View.Account && <AccountTab setView={setView} />}
                     {view === View.Settings && <SettingsTab />}
                 </TabContainer>
