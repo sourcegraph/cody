@@ -52,7 +52,7 @@ export interface PromptEditorRefAPI {
     setFocus(focus: boolean, options?: { moveCursorToEnd?: boolean }, cb?: () => void): void
     appendText(text: string, cb?: () => void): void
     addMentions(items: ContextItem[], cb?: () => void, position?: 'before' | 'after', sep?: string): void
-    removeMentions(filter: (item: SerializedContextItem) => boolean, cb?: () => void): void
+    filterMentions(filter: (item: SerializedContextItem) => boolean, cb?: () => void): void
     setInitialContextMentions(items: ContextItem[], cb?: () => void): void
     setEditorState(state: SerializedPromptEditorState, cb?: () => void): void
 }
@@ -145,7 +145,7 @@ export const PromptEditor: FunctionComponent<Props> = ({
                     { onUpdate: cb }
                 )
             },
-            removeMentions(filter: (item: SerializedContextItem) => boolean, cb?: () => void): void {
+            filterMentions(filter: (item: SerializedContextItem) => boolean, cb?: () => void): void {
                 if (!editorRef.current) {
                     cb?.()
                     return

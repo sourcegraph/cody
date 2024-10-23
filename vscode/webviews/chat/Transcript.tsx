@@ -364,7 +364,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
         if (!contextFiles || !editor) {
             return
         }
-        editor.removeMentions(item => item.type !== 'repository')
+        editor.filterMentions(item => item.type !== 'repository')
         editor.addMentions(contextFiles, undefined, 'before', '\n')
     }, [humanMessage.contextFiles])
 
