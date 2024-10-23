@@ -444,13 +444,13 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                             <Button size="sm" variant="outline" className="tw-pr-4">
                                 <ArrowBigUp className="-tw-mr-6 tw-py-0" />
                                 <AtSign className="-tw-mr-2 tw-py-2" />
-                                <div>Copy results to mentions</div>
+                                <div>Edit results as mentions</div>
                             </Button>
                         ) : (
                             <Button size="sm" variant="outline" className="tw-pr-4">
                                 <ArrowBigUp className="-tw-mr-6 tw-py-0" />
                                 <AtSign className="-tw-mr-2 tw-py-2" />
-                                <div>Edit results as mentions</div>
+                                <div>Copy and edit as mentions</div>
                             </Button>
                         )
                     }
