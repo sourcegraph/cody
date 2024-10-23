@@ -1,4 +1,4 @@
-// 🚨 This patch file mast have NO additional dependencies as import order
+// 🚨 This patch file must have NO additional dependencies as import order
 // changes might cause modules to load before the networking is patched.
 import EventEmitter from 'node:events'
 import type * as http from 'node:http'
@@ -11,8 +11,6 @@ import type * as internalVSCodeAgent from './vscode-network-proxy'
 export const bypassVSCodeSymbol = Symbol('bypassVSCodeSymbol')
 let patched = false
 patchNetworkStack()
-// This needs to happen after so that we don't break import order
-globalAgentRef.blockEarlyAccess = true
 
 function patchNetworkStack(): void {
     if (patched) {

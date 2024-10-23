@@ -58,17 +58,17 @@ export class AgentGlobalState implements vscode.Memento {
         return [localStorage.LAST_USED_ENDPOINT, localStorage.ANONYMOUS_USER_ID_KEY, ...this.db.keys()]
     }
 
-    public get<T>(key: string, defaultValue?: unknown): any {
+    public get<T>(key: string, defaultValue?: T): T {
         if (this.manager === 'server') {
             return this.db.get(key) ?? defaultValue
         }
         switch (key) {
             case localStorage.LAST_USED_ENDPOINT:
-                return vscode_shim.extensionConfiguration?.serverEndpoint
+                return vscode_shim.extensionConfiguration?.serverEndpoint as T
             case localStorage.ANONYMOUS_USER_ID_KEY:
                 // biome-ignore lint/suspicious/noFallthroughSwitchClause: This is intentional
                 if (vscode_shim.extensionConfiguration?.anonymousUserID) {
-                    return vscode_shim.extensionConfiguration?.anonymousUserID
+                    return vscode_shim.extensionConfiguration?.anonymousUserID as T
                 }
             default:
                 return this.db.get(key) ?? defaultValue
@@ -86,7 +86,7 @@ export class AgentGlobalState implements vscode.Memento {
 }
 
 interface DB {
-    get(key: string): any
+    get(key: string): any | undefined
     set(key: string, value: any): void
     keys(): readonly string[]
     clear(): void
@@ -95,7 +95,7 @@ interface DB {
 class InMemoryDB implements DB {
     private store = new Map<string, any>()
 
-    get(key: string): any {
+    get(key: string): any | undefined {
         return this.store.get(key)
     }
 
@@ -112,7 +112,7 @@ class InMemoryDB implements DB {
     }
 }
 
-class LocalStorageDB implements DB {
+export class LocalStorageDB implements DB {
     storage: LocalStorage
 
     constructor(ide: string, dir: string) {
@@ -123,12 +123,20 @@ class LocalStorageDB implements DB {
         this.storage.clear()
     }
 
-    get(key: string): any {
+    get(key: string): any | undefined {
         const item = this.storage.getItem(key)
-        return item ? JSON.parse(item) : undefined
+        try {
+            return item ? JSON.parse(item) : undefined
+        } catch (error) {
+            return undefined
+        }
     }
     set(key: string, value: any): void {
-        this.storage.setItem(key, JSON.stringify(value))
+        if (value !== null && value !== undefined) {
+            this.storage.setItem(key, JSON.stringify(value))
+        } else {
+            this.storage.removeItem(key)
+        }
     }
     keys(): readonly string[] {
         const keys = []

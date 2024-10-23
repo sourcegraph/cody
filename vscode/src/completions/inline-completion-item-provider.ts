@@ -24,7 +24,6 @@ import { isInTutorial } from '../tutorial/helpers'
 
 import type { CompletionBookkeepingEvent, CompletionItemID, CompletionLogID } from './analytics-logger'
 import * as CompletionAnalyticsLogger from './analytics-logger'
-import { getArtificialDelay } from './artificial-delay'
 import { completionProviderConfig } from './completion-provider-config'
 import { ContextMixer } from './context/context-mixer'
 import { DefaultContextStrategyFactory } from './context/context-strategy'
@@ -129,8 +128,6 @@ export class InlineCompletionItemProvider
     public get config(): InlineCompletionItemProviderConfig {
         return InlineCompletionItemProviderConfigSingleton.configuration
     }
-    private disableLowPerfLangDelay = false
-
     constructor({
         completeSuggestWidgetSelection = true,
         triggerDelay = 0,
@@ -194,16 +191,6 @@ export class InlineCompletionItemProvider
 
         void completionProviderConfig.prefetch()
 
-        // Subscribe to changes in disableLowPerfLangDelay and update the value accordingly
-        this.disposables.push(
-            subscriptionDisposable(
-                completionProviderConfig.completionDisableLowPerfLangDelay.subscribe(
-                    disableLowPerfLangDelay => {
-                        this.disableLowPerfLangDelay = disableLowPerfLangDelay
-                    }
-                )
-            )
-        )
         const strategyFactory = new DefaultContextStrategyFactory(
             completionProviderConfig.contextStrategy
         )
@@ -458,12 +445,6 @@ export class InlineCompletionItemProvider
                 return null
             }
 
-            const artificialDelay = getArtificialDelay({
-                languageId: document.languageId,
-                codyAutocompleteDisableLowPerfLangDelay: this.disableLowPerfLangDelay,
-                completionIntent,
-            })
-
             const debounceInterval = this.config.provider.mayUseOnDeviceInference ? 125 : 75
             stageRecorder.record('preGetInlineCompletions')
 
@@ -495,7 +476,6 @@ export class InlineCompletionItemProvider
                     handleDidPartiallyAcceptCompletionItem:
                         this.unstable_handleDidPartiallyAcceptCompletionItem.bind(this),
                     completeSuggestWidgetSelection: takeSuggestWidgetSelectionIntoAccount,
-                    artificialDelay,
                     firstCompletionTimeout: this.config.firstCompletionTimeout,
                     completionIntent,
                     lastAcceptedCompletionItem: this.lastAcceptedCompletionItem,

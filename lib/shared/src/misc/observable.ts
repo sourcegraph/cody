@@ -245,7 +245,7 @@ export function promiseFactoryToObservable<T>(
                 }
             }
         }
-        run()
+        void run()
 
         return () => {
             unsubscribed = true
@@ -562,10 +562,31 @@ export function pick<T, K extends keyof T>(
 // biome-ignore lint/suspicious/noConfusingVoidType:
 export type UnsubscribableLike = Unsubscribable | (() => void) | void | null
 
+export type ShareReplayConfig = {
+    /**
+     * When `shouldCountRefs` is true (default), the source observable will be unsubscribed when the number of
+     * subscribers (reference count) drops to zero. This means that when there are no active subscribers,
+     * the observable will stop emitting values and release resources, and future subscribers will trigger
+     * a new subscription to the source observable.
+     *
+     * If `shouldCountRefs` is false (the default behavior in RxJS), the source observable will remain
+     * active even when there are no subscribers. This is useful when you want to keep an expensive
+     * or long-running observable alive, avoiding the need for a costly re-subscription when new
+     * subscribers join later.
+     *
+     * See more context and examples at: https://rxjs.dev/api/operators/shareReplay
+     * It has a similar but _not_ identical implementation.
+     */
+    shouldCountRefs: boolean
+}
+
 let shareReplaySeq = 0
-export function shareReplay<T>(): (observable: ObservableLike<T>) => Observable<T> {
+export function shareReplay<T>(
+    config?: ShareReplayConfig
+): (observable: ObservableLike<T>) => Observable<T> {
     // NOTE(sqs): This is helpful for debugging why shareReplay does not have a buffered value.
     const shouldLog = false
+    const shouldCountRefs = config?.shouldCountRefs ?? true
     const logID = shareReplaySeq++
     function logDebug(msg: string, ...args: any[]): void {
         if (shouldLog) console.debug(`shareReplay#${logID}:`, msg, ...args)
@@ -601,7 +622,7 @@ export function shareReplay<T>(): (observable: ObservableLike<T>) => Observable<
             return () => {
                 refCount--
                 innerSub.unsubscribe()
-                if (refCount === 0) {
+                if (shouldCountRefs && refCount === 0) {
                     if (subscription) {
                         unsubscribe(subscription)
                         subscription = null

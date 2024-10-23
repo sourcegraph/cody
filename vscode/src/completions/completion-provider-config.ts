@@ -34,7 +34,6 @@ class CompletionProviderConfig {
             FeatureFlag.CodyAutocompletePreloadingExperimentBaseFeatureFlag,
             FeatureFlag.CodyAutocompletePreloadingExperimentVariant1,
             FeatureFlag.CodyAutocompletePreloadingExperimentVariant2,
-            FeatureFlag.CodyAutocompleteDisableLowPerfLangDelay,
             FeatureFlag.CodyAutocompleteDataCollectionFlag,
             FeatureFlag.CodyAutocompleteTracing,
             FeatureFlag.CodyAutocompleteFastPath,
@@ -181,12 +180,6 @@ class CompletionProviderConfig {
                 )
             })
         )
-    }
-
-    public get completionDisableLowPerfLangDelay(): Observable<boolean> {
-        return featureFlagProvider
-            .evaluatedFeatureFlag(FeatureFlag.CodyAutocompleteDisableLowPerfLangDelay)
-            .pipe(distinctUntilChanged())
     }
 
     public get completionDataCollectionFlag(): Observable<boolean> {
