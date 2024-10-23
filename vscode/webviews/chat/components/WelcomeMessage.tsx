@@ -33,9 +33,8 @@ export const WelcomeMessage: FunctionComponent<WelcomeMessageProps> = ({
                     appearanceMode="chips-list"
                     telemetryLocation="PromptsTab"
                     showCommandOrigins={true}
-                    showPromptLibraryUnsupportedMessage={false}
                     showOnlyPromptInsertableCommands={false}
-                    includeEditCommandOnTop={true}
+                    showPromptLibraryUnsupportedMessage={false}
                     onSelect={item => runAction(item, setView)}
                 />
 
