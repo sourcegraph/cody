@@ -73,6 +73,10 @@ Cody Enterprise can search context from your entire remote codebase using Source
 - [Discord](https://discord.gg/s2qDtYGnAE)
 - [Twitter (@sourcegraph)](https://twitter.com/sourcegraph)
 
+## Set Up & Contribute
+
+Please take a look at CONTRIBUTING.md for more information about how to set up this project and contribute.
+
 ## More Information
 
 See [https://cody.dev/](https://about.sourcegraph.com/cody?utm_source=marketplace.visualstudio.com&utm_medium=referral) for demos, information and more.
