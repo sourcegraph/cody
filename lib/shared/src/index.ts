@@ -59,10 +59,11 @@ export type {
     SerializedChatInteraction,
     SerializedChatTranscript,
 } from './chat/transcript'
-export { serializeChatMessage } from './chat/transcript'
 export {
     errorToChatError,
     DEFAULT_EVENT_SOURCE,
+    serializeChatMessage,
+    deserializeChatMessage,
 } from './chat/transcript/messages'
 export type {
     AccountKeyedChatHistory,

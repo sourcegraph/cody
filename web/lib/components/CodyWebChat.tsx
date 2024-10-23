@@ -8,8 +8,8 @@ import {
     type ContextItemOpenCtx,
     type ContextItemRepository,
     ContextItemSource,
-    PromptString,
     REMOTE_DIRECTORY_PROVIDER_URI,
+    deserializeChatMessage,
     isErrorLike,
     setDisplayPathEnvInfo,
 } from '@sourcegraph/cody-shared'
@@ -116,9 +116,7 @@ const CodyWebPanel: FC<CodyWebPanelProps> = props => {
         vscodeAPI.onMessage(message => {
             switch (message.type) {
                 case 'transcript': {
-                    const deserializedMessages = message.messages.map(
-                        PromptString.unsafe_deserializeChatMessage
-                    )
+                    const deserializedMessages = message.messages.map(deserializeChatMessage)
                     if (message.isMessageInProgress) {
                         const msgLength = deserializedMessages.length - 1
                         setTranscript(deserializedMessages.slice(0, msgLength))
