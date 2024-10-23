@@ -127,7 +127,7 @@ export const SubmitButton: FC<{
                             <CommandList>
                                 {IntentOptions.map(option => (
                                     <CommandItem
-                                        key={option.intent}
+                                        key={option.intent ?? option.title}
                                         onSelect={() => {
                                             onSelectIntent?.(option.intent)
                                             close()

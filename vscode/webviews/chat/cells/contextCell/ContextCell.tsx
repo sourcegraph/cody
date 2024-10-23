@@ -94,10 +94,12 @@ export const ContextCell: FunctionComponent<{
             isForFirstMessage
         )
 
-        const [isExpanded, setExpandedd] = useState(false)
+        const [accordionValue, setAccordionValue] = useState(
+            ((__storybook__initialOpen || defaultOpen) && 'item-1') || undefined
+        )
 
         const triggerAccordion = useCallback(() => {
-            setExpandedd(prev => !prev)
+            setAccordionValue(prev => (prev ? '' : 'item-1'))
             telemetryRecorder.recordEvent('cody.contextCell', 'opened', {
                 metadata: {
                     fileCount: new Set(usedContext.map(file => file.uri.toString())).size,
@@ -130,8 +132,6 @@ export const ContextCell: FunctionComponent<{
 
         const [showAllResults, setShowAllResults] = useState(false)
 
-        const accordianValue = isExpanded ? 'item-1' : ''
-
         return (
             <div>
                 {(contextItemsToDisplay === undefined || contextItemsToDisplay.length !== 0) && (
@@ -143,7 +143,7 @@ export const ContextCell: FunctionComponent<{
                         }
                         onValueChange={logValueChange}
                         asChild={true}
-                        value={accordianValue}
+                        value={accordionValue}
                     >
                         <AccordionItem value="item-1" asChild>
                             <Cell
@@ -160,7 +160,7 @@ export const ContextCell: FunctionComponent<{
                                             height={NON_HUMAN_CELL_AVATAR_SIZE}
                                         />
                                         <span className="tw-flex tw-items-baseline">
-                                            Fetched context
+                                            {isContextLoading ? 'Fetching context' : 'Fetched context'}
                                             <span className="tw-opacity-60 tw-text-sm tw-ml-2">
                                                 &mdash;{' '}
                                                 {isContextLoading
@@ -182,14 +182,14 @@ export const ContextCell: FunctionComponent<{
                                 ) : (
                                     <>
                                         <AccordionContent overflow={showSnippets}>
-                                            <button
-                                                type="button"
-                                                className={styles.contextItemEditButton}
+                                            <Button
+                                                size="sm"
+                                                variant="outline"
+                                                className={clsx('tw-pr-4', styles.contextItemEditButton)}
                                                 onClick={onEditContext}
                                             >
                                                 {editContextText}
-                                            </button>
-
+                                            </Button>
                                             {internalDebugContext && contextAlternatives && (
                                                 <div>
                                                     <button
