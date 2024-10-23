@@ -3,7 +3,9 @@ import { ChevronRight } from 'lucide-react'
 import * as React from 'react'
 
 import { clsx } from 'clsx'
+
 import { cn } from '../utils'
+import styles from './accordion.module.css'
 
 const Accordion = AccordionPrimitive.Root
 
@@ -22,14 +24,13 @@ const AccordionTrigger = React.forwardRef<
     <AccordionPrimitive.Header className="tw-flex">
         <AccordionPrimitive.Trigger
             ref={ref}
-            className={cn(
-                'tw-flex tw-gap-1 tw-items-center tw-justify-between tw-transition-all [&[data-state=open]>svg.lucide]:tw-rotate-90',
-                className
-            )}
+            className={clsx(styles.accordionTrigger, className)}
             {...props}
         >
             {children}
-            <ChevronRight className="tw-h-8 tw-w-8 tw-shrink-0 tw-transition-transform tw-duration-150 tw-text-muted-foreground" />
+            <ChevronRight
+                className={cn('tw-h-8 tw-w-8 tw-text-muted-foreground', styles.accordionTriggerChevron)}
+            />
         </AccordionPrimitive.Trigger>
     </AccordionPrimitive.Header>
 ))

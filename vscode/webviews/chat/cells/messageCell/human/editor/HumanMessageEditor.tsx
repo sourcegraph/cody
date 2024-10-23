@@ -297,7 +297,7 @@ export const HumanMessageEditor: FunctionComponent<{
                 if (addContextItemsToLastHumanInput && addContextItemsToLastHumanInput.length > 0) {
                     const editor = editorRef.current
                     if (editor) {
-                        editor.addMentions(addContextItemsToLastHumanInput, awaitUpdate())
+                        editor.addMentions(addContextItemsToLastHumanInput, awaitUpdate(), 'after')
                         editor.setFocus(true)
                     }
                 }
