@@ -82,14 +82,30 @@ export class AutoEditsRenderer implements vscode.Disposable {
         )
     }
 
+    public getNumberOfNewLineCharsAtSuffix(text: string): number {
+        const match = text.match(/\n+$/)
+        return match ? match[0].length : 0
+    }
+
+    public trimExtraNewLineCharsFromSuggestion(predictedText: string, codeToRewrite: string): string {
+        const codeToRewriteChars = this.getNumberOfNewLineCharsAtSuffix(codeToRewrite)
+        const predictedTextChars = this.getNumberOfNewLineCharsAtSuffix(predictedText)
+        const extraChars = predictedTextChars - codeToRewriteChars
+        if (extraChars <= 0) {
+            return predictedText
+        }
+        return predictedText.slice(0, -extraChars)
+    }
+
     public async render(
         options: AutoEditsProviderOptions,
         codeToReplace: CodeToReplaceData,
         predictedText: string
     ) {
-        // Trim only a single "\n" char at the end of the predicted text
-        predictedText = predictedText.replace(/\n$/, '')
-
+        predictedText = this.trimExtraNewLineCharsFromSuggestion(
+            predictedText,
+            codeToReplace.codeToRewrite.toString()
+        )
         if (this.activeProposedChange) {
             await this.dismissProposedChange()
         }

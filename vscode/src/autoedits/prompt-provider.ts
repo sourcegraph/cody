@@ -25,7 +25,7 @@ export interface PromptProvider {
         tokenBudget: AutoEditsTokenLimit
     ): PromptResponseData
 
-    postProcessResponse(completion: string | null): string
+    postProcessResponse(codeToReplace: utils.CodeToReplaceData, completion: string | null): string
 
     getModelResponse(model: string, apiKey: string, prompt: PromptProviderResponse): Promise<string>
 }

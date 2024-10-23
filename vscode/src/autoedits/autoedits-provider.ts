@@ -1,9 +1,4 @@
-import {
-    type AutoEditsTokenLimit,
-    type DocumentContext,
-    logDebug,
-    tokensToChars,
-} from '@sourcegraph/cody-shared'
+import { type AutoEditsTokenLimit, type DocumentContext, tokensToChars } from '@sourcegraph/cody-shared'
 import { Observable } from 'observable-fns'
 import * as vscode from 'vscode'
 import { ContextMixer } from '../completions/context/context-mixer'
@@ -34,11 +29,13 @@ export class AutoeditsProvider implements vscode.Disposable {
     private model: string | undefined
     private apiKey: string | undefined
     private renderer: AutoEditsRenderer = new AutoEditsRenderer()
+    private outputChannel: vscode.OutputChannel
 
     constructor() {
+        this.outputChannel = vscode.window.createOutputChannel('Autoedit Testing')
         const config = getConfiguration().experimentalAutoedits
         if (config === undefined) {
-            logDebug('AutoEdits', 'No Configuration found in the settings')
+            this.logDebug('AutoEdits', 'No Configuration found in the settings')
             return
         }
         this.initizlizePromptProvider(config.provider)
@@ -51,6 +48,9 @@ export class AutoeditsProvider implements vscode.Disposable {
             vscode.commands.registerCommand('cody.experimental.suggest', () => this.getAutoedit())
         )
     }
+    private logDebug(provider: string, ...args: unknown[]): void {
+        this.outputChannel.appendLine(`${provider} █| ${args.join('')}`)
+    }
 
     private initizlizePromptProvider(provider: string) {
         if (provider === 'openai') {
@@ -59,8 +59,9 @@ export class AutoeditsProvider implements vscode.Disposable {
             this.provider = new DeepSeekPromptProvider()
         } else if (provider === 'fireworks') {
             this.provider = new FireworksPromptProvider()
+        } else {
+            this.logDebug('AutoEdits', `provider ${provider} not supported`)
         }
-        logDebug('AutoEdits', `provider ${provider} not supported`)
     }
 
     public getAutoedit() {
@@ -72,7 +73,7 @@ export class AutoeditsProvider implements vscode.Disposable {
 
     public async predictAutoeditAtDocAndPosition(options: AutoEditsProviderOptions) {
         if (!this.provider || !this.autoEditsTokenLimit || !this.model || !this.apiKey) {
-            logDebug('AutoEdits', 'No Provider or Token Limit found in the settings')
+            this.logDebug('AutoEdits', 'No Provider or Token Limit found in the settings')
             return
         }
         const start = Date.now()
@@ -90,9 +91,17 @@ export class AutoeditsProvider implements vscode.Disposable {
             this.autoEditsTokenLimit
         )
         const response = await this.provider.getModelResponse(this.model, this.apiKey, prompt)
+        // this.logDebug('AutoEdits (Original Response):\n<original_response>\n', response, '\n</original_response>')
+        const postProcessedResponse = this.provider.postProcessResponse(codeToReplace, response)
+        this.logDebug('Autoedits', '========================== Response:\n', postProcessedResponse, '\n')
         const timeToResponse = Date.now() - start
-        logDebug('AutoEdits: (Time LLM Query):', timeToResponse.toString())
-        await this.renderer.render(options, codeToReplace, response)
+        this.logDebug(
+            'Autoedits',
+            '========================== Time Taken For LLM (Msec): ',
+            timeToResponse.toString(),
+            '\n'
+        )
+        await this.renderer.render(options, codeToReplace, postProcessedResponse)
     }
 
     private getDocContext(document: vscode.TextDocument, position: vscode.Position): DocumentContext {

@@ -11,7 +11,7 @@ import type {
     PromptResponseData,
 } from '../prompt-provider'
 import { getModelResponse } from '../prompt-provider'
-import { SYSTEM_PROMPT, getBaseUserPrompt } from '../prompt-utils'
+import { type CodeToReplaceData, SYSTEM_PROMPT, getBaseUserPrompt } from '../prompt-utils'
 
 export class OpenAIPromptProvider implements PromptProvider {
     getPrompt(
@@ -42,7 +42,7 @@ export class OpenAIPromptProvider implements PromptProvider {
         }
     }
 
-    postProcessResponse(response: string): string {
+    postProcessResponse(codeToReplace: CodeToReplaceData, response: string): string {
         return response
     }
 
