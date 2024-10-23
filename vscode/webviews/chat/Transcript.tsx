@@ -13,7 +13,7 @@ import { type PromptEditorRefAPI, useExtensionAPI } from '@sourcegraph/prompt-ed
 import { clsx } from 'clsx'
 import debounce from 'lodash/debounce'
 import isEqual from 'lodash/isEqual'
-import { Search } from 'lucide-react'
+import { ArrowBigUp, AtSign, Search } from 'lucide-react'
 import {
     type FC,
     type MutableRefObject,
@@ -439,6 +439,21 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                     isContextLoading={isContextLoading}
                     onAddToFollowupChat={onAddToFollowupChat}
                     onManuallyEditContext={manuallyEditContext}
+                    editContextText={
+                        humanMessage.intent === 'search' ? (
+                            <Button size="sm" variant="outline" className="tw-pr-4">
+                                <ArrowBigUp className="-tw-mr-6 tw-py-0" />
+                                <AtSign className="-tw-mr-2 tw-py-2" />
+                                <div>Copy results to mentions</div>
+                            </Button>
+                        ) : (
+                            <Button size="sm" variant="outline" className="tw-pr-4">
+                                <ArrowBigUp className="-tw-mr-6 tw-py-0" />
+                                <AtSign className="-tw-mr-2 tw-py-2" />
+                                <div>Edit results as mentions</div>
+                            </Button>
+                        )
+                    }
                 />
             )}
             {(!experimentalOneBoxEnabled || humanMessage.intent !== 'search') &&

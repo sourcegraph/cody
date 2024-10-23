@@ -2,7 +2,7 @@ import type { ContextItem, Model } from '@sourcegraph/cody-shared'
 import { pluralize } from '@sourcegraph/cody-shared'
 import type { RankedContext } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { clsx } from 'clsx'
-import { BrainIcon, MessagesSquareIcon, Pencil } from 'lucide-react'
+import { BrainIcon, MessagesSquareIcon } from 'lucide-react'
 import { type FunctionComponent, memo, useCallback, useState } from 'react'
 import { FileContextItem } from '../../../components/FileContextItem'
 import {
@@ -42,6 +42,7 @@ export const ContextCell: FunctionComponent<{
         fileURL: string
     }) => void
     onManuallyEditContext: () => void
+    editContextText: React.ReactNode
 
     /** For use in storybooks only. */
     __storybook__initialOpen?: boolean
@@ -59,6 +60,7 @@ export const ContextCell: FunctionComponent<{
         isContextLoading,
         onAddToFollowupChat,
         onManuallyEditContext,
+        editContextText,
     }) => {
         const [selectedAlternative, setSelectedAlternative] = useState<number | undefined>(undefined)
         const incrementSelectedAlternative = useCallback(
@@ -158,7 +160,7 @@ export const ContextCell: FunctionComponent<{
                                             height={NON_HUMAN_CELL_AVATAR_SIZE}
                                         />
                                         <span className="tw-flex tw-items-baseline">
-                                            Context
+                                            Fetched context
                                             <span className="tw-opacity-60 tw-text-sm tw-ml-2">
                                                 &mdash;{' '}
                                                 {isContextLoading
@@ -185,10 +187,7 @@ export const ContextCell: FunctionComponent<{
                                                 className={styles.contextItemEditButton}
                                                 onClick={onEditContext}
                                             >
-                                                <div className={styles.contextItemEditButtonIcon}>
-                                                    <Pencil size={'1rem'} />
-                                                </div>
-                                                <div>Edit context manually</div>
+                                                {editContextText}
                                             </button>
 
                                             {internalDebugContext && contextAlternatives && (
