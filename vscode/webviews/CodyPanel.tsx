@@ -64,7 +64,7 @@ export const CodyPanel: FunctionComponent<
 
     const api = useExtensionAPI()
     const { value: chatModels } = useObservable(useMemo(() => api.chatModels(), [api.chatModels]))
-    const isUnifiedPromptsEnabled = useFeatureFlag(FeatureFlag.CodyUnifiedPrompts)
+    const isPromptsV2Enabled = useFeatureFlag(FeatureFlag.CodyPromptsV2)
 
     return (
         <TabViewContext.Provider value={useMemo(() => ({ view, setView }), [view, setView])}>
@@ -97,7 +97,7 @@ export const CodyPanel: FunctionComponent<
                             showWelcomeMessage={showWelcomeMessage}
                             scrollableParent={tabContainerRef.current}
                             smartApplyEnabled={smartApplyEnabled}
-                            isUnifiedPromptsEnabled={isUnifiedPromptsEnabled}
+                            isPromptsV2Enabled={isPromptsV2Enabled}
                             setView={setView}
                         />
                     )}
@@ -110,10 +110,7 @@ export const CodyPanel: FunctionComponent<
                         />
                     )}
                     {view === View.Prompts && (
-                        <PromptsTab
-                            setView={setView}
-                            isUnifiedPromptsEnabled={isUnifiedPromptsEnabled}
-                        />
+                        <PromptsTab setView={setView} isPromptsV2Enabled={isPromptsV2Enabled} />
                     )}
                     {view === View.Account && <AccountTab setView={setView} />}
                     {view === View.Settings && <SettingsTab />}
