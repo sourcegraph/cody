@@ -96,7 +96,7 @@
 
         <keymapExtension implementation="com.sourcegraph.cody.config.CodyKeymapExtension"/>
 
-        <inline.completion.provider implementation="com.sourcegraph.cody.autocomplete.CodyInlineCompletionProvider"/>
+        <inline.completion.provider id="Cody" implementation="com.sourcegraph.cody.autocomplete.CodyInlineCompletionProvider"/>
         <!-- Web UI Sidebar Views
              For each sourcegraph/cody/vscode/package.json "views" entry with type "webview",
              add a toolWindow with factoryClass="com.sourcegraph.cody.sidebar.WebUIToolWindowFactory"

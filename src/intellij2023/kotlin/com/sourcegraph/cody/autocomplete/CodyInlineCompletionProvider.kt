@@ -33,7 +33,8 @@ import java.util.concurrent.atomic.AtomicReference
 class CodyInlineCompletionProvider : InlineCompletionProvider {
   private val logger = Logger.getInstance(CodyInlineCompletionProvider::class.java)
   private val currentJob = AtomicReference(CancellationToken())
-  val id = InlineCompletionProviderID("Cody")
+  val id
+    get() = InlineCompletionProviderID("Cody")
 
   suspend fun getSuggestion(request: InlineCompletionRequest): InlineCompletionSuggestion {
     ApplicationManager.getApplication().assertIsNonDispatchThread()
