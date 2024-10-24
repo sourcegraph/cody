@@ -1711,9 +1711,9 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                         ),
                     promptsMigrationStatus: () => getPromptsMigrationInfo(),
                     startPromptsMigration: () => promiseFactoryToObservable(startPromptsMigration),
-                    prompts: query =>
+                    prompts: input =>
                         promiseFactoryToObservable(signal =>
-                            mergedPromptsAndLegacyCommands(query, signal)
+                            mergedPromptsAndLegacyCommands(input, signal)
                         ),
                     models: () =>
                         modelsService.modelsChanges.pipe(

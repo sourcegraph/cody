@@ -89,6 +89,12 @@ export enum FeatureFlag {
      */
     CodyUnifiedPrompts = 'cody-unified-prompts',
 
+    /**
+     * For internal use only. New Prompts UI and logic is behind this feature flag
+     * will be removed as soon as commands will be deprecated.
+     */
+    CodyPromptsV2 = 'prompt-creation-v2',
+
     /** Whether user has access to the experimental Cody Reflection / Deep Cody feature. */
     DeepCody = 'cody-deep-reflection',
 }

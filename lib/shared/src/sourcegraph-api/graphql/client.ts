@@ -53,6 +53,7 @@ import {
     LOG_EVENT_MUTATION_DEPRECATED,
     PACKAGE_LIST_QUERY,
     PROMPTS_QUERY,
+    PromptsOrderBy,
     RECORD_TELEMETRY_EVENTS_MUTATION,
     REPOSITORY_IDS_QUERY,
     REPOSITORY_ID_QUERY,
@@ -417,6 +418,7 @@ export interface Prompt {
     id: string
     name: string
     nameWithOwner: string
+    recommended: boolean
     owner: {
         namespaceName: string
     }
@@ -1150,12 +1152,27 @@ export class SourcegraphGraphQLAPIClient {
         return result
     }
 
-    public async queryPrompts(query: string, signal?: AbortSignal): Promise<Prompt[]> {
+    public async queryPrompts({
+        query,
+        first,
+        recommendedOnly,
+        signal,
+    }: {
+        query: string
+        first: number | undefined
+        recommendedOnly: boolean
+        signal?: AbortSignal
+    }): Promise<Prompt[]> {
         const hasIncludeViewerDraftsArg = await this.isValidSiteVersion({ minimumVersion: '5.9.0' })
 
         const response = await this.fetchSourcegraphAPI<APIResponse<{ prompts: { nodes: Prompt[] } }>>(
             hasIncludeViewerDraftsArg ? PROMPTS_QUERY : LEGACY_PROMPTS_QUERY_5_8,
-            { query },
+            {
+                query,
+                first: first ?? 100,
+                recommendedOnly: recommendedOnly,
+                orderByMultiple: [PromptsOrderBy.PROMPT_RECOMMENDED, PromptsOrderBy.PROMPT_UPDATED_AT],
+            },
             signal
         )
         const result = extractDataOrError(response, data => data.prompts.nodes)

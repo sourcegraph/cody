@@ -8,12 +8,23 @@ import {
     type PromptAction,
 } from '@sourcegraph/cody-shared'
 
+import {
+    BookOpen,
+    BookUp2,
+    FileQuestion,
+    Hammer,
+    PencilLine,
+    PencilRuler,
+    TextSearch,
+} from 'lucide-react'
+
 import { UserAvatar } from '../../components/UserAvatar'
 import { Badge } from '../../components/shadcn/ui/badge'
 import { CommandItem } from '../../components/shadcn/ui/command'
+import { Tooltip, TooltipContent, TooltipTrigger } from '../../components/shadcn/ui/tooltip'
+
 import { commandRowValue } from './utils'
 
-import { BookOpen, FileQuestion, Hammer, PencilLine, PencilRuler, TextSearch } from 'lucide-react'
 import styles from './ActionItem.module.css'
 
 interface ActionItemProps {
@@ -62,6 +73,14 @@ const ActionPrompt: FC<ActionPromptProps> = props => {
                         <Badge variant="secondary" className="tw-text-xxs tw-mt-0.5">
                             Draft
                         </Badge>
+                    )}
+                    {prompt.recommended && (
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <BookUp2 size={12} className={styles.promptIcon} />
+                            </TooltipTrigger>
+                            <TooltipContent>This prompt was promoted by your admin</TooltipContent>
+                        </Tooltip>
                     )}
                 </div>
 

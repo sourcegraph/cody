@@ -34,7 +34,7 @@ interface ChatboxProps {
     showIDESnippetActions?: boolean
     setView: (view: View) => void
     smartApplyEnabled?: boolean
-    isUnifiedPromptsEnabled?: boolean
+    isPromptsV2Enabled?: boolean
 }
 
 export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>> = ({
@@ -49,7 +49,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     showIDESnippetActions = true,
     setView,
     smartApplyEnabled,
-    isUnifiedPromptsEnabled,
+    isPromptsV2Enabled,
 }) => {
     const telemetryRecorder = useTelemetryRecorder()
 
@@ -233,10 +233,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             />
             {transcript.length === 0 && showWelcomeMessage && (
                 <>
-                    <WelcomeMessage
-                        setView={setView}
-                        isUnifiedPromptsEnabled={isUnifiedPromptsEnabled}
-                    />
+                    <WelcomeMessage setView={setView} isPromptsV2Enabled={isPromptsV2Enabled} />
                     <WelcomeFooter IDE={userInfo.IDE} />
                 </>
             )}

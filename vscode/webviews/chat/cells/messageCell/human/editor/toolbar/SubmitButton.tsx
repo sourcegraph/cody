@@ -144,7 +144,7 @@ export const SubmitButton: FC<{
                     aria-label="Insert prompt"
                     popoverContent={close => (
                         <Command>
-                            <CommandList>
+                            <CommandList className="tw-p-2">
                                 {intentOptions.map(option => (
                                     <CommandItem
                                         key={option.intent ?? option.title}
@@ -152,7 +152,7 @@ export const SubmitButton: FC<{
                                             onSelectIntent?.(option.intent)
                                             close()
                                         }}
-                                        className="tw-flex tw-text-left tw-justify-between"
+                                        className="tw-flex tw-text-left tw-justify-between tw-rounded-sm"
                                     >
                                         <div className="tw-flex tw-items-center tw-gap-2">
                                             <option.icon className="tw-size-8" />

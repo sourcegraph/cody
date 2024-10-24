@@ -13,13 +13,13 @@ import styles from './PromptsTab.module.css'
 
 export const PromptsTab: React.FC<{
     setView: (view: View) => void
-    isUnifiedPromptsEnabled?: boolean
-}> = ({ setView, isUnifiedPromptsEnabled }) => {
+    isPromptsV2Enabled?: boolean
+}> = ({ setView, isPromptsV2Enabled }) => {
     const runAction = useActionSelect()
 
     return (
         <div className="tw-overflow-auto tw-h-full tw-flex tw-flex-col tw-gap-6">
-            {isUnifiedPromptsEnabled && (
+            {isPromptsV2Enabled && (
                 <PromptMigrationWidget dismissible={false} className={styles.promptMigrationWidget} />
             )}
             <PromptList
@@ -27,8 +27,9 @@ export const PromptsTab: React.FC<{
                 showCommandOrigins={true}
                 paddingLevels="big"
                 telemetryLocation="PromptsTab"
-                showPromptLibraryUnsupportedMessage={true}
+                recommendedOnly={false}
                 showOnlyPromptInsertableCommands={false}
+                showPromptLibraryUnsupportedMessage={true}
                 onSelect={item => runAction(item, setView)}
                 className={styles.promptsContainer}
                 inputClassName={styles.promptsInput}
