@@ -349,13 +349,20 @@ query ViewerPrompts($query: String!) {
     }
 }`
 
+export enum PromptsOrderBy {
+    PROMPT_NAME_WITH_OWNER = 'PROMPT_NAME_WITH_OWNER',
+    PROMPT_UPDATED_AT = 'PROMPT_UPDATED_AT',
+    PROMPT_RECOMMENDED = 'PROMPT_RECOMMENDED',
+}
+
 export const PROMPTS_QUERY = `
-query ViewerPrompts($query: String!) {
-    prompts(query: $query, first: 100, includeDrafts: false, includeViewerDrafts: true, viewerIsAffiliated: true, orderBy: PROMPT_UPDATED_AT) {
+query ViewerPrompts($query: String!, $first: Int!, $recommendedOnly: Boolean!, $orderBy: [PromptsOrderBy!]) {
+    prompts(query: $query, first: $first, includeDrafts: false, recommendedOnly: $recommendedOnly, includeViewerDrafts: true, viewerIsAffiliated: true, orderByMultiple: $orderBy) {
         nodes {
             id
             name
             nameWithOwner
+            recommended
             owner {
                 namespaceName
             }
@@ -375,10 +382,6 @@ query ViewerPrompts($query: String!) {
             }
         }
         totalCount
-        pageInfo {
-            hasNextPage
-            endCursor
-        }
     }
 }`
 

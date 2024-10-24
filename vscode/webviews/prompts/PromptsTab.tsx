@@ -27,8 +27,9 @@ export const PromptsTab: React.FC<{
                 showCommandOrigins={true}
                 paddingLevels="big"
                 telemetryLocation="PromptsTab"
-                showPromptLibraryUnsupportedMessage={true}
+                recommendedOnly={false}
                 showOnlyPromptInsertableCommands={false}
+                showPromptLibraryUnsupportedMessage={true}
                 onSelect={item => runAction(item, setView)}
                 className={styles.promptsContainer}
                 inputClassName={styles.promptsInput}

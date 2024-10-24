@@ -35,6 +35,7 @@ export const WelcomeMessage: FunctionComponent<WelcomeMessageProps> = ({
                     showCommandOrigins={true}
                     showOnlyPromptInsertableCommands={false}
                     showPromptLibraryUnsupportedMessage={false}
+                    recommendedOnly={true}
                     onSelect={item => runAction(item, setView)}
                 />
 

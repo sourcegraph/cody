@@ -27,7 +27,7 @@ export interface WebviewToExtensionAPI {
      * includes matching builtin commands and custom commands (which are both deprecated in favor of
      * the Prompt Library).
      */
-    prompts(query: string): Observable<PromptsResult>
+    prompts(input: PromptsInput): Observable<PromptsResult>
 
     /** The commands to prompts library migration information. */
     promptsMigrationStatus(): Observable<PromptsMigrationStatus>
@@ -142,6 +142,12 @@ export interface PromptAction extends Prompt {
 
 export interface CommandAction extends CodyCommand {
     actionType: 'command'
+}
+
+export interface PromptsInput {
+    query: string
+    first?: number
+    recommendedOnly: boolean
 }
 
 export type Action = PromptAction | CommandAction
