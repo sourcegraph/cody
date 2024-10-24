@@ -334,8 +334,8 @@ interface SymbolUsage {
             }
         },
         surroundingContent: string,
-        usageKind: string,
-    }
+    },
+    usageKind: string,
 }
 
 interface SymbolUsagesResponse {
