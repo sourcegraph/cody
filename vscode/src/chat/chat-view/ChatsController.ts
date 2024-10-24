@@ -338,7 +338,9 @@ export class ChatsController implements vscode.Disposable {
         } else {
             provider = await this.getOrCreateEditorChatController()
         }
-        await provider.clearAndRestartSession()
+        if (submitType === 'new-chat') {
+            await provider.clearAndRestartSession()
+        }
         const abortSignal = provider.startNewSubmitOrEditOperation()
         const editorState = editorStateFromPromptString(text)
         await provider.handleUserMessageSubmission({
