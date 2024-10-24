@@ -356,8 +356,8 @@ export enum PromptsOrderBy {
 }
 
 export const PROMPTS_QUERY = `
-query ViewerPrompts($query: String!, $first: Int!, $recommendedOnly: Boolean!, $orderBy: [PromptsOrderBy!]) {
-    prompts(query: $query, first: $first, includeDrafts: false, recommendedOnly: $recommendedOnly, includeViewerDrafts: true, viewerIsAffiliated: true, orderByMultiple: $orderBy) {
+query ViewerPrompts($query: String!, $first: Int!, $recommendedOnly: Boolean!, $orderByMultiple: [PromptsOrderBy!]) {
+    prompts(query: $query, first: $first, includeDrafts: false, recommendedOnly: $recommendedOnly, includeViewerDrafts: true, viewerIsAffiliated: true, orderByMultiple: $orderByMultiple) {
         nodes {
             id
             name

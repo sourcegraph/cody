@@ -1171,7 +1171,7 @@ export class SourcegraphGraphQLAPIClient {
                 query,
                 first: first ?? 100,
                 recommendedOnly: recommendedOnly,
-                orderBy: [PromptsOrderBy.PROMPT_RECOMMENDED, PromptsOrderBy.PROMPT_UPDATED_AT],
+                orderByMultiple: [PromptsOrderBy.PROMPT_RECOMMENDED, PromptsOrderBy.PROMPT_UPDATED_AT],
             },
             signal
         )
