@@ -86,7 +86,7 @@ export async function evaluateChatContextStrategy(
 }
 
 async function runContextCommand(
-    clientOps: ClientOptions,
+    clientOpts: ClientOptions,
     examples: Example[]
 ): Promise<ExampleOutput[]> {
     const completionsClient = new SourcegraphNodeCompletionsClient()
@@ -109,7 +109,7 @@ async function runContextCommand(
         const repoIDs = repoIDNames.map(repoIDName => repoIDName.id)
 
         let query = origQuery
-        if (clientOps.rewrite) {
+        if (clientOpts.rewrite) {
             query = await rewriteKeywordQuery(
                 completionsClient,
                 PromptString.unsafe_fromUserQuery(origQuery)
@@ -120,6 +120,7 @@ async function runContextCommand(
             repoIDs,
             query,
             filePatterns: [],
+            // TODO get these from bench config options
             codeResultsCount: 15,
             textResultsCount: 5,
         })
@@ -133,13 +134,13 @@ async function runContextCommand(
 
         const results = resultsResp ?? []
         results.map(contextList => {
-            // TODO: use the name of the retriever as well
             const actualContext: EvalContextItem[] = contextList.contextList.map(result => ({
                 repoName: result.repoName,
                 path: result.path,
                 startLine: result.startLine,
                 endLine: result.endLine,
                 content: result.content,
+                retriever: contextList.name,
             }))
             exampleOutputs.push({
                 ...example,

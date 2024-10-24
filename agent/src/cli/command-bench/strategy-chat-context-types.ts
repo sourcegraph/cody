@@ -30,6 +30,7 @@ export interface EvalContextItem {
     startLine: number
     endLine: number
     content?: string
+    retriever?: string
 }
 
 interface RepoRev {
@@ -244,5 +245,5 @@ export function contextItemFromString(item: string): EvalContextItem {
 }
 
 export function contextItemToString(item: EvalContextItem): string {
-    return `${item.repoName}:${item.path}:${item.startLine}-${item.endLine}`
+    return `${item.retriever}:${item.repoName}:${item.path}:${item.startLine}-${item.endLine}`
 }
