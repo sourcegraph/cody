@@ -11,11 +11,9 @@ export function openCodyIssueReporter() {
     })
 }
 
-const issueBody = `## Extension Information
-<!-- Do not remove the pre-filled information below -->
-- Cody Version: ${version}
-- VS Code Version: ${vscode.version}
-- Extension Host: ${vscode.env.appHost}
+const issueBody = `# Please complete the information below before submitting this form.
+
+## Extension Information
 
 ##  Steps to Reproduce
 <!-- A detailed description of the issue -->
@@ -28,4 +26,10 @@ const issueBody = `## Extension Information
 
 ## Logs
 <!-- Attach logs from the 'Cody Debug: Export Logs' command -->
+
+<!-- Do not remove this section -->
+- Cody Version: ${version}
+- VS Code Version: ${vscode.version}
+- Extension Host: ${vscode.env.appHost}
+<!-- // -->
 `
