@@ -167,9 +167,6 @@ interface SharedEventPayload extends InteractionIDPayload {
      */
     isFuzzyMatch?: boolean
 
-    /** Eventual artificial delay that was used to throttle unwanted completions. */
-    artificialDelay?: number
-
     /**
      * Mapping the completion intent to a higher level abstractions of syntax nodes (e.g. function
      * declaration body)

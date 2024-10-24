@@ -169,6 +169,7 @@ export type ExtensionMessage =
           type: 'clientAction'
           addContextItemsToLastHumanInput?: ContextItem[] | null | undefined
           appendTextToLastPromptEditor?: string | null | undefined
+          setLastHumanInputIntent?: ChatMessage['intent'] | null | undefined
           smartApplyResult?: SmartApplyResult | undefined | null
           submitHumanInput?: boolean | undefined | null
       }

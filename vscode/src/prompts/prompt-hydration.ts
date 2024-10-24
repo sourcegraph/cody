@@ -25,11 +25,11 @@ import { createRepositoryMention } from '../context/openctx/common/get-repositor
 import { remoteReposForAllWorkspaceFolders } from '../repository/remoteRepos'
 import { getCurrentRepositoryInfo } from './utils'
 
-const PROMPT_CURRENT_FILE_PLACEHOLDER: string = 'cody://current-file'
-const PROMPT_CURRENT_SELECTION_PLACEHOLDER: string = 'cody://selection'
-const PROMPT_CURRENT_DIRECTORY_PLACEHOLDER: string = 'cody://current-dir'
-const PROMPT_EDITOR_OPEN_TABS_PLACEHOLDER: string = 'cody://tabs'
-const PROMPT_CURRENT_REPOSITORY_PLACEHOLDER: string = 'cody://repository'
+export const PROMPT_CURRENT_FILE_PLACEHOLDER: string = 'cody://current-file'
+export const PROMPT_CURRENT_SELECTION_PLACEHOLDER: string = 'cody://selection'
+export const PROMPT_CURRENT_DIRECTORY_PLACEHOLDER: string = 'cody://current-dir'
+export const PROMPT_EDITOR_OPEN_TABS_PLACEHOLDER: string = 'cody://tabs'
+export const PROMPT_CURRENT_REPOSITORY_PLACEHOLDER: string = 'cody://repository'
 
 /**
  * Default IDE logic itself can figure out all needed context via vscode API,
@@ -139,6 +139,10 @@ async function hydrateWithCurrentDirectory(
     const initialContextDirectory = initialContext.find(
         item => item.type === 'openctx' && item.providerUri === REMOTE_DIRECTORY_PROVIDER_URI
     )
+
+    if (initialContext.length > 0 && !initialContextDirectory) {
+        return [promptText, []]
+    }
 
     if (initialContextDirectory) {
         return [

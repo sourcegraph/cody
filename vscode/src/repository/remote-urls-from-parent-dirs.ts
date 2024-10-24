@@ -13,15 +13,20 @@ const textDecoder = new TextDecoder('utf-8')
  * This function tries 2 different ways to get the remote URLs: (1) by using the Git extension API
  * available in VS Code only, and (2) by crawling the file system for the `.git/config` file.
  */
-export async function gitRemoteUrlsForUri(
-    uri: vscode.Uri,
-    signal?: AbortSignal
-): Promise<string[] | undefined> {
-    const fromGitExtension = gitRemoteUrlsFromGitExtension(uri)
-    if (fromGitExtension && fromGitExtension.length > 0) {
-        return fromGitExtension
+export async function gitRemoteUrlsForUri(uri: vscode.Uri, signal?: AbortSignal): Promise<string[]> {
+    let remoteUrls = gitRemoteUrlsFromGitExtension(uri)
+
+    // If not results from the Git extension API, try crawling the file system.
+    if (!remoteUrls || remoteUrls.length === 0) {
+        remoteUrls = await gitRemoteUrlsFromParentDirs(uri, signal)
     }
-    return await gitRemoteUrlsFromParentDirs(uri, signal)
+
+    // Ensure the remote URLs are sorted and unique no matter what source we used.
+    if (remoteUrls && remoteUrls.length > 0) {
+        return Array.from(new Set(remoteUrls)).sort()
+    }
+
+    return []
 }
 
 /**

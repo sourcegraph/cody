@@ -18,7 +18,7 @@ import { mockFsCalls } from './test-helpers'
 vi.mock('../services/AuthProvider')
 
 describe('getRepoNamesContainingUri', () => {
-    it('resolves the repo name using graphql for enterprise accounts', async () => {
+    function prepareEnterpriseMocks() {
         const repoNameResolver = new RepoNameResolver()
         mockAuthStatus(AUTH_STATUS_FIXTURE_AUTHED)
         mockResolvedConfig({ auth: {} })
@@ -45,9 +45,34 @@ describe('getRepoNamesContainingUri', () => {
             .spyOn(graphqlClient, 'getRepoName')
             .mockResolvedValue('sourcegraph/cody')
 
-        expect(
-            await firstResultFromOperation(repoNameResolver.getRepoNamesContainingUri(fileUri))
-        ).toEqual(['sourcegraph/cody'])
+        return {
+            repoNameResolver,
+            fileUri,
+            getRepoNameGraphQLMock,
+        }
+    }
+    it('resolves the repo name using graphql for enterprise accounts', async () => {
+        const { repoNameResolver, fileUri, getRepoNameGraphQLMock } = prepareEnterpriseMocks()
+        const repoNames = await firstResultFromOperation(
+            repoNameResolver.getRepoNamesContainingUri(fileUri)
+        )
+
+        expect(repoNames).toEqual(['sourcegraph/cody'])
+        expect(getRepoNameGraphQLMock).toBeCalledTimes(1)
+    })
+
+    it('reuses cached API responses that are needed to resolve enterprise repo names', async () => {
+        const { repoNameResolver, fileUri, getRepoNameGraphQLMock } = prepareEnterpriseMocks()
+
+        const repoNames = await firstResultFromOperation(
+            repoNameResolver.getRepoNamesContainingUri(fileUri)
+        )
+        const shouldReuseCachedValue = await firstResultFromOperation(
+            repoNameResolver.getRepoNamesContainingUri(fileUri)
+        )
+
+        expect(repoNames).toEqual(['sourcegraph/cody'])
+        expect(shouldReuseCachedValue).toEqual(repoNames)
         expect(getRepoNameGraphQLMock).toBeCalledTimes(1)
     })
 
