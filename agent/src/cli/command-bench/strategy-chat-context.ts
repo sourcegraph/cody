@@ -10,8 +10,6 @@ import {
     type EvalContextItem,
     type Example,
     type ExampleOutput,
-    contextItemFromString,
-    contextItemToString,
     readExamplesFromCSV,
     writeExamplesToCSV,
     writeYAMLMetadata,
@@ -88,14 +86,14 @@ export async function evaluateChatContextStrategy(
 }
 
 async function runContextCommand(
-    clientOps: ClientOptions,
+    clientOpts: ClientOptions,
     examples: Example[]
 ): Promise<ExampleOutput[]> {
     const completionsClient = new SourcegraphNodeCompletionsClient()
     const exampleOutputs: ExampleOutput[] = []
 
     for (const example of examples) {
-        const { targetRepoRevs, query: origQuery, essentialContext } = example
+        const { targetRepoRevs, query: origQuery } = example
         const repoNames = targetRepoRevs.map(repoRev => repoRev.repoName)
         const repoIDNames = await graphqlClient.getRepoIds(repoNames, repoNames.length + 10)
         if (isError(repoIDNames)) {
@@ -111,103 +109,45 @@ async function runContextCommand(
         const repoIDs = repoIDNames.map(repoIDName => repoIDName.id)
 
         let query = origQuery
-        if (clientOps.rewrite) {
+        if (clientOpts.rewrite) {
             query = await rewriteKeywordQuery(
                 completionsClient,
                 PromptString.unsafe_fromUserQuery(origQuery)
             )
         }
 
-        const resultsResp = await graphqlClient.contextSearch({
+        const resultsResp = await graphqlClient.contextSearchAlternatives({
             repoIDs,
             query,
             filePatterns: [],
+            // TODO get these from bench config options
+            codeResultsCount: 15,
+            textResultsCount: 5,
         })
+
         if (isError(resultsResp)) {
             throw new Error(`contextSearch failed for [${repoNames.join(',')}]: ${resultsResp}`)
         }
         if (resultsResp === null) {
             throw new Error(`contextSearch failed for [${repoNames.join(',')}]: null results`)
         }
-        const results = resultsResp ?? []
-        const actualContext: EvalContextItem[] = results.map(result => ({
-            repoName: result.repoName,
-            path: result.path,
-            startLine: result.startLine,
-            endLine: result.endLine,
-            content: result.content,
-        }))
 
-        exampleOutputs.push({
-            ...example,
-            actualContext,
-            stats: {
-                essentialRecall5: computeRecall(actualContext, essentialContext, 5),
-                essentialRecall10: computeRecall(actualContext, essentialContext, 10),
-                essentialRecall: computeRecall(actualContext, essentialContext),
-            },
+        const results = resultsResp ?? []
+        results.map(contextList => {
+            const actualContext: EvalContextItem[] = contextList.contextList.map(result => ({
+                repoName: result.repoName,
+                path: result.path,
+                startLine: result.startLine,
+                endLine: result.endLine,
+                content: result.content,
+                retriever: contextList.name,
+            }))
+            exampleOutputs.push({
+                ...example,
+                actualContext,
+            })
         })
     }
 
     return exampleOutputs
-}
-
-function contextOverlaps(
-    parentStr: string,
-    childStr: string,
-    threshold = { lines: 3, fraction: 0.2 }
-): boolean {
-    const parent = contextItemFromString(parentStr)
-    const child = contextItemFromString(childStr)
-    if (!parent || !child) {
-        return false
-    }
-
-    const parentName = parent.repoName.split('/')?.pop() ?? ''
-    const childName = child.repoName.split('/')?.pop() ?? ''
-    if (parentName !== childName) {
-        return false
-    }
-    if (parent.path !== child.path) {
-        return false
-    }
-    if (parent.startLine > child.endLine) {
-        return false
-    }
-    if (parent.endLine < child.startLine) {
-        return false
-    }
-    const overlapStart = Math.max(parent.startLine, child.startLine)
-    const overlapEnd = Math.min(parent.endLine, child.endLine)
-    const overlapLength = overlapEnd - overlapStart + 1
-    const parentLength = parent.endLine - parent.startLine + 1
-
-    return overlapLength / parentLength >= threshold.fraction || overlapLength >= threshold.lines
-}
-
-function computeRecall(
-    actualContext: EvalContextItem[],
-    essentialContext: EvalContextItem[],
-    cutoff?: number
-): number {
-    if (essentialContext.length === 0) {
-        return 1
-    }
-    if (cutoff && actualContext.length > cutoff) {
-        actualContext = actualContext.slice(0, cutoff)
-    }
-    let ct = 0
-    for (const eItem of essentialContext) {
-        let found = false
-        for (const aItem of actualContext) {
-            if (contextOverlaps(contextItemToString(eItem), contextItemToString(aItem))) {
-                found = true
-                break
-            }
-        }
-        if (found) {
-            ct++
-        }
-    }
-    return ct / essentialContext.length
 }

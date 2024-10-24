@@ -21,6 +21,7 @@ import {
     CHAT_INTENT_QUERY,
     CONTEXT_FILTERS_QUERY,
     CONTEXT_SEARCH_QUERY,
+    CONTEXT_SEARCH_QUERY_ALTERNATIVES,
     CONTEXT_SEARCH_QUERY_WITH_RANGES,
     CREATE_PROMPT_MUTATION,
     CURRENT_SITE_CODY_CONFIG_FEATURES,
@@ -377,6 +378,31 @@ interface ContextSearchResponse {
     }[]
 }
 
+interface ContextSearchResponseAlternative {
+    getCodyContextAlternatives: {
+        contextLists: {
+            name: string
+            contextItems: {
+                blob: {
+                    commit: {
+                        oid: string
+                    }
+                    path: string
+                    repository: {
+                        id: string
+                        name: string
+                    }
+                    url: string
+                }
+                startLine: number
+                endLine: number
+                chunkContent: string
+                matchedRanges: Range[]
+            }[]
+        }[]
+    }
+}
+
 interface Position {
     line: number
     character: number
@@ -409,6 +435,12 @@ export interface ContextSearchResult {
     content: string
     ranges: Range[]
 }
+
+export interface ContextSearchResultAlternative {
+    name: string
+    contextList: ContextSearchResult[]
+}
+;[]
 
 /**
  * A prompt that can be shared and reused. See Prompt in the Sourcegraph GraphQL API.
@@ -1069,6 +1101,57 @@ export class SourcegraphGraphQLAPIClient {
                     endLine: item.endLine,
                     content: item.chunkContent,
                     ranges: item.matchedRanges ?? [],
+                }))
+            )
+        )
+    }
+
+    public async contextSearchAlternatives({
+        repoIDs,
+        query,
+        signal,
+        filePatterns,
+        codeResultsCount,
+        textResultsCount,
+    }: {
+        repoIDs: string[]
+        query: string
+        signal?: AbortSignal
+        filePatterns?: string[]
+        codeResultsCount: number
+        textResultsCount: number
+    }): Promise<ContextSearchResultAlternative[] | null | Error> {
+        const config = await firstValueFrom(this.config!)
+        signal?.throwIfAborted()
+
+        return this.fetchSourcegraphAPI<APIResponse<ContextSearchResponseAlternative>>(
+            CONTEXT_SEARCH_QUERY_ALTERNATIVES,
+            {
+                repos: repoIDs,
+                query,
+                codeResultsCount: codeResultsCount,
+                textResultsCount: textResultsCount,
+                ...filePatterns,
+            },
+            signal
+        ).then(response =>
+            extractDataOrError(response, data =>
+                (data.getCodyContextAlternatives.contextLists || []).map(contextList => ({
+                    name: contextList.name,
+                    contextList: contextList.contextItems.map(item => ({
+                        commit: item.blob.commit.oid,
+                        repoName: item.blob.repository.name,
+                        path: item.blob.path,
+                        uri: URI.parse(
+                            `${config.auth.serverEndpoint}${item.blob.repository.name}/-/blob/${
+                                item.blob.path
+                            }?L${item.startLine + 1}-${item.endLine}`
+                        ),
+                        startLine: item.startLine,
+                        endLine: item.endLine,
+                        content: item.chunkContent,
+                        ranges: item.matchedRanges ?? [],
+                    })),
                 }))
             )
         )
