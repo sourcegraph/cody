@@ -150,7 +150,6 @@ export const ContextCell: FunctionComponent<{
                                 header={
                                     <AccordionTrigger
                                         onClick={triggerAccordion}
-                                        onKeyUp={triggerAccordion}
                                         title={itemCountLabel}
                                         className="tw-flex tw-items-center tw-gap-4"
                                         disabled={isContextLoading}
