@@ -79,7 +79,7 @@ const ActionPrompt: FC<ActionPromptProps> = props => {
                             <TooltipTrigger asChild>
                                 <BookUp2 size={12} className={styles.promptIcon} />
                             </TooltipTrigger>
-                            <TooltipContent>This prompt was put here by your admin</TooltipContent>
+                            <TooltipContent>This prompt was promoted by your admin</TooltipContent>
                         </Tooltip>
                     )}
                 </div>
