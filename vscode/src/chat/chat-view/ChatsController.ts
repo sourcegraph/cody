@@ -330,7 +330,7 @@ export class ChatsController implements vscode.Disposable {
             provider = this.panel
             // For now, always use the side panel if it's visible.
             // TODO: Let activeEditor be able to become this.panel,
-            // thus handling them both the side panel and a webview panel the same way.
+            // thus handling both the side panel and a webview panel the same way.
         } else if (submitType === 'continue-chat' && this.panel.isVisible()) {
             provider = this.panel
         } else if (submitType === 'continue-chat' && this.activeEditor?.webviewPanelOrView?.visible) {
