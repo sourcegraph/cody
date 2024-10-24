@@ -148,7 +148,8 @@ export const PromptList: FC<PromptListProps> = props => {
         ? result?.actions.filter(action => action.actionType === 'prompt' || action.mode === 'ask') ?? []
         : result?.actions ?? []
 
-    const actions = lastUsedSorting ? getSortedActions(allActions, lastUsedActions) : allActions
+    const sortedActions = lastUsedSorting ? getSortedActions(allActions, lastUsedActions) : allActions
+    const actions = showFirstNItems ? sortedActions.slice(0, showFirstNItems) : sortedActions
 
     const inputPaddingClass =
         paddingLevels !== 'none' ? (paddingLevels === 'middle' ? '!tw-p-2' : '!tw-p-4') : ''
