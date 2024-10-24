@@ -91,7 +91,6 @@ export class AutoeditsProvider implements vscode.Disposable {
             this.autoEditsTokenLimit
         )
         const response = await this.provider.getModelResponse(this.model, this.apiKey, prompt)
-        // this.logDebug('AutoEdits (Original Response):\n<original_response>\n', response, '\n</original_response>')
         const postProcessedResponse = this.provider.postProcessResponse(codeToReplace, response)
         this.logDebug('Autoedits', '========================== Response:\n', postProcessedResponse, '\n')
         const timeToResponse = Date.now() - start

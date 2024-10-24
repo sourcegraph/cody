@@ -28,6 +28,20 @@ const suggesterType = vscode.window.createTextEditorDecorationType({
     after: { color: GHOST_TEXT_COLOR },
 })
 
+const hideRemainderDecorationType = vscode.window.createTextEditorDecorationType({
+    opacity: '0',
+})
+
+const replacerBackgroundColor = 'rgb(100, 255, 100, 0.1)'
+const replacerDecorationType = vscode.window.createTextEditorDecorationType({
+    backgroundColor: 'red',
+    before: {
+        backgroundColor: replacerBackgroundColor,
+        color: GHOST_TEXT_COLOR,
+        height: '100%',
+    },
+})
+
 function combineRanges(ranges: vscode.Range[], n: number): vscode.Range[] {
     if (ranges.length === 0) return []
     const sortedRanges = ranges.sort((a, b) =>
@@ -69,15 +83,13 @@ export class AutoEditsRenderer implements vscode.Disposable {
         this.disposables.push(
             vscode.commands.registerCommand(
                 'cody.supersuggest.accept',
-                () => this.acceptProposedChange(),
-                this.disposables
+                () => this.acceptProposedChange()
             )
         )
         this.disposables.push(
             vscode.commands.registerCommand(
                 'cody.supersuggest.dismiss',
-                () => this.dismissProposedChange(),
-                this.disposables
+                () => this.dismissProposedChange()
             )
         )
     }
@@ -135,14 +147,90 @@ export class AutoEditsRenderer implements vscode.Disposable {
             currentFileText.slice(document.offsetAt(range.end))
         this.logDiff(options.document.uri, currentFileText, predictedText, predictedFileText)
 
-        const edits = diff(currentFileText, predictedFileText)
-        const allRangesToRemove: vscode.Range[] = []
-        for (const [from1, to1] of edits) {
-            const startPos = document.positionAt(from1)
-            const endPos = document.positionAt(to1)
-            allRangesToRemove.push(new vscode.Range(startPos, endPos))
+        // Add decorations for the removed lines
+        this.renderRemovedLinesDecorations(
+            editor,
+            currentFileText,
+            predictedFileText,
+            document
+        )
+
+        const isPureAddedLine = this.isPureAddedLinesInDiff(currentFileText, predictedFileText)
+        if (isPureAddedLine) {
+            this.renderAddedLinesDecorationsForNewLineAdditions(
+                editor,
+                predictedText,
+                codeToReplace.startLine
+            )
+        } else {
+            this.renderAddedLinesDecorations(
+                editor,
+                currentFileText,
+                predictedFileText,
+                document
+            )
         }
-        const combinedRangesToRemove = combineRanges(allRangesToRemove, 0)
+        await vscode.commands.executeCommand('setContext', 'cody.supersuggest.active', true)
+    }
+
+    public isPureAddedLinesInDiff(currentFileText: string, predictedFileText: string): boolean {
+        const currentLines = currentFileText.split('\n')
+        const predictedLines = predictedFileText.split('\n')
+        for (const [from1, to1, from2, to2] of diff(currentLines, predictedLines)) {
+            if (to2 - to1 > from2 - from1) {
+                return true
+            }
+        }
+        return false
+    }
+
+    public renderAddedLinesDecorationsForNewLineAdditions(
+        editor: vscode.TextEditor,
+        predictedText: string,
+        replaceStartLine: number,
+        replacerCol: number = 80
+    ) {
+        const replacerText = predictedText
+        const replacerDecorations: vscode.DecorationOptions[] = []
+        // TODO(beyang): handle when not enough remaining lines in the doc
+        for (let i = 0; i < replacerText.split('\n').length; i++) {
+            const j = i + replaceStartLine
+            const line = editor.document.lineAt(j)
+            if (line.range.end.character <= replacerCol) {
+                const replacerOptions: vscode.DecorationOptions = {
+                    range: new vscode.Range(j, line.range.end.character, j, line.range.end.character),
+                    renderOptions: {
+                        before: {
+                            contentText:
+                                '\u00A0'.repeat(3) +
+                                replaceLeadingChars(replacerText.split('\n')[i], ' ', '\u00A0'), // TODO(beyang): factor out
+                            margin: `0 0 0 ${replacerCol - line.range.end.character}ch`,
+                        },
+                    },
+                }
+                replacerDecorations.push(replacerOptions)
+            } else {
+                const replacerOptions: vscode.DecorationOptions = {
+                    range: new vscode.Range(j, replacerCol, j, replacerCol),
+                    renderOptions: {
+                        before: {
+                            contentText:
+                                '\u00A0' + replaceLeadingChars(replacerText.split('\n')[i], ' ', '\u00A0'), // TODO(beyang): factor out
+                        },
+                    },
+                }
+                replacerDecorations.push(replacerOptions)
+            }
+        }
+        editor.setDecorations(replacerDecorationType, replacerDecorations)
+    }
+
+    public renderAddedLinesDecorations(
+        editor: vscode.TextEditor,
+        currentFileText: string,
+        predictedFileText: string,
+        document: vscode.TextDocument,
+    ) {
 
         const filename = displayPath(document.uri)
         const patch = structuredPatch(
@@ -151,21 +239,17 @@ export class AutoEditsRenderer implements vscode.Disposable {
             currentFileText,
             predictedFileText
         )
-        let isChanged = false
         const addedLines: DecorationLine[] = []
         for (const hunk of patch.hunks) {
             let oldLineNumber = hunk.oldStart
             let newLineNumber = hunk.newStart
-
             for (const line of hunk.lines) {
                 if (line.length === 0) {
                     continue
                 }
                 if (line[0] === '-') {
-                    isChanged = true
                     oldLineNumber++
                 } else if (line[0] === '+') {
-                    isChanged = true
                     addedLines.push({ line: newLineNumber - 1, text: line.slice(1) })
                     newLineNumber++
                 } else if (line[0] === ' ') {
@@ -174,11 +258,6 @@ export class AutoEditsRenderer implements vscode.Disposable {
                 }
             }
         }
-        if (!isChanged) {
-            await this.showNoChangeMessageAtCursor()
-            return
-        }
-        editor.setDecorations(removedTextDecorationType, combinedRangesToRemove)
         editor.setDecorations(
             suggesterType,
             addedLines.map(line => ({
@@ -191,7 +270,23 @@ export class AutoEditsRenderer implements vscode.Disposable {
                 },
             }))
         )
-        await vscode.commands.executeCommand('setContext', 'cody.supersuggest.active', true)
+    }
+
+    public renderRemovedLinesDecorations(
+        editor: vscode.TextEditor,
+        currentFileText: string,
+        predictedFileText: string,
+        document: vscode.TextDocument
+    ) {
+        const edits = diff(currentFileText, predictedFileText)
+        const allRangesToRemove: vscode.Range[] = []
+        for (const [from1, to1] of edits) {
+            const startPos = document.positionAt(from1)
+            const endPos = document.positionAt(to1)
+            allRangesToRemove.push(new vscode.Range(startPos, endPos))
+        }
+        const combinedRangesToRemove = combineRanges(allRangesToRemove, 0)
+        editor.setDecorations(removedTextDecorationType, combinedRangesToRemove)
     }
 
     async acceptProposedChange(): Promise<void> {
@@ -220,6 +315,7 @@ export class AutoEditsRenderer implements vscode.Disposable {
         }
         editor.setDecorations(removedTextDecorationType, [])
         editor.setDecorations(suggesterType, [])
+        editor.setDecorations(replacerDecorationType, [])
     }
 
     private async showNoChangeMessageAtCursor() {
@@ -259,4 +355,21 @@ export class AutoEditsRenderer implements vscode.Disposable {
             disposable.dispose()
         }
     }
+}
+
+/**
+ * Replaces leading occurrences of a character with another string
+ * @param str The input string to process
+ * @param oldS The character to replace
+ * @param newS The character/string to replace with
+ * @returns The string with leading characters replaced
+ */
+function replaceLeadingChars(str: string, oldS: string, newS: string): string {
+    for (let i = 0; i < str.length; i++) {
+        if (str[i] !== oldS) {
+            // a string that is `newS` repeated i times
+            return newS.repeat(i) + str.substring(i)
+        }
+    }
+    return str
 }
