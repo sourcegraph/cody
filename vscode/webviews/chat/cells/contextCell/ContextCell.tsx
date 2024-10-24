@@ -23,6 +23,45 @@ import { Cell } from '../Cell'
 import { NON_HUMAN_CELL_AVATAR_SIZE } from '../messageCell/assistant/AssistantMessageCell'
 import styles from './ContextCell.module.css'
 
+/*
+<<<<
+}> = memo(
+    ({
+        contextItems,
+        contextAlternatives,
+        model,
+        isForFirstMessage,
+        className,
+        defaultOpen,
+        __storybook__initialOpen,
+        reSubmitWithChatIntent,
+        showSnippets = false,
+        isContextLoading,
+        onAddToFollowupChat,
+        onManuallyEditContext,
+        editContextText,
+    }) => {
+====
+}> = memo(
+    ({
+        contextItems,
+        contextAlternatives,
+        model,
+        isForFirstMessage,
+        className,
+        defaultOpen,
+        __storybook__initialOpen,
+        reSubmitWithChatIntent,
+        isContextLoading,
+        onAddToFollowupChat,
+        onManuallyEditContext,
+        editContextText,
+    }) => {
+~~~~
+{ "minReplacerCol": 40 }
+>>>>
+*/
+
 /**
  * A component displaying the context for a human message.
  */
@@ -62,6 +101,15 @@ export const ContextCell: FunctionComponent<{
         onManuallyEditContext,
         editContextText,
     }) => {
+        /*
+<<<<
+        const [selectedAlternative, setSelectedAlternative] = useState<number | undefined>(undefined)
+        const incrementSelectedAlternative = useCallback(
+            (increment: number): void => {
+                if (!contextAlternatives) {
+                    return
+                }
+====
         const [selectedAlternative, setSelectedAlternative] = useState<number | undefined>(undefined)
         const incrementSelectedAlternative = useCallback(
             (increment: number): void => {
@@ -75,6 +123,48 @@ export const ContextCell: FunctionComponent<{
             },
             [contextAlternatives, selectedAlternative]
         )
+        const nextSelectedAlternative = useCallback(
+            () => incrementSelectedAlternative(1),
+            [incrementSelectedAlternative]
+        )
+~~~~
+{ "minReplacerCol": 80 }
+>>>>
+*/
+        const [selectedAlternative, setSelectedAlternative] = useState<number | undefined>(undefined)
+        const incrementSelectedAlternative = useCallback(
+            (increment: number): void => {
+                if (!contextAlternatives) {
+                    return
+                }
+                const basis = contextAlternatives.length + 1
+                const idx = selectedAlternative === undefined ? 0 : selectedAlternative + 1
+                const newIdx = (idx + increment + basis) % basis
+                setSelectedAlternative(newIdx - 1 < 0 ? undefined : newIdx - 1)
+            },
+            [contextAlternatives, selectedAlternative]
+        )
+
+        /*
+<<<<
+        const prevSelectedAlternative = useCallback(
+            () => incrementSelectedAlternative(-1),
+            [incrementSelectedAlternative]
+        )
+====
+        const prevSelectedAlternative = useCallback(
+            () => incrementSelectedAlternative(-1),
+            [incrementSelectedAlternative]
+        )
+        const anotherOne = useCallback(
+            () => incrementSelectedAlternative(-1),
+            [incrementSelectedAlternative]
+        )
+~~~~
+{ "minReplacerCol": 60 }
+>>>>
+*/
+
         const nextSelectedAlternative = useCallback(
             () => incrementSelectedAlternative(1),
             [incrementSelectedAlternative]

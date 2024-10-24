@@ -744,6 +744,11 @@
         "command": "cody.experimental.suggest",
         "key": "ctrl+shift+enter",
         "when": "cody.activated"
+      },
+      {
+        "command": "cody.supersuggest.testExample",
+        "key": "ctrl+enter",
+        "when": "cody.activated"
       }
     ],
     "submenus": [
