@@ -322,11 +322,19 @@ export class ChatsController implements vscode.Disposable {
         contextItems,
         source = DEFAULT_EVENT_SOURCE,
         command,
+        submitType = 'new-chat',
     }: ExecuteChatArguments): Promise<ChatSession | undefined> {
         let provider: ChatController
         // If the sidebar panel is visible and empty, use it instead of creating a new panel
-        if (this.panel.isVisible() && this.panel.isEmpty()) {
+        if (submitType === 'new-chat' && this.panel.isVisible() && this.panel.isEmpty()) {
             provider = this.panel
+            // For now, always use the side panel if it's visible.
+            // TODO: Let activeEditor be able to become this.panel,
+            // thus handling them both the side panel and a webview panel the same way.
+        } else if (submitType === 'continue-chat' && this.panel.isVisible()) {
+            provider = this.panel
+        } else if (submitType === 'continue-chat' && this.activeEditor?.webviewPanelOrView?.visible) {
+            provider = this.activeEditor
         } else {
             provider = await this.getOrCreateEditorChatController()
         }
