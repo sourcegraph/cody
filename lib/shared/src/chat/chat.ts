@@ -27,7 +27,7 @@ export class ChatClient {
         // Replace internal models used for wrapper models with the actual model ID.
         params.model = params.model?.replace(
             'sourcegraph::2023-06-01::deep-cody',
-            'anthropic::2023-06-01::claude-3.5-sonnet'
+            'anthropic::2024-10-22::claude-3-5-sonnet-latest'
         )
 
         const [versions, authStatus_] = await Promise.all([

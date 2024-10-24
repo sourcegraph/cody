@@ -1,5 +1,6 @@
 import { Observable } from 'observable-fns'
 import type { AuthStatus, ModelsData, ResolvedConfiguration, UserProductSubscription } from '../..'
+import type { SerializedPromptEditorState } from '../..'
 import type { ChatMessage, UserLocalHistory } from '../../chat/transcript/messages'
 import type { ContextItem } from '../../codebase-context/messages'
 import type { CodyCommand } from '../../commands/types'
@@ -28,6 +29,11 @@ export interface WebviewToExtensionAPI {
      */
     prompts(query: string): Observable<PromptsResult>
 
+    /** The commands to prompts library migration information. */
+    promptsMigrationStatus(): Observable<PromptsMigrationStatus>
+
+    startPromptsMigration(): Observable<void>
+
     /**
      * The models data, including all available models, site defaults, and user preferences.
      */
@@ -39,6 +45,11 @@ export interface WebviewToExtensionAPI {
     chatModels(): Observable<Model[]>
 
     highlights(query: FetchHighlightFileParameters): Observable<string[][]>
+
+    hydratePromptMessage(
+        promptText: string,
+        initialContext?: ContextItem[]
+    ): Observable<SerializedPromptEditorState>
 
     /**
      * Set the chat model.
@@ -89,6 +100,8 @@ export function createExtensionAPI(
     // As a workaround for Cody Web, support providing static initial context.
     staticInitialContext?: ContextItem[]
 ): WebviewToExtensionAPI {
+    const hydratePromptMessage = proxyExtensionAPI(messageAPI, 'hydratePromptMessage')
+
     return {
         mentionMenuData: proxyExtensionAPI(messageAPI, 'mentionMenuData'),
         evaluatedFeatureFlag: proxyExtensionAPI(messageAPI, 'evaluatedFeatureFlag'),
@@ -96,11 +109,14 @@ export function createExtensionAPI(
         models: proxyExtensionAPI(messageAPI, 'models'),
         chatModels: proxyExtensionAPI(messageAPI, 'chatModels'),
         highlights: proxyExtensionAPI(messageAPI, 'highlights'),
+        hydratePromptMessage: promptText => hydratePromptMessage(promptText, staticInitialContext),
         setChatModel: proxyExtensionAPI(messageAPI, 'setChatModel'),
         initialContext: staticInitialContext
             ? () => Observable.of(staticInitialContext)
             : proxyExtensionAPI(messageAPI, 'initialContext'),
         detectIntent: proxyExtensionAPI(messageAPI, 'detectIntent'),
+        promptsMigrationStatus: proxyExtensionAPI(messageAPI, 'promptsMigrationStatus'),
+        startPromptsMigration: proxyExtensionAPI(messageAPI, 'startPromptsMigration'),
         resolvedConfig: proxyExtensionAPI(messageAPI, 'resolvedConfig'),
         authStatus: proxyExtensionAPI(messageAPI, 'authStatus'),
         transcript: proxyExtensionAPI(messageAPI, 'transcript'),
@@ -138,4 +154,49 @@ export interface PromptsResult {
 
     /** The original query used to fetch this result. */
     query: string
+}
+
+export type PromptsMigrationStatus =
+    | InitialPromptsMigrationStatus
+    | InProgressPromptsMigrationStatus
+    | SuccessfulPromptsMigrationStatus
+    | FailedPromptsMigrationStatus
+    | PromptsMigrationSkipStatus
+    | NoPromptsMigrationNeeded
+
+interface InitialPromptsMigrationStatus {
+    type: 'initial_migration'
+}
+
+interface InProgressPromptsMigrationStatus {
+    type: 'migrating'
+
+    /**
+     * Current number of commands that we've migrated during the current session
+     * (current migration run).
+     */
+    commandsMigrated: number
+
+    /**
+     * undefined value means that we're still scanning existing prompts to calculate
+     * total commands to migrate (scan first to avoid duplications after migration).
+     */
+    allCommandsToMigrate: number | undefined
+}
+
+interface SuccessfulPromptsMigrationStatus {
+    type: 'migration_success'
+}
+
+interface FailedPromptsMigrationStatus {
+    type: 'migration_failed'
+    errorMessage: string
+}
+
+interface PromptsMigrationSkipStatus {
+    type: 'migration_skip'
+}
+
+interface NoPromptsMigrationNeeded {
+    type: 'no_migration_needed'
 }

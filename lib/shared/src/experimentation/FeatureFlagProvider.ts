@@ -46,7 +46,6 @@ export enum FeatureFlag {
     CodyAutocompleteFIMModelExperimentVariant2 = 'cody-autocomplete-model-v1-experiment-variant-2',
     CodyAutocompleteFIMModelExperimentVariant3 = 'cody-autocomplete-model-v1-experiment-variant-3',
     CodyAutocompleteFIMModelExperimentVariant4 = 'cody-autocomplete-model-v1-experiment-variant-4',
-    CodyAutocompleteDisableLowPerfLangDelay = 'cody-autocomplete-disable-low-perf-lang-delay',
 
     CodyAutocompletePreloadingExperimentBaseFeatureFlag = 'cody-autocomplete-preloading-experiment-flag',
     CodyAutocompletePreloadingExperimentVariant1 = 'cody-autocomplete-preloading-experiment-variant-1',

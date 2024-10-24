@@ -26,6 +26,7 @@ import {
 import type { UserAccountInfo } from '../../../../../Chat'
 import { type ClientActionListener, useClientActionListener } from '../../../../../client/clientState'
 import { useTelemetryRecorder } from '../../../../../utils/telemetry'
+import { useExperimentalOneBox } from '../../../../../utils/useExperimentalOneBox'
 import styles from './HumanMessageEditor.module.css'
 import type { SubmitButtonState } from './toolbar/SubmitButton'
 import { Toolbar } from './toolbar/Toolbar'
@@ -65,6 +66,8 @@ export const HumanMessageEditor: FunctionComponent<{
 
     /** For use in storybooks only. */
     __storybook__focus?: boolean
+
+    initialIntent?: ChatMessage['intent']
 }> = ({
     models,
     userInfo,
@@ -84,6 +87,7 @@ export const HumanMessageEditor: FunctionComponent<{
     editorRef: parentEditorRef,
     __storybook__focus,
     onEditorFocusChange: parentOnEditorFocusChange,
+    initialIntent,
 }) => {
     const telemetryRecorder = useTelemetryRecorder()
 
@@ -109,6 +113,23 @@ export const HumanMessageEditor: FunctionComponent<{
         : isEmptyEditorValue
           ? 'emptyEditorValue'
           : 'submittable'
+
+    const experimentalOneBoxEnabled = useExperimentalOneBox()
+    const [submitIntent, setSubmitIntent] = useState<ChatMessage['intent'] | undefined>(
+        initialIntent || (experimentalOneBoxEnabled ? undefined : 'chat')
+    )
+
+    useEffect(() => {
+        // reset the input box intent when the editor is cleared
+        if (isEmptyEditorValue) {
+            setSubmitIntent(undefined)
+        }
+    }, [isEmptyEditorValue])
+
+    useEffect(() => {
+        // set the input box intent when the message is changed or a new chat is created
+        setSubmitIntent(initialIntent)
+    }, [initialIntent])
 
     const onSubmitClick = useCallback(
         (intent?: ChatMessage['intent']) => {
@@ -156,19 +177,21 @@ export const HumanMessageEditor: FunctionComponent<{
 
             // Submit search intent query when CMD + Options + Enter is pressed.
             if ((event.metaKey || event.ctrlKey) && event.altKey) {
+                setSubmitIntent('search')
                 onSubmitClick('search')
                 return
             }
 
             // Submit chat intent query when CMD + Enter is pressed.
             if (event.metaKey || event.ctrlKey) {
+                setSubmitIntent('chat')
                 onSubmitClick('chat')
                 return
             }
 
-            onSubmitClick()
+            onSubmitClick(submitIntent)
         },
-        [isEmptyEditorValue, onSubmitClick]
+        [isEmptyEditorValue, onSubmitClick, submitIntent]
     )
 
     const [isEditorFocused, setIsEditorFocused] = useState(false)
@@ -256,7 +279,13 @@ export const HumanMessageEditor: FunctionComponent<{
     // Set up the message listener so the extension can control the input field.
     useClientActionListener(
         useCallback<ClientActionListener>(
-            ({ addContextItemsToLastHumanInput, appendTextToLastPromptEditor, submitHumanInput }) => {
+            ({
+                editorState,
+                addContextItemsToLastHumanInput,
+                appendTextToLastPromptEditor,
+                submitHumanInput,
+                setLastHumanInputIntent,
+            }) => {
                 // Add new context to chat from the "Cody Add Selection to Cody Chat"
                 // command, etc. Only add to the last human input field.
                 if (isSent) {
@@ -280,7 +309,7 @@ export const HumanMessageEditor: FunctionComponent<{
                 if (addContextItemsToLastHumanInput && addContextItemsToLastHumanInput.length > 0) {
                     const editor = editorRef.current
                     if (editor) {
-                        editor.addMentions(addContextItemsToLastHumanInput, awaitUpdate())
+                        editor.addMentions(addContextItemsToLastHumanInput, awaitUpdate(), 'after')
                         editor.setFocus(true)
                     }
                 }
@@ -296,11 +325,26 @@ export const HumanMessageEditor: FunctionComponent<{
                     })
                 }
 
+                if (editorState) {
+                    const onUpdate = awaitUpdate()
+                    requestAnimationFrame(() => {
+                        if (editorRef.current) {
+                            editorRef.current.setEditorState(editorState, onUpdate)
+                            editorRef.current.setFocus(true)
+                        }
+                    })
+                }
+                if (setLastHumanInputIntent) {
+                    setSubmitIntent(setLastHumanInputIntent)
+                }
+
                 if (submitHumanInput) {
-                    Promise.all(updates).then(() => onSubmitClick())
+                    Promise.all(updates).then(() =>
+                        onSubmitClick(setLastHumanInputIntent || submitIntent)
+                    )
                 }
             },
-            [isSent, onSubmitClick]
+            [isSent, onSubmitClick, submitIntent]
         )
     )
 
@@ -378,6 +422,8 @@ export const HumanMessageEditor: FunctionComponent<{
                     focusEditor={focusEditor}
                     hidden={!focused && isSent}
                     className={styles.toolbar}
+                    intent={submitIntent}
+                    onSelectIntent={setSubmitIntent}
                 />
             )}
         </div>

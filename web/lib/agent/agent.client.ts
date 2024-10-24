@@ -68,7 +68,7 @@ export async function createAgentClient({
 
     // Initialize
     const serverInfo: ServerInfo = await rpc.sendRequest('initialize', {
-        name: 'standalone-web',
+        name: process.env.CODY_WEB_DEMO ? 'standalone-web' : 'web',
         version: '0.0.1',
         workspaceRootUri,
         capabilities: {

@@ -37,10 +37,6 @@ export const AccountTab: React.FC<AccountTabProps> = ({ setView }) => {
                 getVSCodeAPI().postMessage({ command: 'links', value: ACCOUNT_UPGRADE_URL.toString() }),
         })
     }
-    actions.push({
-        text: 'Switch Account...',
-        onClick: () => getVSCodeAPI().postMessage({ command: 'command', id: 'cody.auth.switchAccount' }),
-    })
     if (isDotComUser) {
         actions.push({
             text: 'Manage Account',

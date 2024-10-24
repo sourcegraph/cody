@@ -16,12 +16,16 @@ export function lexicalNodesForContextItems(
         isFromInitialContext,
     }: {
         isFromInitialContext: boolean
-    }
+    },
+    sep = ' '
 ): (TextNode | ContextItemMentionNode)[] {
-    const nodes = items.flatMap(item => [
-        $createContextItemMentionNode(item, { isFromInitialContext }),
-        $createTextNode(' '),
-    ])
+    const nodes: (ContextItemMentionNode | TextNode)[] = []
+    for (let i = 0; i < items.length; i++) {
+        nodes.push($createContextItemMentionNode(items[i], { isFromInitialContext }))
+        if (i < items.length - 1) {
+            nodes.push($createTextNode(sep))
+        }
+    }
     return nodes
 }
 

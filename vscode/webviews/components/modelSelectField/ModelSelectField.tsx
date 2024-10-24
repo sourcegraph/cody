@@ -190,7 +190,7 @@ export const ModelSelectField: React.FunctionComponent<{
                     data-testid="chat-model-popover"
                 >
                     <CommandList
-                        className="model-selector-popover"
+                        className="model-selector-popover tw-max-h-[80vh] tw-overflow-y-auto"
                         data-testid="chat-model-popover-option"
                     >
                         {optionsByGroup.map(({ group, options }) => (
@@ -379,6 +379,7 @@ const ChatModelIcon: FunctionComponent<{ model: string; className?: string }> = 
 
 /** Common {@link ModelsService.uiGroup} values. */
 const ModelUIGroup: Record<string, string> = {
+    DeepCody: 'Mixed models',
     Power: 'More powerful models',
     Balanced: 'Balanced for power and speed',
     Speed: 'Faster models',
@@ -387,6 +388,7 @@ const ModelUIGroup: Record<string, string> = {
 }
 
 const getModelDropDownUIGroup = (model: Model): string => {
+    if (model.id.includes('deep-cody')) return ModelUIGroup.DeepCody
     if (model.tags.includes(ModelTag.Power)) return ModelUIGroup.Power
     if (model.tags.includes(ModelTag.Balanced)) return ModelUIGroup.Balanced
     if (model.tags.includes(ModelTag.Speed)) return ModelUIGroup.Speed
