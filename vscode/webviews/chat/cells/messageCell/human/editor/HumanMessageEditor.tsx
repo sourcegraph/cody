@@ -119,6 +119,18 @@ export const HumanMessageEditor: FunctionComponent<{
         initialIntent || (experimentalOneBoxEnabled ? undefined : 'chat')
     )
 
+    useEffect(() => {
+        // reset the input box intent when the editor is cleared
+        if (isEmptyEditorValue) {
+            setSubmitIntent(undefined)
+        }
+    }, [isEmptyEditorValue])
+
+    useEffect(() => {
+        // set the input box intent when the message is changed or a new chat is created
+        setSubmitIntent(initialIntent)
+    }, [initialIntent])
+
     const onSubmitClick = useCallback(
         (intent?: ChatMessage['intent']) => {
             if (submitState === 'emptyEditorValue') {
