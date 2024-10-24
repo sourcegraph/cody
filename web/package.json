@@ -24,7 +24,7 @@
     "@sourcegraph/cody-shared": "workspace:*",
     "@sourcegraph/prompt-editor": "workspace:*",
     "@types/lodash": "4.14.195",
-    "@types/vscode": "^1.92.0",
+    "@types/vscode": "1.92.0",
     "@vitejs/plugin-react-swc": "^3.6.0",
     "@vscode/codicons": "^0.0.35",
     "buffer": "^6.0.3",
