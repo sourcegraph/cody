@@ -67,7 +67,7 @@ export class FireworksPromptProvider implements PromptProvider {
                 JSON.stringify({
                     model: model,
                     messages: prompt,
-                    temperature: 0.2,
+                    temperature: 0.1,
                     max_tokens: 256,
                     response_format: {
                         type: 'text',
