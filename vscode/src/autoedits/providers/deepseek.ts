@@ -6,7 +6,7 @@ import type {
 } from '../../../../lib/shared/src/completions/types'
 import type { PromptProvider, PromptProviderResponse, PromptResponseData } from '../prompt-provider'
 import { getModelResponse } from '../prompt-provider'
-import { SYSTEM_PROMPT, getBaseUserPrompt } from '../prompt-utils'
+import { type CodeToReplaceData, SYSTEM_PROMPT, getBaseUserPrompt } from '../prompt-utils'
 
 export class DeepSeekPromptProvider implements PromptProvider {
     private readonly bosToken: PromptString = ps`<｜begin▁of▁sentence｜>`
@@ -37,7 +37,7 @@ ${this.assistantToken}`
         }
     }
 
-    postProcessResponse(response: string): string {
+    postProcessResponse(codeToReplace: CodeToReplaceData, response: string): string {
         return response
     }
 
