@@ -3,6 +3,7 @@ import { structuredPatch } from 'diff'
 import * as vscode from 'vscode'
 import { createGitDiff } from '../../../lib/shared/src/editor/create-git-diff'
 import { GHOST_TEXT_COLOR } from '../commands/GhostHintDecorator'
+import { registerTestRenderCommand } from './BlockRenderer'
 import type { AutoEditsProviderOptions } from './autoedits-provider'
 import type { CodeToReplaceData } from './prompt-utils'
 
@@ -30,18 +31,16 @@ export class AutoEditsRenderer implements vscode.Disposable {
     private activeProposedChange: ProposedChange | null = null
 
     constructor() {
+        this.disposables.push(registerTestRenderCommand())
+
         this.disposables.push(
-            vscode.commands.registerCommand(
-                'cody.supersuggest.accept',
-                () => this.acceptProposedChange(),
-                this.disposables
+            vscode.commands.registerCommand('cody.supersuggest.accept', () =>
+                this.acceptProposedChange()
             )
         )
         this.disposables.push(
-            vscode.commands.registerCommand(
-                'cody.supersuggest.dismiss',
-                () => this.dismissProposedChange(),
-                this.disposables
+            vscode.commands.registerCommand('cody.supersuggest.dismiss', () =>
+                this.dismissProposedChange()
             )
         )
     }
