@@ -99,12 +99,17 @@ export const ContextCell: FunctionComponent<{
         )
 
         const triggerAccordion = useCallback(() => {
-            setAccordionValue(prev => (prev ? '' : 'item-1'))
-            telemetryRecorder.recordEvent('cody.contextCell', 'opened', {
-                metadata: {
-                    fileCount: new Set(usedContext.map(file => file.uri.toString())).size,
-                    excludedAtContext: excludedContext.length,
-                },
+            setAccordionValue(prev => {
+                if (!prev) {
+                    telemetryRecorder.recordEvent('cody.contextCell', 'opened', {
+                        metadata: {
+                            fileCount: new Set(usedContext.map(file => file.uri.toString())).size,
+                            excludedAtContext: excludedContext.length,
+                        },
+                    })
+                }
+
+                return prev ? '' : 'item-1'
             })
         }, [excludedContext.length, usedContext])
 
