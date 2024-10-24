@@ -335,7 +335,6 @@ query GetCodyContextAlternatives($repos: [ID!]!, $query: String!, $codeResultsCo
     }
 }`
 
-
 export const CONTEXT_FILTERS_QUERY = `
 query ContextFilters {
     site {

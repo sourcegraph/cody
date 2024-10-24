@@ -21,6 +21,7 @@ import {
     CHAT_INTENT_QUERY,
     CONTEXT_FILTERS_QUERY,
     CONTEXT_SEARCH_QUERY,
+    CONTEXT_SEARCH_QUERY_ALTERNATIVES,
     CONTEXT_SEARCH_QUERY_WITH_RANGES,
     CREATE_PROMPT_MUTATION,
     CURRENT_SITE_CODY_CONFIG_FEATURES,
@@ -60,7 +61,7 @@ import {
     REPOS_SUGGESTIONS_QUERY,
     REPO_NAME_QUERY,
     SEARCH_ATTRIBUTION_QUERY,
-    VIEWER_SETTINGS_QUERY, CONTEXT_SEARCH_QUERY_ALTERNATIVES,
+    VIEWER_SETTINGS_QUERY,
 } from './queries'
 import { buildGraphQLUrl } from './url'
 
@@ -438,8 +439,8 @@ export interface ContextSearchResult {
 export interface ContextSearchResultAlternative {
     name: string
     contextList: ContextSearchResult[]
-}[]
-
+}
+;[]
 
 /**
  * A prompt that can be shared and reused. See Prompt in the Sourcegraph GraphQL API.
@@ -1133,25 +1134,27 @@ export class SourcegraphGraphQLAPIClient {
                 ...filePatterns,
             },
             signal
-        ).then(response => extractDataOrError(response, data =>
-            (data.getCodyContextAlternatives.contextLists || []).map(contextList => ({
-                name: contextList.name,
-                contextList: contextList.contextItems.map(item => ({
-                    commit: item.blob.commit.oid,
-                    repoName: item.blob.repository.name,
-                    path: item.blob.path,
-                    uri: URI.parse(
-                        `${config.auth.serverEndpoint}${item.blob.repository.name}/-/blob/${
-                            item.blob.path
-                        }?L${item.startLine + 1}-${item.endLine}`
-                    ),
-                    startLine: item.startLine,
-                    endLine: item.endLine,
-                    content: item.chunkContent,
-                    ranges: item.matchedRanges ?? [],
+        ).then(response =>
+            extractDataOrError(response, data =>
+                (data.getCodyContextAlternatives.contextLists || []).map(contextList => ({
+                    name: contextList.name,
+                    contextList: contextList.contextItems.map(item => ({
+                        commit: item.blob.commit.oid,
+                        repoName: item.blob.repository.name,
+                        path: item.blob.path,
+                        uri: URI.parse(
+                            `${config.auth.serverEndpoint}${item.blob.repository.name}/-/blob/${
+                                item.blob.path
+                            }?L${item.startLine + 1}-${item.endLine}`
+                        ),
+                        startLine: item.startLine,
+                        endLine: item.endLine,
+                        content: item.chunkContent,
+                        ranges: item.matchedRanges ?? [],
+                    })),
                 }))
-            }))
-        ))
+            )
+        )
     }
 
     public async contextFilters(): Promise<{
