@@ -18,6 +18,8 @@ import {
     wrapInActiveSpan,
     graphqlClient,
     isError,
+    ps,
+    PromptString,
 } from '@sourcegraph/cody-shared'
 
 
@@ -26,6 +28,7 @@ import type { FixupTask } from '../non-stop/FixupTask'
 import { logError } from '../output-channel-logger'
 
 import {
+    ChatMessage,
     DEFAULT_EVENT_SOURCE,
     EventSourceTelemetryMetadataMapping,
 } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
@@ -98,6 +101,9 @@ export class EditProvider {
                     logDebug("MATCHED SYMBOLS", JSON.stringify(occurrencesInRange.map(occ => occ.symbol)))
                 }
             }
+                }
+            const bytes = chatMessages.reduce((acc, msg) => acc + (msg.text?.length ?? 0), 0) / 4;
+            logDebug("ADDED TOKENS COUNT", bytes.toString())
 
             this.config.controller.startTask(this.config.task)
             const model = this.config.task.model
@@ -121,6 +127,7 @@ export class EditProvider {
                 this.handleError(err)
                 throw err
             })
+            messages.push(...chatMessages)
 
             const multiplexer = new BotResponseMultiplexer()
 
