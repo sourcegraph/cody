@@ -357,8 +357,12 @@ export class InlineCompletionItemProvider
 
             stageRecorder.record('preClientConfigCheck')
             const clientConfig = await ClientConfigSingleton.getInstance().getConfig()
-
-            if (clientConfig && !clientConfig.autoCompleteEnabled) {
+            if (!clientConfig) {
+                const error = new Error('ClientConfigNotFound')
+                this.onError(error)
+                throw error
+            }
+            if (!clientConfig.autoCompleteEnabled) {
                 // If ConfigFeatures exists and autocomplete is disabled then raise
                 // the error banner for autocomplete config turned off
                 const error = new Error('AutocompleteConfigTurnedOff')
@@ -989,30 +993,35 @@ export class InlineCompletionItemProvider
             )
             return
         }
-
-        if (error.message === 'AutocompleteConfigTurnedOff') {
-            const errorTitle = 'Cody Autocomplete Disabled by Site Admin'
-            // If there's already an existing error, don't add another one.
-            const hasAutocompleteDisabledBanner = this.config.statusBar.hasError(
-                e => e.errorType === 'AutoCompleteDisabledByAdmin'
-            )
-            if (hasAutocompleteDisabledBanner) {
-                return
+        //TODO: This error handling is a bit error-prone, either create a custom error class or create a enum
+        switch (error.message) {
+            case 'ClientConfigNotFound':
+            // do nothing
+            case 'AutocompleteConfigTurnedOff': {
+                const errorTitle = 'Cody Autocomplete Disabled by Site Admin'
+                // If there's already an existing error, don't add another one.
+                const hasAutocompleteDisabledBanner = this.config.statusBar.hasError(
+                    e => e.errorType === 'AutoCompleteDisabledByAdmin'
+                )
+                if (hasAutocompleteDisabledBanner) {
+                    return
+                }
+                let shown = false
+                this.config.statusBar.addError({
+                    title: errorTitle,
+                    description: 'Contact your Sourcegraph site admin to enable autocomplete',
+                    errorType: 'AutoCompleteDisabledByAdmin',
+                    removeAfterSelected: false,
+                    onShow: () => {
+                        if (shown) {
+                            return
+                        }
+                        shown = true
+                    },
+                })
             }
-            let shown = false
-            this.config.statusBar.addError({
-                title: errorTitle,
-                description: 'Contact your Sourcegraph site admin to enable autocomplete',
-                errorType: 'AutoCompleteDisabledByAdmin',
-                removeAfterSelected: false,
-                onShow: () => {
-                    if (shown) {
-                        return
-                    }
-                    shown = true
-                },
-            })
         }
+
         // TODO(philipp-spiess): Bring back this code once we have fewer uncaught errors
         //
         // c.f. https://sourcegraph.slack.com/archives/C05AGQYD528/p1693471486690459
