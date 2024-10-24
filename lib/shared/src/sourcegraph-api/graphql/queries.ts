@@ -264,41 +264,6 @@ fragment SymbolUsagesConnection on UsageConnection {
 }
 `
 
-export const SYMBOL_USAGES_QUERY1 = `
-query SymbolUsagesQuery($repoName: String!, $revspec: String!, $filePath: String!, $rangeStart: PositionInput!, $rangeEnd: PositionInput!, $symbolComparator: SymbolComparator, $first: Int!, $afterCursor: String) {
-  usagesForSymbol(
-    symbol: $symbolComparator
-    range: {repository: $repoName, revision: $revspec, path: $filePath, start: $rangeStart, end: $rangeEnd}
-    first: $first
-    after: $afterCursor
-  ) {
-  nodes {
-    provenance
-    usageRange {
-      repository
-      revision
-      path
-      range {
-        start {
-          line
-          character 
-        }
-        end {
-          line
-          character 
-        } 
-      } 
-    }
-    surroundingContent
-    usageKind 
-  } 
-  pageInfo {
-    hasNextPage
-    endCursor 
-  } 
-}
-`
-
 export const FILE_MATCH_SEARCH_QUERY = `
 query FileMatchSearchQuery($query: String!) {
   search(query: $query, version: V3, patternType: literal) {

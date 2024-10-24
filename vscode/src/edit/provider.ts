@@ -32,7 +32,7 @@ import {
     DEFAULT_EVENT_SOURCE,
     EventSourceTelemetryMetadataMapping,
 } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
-import { workspace } from 'vscode'
+import { workspace, Range, Position } from 'vscode'
 import { doesFileExist } from '../commands/utils/workspace-files'
 import { getEditor } from '../editor/active-editor'
 import { CodyTaskState } from '../non-stop/state'
@@ -47,11 +47,184 @@ import { EditIntentTelemetryMetadataMapping, EditModeTelemetryMetadataMapping } 
 import { isStreamedIntent } from './utils/edit-intent'
 import { remoteReposForAllWorkspaceFolders } from '../repository/remoteRepos'
 import { doRangesIntersect } from '@sourcegraph/cody-shared/src/common/range'
-import { oc } from 'date-fns/locale'
+import { CodeGraphOccurrence } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
+import * as cp from 'node:child_process'
+import { CLOSING_CODE_TAG, OPENING_CODE_TAG } from '../completions/text-processing'
+import { gitCommitIdFromGitExtension } from '../repository/git-extension-api'
 
 interface EditProviderOptions extends EditManagerOptions {
     task: FixupTask
     controller: FixupController
+}
+
+async function findScope(content: string, line: number, character: number): Promise<string> {
+    const promise = new Promise<string>((resolve, reject) => {
+        const process = cp.exec(
+            `scip-syntax chunk --line=${line} --character=${character} --language=go -`,
+            (err, stdout, stderr) => {
+                if (err !== null) {
+                    logDebug("SCIP ERROR", err.message, stderr)
+                    reject(err)
+                } else {
+                    resolve(stdout)
+                }
+            }
+        );
+        process.stdin?.write(content)
+        process.stdin?.end()
+    })
+    return promise
+}
+
+type Usage = {
+    repository: string,
+    revision: string,
+    path: string,
+    range: Range,
+    isDefinition: boolean,
+}
+
+/**
+ * Fetches all symbol usages for a given occurrence in a repository.
+ * Handles pagination by making multiple requests until all usages are retrieved.
+ * @param repo Repository name
+ * @param commit Commit hash
+ * @param path File path
+ * @param occurrence Symbol occurrence to find usages for
+ * @returns Array of symbol usages with location and definition information
+ */
+async function occurrenceUsages(repo: string, commit: string, path: string, occurrence: CodeGraphOccurrence): Promise<Usage[]> {
+    let allUsages: Usage[] = [];
+    let cursor: string | undefined;
+    while (allUsages.length < 300) {
+        const usages = await graphqlClient.getSymbolUsages(repo, commit, path, occurrence, cursor)
+        if (isError(usages)) {
+            logDebug("USAGES ERROR", usages.message)
+            break
+        }
+        for (const usage of usages.usagesForSymbol.nodes) {
+            const { start, end } = usage.usageRange.range
+            allUsages.push({
+                repository: usage.usageRange.repository,
+                revision: usage.usageRange.revision,
+                path: usage.usageRange.path,
+                range: new Range(
+                    new Position(start.line, start.character),
+                    new Position(end.line, end.character),
+                ),
+                isDefinition: usage.usageKind === "DEFINITION",
+            })
+        }
+        if (!usages.usagesForSymbol.pageInfo.hasNextPage) {
+            break
+        }
+        cursor = usages.usagesForSymbol.pageInfo.endCursor
+    }
+    return allUsages
+}
+
+/**
+ * Limits the number of usages per repository and total number of repositories.
+ * Prioritizes definitions and respects per-repo and total repo limits.
+ * @param usages Array of symbol usages to filter
+ * @param perRepoLimit Maximum number of usages to include per repository
+ * @param repoLimit Maximum number of repositories to include
+ * @returns Limited array of usages
+ */
+function limitUsagesPerRepo(usages: Usage[], perRepoLimit: number, repoLimit: number): Usage[] {
+    let repoCount = 0;
+    let usagesPerRepo: Record<string, Usage[]> = {}
+    for (const usage of usages) {
+        if (usagesPerRepo[usage.repository] === undefined && repoLimit > repoCount) {
+            usagesPerRepo[usage.repository] = []
+            repoCount++
+        }
+        if (usage.isDefinition) {
+            usagesPerRepo[usage.repository].push(usage)
+            continue
+        }
+        if (usagesPerRepo[usage.repository].length < perRepoLimit) {
+            usagesPerRepo[usage.repository].push(usage)
+        }
+    }
+    let result: Usage[] = []
+    for (const usages of Object.values(usagesPerRepo)) {
+        result.push(...usages)
+    }
+    return result
+}
+
+async function collectGraphContext(range: Range): Promise<ChatMessage[]> {
+    let currentRepo : string | undefined;
+    const repos = await firstValueFrom(remoteReposForAllWorkspaceFolders)
+    if (Array.isArray(repos) && repos.length > 0) {
+        currentRepo = repos[0].name
+    }
+    let currentFile : string | undefined; 
+    let currentCommit : string | undefined;
+    {
+        let currentUri = getEditor()?.active?.document?.uri
+        if (currentUri !== undefined) {
+            currentFile = workspace.asRelativePath(currentUri)
+            currentCommit = gitCommitIdFromGitExtension(currentUri)
+        }
+    }
+    logDebug("COORDINATES",
+        `${currentRepo}@${currentCommit}/${currentFile}:${range?.start?.line}:${range?.end?.line}`
+    )
+
+    let symbolsInRange: CodeGraphOccurrence[] = [];
+    const chatMessages: ChatMessage[] = []
+    if (currentRepo !== undefined && currentCommit !== undefined && currentFile !== undefined) {
+        const codeGraphOccurrences = await graphqlClient.getCodeGraphData(currentRepo, currentCommit, currentFile)
+        if (isError(codeGraphOccurrences)) {
+            logDebug("CODEGRAPH ERROR", codeGraphOccurrences.message)
+        } else {
+            if (codeGraphOccurrences.length === 0) {
+                logDebug("CODEGRAPH ERROR", "No symbols found")
+            }
+            symbolsInRange =
+              codeGraphOccurrences.filter(occurrence => 
+                !occurrence.symbol.startsWith("local ") && doRangesIntersect(occurrence.range, range)
+              )
+        }
+
+        for (const symbol of symbolsInRange) {
+            const usages = await occurrenceUsages(currentRepo, currentCommit, currentFile, symbol)
+            if (isError(usages)) {
+                logDebug("USAGES ERROR", usages.message)
+            } else {
+                for (const usage of limitUsagesPerRepo(usages, 3, 10)) {
+                    const content = await graphqlClient.getFileContents(
+                        usage.repository,
+                        usage.path,
+                        usage.revision,
+                    )
+                    if (isError(content)) {
+                        continue
+                    }
+                    const start = usage.range.start
+                    const prettySymbol = PromptString.unsafe_fromUserQuery(symbol.symbol.split("/").at(-1)!)
+                    try {
+                        const scopeChunk = await findScope(content.repository?.commit?.file?.content ?? "", start.line, start.character)
+                        const promptChunk = PromptString.unsafe_fromUserQuery(scopeChunk)
+                        const promptPath = PromptString.unsafe_fromUserQuery(usage.path)
+                        const usageType = usage.isDefinition ? ps`Definition` : ps`Usage`
+                        const prompt = ps`${usageType} for symbol ${prettySymbol} from file path '${promptPath}': ${OPENING_CODE_TAG}${promptChunk}${CLOSING_CODE_TAG}`
+                        chatMessages.push({ speaker: "human", text: prompt })
+                        logDebug("USAGE", usage.repository, usage.path, start.line)
+                        logDebug(`SCOPE CHUNK (${usageType})`, scopeChunk)
+                    } catch (err: any) {
+                        logDebug("SCIP ERROR", err.message)
+                    }
+                }
+            }
+        }
+    }
+    logDebug("MATCHED SYMBOLS", JSON.stringify(symbolsInRange.map(s => s.symbol)))
+    const bytes = chatMessages.reduce((acc, msg) => acc + (msg.text?.length ?? 0), 0) / 4;
+    logDebug("ADDED TOKENS COUNT", bytes.toString())
+    return chatMessages
 }
 
 // Initiates a completion and responds to the result from the LLM. Implements
@@ -66,45 +239,7 @@ export class EditProvider {
 
     public async startEdit(): Promise<void> {
         return wrapInActiveSpan('command.edit.start', async span => {
-            // FixupController <= creates fixup tasks
-            let currentRepo : string | undefined;
-            const repos = await firstValueFrom(remoteReposForAllWorkspaceFolders)
-            if (Array.isArray(repos) && repos.length > 0) {
-                logDebug("FOUND A REPO", JSON.stringify(repos[0]))
-                currentRepo = repos[0].name
-            }
-            // TODO: make relative to workspace root
-            let currentFile : string | undefined; 
-            {
-                let currentUri = getEditor()?.active?.document?.uri
-                if (currentUri !== undefined) {
-                    currentFile = workspace.asRelativePath(currentUri)
-                }
-            }
-            logDebug("CURRENT FILE", currentFile ?? "NO FILE")
-            // TODO: Resolve the actual revision here
-            let currentCommit = "bca0a8b398de1ca8c8957eecba3f42e622ca5d2a"
-            logDebug("CURRENT COMMIT", currentCommit ?? "NO COMMIT")
-
-            let currentRange = this.config.task.selectionRange
-            logDebug("CURRENT RANGE", JSON.stringify(currentRange))
-
-            if (currentRepo !== undefined && currentCommit !== undefined && currentFile !== undefined) {
-                const codeGraphOccurrences = await graphqlClient.getCodeGraphData(currentRepo, currentCommit, currentFile)
-                if (isError(codeGraphOccurrences)) {
-                    logDebug("CODEGRAPH ERROR", codeGraphOccurrences.message)
-                } else {
-                    const occurrencesInRange = 
-                      codeGraphOccurrences.filter(occurrence => 
-                        !occurrence.symbol.startsWith("local ") && doRangesIntersect(occurrence.range, currentRange)
-                      )
-                    logDebug("MATCHED SYMBOLS", JSON.stringify(occurrencesInRange.map(occ => occ.symbol)))
-                }
-            }
-                }
-            const bytes = chatMessages.reduce((acc, msg) => acc + (msg.text?.length ?? 0), 0) / 4;
-            logDebug("ADDED TOKENS COUNT", bytes.toString())
-
+            const chatMessages = await collectGraphContext(this.config.task.originalRange)
             this.config.controller.startTask(this.config.task)
             const model = this.config.task.model
             const contextWindow = modelsService.getContextWindowByID(model)
