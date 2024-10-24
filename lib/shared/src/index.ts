@@ -256,6 +256,7 @@ export {
     isNodeResponse,
     INCLUDE_EVERYTHING_CONTEXT_FILTERS,
     EXCLUDE_EVERYTHING_CONTEXT_FILTERS,
+    PromptMode,
     type BrowserOrNodeResponse,
     type LogEventMode,
     type ContextFilters,
@@ -380,5 +381,10 @@ export {
     cachedUserProductSubscription,
     userProductSubscription,
 } from './sourcegraph-api/userProductSubscription'
-export { siteVersion, currentSiteVersion } from './sourcegraph-api/siteVersion'
+export {
+    siteVersion,
+    currentSiteVersion,
+    isValidVersion,
+    checkVersion,
+} from './sourcegraph-api/siteVersion'
 export { configOverwrites } from './models/configOverwrites'

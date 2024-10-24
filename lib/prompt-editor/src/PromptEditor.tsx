@@ -1,5 +1,7 @@
+import { $insertFirst } from '@lexical/utils'
 import {
     type ContextItem,
+    type SerializedContextItem,
     type SerializedPromptEditorState,
     type SerializedPromptEditorValue,
     getMentionOperations,
@@ -8,6 +10,7 @@ import {
 } from '@sourcegraph/cody-shared'
 import { clsx } from 'clsx'
 import {
+    $createParagraphNode,
     $createTextNode,
     $getRoot,
     $getSelection,
@@ -22,12 +25,7 @@ import { BaseEditor } from './BaseEditor'
 import styles from './PromptEditor.module.css'
 import { useSetGlobalPromptEditorConfig } from './config'
 import { isEditorContentOnlyInitialContext, lexicalNodesForContextItems } from './initialContext'
-import {
-    $selectAfter,
-    $selectEnd,
-    getContextItemsForEditor,
-    visitContextItemsForEditor,
-} from './lexicalUtils'
+import { $selectEnd, getContextItemsForEditor, visitContextItemsForEditor } from './lexicalUtils'
 import { $createContextItemMentionNode } from './nodes/ContextItemMentionNode'
 import type { KeyboardEventPluginProps } from './plugins/keyboardEvent'
 
@@ -53,7 +51,8 @@ export interface PromptEditorRefAPI {
     getSerializedValue(): SerializedPromptEditorValue
     setFocus(focus: boolean, options?: { moveCursorToEnd?: boolean }, cb?: () => void): void
     appendText(text: string, cb?: () => void): void
-    addMentions(items: ContextItem[], cb?: () => void): void
+    addMentions(items: ContextItem[], cb?: () => void, position?: 'before' | 'after', sep?: string): void
+    filterMentions(filter: (item: SerializedContextItem) => boolean, cb?: () => void): void
     setInitialContextMentions(items: ContextItem[], cb?: () => void): void
     setEditorState(state: SerializedPromptEditorState, cb?: () => void): void
 }
@@ -146,7 +145,23 @@ export const PromptEditor: FunctionComponent<Props> = ({
                     { onUpdate: cb }
                 )
             },
-            addMentions(items: ContextItem[], cb?: () => void): void {
+            filterMentions(filter: (item: SerializedContextItem) => boolean, cb?: () => void): void {
+                if (!editorRef.current) {
+                    cb?.()
+                    return
+                }
+                visitContextItemsForEditor(editorRef.current, node => {
+                    if (!filter(node.contextItem)) {
+                        node.remove()
+                    }
+                })
+            },
+            addMentions(
+                items: ContextItem[],
+                cb?: () => void,
+                position: 'before' | 'after' = 'after',
+                sep = ' '
+            ): void {
                 const editor = editorRef.current
                 if (!editor) {
                     cb?.()
@@ -176,13 +191,39 @@ export const PromptEditor: FunctionComponent<Props> = ({
 
                 editorRef.current?.update(
                     () => {
-                        const nodesToInsert = lexicalNodesForContextItems(ops.create, {
-                            isFromInitialContext: false,
-                        })
-                        $insertNodes([$createTextNode(getWhitespace($getRoot())), ...nodesToInsert])
-                        const lastNode = nodesToInsert.at(-1)
-                        if (lastNode) {
-                            $selectAfter(lastNode)
+                        switch (position) {
+                            case 'before': {
+                                const nodesToInsert = lexicalNodesForContextItems(
+                                    ops.create,
+                                    {
+                                        isFromInitialContext: false,
+                                    },
+                                    sep
+                                )
+                                const pNode = $createParagraphNode()
+                                pNode.append(...nodesToInsert)
+                                $insertFirst($getRoot(), pNode)
+                                $selectEnd()
+                                break
+                            }
+                            case 'after': {
+                                const lexicalNodes = lexicalNodesForContextItems(
+                                    ops.create,
+                                    {
+                                        isFromInitialContext: false,
+                                    },
+                                    sep
+                                )
+                                const pNode = $createParagraphNode()
+                                pNode.append(
+                                    $createTextNode(getWhitespace($getRoot())),
+                                    ...lexicalNodes,
+                                    $createTextNode(sep)
+                                )
+                                $insertNodes([pNode])
+                                $selectEnd()
+                                break
+                            }
                         }
                     },
                     { onUpdate: cb }
@@ -206,6 +247,7 @@ export const PromptEditor: FunctionComponent<Props> = ({
                             const nodesToInsert = lexicalNodesForContextItems(items, {
                                 isFromInitialContext: true,
                             })
+                            nodesToInsert.push($createTextNode(' '))
                             $setSelection($getRoot().selectStart()) // insert at start
                             $insertNodes(nodesToInsert)
                             $selectEnd()

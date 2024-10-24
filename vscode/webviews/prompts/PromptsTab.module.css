@@ -2,3 +2,12 @@
 .prompts-input {
     background-color: var(--vscode-sideBar-background);
 }
+
+.prompts-container {
+    height: min-content !important;
+    overflow: visible !important;
+}
+
+.prompt-migration-widget {
+    margin: 1rem 1rem -0.75rem 1rem;
+}
