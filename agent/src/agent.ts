@@ -528,6 +528,11 @@ export class Agent extends MessageHandler implements ExtensionClient {
             )
         })
 
+        this.registerNotification('window/didChangeFocus', state => {
+            this.pushPendingPromise(vscode_shim.onDidChangeWindowState.cody_fireAsync(state))
+            Object.assign(vscode_shim.window.state, state)
+        })
+
         this.registerNotification('textDocument/didFocus', (document: ProtocolTextDocument) => {
             const documentWithUri = ProtocolTextDocumentWithUri.fromDocument(document)
             this.workspace.setActiveTextEditor(
