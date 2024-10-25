@@ -22,7 +22,7 @@ export const WelcomeMessage: FunctionComponent<WelcomeMessageProps> = ({
     const runAction = useActionSelect()
 
     return (
-        <div className="tw-flex-1 tw-flex tw-flex-col tw-items-start tw-w-full tw-px-6 tw-gap-6 tw-transition-all md:tw-flex-row md:tw-flex-wrap">
+        <div className="tw-flex-1 tw-flex tw-flex-col tw-items-start tw-w-full tw-px-8 tw-gap-6 tw-transition-all">
             {isPromptsV2Enabled && <PromptMigrationWidget dismissible={true} className="tw-w-full" />}
             <div className="tw-flex tw-flex-col tw-gap-4 tw-w-full">
                 <PromptList
