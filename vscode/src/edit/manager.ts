@@ -88,6 +88,7 @@ export class EditManager implements vscode.Disposable {
 
     public async executeEdit(args: ExecuteEditArguments = {}): Promise<FixupTask | undefined> {
         const {
+            runInChatMode,
             configuration = {},
             /**
              * Note: Source must default to `editor` as these are
@@ -231,7 +232,7 @@ export class EditManager implements vscode.Disposable {
             )
         }
         const provider = this.getProviderForTask(task)
-        await provider.startEdit()
+        await provider.startEdit({ saveInHistory: !runInChatMode })
         return task
     }
 

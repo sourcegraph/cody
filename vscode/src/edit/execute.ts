@@ -50,6 +50,8 @@ export interface ExecuteEditArguments {
         insertionPoint?: vscode.Position
     }
     source?: EventSource
+    // runs the command in chat mode, even if it's an edit command
+    runInChatMode?: boolean
     telemetryMetadata?: FixupTelemetryMetadata
 }
 

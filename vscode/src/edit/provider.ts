@@ -58,7 +58,7 @@ export class EditProvider {
 
     constructor(public config: EditProviderOptions) {}
 
-    public async startEdit(): Promise<void> {
+    public async startEdit(options?: { saveInHistory: boolean }): Promise<void> {
         return wrapInActiveSpan('command.edit.start', async span => {
             this.config.controller.startTask(this.config.task)
             const model = this.config.task.model
@@ -103,7 +103,9 @@ export class EditProvider {
                 onTurnComplete: async () => {
                     typewriter.close()
                     typewriter.stop()
-                    void this.saveEditAsChatEntry(text)
+                    if (options?.saveInHistory) {
+                        void this.saveEditAsChatEntry(text)
+                    }
                     void this.handleResponse(text, false)
                     return Promise.resolve()
                 },
@@ -213,7 +215,7 @@ export class EditProvider {
         responseMessage += '```\n' + `${responseContent}\n` + '```'
 
         const chatEntry: SerializedChatTranscript = {
-            id: this.config.task.id,
+            id: Date.now().toString(36).replaceAll(/\d+/g, ''),
             interactions: [
                 {
                     humanMessage: {

@@ -29,8 +29,6 @@ export interface CodyCommandArgs extends ExecuteEditArguments {
     requestID: string
     // where the command was triggered from
     source?: EventSource
-    // runs the command in chat mode, even if it's an edit command
-    runInChatMode?: boolean
     // current context to add on top of the command context
     userContextFiles?: ContextItem[]
     additionalInstruction?: PromptString
