@@ -67,9 +67,9 @@ export const PromptsMigration: FC<PromptsMigrationProps> = props => {
     return (
         <div className={clsx(className, styles.root)}>
             <header className={clsx('tw-text-muted-foreground', styles.iconsHeader)}>
-                <PencilRuler size={20} />
-                <ArrowRight size={20} />
-                <BookText size={20} />
+                <PencilRuler size={18} />
+                <ArrowRight size={18} />
+                <BookText size={18} />
 
                 {dismissible && (
                     <Button
