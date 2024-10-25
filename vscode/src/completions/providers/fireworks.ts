@@ -96,7 +96,7 @@ class FireworksProvider extends Provider {
         this.disposables.push(
             subscriptionDisposable(
                 featureFlagProvider
-                    .evaluatedFeatureFlag(FeatureFlag.CodyAutocompleteTracing)
+                    .evaluatedFeatureFlag(FeatureFlag.CodyAutocompleteFastPath)
                     .subscribe(isFastPathEnabled => {
                         this.isFastPathEnabled = Boolean(isFastPathEnabled)
                     })
