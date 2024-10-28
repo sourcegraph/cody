@@ -160,7 +160,7 @@ export const PromptList: FC<PromptListProps> = props => {
             loop={true}
             tabIndex={0}
             shouldFilter={false}
-            defaultValue='xxx-no-item'
+            defaultValue="xxx-no-item"
             className={clsx(className, styles.list, {
                 [styles.listChips]: appearanceMode === 'chips-list',
             })}
