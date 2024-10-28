@@ -133,19 +133,20 @@ async function runContextCommand(
         }
 
         const results = resultsResp ?? []
-        results.map(contextList => {
-            const actualContext: EvalContextItem[] = contextList.contextList.map(result => ({
+        const actualContext: EvalContextItem[] = []
+        for (const contextList of results) {
+            actualContext.push(...contextList.contextList.map(result => ({
                 repoName: result.repoName,
                 path: result.path,
                 startLine: result.startLine,
                 endLine: result.endLine,
                 content: result.content,
                 retriever: contextList.name,
-            }))
-            exampleOutputs.push({
-                ...example,
-                actualContext,
-            })
+            })))
+        }
+        exampleOutputs.push({
+            ...example,
+            actualContext,
         })
     }
 
