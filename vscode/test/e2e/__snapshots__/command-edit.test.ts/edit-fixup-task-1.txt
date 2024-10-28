@@ -26,10 +26,6 @@
       "value": 0
     },
     {
-      "key": "isRapidChange",
-      "value": 1
-    },
-    {
       "key": "isDisjoint",
       "value": 0
     },
@@ -67,8 +63,7 @@
     }
   ],
   "privateMetadata": {
-    "model": "anthropic::2023-06-01::claude-3.5-sonnet",
-    "changeType": "rapid_s_change"
+    "model": "anthropic::2023-06-01::claude-3.5-sonnet"
   },
   "billingMetadata": {
     "category": "core",
