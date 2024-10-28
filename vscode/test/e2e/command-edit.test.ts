@@ -1,4 +1,7 @@
+import fs from 'node:fs'
+import path from 'node:path'
 import { expect } from '@playwright/test'
+import { createTwoFilesPatch } from 'diff'
 
 import * as mockServer from '../fixtures/mock-server'
 
@@ -94,7 +97,13 @@ test.extend<ExpectedV2Events>({
     const fixupApplySuccessEvent = mockServer.loggedV2Events.find(
         event => event.testId === 'cody.fixup.apply:succeeded'
     )
-    expect(JSON.stringify(fixupApplySuccessEvent?.parameters, null, 2)).toMatchSnapshot()
+    const oldContent = fs.readFileSync(
+        path.join(__dirname, '__snapshots__/command-edit.test.ts/edit-fixup-task-1.txt'),
+        { encoding: 'utf-8' }
+    )
+    const content = JSON.stringify(fixupApplySuccessEvent?.parameters, null, 2)
+    console.log('diff', createTwoFilesPatch('a', 'b', oldContent, content))
+    expect(content).toMatchSnapshot()
 })
 
 test('edit (fixup) input - range selection', async ({ page, sidebar }) => {
