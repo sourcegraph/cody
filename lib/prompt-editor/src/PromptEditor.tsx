@@ -162,37 +162,38 @@ export const PromptEditor: FunctionComponent<Props> = ({
                     }).then(resolve)
                 })
             },
-            addMentions(
+            async addMentions(
                 items: ContextItem[],
                 position: 'before' | 'after' = 'after',
                 sep = ' '
             ): Promise<void> {
-                return new Promise(resolve => {
-                    const editor = editorRef.current
-                    if (!editor) {
-                        return resolve()
-                    }
+                const editor = editorRef.current
+                if (!editor) {
+                    return
+                }
 
-                    const newContextItems = items.map(serializeContextItem)
-                    const existingMentions = getContextItemsForEditor(editor)
-                    const ops = getMentionOperations(existingMentions, newContextItems)
+                const newContextItems = items.map(serializeContextItem)
+                const existingMentions = getContextItemsForEditor(editor)
+                const ops = getMentionOperations(existingMentions, newContextItems)
 
-                    if (ops.modify.size + ops.delete.size > 0) {
-                        visitContextItemsForEditor(editor, existing => {
-                            const update = ops.modify.get(existing.contextItem)
-                            if (update) {
-                                // replace the existing mention inline with the new one
-                                existing.replace($createContextItemMentionNode(update))
-                            }
-                            if (ops.delete.has(existing.contextItem)) {
-                                existing.remove()
-                            }
-                        })
-                    }
-                    if (ops.create.length === 0) {
-                        return resolve()
-                    }
+                if (ops.modify.size + ops.delete.size > 0) {
+                    await visitContextItemsForEditor(editor, existing => {
+                        const update = ops.modify.get(existing.contextItem)
+                        if (update) {
+                            // replace the existing mention inline with the new one
+                            existing.replace($createContextItemMentionNode(update))
+                        }
+                        if (ops.delete.has(existing.contextItem)) {
+                            existing.remove()
+                        }
+                    })
+                }
 
+                if (ops.create.length === 0) {
+                    return
+                }
+
+                return new Promise(resolve =>
                     editorRef.current?.update(
                         () => {
                             switch (position) {
@@ -232,7 +233,7 @@ export const PromptEditor: FunctionComponent<Props> = ({
                         },
                         { onUpdate: resolve }
                     )
-                })
+                )
             },
             setInitialContextMentions(items: ContextItem[]): Promise<void> {
                 return new Promise(resolve => {
