@@ -28,6 +28,7 @@ const dummyVSCodeAPI: VSCodeWrapper = {
                 uiKindIsWeb: false,
                 experimentalNoodle: false,
                 smartApply: false,
+                hasEditCapability: false,
             },
             clientCapabilities: CLIENT_CAPABILITIES_FIXTURE,
             authStatus: {
