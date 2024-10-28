@@ -1,4 +1,8 @@
-import { AUTH_STATUS_FIXTURE_AUTHED, type ClientCapabilitiesWithLegacyFields, CodyIDE, } from '@sourcegraph/cody-shared'
+import {
+    AUTH_STATUS_FIXTURE_AUTHED,
+    type ClientCapabilitiesWithLegacyFields,
+    CodyIDE,
+} from '@sourcegraph/cody-shared'
 import { fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, test, vi } from 'vitest'
 import { AppWrapperForTest } from '../../AppWrapperForTest'
