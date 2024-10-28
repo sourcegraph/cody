@@ -102,8 +102,8 @@ test.extend<ExpectedV2Events>({
         { encoding: 'utf-8' }
     )
     const content = JSON.stringify(fixupApplySuccessEvent?.parameters, null, 2)
-    console.log('diff', createTwoFilesPatch('a', 'b', oldContent, content))
-    expect(content).toMatchSnapshot()
+    throw new Error(createTwoFilesPatch('a', 'b', oldContent, content))
+    // expect(content).toMatchSnapshot()
 })
 
 test('edit (fixup) input - range selection', async ({ page, sidebar }) => {
