@@ -19,7 +19,7 @@
     "build-ts": "tsc --build"
   },
   "devDependencies": {
-    "@openctx/vscode-lib": "^0.0.25",
+    "@openctx/vscode-lib": "^0.0.26",
     "@sourcegraph/cody": "workspace:*",
     "@sourcegraph/cody-shared": "workspace:*",
     "@sourcegraph/prompt-editor": "workspace:*",
