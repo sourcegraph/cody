@@ -1,5 +1,6 @@
 import {
     type ChatModel,
+    type ClientActionBroadcast,
     type CodyClientConfig,
     DefaultEditCommands,
     cenv,
@@ -81,7 +82,7 @@ import type { Span } from '@opentelemetry/api'
 import { captureException } from '@sentry/core'
 import { getTokenCounterUtils } from '@sourcegraph/cody-shared/src/token/counter'
 import type { TelemetryEventParameters } from '@sourcegraph/telemetry'
-import { map } from 'observable-fns'
+import { Subject, map } from 'observable-fns'
 import type { URI } from 'vscode-uri'
 import { View } from '../../../webviews/tabs/types'
 import { redirectToEndpointLogin, showSignInMenu, showSignOutMenu } from '../../auth/auth'
@@ -1690,6 +1691,14 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             chatBuilder: this.chatBuilder.changes,
         }).pipe(shareReplay())
 
+        const clientBroadcast = new Subject<ClientActionBroadcast>()
+
+        this.disposables.push(
+            vscode.commands.registerCommand('cody.show.lastUsedActions', () => {
+                clientBroadcast.next({ type: 'open-recently-prompts' })
+            })
+        )
+
         this.disposables.push(
             addMessageListenersForExtensionAPI(
                 createMessageAPIForExtension({
@@ -1709,6 +1718,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                             chatBuilder: this.chatBuilder,
                         })
                     },
+                    clientActionBroadcast: () => clientBroadcast,
                     evaluatedFeatureFlag: flag => featureFlagProvider.evaluatedFeatureFlag(flag),
                     hydratePromptMessage: (promptText, initialContext) =>
                         promiseFactoryToObservable(() =>
