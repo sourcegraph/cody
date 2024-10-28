@@ -386,6 +386,8 @@ export type ClientNotifications = {
     'webview/didDisposeNative': [{ handle: string }]
 
     'secrets/didChange': [{ key: string }]
+
+    'window/didChangeFocus': [{ focused: boolean }]
 }
 
 // ================
