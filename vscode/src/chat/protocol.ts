@@ -2,7 +2,7 @@ import type {
     AuthCredentials,
     AuthStatus,
     ChatMessage,
-    ClientCapabilities,
+    ClientCapabilitiesWithLegacyFields,
     ClientConfiguration,
     CodyIDE,
     ContextItem,
@@ -121,8 +121,17 @@ export type WebviewMessage =
           snippet: string
       }
     | { command: 'rpc/request'; message: RequestMessage }
-    | { command: 'chatSession'; action: 'duplicate' | 'new'; sessionID?: string | undefined | null }
-    | { command: 'log'; level: 'debug' | 'error'; filterLabel: string; message: string }
+    | {
+          command: 'chatSession'
+          action: 'duplicate' | 'new'
+          sessionID?: string | undefined | null
+      }
+    | {
+          command: 'log'
+          level: 'debug' | 'error'
+          filterLabel: string
+          message: string
+      }
 
 export interface SmartApplyResult {
     taskId: FixupTaskID
@@ -136,7 +145,7 @@ export type ExtensionMessage =
     | {
           type: 'config'
           config: ConfigurationSubsetForWebview & LocalEnv
-          clientCapabilities: ClientCapabilities
+          clientCapabilities: ClientCapabilitiesWithLegacyFields
           authStatus: AuthStatus
           userProductSubscription?: UserProductSubscription | null | undefined
           configFeatures: {
@@ -160,7 +169,9 @@ export type ExtensionMessage =
           type: 'clientAction'
           addContextItemsToLastHumanInput?: ContextItem[] | null | undefined
           appendTextToLastPromptEditor?: string | null | undefined
+          setLastHumanInputIntent?: ChatMessage['intent'] | null | undefined
           smartApplyResult?: SmartApplyResult | undefined | null
+          submitHumanInput?: boolean | undefined | null
       }
     | ({ type: 'attribution' } & ExtensionAttributionMessage)
     | { type: 'rpc/response'; message: ResponseMessage }

@@ -65,11 +65,23 @@ export type SerializedTemplateInputNode = Spread<
 export function serializeContextItem(
     contextItem: ContextItem | SerializedContextItem
 ): SerializedContextItem {
+    const uri = contextItem.uri
+    const uriString =
+        uri instanceof Object
+            ? URI.from({
+                  scheme: uri.scheme,
+                  authority: uri.authority,
+                  path: uri.path,
+                  query: uri.query,
+                  fragment: uri.fragment,
+              }).toString()
+            : uri
+
     // Make sure we only bring over the fields on the context item that we need, or else we
     // could accidentally include tons of data (including the entire contents of files).
     return {
         ...contextItem,
-        uri: contextItem.uri.toString(),
+        uri: uriString,
 
         // Don't include the `content` (if it's present) because it's quite large, and we don't need
         // to serialize it here. It can be hydrated on demand.
@@ -295,6 +307,7 @@ export function contextItemMentionNodeDisplayText(contextItem: SerializedContext
         case 'openctx':
             return contextItem.title
     }
+
     // @ts-ignore
     throw new Error(`unrecognized context item type ${contextItem.type}`)
 }

@@ -1,5 +1,7 @@
+import { $insertFirst } from '@lexical/utils'
 import {
     type ContextItem,
+    type SerializedContextItem,
     type SerializedPromptEditorState,
     type SerializedPromptEditorValue,
     getMentionOperations,
@@ -8,6 +10,7 @@ import {
 } from '@sourcegraph/cody-shared'
 import { clsx } from 'clsx'
 import {
+    $createParagraphNode,
     $createTextNode,
     $getRoot,
     $getSelection,
@@ -22,12 +25,7 @@ import { BaseEditor } from './BaseEditor'
 import styles from './PromptEditor.module.css'
 import { useSetGlobalPromptEditorConfig } from './config'
 import { isEditorContentOnlyInitialContext, lexicalNodesForContextItems } from './initialContext'
-import {
-    $selectAfter,
-    $selectEnd,
-    getContextItemsForEditor,
-    visitContextItemsForEditor,
-} from './lexicalUtils'
+import { $selectEnd, getContextItemsForEditor, visitContextItemsForEditor } from './lexicalUtils'
 import { $createContextItemMentionNode } from './nodes/ContextItemMentionNode'
 import type { KeyboardEventPluginProps } from './plugins/keyboardEvent'
 
@@ -51,11 +49,12 @@ interface Props extends KeyboardEventPluginProps {
 
 export interface PromptEditorRefAPI {
     getSerializedValue(): SerializedPromptEditorValue
-    setFocus(focus: boolean, options?: { moveCursorToEnd?: boolean }): void
-    appendText(text: string, ensureWhitespaceBefore?: boolean): void
-    addMentions(items: ContextItem[]): void
-    setInitialContextMentions(items: ContextItem[]): void
-    setEditorState(state: SerializedPromptEditorState): void
+    setFocus(focus: boolean, options?: { moveCursorToEnd?: boolean }, cb?: () => void): void
+    appendText(text: string, cb?: () => void): void
+    addMentions(items: ContextItem[], cb?: () => void, position?: 'before' | 'after', sep?: string): void
+    filterMentions(filter: (item: SerializedContextItem) => boolean, cb?: () => void): void
+    setInitialContextMentions(items: ContextItem[], cb?: () => void): void
+    setEditorState(state: SerializedPromptEditorState, cb?: () => void): void
 }
 
 /**
@@ -80,10 +79,11 @@ export const PromptEditor: FunctionComponent<Props> = ({
     useImperativeHandle(
         ref,
         (): PromptEditorRefAPI => ({
-            setEditorState(state: SerializedPromptEditorState): void {
+            setEditorState(state: SerializedPromptEditorState, onUpdate): void {
                 const editor = editorRef.current
                 if (editor) {
                     editor.setEditorState(editor.parseEditorState(state.lexicalEditorState))
+                    onUpdate?.()
                 }
             },
             getSerializedValue(): SerializedPromptEditorValue {
@@ -92,7 +92,8 @@ export const PromptEditor: FunctionComponent<Props> = ({
                 }
                 return toSerializedPromptEditorValue(editorRef.current)
             },
-            setFocus(focus, { moveCursorToEnd } = {}): void {
+            // biome-ignore lint/style/useDefaultParameterLast:
+            setFocus(focus, { moveCursorToEnd } = {}, cb): void {
                 const editor = editorRef.current
                 if (editor) {
                     if (focus) {
@@ -123,24 +124,47 @@ export const PromptEditor: FunctionComponent<Props> = ({
                                 // on initial load, for some reason.
                                 setTimeout(doFocus)
                             },
-                            { tag: 'skip-scroll-into-view' }
+                            { tag: 'skip-scroll-into-view', onUpdate: cb }
                         )
                     } else {
                         editor.blur()
+                        cb?.()
                     }
+                } else {
+                    cb?.()
                 }
             },
-            appendText(text: string, ensureWhitespaceBefore?: boolean): void {
-                editorRef.current?.update(() => {
-                    const root = $getRoot()
-                    root.selectEnd()
-                    $insertNodes([$createTextNode(`${getWhitespace(root)}${text}`)])
-                    root.selectEnd()
+            appendText(text: string, cb?: () => void): void {
+                editorRef.current?.update(
+                    () => {
+                        const root = $getRoot()
+                        root.selectEnd()
+                        $insertNodes([$createTextNode(`${getWhitespace(root)}${text}`)])
+                        root.selectEnd()
+                    },
+                    { onUpdate: cb }
+                )
+            },
+            filterMentions(filter: (item: SerializedContextItem) => boolean, cb?: () => void): void {
+                if (!editorRef.current) {
+                    cb?.()
+                    return
+                }
+                visitContextItemsForEditor(editorRef.current, node => {
+                    if (!filter(node.contextItem)) {
+                        node.remove()
+                    }
                 })
             },
-            addMentions(items: ContextItem[]) {
+            addMentions(
+                items: ContextItem[],
+                cb?: () => void,
+                position: 'before' | 'after' = 'after',
+                sep = ' '
+            ): void {
                 const editor = editorRef.current
                 if (!editor) {
+                    cb?.()
                     return
                 }
 
@@ -161,42 +185,77 @@ export const PromptEditor: FunctionComponent<Props> = ({
                     })
                 }
                 if (ops.create.length === 0) {
+                    cb?.()
                     return
                 }
 
-                editorRef.current?.update(() => {
-                    const nodesToInsert = lexicalNodesForContextItems(ops.create, {
-                        isFromInitialContext: false,
-                    })
-                    $insertNodes([$createTextNode(getWhitespace($getRoot())), ...nodesToInsert])
-                    const lastNode = nodesToInsert.at(-1)
-                    if (lastNode) {
-                        $selectAfter(lastNode)
-                    }
-                })
+                editorRef.current?.update(
+                    () => {
+                        switch (position) {
+                            case 'before': {
+                                const nodesToInsert = lexicalNodesForContextItems(
+                                    ops.create,
+                                    {
+                                        isFromInitialContext: false,
+                                    },
+                                    sep
+                                )
+                                const pNode = $createParagraphNode()
+                                pNode.append(...nodesToInsert)
+                                $insertFirst($getRoot(), pNode)
+                                $selectEnd()
+                                break
+                            }
+                            case 'after': {
+                                const lexicalNodes = lexicalNodesForContextItems(
+                                    ops.create,
+                                    {
+                                        isFromInitialContext: false,
+                                    },
+                                    sep
+                                )
+                                const pNode = $createParagraphNode()
+                                pNode.append(
+                                    $createTextNode(getWhitespace($getRoot())),
+                                    ...lexicalNodes,
+                                    $createTextNode(sep)
+                                )
+                                $insertNodes([pNode])
+                                $selectEnd()
+                                break
+                            }
+                        }
+                    },
+                    { onUpdate: cb }
+                )
             },
-            setInitialContextMentions(items: ContextItem[]) {
+            setInitialContextMentions(items: ContextItem[], cb?: () => void): void {
                 const editor = editorRef.current
                 if (!editor) {
+                    cb?.()
                     return
                 }
 
-                editor.update(() => {
-                    if (!hasSetInitialContext.current || isEditorContentOnlyInitialContext(editor)) {
-                        if (isEditorContentOnlyInitialContext(editor)) {
-                            // Only clear in this case so that we don't clobber any text that was
-                            // inserted before initial context was received.
-                            $getRoot().clear()
+                editor.update(
+                    () => {
+                        if (!hasSetInitialContext.current || isEditorContentOnlyInitialContext(editor)) {
+                            if (isEditorContentOnlyInitialContext(editor)) {
+                                // Only clear in this case so that we don't clobber any text that was
+                                // inserted before initial context was received.
+                                $getRoot().clear()
+                            }
+                            const nodesToInsert = lexicalNodesForContextItems(items, {
+                                isFromInitialContext: true,
+                            })
+                            nodesToInsert.push($createTextNode(' '))
+                            $setSelection($getRoot().selectStart()) // insert at start
+                            $insertNodes(nodesToInsert)
+                            $selectEnd()
+                            hasSetInitialContext.current = true
                         }
-                        const nodesToInsert = lexicalNodesForContextItems(items, {
-                            isFromInitialContext: true,
-                        })
-                        $setSelection($getRoot().selectStart()) // insert at start
-                        $insertNodes(nodesToInsert)
-                        $selectEnd()
-                        hasSetInitialContext.current = true
-                    }
-                })
+                    },
+                    { onUpdate: cb }
+                )
             },
         }),
         []

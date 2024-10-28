@@ -10,6 +10,7 @@ import type { CodyCommandArgs } from './types'
 import { fromSlashCommand } from './utils/common'
 
 import {
+    type ClientCapabilities,
     type CodyCommand,
     DefaultChatCommands,
     type DefaultCodyCommands,
@@ -18,7 +19,7 @@ import {
     ps,
     wrapInActiveSpan,
 } from '@sourcegraph/cody-shared'
-import type { ClientCapabilities } from '../jsonrpc/agent-protocol'
+
 /**
  * Handles commands execution with commands from CommandsProvider
  * Provides additional prompt management and execution logic
@@ -75,7 +76,7 @@ class CommandsController implements vscode.Disposable {
 
             // Process default commands
             if (isDefaultChatCommand(commandKey) || isDefaultEditCommand(commandKey)) {
-                return executeDefaultCommand(commandKey, additionalInstruction)
+                return executeDefaultCommand(commandKey, { ...args, additionalInstruction })
             }
 
             const command = this.provider?.get(commandKey)

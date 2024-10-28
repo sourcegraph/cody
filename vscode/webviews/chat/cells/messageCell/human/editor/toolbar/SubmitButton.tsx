@@ -1,24 +1,78 @@
 import type { ChatMessage } from '@sourcegraph/cody-shared'
+import { CodyIDE } from '@sourcegraph/cody-shared'
 import clsx from 'clsx'
-import { BadgeCheck, Search } from 'lucide-react'
-import type { FunctionComponent } from 'react'
+import { BadgeCheck, BetweenHorizonalEnd, Pencil, Search } from 'lucide-react'
+import type { FC } from 'react'
+import { useMemo } from 'react'
 import { Kbd } from '../../../../../../components/Kbd'
 import { Button } from '../../../../../../components/shadcn/ui/button'
 import { Command, CommandItem, CommandList } from '../../../../../../components/shadcn/ui/command'
 import { ToolbarPopoverItem } from '../../../../../../components/shadcn/ui/toolbar'
 import { Tooltip, TooltipContent, TooltipTrigger } from '../../../../../../components/shadcn/ui/tooltip'
+import { useConfig } from '../../../../../../utils/useConfig'
 import { useExperimentalOneBox } from '../../../../../../utils/useExperimentalOneBox'
 import { CodyIcon } from '../../../../../components/CodyIcon'
 
 export type SubmitButtonState = 'submittable' | 'emptyEditorValue' | 'waitingResponseComplete'
 
-export const SubmitButton: FunctionComponent<{
+interface IntentOption {
+    title: string
+    icon: React.FC<{ className?: string }>
+    intent: ChatMessage['intent']
+}
+
+function getIntentOptions(ide: CodyIDE): IntentOption[] {
+    const standardOneBoxIntents: IntentOption[] = [
+        {
+            title: 'Best for question',
+            icon: BadgeCheck,
+            intent: undefined,
+        },
+        {
+            title: 'Ask the LLM',
+            icon: CodyIcon,
+            intent: 'chat',
+        },
+        {
+            title: 'Search Code',
+            icon: Search,
+            intent: 'search',
+        },
+    ]
+
+    if (ide === CodyIDE.Web) {
+        return standardOneBoxIntents
+    }
+
+    return [
+        ...standardOneBoxIntents,
+        {
+            title: 'Edit Code',
+            icon: Pencil,
+            intent: 'edit',
+        },
+        {
+            title: 'Insert Code',
+            icon: BetweenHorizonalEnd,
+            intent: 'insert',
+        },
+    ]
+}
+
+export const SubmitButton: FC<{
     onClick: (intent?: ChatMessage['intent']) => void
     isEditorFocused?: boolean
     state?: SubmitButtonState
     className?: string
-}> = ({ onClick, state = 'submittable', className }) => {
+    intent?: ChatMessage['intent']
+    onSelectIntent?: (intent: ChatMessage['intent']) => void
+}> = ({ onClick, state = 'submittable', className, intent, onSelectIntent }) => {
     const experimentalOneBoxEnabled = useExperimentalOneBox()
+    const {
+        clientCapabilities: { agentIDE },
+    } = useConfig()
+
+    const intentOptions = useMemo(() => getIntentOptions(agentIDE), [agentIDE])
 
     if (state === 'waitingResponseComplete') {
         return (
@@ -45,79 +99,67 @@ export const SubmitButton: FunctionComponent<{
         )
     }
 
-    if (experimentalOneBoxEnabled) {
-        return (
-            <div className="tw-flex tw-items-center">
-                <Button
-                    variant="primaryRoundedIcon"
-                    onClick={() => onClick()}
-                    disabled={state === 'emptyEditorValue'}
-                    type="submit"
-                    className={clsx('tw-relative tw-w-[20px] tw-h-[20px]', className)}
-                    title="Send"
-                >
-                    {/* biome-ignore lint/a11y/noSvgWithoutTitle: */}
-                    <svg
-                        width="8"
-                        height="10"
-                        viewBox="0 0 8 10"
-                        className="tw-translate-x-[1px]"
-                        fill="currentColor"
+    const selectedIntent = intentOptions.find(option => option.intent === intent)
+
+    return (
+        <div className="tw-flex tw-items-center">
+            {experimentalOneBoxEnabled && selectedIntent && (
+                <selectedIntent.icon className="tw-size-8 tw-mr-2" />
+            )}
+            <Tooltip>
+                <TooltipTrigger asChild>
+                    <Button
+                        variant="primaryRoundedIcon"
+                        onClick={() => onClick(intent)}
+                        disabled={state === 'emptyEditorValue'}
+                        type="submit"
+                        className={clsx('tw-relative tw-w-[20px] tw-h-[20px]', className)}
+                        title="Send"
                     >
-                        <path
-                            d="M1.25 1L7.25 5L1.25 9V1Z"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                        />
-                    </svg>
-                </Button>
+                        {/* biome-ignore lint/a11y/noSvgWithoutTitle: */}
+                        <svg
+                            width="8"
+                            height="10"
+                            viewBox="0 0 8 10"
+                            className="tw-translate-x-[1px]"
+                            fill="currentColor"
+                        >
+                            <path
+                                d="M1.25 1L7.25 5L1.25 9V1Z"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                            />
+                        </svg>
+                    </Button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">
+                    Send <Kbd macOS="return" linuxAndWindows="return" />
+                </TooltipContent>
+            </Tooltip>
+            {experimentalOneBoxEnabled && (
                 <ToolbarPopoverItem
                     role="combobox"
                     iconEnd="chevron"
                     className="tw-justify-between tw-inline-flex"
                     aria-label="Insert prompt"
-                    popoverContent={() => (
+                    popoverContent={close => (
                         <Command>
-                            <CommandList>
-                                <CommandItem
-                                    onSelect={() => onClick()}
-                                    className="tw-flex tw-text-left tw-justify-between"
-                                >
-                                    <div className="tw-flex tw-items-center tw-gap-2">
-                                        <BadgeCheck className="tw-size-8" />
-                                        Best for question
-                                    </div>
-                                    <div className="tw-flex tw-gap-2">
-                                        <Kbd macOS="return" linuxAndWindows="return" />
-                                    </div>
-                                </CommandItem>
-                                <CommandItem
-                                    onSelect={() => onClick('chat')}
-                                    className="tw-flex tw-text-left tw-justify-between"
-                                >
-                                    <div className="tw-flex tw-items-center tw-gap-2">
-                                        <CodyIcon />
-                                        Ask the LLM
-                                    </div>
-                                    <div className="tw-flex tw-gap-2">
-                                        <Kbd macOS="cmd" linuxAndWindows="ctrl" />
-                                        <Kbd macOS="return" linuxAndWindows="return" />
-                                    </div>
-                                </CommandItem>
-                                <CommandItem
-                                    onSelect={() => onClick('search')}
-                                    className="tw-flex tw-text-left tw-justify-between"
-                                >
-                                    <div className="tw-flex tw-items-center tw-gap-2">
-                                        <Search className="tw-size-8" />
-                                        Search Code
-                                    </div>
-                                    <div className="tw-flex tw-gap-2">
-                                        <Kbd macOS="cmd" linuxAndWindows="ctrl" />
-                                        <Kbd macOS="opt" linuxAndWindows="alt" />
-                                        <Kbd macOS="return" linuxAndWindows="return" />
-                                    </div>
-                                </CommandItem>
+                            <CommandList className="tw-p-2">
+                                {intentOptions.map(option => (
+                                    <CommandItem
+                                        key={option.intent ?? option.title}
+                                        onSelect={() => {
+                                            onSelectIntent?.(option.intent)
+                                            close()
+                                        }}
+                                        className="tw-flex tw-text-left tw-justify-between tw-rounded-sm"
+                                    >
+                                        <div className="tw-flex tw-items-center tw-gap-2">
+                                            <option.icon className="tw-size-8" />
+                                            {option.title}
+                                        </div>
+                                    </CommandItem>
+                                ))}
                             </CommandList>
                         </Command>
                     )}
@@ -130,39 +172,7 @@ export const SubmitButton: FunctionComponent<{
                         },
                     }}
                 />
-            </div>
-        )
-    }
-    return (
-        <Tooltip>
-            <TooltipTrigger asChild>
-                <Button
-                    variant="primaryRoundedIcon"
-                    onClick={() => onClick()}
-                    disabled={state === 'emptyEditorValue'}
-                    type="submit"
-                    className={clsx('tw-relative tw-w-[20px] tw-h-[20px]', className)}
-                    title="Send"
-                >
-                    {/* biome-ignore lint/a11y/noSvgWithoutTitle: */}
-                    <svg
-                        width="8"
-                        height="10"
-                        viewBox="0 0 8 10"
-                        className="tw-translate-x-[1px]"
-                        fill="currentColor"
-                    >
-                        <path
-                            d="M1.25 1L7.25 5L1.25 9V1Z"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                        />
-                    </svg>
-                </Button>
-            </TooltipTrigger>
-            <TooltipContent side="bottom">
-                Send <Kbd macOS="return" linuxAndWindows="return" />
-            </TooltipContent>
-        </Tooltip>
+            )}
+        </div>
     )
 }

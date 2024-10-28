@@ -1,4 +1,9 @@
-import { type AuthStatus, type ClientCapabilities, CodyIDE } from '@sourcegraph/cody-shared'
+import {
+    type AuthStatus,
+    type ClientCapabilitiesWithLegacyFields,
+    CodyIDE,
+    FeatureFlag,
+} from '@sourcegraph/cody-shared'
 import { useExtensionAPI, useObservable } from '@sourcegraph/prompt-editor'
 import type React from 'react'
 import { type ComponentProps, type FunctionComponent, useMemo, useRef } from 'react'
@@ -10,6 +15,7 @@ import { Notices } from './components/Notices'
 import { StateDebugOverlay } from './components/StateDebugOverlay'
 import { TabContainer, TabRoot } from './components/shadcn/ui/tabs'
 import { AccountTab, HistoryTab, PromptsTab, SettingsTab, TabsBar, View } from './tabs'
+import { useFeatureFlag } from './utils/useFeatureFlags'
 import { TabViewContext } from './utils/useTabView'
 
 /**
@@ -21,7 +27,7 @@ export const CodyPanel: FunctionComponent<
         setView: (view: View) => void
         configuration: {
             config: LocalEnv & ConfigurationSubsetForWebview
-            clientCapabilities: ClientCapabilities
+            clientCapabilities: ClientCapabilitiesWithLegacyFields
             authStatus: AuthStatus
         }
         errorMessages: string[]
@@ -58,6 +64,7 @@ export const CodyPanel: FunctionComponent<
 
     const api = useExtensionAPI()
     const { value: chatModels } = useObservable(useMemo(() => api.chatModels(), [api.chatModels]))
+    const isPromptsV2Enabled = useFeatureFlag(FeatureFlag.CodyPromptsV2)
 
     return (
         <TabViewContext.Provider value={useMemo(() => ({ view, setView }), [view, setView])}>
@@ -90,6 +97,7 @@ export const CodyPanel: FunctionComponent<
                             showWelcomeMessage={showWelcomeMessage}
                             scrollableParent={tabContainerRef.current}
                             smartApplyEnabled={smartApplyEnabled}
+                            isPromptsV2Enabled={isPromptsV2Enabled}
                             setView={setView}
                         />
                     )}
@@ -101,7 +109,9 @@ export const CodyPanel: FunctionComponent<
                             multipleWebviewsEnabled={config.multipleWebviewsEnabled}
                         />
                     )}
-                    {view === View.Prompts && <PromptsTab setView={setView} />}
+                    {view === View.Prompts && (
+                        <PromptsTab setView={setView} isPromptsV2Enabled={isPromptsV2Enabled} />
+                    )}
                     {view === View.Account && <AccountTab setView={setView} />}
                     {view === View.Settings && <SettingsTab />}
                 </TabContainer>

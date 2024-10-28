@@ -13,13 +13,16 @@ import { logDebug, logError } from '../../logger'
 import { firstValueFrom } from '../../misc/observable'
 import { addTraceparent, wrapInActiveSpan } from '../../tracing'
 import { isError } from '../../utils'
+import { addCodyClientIdentificationHeaders } from '../client-name-version'
 import { DOTCOM_URL, isDotCom } from '../environments'
 import { isAbortError } from '../errors'
 import {
+    CHANGE_PROMPT_VISIBILITY,
     CHAT_INTENT_QUERY,
     CONTEXT_FILTERS_QUERY,
     CONTEXT_SEARCH_QUERY,
     CONTEXT_SEARCH_QUERY_WITH_RANGES,
+    CREATE_PROMPT_MUTATION,
     CURRENT_SITE_CODY_CONFIG_FEATURES,
     CURRENT_SITE_CODY_LLM_CONFIGURATION,
     CURRENT_SITE_CODY_LLM_CONFIGURATION_SMART_CONTEXT,
@@ -32,6 +35,7 @@ import {
     CURRENT_USER_CODY_SUBSCRIPTION_QUERY,
     CURRENT_USER_ID_QUERY,
     CURRENT_USER_INFO_QUERY,
+    CURRENT_USER_ROLE_QUERY,
     DELETE_ACCESS_TOKEN_MUTATION,
     EVALUATE_FEATURE_FLAG_QUERY,
     FILE_CONTENTS_QUERY,
@@ -44,10 +48,12 @@ import {
     HIGHLIGHTED_FILE_QUERY,
     LEGACY_CHAT_INTENT_QUERY,
     LEGACY_CONTEXT_SEARCH_QUERY,
+    LEGACY_PROMPTS_QUERY_5_8,
     LOG_EVENT_MUTATION,
     LOG_EVENT_MUTATION_DEPRECATED,
     PACKAGE_LIST_QUERY,
     PROMPTS_QUERY,
+    PromptsOrderBy,
     RECORD_TELEMETRY_EVENTS_MUTATION,
     REPOSITORY_IDS_QUERY,
     REPOSITORY_ID_QUERY,
@@ -180,12 +186,17 @@ interface CurrentUserIdResponse {
     currentUser: { id: string } | null
 }
 
+interface CurrentUserRoleResponse {
+    currentUser: { id: string; siteAdmin: boolean } | null
+}
+
 interface CurrentUserInfoResponse {
     currentUser: {
         id: string
         hasVerifiedEmail: boolean
         displayName?: string
         username: string
+        siteAdmin: boolean
         avatarURL: string
         codyProEnabled: boolean
         primaryEmail?: { email: string } | null
@@ -407,11 +418,14 @@ export interface Prompt {
     id: string
     name: string
     nameWithOwner: string
+    recommended: boolean
     owner: {
         namespaceName: string
     }
     description?: string
     draft: boolean
+    autoSubmit?: boolean
+    mode?: PromptMode
     definition: {
         text: string
     }
@@ -422,6 +436,23 @@ export interface Prompt {
         displayName: string
         avatarURL: string
     }
+}
+
+export interface PromptInput {
+    owner: string
+    name: string
+    description: string
+    definitionText: string
+    draft: boolean
+    autoSubmit: boolean
+    mode: PromptMode
+    visibility?: 'PUBLIC' | 'SECRET'
+}
+
+export enum PromptMode {
+    CHAT = 'CHAT',
+    EDIT = 'EDIT',
+    INSERT = 'INSERT',
 }
 
 interface ContextFiltersResponse {
@@ -489,6 +520,7 @@ export interface CurrentUserInfo {
     hasVerifiedEmail: boolean
     username: string
     displayName?: string
+    siteAdmin: boolean
     avatarURL: string
     primaryEmail?: { email: string } | null
     organizations: {
@@ -568,16 +600,6 @@ type GraphQLAPIClientConfig = PickResolvedConfiguration<{
     configuration: 'telemetryLevel' | 'customHeaders'
     clientState: 'anonymousUserID'
 }>
-
-export let customUserAgent: string | undefined
-export function addCustomUserAgent(headers: Headers): void {
-    if (customUserAgent) {
-        headers.set('User-Agent', customUserAgent)
-    }
-}
-export function setUserAgent(newUseragent: string): void {
-    customUserAgent = newUseragent
-}
 
 const QUERY_TO_NAME_REGEXP = /^\s*(?:query|mutation)\s+(\w+)/m
 
@@ -751,6 +773,17 @@ export class SourcegraphGraphQLAPIClient {
             {}
         ).then(response =>
             extractDataOrError(response, data => (data.currentUser ? data.currentUser.id : null))
+        )
+    }
+
+    public async isCurrentUserSideAdmin(): Promise<
+        CurrentUserRoleResponse['currentUser'] | null | Error
+    > {
+        return this.fetchSourcegraphAPI<APIResponse<CurrentUserRoleResponse>>(
+            CURRENT_USER_ROLE_QUERY,
+            {}
+        ).then(response =>
+            extractDataOrError(response, data => (data.currentUser ? data.currentUser : null))
         )
     }
 
@@ -1119,10 +1152,27 @@ export class SourcegraphGraphQLAPIClient {
         return result
     }
 
-    public async queryPrompts(query: string, signal?: AbortSignal): Promise<Prompt[]> {
+    public async queryPrompts({
+        query,
+        first,
+        recommendedOnly,
+        signal,
+    }: {
+        query: string
+        first: number | undefined
+        recommendedOnly: boolean
+        signal?: AbortSignal
+    }): Promise<Prompt[]> {
+        const hasIncludeViewerDraftsArg = await this.isValidSiteVersion({ minimumVersion: '5.9.0' })
+
         const response = await this.fetchSourcegraphAPI<APIResponse<{ prompts: { nodes: Prompt[] } }>>(
-            PROMPTS_QUERY,
-            { query },
+            hasIncludeViewerDraftsArg ? PROMPTS_QUERY : LEGACY_PROMPTS_QUERY_5_8,
+            {
+                query,
+                first: first ?? 100,
+                recommendedOnly: recommendedOnly,
+                orderByMultiple: [PromptsOrderBy.PROMPT_RECOMMENDED, PromptsOrderBy.PROMPT_UPDATED_AT],
+            },
             signal
         )
         const result = extractDataOrError(response, data => data.prompts.nodes)
@@ -1130,6 +1180,39 @@ export class SourcegraphGraphQLAPIClient {
             throw result
         }
         return result
+    }
+
+    public async createPrompt(input: PromptInput): Promise<{ id: string }> {
+        const response = await this.fetchSourcegraphAPI<APIResponse<{ createPrompt: { id: string } }>>(
+            CREATE_PROMPT_MUTATION,
+            { input }
+        )
+
+        const result = extractDataOrError(response, data => data.createPrompt)
+
+        if (result instanceof Error) {
+            throw result
+        }
+
+        return result
+    }
+
+    public async transferPromptOwnership(input: {
+        id: string
+        visibility: 'PUBLIC' | 'SECRET'
+    }): Promise<void> {
+        const response = await this.fetchSourcegraphAPI<APIResponse<unknown>>(CHANGE_PROMPT_VISIBILITY, {
+            id: input.id,
+            newVisibility: input.visibility,
+        })
+
+        const result = extractDataOrError(response, data => data)
+
+        if (result instanceof Error) {
+            throw result
+        }
+
+        return
     }
 
     /**
@@ -1384,7 +1467,7 @@ export class SourcegraphGraphQLAPIClient {
         }
 
         addTraceparent(headers)
-        addCustomUserAgent(headers)
+        addCodyClientIdentificationHeaders(headers)
 
         const queryName = query.match(QUERY_TO_NAME_REGEXP)?.[1]
 
@@ -1416,7 +1499,7 @@ export class SourcegraphGraphQLAPIClient {
             baseUrl: this.dotcomUrl.href,
         })
         const headers = new Headers()
-        addCustomUserAgent(headers)
+        addCodyClientIdentificationHeaders(headers)
         addTraceparent(headers)
 
         const queryName = query.match(QUERY_TO_NAME_REGEXP)?.[1]
@@ -1439,7 +1522,7 @@ export class SourcegraphGraphQLAPIClient {
         const headers = new Headers({
             'Content-Type': 'application/json',
         })
-        addCustomUserAgent(headers)
+        addCodyClientIdentificationHeaders(headers)
 
         return fetch(url, {
             method: 'POST',
@@ -1475,7 +1558,7 @@ export class SourcegraphGraphQLAPIClient {
         }
 
         addTraceparent(headers)
-        addCustomUserAgent(headers)
+        addCodyClientIdentificationHeaders(headers)
 
         const url = new URL(urlPath, config.auth.serverEndpoint).href
 
@@ -1527,7 +1610,8 @@ function catchHTTPError(
             }
             error = `ETIMEDOUT: timed out after ${DEFAULT_TIMEOUT_MSEC}ms`
         }
-        return new Error(`accessing Sourcegraph HTTP API: ${error} (${url})`)
+        const code = `${(typeof error === 'object' && error ? (error as any).code : undefined) ?? ''} `
+        return new Error(`accessing Sourcegraph HTTP API: ${code}${error} (${url})`)
     }
 }
 

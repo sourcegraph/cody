@@ -46,7 +46,6 @@ export enum FeatureFlag {
     CodyAutocompleteFIMModelExperimentVariant2 = 'cody-autocomplete-model-v1-experiment-variant-2',
     CodyAutocompleteFIMModelExperimentVariant3 = 'cody-autocomplete-model-v1-experiment-variant-3',
     CodyAutocompleteFIMModelExperimentVariant4 = 'cody-autocomplete-model-v1-experiment-variant-4',
-    CodyAutocompleteDisableLowPerfLangDelay = 'cody-autocomplete-disable-low-perf-lang-delay',
 
     CodyAutocompletePreloadingExperimentBaseFeatureFlag = 'cody-autocomplete-preloading-experiment-flag',
     CodyAutocompletePreloadingExperimentVariant1 = 'cody-autocomplete-preloading-experiment-variant-1',
@@ -89,6 +88,12 @@ export enum FeatureFlag {
      * some standard out-of-the-box prompts like documentation and explain code prompts)
      */
     CodyUnifiedPrompts = 'cody-unified-prompts',
+
+    /**
+     * For internal use only. New Prompts UI and logic is behind this feature flag
+     * will be removed as soon as commands will be deprecated.
+     */
+    CodyPromptsV2 = 'prompt-creation-v2',
 
     /** Whether user has access to the experimental Cody Reflection / Deep Cody feature. */
     DeepCody = 'cody-deep-reflection',

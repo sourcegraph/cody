@@ -14,6 +14,7 @@ import {
     type UserLocalHistory,
     getMockedDotComClientModels,
     promiseFactoryToObservable,
+    serializedPromptEditorStateFromText,
 } from '@sourcegraph/cody-shared'
 import { ExtensionAPIProviderForTestsOnly } from '@sourcegraph/prompt-editor'
 import { Observable } from 'observable-fns'
@@ -93,6 +94,10 @@ export const AppWrapperForTest: FunctionComponent<{ children: ReactNode }> = ({ 
                     chatModels: () => Observable.of(getMockedDotComClientModels()),
                     setChatModel: () => EMPTY,
                     initialContext: () => Observable.of([]),
+                    hydratePromptMessage: text =>
+                        Observable.of(serializedPromptEditorStateFromText(text)),
+                    promptsMigrationStatus: () => Observable.of({ type: 'no_migration_needed' }),
+                    startPromptsMigration: () => Observable.of(),
                     detectIntent: () => Observable.of(),
                     resolvedConfig: () =>
                         Observable.of({

@@ -1,7 +1,7 @@
 import fs from 'node:fs'
 
 import path from 'node:path'
-import { codyPaths } from '../../codyPaths'
+import { codyPaths } from '@sourcegraph/cody-shared'
 
 export interface Account {
     // In most cases, the ID will be the same as the username.  It's only when

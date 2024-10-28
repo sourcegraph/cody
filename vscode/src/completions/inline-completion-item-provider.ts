@@ -24,7 +24,6 @@ import { isInTutorial } from '../tutorial/helpers'
 
 import type { CompletionBookkeepingEvent, CompletionItemID, CompletionLogID } from './analytics-logger'
 import * as CompletionAnalyticsLogger from './analytics-logger'
-import { getArtificialDelay } from './artificial-delay'
 import { completionProviderConfig } from './completion-provider-config'
 import { ContextMixer } from './context/context-mixer'
 import { DefaultContextStrategyFactory } from './context/context-strategy'
@@ -129,8 +128,6 @@ export class InlineCompletionItemProvider
     public get config(): InlineCompletionItemProviderConfig {
         return InlineCompletionItemProviderConfigSingleton.configuration
     }
-    private disableLowPerfLangDelay = false
-
     constructor({
         completeSuggestWidgetSelection = true,
         triggerDelay = 0,
@@ -194,22 +191,15 @@ export class InlineCompletionItemProvider
 
         void completionProviderConfig.prefetch()
 
-        // Subscribe to changes in disableLowPerfLangDelay and update the value accordingly
-        this.disposables.push(
-            subscriptionDisposable(
-                completionProviderConfig.completionDisableLowPerfLangDelay.subscribe(
-                    disableLowPerfLangDelay => {
-                        this.disableLowPerfLangDelay = disableLowPerfLangDelay
-                    }
-                )
-            )
-        )
         const strategyFactory = new DefaultContextStrategyFactory(
             completionProviderConfig.contextStrategy
         )
         this.disposables.push(strategyFactory)
 
-        this.contextMixer = new ContextMixer(strategyFactory)
+        this.contextMixer = new ContextMixer({
+            strategyFactory,
+            dataCollectionEnabled: true,
+        })
         this.disposables.push(this.contextMixer)
 
         this.smartThrottleService = new SmartThrottleService()
@@ -455,12 +445,6 @@ export class InlineCompletionItemProvider
                 return null
             }
 
-            const artificialDelay = getArtificialDelay({
-                languageId: document.languageId,
-                codyAutocompleteDisableLowPerfLangDelay: this.disableLowPerfLangDelay,
-                completionIntent,
-            })
-
             const debounceInterval = this.config.provider.mayUseOnDeviceInference ? 125 : 75
             stageRecorder.record('preGetInlineCompletions')
 
@@ -492,7 +476,6 @@ export class InlineCompletionItemProvider
                     handleDidPartiallyAcceptCompletionItem:
                         this.unstable_handleDidPartiallyAcceptCompletionItem.bind(this),
                     completeSuggestWidgetSelection: takeSuggestWidgetSelectionIntoAccount,
-                    artificialDelay,
                     firstCompletionTimeout: this.config.firstCompletionTimeout,
                     completionIntent,
                     lastAcceptedCompletionItem: this.lastAcceptedCompletionItem,
@@ -632,7 +615,7 @@ export class InlineCompletionItemProvider
                 // return `CompletionEvent` telemetry data to the agent command `autocomplete/execute`.
                 const autocompleteResult: AutocompleteResult = {
                     logId: result.logId,
-                    items: updateInsertRangeForVSCode(visibleItems),
+                    items: visibleItems,
                     completionEvent: CompletionAnalyticsLogger.getCompletionEvent(result.logId),
                 }
 
@@ -641,6 +624,12 @@ export class InlineCompletionItemProvider
                     // that if we pass the above visibility tests, the completion is going to be
                     // rendered in the UI
                     this.unstable_handleDidShowCompletionItem(visibleItems[0])
+
+                    // Adjust the completion insert text and range to start from beginning of the current line
+                    // (instead of starting at the given position). This avoids UI jitter in VS Code; when
+                    // typing or deleting individual characters, VS Code reuses the existing completion
+                    // while it waits for the new one to come in.
+                    autocompleteResult.items = updateInsertRangeForVSCode(visibleItems)
                 }
 
                 recordExposedExperimentsToSpan(span)
@@ -660,6 +649,7 @@ export class InlineCompletionItemProvider
                         return null // Exit early if the request has been aborted
                     }
                 }
+
                 return autocompleteResult
             } catch (error) {
                 this.onError(error as Error)

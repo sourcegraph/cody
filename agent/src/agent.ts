@@ -5,6 +5,7 @@ import type { Polly, Request } from '@pollyjs/core'
 import {
     type AccountKeyedChatHistory,
     type ChatHistoryKey,
+    type ClientCapabilities,
     type CodyCommand,
     CodyIDE,
     ModelUsage,
@@ -34,7 +35,6 @@ import {
     logDebug,
     logError,
     modelsService,
-    setUserAgent,
 } from '@sourcegraph/cody-shared'
 import { chatHistory } from '../../vscode/src/chat/chat-view/ChatHistoryManager'
 import type { ExtensionMessage, WebviewMessage } from '../../vscode/src/chat/protocol'
@@ -44,6 +44,7 @@ import type * as agent_protocol from '../../vscode/src/jsonrpc/agent-protocol'
 import { mkdirSync, statSync } from 'node:fs'
 import { PassThrough } from 'node:stream'
 import type { Har } from '@pollyjs/persister'
+import { codyPaths } from '@sourcegraph/cody-shared'
 import { TESTING_TELEMETRY_EXPORTER } from '@sourcegraph/cody-shared/src/telemetry-v2/TelemetryRecorderProvider'
 import { type TelemetryEventParameters, TestTelemetryExporter } from '@sourcegraph/telemetry'
 import { copySync } from 'fs-extra'
@@ -76,7 +77,6 @@ import { AgentWorkspaceConfiguration } from './AgentWorkspaceConfiguration'
 import { AgentWorkspaceDocuments } from './AgentWorkspaceDocuments'
 import { registerNativeWebviewHandlers, resolveWebviewView } from './NativeWebview'
 import type { PollyRequestError } from './cli/command-jsonrpc-stdio'
-import { codyPaths } from './codyPaths'
 import {
     currentProtocolAuthStatus,
     currentProtocolAuthStatusOrNotReadyYet,
@@ -141,7 +141,12 @@ function copyExtensionRelativeResources(extensionPath: string, extensionClient: 
         }
     }
     copySources('win-ca-roots.exe')
-    if (extensionClient.capabilities?.webview === 'native') {
+    // Only copy the files if the client is using the native webview and they haven't opted
+    // to manage the resource files themselves.
+    if (
+        extensionClient.capabilities?.webview === 'native' &&
+        !extensionClient.capabilities?.webviewNativeConfig?.skipResourceRelativization
+    ) {
         copySources('webviews')
     }
 }
@@ -429,7 +434,6 @@ export class Agent extends MessageHandler implements ExtensionClient {
 
             vscode_shim.setClientInfo(clientInfo)
             this.clientInfo = clientInfo
-            setUserAgent(`${clientInfo?.name} / ${clientInfo?.version}`)
 
             try {
                 const secrets =
@@ -968,6 +972,11 @@ export class Agent extends MessageHandler implements ExtensionClient {
             }
         })
 
+        this.registerAuthenticatedRequest('extension/reset', async () => {
+            await this.globalState?.reset()
+            return null
+        })
+
         this.registerNotification('autocomplete/completionAccepted', async ({ completionID }) => {
             const provider = await vscode_shim.completionProvider()
             await provider.handleDidAcceptCompletionItem(completionID as CompletionItemID)
@@ -1479,7 +1488,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
         return this.clientInfo?.version || '0.0.0'
     }
 
-    get capabilities(): agent_protocol.ClientCapabilities | undefined {
+    get capabilities(): ClientCapabilities | undefined {
         return this.clientInfo?.capabilities ?? undefined
     }
 

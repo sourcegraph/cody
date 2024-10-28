@@ -28,7 +28,6 @@ const MIN_CHAR_CHUNK_SIZE = 1
  */
 export class Typewriter implements IncrementalTextConsumer {
     private upstreamClosed = false
-
     private text = ''
     private i = 0
     private interval: ReturnType<typeof setInterval> | undefined
@@ -40,8 +39,16 @@ export class Typewriter implements IncrementalTextConsumer {
      */
     constructor(private readonly consumer: IncrementalTextConsumer) {}
 
-    // IncrementalTextConsumer implementation. The "write" side of the pipe.
+    /**
+     * Gets the next valid slice point that won't break UTF-16 surrogate pairs
+     */
+    private getNextValidSlicePoint(currentIndex: number, increment: number): number {
+        const codePoints = Array.from(this.text)
+        const targetIndex = Math.min(codePoints.length, currentIndex + increment)
+        return codePoints.slice(0, targetIndex).join('').length
+    }
 
+    // IncrementalTextConsumer implementation. The "write" side of the pipe.
     public update(content: string): void {
         if (this.upstreamClosed) {
             throw new Error('Typewriter already closed')
@@ -88,7 +95,7 @@ export class Typewriter implements IncrementalTextConsumer {
                 : MIN_CHAR_CHUNK_SIZE
 
         this.interval = setInterval(() => {
-            this.i = Math.min(this.text.length, this.i + charChunkSize)
+            this.i = this.getNextValidSlicePoint(this.i, charChunkSize)
             this.consumer.update(this.text.slice(0, this.i))
 
             /** Clean up, notify when we have reached the end of the known remaining text. */

@@ -62,7 +62,6 @@ export interface InlineCompletionsParams {
     abortSignal?: AbortSignal
     cancellationListener?: vscode.Disposable
     tracer?: (data: Partial<ProvideInlineCompletionsItemTraceData>) => void
-    artificialDelay?: number
     firstCompletionTimeout: number
     numberOfCompletionsToGenerate?: number
 
@@ -238,7 +237,6 @@ async function doGetInlineCompletions(
         tracer,
         handleDidAcceptCompletionItem,
         handleDidPartiallyAcceptCompletionItem,
-        artificialDelay,
         firstCompletionTimeout,
         completionIntent,
         lastAcceptedCompletionItem,
@@ -250,8 +248,9 @@ async function doGetInlineCompletions(
 
     const isDotComUser = isDotComAuthed()
 
-    const gitIdentifiersForFile =
-        isDotComUser === true ? gitMetadataForCurrentEditor.getGitIdentifiersForFile() : undefined
+    const gitIdentifiersForFile = isDotComUser
+        ? gitMetadataForCurrentEditor.getGitIdentifiersForFile()
+        : undefined
     if (gitIdentifiersForFile?.repoName) {
         const repoMetadataInstance = GitHubDotComRepoMetadata.getInstance()
         // Calling this so that it precomputes the `gitRepoUrl` and store in its cache for query later.
@@ -320,7 +319,6 @@ async function doGetInlineCompletions(
         languageId: document.languageId,
         testFile: isValidTestFile(document.uri),
         completionIntent,
-        artificialDelay,
         traceId: getActiveTraceAndSpanId()?.traceId,
         stageTimings: stageRecorder.stageTimings,
     })
@@ -421,8 +419,7 @@ async function doGetInlineCompletions(
         ? 0
         : triggerKind !== TriggerKind.Automatic
           ? 0
-          : ((multiline ? debounceInterval?.multiLine : debounceInterval?.singleLine) ?? 0) +
-            (artificialDelay ?? 0)
+          : (multiline ? debounceInterval?.multiLine : debounceInterval?.singleLine) ?? 0
 
     // We split the desired debounceTime into two chunks. One that is at most 25ms where every
     // further execution is halted...

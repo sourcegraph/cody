@@ -13,7 +13,7 @@ const HEDGES_PREVENTION = ps`Answer positively without apologizing. `
 /**
  * Answer guidelines for the Deep Cody model.
  */
-const DEEP_CODY = ps`Give step-by-step instruction for how-to questions. Keep answer for general questions concise and informative. `
+const DEEP_CODY = ps`Give step-by-step guide for how-to and debug questions, with the updated code changes if any. Else, keep answer for general questions concise and informative. `
 
 /**
  * Prompt mixins elaborate every prompt presented to the LLM.

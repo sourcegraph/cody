@@ -1,12 +1,10 @@
-// `TESTING_DOTCOM_URL` is not set in webviews. If `isDotCom` helper it called from the webview it will use
+// `CODY_OVERRIDE_DOTCOM_URL` is not set in webviews. If `isDotCom` helper it called from the webview it will use
 
 import type { AuthStatus } from '../auth/types'
+import { cenv } from '../configuration/environment'
 
 // the default ('https://sourcegraph.com') value.
-export const DOTCOM_URL = new URL(
-    (typeof process === 'undefined' ? null : process.env.TESTING_DOTCOM_URL) ??
-        'https://sourcegraph.com/'
-)
+export const DOTCOM_URL = new URL(cenv.CODY_OVERRIDE_DOTCOM_URL || 'https://sourcegraph.com/')
 
 // 🚨 SECURITY: This is used as a check for logging chatTranscript for dotcom users only, be extremely careful if modifying this function
 export function isDotCom(authStatus: Pick<AuthStatus, 'endpoint'> | undefined): boolean

@@ -9,7 +9,7 @@ import type {
     Range as VSCodeRange,
 } from 'vscode'
 
-import { type ClientConfiguration, OLLAMA_DEFAULT_URL, ps } from '@sourcegraph/cody-shared'
+import { type ClientConfiguration, OLLAMA_DEFAULT_URL } from '@sourcegraph/cody-shared'
 
 import path from 'node:path'
 import { AgentEventEmitter as EventEmitter } from './AgentEventEmitter'
@@ -873,18 +873,25 @@ export const vsCodeMocks = {
 } as const
 
 export const DEFAULT_VSCODE_SETTINGS = {
-    proxy: undefined,
+    net: {
+        mode: undefined,
+        proxy: {
+            cacert: undefined,
+            endpoint: undefined,
+            skipCertValidation: false,
+        },
+        vscode: '{}',
+    },
     codebase: '',
     serverEndpoint: undefined,
     customHeaders: undefined,
-    chatPreInstruction: ps``,
-    editPreInstruction: ps``,
     autocomplete: true,
     autocompleteLanguages: {
         '*': true,
     },
     commandCodeLenses: false,
     experimentalSupercompletions: false,
+    experimentalAutoedits: undefined,
     experimentalMinionAnthropicKey: undefined,
     experimentalTracing: false,
     experimentalCommitMessage: true,

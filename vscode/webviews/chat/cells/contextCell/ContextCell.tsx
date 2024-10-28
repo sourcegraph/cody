@@ -36,6 +36,13 @@ export const ContextCell: FunctionComponent<{
     defaultOpen?: boolean
     showSnippets?: boolean
     reSubmitWithChatIntent?: () => void
+    onAddToFollowupChat?: (props: {
+        repoName: string
+        filePath: string
+        fileURL: string
+    }) => void
+    onManuallyEditContext: () => void
+    editContextText: React.ReactNode
 
     /** For use in storybooks only. */
     __storybook__initialOpen?: boolean
@@ -51,6 +58,9 @@ export const ContextCell: FunctionComponent<{
         reSubmitWithChatIntent,
         showSnippets = false,
         isContextLoading,
+        onAddToFollowupChat,
+        onManuallyEditContext,
+        editContextText,
     }) => {
         const [selectedAlternative, setSelectedAlternative] = useState<number | undefined>(undefined)
         const incrementSelectedAlternative = useCallback(
@@ -84,14 +94,29 @@ export const ContextCell: FunctionComponent<{
             isForFirstMessage
         )
 
-        const logContextOpening = useCallback(() => {
-            telemetryRecorder.recordEvent('cody.contextCell', 'opened', {
-                metadata: {
-                    fileCount: new Set(usedContext.map(file => file.uri.toString())).size,
-                    excludedAtContext: excludedContext.length,
-                },
+        const [accordionValue, setAccordionValue] = useState(
+            ((__storybook__initialOpen || defaultOpen) && 'item-1') || undefined
+        )
+
+        const triggerAccordion = useCallback(() => {
+            setAccordionValue(prev => {
+                if (!prev) {
+                    telemetryRecorder.recordEvent('cody.contextCell', 'opened', {
+                        metadata: {
+                            fileCount: new Set(usedContext.map(file => file.uri.toString())).size,
+                            excludedAtContext: excludedContext.length,
+                        },
+                    })
+                }
+
+                return prev ? '' : 'item-1'
             })
         }, [excludedContext.length, usedContext])
+
+        const onEditContext = useCallback(() => {
+            triggerAccordion()
+            onManuallyEditContext()
+        }, [triggerAccordion, onManuallyEditContext])
 
         const {
             config: { internalDebugContext },
@@ -123,13 +148,13 @@ export const ContextCell: FunctionComponent<{
                         }
                         onValueChange={logValueChange}
                         asChild={true}
+                        value={accordionValue}
                     >
                         <AccordionItem value="item-1" asChild>
                             <Cell
                                 header={
                                     <AccordionTrigger
-                                        onClick={logContextOpening}
-                                        onKeyUp={logContextOpening}
+                                        onClick={triggerAccordion}
                                         title={itemCountLabel}
                                         className="tw-flex tw-items-center tw-gap-4"
                                         disabled={isContextLoading}
@@ -139,7 +164,7 @@ export const ContextCell: FunctionComponent<{
                                             height={NON_HUMAN_CELL_AVATAR_SIZE}
                                         />
                                         <span className="tw-flex tw-items-baseline">
-                                            Context
+                                            {isContextLoading ? 'Fetching context' : 'Fetched context'}
                                             <span className="tw-opacity-60 tw-text-sm tw-ml-2">
                                                 &mdash;{' '}
                                                 {isContextLoading
@@ -161,6 +186,14 @@ export const ContextCell: FunctionComponent<{
                                 ) : (
                                     <>
                                         <AccordionContent overflow={showSnippets}>
+                                            <Button
+                                                size="sm"
+                                                variant="outline"
+                                                className={clsx('tw-pr-4', styles.contextItemEditButton)}
+                                                onClick={onEditContext}
+                                            >
+                                                {editContextText}
+                                            </Button>
                                             {internalDebugContext && contextAlternatives && (
                                                 <div>
                                                     <button
@@ -198,6 +231,7 @@ export const ContextCell: FunctionComponent<{
                                                             <FileContextItem
                                                                 item={item}
                                                                 showSnippets={showSnippets}
+                                                                onAddToFollowupChat={onAddToFollowupChat}
                                                             />
                                                             {internalDebugContext &&
                                                                 item.metadata &&

@@ -75,13 +75,13 @@ describe('gitRemoteUrlsForUri', () => {
 
         const remoteUrls = await gitRemoteUrlsForUri(fileUri)
         expect(remoteUrls).toEqual([
-            'https://github.com/username/yourproject.git',
-            'https://github.com/originalauthor/yourproject.git',
             'git@backupserver:repositories/yourproject.git',
+            'https://github.com/originalauthor/yourproject.git',
+            'https://github.com/username/yourproject.git',
         ])
     })
 
-    it('returns `undefined` from the .git/config file with no remotes specified', async () => {
+    it('returns `[]` from the .git/config file with no remotes specified', async () => {
         const { fileUri } = mockFsCalls({
             filePath: '/repo/src/dir/foo.ts',
             gitRepoPath: '/repo',
@@ -99,10 +99,10 @@ describe('gitRemoteUrlsForUri', () => {
         })
 
         const remoteUrls = await gitRemoteUrlsForUri(fileUri)
-        expect(remoteUrls).toBe(undefined)
+        expect(remoteUrls).toEqual([])
     })
 
-    it('returns `undefined` if .git/config is not found', async () => {
+    it('returns `[]` if .git/config is not found', async () => {
         const statMock = vi
             .spyOn(vscode.workspace.fs, 'stat')
             .mockResolvedValueOnce({ type: vscode.FileType.File } as vscode.FileStat)
@@ -112,7 +112,7 @@ describe('gitRemoteUrlsForUri', () => {
         const remoteUrls = await gitRemoteUrlsForUri(uri)
 
         expect(statMock).toBeCalledTimes(5)
-        expect(remoteUrls).toBe(undefined)
+        expect(remoteUrls).toEqual([])
     })
 
     it('finds remote urls in a submodule', async () => {
@@ -175,7 +175,7 @@ describe('gitRemoteUrlsForUri', () => {
         expect(remoteUrls).toEqual(['https://github.com/nested/submodule.git'])
     })
 
-    it('returns `undefined` for a submodule without a remote url', async () => {
+    it('returns `[]` for a submodule without a remote url', async () => {
         const { fileUri } = mockFsCalls({
             filePath: '/repo/submodule/foo.ts',
             gitRepoPath: '/repo',
@@ -199,7 +199,7 @@ describe('gitRemoteUrlsForUri', () => {
         })
 
         const remoteUrls = await gitRemoteUrlsForUri(fileUri)
-        expect(remoteUrls).toBe(undefined)
+        expect(remoteUrls).toEqual([])
     })
 
     it('refuses to work on non-file URIs', async () => {
@@ -209,10 +209,10 @@ describe('gitRemoteUrlsForUri', () => {
             gitConfig: 'a',
         })
 
-        expect(await gitRemoteUrlsForUri(URI.parse('https://example.com/foo/bar'))).toBe(undefined)
-        expect(await gitRemoteUrlsForUri(URI.parse('https://gitlab.com/foo/bar'))).toBe(undefined)
-        expect(await gitRemoteUrlsForUri(URI.parse('https://github.com/foo/bar'))).toBe(undefined)
-        expect(await gitRemoteUrlsForUri(URI.parse('ssh://git@github.com:foo/bar.git'))).toBe(undefined)
+        expect(await gitRemoteUrlsForUri(URI.parse('https://example.com/foo/bar'))).toEqual([])
+        expect(await gitRemoteUrlsForUri(URI.parse('https://gitlab.com/foo/bar'))).toEqual([])
+        expect(await gitRemoteUrlsForUri(URI.parse('https://github.com/foo/bar'))).toEqual([])
+        expect(await gitRemoteUrlsForUri(URI.parse('ssh://git@github.com:foo/bar.git'))).toEqual([])
         expect(statMock).toBeCalledTimes(0)
         expect(readFileMock).toBeCalledTimes(0)
     })

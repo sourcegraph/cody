@@ -34,7 +34,6 @@ class LocalStorage implements LocalStorageForModelPreferences {
     protected readonly LAST_USED_CHAT_MODALITY = 'cody-last-used-chat-modality'
     public readonly ANONYMOUS_USER_ID_KEY = 'sourcegraphAnonymousUid'
     public readonly LAST_USED_ENDPOINT = 'SOURCEGRAPH_CODY_ENDPOINT'
-    public readonly LAST_USED_USERNAME = 'SOURCEGRAPH_CODY_USERNAME'
     private readonly MODEL_PREFERENCES_KEY = 'cody-model-preferences'
     public readonly keys = {
         // LLM waitlist for the 09/12/2024 openAI o1 models
@@ -137,6 +136,13 @@ class LocalStorage implements LocalStorageForModelPreferences {
 
     public async deleteEndpoint(): Promise<void> {
         await this.set(this.LAST_USED_ENDPOINT, null)
+    }
+
+    // Deletes and returns the endpoint history
+    public async deleteEndpointHistory(): Promise<string[]> {
+        const history = this.getEndpointHistory()
+        await Promise.all([this.deleteEndpoint(), this.set(this.CODY_ENDPOINT_HISTORY, null)])
+        return history || []
     }
 
     public getEndpointHistory(): string[] | null {

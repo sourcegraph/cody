@@ -1,5 +1,5 @@
 import clsx from 'clsx'
-import { type FC, useCallback, useState } from 'react'
+import { type FC, useCallback, useMemo, useState } from 'react'
 
 import type { Action } from '@sourcegraph/cody-shared'
 
@@ -17,6 +17,7 @@ import { ActionItem } from './ActionItem'
 import { usePromptsQuery } from './usePromptsQuery'
 import { commandRowValue } from './utils'
 
+import type { PromptsInput } from '@sourcegraph/cody-shared'
 import { useLocalStorage } from '../../components/hooks'
 import styles from './PromptList.module.css'
 
@@ -33,7 +34,7 @@ interface PromptListProps {
     paddingLevels?: 'none' | 'middle' | 'big'
     appearanceMode?: 'flat-list' | 'chips-list'
     lastUsedSorting?: boolean
-    includeEditCommandOnTop?: boolean
+    recommendedOnly?: boolean
     onSelect: (item: Action) => void
 }
 
@@ -57,7 +58,7 @@ export const PromptList: FC<PromptListProps> = props => {
         paddingLevels = 'none',
         appearanceMode = 'flat-list',
         lastUsedSorting,
-        includeEditCommandOnTop,
+        recommendedOnly,
         onSelect: parentOnSelect,
     } = props
 
@@ -71,7 +72,17 @@ export const PromptList: FC<PromptListProps> = props => {
 
     const [query, setQuery] = useState('')
     const debouncedQuery = useDebounce(query, 250)
-    const { value: result, error } = usePromptsQuery(debouncedQuery)
+
+    const promptInput = useMemo<PromptsInput>(
+        () => ({
+            query: debouncedQuery,
+            first: showFirstNItems,
+            recommendedOnly: recommendedOnly ?? false,
+        }),
+        [debouncedQuery, showFirstNItems, recommendedOnly]
+    )
+
+    const { value: result, error } = usePromptsQuery(promptInput)
 
     const onSelect = useCallback(
         (rowValue: string): void => {
@@ -82,12 +93,14 @@ export const PromptList: FC<PromptListProps> = props => {
             }
 
             const isPrompt = action.actionType === 'prompt'
+            const isPromptAutoSubmit = action.actionType === 'prompt' && action.autoSubmit
             const isCommand = action.actionType === 'command'
             const isBuiltInCommand = isCommand && action.type === 'default'
 
             telemetryRecorder.recordEvent('cody.promptList', 'select', {
                 metadata: {
                     isPrompt: isPrompt ? 1 : 0,
+                    isPromptAutoSubmit: isPromptAutoSubmit ? 1 : 0,
                     isCommand: isCommand ? 1 : 0,
                     isCommandBuiltin: isBuiltInCommand ? 1 : 0,
                     isCommandCustom: !isBuiltInCommand ? 1 : 0,
@@ -136,16 +149,6 @@ export const PromptList: FC<PromptListProps> = props => {
         : result?.actions ?? []
 
     const sortedActions = lastUsedSorting ? getSortedActions(allActions, lastUsedActions) : allActions
-
-    const editCommandIndex = sortedActions.findIndex(
-        action => action.actionType === 'command' && action.key === 'edit'
-    )
-
-    // Bring Edit command on top of the command list
-    if (includeEditCommandOnTop && editCommandIndex !== -1) {
-        sortedActions.unshift(sortedActions.splice(editCommandIndex, 1)[0])
-    }
-
     const actions = showFirstNItems ? sortedActions.slice(0, showFirstNItems) : sortedActions
 
     const inputPaddingClass =
@@ -160,7 +163,9 @@ export const PromptList: FC<PromptListProps> = props => {
             tabIndex={0}
             shouldFilter={false}
             defaultValue={showInitialSelectedItem ? undefined : 'xxx-no-item'}
-            className={clsx(styles.list, { [styles.listChips]: appearanceMode === 'chips-list' })}
+            className={clsx(className, styles.list, {
+                [styles.listChips]: appearanceMode === 'chips-list',
+            })}
         >
             <CommandList className={className}>
                 {showSearch && (
@@ -180,7 +185,7 @@ export const PromptList: FC<PromptListProps> = props => {
                 )}
                 {result && allActions.filter(action => action.actionType === 'prompt').length === 0 && (
                     <CommandLoading className={itemPaddingClass}>
-                        {result?.query === '' ? (
+                        {result?.query === '' && !recommendedOnly ? (
                             <>
                                 Your Prompt Library is empty.{' '}
                                 <a

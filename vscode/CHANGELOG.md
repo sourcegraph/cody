@@ -6,6 +6,38 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 ### Added
 
+- Proxy: Support for `cody.net.proxy` settings that enable configuation a cody specific proxy server. This also supports `cody.net.proxy.path` to provide a UNIX domain socket directly. [pull/5883](https://github.com/sourcegraph/cody/pull/5883)
+
+### Changed
+
+### Fixed
+
+- Context Filters: fixed repo name resolution cache. [pull/5978](https://github.com/sourcegraph/cody/pull/5978)
+
+## 1.38.2
+
+### Changed
+
+- Telemetry: Account for visible ranges in the characters logger. [pull/5931](https://github.com/sourcegraph/cody/pull/5931)
+
+### Fixed
+
+- Chat: Improved handling of duplicated priority context items. [pull/5860](https://github.com/sourcegraph/cody/pull/5860)
+- Chat: Improved handling of duplicated priority context items. [pull/5860](https://github.com/sourcegraph/cody/pull/5860)
+
+### Changed
+
+- Network: Changed configuration of network libraries to better support VSCode's patching of `http` and `https` modules. Also disabled the use of `keep-alive` headers until more robust testing is in place around VSCode's ongoing network changes. No performance changes are expected as the previous use of `keep-alive` didn't properly create re-usable connections.
+
+## 1.38.1
+
+### Changed
+
+- Telemetry: Add document change reasons to characters logger. [pull/5855](https://github.com/sourcegraph/cody/pull/5855)
+- Autocomplete: Prepare for the fast-path and completion-preloading A/B tests. [pull/5905](https://github.com/sourcegraph/cody/pull/5905)
+
+## 1.38.0
+
 ### Fixed
 
 ### Changed

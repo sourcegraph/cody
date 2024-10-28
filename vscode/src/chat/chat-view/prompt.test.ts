@@ -1,5 +1,6 @@
 import {
     AUTH_STATUS_FIXTURE_AUTHED,
+    CLIENT_CAPABILITIES_FIXTURE,
     type ContextItem,
     ContextItemSource,
     type Message,
@@ -8,6 +9,8 @@ import {
     contextFiltersProvider,
     createModel,
     mockAuthStatus,
+    mockClientCapabilities,
+    mockResolvedConfig,
     modelsService,
     ps,
 } from '@sourcegraph/cody-shared'
@@ -22,6 +25,8 @@ describe('DefaultPrompter', () => {
     beforeEach(() => {
         vi.spyOn(contextFiltersProvider, 'isUriIgnored').mockResolvedValue(false)
         mockAuthStatus(AUTH_STATUS_FIXTURE_AUTHED)
+        mockResolvedConfig({ configuration: {} })
+        mockClientCapabilities(CLIENT_CAPABILITIES_FIXTURE)
     })
     afterEach(() => {
         vi.restoreAllMocks()
@@ -102,13 +107,11 @@ describe('DefaultPrompter', () => {
     })
 
     it('adds the cody.chat.preInstruction vscode setting if set', async () => {
-        const getConfig = vi.spyOn(vscode.workspace, 'getConfiguration')
-        getConfig.mockImplementation((section, resource) => ({
-            get: vi.fn(() => 'Always respond with 🧀 emojis'),
-            has: vi.fn(() => true),
-            inspect: vi.fn(() => ({ key: 'key' })),
-            update: vi.fn(() => Promise.resolve()),
-        }))
+        mockResolvedConfig({
+            configuration: {
+                chatPreInstruction: ps`Always respond with 🧀 emojis`,
+            },
+        })
 
         vi.spyOn(modelsService, 'modelsChanges', 'get').mockReturnValue(
             Observable.of<ModelsData>({

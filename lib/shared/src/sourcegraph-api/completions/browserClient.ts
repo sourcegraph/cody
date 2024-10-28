@@ -3,8 +3,8 @@ import { fetchEventSource } from '@microsoft/fetch-event-source'
 import { dependentAbortController } from '../../common/abortController'
 import { currentResolvedConfig } from '../../configuration/resolver'
 import { isError } from '../../utils'
-import { addClientInfoParams } from '../client-name-version'
-import { addCustomUserAgent } from '../graphql/client'
+import { addClientInfoParams, addCodyClientIdentificationHeaders } from '../client-name-version'
+
 import { CompletionsResponseBuilder } from './CompletionsResponseBuilder'
 import { type CompletionRequestParameters, SourcegraphCompletionsClient } from './client'
 import { parseCompletionJSON } from './parse'
@@ -38,7 +38,7 @@ export class SourcegraphBrowserCompletionsClient extends SourcegraphCompletionsC
             ...config.configuration?.customHeaders,
             ...requestParams.customHeaders,
         } as HeadersInit)
-        addCustomUserAgent(headersInstance)
+        addCodyClientIdentificationHeaders(headersInstance)
         headersInstance.set('Content-Type', 'application/json; charset=utf-8')
         if (config.auth.accessToken) {
             headersInstance.set('Authorization', `token ${config.auth.accessToken}`)
@@ -131,7 +131,7 @@ export class SourcegraphBrowserCompletionsClient extends SourcegraphCompletionsC
             ...configuration.customHeaders,
             ...requestParams.customHeaders,
         })
-        addCustomUserAgent(headersInstance)
+        addCodyClientIdentificationHeaders(headersInstance)
         if (auth.accessToken) {
             headersInstance.set('Authorization', `token ${auth.accessToken}`)
         }
