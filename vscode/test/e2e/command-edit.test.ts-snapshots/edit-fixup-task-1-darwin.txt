@@ -29,14 +29,6 @@
         "value": 46
       },
       {
-        "key": "isUndo",
-        "value": 0
-      },
-      {
-        "key": "isRedo",
-        "value": 0
-      },
-      {
         "key": "isSelectionStale",
         "value": 0
       },

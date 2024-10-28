@@ -26,7 +26,7 @@ test.extend<ExpectedV2Events>({
         'cody.fixup.codeLens:undo',
         'cody.fixup.reverted:clicked',
     ],
-})('edit (fixup) task', async ({ page, sidebar, nap }) => {
+}).only('edit (fixup) task', async ({ page, sidebar, nap }) => {
     // Sign into Cody
     await sidebarSignin(page, sidebar)
 

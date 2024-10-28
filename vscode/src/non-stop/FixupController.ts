@@ -604,7 +604,7 @@ export class FixupController
             model: task.model,
             ...this.countEditInsertions(task),
             ...task.telemetryMetadata,
-            ...omit(charactersLoggerMetadata, 'changeSize'),
+            ...omit(charactersLoggerMetadata, ['changeSize', 'isRedo', 'isUndo']),
         }
         const { metadata, privateMetadata } = splitSafeMetadata(legacyMetadata)
         if (!editOk) {
