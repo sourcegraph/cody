@@ -307,7 +307,7 @@ export const test = base
             if (testInfo.status === 'passed') {
                 // Critical test to prevent event logging regressions.
                 // Do not remove without consulting data analytics team.
-                await expect(loggedV2Events.map(event => event.testId)).toContainEvents(expectedV2Events)
+                await expect(loggedV2Events).toContainEvents(expectedV2Events)
             } else {
                 await attachArtifacts(testInfo, page, assetsDirectory)
             }
