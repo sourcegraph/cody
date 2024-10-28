@@ -24,7 +24,9 @@ test('uninstall extension', async ({ openVSCode }) => {
         skipLocalInstall: true,
     })
     // Allow the uninstaller to finish
-    await expect(loggedV2Events).toContainEvents(['cody.extension:uninstalled'], { timeout: 5000 })
+    await expect(loggedV2Events.map(e => e.testId)).toContainEvents(['cody.extension:uninstalled'], {
+        timeout: 5000,
+    })
     await app.close()
 
     // we re-install the extension, and re-open VSCode. This will trigger the
@@ -38,7 +40,9 @@ test('uninstall extension', async ({ openVSCode }) => {
     // This will fail if the credentials are saved because the login screen will still be
     // visible, thus it acts as an implicit test that credentials were cleared out
     await signin(page)
-    await expect(loggedV2Events).toContainEvents(['cody.extension:reinstalled'], { timeout: 5000 })
+    await expect(loggedV2Events.map(e => e.testId)).toContainEvents(['cody.extension:reinstalled'], {
+        timeout: 5000,
+    })
     await app.close()
 
     // Finally, re-open the VSCode and ensure that we are still logged in

@@ -140,4 +140,51 @@ export class FixupTask {
         // the indentation in the returned code.
         return new vscode.Range(proposedRange.start.line, 0, proposedRange.end.line + 1, 0)
     }
+
+    /**
+     * Converts 'FixupTask.diff' edits into 'vscode.TextDocumentContentChangeEvent[]'
+     * format. This lets us use 'CharactersLogger' to get the same kind of metadata
+     * that we normally get from regular 'vscode.TextDocumentChangeEvent' events.
+     */
+    public getContentChanges(): vscode.TextDocumentContentChangeEvent[] {
+        if (this.diff === undefined) {
+            return []
+        }
+
+        const contentChanges = []
+        const { document } = this
+
+        for (const edit of this.diff) {
+            switch (edit.type) {
+                case 'deletion':
+                case 'decoratedReplacement':
+                    contentChanges.push({
+                        range: document.validateRange(edit.range),
+                        rangeOffset: document.offsetAt(edit.range.start),
+                        rangeLength: edit.oldText.length,
+                        text: '',
+                    })
+                    break
+                case 'insertion':
+                    contentChanges.push({
+                        // We need to check if the range is valid here.
+                        // When adding text at the end of the document,
+                        // the range might go beyond the document's bounds.
+                        // If that happens, 'CharactersLogger' would think
+                        // this change happened outside the visible ranges.
+                        //
+                        // We should consider doing that for initial ranges too.
+                        range: document.validateRange(edit.range),
+                        rangeOffset: document.offsetAt(edit.range.start),
+                        rangeLength: edit.text.length,
+                        text: edit.text,
+                    })
+                    break
+                default:
+                    throw new Error(`Unhandled edit type: ${(edit as any).type}`)
+            }
+        }
+
+        return contentChanges
+    }
 }

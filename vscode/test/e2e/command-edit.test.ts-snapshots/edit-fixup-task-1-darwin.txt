@@ -1,0 +1,94 @@
+{
+  "feature": "cody.fixup.apply",
+  "action": "succeeded",
+  "source": {
+    "client": "VSCode.Cody",
+    "clientVersion": "1.38.2"
+  },
+  "parameters": {
+    "version": 0,
+    "metadata": [
+      {
+        "key": "intent",
+        "value": 2
+      },
+      {
+        "key": "mode",
+        "value": 2
+      },
+      {
+        "key": "source",
+        "value": 2
+      },
+      {
+        "key": "lineCount",
+        "value": 4
+      },
+      {
+        "key": "charCount",
+        "value": 46
+      },
+      {
+        "key": "isUndo",
+        "value": 0
+      },
+      {
+        "key": "isRedo",
+        "value": 0
+      },
+      {
+        "key": "isSelectionStale",
+        "value": 0
+      },
+      {
+        "key": "isRapidChange",
+        "value": 1
+      },
+      {
+        "key": "isDisjoint",
+        "value": 0
+      },
+      {
+        "key": "isPartiallyOutsideOfVisibleRanges",
+        "value": 0
+      },
+      {
+        "key": "isFullyOutsideOfVisibleRanges",
+        "value": 0
+      },
+      {
+        "key": "windowNotFocused",
+        "value": 0
+      },
+      {
+        "key": "noActiveTextEditor",
+        "value": 0
+      },
+      {
+        "key": "outsideOfActiveEditor",
+        "value": 0
+      },
+      {
+        "key": "charsInserted",
+        "value": 46
+      },
+      {
+        "key": "charsDeleted",
+        "value": 90
+      },
+      {
+        "key": "tier",
+        "value": 0
+      }
+    ],
+    "privateMetadata": {
+      "model": "anthropic::2023-06-01::claude-3.5-sonnet",
+      "changeType": "rapid_s_change"
+    },
+    "billingMetadata": {
+      "category": "core",
+      "product": "cody"
+    }
+  },
+  "testId": "cody.fixup.apply:succeeded"
+}

@@ -1,4 +1,5 @@
 import { expect } from '@playwright/test'
+import omit from 'lodash/omit'
 
 import * as mockServer from '../fixtures/mock-server'
 
@@ -90,6 +91,13 @@ test.extend<ExpectedV2Events>({
     await nap()
     await expect(page.getByText('appleName')).not.toBeVisible()
     await expect(page.getByText('bananaName')).toBeVisible()
+
+    const fixupApplySuccessEvent = mockServer.loggedV2Events.find(
+        event => event.testId === 'cody.fixup.apply:succeeded'
+    )
+    expect(
+        JSON.stringify(omit(fixupApplySuccessEvent, 'testOnlyAnonymousUserID'), null, 2)
+    ).toMatchSnapshot()
 })
 
 test('edit (fixup) input - range selection', async ({ page, sidebar }) => {
