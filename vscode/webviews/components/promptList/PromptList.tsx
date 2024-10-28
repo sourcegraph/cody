@@ -26,7 +26,6 @@ interface PromptListProps {
     showFirstNItems?: number
     telemetryLocation: 'PromptSelectField' | 'PromptsTab'
     showOnlyPromptInsertableCommands?: boolean
-    showInitialSelectedItem?: boolean
     showCommandOrigins?: boolean
     showPromptLibraryUnsupportedMessage?: boolean
     className?: string
@@ -51,7 +50,6 @@ export const PromptList: FC<PromptListProps> = props => {
         showFirstNItems,
         telemetryLocation,
         showOnlyPromptInsertableCommands,
-        showInitialSelectedItem = true,
         showPromptLibraryUnsupportedMessage = true,
         className,
         inputClassName,
@@ -162,7 +160,7 @@ export const PromptList: FC<PromptListProps> = props => {
             loop={true}
             tabIndex={0}
             shouldFilter={false}
-            defaultValue={showInitialSelectedItem ? undefined : 'xxx-no-item'}
+            defaultValue='xxx-no-item'
             className={clsx(className, styles.list, {
                 [styles.listChips]: appearanceMode === 'chips-list',
             })}
