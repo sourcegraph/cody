@@ -226,6 +226,7 @@ export interface ConfigurationSubsetForWebview
     extends Pick<ClientConfiguration, 'experimentalNoodle' | 'internalDebugContext'>,
         Pick<AuthCredentials, 'serverEndpoint'> {
     smartApply: boolean
+    hasEditCapability: boolean
     // Type/location of the current webview.
     webviewType?: WebviewType | undefined | null
     // Whether support running multiple webviews (e.g. sidebar w/ multiple editor panels).

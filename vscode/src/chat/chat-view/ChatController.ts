@@ -499,6 +499,10 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         return this.extensionClient.capabilities?.edit !== 'none'
     }
 
+    private hasEditCapability(): boolean {
+        return this.extensionClient.capabilities?.edit === 'enabled' ?? false
+    }
+
     private featureCodyExperimentalOneBox = storeLastValue(
         featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyExperimentalOneBox)
     )
@@ -514,6 +518,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             serverEndpoint: auth.serverEndpoint,
             experimentalNoodle: configuration.experimentalNoodle,
             smartApply: this.isSmartApplyEnabled(),
+            hasEditCapability: this.hasEditCapability(),
             webviewType,
             multipleWebviewsEnabled: !sidebarViewOnly,
             internalDebugContext: configuration.internalDebugContext,
