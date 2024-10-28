@@ -34,6 +34,7 @@ import com.sourcegraph.cody.agent.protocol_generated.ExecuteCommandParams
 import com.sourcegraph.cody.agent.protocol_generated.ExtensionConfiguration
 import com.sourcegraph.cody.agent.protocol_generated.Null
 import com.sourcegraph.cody.agent.protocol_generated.ServerInfo
+import com.sourcegraph.cody.agent.protocol_generated.Window_DidChangeFocusParams
 import java.util.concurrent.CompletableFuture
 import org.eclipse.lsp4j.jsonrpc.services.JsonNotification
 import org.eclipse.lsp4j.jsonrpc.services.JsonRequest
@@ -49,6 +50,8 @@ interface _SubsetGeneratedCodyAgentServer {
   // ========
   @JsonRequest("initialize") fun initialize(params: ClientInfo): CompletableFuture<ServerInfo>
 
+  @JsonRequest("shutdown") fun shutdown(params: Null?): CompletableFuture<Null?>
+
   @JsonRequest("editTask/retry")
   fun editTask_retry(params: EditTask_RetryParams): CompletableFuture<EditTask>
 
@@ -61,6 +64,9 @@ interface _SubsetGeneratedCodyAgentServer {
   @JsonRequest("command/execute")
   fun command_execute(params: ExecuteCommandParams): CompletableFuture<Any>
 
+  @JsonRequest("commands/custom")
+  fun commands_custom(params: Commands_CustomParams): CompletableFuture<CustomCommandResult>
+
   @JsonRequest("codeActions/provide")
   fun codeActions_provide(
       params: CodeActions_ProvideParams
@@ -68,6 +74,8 @@ interface _SubsetGeneratedCodyAgentServer {
 
   @JsonRequest("codeActions/trigger")
   fun codeActions_trigger(params: CodeActions_TriggerParams): CompletableFuture<EditTask>
+
+  @JsonRequest("chat/import") fun chat_import(params: Chat_ImportParams): CompletableFuture<Null?>
 
   @JsonRequest("chat/models")
   fun chat_models(params: Chat_ModelsParams): CompletableFuture<Chat_ModelsResult>
@@ -79,8 +87,15 @@ interface _SubsetGeneratedCodyAgentServer {
   //  // Notifications
   //  // =============
 
+  @JsonNotification("initialized") fun initialized(params: Null?)
+
+  @JsonNotification("exit") fun exit(params: Null?)
+
   @JsonNotification("extensionConfiguration/didChange")
   fun extensionConfiguration_didChange(params: ExtensionConfiguration)
+
+  @JsonNotification("window/didChangeFocus")
+  fun window_didChangeFocus(params: Window_DidChangeFocusParams)
 }
 
 // TODO: Requests waiting to be migrated & tested for compatibility. Avoid placing new protocol
@@ -92,7 +107,6 @@ interface _SubsetGeneratedCodyAgentServer {
  * works similar to JavaScript Proxy.
  */
 interface _LegacyAgentServer {
-  @JsonRequest("shutdown") fun shutdown(): CompletableFuture<Void?>
 
   @JsonRequest("autocomplete/execute")
   fun autocompleteExecute(params: AutocompleteParams?): CompletableFuture<AutocompleteResult>
@@ -109,10 +123,6 @@ interface _LegacyAgentServer {
   // value
   @JsonRequest("graphql/getCurrentUserCodySubscription")
   fun getCurrentUserCodySubscription(): CompletableFuture<CurrentUserCodySubscription?>
-
-  @JsonNotification("initialized") fun initialized()
-
-  @JsonNotification("exit") fun exit()
 
   @JsonNotification("textDocument/didFocus")
   fun textDocumentDidFocus(document: ProtocolTextDocument)
@@ -142,9 +152,6 @@ interface _LegacyAgentServer {
   @JsonRequest("editTask/cancel")
   fun cancelEditTask(params: EditTask_CancelParams): CompletableFuture<Void?>
 
-  @JsonRequest("commands/custom")
-  fun commands_custom(params: Commands_CustomParams): CompletableFuture<CustomCommandResult>
-
   @JsonRequest("editCommands/code")
   fun commandsEdit(params: InlineEditParams): CompletableFuture<EditTask>
 
@@ -160,8 +167,6 @@ interface _LegacyAgentServer {
 
   @JsonRequest("webview/resolveWebviewView")
   fun webviewResolveWebviewView(params: WebviewResolveWebviewViewParams): CompletableFuture<Any>
-
-  @JsonRequest("chat/import") fun chat_import(params: Chat_ImportParams): CompletableFuture<Null?>
 
   @JsonRequest("ignore/test")
   fun ignoreTest(params: IgnoreTestParams): CompletableFuture<IgnoreTestResponse>

@@ -39,9 +39,10 @@ private constructor(
 ) {
 
   fun shutdown(): CompletableFuture<Unit> {
-    return server.shutdown().completeOnTimeout(null, 15, TimeUnit.SECONDS).handle { _, throwable ->
+    return server.shutdown(null).completeOnTimeout(null, 15, TimeUnit.SECONDS).handle { _, throwable
+      ->
       if (throwable != null) logger.warn("Graceful shutdown of Cody agent server failed", throwable)
-      server.exit()
+      server.exit(null)
       listeningToJsonRpc.cancel(true)
       connection.close()
       logger.info("Cody Agent shut down gracefully")
@@ -140,7 +141,7 @@ private constructor(
                                   ClientCapabilities.WebviewMessagesEnum.`String-encoded`)))
               .thenApply { info ->
                 logger.warn("Connected to Cody agent " + info.name)
-                server.initialized()
+                server.initialized(null)
                 CodyAgent(client, server, launcher, conn, listeningToJsonRpc)
               }
         } catch (e: Exception) {

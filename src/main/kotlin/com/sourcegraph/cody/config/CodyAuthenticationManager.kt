@@ -14,8 +14,6 @@ import com.intellij.openapi.progress.EmptyProgressIndicator
 import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectManager
-import com.intellij.openapi.util.Disposer
-import com.intellij.openapi.wm.WindowManager
 import com.intellij.util.AuthData
 import com.intellij.util.concurrency.annotations.RequiresEdt
 import com.sourcegraph.cody.agent.CodyAgentService
@@ -26,8 +24,6 @@ import com.sourcegraph.cody.config.notification.AccountSettingChangeContext
 import com.sourcegraph.cody.config.notification.AccountSettingChangeContext.Companion.UNAUTHORIZED_ERROR_MESSAGE
 import com.sourcegraph.config.ConfigUtil
 import java.awt.Component
-import java.awt.event.WindowAdapter
-import java.awt.event.WindowEvent
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
@@ -107,23 +103,10 @@ class CodyAuthenticationManager :
   private val accountManager: CodyAccountManager
     get() = service()
 
-  fun addAuthChangeListener(project: Project) {
-    val frame = WindowManager.getInstance().getFrame(project)
-    val listener =
-        object : WindowAdapter() {
-          override fun windowActivated(e: WindowEvent?) {
-            super.windowActivated(e)
-            ApplicationManager.getApplication().executeOnPooledThread { getAuthenticationState() }
-          }
-        }
-    frame?.addWindowListener(listener)
-    Disposer.register(this) { frame?.removeWindowListener(listener) }
-  }
-
   @CalledInAny fun getAccounts(): Set<CodyAccount> = accountManager.accounts
 
   @CalledInAny
-  private fun getAuthenticationState(): AuthenticationState {
+  fun getAuthenticationState(): AuthenticationState {
     val previousIsTokenInvalid = isTokenInvalid?.getNow(null)
     val previousTier = tier?.getNow(null)
     val isTokenInvalidFuture = CompletableFuture<Boolean>()

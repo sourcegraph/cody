@@ -8,8 +8,8 @@ import com.intellij.openapi.editor.ex.EditorEventMulticasterEx
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.startup.ProjectActivity
 import com.sourcegraph.cody.agent.CodyAgentService
-import com.sourcegraph.cody.config.CodyAuthenticationManager
 import com.sourcegraph.cody.config.CodySettingsFileChangeListener
+import com.sourcegraph.cody.config.CodyWindowAdapter
 import com.sourcegraph.cody.config.migration.SettingsMigration
 import com.sourcegraph.cody.config.notification.AccountSettingChangeListener
 import com.sourcegraph.cody.config.notification.CodySettingChangeListener
@@ -32,7 +32,7 @@ class PostStartupActivity : ProjectActivity {
     VerifyJavaBootRuntimeVersion().runActivity(project)
     SettingsMigration().runActivity(project)
     CodyAuthNotificationActivity().runActivity(project)
-    CodyAuthenticationManager.getInstance().addAuthChangeListener(project)
+    CodyWindowAdapter.addAuthChangeListener(project)
     ApplicationManager.getApplication().executeOnPooledThread {
       // Scheduling because this task takes ~2s to run
       CheckUpdatesTask(project).queue()

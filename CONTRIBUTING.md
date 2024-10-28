@@ -193,15 +193,15 @@ We trigger the stable channel release only after the nightly channel release pas
 graph TD;
     Title --> nightly["Nightly Release / Experimental Release"];
     Title["JetBrains Plugin Release"] --> stable["Stable Release"];
-    stable -->  trigger_stable["Manually trigger 'Stable Release' workflow\nin GitHub Actions"];
+    stable -->  trigger_stable["Manually trigger 'Stable Release' workflow in GitHub Actions"];
     release_stable --> marketplace_approval["Wait for JetBrains approval"];
     marketplace_approval --> |Automated approval, up to 48hr| unhide["unhide"];
     unhide --> available_to_end_users_stable["Available for download"];
-    marketplace_approval --> |Manual quick-approve| slack_approval["Request JetBrains Marketplace team\nto manually approve it via Slack"];
-    slack_approval --> unhide["Unhide the approved release\n(requires admin access)"];
-    nightly --> push_tag["Run `push-git-tag-for-next-release.sh`"];
+    marketplace_approval --> |Manual quick-approve| slack_approval["Request JetBrains Marketplace team to manually approve it via Slack"];
+    slack_approval --> unhide["Unhide the approved release (requires admin access)"];
+    nightly --> push_tag["Run 'push-git-tag-for-next-release.sh'"];
     trigger_stable --> release_stable["Wait for 'Stable Release' workflow to complete"];
-    push_tag --> release_nightly["Wait for 'Nightly Release' / 'Experimental Release'\nworkflow to complete"];
+    push_tag --> release_nightly["Wait for 'Nightly Release' / 'Experimental Release' workflow to complete"];
     release_nightly --> available_to_end_users_nightly["Available for download"];
 ```
 
