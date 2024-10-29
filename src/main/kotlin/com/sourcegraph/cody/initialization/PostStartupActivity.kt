@@ -32,7 +32,7 @@ class PostStartupActivity : ProjectActivity {
     VerifyJavaBootRuntimeVersion().runActivity(project)
     SettingsMigration().runActivity(project)
     CodyAuthNotificationActivity().runActivity(project)
-    CodyWindowAdapter.addAuthChangeListener(project)
+    CodyWindowAdapter.addWindowFocusListener(project)
     ApplicationManager.getApplication().executeOnPooledThread {
       // Scheduling because this task takes ~2s to run
       CheckUpdatesTask(project).queue()

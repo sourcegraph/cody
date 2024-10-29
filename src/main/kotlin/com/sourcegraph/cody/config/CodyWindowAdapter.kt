@@ -30,7 +30,7 @@ class CodyWindowAdapter(private val project: Project) : WindowAdapter() {
   }
 
   companion object {
-    fun addAuthChangeListener(project: Project) {
+    fun addWindowFocusListener(project: Project) {
       val frame = WindowManager.getInstance().getFrame(project)
       val listener = CodyWindowAdapter(project)
       frame?.addWindowListener(listener)

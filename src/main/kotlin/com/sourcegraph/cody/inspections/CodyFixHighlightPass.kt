@@ -25,6 +25,8 @@ import com.sourcegraph.cody.agent.protocol_generated.ProtocolDiagnostic
 import com.sourcegraph.cody.agent.protocol_generated.ProtocolLocation
 import com.sourcegraph.cody.agent.protocol_generated.Range
 import java.util.concurrent.CompletableFuture
+import java.util.concurrent.ExecutionException
+import org.eclipse.lsp4j.jsonrpc.ResponseErrorException
 
 class CodyFixHighlightPass(val file: PsiFile, val editor: Editor) :
     TextEditorHighlightingPass(file.project, editor.document, false) {
@@ -98,7 +100,13 @@ class CodyFixHighlightPass(val file: PsiFile, val editor: Editor) :
         }
         done.complete(Unit)
       } catch (e: Exception) {
-        done.completeExceptionally(e)
+        val responseErrorException = (e as? ExecutionException)?.cause as? ResponseErrorException
+        if (responseErrorException != null) {
+          logger.warn("Failed to get code actions for diagnostic", e)
+          done.complete(Unit)
+        } else {
+          done.completeExceptionally(e)
+        }
       }
     }
     ProgressIndicatorUtils.awaitWithCheckCanceled(done, progress)
