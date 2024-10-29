@@ -7,27 +7,37 @@ import {
     isDotCom,
     telemetryRecorder,
 } from '@sourcegraph/cody-shared'
-import { getEditor } from '../../editor/active-editor'
 
-import { workspace } from 'vscode'
 import { doesFileExist } from '../../commands/utils/workspace-files'
 import { executeSmartApply } from '../../edit/smart-apply'
+import { getEditor } from '../../editor/active-editor'
 import type { VSCodeEditor } from '../../editor/vscode-editor'
+import { charactersLogger } from '../CharactersLogger'
+
 import { countCode, matchCodeSnippets } from './code-count'
 import { resolveRelativeOrAbsoluteUri } from './edit-create-file'
+
+const defaultLastStoredCode = {
+    code: '',
+    lineCount: 0,
+    charCount: 0,
+    eventName: '',
+    source: '',
+} satisfies LastStoredCode
+
+type LastStoredCode = {
+    code: string
+    lineCount: number
+    charCount: number
+    eventName: string
+    source: string
+}
 
 /**
  * It tracks the last stored code snippet and metadata like lines, chars, event, source etc.
  * This is used to track acceptance of generated code by Cody for Chat and Commands
  */
-let lastStoredCode = {
-    code: 'init',
-    lineCount: 0,
-    charCount: 0,
-    eventName: '',
-    source: '',
-    requestID: '',
-}
+let lastStoredCode: LastStoredCode = { ...defaultLastStoredCode }
 let insertInProgress = false
 let lastClipboardText = ''
 
@@ -43,16 +53,23 @@ enum SourceMetadataMapping {
  *
  * This is used to track code generation events in VS Code.
  */
-function setLastStoredCode(
-    code: string,
-    eventName: 'copyButton' | 'keyDown.Copy' | 'applyButton' | 'insertButton' | 'saveButton',
-    source = 'chat',
-    requestID = ''
-): void {
+function setLastStoredCode({
+    code,
+    eventName,
+    changeEvent,
+}: {
+    code: string
+    eventName: 'copyButton' | 'keyDown.Copy' | 'applyButton' | 'insertButton' | 'saveButton'
+    /**
+     * Used to add the characters logger metadata to the telemetry event.
+     */
+    changeEvent?: vscode.TextDocumentChangeEvent
+}): void {
     // All non-copy events are considered as insertions since we don't need to listen for paste events
+    const source = 'chat'
     insertInProgress = !eventName.includes('copy')
     const { lineCount, charCount } = countCode(code)
-    const codeCount = { code, lineCount, charCount, eventName, source, requestID }
+    const codeCount = { code, lineCount, charCount, eventName, source }
 
     lastStoredCode = codeCount
 
@@ -77,13 +94,17 @@ function setLastStoredCode(
             break
     }
 
+    const charactersLoggerMetadata = changeEvent
+        ? charactersLogger.getChangeEventMetadataForCodyCodeGenEvents(changeEvent)
+        : {}
+
     telemetryRecorder.recordEvent(`cody.${eventName}`, 'clicked', {
         metadata: {
             source: SourceMetadataMapping[source as keyof typeof SourceMetadataMapping] || 0, // Use 0 as default if source is not found
             lineCount,
             charCount,
+            ...charactersLoggerMetadata,
         },
-        interactionID: requestID,
         privateMetadata: {
             source,
             op: operation,
@@ -100,6 +121,31 @@ async function setLastTextFromClipboard(clipboardText?: string): Promise<void> {
     lastClipboardText = clipboardText || (await vscode.env.clipboard.readText())
 }
 
+function workspaceEditToDocumentChangeEvent({
+    workspaceEdit,
+    document,
+    selection,
+}: {
+    workspaceEdit: vscode.WorkspaceEdit
+    document: vscode.TextDocument
+    selection: vscode.Selection
+}): vscode.TextDocumentChangeEvent {
+    const contentChanges = workspaceEdit.get(document.uri).map(edit => {
+        return {
+            range: document.validateRange(edit.range),
+            rangeOffset: document.offsetAt(selection.start),
+            rangeLength: getRangeLength(edit.range, document),
+            text: edit.newText,
+        }
+    })
+
+    return {
+        document,
+        contentChanges,
+        reason: undefined,
+    }
+}
+
 /**
  * Handles insert event to insert text from code block at cursor position
  * Replace selection if there is one and then log insert event
@@ -108,20 +154,30 @@ async function setLastTextFromClipboard(clipboardText?: string): Promise<void> {
 export async function handleCodeFromInsertAtCursor(text: string): Promise<void> {
     const editor = getEditor()
     const activeEditor = editor.active
-    const selectionRange = activeEditor?.selection
-    if (!activeEditor || !selectionRange) {
+    const selection = activeEditor?.selection
+    if (!activeEditor || !selection) {
         throw new Error('No editor or selection found to insert text')
     }
 
-    const edit = new vscode.WorkspaceEdit()
+    const { document } = activeEditor
+    const workspaceEdit = new vscode.WorkspaceEdit()
+
     // trimEnd() to remove new line added by Cody
-    if (selectionRange.isEmpty) {
-        edit.insert(activeEditor.document.uri, selectionRange.start, text.trimEnd())
+    if (selection.isEmpty) {
+        workspaceEdit.insert(document.uri, selection.start, text.trimEnd())
     } else {
-        edit.replace(activeEditor.document.uri, selectionRange, text.trimEnd())
+        workspaceEdit.replace(document.uri, selection, text.trimEnd())
     }
-    setLastStoredCode(text, 'insertButton')
-    await vscode.workspace.applyEdit(edit)
+
+    // Required for characters logger metadata generation.
+    const changeEvent = workspaceEditToDocumentChangeEvent({
+        workspaceEdit,
+        document,
+        selection,
+    })
+
+    setLastStoredCode({ code: text, eventName: 'insertButton', changeEvent })
+    await vscode.workspace.applyEdit(workspaceEdit)
 }
 
 function getSmartApplyModel(authStatus: AuthStatus): EditModel | undefined {
@@ -148,7 +204,7 @@ export async function handleSmartApply(
     fileUri?: string | null
 ): Promise<void> {
     const activeEditor = getEditor()?.active
-    const workspaceUri = workspace.workspaceFolders?.[0].uri
+    const workspaceUri = vscode.workspace.workspaceFolders?.[0].uri
     const uri = await resolveRelativeOrAbsoluteUri(workspaceUri, fileUri, activeEditor?.document?.uri)
 
     const isNewFile = uri && !(await doesFileExist(uri))
@@ -174,7 +230,7 @@ export async function handleSmartApply(
         viewColumn: visibleEditor?.viewColumn,
     })
 
-    setLastStoredCode(code, 'applyButton')
+    setLastStoredCode({ code, eventName: 'applyButton' })
     await executeSmartApply({
         configuration: {
             id,
@@ -192,7 +248,7 @@ export async function handleSmartApply(
  * Handles insert event to insert text from code block to new file
  */
 export async function handleCodeFromSaveToNewFile(text: string, editor: VSCodeEditor): Promise<void> {
-    setLastStoredCode(text, 'saveButton')
+    setLastStoredCode({ code: text, eventName: 'saveButton' })
     return editor.createWorkspaceFile(text)
 }
 
@@ -205,45 +261,58 @@ export async function handleCopiedCode(text: string, isButtonClickEvent: boolean
     const eventName = isButtonClickEvent ? 'copyButton' : 'keyDown.Copy'
     // Set for tracking
     if (copiedCode) {
-        setLastStoredCode(copiedCode, eventName)
+        setLastStoredCode({ code: copiedCode, eventName })
     }
 }
 
 // For tracking paste events for inline-chat
-export async function onTextDocumentChange(newCode: string): Promise<void> {
-    const { code, lineCount, charCount, source, requestID } = lastStoredCode
+export function recordPasteFromChatEvent({ lineCount, charCount, source }: LastStoredCode) {
+    telemetryRecorder.recordEvent('cody.keyDown', 'paste', {
+        metadata: {
+            lineCount,
+            charCount,
+            source: SourceMetadataMapping[source as keyof typeof SourceMetadataMapping] || 0, // Use 0 as default if source is not found
+        },
+        privateMetadata: {
+            source,
+            op: 'paste',
+        },
+        billingMetadata: {
+            product: 'cody',
+            category: 'core',
+        },
+    })
+}
 
-    if (!code) {
-        return
+export async function isCodeFromChatCodeBlockAction(
+    newCode: string
+): Promise<({ operation: 'insert' | 'paste' } & LastStoredCode) | null> {
+    const storedCode = { ...lastStoredCode }
+
+    if (storedCode.code.length === 0) {
+        return null
+    }
+
+    if (!matchCodeSnippets(storedCode.code, newCode)) {
+        return null
     }
 
     if (insertInProgress) {
+        lastStoredCode = { ...defaultLastStoredCode }
         insertInProgress = false
-        return
+        return { ...storedCode, operation: 'insert' }
     }
 
     await setLastTextFromClipboard()
-
-    // the copied code should be the same as the clipboard text
-    if (matchCodeSnippets(code, lastClipboardText) && matchCodeSnippets(code, newCode)) {
-        const op = 'paste'
-        const eventType = 'keyDown'
-
-        telemetryRecorder.recordEvent(`cody.${eventType}`, 'paste', {
-            metadata: {
-                lineCount,
-                charCount,
-                source: SourceMetadataMapping[source as keyof typeof SourceMetadataMapping] || 0, // Use 0 as default if source is not found
-            },
-            interactionID: requestID,
-            privateMetadata: {
-                source,
-                op,
-            },
-            billingMetadata: {
-                product: 'cody',
-                category: 'core',
-            },
-        })
+    if (matchCodeSnippets(storedCode.code, lastClipboardText)) {
+        return { ...storedCode, operation: 'paste' }
     }
+
+    return null
+}
+
+function getRangeLength(range: vscode.Range, document: vscode.TextDocument): number {
+    const startOffset = document.offsetAt(range.start)
+    const endOffset = document.offsetAt(range.end)
+    return endOffset - startOffset
 }

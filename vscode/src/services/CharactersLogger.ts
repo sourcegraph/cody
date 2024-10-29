@@ -1,7 +1,15 @@
+import omit from 'lodash/omit'
 import * as vscode from 'vscode'
 
 import { isFileURI, telemetryRecorder } from '@sourcegraph/cody-shared'
+
 import { outputChannelLogger } from '../output-channel-logger'
+
+import { splitSafeMetadata } from './telemetry-v2'
+import {
+    isCodeFromChatCodeBlockAction,
+    recordPasteFromChatEvent,
+} from './utils/codeblock-action-tracker'
 
 export const LOG_INTERVAL = 30 * 60 * 1000 // 30 minutes
 export const RAPID_CHANGE_TIMEOUT = 15
@@ -25,6 +33,7 @@ const staleAndRapidChangeBoundariesKeys = changeBoundariesKeys.flatMap(
 )
 
 const SPECIAL_DOCUMENT_CHANGE_TYPES = [
+    'cody_chat',
     'undo',
     'redo',
     'window_not_focused',
@@ -76,7 +85,6 @@ interface ChangeEventMetadata {
     changeSize: DocumentChangeSize | undefined
     charsInserted: number
     charsDeleted: number
-    changeType: DocumentChangeType
 }
 
 export class CharactersLogger implements vscode.Disposable {
@@ -139,12 +147,36 @@ export class CharactersLogger implements vscode.Disposable {
         }
     }
 
-    private onDidChangeTextDocument(event: vscode.TextDocumentChangeEvent): void {
+    private async onDidChangeTextDocument(event: vscode.TextDocumentChangeEvent): Promise<void> {
         if (!isFileURI(event.document.uri)) {
             return
         }
 
-        const { changeType, charsDeleted, charsInserted } = this.getChangeEventMetadata(event)
+        const changedText = event.contentChanges[0]?.text ?? ''
+        let isChangeEventFromCodyChat = false
+
+        if (changedText.length !== 0) {
+            // We record paste events in the `onDidChangeTextDocument` handler to avoid race conditions,
+            // since we synchronously mutate the internal state in `codeblock-action-tracker.ts`.
+            //
+            // Additionally, the characters logger needs to know if the change is coming from Cody
+            // to accurately classify it.
+            const codeBlockActionMatch = await isCodeFromChatCodeBlockAction(
+                event.contentChanges[0]?.text
+            )
+            if (codeBlockActionMatch?.operation === 'paste') {
+                // Sends the `cody.keyDown:paste` event.
+                recordPasteFromChatEvent(codeBlockActionMatch)
+            }
+
+            // Marks the change as originating from Cody Chat to prevent double-counting.
+            // For example, double-counting occurs when a change is counted both as a manual user input
+            // and as characters from the `cody.keyDown:paste` event.
+            isChangeEventFromCodyChat = Boolean(codeBlockActionMatch)
+        }
+
+        const changeEventMetadata = this.getChangeEventMetadata(event)
+        const changeType = this.getDocumentChangeType(changeEventMetadata, isChangeEventFromCodyChat)
         this.changeCounters[changeType]++
 
         for (const change of event.contentChanges) {
@@ -167,14 +199,19 @@ export class CharactersLogger implements vscode.Disposable {
             // the lengths are the same.
         }
 
-        if (charsDeleted > 0 || charsInserted > 0) {
+        if (changeEventMetadata.charsDeleted > 0 || changeEventMetadata.charsInserted > 0) {
             this.lastChangeTimestamp = Date.now()
         }
     }
 
     private getDocumentChangeType(
-        metadata: Omit<ChangeEventMetadata, 'changeType'>
+        metadata: Omit<ChangeEventMetadata, 'changeType'>,
+        isChangeEventFromCodyChat = false
     ): DocumentChangeType {
+        if (isChangeEventFromCodyChat) {
+            return 'cody_chat'
+        }
+
         if (metadata.isUndo) {
             return 'undo'
         }
@@ -217,11 +254,11 @@ export class CharactersLogger implements vscode.Disposable {
         return 'unexpected'
     }
 
-    public getChangeEventMetadata(event: vscode.TextDocumentChangeEvent): ChangeEventMetadata {
-        const { document, contentChanges } = event
+    private getChangeEventMetadata(event: Partial<vscode.TextDocumentChangeEvent>): ChangeEventMetadata {
+        const { document, contentChanges = [] } = event
 
         const currentTimestamp = Date.now()
-        const uriString = document.uri.toString()
+        const uriString = document?.uri.toString() || 'document-not-provided'
 
         const isUndo = event.reason === vscode.TextDocumentChangeReason.Undo
         const isRedo = event.reason === vscode.TextDocumentChangeReason.Redo
@@ -264,7 +301,7 @@ export class CharactersLogger implements vscode.Disposable {
             this.activeTextEditor && this.activeTextEditor.document.uri.toString() !== uriString
         )
 
-        const changeEventMetadata = {
+        return {
             isUndo,
             isRedo,
             isSelectionStale,
@@ -278,12 +315,28 @@ export class CharactersLogger implements vscode.Disposable {
             changeSize: changeSizePair ? (changeSizePair[0] as DocumentChangeSize) : undefined,
             charsInserted: charCounts.inserted,
             charsDeleted: charCounts.deleted,
-        } satisfies Omit<ChangeEventMetadata, 'changeType'>
-
-        return {
-            ...changeEventMetadata,
-            changeType: this.getDocumentChangeType(changeEventMetadata),
         }
+    }
+
+    public getChangeEventMetadataForCodyCodeGenEvents(event: Partial<vscode.TextDocumentChangeEvent>): {
+        isSelectionStale: number
+        isDisjoint: number
+        isPartiallyOutsideOfVisibleRanges: number
+        isFullyOutsideOfVisibleRanges: number
+        windowNotFocused: number
+        noActiveTextEditor: number
+        outsideOfActiveEditor: number
+        charsInserted: number
+        charsDeleted: number
+    } {
+        const rawMetadata = omit(this.getChangeEventMetadata(event), [
+            'changeSize',
+            'isRedo',
+            'isUndo',
+            'isRapidChange',
+        ])
+
+        return splitSafeMetadata(rawMetadata).metadata
     }
 
     public dispose(): void {
