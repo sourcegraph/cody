@@ -67,7 +67,7 @@ export async function getTokenCounterUtils(): Promise<TokenCounterUtils> {
                     },
 
                     countTokens(text: string): number {
-                        const wordCount = text.split(' ').length
+                        const wordCount = text.trim().split(/\s+/).length
                         return wordCount > EXTENDED_USER_CONTEXT_TOKEN_BUDGET
                             ? wordCount
                             : this.encode(text).length
