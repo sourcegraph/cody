@@ -847,6 +847,7 @@ export const vsCodeMocks = {
             return path.toString()
         },
         onDidChangeTextDocument() {},
+        onDidCloseTextDocument() {},
         onDidRenameFiles() {},
         onDidDeleteFiles() {},
         textDocuments: vscodeWorkspaceTextDocuments,

@@ -174,8 +174,8 @@ describe('CharactersLogger', () => {
                 stale_xxs_change: 1,
                 stale_xxs_change_inserted: 5, // 'there'
 
-                outside_of_visible_ranges: 1,
-                outside_of_visible_ranges_inserted: 6, // 'hidden'
+                partially_outside_of_visible_ranges: 1,
+                partially_outside_of_visible_ranges_inserted: 6, // 'hidden'
             }),
         })
     })
@@ -186,7 +186,14 @@ describe('CharactersLogger', () => {
 
         const changeReasons = { Undo: 1, Redo: 2 } as const
 
-        onDidChangeTextDocument(createChange({ text: 'test', range: range(0, 0, 0, 0), rangeLength: 0 }))
+        const xxsChangeEvent = createChange({ text: 'test', range: range(0, 0, 0, 0), rangeLength: 0 })
+        onDidChangeTextDocument(xxsChangeEvent)
+
+        const disjointChange = createChange({ text: 'test', range: range(2, 0, 0, 0), rangeLength: 0 })
+        onDidChangeTextDocument({
+            ...xxsChangeEvent,
+            contentChanges: [xxsChangeEvent.contentChanges[0], disjointChange.contentChanges[0]],
+        })
 
         // Simulate undo
         onDidChangeTextDocument(
@@ -265,6 +272,9 @@ describe('CharactersLogger', () => {
             metadata: expectedCharCounters({
                 xxs_change: 1,
                 xxs_change_inserted: 4, // 'test'
+
+                disjoint_change: 1,
+                disjoint_change_inserted: 8, // 'test' + 'test'
 
                 undo: 1,
                 undo_deleted: 4, // 'test' deleted
