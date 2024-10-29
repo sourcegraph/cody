@@ -54,7 +54,7 @@ export const WelcomeMessage: FunctionComponent<WelcomeMessageProps> = ({
                         onClick={handleRecentlyUsed}
                     >
                         Recently used{' '}
-                        {IDE === CodyIDE.VSCode && <Kbd macOS="shift+r" linuxAndWindows="shift+r" />}
+                        {IDE === CodyIDE.VSCode && <Kbd macOS="opt+p" linuxAndWindows="alt+p" />}
                     </Button>
 
                     <Button
