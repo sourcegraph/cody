@@ -34,6 +34,7 @@ export const DEEPSEEK_CODER_V2_LITE_BASE_WINDOW_8192 = 'deepseek-coder-v2-lite-b
 export const DEEPSEEK_CODER_V2_LITE_BASE_WINDOW_16384 = 'deepseek-coder-v2-lite-base-context-16384'
 
 export const CODE_QWEN_7B_V2P5 = 'code-qwen-7b-v2p5'
+export const CODE_LLAMA_7B = 'codellama-7b'
 
 // Model identifiers can be found in https://docs.fireworks.ai/explore/ and in our internal
 // conversations
@@ -50,6 +51,7 @@ const MODEL_MAP = {
     [DEEPSEEK_CODER_V2_LITE_BASE_WINDOW_8192]: 'accounts/fireworks/models/deepseek-coder-v2-lite-base',
     [DEEPSEEK_CODER_V2_LITE_BASE_WINDOW_16384]: 'accounts/fireworks/models/deepseek-coder-v2-lite-base',
     [CODE_QWEN_7B_V2P5]: 'accounts/fireworks/models/qwen-v2p5-7b',
+    [CODE_LLAMA_7B]: 'accounts/fireworks/models/code-llama-7b',
 } as const
 
 type FireworksModel =
@@ -72,6 +74,7 @@ function getMaxContextTokens(model: FireworksModel): number {
             // compare the results
             return 2048
         case DEEPSEEK_CODER_V2_LITE_BASE:
+        case CODE_LLAMA_7B:
         case CODE_QWEN_7B_V2P5: {
             return 2048
         }
