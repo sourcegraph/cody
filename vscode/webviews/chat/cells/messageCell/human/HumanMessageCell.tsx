@@ -111,7 +111,11 @@ const HumanMessageCellContent = memo<HumanMessageCellContent>(props => {
                     models={models}
                     userInfo={userInfo}
                     initialEditorState={initialEditorState}
-                    placeholder={isFirstMessage ? 'Ask anything. Use @ to specify context...' : 'Ask a followup...'}
+                    placeholder={
+                        isFirstMessage
+                            ? 'Ask anything. Use @ to specify context...'
+                            : 'Ask a followup...'
+                    }
                     isFirstMessage={isFirstMessage}
                     isSent={isSent}
                     isPendingPriorResponse={isPendingPriorResponse}
