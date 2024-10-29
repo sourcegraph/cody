@@ -15,6 +15,7 @@ import {
     shareReplay,
     skip,
     skipPendingOperation,
+    tapLog,
 } from '@sourcegraph/cody-shared'
 import * as uuid from 'uuid'
 import * as vscode from 'vscode'
@@ -120,7 +121,7 @@ import { CodyToolProvider } from '../agentic/CodyToolProvider'
 import { DeepCodyAgent } from '../agentic/DeepCody'
 import { getMentionMenuData } from '../context/chatContext'
 import type { ChatIntentAPIClient } from '../context/chatIntentAPIClient'
-import { observeInitialContext } from '../initialContext'
+import { getCorpusContextItemsForEditorState, observeInitialContext } from '../initialContext'
 import {
     CODY_BLOG_URL_o1_WAITLIST,
     type ConfigurationSubsetForWebview,
@@ -1695,6 +1696,8 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             chatBuilder: this.chatBuilder.changes,
         }).pipe(shareReplay())
 
+        const corpusContext = getCorpusContextItemsForEditorState().pipe(distinctUntilChanged())
+
         this.disposables.push(
             addMessageListenersForExtensionAPI(
                 createMessageAPIForExtension({
@@ -1756,6 +1759,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                         })
                     },
                     initialContext: () => initialContext.pipe(skipPendingOperation()),
+                    corpusContext: () => corpusContext.pipe(skipPendingOperation()),
                     detectIntent: text =>
                         promiseFactoryToObservable<
                             | {

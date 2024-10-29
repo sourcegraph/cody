@@ -67,6 +67,11 @@ export interface WebviewToExtensionAPI {
      */
     initialContext(): Observable<ContextItem[]>
 
+    /**
+     * Observe the corpus context items for searching the current corpus of code
+     */
+    corpusContext(): Observable<ContextItem[]>
+
     detectIntent(
         text: string
     ): Observable<
@@ -121,6 +126,7 @@ export function createExtensionAPI(
         initialContext: staticInitialContext
             ? () => Observable.of(staticInitialContext)
             : proxyExtensionAPI(messageAPI, 'initialContext'),
+        corpusContext: proxyExtensionAPI(messageAPI, 'corpusContext'),
         detectIntent: proxyExtensionAPI(messageAPI, 'detectIntent'),
         promptsMigrationStatus: proxyExtensionAPI(messageAPI, 'promptsMigrationStatus'),
         startPromptsMigration: proxyExtensionAPI(messageAPI, 'startPromptsMigration'),

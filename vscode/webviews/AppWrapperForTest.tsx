@@ -95,6 +95,7 @@ export const AppWrapperForTest: FunctionComponent<{ children: ReactNode }> = ({ 
                     chatModels: () => Observable.of(getMockedDotComClientModels()),
                     setChatModel: () => EMPTY,
                     initialContext: () => Observable.of([]),
+                    corpusContext: () => Observable.of([]),
                     hydratePromptMessage: text =>
                         Observable.of(serializedPromptEditorStateFromText(text)),
                     promptsMigrationStatus: () => Observable.of({ type: 'no_migration_needed' }),

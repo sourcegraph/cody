@@ -45,24 +45,19 @@ export function observeInitialContext({
 }): Observable<ContextItem[] | typeof pendingOperation> {
     return combineLatest(
         getCurrentFileOrSelection({ chatBuilder }).pipe(distinctUntilChanged()),
-        getCorpusContextItemsForEditorState().pipe(distinctUntilChanged()),
         getOpenCtxContextItems().pipe(distinctUntilChanged())
     ).pipe(
         debounceTime(50),
-        switchMap(
-            ([currentFileOrSelectionContext, corpusContext, openctxContext]): Observable<
-                ContextItem[] | typeof pendingOperation
-            > => {
-                if (corpusContext === pendingOperation) {
-                    return Observable.of(pendingOperation)
-                }
-                return Observable.of([
+        map(
+            ([currentFileOrSelectionContext, openctxContext]):
+                | ContextItem[]
+                | typeof pendingOperation => {
+                return [
                     ...(openctxContext === pendingOperation ? [] : openctxContext),
                     ...(currentFileOrSelectionContext === pendingOperation
                         ? []
                         : currentFileOrSelectionContext),
-                    ...corpusContext,
-                ])
+                ]
             }
         )
     )
