@@ -206,6 +206,9 @@ export class ChatsController implements vscode.Disposable {
             vscode.commands.registerCommand(CODY_PASSTHROUGH_VSCODE_OPEN_COMMAND_ID, (...args) =>
                 this.passthroughVsCodeOpen(...args)
             ),
+            vscode.commands.registerCommand('cody.show.lastUsedActions', async () => {
+                this.panel.clientBroadcast.next({ type: 'open-recently-prompts' })
+            }),
 
             // Mention selection/file commands
             vscode.commands.registerCommand('cody.mention.selection', uri =>

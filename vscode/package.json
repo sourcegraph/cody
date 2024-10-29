@@ -710,7 +710,7 @@
       },
       {
         "command": "cody.show.lastUsedActions",
-        "key": "ctrl+r",
+        "key": "shift+r",
         "when": "cody.activated && !editorReadonly"
       },
       {

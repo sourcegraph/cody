@@ -203,6 +203,8 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
 
     private disposables: vscode.Disposable[] = []
 
+    public readonly clientBroadcast = new Subject<ClientActionBroadcast>()
+
     public dispose(): void {
         vscode.Disposable.from(...this.disposables).dispose()
         this.featureCodyExperimentalOneBox.subscription.unsubscribe()
@@ -501,7 +503,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
     }
 
     private hasEditCapability(): boolean {
-        return this.extensionClient.capabilities?.edit === 'enabled' ?? false
+        return this.extensionClient.capabilities?.edit === 'enabled'
     }
 
     private featureCodyExperimentalOneBox = storeLastValue(
@@ -1222,6 +1224,8 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         })
     }
 
+    public fireClientAction(): void {}
+
     private async handleAttributionSearch(snippet: string): Promise<void> {
         try {
             const attribution = await this.guardrails.searchAttribution(snippet)
@@ -1691,14 +1695,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             chatBuilder: this.chatBuilder.changes,
         }).pipe(shareReplay())
 
-        const clientBroadcast = new Subject<ClientActionBroadcast>()
-
-        this.disposables.push(
-            vscode.commands.registerCommand('cody.show.lastUsedActions', () => {
-                clientBroadcast.next({ type: 'open-recently-prompts' })
-            })
-        )
-
         this.disposables.push(
             addMessageListenersForExtensionAPI(
                 createMessageAPIForExtension({
@@ -1718,7 +1714,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                             chatBuilder: this.chatBuilder,
                         })
                     },
-                    clientActionBroadcast: () => clientBroadcast,
+                    clientActionBroadcast: () => this.clientBroadcast,
                     evaluatedFeatureFlag: flag => featureFlagProvider.evaluatedFeatureFlag(flag),
                     hydratePromptMessage: (promptText, initialContext) =>
                         promiseFactoryToObservable(() =>
