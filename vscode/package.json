@@ -709,6 +709,11 @@
         "when": "cody.activated && !editorReadonly && cody.hasActionableEdit"
       },
       {
+        "command": "cody.show.lastUsedActions",
+        "key": "alt+p",
+        "when": "cody.activated && !editorReadonly"
+      },
+      {
         "command": "cody.fixup.undoNearest",
         "key": "alt+x",
         "when": "cody.activated && !editorReadonly && cody.hasActionableEdit"

@@ -85,6 +85,7 @@ export const AppWrapperForTest: FunctionComponent<{ children: ReactNode }> = ({ 
                         commands: FIXTURE_COMMANDS,
                     }),
                     highlights: () => Observable.of([]),
+                    clientActionBroadcast: () => Observable.of(),
                     models: () =>
                         Observable.of({
                             localModels: [],

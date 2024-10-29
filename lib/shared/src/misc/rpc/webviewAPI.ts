@@ -29,6 +29,12 @@ export interface WebviewToExtensionAPI {
      */
     prompts(input: PromptsInput): Observable<PromptsResult>
 
+    /**
+     * Stream with actions from cody agent service, serves as transport for any client
+     * based actions/effects.
+     */
+    clientActionBroadcast(): Observable<ClientActionBroadcast>
+
     /** The commands to prompts library migration information. */
     promptsMigrationStatus(): Observable<PromptsMigrationStatus>
 
@@ -106,6 +112,7 @@ export function createExtensionAPI(
         mentionMenuData: proxyExtensionAPI(messageAPI, 'mentionMenuData'),
         evaluatedFeatureFlag: proxyExtensionAPI(messageAPI, 'evaluatedFeatureFlag'),
         prompts: proxyExtensionAPI(messageAPI, 'prompts'),
+        clientActionBroadcast: proxyExtensionAPI(messageAPI, 'clientActionBroadcast'),
         models: proxyExtensionAPI(messageAPI, 'models'),
         chatModels: proxyExtensionAPI(messageAPI, 'chatModels'),
         highlights: proxyExtensionAPI(messageAPI, 'highlights'),
@@ -205,4 +212,8 @@ interface PromptsMigrationSkipStatus {
 
 interface NoPromptsMigrationNeeded {
     type: 'no_migration_needed'
+}
+
+export interface ClientActionBroadcast {
+    type: 'open-recently-prompts'
 }
