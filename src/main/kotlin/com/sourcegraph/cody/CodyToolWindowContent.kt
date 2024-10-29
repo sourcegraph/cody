@@ -54,12 +54,17 @@ class CodyToolWindowContent(val project: Project) {
   }
 
   @RequiresEdt
+  fun showLoginPanel() {
+    cardLayout.show(cardPanel, SIGN_IN_PANEL)
+    showView(cardPanel)
+  }
+
+  @RequiresEdt
   fun refreshPanelsVisibility() {
     val codyAuthenticationManager = CodyAuthenticationManager.getInstance()
     if (codyAuthenticationManager.hasNoActiveAccount() ||
         codyAuthenticationManager.showInvalidAccessTokenError()) {
-      cardLayout.show(cardPanel, SIGN_IN_PANEL)
-      showView(cardPanel)
+      showLoginPanel()
       return
     }
     val activeAccount = codyAuthenticationManager.account

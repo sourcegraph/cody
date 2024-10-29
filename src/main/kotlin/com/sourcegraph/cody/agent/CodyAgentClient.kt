@@ -10,6 +10,7 @@ import com.intellij.openapi.project.guessProjectDir
 import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VirtualFile
 import com.jetbrains.rd.util.firstOrNull
+import com.sourcegraph.cody.CodyToolWindowContent
 import com.sourcegraph.cody.agent.protocol.ProtocolTextDocument
 import com.sourcegraph.cody.agent.protocol.WebviewCreateWebviewPanelParams
 import com.sourcegraph.cody.agent.protocol_generated.DebugMessage
@@ -20,6 +21,7 @@ import com.sourcegraph.cody.agent.protocol_generated.SaveDialogOptionsParams
 import com.sourcegraph.cody.agent.protocol_generated.TextDocumentEditParams
 import com.sourcegraph.cody.agent.protocol_generated.TextDocument_ShowParams
 import com.sourcegraph.cody.agent.protocol_generated.UntitledTextDocument
+import com.sourcegraph.cody.agent.protocol_generated.Window_DidChangeContextParams
 import com.sourcegraph.cody.agent.protocol_generated.WorkspaceEditParams
 import com.sourcegraph.cody.edit.EditService
 import com.sourcegraph.cody.edit.lenses.LensesService
@@ -227,5 +229,18 @@ class CodyAgentClient(private val project: Project, private val webview: NativeW
     }
 
     return saveFileFuture
+  }
+
+  @JsonNotification("window/didChangeContext")
+  fun window_didChangeContext(params: Window_DidChangeContextParams) {
+    if (params.key == "cody.activated") {
+      CodyToolWindowContent.executeOnInstanceIfNotDisposed(project) {
+        if (params.value?.toBoolean() == false) {
+          showLoginPanel()
+        } else {
+          refreshPanelsVisibility()
+        }
+      }
+    }
   }
 }
