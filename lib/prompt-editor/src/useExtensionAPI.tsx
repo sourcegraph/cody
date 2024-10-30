@@ -14,11 +14,17 @@ const context = createContext<WebviewToExtensionAPI | undefined>(undefined)
 export const ExtensionAPIProviderFromVSCodeAPI: FunctionComponent<{
     vscodeAPI: GenericVSCodeWrapper<any, any>
     staticInitialContext?: ContextItem[]
+    staticCorpusContext?: ContextItem[]
     children: ReactNode
-}> = ({ vscodeAPI, staticInitialContext, children }) => {
+}> = ({ vscodeAPI, staticInitialContext, staticCorpusContext, children }) => {
     const extensionAPI = useMemo<WebviewToExtensionAPI>(
-        () => createExtensionAPI(createMessageAPIForWebview(vscodeAPI), staticInitialContext),
-        [vscodeAPI, staticInitialContext]
+        () =>
+            createExtensionAPI(
+                createMessageAPIForWebview(vscodeAPI),
+                staticInitialContext,
+                staticCorpusContext
+            ),
+        [vscodeAPI, staticInitialContext, staticCorpusContext]
     )
     return <context.Provider value={extensionAPI}>{children}</context.Provider>
 }

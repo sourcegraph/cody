@@ -157,21 +157,7 @@ const CodyWebPanel: FC<CodyWebPanelProps> = props => {
             return []
         }
 
-        const mentions: ContextItem[] = [
-            {
-                type: 'repository',
-                id: repository.id,
-                name: repository.name,
-                repoID: repository.id,
-                repoName: repository.name,
-                description: repository.name,
-                uri: URI.parse(`repo:${repository.name}`),
-                content: null,
-                source: ContextItemSource.Initial,
-                icon: 'folder',
-                title: 'Current Repository',
-            } as ContextItemRepository,
-        ]
+        const mentions: ContextItem[] = []
 
         if (fileURL) {
             // Repository directory file url in this case is directory path
@@ -214,10 +200,32 @@ const CodyWebPanel: FC<CodyWebPanelProps> = props => {
 
         return mentions
     }, [initialContextData])
+    const corpusContext = useMemo<ContextItem[]>(() => {
+        const { repository } = initialContextData ?? {}
+        if (!repository) {
+            return []
+        }
+        const mentions: ContextItem[] = [
+            {
+                type: 'repository',
+                id: repository.id,
+                name: repository.name,
+                repoID: repository.id,
+                repoName: repository.name,
+                description: repository.name,
+                uri: URI.parse(`repo:${repository.name}`),
+                content: null,
+                source: ContextItemSource.Initial,
+                icon: 'folder',
+                title: 'Current Repository', // web chat default initial context
+            } as ContextItemRepository,
+        ]
+        return mentions
+    }, [initialContextData])
 
     const wrappers = useMemo<Wrapper[]>(
-        () => getAppWrappers(vscodeAPI, telemetryRecorder, config, initialContext),
-        [vscodeAPI, telemetryRecorder, config, initialContext]
+        () => getAppWrappers(vscodeAPI, telemetryRecorder, config, initialContext, corpusContext),
+        [vscodeAPI, telemetryRecorder, config, initialContext, corpusContext]
     )
 
     const CONTEXT_MENTIONS_SETTINGS = useMemo<ChatMentionsSettings>(() => {

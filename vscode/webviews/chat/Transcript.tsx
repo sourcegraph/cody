@@ -10,6 +10,7 @@ import {
     isAbortErrorOrSocketHangUp,
 } from '@sourcegraph/cody-shared'
 import { type PromptEditorRefAPI, useExtensionAPI } from '@sourcegraph/prompt-editor'
+import { useCorpusContextForChat } from '@sourcegraph/prompt-editor/src/useInitialContext'
 import { clsx } from 'clsx'
 import debounce from 'lodash/debounce'
 import isEqual from 'lodash/isEqual'
@@ -350,6 +351,22 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
         [onEditSubmit, telemetryRecorder, humanMessage]
     )
 
+    const corpusContextItems = useCorpusContextForChat()
+    const resubmitWithAdditionalContext = useCallback(async () => {
+        const editorState = humanEditorRef.current?.getSerializedValue()
+        if (editorState) {
+            const editor = humanEditorRef.current
+            if (corpusContextItems.length === 0 || !editor) {
+                return
+            }
+            await editor.addMentions(corpusContextItems, 'before', ' ')
+            const newEditorState = humanEditorRef.current?.getSerializedValue()
+            if (newEditorState) {
+                onEditSubmit(newEditorState, 'chat')
+            }
+        }
+    }, [corpusContextItems, onEditSubmit])
+
     const reSubmitWithChatIntent = useCallback(() => reSubmitWithIntent('chat'), [reSubmitWithIntent])
     const reSubmitWithSearchIntent = useCallback(
         () => reSubmitWithIntent('search'),
@@ -425,6 +442,12 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                     )}
                 </InfoMessage>
             )}
+            <div>
+                {/* TODO(beyang): hide when repo mention already exists*/}
+                <Button onClick={resubmitWithAdditionalContext} type="button">
+                    Rerun with repository context
+                </Button>
+            </div>
             {((humanMessage.contextFiles && humanMessage.contextFiles.length > 0) ||
                 isContextLoading) && (
                 <ContextCell

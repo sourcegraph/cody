@@ -153,7 +153,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     const telemetryRecorder = useMemo(() => createWebviewTelemetryRecorder(vscodeAPI), [vscodeAPI])
 
     const wrappers = useMemo<Wrapper[]>(
-        () => getAppWrappers(vscodeAPI, telemetryRecorder, config, undefined),
+        () => getAppWrappers(vscodeAPI, telemetryRecorder, config, undefined, undefined),
         [vscodeAPI, telemetryRecorder, config]
     )
 
@@ -197,7 +197,8 @@ export function getAppWrappers(
     vscodeAPI: VSCodeWrapper,
     telemetryRecorder: TelemetryRecorder,
     config: Config | null,
-    staticInitialContext: ContextItem[] | undefined
+    staticInitialContext: ContextItem[] | undefined,
+    staticCorpusContext: ContextItem[] | undefined
 ): Wrapper[] {
     return [
         {
@@ -206,7 +207,7 @@ export function getAppWrappers(
         } satisfies Wrapper<ComponentProps<typeof TelemetryRecorderContext.Provider>['value']>,
         {
             component: ExtensionAPIProviderFromVSCodeAPI,
-            props: { vscodeAPI, staticInitialContext },
+            props: { vscodeAPI, staticInitialContext, staticCorpusContext },
         } satisfies Wrapper<any, ComponentProps<typeof ExtensionAPIProviderFromVSCodeAPI>>,
         {
             component: ConfigProvider,

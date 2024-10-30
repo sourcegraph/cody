@@ -109,7 +109,8 @@ export function createExtensionAPI(
     messageAPI: ReturnType<typeof createMessageAPIForWebview>,
 
     // As a workaround for Cody Web, support providing static initial context.
-    staticInitialContext?: ContextItem[]
+    staticInitialContext?: ContextItem[],
+    staticCorpusContext?: ContextItem[]
 ): WebviewToExtensionAPI {
     const hydratePromptMessage = proxyExtensionAPI(messageAPI, 'hydratePromptMessage')
 
@@ -126,7 +127,9 @@ export function createExtensionAPI(
         initialContext: staticInitialContext
             ? () => Observable.of(staticInitialContext)
             : proxyExtensionAPI(messageAPI, 'initialContext'),
-        corpusContext: proxyExtensionAPI(messageAPI, 'corpusContext'),
+        corpusContext: staticCorpusContext
+            ? () => Observable.of(staticCorpusContext)
+            : proxyExtensionAPI(messageAPI, 'corpusContext'),
         detectIntent: proxyExtensionAPI(messageAPI, 'detectIntent'),
         promptsMigrationStatus: proxyExtensionAPI(messageAPI, 'promptsMigrationStatus'),
         startPromptsMigration: proxyExtensionAPI(messageAPI, 'startPromptsMigration'),
