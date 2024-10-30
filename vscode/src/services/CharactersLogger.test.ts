@@ -15,6 +15,7 @@ import {
     RAPID_CHANGE_TIMEOUT,
     SELECTION_TIMEOUT,
 } from './CharactersLogger'
+import * as codeBlockUtils from './utils/codeblock-action-tracker'
 
 const testDocument = document('foo')
 
@@ -217,6 +218,24 @@ describe('CharactersLogger', () => {
             })
         )
 
+        const codeFromChat = 'insert_from_chat'
+        vi.spyOn(codeBlockUtils, 'isCodeFromChatCodeBlockAction').mockResolvedValueOnce({
+            operation: 'insert',
+            code: codeFromChat,
+            lineCount: 1,
+            charCount: codeFromChat.length,
+            eventName: 'insert',
+            source: 'chat',
+        })
+
+        await onDidChangeTextDocument(
+            createChange({
+                text: codeFromChat,
+                range: range(0, 0, 0, 0),
+                rangeLength: 0,
+            })
+        )
+
         mockWindowState.focused = false
         onDidChangeWindowState(mockWindowState)
 
@@ -272,6 +291,9 @@ describe('CharactersLogger', () => {
         // Expected counters:
         expect(recordSpy).toHaveBeenCalledWith('cody.characters', 'flush', {
             metadata: expectedCharCounters({
+                cody_chat: 1,
+                cody_chat_inserted: 16, // 'insert_from_chat'
+
                 xxs_change: 1,
                 xxs_change_inserted: 4, // 'test'
 
