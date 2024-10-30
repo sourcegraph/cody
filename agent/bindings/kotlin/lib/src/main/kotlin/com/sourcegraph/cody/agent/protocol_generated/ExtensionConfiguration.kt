@@ -15,6 +15,7 @@ data class ExtensionConfiguration(
   val codebase: String? = null,
   val eventProperties: EventProperties? = null,
   val customConfiguration: Map<String, Any>? = null,
+  val customConfigurationJson: String? = null,
   val baseGlobalState: Map<String, Any>? = null,
 )
 
