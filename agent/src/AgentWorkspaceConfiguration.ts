@@ -12,8 +12,25 @@ export class AgentWorkspaceConfiguration implements vscode.WorkspaceConfiguratio
         private prefix: string[],
         private clientInfo: () => ClientInfo | undefined,
         private extensionConfig: () => ExtensionConfiguration | undefined,
-        private dictionary: Record<string, any> = {}
-    ) {}
+        private dictionary: any = {}
+    ) {
+        const extensionConfigValue = this.extensionConfig()
+
+        const fromCustomConfigurationJson = extensionConfigValue?.customConfigurationJson
+        if (fromCustomConfigurationJson) {
+            const configJson = JSON.parse(fromCustomConfigurationJson)
+            for (const key of Object.keys(configJson)) {
+                _.set(dictionary, key, configJson[key])
+            }
+        }
+
+        const customConfiguration = extensionConfigValue?.customConfiguration
+        if (customConfiguration) {
+            for (const key of Object.keys(customConfiguration)) {
+                _.set(dictionary, key, customConfiguration[key])
+            }
+        }
+    }
 
     public withPrefix(prefix: string): AgentWorkspaceConfiguration {
         return new AgentWorkspaceConfiguration(
@@ -57,29 +74,12 @@ export class AgentWorkspaceConfiguration implements vscode.WorkspaceConfiguratio
     public get(userSection: string, defaultValue?: unknown): any {
         const section = this.actualSection(userSection)
 
-        const fromDictionary = this.dictionary?.[section]
-        if (fromDictionary !== undefined) {
-            return fromDictionary
+        const fromDict = _.get(this.dictionary, section)
+        if (fromDict !== undefined) {
+            return fromDict
         }
+
         const extensionConfig = this.extensionConfig()
-
-        const fromCustomConfiguration = extensionConfig?.customConfiguration?.[section]
-        if (fromCustomConfiguration !== undefined) {
-            return fromCustomConfiguration
-        }
-        const fromCustomConfigurationJson = extensionConfig?.customConfigurationJson
-        const customConfig = {}
-        if (fromCustomConfigurationJson) {
-            const configJson = JSON.parse(fromCustomConfigurationJson)
-            for (const key of Object.keys(configJson)) {
-                _.set(customConfig, key, configJson[key])
-            }
-        }
-        const customConfigValue = _.get(customConfig, section)
-        if (customConfigValue !== undefined) {
-            return customConfigValue
-        }
-
         switch (section) {
             case 'cody.serverEndpoint':
                 return extensionConfig?.serverEndpoint
@@ -134,13 +134,8 @@ export class AgentWorkspaceConfiguration implements vscode.WorkspaceConfiguratio
     }
 
     public has(section: string): boolean {
-        const actual = this.actualSection(section)
-        for (const key in this.dictionary) {
-            if (key.startsWith(actual)) {
-                return true
-            }
-        }
-        return false
+        const NotFound = {}
+        return this.get(section, NotFound) !== NotFound
     }
 
     public inspect<T>(section: string):
@@ -166,7 +161,7 @@ export class AgentWorkspaceConfiguration implements vscode.WorkspaceConfiguratio
         _configurationTarget?: boolean | vscode.ConfigurationTarget | null | undefined,
         _overrideInLanguage?: boolean | undefined
     ): Promise<void> {
-        this.dictionary[this.actualSection(section)] = value
+        _.set(this.dictionary, section, value)
         return Promise.resolve()
     }
 }
