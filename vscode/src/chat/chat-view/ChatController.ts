@@ -15,7 +15,6 @@ import {
     shareReplay,
     skip,
     skipPendingOperation,
-    tapLog,
 } from '@sourcegraph/cody-shared'
 import * as uuid from 'uuid'
 import * as vscode from 'vscode'

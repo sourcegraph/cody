@@ -16,7 +16,7 @@ import debounce from 'lodash/debounce'
 import { useCallback, useContext, useMemo, useState } from 'react'
 import { ChatMentionContext } from '../../plugins/atMentions/useChatContextItems'
 import { useExtensionAPI } from '../../useExtensionAPI'
-import { useInitialContextForChat } from '../../useInitialContext'
+import { useCorpusContextForChat, useInitialContextForChat } from '../../useInitialContext'
 import { type UseObservableResult, useObservable } from '../../useObservable'
 
 export interface MentionMenuParams {
@@ -95,7 +95,7 @@ export function useMentionMenuData(
     const isInProvider = !!params.parentItem
 
     // Initial context items aren't filtered when we receive them, so we need to filter them here.
-    const initialContext = useInitialContextForChat()
+    const initialContext = [...useInitialContextForChat(), ...useCorpusContextForChat()]
     const filteredInitialContextItems = isInProvider
         ? []
         : initialContext.filter(item =>
@@ -106,28 +106,28 @@ export function useMentionMenuData(
                   : true
           )
 
+    const additionalItems =
+        value?.items
+            ?.filter(
+                // If an item is shown as initial context, don't show it twice.
+                item =>
+                    !filteredInitialContextItems.some(
+                        initialItem =>
+                            initialItem.uri.toString() === item.uri.toString() &&
+                            initialItem.type === item.type
+                    )
+            )
+            .slice(0, limit)
+            .map(item => prepareUserContextItem(item, remainingTokenBudget)) ?? []
+
     return useMemo(
         () =>
             ({
                 providers: value?.providers ?? [],
-                items: [
-                    ...filteredInitialContextItems,
-                    ...(value?.items
-                        ?.filter(
-                            // If an item is shown as initial context, don't show it twice.
-                            item =>
-                                !filteredInitialContextItems.some(
-                                    initialItem =>
-                                        initialItem.uri.toString() === item.uri.toString() &&
-                                        initialItem.type === item.type
-                                )
-                        )
-                        .slice(0, limit)
-                        .map(item => prepareUserContextItem(item, remainingTokenBudget)) ?? []),
-                ],
+                items: [...filteredInitialContextItems, ...additionalItems],
                 error: value?.error ?? (error ? `Unexpected error: ${error}` : undefined),
             }) satisfies MentionMenuData,
-        [value, error, filteredInitialContextItems, limit, remainingTokenBudget]
+        [value, error, filteredInitialContextItems, additionalItems]
     )
 }
 

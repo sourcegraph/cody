@@ -11,4 +11,12 @@ export function useInitialContextForChat(): ContextItem[] {
     return useObservable(useMemo(() => initialContext(), [initialContext])).value ?? EMPTY
 }
 
+/**
+ * Get the corpus context corresponding to the current editor state
+ */
+export function useCorpusContextForChat(): ContextItem[] {
+    const corpusContext = useExtensionAPI().corpusContext
+    return useObservable(useMemo(() => corpusContext(), [corpusContext])).value ?? EMPTY
+}
+
 const EMPTY: ContextItem[] = []
