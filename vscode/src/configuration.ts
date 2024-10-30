@@ -139,7 +139,7 @@ export function getConfiguration(
         // Rely on this flag sparingly.
         isRunningInsideAgent: getHiddenSetting('advanced.agent.running', false),
         hasNativeWebview: getHiddenSetting('advanced.hasNativeWebview', true),
-        agentIDE: getHiddenSetting<CodyIDE>('advanced.agent.ide'),
+        agentIDE: getHiddenSetting<CodyIDE>('advanced.agent.ide.name'),
         agentIDEVersion: getHiddenSetting('advanced.agent.ide.version'),
         agentExtensionVersion: getHiddenSetting('advanced.agent.extension.version'),
         agentHasPersistentStorage: getHiddenSetting('advanced.agent.capabilities.storage', false),

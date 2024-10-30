@@ -32,6 +32,14 @@ describe('AgentWorkspaceConfiguration', () => {
           },
           "editor": {
             "insertSpaces": true
+          },
+          "foo.bar": {
+            "baz.qux": true,
+            "baz": {
+                "d1.d2": {
+                    "v": 1
+                }
+            }
           }
         }
     `
@@ -84,21 +92,51 @@ describe('AgentWorkspaceConfiguration', () => {
             })
 
             expect(config.get('cody')).toStrictEqual({
-                debug: {
-                    verbose: true,
+                advanced: {
+                    agent: {
+                        capabilities: {
+                            storage: true,
+                        },
+                        extension: {
+                            version: '1.0.0',
+                        },
+                        ide: {
+                            name: 'VSCode',
+                            version: '1.80.0',
+                        },
+                        running: true,
+                    },
+                    hasNativeWebview: true,
                 },
                 autocomplete: {
                     advanced: {
+                        model: 'claude-2',
                         provider: 'anthropic',
                     },
+                    enabled: true,
+                },
+                codebase: 'test-repo',
+                customHeaders: {
+                    'X-Test': 'test',
+                },
+                debug: {
+                    verbose: true,
                 },
                 experimental: {
                     tracing: true,
                 },
+                serverEndpoint: 'https://sourcegraph.test',
                 telemetry: {
+                    clientName: 'test-client',
                     level: 'agent',
                 },
             })
+        })
+
+        it('handles parsing nested keys as objects', () => {
+            expect(config.get('foo.bar.baz.qux')).toBe(true)
+            expect(config.get('foo.bar.baz')).toStrictEqual({ d1: { d2: { v: 1 } }, qux: true })
+            expect(config.get('foo.bar.baz.d1')).toStrictEqual({ d2: { v: 1 } })
         })
 
         it('handles agent capabilities correctly', () => {
@@ -109,6 +147,17 @@ describe('AgentWorkspaceConfiguration', () => {
         it('returns default value for unknown sections', () => {
             expect(config.get('unknown.section', 'default')).toBe('default')
         })
+
+        it('returns new instance each time when getting the same value', () => {
+            const testObject = { key: 'value' }
+            config.update('test.object', testObject)
+
+            const firstGet = config.get('test.object')
+            firstGet.key = 'modified'
+
+            const secondGet = config.get('test.object')
+            expect(secondGet.key).toBe('value')
+        })
     })
 
     describe('has', () => {
@@ -118,6 +167,14 @@ describe('AgentWorkspaceConfiguration', () => {
 
         it('returns false for non-existing sections', () => {
             expect(config.has('nonexistent.section')).toBe(false)
+        })
+
+        it('returns false for non-existing sub-sections', () => {
+            expect(config.has('http.foo')).toBe(false)
+        })
+
+        it('returns true for existing sub-sections', () => {
+            expect(config.has('http.experimental')).toBe(true)
         })
     })
 
