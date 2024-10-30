@@ -16,12 +16,24 @@ export class AgentWorkspaceConfiguration implements vscode.WorkspaceConfiguratio
     ) {
         const extensionConfigValue = this.extensionConfig()
 
+        function normalize(config: any): any {
+            if (typeof config === 'object') {
+                const normalized = {}
+                for (const key of Object.keys(config)) {
+                    const tmp = {}
+                    _.set(tmp, key, normalize(config[key]))
+                    _.merge(normalized, tmp)
+                }
+                return normalized
+            }
+
+            return config
+        }
+
         const fromCustomConfigurationJson = extensionConfigValue?.customConfigurationJson
         if (fromCustomConfigurationJson) {
             const configJson = JSON.parse(fromCustomConfigurationJson)
-            for (const key of Object.keys(configJson)) {
-                _.set(dictionary, key, configJson[key])
-            }
+            _.merge(this.dictionary, normalize(configJson))
         }
 
         const customConfiguration = extensionConfigValue?.customConfiguration

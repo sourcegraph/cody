@@ -32,6 +32,14 @@ describe('AgentWorkspaceConfiguration', () => {
           },
           "editor": {
             "insertSpaces": true
+          },
+          "foo.bar": {
+            "baz.qux": true,
+            "baz": {
+                "d1.d2": {
+                    "v": 1
+                }
+            }
           }
         }
     `
@@ -101,6 +109,12 @@ describe('AgentWorkspaceConfiguration', () => {
             })
         })
 
+        it('handles parsing nested keys as objects', () => {
+            expect(config.get('foo.bar.baz.qux')).toBe(true)
+            expect(config.get('foo.bar.baz')).toStrictEqual({ d1: { d2: { v: 1 } }, qux: true })
+            expect(config.get('foo.bar.baz.d1')).toStrictEqual({ d2: { v: 1 } })
+        })
+
         it('handles agent capabilities correctly', () => {
             expect(config.get('cody.advanced.agent.capabilities.storage')).toBe(true)
             expect(config.get('cody.advanced.hasNativeWebview')).toBe(true)
@@ -118,6 +132,14 @@ describe('AgentWorkspaceConfiguration', () => {
 
         it('returns false for non-existing sections', () => {
             expect(config.has('nonexistent.section')).toBe(false)
+        })
+
+        it('returns false for non-existing sub-sections', () => {
+            expect(config.has('http.foo')).toBe(false)
+        })
+
+        it('returns true for existing sub-sections', () => {
+            expect(config.has('http.experimental')).toBe(true)
         })
     })
 
