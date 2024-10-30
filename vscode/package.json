@@ -527,14 +527,6 @@
         "enablement": "cody.activated"
       },
       {
-        "command": "cody.mention.selection",
-        "category": "Cody",
-        "group": "Chat",
-        "title": "Add Selection to Cody Chat",
-        "icon": "$(mention)",
-        "enablement": "cody.activated && editorHasSelection"
-      },
-      {
         "command": "cody.mention.file",
         "category": "Cody",
         "group": "Chat",
@@ -642,16 +634,6 @@
         "args": {
           "editorFocus": false
         }
-      },
-      {
-        "command": "cody.mention.selection",
-        "key": "alt+l",
-        "when": "cody.activated && editorTextFocus && editorHasSelection"
-      },
-      {
-        "command": "cody.mention.selection",
-        "key": "alt+/",
-        "when": "cody.activated && editorTextFocus && editorHasSelection"
       },
       {
         "command": "cody.tutorial.chat",
@@ -828,11 +810,6 @@
         }
       ],
       "cody.submenu": [
-        {
-          "command": "cody.mention.selection",
-          "group": "0_cody",
-          "when": "cody.activated && editorHasSelection"
-        },
         {
           "command": "cody.mention.file",
           "group": "0_cody",

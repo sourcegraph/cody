@@ -211,9 +211,6 @@ export class ChatsController implements vscode.Disposable {
             }),
 
             // Mention selection/file commands
-            vscode.commands.registerCommand('cody.mention.selection', uri =>
-                this.sendEditorContextToChat(uri)
-            ),
             vscode.commands.registerCommand('cody.mention.file', uri =>
                 this.sendEditorContextToChat(uri)
             ),
