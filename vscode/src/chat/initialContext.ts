@@ -31,7 +31,7 @@ import * as vscode from 'vscode'
 import { URI } from 'vscode-uri'
 import { getSelectionOrFileContext } from '../commands/context/selection'
 import { createRepositoryMention } from '../context/openctx/common/get-repository-mentions'
-import { remoteReposForAllWorkspaceFolders } from '../repository/remoteRepos'
+import { type RemoteRepo, remoteReposForAllWorkspaceFolders } from '../repository/remoteRepos'
 import { ChatBuilder } from './chat-view/ChatBuilder'
 import {
     activeEditorContextForOpenCtxMentions,
@@ -196,7 +196,8 @@ export function getCorpusContextItemsForEditorState(): Observable<
             // TODO(sqs): Make this consistent between self-serve (no remote search) and enterprise (has
             // remote search). There should be a single internal thing in Cody that lets you monitor the
             // user's current codebase.
-            if (authStatus.allowRemoteContext) {
+            const remoteRepos = (remoteReposForAllWorkspaceFolders as RemoteRepo[]) || []
+            if (authStatus.allowRemoteContext && remoteRepos.length > 0) {
                 if (remoteReposForAllWorkspaceFolders === pendingOperation) {
                     return pendingOperation
                 }
