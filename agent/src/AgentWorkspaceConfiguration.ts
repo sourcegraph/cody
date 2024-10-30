@@ -1,3 +1,4 @@
+import _ from 'lodash'
 import type * as vscode from 'vscode'
 
 import { type ClientConfiguration, CodyIDE } from '@sourcegraph/cody-shared'
@@ -66,6 +67,19 @@ export class AgentWorkspaceConfiguration implements vscode.WorkspaceConfiguratio
         if (fromCustomConfiguration !== undefined) {
             return fromCustomConfiguration
         }
+        const fromCustomConfigurationJson = extensionConfig?.customConfigurationJson
+        const customConfig = {}
+        if (fromCustomConfigurationJson) {
+            const configJson = JSON.parse(fromCustomConfigurationJson)
+            for (const key of Object.keys(configJson)) {
+                _.set(customConfig, key, configJson[key])
+            }
+        }
+        const customConfigValue = _.get(customConfig, section)
+        if (customConfigValue !== undefined) {
+            return customConfigValue
+        }
+
         switch (section) {
             case 'cody.serverEndpoint':
                 return extensionConfig?.serverEndpoint

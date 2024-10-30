@@ -595,7 +595,12 @@ export interface ExtensionConfiguration {
      */
     eventProperties?: EventProperties | undefined | null
 
+    /**
+     * @deprecated use 'customConfigurationJson' instead, it supports dotted names
+     */
     customConfiguration?: Record<string, any> | undefined | null
+
+    customConfigurationJson?: string | undefined | null
 
     baseGlobalState?: Record<string, any> | undefined | null
 }
