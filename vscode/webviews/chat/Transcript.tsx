@@ -352,7 +352,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
     )
 
     const corpusContextItems = useCorpusContextForChat()
-    const resubmitWithAdditionalContext = useCallback(async () => {
+    const resubmitWithRepoContext = useCallback(async () => {
         const editorState = humanEditorRef.current?.getSerializedValue()
         if (editorState) {
             const editor = humanEditorRef.current
@@ -448,7 +448,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
             )}
             {!mentionsContainRepository && assistantMessage && !assistantMessage.isLoading && (
                 <div>
-                    <Button onClick={resubmitWithAdditionalContext} type="button">
+                    <Button onClick={resubmitWithRepoContext} type="button">
                         Rerun with repository context
                     </Button>
                 </div>
