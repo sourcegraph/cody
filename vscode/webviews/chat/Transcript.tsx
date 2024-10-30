@@ -385,6 +385,10 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
         editor.addMentions(contextFiles, 'before', '\n')
     }, [humanMessage.contextFiles])
 
+    const mentionsContainRepository = humanEditorRef.current
+        ?.getSerializedValue()
+        .contextItems.some(item => item.type === 'repository')
+
     return (
         <>
             <HumanMessageCell
@@ -442,12 +446,13 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                     )}
                 </InfoMessage>
             )}
-            <div>
-                {/* TODO(beyang): hide when repo mention already exists*/}
-                <Button onClick={resubmitWithAdditionalContext} type="button">
-                    Rerun with repository context
-                </Button>
-            </div>
+            {!mentionsContainRepository && assistantMessage && !assistantMessage.isLoading && (
+                <div>
+                    <Button onClick={resubmitWithAdditionalContext} type="button">
+                        Rerun with repository context
+                    </Button>
+                </div>
+            )}
             {((humanMessage.contextFiles && humanMessage.contextFiles.length > 0) ||
                 isContextLoading) && (
                 <ContextCell
