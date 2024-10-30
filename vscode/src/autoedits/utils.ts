@@ -1,3 +1,4 @@
+import * as vscode from 'vscode'
 import { lines } from '../completions/text-processing'
 
 export function fixFirstLineIndentation(source: string, target: string): string {
@@ -61,4 +62,55 @@ export function mapLinesToOriginalLineNo(
 export function zip<T, U>(arr1: T[], arr2: U[]): [T, U][] {
     const length = Math.min(arr1.length, arr2.length)
     return Array.from({ length }, (_, i) => [arr1[i], arr2[i]])
+}
+
+export function trimExtraNewLineCharsFromSuggestion(
+    predictedText: string,
+    codeToRewrite: string
+): string {
+    const codeToRewriteChars = getNumberOfNewLineCharsAtSuffix(codeToRewrite)
+    const predictedTextChars = getNumberOfNewLineCharsAtSuffix(predictedText)
+    const extraChars = predictedTextChars - codeToRewriteChars
+    if (extraChars <= 0) {
+        return predictedText
+    }
+    return predictedText.slice(0, -extraChars)
+}
+
+function getNumberOfNewLineCharsAtSuffix(text: string): number {
+    const match = text.match(/\n+$/)
+    return match ? match[0].length : 0
+}
+
+export function combineRanges(ranges: vscode.Range[], n: number): vscode.Range[] {
+    if (ranges.length === 0) return []
+    const sortedRanges = ranges.sort((a, b) =>
+        a.start.line !== b.start.line
+            ? a.start.line - b.start.line
+            : a.start.character - b.start.character
+    )
+
+    const combinedRanges: vscode.Range[] = []
+    let currentRange = sortedRanges[0]
+
+    for (let i = 1; i < sortedRanges.length; i++) {
+        const nextRange = sortedRanges[i]
+
+        if (
+            currentRange.end.line === nextRange.start.line &&
+            (nextRange.start.character - currentRange.end.character <= n ||
+                currentRange.intersection(nextRange))
+        ) {
+            currentRange = new vscode.Range(
+                currentRange.start,
+                nextRange.end.character > currentRange.end.character ? nextRange.end : currentRange.end
+            )
+        } else {
+            combinedRanges.push(currentRange)
+            currentRange = nextRange
+        }
+    }
+
+    combinedRanges.push(currentRange)
+    return combinedRanges
 }

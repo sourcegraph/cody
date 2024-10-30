@@ -17,6 +17,7 @@ const AUTOEDITS_CONTEXT_STRATEGY = 'auto-edits'
 export interface AutoEditsProviderOptions {
     document: vscode.TextDocument
     position: vscode.Position
+    abortSignal?: AbortSignal
 }
 
 export interface AutoeditsPrediction {
@@ -36,6 +37,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
     private apiKey: string | undefined
     private renderer: AutoEditsRenderer = new AutoEditsRenderer()
     private outputChannel: vscode.OutputChannel
+    private debounceIntervalMs = 250
 
     constructor() {
         this.outputChannel = vscode.window.createOutputChannel('Autoedit Testing')
@@ -53,7 +55,12 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
             this.renderer,
             // Command is used to manually debug the autoedits provider
             vscode.commands.registerCommand('cody.experimental.suggest', () => {
-                this.getAutoedit()
+                const document = vscode.window.activeTextEditor!.document
+                const position = vscode.window.activeTextEditor!.selection.active
+                this.provideInlineCompletionItems(document, position, {
+                    triggerKind: vscode.InlineCompletionTriggerKind.Invoke,
+                    selectedCompletionInfo: undefined,
+                })
             })
         )
     }
@@ -64,27 +71,55 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
         context: vscode.InlineCompletionContext,
         token?: vscode.CancellationToken
     ): Promise<vscode.InlineCompletionItem[] | vscode.InlineCompletionList | null> {
+        const controller = new AbortController()
+        token?.onCancellationRequested(() => {
+            controller.abort()
+        })
+        await new Promise(resolve => setTimeout(resolve, this.debounceIntervalMs))
+        return this.doProvideInlineCompletionItems(document, position, controller.signal)
+    }
+
+    public async doProvideInlineCompletionItems(
+        document: vscode.TextDocument,
+        position: vscode.Position,
+        abortSignal: AbortSignal
+    ): Promise<vscode.InlineCompletionItem[] | vscode.InlineCompletionList | null> {
+        if (abortSignal.aborted) {
+            return null
+        }
         // Generate the prediction and if the prediction is similar to only autocomplete request
         // use the inline completions, otherwise use custom decorations
         const autoeditResponse = await this.predictAutoeditAtDocAndPosition({
             document,
             position,
+            abortSignal,
         })
-        if (autoeditResponse === null) {
+        if (abortSignal.aborted || autoeditResponse === null) {
             return null
         }
-        // Check if the prediction is similar to only autocomplete request
-        if (
-            autoeditResponse.prediction.startsWith(
-                autoeditResponse.codeToReplaceData.codeToRewritePrefix
-            ) &&
-            autoeditResponse.prediction.endsWith(autoeditResponse.codeToReplaceData.codeToRewriteSuffix)
-        ) {
-            this.logDebug('AutoEdits', '======= Using Inline Decorations =======')
+
+        const isPrefixMatch = autoeditResponse.prediction.startsWith(
+            autoeditResponse.codeToReplaceData.codeToRewritePrefix
+        )
+        const isSuffixMatch = autoeditResponse.prediction.endsWith(
+            autoeditResponse.codeToReplaceData.codeToRewriteSuffix
+        )
+        const inlineDebugData = {
+            isPrefixMatch,
+            isSuffixMatch,
+            prediction: JSON.stringify(autoeditResponse.prediction),
+            codeToRewritePrefix: JSON.stringify(autoeditResponse.codeToReplaceData.codeToRewritePrefix),
+            codeToRewriteSuffix: JSON.stringify(autoeditResponse.codeToReplaceData.codeToRewriteSuffix),
+        }
+        this.logDebug(
+            'AutoEdits',
+            'Inline Completions Data Debug:\n',
+            JSON.stringify(inlineDebugData, null, 2)
+        )
+        if (isPrefixMatch && isSuffixMatch) {
             const autocompleteResponse = this.extractInlineCompletion(autoeditResponse)
             return [new vscode.InlineCompletionItem(autocompleteResponse)]
         }
-        this.logDebug('AutoEdits', '======= Using Custom Decorations =======')
         await this.renderer.render(
             {
                 document,
@@ -93,7 +128,6 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
             autoeditResponse.codeToReplaceData,
             autoeditResponse.prediction
         )
-        // Return null for inline completions and use custom decorations
         return null
     }
 
@@ -113,25 +147,6 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
 
         const autocompleteResponse = autoeditResponse.prediction.slice(startIndex, endIndex)
         return autocompleteResponse
-    }
-
-    public async getAutoedit() {
-        const document = vscode.window.activeTextEditor!.document
-        const position = vscode.window.activeTextEditor!.selection.active
-        const autoeditResponse = await this.predictAutoeditAtDocAndPosition({
-            document,
-            position,
-        })
-        if (autoeditResponse) {
-            await this.renderer.render(
-                {
-                    document,
-                    position,
-                },
-                autoeditResponse.codeToReplaceData,
-                autoeditResponse.prediction
-            )
-        }
     }
 
     private initizlizePromptProvider(provider: string) {
@@ -172,9 +187,18 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
             context,
             this.autoEditsTokenLimit
         )
+        if (options.abortSignal?.aborted) {
+            return null
+        }
+
         const response = await this.provider.getModelResponse(this.model, this.apiKey, prompt)
         const postProcessedResponse = this.provider.postProcessResponse(codeToReplace, response)
-        this.logDebug('Autoedits', '========================== Response:\n', postProcessedResponse, '\n')
+        this.logDebug(
+            'Autoedits',
+            '========================== Response:\n',
+            JSON.stringify(postProcessedResponse),
+            '\n'
+        )
         const timeToResponse = Date.now() - start
         this.logDebug(
             'Autoedits',
