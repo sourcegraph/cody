@@ -360,6 +360,10 @@ export class PromptString {
         }
     }
 
+    public static fromAutoEditsCurrentFileContent(content: string, uri: vscode.Uri) {
+        return internal_createPromptString(content, [uri])
+    }
+
     public static fromContextItem(contextItem: ContextItem): {
         content: PromptString | undefined
         repoName: PromptString | undefined

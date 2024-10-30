@@ -17,12 +17,14 @@ export class OpenAIPromptProvider implements PromptProvider {
     getPrompt(
         docContext: DocumentContext,
         document: vscode.TextDocument,
+        position: vscode.Position,
         context: AutocompleteContextSnippet[],
         tokenBudget: AutoEditsTokenLimit
     ): PromptResponseData {
         const { codeToReplace, promptResponse: userPrompt } = getBaseUserPrompt(
             docContext,
             document,
+            position,
             context,
             tokenBudget
         )
