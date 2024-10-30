@@ -81,15 +81,13 @@ export class AutoEditsRenderer implements vscode.Disposable {
 
     constructor() {
         this.disposables.push(
-            vscode.commands.registerCommand(
-                'cody.supersuggest.accept',
-                () => this.acceptProposedChange()
+            vscode.commands.registerCommand('cody.supersuggest.accept', () =>
+                this.acceptProposedChange()
             )
         )
         this.disposables.push(
-            vscode.commands.registerCommand(
-                'cody.supersuggest.dismiss',
-                () => this.dismissProposedChange()
+            vscode.commands.registerCommand('cody.supersuggest.dismiss', () =>
+                this.dismissProposedChange()
             )
         )
     }
@@ -116,7 +114,7 @@ export class AutoEditsRenderer implements vscode.Disposable {
     ) {
         predictedText = this.trimExtraNewLineCharsFromSuggestion(
             predictedText,
-            codeToReplace.codeToRewrite.toString()
+            codeToReplace.codeToRewrite
         )
         if (this.activeProposedChange) {
             await this.dismissProposedChange()
@@ -148,12 +146,7 @@ export class AutoEditsRenderer implements vscode.Disposable {
         this.logDiff(options.document.uri, currentFileText, predictedText, predictedFileText)
 
         // Add decorations for the removed lines
-        this.renderRemovedLinesDecorations(
-            editor,
-            currentFileText,
-            predictedFileText,
-            document
-        )
+        this.renderRemovedLinesDecorations(editor, currentFileText, predictedFileText, document)
 
         const isPureAddedLine = this.isPureAddedLinesInDiff(currentFileText, predictedFileText)
         if (isPureAddedLine) {
@@ -163,12 +156,7 @@ export class AutoEditsRenderer implements vscode.Disposable {
                 codeToReplace.startLine
             )
         } else {
-            this.renderAddedLinesDecorations(
-                editor,
-                currentFileText,
-                predictedFileText,
-                document
-            )
+            this.renderAddedLinesDecorations(editor, currentFileText, predictedFileText, document)
         }
         await vscode.commands.executeCommand('setContext', 'cody.supersuggest.active', true)
     }
@@ -188,7 +176,7 @@ export class AutoEditsRenderer implements vscode.Disposable {
         editor: vscode.TextEditor,
         predictedText: string,
         replaceStartLine: number,
-        replacerCol: number = 80
+        replacerCol = 80
     ) {
         const replacerText = predictedText
         const replacerDecorations: vscode.DecorationOptions[] = []
@@ -215,7 +203,8 @@ export class AutoEditsRenderer implements vscode.Disposable {
                     renderOptions: {
                         before: {
                             contentText:
-                                '\u00A0' + replaceLeadingChars(replacerText.split('\n')[i], ' ', '\u00A0'), // TODO(beyang): factor out
+                                '\u00A0' +
+                                replaceLeadingChars(replacerText.split('\n')[i], ' ', '\u00A0'), // TODO(beyang): factor out
                         },
                     },
                 }
@@ -229,9 +218,8 @@ export class AutoEditsRenderer implements vscode.Disposable {
         editor: vscode.TextEditor,
         currentFileText: string,
         predictedFileText: string,
-        document: vscode.TextDocument,
+        document: vscode.TextDocument
     ) {
-
         const filename = displayPath(document.uri)
         const patch = structuredPatch(
             `a/${filename}`,

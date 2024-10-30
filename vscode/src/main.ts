@@ -452,12 +452,13 @@ async function registerCodyCommands(
     )
 
     // Initialize autoedit provider if experimental feature is enabled
-    disposables.push(
-        enableFeature(
-            ({ configuration }) => configuration.experimentalAutoedits !== undefined,
-            () => new AutoeditsProvider()
-        )
-    )
+    registerAutoEdits(disposables)
+    // disposables.push(
+    //     enableFeature(
+    //         ({ configuration }) => configuration.experimentalAutoedits !== undefined,
+    //         () => new AutoeditsProvider()
+    //     )
+    // )
 
     // Experimental Command: Auto Edit
     disposables.push(
@@ -698,6 +699,22 @@ async function tryRegisterTutorial(
         const { registerInteractiveTutorial } = await import('./tutorial')
         registerInteractiveTutorial(context).then(disposable => disposables.push(...disposable))
     }
+}
+
+function registerAutoEdits(disposables: vscode.Disposable[]): void {
+    disposables.push(
+        enableFeature(
+            ({ configuration }) => configuration.experimentalAutoedits !== undefined,
+            () => {
+                const provider = new AutoeditsProvider()
+                vscode.languages.registerInlineCompletionItemProvider(
+                    [{ scheme: 'file', language: '*' }, { notebookType: '*' }],
+                    provider
+                )
+                return provider
+            }
+        )
+    )
 }
 
 /**

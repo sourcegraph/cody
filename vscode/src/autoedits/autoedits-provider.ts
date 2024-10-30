@@ -6,6 +6,7 @@ import { DefaultContextStrategyFactory } from '../completions/context/context-st
 import { getCurrentDocContext } from '../completions/get-current-doc-context'
 import { getConfiguration } from '../configuration'
 import type { PromptProvider } from './prompt-provider'
+import type { CodeToReplaceData } from './prompt-utils'
 import { DeepSeekPromptProvider } from './providers/deepseek'
 import { FireworksPromptProvider } from './providers/fireworks'
 import { OpenAIPromptProvider } from './providers/openai'
@@ -18,7 +19,12 @@ export interface AutoEditsProviderOptions {
     position: vscode.Position
 }
 
-export class AutoeditsProvider implements vscode.Disposable {
+export interface AutoeditsPrediction {
+    codeToReplaceData: CodeToReplaceData
+    prediction: string
+}
+
+export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, vscode.Disposable {
     private disposables: vscode.Disposable[] = []
     private contextMixer: ContextMixer = new ContextMixer({
         strategyFactory: new DefaultContextStrategyFactory(Observable.of(AUTOEDITS_CONTEXT_STRATEGY)),
@@ -45,11 +51,87 @@ export class AutoeditsProvider implements vscode.Disposable {
         this.disposables.push(
             this.contextMixer,
             this.renderer,
-            vscode.commands.registerCommand('cody.experimental.suggest', () => this.getAutoedit())
+            // Command is used to manually debug the autoedits provider
+            vscode.commands.registerCommand('cody.experimental.suggest', () => {
+                this.getAutoedit()
+            })
         )
     }
-    private logDebug(provider: string, ...args: unknown[]): void {
-        this.outputChannel.appendLine(`${provider} █| ${args.join('')}`)
+
+    public async provideInlineCompletionItems(
+        document: vscode.TextDocument,
+        position: vscode.Position,
+        context: vscode.InlineCompletionContext,
+        token?: vscode.CancellationToken
+    ): Promise<vscode.InlineCompletionItem[] | vscode.InlineCompletionList | null> {
+        // Generate the prediction and if the prediction is similar to only autocomplete request
+        // use the inline completions, otherwise use custom decorations
+        const autoeditResponse = await this.predictAutoeditAtDocAndPosition({
+            document,
+            position,
+        })
+        if (autoeditResponse === null) {
+            return null
+        }
+        // Check if the prediction is similar to only autocomplete request
+        if (
+            autoeditResponse.prediction.startsWith(
+                autoeditResponse.codeToReplaceData.codeToRewritePrefix
+            ) &&
+            autoeditResponse.prediction.endsWith(autoeditResponse.codeToReplaceData.codeToRewriteSuffix)
+        ) {
+            this.logDebug('AutoEdits', '======= Using Inline Decorations =======')
+            const autocompleteResponse = this.extractInlineCompletion(autoeditResponse)
+            return [new vscode.InlineCompletionItem(autocompleteResponse)]
+        }
+        this.logDebug('AutoEdits', '======= Using Custom Decorations =======')
+        await this.renderer.render(
+            {
+                document,
+                position,
+            },
+            autoeditResponse.codeToReplaceData,
+            autoeditResponse.prediction
+        )
+        // Return null for inline completions and use custom decorations
+        return null
+    }
+
+    private extractInlineCompletion(autoeditResponse: AutoeditsPrediction): string {
+        let startIndex = 0
+        let endIndex = autoeditResponse.prediction.length
+
+        if (autoeditResponse.codeToReplaceData.codeToRewritePrefix) {
+            startIndex = autoeditResponse.codeToReplaceData.codeToRewritePrefix.length
+        }
+
+        if (autoeditResponse.codeToReplaceData.codeToRewriteSuffix) {
+            endIndex =
+                autoeditResponse.prediction.length -
+                autoeditResponse.codeToReplaceData.codeToRewriteSuffix.length
+        }
+
+        const autocompleteResponse = autoeditResponse.prediction.slice(startIndex, endIndex)
+        return autocompleteResponse
+    }
+
+    public async getAutoedit() {
+        const document = vscode.window.activeTextEditor!.document
+        const position = vscode.window.activeTextEditor!.selection.active
+        const autoeditResponse = await this.predictAutoeditAtDocAndPosition({
+            document,
+            position,
+        })
+        if (autoeditResponse) {
+            await this.renderer.render(
+                {
+                    document,
+                    position,
+                },
+                autoeditResponse.codeToReplaceData,
+                autoeditResponse.prediction
+            )
+        }
     }
 
     private initizlizePromptProvider(provider: string) {
@@ -64,17 +146,16 @@ export class AutoeditsProvider implements vscode.Disposable {
         }
     }
 
-    public getAutoedit() {
-        this.predictAutoeditAtDocAndPosition({
-            document: vscode.window.activeTextEditor!.document,
-            position: vscode.window.activeTextEditor!.selection.active,
-        })
+    private logDebug(provider: string, ...args: unknown[]): void {
+        this.outputChannel.appendLine(`${provider} █| ${args.join('')}`)
     }
 
-    public async predictAutoeditAtDocAndPosition(options: AutoEditsProviderOptions) {
+    public async predictAutoeditAtDocAndPosition(
+        options: AutoEditsProviderOptions
+    ): Promise<AutoeditsPrediction | null> {
         if (!this.provider || !this.autoEditsTokenLimit || !this.model || !this.apiKey) {
             this.logDebug('AutoEdits', 'No Provider or Token Limit found in the settings')
-            return
+            return null
         }
         const start = Date.now()
         const docContext = this.getDocContext(options.document, options.position)
@@ -87,6 +168,7 @@ export class AutoeditsProvider implements vscode.Disposable {
         const { codeToReplace, promptResponse: prompt } = this.provider.getPrompt(
             docContext,
             options.document,
+            options.position,
             context,
             this.autoEditsTokenLimit
         )
@@ -100,7 +182,10 @@ export class AutoeditsProvider implements vscode.Disposable {
             timeToResponse.toString(),
             '\n'
         )
-        await this.renderer.render(options, codeToReplace, postProcessedResponse)
+        return {
+            codeToReplaceData: codeToReplace,
+            prediction: postProcessedResponse,
+        }
     }
 
     private getDocContext(document: vscode.TextDocument, position: vscode.Position): DocumentContext {

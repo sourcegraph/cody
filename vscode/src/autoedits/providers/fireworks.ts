@@ -4,7 +4,6 @@ import type {
     AutocompleteContextSnippet,
     DocumentContext,
 } from '../../../../lib/shared/src/completions/types'
-import { lines } from '../../completions/text-processing'
 import type {
     ChatPrompt,
     PromptProvider,
@@ -13,17 +12,20 @@ import type {
 } from '../prompt-provider'
 import { getModelResponse } from '../prompt-provider'
 import { type CodeToReplaceData, SYSTEM_PROMPT, getBaseUserPrompt } from '../prompt-utils'
+import * as utils from '../utils'
 
 export class FireworksPromptProvider implements PromptProvider {
     getPrompt(
         docContext: DocumentContext,
         document: vscode.TextDocument,
+        position: vscode.Position,
         context: AutocompleteContextSnippet[],
         tokenBudget: AutoEditsTokenLimit
     ): PromptResponseData {
         const { codeToReplace, promptResponse: userPrompt } = getBaseUserPrompt(
             docContext,
             document,
+            position,
             context,
             tokenBudget
         )
@@ -46,14 +48,11 @@ export class FireworksPromptProvider implements PromptProvider {
     postProcessResponse(codeToReplace: CodeToReplaceData, response: string): string {
         // todo (hitesh): The finetuned model is messing up the identation of the first line.
         // todo: correct it manully for now, by checking the first line of the code to rewrite and adding the same indentation to the first line of the completion
-        const codeToRewrite = codeToReplace.codeToRewrite.toString()
-        const codeToRewriteLines = lines(codeToRewrite)
-        const completionLines = lines(response)
-        const firstLineMatch = codeToRewriteLines[0].match(/^(\s*)/)
-        const firstLineIndentation = firstLineMatch ? firstLineMatch[1] : ''
-        completionLines[0] = firstLineIndentation + completionLines[0].trimLeft()
-        const completion = completionLines.join('\n')
-        return completion
+        const fixedIndentationResponse = utils.fixFirstLineIndentation(
+            codeToReplace.codeToRewrite,
+            response
+        )
+        return fixedIndentationResponse
     }
 
     async getModelResponse(
@@ -67,7 +66,7 @@ export class FireworksPromptProvider implements PromptProvider {
                 JSON.stringify({
                     model: model,
                     messages: prompt,
-                    temperature: 0.1,
+                    temperature: 0.2,
                     max_tokens: 256,
                     response_format: {
                         type: 'text',
