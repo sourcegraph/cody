@@ -176,30 +176,17 @@ export class CharactersLogger implements vscode.Disposable {
         }
 
         const changeEventMetadata = this.getChangeEventMetadata(event)
-        const changeType = this.getDocumentChangeType(changeEventMetadata, isChangeEventFromCodyChat)
-        this.changeCounters[changeType]++
 
-        for (const change of event.contentChanges) {
-            // We use change.rangeLength for deletions because:
-            // 1. It represents the length of the text being replaced, including newline characters.
-            // 2. It accurately accounts for multi-line deletions.
-            // 3. For pure deletions (without insertions), this will be the number of characters removed.
-            // 4. For replacements, this represents the "old" text that's being replaced.
-            this.changeCounters[`${changeType}_deleted`] += change.rangeLength
+        const { charsInserted, charsDeleted } = changeEventMetadata
+        const hasTextChanges = charsDeleted > 0 || charsInserted > 0
 
-            // We use change.text.length for insertions because:
-            // 1. It represents the length of the new text being inserted, including newline characters.
-            // 2. It accurately accounts for multi-line insertions.
-            // 3. For pure insertions (without deletions), this will be the number of characters added.
-            // 4. For replacements, this represents the "new" text that's replacing the old.
-            this.changeCounters[`${changeType}_inserted`] += change.text.length
+        if (hasTextChanges) {
+            const changeType = this.getDocumentChangeType(changeEventMetadata, isChangeEventFromCodyChat)
 
-            // Note: In the case of replacements, both deleted and inserted will be incremented.
-            // This accurately represents that some text was removed and some was added, even if
-            // the lengths are the same.
-        }
+            this.changeCounters[changeType]++
+            this.changeCounters[`${changeType}_deleted`] += charsDeleted
+            this.changeCounters[`${changeType}_inserted`] += charsInserted
 
-        if (changeEventMetadata.charsDeleted > 0 || changeEventMetadata.charsInserted > 0) {
             this.lastChangeTimestamp = Date.now()
         }
     }
@@ -282,8 +269,24 @@ export class CharactersLogger implements vscode.Disposable {
         const charCounts = contentChanges.reduce(
             (stats, change) => {
                 stats.total += Math.abs(change.rangeLength) + Math.abs(change.text.length)
+
+                // We use change.text.length for insertions because:
+                // 1. It represents the length of the new text being inserted, including newline characters.
+                // 2. It accurately accounts for multi-line insertions.
+                // 3. For pure insertions (without deletions), this will be the number of characters added.
+                // 4. For replacements, this represents the "new" text that's replacing the old.
                 stats.inserted += change.text.length
+
+                // We use change.rangeLength for deletions because:
+                // 1. It represents the length of the text being replaced, including newline characters.
+                // 2. It accurately accounts for multi-line deletions.
+                // 3. For pure deletions (without insertions), this will be the number of characters removed.
+                // 4. For replacements, this represents the "old" text that's being replaced.
                 stats.deleted += change.rangeLength
+
+                // Note: In the case of replacements, both deleted and inserted will be incremented.
+                // This accurately represents that some text was removed and some was added, even if
+                // the lengths are the same.
                 return stats
             },
             {

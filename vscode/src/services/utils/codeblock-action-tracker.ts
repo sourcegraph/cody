@@ -12,7 +12,6 @@ import { doesFileExist } from '../../commands/utils/workspace-files'
 import { executeSmartApply } from '../../edit/smart-apply'
 import { getEditor } from '../../editor/active-editor'
 import type { VSCodeEditor } from '../../editor/vscode-editor'
-import { charactersLogger } from '../CharactersLogger'
 
 import { countCode, matchCodeSnippets } from './code-count'
 import { resolveRelativeOrAbsoluteUri } from './edit-create-file'
@@ -56,14 +55,9 @@ enum SourceMetadataMapping {
 function setLastStoredCode({
     code,
     eventName,
-    changeEvent,
 }: {
     code: string
     eventName: 'copyButton' | 'keyDown.Copy' | 'applyButton' | 'insertButton' | 'saveButton'
-    /**
-     * Used to add the characters logger metadata to the telemetry event.
-     */
-    changeEvent?: vscode.TextDocumentChangeEvent
 }): void {
     // All non-copy events are considered as insertions since we don't need to listen for paste events
     const source = 'chat'
@@ -94,16 +88,11 @@ function setLastStoredCode({
             break
     }
 
-    const charactersLoggerMetadata = changeEvent
-        ? charactersLogger.getChangeEventMetadataForCodyCodeGenEvents(changeEvent)
-        : {}
-
     telemetryRecorder.recordEvent(`cody.${eventName}`, 'clicked', {
         metadata: {
             source: SourceMetadataMapping[source as keyof typeof SourceMetadataMapping] || 0, // Use 0 as default if source is not found
             lineCount,
             charCount,
-            ...charactersLoggerMetadata,
         },
         privateMetadata: {
             source,
@@ -119,31 +108,6 @@ function setLastStoredCode({
 
 async function setLastTextFromClipboard(clipboardText?: string): Promise<void> {
     lastClipboardText = clipboardText || (await vscode.env.clipboard.readText())
-}
-
-function workspaceEditToDocumentChangeEvent({
-    workspaceEdit,
-    document,
-    selection,
-}: {
-    workspaceEdit: vscode.WorkspaceEdit
-    document: vscode.TextDocument
-    selection: vscode.Selection
-}): vscode.TextDocumentChangeEvent {
-    const contentChanges = workspaceEdit.get(document.uri).map(edit => {
-        return {
-            range: document.validateRange(edit.range),
-            rangeOffset: document.offsetAt(selection.start),
-            rangeLength: getRangeLength(edit.range, document),
-            text: edit.newText,
-        }
-    })
-
-    return {
-        document,
-        contentChanges,
-        reason: undefined,
-    }
 }
 
 /**
@@ -169,14 +133,7 @@ export async function handleCodeFromInsertAtCursor(text: string): Promise<void> 
         workspaceEdit.replace(document.uri, selection, text.trimEnd())
     }
 
-    // Required for characters logger metadata generation.
-    const changeEvent = workspaceEditToDocumentChangeEvent({
-        workspaceEdit,
-        document,
-        selection,
-    })
-
-    setLastStoredCode({ code: text, eventName: 'insertButton', changeEvent })
+    setLastStoredCode({ code: text, eventName: 'insertButton' })
     await vscode.workspace.applyEdit(workspaceEdit)
 }
 
@@ -309,10 +266,4 @@ export async function isCodeFromChatCodeBlockAction(
     }
 
     return null
-}
-
-function getRangeLength(range: vscode.Range, document: vscode.TextDocument): number {
-    const startOffset = document.offsetAt(range.start)
-    const endOffset = document.offsetAt(range.end)
-    return endOffset - startOffset
 }
