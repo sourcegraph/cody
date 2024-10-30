@@ -92,18 +92,42 @@ describe('AgentWorkspaceConfiguration', () => {
             })
 
             expect(config.get('cody')).toStrictEqual({
-                debug: {
-                    verbose: true,
+                advanced: {
+                    agent: {
+                        capabilities: {
+                            storage: true,
+                        },
+                        extension: {
+                            version: '1.0.0',
+                        },
+                        ide: {
+                            name: 'VSCode',
+                            version: '1.80.0',
+                        },
+                        running: true,
+                    },
+                    hasNativeWebview: true,
                 },
                 autocomplete: {
                     advanced: {
+                        model: 'claude-2',
                         provider: 'anthropic',
                     },
+                    enabled: true,
+                },
+                codebase: 'test-repo',
+                customHeaders: {
+                    'X-Test': 'test',
+                },
+                debug: {
+                    verbose: true,
                 },
                 experimental: {
                     tracing: true,
                 },
+                serverEndpoint: 'https://sourcegraph.test',
                 telemetry: {
+                    clientName: 'test-client',
                     level: 'agent',
                 },
             })
@@ -122,6 +146,17 @@ describe('AgentWorkspaceConfiguration', () => {
 
         it('returns default value for unknown sections', () => {
             expect(config.get('unknown.section', 'default')).toBe('default')
+        })
+
+        it('returns new instance each time when getting the same value', () => {
+            const testObject = { key: 'value' }
+            config.update('test.object', testObject)
+
+            const firstGet = config.get('test.object')
+            firstGet.key = 'modified'
+
+            const secondGet = config.get('test.object')
+            expect(secondGet.key).toBe('value')
         })
     })
 

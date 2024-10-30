@@ -14,32 +14,57 @@ export class AgentWorkspaceConfiguration implements vscode.WorkspaceConfiguratio
         private extensionConfig: () => ExtensionConfiguration | undefined,
         private dictionary: any = {}
     ) {
-        const extensionConfigValue = this.extensionConfig()
+        const config = this.extensionConfig()
+        const capabilities = this.clientInfo()?.capabilities
 
-        function normalize(config: any): any {
-            if (typeof config === 'object') {
-                const normalized = {}
-                for (const key of Object.keys(config)) {
-                    const tmp = {}
-                    _.set(tmp, key, normalize(config[key]))
-                    _.merge(normalized, tmp)
-                }
-                return normalized
-            }
+        this.put('editor.insertSpaces', true)
+        this.put('cody', {
+            advanced: {
+                agent: {
+                    'capabilities.storage':
+                        capabilities?.globalState === 'server-managed' ||
+                        capabilities?.globalState === 'client-managed',
+                    'extension.version': this.clientInfo()?.version,
+                    ide: {
+                        name: AgentWorkspaceConfiguration.clientNameToIDE(this.clientInfo()?.name ?? ''),
+                        version: this.clientInfo()?.ideVersion,
+                    },
+                    running: true,
+                },
+                hasNativeWebview: capabilities?.webview === 'native' ?? false,
+            },
+            autocomplete: {
+                advanced: {
+                    model: config?.autocompleteAdvancedModel ?? null,
+                    provider: config?.autocompleteAdvancedProvider ?? null,
+                },
+                enabled: true,
+            },
+            codebase: config?.codebase,
+            customHeaders: config?.customHeaders,
+            'debug.verbose': config?.verboseDebug ?? false,
+            'experimental.tracing': config?.verboseDebug ?? false,
+            serverEndpoint: config?.serverEndpoint,
+            // Use the dedicated `telemetry/recordEvent` to send telemetry from
+            // agent clients.  The reason we disable telemetry via config is
+            // that we don't want to submit vscode-specific events when
+            // running inside the agent.
+            telemetry: {
+                clientName: config?.telemetryClientName,
+                level: 'agent',
+            },
+        })
 
-            return config
-        }
-
-        const fromCustomConfigurationJson = extensionConfigValue?.customConfigurationJson
+        const fromCustomConfigurationJson = config?.customConfigurationJson
         if (fromCustomConfigurationJson) {
             const configJson = JSON.parse(fromCustomConfigurationJson)
-            _.merge(this.dictionary, normalize(configJson))
+            _.merge(this.dictionary, this.normalize(configJson))
         }
 
-        const customConfiguration = extensionConfigValue?.customConfiguration
+        const customConfiguration = config?.customConfiguration
         if (customConfiguration) {
             for (const key of Object.keys(customConfiguration)) {
-                _.set(dictionary, key, customConfiguration[key])
+                this.put(key, customConfiguration[key])
             }
         }
     }
@@ -51,6 +76,32 @@ export class AgentWorkspaceConfiguration implements vscode.WorkspaceConfiguratio
             this.extensionConfig,
             this.dictionary
         )
+    }
+
+    private normalize(cfg: any): any {
+        if (cfg && typeof cfg === 'object') {
+            if (Array.isArray(cfg)) {
+                const normalized = []
+                for (const value of Object.values(cfg)) {
+                    normalized.push(this.normalize(value))
+                }
+                return normalized
+            }
+
+            const normalized = {}
+            for (const key of Object.keys(cfg)) {
+                const tmp = {}
+                _.set(tmp, key, this.normalize(cfg[key]))
+                _.merge(normalized, tmp)
+            }
+            return normalized
+        }
+
+        return cfg
+    }
+
+    private put(key: string, value: any): void {
+        _.set(this.dictionary, key, this.normalize(value))
     }
 
     private actualSection(section: string): string {
@@ -85,64 +136,11 @@ export class AgentWorkspaceConfiguration implements vscode.WorkspaceConfiguratio
 
     public get(userSection: string, defaultValue?: unknown): any {
         const section = this.actualSection(userSection)
-
         const fromDict = _.get(this.dictionary, section)
         if (fromDict !== undefined) {
-            return fromDict
+            return structuredClone(fromDict)
         }
-
-        const extensionConfig = this.extensionConfig()
-        switch (section) {
-            case 'cody.serverEndpoint':
-                return extensionConfig?.serverEndpoint
-            case 'cody.customHeaders':
-                return extensionConfig?.customHeaders
-            case 'cody.telemetry.level':
-                // Use the dedicated `telemetry/recordEvent` to send telemetry from
-                // agent clients.  The reason we disable telemetry via config is
-                // that we don't want to submit vscode-specific events when
-                // running inside the agent.
-                return 'agent'
-            case 'cody.telemetry.clientName':
-                return extensionConfig?.telemetryClientName
-            case 'cody.autocomplete.enabled':
-                return true
-            case 'cody.autocomplete.advanced.provider':
-                return extensionConfig?.autocompleteAdvancedProvider ?? null
-            case 'cody.autocomplete.advanced.model':
-                return extensionConfig?.autocompleteAdvancedModel ?? null
-            case 'cody.advanced.agent.running':
-                return true
-            case 'cody.debug.verbose':
-                return extensionConfig?.verboseDebug ?? false
-            case 'cody.experimental.tracing':
-                return extensionConfig?.verboseDebug ?? false
-            case 'cody.codebase':
-                return extensionConfig?.codebase
-            case 'cody.advanced.agent.ide':
-                return AgentWorkspaceConfiguration.clientNameToIDE(this.clientInfo()?.name ?? '')
-            case 'cody.advanced.agent.ide.version':
-                return this.clientInfo()?.ideVersion
-            case 'cody.advanced.agent.extension.version':
-                return this.clientInfo()?.version
-            case 'cody.advanced.agent.capabilities.storage':
-                switch (this.clientInfo()?.capabilities?.globalState) {
-                    case 'server-managed':
-                    case 'client-managed':
-                        return true
-                    default:
-                        return false
-                }
-            case 'cody.advanced.hasNativeWebview':
-                return this.clientInfo()?.capabilities?.webview === 'native' ?? false
-            case 'editor.insertSpaces':
-                return true // TODO: override from IDE clients
-            default:
-                // VS Code picks up default value in package.json, and only uses
-                // the `defaultValue` parameter if package.json provides no
-                // default.
-                return defaultConfigurationValue(section) ?? defaultValue
-        }
+        return defaultConfigurationValue(section) ?? defaultValue
     }
 
     public has(section: string): boolean {
@@ -173,7 +171,7 @@ export class AgentWorkspaceConfiguration implements vscode.WorkspaceConfiguratio
         _configurationTarget?: boolean | vscode.ConfigurationTarget | null | undefined,
         _overrideInLanguage?: boolean | undefined
     ): Promise<void> {
-        _.set(this.dictionary, section, value)
+        this.put(section, value)
         return Promise.resolve()
     }
 }

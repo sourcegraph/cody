@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { assert, describe, expect, it } from 'vitest'
 import type * as vscode from 'vscode'
 
 import { type ClientConfiguration, OLLAMA_DEFAULT_URL, ps } from '@sourcegraph/cody-shared'
@@ -81,7 +81,7 @@ describe('getConfiguration', () => {
                         return false
                     case 'cody.advanced.hasNativeWebview':
                         return true
-                    case 'cody.advanced.agent.ide':
+                    case 'cody.advanced.agent.ide.name':
                         return undefined
                     case 'cody.advanced.agent.ide.version':
                         return undefined
@@ -128,7 +128,7 @@ describe('getConfiguration', () => {
                     case 'http':
                         return undefined
                     default:
-                        throw new Error(`unexpected key: ${key}`)
+                        assert(false, `unexpected key: ${key}`)
                 }
             },
         }
