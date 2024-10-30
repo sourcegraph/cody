@@ -1,0 +1,19 @@
+.accordion-trigger {
+    display: flex;
+    gap: 0.25rem;
+    align-items: center;
+    justify-content: space-between;
+    transition-property: all;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 150ms;
+}
+
+.accordion-trigger[data-state="open"] .accordion-trigger-chevron {
+    transform: rotate(90deg);
+}
+
+.accordion-trigger-chevron {
+    flex-shrink: 0;        /* tw-shrink-0 */
+    transition-property: transform;  /* tw-transition-transform */
+    transition-duration: 150ms;      /* tw-duration-150 */
+}

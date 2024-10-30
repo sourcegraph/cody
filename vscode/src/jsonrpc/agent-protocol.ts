@@ -386,6 +386,8 @@ export type ClientNotifications = {
     'webview/didDisposeNative': [{ handle: string }]
 
     'secrets/didChange': [{ key: string }]
+
+    'window/didChangeFocus': [{ focused: boolean }]
 }
 
 // ================
@@ -593,7 +595,12 @@ export interface ExtensionConfiguration {
      */
     eventProperties?: EventProperties | undefined | null
 
+    /**
+     * @deprecated use 'customConfigurationJson' instead, it supports dotted names
+     */
     customConfiguration?: Record<string, any> | undefined | null
+
+    customConfigurationJson?: string | undefined | null
 
     baseGlobalState?: Record<string, any> | undefined | null
 }

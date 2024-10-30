@@ -1,5 +1,6 @@
 import {
     type ChatModel,
+    type ClientActionBroadcast,
     type CodyClientConfig,
     DefaultEditCommands,
     cenv,
@@ -81,7 +82,7 @@ import type { Span } from '@opentelemetry/api'
 import { captureException } from '@sentry/core'
 import { getTokenCounterUtils } from '@sourcegraph/cody-shared/src/token/counter'
 import type { TelemetryEventParameters } from '@sourcegraph/telemetry'
-import { map } from 'observable-fns'
+import { Subject, map } from 'observable-fns'
 import type { URI } from 'vscode-uri'
 import { View } from '../../../webviews/tabs/types'
 import { redirectToEndpointLogin, showSignInMenu, showSignOutMenu } from '../../auth/auth'
@@ -201,6 +202,8 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
     private readonly chatIntentAPIClient: ChatIntentAPIClient | null
 
     private disposables: vscode.Disposable[] = []
+
+    public readonly clientBroadcast = new Subject<ClientActionBroadcast>()
 
     public dispose(): void {
         vscode.Disposable.from(...this.disposables).dispose()
@@ -499,6 +502,10 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         return this.extensionClient.capabilities?.edit !== 'none'
     }
 
+    private hasEditCapability(): boolean {
+        return this.extensionClient.capabilities?.edit === 'enabled'
+    }
+
     private featureCodyExperimentalOneBox = storeLastValue(
         featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyExperimentalOneBox)
     )
@@ -514,6 +521,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             serverEndpoint: auth.serverEndpoint,
             experimentalNoodle: configuration.experimentalNoodle,
             smartApply: this.isSmartApplyEnabled(),
+            hasEditCapability: this.hasEditCapability(),
             webviewType,
             multipleWebviewsEnabled: !sidebarViewOnly,
             internalDebugContext: configuration.internalDebugContext,
@@ -1216,6 +1224,8 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         })
     }
 
+    public fireClientAction(): void {}
+
     private async handleAttributionSearch(snippet: string): Promise<void> {
         try {
             const attribution = await this.guardrails.searchAttribution(snippet)
@@ -1704,6 +1714,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                             chatBuilder: this.chatBuilder,
                         })
                     },
+                    clientActionBroadcast: () => this.clientBroadcast,
                     evaluatedFeatureFlag: flag => featureFlagProvider.evaluatedFeatureFlag(flag),
                     hydratePromptMessage: (promptText, initialContext) =>
                         promiseFactoryToObservable(() =>
@@ -1711,9 +1722,9 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                         ),
                     promptsMigrationStatus: () => getPromptsMigrationInfo(),
                     startPromptsMigration: () => promiseFactoryToObservable(startPromptsMigration),
-                    prompts: query =>
+                    prompts: input =>
                         promiseFactoryToObservable(signal =>
-                            mergedPromptsAndLegacyCommands(query, signal)
+                            mergedPromptsAndLegacyCommands(input, signal)
                         ),
                     models: () =>
                         modelsService.modelsChanges.pipe(

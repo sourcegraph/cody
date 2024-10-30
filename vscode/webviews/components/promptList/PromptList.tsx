@@ -1,5 +1,5 @@
 import clsx from 'clsx'
-import { type FC, useCallback, useState } from 'react'
+import { type FC, useCallback, useMemo, useState } from 'react'
 
 import type { Action } from '@sourcegraph/cody-shared'
 
@@ -17,6 +17,7 @@ import { ActionItem } from './ActionItem'
 import { usePromptsQuery } from './usePromptsQuery'
 import { commandRowValue } from './utils'
 
+import type { PromptsInput } from '@sourcegraph/cody-shared'
 import { useLocalStorage } from '../../components/hooks'
 import styles from './PromptList.module.css'
 
@@ -25,7 +26,6 @@ interface PromptListProps {
     showFirstNItems?: number
     telemetryLocation: 'PromptSelectField' | 'PromptsTab'
     showOnlyPromptInsertableCommands?: boolean
-    showInitialSelectedItem?: boolean
     showCommandOrigins?: boolean
     showPromptLibraryUnsupportedMessage?: boolean
     className?: string
@@ -33,7 +33,7 @@ interface PromptListProps {
     paddingLevels?: 'none' | 'middle' | 'big'
     appearanceMode?: 'flat-list' | 'chips-list'
     lastUsedSorting?: boolean
-    includeEditCommandOnTop?: boolean
+    recommendedOnly?: boolean
     onSelect: (item: Action) => void
 }
 
@@ -50,14 +50,13 @@ export const PromptList: FC<PromptListProps> = props => {
         showFirstNItems,
         telemetryLocation,
         showOnlyPromptInsertableCommands,
-        showInitialSelectedItem = true,
         showPromptLibraryUnsupportedMessage = true,
         className,
         inputClassName,
         paddingLevels = 'none',
         appearanceMode = 'flat-list',
         lastUsedSorting,
-        includeEditCommandOnTop,
+        recommendedOnly,
         onSelect: parentOnSelect,
     } = props
 
@@ -71,7 +70,17 @@ export const PromptList: FC<PromptListProps> = props => {
 
     const [query, setQuery] = useState('')
     const debouncedQuery = useDebounce(query, 250)
-    const { value: result, error } = usePromptsQuery(debouncedQuery)
+
+    const promptInput = useMemo<PromptsInput>(
+        () => ({
+            query: debouncedQuery,
+            first: showFirstNItems,
+            recommendedOnly: recommendedOnly ?? false,
+        }),
+        [debouncedQuery, showFirstNItems, recommendedOnly]
+    )
+
+    const { value: result, error } = usePromptsQuery(promptInput)
 
     const onSelect = useCallback(
         (rowValue: string): void => {
@@ -138,30 +147,20 @@ export const PromptList: FC<PromptListProps> = props => {
         : result?.actions ?? []
 
     const sortedActions = lastUsedSorting ? getSortedActions(allActions, lastUsedActions) : allActions
-
-    const editCommandIndex = sortedActions.findIndex(
-        action => action.actionType === 'command' && action.key === 'edit'
-    )
-
-    // Bring Edit command on top of the command list
-    if (includeEditCommandOnTop && editCommandIndex !== -1) {
-        sortedActions.unshift(sortedActions.splice(editCommandIndex, 1)[0])
-    }
-
     const actions = showFirstNItems ? sortedActions.slice(0, showFirstNItems) : sortedActions
 
     const inputPaddingClass =
-        paddingLevels !== 'none' ? (paddingLevels === 'middle' ? '!tw-p-2' : '!tw-p-4') : ''
+        paddingLevels !== 'none' ? (paddingLevels === 'middle' ? '!tw-p-0' : '!tw-p-0') : ''
 
     const itemPaddingClass =
-        paddingLevels !== 'none' ? (paddingLevels === 'middle' ? '!tw-px-6' : '!tw-px-8') : ''
+        paddingLevels !== 'none' ? (paddingLevels === 'middle' ? '!tw-px-6' : '!tw-px-6') : ''
 
     return (
         <Command
             loop={true}
             tabIndex={0}
             shouldFilter={false}
-            defaultValue={showInitialSelectedItem ? undefined : 'xxx-no-item'}
+            defaultValue="xxx-no-item"
             className={clsx(className, styles.list, {
                 [styles.listChips]: appearanceMode === 'chips-list',
             })}
@@ -184,7 +183,7 @@ export const PromptList: FC<PromptListProps> = props => {
                 )}
                 {result && allActions.filter(action => action.actionType === 'prompt').length === 0 && (
                     <CommandLoading className={itemPaddingClass}>
-                        {result?.query === '' ? (
+                        {result?.query === '' && !recommendedOnly ? (
                             <>
                                 Your Prompt Library is empty.{' '}
                                 <a

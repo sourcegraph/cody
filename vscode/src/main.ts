@@ -90,7 +90,7 @@ import { showSetupNotification } from './notifications/setup-notification'
 import { logDebug, logError } from './output-channel-logger'
 import { initVSCodeGitApi } from './repository/git-extension-api'
 import { authProvider } from './services/AuthProvider'
-import { CharactersLogger } from './services/CharactersLogger'
+import { charactersLogger } from './services/CharactersLogger'
 import { CodyTerminal } from './services/CodyTerminal'
 import { showFeedbackSupportQuickPick } from './services/FeedbackOptions'
 import { displayHistoryQuickPick } from './services/HistoryChat'
@@ -296,7 +296,7 @@ const register = async (
     }
     registerDebugCommands(context, disposables)
     registerUpgradeHandlers(disposables)
-    disposables.push(new CharactersLogger())
+    disposables.push(charactersLogger)
 
     // INC-267 do NOT await on this promise. This promise triggers
     // `vscode.window.showInformationMessage()`, which only resolves after the

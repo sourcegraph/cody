@@ -140,6 +140,10 @@ async function hydrateWithCurrentDirectory(
         item => item.type === 'openctx' && item.providerUri === REMOTE_DIRECTORY_PROVIDER_URI
     )
 
+    if (initialContext.length > 0 && !initialContextDirectory) {
+        return [promptText, []]
+    }
+
     if (initialContextDirectory) {
         return [
             promptText.replaceAll(

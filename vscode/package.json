@@ -3,7 +3,7 @@
   "name": "cody-ai",
   "private": true,
   "displayName": "Cody: AI Coding Assistant with Autocomplete & Chat",
-  "version": "1.38.2",
+  "version": "1.38.3",
   "publisher": "sourcegraph",
   "license": "Apache-2.0",
   "icon": "resources/cody.png",
@@ -709,6 +709,11 @@
         "when": "cody.activated && !editorReadonly && cody.hasActionableEdit"
       },
       {
+        "command": "cody.show.lastUsedActions",
+        "key": "alt+p",
+        "when": "cody.activated && !editorReadonly"
+      },
+      {
         "command": "cody.fixup.undoNearest",
         "key": "alt+x",
         "when": "cody.activated && !editorReadonly && cody.hasActionableEdit"
@@ -1365,7 +1370,7 @@
   "dependencies": {
     "@anthropic-ai/sdk": "^0.20.8",
     "@openctx/provider-linear-issues": "^0.0.9",
-    "@openctx/vscode-lib": "^0.0.25",
+    "@openctx/vscode-lib": "^0.0.26",
     "@opentelemetry/api": "^1.7.0",
     "@opentelemetry/core": "^1.18.1",
     "@opentelemetry/exporter-trace-otlp-http": "^0.45.1",

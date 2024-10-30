@@ -83,13 +83,6 @@ export class ChatBuilder {
     }
 
     private changeNotifications = new Subject<void>()
-
-    /** An observable that emits whenever the {@link ChatBuilder}'s chat changes. */
-    public changes: Observable<ChatBuilder> = this.changeNotifications.pipe(
-        startWith(undefined),
-        map(() => this)
-    )
-
     constructor(
         /**
          * The model ID to use for the next assistant response if the user has explicitly chosen
@@ -102,6 +95,12 @@ export class ChatBuilder {
         private messages: ChatMessage[] = [],
         private customChatTitle?: string
     ) {}
+
+    /** An observable that emits whenever the {@link ChatBuilder}'s chat changes. */
+    public changes: Observable<ChatBuilder> = this.changeNotifications.pipe(
+        startWith(undefined),
+        map(() => this)
+    )
 
     /**
      * Set the selected model to use for the next assistant response, or `undefined` to use the

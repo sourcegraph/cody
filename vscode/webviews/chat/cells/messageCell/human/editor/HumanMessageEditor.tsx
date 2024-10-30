@@ -119,13 +119,25 @@ export const HumanMessageEditor: FunctionComponent<{
         initialIntent || (experimentalOneBoxEnabled ? undefined : 'chat')
     )
 
+    useEffect(() => {
+        // reset the input box intent when the editor is cleared
+        if (isEmptyEditorValue) {
+            setSubmitIntent(undefined)
+        }
+    }, [isEmptyEditorValue])
+
+    useEffect(() => {
+        // set the input box intent when the message is changed or a new chat is created
+        setSubmitIntent(initialIntent)
+    }, [initialIntent])
+
     const onSubmitClick = useCallback(
-        (intent?: ChatMessage['intent']) => {
-            if (submitState === 'emptyEditorValue') {
+        (intent?: ChatMessage['intent'], forceSubmit?: boolean): void => {
+            if (!forceSubmit && submitState === 'emptyEditorValue') {
                 return
             }
 
-            if (submitState === 'waitingResponseComplete') {
+            if (!forceSubmit && submitState === 'waitingResponseComplete') {
                 onStop()
                 return
             }
@@ -281,46 +293,47 @@ export const HumanMessageEditor: FunctionComponent<{
                 }
 
                 const updates: Promise<unknown>[] = []
-                const awaitUpdate = () => {
-                    let resolve: (value?: unknown) => void
-                    updates.push(
-                        new Promise(r => {
-                            resolve = r
-                        })
-                    )
-
-                    return () => {
-                        resolve?.()
-                    }
-                }
 
                 if (addContextItemsToLastHumanInput && addContextItemsToLastHumanInput.length > 0) {
                     const editor = editorRef.current
                     if (editor) {
-                        editor.addMentions(addContextItemsToLastHumanInput, awaitUpdate())
-                        editor.setFocus(true)
+                        updates.push(editor.addMentions(addContextItemsToLastHumanInput, 'after'))
+                        updates.push(editor.setFocus(true))
                     }
                 }
 
                 if (appendTextToLastPromptEditor) {
                     // Schedule append text task to the next tick to avoid collisions with
                     // initial text set (add initial mentions first then append text from prompt)
-                    const onUpdate = awaitUpdate()
-                    requestAnimationFrame(() => {
-                        if (editorRef.current) {
-                            editorRef.current.appendText(appendTextToLastPromptEditor, onUpdate)
-                        }
-                    })
+                    updates.push(
+                        new Promise<void>((resolve): void => {
+                            requestAnimationFrame(() => {
+                                if (editorRef.current) {
+                                    editorRef.current
+                                        .appendText(appendTextToLastPromptEditor)
+                                        .then(resolve)
+                                } else {
+                                    resolve()
+                                }
+                            })
+                        })
+                    )
                 }
 
                 if (editorState) {
-                    const onUpdate = awaitUpdate()
-                    requestAnimationFrame(() => {
-                        if (editorRef.current) {
-                            editorRef.current.setEditorState(editorState, onUpdate)
-                            editorRef.current.setFocus(true)
-                        }
-                    })
+                    updates.push(
+                        new Promise<void>(resolve => {
+                            requestAnimationFrame(async () => {
+                                if (editorRef.current) {
+                                    await Promise.all([
+                                        editorRef.current.setEditorState(editorState),
+                                        editorRef.current.setFocus(true),
+                                    ])
+                                }
+                                resolve()
+                            })
+                        })
+                    )
                 }
                 if (setLastHumanInputIntent) {
                     setSubmitIntent(setLastHumanInputIntent)
@@ -328,7 +341,7 @@ export const HumanMessageEditor: FunctionComponent<{
 
                 if (submitHumanInput) {
                     Promise.all(updates).then(() =>
-                        onSubmitClick(setLastHumanInputIntent || submitIntent)
+                        onSubmitClick(setLastHumanInputIntent || submitIntent, true)
                     )
                 }
             },

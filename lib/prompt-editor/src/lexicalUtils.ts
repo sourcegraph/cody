@@ -76,13 +76,18 @@ export function getContextItemsForEditor(editor: LexicalEditor): SerializedConte
 export function visitContextItemsForEditor(
     editor: LexicalEditor,
     visit: (mention: ContextItemMentionNode) => void
-): void {
-    editor.update(() => {
-        walkLexicalNodes($getRoot(), node => {
-            if (node instanceof ContextItemMentionNode) {
-                visit(node)
-            }
-            return true
-        })
+): Promise<void> {
+    return new Promise(resolve => {
+        editor.update(
+            () => {
+                walkLexicalNodes($getRoot(), node => {
+                    if (node instanceof ContextItemMentionNode) {
+                        visit(node)
+                    }
+                    return true
+                })
+            },
+            { onUpdate: resolve }
+        )
     })
 }

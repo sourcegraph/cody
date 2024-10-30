@@ -463,7 +463,7 @@ export async function executeCommandInPalette(page: Page, commandName: string): 
  */
 export const expect = baseExpect.extend({
     async toContainEvents(
-        received: string[],
+        received: typeof loggedV2Events,
         expected: string[],
         options?: { timeout?: number; interval?: number; retries?: number }
     ): Promise<MatcherReturnType> {
@@ -476,13 +476,14 @@ export const expect = baseExpect.extend({
                 .poll(() => received, { timeout: options?.timeout ?? 3000, ...options })
                 .toEqual(baseExpect.arrayContaining(expected))
         } catch (e: any) {
-            const receivedSet = new Set(received)
+            const eventIds = received.map(e => e.testId) as string[]
+            const receivedSet = new Set(eventIds)
             for (const event of expected) {
                 if (!receivedSet.has(event)) {
                     missing.push(event)
                 }
             }
-            for (const event of received) {
+            for (const event of eventIds) {
                 if (!expected.includes(event)) {
                     extra.push(event)
                 }

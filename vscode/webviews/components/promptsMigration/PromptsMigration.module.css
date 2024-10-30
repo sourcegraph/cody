@@ -11,19 +11,19 @@
 .icons-header {
     display: flex;
     gap: 0.5rem;
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.625rem;
 }
 
 .heading {
-    font-size: 1rem;
+    font-size: 0.875rem;
     font-weight: 500;
-    margin-bottom: 0.25rem;
+    margin-bottom: 0.175rem;
     color: var(--vscode-dropdown-foreground);
 }
 
 .description-text {
     line-height: 1rem;
-    margin-bottom: 0.75rem;
+    margin-bottom: 0.875rem;
     color: var(--vscode-dropdown-foreground);
 }
 

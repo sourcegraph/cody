@@ -152,17 +152,20 @@ const configuration = new AgentWorkspaceConfiguration(
     () => extensionConfiguration
 )
 
-export const onDidChangeWorkspaceFolders = new EventEmitter<vscode.WorkspaceFoldersChangeEvent>()
-export const onDidChangeTextEditorSelection = new EventEmitter<vscode.TextEditorSelectionChangeEvent>() // TODO: implement this
-export const onDidChangeVisibleTextEditors = new EventEmitter<readonly vscode.TextEditor[]>()
+// Sorted alphabetically
 export const onDidChangeActiveTextEditor = new EventEmitter<vscode.TextEditor | undefined>()
 export const onDidChangeConfiguration = new EventEmitter<vscode.ConfigurationChangeEvent>()
-export const onDidOpenTextDocument = new EventEmitter<vscode.TextDocument>()
 export const onDidChangeTextDocument = new EventEmitter<vscode.TextDocumentChangeEvent>()
+export const onDidChangeTextEditorSelection = new EventEmitter<vscode.TextEditorSelectionChangeEvent>()
+export const onDidChangeVisibleTextEditors = new EventEmitter<readonly vscode.TextEditor[]>()
+export const onDidChangeWindowState = new EventEmitter<vscode.WindowState>()
+export const onDidChangeWorkspaceFolders = new EventEmitter<vscode.WorkspaceFoldersChangeEvent>()
+
 export const onDidCloseTextDocument = new EventEmitter<vscode.TextDocument>()
-export const onDidSaveTextDocument = new EventEmitter<vscode.TextDocument>()
-export const onDidRenameFiles = new EventEmitter<vscode.FileRenameEvent>()
 export const onDidDeleteFiles = new EventEmitter<vscode.FileDeleteEvent>()
+export const onDidOpenTextDocument = new EventEmitter<vscode.TextDocument>()
+export const onDidRenameFiles = new EventEmitter<vscode.FileRenameEvent>()
+export const onDidSaveTextDocument = new EventEmitter<vscode.TextDocument>()
 
 export interface WorkspaceDocuments {
     workspaceRootUri?: vscode.Uri
@@ -642,7 +645,7 @@ const _window: typeof vscode.window = {
     onDidChangeTextEditorOptions: emptyEvent(),
     onDidChangeTextEditorViewColumn: emptyEvent(),
     onDidChangeVisibleNotebookEditors: emptyEvent(),
-    onDidChangeWindowState: emptyEvent(),
+    onDidChangeWindowState: onDidChangeWindowState.event,
     onDidCloseTerminal: emptyEvent(),
     onDidOpenTerminal: emptyEvent(),
     registerUriHandler: (vsceHandler: vscode.UriHandler) => {

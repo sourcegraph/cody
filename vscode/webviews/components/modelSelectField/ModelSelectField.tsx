@@ -190,7 +190,7 @@ export const ModelSelectField: React.FunctionComponent<{
                     data-testid="chat-model-popover"
                 >
                     <CommandList
-                        className="model-selector-popover"
+                        className="model-selector-popover tw-max-h-[80vh] tw-overflow-y-auto"
                         data-testid="chat-model-popover-option"
                     >
                         {optionsByGroup.map(({ group, options }) => (
@@ -315,13 +315,17 @@ function getTooltip(model: Model, availability: string): string {
         return 'Request received, we will reach out with next steps'
     }
 
+    const capitalizedProvider =
+        model.provider === 'openai'
+            ? 'OpenAI'
+            : model.provider.charAt(0).toUpperCase() + model.provider.slice(1)
     switch (availability) {
         case 'not-selectable-on-enterprise':
             return 'Chat model set by your Sourcegraph Enterprise admin'
         case 'needs-cody-pro':
-            return `Upgrade to Cody Pro to use ${model.title} by ${model.provider}`
+            return `Upgrade to Cody Pro to use ${model.title} by ${capitalizedProvider}`
         default:
-            return `${model.title} by ${model.provider}`
+            return `${model.title} by ${capitalizedProvider}`
     }
 }
 

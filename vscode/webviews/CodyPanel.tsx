@@ -6,7 +6,7 @@ import {
 } from '@sourcegraph/cody-shared'
 import { useExtensionAPI, useObservable } from '@sourcegraph/prompt-editor'
 import type React from 'react'
-import { type ComponentProps, type FunctionComponent, useMemo, useRef } from 'react'
+import { type ComponentProps, type FunctionComponent, useEffect, useMemo, useRef } from 'react'
 import type { ConfigurationSubsetForWebview, LocalEnv } from '../src/chat/protocol'
 import styles from './App.module.css'
 import { Chat } from './Chat'
@@ -64,7 +64,23 @@ export const CodyPanel: FunctionComponent<
 
     const api = useExtensionAPI()
     const { value: chatModels } = useObservable(useMemo(() => api.chatModels(), [api.chatModels]))
-    const isUnifiedPromptsEnabled = useFeatureFlag(FeatureFlag.CodyUnifiedPrompts)
+    const isPromptsV2Enabled = useFeatureFlag(FeatureFlag.CodyPromptsV2)
+
+    useEffect(() => {
+        const subscription = api.clientActionBroadcast().subscribe(action => {
+            switch (action.type) {
+                case 'open-recently-prompts': {
+                    document
+                        .querySelector<HTMLButtonElement>("button[aria-label='Insert prompt']")
+                        ?.click()
+                }
+            }
+        })
+
+        return () => {
+            subscription.unsubscribe()
+        }
+    }, [api.clientActionBroadcast])
 
     return (
         <TabViewContext.Provider value={useMemo(() => ({ view, setView }), [view, setView])}>
@@ -97,7 +113,7 @@ export const CodyPanel: FunctionComponent<
                             showWelcomeMessage={showWelcomeMessage}
                             scrollableParent={tabContainerRef.current}
                             smartApplyEnabled={smartApplyEnabled}
-                            isUnifiedPromptsEnabled={isUnifiedPromptsEnabled}
+                            isPromptsV2Enabled={isPromptsV2Enabled}
                             setView={setView}
                         />
                     )}
@@ -110,10 +126,7 @@ export const CodyPanel: FunctionComponent<
                         />
                     )}
                     {view === View.Prompts && (
-                        <PromptsTab
-                            setView={setView}
-                            isUnifiedPromptsEnabled={isUnifiedPromptsEnabled}
-                        />
+                        <PromptsTab setView={setView} isPromptsV2Enabled={isPromptsV2Enabled} />
                     )}
                     {view === View.Account && <AccountTab setView={setView} />}
                     {view === View.Settings && <SettingsTab />}

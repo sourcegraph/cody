@@ -30,7 +30,7 @@ const chatTips: ChatViewTip[] = [
         vsCodeOnly: true,
     },
     {
-        message: 'Start a new chat using ⌥ / or the New Chat button',
+        message: 'Start a new chat with ⇧ ⌥ L or switch to chat with ⌥ /',
         icon: MessageSquarePlus,
         vsCodeOnly: false,
     },

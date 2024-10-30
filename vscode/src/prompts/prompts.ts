@@ -2,6 +2,7 @@ import {
     type CommandAction,
     FeatureFlag,
     type PromptAction,
+    type PromptsInput,
     type PromptsResult,
     clientCapabilities,
     featureFlagProvider,
@@ -69,12 +70,13 @@ const STANDARD_PROMPTS_LIKE_COMMAND: CommandAction[] = [
  * Library.
  */
 export async function mergedPromptsAndLegacyCommands(
-    query: string,
+    input: PromptsInput,
     signal: AbortSignal
 ): Promise<PromptsResult> {
+    const { query, recommendedOnly, first } = input
     const queryLower = query.toLowerCase()
     const [customPrompts, isUnifiedPromptsEnabled] = await Promise.all([
-        fetchCustomPrompts(queryLower, signal),
+        fetchCustomPrompts(queryLower, first, recommendedOnly, signal),
         featureFlagProvider.evaluateFeatureFlagEphemerally(FeatureFlag.CodyUnifiedPrompts),
     ])
 
@@ -118,10 +120,12 @@ function matchesQuery(query: string, text: string): boolean {
 
 async function fetchCustomPrompts(
     query: string,
+    first: number | undefined,
+    recommendedOnly: boolean,
     signal: AbortSignal
 ): Promise<PromptAction[] | 'unsupported'> {
     try {
-        const prompts = await graphqlClient.queryPrompts(query, signal)
+        const prompts = await graphqlClient.queryPrompts({ query, first, recommendedOnly, signal })
         return prompts.map(prompt => ({ ...prompt, actionType: 'prompt' }))
     } catch (error) {
         if (isAbortError(error)) {

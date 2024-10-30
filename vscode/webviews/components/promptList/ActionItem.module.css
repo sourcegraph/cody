@@ -50,6 +50,7 @@
         min-width: 0;
         display: flex;
         gap: 0.25rem;
+        align-items: center;
     }
 
     &--name {
