@@ -26,6 +26,7 @@ import { FeedbackButtons } from '../../../components/FeedbackButtons'
 import { LoadingDots } from '../../../components/LoadingDots'
 import { BaseMessageCell, MESSAGE_CELL_AVATAR_SIZE } from '../BaseMessageCell'
 import { ContextFocusActions } from './ContextFocusActions'
+import { CopyCodeBlockIcon } from '../../../../icons/CodeBlockActionIcons'
 
 /**
  * A component that displays a chat message from the assistant.
@@ -138,24 +139,31 @@ export const AssistantMessageCell: FunctionComponent<{
                                 </div>
                             )}
                             <div className="tw-flex tw-items-center tw-divide-x tw-transition tw-divide-muted tw-opacity-65 hover:tw-opacity-100">
-                                {showFeedbackButtons && feedbackButtonsOnSubmit && (
-                                    <FeedbackButtons
-                                        feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
-                                        className="tw-pr-4"
-                                    />
-                                )}
-                                {!isLoading && (!message.error || isAborted) && (
-                                    <ContextFocusActions
-                                        humanMessage={humanMessage}
-                                        longResponseTime={hasLongerResponseTime}
-                                        className={
-                                            showFeedbackButtons && feedbackButtonsOnSubmit
-                                                ? 'tw-pl-5'
-                                                : undefined
-                                        }
-                                    />
-                                )}
-                            </div>
+    {showFeedbackButtons && feedbackButtonsOnSubmit && (
+        <FeedbackButtons
+            feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
+            className="tw-pr-4"
+        />
+    )}
+    {!isLoading && (!message.error || isAborted) && (
+        <>
+<button
+    className="tw-flex tw-items-center tw-gap-2 tw-px-4 tw-text-sm tw-text-muted-foreground hover:tw-text-foreground"
+    onClick={() => {
+        navigator.clipboard.writeText(message.text?.toString() || '')
+        copyButtonOnSubmit?.(message.text?.toString() || '')
+    }}
+>
+    <div dangerouslySetInnerHTML={{ __html: CopyCodeBlockIcon }} />
+</button>
+            <ContextFocusActions
+                humanMessage={humanMessage}
+                longResponseTime={hasLongerResponseTime}
+                className={showFeedbackButtons && feedbackButtonsOnSubmit ? 'tw-pl-5' : undefined}
+            />
+        </>
+    )}
+</div>
                         </div>
                     )
                 }
