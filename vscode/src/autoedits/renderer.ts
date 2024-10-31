@@ -199,7 +199,7 @@ export class AutoEditsRenderer implements vscode.Disposable {
             this.renderAddedLinesDecorationsForNewLineAdditions(
                 options.document,
                 options.predictedFileText,
-                80
+                0
             )
         } else {
             this.renderAddedLinesDecorations(
@@ -224,6 +224,9 @@ export class AutoEditsRenderer implements vscode.Disposable {
         const replacerDecorations: vscode.DecorationOptions[] = []
         // TODO(beyang): handle when not enough remaining lines in the doc
         for (let i = 0; i < replacerText.split('\n').length; i++) {
+            if (i > 5)
+                break
+
             const j = i + replaceStartLine
             const line = this.editor.document.lineAt(j)
             if (line.range.end.character <= replacerCol) {

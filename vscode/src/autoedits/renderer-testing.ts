@@ -58,7 +58,7 @@ class DiffDecorationManager implements vscode.Disposable {
         )
 
         const currentFileText = before + marker + after
-        const predictedFileText = after + marker + after
+        const predictedFileText = after + '\n' + marker + after
 
         await this.renderer.renderDecorations({
             document: this.editor.document,

@@ -456,7 +456,7 @@ async function registerCodyCommands(
     registerAutoEdits(disposables)
     disposables.push(
         enableFeature(
-            ({ configuration }) => configuration.experimentalAutoeditsRendererTesting !== undefined,
+            ({ configuration }) => configuration.experimentalAutoeditsRendererTesting !== false,
             () => new AutoeditTestingProvider()
         )
     )
