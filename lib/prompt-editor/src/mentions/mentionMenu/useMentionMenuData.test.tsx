@@ -11,12 +11,13 @@ import { Observable } from 'observable-fns'
 import { describe, expect, test, vi } from 'vitest'
 import { URI } from 'vscode-uri'
 import { MOCK_API, useExtensionAPI } from '../../useExtensionAPI'
-import { useInitialContextForChat } from '../../useInitialContext'
+import { useCorpusContextForChat, useInitialContextForChat } from '../../useInitialContext'
 import { waitForObservableInTest } from '../../useObservable'
 import { useCallMentionMenuData, useMentionMenuData } from './useMentionMenuData'
 
 vi.mock('../../useExtensionAPI')
 vi.mock('../../useInitialContext')
+vi.mock('../../useCorpusContextForChat')
 
 describe('useMentionMenuData', () => {
     describe('initial context deduping', () => {
@@ -59,6 +60,7 @@ describe('useMentionMenuData', () => {
                 source: ContextItemSource.Initial,
             }
             vi.mocked(useInitialContextForChat).mockReturnValue([file1FromInitialContext])
+            vi.mocked(useCorpusContextForChat).mockReturnValue([])
 
             const { result } = renderHook(() =>
                 useMentionMenuData(
@@ -113,6 +115,7 @@ describe('useMentionMenuData', () => {
                 }),
         })
         vi.mocked(useInitialContextForChat).mockReturnValue([])
+        vi.mocked(useCorpusContextForChat).mockReturnValue([])
 
         const { result } = renderHook(() =>
             useMentionMenuData({ query: '', parentItem: null }, { remainingTokenBudget: 100, limit: 10 })

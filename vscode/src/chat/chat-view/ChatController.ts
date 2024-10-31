@@ -643,7 +643,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 editorState,
                 intent: detectedIntent,
             })
-            this.postViewTranscript()
+            this.postViewTranscript({ speaker: 'assistant' })
 
             await this.saveSession()
             signal.throwIfAborted()
