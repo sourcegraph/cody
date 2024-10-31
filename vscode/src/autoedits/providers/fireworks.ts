@@ -1,9 +1,10 @@
-import { type AutoEditsTokenLimit, logDebug } from '@sourcegraph/cody-shared'
+import type { AutoEditsTokenLimit } from '@sourcegraph/cody-shared'
 import type * as vscode from 'vscode'
 import type {
     AutocompleteContextSnippet,
     DocumentContext,
 } from '../../../../lib/shared/src/completions/types'
+import { autoeditsLogger } from '../logger'
 import type {
     ChatPrompt,
     PromptProvider,
@@ -76,7 +77,7 @@ export class FireworksPromptProvider implements PromptProvider {
             )
             return response.choices[0].message.content
         } catch (error) {
-            logDebug('AutoEdits', 'Error calling OpenAI API:', error)
+            autoeditsLogger.logDebug('AutoEdits', 'Error calling OpenAI API:', error)
             throw error
         }
     }

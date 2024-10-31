@@ -113,6 +113,10 @@ export function getConfiguration(
 
         experimentalSupercompletions: getHiddenSetting('experimental.supercompletions', false),
         experimentalAutoedits: getHiddenSetting('experimental.autoedit', undefined),
+        experimentalAutoeditsRendererTesting: getHiddenSetting(
+            'experimental.autoedits-renderer-testing',
+            false
+        ),
         experimentalMinionAnthropicKey: getHiddenSetting('experimental.minion.anthropicKey', undefined),
 
         experimentalGuardrailsTimeoutSeconds: getHiddenSetting('experimental.guardrailsTimeoutSeconds'),

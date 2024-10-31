@@ -45,6 +45,7 @@ import type { CommandResult } from './CommandResult'
 import { showAccountMenu } from './auth/account-menu'
 import { showSignInMenu, showSignOutMenu, tokenCallbackHandler } from './auth/auth'
 import { AutoeditsProvider } from './autoedits/autoedits-provider'
+import { AutoeditTestingProvider } from './autoedits/renderer-testing'
 import type { MessageProviderOptions } from './chat/MessageProvider'
 import { ChatsController, CodyChatEditorViewType } from './chat/chat-view/ChatsController'
 import { ContextRetriever } from './chat/chat-view/ContextRetriever'
@@ -469,14 +470,12 @@ async function registerCodyCommands(
 
     // Initialize autoedit provider if experimental feature is enabled
     registerAutoEdits(disposables)
-    // disposables.push(
-    //     enableFeature(
-    //         ({ configuration }) => configuration.experimentalAutoedits !== undefined,
-    //         () => new AutoeditsProvider()
-    //     )
-    // )
-
-    // Experimental Command: Auto Edit
+    disposables.push(
+        enableFeature(
+            ({ configuration }) => configuration.experimentalAutoeditsRendererTesting !== undefined,
+            () => new AutoeditTestingProvider()
+        )
+    )
     disposables.push(
         vscode.commands.registerCommand('cody.command.auto-edit', a => executeAutoEditCommand(a))
     )

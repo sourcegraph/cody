@@ -1,9 +1,10 @@
-import { type AutoEditsTokenLimit, type PromptString, logDebug, ps } from '@sourcegraph/cody-shared'
+import { type AutoEditsTokenLimit, type PromptString, ps } from '@sourcegraph/cody-shared'
 import type * as vscode from 'vscode'
 import type {
     AutocompleteContextSnippet,
     DocumentContext,
 } from '../../../../lib/shared/src/completions/types'
+import { autoeditsLogger } from '../logger'
 import type { PromptProvider, PromptProviderResponse, PromptResponseData } from '../prompt-provider'
 import { getModelResponse } from '../prompt-provider'
 import { type CodeToReplaceData, SYSTEM_PROMPT, getBaseUserPrompt } from '../prompt-utils'
@@ -61,7 +62,7 @@ ${this.assistantToken}`
             )
             return response.choices[0].text
         } catch (error) {
-            logDebug('AutoEdits', 'Error calling Fireworks API:', error)
+            autoeditsLogger.logDebug('AutoEdits', 'Error calling Fireworks API:', error)
             throw error
         }
     }
