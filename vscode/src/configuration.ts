@@ -54,7 +54,7 @@ export function getConfiguration(
                 cacert: config.get<string | null | undefined>(CONFIG_KEY.netProxyCacert, undefined),
                 skipCertValidation: config.get<boolean | null | undefined>(
                     CONFIG_KEY.netProxySkipCertValidation,
-                    false
+                    undefined
                 ),
             },
             // this is vscode's config that we need to watch. This is because it
