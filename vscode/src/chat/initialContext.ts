@@ -4,6 +4,7 @@ import {
     ContextItemSource,
     type ContextItemTree,
     type DefaultContext,
+    FeatureFlag,
     REMOTE_REPOSITORY_PROVIDER_URI,
     abortableOperation,
     authStatus,
@@ -15,6 +16,7 @@ import {
     displayPathBasename,
     distinctUntilChanged,
     expandToLineRange,
+    featureFlagProvider,
     fromVSCodeEvent,
     isDotCom,
     isError,
@@ -47,15 +49,27 @@ export function observeDefaultContext({
     return combineLatest(
         getCurrentFileOrSelection({ chatBuilder }).pipe(distinctUntilChanged()),
         getCorpusContextItemsForEditorState().pipe(distinctUntilChanged()),
-        getOpenCtxContextItems().pipe(distinctUntilChanged())
+        getOpenCtxContextItems().pipe(distinctUntilChanged()),
+        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.NoDefaultRepoChip)
     ).pipe(
         debounceTime(50),
         map(
-            ([currentFileOrSelectionContext, corpusContext, openctxContext]):
+            ([currentFileOrSelectionContext, corpusContext, openctxContext, noDefaultRepoChip]):
                 | DefaultContext
                 | typeof pendingOperation => {
                 if (corpusContext === pendingOperation) {
                     return pendingOperation
+                }
+                if (noDefaultRepoChip) {
+                    return {
+                        initialContext: [
+                            ...(openctxContext === pendingOperation ? [] : openctxContext),
+                            ...(currentFileOrSelectionContext === pendingOperation
+                                ? []
+                                : currentFileOrSelectionContext),
+                        ],
+                        corpusContext,
+                    }
                 }
                 return {
                     initialContext: [
@@ -63,8 +77,9 @@ export function observeDefaultContext({
                         ...(currentFileOrSelectionContext === pendingOperation
                             ? []
                             : currentFileOrSelectionContext),
+                        ...corpusContext,
                     ],
-                    corpusContext,
+                    corpusContext: [],
                 }
             }
         )
