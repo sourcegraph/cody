@@ -608,7 +608,7 @@
       },
       {
         "command": "cody.chat.new",
-        "key": "shift+ctrl+l",
+        "key": "shift+alt+l",
         "when": "cody.activated"
       },
       {
@@ -645,12 +645,12 @@
       },
       {
         "command": "cody.mention.selection",
-        "key": "shift+alt+l",
+        "key": "alt+l",
         "when": "cody.activated && editorTextFocus && editorHasSelection"
       },
       {
         "command": "cody.mention.selection",
-        "key": "shift+alt+/",
+        "key": "alt+/",
         "when": "cody.activated && editorTextFocus && editorHasSelection"
       },
       {
