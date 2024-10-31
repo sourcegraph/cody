@@ -251,7 +251,10 @@ function normalizeSettings(raw: NetConfiguration): [Error, null] | [null, Normal
                 bypassVSCode:
                     raw.mode?.toLowerCase() === 'bypass' ||
                     (raw.mode?.toLowerCase() !== 'vscode' && (!!proxyServer || !!proxyPath)),
-                skipCertValidation: raw.proxy?.skipCertValidation || false,
+                skipCertValidation:
+                    raw.proxy?.skipCertValidation ??
+                    cenv.CODY_NODE_TLS_REJECT_UNAUTHORIZED === false ??
+                    false,
                 ...caCertConfig,
                 proxyPath,
                 proxyServer,
@@ -309,11 +312,12 @@ async function resolveSettings([error, settings]:
             }
         }
     }
+    const ca = await buildCaCerts(caCert ? [caCert] : null)
     return {
         error: err,
         proxyServer: settings.proxyServer || null,
         proxyPath,
-        ca: await buildCaCerts(caCert ? [caCert] : null),
+        ca,
         skipCertValidation: settings.skipCertValidation,
         bypassVSCode: settings.bypassVSCode,
         vscode: settings.vscode,
