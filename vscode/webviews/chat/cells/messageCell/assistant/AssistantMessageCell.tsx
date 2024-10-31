@@ -26,7 +26,28 @@ import { FeedbackButtons } from '../../../components/FeedbackButtons'
 import { LoadingDots } from '../../../components/LoadingDots'
 import { BaseMessageCell, MESSAGE_CELL_AVATAR_SIZE } from '../BaseMessageCell'
 import { ContextFocusActions } from './ContextFocusActions'
-import { CopyCodeBlockIcon } from '../../../../icons/CodeBlockActionIcons'
+
+/**
+ * A small component that displays a copy icon.
+ */
+const CopyIcon: React.FC<{ className?: string }> = ({ className }) => (
+    <svg
+        role="img"
+        height={16}
+        width={16}
+        viewBox="0 0 16 16"
+        fill="currentColor"
+        className={className}
+        aria-label="Copy icon"
+    >
+        <path
+            fillRule="evenodd"
+            clipRule="evenodd"
+            d="M4 4l1-1h5.414L14 6.586V14l-1 1H5l-1-1V4zm9 3l-3-3H5v10h8V7z"
+        />
+        <path fillRule="evenodd" clipRule="evenodd" d="M3 1L2 2v10l1 1V2h6.414l-1-1H3z" />
+    </svg>
+)
 
 /**
  * A component that displays a chat message from the assistant.
@@ -139,31 +160,40 @@ export const AssistantMessageCell: FunctionComponent<{
                                 </div>
                             )}
                             <div className="tw-flex tw-items-center tw-divide-x tw-transition tw-divide-muted tw-opacity-65 hover:tw-opacity-100">
-    {showFeedbackButtons && feedbackButtonsOnSubmit && (
-        <FeedbackButtons
-            feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
-            className="tw-pr-4"
-        />
-    )}
-    {!isLoading && (!message.error || isAborted) && (
-        <>
-<button
-    className="tw-flex tw-items-center tw-gap-2 tw-px-4 tw-text-sm tw-text-muted-foreground hover:tw-text-foreground"
-    onClick={() => {
-        navigator.clipboard.writeText(message.text?.toString() || '')
-        copyButtonOnSubmit?.(message.text?.toString() || '')
-    }}
->
-    <div dangerouslySetInnerHTML={{ __html: CopyCodeBlockIcon }} />
-</button>
-            <ContextFocusActions
-                humanMessage={humanMessage}
-                longResponseTime={hasLongerResponseTime}
-                className={showFeedbackButtons && feedbackButtonsOnSubmit ? 'tw-pl-5' : undefined}
-            />
-        </>
-    )}
-</div>
+                                {showFeedbackButtons && feedbackButtonsOnSubmit && (
+                                    <FeedbackButtons
+                                        feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
+                                        className="tw-pr-4"
+                                    />
+                                )}
+                                {!isLoading && (!message.error || isAborted) && (
+                                    <>
+                                        <div className="tw-pl-4">
+                                            <button
+                                                type="button"
+                                                className="tw-flex tw-items-center tw-gap-2 tw-text-sm tw-text-muted-foreground hover:tw-text-foreground"
+                                                onClick={() => {
+                                                    navigator.clipboard.writeText(
+                                                        message.text?.toString() || ''
+                                                    )
+                                                    copyButtonOnSubmit?.(message.text?.toString() || '')
+                                                }}
+                                            >
+                                                <CopyIcon />
+                                            </button>
+                                        </div>
+                                        <ContextFocusActions
+                                            humanMessage={humanMessage}
+                                            longResponseTime={hasLongerResponseTime}
+                                            className={
+                                                showFeedbackButtons && feedbackButtonsOnSubmit
+                                                    ? 'tw-pl-5'
+                                                    : undefined
+                                            }
+                                        />
+                                    </>
+                                )}
+                            </div>
                         </div>
                     )
                 }
