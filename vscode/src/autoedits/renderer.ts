@@ -1,17 +1,46 @@
-import { displayPath, logDebug } from '@sourcegraph/cody-shared'
+import { displayPath } from '@sourcegraph/cody-shared'
 import { structuredPatch } from 'diff'
-import { diff } from 'fast-myers-diff'
 import * as vscode from 'vscode'
 import { ThemeColor } from 'vscode'
 import { createGitDiff } from '../../../lib/shared/src/editor/create-git-diff'
 import { GHOST_TEXT_COLOR } from '../commands/GhostHintDecorator'
-import type { AutoEditsProviderOptions } from './autoedits-provider'
-import type { CodeToReplaceData } from './prompt-utils'
-import { combineRanges } from './utils'
+import { calculateRemovedRanges, isPureAddedLines } from './diff-utils'
+import { autoeditsLogger } from './logger'
 
+/**
+ * Represents a proposed text change in the editor.
+ */
 interface ProposedChange {
+    /** The URI of the document for which the change is proposed */
+    uri: string
+    /** The range in the document that will be modified */
     range: vscode.Range
-    newText: string
+    /** The text that will replace the content in the range if accepted */
+    prediction: string
+    /** The renderer responsible for decorating the proposed change */
+    renderer: AutoEditsRenderer
+}
+
+/**
+ * Options for rendering auto-edits in the editor.
+ */
+export interface AutoEditsManagerOptions {
+    /** The document where the auto-edit will be rendered */
+    document: vscode.TextDocument
+    /** The range in the document that will be modified with the predicted text */
+    range: vscode.Range
+    /** The predicted text that will replace the current text in the range */
+    prediction: string
+    /** The current text content of the file */
+    currentFileText: string
+    /** The predicted/suggested text that will replace the current text */
+    predictedFileText: string
+}
+
+export interface AutoEditsRendererOptions {
+    document: vscode.TextDocument
+    currentFileText: string
+    predictedFileText: string
 }
 
 interface DecorationLine {
@@ -19,30 +48,7 @@ interface DecorationLine {
     text: string
 }
 
-const removedTextDecorationType = vscode.window.createTextEditorDecorationType({
-    backgroundColor: new ThemeColor('diffEditor.removedTextBackground'),
-})
-
-const suggesterType = vscode.window.createTextEditorDecorationType({
-    before: { color: GHOST_TEXT_COLOR },
-    after: { color: GHOST_TEXT_COLOR },
-})
-
-const hideRemainderDecorationType = vscode.window.createTextEditorDecorationType({
-    opacity: '0',
-})
-
-const replacerBackgroundColor = 'rgb(100, 255, 100, 0.1)'
-const replacerDecorationType = vscode.window.createTextEditorDecorationType({
-    backgroundColor: 'red',
-    before: {
-        backgroundColor: replacerBackgroundColor,
-        color: GHOST_TEXT_COLOR,
-        height: '100%',
-    },
-})
-
-export class AutoEditsRenderer implements vscode.Disposable {
+export class AutoEditsRendererManager implements vscode.Disposable {
     private disposables: vscode.Disposable[] = []
     private activeProposedChange: ProposedChange | null = null
 
@@ -50,85 +56,176 @@ export class AutoEditsRenderer implements vscode.Disposable {
         this.disposables.push(
             vscode.commands.registerCommand('cody.supersuggest.accept', () =>
                 this.acceptProposedChange()
-            )
-        )
-        this.disposables.push(
+            ),
             vscode.commands.registerCommand('cody.supersuggest.dismiss', () =>
                 this.dismissProposedChange()
-            )
+            ),
+            vscode.workspace.onDidChangeTextDocument(event => this.onDidChangeTextDocument(event))
         )
     }
 
-    public async render(
-        options: AutoEditsProviderOptions,
-        codeToReplace: CodeToReplaceData,
-        predictedText: string
-    ) {
-        if (this.activeProposedChange) {
-            await this.dismissProposedChange()
-        }
+    public async displayProposedEdit(options: AutoEditsManagerOptions): Promise<void> {
+        await this.dismissProposedChange()
         const editor = vscode.window.activeTextEditor
-        const document = editor?.document
-        if (!editor || !document) {
+        if (!editor || options.document !== editor.document) {
             return
         }
 
-        const range = new vscode.Range(
-            new vscode.Position(codeToReplace.startLine, 0),
-            document.lineAt(codeToReplace.endLine).rangeIncludingLineBreak.end
-        )
         this.activeProposedChange = {
-            range,
-            newText: predictedText,
+            uri: options.document.uri.toString(),
+            range: options.range,
+            prediction: options.prediction,
+            renderer: new AutoEditsRenderer(editor),
         }
+        this.logDiff(
+            options.document.uri,
+            options.currentFileText,
+            options.prediction,
+            options.predictedFileText
+        )
+        await this.activeProposedChange.renderer.renderDecorations({
+            document: options.document,
+            currentFileText: options.currentFileText,
+            predictedFileText: options.predictedFileText,
+        })
+        await vscode.commands.executeCommand('setContext', 'cody.supersuggest.active', true)
+    }
 
-        const currentFileText = options.document.getText()
-        const predictedFileText =
-            currentFileText.slice(0, document.offsetAt(range.start)) +
-            predictedText +
-            currentFileText.slice(document.offsetAt(range.end))
+    private async acceptProposedChange(): Promise<void> {
+        const editor = vscode.window.activeTextEditor
+        if (
+            !this.activeProposedChange ||
+            !editor ||
+            editor.document.uri.toString() !== this.activeProposedChange.uri
+        ) {
+            await this.dismissProposedChange()
+            return
+        }
+        await editor.edit(editBuilder => {
+            editBuilder.replace(this.activeProposedChange!.range, this.activeProposedChange!.prediction)
+        })
+        await this.dismissProposedChange()
+    }
 
-        this.logDiff(options.document.uri, currentFileText, predictedText, predictedFileText)
+    private async dismissProposedChange(): Promise<void> {
+        const renderer = this.activeProposedChange?.renderer
+        if (renderer) {
+            renderer.clearDecorations()
+            renderer.dispose()
+        }
+        this.activeProposedChange = null
+        await vscode.commands.executeCommand('setContext', 'cody.supersuggest.active', false)
+    }
 
-        // Add decorations for the removed lines
-        this.renderRemovedLinesDecorations(editor, currentFileText, predictedFileText, document)
+    private onDidChangeTextDocument(event: vscode.TextDocumentChangeEvent): void {
+        // Dismiss the proposed change if the document has changed
+        this.dismissProposedChange()
+    }
 
-        const isPureAddedLine = this.isPureAddedLinesInDiff(currentFileText, predictedFileText)
-        if (isPureAddedLine) {
+    private logDiff(
+        uri: vscode.Uri,
+        codeToRewrite: string,
+        predictedText: string,
+        prediction: string
+    ): void {
+        const predictedCodeXML = `<code>\n${predictedText}\n</code>`
+        autoeditsLogger.logDebug('AutoEdits', '(Predicted Code@ Cursor Position)\n', predictedCodeXML)
+        const diff = createGitDiff(displayPath(uri), codeToRewrite, prediction)
+        autoeditsLogger.logDebug('AutoEdits', '(Diff@ Cursor Position)\n', diff)
+    }
+
+    public dispose(): void {
+        this.dismissProposedChange()
+        for (const disposable of this.disposables) {
+            disposable.dispose()
+        }
+    }
+}
+
+export class AutoEditsRenderer implements vscode.Disposable {
+    private readonly decorationTypes: vscode.TextEditorDecorationType[]
+    private readonly removedTextDecorationType: vscode.TextEditorDecorationType
+    private readonly suggesterType: vscode.TextEditorDecorationType
+    private readonly hideRemainderDecorationType: vscode.TextEditorDecorationType
+    private readonly replacerDecorationType: vscode.TextEditorDecorationType
+    private readonly editor: vscode.TextEditor
+
+    constructor(editor: vscode.TextEditor) {
+        this.editor = editor
+
+        // Initialize decoration types
+        this.removedTextDecorationType = vscode.window.createTextEditorDecorationType({
+            backgroundColor: new ThemeColor('diffEditor.removedTextBackground'),
+        })
+        this.suggesterType = vscode.window.createTextEditorDecorationType({
+            before: { color: GHOST_TEXT_COLOR },
+            after: { color: GHOST_TEXT_COLOR },
+        })
+        this.hideRemainderDecorationType = vscode.window.createTextEditorDecorationType({
+            opacity: '0',
+        })
+        this.replacerDecorationType = vscode.window.createTextEditorDecorationType({
+            backgroundColor: 'red',
+            before: {
+                backgroundColor: 'rgb(100, 255, 100, 0.1)',
+                color: GHOST_TEXT_COLOR,
+                height: '100%',
+            },
+        })
+
+        // Track all decoration types for disposal
+        this.decorationTypes = [
+            this.removedTextDecorationType,
+            this.suggesterType,
+            this.hideRemainderDecorationType,
+            this.replacerDecorationType,
+        ]
+    }
+
+    public clearDecorations(): void {
+        for (const decorationType of this.decorationTypes) {
+            this.editor.setDecorations(decorationType, [])
+        }
+    }
+
+    public async renderDecorations(options: AutoEditsRendererOptions) {
+        this.renderRemovedLinesDecorations(
+            options.document,
+            options.currentFileText,
+            options.predictedFileText
+        )
+        const isPureAdded = isPureAddedLines(options.currentFileText, options.predictedFileText)
+        if (isPureAdded) {
             this.renderAddedLinesDecorationsForNewLineAdditions(
-                editor,
-                predictedText,
-                codeToReplace.startLine
+                options.document,
+                options.predictedFileText,
+                80
             )
         } else {
-            this.renderAddedLinesDecorations(editor, currentFileText, predictedFileText, document)
+            this.renderAddedLinesDecorations(
+                options.document,
+                options.currentFileText,
+                options.predictedFileText
+            )
         }
         await vscode.commands.executeCommand('setContext', 'cody.supersuggest.active', true)
     }
 
-    public isPureAddedLinesInDiff(currentFileText: string, predictedFileText: string): boolean {
-        const currentLines = currentFileText.split('\n')
-        const predictedLines = predictedFileText.split('\n')
-        for (const [from1, to1, from2, to2] of diff(currentLines, predictedLines)) {
-            if (to2 - to1 > from2 - from1) {
-                return true
-            }
-        }
-        return false
-    }
-
     public renderAddedLinesDecorationsForNewLineAdditions(
-        editor: vscode.TextEditor,
+        document: vscode.TextDocument,
         predictedText: string,
         replaceStartLine: number,
         replacerCol = 80
     ) {
+        if (this.editor.document !== document) {
+            return
+        }
         const replacerText = predictedText
         const replacerDecorations: vscode.DecorationOptions[] = []
         // TODO(beyang): handle when not enough remaining lines in the doc
         for (let i = 0; i < replacerText.split('\n').length; i++) {
             const j = i + replaceStartLine
-            const line = editor.document.lineAt(j)
+            const line = this.editor.document.lineAt(j)
             if (line.range.end.character <= replacerCol) {
                 const replacerOptions: vscode.DecorationOptions = {
                     range: new vscode.Range(j, line.range.end.character, j, line.range.end.character),
@@ -156,15 +253,17 @@ export class AutoEditsRenderer implements vscode.Disposable {
                 replacerDecorations.push(replacerOptions)
             }
         }
-        editor.setDecorations(replacerDecorationType, replacerDecorations)
+        this.editor.setDecorations(this.replacerDecorationType, replacerDecorations)
     }
 
     public renderAddedLinesDecorations(
-        editor: vscode.TextEditor,
+        document: vscode.TextDocument,
         currentFileText: string,
-        predictedFileText: string,
-        document: vscode.TextDocument
+        predictedFileText: string
     ) {
+        if (this.editor.document !== document) {
+            return
+        }
         const filename = displayPath(document.uri)
         const patch = structuredPatch(
             `a/${filename}`,
@@ -191,8 +290,8 @@ export class AutoEditsRenderer implements vscode.Disposable {
                 }
             }
         }
-        editor.setDecorations(
-            suggesterType,
+        this.editor.setDecorations(
+            this.suggesterType,
             addedLines.map(line => ({
                 range: new vscode.Range(line.line, 0, line.line, document.lineAt(line.line).text.length),
                 renderOptions: {
@@ -206,60 +305,21 @@ export class AutoEditsRenderer implements vscode.Disposable {
     }
 
     public renderRemovedLinesDecorations(
-        editor: vscode.TextEditor,
+        document: vscode.TextDocument,
         currentFileText: string,
-        predictedFileText: string,
-        document: vscode.TextDocument
+        predictedFileText: string
     ) {
-        const edits = diff(currentFileText, predictedFileText)
-        const allRangesToRemove: vscode.Range[] = []
-        for (const [from1, to1] of edits) {
-            const startPos = document.positionAt(from1)
-            const endPos = document.positionAt(to1)
-            allRangesToRemove.push(new vscode.Range(startPos, endPos))
-        }
-        const combinedRangesToRemove = combineRanges(allRangesToRemove, 0)
-        editor.setDecorations(removedTextDecorationType, combinedRangesToRemove)
-    }
-
-    async acceptProposedChange(): Promise<void> {
-        if (this.activeProposedChange === null) {
+        if (this.editor.document !== document) {
             return
         }
-        const editor = vscode.window.activeTextEditor
-        if (!editor) {
-            await this.dismissProposedChange()
-            return
-        }
-        const currentActiveChange = this.activeProposedChange
-        await editor.edit(editBuilder => {
-            editBuilder.replace(currentActiveChange.range, currentActiveChange.newText)
-        })
-        await this.dismissProposedChange()
+        const allRangesToRemove = calculateRemovedRanges(document, currentFileText, predictedFileText)
+        this.editor.setDecorations(this.removedTextDecorationType, allRangesToRemove)
     }
 
-    async dismissProposedChange(): Promise<void> {
-        this.activeProposedChange = null
-        await vscode.commands.executeCommand('setContext', 'cody.supersuggest.active', false)
-        const editor = vscode.window.activeTextEditor
-        if (!editor) {
-            return
-        }
-        editor.setDecorations(removedTextDecorationType, [])
-        editor.setDecorations(suggesterType, [])
-        editor.setDecorations(replacerDecorationType, [])
-    }
-
-    private logDiff(uri: vscode.Uri, codeToRewrite: string, predictedText: string, prediction: string) {
-        const predictedCodeXML = `<code>\n${predictedText}\n</code>`
-        logDebug('AutoEdits', '(Predicted Code@ Cursor Position)\n', predictedCodeXML)
-        const diff = createGitDiff(displayPath(uri), codeToRewrite, prediction)
-        logDebug('AutoEdits', '(Diff@ Cursor Position)\n', diff)
-    }
-
-    public dispose() {
-        for (const disposable of this.disposables) {
-            disposable.dispose()
+    public dispose(): void {
+        // Dispose all decoration types
+        for (const decorationType of this.decorationTypes) {
+            decorationType.dispose()
         }
     }
 }

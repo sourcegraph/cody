@@ -78,6 +78,7 @@ interface RawClientConfiguration {
 
     experimentalTracing: boolean
     experimentalSupercompletions: boolean
+    experimentalAutoeditsRendererTesting: boolean
     experimentalAutoedits: AutoEditsModelConfig | undefined
     experimentalCommitMessage: boolean
     experimentalNoodle: boolean

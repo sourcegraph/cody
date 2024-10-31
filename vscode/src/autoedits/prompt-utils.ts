@@ -1,4 +1,4 @@
-import { type AutoEditsTokenLimit, PromptString, logDebug, ps } from '@sourcegraph/cody-shared'
+import { type AutoEditsTokenLimit, PromptString, ps } from '@sourcegraph/cody-shared'
 import { Uri } from 'vscode'
 import type * as vscode from 'vscode'
 import type {
@@ -6,6 +6,7 @@ import type {
     DocumentContext,
 } from '../../../lib/shared/src/completions/types'
 import { RetrieverIdentifier } from '../completions/context/utils'
+import { autoeditsLogger } from './logger'
 import { mapLinesToOriginalLineNo, splitLinesKeepEnds, zip } from './utils'
 const LINT_ERRORS_TAG_OPEN = ps`<lint_errors>`
 const LINT_ERRORS_TAG_CLOSE = ps`</lint_errors>`
@@ -137,7 +138,7 @@ ${recentCopyPrompt}
 ${areaPrompt}
 ${FINAL_USER_PROMPT}
 `
-    logDebug('AutoEdits', 'Prompt\n', finalPrompt)
+    autoeditsLogger.logDebug('AutoEdits', 'Prompt\n', finalPrompt)
     return {
         codeToReplace: codeToReplace,
         promptResponse: finalPrompt,
@@ -457,7 +458,7 @@ export function getContextItemMappingWithTokenLimit(
         if (tokenLimit !== undefined) {
             contextItemMapping.set(identifier, getContextItemsInTokenBudget(items, tokenLimit))
         } else {
-            logDebug('AutoEdits', `No token limit for ${identifier}`)
+            autoeditsLogger.logDebug('AutoEdits', `No token limit for ${identifier}`)
             contextItemMapping.set(identifier, [])
         }
     }
