@@ -11,7 +11,7 @@ import { Observable } from 'observable-fns'
 import { describe, expect, test, vi } from 'vitest'
 import { URI } from 'vscode-uri'
 import { MOCK_API, useExtensionAPI } from '../../useExtensionAPI'
-import { useCorpusContextForChat, useInitialContextForChat } from '../../useInitialContext'
+import { useDefaultContextForChat } from '../../useInitialContext'
 import { waitForObservableInTest } from '../../useObservable'
 import { useCallMentionMenuData, useMentionMenuData } from './useMentionMenuData'
 
@@ -59,8 +59,10 @@ describe('useMentionMenuData', () => {
                 ...mockContextItems[0],
                 source: ContextItemSource.Initial,
             }
-            vi.mocked(useInitialContextForChat).mockReturnValue([file1FromInitialContext])
-            vi.mocked(useCorpusContextForChat).mockReturnValue([])
+            vi.mocked(useDefaultContextForChat).mockReturnValue({
+                initialContext: [file1FromInitialContext],
+                corpusContext: [],
+            })
 
             const { result } = renderHook(() =>
                 useMentionMenuData(
@@ -114,8 +116,10 @@ describe('useMentionMenuData', () => {
                     error: 'my error',
                 }),
         })
-        vi.mocked(useInitialContextForChat).mockReturnValue([])
-        vi.mocked(useCorpusContextForChat).mockReturnValue([])
+        vi.mocked(useDefaultContextForChat).mockReturnValue({
+            initialContext: [],
+            corpusContext: [],
+        })
 
         const { result } = renderHook(() =>
             useMentionMenuData({ query: '', parentItem: null }, { remainingTokenBudget: 100, limit: 10 })

@@ -127,6 +127,14 @@ export type ContextItem =
     | ContextItemOpenCtx
 
 /**
+ * Context items to show by default in the chat input, or as suggestions in the chat UI.
+ */
+export interface DefaultContext {
+    initialContext: ContextItem[]
+    corpusContext: ContextItem[]
+}
+
+/**
  * A context item that represents a repository.
  */
 export interface ContextItemRepository extends ContextItemCommon {

@@ -16,7 +16,7 @@ import debounce from 'lodash/debounce'
 import { useCallback, useContext, useMemo, useState } from 'react'
 import { ChatMentionContext } from '../../plugins/atMentions/useChatContextItems'
 import { useExtensionAPI } from '../../useExtensionAPI'
-import { useCorpusContextForChat, useInitialContextForChat } from '../../useInitialContext'
+import { useDefaultContextForChat } from '../../useInitialContext'
 import { type UseObservableResult, useObservable } from '../../useObservable'
 
 export interface MentionMenuParams {
@@ -95,7 +95,8 @@ export function useMentionMenuData(
     const isInProvider = !!params.parentItem
 
     // Initial context items aren't filtered when we receive them, so we need to filter them here.
-    const initialContext = [...useInitialContextForChat(), ...useCorpusContextForChat()]
+    const defaultContext = useDefaultContextForChat()
+    const initialContext = [...defaultContext.initialContext, ...defaultContext.corpusContext]
     const filteredInitialContextItems = isInProvider
         ? []
         : initialContext.filter(item =>

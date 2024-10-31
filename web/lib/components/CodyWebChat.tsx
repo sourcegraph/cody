@@ -31,6 +31,7 @@ import { useCodyWebAgent } from './use-cody-agent'
 
 // Include global Cody Web styles to the styles bundle
 import '../global-styles/styles.css'
+import type { DefaultContext } from '@sourcegraph/cody-shared/src/codebase-context/messages'
 import styles from './CodyWebChat.module.css'
 import { ChatSkeleton } from './skeleton/ChatSkeleton'
 
@@ -150,19 +151,34 @@ const CodyWebPanel: FC<CodyWebPanelProps> = props => {
     // V2 telemetry recorder
     const telemetryRecorder = useMemo(() => createWebviewTelemetryRecorder(vscodeAPI), [vscodeAPI])
 
-    const staticInitialContext = useMemo<ContextItem[]>(() => {
+    const staticDefaultContext = useMemo<DefaultContext>((): DefaultContext => {
         const { repository, fileURL, isDirectory } = initialContextData ?? {}
 
         if (!repository) {
-            return []
+            return { initialContext: [], corpusContext: [] }
         }
 
-        const mentions: ContextItem[] = []
+        const initialContext: ContextItem[] = []
+        const corpusContext: ContextItem[] = [
+            {
+                type: 'repository',
+                id: repository.id,
+                name: repository.name,
+                repoID: repository.id,
+                repoName: repository.name,
+                description: repository.name,
+                uri: URI.parse(`repo:${repository.name}`),
+                content: null,
+                source: ContextItemSource.Initial,
+                icon: 'folder',
+                title: 'Current Repository', // web chat default initial context
+            } as ContextItemRepository,
+        ]
 
         if (fileURL) {
             // Repository directory file url in this case is directory path
             if (isDirectory) {
-                mentions.push({
+                initialContext.push({
                     type: 'openctx',
                     provider: 'openctx',
                     title: fileURL,
@@ -181,7 +197,7 @@ const CodyWebPanel: FC<CodyWebPanelProps> = props => {
                 } as ContextItemOpenCtx)
             } else {
                 // Common file mention with possible file range positions
-                mentions.push({
+                initialContext.push({
                     type: 'file',
                     isIgnored: false,
                     title: initialContextData?.fileRange ? 'Current Selection' : 'Current File',
@@ -198,29 +214,7 @@ const CodyWebPanel: FC<CodyWebPanelProps> = props => {
             }
         }
 
-        return mentions
-    }, [initialContextData])
-    const staticCorpusContext = useMemo<ContextItem[]>(() => {
-        const { repository } = initialContextData ?? {}
-        if (!repository) {
-            return []
-        }
-        const mentions: ContextItem[] = [
-            {
-                type: 'repository',
-                id: repository.id,
-                name: repository.name,
-                repoID: repository.id,
-                repoName: repository.name,
-                description: repository.name,
-                uri: URI.parse(`repo:${repository.name}`),
-                content: null,
-                source: ContextItemSource.Initial,
-                icon: 'folder',
-                title: 'Current Repository', // web chat default initial context
-            } as ContextItemRepository,
-        ]
-        return mentions
+        return { initialContext, corpusContext }
     }, [initialContextData])
 
     const wrappers = useMemo<Wrapper[]>(
@@ -229,10 +223,9 @@ const CodyWebPanel: FC<CodyWebPanelProps> = props => {
                 vscodeAPI,
                 telemetryRecorder,
                 config,
-                staticInitialContext,
-                staticCorpusContext,
+                staticDefaultContext,
             }),
-        [vscodeAPI, telemetryRecorder, config, staticInitialContext, staticCorpusContext]
+        [vscodeAPI, telemetryRecorder, config, staticDefaultContext]
     )
 
     const CONTEXT_MENTIONS_SETTINGS = useMemo<ChatMentionsSettings>(() => {

@@ -3,6 +3,7 @@ import {
     type ContextItem,
     ContextItemSource,
     type ContextItemTree,
+    type DefaultContext,
     REMOTE_REPOSITORY_PROVIDER_URI,
     abortableOperation,
     authStatus,
@@ -38,26 +39,33 @@ import {
 /**
  * Observe the initial context that should be populated in the chat message input field.
  */
-export function observeInitialContext({
+export function observeDefaultContext({
     chatBuilder,
 }: {
     chatBuilder: Observable<ChatBuilder>
-}): Observable<ContextItem[] | typeof pendingOperation> {
+}): Observable<DefaultContext | typeof pendingOperation> {
     return combineLatest(
         getCurrentFileOrSelection({ chatBuilder }).pipe(distinctUntilChanged()),
+        getCorpusContextItemsForEditorState().pipe(distinctUntilChanged()),
         getOpenCtxContextItems().pipe(distinctUntilChanged())
     ).pipe(
         debounceTime(50),
         map(
-            ([currentFileOrSelectionContext, openctxContext]):
-                | ContextItem[]
+            ([currentFileOrSelectionContext, corpusContext, openctxContext]):
+                | DefaultContext
                 | typeof pendingOperation => {
-                return [
-                    ...(openctxContext === pendingOperation ? [] : openctxContext),
-                    ...(currentFileOrSelectionContext === pendingOperation
-                        ? []
-                        : currentFileOrSelectionContext),
-                ]
+                if (corpusContext === pendingOperation) {
+                    return pendingOperation
+                }
+                return {
+                    initialContext: [
+                        ...(openctxContext === pendingOperation ? [] : openctxContext),
+                        ...(currentFileOrSelectionContext === pendingOperation
+                            ? []
+                            : currentFileOrSelectionContext),
+                    ],
+                    corpusContext,
+                }
             }
         )
     )

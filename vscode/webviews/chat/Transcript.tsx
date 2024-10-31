@@ -9,8 +9,11 @@ import {
     inputTextWithoutContextChipsFromPromptEditorState,
     isAbortErrorOrSocketHangUp,
 } from '@sourcegraph/cody-shared'
-import { type PromptEditorRefAPI, useExtensionAPI } from '@sourcegraph/prompt-editor'
-import { useCorpusContextForChat } from '@sourcegraph/prompt-editor/src/useInitialContext'
+import {
+    type PromptEditorRefAPI,
+    useDefaultContextForChat,
+    useExtensionAPI,
+} from '@sourcegraph/prompt-editor'
 import { clsx } from 'clsx'
 import debounce from 'lodash/debounce'
 import isEqual from 'lodash/isEqual'
@@ -351,7 +354,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
         [onEditSubmit, telemetryRecorder, humanMessage]
     )
 
-    const corpusContextItems = useCorpusContextForChat()
+    const { corpusContext: corpusContextItems } = useDefaultContextForChat()
     const resubmitWithRepoContext = useCallback(async () => {
         const editorState = humanEditorRef.current?.getSerializedValue()
         if (editorState) {

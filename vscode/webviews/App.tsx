@@ -4,7 +4,7 @@ import styles from './App.module.css'
 
 import {
     type ChatMessage,
-    type ContextItem,
+    type DefaultContext,
     GuardrailsPost,
     PromptString,
     type TelemetryRecorder,
@@ -197,16 +197,14 @@ interface GetAppWrappersOptions {
     vscodeAPI: VSCodeWrapper
     telemetryRecorder: TelemetryRecorder
     config: Config | null
-    staticInitialContext?: ContextItem[]
-    staticCorpusContext?: ContextItem[]
+    staticDefaultContext?: DefaultContext
 }
 
 export function getAppWrappers({
     vscodeAPI,
     telemetryRecorder,
     config,
-    staticInitialContext,
-    staticCorpusContext,
+    staticDefaultContext,
 }: GetAppWrappersOptions): Wrapper[] {
     return [
         {
@@ -215,7 +213,7 @@ export function getAppWrappers({
         } satisfies Wrapper<ComponentProps<typeof TelemetryRecorderContext.Provider>['value']>,
         {
             component: ExtensionAPIProviderFromVSCodeAPI,
-            props: { vscodeAPI, staticInitialContext, staticCorpusContext },
+            props: { vscodeAPI, staticDefaultContext },
         } satisfies Wrapper<any, ComponentProps<typeof ExtensionAPIProviderFromVSCodeAPI>>,
         {
             component: ConfigProvider,
