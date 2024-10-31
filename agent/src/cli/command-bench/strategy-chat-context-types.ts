@@ -8,6 +8,8 @@ import { stringify as yamlStringify } from 'yaml'
 
 export interface ClientOptions {
     rewrite: boolean
+    codeResultsCount: number
+    textResultsCount: number
 }
 
 export interface EvalOutput {

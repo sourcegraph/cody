@@ -34,6 +34,8 @@ export async function evaluateChatContextStrategy(
         'cody-bench.chatContext.clientOptions'
     ] ?? {
         rewrite: false,
+        codeResultsCount: 15,
+        textResultsCount: 5,
     }
 
     const siteVersion = await graphqlClient.getSiteVersion()
@@ -52,8 +54,9 @@ export async function evaluateChatContextStrategy(
         ? siteVersion.match(/-([0-9a-f]{7,40})$/)?.[1]
         : siteVersion
     const currentTimestamp = new Date().toISOString()
+    const date = currentTimestamp.split('T')[0]
 
-    const outputBase = `${inputBasename}__${shortSiteVersion}`
+    const outputBase = `${inputBasename}__${date}__${shortSiteVersion}`
     const outputCSVFilename = `${outputBase}.csv`
     const outputYAMLFilename = `${outputBase}.yaml`
 
@@ -67,7 +70,7 @@ export async function evaluateChatContextStrategy(
         console.log(`⚠ ignoring ${ignoredRecords.length} malformed rows`)
     }
 
-    const outputs = await runContextCommand({ rewrite: clientOptions.rewrite }, examples)
+    const outputs = await runContextCommand(clientOptions, examples)
     const codyClientVersion = process.env.CODY_COMMIT ?? version
     await writeExamplesToCSV(outputCSVFile, outputs)
     await writeYAMLMetadata(outputYAMLFile, {
@@ -120,9 +123,8 @@ async function runContextCommand(
             repoIDs,
             query,
             filePatterns: [],
-            // TODO get these from bench config options
-            codeResultsCount: 15,
-            textResultsCount: 5,
+            codeResultsCount: clientOpts.codeResultsCount,
+            textResultsCount: clientOpts.textResultsCount,
         })
 
         if (isError(resultsResp)) {
