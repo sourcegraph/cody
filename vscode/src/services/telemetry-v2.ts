@@ -119,7 +119,9 @@ export function createOrUpdateTelemetryRecorderProvider(
  * that collects the keys of an object where the corresponding value is of a
  * given type as a type.
  */
-type KeysWithNumericValues<T> = keyof { [P in keyof T as T[P] extends number ? P : never]: P }
+type KeysWithNumericOrBooleanValues<T> = keyof {
+    [P in keyof T as T[P] extends number | boolean ? P : never]: P
+}
 
 /**
  * splitSafeMetadata is a helper for legacy telemetry helpers that accept typed
@@ -140,7 +142,7 @@ type KeysWithNumericValues<T> = keyof { [P in keyof T as T[P] extends number ? P
 export function splitSafeMetadata<Properties extends { [key: string]: any }>(
     properties: Properties
 ): {
-    metadata: { [key in KeysWithNumericValues<Properties>]: number }
+    metadata: { [key in KeysWithNumericOrBooleanValues<Properties>]: number }
     privateMetadata: { [key in keyof Properties]?: any }
 } {
     const safe: { [key in keyof Properties]?: number } = {}
@@ -179,7 +181,7 @@ export function splitSafeMetadata<Properties extends { [key: string]: any }>(
         // We know we've constructed an object with only numeric values, so
         // we cast it into the desired type where all the keys with number values
         // are present. Unit tests ensures this property holds.
-        metadata: safe as { [key in KeysWithNumericValues<Properties>]: number },
+        metadata: safe as { [key in KeysWithNumericOrBooleanValues<Properties>]: number },
         privateMetadata: unsafe,
     }
 }

@@ -25,7 +25,6 @@ import {
     DEFAULT_EVENT_SOURCE,
     EventSourceTelemetryMetadataMapping,
 } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
-import omit from 'lodash/omit'
 import type { SmartApplyResult } from '../chat/protocol'
 import { PersistenceTracker } from '../common/persistence-tracker'
 import { lines } from '../completions/text-processing'
@@ -590,7 +589,7 @@ export class FixupController
     }
 
     private logTaskCompletion(task: FixupTask, document: vscode.TextDocument, editOk: boolean): void {
-        const charactersLoggerMetadata = charactersLogger.getChangeEventMetadata({
+        const charactersLoggerMetadata = charactersLogger.getChangeEventMetadataForCodyCodeGenEvents({
             document,
             contentChanges: task.getContentChanges(),
             reason: undefined,
@@ -604,13 +603,7 @@ export class FixupController
             model: task.model,
             ...this.countEditInsertions(task),
             ...task.telemetryMetadata,
-            ...omit(charactersLoggerMetadata, [
-                'changeSize',
-                'changeType',
-                'isRedo',
-                'isUndo',
-                'isRapidChange',
-            ]),
+            ...charactersLoggerMetadata,
         }
         const { metadata, privateMetadata } = splitSafeMetadata(legacyMetadata)
         if (!editOk) {
