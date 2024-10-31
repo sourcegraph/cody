@@ -166,7 +166,8 @@ object ConfigUtil {
 
   @JvmStatic
   fun isCodyVerboseDebugEnabled(): Boolean =
-      CodyApplicationSettings.instance.isCodyVerboseDebugEnabled
+      CodyApplicationSettings.instance.isCodyVerboseDebugEnabled ||
+          System.getProperty("sourcegraph.verbose-logging") == "true"
 
   @JvmStatic
   fun isCodyAutocompleteEnabled(): Boolean =

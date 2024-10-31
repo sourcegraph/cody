@@ -4,7 +4,6 @@ import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.PersistentStateComponent;
 import com.intellij.openapi.components.State;
 import com.intellij.openapi.components.Storage;
-import com.intellij.util.xmlb.annotations.Transient;
 import com.sourcegraph.find.Search;
 import java.util.Optional;
 import org.apache.commons.lang3.StringUtils;
@@ -72,11 +71,6 @@ public class CodyApplicationService implements PersistentStateComponent<CodyAppl
     return url;
   }
 
-  @Transient
-  public void setSafeDotComAccessToken(@NotNull String accessToken) {
-    AccessTokenStorage.setApplicationDotComAccessToken(accessToken);
-  }
-
   @Nullable
   public String getCustomRequestHeaders() {
     return customRequestHeaders;
@@ -99,54 +93,10 @@ public class CodyApplicationService implements PersistentStateComponent<CodyAppl
     return null;
   }
 
-  @Transient
-  public void setSafeEnterpriseAccessToken(@NotNull String accessToken) {
-    AccessTokenStorage.setApplicationEnterpriseAccessToken(accessToken);
-  }
-
-  @Nullable
-  public String getAnonymousUserId() {
-    return anonymousUserId;
-  }
-
-  public boolean isInstallEventLogged() {
-    return isInstallEventLogged;
-  }
-
-  public boolean isUrlNotificationDismissed() {
-    return isUrlNotificationDismissed;
-  }
-
-  public void setCodyEnabled(boolean enabled) {
-    isCodyEnabled = enabled;
-  }
-
   public boolean isCodyAutocompleteEnabled() {
     return Optional.ofNullable(isCodyAutocompleteEnabled) // the current key takes priority
         .or(() -> Optional.ofNullable(areCodyCompletionsEnabled)) // fallback to the old key
         .orElse(false);
-  }
-
-  public boolean isCodyDebugEnabled() {
-    return Optional.ofNullable(isCodyDebugEnabled).orElse(false);
-  }
-
-  public boolean isCodyVerboseDebugEnabled() {
-    return Optional.ofNullable(isCodyVerboseDebugEnabled).orElse(false);
-  }
-
-  public boolean isAccessTokenNotificationDismissed() {
-    return isAccessTokenNotificationDismissed;
-  }
-
-  @Nullable
-  public Boolean getAuthenticationFailedLastTime() {
-    return authenticationFailedLastTime;
-  }
-
-  @Nullable
-  public String getLastUpdateNotificationPluginVersion() {
-    return lastUpdateNotificationPluginVersion;
   }
 
   @Nullable
