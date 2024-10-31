@@ -446,13 +446,16 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                     )}
                 </InfoMessage>
             )}
-            {!mentionsContainRepository && assistantMessage && !assistantMessage.isLoading && (
-                <div>
-                    <Button onClick={resubmitWithRepoContext} type="button">
-                        Resend with current repository context
-                    </Button>
-                </div>
-            )}
+            {corpusContextItems.length > 0 &&
+                !mentionsContainRepository &&
+                assistantMessage &&
+                !assistantMessage.isLoading && (
+                    <div>
+                        <Button onClick={resubmitWithRepoContext} type="button">
+                            Resend with current repository context
+                        </Button>
+                    </div>
+                )}
             {((humanMessage.contextFiles && humanMessage.contextFiles.length > 0) ||
                 isContextLoading) && (
                 <ContextCell
