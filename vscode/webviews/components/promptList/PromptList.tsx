@@ -181,25 +181,27 @@ export const PromptList: FC<PromptListProps> = props => {
                 {!result && !error && (
                     <CommandLoading className={itemPaddingClass}>Loading...</CommandLoading>
                 )}
-                {result && allActions.filter(action => action.actionType === 'prompt').length === 0 && (
-                    <CommandLoading className={itemPaddingClass}>
-                        {result?.query === '' && !recommendedOnly ? (
-                            <>
-                                Your Prompt Library is empty.{' '}
-                                <a
-                                    href={new URL('/prompts/new', endpointURL).toString()}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                >
-                                    Add a prompt
-                                </a>{' '}
-                                to reuse and share it.
-                            </>
-                        ) : (
-                            <>No prompts found</>
-                        )}
-                    </CommandLoading>
-                )}
+                {!recommendedOnly &&
+                    result &&
+                    allActions.filter(action => action.actionType === 'prompt').length === 0 && (
+                        <CommandLoading className={itemPaddingClass}>
+                            {result?.query === '' ? (
+                                <>
+                                    Your Prompt Library is empty.{' '}
+                                    <a
+                                        href={new URL('/prompts/new', endpointURL).toString()}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                    >
+                                        Add a prompt
+                                    </a>{' '}
+                                    to reuse and share it.
+                                </>
+                            ) : (
+                                <>No prompts found</>
+                            )}
+                        </CommandLoading>
+                    )}
 
                 {actions.map(action => (
                     <ActionItem
