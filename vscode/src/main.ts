@@ -100,7 +100,6 @@ import { VSCodeSecretStorage, secretStorage } from './services/SecretStorageProv
 import { registerSidebarCommands } from './services/SidebarCommands'
 import { CodyStatusBar } from './services/StatusBar'
 import { createOrUpdateTelemetryRecorderProvider } from './services/telemetry-v2'
-import { onTextDocumentChange } from './services/utils/codeblock-action-tracker'
 import {
     enableVerboseDebugMode,
     exportOutputLog,
@@ -233,7 +232,6 @@ const register = async (
     disposables.push(await initVSCodeGitApi())
 
     registerParserListeners(disposables)
-    registerChatListeners(disposables)
 
     // Initialize external services
     const {
@@ -338,20 +336,6 @@ function registerParserListeners(disposables: vscode.Disposable[]) {
     void parseAllVisibleDocuments()
     disposables.push(vscode.window.onDidChangeVisibleTextEditors(parseAllVisibleDocuments))
     disposables.push(vscode.workspace.onDidChangeTextDocument(updateParseTreeOnEdit))
-}
-
-function registerChatListeners(disposables: vscode.Disposable[]) {
-    // Enable tracking for pasting chat responses into editor text
-    disposables.push(
-        vscode.workspace.onDidChangeTextDocument(async e => {
-            const changedText = e.contentChanges[0]?.text
-            // Skip if the document is not a file or if the copied text is from insert
-            if (!changedText || e.document.uri.scheme !== 'file') {
-                return
-            }
-            await onTextDocumentChange(changedText)
-        })
-    )
 }
 
 async function registerOtherCommands(disposables: vscode.Disposable[]) {
