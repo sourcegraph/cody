@@ -150,7 +150,7 @@ const CodyWebPanel: FC<CodyWebPanelProps> = props => {
     // V2 telemetry recorder
     const telemetryRecorder = useMemo(() => createWebviewTelemetryRecorder(vscodeAPI), [vscodeAPI])
 
-    const initialContext = useMemo<ContextItem[]>(() => {
+    const staticInitialContext = useMemo<ContextItem[]>(() => {
         const { repository, fileURL, isDirectory } = initialContextData ?? {}
 
         if (!repository) {
@@ -200,7 +200,7 @@ const CodyWebPanel: FC<CodyWebPanelProps> = props => {
 
         return mentions
     }, [initialContextData])
-    const corpusContext = useMemo<ContextItem[]>(() => {
+    const staticCorpusContext = useMemo<ContextItem[]>(() => {
         const { repository } = initialContextData ?? {}
         if (!repository) {
             return []
@@ -224,8 +224,15 @@ const CodyWebPanel: FC<CodyWebPanelProps> = props => {
     }, [initialContextData])
 
     const wrappers = useMemo<Wrapper[]>(
-        () => getAppWrappers(vscodeAPI, telemetryRecorder, config, initialContext, corpusContext),
-        [vscodeAPI, telemetryRecorder, config, initialContext, corpusContext]
+        () =>
+            getAppWrappers({
+                vscodeAPI,
+                telemetryRecorder,
+                config,
+                staticInitialContext,
+                staticCorpusContext,
+            }),
+        [vscodeAPI, telemetryRecorder, config, staticInitialContext, staticCorpusContext]
     )
 
     const CONTEXT_MENTIONS_SETTINGS = useMemo<ChatMentionsSettings>(() => {
