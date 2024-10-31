@@ -449,7 +449,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
             {!mentionsContainRepository && assistantMessage && !assistantMessage.isLoading && (
                 <div>
                     <Button onClick={resubmitWithRepoContext} type="button">
-                        Rerun with repository context
+                        Resend with current repository context
                     </Button>
                 </div>
             )}
