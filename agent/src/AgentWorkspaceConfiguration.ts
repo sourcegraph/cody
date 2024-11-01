@@ -21,17 +21,21 @@ export class AgentWorkspaceConfiguration implements vscode.WorkspaceConfiguratio
         this.put('cody', {
             advanced: {
                 agent: {
-                    'capabilities.storage':
-                        capabilities?.globalState === 'server-managed' ||
-                        capabilities?.globalState === 'client-managed',
-                    'extension.version': this.clientInfo()?.version,
+                    capabilities: {
+                        storage:
+                            capabilities?.globalState === 'server-managed' ||
+                            capabilities?.globalState === 'client-managed',
+                    },
+                    extension: {
+                        version: this.clientInfo()?.version,
+                    },
                     ide: {
                         name: AgentWorkspaceConfiguration.clientNameToIDE(this.clientInfo()?.name ?? ''),
                         version: this.clientInfo()?.ideVersion,
                     },
                     running: true,
                 },
-                hasNativeWebview: capabilities?.webview === 'native' ?? false,
+                hasNativeWebview: capabilities?.webview === 'native',
             },
             autocomplete: {
                 advanced: {
@@ -42,8 +46,8 @@ export class AgentWorkspaceConfiguration implements vscode.WorkspaceConfiguratio
             },
             codebase: config?.codebase,
             customHeaders: config?.customHeaders,
-            'debug.verbose': config?.verboseDebug ?? false,
-            'experimental.tracing': config?.verboseDebug ?? false,
+            debug: { verbose: config?.verboseDebug ?? false },
+            experimental: { tracing: config?.verboseDebug ?? false },
             serverEndpoint: config?.serverEndpoint,
             // Use the dedicated `telemetry/recordEvent` to send telemetry from
             // agent clients.  The reason we disable telemetry via config is
@@ -58,13 +62,15 @@ export class AgentWorkspaceConfiguration implements vscode.WorkspaceConfiguratio
         const fromCustomConfigurationJson = config?.customConfigurationJson
         if (fromCustomConfigurationJson) {
             const configJson = JSON.parse(fromCustomConfigurationJson)
-            _.merge(this.dictionary, this.normalize(configJson))
+            for (const [key, value] of Object.entries(configJson)) {
+                this.put(key, value)
+            }
         }
 
         const customConfiguration = config?.customConfiguration
         if (customConfiguration) {
-            for (const key of Object.keys(customConfiguration)) {
-                this.put(key, customConfiguration[key])
+            for (const [key, value] of Object.entries(customConfiguration)) {
+                this.put(key, value)
             }
         }
     }
@@ -78,30 +84,8 @@ export class AgentWorkspaceConfiguration implements vscode.WorkspaceConfiguratio
         )
     }
 
-    private normalize(cfg: any): any {
-        if (cfg && typeof cfg === 'object') {
-            if (Array.isArray(cfg)) {
-                const normalized = []
-                for (const value of Object.values(cfg)) {
-                    normalized.push(this.normalize(value))
-                }
-                return normalized
-            }
-
-            const normalized = {}
-            for (const key of Object.keys(cfg)) {
-                const tmp = {}
-                _.set(tmp, key, this.normalize(cfg[key]))
-                _.merge(normalized, tmp)
-            }
-            return normalized
-        }
-
-        return cfg
-    }
-
     private put(key: string, value: any): void {
-        _.set(this.dictionary, key, this.normalize(value))
+        _.set(this.dictionary, key, value)
     }
 
     private actualSection(section: string): string {
