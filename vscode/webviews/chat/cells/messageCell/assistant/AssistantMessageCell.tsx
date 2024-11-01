@@ -161,37 +161,35 @@ export const AssistantMessageCell: FunctionComponent<{
                             )}
                             <div className="tw-flex tw-items-center tw-divide-x tw-transition tw-divide-muted tw-opacity-65 hover:tw-opacity-100">
                                 {showFeedbackButtons && feedbackButtonsOnSubmit && (
-                                    <FeedbackButtons
-                                        feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
-                                        className="tw-pr-4"
-                                    />
-                                )}
-                                {!isLoading && (!message.error || isAborted) && (
-                                    <>
-                                        <div className="tw-pl-4">
-                                            <button
-                                                type="button"
-                                                className="tw-flex tw-items-center tw-gap-2 tw-text-sm tw-text-muted-foreground hover:tw-text-foreground"
-                                                onClick={() => {
-                                                    navigator.clipboard.writeText(
-                                                        message.text?.toString() || ''
-                                                    )
-                                                    copyButtonOnSubmit?.(message.text?.toString() || '')
-                                                }}
-                                            >
-                                                <CopyIcon />
-                                            </button>
-                                        </div>
-                                        <ContextFocusActions
-                                            humanMessage={humanMessage}
-                                            longResponseTime={hasLongerResponseTime}
-                                            className={
-                                                showFeedbackButtons && feedbackButtonsOnSubmit
-                                                    ? 'tw-pl-5'
-                                                    : undefined
-                                            }
+                                    <div className="tw-flex tw-items-center">
+                                        <FeedbackButtons
+                                            feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
+                                            className="tw-pr-4"
                                         />
-                                    </>
+                                    </div>
+                                )}
+                                <div className="tw-pl-4">
+                                    <button
+                                        type="button"
+                                        className="tw-flex tw-items-center tw-gap-2 tw-text-sm tw-text-muted-foreground hover:tw-text-foreground tw-mx-4"
+                                        onClick={() => {
+                                            navigator.clipboard.writeText(message.text?.toString() || '')
+                                            copyButtonOnSubmit?.(message.text?.toString() || '')
+                                        }}
+                                    >
+                                        <CopyIcon />
+                                    </button>
+                                </div>
+                                {!isLoading && (!message.error || isAborted) && (
+                                    <ContextFocusActions
+                                        humanMessage={humanMessage}
+                                        longResponseTime={hasLongerResponseTime}
+                                        className={
+                                            showFeedbackButtons && feedbackButtonsOnSubmit
+                                                ? 'tw-pl-5'
+                                                : undefined
+                                        }
+                                    />
                                 )}
                             </div>
                         </div>
