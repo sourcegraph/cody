@@ -595,6 +595,11 @@ interface HighlightLineRange {
     startLine: number
 }
 
+interface VersionInfo {
+    version: string
+    isInsiderBuild: boolean
+}
+
 type GraphQLAPIClientConfig = PickResolvedConfiguration<{
     auth: true
     configuration: 'telemetryLevel' | 'customHeaders'
@@ -621,6 +626,7 @@ export class SourcegraphGraphQLAPIClient {
         return new SourcegraphGraphQLAPIClient(Observable.of(config))
     }
 
+    private versionInfo: Promise<VersionInfo | Error> | null = null
     private lastServerEndpoint?: string
     private siteVersionCache: Map<string, Promise<string | Error>> = new Map()
 
@@ -1030,6 +1036,21 @@ export class SourcegraphGraphQLAPIClient {
         return extractDataOrError(response, data => data.chatIntent)
     }
 
+    private async getVersionInfo(signal?: AbortSignal): Promise<VersionInfo | Error> {
+        if (!this.versionInfo) {
+            this.versionInfo = this.getSiteVersion(signal).then(version => {
+                if (isError(version)) {
+                    return version
+                }
+                return {
+                    version,
+                    isInsiderBuild: version.length > 12 || version.includes('dev'),
+                }
+            })
+        }
+        return this.versionInfo
+    }
+
     /**
      * Checks if the current site version is valid based on the given criteria.
      *
@@ -1042,15 +1063,13 @@ export class SourcegraphGraphQLAPIClient {
         { minimumVersion, insider = true }: { minimumVersion: string; insider?: boolean },
         signal?: AbortSignal
     ): Promise<boolean> {
-        const version = await this.getSiteVersion(signal)
-        if (isError(version)) {
+        const versionInfo = await this.getVersionInfo(signal)
+        if (isError(versionInfo)) {
             return false
         }
         signal?.throwIfAborted()
 
-        const isInsiderBuild = version.length > 12 || version.includes('dev')
-
-        return (insider && isInsiderBuild) || semver.gte(version, minimumVersion)
+        return (insider && versionInfo.isInsiderBuild) || semver.gte(versionInfo.version, minimumVersion)
     }
 
     public async contextSearch({
