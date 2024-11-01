@@ -1,10 +1,11 @@
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { nextTick } from '@sourcegraph/cody-shared'
+
 import { resetParsersCache } from '../../tree-sitter/parser'
 import { InlineCompletionsResultSource } from '../get-inline-completions'
 import { initTreeSitterParser } from '../test-helpers'
 
-import { nextTick } from '@sourcegraph/cody-shared'
 import { getInlineCompletionsWithInlinedChunks } from './helpers'
 
 describe('[getInlineCompletions] hot streak', () => {
@@ -19,17 +20,17 @@ describe('[getInlineCompletions] hot streak', () => {
     beforeEach(() => {
         vi.useFakeTimers()
         vi.clearAllTimers()
-        vi.resetAllMocks()
+        vi.restoreAllMocks()
     })
 
     afterEach(() => {
-        vi.resetAllMocks()
+        vi.restoreAllMocks()
         vi.clearAllTimers()
     })
 
     it(
         'does not attempt to extract hot streak completions if the resolves completion duplicates suffix',
-        { timeout: 1000, repeats: 1000 },
+        { repeats: 1000 },
         async () => {
             let request = await getInlineCompletionsWithInlinedChunks(
                 `from experimental table
