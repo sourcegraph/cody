@@ -621,10 +621,33 @@ export class SourcegraphGraphQLAPIClient {
         return new SourcegraphGraphQLAPIClient(Observable.of(config))
     }
 
-    private constructor(private readonly config: Observable<GraphQLAPIClientConfig>) {}
+    private lastServerEndpoint?: string
+    private siteVersionCache: Map<string, Promise<string | Error>> = new Map()
+
+    private constructor(private readonly config: Observable<GraphQLAPIClientConfig>) {
+        // Subscribe to config changes to clear cache when endpoint changes
+        this.config.subscribe(newConfig => {
+            if (this.lastServerEndpoint !== newConfig.auth.serverEndpoint) {
+                this.siteVersionCache.clear()
+                this.lastServerEndpoint = newConfig.auth.serverEndpoint
+            }
+        })
+    }
 
     public async getSiteVersion(signal?: AbortSignal): Promise<string | Error> {
-        return this.fetchSourcegraphAPI<APIResponse<SiteVersionResponse>>(
+        if (!this.config) {
+            return new Error('SourcegraphGraphQLAPIClient config not set')
+        }
+
+        const config = await firstValueFrom(this.config)
+        const serverEndpoint = config.auth.serverEndpoint
+
+        const cachedVersion = this.siteVersionCache.get(serverEndpoint)
+        if (cachedVersion) {
+            return cachedVersion
+        }
+
+        const versionPromise = this.fetchSourcegraphAPI<APIResponse<SiteVersionResponse>>(
             CURRENT_SITE_VERSION_QUERY,
             {},
             signal
@@ -634,6 +657,11 @@ export class SourcegraphGraphQLAPIClient {
                 data => data.site?.productVersion ?? new Error('site version not found')
             )
         )
+
+        // Store the promise in the cache
+        this.siteVersionCache.set(serverEndpoint, versionPromise)
+
+        return versionPromise
     }
 
     public async getRemoteFiles(
