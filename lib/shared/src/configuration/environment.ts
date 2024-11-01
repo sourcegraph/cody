@@ -27,6 +27,12 @@ export const cenv = defineEnvBuilder({
     CODY_NODE_DEFAULT_PROXY: proxyStringWithNodeFallback,
 
     /**
+     * A setting that is similar (and falls back to) Node's NODE_TLS_REJECT_UNAUTHORIZED setting
+     */
+    CODY_NODE_TLS_REJECT_UNAUTHORIZED: (envValue, _) =>
+        bool(envValue) ?? bool(getEnv('NODE_TLS_REJECT_UNAUTHORIZED')),
+
+    /**
      * Enables unstable internal testing configuration to be read from settings.json
      */
     CODY_CONFIG_ENABLE_INTERNAL_UNSTABLE: (envValue, _) =>

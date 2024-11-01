@@ -43,7 +43,7 @@ export interface NetConfiguration {
     proxy?: {
         endpoint?: string | undefined | null
         cacert?: string | undefined | null
-        skipCertValidation?: boolean | null
+        skipCertValidation?: boolean | undefined | null
     }
     vscode?: string | undefined | null
 }
