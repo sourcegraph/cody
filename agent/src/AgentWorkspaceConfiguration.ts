@@ -13,67 +13,7 @@ export class AgentWorkspaceConfiguration implements vscode.WorkspaceConfiguratio
         private clientInfo: () => ClientInfo | undefined,
         private extensionConfig: () => ExtensionConfiguration | undefined,
         private dictionary: any = {}
-    ) {
-        const config = this.extensionConfig()
-        const capabilities = this.clientInfo()?.capabilities
-
-        this.put('editor.insertSpaces', true)
-        this.put('cody', {
-            advanced: {
-                agent: {
-                    capabilities: {
-                        storage:
-                            capabilities?.globalState === 'server-managed' ||
-                            capabilities?.globalState === 'client-managed',
-                    },
-                    extension: {
-                        version: this.clientInfo()?.version,
-                    },
-                    ide: {
-                        name: AgentWorkspaceConfiguration.clientNameToIDE(this.clientInfo()?.name ?? ''),
-                        version: this.clientInfo()?.ideVersion,
-                    },
-                    running: true,
-                },
-                hasNativeWebview: capabilities?.webview === 'native',
-            },
-            autocomplete: {
-                advanced: {
-                    model: config?.autocompleteAdvancedModel ?? null,
-                    provider: config?.autocompleteAdvancedProvider ?? null,
-                },
-                enabled: true,
-            },
-            codebase: config?.codebase,
-            customHeaders: config?.customHeaders,
-            debug: { verbose: config?.verboseDebug ?? false },
-            experimental: { tracing: config?.verboseDebug ?? false },
-            serverEndpoint: config?.serverEndpoint,
-            // Use the dedicated `telemetry/recordEvent` to send telemetry from
-            // agent clients.  The reason we disable telemetry via config is
-            // that we don't want to submit vscode-specific events when
-            // running inside the agent.
-            telemetry: {
-                clientName: config?.telemetryClientName,
-                level: 'agent',
-            },
-        })
-
-        const fromCustomConfigurationJson = config?.customConfigurationJson
-        if (fromCustomConfigurationJson) {
-            const configJson = JSON.parse(fromCustomConfigurationJson)
-            for (const [key, value] of Object.entries(configJson)) {
-                this.put(key, value)
-            }
-        }
-
-        const customConfiguration = config?.customConfiguration
-        if (customConfiguration) {
-            for (const [key, value] of Object.entries(customConfiguration)) {
-                this.put(key, value)
-            }
-        }
-    }
+    ) {}
 
     public withPrefix(prefix: string): AgentWorkspaceConfiguration {
         return new AgentWorkspaceConfiguration(
@@ -120,10 +60,89 @@ export class AgentWorkspaceConfiguration implements vscode.WorkspaceConfiguratio
 
     public get(userSection: string, defaultValue?: unknown): any {
         const section = this.actualSection(userSection)
+
+        const config = this.extensionConfig()
+        const capabilities = this.clientInfo()?.capabilities
+        const baseConfig = {
+            editor: {
+                insertSpaces: true,
+            },
+            cody: {
+                advanced: {
+                    agent: {
+                        capabilities: {
+                            storage:
+                                capabilities?.globalState === 'server-managed' ||
+                                capabilities?.globalState === 'client-managed',
+                        },
+                        extension: {
+                            version: this.clientInfo()?.version,
+                        },
+                        ide: {
+                            name: AgentWorkspaceConfiguration.clientNameToIDE(
+                                this.clientInfo()?.name ?? ''
+                            ),
+                            version: this.clientInfo()?.ideVersion,
+                        },
+                        running: true,
+                    },
+                    hasNativeWebview: capabilities?.webview === 'native',
+                },
+                autocomplete: {
+                    advanced: {
+                        model: config?.autocompleteAdvancedModel ?? null,
+                        provider: config?.autocompleteAdvancedProvider ?? null,
+                    },
+                    enabled: true,
+                },
+                codebase: config?.codebase,
+                customHeaders: config?.customHeaders,
+                debug: { verbose: config?.verboseDebug ?? false },
+                experimental: { tracing: config?.verboseDebug ?? false },
+                serverEndpoint: config?.serverEndpoint,
+                // Use the dedicated `telemetry/recordEvent` to send telemetry from
+                // agent clients.  The reason we disable telemetry via config is
+                // that we don't want to submit vscode-specific events when
+                // running inside the agent.
+                telemetry: {
+                    clientName: config?.telemetryClientName,
+                    level: 'agent',
+                },
+            },
+        }
+
+        const customConfiguration = config?.customConfiguration
+        if (customConfiguration) {
+            for (const [key, value] of Object.entries(customConfiguration)) {
+                _.set(baseConfig, key, value)
+            }
+        }
+
+        const fromCustomConfigurationJson = config?.customConfigurationJson
+        if (fromCustomConfigurationJson) {
+            const configJson = JSON.parse(fromCustomConfigurationJson)
+            for (const [key, value] of Object.entries(configJson)) {
+                _.set(baseConfig, key, value)
+            }
+        }
+
+        const fromBaseConfig = _.get(baseConfig, section)
         const fromDict = _.get(this.dictionary, section)
+        if (
+            typeof fromBaseConfig === 'object' &&
+            typeof fromDict === 'object' &&
+            !Array.isArray(fromBaseConfig) &&
+            !Array.isArray(fromDict)
+        ) {
+            return structuredClone(_.extend(fromBaseConfig, fromDict))
+        }
         if (fromDict !== undefined) {
             return structuredClone(fromDict)
         }
+        if (fromBaseConfig !== undefined) {
+            return fromBaseConfig
+        }
+
         return defaultConfigurationValue(section) ?? defaultValue
     }
 

@@ -66,7 +66,7 @@ describe('AgentWorkspaceConfiguration', () => {
 
     describe('get', () => {
         it('can return sub-configuration object', () => {
-            expect(config.get('cody.serverEndpoint')).toBe('https://sourcegraph.test')
+            expect(config.get('cody.serverEndpoint')).toEqual('https://sourcegraph.test')
             expect(config.get('cody.customHeaders')).toEqual({ 'X-Test': 'test' })
             expect(config.get('cody.telemetry.level')).toBe('agent')
             // clientName undefined because custom JSON specified telemetry with level alone.
