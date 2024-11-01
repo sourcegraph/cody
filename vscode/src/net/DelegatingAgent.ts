@@ -245,13 +245,24 @@ function normalizeSettings(raw: NetConfiguration): [Error, null] | [null, Normal
         const proxyPath = proxyEndpointString?.startsWith('unix://')
             ? normalizePath(proxyEndpointString.slice(7))
             : null
+
+        // TODO: For all other nullish types like `skipCertValidation` we try to
+        // have the overrides be priority based and only apply if they're set.
+        // Meaning that `skipCertValidation` should have been ?? not || as it
+        // would override the config value with the environment value even if
+        // the config was set. However VSCode's config doesn't give
+        // undefined/null for boolean types and an extra call to config.inspect
+        // is required to see if a value has been set by the user. We don't have
+        // a way of doing that in our ConfigGetter wrapper.
+        const skipCertValidation =
+            raw.proxy?.skipCertValidation || cenv.CODY_NODE_TLS_REJECT_UNAUTHORIZED === false || false
         return [
             null,
             {
                 bypassVSCode:
                     raw.mode?.toLowerCase() === 'bypass' ||
                     (raw.mode?.toLowerCase() !== 'vscode' && (!!proxyServer || !!proxyPath)),
-                skipCertValidation: raw.proxy?.skipCertValidation || false,
+                skipCertValidation,
                 ...caCertConfig,
                 proxyPath,
                 proxyServer,
@@ -309,11 +320,12 @@ async function resolveSettings([error, settings]:
             }
         }
     }
+    const ca = await buildCaCerts(caCert ? [caCert] : null)
     return {
         error: err,
         proxyServer: settings.proxyServer || null,
         proxyPath,
-        ca: await buildCaCerts(caCert ? [caCert] : null),
+        ca,
         skipCertValidation: settings.skipCertValidation,
         bypassVSCode: settings.bypassVSCode,
         vscode: settings.vscode,
