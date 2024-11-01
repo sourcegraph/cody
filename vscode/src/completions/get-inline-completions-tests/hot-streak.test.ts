@@ -24,9 +24,12 @@ describe('[getInlineCompletions] hot streak', () => {
         vi.restoreAllMocks()
     })
 
-    it('does not attempt to extract hot streak completions if the resolves completion duplicates suffix', async () => {
-        let request = await getInlineCompletionsWithInlinedChunks(
-            `from experimental table
+    it(
+        'does not attempt to extract hot streak completions if the resolves completion duplicates suffix',
+        { timeout: 1000, repeats: 1000 },
+        async () => {
+            let request = await getInlineCompletionsWithInlinedChunks(
+                `from experimental table
                 █where other_completion_provider_enabled = false
                 █and read = true
                 █and whatever = false
@@ -34,27 +37,28 @@ describe('[getInlineCompletions] hot streak', () => {
                 where other_completion_provider_enabled = false
                 and read = true
                 `,
-            {
-                configuration: {
+                {
                     configuration: {
-                        autocompleteAdvancedProvider: 'fireworks',
+                        configuration: {
+                            autocompleteAdvancedProvider: 'fireworks',
+                        },
                     },
-                },
-                delayBetweenChunks: 50,
-            }
-        )
+                    delayBetweenChunks: 50,
+                }
+            )
 
-        await vi.runOnlyPendingTimersAsync()
+            await vi.runOnlyPendingTimersAsync()
 
-        // No completion is resolved here because the suggested text is the suffix duplicate.
-        expect(request.items).toEqual([])
+            // No completion is resolved here because the suggested text is the suffix duplicate.
+            expect(request.items).toEqual([])
 
-        // Go to the next line and wait for the new completion from the cache.
-        request = await request.pressEnter()
+            // Go to the next line and wait for the new completion from the cache.
+            request = await request.pressEnter()
 
-        // No hot-streak completions are expected because the previous line didn't get a completion.
-        expect(request.items).toEqual([])
-    })
+            // No hot-streak completions are expected because the previous line didn't get a completion.
+            expect(request.items).toEqual([])
+        }
+    )
 
     describe('static multiline', () => {
         it('caches hot streaks completions that are streamed in', async () => {
@@ -178,10 +182,13 @@ describe('[getInlineCompletions] hot streak', () => {
             expect(request.source).toBe(InlineCompletionsResultSource.HotStreak)
         })
 
-        it('yields a singleline completion early if `firstCompletionTimeout` elapses before the multiline completion is ready', async () => {
-            let abortController: AbortController | undefined
-            const completionsPromise = getInlineCompletionsWithInlinedChunks(
-                `function myFunction█() {
+        it(
+            'yields a singleline completion early if `firstCompletionTimeout` elapses before the multiline completion is ready',
+            { repeats: 1000 },
+            async () => {
+                let abortController: AbortController | undefined
+                const completionsPromise = getInlineCompletionsWithInlinedChunks(
+                    `function myFunction█() {
                     if(i > 1) {█
                         console.log(2)
                     }
@@ -195,42 +202,43 @@ describe('[getInlineCompletions] hot streak', () => {
                 myFunction()
                 █
                 const`,
-                {
-                    delayBetweenChunks: 20,
-                    configuration: {
+                    {
+                        delayBetweenChunks: 50,
                         configuration: {
-                            autocompleteFirstCompletionTimeout: 10,
+                            configuration: {
+                                autocompleteFirstCompletionTimeout: 50,
+                            },
                         },
-                    },
-                    abortSignal: new AbortController().signal,
-                    onNetworkRequest(_, requestManagerAbortController) {
-                        abortController = requestManagerAbortController
-                    },
-                }
-            )
+                        abortSignal: new AbortController().signal,
+                        onNetworkRequest(_, requestManagerAbortController) {
+                            abortController = requestManagerAbortController
+                        },
+                    }
+                )
 
-            // Wait for the first completion to be ready
-            await vi.advanceTimersByTimeAsync(10)
-            expect(abortController?.signal.aborted).toBe(false)
+                // Nothing happens until the first completion chunk is resolved
+                await vi.advanceTimersByTimeAsync(30)
+                expect(abortController?.signal.aborted).toBe(false)
 
-            // Wait for the first hot streak completion to be ready
-            await vi.advanceTimersByTimeAsync(10)
-            // We anticipate that the streaming will be cancelled because the hot
-            // streak text exceeds the maximum number of lines defined by `MAX_HOT_STREAK_LINES`.
-            // TODO: expose completion chunks, enabling more explicit verification of this behavior.
-            expect(abortController?.signal.aborted).toBe(true)
+                // Wait for the first hot streak completion to be ready
+                await vi.advanceTimersByTimeAsync(30)
+                // We anticipate that the streaming will be cancelled because the hot
+                // streak text exceeds the maximum number of lines defined by `MAX_HOT_STREAK_LINES`.
+                // TODO: expose completion chunks, enabling more explicit verification of this behavior.
+                expect(abortController?.signal.aborted).toBe(true)
+                // throw new Error('kek')
 
-            // Release the `completionsPromise`
-            await vi.runOnlyPendingTimersAsync()
+                // Release the `completionsPromise`
+                await vi.runOnlyPendingTimersAsync()
 
-            let request = await completionsPromise
-            await request.completionResponseGeneratorPromise
-            expect(request.items[0].insertText).toEqual('() {')
+                let request = await completionsPromise
+                await request.completionResponseGeneratorPromise
+                expect(request.items[0].insertText).toEqual('() {')
 
-            request = await request.acceptFirstCompletionAndPressEnter()
-            expect(request.source).toBe(InlineCompletionsResultSource.HotStreak)
-            expect(request.items[0].insertText).toMatchInlineSnapshot(
-                `
+                request = await request.acceptFirstCompletionAndPressEnter()
+                expect(request.source).toBe(InlineCompletionsResultSource.HotStreak)
+                expect(request.items[0].insertText).toMatchInlineSnapshot(
+                    `
               "if(i > 1) {
                       console.log(2)
                   }
@@ -242,15 +250,16 @@ describe('[getInlineCompletions] hot streak', () => {
                   }
               }"
             `
-            )
+                )
 
-            request = await request.acceptFirstCompletionAndPressEnter()
-            expect(request.source).toBe(InlineCompletionsResultSource.HotStreak)
-            expect(request.items[0].insertText).toMatchInlineSnapshot(
-                `
+                request = await request.acceptFirstCompletionAndPressEnter()
+                expect(request.source).toBe(InlineCompletionsResultSource.HotStreak)
+                expect(request.items[0].insertText).toMatchInlineSnapshot(
+                    `
               "myFunction()"
             `
-            )
-        })
+                )
+            }
+        )
     })
 })
