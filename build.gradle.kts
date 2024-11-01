@@ -133,6 +133,7 @@ dependencies {
     }
   }
 
+  implementation("com.typesafe:config:1.4.3")
   implementation("org.commonmark:commonmark:0.22.0")
   implementation("org.commonmark:commonmark-ext-gfm-tables:0.22.0")
   implementation("org.eclipse.lsp4j:org.eclipse.lsp4j.jsonrpc:0.23.1")
