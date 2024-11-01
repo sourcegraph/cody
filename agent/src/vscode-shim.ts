@@ -1066,7 +1066,7 @@ export const commands = _commands as typeof vscode.commands
 const _env: Partial<typeof vscode.env> = {
     uriScheme: 'file',
     appRoot: process.cwd?.(),
-    uiKind: UIKind.Web,
+    uiKind: UIKind.Desktop,
     language: process.env.language,
     clipboard: {
         readText: () => Promise.resolve(''),

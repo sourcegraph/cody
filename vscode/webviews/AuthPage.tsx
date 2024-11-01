@@ -51,11 +51,11 @@ export const AuthPage: React.FunctionComponent<React.PropsWithoutRef<LoginProps>
             <section className="tw-bg-sidebar-background tw-text-sidebar-foreground tw-border tw-border-border tw-rounded-lg tw-p-6 tw-w-full tw-max-w-md">
                 <h2 className="tw-font-semibold tw-text-lg tw-mb-4">Cody Free or Cody Pro</h2>
                 <div className="tw-flex tw-flex-col tw-gap-6 tw-w-full">
-                    {codyIDE === CodyIDE.Web ? (
+                    {uiKindIsWeb ? (
                         <WebLogin
                             telemetryRecorder={telemetryRecorder}
                             vscodeAPI={vscodeAPI}
-                            isCodyWeb={codyIDE === CodyIDE.Web}
+                            isCodyWeb={uiKindIsWeb}
                         />
                     ) : (
                         <>
