@@ -1,5 +1,3 @@
-import type * as vscode from 'vscode'
-
 import {
     type AuthenticatedAuthStatus,
     type CodeCompletionsParams,
