@@ -80,5 +80,3 @@ function getNumberOfNewLineCharsAtSuffix(text: string): number {
     const match = text.match(/\n+$/)
     return match ? match[0].length : 0
 }
-
-
