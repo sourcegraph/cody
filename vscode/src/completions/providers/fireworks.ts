@@ -4,14 +4,11 @@ import {
     type AuthenticatedAuthStatus,
     type CodeCompletionsParams,
     type CompletionResponseGenerator,
-    FeatureFlag,
     currentAuthStatusAuthed,
     currentResolvedConfig,
     dotcomTokenToGatewayToken,
-    featureFlagProvider,
     isDotCom,
     isDotComAuthed,
-    subscriptionDisposable,
     tokensToChars,
 } from '@sourcegraph/cody-shared'
 
@@ -24,7 +21,6 @@ import {
     MAX_RESPONSE_TOKENS,
     Provider,
     type ProviderFactoryParams,
-    type ProviderOptions,
 } from './shared/provider'
 
 export const DEEPSEEK_CODER_V2_LITE_BASE = 'deepseek-coder-v2-lite-base'
@@ -90,22 +86,6 @@ function getMaxContextTokens(model: FireworksModel): number {
 }
 
 class FireworksProvider extends Provider {
-    private disposables: vscode.Disposable[] = []
-    private isFastPathEnabled = true
-
-    constructor(public readonly options: Readonly<ProviderOptions>) {
-        super(options)
-
-        this.disposables.push(
-            subscriptionDisposable(
-                featureFlagProvider
-                    .evaluatedFeatureFlag(FeatureFlag.CodyAutocompleteFastPath)
-                    .subscribe(isFastPathEnabled => {
-                        this.isFastPathEnabled = Boolean(isFastPathEnabled)
-                    })
-            )
-        )
-    }
     public getRequestParams(options: GenerateCompletionsOptions): CodeCompletionsParams {
         const { multiline, docContext, document, triggerKind, snippets } = options
         const useMultilineModel = multiline || triggerKind !== TriggerKind.Automatic
@@ -162,7 +142,7 @@ class FireworksProvider extends Provider {
                     ? config.configuration.autocompleteExperimentalFireworksOptions?.token
                     : undefined
 
-            if ((fastPathAccessToken && this.isFastPathEnabled) || localFastPathAccessToken) {
+            if (fastPathAccessToken || localFastPathAccessToken) {
                 return createFastPathClient(requestParams, abortController, {
                     isLocalInstance,
                     fireworksConfig: localFastPathAccessToken
@@ -191,13 +171,6 @@ class FireworksProvider extends Provider {
         }
 
         return customHeaders
-    }
-
-    public dispose(): void {
-        for (const disposable of this.disposables) {
-            disposable.dispose()
-        }
-        this.disposables = []
     }
 }
 

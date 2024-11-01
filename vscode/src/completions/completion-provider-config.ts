@@ -36,7 +36,6 @@ class CompletionProviderConfig {
             FeatureFlag.CodyAutocompletePreloadingExperimentVariant2,
             FeatureFlag.CodyAutocompleteDataCollectionFlag,
             FeatureFlag.CodyAutocompleteTracing,
-            FeatureFlag.CodyAutocompleteFastPath,
         ]
         this.prefetchSubscription = combineLatest(
             ...featureFlagsUsed.map(flag => featureFlagProvider.evaluatedFeatureFlag(flag))
