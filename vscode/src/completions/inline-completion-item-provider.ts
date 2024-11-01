@@ -74,6 +74,8 @@ interface CompletionRequest {
     context: vscode.InlineCompletionContext
 }
 
+export const PRELOAD_DEBOUNCE_INTERVAL = 150
+
 interface PreloadCompletionContext extends vscode.InlineCompletionContext {
     isPreload: true
 
@@ -222,7 +224,11 @@ export class InlineCompletionItemProvider
 
         this.onSelectionChangeDebounced = debounce(
             this.preloadCompletionOnSelectionChange.bind(this),
-            150
+            PRELOAD_DEBOUNCE_INTERVAL
+        )
+
+        this.disposables.push(
+            vscode.window.onDidChangeTextEditorSelection(this.onSelectionChangeDebounced)
         )
 
         // Warm caches for the config feature configuration to avoid the first completion call
