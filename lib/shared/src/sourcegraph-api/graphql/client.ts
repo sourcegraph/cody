@@ -628,46 +628,42 @@ export class SourcegraphGraphQLAPIClient {
 
     private versionInfo: Promise<VersionInfo | Error> | null = null
     private lastServerEndpoint?: string
-    private siteVersionCache: Map<string, Promise<string | Error>> = new Map()
 
     private constructor(private readonly config: Observable<GraphQLAPIClientConfig>) {
         // Subscribe to config changes to clear cache when endpoint changes
         this.config.subscribe(newConfig => {
             if (this.lastServerEndpoint !== newConfig.auth.serverEndpoint) {
-                this.siteVersionCache.clear()
+                this.versionInfo = null // Clear version cache
                 this.lastServerEndpoint = newConfig.auth.serverEndpoint
             }
         })
     }
 
     public async getSiteVersion(signal?: AbortSignal): Promise<string | Error> {
-        if (!this.config) {
-            return new Error('SourcegraphGraphQLAPIClient config not set')
-        }
+        const versionInfo = await this.getVersionInfo(signal)
+        return isError(versionInfo) ? versionInfo : versionInfo.version
+    }
 
-        const config = await firstValueFrom(this.config)
-        const serverEndpoint = config.auth.serverEndpoint
-
-        const cachedVersion = this.siteVersionCache.get(serverEndpoint)
-        if (cachedVersion) {
-            return cachedVersion
-        }
-
-        const versionPromise = this.fetchSourcegraphAPI<APIResponse<SiteVersionResponse>>(
-            CURRENT_SITE_VERSION_QUERY,
-            {},
-            signal
-        ).then(response =>
-            extractDataOrError(
-                response,
-                data => data.site?.productVersion ?? new Error('site version not found')
+    private async getVersionInfo(signal?: AbortSignal): Promise<VersionInfo | Error> {
+        if (!this.versionInfo) {
+            this.versionInfo = this.fetchSourcegraphAPI<APIResponse<SiteVersionResponse>>(
+                CURRENT_SITE_VERSION_QUERY,
+                {},
+                signal
+            ).then(response =>
+                extractDataOrError(response, data => {
+                    const version = data.site?.productVersion ?? new Error('site version not found')
+                    if (isError(version)) {
+                        return version
+                    }
+                    return {
+                        version,
+                        isInsiderBuild: version.length > 12 || version.includes('dev'),
+                    }
+                })
             )
-        )
-
-        // Store the promise in the cache
-        this.siteVersionCache.set(serverEndpoint, versionPromise)
-
-        return versionPromise
+        }
+        return this.versionInfo
     }
 
     public async getRemoteFiles(
@@ -1034,21 +1030,6 @@ export class SourcegraphGraphQLAPIClient {
             }
         )
         return extractDataOrError(response, data => data.chatIntent)
-    }
-
-    private async getVersionInfo(signal?: AbortSignal): Promise<VersionInfo | Error> {
-        if (!this.versionInfo) {
-            this.versionInfo = this.getSiteVersion(signal).then(version => {
-                if (isError(version)) {
-                    return version
-                }
-                return {
-                    version,
-                    isInsiderBuild: version.length > 12 || version.includes('dev'),
-                }
-            })
-        }
-        return this.versionInfo
     }
 
     /**
