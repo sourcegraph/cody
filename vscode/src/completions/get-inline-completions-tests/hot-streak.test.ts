@@ -18,10 +18,13 @@ describe('[getInlineCompletions] hot streak', () => {
 
     beforeEach(() => {
         vi.useFakeTimers()
+        vi.clearAllTimers()
+        vi.resetAllMocks()
     })
 
     afterEach(() => {
-        vi.restoreAllMocks()
+        vi.resetAllMocks()
+        vi.clearAllTimers()
     })
 
     it(
@@ -226,7 +229,6 @@ describe('[getInlineCompletions] hot streak', () => {
                 // streak text exceeds the maximum number of lines defined by `MAX_HOT_STREAK_LINES`.
                 // TODO: expose completion chunks, enabling more explicit verification of this behavior.
                 expect(abortController?.signal.aborted).toBe(true)
-                // throw new Error('kek')
 
                 // Release the `completionsPromise`
                 await vi.runOnlyPendingTimersAsync()

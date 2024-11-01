@@ -24,7 +24,7 @@
     "check:build": "pnpm run -C vscode check:build",
     "biome": "biome check --apply --error-on-warnings .",
     "test": "vitest",
-    "test:unit": "vitest vscode/src/completions/get-inline-completions-tests/hot-streak.test.ts",
+    "test:unit": "vitest run",
     "test:integration": "pnpm -C vscode test:integration",
     "test:e2e": "pnpm -C vscode test:e2e",
     "test:local-e2e": "RUN_LOCAL_E2E_TESTS=true pnpm test agent/src/local-e2e/template.test.ts",
