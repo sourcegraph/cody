@@ -8,7 +8,6 @@ import {
     RateLimitError,
     authStatus,
     contextFiltersProvider,
-    createDisposables,
     featureFlagProvider,
     isDotCom,
     subscriptionDisposable,
@@ -221,27 +220,9 @@ export class InlineCompletionItemProvider
             )
         )
 
-        this.disposables.push(
-            subscriptionDisposable(
-                completionProviderConfig.autocompletePreloadDebounceInterval
-                    .pipe(
-                        createDisposables(preloadDebounceInterval => {
-                            this.onSelectionChangeDebounced = undefined
-                            if (preloadDebounceInterval > 0) {
-                                this.onSelectionChangeDebounced = debounce(
-                                    this.preloadCompletionOnSelectionChange.bind(this),
-                                    preloadDebounceInterval
-                                )
-
-                                return vscode.window.onDidChangeTextEditorSelection(
-                                    this.onSelectionChangeDebounced
-                                )
-                            }
-                            return undefined
-                        })
-                    )
-                    .subscribe({})
-            )
+        this.onSelectionChangeDebounced = debounce(
+            this.preloadCompletionOnSelectionChange.bind(this),
+            150
         )
 
         // Warm caches for the config feature configuration to avoid the first completion call
