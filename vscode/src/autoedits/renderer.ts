@@ -1,5 +1,4 @@
 import { displayPath } from '@sourcegraph/cody-shared'
-import { structuredPatch } from 'diff'
 import * as vscode from 'vscode'
 import { ThemeColor } from 'vscode'
 import { createGitDiff } from '../../../lib/shared/src/editor/create-git-diff'
@@ -50,9 +49,10 @@ export interface AutoEditsRendererOptions {
     predictedFileText: string
 }
 
-interface DecorationLine {
-    line: number
-    text: string
+interface AddedLinesDecorationInfo {
+    ranges: [number, number][]
+    afterLine: number
+    lineText: string
 }
 
 export class AutoEditsRendererManager implements vscode.Disposable {
@@ -152,6 +152,7 @@ export class AutoEditsRendererManager implements vscode.Disposable {
 export class AutoEditsRenderer implements vscode.Disposable {
     private readonly decorationTypes: vscode.TextEditorDecorationType[]
     private readonly removedTextDecorationType: vscode.TextEditorDecorationType
+    private readonly modifiedTextDecorationType: vscode.TextEditorDecorationType
     private readonly suggesterType: vscode.TextEditorDecorationType
     private readonly hideRemainderDecorationType: vscode.TextEditorDecorationType
     private readonly replacerDecorationType: vscode.TextEditorDecorationType
@@ -162,6 +163,9 @@ export class AutoEditsRenderer implements vscode.Disposable {
 
         // Initialize decoration types
         this.removedTextDecorationType = vscode.window.createTextEditorDecorationType({
+            backgroundColor: new ThemeColor('diffEditor.removedTextBackground'),
+        })
+        this.modifiedTextDecorationType = vscode.window.createTextEditorDecorationType({
             backgroundColor: new ThemeColor('diffEditor.removedTextBackground'),
         })
         this.suggesterType = vscode.window.createTextEditorDecorationType({
@@ -183,6 +187,7 @@ export class AutoEditsRenderer implements vscode.Disposable {
         // Track all decoration types for disposal
         this.decorationTypes = [
             this.removedTextDecorationType,
+            this.modifiedTextDecorationType,
             this.suggesterType,
             this.hideRemainderDecorationType,
             this.replacerDecorationType,
@@ -199,150 +204,6 @@ export class AutoEditsRenderer implements vscode.Disposable {
         const beforeLines = lines(options.currentFileText)
         const afterLines = lines(options.predictedFileText)
         const { modifiedLines, removedLines, addedLines } = getLineLevelDiff(beforeLines, afterLines)
-        this.renderDecorationsInlineStrategy(
-            beforeLines,
-            afterLines,
-            modifiedLines,
-            removedLines,
-            addedLines
-        )
-
-        // this.renderRemovedLinesDecorations(
-        //     options.document,
-        //     options.currentFileText,
-        //     options.predictedFileText
-        // )
-        // const isPureAdded = isPureAddedLines(options.currentFileText, options.predictedFileText)
-        // if (isPureAdded) {
-        //     this.renderAddedLinesDecorationsForNewLineAdditions(
-        //         options.document,
-        //         options.predictedFileText,
-        //         0
-        //     )
-        // } else {
-        //     this.renderAddedLinesDecorations(
-        //         options.document,
-        //         options.currentFileText,
-        //         options.predictedFileText
-        //     )
-        // }
-        // await vscode.commands.executeCommand('setContext', 'cody.supersuggest.active', true)
-    }
-
-    private renderAddedLinesDecorationsForNewLineAdditions(
-        document: vscode.TextDocument,
-        predictedText: string,
-        replaceStartLine: number,
-        replacerCol = 80
-    ) {
-        if (this.editor.document !== document) {
-            return
-        }
-        const replacerText = predictedText
-        const replacerDecorations: vscode.DecorationOptions[] = []
-        // TODO(beyang): handle when not enough remaining lines in the doc
-        for (let i = 0; i < replacerText.split('\n').length; i++) {
-            if (i > 5) break
-
-            const j = i + replaceStartLine
-            const line = this.editor.document.lineAt(j)
-            if (line.range.end.character <= replacerCol) {
-                const replacerOptions: vscode.DecorationOptions = {
-                    range: new vscode.Range(j, line.range.end.character, j, line.range.end.character),
-                    renderOptions: {
-                        before: {
-                            contentText:
-                                '\u00A0'.repeat(3) +
-                                replaceLeadingChars(replacerText.split('\n')[i], ' ', '\u00A0'), // TODO(beyang): factor out
-                            margin: `0 0 0 ${replacerCol - line.range.end.character}ch`,
-                        },
-                    },
-                }
-                replacerDecorations.push(replacerOptions)
-            } else {
-                const replacerOptions: vscode.DecorationOptions = {
-                    range: new vscode.Range(j, replacerCol, j, replacerCol),
-                    renderOptions: {
-                        before: {
-                            contentText:
-                                '\u00A0' +
-                                replaceLeadingChars(replacerText.split('\n')[i], ' ', '\u00A0'), // TODO(beyang): factor out
-                        },
-                    },
-                }
-                replacerDecorations.push(replacerOptions)
-            }
-        }
-        this.editor.setDecorations(this.replacerDecorationType, replacerDecorations)
-    }
-
-    private renderAddedLinesDecorations(
-        document: vscode.TextDocument,
-        currentFileText: string,
-        predictedFileText: string
-    ) {
-        if (this.editor.document !== document) {
-            return
-        }
-        const filename = displayPath(document.uri)
-        const patch = structuredPatch(
-            `a/${filename}`,
-            `b/${filename}`,
-            currentFileText,
-            predictedFileText
-        )
-        const addedLines: DecorationLine[] = []
-        for (const hunk of patch.hunks) {
-            let oldLineNumber = hunk.oldStart
-            let newLineNumber = hunk.newStart
-            for (const line of hunk.lines) {
-                if (line.length === 0) {
-                    continue
-                }
-                if (line[0] === '-') {
-                    oldLineNumber++
-                } else if (line[0] === '+') {
-                    addedLines.push({ line: newLineNumber - 1, text: line.slice(1) })
-                    newLineNumber++
-                } else if (line[0] === ' ') {
-                    oldLineNumber++
-                    newLineNumber++
-                }
-            }
-        }
-        this.editor.setDecorations(
-            this.suggesterType,
-            addedLines.map(line => ({
-                range: new vscode.Range(line.line, 0, line.line, document.lineAt(line.line).text.length),
-                renderOptions: {
-                    after: {
-                        contentText: line.text,
-                        backgroundColor: new ThemeColor('diffEditor.insertedTextBackground'),
-                    },
-                },
-            }))
-        )
-    }
-
-    /**
-     * Renders decorations using an inline diff strategy to show changes between two versions of text
-     * Split the decorations into three parts:
-     * 1. Modified lines: Either show inline ghost text or a combination of ("red" decorations + "green" decorations)
-     * 2. Removed lines: Show Inline decoration with "red" marker indicating deletions
-     * 3. Added lines: Show Inline decoration with "green" marker indicating additions
-     * @param beforeLines Array of lines from the original text
-     * @param afterLines Array of lines from the modified text
-     * @param modifiedLines Array of line numbers that were modified between versions
-     * @param removedLines Array of line numbers that were removed from original text
-     * @param addedLines Array of line numbers that were added in modified text
-     */
-    private renderDecorationsInlineStrategy(
-        beforeLines: string[],
-        afterLines: string[],
-        modifiedLines: ModifiedLine[],
-        removedLines: number[],
-        addedLines: number[]
-    ) {
         const beforeLineChunks = beforeLines.map(line => splitLineIntoChunks(line))
         const afterLineChunks = afterLines.map(line => splitLineIntoChunks(line))
 
@@ -360,26 +221,222 @@ export class AutoEditsRenderer implements vscode.Disposable {
                 )
             }
         }
+        this.addDecorations(
+            beforeLineChunks,
+            afterLineChunks,
+            removedLines,
+            addedLines,
+            modifiedLines,
+            modifiedRangesMapping,
+            isOnlyAdditionsForModifiedLines
+        )
+
+        await vscode.commands.executeCommand('setContext', 'cody.supersuggest.active', true)
+    }
+
+    /**
+     * Renders decorations using an inline diff strategy to show changes between two versions of text
+     * Split the decorations into three parts:
+     * 1. Modified lines: Either show inline ghost text or a combination of ("red" decorations + "green" decorations)
+     * 2. Removed lines: Show Inline decoration with "red" marker indicating deletions
+     * 3. Added lines: Show Inline decoration with "green" marker indicating additions
+     */
+    private addDecorations(
+        beforeLinesChunks: string[][],
+        afterLinesChunks: string[][],
+        removedLines: number[],
+        addedLines: number[],
+        modifiedLines: ModifiedLine[],
+        modifiedRangesMapping: Map<number, ModifiedRange[]>,
+        isOnlyAdditionsForModifiedLines: boolean
+    ): void {
+        // 1. For the removed lines, add "red" color decoration
+        const removedLinesRanges = this.getNonModifiedLinesRanges(removedLines)
+        this.editor.setDecorations(this.removedTextDecorationType, removedLinesRanges)
+
         if (addedLines.length !== 0 || isOnlyAdditionsForModifiedLines === false) {
+            this.renderDiffDecorations(
+                beforeLinesChunks,
+                afterLinesChunks,
+                modifiedLines,
+                modifiedRangesMapping,
+                addedLines
+            )
         } else {
-            this.decorateInlineLikeDecorations(
-                beforeLineChunks,
-                afterLineChunks,
-                removedLines,
+            this.renderInlineGhostTextDecorations(
+                beforeLinesChunks,
+                afterLinesChunks,
                 modifiedLines,
                 modifiedRangesMapping
             )
         }
     }
 
-    private decorateInlineLikeDecorations(
+    private renderDiffDecorations(
         beforeLinesChunks: string[][],
         afterLinesChunks: string[][],
-        removedLines: number[],
+        modifiedLines: ModifiedLine[],
+        modifiedRangesMapping: Map<number, ModifiedRange[]>,
+        addedLines: number[]
+    ): void {
+        // Display the removed range decorations
+        const removedRanges: vscode.Range[] = []
+        const addedLinesInfo: AddedLinesDecorationInfo[] = []
+
+        let firstModifiedLineMatch: {
+            beforeLine: number
+            afterLine: number
+        } | null = null
+
+        // Handle modified lines - collect removed ranges and added decorations
+        for (const modifiedLine of modifiedLines) {
+            const modifiedRanges = modifiedRangesMapping.get(modifiedLine.beforeNumber)
+            if (!modifiedRanges) {
+                continue
+            }
+            const addedRanges: [number, number][] = []
+            for (const range of modifiedRanges) {
+                // Removed from the original text
+                if (range.to1 > range.from1) {
+                    const startRange = this.getIndexFromLineChunks(
+                        beforeLinesChunks[modifiedLine.beforeNumber],
+                        range.from1
+                    )
+                    const endRange = this.getIndexFromLineChunks(
+                        beforeLinesChunks[modifiedLine.beforeNumber],
+                        range.to1
+                    )
+                    removedRanges.push(
+                        new vscode.Range(
+                            modifiedLine.beforeNumber,
+                            startRange,
+                            modifiedLine.beforeNumber,
+                            endRange
+                        )
+                    )
+                }
+                // Addition from the predicted text
+                if (range.to2 > range.from2) {
+                    const startRange = this.getIndexFromLineChunks(
+                        afterLinesChunks[modifiedLine.afterNumber],
+                        range.from2
+                    )
+                    const endRange = this.getIndexFromLineChunks(
+                        afterLinesChunks[modifiedLine.afterNumber],
+                        range.to2
+                    )
+                    addedRanges.push([startRange, endRange])
+                }
+            }
+            if (addedRanges.length > 0) {
+                firstModifiedLineMatch = {
+                    beforeLine: modifiedLine.beforeNumber,
+                    afterLine: modifiedLine.afterNumber,
+                }
+                addedLinesInfo.push({
+                    ranges: addedRanges,
+                    afterLine: modifiedLine.afterNumber,
+                    lineText: afterLinesChunks[modifiedLine.afterNumber].join(''),
+                })
+            }
+        }
+        this.editor.setDecorations(this.modifiedTextDecorationType, removedRanges)
+
+        // Handle fully added lines
+        for (const addedLine of addedLines) {
+            const addedLineText = afterLinesChunks[addedLine].join('')
+            addedLinesInfo.push({
+                ranges: [[0, addedLineText.length]],
+                afterLine: addedLine,
+                lineText: addedLineText,
+            })
+        }
+
+        // Fill in any gaps in line numbers with empty ranges
+        const lineNumbers = addedLinesInfo.map(d => d.afterLine)
+        const min = Math.min(...lineNumbers)
+        const max = Math.max(...lineNumbers)
+
+        for (let i = min; i <= max; i++) {
+            if (!lineNumbers.includes(i)) {
+                addedLinesInfo.push({
+                    ranges: [],
+                    afterLine: i,
+                    lineText: afterLinesChunks[i].join(''),
+                })
+            }
+        }
+        // Sort addedLinesInfo by line number in ascending order
+        addedLinesInfo.sort((a, b) => a.afterLine - b.afterLine)
+        if (addedLinesInfo.length === 0) {
+            return
+        }
+
+        let startLine = this.editor.selection.active.line
+        if (firstModifiedLineMatch) {
+            startLine =
+                firstModifiedLineMatch.beforeLine -
+                (firstModifiedLineMatch.afterLine - addedLinesInfo[0].afterLine)
+        }
+
+        const bufferReplacerCol = 5
+        const replacerCol = Math.min(
+            Math.max(
+                ...beforeLinesChunks
+                    .slice(startLine, startLine + addedLinesInfo.length)
+                    .map(line => line.join('').length)
+            ) + bufferReplacerCol,
+            80 // todo (hitesh): fallback value, set based on the visible range of the editor
+        )
+        // todo (hitesh): handle case when too many lines to fit in the editor
+        this.renderAddedLinesDecorations(addedLinesInfo, startLine, replacerCol)
+    }
+
+    private renderAddedLinesDecorations(
+        addedLinesInfo: AddedLinesDecorationInfo[],
+        startLine: number,
+        replacerCol: number
+    ): void {
+        const replacerDecorations: vscode.DecorationOptions[] = []
+
+        for (let i = 0; i < addedLinesInfo.length; i++) {
+            const j = i + startLine
+            const line = this.editor.document.lineAt(j)
+            const decoration = addedLinesInfo[i]
+
+            if (line.range.end.character <= replacerCol) {
+                replacerDecorations.push({
+                    range: new vscode.Range(j, line.range.end.character, j, line.range.end.character),
+                    renderOptions: {
+                        before: {
+                            contentText:
+                                '\u00A0'.repeat(3) +
+                                replaceLeadingChars(decoration.lineText, ' ', '\u00A0'),
+                            margin: `0 0 0 ${replacerCol - line.range.end.character}ch`,
+                        },
+                    },
+                })
+            } else {
+                replacerDecorations.push({
+                    range: new vscode.Range(j, replacerCol, j, replacerCol),
+                    renderOptions: {
+                        before: {
+                            contentText:
+                                '\u00A0' + replaceLeadingChars(decoration.lineText, ' ', '\u00A0'),
+                        },
+                    },
+                })
+            }
+        }
+        this.editor.setDecorations(this.replacerDecorationType, replacerDecorations)
+    }
+
+    private renderInlineGhostTextDecorations(
+        beforeLinesChunks: string[][],
+        afterLinesChunks: string[][],
         modifiedLines: ModifiedLine[],
         modifiedRangesMapping: Map<number, ModifiedRange[]>
     ): void {
-        const removedLinesRanges = this.getNonModifiedLinesRanges(removedLines)
         const inlineModifiedRanges: vscode.DecorationOptions[] = []
         for (const modifiedLine of modifiedLines) {
             const modifiedRanges = modifiedRangesMapping.get(modifiedLine.beforeNumber)
@@ -387,16 +444,18 @@ export class AutoEditsRenderer implements vscode.Disposable {
                 continue
             }
             for (const range of modifiedRanges) {
-                // todo: handle when the modified lines are split by words
                 const rangeText = afterLinesChunks[modifiedLine.afterNumber]
                     .slice(range.from2, range.to2)
                     .join('')
-                const startRange = beforeLinesChunks[modifiedLine.beforeNumber]
-                    .slice(0, range.from1)
-                    .reduce((acc, str) => acc + str.length, 0)
-                const endRange = beforeLinesChunks[modifiedLine.beforeNumber]
-                    .slice(0, range.to1)
-                    .reduce((acc, str) => acc + str.length, 0)
+                const startRange = this.getIndexFromLineChunks(
+                    beforeLinesChunks[modifiedLine.beforeNumber],
+                    range.from1
+                )
+                const endRange = this.getIndexFromLineChunks(
+                    beforeLinesChunks[modifiedLine.beforeNumber],
+                    range.to1
+                )
+
                 inlineModifiedRanges.push({
                     range: new vscode.Range(
                         modifiedLine.beforeNumber,
@@ -413,7 +472,10 @@ export class AutoEditsRenderer implements vscode.Disposable {
             }
         }
         this.editor.setDecorations(this.suggesterType, inlineModifiedRanges)
-        this.editor.setDecorations(this.removedTextDecorationType, removedLinesRanges)
+    }
+
+    private getIndexFromLineChunks(parts: string[], index: number): number {
+        return parts.slice(0, index).reduce((acc: number, str: string) => acc + str.length, 0)
     }
 
     private getNonModifiedLinesRanges(lineNumbers: number[]): vscode.Range[] {
