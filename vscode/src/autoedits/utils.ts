@@ -94,7 +94,6 @@ function getNumberOfNewLineCharsAtSuffix(text: string): number {
     return match ? match[0].length : 0
 }
 
-
 /**
  * Adjusts the prediction to enable inline completion when possible.
  *
