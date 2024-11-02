@@ -4,7 +4,9 @@ import * as vscode from 'vscode'
 import { ContextMixer } from '../completions/context/context-mixer'
 import { DefaultContextStrategyFactory } from '../completions/context/context-strategy'
 import { getCurrentDocContext } from '../completions/get-current-doc-context'
+import { lines } from '../completions/text-processing'
 import { getConfiguration } from '../configuration'
+import { getLineLevelDiff } from './diff-utils'
 import { autoeditsLogger } from './logger'
 import type { PromptProvider } from './prompt-provider'
 import type { CodeToReplaceData } from './prompt-utils'
@@ -115,31 +117,65 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
         if (abortSignal.aborted || !autoeditResponse) {
             return null
         }
-        return this.handleAutoeditResponse(document, position, autoeditResponse)
+        const { prediction, codeToReplaceData } = autoeditResponse
+
+        const inlineCompletionItems = await this.handleInlineCompletionResponse(
+            prediction,
+            codeToReplaceData
+        )
+        if (inlineCompletionItems) {
+            return inlineCompletionItems
+        }
+        await this.handleAutoeditsDecorations(document, position, codeToReplaceData, prediction)
+        return null
     }
 
-    private async handleAutoeditResponse(
-        document: vscode.TextDocument,
-        position: vscode.Position,
-        autoeditResponse: AutoeditsPrediction
+    private async handleInlineCompletionResponse(
+        prediction: string,
+        codeToReplace: CodeToReplaceData
     ): Promise<vscode.InlineCompletionItem[] | null> {
-        const { prediction, codeToReplaceData } = autoeditResponse
-        const isPrefixMatch = prediction.startsWith(codeToReplaceData.codeToRewritePrefix)
-        const isSuffixMatch = prediction.endsWith(codeToReplaceData.codeToRewriteSuffix)
+        const isPrefixMatch = prediction.startsWith(codeToReplace.codeToRewritePrefix)
 
-        this.logDebugData(isPrefixMatch, isSuffixMatch, autoeditResponse)
+        // In case of suffix, there could be some new line chars at the start causing prediction to not match.
+        // Add a heuristic, to match at the suffix ignoring first couple of new line chars.
+        const MAX_NEW_LINE_CHARS_TO_IGNORE = 2
+
+        let isSuffixMatch = prediction.endsWith(codeToReplace.codeToRewriteSuffix)
+        let matchedSuffix = codeToReplace.codeToRewriteSuffix
+
+        for (
+            let i = 0;
+            i < Math.min(MAX_NEW_LINE_CHARS_TO_IGNORE, codeToReplace.codeToRewriteSuffix.length);
+            i++
+        ) {
+            // todo (hitesh): Change so that the new line matching is platform agnostic
+            if (isSuffixMatch || codeToReplace.codeToRewriteSuffix[i] !== '\n') {
+                break
+            }
+            if (prediction.endsWith(codeToReplace.codeToRewriteSuffix.slice(i))) {
+                isSuffixMatch = true
+                matchedSuffix = codeToReplace.codeToRewriteSuffix.slice(i)
+                break
+            }
+        }
+        this.logDebugData(
+            isPrefixMatch,
+            isSuffixMatch,
+            prediction,
+            codeToReplace.codeToRewritePrefix,
+            matchedSuffix
+        )
 
         if (isPrefixMatch && isSuffixMatch) {
             const autocompleteResponse = extractInlineCompletionFromRewrittenCode(
                 prediction,
-                codeToReplaceData.codeToRewritePrefix,
-                codeToReplaceData.codeToRewriteSuffix
+                codeToReplace.codeToRewritePrefix,
+                codeToReplace.codeToRewriteSuffix
             )
             autoeditsLogger.logDebug('Autocomplete Inline Respone: ', autocompleteResponse)
             const inlineCompletionItems = new vscode.InlineCompletionItem(autocompleteResponse)
             return [inlineCompletionItems]
         }
-        await this.handleAutoeditsDecorations(document, position, codeToReplaceData, prediction)
         return null
     }
 
@@ -159,6 +195,10 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
             prediction +
             currentFileText.slice(document.offsetAt(range.end))
 
+        if (this.shouldFilterAutoeditResponse(currentFileText, predictedFileText, codeToReplaceData)) {
+            autoeditsLogger.logDebug('Autoedits', 'Model prediction already of suffix')
+            return
+        }
         await this.rendererManager.displayProposedEdit({
             document,
             range,
@@ -168,17 +208,44 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
         })
     }
 
+    private shouldFilterAutoeditResponse(
+        currentFileText: string,
+        predictedFileText: string,
+        codeToReplaceData: CodeToReplaceData
+    ): boolean {
+        const currentFileLines = lines(currentFileText)
+        const predictedFileLines = lines(predictedFileText)
+        const { modifiedLines, removedLines, addedLines } = getLineLevelDiff(
+            currentFileLines,
+            predictedFileLines
+        )
+        if (modifiedLines.length > 0 || removedLines.length > 0 || addedLines.length === 0) {
+            return false
+        }
+        addedLines.sort()
+        const minAddedLineIndex = addedLines[0]
+        const maxAddedLineIndex = addedLines[addedLines.length - 1]
+        const allAddedLines = predictedFileLines.slice(minAddedLineIndex, maxAddedLineIndex + 1)
+        const allAddedLinesText = allAddedLines.join('\n')
+        if (codeToReplaceData.areaSuffix.includes(allAddedLinesText)) {
+            return true
+        }
+        return false
+    }
+
     private logDebugData(
         isPrefixMatch: boolean,
         isSuffixMatch: boolean,
-        response: AutoeditsPrediction
+        prediction: string,
+        prefix: string,
+        suffix: string
     ): void {
         const debugData = {
             isPrefixMatch,
             isSuffixMatch,
-            prediction: JSON.stringify(response.prediction),
-            codeToRewritePrefix: JSON.stringify(response.codeToReplaceData.codeToRewritePrefix),
-            codeToRewriteSuffix: JSON.stringify(response.codeToReplaceData.codeToRewriteSuffix),
+            prediction,
+            prefix,
+            suffix,
         }
         autoeditsLogger.logDebug(
             'InlineCompletions',
