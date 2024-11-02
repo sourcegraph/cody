@@ -390,7 +390,7 @@ function useTabs(input: Pick<TabsBarProps, 'IDE'>): TabConfig[] {
                     },
                     {
                         view: View.Toolbox,
-                        title: 'Workflows',
+                        title: 'Toolbox',
                         Icon: Cog,
                         changesView: true,
                     },

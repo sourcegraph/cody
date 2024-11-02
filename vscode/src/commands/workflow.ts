@@ -14,7 +14,7 @@ export function registerWorkflowCommands(context: vscode.ExtensionContext) {
                 }
             )
 
-            const webviewPath = vscode.Uri.joinPath(context.extensionUri, 'dist')
+            const webviewPath = vscode.Uri.joinPath(context.extensionUri, 'dist/webviews')
 
             // Read the HTML file content
             const root = vscode.Uri.joinPath(webviewPath, 'workflow.html')

@@ -5,7 +5,7 @@ import {
     AccordionItem,
     AccordionTrigger,
 } from '../components/shadcn/ui/accordion'
-import { getGenericVSCodeAPI } from '../utils/VSCodeApi'
+import { getVSCodeAPI } from '../utils/VSCodeApi'
 import type { View } from './types'
 
 interface ToolboxTabProps {
@@ -37,9 +37,8 @@ const toolboxItems: ToolboxItem[] = [
     },
 ]
 
-const vscodeAPI = getGenericVSCodeAPI()
-
 const ToolboxTab: FC<ToolboxTabProps> = ({ setView }) => {
+    // Move API access inside component
     return (
         <div className="tw-p-4 tw-h-full tw-overflow-auto">
             <div className="tw-mb-6">
@@ -52,20 +51,20 @@ const ToolboxTab: FC<ToolboxTabProps> = ({ setView }) => {
                         <AccordionTrigger className="tw-text-base">{item.title}</AccordionTrigger>
                         <AccordionContent>
                             <div className="tw-p-2">
-                                <p className="tw-text-sm tw-text-muted-foreground tw-text-center tw-mb-4">
+                                <p className="tw-text-sm tw-text-muted-foreground tw-mb-4">
                                     {item.description}
                                 </p>
                                 {/* Tool-specific content can be added here */}
                                 <div className="tw-space-y-2">
                                     {item.id === 'workflow-tools' && (
-                                        <div className="tw-p-2 tw-rounded-md tw-border">
+                                        <div className="tw-inline-flex tw-items-center tw-p-2 tw-rounded-md tw-border">
                                             <button
                                                 type="button"
-                                                className="tw-mt-2 tw-px-3 tw-py-1 tw-bg-button-background tw-text-button-foreground tw-rounded hover:tw-bg-button-hoverBackground"
+                                                className="tw-px-3 tw-py-1 tw-bg-button-background tw-text-button-foreground tw-rounded hover:tw-bg-button-hoverBackground"
                                                 onClick={() => {
-                                                    vscodeAPI.postMessage({
-                                                        command: 'openWorkflowEditor',
-                                                        type: 'workflow',
+                                                    getVSCodeAPI().postMessage({
+                                                        command: 'command',
+                                                        id: 'cody.openWorkflowEditor',
                                                     })
                                                 }}
                                             >
