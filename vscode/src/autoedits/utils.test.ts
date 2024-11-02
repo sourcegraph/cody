@@ -190,3 +190,383 @@ describe('extractInlineCompletionFromRewrittenCode', () => {
         expect(result).toBe('1;\nconst middle = 2;\nconst suffix = 3;')
     })
 })
+
+describe('trimNewLineCharsFromString', () => {
+    it('removes leading newlines', () => {
+        const input = '\n\nHello World'
+        const expected = 'Hello World'
+        expect(utils.trimNewLineCharsFromString(input)).toBe(expected)
+    })
+
+    it('removes single newlines', () => {
+        const input = '\nHello World'
+        const expected = 'Hello World'
+        expect(utils.trimNewLineCharsFromString(input)).toBe(expected)
+    })
+
+    it('removes with whitespace chars newlines', () => {
+        const input = '\n   \nHello World \n  \n\n'
+        const expected = '   \nHello World \n  '
+        expect(utils.trimNewLineCharsFromString(input)).toBe(expected)
+    })
+
+    it('removes trailing newlines', () => {
+        const input = 'Hello World\n\n'
+        const expected = 'Hello World'
+        expect(utils.trimNewLineCharsFromString(input)).toBe(expected)
+    })
+
+    it('removes leading and trailing newlines', () => {
+        const input = '\nHello World\n'
+        const expected = 'Hello World'
+        expect(utils.trimNewLineCharsFromString(input)).toBe(expected)
+    })
+
+    it('does not remove newlines in the middle of the string', () => {
+        const input = 'Hello\nWorld'
+        const expected = 'Hello\nWorld'
+        expect(utils.trimNewLineCharsFromString(input)).toBe(expected)
+    })
+
+    it('returns empty string when input is only newlines', () => {
+        const input = '\n\n'
+        const expected = ''
+        expect(utils.trimNewLineCharsFromString(input)).toBe(expected)
+    })
+
+    it('returns the same string when there are no leading or trailing newlines', () => {
+        const input = 'Hello World'
+        const expected = 'Hello World'
+        expect(utils.trimNewLineCharsFromString(input)).toBe(expected)
+    })
+
+    it('handles empty string input', () => {
+        const input = ''
+        const expected = ''
+        expect(utils.trimNewLineCharsFromString(input)).toBe(expected)
+    })
+})
+
+describe('isAllNewLineChars', () => {
+    it('should return true for an empty string', () => {
+        expect(utils.isAllNewLineChars('')).toBe(true)
+    })
+
+    it('should return true for a string with only newlines', () => {
+        expect(utils.isAllNewLineChars('\n')).toBe(true)
+        expect(utils.isAllNewLineChars('\n\n')).toBe(true)
+        expect(utils.isAllNewLineChars('\r')).toBe(true)
+        expect(utils.isAllNewLineChars('\r\n')).toBe(true)
+        expect(utils.isAllNewLineChars('\n\r\n\r')).toBe(true)
+    })
+
+    it('should return false for a string with non-newline characters', () => {
+        expect(utils.isAllNewLineChars('a')).toBe(false)
+        expect(utils.isAllNewLineChars(' \n')).toBe(false)
+        expect(utils.isAllNewLineChars('\n ')).toBe(false)
+        expect(utils.isAllNewLineChars('abc')).toBe(false)
+        expect(utils.isAllNewLineChars('\nabc')).toBe(false)
+        expect(utils.isAllNewLineChars('abc\n')).toBe(false)
+    })
+
+    it('should return false for a string with whitespace other than newlines', () => {
+        expect(utils.isAllNewLineChars(' ')).toBe(false)
+        expect(utils.isAllNewLineChars('\t')).toBe(false)
+        expect(utils.isAllNewLineChars(' \t\n')).toBe(false)
+        expect(utils.isAllNewLineChars('\n\t ')).toBe(false)
+    })
+})
+
+describe('adjustPredictionIfInlineCompletionPossible', () => {
+    it('returns original prediction if prefix or suffix not found', () => {
+        const originalPrediction = 'some code'
+        const prefix = 'prefix'
+        const suffix = 'suffix'
+        const result = utils.adjustPredictionIfInlineCompletionPossible(
+            originalPrediction,
+            prefix,
+            suffix
+        )
+        expect(result).toBe(originalPrediction)
+    })
+
+    it('adjusts the prediction when prefix and suffix are found and surrounding content is only new lines', () => {
+        const originalPrediction = '\n\nfunction test() {\n  console.log("Test");\n}\n\n'
+        const prefix = '\nfunction test() {'
+        const suffix = '}'
+        const expected = '\nfunction test() {\n  console.log("Test");\n}'
+        const result = utils.adjustPredictionIfInlineCompletionPossible(
+            originalPrediction,
+            prefix,
+            suffix
+        )
+        expect(result).toBe(expected)
+    })
+
+    it('returns original prediction if content before prefix is not all new lines', () => {
+        const originalPrediction = 'var a = 1;\nfunction test() {\n  console.log(a);\n}\n'
+        const prefix = 'function test() {'
+        const suffix = '}'
+        const result = utils.adjustPredictionIfInlineCompletionPossible(
+            originalPrediction,
+            prefix,
+            suffix
+        )
+        expect(result).toBe(originalPrediction)
+    })
+
+    it('returns original prediction if content after suffix is not all new lines', () => {
+        const originalPrediction = '\nfunction test() {\n  console.log("Test");\n}\nconsole.log("Done");'
+        const prefix = '\nfunction test() {'
+        const suffix = '}'
+        const result = utils.adjustPredictionIfInlineCompletionPossible(
+            originalPrediction,
+            prefix,
+            suffix
+        )
+        expect(result).toBe(originalPrediction)
+    })
+
+    it('handles cases where prefix and suffix are adjacent', () => {
+        const originalPrediction = '\n\nprefixsuffix\n\n'
+        const prefix = 'prefix'
+        const suffix = 'suffix'
+        const expected = 'prefixsuffix'
+        const result = utils.adjustPredictionIfInlineCompletionPossible(
+            originalPrediction,
+            prefix,
+            suffix
+        )
+        expect(result).toBe(expected)
+    })
+
+    it('trims new line characters correctly', () => {
+        const originalPrediction = '\n\n  content with new lines  \n\n'
+        const prefix = '\n  content'
+        const suffix = 'new lines  \n'
+        const expected = '\n  content with new lines  \n'
+        const result = utils.adjustPredictionIfInlineCompletionPossible(
+            originalPrediction,
+            prefix,
+            suffix
+        )
+        expect(result).toBe(expected)
+    })
+
+    it('returns prediction when prefix is empty', () => {
+        const originalPrediction = '\nfunction test() {\n  console.log("Test");\n}\n'
+        const prefix = ''
+        const suffix = '}'
+        const expected = '\nfunction test() {\n  console.log("Test");\n}'
+        const result = utils.adjustPredictionIfInlineCompletionPossible(
+            originalPrediction,
+            prefix,
+            suffix
+        )
+        expect(result).toBe(expected)
+    })
+
+    it('returns original prediction when suffix is empty', () => {
+        const originalPrediction = '\nfunction test() {\n  console.log("Test");\n}\n'
+        const prefix = 'function test() {'
+        const suffix = ''
+        const expected = 'function test() {\n  console.log("Test");\n}\n'
+        const result = utils.adjustPredictionIfInlineCompletionPossible(
+            originalPrediction,
+            prefix,
+            suffix
+        )
+        expect(result).toBe(expected)
+    })
+
+    it('handles empty prefix and suffix', () => {
+        const originalPrediction = '\n\nSome content\n\n'
+        const prefix = ''
+        const suffix = ''
+        const expected = '\n\nSome content\n\n'
+        const result = utils.adjustPredictionIfInlineCompletionPossible(
+            originalPrediction,
+            prefix,
+            suffix
+        )
+        expect(result).toBe(expected)
+    })
+
+    it('handles strings with only newlines in original prediction, prefix, and suffix', () => {
+        const originalPrediction = '\n\n\n'
+        const prefix = '\n'
+        const suffix = '\n'
+        const expected = '\n\n\n'
+        const result = utils.adjustPredictionIfInlineCompletionPossible(
+            originalPrediction,
+            prefix,
+            suffix
+        )
+        expect(result).toBe(expected)
+    })
+
+    it('handles multiple occurrences of the suffix in the original prediction', () => {
+        const originalPrediction = '\nsome code\nsuffix\nmore code\nsuffix\n'
+        const prefix = 'some code\n'
+        const suffix = 'suffix\n'
+        const expected = 'some code\nsuffix\nmore code\nsuffix\n'
+        const result = utils.adjustPredictionIfInlineCompletionPossible(
+            originalPrediction,
+            prefix,
+            suffix
+        )
+        expect(result).toBe(expected)
+    })
+
+    it('handles when original prediction is only newlines', () => {
+        const originalPrediction = '\n\n\n'
+        const prefix = '\n\n'
+        const suffix = '\n'
+        const expected = '\n\n\n'
+        const result = utils.adjustPredictionIfInlineCompletionPossible(
+            originalPrediction,
+            prefix,
+            suffix
+        )
+        expect(result).toBe(expected)
+    })
+
+    it('handles when completion to extract is empty', () => {
+        const originalPrediction = 'prefixsuffix'
+        const prefix = 'prefix'
+        const suffix = 'suffix'
+        const expected = 'prefixsuffix'
+        const result = utils.adjustPredictionIfInlineCompletionPossible(
+            originalPrediction,
+            prefix,
+            suffix
+        )
+        expect(result).toBe(expected)
+    })
+
+    it('handles when completion has only newlines and needs trimming', () => {
+        const originalPrediction = '\nprefix\n\n\nsuffix\n'
+        const prefix = 'prefix'
+        const suffix = 'suffix'
+        const expected = 'prefix\n\n\nsuffix'
+        const result = utils.adjustPredictionIfInlineCompletionPossible(
+            originalPrediction,
+            prefix,
+            suffix
+        )
+        expect(result).toBe(expected)
+    })
+
+    it('handles when completion has only newlines and needs trimming and overlapping new lines in between', () => {
+        const originalPrediction = '\nprefix\n\n\nsuffix\n'
+        const prefix = 'prefix\n'
+        const suffix = '\n\nsuffix'
+        const expected = 'prefix\n\n\nsuffix'
+        const result = utils.adjustPredictionIfInlineCompletionPossible(
+            originalPrediction,
+            prefix,
+            suffix
+        )
+        expect(result).toBe(expected)
+    })
+
+    it('handles when completion has only newlines and needs trimming and overlapping with extra new line chars', () => {
+        const originalPrediction = '\nprefix\n\n\nsuffix\n'
+        const prefix = 'prefix\n\n'
+        const suffix = '\n\nsuffix'
+        const expected = 'prefix\n\n\n\nsuffix'
+        const result = utils.adjustPredictionIfInlineCompletionPossible(
+            originalPrediction,
+            prefix,
+            suffix
+        )
+        expect(result).toBe(expected)
+    })
+
+    it('handles when prefix and suffix are identical', () => {
+        const originalPrediction = '\nprefix\nmiddle content\nprefix\n'
+        const prefix = 'prefix'
+        const suffix = 'prefix'
+        const expected = 'prefix\nmiddle content\nprefix'
+        const result = utils.adjustPredictionIfInlineCompletionPossible(
+            originalPrediction,
+            prefix,
+            suffix
+        )
+        expect(result).toBe(expected)
+    })
+
+    it('handles when suffix has extra chars', () => {
+        const originalPrediction = '\nstart\nsuffix\nmiddle\nsuffix\nend\n'
+        const prefix = 'start\n'
+        const suffix = 'suffix\n'
+        const result = utils.adjustPredictionIfInlineCompletionPossible(
+            originalPrediction,
+            prefix,
+            suffix
+        )
+        expect(result).toBe(originalPrediction)
+    })
+
+    it('handles when suffix repeats multiple times in original prediction', () => {
+        const originalPrediction = '\nstart\nsuffix\nmiddle\nsuffix\n\n'
+        const prefix = 'start\n'
+        const suffix = 'suffix\n'
+        const expected = 'start\nsuffix\nmiddle\nsuffix\n'
+        const result = utils.adjustPredictionIfInlineCompletionPossible(
+            originalPrediction,
+            prefix,
+            suffix
+        )
+        expect(result).toBe(expected)
+    })
+
+    it('handles when all parameters are empty strings', () => {
+        const originalPrediction = ''
+        const prefix = ''
+        const suffix = ''
+        const result = utils.adjustPredictionIfInlineCompletionPossible(
+            originalPrediction,
+            prefix,
+            suffix
+        )
+        expect(result).toBe('')
+    })
+
+    it('handles when originalPrediction contains only newlines and spaces', () => {
+        const originalPrediction = '\n \n\n '
+        const prefix = '\n '
+        const suffix = '\n '
+        const expected = '\n \n\n '
+        const result = utils.adjustPredictionIfInlineCompletionPossible(
+            originalPrediction,
+            prefix,
+            suffix
+        )
+        expect(result).toBe(expected)
+    })
+
+    it('returns original prediction when prediction before prefix contains non-newline characters', () => {
+        const originalPrediction = 'code before\nprefix\ncompletion\nsuffix'
+        const prefix = 'prefix'
+        const suffix = 'suffix'
+        const result = utils.adjustPredictionIfInlineCompletionPossible(
+            originalPrediction,
+            prefix,
+            suffix
+        )
+        expect(result).toBe(originalPrediction)
+    })
+
+    it('returns original prediction when prediction after suffix contains non-newline characters', () => {
+        const originalPrediction = 'prefix\ncompletion\nsuffix\ncode after'
+        const prefix = 'prefix'
+        const suffix = 'suffix'
+        const result = utils.adjustPredictionIfInlineCompletionPossible(
+            originalPrediction,
+            prefix,
+            suffix
+        )
+        expect(result).toBe(originalPrediction)
+    })
+})
