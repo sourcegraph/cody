@@ -15,9 +15,9 @@ import { Notices } from './components/Notices'
 import { StateDebugOverlay } from './components/StateDebugOverlay'
 import { TabContainer, TabRoot } from './components/shadcn/ui/tabs'
 import { AccountTab, HistoryTab, PromptsTab, SettingsTab, TabsBar, View } from './tabs'
+import ToolboxTab from './tabs/ToolboxTab'
 import { useFeatureFlag } from './utils/useFeatureFlags'
 import { TabViewContext } from './utils/useTabView'
-
 /**
  * The Cody tab panel, with tabs for chat, history, prompts, etc.
  */
@@ -127,6 +127,9 @@ export const CodyPanel: FunctionComponent<
                     )}
                     {view === View.Prompts && (
                         <PromptsTab setView={setView} isPromptsV2Enabled={isPromptsV2Enabled} />
+                    )}
+                    {view === View.Toolbox && config.webviewType === 'sidebar' && (
+                        <ToolboxTab setView={setView} />
                     )}
                     {view === View.Account && <AccountTab setView={setView} />}
                     {view === View.Settings && <SettingsTab />}

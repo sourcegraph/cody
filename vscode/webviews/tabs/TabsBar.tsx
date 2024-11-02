@@ -5,6 +5,7 @@ import clsx from 'clsx'
 import {
     BookTextIcon,
     CircleUserIcon,
+    Cog,
     DownloadIcon,
     ExternalLink,
     HistoryIcon,
@@ -385,6 +386,12 @@ function useTabs(input: Pick<TabsBarProps, 'IDE'>): TabConfig[] {
                                 arg: IDE === CodyIDE.VSCode ? undefined : 'clear-all-no-confirm',
                             },
                         ].filter(isDefined),
+                        changesView: true,
+                    },
+                    {
+                        view: View.Toolbox,
+                        title: 'Workflows',
+                        Icon: Cog,
                         changesView: true,
                     },
                     {
