@@ -57,6 +57,19 @@ export function mapLinesToOriginalLineNo(
     return result
 }
 
+export function extractInlineCompletionFromRewrittenCode(
+    prediction: string,
+    codeToRewritePrefix: string,
+    codeToRewriteSuffix: string
+): string {
+    const predictionWithoutPrefix = prediction.slice(codeToRewritePrefix.length)
+    const endIndex = predictionWithoutPrefix.length - codeToRewriteSuffix.length
+    const completion = predictionWithoutPrefix.slice(0, endIndex)
+    const completionNumLines = lines(completion).length
+    const completionWithSameLineSuffix = lines(predictionWithoutPrefix).slice(0, completionNumLines)
+    return completionWithSameLineSuffix.join('\n')
+}
+
 // Helper function to zip two arrays together
 export function zip<T, U>(arr1: T[], arr2: U[]): [T, U][] {
     const length = Math.min(arr1.length, arr2.length)
