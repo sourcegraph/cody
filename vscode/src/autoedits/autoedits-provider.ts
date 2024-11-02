@@ -12,9 +12,10 @@ import { DeepSeekPromptProvider } from './providers/deepseek'
 import { FireworksPromptProvider } from './providers/fireworks'
 import { OpenAIPromptProvider } from './providers/openai'
 import { AutoEditsRendererManager } from './renderer'
+import { extractInlineCompletionFromRewrittenCode } from './utils'
 
 const AUTOEDITS_CONTEXT_STRATEGY = 'auto-edits'
-const DEFAULT_DEBOUNCE_INTERVAL_MS = 250
+const DEFAULT_DEBOUNCE_INTERVAL_MS = 150
 
 export interface AutoEditsProviderOptions {
     document: vscode.TextDocument
@@ -129,11 +130,16 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
         this.logDebugData(isPrefixMatch, isSuffixMatch, autoeditResponse)
 
         if (isPrefixMatch && isSuffixMatch) {
-            const autocompleteResponse = this.extractInlineCompletion(autoeditResponse)
-            return [new vscode.InlineCompletionItem(autocompleteResponse)]
+            const autocompleteResponse = extractInlineCompletionFromRewrittenCode(
+                prediction,
+                codeToReplaceData.codeToRewritePrefix,
+                codeToReplaceData.codeToRewriteSuffix
+            )
+            autoeditsLogger.logDebug('Autocomplete Inline Respone: ', autocompleteResponse)
+            const inlineCompletionItems = new vscode.InlineCompletionItem(autocompleteResponse)
+            return [inlineCompletionItems]
         }
-
-        this.handleAutoeditsDecorations(document, position, codeToReplaceData, prediction)
+        await this.handleAutoeditsDecorations(document, position, codeToReplaceData, prediction)
         return null
     }
 
@@ -179,14 +185,6 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
             'Data Debug:\n',
             JSON.stringify(debugData, null, 2)
         )
-    }
-
-    private extractInlineCompletion(autoeditResponse: AutoeditsPrediction): string {
-        const { prediction, codeToReplaceData } = autoeditResponse
-        const startIndex = codeToReplaceData.codeToRewritePrefix?.length || 0
-        const endIndex = prediction.length - (codeToReplaceData.codeToRewriteSuffix?.length || 0)
-
-        return prediction.slice(startIndex, endIndex)
     }
 
     private initializePromptProvider(provider: string): void {

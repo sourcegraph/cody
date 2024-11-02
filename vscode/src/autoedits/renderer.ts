@@ -90,7 +90,7 @@ export class AutoEditsRendererManager implements vscode.Disposable {
             options.prediction,
             options.predictedFileText
         )
-        await this.activeProposedChange.renderer.renderDecorations({
+        this.activeProposedChange.renderer.renderDecorations({
             document: options.document,
             currentFileText: options.currentFileText,
             predictedFileText: options.predictedFileText,
@@ -124,9 +124,15 @@ export class AutoEditsRendererManager implements vscode.Disposable {
         await vscode.commands.executeCommand('setContext', 'cody.supersuggest.active', false)
     }
 
-    private onDidChangeTextDocument(event: vscode.TextDocumentChangeEvent): void {
-        // Dismiss the proposed change if the document has changed
-        this.dismissProposedChange()
+    private async onDidChangeTextDocument(event: vscode.TextDocumentChangeEvent): Promise<void> {
+        // Only dismiss if we have an active suggestion and the changed document matches
+        // else, we will falsely discard the suggestion on unrelated changes such as changes in output panel.
+        if (
+            this.activeProposedChange &&
+            event.document.uri.toString() === this.activeProposedChange.uri
+        ) {
+            await this.dismissProposedChange()
+        }
     }
 
     private logDiff(
@@ -200,7 +206,7 @@ export class AutoEditsRenderer implements vscode.Disposable {
         }
     }
 
-    public async renderDecorations(options: AutoEditsRendererOptions) {
+    public renderDecorations(options: AutoEditsRendererOptions): void {
         const beforeLines = lines(options.currentFileText)
         const afterLines = lines(options.predictedFileText)
         const { modifiedLines, removedLines, addedLines } = getLineLevelDiff(beforeLines, afterLines)
@@ -230,8 +236,6 @@ export class AutoEditsRenderer implements vscode.Disposable {
             modifiedRangesMapping,
             isOnlyAdditionsForModifiedLines
         )
-
-        await vscode.commands.executeCommand('setContext', 'cody.supersuggest.active', true)
     }
 
     /**
@@ -379,14 +383,10 @@ export class AutoEditsRenderer implements vscode.Disposable {
                 (firstModifiedLineMatch.afterLine - addedLinesInfo[0].afterLine)
         }
 
-        const bufferReplacerCol = 5
-        const replacerCol = Math.min(
-            Math.max(
-                ...beforeLinesChunks
-                    .slice(startLine, startLine + addedLinesInfo.length)
-                    .map(line => line.join('').length)
-            ) + bufferReplacerCol,
-            80 // todo (hitesh): fallback value, set based on the visible range of the editor
+        const replacerCol = Math.max(
+            ...beforeLinesChunks
+                .slice(startLine, startLine + addedLinesInfo.length)
+                .map(line => line.join('').length)
         )
         // todo (hitesh): handle case when too many lines to fit in the editor
         this.renderAddedLinesDecorations(addedLinesInfo, startLine, replacerCol)

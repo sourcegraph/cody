@@ -142,3 +142,51 @@ describe('splitLinesKeepEnds', () => {
         expect(utils.splitLinesKeepEnds('  \r\n\t\n    \r')).toEqual(['  \r\n', '\t\n', '    \r'])
     })
 })
+
+describe('extractInlineCompletionFromRewrittenCode', () => {
+    it('handles basic case', () => {
+        const prediction = 'const prefix = 1;\nconst middle = 2;\nconst suffix = 3;'
+        const prefix = 'const prefix = 1;\n'
+        const suffix = '\nconst suffix = 3;'
+
+        const result = utils.extractInlineCompletionFromRewrittenCode(prediction, prefix, suffix)
+        expect(result).toBe('const middle = 2;')
+    })
+
+    it('handles empty prefix and suffix', () => {
+        const prediction = 'const x = 1;'
+        const prefix = ''
+        const suffix = ''
+
+        const result = utils.extractInlineCompletionFromRewrittenCode(prediction, prefix, suffix)
+        expect(result).toBe('const x = 1;')
+    })
+
+    it('handles multiline completion', () => {
+        const prediction = 'prefix\nline1\nline2\nline3\nsuffix'
+        const prefix = 'prefix\n'
+        const suffix = '\nsuffix'
+
+        const result = utils.extractInlineCompletionFromRewrittenCode(prediction, prefix, suffix)
+        expect(result).toBe('line1\nline2\nline3')
+    })
+
+    it('same line suffix test', () => {
+        const prediction = 'const prefix = 1;\nconst middle = 2;\nconst suffix = 3;'
+        const prefix = 'const prefix = 1;\n'
+        const suffix = 'middle = 2;\nconst suffix = 3;'
+
+        const result = utils.extractInlineCompletionFromRewrittenCode(prediction, prefix, suffix)
+        expect(result).toBe('const middle = 2;')
+    })
+
+    it('same line suffix test (with multiple lines)', () => {
+        const prediction =
+            'const prefix = 1;\nconst middle = 2;\nconst suffix = 3;\nconst superSuffix = 4;'
+        const prefix = 'const prefix = '
+        const suffix = '= 3;\nconst superSuffix = 4;'
+
+        const result = utils.extractInlineCompletionFromRewrittenCode(prediction, prefix, suffix)
+        expect(result).toBe('1;\nconst middle = 2;\nconst suffix = 3;')
+    })
+})
