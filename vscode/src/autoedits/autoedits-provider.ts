@@ -14,7 +14,10 @@ import { DeepSeekPromptProvider } from './providers/deepseek'
 import { FireworksPromptProvider } from './providers/fireworks'
 import { OpenAIPromptProvider } from './providers/openai'
 import { AutoEditsRendererManager } from './renderer'
-import { extractInlineCompletionFromRewrittenCode } from './utils'
+import {
+    adjustPredictionIfInlineCompletionPossible,
+    extractInlineCompletionFromRewrittenCode,
+} from './utils'
 
 const AUTOEDITS_CONTEXT_STRATEGY = 'auto-edits'
 const DEFAULT_DEBOUNCE_INTERVAL_MS = 150
@@ -119,10 +122,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
         }
         const { prediction, codeToReplaceData } = autoeditResponse
 
-        const inlineCompletionItems = await this.handleInlineCompletionResponse(
-            prediction,
-            codeToReplaceData
-        )
+        const inlineCompletionItems = this.handleInlineCompletionResponse(prediction, codeToReplaceData)
         if (inlineCompletionItems) {
             return inlineCompletionItems
         }
@@ -130,40 +130,24 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
         return null
     }
 
-    private async handleInlineCompletionResponse(
-        prediction: string,
+    private handleInlineCompletionResponse(
+        originalPrediction: string,
         codeToReplace: CodeToReplaceData
-    ): Promise<vscode.InlineCompletionItem[] | null> {
+    ): vscode.InlineCompletionItem[] | null {
+        const prediction = adjustPredictionIfInlineCompletionPossible(
+            originalPrediction,
+            codeToReplace.codeToRewritePrefix,
+            codeToReplace.codeToRewriteSuffix
+        )
         const isPrefixMatch = prediction.startsWith(codeToReplace.codeToRewritePrefix)
+        const isSuffixMatch = prediction.endsWith(codeToReplace.codeToRewriteSuffix)
 
-        // In case of suffix, there could be some new line chars at the start causing prediction to not match.
-        // Add a heuristic, to match at the suffix ignoring first couple of new line chars.
-        const MAX_NEW_LINE_CHARS_TO_IGNORE = 2
-
-        let isSuffixMatch = prediction.endsWith(codeToReplace.codeToRewriteSuffix)
-        let matchedSuffix = codeToReplace.codeToRewriteSuffix
-
-        for (
-            let i = 0;
-            i < Math.min(MAX_NEW_LINE_CHARS_TO_IGNORE, codeToReplace.codeToRewriteSuffix.length);
-            i++
-        ) {
-            // todo (hitesh): Change so that the new line matching is platform agnostic
-            if (isSuffixMatch || codeToReplace.codeToRewriteSuffix[i] !== '\n') {
-                break
-            }
-            if (prediction.endsWith(codeToReplace.codeToRewriteSuffix.slice(i))) {
-                isSuffixMatch = true
-                matchedSuffix = codeToReplace.codeToRewriteSuffix.slice(i)
-                break
-            }
-        }
         this.logDebugData(
             isPrefixMatch,
             isSuffixMatch,
             prediction,
             codeToReplace.codeToRewritePrefix,
-            matchedSuffix
+            codeToReplace.codeToRewriteSuffix
         )
 
         if (isPrefixMatch && isSuffixMatch) {
