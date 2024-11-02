@@ -10,6 +10,11 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 ### Changed
 
+## 1.40.1
+
+### Fixed
+- Auth: Fixed UI conditional rendering logic for non VS Code clients. [pull/6047](https://github.com/sourcegraph/cody/pull/6047)
+
 ## 1.40.0
 
 ### Added
