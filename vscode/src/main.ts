@@ -72,6 +72,7 @@ import { executeTestChatCommand } from './commands/execute/test-chat'
 import { CodySourceControl } from './commands/scm/source-control'
 import type { CodyCommandArgs } from './commands/types'
 import { newCodyCommandArgs } from './commands/utils/get-commands'
+import { registerWorkflowCommands } from './commands/workflow'
 import { createInlineCompletionItemProvider } from './completions/create-inline-completion-item-provider'
 import { getConfiguration } from './configuration'
 import { exposeOpenCtxClient } from './context/openctx'
@@ -288,6 +289,7 @@ const register = async (
     registerOtherCommands(disposables)
     if (clientCapabilities().isVSCode) {
         registerVSCodeOnlyFeatures(chatClient, disposables)
+        registerWorkflowCommands(context)
     }
     if (isExtensionModeDevOrTest) {
         await registerTestCommands(context, disposables)

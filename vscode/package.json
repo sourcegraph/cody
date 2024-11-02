@@ -588,6 +588,11 @@
         "command": "cody.command.insertCodeToNewFile",
         "title": "Save Code to New File...",
         "enablement": "cody.activated"
+      },
+      {
+        "command": "cody.openWorkflowEditor",
+        "title": "Open Workflow Editor",
+        "category": "Cody"
       }
     ],
     "keybindings": [

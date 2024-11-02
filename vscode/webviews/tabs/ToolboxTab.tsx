@@ -5,6 +5,7 @@ import {
     AccordionItem,
     AccordionTrigger,
 } from '../components/shadcn/ui/accordion'
+import { getGenericVSCodeAPI } from '../utils/VSCodeApi'
 import type { View } from './types'
 
 interface ToolboxTabProps {
@@ -36,6 +37,8 @@ const toolboxItems: ToolboxItem[] = [
     },
 ]
 
+const vscodeAPI = getGenericVSCodeAPI()
+
 const ToolboxTab: FC<ToolboxTabProps> = ({ setView }) => {
     return (
         <div className="tw-p-4 tw-h-full tw-overflow-auto">
@@ -56,10 +59,18 @@ const ToolboxTab: FC<ToolboxTabProps> = ({ setView }) => {
                                 <div className="tw-space-y-2">
                                     {item.id === 'workflow-tools' && (
                                         <div className="tw-p-2 tw-rounded-md tw-border">
-                                            <h3 className="tw-font-medium">Workflows</h3>
-                                            <p className="tw-text-sm">
-                                                Create, edit, and manage workflows
-                                            </p>
+                                            <button
+                                                type="button"
+                                                className="tw-mt-2 tw-px-3 tw-py-1 tw-bg-button-background tw-text-button-foreground tw-rounded hover:tw-bg-button-hoverBackground"
+                                                onClick={() => {
+                                                    vscodeAPI.postMessage({
+                                                        command: 'openWorkflowEditor',
+                                                        type: 'workflow',
+                                                    })
+                                                }}
+                                            >
+                                                Open Workflow Editor
+                                            </button>
                                         </div>
                                     )}
                                     {item.id === 'token-tools' && (
@@ -80,7 +91,7 @@ const ToolboxTab: FC<ToolboxTabProps> = ({ setView }) => {
                             </div>
                         </AccordionContent>
                     </AccordionItem>
-                ))}
+                ))}{' '}
             </Accordion>
         </div>
     )
