@@ -68,7 +68,7 @@ const ToolboxTab: FC<ToolboxTabProps> = ({ setView }) => {
                                                     })
                                                 }}
                                             >
-                                                Open Workflow Editor
+                                                Workflow Editor
                                             </button>
                                         </div>
                                     )}

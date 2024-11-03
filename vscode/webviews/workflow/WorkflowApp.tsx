@@ -10,6 +10,7 @@ import {
 } from '@xyflow/react'
 import React, { useState, useCallback } from 'react'
 import '@xyflow/react/dist/style.css'
+import { VSCodeWrapper } from '../utils/VSCodeApi'
 
 const initialNodes = [
     {
@@ -35,11 +36,8 @@ const initialEdges = [
     { id: '2-3', source: '2', target: '3', type: 'step' },
 ]
 
-export interface WorkflowAppProps {
-    count?: number
-}
 
-export const WorkflowApp: React.FunctionComponent<WorkflowAppProps> = () => {
+export const WorkflowApp: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vscodeAPI }) => {
     const [nodes, setNodes] = useState(initialNodes)
     const [edges, setEdges] = useState(initialEdges)
 
