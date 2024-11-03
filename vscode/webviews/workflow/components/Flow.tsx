@@ -7,6 +7,7 @@ import {
     addEdge,
     applyEdgeChanges,
     applyNodeChanges,
+    useOnSelectionChange,
     useReactFlow,
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
@@ -14,50 +15,19 @@ import type React from 'react'
 import { useCallback, useState } from 'react'
 import type { VSCodeWrapper } from '../../utils/VSCodeApi'
 import { WorkflowSidebar } from './WorkflowSidebar'
-import { CLINode, CodyLLMNode, NodeType, type WorkflowNode } from './nodes/Nodes'
-
-// Add nodeTypes to ReactFlow
-const nodeTypes = {
-    [NodeType.CLI]: CLINode,
-    [NodeType.LLM]: CodyLLMNode,
-}
-
-const initialNodes: WorkflowNode[] = [
-    {
-        id: '1',
-        type: NodeType.CLI,
-        data: { label: 'Git Diff' },
-        position: { x: 0, y: 0 },
-    },
-    {
-        id: '2',
-        type: NodeType.LLM,
-        data: { label: 'Cody Generate Commit Message' },
-        position: { x: 0, y: 100 },
-    },
-    {
-        id: '3',
-        type: NodeType.CLI,
-        data: { label: 'Git Commit' },
-        position: { x: 0, y: 200 },
-    },
-]
-
-const initialEdges = [
-    { id: '1-2', source: '1', target: '2', type: 'bezier' },
-    { id: '2-3', source: '2', target: '3', type: 'bezier' },
-]
+import { type NodeType, type WorkflowNode, createNode, defaultWorkflow, nodeTypes } from './nodes/Nodes'
 
 export const Flow: React.FC<{ vscodeAPI: VSCodeWrapper }> = ({ vscodeAPI }) => {
     const { getViewport } = useReactFlow()
-    const [nodes, setNodes] = useState(initialNodes)
-    const [edges, setEdges] = useState(initialEdges)
+    const [nodes, setNodes] = useState(defaultWorkflow.nodes)
+    const [edges, setEdges] = useState(defaultWorkflow.edges)
     const [selectedNode, setSelectedNode] = useState<WorkflowNode | null>(null)
     const [movingNodeId, setMovingNodeId] = useState<string | null>(null)
 
+    // 1. Node Operations
+    // Handles all node-related state changes and updates
     const onNodesChange = useCallback(
         (changes: NodeChange[]) => {
-            // Track node movement
             const dragChange = changes.find(
                 change =>
                     change.type === 'position' &&
@@ -72,40 +42,23 @@ export const Flow: React.FC<{ vscodeAPI: VSCodeWrapper }> = ({ vscodeAPI }) => {
                 setMovingNodeId(null)
             }
 
-            const updatedNodes = applyNodeChanges(changes, nodes) as typeof initialNodes
+            const updatedNodes = applyNodeChanges(changes, nodes) as typeof nodes
             setNodes(updatedNodes)
 
             if (selectedNode) {
-                const updatedSelectedNode = updatedNodes.find(node => node.id === selectedNode.id)
+                const updatedSelectedNode = updatedNodes.find(
+                    (node: { id: string }) => node.id === selectedNode.id
+                )
                 setSelectedNode(updatedSelectedNode || null)
             }
         },
         [selectedNode, nodes, movingNodeId]
     )
-
-    // Update the nodes to include moving state
-    // Update the nodesWithState mapping
-    const nodesWithState = nodes.map(node => ({
-        ...node,
-        selected: node.id === selectedNode?.id,
-        data: {
-            ...node.data,
-            moving: node.id === movingNodeId, // Move moving state into data
-        },
-    }))
-
-    const onEdgesChange = useCallback(
-        (changes: EdgeChange[]) =>
-            setEdges(eds => applyEdgeChanges(changes, eds) as typeof initialEdges),
-        []
-    )
-
-    const onConnect = useCallback((params: any) => setEdges(eds => addEdge(params, eds)), [])
-
     const onNodeClick = useCallback((event: React.MouseEvent, node: WorkflowNode) => {
+        // Stop event propagation to prevent triggering background click
+        event.stopPropagation()
         setSelectedNode(node)
     }, [])
-
     const onNodeUpdate = useCallback(
         (nodeId: string, data: Partial<WorkflowNode['data']>) => {
             setNodes(currentNodes =>
@@ -126,26 +79,58 @@ export const Flow: React.FC<{ vscodeAPI: VSCodeWrapper }> = ({ vscodeAPI }) => {
         },
         [selectedNode]
     )
-
     const handleAddNode = useCallback(
         (nodeLabel: string, nodeType: NodeType) => {
             const { x, y, zoom } = getViewport()
             const position = { x: -x + 100 * zoom, y: -y + 100 * zoom }
-
-            const newNode: WorkflowNode = {
-                id: `${nodes.length + 1}`,
-                type: nodeType,
-                data: {
-                    label: nodeLabel,
-                    command: nodeType === NodeType.CLI ? '' : undefined,
-                    prompt: nodeType === NodeType.LLM ? '' : undefined,
-                },
-                position,
-            }
+            const newNode = createNode(nodeType, nodeLabel, position, nodes.length)
             setNodes(nodes => [...nodes, newNode])
         },
         [getViewport, nodes]
     )
+
+    // 2. Edge Operations
+    // Manages connections between nodes
+    const onEdgesChange = useCallback(
+        (changes: EdgeChange[]) =>
+            setEdges(eds => applyEdgeChanges(changes, eds) as typeof defaultWorkflow.edges),
+        []
+    )
+    const onConnect = useCallback((params: any) => setEdges(eds => addEdge(params, eds)), [])
+
+    // 3. Selection Management
+    // Handles node selection state
+    useOnSelectionChange({
+        onChange: ({ nodes }) => {
+            if (nodes.length === 0) {
+                setSelectedNode(null)
+            }
+        },
+    })
+
+    // 4. Background/System Operations
+    // Manages workspace interactions
+    const handleBackgroundClick = useCallback((event: React.MouseEvent | React.KeyboardEvent) => {
+        if (event.type === 'click' || (event as React.KeyboardEvent).key === 'Enter') {
+            setSelectedNode(null)
+        }
+    }, [])
+    const handleBackgroundKeyDown = useCallback((event: React.KeyboardEvent) => {
+        if (event.key === 'Enter') {
+            setSelectedNode(null)
+        }
+    }, [])
+
+    // 5. State Transformations
+    // Transforms data for rendering
+    const nodesWithState = nodes.map(node => ({
+        ...node,
+        selected: node.id === selectedNode?.id,
+        data: {
+            ...node.data,
+            moving: node.id === movingNodeId,
+        },
+    }))
 
     return (
         <div className="tw-flex tw-h-screen">
@@ -154,7 +139,13 @@ export const Flow: React.FC<{ vscodeAPI: VSCodeWrapper }> = ({ vscodeAPI }) => {
                 selectedNode={selectedNode}
                 onNodeUpdate={onNodeUpdate}
             />
-            <div className="tw-flex-1">
+            <div
+                className="tw-flex-1"
+                onClick={handleBackgroundClick}
+                onKeyDown={handleBackgroundKeyDown}
+                role="button"
+                tabIndex={0}
+            >
                 <div style={{ width: '100%', height: '100%' }}>
                     <ReactFlow
                         nodes={nodesWithState}
