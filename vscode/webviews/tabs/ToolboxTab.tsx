@@ -7,6 +7,7 @@ import {
 } from '../components/shadcn/ui/accordion'
 import { getVSCodeAPI } from '../utils/VSCodeApi'
 import type { View } from './types'
+import { Button } from '../components/shadcn/ui/button'
 
 interface ToolboxTabProps {
     setView: (view: View) => void
@@ -57,10 +58,11 @@ const ToolboxTab: FC<ToolboxTabProps> = ({ setView }) => {
                                 {/* Tool-specific content can be added here */}
                                 <div className="tw-space-y-2">
                                     {item.id === 'workflow-tools' && (
-                                        <div className="tw-inline-flex tw-items-center tw-p-2 tw-rounded-md tw-border">
-                                            <button
+                                        <div className="tw-items-center tw-p-2 tw-rounded-md tw-border">
+                                            <Button
                                                 type="button"
-                                                className="tw-px-3 tw-py-1 tw-bg-button-background tw-text-button-foreground tw-rounded hover:tw-bg-button-hoverBackground"
+                                                className="tw-w-full tw-justify-start"
+                                                variant="ghost"
                                                 onClick={() => {
                                                     getVSCodeAPI().postMessage({
                                                         command: 'command',
@@ -69,7 +71,7 @@ const ToolboxTab: FC<ToolboxTabProps> = ({ setView }) => {
                                                 }}
                                             >
                                                 Workflow Editor
-                                            </button>
+                                            </Button>
                                         </div>
                                     )}
                                     {item.id === 'token-tools' && (
