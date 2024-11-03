@@ -67,7 +67,10 @@ export class AutoEditsRendererManager implements vscode.Disposable {
             vscode.commands.registerCommand('cody.supersuggest.dismiss', () =>
                 this.dismissProposedChange()
             ),
-            vscode.workspace.onDidChangeTextDocument(event => this.onDidChangeTextDocument(event))
+            vscode.workspace.onDidChangeTextDocument(event => this.onDidChangeTextDocument(event)),
+            vscode.window.onDidChangeTextEditorSelection(event =>
+                this.onDidChangeTextEditorSelection(event)
+            )
         )
     }
 
@@ -77,7 +80,6 @@ export class AutoEditsRendererManager implements vscode.Disposable {
         if (!editor || options.document !== editor.document) {
             return
         }
-
         this.activeProposedChange = {
             uri: options.document.uri.toString(),
             range: options.range,
@@ -128,9 +130,37 @@ export class AutoEditsRendererManager implements vscode.Disposable {
         // Only dismiss if we have an active suggestion and the changed document matches
         // else, we will falsely discard the suggestion on unrelated changes such as changes in output panel.
         if (
-            this.activeProposedChange &&
-            event.document.uri.toString() === this.activeProposedChange.uri
+            !this.activeProposedChange ||
+            event.document.uri.toString() !== this.activeProposedChange.uri
         ) {
+            return
+        }
+        await this.dismissProposedChange()
+    }
+
+    private async onDidChangeTextEditorSelection(
+        event: vscode.TextEditorSelectionChangeEvent
+    ): Promise<void> {
+        if (
+            !this.activeProposedChange ||
+            event.textEditor.document.uri.toString() !== this.activeProposedChange.uri
+        ) {
+            return
+        }
+        const currentSelectionRange = event.selections[0]
+        const proposedChangeRange = this.activeProposedChange.range
+
+        // If the user places the cursor beyond the buffer around the proposed selection range, dismiss the suggestion
+        const BUFFER_LINES = 4
+        const document = event.textEditor.document
+        const startLine = Math.max(proposedChangeRange.start.line - BUFFER_LINES, 0)
+        const endLine = Math.min(proposedChangeRange.end.line + BUFFER_LINES, document.lineCount - 1)
+        const expandedRange = new vscode.Range(
+            document.lineAt(startLine).range.start,
+            document.lineAt(endLine).range.end
+        )
+        if (!currentSelectionRange.intersection(expandedRange)) {
+            // No overlap with expanded range, dismiss the proposed change
             await this.dismissProposedChange()
         }
     }

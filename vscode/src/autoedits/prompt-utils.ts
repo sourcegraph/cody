@@ -51,8 +51,10 @@ export interface CurrentFilePromptOptions {
 
 export interface CodeToReplaceData {
     codeToRewrite: string
-    areaPrefix: string
-    areaSuffix: string
+    prefixBeforeArea: string
+    suffixAfterArea: string
+    prefixInArea: string
+    suffixInArea: string
     codeToRewritePrefix: string
     codeToRewriteSuffix: string
     startLine: number
@@ -170,8 +172,10 @@ export function getCurrentFilePromptComponents(
         endLine: currentFileContext.codeToRewriteEndLine,
         codeToRewritePrefix: currentFileContext.codeToRewritePrefix.toString(),
         codeToRewriteSuffix: currentFileContext.codeToRewriteSuffix.toString(),
-        areaPrefix: currentFileContext.prefixInArea.toString(),
-        areaSuffix: currentFileContext.suffixInArea.toString(),
+        prefixBeforeArea: currentFileContext.prefixBeforeArea.toString(),
+        suffixAfterArea: currentFileContext.suffixAfterArea.toString(),
+        prefixInArea: currentFileContext.prefixInArea.toString(),
+        suffixInArea: currentFileContext.suffixInArea.toString(),
     }
 
     const fileWithMarker = ps`${currentFileContext.prefixBeforeArea}
