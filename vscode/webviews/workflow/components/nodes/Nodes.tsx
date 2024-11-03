@@ -20,14 +20,27 @@ export interface WorkflowNode {
     }
 }
 
-export const CLINode: React.FC<{ data: { label: string } }> = ({ data }) => (
+// Update CLINode component
+export const CLINode: React.FC<{
+    data: {
+        label: string
+        moving?: boolean
+    }
+    selected?: boolean
+}> = ({ data, selected }) => (
     <div
         style={{
             padding: '0.5rem',
             borderRadius: '0.25rem',
             backgroundColor: 'var(--vscode-dropdown-background)',
             color: 'var(--vscode-dropdown-foreground)',
-            border: '1px solid var(--vscode-textLink-foreground)',
+            border: `2px solid ${
+                data.moving
+                    ? 'var(--vscode-focusBorder)'
+                    : selected
+                      ? 'var(--vscode-testing-iconPassed)'
+                      : 'var(--vscode-textLink-foreground)'
+            }`,
         }}
     >
         <Handle type="target" position={Position.Top} />
@@ -38,14 +51,27 @@ export const CLINode: React.FC<{ data: { label: string } }> = ({ data }) => (
     </div>
 )
 
-export const CodyLLMNode: React.FC<{ data: { label: string } }> = ({ data }) => (
+// Update CodyLLMNode component
+export const CodyLLMNode: React.FC<{
+    data: {
+        label: string
+        moving?: boolean
+    }
+    selected?: boolean
+}> = ({ data, selected }) => (
     <div
         style={{
             padding: '0.5rem',
             borderRadius: '0.25rem',
             backgroundColor: 'var(--vscode-dropdown-background)',
             color: 'var(--vscode-dropdown-foreground)',
-            border: '1px solid var(--vscode-foreground)',
+            border: `2px solid ${
+                data.moving
+                    ? 'var(--vscode-focusBorder)'
+                    : selected
+                      ? 'var(--vscode-testing-iconPassed)'
+                      : 'var(--vscode-foreground)'
+            }`,
         }}
     >
         <Handle type="target" position={Position.Top} />

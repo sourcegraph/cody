@@ -6,13 +6,20 @@ import {
     AccordionTrigger,
 } from '../../components/shadcn/ui/accordion'
 import { Button } from '../../components/shadcn/ui/button'
-import { NodeType } from './nodes/Nodes'
+import { PropertyEditor } from './PropertyEditor'
+import { NodeType, type WorkflowNode } from './nodes/Nodes'
 
 interface WorkflowSidebarProps {
     onNodeAdd: (nodeLabel: string, nodeType: NodeType) => void
+    selectedNode?: WorkflowNode | null
+    onNodeUpdate?: (nodeId: string, data: Partial<WorkflowNode['data']>) => void
 }
 
-export const WorkflowSidebar: React.FC<WorkflowSidebarProps> = ({ onNodeAdd }) => {
+export const WorkflowSidebar: React.FC<WorkflowSidebarProps> = ({
+    onNodeAdd,
+    selectedNode,
+    onNodeUpdate,
+}) => {
     return (
         <div className="tw-w-64 tw-border-r tw-border-border tw-h-full tw-bg-sidebar-background tw-p-4">
             <Accordion type="single" collapsible>
@@ -59,6 +66,19 @@ export const WorkflowSidebar: React.FC<WorkflowSidebarProps> = ({ onNodeAdd }) =
                     </AccordionContent>
                 </AccordionItem>
             </Accordion>
+
+            <div className="tw-my-4 tw-border-t tw-border-border" />
+
+            <div className="tw-p-2">
+                <h3 className="tw-text-sm tw-font-medium">Property Editor</h3>
+                {selectedNode ? (
+                    <PropertyEditor node={selectedNode} onUpdate={onNodeUpdate || (() => {})} />
+                ) : (
+                    <p className="tw-text-sm tw-text-muted-foreground tw-mt-2">
+                        Select a node to edit its properties
+                    </p>
+                )}
+            </div>
         </div>
     )
 }

@@ -52,12 +52,47 @@ export const Flow: React.FC<{ vscodeAPI: VSCodeWrapper }> = ({ vscodeAPI }) => {
     const { getViewport } = useReactFlow()
     const [nodes, setNodes] = useState(initialNodes)
     const [edges, setEdges] = useState(initialEdges)
+    const [selectedNode, setSelectedNode] = useState<WorkflowNode | null>(null)
+    const [movingNodeId, setMovingNodeId] = useState<string | null>(null)
 
     const onNodesChange = useCallback(
-        (changes: NodeChange[]) =>
-            setNodes(nds => applyNodeChanges(changes, nds) as typeof initialNodes),
-        []
+        (changes: NodeChange[]) => {
+            // Track node movement
+            const dragChange = changes.find(
+                change =>
+                    change.type === 'position' &&
+                    'dragging' in change &&
+                    change.dragging &&
+                    'id' in change
+            ) as { id: string; type: 'position'; dragging: boolean } | undefined
+
+            if (dragChange) {
+                setMovingNodeId(dragChange.id)
+            } else if (movingNodeId) {
+                setMovingNodeId(null)
+            }
+
+            const updatedNodes = applyNodeChanges(changes, nodes) as typeof initialNodes
+            setNodes(updatedNodes)
+
+            if (selectedNode) {
+                const updatedSelectedNode = updatedNodes.find(node => node.id === selectedNode.id)
+                setSelectedNode(updatedSelectedNode || null)
+            }
+        },
+        [selectedNode, nodes, movingNodeId]
     )
+
+    // Update the nodes to include moving state
+    // Update the nodesWithState mapping
+    const nodesWithState = nodes.map(node => ({
+        ...node,
+        selected: node.id === selectedNode?.id,
+        data: {
+            ...node.data,
+            moving: node.id === movingNodeId, // Move moving state into data
+        },
+    }))
 
     const onEdgesChange = useCallback(
         (changes: EdgeChange[]) =>
@@ -66,6 +101,31 @@ export const Flow: React.FC<{ vscodeAPI: VSCodeWrapper }> = ({ vscodeAPI }) => {
     )
 
     const onConnect = useCallback((params: any) => setEdges(eds => addEdge(params, eds)), [])
+
+    const onNodeClick = useCallback((event: React.MouseEvent, node: WorkflowNode) => {
+        setSelectedNode(node)
+    }, [])
+
+    const onNodeUpdate = useCallback(
+        (nodeId: string, data: Partial<WorkflowNode['data']>) => {
+            setNodes(currentNodes =>
+                currentNodes.map(node => {
+                    if (node.id === nodeId) {
+                        const updatedNode = {
+                            ...node,
+                            data: { ...node.data, ...data },
+                        }
+                        if (selectedNode?.id === nodeId) {
+                            setSelectedNode(updatedNode)
+                        }
+                        return updatedNode
+                    }
+                    return node
+                })
+            )
+        },
+        [selectedNode]
+    )
 
     const handleAddNode = useCallback(
         (nodeLabel: string, nodeType: NodeType) => {
@@ -84,20 +144,25 @@ export const Flow: React.FC<{ vscodeAPI: VSCodeWrapper }> = ({ vscodeAPI }) => {
             }
             setNodes(nodes => [...nodes, newNode])
         },
-        [nodes, getViewport]
+        [getViewport, nodes]
     )
 
     return (
         <div className="tw-flex tw-h-screen">
-            <WorkflowSidebar onNodeAdd={handleAddNode} />
+            <WorkflowSidebar
+                onNodeAdd={handleAddNode}
+                selectedNode={selectedNode}
+                onNodeUpdate={onNodeUpdate}
+            />
             <div className="tw-flex-1">
                 <div style={{ width: '100%', height: '100%' }}>
                     <ReactFlow
-                        nodes={nodes}
+                        nodes={nodesWithState}
                         edges={edges}
                         onNodesChange={onNodesChange}
                         onEdgesChange={onEdgesChange}
                         onConnect={onConnect}
+                        onNodeClick={onNodeClick}
                         nodeTypes={nodeTypes}
                         fitView
                     >
