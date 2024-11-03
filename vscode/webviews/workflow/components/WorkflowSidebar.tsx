@@ -22,29 +22,36 @@ export const WorkflowSidebar: React.FC<WorkflowSidebarProps> = ({
 }) => {
     return (
         <div className="tw-w-64 tw-border-r tw-border-border tw-h-full tw-bg-sidebar-background tw-p-4">
+            <div className="tw-flex tw-flex-col tw-gap-2 tw-mb-4">
+                <Button variant="secondary" className="tw-w-full">
+                    Open Workflow
+                </Button>
+                <Button variant="secondary" className="tw-w-full">
+                    Save Workflow
+                </Button>
+            </div>
+
+            <div className="tw-my-4 tw-border-t tw-border-border" />
             <Accordion type="single" collapsible>
                 <AccordionItem value="cli">
                     <AccordionTrigger>CLI Actions</AccordionTrigger>
                     <AccordionContent>
                         <div className="tw-flex tw-flex-col tw-gap-2">
-                            <div className="tw-border">
-                                <Button
-                                    onClick={() => onNodeAdd('Git Diff', NodeType.CLI)}
-                                    className="tw-w-full tw-justify-start"
-                                    variant="ghost"
-                                >
-                                    Git Diff
-                                </Button>
-                            </div>
-                            <div className="tw-border">
-                                <Button
-                                    onClick={() => onNodeAdd('Git Commit', NodeType.CLI)}
-                                    className="tw-w-full tw-justify-start"
-                                    variant="ghost"
-                                >
-                                    Git Commit
-                                </Button>
-                            </div>
+                            <Button
+                                onClick={() => onNodeAdd('Git Diff', NodeType.CLI)}
+                                className="tw-w-full"
+                                variant="secondary"
+                            >
+                                Git Diff
+                            </Button>
+
+                            <Button
+                                onClick={() => onNodeAdd('Git Commit', NodeType.CLI)}
+                                className="tw-w-full"
+                                variant="secondary"
+                            >
+                                Git Commit
+                            </Button>
                         </div>
                     </AccordionContent>
                 </AccordionItem>
@@ -53,15 +60,13 @@ export const WorkflowSidebar: React.FC<WorkflowSidebarProps> = ({
                     <AccordionTrigger>Cody LLM Actions</AccordionTrigger>
                     <AccordionContent>
                         <div className="tw-flex tw-flex-col tw-gap-2">
-                            <div className="tw-border">
-                                <Button
-                                    onClick={() => onNodeAdd('Cody Generate Commit', NodeType.LLM)}
-                                    className="tw-w-full tw-justify-start"
-                                    variant="ghost"
-                                >
-                                    Cody Inference
-                                </Button>
-                            </div>
+                            <Button
+                                onClick={() => onNodeAdd('Cody Generate Commit', NodeType.LLM)}
+                                className="tw-w-full"
+                                variant="secondary"
+                            >
+                                Cody Inference
+                            </Button>
                         </div>
                     </AccordionContent>
                 </AccordionItem>
