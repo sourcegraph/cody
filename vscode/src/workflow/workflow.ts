@@ -1,4 +1,6 @@
 import * as vscode from 'vscode'
+import type { WorkflowToExtension } from '../../webviews/workflow/services/WorkflowProtocol'
+import { handleWorkflowSave } from './workflow-io'
 
 export function registerWorkflowCommands(context: vscode.ExtensionContext) {
     context.subscriptions.push(
@@ -14,13 +16,23 @@ export function registerWorkflowCommands(context: vscode.ExtensionContext) {
                 }
             )
 
+            // Add message handler
+            panel.webview.onDidReceiveMessage(
+                async (message: WorkflowToExtension) => {
+                    switch (message.type) {
+                        case 'save_workflow':
+                            await handleWorkflowSave(message.data)
+                            break
+                    }
+                },
+                undefined,
+                context.subscriptions
+            )
+
             // Add dispose handler
             panel.onDidDispose(() => {
                 // Cleanup resources
                 panel.dispose()
-
-                // Optional: Clear any stored state or references
-                // Example: clear any stored workflow data
             })
 
             const webviewPath = vscode.Uri.joinPath(context.extensionUri, 'dist/webviews')

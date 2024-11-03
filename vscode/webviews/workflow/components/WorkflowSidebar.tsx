@@ -13,20 +13,29 @@ interface WorkflowSidebarProps {
     onNodeAdd: (nodeLabel: string, nodeType: NodeType) => void
     selectedNode?: WorkflowNode | null
     onNodeUpdate?: (nodeId: string, data: Partial<WorkflowNode['data']>) => void
+    onSave?: () => void
 }
 
 export const WorkflowSidebar: React.FC<WorkflowSidebarProps> = ({
     onNodeAdd,
     selectedNode,
     onNodeUpdate,
+    onSave,
 }) => {
+    const handleSave = async (): Promise<void> => {
+        // Send message to VSCode extension to handle file saving
+        if (onSave) {
+            onSave()
+        }
+    }
+
     return (
         <div className="tw-w-64 tw-border-r tw-border-border tw-h-full tw-bg-sidebar-background tw-p-4">
             <div className="tw-flex tw-flex-col tw-gap-2 tw-mb-4">
                 <Button variant="secondary" className="tw-w-full">
                     Open Workflow
                 </Button>
-                <Button variant="secondary" className="tw-w-full">
+                <Button variant="secondary" className="tw-w-full" onClick={handleSave}>
                     Save Workflow
                 </Button>
             </div>

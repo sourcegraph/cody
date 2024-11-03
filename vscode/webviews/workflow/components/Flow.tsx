@@ -11,13 +11,16 @@ import {
     useReactFlow,
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
+import type { GenericVSCodeWrapper } from '@sourcegraph/cody-shared'
 import type React from 'react'
 import { useCallback, useState } from 'react'
-import type { VSCodeWrapper } from '../../utils/VSCodeApi'
+import type { WorkflowFromExtension, WorkflowToExtension } from '../services/WorkflowProtocol'
 import { WorkflowSidebar } from './WorkflowSidebar'
 import { type NodeType, type WorkflowNode, createNode, defaultWorkflow, nodeTypes } from './nodes/Nodes'
 
-export const Flow: React.FC<{ vscodeAPI: VSCodeWrapper }> = ({ vscodeAPI }) => {
+export const Flow: React.FC<{
+    vscodeAPI: GenericVSCodeWrapper<WorkflowToExtension, WorkflowFromExtension>
+}> = ({ vscodeAPI }) => {
     const { getViewport } = useReactFlow()
     const [nodes, setNodes] = useState(defaultWorkflow.nodes)
     const [edges, setEdges] = useState(defaultWorkflow.edges)
@@ -132,12 +135,25 @@ export const Flow: React.FC<{ vscodeAPI: VSCodeWrapper }> = ({ vscodeAPI }) => {
         },
     }))
 
+    const onSave = useCallback(() => {
+        const workflowData = {
+            nodes,
+            edges,
+            version: '1.0.0', // Add versioning for future compatibility
+        }
+        vscodeAPI.postMessage({
+            type: 'save_workflow',
+            data: workflowData,
+        })
+    }, [nodes, edges, vscodeAPI])
+
     return (
         <div className="tw-flex tw-h-screen">
             <WorkflowSidebar
                 onNodeAdd={handleAddNode}
                 selectedNode={selectedNode}
                 onNodeUpdate={onNodeUpdate}
+                onSave={onSave}
             />
             <div
                 className="tw-flex-1"

@@ -1,6 +1,12 @@
 import { Handle, Position } from '@xyflow/react'
 import type React from 'react'
 
+export interface Edge {
+    id: string
+    source: string
+    target: string
+}
+
 // Core type definitions
 export enum NodeType {
     CLI = 'cli',
@@ -55,11 +61,10 @@ export const defaultWorkflow = {
         createNode(NodeType.CLI, 'Git Commit', { x: 0, y: 200 }, 2),
     ],
     edges: [
-        { id: '1-2', source: '1', target: '2', type: 'bezier' },
-        { id: '2-3', source: '2', target: '3', type: 'bezier' },
+        { id: 'xy-edge__1-2', source: '1', target: '2' },
+        { id: 'xy-edge__2-3', source: '2', target: '3' },
     ],
 }
-
 // Shared node styling with type-specific colors
 const getNodeStyle = (type: NodeType, moving?: boolean, selected?: boolean) => ({
     padding: '0.5rem',
