@@ -52,7 +52,7 @@ export const WorkflowSidebar: React.FC<WorkflowSidebarProps> = ({ onNodeAdd }) =
                                     className="tw-w-full tw-justify-start"
                                     variant="ghost"
                                 >
-                                    Cody Generate Reply
+                                    Cody Inference
                                 </Button>
                             </div>
                         </div>
