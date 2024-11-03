@@ -9,10 +9,19 @@ export function registerWorkflowCommands(context: vscode.ExtensionContext) {
                 vscode.ViewColumn.One,
                 {
                     enableScripts: true,
-                    retainContextWhenHidden: true,
+                    retainContextWhenHidden: false,
                     localResourceRoots: [vscode.Uri.joinPath(context.extensionUri, 'dist')],
                 }
             )
+
+            // Add dispose handler
+            panel.onDidDispose(() => {
+                // Cleanup resources
+                panel.dispose()
+
+                // Optional: Clear any stored state or references
+                // Example: clear any stored workflow data
+            })
 
             const webviewPath = vscode.Uri.joinPath(context.extensionUri, 'dist/webviews')
 
