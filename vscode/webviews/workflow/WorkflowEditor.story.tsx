@@ -13,12 +13,14 @@ export default meta
 export const Default: StoryObj<typeof meta> = {
     render: () => (
         <div style={{ height: '100vh' }}>
-            <WorkflowApp vscodeAPI={{
-                postMessage: () => {},
-                onMessage: () => () => {},
-                getState: () => ({}),
-                setState: () => {},
-            }} />
+            <WorkflowApp
+                vscodeAPI={{
+                    postMessage: () => {},
+                    onMessage: () => () => {},
+                    getState: () => ({}),
+                    setState: () => {},
+                }}
+            />
         </div>
     ),
 }

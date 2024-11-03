@@ -13,6 +13,7 @@ import '@xyflow/react/dist/style.css'
 import type React from 'react'
 import { useCallback, useState } from 'react'
 import type { VSCodeWrapper } from '../../utils/VSCodeApi'
+import styles from './Flow.module.css'
 import { WorkflowSidebar } from './WorkflowSidebar'
 
 const initialNodes = [
@@ -21,16 +22,19 @@ const initialNodes = [
         data: { label: 'Git Diff' },
         position: { x: 0, y: 0 },
         type: 'input',
+        className: styles.node,
     },
     {
         id: '2',
         data: { label: 'Cody Generate Commit Message' },
         position: { x: 0, y: 100 },
+        className: styles.node,
     },
     {
         id: '3',
         data: { label: 'Git Commit' },
         position: { x: 0, y: 200 },
+        className: styles.node,
     },
 ]
 
@@ -68,6 +72,7 @@ export const Flow: React.FC<{ vscodeAPI: VSCodeWrapper }> = ({ vscodeAPI }) => {
                 data: { label: nodeType },
                 position,
                 type: nodes.length === 0 ? 'input' : undefined,
+                className: styles.node,
             }
             setNodes(nodes => [...nodes, newNode])
         },
