@@ -178,9 +178,11 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
             currentFileText.slice(0, document.offsetAt(range.start)) +
             prediction +
             currentFileText.slice(document.offsetAt(range.end))
-
         if (this.shouldFilterAutoeditResponse(currentFileText, predictedFileText, codeToReplaceData)) {
-            autoeditsLogger.logDebug('Autoedits', 'Model prediction already of suffix')
+            autoeditsLogger.logDebug(
+                'Autoedits',
+                'Skipping autoedit - predicted text already exists in suffix'
+            )
             return
         }
         await this.rendererManager.displayProposedEdit({
@@ -211,7 +213,9 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
         const maxAddedLineIndex = addedLines[addedLines.length - 1]
         const allAddedLines = predictedFileLines.slice(minAddedLineIndex, maxAddedLineIndex + 1)
         const allAddedLinesText = allAddedLines.join('\n')
-        if (codeToReplaceData.areaSuffix.includes(allAddedLinesText)) {
+
+        const immediateSuffix = codeToReplaceData.suffixInArea + codeToReplaceData.suffixAfterArea
+        if (immediateSuffix.startsWith(allAddedLinesText)) {
             return true
         }
         return false
