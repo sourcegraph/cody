@@ -5,16 +5,15 @@ import type {
     DocumentContext,
 } from '../../../lib/shared/src/completions/types'
 import type * as utils from './prompt-utils'
-export type CompletionsPrompt = PromptString
+
 export type ChatPrompt = {
     role: 'system' | 'user' | 'assistant'
     content: PromptString
 }[]
-export type PromptProviderResponse = CompletionsPrompt | ChatPrompt
 
 export interface PromptResponseData {
     codeToReplace: utils.CodeToReplaceData
-    promptResponse: PromptProviderResponse
+    promptResponse: ChatPrompt
 }
 
 export interface PromptProvider {
@@ -28,15 +27,21 @@ export interface PromptProvider {
 
     postProcessResponse(codeToReplace: utils.CodeToReplaceData, completion: string | null): string
 
-    getModelResponse(model: string, apiKey: string, prompt: PromptProviderResponse): Promise<string>
+    getModelResponse(url: string, model: string, apiKey: string, prompt: ChatPrompt): Promise<string>
 }
 
-export async function getModelResponse(url: string, body: string, apiKey: string): Promise<any> {
+export async function getModelResponse(
+    url: string,
+    body: string,
+    apiKey: string,
+    customHeaders: Record<string, string> = {}
+): Promise<any> {
     const response = await fetch(url, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${apiKey}`,
+            ...customHeaders,
         },
         body: body,
     })

@@ -1,8 +1,15 @@
-import { type AutoEditsTokenLimit, type DocumentContext, tokensToChars } from '@sourcegraph/cody-shared'
+import {
+    type AutoEditsModelConfig,
+    type AutoEditsTokenLimit,
+    currentResolvedConfig,
+    dotcomTokenToGatewayToken,
+    tokensToChars,
+} from '@sourcegraph/cody-shared'
 import { Observable } from 'observable-fns'
 import * as vscode from 'vscode'
 import { ContextMixer } from '../completions/context/context-mixer'
 import { DefaultContextStrategyFactory } from '../completions/context/context-strategy'
+import { RetrieverIdentifier } from '../completions/context/utils'
 import { getCurrentDocContext } from '../completions/get-current-doc-context'
 import { lines } from '../completions/text-processing'
 import { getConfiguration } from '../configuration'
@@ -10,7 +17,7 @@ import { getLineLevelDiff } from './diff-utils'
 import { autoeditsLogger } from './logger'
 import type { PromptProvider } from './prompt-provider'
 import type { CodeToReplaceData } from './prompt-utils'
-import { DeepSeekPromptProvider } from './providers/deepseek'
+import { CodyGatewayPromptProvider } from './providers/cody-gateway'
 import { FireworksPromptProvider } from './providers/fireworks'
 import { OpenAIPromptProvider } from './providers/openai'
 import { AutoEditsRendererManager } from './renderer'
@@ -33,6 +40,15 @@ export interface AutoeditsPrediction {
     prediction: string
 }
 
+interface ProviderConfig {
+    experimentalAutoeditsConfigOverride: AutoEditsModelConfig | undefined
+    providerName: AutoEditsModelConfig['provider']
+    provider: PromptProvider
+    model: string
+    url: string
+    tokenLimit: AutoEditsTokenLimit
+}
+
 /**
  * Provides inline completions and auto-edits functionality.
  */
@@ -41,11 +57,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
     private readonly contextMixer: ContextMixer
     private readonly rendererManager: AutoEditsRendererManager
     private readonly debounceIntervalMs: number
-
-    private autoEditsTokenLimit?: AutoEditsTokenLimit
-    private provider?: PromptProvider
-    private model?: string
-    private apiKey?: string
+    private readonly config: ProviderConfig
 
     constructor() {
         this.contextMixer = new ContextMixer({
@@ -56,21 +68,36 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
         })
         this.rendererManager = new AutoEditsRendererManager()
         this.debounceIntervalMs = DEFAULT_DEBOUNCE_INTERVAL_MS
-
-        this.initializeFromConfig()
+        this.config = this.initializeConfig()
         this.registerCommands()
     }
 
-    private initializeFromConfig(): void {
-        const config = getConfiguration().experimentalAutoedits
-        if (!config) {
-            autoeditsLogger.logDebug('Config', 'No Configuration found in the settings')
-            return
+    private initializeConfig(): ProviderConfig {
+        const userConfig = getConfiguration().experimentalAutoeditsConfigOverride
+        const baseConfig = userConfig ?? this.getDefaultConfig()
+
+        return {
+            experimentalAutoeditsConfigOverride: userConfig,
+            providerName: baseConfig.provider,
+            provider: this.createPromptProvider(baseConfig.provider),
+            model: baseConfig.model,
+            url: baseConfig.url,
+            tokenLimit: baseConfig.tokenLimit,
         }
-        this.initializePromptProvider(config.provider)
-        this.autoEditsTokenLimit = config.tokenLimit as AutoEditsTokenLimit
-        this.model = config.model
-        this.apiKey = config.apiKey
+    }
+
+    private createPromptProvider(providerName: AutoEditsModelConfig['provider']): PromptProvider {
+        switch (providerName) {
+            case 'openai':
+                return new OpenAIPromptProvider()
+            case 'fireworks':
+                return new FireworksPromptProvider()
+            case 'cody-gateway-fastpath-chat':
+                return new CodyGatewayPromptProvider()
+            default:
+                autoeditsLogger.logDebug('Config', `Provider ${providerName} not supported`)
+                throw new Error(`Provider ${providerName} not supported`)
+        }
     }
 
     private registerCommands(): void {
@@ -201,11 +228,8 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
     ): boolean {
         const currentFileLines = lines(currentFileText)
         const predictedFileLines = lines(predictedFileText)
-        const { modifiedLines, removedLines, addedLines } = getLineLevelDiff(
-            currentFileLines,
-            predictedFileLines
-        )
-        if (modifiedLines.length > 0 || removedLines.length > 0 || addedLines.length === 0) {
+        const { addedLines } = getLineLevelDiff(currentFileLines, predictedFileLines)
+        if (addedLines.length === 0) {
             return false
         }
         addedLines.sort()
@@ -219,6 +243,67 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
             return true
         }
         return false
+    }
+
+    public async predictAutoeditAtDocAndPosition(
+        options: AutoEditsProviderOptions
+    ): Promise<AutoeditsPrediction | null> {
+        const start = Date.now()
+        const prediction = await this.generatePrediction(options)
+
+        if (options.abortSignal?.aborted || !prediction) {
+            return null
+        }
+
+        autoeditsLogger.logDebug(
+            'Autoedits',
+            '========================== Response:\n',
+            JSON.stringify(prediction, null, 2),
+            '\n',
+            '========================== Time Taken For LLM (Msec): ',
+            (Date.now() - start).toString(),
+            '\n'
+        )
+
+        return prediction
+    }
+
+    private async generatePrediction(
+        options: AutoEditsProviderOptions
+    ): Promise<AutoeditsPrediction | null> {
+        const docContext = getCurrentDocContext({
+            document: options.document,
+            position: options.position,
+            maxPrefixLength: tokensToChars(this.config.tokenLimit.prefixTokens),
+            maxSuffixLength: tokensToChars(this.config.tokenLimit.suffixTokens),
+        })
+        const { context } = await this.contextMixer.getContext({
+            document: options.document,
+            position: options.position,
+            docContext,
+            maxChars: 32_000,
+        })
+
+        const { codeToReplace, promptResponse: prompt } = this.config.provider.getPrompt(
+            docContext,
+            options.document,
+            options.position,
+            context,
+            this.config.tokenLimit
+        )
+        const apiKey = await this.getApiKey()
+        const response = await this.config.provider.getModelResponse(
+            this.config.url,
+            this.config.model,
+            apiKey,
+            prompt
+        )
+        const postProcessedResponse = this.config.provider.postProcessResponse(codeToReplace, response)
+
+        return {
+            codeToReplaceData: codeToReplace,
+            prediction: postProcessedResponse,
+        }
     }
 
     private logDebugData(
@@ -242,93 +327,45 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
         )
     }
 
-    private initializePromptProvider(provider: string): void {
-        switch (provider) {
-            case 'openai':
-                this.provider = new OpenAIPromptProvider()
-                break
-            case 'deepseek':
-                this.provider = new DeepSeekPromptProvider()
-                break
-            case 'fireworks':
-                this.provider = new FireworksPromptProvider()
-                break
-            default:
-                autoeditsLogger.logDebug('Config', `Provider ${provider} not supported`)
-                this.provider = undefined
+    private getDefaultConfig(): Omit<AutoEditsModelConfig, 'apiKey'> {
+        const defaultTokenLimit: AutoEditsTokenLimit = {
+            prefixTokens: 2500,
+            suffixTokens: 2500,
+            maxPrefixLinesInArea: 11,
+            maxSuffixLinesInArea: 4,
+            codeToRewritePrefixLines: 1,
+            codeToRewriteSuffixLines: 2,
+            contextSpecificTokenLimit: {
+                [RetrieverIdentifier.RecentEditsRetriever]: 1500,
+                [RetrieverIdentifier.JaccardSimilarityRetriever]: 0,
+                [RetrieverIdentifier.RecentCopyRetriever]: 500,
+                [RetrieverIdentifier.DiagnosticsRetriever]: 500,
+                [RetrieverIdentifier.RecentViewPortRetriever]: 2500,
+            },
         }
-    }
-
-    public async predictAutoeditAtDocAndPosition(
-        options: AutoEditsProviderOptions
-    ): Promise<AutoeditsPrediction | null> {
-        if (!this.isConfigValid()) {
-            return null
-        }
-
-        const start = Date.now()
-        const prediction = await this.generatePrediction(options)
-
-        if (options.abortSignal?.aborted || !prediction) {
-            return null
-        }
-
-        autoeditsLogger.logDebug(
-            'Autoedits',
-            '========================== Response:\n',
-            JSON.stringify(prediction, null, 2),
-            '\n',
-            '========================== Time Taken For LLM (Msec): ',
-            (Date.now() - start).toString(),
-            '\n'
-        )
-
-        return prediction
-    }
-
-    private isConfigValid(): boolean {
-        if (!this.provider || !this.autoEditsTokenLimit || !this.model || !this.apiKey) {
-            autoeditsLogger.logDebug('Config', 'No Provider or Token Limit found in the settings')
-            return false
-        }
-        return true
-    }
-
-    private async generatePrediction(
-        options: AutoEditsProviderOptions
-    ): Promise<AutoeditsPrediction | null> {
-        const docContext = this.getDocContext(options.document, options.position)
-        const { context } = await this.contextMixer.getContext({
-            document: options.document,
-            position: options.position,
-            docContext,
-            maxChars: 100000,
-        })
-
-        const { codeToReplace, promptResponse: prompt } = this.provider!.getPrompt(
-            docContext,
-            options.document,
-            options.position,
-            context,
-            this.autoEditsTokenLimit!
-        )
-
-        const response = await this.provider!.getModelResponse(this.model!, this.apiKey!, prompt)
-        const postProcessedResponse = this.provider!.postProcessResponse(codeToReplace, response)
-
         return {
-            codeToReplaceData: codeToReplace,
-            prediction: postProcessedResponse,
+            provider: 'cody-gateway-fastpath-chat',
+            model: 'cody-model-auto-edits-fireworks-default',
+            url: 'https://cody-gateway.sourcegraph.com//v1/completions/fireworks',
+            tokenLimit: defaultTokenLimit,
         }
     }
 
-    private getDocContext(document: vscode.TextDocument, position: vscode.Position): DocumentContext {
-        return getCurrentDocContext({
-            document,
-            position,
-            maxPrefixLength: tokensToChars(this.autoEditsTokenLimit?.prefixTokens ?? 0),
-            maxSuffixLength: tokensToChars(this.autoEditsTokenLimit?.suffixTokens ?? 0),
-        })
+    private async getApiKey(): Promise<string> {
+        if (this.config.providerName === 'cody-gateway-fastpath-chat') {
+            const config = await currentResolvedConfig()
+            const fastPathAccessToken = dotcomTokenToGatewayToken(config.auth.accessToken)
+            if (!fastPathAccessToken) {
+                autoeditsLogger.logError('Autoedits', 'FastPath access token is not available')
+                throw new Error('FastPath access token is not available')
+            }
+            return fastPathAccessToken
+        }
+        if (this.config.experimentalAutoeditsConfigOverride?.apiKey) {
+            return this.config.experimentalAutoeditsConfigOverride.apiKey
+        }
+        autoeditsLogger.logError('Autoedits', 'No api key provided in the config override')
+        throw new Error('No api key provided in the config override')
     }
 
     public dispose(): void {

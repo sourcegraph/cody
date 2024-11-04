@@ -95,10 +95,12 @@ describe('getConfiguration', () => {
                         return false
                     case 'cody.experimental.supercompletions':
                         return false
-                    case 'cody.experimental.autoedit':
-                        return undefined
+                    case 'cody.experimental.autoedits.enabled':
+                        return false
                     case 'cody.experimental.autoedits-renderer-testing':
                         return false
+                    case 'cody.experimental.autoedits.config.override':
+                        return undefined
                     case 'cody.experimental.noodle':
                         return false
                     case 'cody.experimental.minion.anthropicKey':
@@ -158,8 +160,9 @@ describe('getConfiguration', () => {
             },
             commandCodeLenses: true,
             experimentalSupercompletions: false,
+            experimentalAutoeditsEnabled: false,
+            experimentalAutoeditsConfigOverride: undefined,
             experimentalAutoeditsRendererTesting: false,
-            experimentalAutoedits: undefined,
             experimentalMinionAnthropicKey: undefined,
             experimentalTracing: true,
             experimentalCommitMessage: true,

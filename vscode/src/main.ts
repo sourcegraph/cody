@@ -719,7 +719,12 @@ async function tryRegisterTutorial(
 function registerAutoEdits(disposables: vscode.Disposable[]): void {
     disposables.push(
         enableFeature(
-            ({ configuration }) => configuration.experimentalAutoedits !== undefined,
+            ({ configuration }) => {
+                return (
+                    configuration.experimentalAutoeditsEnabled !== undefined &&
+                    configuration.autocomplete === false
+                )
+            },
             () => {
                 const provider = new AutoeditsProvider()
                 vscode.languages.registerInlineCompletionItemProvider(
