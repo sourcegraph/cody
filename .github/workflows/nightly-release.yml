@@ -26,11 +26,10 @@ jobs:
         uses: gradle/wrapper-validation-action@v3
       - run: yarn global add pnpm@8.6.7
       - run: |
-          echo "RELEASE_VERSION=$(./scripts/version-from-git-tag.sh)" >> $GITHUB_ENV
-      - run: echo "Publishing version $RELEASE_VERSION"
+          echo "RELEASE_VERSION=$(./scripts/version-from-git-tag.sh)-nightly" >> $GITHUB_ENV
       - name: Publish nightly version
         run: |
-          echo "Publishing nightly version ${RELEASE_VERSION}-nightly"
-          ./gradlew "-PpluginVersion=${RELEASE_VERSION}-nightly" publishPlugin
+          echo "Publishing nightly version ${RELEASE_VERSION}"
+          ./gradlew "-PpluginVersion=${RELEASE_VERSION}" publishPlugin
         env:
           PUBLISH_TOKEN: ${{ secrets.PUBLISH_TOKEN }}

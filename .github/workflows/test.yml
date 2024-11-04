@@ -80,13 +80,13 @@ jobs:
           plugin-location: '*.zip'
           ide-versions: |
             ideaIC:2023.2
-            ideaIC:2024.2.3
+            ideaIC:2024.2.4
           failure-levels: |
-            OVERRIDE_ONLY_API_USAGES
-            NON_EXTENDABLE_API_USAGES
-            PLUGIN_STRUCTURE_WARNINGS
-            MISSING_DEPENDENCIES
             INVALID_PLUGIN
+            MISSING_DEPENDENCIES
+            NON_EXTENDABLE_API_USAGES
+            OVERRIDE_ONLY_API_USAGES
+            PLUGIN_STRUCTURE_WARNINGS
       - name: Upload the verification reports
         if: always()
         uses: actions/upload-artifact@v4

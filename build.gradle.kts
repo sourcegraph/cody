@@ -29,7 +29,7 @@ val isForceCodeSearchBuild = properties("forceCodeSearchBuild") == "true"
 // Remove unsupported old versions from this list.
 // Update gradle.properties pluginSinceBuild, pluginUntilBuild to match the min, max versions in
 // this list.
-val versionsOfInterest = listOf("2023.2", "2023.3", "2024.1", "2024.2.3").sorted()
+val versionsOfInterest = listOf("2023.2", "2023.3", "2024.1", "2024.2.4").sorted()
 val versionsToValidate =
     when (project.properties["validation"]?.toString()) {
       "lite" -> listOf(versionsOfInterest.first(), versionsOfInterest.last())
@@ -45,11 +45,12 @@ val skippedFailureLevels =
             .COMPATIBILITY_PROBLEMS, // blocked by the hacks with the completion provider for the
         // remote IDE
         FailureLevel.DEPRECATED_API_USAGES,
-        FailureLevel.INTERNAL_API_USAGES,
-        FailureLevel
-            .SCHEDULED_FOR_REMOVAL_API_USAGES, // HttpConfigurable, migration to coroutines, others
         FailureLevel.EXPERIMENTAL_API_USAGES,
-        FailureLevel.NOT_DYNAMIC)!!
+        FailureLevel.INTERNAL_API_USAGES,
+        FailureLevel.NOT_DYNAMIC,
+        FailureLevel
+            .SCHEDULED_FOR_REMOVAL_API_USAGES // HttpConfigurable, migration to coroutines, others
+        )!!
 
 plugins {
   id("java")
