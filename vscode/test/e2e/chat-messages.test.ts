@@ -58,7 +58,7 @@ test('chat assistant response code buttons', async ({ page, nap, sidebar }, test
 
     await executeCommandInPalette(page, 'cody.command.logCharacterCounters')
     // Wait for the logCharacterCounters command to update the log file.
-    await nap()
+    await nap(600)
     const outputChannelWithPaste = await fs.readFile(getTmpLogFile(testInfo.title), 'utf-8')
 
     // We expect the pasted code to be categorized as cody_chat and
@@ -71,7 +71,7 @@ test('chat assistant response code buttons', async ({ page, nap, sidebar }, test
     await nap()
     await executeCommandInPalette(page, 'cody.command.logCharacterCounters')
     // Wait for the logCharacterCounters command to update the log file.
-    await nap()
+    await nap(600)
 
     // Static value hardcoded for testing because I did not find a way to
     // reliably access the native OS-dropdown used for the insert code button.
