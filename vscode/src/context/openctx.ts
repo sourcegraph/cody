@@ -73,7 +73,9 @@ export function exposeOpenCtxClient(
         createDisposables(([{ experimentalNoodle }, isValidSiteVersion, createController]) => {
             try {
                 // Enable fetching of openctx configuration from Sourcegraph instance
-                const mergeConfiguration = getMergeConfigurationFunction()
+                const mergeConfiguration = experimentalNoodle
+                    ? getMergeConfigurationFunction()
+                    : undefined
 
                 if (!openctxOutputChannel) {
                     // Don't dispose this, so that it stays around for easier debugging even if the
