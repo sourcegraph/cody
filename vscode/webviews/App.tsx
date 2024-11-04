@@ -4,7 +4,7 @@ import styles from './App.module.css'
 
 import {
     type ChatMessage,
-    type ContextItem,
+    type DefaultContext,
     GuardrailsPost,
     PromptString,
     type TelemetryRecorder,
@@ -153,7 +153,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     const telemetryRecorder = useMemo(() => createWebviewTelemetryRecorder(vscodeAPI), [vscodeAPI])
 
     const wrappers = useMemo<Wrapper[]>(
-        () => getAppWrappers(vscodeAPI, telemetryRecorder, config, undefined),
+        () => getAppWrappers({ vscodeAPI, telemetryRecorder, config }),
         [vscodeAPI, telemetryRecorder, config]
     )
 
@@ -193,12 +193,19 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     )
 }
 
-export function getAppWrappers(
-    vscodeAPI: VSCodeWrapper,
-    telemetryRecorder: TelemetryRecorder,
-    config: Config | null,
-    staticInitialContext: ContextItem[] | undefined
-): Wrapper[] {
+interface GetAppWrappersOptions {
+    vscodeAPI: VSCodeWrapper
+    telemetryRecorder: TelemetryRecorder
+    config: Config | null
+    staticDefaultContext?: DefaultContext
+}
+
+export function getAppWrappers({
+    vscodeAPI,
+    telemetryRecorder,
+    config,
+    staticDefaultContext,
+}: GetAppWrappersOptions): Wrapper[] {
     return [
         {
             provider: TelemetryRecorderContext.Provider,
@@ -206,7 +213,7 @@ export function getAppWrappers(
         } satisfies Wrapper<ComponentProps<typeof TelemetryRecorderContext.Provider>['value']>,
         {
             component: ExtensionAPIProviderFromVSCodeAPI,
-            props: { vscodeAPI, staticInitialContext },
+            props: { vscodeAPI, staticDefaultContext },
         } satisfies Wrapper<any, ComponentProps<typeof ExtensionAPIProviderFromVSCodeAPI>>,
         {
             component: ConfigProvider,

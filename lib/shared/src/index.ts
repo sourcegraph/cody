@@ -98,6 +98,7 @@ export {
     type ContextItemSymbol,
     type ContextFileType,
     type ContextMessage,
+    type DefaultContext,
     type SymbolKind,
     type ContextItemTree,
     type ContextItemRepository,

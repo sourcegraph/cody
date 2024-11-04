@@ -97,6 +97,11 @@ export enum FeatureFlag {
 
     /** Whether user has access to the experimental Cody Reflection / Deep Cody feature. */
     DeepCody = 'cody-deep-reflection',
+
+    /**
+     * Whether the current repo context chip is shown in the chat input by default
+     */
+    NoDefaultRepoChip = 'no-default-repo-chip',
 }
 
 const ONE_HOUR = 60 * 60 * 1000
