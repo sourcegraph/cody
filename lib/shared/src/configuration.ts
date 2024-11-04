@@ -32,8 +32,9 @@ export interface AutoEditsTokenLimit {
 }
 
 export interface AutoEditsModelConfig {
-    provider: string
+    provider: 'openai' | 'fireworks' | 'cody-gateway-fastpath-chat'
     model: string
+    url: string
     apiKey: string
     tokenLimit: AutoEditsTokenLimit
 }
@@ -79,7 +80,8 @@ interface RawClientConfiguration {
     experimentalTracing: boolean
     experimentalSupercompletions: boolean
     experimentalAutoeditsRendererTesting: boolean
-    experimentalAutoedits: AutoEditsModelConfig | undefined
+    experimentalAutoeditsConfigOverride: AutoEditsModelConfig | undefined
+    experimentalAutoeditsEnabled: boolean
     experimentalCommitMessage: boolean
     experimentalNoodle: boolean
     experimentalMinionAnthropicKey: string | undefined

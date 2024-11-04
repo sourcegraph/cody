@@ -5,12 +5,7 @@ import type {
     DocumentContext,
 } from '../../../../lib/shared/src/completions/types'
 import { autoeditsLogger } from '../logger'
-import type {
-    ChatPrompt,
-    PromptProvider,
-    PromptProviderResponse,
-    PromptResponseData,
-} from '../prompt-provider'
+import type { ChatPrompt, PromptProvider, PromptResponseData } from '../prompt-provider'
 import { getModelResponse } from '../prompt-provider'
 import { type CodeToReplaceData, SYSTEM_PROMPT, getBaseUserPrompt } from '../prompt-utils'
 import * as utils from '../utils'
@@ -57,14 +52,14 @@ export class FireworksPromptProvider implements PromptProvider {
     }
 
     async getModelResponse(
+        url: string,
         model: string,
         apiKey: string,
-        prompt: PromptProviderResponse
+        prompt: ChatPrompt
     ): Promise<string> {
         try {
             const response = await getModelResponse(
-                // 'https://sourcegraph-905e5804.direct.fireworks.ai/v1/chat/completions',
-                'https://api.fireworks.ai/inference/v1/chat/completions',
+                url,
                 JSON.stringify({
                     model: model,
                     messages: prompt,
@@ -78,7 +73,7 @@ export class FireworksPromptProvider implements PromptProvider {
             )
             return response.choices[0].message.content
         } catch (error) {
-            autoeditsLogger.logDebug('AutoEdits', 'Error calling OpenAI API:', error)
+            autoeditsLogger.logDebug('AutoEdits', 'Error calling Fireworks API:', error)
             throw error
         }
     }
