@@ -4,10 +4,11 @@ import type {
     WorkflowToExtension,
 } from '../../webviews/workflow/services/WorkflowProtocol'
 
+import type { ChatClient } from '@sourcegraph/cody-shared'
 import { executeWorkflow } from './workflow-executor'
 import { handleWorkflowLoad, handleWorkflowSave } from './workflow-io'
 
-export function registerWorkflowCommands(context: vscode.ExtensionContext) {
+export function registerWorkflowCommands(context: vscode.ExtensionContext, chatClient: ChatClient) {
     context.subscriptions.push(
         vscode.commands.registerCommand('cody.openWorkflowEditor', async () => {
             const panel = vscode.window.createWebviewPanel(
@@ -43,7 +44,8 @@ export function registerWorkflowCommands(context: vscode.ExtensionContext) {
                                 await executeWorkflow(
                                     message.data.nodes,
                                     message.data.edges,
-                                    panel.webview
+                                    panel.webview,
+                                    chatClient
                                 )
                             }
                             break

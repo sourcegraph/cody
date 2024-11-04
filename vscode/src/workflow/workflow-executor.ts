@@ -4,6 +4,7 @@ import * as path from 'node:path'
 import { promisify } from 'node:util'
 import * as vscode from 'vscode'
 
+import { type ChatClient, type Message, PromptString } from '@sourcegraph/cody-shared'
 import type { Edge } from '../../webviews/workflow/components/CustomOrderedEdge'
 import type { WorkflowNode } from '../../webviews/workflow/components/nodes/Nodes'
 import type { WorkflowFromExtension } from '../../webviews/workflow/services/WorkflowProtocol'
@@ -85,10 +86,7 @@ async function executeCLINode(node: WorkflowNode): Promise<string> {
     }
 
     try {
-        console.log('execute CLI: ', JSON.stringify(node.data.command, null, 2))
-        await new Promise(resolve => setTimeout(resolve, 2000))
         const { stdout, stderr } = await execAsync(filteredCommand, { cwd })
-        console.log('executed CLI: ', JSON.stringify(stdout, null, 2))
 
         if (stderr) {
             throw new Error(stderr)
@@ -100,25 +98,85 @@ async function executeCLINode(node: WorkflowNode): Promise<string> {
         )
     }
 }
-async function executeLLMNode(node: WorkflowNode): Promise<string> {
-    // Implement LLM execution logic here
-    // This would integrate with your existing Cody API
-    // TODO(PriNova): Implement LLM inference logic
-    await new Promise(resolve => setTimeout(resolve, 2000))
-    console.log('execute LLM: ', JSON.stringify(node, null, 2))
-    return `LLM result for ${node.data.prompt || 'no prompt'}`
+async function executeLLMNode(node: WorkflowNode, chatClient: ChatClient): Promise<string> {
+    if (!node.data.prompt) {
+        throw new Error(`No prompt specified for LLM node ${node.id} with ${node.data.label}`)
+    }
+
+    try {
+        // Convert to messages format expected by chat client
+        const messages: Message[] = [
+            {
+                speaker: 'human',
+                text: PromptString.unsafe_fromUserQuery(node.data.prompt),
+            },
+        ]
+
+        // Using the chat client directly as seen in chat.ts
+        const response = await new Promise<string>((resolve, reject) => {
+            let fullResponse = ''
+
+            // Stream the response and accumulate it
+            chatClient
+                .chat(messages, {
+                    stream: false,
+                    maxTokensToSample: 1000, // Adjust as needed
+                    model: 'anthropic::2024-10-22::claude-3-5-sonnet-latest',
+                })
+                .then(async stream => {
+                    try {
+                        for await (const message of stream) {
+                            switch (message.type) {
+                                case 'change':
+                                    fullResponse += message.text
+                                    break
+                                case 'complete':
+                                    resolve(fullResponse)
+                                    break
+                                case 'error':
+                                    reject(message.error)
+                                    break
+                            }
+                        }
+                    } catch (error) {
+                        reject(error)
+                    }
+                })
+                .catch(reject)
+        })
+
+        return response
+    } catch (error) {
+        throw new Error(
+            `Failed to execute LLM node: ${error instanceof Error ? error.message : String(error)}`
+        )
+    }
 }
 
 // Add new helper function that maintains edge order as connected
 function combineParentOutputsByConnectionOrder(
     nodeId: string,
     edges: Edge[],
-    context: ExecutionContext
+    context: ExecutionContext,
+    nodeType: string
 ): string {
-    // Use edges array order directly (maintains order of connections)
     const parentEdges = edges.filter(edge => edge.target === nodeId)
-
-    const inputs = parentEdges.map(edge => context.nodeOutputs.get(edge.source)).filter(Boolean)
+    const inputs = parentEdges
+        .map(edge => context.nodeOutputs.get(edge.source))
+        .filter(Boolean)
+        .map(output => {
+            if (output === undefined) {
+                return ''
+            }
+            // Apply appropriate sanitization based on target node type
+            if (nodeType === 'cli') {
+                return sanitizeForShell(output)
+            }
+            if (nodeType === 'llm') {
+                return sanitizeForPrompt(output)
+            }
+            return output
+        })
 
     return inputs.join('\n')
 }
@@ -127,7 +185,8 @@ function combineParentOutputsByConnectionOrder(
 export async function executeWorkflow(
     nodes: WorkflowNode[],
     edges: Edge[],
-    webview: vscode.Webview
+    webview: vscode.Webview,
+    chatClient: ChatClient
 ): Promise<void> {
     const context: ExecutionContext = {
         nodeOutputs: new Map(),
@@ -141,7 +200,12 @@ export async function executeWorkflow(
 
     for (const node of sortedNodes) {
         try {
-            const combinedInput = combineParentOutputsByConnectionOrder(node.id, edges, context)
+            const combinedInput = combineParentOutputsByConnectionOrder(
+                node.id,
+                edges,
+                context,
+                node.type
+            )
 
             webview.postMessage({
                 type: 'node_execution_status',
@@ -151,13 +215,18 @@ export async function executeWorkflow(
             let result: string
             switch (node.type) {
                 case 'cli': {
-                    const command = node.data.command?.replace('${input}', combinedInput) || ''
+                    const command =
+                        node.data.command?.replace('${input}', sanitizeForShell(combinedInput)) || ''
                     result = await executeCLINode({ ...node, data: { ...node.data, command } })
                     break
                 }
                 case 'llm': {
-                    const prompt = node.data.prompt?.replace('${input}', combinedInput) || ''
-                    result = await executeLLMNode({ ...node, data: { ...node.data, prompt } })
+                    const prompt =
+                        node.data.prompt?.replace('${input}', sanitizeForPrompt(combinedInput)) || ''
+                    result = await executeLLMNode(
+                        { ...node, data: { ...node.data, prompt } },
+                        chatClient
+                    )
                     break
                 }
                 default:
@@ -165,7 +234,6 @@ export async function executeWorkflow(
             }
 
             context.nodeOutputs.set(node.id, result)
-
             webview.postMessage({
                 type: 'node_execution_status',
                 data: { nodeId: node.id, status: 'completed', result },
@@ -189,6 +257,16 @@ export async function executeWorkflow(
     webview.postMessage({
         type: 'execution_completed',
     } as WorkflowFromExtension)
+}
+
+function sanitizeForShell(input: string): string {
+    // Escape special shell characters
+    return input.replace(/(["\\'$`])/g, '\\$1').replace(/\n/g, ' ') // Replace newlines with spaces for shell safety
+}
+
+function sanitizeForPrompt(input: string): string {
+    // Basic sanitization for prompt interpolation
+    return input.replace(/\${/g, '\\${') // Escape template literals
 }
 
 const commandsNotAllowed = [
