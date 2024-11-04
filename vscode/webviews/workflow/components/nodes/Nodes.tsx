@@ -30,6 +30,8 @@ export interface WorkflowNode {
         label: string
         command?: string
         prompt?: string
+        input?: string
+        output?: string
     }
     position: {
         x: number

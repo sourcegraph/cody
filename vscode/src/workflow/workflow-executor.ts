@@ -1,10 +1,17 @@
-//import { exec } from 'node:child_process'
-//import { promisify } from 'node:util'
+import { exec } from 'node:child_process'
+import * as os from 'node:os'
+import * as path from 'node:path'
+import { promisify } from 'node:util'
 import * as vscode from 'vscode'
+
 import type { Edge, WorkflowNode } from '../../webviews/workflow/components/nodes/Nodes'
 import type { WorkflowFromExtension } from '../../webviews/workflow/services/WorkflowProtocol'
 
-//const execAsync = promisify(exec)
+interface ExecutionContext {
+    nodeOutputs: Map<string, string>
+}
+
+const execAsync = promisify(exec)
 
 function topologicalSort(nodes: WorkflowNode[], edges: Edge[]): WorkflowNode[] {
     const graph = new Map<string, string[]>()
@@ -50,17 +57,41 @@ async function executeCLINode(node: WorkflowNode): Promise<string> {
         )
         throw new Error(`No command specified for CLI node ${node.id}  with ${node.data.label}`)
     }
-    await new Promise(resolve => setTimeout(resolve, 2000))
 
-    console.log('execute CLI: ', JSON.stringify(node, null, 2))
-    // TODO(PriNova): Implement safe execution logic
-    /* const { stdout, stderr } = await execAsync(node.data.command)
-    if (stderr) {
-        throw new Error(stderr)
-    } */
-    return node.data.command
+    // Check if shell is available and workspace is trusted
+    if (!vscode.env.shell || !vscode.workspace.isTrusted) {
+        throw new Error('Shell command is not supported in your current workspace.')
+    }
+
+    // Get workspace directory
+    const homeDir = os.homedir() || process.env.HOME || process.env.USERPROFILE || ''
+    const cwd = vscode.workspace.workspaceFolders?.[0]?.uri?.path
+
+    // Filter and sanitize command
+    const filteredCommand = node.data.command.replaceAll(/(\s~\/)/g, ` ${homeDir}${path.sep}`)
+
+    // Check for disallowed commands (you'll need to define commandsNotAllowed array)
+    if (commandsNotAllowed.some(cmd => filteredCommand.startsWith(cmd))) {
+        void vscode.window.showErrorMessage('Cody cannot execute this command')
+        throw new Error('Cody cannot execute this command')
+    }
+
+    try {
+        console.log('execute CLI: ', JSON.stringify(node.data.command, null, 2))
+        await new Promise(resolve => setTimeout(resolve, 2000))
+        const { stdout, stderr } = await execAsync(filteredCommand, { cwd })
+        console.log('executed CLI: ', JSON.stringify(stdout, null, 2))
+
+        if (stderr) {
+            throw new Error(stderr)
+        }
+        return stdout
+    } catch (error) {
+        throw new Error(
+            `Failed to execute command: ${error instanceof Error ? error.message : String(error)}`
+        )
+    }
 }
-
 async function executeLLMNode(node: WorkflowNode): Promise<string> {
     // Implement LLM execution logic here
     // This would integrate with your existing Cody API
@@ -75,6 +106,10 @@ export async function executeWorkflow(
     edges: Edge[],
     webview: vscode.Webview
 ): Promise<void> {
+    const context: ExecutionContext = {
+        nodeOutputs: new Map(),
+    }
+
     const sortedNodes = topologicalSort(nodes, edges)
 
     webview.postMessage({
@@ -83,6 +118,13 @@ export async function executeWorkflow(
 
     for (const node of sortedNodes) {
         try {
+            // Find parent nodes and get their outputs
+            const parentEdges = edges.filter(edge => edge.target === node.id)
+            const inputs = parentEdges.map(edge => context.nodeOutputs.get(edge.source)).filter(Boolean)
+
+            // Combine inputs if multiple parents
+            const combinedInput = inputs.join('\n')
+
             webview.postMessage({
                 type: 'node_execution_status',
                 data: { nodeId: node.id, status: 'running' },
@@ -90,15 +132,24 @@ export async function executeWorkflow(
 
             let result: string
             switch (node.type) {
-                case 'cli':
-                    result = await executeCLINode(node)
+                case 'cli': {
+                    // Inject parent output into command if needed
+                    const command = node.data.command?.replace('${input}', combinedInput) || ''
+                    result = await executeCLINode({ ...node, data: { ...node.data, command } })
                     break
-                case 'llm':
-                    result = await executeLLMNode(node)
+                }
+                case 'llm': {
+                    // Inject parent output into prompt if needed
+                    const prompt = node.data.prompt?.replace('${input}', combinedInput) || ''
+                    result = await executeLLMNode({ ...node, data: { ...node.data, prompt } })
                     break
+                }
                 default:
                     throw new Error(`Unknown node type: ${node.type}`)
             }
+
+            // Store output in context
+            context.nodeOutputs.set(node.id, result)
 
             webview.postMessage({
                 type: 'node_execution_status',
@@ -118,3 +169,30 @@ export async function executeWorkflow(
         type: 'execution_completed',
     } as WorkflowFromExtension)
 }
+
+const commandsNotAllowed = [
+    'rm',
+    'chmod',
+    'shutdown',
+    'history',
+    'user',
+    'sudo',
+    'su',
+    'passwd',
+    'chown',
+    'chgrp',
+    'kill',
+    'reboot',
+    'poweroff',
+    'init',
+    'systemctl',
+    'journalctl',
+    'dmesg',
+    'lsblk',
+    'lsmod',
+    'modprobe',
+    'insmod',
+    'rmmod',
+    'lsusb',
+    'lspci',
+]

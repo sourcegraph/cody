@@ -76,9 +76,13 @@ export const Flow: React.FC<{
         event.stopPropagation()
         setSelectedNode(node)
     }, [])
+
+    const { updateNodeData } = useReactFlow()
+
     const onNodeUpdate = useCallback(
         (nodeId: string, data: Partial<WorkflowNode['data']>) => {
-            setNodes(currentNodes =>
+            updateNodeData(nodeId, data)
+            /* setNodes(currentNodes =>
                 currentNodes.map(node => {
                     if (node.id === nodeId) {
                         const updatedNode = {
@@ -92,9 +96,9 @@ export const Flow: React.FC<{
                     }
                     return node
                 })
-            )
+            ) */
         },
-        [selectedNode]
+        [updateNodeData]
     )
     const handleAddNode = useCallback(
         (nodeLabel: string, nodeType: NodeType) => {
@@ -149,6 +153,8 @@ export const Flow: React.FC<{
 
     // 5. State Transformations
     // Transforms data for rendering
+    const [nodeResults, setNodeResults] = useState<Map<string, string>>(new Map())
+
     const nodesWithState = nodes.map(node => ({
         ...node,
         selected: node.id === selectedNode?.id,
@@ -156,6 +162,7 @@ export const Flow: React.FC<{
             ...node.data,
             moving: node.id === movingNodeId,
             executing: node.id === executingNodeId,
+            result: nodeResults.get(node.id), // Include the result in node data
         },
     }))
 
@@ -189,7 +196,14 @@ export const Flow: React.FC<{
                 case 'node_execution_status':
                     if (event.data.data?.nodeId && event.data.data?.status) {
                         if (event.data.data.status === 'running') {
+                            console.log('Node execution started:', event.data.data.nodeId)
                             setExecutingNodeId(event.data.data.nodeId)
+                            setNodeResults(prev =>
+                                new Map(prev).set(
+                                    event.data.data?.nodeId ?? '',
+                                    event.data.data?.result ?? ''
+                                )
+                            )
                         } else {
                             setExecutingNodeId(null)
                         }
