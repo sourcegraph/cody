@@ -36,7 +36,7 @@ export class CodyGatewayPromptProvider implements PromptProvider {
             },
         ]
         return {
-            codeToReplace: codeToReplace,
+            codeToReplace,
             promptResponse: prompt,
         }
     }

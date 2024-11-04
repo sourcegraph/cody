@@ -35,7 +35,7 @@ export class OpenAIPromptProvider implements PromptProvider {
             },
         ]
         return {
-            codeToReplace: codeToReplace,
+            codeToReplace,
             promptResponse: prompt,
         }
     }

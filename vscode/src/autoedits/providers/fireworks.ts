@@ -36,7 +36,7 @@ export class FireworksPromptProvider implements PromptProvider {
             },
         ]
         return {
-            codeToReplace: codeToReplace,
+            codeToReplace,
             promptResponse: prompt,
         }
     }
