@@ -29,8 +29,17 @@ function topologicalSort(nodes: WorkflowNode[], edges: Edge[]): WorkflowNode[] {
         inDegree.set(edge.target, (inDegree.get(edge.target) || 0) + 1)
     }
 
-    // Find nodes with no dependencies
-    const queue = nodes.filter(node => inDegree.get(node.id) === 0).map(node => node.id)
+    // Find nodes with no dependencies but sort them based on their edge connections
+    const sourceNodes = nodes.filter(node => inDegree.get(node.id) === 0)
+
+    // Sort source nodes based on edge order
+    const sortedSourceNodes = sourceNodes.sort((a, b) => {
+        const aEdgeIndex = edges.findIndex(edge => edge.source === a.id)
+        const bEdgeIndex = edges.findIndex(edge => edge.source === b.id)
+        return aEdgeIndex - bEdgeIndex
+    })
+
+    const queue = sortedSourceNodes.map(node => node.id)
     const result: string[] = []
 
     while (queue.length > 0) {
@@ -50,6 +59,7 @@ function topologicalSort(nodes: WorkflowNode[], edges: Edge[]): WorkflowNode[] {
 
     return result.map(id => nodes.find(node => node.id === id)!).filter(Boolean)
 }
+
 async function executeCLINode(node: WorkflowNode): Promise<string> {
     if (!node.data.command) {
         await vscode.window.showErrorMessage(
@@ -101,6 +111,21 @@ async function executeLLMNode(node: WorkflowNode): Promise<string> {
     return `LLM result for ${node.data.prompt || 'no prompt'}`
 }
 
+// Add new helper function that maintains edge order as connected
+function combineParentOutputsByConnectionOrder(
+    nodeId: string,
+    edges: Edge[],
+    context: ExecutionContext
+): string {
+    // Use edges array order directly (maintains order of connections)
+    const parentEdges = edges.filter(edge => edge.target === nodeId)
+
+    const inputs = parentEdges.map(edge => context.nodeOutputs.get(edge.source)).filter(Boolean)
+
+    return inputs.join('\n')
+}
+
+// Modify the executeWorkflow function
 export async function executeWorkflow(
     nodes: WorkflowNode[],
     edges: Edge[],
@@ -118,12 +143,8 @@ export async function executeWorkflow(
 
     for (const node of sortedNodes) {
         try {
-            // Find parent nodes and get their outputs
-            const parentEdges = edges.filter(edge => edge.target === node.id)
-            const inputs = parentEdges.map(edge => context.nodeOutputs.get(edge.source)).filter(Boolean)
-
-            // Combine inputs if multiple parents
-            const combinedInput = inputs.join('\n')
+            // Use connection order for input combination
+            const combinedInput = combineParentOutputsByConnectionOrder(node.id, edges, context)
 
             webview.postMessage({
                 type: 'node_execution_status',
@@ -133,13 +154,11 @@ export async function executeWorkflow(
             let result: string
             switch (node.type) {
                 case 'cli': {
-                    // Inject parent output into command if needed
                     const command = node.data.command?.replace('${input}', combinedInput) || ''
                     result = await executeCLINode({ ...node, data: { ...node.data, command } })
                     break
                 }
                 case 'llm': {
-                    // Inject parent output into prompt if needed
                     const prompt = node.data.prompt?.replace('${input}', combinedInput) || ''
                     result = await executeLLMNode({ ...node, data: { ...node.data, prompt } })
                     break
@@ -148,7 +167,6 @@ export async function executeWorkflow(
                     throw new Error(`Unknown node type: ${node.type}`)
             }
 
-            // Store output in context
             context.nodeOutputs.set(node.id, result)
 
             webview.postMessage({
