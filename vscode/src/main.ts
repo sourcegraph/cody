@@ -72,7 +72,6 @@ import { executeTestChatCommand } from './commands/execute/test-chat'
 import { CodySourceControl } from './commands/scm/source-control'
 import type { CodyCommandArgs } from './commands/types'
 import { newCodyCommandArgs } from './commands/utils/get-commands'
-import { registerWorkflowCommands } from './workflow/workflow'
 import { createInlineCompletionItemProvider } from './completions/create-inline-completion-item-provider'
 import { getConfiguration } from './configuration'
 import { exposeOpenCtxClient } from './context/openctx'
@@ -110,6 +109,7 @@ import { openCodyIssueReporter } from './services/utils/issue-reporter'
 import { SupercompletionProvider } from './supercompletions/supercompletion-provider'
 import { parseAllVisibleDocuments, updateParseTreeOnEdit } from './tree-sitter/parse-tree-cache'
 import { version } from './version'
+import { registerWorkflowCommands } from './workflow/workflow'
 
 /**
  * Start the extension, watching all relevant configuration and secrets for changes.
