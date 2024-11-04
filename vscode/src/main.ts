@@ -706,7 +706,7 @@ function registerAutoEdits(disposables: vscode.Disposable[]): void {
         enableFeature(
             ({ configuration }) => {
                 return (
-                    configuration.experimentalAutoeditsEnabled !== undefined &&
+                    configuration.experimentalAutoeditsEnabled === true &&
                     configuration.autocomplete === false
                 )
             },

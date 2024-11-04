@@ -35,7 +35,7 @@ export class OpenAIAdapter implements AutoeditsModelAdapter {
             },
         ]
         return {
-            codeToReplace: codeToReplace,
+            codeToReplace,
             promptResponse: prompt,
         }
     }

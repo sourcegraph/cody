@@ -36,7 +36,7 @@ export class FireworksAdapter implements AutoeditsModelAdapter {
             },
         ]
         return {
-            codeToReplace: codeToReplace,
+            codeToReplace,
             promptResponse: prompt,
         }
     }
