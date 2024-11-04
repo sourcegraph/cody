@@ -128,10 +128,10 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
         token?.onCancellationRequested(() => controller.abort())
 
         await new Promise(resolve => setTimeout(resolve, this.debounceIntervalMs))
-        return this.doProvideAutoEditsItems(document, position, controller.signal)
+        return this.showAutoEdit(document, position, controller.signal)
     }
 
-    public async doProvideAutoEditsItems(
+    public async showAutoEdit(
         document: vscode.TextDocument,
         position: vscode.Position,
         abortSignal: AbortSignal
@@ -139,7 +139,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
         if (abortSignal.aborted) {
             return null
         }
-        const autoeditResponse = await this.predictAutoeditAtDocAndPosition({
+        const autoeditResponse = await this.inferEdit({
             document,
             position,
             abortSignal,
@@ -149,15 +149,15 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
         }
         const { prediction, codeToReplaceData } = autoeditResponse
 
-        const inlineCompletionItems = this.handleInlineCompletionResponse(prediction, codeToReplaceData)
+        const inlineCompletionItems = this.tryMakeInlineCompletionResponse(prediction, codeToReplaceData)
         if (inlineCompletionItems) {
             return inlineCompletionItems
         }
-        await this.handleAutoeditsDecorations(document, position, codeToReplaceData, prediction)
+        await this.showEditAsDecorations(document, codeToReplaceData, prediction)
         return null
     }
 
-    private handleInlineCompletionResponse(
+    private tryMakeInlineCompletionResponse(
         originalPrediction: string,
         codeToReplace: CodeToReplaceData
     ): vscode.InlineCompletionItem[] | null {
@@ -190,9 +190,8 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
         return null
     }
 
-    private async handleAutoeditsDecorations(
+    private async showEditAsDecorations(
         document: vscode.TextDocument,
-        position: vscode.Position,
         codeToReplaceData: CodeToReplaceData,
         prediction: string
     ): Promise<void> {
@@ -205,7 +204,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
             currentFileText.slice(0, document.offsetAt(range.start)) +
             prediction +
             currentFileText.slice(document.offsetAt(range.end))
-        if (this.shouldFilterAutoeditResponse(currentFileText, predictedFileText, codeToReplaceData)) {
+        if (this.shouldNotShowEdit(currentFileText, predictedFileText, codeToReplaceData)) {
             autoeditsLogger.logDebug(
                 'Autoedits',
                 'Skipping autoedit - predicted text already exists in suffix'
@@ -221,7 +220,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
         })
     }
 
-    private shouldFilterAutoeditResponse(
+    private shouldNotShowEdit(
         currentFileText: string,
         predictedFileText: string,
         codeToReplaceData: CodeToReplaceData
@@ -245,11 +244,9 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
         return false
     }
 
-    public async predictAutoeditAtDocAndPosition(
-        options: AutoEditsProviderOptions
-    ): Promise<AutoeditsPrediction | null> {
+    public async inferEdit(options: AutoEditsProviderOptions): Promise<AutoeditsPrediction | null> {
         const start = Date.now()
-        const prediction = await this.generatePrediction(options)
+        const prediction = await this._inferEdit(options)
 
         if (options.abortSignal?.aborted || !prediction) {
             return null
@@ -268,9 +265,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
         return prediction
     }
 
-    private async generatePrediction(
-        options: AutoEditsProviderOptions
-    ): Promise<AutoeditsPrediction | null> {
+    private async _inferEdit(options: AutoEditsProviderOptions): Promise<AutoeditsPrediction | null> {
         const docContext = getCurrentDocContext({
             document: options.document,
             position: options.position,
