@@ -12,6 +12,11 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 ### Changed
 
+## 1.40.2
+
+### Fixed
+- Fixed bugs in workspace::getConfiguration vscode shim [pull/6058](https://github.com/sourcegraph/cody/pull/6058)
+
 ## 1.40.1
 
 ### Fixed
