@@ -3,6 +3,8 @@ import type {
     WorkflowFromExtension,
     WorkflowToExtension,
 } from '../../webviews/workflow/services/WorkflowProtocol'
+
+import { executeWorkflow } from './workflow-executor'
 import { handleWorkflowLoad, handleWorkflowSave } from './workflow-io'
 
 export function registerWorkflowCommands(context: vscode.ExtensionContext) {
@@ -33,6 +35,16 @@ export function registerWorkflowCommands(context: vscode.ExtensionContext) {
                                     type: 'workflow_loaded',
                                     data: loadedData,
                                 } as WorkflowFromExtension)
+                            }
+                            break
+                        }
+                        case 'execute_workflow': {
+                            if (message.data?.nodes && message.data?.edges) {
+                                await executeWorkflow(
+                                    message.data.nodes,
+                                    message.data.edges,
+                                    panel.webview
+                                )
                             }
                             break
                         }

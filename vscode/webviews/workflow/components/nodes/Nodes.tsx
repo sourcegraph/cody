@@ -18,6 +18,7 @@ interface BaseNodeProps {
     data: {
         label: string
         moving?: boolean
+        executing?: boolean
     }
     selected?: boolean
 }
@@ -66,25 +67,27 @@ export const defaultWorkflow = {
     ],
 }
 // Shared node styling with type-specific colors
-const getNodeStyle = (type: NodeType, moving?: boolean, selected?: boolean) => ({
+const getNodeStyle = (type: NodeType, moving?: boolean, selected?: boolean, executing?: boolean) => ({
     padding: '0.5rem',
     borderRadius: '0.25rem',
     backgroundColor: 'var(--vscode-dropdown-background)',
     color: 'var(--vscode-dropdown-foreground)',
     border: `2px solid ${
-        moving
-            ? 'var(--vscode-focusBorder)'
-            : selected
-              ? 'var(--vscode-testing-iconPassed)'
-              : type === NodeType.CLI
-                ? 'var(--vscode-textLink-foreground)'
-                : 'var(--vscode-foreground)'
+        executing
+            ? 'var(--vscode-charts-yellow)'
+            : moving
+              ? 'var(--vscode-focusBorder)'
+              : selected
+                ? 'var(--vscode-testing-iconPassed)'
+                : type === NodeType.CLI
+                  ? 'var(--vscode-textLink-foreground)'
+                  : 'var(--vscode-foreground)'
     }`,
 })
 
 // Node Components with shared base props
 export const CLINode: React.FC<BaseNodeProps> = ({ data, selected }) => (
-    <div style={getNodeStyle(NodeType.CLI, data.moving, selected)}>
+    <div style={getNodeStyle(NodeType.CLI, data.moving, selected, data.executing)}>
         <Handle type="target" position={Position.Top} />
         <div className="tw-flex tw-items-center">
             <span>{data.label}</span>
@@ -94,7 +97,7 @@ export const CLINode: React.FC<BaseNodeProps> = ({ data, selected }) => (
 )
 
 export const CodyLLMNode: React.FC<BaseNodeProps> = ({ data, selected }) => (
-    <div style={getNodeStyle(NodeType.LLM, data.moving, selected)}>
+    <div style={getNodeStyle(NodeType.LLM, data.moving, selected, data.executing)}>
         <Handle type="target" position={Position.Top} />
         <div className="tw-flex tw-items-center">
             <span>{data.label}</span>

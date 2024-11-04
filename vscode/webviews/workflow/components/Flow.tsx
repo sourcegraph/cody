@@ -26,6 +26,7 @@ export const Flow: React.FC<{
     const [edges, setEdges] = useState(defaultWorkflow.edges)
     const [selectedNode, setSelectedNode] = useState<WorkflowNode | null>(null)
     const [movingNodeId, setMovingNodeId] = useState<string | null>(null)
+    const [executingNodeId, setExecutingNodeId] = useState<string | null>(null)
 
     // Add message handler for loaded workflows
     useEffect(() => {
@@ -104,6 +105,15 @@ export const Flow: React.FC<{
         },
         [getViewport, nodes]
     )
+    const onExecute = useCallback(() => {
+        vscodeAPI.postMessage({
+            type: 'execute_workflow',
+            data: {
+                nodes,
+                edges,
+            },
+        })
+    }, [nodes, edges, vscodeAPI])
 
     // 2. Edge Operations
     // Manages connections between nodes
@@ -145,6 +155,7 @@ export const Flow: React.FC<{
         data: {
             ...node.data,
             moving: node.id === movingNodeId,
+            executing: node.id === executingNodeId,
         },
     }))
 
@@ -166,6 +177,31 @@ export const Flow: React.FC<{
         })
     }, [vscodeAPI])
 
+    useEffect(() => {
+        const messageHandler = (event: MessageEvent<WorkflowFromExtension>) => {
+            switch (event.data.type) {
+                case 'workflow_loaded':
+                    if (event.data.data) {
+                        setNodes(event.data.data.nodes)
+                        setEdges(event.data.data.edges)
+                    }
+                    break
+                case 'node_execution_status':
+                    if (event.data.data?.nodeId && event.data.data?.status) {
+                        if (event.data.data.status === 'running') {
+                            setExecutingNodeId(event.data.data.nodeId)
+                        } else {
+                            setExecutingNodeId(null)
+                        }
+                    }
+                    break
+            }
+        }
+
+        window.addEventListener('message', messageHandler)
+        return () => window.removeEventListener('message', messageHandler)
+    }, [])
+
     return (
         <div className="tw-flex tw-h-screen">
             <WorkflowSidebar
@@ -174,6 +210,7 @@ export const Flow: React.FC<{
                 onNodeUpdate={onNodeUpdate}
                 onSave={onSave}
                 onLoad={onLoad}
+                onExecute={onExecute}
             />
             <div
                 className="tw-flex-1"

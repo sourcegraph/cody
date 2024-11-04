@@ -15,6 +15,7 @@ interface WorkflowSidebarProps {
     onNodeUpdate?: (nodeId: string, data: Partial<WorkflowNode['data']>) => void
     onSave?: () => void
     onLoad?: () => void
+    onExecute?: () => void
 }
 
 export const WorkflowSidebar: React.FC<WorkflowSidebarProps> = ({
@@ -23,6 +24,7 @@ export const WorkflowSidebar: React.FC<WorkflowSidebarProps> = ({
     onNodeUpdate,
     onSave,
     onLoad,
+    onExecute,
 }) => {
     const handleSave = async (): Promise<void> => {
         // Send message to VSCode extension to handle file saving
@@ -40,6 +42,17 @@ export const WorkflowSidebar: React.FC<WorkflowSidebarProps> = ({
                 <Button variant="secondary" className="tw-w-full" onClick={handleSave}>
                     Save Workflow
                 </Button>
+                <Button
+                    variant="secondary"
+                    className="tw-w-full"
+                    onClick={() => {
+                        if (onExecute) {
+                            onExecute()
+                        }
+                    }}
+                >
+                    Execute
+                </Button>
             </div>
 
             <div className="tw-my-4 tw-border-t tw-border-border" />
@@ -53,15 +66,7 @@ export const WorkflowSidebar: React.FC<WorkflowSidebarProps> = ({
                                 className="tw-w-full"
                                 variant="secondary"
                             >
-                                Git Diff
-                            </Button>
-
-                            <Button
-                                onClick={() => onNodeAdd('Git Commit', NodeType.CLI)}
-                                className="tw-w-full"
-                                variant="secondary"
-                            >
-                                Git Commit
+                                CLI command
                             </Button>
                         </div>
                     </AccordionContent>
@@ -95,6 +100,7 @@ export const WorkflowSidebar: React.FC<WorkflowSidebarProps> = ({
                     </p>
                 )}
             </div>
+            <div className="tw-my-4 tw-border-t tw-border-border" />
         </div>
     )
 }
