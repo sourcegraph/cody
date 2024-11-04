@@ -63,9 +63,6 @@ function topologicalSort(nodes: WorkflowNode[], edges: Edge[]): WorkflowNode[] {
 
 async function executeCLINode(node: WorkflowNode): Promise<string> {
     if (!node.data.command) {
-        await vscode.window.showErrorMessage(
-            `Failed to execute CLI node: No command specified for node ${node.id} with ${node.data.label}`
-        )
         throw new Error(`No command specified for CLI node ${node.id}  with ${node.data.label}`)
     }
 
@@ -144,7 +141,6 @@ export async function executeWorkflow(
 
     for (const node of sortedNodes) {
         try {
-            // Use connection order for input combination
             const combinedInput = combineParentOutputsByConnectionOrder(node.id, edges, context)
 
             webview.postMessage({
@@ -180,6 +176,12 @@ export async function executeWorkflow(
                 type: 'node_execution_status',
                 data: { nodeId: node.id, status: 'error', result: errorMessage },
             } as WorkflowFromExtension)
+            // Send execution completed message to indicate workflow has stopped
+            webview.postMessage({
+                type: 'execution_completed',
+            } as WorkflowFromExtension)
+            void vscode.window.showErrorMessage(errorMessage)
+            // Exit the function to stop execution
             return
         }
     }

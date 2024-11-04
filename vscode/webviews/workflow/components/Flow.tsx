@@ -17,7 +17,7 @@ import { useCallback, useEffect, useState } from 'react'
 import type { WorkflowFromExtension, WorkflowToExtension } from '../services/WorkflowProtocol'
 import { CustomOrderedEdge, type Edge } from './CustomOrderedEdge'
 import { WorkflowSidebar } from './WorkflowSidebar'
-import { type NodeType, type WorkflowNode, createNode, defaultWorkflow, nodeTypes } from './nodes/Nodes'
+import { NodeType, type WorkflowNode, createNode, defaultWorkflow, nodeTypes } from './nodes/Nodes'
 
 // Add this function inside Flow.tsx before the Flow component
 function topologicalEdgeSort(nodes: WorkflowNode[], edges: Edge[]): WorkflowNode[] {
@@ -76,6 +76,7 @@ export const Flow: React.FC<{
     const [selectedNode, setSelectedNode] = useState<WorkflowNode | null>(null)
     const [movingNodeId, setMovingNodeId] = useState<string | null>(null)
     const [executingNodeId, setExecutingNodeId] = useState<string | null>(null)
+    const [nodeErrors, setNodeErrors] = useState<Map<string, string>>(new Map())
     const [edgeOrder, setEdgeOrder] = useState<Map<string, number>>(new Map())
     const edgeTypes = {
         'ordered-edge': CustomOrderedEdge,
@@ -163,6 +164,33 @@ export const Flow: React.FC<{
         [getViewport, nodes]
     )
     const onExecute = useCallback(() => {
+        // Validate all nodes have required fields
+        const invalidNodes = nodes.filter(node => {
+            if (node.type === NodeType.CLI) {
+                return !node.data.command || node.data.command.trim() === ''
+            }
+            if (node.type === NodeType.LLM) {
+                return !node.data.prompt || node.data.prompt.trim() === ''
+            }
+            return false
+        })
+
+        if (invalidNodes.length > 0) {
+            // Update error states for invalid nodes
+            const newErrors = new Map<string, string>()
+            for (const node of invalidNodes) {
+                const errorMessage =
+                    node.type === NodeType.CLI ? 'Command field is required' : 'Prompt field is required'
+                newErrors.set(node.id, errorMessage)
+            }
+            setNodeErrors(newErrors)
+            return
+        }
+
+        // Clear any existing errors before executing
+        setNodeErrors(new Map())
+
+        // Execute workflow if validation passes
         vscodeAPI.postMessage({
             type: 'execute_workflow',
             data: {
@@ -245,7 +273,8 @@ export const Flow: React.FC<{
             ...node.data,
             moving: node.id === movingNodeId,
             executing: node.id === executingNodeId,
-            result: nodeResults.get(node.id), // Include the result in node data
+            error: nodeErrors.has(node.id),
+            result: nodeResults.get(node.id),
         },
     }))
 
@@ -274,22 +303,45 @@ export const Flow: React.FC<{
                     if (event.data.data) {
                         setNodes(event.data.data.nodes)
                         setEdges(event.data.data.edges)
+                        // Clear error states when loading new workflow
+                        setNodeErrors(new Map())
                     }
                     break
                 case 'node_execution_status':
                     if (event.data.data?.nodeId && event.data.data?.status) {
                         if (event.data.data.status === 'running') {
-                            console.log('Node execution started:', event.data.data.nodeId)
                             setExecutingNodeId(event.data.data.nodeId)
-                            setNodeResults(prev =>
+                            // Clear error state when node starts running
+                            setNodeErrors(prev => {
+                                const updated = new Map(prev)
+                                updated.delete(event.data.data?.nodeId ?? '')
+                                return updated
+                            })
+                        } else if (event.data.data.status === 'error') {
+                            setExecutingNodeId(null)
+                            // Set error state and message
+                            setNodeErrors(prev =>
                                 new Map(prev).set(
                                     event.data.data?.nodeId ?? '',
                                     event.data.data?.result ?? ''
                                 )
                             )
+                            // Show error message in VS Code
+                            /* vscodeAPI.postMessage({
+                                type: 'show_error',
+                                data: {
+                                    message: event.data.data?.result ?? 'Unknown error occurred'
+                                }
+                            }) */
                         } else {
                             setExecutingNodeId(null)
                         }
+                        setNodeResults(prev =>
+                            new Map(prev).set(
+                                event.data.data?.nodeId ?? '',
+                                event.data.data?.result ?? ''
+                            )
+                        )
                     }
                     break
             }
