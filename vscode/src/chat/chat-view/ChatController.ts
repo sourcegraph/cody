@@ -1048,7 +1048,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         const [priorityContext, retrievedContext, openCtxContext] = await Promise.all([
             priorityContextPromise,
             retrievedContextPromise.catch(e => {
-                this.postError(new Error(`Error retrieving context, no search context was used: ${e}`))
+                this.postError(new Error(`Failed to retrieve search context: ${e}`))
                 return []
             }),
             openCtxContextPromise,
