@@ -1,10 +1,10 @@
-import { exec } from 'node:child_process'
-import { promisify } from 'node:util'
+//import { exec } from 'node:child_process'
+//import { promisify } from 'node:util'
 import * as vscode from 'vscode'
 import type { Edge, WorkflowNode } from '../../webviews/workflow/components/nodes/Nodes'
 import type { WorkflowFromExtension } from '../../webviews/workflow/services/WorkflowProtocol'
 
-const execAsync = promisify(exec)
+//const execAsync = promisify(exec)
 
 function topologicalSort(nodes: WorkflowNode[], edges: Edge[]): WorkflowNode[] {
     const graph = new Map<string, string[]>()
