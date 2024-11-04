@@ -13,7 +13,7 @@ import {
 import '@xyflow/react/dist/style.css'
 import type { GenericVSCodeWrapper } from '@sourcegraph/cody-shared'
 import type React from 'react'
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import type { WorkflowFromExtension, WorkflowToExtension } from '../services/WorkflowProtocol'
 import { WorkflowSidebar } from './WorkflowSidebar'
 import { type NodeType, type WorkflowNode, createNode, defaultWorkflow, nodeTypes } from './nodes/Nodes'
@@ -26,6 +26,19 @@ export const Flow: React.FC<{
     const [edges, setEdges] = useState(defaultWorkflow.edges)
     const [selectedNode, setSelectedNode] = useState<WorkflowNode | null>(null)
     const [movingNodeId, setMovingNodeId] = useState<string | null>(null)
+
+    // Add message handler for loaded workflows
+    useEffect(() => {
+        const messageHandler = (event: MessageEvent<WorkflowFromExtension>) => {
+            if (event.data.type === 'workflow_loaded' && event.data.data) {
+                setNodes(event.data.data.nodes)
+                setEdges(event.data.data.edges)
+            }
+        }
+
+        window.addEventListener('message', messageHandler)
+        return () => window.removeEventListener('message', messageHandler)
+    }, [])
 
     // 1. Node Operations
     // Handles all node-related state changes and updates
@@ -147,6 +160,12 @@ export const Flow: React.FC<{
         })
     }, [nodes, edges, vscodeAPI])
 
+    const onLoad = useCallback(() => {
+        vscodeAPI.postMessage({
+            type: 'load_workflow',
+        })
+    }, [vscodeAPI])
+
     return (
         <div className="tw-flex tw-h-screen">
             <WorkflowSidebar
@@ -154,6 +173,7 @@ export const Flow: React.FC<{
                 selectedNode={selectedNode}
                 onNodeUpdate={onNodeUpdate}
                 onSave={onSave}
+                onLoad={onLoad}
             />
             <div
                 className="tw-flex-1"

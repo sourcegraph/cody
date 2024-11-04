@@ -1,6 +1,9 @@
 import * as vscode from 'vscode'
-import type { WorkflowToExtension } from '../../webviews/workflow/services/WorkflowProtocol'
-import { handleWorkflowSave } from './workflow-io'
+import type {
+    WorkflowFromExtension,
+    WorkflowToExtension,
+} from '../../webviews/workflow/services/WorkflowProtocol'
+import { handleWorkflowLoad, handleWorkflowSave } from './workflow-io'
 
 export function registerWorkflowCommands(context: vscode.ExtensionContext) {
     context.subscriptions.push(
@@ -23,6 +26,16 @@ export function registerWorkflowCommands(context: vscode.ExtensionContext) {
                         case 'save_workflow':
                             await handleWorkflowSave(message.data)
                             break
+                        case 'load_workflow': {
+                            const loadedData = await handleWorkflowLoad()
+                            if (loadedData) {
+                                panel.webview.postMessage({
+                                    type: 'workflow_loaded',
+                                    data: loadedData,
+                                } as WorkflowFromExtension)
+                            }
+                            break
+                        }
                     }
                 },
                 undefined,
