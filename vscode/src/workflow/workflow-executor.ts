@@ -15,7 +15,7 @@ interface ExecutionContext {
 
 const execAsync = promisify(exec)
 
-function topologicalSort(nodes: WorkflowNode[], edges: Edge[]): WorkflowNode[] {
+export function topologicalSort(nodes: WorkflowNode[], edges: Edge[]): WorkflowNode[] {
     const graph = new Map<string, string[]>()
     const inDegree = new Map<string, number>()
 
@@ -91,13 +91,14 @@ async function executeCLINode(node: WorkflowNode): Promise<string> {
         if (stderr) {
             throw new Error(stderr)
         }
-        return stdout
+        return stdout.replace(/\n$/, '')
     } catch (error) {
         throw new Error(
             `Failed to execute command: ${error instanceof Error ? error.message : String(error)}`
         )
     }
 }
+
 async function executeLLMNode(node: WorkflowNode, chatClient: ChatClient): Promise<string> {
     if (!node.data.prompt) {
         throw new Error(`No prompt specified for LLM node ${node.id} with ${node.data.label}`)
@@ -154,11 +155,9 @@ async function executeLLMNode(node: WorkflowNode, chatClient: ChatClient): Promi
 }
 
 async function executePreviewNode(node: WorkflowNode, input: string): Promise<string> {
-    // Preview nodes just pass through their input
     return input
 }
 
-// Add new helper function that maintains edge order as connected
 function combineParentOutputsByConnectionOrder(
     nodeId: string,
     edges: Edge[],
@@ -167,9 +166,8 @@ function combineParentOutputsByConnectionOrder(
 ): string {
     const parentEdges = edges.filter(edge => edge.target === nodeId)
     const inputs = parentEdges
-        .map(edge => context.nodeOutputs.get(edge.source))
-        .filter(Boolean)
-        .map(output => {
+        .map(edge => {
+            const output = context.nodeOutputs.get(edge.source)
             if (output === undefined) {
                 return ''
             }
@@ -182,11 +180,12 @@ function combineParentOutputsByConnectionOrder(
             }
             return output
         })
+        .filter(output => output !== undefined)
+        .join('')
 
-    return inputs.join('\n')
+    return inputs
 }
 
-// Modify the executeWorkflow function
 export async function executeWorkflow(
     nodes: WorkflowNode[],
     edges: Edge[],
@@ -269,13 +268,11 @@ export async function executeWorkflow(
 }
 
 function sanitizeForShell(input: string): string {
-    // Escape special shell characters
-    return input.replace(/(["\\'$`])/g, '\\$1').replace(/\n/g, ' ') // Replace newlines with spaces for shell safety
+    return input.replace(/(["\\'$`])/g, '\\$1').replace(/\n/g, ' ')
 }
 
 function sanitizeForPrompt(input: string): string {
-    // Basic sanitization for prompt interpolation
-    return input.replace(/\${/g, '\\${') // Escape template literals
+    return input.replace(/\${/g, '\\${')
 }
 
 const commandsNotAllowed = [

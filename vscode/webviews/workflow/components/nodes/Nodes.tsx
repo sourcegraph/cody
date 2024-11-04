@@ -1,5 +1,6 @@
 import { Handle, Position } from '@xyflow/react'
 import type React from 'react'
+import { v4 as uuidv4 } from 'uuid'
 
 // Core type definitions
 export enum NodeType {
@@ -41,10 +42,9 @@ export interface WorkflowNode {
 export const createNode = (
     type: NodeType,
     label: string,
-    position: { x: number; y: number },
-    nodeCount: number
+    position: { x: number; y: number }
 ): WorkflowNode => ({
-    id: String(nodeCount + 1),
+    id: uuidv4(),
     type,
     data: {
         label,
@@ -58,9 +58,9 @@ export const createNode = (
 // Default workflow template
 export const defaultWorkflow = {
     nodes: [
-        createNode(NodeType.CLI, 'Git Diff', { x: 0, y: 0 }, 0),
-        createNode(NodeType.LLM, 'Cody Generate Commit Message', { x: 0, y: 100 }, 1),
-        createNode(NodeType.CLI, 'Git Commit', { x: 0, y: 200 }, 2),
+        createNode(NodeType.CLI, 'Git Diff', { x: 0, y: 0 }),
+        createNode(NodeType.LLM, 'Cody Generate Commit Message', { x: 0, y: 100 }),
+        createNode(NodeType.CLI, 'Git Commit', { x: 0, y: 200 }),
     ],
     edges: [
         { id: 'xy-edge__1-2', source: '1', target: '2' },

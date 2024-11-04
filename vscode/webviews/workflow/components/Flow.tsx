@@ -159,13 +159,13 @@ export const Flow: React.FC<{
         (nodeLabel: string, nodeType: NodeType) => {
             const { x, y, zoom } = getViewport()
             const position = { x: -x + 100 * zoom, y: -y + 100 * zoom }
-            const newNode = createNode(nodeType, nodeLabel, position, nodes.length)
+            const newNode = createNode(nodeType, nodeLabel, position)
             if (nodeType === NodeType.PREVIEW) {
                 newNode.data.content = ''
             }
             setNodes(nodes => [...nodes, newNode])
         },
-        [getViewport, nodes]
+        [getViewport]
     )
     const onExecute = useCallback(() => {
         // Validate all nodes have required fields
