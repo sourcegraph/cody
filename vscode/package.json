@@ -575,6 +575,13 @@
         "title": "Copy Cody Extension Version"
       },
       {
+        "command": "cody.command.logCharacterCounters",
+        "title": "[Internal] Log character logger counters",
+        "category": "Cody Debug",
+        "group": "Debug",
+        "when": "cody.activated"
+      },
+      {
         "command": "cody.test.set-context-filters",
         "title": "[Internal] Set Context Filters Overwrite",
         "enablement": "cody.activated && cody.devOrTest"

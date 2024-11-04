@@ -125,6 +125,11 @@ export class CharactersLogger implements vscode.Disposable {
             window.onDidChangeTextEditorSelection(event => {
                 const documentUri = event.textEditor.document.uri.toString()
                 this.lastSelectionTimestamps.set(documentUri, Date.now())
+            }),
+            vscode.commands.registerCommand('cody.command.logCharacterCounters', () => {
+                outputChannelLogger.logDebug('CharactersLogger', 'Current character counters:', {
+                    verbose: this.changeCounters,
+                })
             })
         )
 
