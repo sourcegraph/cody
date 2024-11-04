@@ -9,6 +9,7 @@ import com.intellij.openapi.wm.ToolWindowFactory;
 import com.intellij.ui.content.Content;
 import com.intellij.ui.content.ContentFactory;
 import com.sourcegraph.cody.config.actions.OpenCodySettingsEditorAction;
+import com.sourcegraph.cody.ui.web.WebUIService;
 import com.sourcegraph.config.ConfigUtil;
 import com.sourcegraph.config.OpenPluginSettingsAction;
 import org.jetbrains.annotations.NotNull;
@@ -39,6 +40,10 @@ public class CodyToolWindowFactory implements ToolWindowFactory, DumbAware {
           }
 
           toolWindow.setAdditionalGearActions(customCodySettings);
+
+          WebUIService.getInstance(project)
+              .getViews$Sourcegraph()
+              .provideCodyToolWindowContent(toolWindowContent);
           return null;
         });
   }

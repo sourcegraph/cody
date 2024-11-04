@@ -48,8 +48,6 @@ class CodyToolWindowContent(val project: Project) {
     cardPanel.add(MissingJcefPanel(), CHANGE_RUNTIME_PANEL, CHANGE_RUNTIME_PANEL_INDEX)
     cardPanel.add(ErrorPanel(), ERROR_PANEL, ERROR_INDEX)
 
-    WebUIService.getInstance(project).views.provideCodyToolWindowContent(this)
-
     refreshPanelsVisibility()
   }
 
