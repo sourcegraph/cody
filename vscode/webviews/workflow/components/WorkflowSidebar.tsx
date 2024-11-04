@@ -62,7 +62,7 @@ export const WorkflowSidebar: React.FC<WorkflowSidebarProps> = ({
                     <AccordionContent>
                         <div className="tw-flex tw-flex-col tw-gap-2">
                             <Button
-                                onClick={() => onNodeAdd('Git Diff', NodeType.CLI)}
+                                onClick={() => onNodeAdd('CLI Command', NodeType.CLI)}
                                 className="tw-w-full"
                                 variant="secondary"
                             >
@@ -77,11 +77,11 @@ export const WorkflowSidebar: React.FC<WorkflowSidebarProps> = ({
                     <AccordionContent>
                         <div className="tw-flex tw-flex-col tw-gap-2">
                             <Button
-                                onClick={() => onNodeAdd('Cody Generate Commit', NodeType.LLM)}
+                                onClick={() => onNodeAdd('Cody', NodeType.LLM)}
                                 className="tw-w-full"
                                 variant="secondary"
                             >
-                                Cody Inference
+                                Cody
                             </Button>
                         </div>
                     </AccordionContent>
