@@ -394,16 +394,14 @@ const _workspace: typeof vscode.workspace = {
     // https://github.com/sourcegraph/cody/issues/4136
     createFileSystemWatcher: () => emptyFileWatcher,
     getConfiguration: (section, scope): vscode.WorkspaceConfiguration => {
-        if (section !== undefined) {
-            if (scope === undefined) {
-                return configuration.withPrefix(section)
-            }
-
+        if (section) {
             // Ignore language-scoped configuration sections like
             // '[jsonc].editor.insertSpaces', fallback to global scope instead.
             if (section.startsWith('[')) {
                 return configuration
             }
+
+            return configuration.withPrefix(section)
         }
         return configuration
     },
