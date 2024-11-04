@@ -1,4 +1,5 @@
-import type { Edge, WorkflowNode } from '../components/nodes/Nodes'
+import type { Edge } from '../components/CustomOrderedEdge'
+import type { WorkflowNode } from '../components/nodes/Nodes'
 
 export type WorkflowToExtension = {
     type: 'save_workflow' | 'load_workflow' | 'execute_workflow'

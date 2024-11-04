@@ -15,8 +15,57 @@ import type { GenericVSCodeWrapper } from '@sourcegraph/cody-shared'
 import type React from 'react'
 import { useCallback, useEffect, useState } from 'react'
 import type { WorkflowFromExtension, WorkflowToExtension } from '../services/WorkflowProtocol'
+import { CustomOrderedEdge, type Edge } from './CustomOrderedEdge'
 import { WorkflowSidebar } from './WorkflowSidebar'
 import { type NodeType, type WorkflowNode, createNode, defaultWorkflow, nodeTypes } from './nodes/Nodes'
+
+// Add this function inside Flow.tsx before the Flow component
+function topologicalEdgeSort(nodes: WorkflowNode[], edges: Edge[]): WorkflowNode[] {
+    const graph = new Map<string, string[]>()
+    const inDegree = new Map<string, number>()
+
+    // Initialize
+    for (const node of nodes) {
+        graph.set(node.id, [])
+        inDegree.set(node.id, 0)
+    }
+
+    // Build graph
+    for (const edge of edges) {
+        graph.get(edge.source)?.push(edge.target)
+        inDegree.set(edge.target, (inDegree.get(edge.target) || 0) + 1)
+    }
+
+    // Find nodes with no dependencies but sort them based on their edge connections
+    const sourceNodes = nodes.filter(node => inDegree.get(node.id) === 0)
+
+    // Sort source nodes based on edge order
+    const sortedSourceNodes = sourceNodes.sort((a, b) => {
+        const aEdgeIndex = edges.findIndex(edge => edge.source === a.id)
+        const bEdgeIndex = edges.findIndex(edge => edge.source === b.id)
+        return aEdgeIndex - bEdgeIndex
+    })
+
+    const queue = sortedSourceNodes.map(node => node.id)
+    const result: string[] = []
+
+    while (queue.length > 0) {
+        const nodeId = queue.shift()!
+        result.push(nodeId)
+
+        const neighbors = graph.get(nodeId)
+        if (neighbors) {
+            for (const neighbor of neighbors) {
+                inDegree.set(neighbor, (inDegree.get(neighbor) || 0) - 1)
+                if (inDegree.get(neighbor) === 0) {
+                    queue.push(neighbor)
+                }
+            }
+        }
+    }
+
+    return result.map(id => nodes.find(node => node.id === id)!).filter(Boolean)
+}
 
 export const Flow: React.FC<{
     vscodeAPI: GenericVSCodeWrapper<WorkflowToExtension, WorkflowFromExtension>
@@ -27,6 +76,10 @@ export const Flow: React.FC<{
     const [selectedNode, setSelectedNode] = useState<WorkflowNode | null>(null)
     const [movingNodeId, setMovingNodeId] = useState<string | null>(null)
     const [executingNodeId, setExecutingNodeId] = useState<string | null>(null)
+    const [edgeOrder, setEdgeOrder] = useState<Map<string, number>>(new Map())
+    const edgeTypes = {
+        'ordered-edge': CustomOrderedEdge,
+    }
 
     // Add message handler for loaded workflows
     useEffect(() => {
@@ -127,7 +180,37 @@ export const Flow: React.FC<{
         []
     )
     const onConnect = useCallback((params: any) => setEdges(eds => addEdge(params, eds)), [])
+    const updateEdgeOrder = useCallback(() => {
+        const sortedNodes = topologicalEdgeSort(nodes, edges)
+        const orderMap = new Map<string, number>()
 
+        let sequentialNumber = 1
+
+        // Process edges following the topological order of nodes
+        for (const node of sortedNodes) {
+            // Find all edges that start from this node
+            const sourceEdges = edges.filter(edge => edge.source === node.id)
+
+            // Assign sequential numbers to each edge
+            for (const edge of sourceEdges) {
+                orderMap.set(edge.id, sequentialNumber++)
+            }
+        }
+
+        setEdgeOrder(orderMap)
+    }, [nodes, edges])
+
+    useEffect(() => {
+        updateEdgeOrder()
+    }, [updateEdgeOrder])
+
+    const edgesWithOrder = edges.map(edge => ({
+        ...edge,
+        type: 'ordered-edge', // Make sure to set the type
+        data: {
+            orderNumber: edgeOrder.get(edge.id) || 0,
+        },
+    }))
     // 3. Selection Management
     // Handles node selection state
     useOnSelectionChange({
@@ -236,12 +319,13 @@ export const Flow: React.FC<{
                 <div style={{ width: '100%', height: '100%' }}>
                     <ReactFlow
                         nodes={nodesWithState}
-                        edges={edges}
+                        edges={edgesWithOrder}
                         onNodesChange={onNodesChange}
                         onEdgesChange={onEdgesChange}
                         onConnect={onConnect}
                         onNodeClick={onNodeClick}
                         nodeTypes={nodeTypes}
+                        edgeTypes={edgeTypes}
                         fitView
                     >
                         <Background />

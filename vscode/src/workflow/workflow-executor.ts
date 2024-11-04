@@ -4,7 +4,8 @@ import * as path from 'node:path'
 import { promisify } from 'node:util'
 import * as vscode from 'vscode'
 
-import type { Edge, WorkflowNode } from '../../webviews/workflow/components/nodes/Nodes'
+import type { Edge } from '../../webviews/workflow/components/CustomOrderedEdge'
+import type { WorkflowNode } from '../../webviews/workflow/components/nodes/Nodes'
 import type { WorkflowFromExtension } from '../../webviews/workflow/services/WorkflowProtocol'
 
 interface ExecutionContext {

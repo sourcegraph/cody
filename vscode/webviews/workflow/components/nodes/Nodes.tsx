@@ -1,12 +1,6 @@
 import { Handle, Position } from '@xyflow/react'
 import type React from 'react'
 
-export interface Edge {
-    id: string
-    source: string
-    target: string
-}
-
 // Core type definitions
 export enum NodeType {
     CLI = 'cli',
