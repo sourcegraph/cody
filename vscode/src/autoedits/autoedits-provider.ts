@@ -5,6 +5,7 @@ import {
     dotcomTokenToGatewayToken,
     tokensToChars,
 } from '@sourcegraph/cody-shared'
+import { debounce } from 'lodash'
 import { Observable } from 'observable-fns'
 import * as vscode from 'vscode'
 import { ContextMixer } from '../completions/context/context-mixer'
@@ -21,10 +22,6 @@ import { CodyGatewayPromptProvider } from './providers/cody-gateway'
 import { FireworksPromptProvider } from './providers/fireworks'
 import { OpenAIPromptProvider } from './providers/openai'
 import { AutoEditsRendererManager } from './renderer'
-import {
-    adjustPredictionIfInlineCompletionPossible,
-    extractInlineCompletionFromRewrittenCode,
-} from './utils'
 
 const AUTOEDITS_CONTEXT_STRATEGY = 'auto-edits'
 const DEFAULT_DEBOUNCE_INTERVAL_MS = 150
@@ -32,7 +29,6 @@ const DEFAULT_DEBOUNCE_INTERVAL_MS = 150
 export interface AutoEditsProviderOptions {
     document: vscode.TextDocument
     position: vscode.Position
-    abortSignal?: AbortSignal
 }
 
 export interface AutoeditsPrediction {
@@ -52,12 +48,13 @@ interface ProviderConfig {
 /**
  * Provides inline completions and auto-edits functionality.
  */
-export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, vscode.Disposable {
+export class AutoeditsProvider implements vscode.Disposable {
     private readonly disposables: vscode.Disposable[] = []
     private readonly contextMixer: ContextMixer
     private readonly rendererManager: AutoEditsRendererManager
     private readonly debounceIntervalMs: number
     private readonly config: ProviderConfig
+
 
     constructor() {
         this.contextMixer = new ContextMixer({
@@ -69,7 +66,28 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
         this.rendererManager = new AutoEditsRendererManager()
         this.debounceIntervalMs = DEFAULT_DEBOUNCE_INTERVAL_MS
         this.config = this.initializeConfig()
-        this.registerCommands()
+
+        const handleSelectionChange = (editor: vscode.TextEditor) => {
+            this.provideAutoeditsItems(editor.document, editor.selection.active)
+        }
+
+        const onSelectionChange = debounce((event: vscode.TextEditorSelectionChangeEvent) => {
+            if (event.textEditor) {
+                handleSelectionChange(event.textEditor)
+            }
+        }, this.debounceIntervalMs)
+
+        this.disposables.push(
+            this.contextMixer,
+            this.rendererManager,
+            vscode.commands.registerCommand('cody.experimental.suggest', () => {
+                const editor = vscode.window.activeTextEditor
+                if (editor) {
+                    handleSelectionChange(editor)
+                }
+            }),
+            vscode.window.onDidChangeTextEditorSelection(onSelectionChange)
+        )
     }
 
     private initializeConfig(): ProviderConfig {
@@ -100,94 +118,19 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
         }
     }
 
-    private registerCommands(): void {
-        this.disposables.push(
-            this.contextMixer,
-            this.rendererManager,
-            // Command is used to manually debug the autoedits provider
-            vscode.commands.registerCommand('cody.experimental.suggest', () => {
-                const editor = vscode.window.activeTextEditor
-                if (!editor) {
-                    return
-                }
-                this.provideInlineCompletionItems(editor.document, editor.selection.active, {
-                    triggerKind: vscode.InlineCompletionTriggerKind.Invoke,
-                    selectedCompletionInfo: undefined,
-                })
-            })
-        )
-    }
-
-    public async provideInlineCompletionItems(
+    public async provideAutoeditsItems(
         document: vscode.TextDocument,
-        position: vscode.Position,
-        context: vscode.InlineCompletionContext,
-        token?: vscode.CancellationToken
-    ): Promise<vscode.InlineCompletionItem[] | vscode.InlineCompletionList | null> {
-        const controller = new AbortController()
-        token?.onCancellationRequested(() => controller.abort())
-
-        await new Promise(resolve => setTimeout(resolve, this.debounceIntervalMs))
-        return this.doProvideAutoEditsItems(document, position, controller.signal)
-    }
-
-    public async doProvideAutoEditsItems(
-        document: vscode.TextDocument,
-        position: vscode.Position,
-        abortSignal: AbortSignal
-    ): Promise<vscode.InlineCompletionItem[] | vscode.InlineCompletionList | null> {
-        if (abortSignal.aborted) {
-            return null
-        }
+        position: vscode.Position
+    ): Promise<void> {
         const autoeditResponse = await this.predictAutoeditAtDocAndPosition({
             document,
             position,
-            abortSignal,
         })
-        if (abortSignal.aborted || !autoeditResponse) {
-            return null
+        if (!autoeditResponse) {
+            return
         }
         const { prediction, codeToReplaceData } = autoeditResponse
-
-        const inlineCompletionItems = this.handleInlineCompletionResponse(prediction, codeToReplaceData)
-        if (inlineCompletionItems) {
-            return inlineCompletionItems
-        }
         await this.handleAutoeditsDecorations(document, position, codeToReplaceData, prediction)
-        return null
-    }
-
-    private handleInlineCompletionResponse(
-        originalPrediction: string,
-        codeToReplace: CodeToReplaceData
-    ): vscode.InlineCompletionItem[] | null {
-        const prediction = adjustPredictionIfInlineCompletionPossible(
-            originalPrediction,
-            codeToReplace.codeToRewritePrefix,
-            codeToReplace.codeToRewriteSuffix
-        )
-        const isPrefixMatch = prediction.startsWith(codeToReplace.codeToRewritePrefix)
-        const isSuffixMatch = prediction.endsWith(codeToReplace.codeToRewriteSuffix)
-
-        this.logDebugData(
-            isPrefixMatch,
-            isSuffixMatch,
-            prediction,
-            codeToReplace.codeToRewritePrefix,
-            codeToReplace.codeToRewriteSuffix
-        )
-
-        if (isPrefixMatch && isSuffixMatch) {
-            const autocompleteResponse = extractInlineCompletionFromRewrittenCode(
-                prediction,
-                codeToReplace.codeToRewritePrefix,
-                codeToReplace.codeToRewriteSuffix
-            )
-            autoeditsLogger.logDebug('Autocomplete Inline Respone: ', autocompleteResponse)
-            const inlineCompletionItems = new vscode.InlineCompletionItem(autocompleteResponse)
-            return [inlineCompletionItems]
-        }
-        return null
     }
 
     private async handleAutoeditsDecorations(
@@ -250,8 +193,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
     ): Promise<AutoeditsPrediction | null> {
         const start = Date.now()
         const prediction = await this.generatePrediction(options)
-
-        if (options.abortSignal?.aborted || !prediction) {
+        if (!prediction) {
             return null
         }
 
@@ -304,27 +246,6 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
             codeToReplaceData: codeToReplace,
             prediction: postProcessedResponse,
         }
-    }
-
-    private logDebugData(
-        isPrefixMatch: boolean,
-        isSuffixMatch: boolean,
-        prediction: string,
-        prefix: string,
-        suffix: string
-    ): void {
-        const debugData = {
-            isPrefixMatch,
-            isSuffixMatch,
-            prediction,
-            prefix,
-            suffix,
-        }
-        autoeditsLogger.logDebug(
-            'InlineCompletions',
-            'Data Debug:\n',
-            JSON.stringify(debugData, null, 2)
-        )
     }
 
     private getDefaultConfig(): Omit<AutoEditsModelConfig, 'apiKey'> {

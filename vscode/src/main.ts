@@ -727,10 +727,6 @@ function registerAutoEdits(disposables: vscode.Disposable[]): void {
             },
             () => {
                 const provider = new AutoeditsProvider()
-                vscode.languages.registerInlineCompletionItemProvider(
-                    [{ scheme: 'file', language: '*' }, { notebookType: '*' }],
-                    provider
-                )
                 return provider
             }
         )
