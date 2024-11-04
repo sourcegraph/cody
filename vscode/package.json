@@ -603,7 +603,7 @@
       },
       {
         "command": "cody.chat.new",
-        "key": "shift+alt+/",
+        "key": "shift+ctrl+/",
         "when": "cody.activated"
       },
       {
