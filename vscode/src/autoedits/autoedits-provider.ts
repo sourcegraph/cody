@@ -211,7 +211,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
             )
             return
         }
-        await this.rendererManager.displayProposedEdit({
+        await this.rendererManager.showEdit({
             document,
             range,
             prediction,

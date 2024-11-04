@@ -17,13 +17,16 @@ import { autoeditsLogger } from './logger'
  * Represents a proposed text change in the editor.
  */
 interface ProposedChange {
-    /** The URI of the document for which the change is proposed */
+    // The URI of the document for which the change is proposed
     uri: string
-    /** The range in the document that will be modified */
+
+    // The range in the document that will be modified
     range: vscode.Range
-    /** The text that will replace the content in the range if accepted */
+
+    // The text that will replace the content in the range if accepted
     prediction: string
-    /** The renderer responsible for decorating the proposed change */
+
+    // The renderer responsible for decorating the proposed change
     renderer: AutoEditsRenderer
 }
 
@@ -31,15 +34,19 @@ interface ProposedChange {
  * Options for rendering auto-edits in the editor.
  */
 export interface AutoEditsManagerOptions {
-    /** The document where the auto-edit will be rendered */
+    // The document where the auto-edit will be rendered
     document: vscode.TextDocument
-    /** The range in the document that will be modified with the predicted text */
+
+    // The range in the document that will be modified with the predicted text
     range: vscode.Range
-    /** The predicted text that will replace the current text in the range */
+
+    // The predicted text that will replace the current text in the range
     prediction: string
-    /** The current text content of the file */
+
+    // The current text content of the file
     currentFileText: string
-    /** The predicted/suggested text that will replace the current text */
+
+    // The predicted/suggested text that will replace the current text
     predictedFileText: string
 }
 
@@ -56,17 +63,15 @@ interface AddedLinesDecorationInfo {
 }
 
 export class AutoEditsRendererManager implements vscode.Disposable {
+    // Keeps track of the current active edit (there can only be one active edit at a time)
+    private activeEdit: ProposedChange | null = null
+
     private disposables: vscode.Disposable[] = []
-    private activeProposedChange: ProposedChange | null = null
 
     constructor() {
         this.disposables.push(
-            vscode.commands.registerCommand('cody.supersuggest.accept', () =>
-                this.acceptProposedChange()
-            ),
-            vscode.commands.registerCommand('cody.supersuggest.dismiss', () =>
-                this.dismissProposedChange()
-            ),
+            vscode.commands.registerCommand('cody.supersuggest.accept', () => this.acceptEdit()),
+            vscode.commands.registerCommand('cody.supersuggest.dismiss', () => this.dismissEdit()),
             vscode.workspace.onDidChangeTextDocument(event => this.onDidChangeTextDocument(event)),
             vscode.window.onDidChangeTextEditorSelection(event =>
                 this.onDidChangeTextEditorSelection(event)
@@ -74,13 +79,13 @@ export class AutoEditsRendererManager implements vscode.Disposable {
         )
     }
 
-    public async displayProposedEdit(options: AutoEditsManagerOptions): Promise<void> {
-        await this.dismissProposedChange()
+    public async showEdit(options: AutoEditsManagerOptions): Promise<void> {
+        await this.dismissEdit()
         const editor = vscode.window.activeTextEditor
         if (!editor || options.document !== editor.document) {
             return
         }
-        this.activeProposedChange = {
+        this.activeEdit = {
             uri: options.document.uri.toString(),
             range: options.range,
             prediction: options.prediction,
@@ -92,7 +97,7 @@ export class AutoEditsRendererManager implements vscode.Disposable {
             options.prediction,
             options.predictedFileText
         )
-        this.activeProposedChange.renderer.renderDecorations({
+        this.activeEdit.renderer.renderDecorations({
             document: options.document,
             currentFileText: options.currentFileText,
             predictedFileText: options.predictedFileText,
@@ -100,55 +105,45 @@ export class AutoEditsRendererManager implements vscode.Disposable {
         await vscode.commands.executeCommand('setContext', 'cody.supersuggest.active', true)
     }
 
-    private async acceptProposedChange(): Promise<void> {
-        const editor = vscode.window.activeTextEditor
-        if (
-            !this.activeProposedChange ||
-            !editor ||
-            editor.document.uri.toString() !== this.activeProposedChange.uri
-        ) {
-            await this.dismissProposedChange()
-            return
-        }
-        await editor.edit(editBuilder => {
-            editBuilder.replace(this.activeProposedChange!.range, this.activeProposedChange!.prediction)
-        })
-        await this.dismissProposedChange()
-    }
-
-    private async dismissProposedChange(): Promise<void> {
-        const renderer = this.activeProposedChange?.renderer
+    private async dismissEdit(): Promise<void> {
+        const renderer = this.activeEdit?.renderer
         if (renderer) {
             renderer.clearDecorations()
             renderer.dispose()
         }
-        this.activeProposedChange = null
+        this.activeEdit = null
         await vscode.commands.executeCommand('setContext', 'cody.supersuggest.active', false)
+    }
+
+    private async acceptEdit(): Promise<void> {
+        const editor = vscode.window.activeTextEditor
+        if (!this.activeEdit || !editor || editor.document.uri.toString() !== this.activeEdit.uri) {
+            await this.dismissEdit()
+            return
+        }
+        await editor.edit(editBuilder => {
+            editBuilder.replace(this.activeEdit!.range, this.activeEdit!.prediction)
+        })
+        await this.dismissEdit()
     }
 
     private async onDidChangeTextDocument(event: vscode.TextDocumentChangeEvent): Promise<void> {
         // Only dismiss if we have an active suggestion and the changed document matches
         // else, we will falsely discard the suggestion on unrelated changes such as changes in output panel.
-        if (
-            !this.activeProposedChange ||
-            event.document.uri.toString() !== this.activeProposedChange.uri
-        ) {
+        if (!this.activeEdit || event.document.uri.toString() !== this.activeEdit.uri) {
             return
         }
-        await this.dismissProposedChange()
+        await this.dismissEdit()
     }
 
     private async onDidChangeTextEditorSelection(
         event: vscode.TextEditorSelectionChangeEvent
     ): Promise<void> {
-        if (
-            !this.activeProposedChange ||
-            event.textEditor.document.uri.toString() !== this.activeProposedChange.uri
-        ) {
+        if (!this.activeEdit || event.textEditor.document.uri.toString() !== this.activeEdit.uri) {
             return
         }
         const currentSelectionRange = event.selections[0]
-        const proposedChangeRange = this.activeProposedChange.range
+        const proposedChangeRange = this.activeEdit.range
 
         // If the user places the cursor beyond the buffer around the proposed selection range, dismiss the suggestion
         const BUFFER_LINES = 4
@@ -161,7 +156,7 @@ export class AutoEditsRendererManager implements vscode.Disposable {
         )
         if (!currentSelectionRange.intersection(expandedRange)) {
             // No overlap with expanded range, dismiss the proposed change
-            await this.dismissProposedChange()
+            await this.dismissEdit()
         }
     }
 
@@ -178,7 +173,7 @@ export class AutoEditsRendererManager implements vscode.Disposable {
     }
 
     public dispose(): void {
-        this.dismissProposedChange()
+        this.dismissEdit()
         for (const disposable of this.disposables) {
             disposable.dispose()
         }
