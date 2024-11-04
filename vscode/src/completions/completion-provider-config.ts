@@ -31,9 +31,6 @@ class CompletionProviderConfig {
             FeatureFlag.CodyAutocompleteContextExperimentVariant3,
             FeatureFlag.CodyAutocompleteContextExperimentVariant4,
             FeatureFlag.CodyAutocompleteContextExperimentControl,
-            FeatureFlag.CodyAutocompletePreloadingExperimentBaseFeatureFlag,
-            FeatureFlag.CodyAutocompletePreloadingExperimentVariant1,
-            FeatureFlag.CodyAutocompletePreloadingExperimentVariant2,
             FeatureFlag.CodyAutocompleteDataCollectionFlag,
             FeatureFlag.CodyAutocompleteTracing,
         ]
@@ -124,61 +121,6 @@ class CompletionProviderConfig {
                 }),
                 distinctUntilChanged<ContextStrategy>()
             )
-    }
-
-    private getPreloadingExperimentGroup(): Observable<'variant1' | 'variant2' | 'control'> {
-        return combineLatest(
-            featureFlagProvider.evaluatedFeatureFlag(
-                FeatureFlag.CodyAutocompletePreloadingExperimentBaseFeatureFlag
-            ),
-            featureFlagProvider.evaluatedFeatureFlag(
-                FeatureFlag.CodyAutocompletePreloadingExperimentVariant1
-            ),
-            featureFlagProvider.evaluatedFeatureFlag(
-                FeatureFlag.CodyAutocompletePreloadingExperimentVariant2
-            )
-        ).pipe(
-            map(([isContextExperimentFlagEnabled, variant1, variant2]) => {
-                if (isContextExperimentFlagEnabled) {
-                    if (variant1) {
-                        return 'variant1'
-                    }
-
-                    if (variant2) {
-                        return 'variant2'
-                    }
-                }
-
-                return 'control'
-            }),
-            distinctUntilChanged()
-        )
-    }
-
-    public get autocompletePreloadDebounceInterval(): Observable<number> {
-        return resolvedConfig.pipe(
-            switchMap(({ configuration }) => {
-                const localInterval = configuration.autocompleteExperimentalPreloadDebounceInterval
-
-                if (localInterval !== undefined && localInterval > 0) {
-                    return Observable.of(localInterval)
-                }
-
-                return this.getPreloadingExperimentGroup().pipe(
-                    map(preloadingExperimentGroup => {
-                        switch (preloadingExperimentGroup) {
-                            case 'variant1':
-                                return 150
-                            case 'variant2':
-                                return 100
-                            default:
-                                return 0
-                        }
-                    }),
-                    distinctUntilChanged()
-                )
-            })
-        )
     }
 
     public get completionDataCollectionFlag(): Observable<boolean> {

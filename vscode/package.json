@@ -1232,11 +1232,6 @@
             }
           }
         },
-        "cody.autocomplete.experimental.preloadDebounceInterval": {
-          "type": "number",
-          "default": 0,
-          "markdownDescription": "Changes the preload debounce interval for autocomplete requests triggered on cursor movement."
-        },
         "openctx.enable": {
           "type": "boolean",
           "markdownDescription": "Enable OpenCtx providers for Cody.",

@@ -6,6 +6,8 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 ### Added
 
+- Autocomplete: Enabled completions preloading on cursor movement. [pull/6043](https://github.com/sourcegraph/cody/pull/6043)
+
 ### Fixed
 
 ### Changed
@@ -20,8 +22,6 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 ### Added
 
 - Proxy: Support for `cody.net.proxy` settings that enable configuation a cody specific proxy server. This also supports `cody.net.proxy.path` to provide a UNIX domain socket directly. [pull/5883](https://github.com/sourcegraph/cody/pull/5883)
-
-### Changed
 
 ### Fixed
 

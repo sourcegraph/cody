@@ -103,8 +103,6 @@ describe('getConfiguration', () => {
                         return undefined
                     case 'cody.autocomplete.advanced.timeout.firstCompletion':
                         return 1500
-                    case 'cody.autocomplete.experimental.preloadDebounceInterval':
-                        return 0
                     case 'cody.experimental.guardrailsTimeoutSeconds':
                         return undefined
                     case 'cody.advanced.agent.capabilities.storage':
@@ -185,7 +183,6 @@ describe('getConfiguration', () => {
                 url: OLLAMA_DEFAULT_URL,
             },
             autocompleteFirstCompletionTimeout: 1500,
-            autocompleteExperimentalPreloadDebounceInterval: 0,
             providerLimitPrompt: 123,
             devModels: [{ model: 'm', provider: 'p' }],
             experimentalGuardrailsTimeoutSeconds: undefined,

@@ -75,7 +75,6 @@ interface RawClientConfiguration {
     autocompleteExperimentalGraphContext: 'lsp-light' | 'tsc' | 'tsc-mixed' | null
     autocompleteExperimentalOllamaOptions: OllamaOptions
     autocompleteExperimentalFireworksOptions?: ExperimentalFireworksConfig
-    autocompleteExperimentalPreloadDebounceInterval?: number
 
     experimentalTracing: boolean
     experimentalSupercompletions: boolean
