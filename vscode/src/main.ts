@@ -454,6 +454,7 @@ async function registerCodyCommands(
 
     // Initialize autoedit provider if experimental feature is enabled
     registerAutoEdits(disposables)
+    // Initialize autoedit tester
     disposables.push(
         enableFeature(
             ({ configuration }) => configuration.experimentalAutoeditsRendererTesting !== false,
@@ -711,11 +712,11 @@ function registerAutoEdits(disposables: vscode.Disposable[]): void {
             },
             () => {
                 const provider = new AutoeditsProvider()
-                vscode.languages.registerInlineCompletionItemProvider(
+                const completionRegistration = vscode.languages.registerInlineCompletionItemProvider(
                     [{ scheme: 'file', language: '*' }, { notebookType: '*' }],
                     provider
                 )
-                return provider
+                return vscode.Disposable.from(provider, completionRegistration)
             }
         )
     )

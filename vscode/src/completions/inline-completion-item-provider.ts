@@ -379,6 +379,7 @@ export class InlineCompletionItemProvider
                     stopLoading?.()
                 }
             }
+
             const abortController = new AbortController()
             let cancellationListener: vscode.Disposable | undefined
             if (token) {
