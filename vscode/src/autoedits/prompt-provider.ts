@@ -16,7 +16,7 @@ export interface PromptResponseData {
     promptResponse: ChatPrompt
 }
 
-export interface PromptProvider {
+export interface AutoeditsModelAdapter {
     getPrompt(
         docContext: DocumentContext,
         document: vscode.TextDocument,
@@ -24,10 +24,8 @@ export interface PromptProvider {
         context: AutocompleteContextSnippet[],
         tokenBudget: AutoEditsTokenLimit
     ): PromptResponseData
-
-    postProcessResponse(codeToReplace: utils.CodeToReplaceData, completion: string | null): string
-
     getModelResponse(url: string, model: string, apiKey: string, prompt: ChatPrompt): Promise<string>
+    postProcessResponse(codeToReplace: utils.CodeToReplaceData, completion: string | null): string
 }
 
 export async function getModelResponse(
@@ -52,5 +50,3 @@ export async function getModelResponse(
     const data = await response.json()
     return data
 }
-
-// ################################################################################################################

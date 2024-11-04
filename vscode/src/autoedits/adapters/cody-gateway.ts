@@ -5,12 +5,12 @@ import type {
     DocumentContext,
 } from '../../../../lib/shared/src/completions/types'
 import { autoeditsLogger } from '../logger'
-import type { ChatPrompt, PromptProvider, PromptResponseData } from '../prompt-provider'
+import type { AutoeditsModelAdapter, ChatPrompt, PromptResponseData } from '../prompt-provider'
 import { getModelResponse } from '../prompt-provider'
 import { type CodeToReplaceData, SYSTEM_PROMPT, getBaseUserPrompt } from '../prompt-utils'
 import * as utils from '../utils'
 
-export class CodyGatewayPromptProvider implements PromptProvider {
+export class CodyGatewayAdapter implements AutoeditsModelAdapter {
     getPrompt(
         docContext: DocumentContext,
         document: vscode.TextDocument,
@@ -25,7 +25,7 @@ export class CodyGatewayPromptProvider implements PromptProvider {
             context,
             tokenBudget
         )
-        const prompt: ChatPrompt = [
+        const promptResponse: ChatPrompt = [
             {
                 role: 'system',
                 content: SYSTEM_PROMPT,
@@ -35,10 +35,7 @@ export class CodyGatewayPromptProvider implements PromptProvider {
                 content: userPrompt,
             },
         ]
-        return {
-            codeToReplace: codeToReplace,
-            promptResponse: prompt,
-        }
+        return { codeToReplace, promptResponse }
     }
 
     postProcessResponse(codeToReplace: CodeToReplaceData, response: string): string {

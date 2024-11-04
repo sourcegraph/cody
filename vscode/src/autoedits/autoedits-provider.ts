@@ -13,13 +13,13 @@ import { RetrieverIdentifier } from '../completions/context/utils'
 import { getCurrentDocContext } from '../completions/get-current-doc-context'
 import { lines } from '../completions/text-processing'
 import { getConfiguration } from '../configuration'
+import { CodyGatewayAdapter } from './adapters/cody-gateway'
+import { FireworksAdapter } from './adapters/fireworks'
+import { OpenAIAdapter } from './adapters/openai'
 import { getLineLevelDiff } from './diff-utils'
 import { autoeditsLogger } from './logger'
-import type { PromptProvider } from './prompt-provider'
+import type { AutoeditsModelAdapter } from './prompt-provider'
 import type { CodeToReplaceData } from './prompt-utils'
-import { CodyGatewayPromptProvider } from './providers/cody-gateway'
-import { FireworksPromptProvider } from './providers/fireworks'
-import { OpenAIPromptProvider } from './providers/openai'
 import { AutoEditsRendererManager } from './renderer'
 import {
     adjustPredictionIfInlineCompletionPossible,
@@ -43,7 +43,7 @@ export interface AutoeditsPrediction {
 interface ProviderConfig {
     experimentalAutoeditsConfigOverride: AutoEditsModelConfig | undefined
     providerName: AutoEditsModelConfig['provider']
-    provider: PromptProvider
+    provider: AutoeditsModelAdapter
     model: string
     url: string
     tokenLimit: AutoEditsTokenLimit
@@ -86,14 +86,14 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
         }
     }
 
-    private createPromptProvider(providerName: AutoEditsModelConfig['provider']): PromptProvider {
+    private createPromptProvider(providerName: AutoEditsModelConfig['provider']): AutoeditsModelAdapter {
         switch (providerName) {
             case 'openai':
-                return new OpenAIPromptProvider()
+                return new OpenAIAdapter()
             case 'fireworks':
-                return new FireworksPromptProvider()
+                return new FireworksAdapter()
             case 'cody-gateway-fastpath-chat':
-                return new CodyGatewayPromptProvider()
+                return new CodyGatewayAdapter()
             default:
                 autoeditsLogger.logDebug('Config', `Provider ${providerName} not supported`)
                 throw new Error(`Provider ${providerName} not supported`)

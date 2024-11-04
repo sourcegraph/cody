@@ -5,12 +5,11 @@ import type {
     DocumentContext,
 } from '../../../../lib/shared/src/completions/types'
 import { autoeditsLogger } from '../logger'
-import type { ChatPrompt, PromptProvider, PromptResponseData } from '../prompt-provider'
+import type { AutoeditsModelAdapter, ChatPrompt, PromptResponseData } from '../prompt-provider'
 import { getModelResponse } from '../prompt-provider'
 import { type CodeToReplaceData, SYSTEM_PROMPT, getBaseUserPrompt } from '../prompt-utils'
-import * as utils from '../utils'
 
-export class FireworksPromptProvider implements PromptProvider {
+export class OpenAIAdapter implements AutoeditsModelAdapter {
     getPrompt(
         docContext: DocumentContext,
         document: vscode.TextDocument,
@@ -41,14 +40,8 @@ export class FireworksPromptProvider implements PromptProvider {
         }
     }
 
-    postProcessResponse(codeToReplace: CodeToReplaceData, response: string): string {
-        // todo (hitesh): The finetuned model is messing up the identation of the first line.
-        // todo: correct it manully for now, by checking the first line of the code to rewrite and adding the same indentation to the first line of the completion
-        const fixedIndentationResponse = utils.fixFirstLineIndentation(
-            codeToReplace.codeToRewrite,
-            response
-        )
-        return fixedIndentationResponse
+    postProcessResponse(_: CodeToReplaceData, response: string): string {
+        return response
     }
 
     async getModelResponse(
@@ -63,7 +56,7 @@ export class FireworksPromptProvider implements PromptProvider {
                 JSON.stringify({
                     model: model,
                     messages: prompt,
-                    temperature: 0.2,
+                    temperature: 0.5,
                     max_tokens: 256,
                     response_format: {
                         type: 'text',
@@ -73,7 +66,7 @@ export class FireworksPromptProvider implements PromptProvider {
             )
             return response.choices[0].message.content
         } catch (error) {
-            autoeditsLogger.logDebug('AutoEdits', 'Error calling Fireworks API:', error)
+            autoeditsLogger.logDebug('AutoEdits', 'Error calling OpenAI API:', error)
             throw error
         }
     }
