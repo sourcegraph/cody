@@ -17,7 +17,7 @@ export function registerWorkflowCommands(context: vscode.ExtensionContext, chatC
                 vscode.ViewColumn.One,
                 {
                     enableScripts: true,
-                    retainContextWhenHidden: false,
+                    retainContextWhenHidden: true,
                     localResourceRoots: [vscode.Uri.joinPath(context.extensionUri, 'dist')],
                 }
             )

@@ -78,6 +78,7 @@ export const Flow: React.FC<{
     const [executingNodeId, setExecutingNodeId] = useState<string | null>(null)
     const [nodeErrors, setNodeErrors] = useState<Map<string, string>>(new Map())
     const [edgeOrder, setEdgeOrder] = useState<Map<string, number>>(new Map())
+    const [isExecuting, setIsExecuting] = useState(false)
     const edgeTypes = {
         'ordered-edge': CustomOrderedEdge,
     }
@@ -330,6 +331,7 @@ export const Flow: React.FC<{
                                 )
                             )
                         } else if (event.data.data.status === 'completed') {
+                            setExecutingNodeId(null)
                             const node = nodes.find(n => n.id === event.data.data?.nodeId)
                             if (node?.type === NodeType.PREVIEW) {
                                 onNodeUpdate(node.id, { content: event.data.data?.result })
@@ -344,6 +346,12 @@ export const Flow: React.FC<{
                             )
                         )
                     }
+                    break
+                case 'execution_started':
+                    setIsExecuting(true)
+                    break
+                case 'execution_completed':
+                    setIsExecuting(false)
                     break
             }
         }
@@ -361,6 +369,7 @@ export const Flow: React.FC<{
                 onSave={onSave}
                 onLoad={onLoad}
                 onExecute={onExecute}
+                isExecuting={isExecuting}
             />
             <div
                 className="tw-flex-1"

@@ -50,6 +50,7 @@ export const createNode = (
         label,
         command: type === NodeType.CLI ? '' : undefined,
         prompt: type === NodeType.LLM ? '' : undefined,
+        content: type === NodeType.PREVIEW ? '' : undefined,
     },
     position,
 })

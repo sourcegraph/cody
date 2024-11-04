@@ -10,12 +10,7 @@ export type WorkflowToExtension = {
 }
 
 export type WorkflowFromExtension = {
-    type:
-        | 'hello_webview'
-        | 'workflow_loaded'
-        | 'execution_started'
-        | 'execution_completed'
-        | 'node_execution_status'
+    type: 'workflow_loaded' | 'execution_started' | 'execution_completed' | 'node_execution_status'
     data?: {
         nodes: WorkflowNode[]
         edges: Edge[]

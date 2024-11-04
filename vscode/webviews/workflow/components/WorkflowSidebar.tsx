@@ -16,6 +16,7 @@ interface WorkflowSidebarProps {
     onSave?: () => void
     onLoad?: () => void
     onExecute?: () => void
+    isExecuting?: boolean
 }
 
 export const WorkflowSidebar: React.FC<WorkflowSidebarProps> = ({
@@ -25,6 +26,7 @@ export const WorkflowSidebar: React.FC<WorkflowSidebarProps> = ({
     onSave,
     onLoad,
     onExecute,
+    isExecuting,
 }) => {
     const handleSave = async (): Promise<void> => {
         // Send message to VSCode extension to handle file saving
@@ -50,8 +52,9 @@ export const WorkflowSidebar: React.FC<WorkflowSidebarProps> = ({
                             onExecute()
                         }
                     }}
+                    disabled={isExecuting}
                 >
-                    Execute
+                    {isExecuting ? 'Running...' : 'Execute'}
                 </Button>
             </div>
 
