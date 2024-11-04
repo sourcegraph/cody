@@ -88,7 +88,7 @@ export function getBaseUserPrompt(
     tokenBudget: AutoEditsTokenLimit
 ): {
     codeToReplace: CodeToReplaceData
-    promptResponse: PromptString
+    prompt: PromptString
 } {
     const contextItemMapping = getContextItemMappingWithTokenLimit(
         context,
@@ -145,7 +145,7 @@ ${FINAL_USER_PROMPT}
     autoeditsLogger.logDebug('AutoEdits', 'Prompt\n', finalPrompt)
     return {
         codeToReplace: codeToReplace,
-        promptResponse: finalPrompt,
+        prompt: finalPrompt,
     }
 }
 

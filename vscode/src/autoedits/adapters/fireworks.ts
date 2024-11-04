@@ -18,7 +18,7 @@ export class FireworksAdapter implements AutoeditsModelAdapter {
         context: AutocompleteContextSnippet[],
         tokenBudget: AutoEditsTokenLimit
     ): PromptResponseData {
-        const { codeToReplace, promptResponse: userPrompt } = getBaseUserPrompt(
+        const { codeToReplace, prompt: userPrompt } = getBaseUserPrompt(
             docContext,
             document,
             position,
