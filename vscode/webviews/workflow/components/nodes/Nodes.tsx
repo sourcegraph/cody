@@ -5,6 +5,7 @@ import type React from 'react'
 export enum NodeType {
     CLI = 'cli',
     LLM = 'llm',
+    PREVIEW = 'preview',
 }
 
 // Shared node props interface
@@ -14,6 +15,7 @@ interface BaseNodeProps {
         moving?: boolean
         executing?: boolean
         error?: boolean
+        content?: string
     }
     selected?: boolean
 }
@@ -27,6 +29,7 @@ export interface WorkflowNode {
         prompt?: string
         input?: string
         output?: string
+        content?: string
     }
     position: {
         x: number
@@ -92,6 +95,27 @@ const getNodeStyle = (
     }`,
 })
 
+export const PreviewNode: React.FC<BaseNodeProps> = ({ data, selected }) => (
+    <div style={getNodeStyle(NodeType.PREVIEW, data.moving, selected, data.executing, data.error)}>
+        <Handle type="target" position={Position.Top} />
+        <div className="tw-flex tw-flex-col tw-gap-2">
+            <span>{data.label}</span>
+            <textarea
+                className="tw-w-full tw-h-24 tw-p-2 tw-rounded nodrag tw-resize  tw-border-2 tw-border-solid tw-border-[var(--xy-node-border-default)]"
+                style={{
+                    color: 'var(--vscode-editor-foreground)',
+                    backgroundColor: 'var(--vscode-input-background)',
+                    outline: 'none',
+                }}
+                value={data.content || ''}
+                readOnly
+                placeholder="Preview content will appear here..."
+            />
+        </div>
+        <Handle type="source" position={Position.Bottom} />
+    </div>
+)
+
 // Node Components with shared base props
 export const CLINode: React.FC<BaseNodeProps> = ({ data, selected }) => (
     <div style={getNodeStyle(NodeType.CLI, data.moving, selected, data.executing, data.error)}>
@@ -116,4 +140,5 @@ export const CodyLLMNode: React.FC<BaseNodeProps> = ({ data, selected }) => (
 export const nodeTypes = {
     [NodeType.CLI]: CLINode,
     [NodeType.LLM]: CodyLLMNode,
+    [NodeType.PREVIEW]: PreviewNode,
 }

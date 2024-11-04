@@ -153,6 +153,11 @@ async function executeLLMNode(node: WorkflowNode, chatClient: ChatClient): Promi
     }
 }
 
+async function executePreviewNode(node: WorkflowNode, input: string): Promise<string> {
+    // Preview nodes just pass through their input
+    return input
+}
+
 // Add new helper function that maintains edge order as connected
 function combineParentOutputsByConnectionOrder(
     nodeId: string,
@@ -227,6 +232,10 @@ export async function executeWorkflow(
                         { ...node, data: { ...node.data, prompt } },
                         chatClient
                     )
+                    break
+                }
+                case 'preview': {
+                    result = await executePreviewNode(node, combinedInput)
                     break
                 }
                 default:

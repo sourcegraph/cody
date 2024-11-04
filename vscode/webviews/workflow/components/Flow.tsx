@@ -131,12 +131,12 @@ export const Flow: React.FC<{
         setSelectedNode(node)
     }, [])
 
-    const { updateNodeData } = useReactFlow()
+    //const { updateNodeData } = useReactFlow()
 
     const onNodeUpdate = useCallback(
         (nodeId: string, data: Partial<WorkflowNode['data']>) => {
-            updateNodeData(nodeId, data)
-            /* setNodes(currentNodes =>
+            //updateNodeData(nodeId, data)
+            setNodes(currentNodes =>
                 currentNodes.map(node => {
                     if (node.id === nodeId) {
                         const updatedNode = {
@@ -150,15 +150,18 @@ export const Flow: React.FC<{
                     }
                     return node
                 })
-            ) */
+            )
         },
-        [updateNodeData]
+        [selectedNode]
     )
     const handleAddNode = useCallback(
         (nodeLabel: string, nodeType: NodeType) => {
             const { x, y, zoom } = getViewport()
             const position = { x: -x + 100 * zoom, y: -y + 100 * zoom }
             const newNode = createNode(nodeType, nodeLabel, position, nodes.length)
+            if (nodeType === NodeType.PREVIEW) {
+                newNode.data.content = ''
+            }
             setNodes(nodes => [...nodes, newNode])
         },
         [getViewport, nodes]
@@ -326,13 +329,11 @@ export const Flow: React.FC<{
                                     event.data.data?.result ?? ''
                                 )
                             )
-                            // Show error message in VS Code
-                            /* vscodeAPI.postMessage({
-                                type: 'show_error',
-                                data: {
-                                    message: event.data.data?.result ?? 'Unknown error occurred'
-                                }
-                            }) */
+                        } else if (event.data.data.status === 'completed') {
+                            const node = nodes.find(n => n.id === event.data.data?.nodeId)
+                            if (node?.type === NodeType.PREVIEW) {
+                                onNodeUpdate(node.id, { content: event.data.data?.result })
+                            }
                         } else {
                             setExecutingNodeId(null)
                         }
@@ -349,7 +350,7 @@ export const Flow: React.FC<{
 
         window.addEventListener('message', messageHandler)
         return () => window.removeEventListener('message', messageHandler)
-    }, [])
+    }, [nodes, onNodeUpdate])
 
     return (
         <div className="tw-flex tw-h-screen">

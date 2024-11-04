@@ -71,7 +71,6 @@ export const WorkflowSidebar: React.FC<WorkflowSidebarProps> = ({
                         </div>
                     </AccordionContent>
                 </AccordionItem>
-
                 <AccordionItem value="llm">
                     <AccordionTrigger>Cody LLM Actions</AccordionTrigger>
                     <AccordionContent>
@@ -82,6 +81,20 @@ export const WorkflowSidebar: React.FC<WorkflowSidebarProps> = ({
                                 variant="secondary"
                             >
                                 Cody
+                            </Button>
+                        </div>
+                    </AccordionContent>
+                </AccordionItem>
+                <AccordionItem value="preview">
+                    <AccordionTrigger>Preview</AccordionTrigger>
+                    <AccordionContent>
+                        <div className="tw-flex tw-flex-col tw-gap-2">
+                            <Button
+                                onClick={() => onNodeAdd('Preview', NodeType.PREVIEW)}
+                                className="tw-w-full"
+                                variant="secondary"
+                            >
+                                Add Preview
                             </Button>
                         </div>
                     </AccordionContent>
