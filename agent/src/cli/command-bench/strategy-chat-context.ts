@@ -83,8 +83,7 @@ export async function evaluateChatContextStrategy(
             username: userInfo?.username ?? '[none]',
             userId: userInfo?.id ?? '[none]',
             evaluatedFeatureFlags,
-        },
-        examples: outputs,
+        }
     })
 }
 

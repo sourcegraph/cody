@@ -23,7 +23,6 @@ export interface EvalOutput {
         userId: string
         evaluatedFeatureFlags: Record<string, boolean>
     }
-    examples: ExampleOutput[]
 }
 
 export interface EvalContextItem {
@@ -174,18 +173,8 @@ export async function readExamplesFromCSV(filePath: string): Promise<{
     }
 }
 
-/**
- * Note: this mutates evalOutput to remove the content field from actualContext context items.
- */
 export async function writeYAMLMetadata(outputFile: string, evalOutput: EvalOutput): Promise<void> {
     await mkdirp(path.dirname(outputFile))
-
-    for (const example of evalOutput.examples) {
-        for (const contextItem of example.actualContext) {
-            contextItem.content = undefined
-        }
-    }
-
     await fs.writeFile(outputFile, yamlStringify(evalOutput))
 }
 
