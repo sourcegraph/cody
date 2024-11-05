@@ -42,7 +42,7 @@ export async function configureExternalServices(
 
     const completionsClient = platform.createCompletionsClient(autocompleteLifecycleOutputChannelLogger)
 
-    const symfRunner = platform.createSymfRunner?.(context, completionsClient)
+    const symfRunner = platform.createSymfRunner?.(context)
     if (symfRunner) disposables.push(symfRunner)
 
     const chatClient = new ChatClient(completionsClient)
