@@ -9,10 +9,10 @@ import { CODYAGENT_PROMPTS } from './prompts'
  * It is responsible for reviewing the retrieved context, and perform agentic context retrieval for the chat request.
  */
 export class DeepCodyAgent extends CodyChatAgent {
-    private static toggledOn = true
+    private static toggledOn = false
 
-    public static setToggler(): boolean {
-        DeepCodyAgent.toggledOn = !DeepCodyAgent.toggledOn
+    public static setToggler(value?: boolean): boolean {
+        DeepCodyAgent.toggledOn = value ?? !DeepCodyAgent.toggledOn
         return DeepCodyAgent.toggledOn
     }
 

@@ -29,11 +29,6 @@ describe('DeepCody', () => {
         endpoint: DOTCOM_URL.toString(),
         authenticated: true,
     }
-    const enterpriseAuthStatus: AuthenticatedAuthStatus = {
-        ...AUTH_STATUS_FIXTURE_AUTHED,
-        endpoint: 'https://example.sourcegraph.com',
-        authenticated: true,
-    }
 
     let mockChatBuilder: ChatBuilder
     let mockChatClient: ChatClient
@@ -111,7 +106,7 @@ describe('DeepCody', () => {
         expect(agent).toBeDefined()
     })
 
-    it('retrieves additional context when enabled', async () => {
+    it('retrieves additional context when response contains tool tags', async () => {
         const mockStreamResponse = [
             { type: 'change', text: '<TOOLSEARCH><query>test query</query></TOOLSEARCH>' },
             { type: 'complete' },
@@ -151,17 +146,10 @@ describe('DeepCody', () => {
         const result = await agent.getContext(mockSpan, { aborted: false } as AbortSignal)
 
         expect(mockChatClient.chat).toHaveBeenCalled()
-        expect(mockCodyTools).toHaveLength(5)
+        expect(mockCodyTools).toHaveLength(4)
         expect(mockContextRetriever.retrieveContext).toHaveBeenCalled()
         expect(result).toHaveLength(2)
         expect(result[0].content).toBe('const example = "test";')
         expect(result[1].content).toBe('const newExample = "test result";')
-    })
-
-    it('does not retrieve additional context for enterprise user without feature flag', async () => {
-        vi.spyOn(featureFlagProvider, 'evaluatedFeatureFlag').mockReturnValue(Observable.of(false))
-        mockAuthStatus(enterpriseAuthStatus)
-        expect(mockChatClient.chat).not.toHaveBeenCalled()
-        expect(mockContextRetriever.retrieveContext).not.toHaveBeenCalled()
     })
 })

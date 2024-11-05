@@ -282,6 +282,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 this.setWebviewToChat()
                 break
             case 'submit': {
+                DeepCodyAgent.setToggler(message.isDeepCodyEnabled || false)
                 await this.handleUserMessageSubmission({
                     requestID: uuid.v4(),
                     inputText: PromptString.unsafe_fromUserQuery(message.text),
@@ -296,6 +297,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 break
             }
             case 'edit': {
+                DeepCodyAgent.setToggler(message.isDeepCodyEnabled || false)
                 await this.handleEdit({
                     requestID: uuid.v4(),
                     text: PromptString.unsafe_fromUserQuery(message.text),

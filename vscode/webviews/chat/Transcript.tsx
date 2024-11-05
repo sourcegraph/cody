@@ -288,9 +288,10 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                 intent: intentFromSubmit || intentResults.current?.intent,
                 intentScores: intentFromSubmit ? undefined : intentResults.current?.allScores,
                 manuallySelectedIntent: !!intentFromSubmit,
+                isDeepCodyEnabled: deepCodyToggleState,
             })
         },
-        [humanMessage.index, intentResults]
+        [humanMessage.index, intentResults, deepCodyToggleState]
     )
 
     const onFollowupSubmit = useCallback(
@@ -300,9 +301,10 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                 intent: intentFromSubmit || intentResults.current?.intent,
                 intentScores: intentFromSubmit ? undefined : intentResults.current?.allScores,
                 manuallySelectedIntent: !!intentFromSubmit,
+                isDeepCodyEnabled: deepCodyToggleState,
             })
         },
-        [intentResults]
+        [intentResults, deepCodyToggleState]
     )
 
     const extensionAPI = useExtensionAPI()
@@ -567,12 +569,14 @@ export function editHumanMessage({
     intent,
     intentScores,
     manuallySelectedIntent,
+    isDeepCodyEnabled,
 }: {
     messageIndexInTranscript: number
     editorValue: SerializedPromptEditorValue
     intent?: ChatMessage['intent']
     intentScores?: { intent: string; score: number }[]
     manuallySelectedIntent?: boolean
+    isDeepCodyEnabled?: boolean
 }): void {
     getVSCodeAPI().postMessage({
         command: 'edit',
@@ -583,6 +587,7 @@ export function editHumanMessage({
         intent,
         intentScores,
         manuallySelectedIntent,
+        isDeepCodyEnabled,
     })
     focusLastHumanMessageEditor()
 }
@@ -592,11 +597,13 @@ function submitHumanMessage({
     intent,
     intentScores,
     manuallySelectedIntent,
+    isDeepCodyEnabled,
 }: {
     editorValue: SerializedPromptEditorValue
     intent?: ChatMessage['intent']
     intentScores?: { intent: string; score: number }[]
     manuallySelectedIntent?: boolean
+    isDeepCodyEnabled?: boolean
 }): void {
     getVSCodeAPI().postMessage({
         command: 'submit',
@@ -606,6 +613,7 @@ function submitHumanMessage({
         intent,
         intentScores,
         manuallySelectedIntent,
+        isDeepCodyEnabled,
     })
     focusLastHumanMessageEditor()
 }
