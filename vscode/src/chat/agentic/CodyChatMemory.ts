@@ -7,6 +7,12 @@ export class CodyChatMemory {
 
     public static load(memory: string): void {
         CodyChatMemory.Store.add(memory)
+        // If store exceeds 5 items, remove oldest items
+        if (CodyChatMemory.Store.size > 5) {
+            const storeArray = Array.from(CodyChatMemory.Store)
+            CodyChatMemory.Store = new Set(storeArray.slice(-5))
+        }
+        // TODO - persist to local file system
         localStorage?.set(CodyChatMemory.STORAGE_KEY, Array.from(CodyChatMemory.Store))
     }
 
