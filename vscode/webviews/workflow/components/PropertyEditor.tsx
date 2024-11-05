@@ -53,6 +53,20 @@ export const PropertyEditor: React.FC<PropertyEditorProps> = ({ node, onUpdate }
                     />
                 </div>
             )}
+
+            {node.type === NodeType.INPUT && (
+                <div>
+                    <Label htmlFor="node-input">Input Text</Label>
+                    <Textarea
+                        id="node-input"
+                        value={node.data.content || ''}
+                        onChange={(e: { target: { value: any } }) =>
+                            onUpdate(node.id, { content: e.target.value })
+                        }
+                        placeholder="Enter input text..."
+                    />
+                </div>
+            )}
         </div>
     )
 }

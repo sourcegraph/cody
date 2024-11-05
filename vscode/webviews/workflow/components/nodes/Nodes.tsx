@@ -7,6 +7,7 @@ export enum NodeType {
     CLI = 'cli',
     LLM = 'llm',
     PREVIEW = 'preview',
+    INPUT = 'input',
 }
 
 // Shared node props interface
@@ -102,7 +103,7 @@ export const PreviewNode: React.FC<BaseNodeProps> = ({ data, selected }) => (
         <div className="tw-flex tw-flex-col tw-gap-2">
             <span>{data.label}</span>
             <textarea
-                className="tw-w-full tw-h-24 tw-p-2 tw-rounded nodrag tw-resize  tw-border-2 tw-border-solid tw-border-[var(--xy-node-border-default)]"
+                className="tw-w-full tw-h-24 tw-p-2 tw-rounded nodrag tw-resize tw-border-2 tw-border-solid tw-border-[var(--xy-node-border-default)]"
                 style={{
                     color: 'var(--vscode-editor-foreground)',
                     backgroundColor: 'var(--vscode-input-background)',
@@ -111,6 +112,27 @@ export const PreviewNode: React.FC<BaseNodeProps> = ({ data, selected }) => (
                 value={data.content || ''}
                 readOnly
                 placeholder="Preview content will appear here..."
+            />
+        </div>
+        <Handle type="source" position={Position.Bottom} />
+    </div>
+)
+
+export const InputNode: React.FC<BaseNodeProps> = ({ data, selected }) => (
+    <div style={getNodeStyle(NodeType.INPUT, data.moving, selected, data.executing, data.error)}>
+        <Handle type="target" position={Position.Top} />
+        <div className="tw-flex tw-flex-col tw-gap-2 tw-text-left">
+            <span>{data.label}</span>
+            <textarea
+                className="tw-w-full tw-h-24 tw-p-2 tw-rounded nodrag tw-resize tw-border-2 tw-border-solid tw-border-[var(--xy-node-border-default)]"
+                style={{
+                    color: 'var(--vscode-editor-foreground)',
+                    backgroundColor: 'var(--vscode-input-background)',
+                    outline: 'none', // Add this line
+                }}
+                value={data.content || ''}
+                readOnly
+                placeholder="Enter your input text here..."
             />
         </div>
         <Handle type="source" position={Position.Bottom} />
@@ -142,4 +164,5 @@ export const nodeTypes = {
     [NodeType.CLI]: CLINode,
     [NodeType.LLM]: CodyLLMNode,
     [NodeType.PREVIEW]: PreviewNode,
+    [NodeType.INPUT]: InputNode,
 }

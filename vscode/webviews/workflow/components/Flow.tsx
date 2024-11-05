@@ -170,9 +170,6 @@ export const Flow: React.FC<{
     const onExecute = useCallback(() => {
         // Validate all nodes have required fields
         const invalidNodes = nodes.filter(node => {
-            if (node.type === NodeType.CLI) {
-                return !node.data.command || node.data.command.trim() === ''
-            }
             if (node.type === NodeType.LLM) {
                 return !node.data.prompt || node.data.prompt.trim() === ''
             }

@@ -63,10 +63,6 @@ export function topologicalSort(nodes: WorkflowNode[], edges: Edge[]): WorkflowN
 }
 
 async function executeCLINode(node: WorkflowNode): Promise<string> {
-    if (!node.data.command) {
-        throw new Error(`No command specified for CLI node ${node.id}  with ${node.data.label}`)
-    }
-
     // Check if shell is available and workspace is trusted
     if (!vscode.env.shell || !vscode.workspace.isTrusted) {
         throw new Error('Shell command is not supported in your current workspace.')
@@ -77,7 +73,7 @@ async function executeCLINode(node: WorkflowNode): Promise<string> {
     const cwd = vscode.workspace.workspaceFolders?.[0]?.uri?.path
 
     // Filter and sanitize command
-    const filteredCommand = node.data.command.replaceAll(/(\s~\/)/g, ` ${homeDir}${path.sep}`)
+    const filteredCommand = node.data.command?.replaceAll(/(\s~\/)/g, ` ${homeDir}${path.sep}`) || ''
 
     // Check for disallowed commands (you'll need to define commandsNotAllowed array)
     if (commandsNotAllowed.some(cmd => filteredCommand.startsWith(cmd))) {
@@ -154,7 +150,12 @@ async function executeLLMNode(node: WorkflowNode, chatClient: ChatClient): Promi
     }
 }
 
-async function executePreviewNode(node: WorkflowNode, input: string): Promise<string> {
+async function executePreviewNode(input: string): Promise<string> {
+    return input
+}
+
+async function executeInputNode(input: string): Promise<string> {
+    // Return the content directly as it's user input
     return input
 }
 
@@ -234,7 +235,13 @@ export async function executeWorkflow(
                     break
                 }
                 case 'preview': {
-                    result = await executePreviewNode(node, combinedInput)
+                    result = await executePreviewNode(combinedInput)
+                    break
+                }
+                case 'input': {
+                    const text =
+                        node.data.content?.replace('${input}', sanitizeForPrompt(combinedInput)) || ''
+                    result = await executeInputNode(text)
                     break
                 }
                 default:
