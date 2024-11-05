@@ -189,7 +189,7 @@ const DeepCodySwitchToolbarItem: FunctionComponent<{
                         onCheckedChange={onDeepCodyToggleClick}
                         className={className}
                     />
-                    <div className="tw-text-sm">
+                    <div className="tw-flex tw-items-center tw-gap-1 tw-text-sm">
                         <FlaskConicalIcon
                             className="tw-m-0 tw-h-6 tw-w-6 tw-inline-block"
                             strokeWidth={1.5}
@@ -199,7 +199,8 @@ const DeepCodySwitchToolbarItem: FunctionComponent<{
                 </div>
             </TooltipTrigger>
             <TooltipContent side="bottom">
-                [Experimental] Cody may respond slower to fetch additional context for improved output.
+                [Experimental] Deep Cody may respond slower to fetch additional context for improved
+                output
             </TooltipContent>
         </Tooltip>
     )

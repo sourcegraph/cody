@@ -478,7 +478,8 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
             {corpusContextItems.length > 0 &&
                 !mentionsContainRepository &&
                 assistantMessage &&
-                !assistantMessage.isLoading && (
+                !assistantMessage.isLoading &&
+                humanMessage.agent !== 'deep-cody' && (
                     <div>
                         <Button onClick={resubmitWithRepoContext} type="button">
                             Resend with current repository context
@@ -540,6 +541,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                         }
                         smartApply={smartApply}
                         smartApplyEnabled={smartApplyEnabled}
+                        chatAgent={humanMessage.agent}
                     />
                 )}
         </>

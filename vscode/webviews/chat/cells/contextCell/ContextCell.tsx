@@ -171,9 +171,7 @@ export const ContextCell: FunctionComponent<{
                                                 ? isDeepCodyEnabled
                                                     ? 'Thinking'
                                                     : 'Fetching context'
-                                                : isDeepCodyEnabled
-                                                  ? 'Deep Cody Context'
-                                                  : 'Fetched context'}
+                                                : 'Fetched context'}
                                             <span className="tw-opacity-60 tw-text-sm tw-ml-2">
                                                 &mdash;{' '}
                                                 {isContextLoading
