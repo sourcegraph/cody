@@ -53,7 +53,7 @@ import { AgentTabGroups } from './AgentTabGroups'
 import { AgentWorkspaceConfiguration } from './AgentWorkspaceConfiguration'
 import type { Agent } from './agent'
 import { matchesGlobPatterns } from './cli/command-bench/matchesGlobPatterns'
-import type { ClientInfo, ExtensionConfiguration } from './protocol-alias'
+import {ClientInfo, DebugMessageLogLevel, ExtensionConfiguration} from './protocol-alias'
 
 // Not using CODY_TESTING because it changes the URL endpoint we send requests
 // to and we want to send requests to sourcegraph.com because we record the HTTP
@@ -530,32 +530,27 @@ export namespace UriString {
 }
 
 function outputChannel(name: string): vscode.LogOutputChannel {
+    function notifyAgent(level: DebugMessageLogLevel, message: string, ...args: any[]): void {
+        if (agent) {
+            const formattedMessage = args.length ? String(message).replace(/{(\d+)}/g, (match, num) => args[num]?.toString() ?? match) : message
+            agent.notify('debug/message', { channel: name, message: formattedMessage, level })
+
+        }
+    }
     return {
         name,
-        append: message => {
-            if (agent) {
-                agent.notify('debug/message', { channel: name, message })
-            }
-        },
-        appendLine: message => {
-            if (agent) {
-                agent.notify('debug/message', { channel: name, message })
-            }
-        },
-        replace: message => {
-            if (agent) {
-                agent.notify('debug/message', { channel: name, message })
-            }
-        },
+        append: message => { notifyAgent('info', message) },
+        appendLine: message => { notifyAgent('trace', message) },
+        replace: message => { notifyAgent('trace', message) },
         clear: () => {},
         show: () => {},
         hide: () => {},
         dispose: () => {},
-        trace: () => {},
-        debug: () => {},
-        info: () => {},
-        warn: () => {},
-        error: () => {},
+        trace: (message: string, ...args: any[]) => { notifyAgent('trace', message, args) },
+        debug: (message: string, ...args: any[]) => { notifyAgent('debug', message, args) },
+        info: (message: string, ...args: any[]) => { notifyAgent('info', message, args) },
+        warn: (message: string, ...args: any[]) => { notifyAgent('warn', message, args) },
+        error: (message: string, ...args: any[]) => { notifyAgent('error', message, args) },
         logLevel: LogLevel.Trace,
         onDidChangeLogLevel: emptyEvent(),
     }
