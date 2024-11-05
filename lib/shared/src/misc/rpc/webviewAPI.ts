@@ -98,6 +98,11 @@ export interface WebviewToExtensionAPI {
      * The current user's product subscription information (Cody Free/Pro).
      */
     userProductSubscription(): Observable<UserProductSubscription | null>
+
+    /**
+     * Enable / Disable Deep Cody on toggler switch.
+     */
+    toogleDeepCody(): Observable<boolean>
 }
 
 export function createExtensionAPI(
@@ -129,6 +134,7 @@ export function createExtensionAPI(
         transcript: proxyExtensionAPI(messageAPI, 'transcript'),
         userHistory: proxyExtensionAPI(messageAPI, 'userHistory'),
         userProductSubscription: proxyExtensionAPI(messageAPI, 'userProductSubscription'),
+        toogleDeepCody: proxyExtensionAPI(messageAPI, 'toogleDeepCody'),
     }
 }
 

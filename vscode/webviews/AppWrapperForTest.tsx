@@ -126,6 +126,7 @@ export const AppWrapperForTest: FunctionComponent<{ children: ReactNode }> = ({ 
                             },
                         }),
                     userProductSubscription: () => Observable.of(null),
+                    toogleDeepCody: () => EMPTY,
                 },
             } satisfies Wrapper<ComponentProps<typeof ExtensionAPIProviderForTestsOnly>['value']>,
             {

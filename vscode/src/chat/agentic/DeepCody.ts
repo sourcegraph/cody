@@ -9,10 +9,15 @@ import { CODYAGENT_PROMPTS } from './prompts'
  * It is responsible for reviewing the retrieved context, and perform agentic context retrieval for the chat request.
  */
 export class DeepCodyAgent extends CodyChatAgent {
-    public static readonly ModelRef = 'sourcegraph::2023-06-01::deep-cody'
+    private static toggledOn = true
 
-    protected getModelRef(): string {
-        return DeepCodyAgent.ModelRef
+    public static setToggler(): boolean {
+        DeepCodyAgent.toggledOn = !DeepCodyAgent.toggledOn
+        return DeepCodyAgent.toggledOn
+    }
+
+    public static get isToggledOn(): boolean {
+        return DeepCodyAgent.toggledOn
     }
 
     protected buildPrompt(): PromptString {
@@ -64,10 +69,13 @@ export class DeepCodyAgent extends CodyChatAgent {
     private async review(span: Span, chatAbortSignal: AbortSignal): Promise<ContextItem[]> {
         const model = 'anthropic::2023-06-01::claude-3-haiku'
         const prompter = this.getPrompter(this.context)
-        const promptData = await prompter.makePrompt(this.chatBuilder, 1, this.promptMixins)
+        const promptData = await prompter.makePrompt(this.chatBuilder, 1, this.promptMixins, true)
 
         try {
-            await this.processStream(promptData.prompt, chatAbortSignal, model)
+            const res = await this.processStream(promptData.prompt, chatAbortSignal, model)
+            if (res?.toString().includes('CONTEXT_SUFFICIENT')) {
+                return []
+            }
             const results = await Promise.all(
                 Array.from(this.toolHandlers.values()).map(tool => tool.execute(span))
             )

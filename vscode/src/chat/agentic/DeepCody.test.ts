@@ -23,8 +23,6 @@ import type { CodyTool } from './CodyTool'
 import { CodyToolProvider } from './CodyToolProvider'
 import { DeepCodyAgent } from './DeepCody'
 
-const DeepCodyModel = DeepCodyAgent.ModelRef
-
 describe('DeepCody', () => {
     const codyProAuthStatus: AuthenticatedAuthStatus = {
         ...AUTH_STATUS_FIXTURE_AUTHED,
@@ -49,11 +47,11 @@ describe('DeepCody', () => {
         mockClientCapabilities(CLIENT_CAPABILITIES_FIXTURE)
         mockAuthStatus(codyProAuthStatus)
         mockChatBuilder = {
-            selectedModel: 'anthropic::2023-06-01::deep-cody',
+            selectedModel: 'anthropic::2023-06-01::claude-3.5-sonnet',
             changes: {
                 pipe: vi.fn(),
             },
-            resolvedModelForChat: vi.fn().mockReturnValue('anthropic::2023-06-01::deep-cody'),
+            resolvedModelForChat: vi.fn().mockReturnValue('anthropic::2023-06-01::claude-3.5-sonnet'),
             addHumanMessage: vi.fn(),
             addBotMessage: vi.fn(),
             contextWindowForChat: vi.fn().mockReturnValue({ input: 10000, output: 1000 }),
@@ -89,7 +87,9 @@ describe('DeepCody', () => {
 
         vi.spyOn(featureFlagProvider, 'evaluatedFeatureFlag').mockReturnValue(Observable.of(false))
         vi.spyOn(modelsService, 'isStreamDisabled').mockReturnValue(false)
-        vi.spyOn(ChatBuilder, 'resolvedModelForChat').mockReturnValue(Observable.of(DeepCodyModel))
+        vi.spyOn(ChatBuilder, 'resolvedModelForChat').mockReturnValue(
+            Observable.of('anthropic::2023-06-01::claude-3.5-sonnet')
+        )
         vi.spyOn(ChatBuilder, 'contextWindowForChat').mockReturnValue(
             Observable.of({ input: 10000, output: 1000 })
         )

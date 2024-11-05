@@ -208,6 +208,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
     public dispose(): void {
         vscode.Disposable.from(...this.disposables).dispose()
         this.featureCodyExperimentalOneBox.subscription.unsubscribe()
+        this.featureCodyExperimentalDeepCody.subscription.unsubscribe()
         this.disposables = []
     }
 
@@ -510,6 +511,14 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyExperimentalOneBox)
     )
 
+    private featureCodyExperimentalDeepCody = storeLastValue(
+        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.DeepCody)
+    )
+
+    private setDeepCodyToggler(): boolean {
+        return DeepCodyAgent.setToggler()
+    }
+
     private async getConfigForWebview(): Promise<ConfigurationSubsetForWebview & LocalEnv> {
         const { configuration, auth } = await currentResolvedConfig()
         const sidebarViewOnly = this.extensionClient.capabilities?.webviewNativeConfig?.view === 'single'
@@ -811,7 +820,8 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             }
 
             // Experimental Feature: Deep Cody
-            if (model === DeepCodyAgent.ModelRef) {
+            const isDeepCodyEnabled = this.featureCodyExperimentalDeepCody && DeepCodyAgent.isToggledOn
+            if (isDeepCodyEnabled) {
                 const agenticContext = await new DeepCodyAgent(
                     this.chatBuilder,
                     this.chatClient,
@@ -839,7 +849,8 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     signal,
                     requestID,
                     versions.codyAPIVersion,
-                    contextAlternatives
+                    contextAlternatives,
+                    isDeepCodyEnabled
                 )
 
                 telemetryEvents['cody.chat-question/executed'].record(
@@ -1328,9 +1339,15 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         abortSignal: AbortSignal,
         requestID: string,
         codyApiVersion: number,
-        contextAlternatives?: RankedContext[]
+        contextAlternatives?: RankedContext[],
+        isDeepCodyEnabled = false
     ): Promise<PromptInfo> {
-        const { prompt, context } = await prompter.makePrompt(this.chatBuilder, codyApiVersion)
+        const { prompt, context } = await prompter.makePrompt(
+            this.chatBuilder,
+            codyApiVersion,
+            [],
+            isDeepCodyEnabled
+        )
         abortSignal.throwIfAborted()
 
         // Update UI based on prompt construction. Includes the excluded context items to display in the UI
@@ -1772,6 +1789,9 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                         userProductSubscription.pipe(
                             map(value => (value === pendingOperation ? null : value))
                         ),
+                    toogleDeepCody: () => {
+                        return promiseFactoryToObservable(async () => this.setDeepCodyToggler())
+                    },
                 }
             )
         )

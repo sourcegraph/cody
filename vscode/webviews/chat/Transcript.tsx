@@ -22,6 +22,7 @@ import {
     useImperativeHandle,
     useMemo,
     useRef,
+    useState,
 } from 'react'
 import { URI } from 'vscode-uri'
 import type { UserAccountInfo } from '../Chat'
@@ -29,6 +30,7 @@ import type { ApiPostMessage } from '../Chat'
 import { Button } from '../components/shadcn/ui/button'
 import { getVSCodeAPI } from '../utils/VSCodeApi'
 import { useTelemetryRecorder } from '../utils/telemetry'
+import { useExperimentalDeepCody } from '../utils/useExperimentalDeepCody'
 import { useExperimentalOneBox } from '../utils/useExperimentalOneBox'
 import type { CodeBlockActionsProps } from './ChatMessageContent/ChatMessageContent'
 import { ContextCell } from './cells/contextCell/ContextCell'
@@ -113,6 +115,18 @@ export const Transcript: FC<TranscriptProps> = props => {
         []
     )
 
+    const experimentalDeepCodyEnabled = useExperimentalDeepCody()
+    const deepCodyEnabled = useMemo(() => experimentalDeepCodyEnabled, [experimentalDeepCodyEnabled])
+
+    const [deepCodyToggleState, setDeepCodyToggleState] = useState<boolean>(true)
+
+    const extensionAPI = useExtensionAPI()
+    const onToggleDeepCody = useCallback(() => {
+        extensionAPI.toogleDeepCody().subscribe(value => {
+            setDeepCodyToggleState(value)
+        })
+    }, [extensionAPI.toogleDeepCody])
+
     return (
         <div
             className={clsx('tw-px-8 tw-pt-8 tw-pb-6 tw-flex tw-flex-col tw-gap-8', {
@@ -143,6 +157,8 @@ export const Transcript: FC<TranscriptProps> = props => {
                     smartApplyEnabled={smartApplyEnabled}
                     editorRef={i === interactions.length - 1 ? lastHumanEditorRef : undefined}
                     onAddToFollowupChat={onAddToFollowupChat}
+                    deepCodyToggleState={deepCodyEnabled && deepCodyToggleState}
+                    onToggleDeepCody={onToggleDeepCody}
                 />
             ))}
         </div>
@@ -221,6 +237,8 @@ interface TranscriptInteractionProps
         filePath: string
         fileURL: string
     }) => void
+    deepCodyToggleState?: boolean
+    onToggleDeepCody: () => void
 }
 
 const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
@@ -242,6 +260,8 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
         smartApplyEnabled,
         editorRef: parentEditorRef,
         onAddToFollowupChat,
+        deepCodyToggleState,
+        onToggleDeepCody,
     } = props
 
     const [intentResults, setIntentResults] = useMutatedValue<
@@ -388,6 +408,8 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                 editorRef={humanEditorRef}
                 className={!isFirstInteraction && isLastInteraction ? 'tw-mt-auto' : ''}
                 onEditorFocusChange={resetIntent}
+                isDeepCodyEnabled={deepCodyToggleState}
+                toggleDeepCody={onToggleDeepCody}
             />
 
             {experimentalOneBoxEnabled && humanMessage.intent && (
@@ -454,6 +476,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                             </>
                         )
                     }
+                    isDeepCodyEnabled={deepCodyToggleState}
                 />
             )}
             {(!experimentalOneBoxEnabled || humanMessage.intent !== 'search') &&

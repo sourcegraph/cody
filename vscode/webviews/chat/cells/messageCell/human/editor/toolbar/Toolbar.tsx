@@ -1,10 +1,13 @@
 import type { Action, ChatMessage, Model } from '@sourcegraph/cody-shared'
 import { useExtensionAPI } from '@sourcegraph/prompt-editor'
 import clsx from 'clsx'
+import { FlaskConicalIcon } from 'lucide-react'
 import { type FunctionComponent, useCallback } from 'react'
 import type { UserAccountInfo } from '../../../../../../Chat'
 import { ModelSelectField } from '../../../../../../components/modelSelectField/ModelSelectField'
 import { PromptSelectField } from '../../../../../../components/promptSelectField/PromptSelectField'
+import { Switch } from '../../../../../../components/shadcn/ui/switch'
+import { Tooltip, TooltipContent, TooltipTrigger } from '../../../../../../components/shadcn/ui/tooltip'
 import { useActionSelect } from '../../../../../../prompts/PromptsTab'
 import { useConfig } from '../../../../../../utils/useConfig'
 import { AddContextButton } from './AddContextButton'
@@ -33,6 +36,10 @@ export const Toolbar: FunctionComponent<{
     className?: string
     intent?: ChatMessage['intent']
     onSelectIntent?: (intent: ChatMessage['intent']) => void
+
+    /** Deep Cody */
+    isDeepCodyEnabled?: boolean
+    toggleDeepCody: () => void
 }> = ({
     userInfo,
     isEditorFocused,
@@ -46,6 +53,8 @@ export const Toolbar: FunctionComponent<{
     models,
     intent,
     onSelectIntent,
+    isDeepCodyEnabled,
+    toggleDeepCody,
 }) => {
     /**
      * If the user clicks in a gap or on the toolbar outside of any of its buttons, report back to
@@ -92,6 +101,14 @@ export const Toolbar: FunctionComponent<{
                     focusEditor={focusEditor}
                     className="tw-mr-1"
                 />
+                {/* Currently support Sonnet only */}
+                {models?.[0]?.id?.includes('sonnet') && (
+                    <DeepCodySwitchToolbarItem
+                        className="tw-mr-1"
+                        isDeepCodyEnabled={isDeepCodyEnabled}
+                        toggleDeepCody={toggleDeepCody}
+                    />
+                )}
             </div>
             <div className="tw-flex-1 tw-flex tw-justify-end">
                 <SubmitButton
@@ -156,5 +173,44 @@ const ModelSelectFieldToolbarItem: FunctionComponent<{
                 data-testid="chat-model-selector"
             />
         )
+    )
+}
+
+const DeepCodySwitchToolbarItem: FunctionComponent<{
+    isDeepCodyEnabled?: boolean
+    toggleDeepCody: () => void
+    className?: string
+}> = ({ className, isDeepCodyEnabled, toggleDeepCody }) => {
+    if (isDeepCodyEnabled === undefined) {
+        return
+    }
+
+    const onChange = useCallback(() => {
+        toggleDeepCody()
+    }, [toggleDeepCody])
+
+    return (
+        <Tooltip>
+            <TooltipTrigger asChild>
+                <div className="tw-flex tw-items-center tw-space-x-2">
+                    <Switch
+                        title="Deep Cody"
+                        checked={isDeepCodyEnabled}
+                        onCheckedChange={onChange}
+                        className={className}
+                    />
+                    <div className="tw-text-sm">
+                        <FlaskConicalIcon
+                            className="tw-m-0 tw-h-6 tw-w-6 tw-inline-block"
+                            strokeWidth={1.5}
+                        />
+                        Deep Cody
+                    </div>
+                </div>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">
+                [Experimental] Cody may respond slower to fetch additional context for improved output.
+            </TooltipContent>
+        </Tooltip>
     )
 }
