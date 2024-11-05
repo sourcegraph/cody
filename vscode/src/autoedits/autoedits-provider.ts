@@ -341,7 +341,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
         return {
             provider: 'cody-gateway-fastpath-chat',
             model: 'cody-model-auto-edits-fireworks-default',
-            url: 'https://cody-gateway.sourcegraph.com//v1/completions/fireworks',
+            url: 'https://cody-gateway.sourcegraph.com/v1/completions/fireworks',
             tokenLimit: defaultTokenLimit,
         }
     }
