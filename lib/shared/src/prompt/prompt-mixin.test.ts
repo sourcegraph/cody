@@ -37,7 +37,7 @@ describe('PromptMixin', () => {
         })
 
         it('should apply Deep Cody format when enabled', () => {
-            const result = PromptMixin.mixInto(basicMessage, undefined, [], true)
+            const result = PromptMixin.mixInto(basicMessage, undefined, [], 'deep-cody')
             expect(result.text?.toString()).toContain('[QUESTION]')
             expect(result.text?.toString()).toContain('Give step-by-step guide')
         })
@@ -111,7 +111,7 @@ describe('PromptMixin', () => {
             const customMixin = newPromptMixin(ps`Custom mixin`)
             PromptMixin.add(customMixin)
 
-            const result = PromptMixin.mixInto(message, '3-5-sonnet', [contextMixin], true)
+            const result = PromptMixin.mixInto(message, '3-5-sonnet', [contextMixin], 'deep-cody')
 
             expect(result.text?.toString()).toContain('You have access to the provided codebase context')
             expect(result.text?.toString()).toContain('Answer positively without apologizing')

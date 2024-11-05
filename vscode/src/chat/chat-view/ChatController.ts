@@ -826,7 +826,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             }
 
             // Experimental Feature: Deep Cody
-            const isDeepCodyEnabled = this.featureCodyExperimentalDeepCody && agent === 'deep-cody'
+            const isDeepCodyEnabled = this.featureCodyExperimentalDeepCody && agent === DeepCodyAgent.ID
             if (isDeepCodyEnabled) {
                 const agenticContext = await new DeepCodyAgent(
                     this.chatBuilder,
@@ -856,7 +856,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     requestID,
                     versions.codyAPIVersion,
                     contextAlternatives,
-                    isDeepCodyEnabled
+                    agent
                 )
 
                 telemetryEvents['cody.chat-question/executed'].record(
@@ -1349,13 +1349,13 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         requestID: string,
         codyApiVersion: number,
         contextAlternatives?: RankedContext[],
-        isDeepCodyEnabled = false
+        agentID?: string
     ): Promise<PromptInfo> {
         const { prompt, context } = await prompter.makePrompt(
             this.chatBuilder,
             codyApiVersion,
             [],
-            isDeepCodyEnabled
+            agentID
         )
         abortSignal.throwIfAborted()
 

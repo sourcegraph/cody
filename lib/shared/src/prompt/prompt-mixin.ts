@@ -34,7 +34,7 @@ export class PromptMixin {
         humanMessage: ChatMessage,
         modelID: ChatModel | undefined,
         newMixins: PromptMixin[] = [],
-        isDeepCodyEnabled = false
+        agentID?: string
     ): ChatMessage {
         const mixins = [...PromptMixin.mixins]
 
@@ -45,6 +45,7 @@ export class PromptMixin {
         }
 
         // Handle Deep Cody specific prompts
+        const isDeepCodyEnabled = agentID === 'deep-cody'
         if (isDeepCodyEnabled && !newMixins.length) {
             mixins.push(new PromptMixin(DEEP_CODY))
         }
