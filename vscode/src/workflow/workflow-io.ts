@@ -1,9 +1,13 @@
 import * as vscode from 'vscode'
 import { writeToCodyJSON } from '../commands/utils/config-file'
 
-// handle workflow saving
+/**
+ * Handles the workflow saving process by displaying a save dialog to the user, allowing them to select a location to save the workflow file.
+ *
+ * @param data - The workflow data to be saved.
+ * @returns A Promise that resolves when the workflow file has been successfully saved, or rejects if an error occurs.
+ */
 export async function handleWorkflowSave(data: any): Promise<void> {
-    // Show save dialog
     const workspaceRootFsPath = vscode.workspace.workspaceFolders?.[0]?.uri?.path
     const defaultFilePath = workspaceRootFsPath
         ? vscode.Uri.joinPath(
@@ -30,9 +34,12 @@ export async function handleWorkflowSave(data: any): Promise<void> {
     }
 }
 
-// handle workflow loading
+/**
+ * Handles the workflow loading process by displaying an open dialog to the user, allowing them to select a workflow file.
+ *
+ * @returns The loaded workflow data, or `null` if the user cancels the operation or an error occurs.
+ */
 export async function handleWorkflowLoad(): Promise<any> {
-    // Show open dialog
     const workspaceRootFsPath = vscode.workspace.workspaceFolders?.[0]?.uri?.path
     const defaultFilePath = workspaceRootFsPath
         ? vscode.Uri.joinPath(

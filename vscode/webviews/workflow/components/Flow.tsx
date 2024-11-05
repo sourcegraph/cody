@@ -19,7 +19,16 @@ import { CustomOrderedEdge, type Edge } from './CustomOrderedEdge'
 import { WorkflowSidebar } from './WorkflowSidebar'
 import { NodeType, type WorkflowNode, createNode, defaultWorkflow, nodeTypes } from './nodes/Nodes'
 
-// Add this function inside Flow.tsx before the Flow component
+/**
+ * Performs a topological sort of the given workflow nodes and edges, returning the nodes in a sorted order.
+ *
+ * The topological sort ensures that nodes with no dependencies are placed first, and the order of the sorted nodes
+ * respects the edges between them. This is useful for ensuring that the workflow execution order is correct.
+ *
+ * @param nodes - The workflow nodes to sort.
+ * @param edges - The edges between the workflow nodes.
+ * @returns The workflow nodes in a sorted order.
+ */
 function topologicalEdgeSort(nodes: WorkflowNode[], edges: Edge[]): WorkflowNode[] {
     const graph = new Map<string, string[]>()
     const inDegree = new Map<string, number>()
@@ -132,11 +141,8 @@ export const Flow: React.FC<{
         setSelectedNode(node)
     }, [])
 
-    //const { updateNodeData } = useReactFlow()
-
     const onNodeUpdate = useCallback(
         (nodeId: string, data: Partial<WorkflowNode['data']>) => {
-            //updateNodeData(nodeId, data)
             setNodes(currentNodes =>
                 currentNodes.map(node => {
                     if (node.id === nodeId) {
@@ -155,6 +161,7 @@ export const Flow: React.FC<{
         },
         [selectedNode]
     )
+
     const handleAddNode = useCallback(
         (nodeLabel: string, nodeType: NodeType) => {
             const { x, y, zoom } = getViewport()
@@ -167,6 +174,7 @@ export const Flow: React.FC<{
         },
         [getViewport]
     )
+
     const onExecute = useCallback(() => {
         // Validate all nodes have required fields
         const invalidNodes = nodes.filter(node => {
@@ -208,7 +216,9 @@ export const Flow: React.FC<{
             setEdges(eds => applyEdgeChanges(changes, eds) as typeof defaultWorkflow.edges),
         []
     )
+
     const onConnect = useCallback((params: any) => setEdges(eds => addEdge(params, eds)), [])
+
     const updateEdgeOrder = useCallback(() => {
         const sortedNodes = topologicalEdgeSort(nodes, edges)
         const orderMap = new Map<string, number>()
@@ -240,6 +250,7 @@ export const Flow: React.FC<{
             orderNumber: edgeOrder.get(edge.id) || 0,
         },
     }))
+
     // 3. Selection Management
     // Handles node selection state
     useOnSelectionChange({
@@ -257,6 +268,7 @@ export const Flow: React.FC<{
             setSelectedNode(null)
         }
     }, [])
+
     const handleBackgroundKeyDown = useCallback((event: React.KeyboardEvent) => {
         if (event.key === 'Enter') {
             setSelectedNode(null)

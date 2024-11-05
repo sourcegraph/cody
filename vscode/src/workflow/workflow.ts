@@ -8,6 +8,16 @@ import type { ChatClient } from '@sourcegraph/cody-shared'
 import { executeWorkflow } from './workflow-executor'
 import { handleWorkflowLoad, handleWorkflowSave } from './workflow-io'
 
+/**
+ * Registers the Cody workflow commands in the Visual Studio Code extension context.
+ *
+ * This function sets up the necessary event handlers and message handlers for the Cody workflow editor webview panel.
+ * It allows users to open the workflow editor, save the current workflow, load a previously saved workflow, and execute the current workflow.
+ *
+ * @param context - The Visual Studio Code extension context.
+ * @param chatClient - The Cody chat client for executing the workflow.
+ * @returns void
+ */
 export function registerWorkflowCommands(context: vscode.ExtensionContext, chatClient: ChatClient) {
     context.subscriptions.push(
         vscode.commands.registerCommand('cody.openWorkflowEditor', async () => {
@@ -22,7 +32,7 @@ export function registerWorkflowCommands(context: vscode.ExtensionContext, chatC
                 }
             )
 
-            // Add message handler
+            // Handler for message from the webview
             panel.webview.onDidReceiveMessage(
                 async (message: WorkflowToExtension) => {
                     switch (message.type) {
@@ -56,9 +66,8 @@ export function registerWorkflowCommands(context: vscode.ExtensionContext, chatC
                 context.subscriptions
             )
 
-            // Add dispose handler
+            // Clean Up
             panel.onDidDispose(() => {
-                // Cleanup resources
                 panel.dispose()
             })
 

@@ -15,6 +15,13 @@ interface ExecutionContext {
 
 const execAsync = promisify(exec)
 
+/**
+ * Performs a topological sort on the given workflow nodes and edges, returning the sorted nodes.
+ *
+ * @param nodes - The workflow nodes to sort.
+ * @param edges - The edges between the workflow nodes.
+ * @returns The sorted workflow nodes.
+ */
 export function topologicalSort(nodes: WorkflowNode[], edges: Edge[]): WorkflowNode[] {
     const graph = new Map<string, string[]>()
     const inDegree = new Map<string, number>()
@@ -62,6 +69,13 @@ export function topologicalSort(nodes: WorkflowNode[], edges: Edge[]): WorkflowN
     return result.map(id => nodes.find(node => node.id === id)!).filter(Boolean)
 }
 
+/**
+ * Executes a CLI node in a workflow, running the specified shell command and returning its output.
+ *
+ * @param node - The workflow node to execute.
+ * @returns The output of the shell command.
+ * @throws {Error} If the shell is not available, the workspace is not trusted, or the command fails to execute.
+ */
 async function executeCLINode(node: WorkflowNode): Promise<string> {
     // Check if shell is available and workspace is trusted
     if (!vscode.env.shell || !vscode.workspace.isTrusted) {
@@ -95,6 +109,14 @@ async function executeCLINode(node: WorkflowNode): Promise<string> {
     }
 }
 
+/**
+ * Executes Cody AI node in a workflow, using the provided chat client to generate a response based on the specified prompt.
+ *
+ * @param node - The workflow node to execute.
+ * @param chatClient - The chat client to use for generating the LLM response.
+ * @returns The generated response from the LLM.
+ * @throws {Error} If no prompt is specified for the LLM node, or if there is an error executing the LLM node.
+ */
 async function executeLLMNode(node: WorkflowNode, chatClient: ChatClient): Promise<string> {
     if (!node.data.prompt) {
         throw new Error(`No prompt specified for LLM node ${node.id} with ${node.data.label}`)
@@ -155,10 +177,18 @@ async function executePreviewNode(input: string): Promise<string> {
 }
 
 async function executeInputNode(input: string): Promise<string> {
-    // Return the content directly as it's user input
     return input
 }
 
+/**
+ * Combines the output from parent nodes of the given node, applying appropriate sanitization based on the node type.
+ *
+ * @param nodeId - The ID of the node for which to combine the parent outputs.
+ * @param edges - The connections between the workflow nodes.
+ * @param context - The execution context, containing the node outputs.
+ * @param nodeType - The type of the node (e.g. 'cli', 'llm').
+ * @returns The combined output from the parent nodes, with appropriate sanitization applied.
+ */
 function combineParentOutputsByConnectionOrder(
     nodeId: string,
     edges: Edge[],
@@ -187,6 +217,15 @@ function combineParentOutputsByConnectionOrder(
     return inputs
 }
 
+/**
+ * Executes a workflow by running each node in the workflow and combining the outputs from parent nodes.
+ *
+ * @param nodes - The workflow nodes to execute.
+ * @param edges - The connections between the workflow nodes.
+ * @param webview - The VSCode webview instance to send status updates to.
+ * @param chatClient - The chat client to use for executing LLM nodes.
+ * @returns A Promise that resolves when the workflow execution is complete.
+ */
 export async function executeWorkflow(
     nodes: WorkflowNode[],
     edges: Edge[],

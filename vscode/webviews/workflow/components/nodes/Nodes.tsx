@@ -39,7 +39,14 @@ export interface WorkflowNode {
     }
 }
 
-// Node Factory
+/**
+ * Creates a new workflow node with the specified type, label, and position.
+ *
+ * @param {NodeType} type - The type of the node.
+ * @param {string} label - The label of the node.
+ * @param {{ x: number; y: number }} position - The position of the node.
+ * @returns {WorkflowNode} - The new workflow node.
+ */
 export const createNode = (
     type: NodeType,
     label: string,
@@ -56,7 +63,16 @@ export const createNode = (
     position,
 })
 
-// Default workflow template
+/**
+ * Defines the default workflow in the application, including three nodes:
+ * - A Git Diff CLI node at position (0, 0)
+ * - A Cody Generate Commit Message LLM node at position (0, 100)
+ * - A Git Commit CLI node at position (0, 200)
+ *
+ * The workflow also includes two edges connecting the nodes:
+ * - An edge from the Git Diff node to the Cody Generate Commit Message node
+ * - An edge from the Cody Generate Commit Message node to the Git Commit node
+ */
 export const defaultWorkflow = {
     nodes: [
         createNode(NodeType.CLI, 'Git Diff', { x: 0, y: 0 }),
@@ -68,7 +84,17 @@ export const defaultWorkflow = {
         { id: 'xy-edge__2-3', source: '2', target: '3' },
     ],
 }
-// Shared node styling with type-specific colors
+
+/**
+ * A function that generates a style object for a node in the workflow based on its properties.
+ *
+ * @param {NodeType} type - The type of the node.
+ * @param {boolean} [moving] - Whether the node is currently being moved.
+ * @param {boolean} [selected] - Whether the node is currently selected.
+ * @param {boolean} [executing] - Whether the node is currently executing.
+ * @param {boolean} [error] - Whether the node is in an error state.
+ * @returns {Object} - A style object for the node.
+ */
 const getNodeStyle = (
     type: NodeType,
     moving?: boolean,
