@@ -183,16 +183,18 @@ const DeepCodySwitchToolbarItem: FunctionComponent<{
     const [showStatus, setShowStatus] = useState(false)
     const [isTooltipOpen, setIsTooltipOpen] = useState(false)
     const prevChatAgentRef = useRef(chatAgent)
+    const isUserInteractionRef = useRef(false)
 
-    // Only show tooltip if there was an actual change in chatAgent (not initial mount)
+    // Only show tooltip if there was an actual change in chatAgent AND user interaction
     useEffect(() => {
-        if (prevChatAgentRef.current !== chatAgent) {
+        if (prevChatAgentRef.current !== chatAgent && isUserInteractionRef.current) {
             setShowStatus(true)
             setIsTooltipOpen(true)
 
             const timer = setTimeout(() => {
                 setShowStatus(false)
                 setIsTooltipOpen(false)
+                isUserInteractionRef.current = false // Reset the interaction flag
             }, 5000)
 
             prevChatAgentRef.current = chatAgent
@@ -202,6 +204,11 @@ const DeepCodySwitchToolbarItem: FunctionComponent<{
         prevChatAgentRef.current = chatAgent
         return
     }, [chatAgent])
+
+    const handleToggleClick = () => {
+        isUserInteractionRef.current = true // Set the interaction flag when user clicks
+        onDeepCodyToggleClick?.()
+    }
 
     const tooltipContent = useMemo(
         () =>
@@ -217,7 +224,7 @@ const DeepCodySwitchToolbarItem: FunctionComponent<{
                 <div className="tw-flex tw-items-center tw-space-x-2 tw-opacity-60 focus-visible:tw-opacity-100 hover:tw-opacity-100 tw-mr-1">
                     <Switch
                         checked={isEnabled}
-                        onCheckedChange={onDeepCodyToggleClick}
+                        onCheckedChange={handleToggleClick}
                         className={className}
                         thumbIcon="🧠"
                     />
