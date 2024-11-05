@@ -242,7 +242,8 @@ function useChatModelByID(
         (model
             ? {
                   id: model,
-                  title: model,
+                  // Backwards compatibility for Deep Cody when it was a model.
+                  title: model?.includes('deep-cody') ? 'Deep Cody' : model,
                   provider: 'unknown',
                   tags: [],
               }
