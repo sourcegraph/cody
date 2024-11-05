@@ -394,16 +394,14 @@ const _workspace: typeof vscode.workspace = {
     // https://github.com/sourcegraph/cody/issues/4136
     createFileSystemWatcher: () => emptyFileWatcher,
     getConfiguration: (section, scope): vscode.WorkspaceConfiguration => {
-        if (section !== undefined) {
-            if (scope === undefined) {
-                return configuration.withPrefix(section)
-            }
-
+        if (section) {
             // Ignore language-scoped configuration sections like
             // '[jsonc].editor.insertSpaces', fallback to global scope instead.
             if (section.startsWith('[')) {
                 return configuration
             }
+
+            return configuration.withPrefix(section)
         }
         return configuration
     },
@@ -1066,7 +1064,7 @@ export const commands = _commands as typeof vscode.commands
 const _env: Partial<typeof vscode.env> = {
     uriScheme: 'file',
     appRoot: process.cwd?.(),
-    uiKind: UIKind.Web,
+    uiKind: UIKind.Desktop,
     language: process.env.language,
     clipboard: {
         readText: () => Promise.resolve(''),

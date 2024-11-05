@@ -39,7 +39,8 @@ describe('AgentWorkspaceConfiguration', () => {
                 "d1.d2": {
                     "v": 1
                 }
-            }
+            },
+            "dotted.property.name": 42
           }
         }
     `
@@ -65,10 +66,11 @@ describe('AgentWorkspaceConfiguration', () => {
 
     describe('get', () => {
         it('can return sub-configuration object', () => {
-            expect(config.get('cody.serverEndpoint')).toBe('https://sourcegraph.test')
+            expect(config.get('cody.serverEndpoint')).toEqual('https://sourcegraph.test')
             expect(config.get('cody.customHeaders')).toEqual({ 'X-Test': 'test' })
             expect(config.get('cody.telemetry.level')).toBe('agent')
-            expect(config.get('cody.telemetry.clientName')).toBe('test-client')
+            // clientName undefined because custom JSON specified telemetry with level alone.
+            expect(config.get('cody.telemetry.clientName')).toBeUndefined()
             expect(config.get('cody.autocomplete.enabled')).toBe(true)
             expect(config.get('cody.autocomplete.advanced.provider')).toBe('anthropic')
             expect(config.get('cody.autocomplete.advanced.model')).toBe('claude-2')
@@ -127,16 +129,40 @@ describe('AgentWorkspaceConfiguration', () => {
                 },
                 serverEndpoint: 'https://sourcegraph.test',
                 telemetry: {
-                    clientName: 'test-client',
                     level: 'agent',
                 },
             })
         })
 
         it('handles parsing nested keys as objects', () => {
-            expect(config.get('foo.bar.baz.qux')).toBe(true)
-            expect(config.get('foo.bar.baz')).toStrictEqual({ d1: { d2: { v: 1 } }, qux: true })
-            expect(config.get('foo.bar.baz.d1')).toStrictEqual({ d2: { v: 1 } })
+            expect(config.get('foo.bar.baz')).toStrictEqual({ 'd1.d2': { v: 1 } })
+        })
+
+        // This reflects VSCode's behavior around configuration. OpenContext
+        // providers rely on this behavior, specifically, that property names
+        // at the top level are split on dots (so 'openctx.provider' is part of
+        // 'openctx') but within subobjects are not split (so
+        // 'https://github.com/foo/bar': true is not split into 'https://github'
+        // and 'com/foo/bar')
+        it('does not split apart dotted property names in nested objects', () => {
+            // The shape of the foo object, note the outermost dotted name
+            // foo.bar can be split into foo and bar.
+            expect(config.get('foo')).toStrictEqual({
+                bar: {
+                    'baz.qux': true,
+                    baz: {
+                        'd1.d2': {
+                            v: 1,
+                        },
+                    },
+                    'dotted.property.name': 42,
+                },
+            })
+            // 'baz.qux' is an atom different to baz containing qux. It is not
+            // outermost thus it is not split.
+            expect(config.get('foo.bar.baz.qux')).toStrictEqual(undefined)
+            // 'd1.d2' is an atom that should not be split at d1.
+            expect(config.get('foo.bar.baz.d1')).toBeUndefined()
         })
 
         it('handles agent capabilities correctly', () => {

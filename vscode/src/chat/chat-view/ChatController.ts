@@ -120,7 +120,7 @@ import { CodyToolProvider } from '../agentic/CodyToolProvider'
 import { DeepCodyAgent } from '../agentic/DeepCody'
 import { getMentionMenuData } from '../context/chatContext'
 import type { ChatIntentAPIClient } from '../context/chatIntentAPIClient'
-import { observeInitialContext } from '../initialContext'
+import { observeDefaultContext } from '../initialContext'
 import {
     CODY_BLOG_URL_o1_WAITLIST,
     type ConfigurationSubsetForWebview,
@@ -643,6 +643,8 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 editorState,
                 intent: detectedIntent,
             })
+            this.postViewTranscript({ speaker: 'assistant' })
+
             await this.saveSession()
             signal.throwIfAborted()
 
@@ -1691,7 +1693,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         )
 
         // Listen for API calls from the webview.
-        const initialContext = observeInitialContext({
+        const defaultContext = observeDefaultContext({
             chatBuilder: this.chatBuilder.changes,
         }).pipe(shareReplay())
 
@@ -1755,7 +1757,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                             await modelsService.setSelectedModel(ModelUsage.Chat, model)
                         })
                     },
-                    initialContext: () => initialContext.pipe(skipPendingOperation()),
+                    defaultContext: () => defaultContext.pipe(skipPendingOperation()),
                     detectIntent: text =>
                         promiseFactoryToObservable<
                             | {

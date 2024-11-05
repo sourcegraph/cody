@@ -43,7 +43,7 @@ export interface NetConfiguration {
     proxy?: {
         endpoint?: string | undefined | null
         cacert?: string | undefined | null
-        skipCertValidation?: boolean | null
+        skipCertValidation?: boolean | undefined | null
     }
     vscode?: string | undefined | null
 }
@@ -75,7 +75,6 @@ interface RawClientConfiguration {
     autocompleteExperimentalGraphContext: 'lsp-light' | 'tsc' | 'tsc-mixed' | null
     autocompleteExperimentalOllamaOptions: OllamaOptions
     autocompleteExperimentalFireworksOptions?: ExperimentalFireworksConfig
-    autocompleteExperimentalPreloadDebounceInterval?: number
 
     experimentalTracing: boolean
     experimentalSupercompletions: boolean

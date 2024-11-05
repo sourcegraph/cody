@@ -3,11 +3,11 @@
   "name": "cody-ai",
   "private": true,
   "displayName": "Cody: AI Coding Assistant with Autocomplete & Chat",
-  "version": "1.40.0",
+  "version": "1.40.1",
   "publisher": "sourcegraph",
   "license": "Apache-2.0",
   "icon": "resources/cody.png",
-  "description": "AI coding assistant that uses search and codebase context to help you write code faster. Cody brings autocomplete, chat, and commands to VS Code, so you can generate code, write unit tests, create docs, and explain complex code using AI. Choose from the latest LLMs, including GPT-4o and Claude 3.",
+  "description": "AI coding assistant that uses search and codebase context to help you write code faster. Cody brings autocomplete, chat, and commands to VS Code, so you can generate code, write unit tests, create docs, and explain complex code using AI. Choose from the latest LLMs, including GPT-4o and Claude 3.5 Sonnet.",
   "scripts": {
     "build:root": "pnpm -C .. run -s build",
     "postinstall": "pnpm download-wasm && pnpm copy-win-ca-roots",
@@ -603,12 +603,12 @@
       },
       {
         "command": "cody.chat.new",
-        "key": "shift+alt+/",
+        "key": "shift+ctrl+/",
         "when": "cody.activated"
       },
       {
         "command": "cody.chat.new",
-        "key": "shift+alt+l",
+        "key": "shift+ctrl+l",
         "when": "cody.activated"
       },
       {
@@ -645,12 +645,12 @@
       },
       {
         "command": "cody.mention.selection",
-        "key": "alt+l",
+        "key": "shift+alt+l",
         "when": "cody.activated && editorTextFocus && editorHasSelection"
       },
       {
         "command": "cody.mention.selection",
-        "key": "alt+/",
+        "key": "shift+alt+/",
         "when": "cody.activated && editorTextFocus && editorHasSelection"
       },
       {
@@ -1231,11 +1231,6 @@
               }
             }
           }
-        },
-        "cody.autocomplete.experimental.preloadDebounceInterval": {
-          "type": "number",
-          "default": 0,
-          "markdownDescription": "Changes the preload debounce interval for autocomplete requests triggered on cursor movement."
         },
         "openctx.enable": {
           "type": "boolean",

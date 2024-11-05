@@ -1,10 +1,11 @@
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { nextTick } from '@sourcegraph/cody-shared'
+
 import { resetParsersCache } from '../../tree-sitter/parser'
 import { InlineCompletionsResultSource } from '../get-inline-completions'
 import { initTreeSitterParser } from '../test-helpers'
 
-import { nextTick } from '@sourcegraph/cody-shared'
 import { getInlineCompletionsWithInlinedChunks } from './helpers'
 
 describe('[getInlineCompletions] hot streak', () => {
@@ -18,10 +19,13 @@ describe('[getInlineCompletions] hot streak', () => {
 
     beforeEach(() => {
         vi.useFakeTimers()
+        vi.clearAllTimers()
+        vi.restoreAllMocks()
     })
 
     afterEach(() => {
         vi.restoreAllMocks()
+        vi.clearAllTimers()
     })
 
     it('does not attempt to extract hot streak completions if the resolves completion duplicates suffix', async () => {
@@ -196,10 +200,10 @@ describe('[getInlineCompletions] hot streak', () => {
                 █
                 const`,
                 {
-                    delayBetweenChunks: 20,
+                    delayBetweenChunks: 50,
                     configuration: {
                         configuration: {
-                            autocompleteFirstCompletionTimeout: 10,
+                            autocompleteFirstCompletionTimeout: 50,
                         },
                     },
                     abortSignal: new AbortController().signal,
@@ -209,12 +213,12 @@ describe('[getInlineCompletions] hot streak', () => {
                 }
             )
 
-            // Wait for the first completion to be ready
-            await vi.advanceTimersByTimeAsync(10)
+            // Nothing happens until the first completion chunk is resolved
+            await vi.advanceTimersByTimeAsync(30)
             expect(abortController?.signal.aborted).toBe(false)
 
             // Wait for the first hot streak completion to be ready
-            await vi.advanceTimersByTimeAsync(10)
+            await vi.advanceTimersByTimeAsync(30)
             // We anticipate that the streaming will be cancelled because the hot
             // streak text exceeds the maximum number of lines defined by `MAX_HOT_STREAK_LINES`.
             // TODO: expose completion chunks, enabling more explicit verification of this behavior.
