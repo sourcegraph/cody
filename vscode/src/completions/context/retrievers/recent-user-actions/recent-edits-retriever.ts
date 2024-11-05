@@ -38,14 +38,19 @@ export class RecentEditsRetriever implements vscode.Disposable, ContextRetriever
         options: RecentEditsRetrieverOptions,
         readonly workspace: Pick<
             typeof vscode.workspace,
-            'onDidChangeTextDocument' | 'onDidRenameFiles' | 'onDidDeleteFiles'
+            'onDidChangeTextDocument' | 'onDidRenameFiles' | 'onDidDeleteFiles' | 'onDidOpenTextDocument'
         > = vscode.workspace
     ) {
+        // Track all the existing documents which were open when the extension was started.
+        for (const document of vscode.workspace.textDocuments) {
+            this.trackDocument(document)
+        }
         this.maxAgeMs = options.maxAgeMs
         this.addLineNumbersForDiff = options.addLineNumbersForDiff ?? false
         this.disposables.push(workspace.onDidChangeTextDocument(this.onDidChangeTextDocument.bind(this)))
         this.disposables.push(workspace.onDidRenameFiles(this.onDidRenameFiles.bind(this)))
         this.disposables.push(workspace.onDidDeleteFiles(this.onDidDeleteFiles.bind(this)))
+        this.disposables.push(workspace.onDidOpenTextDocument(this.onDidOpenTextDocument.bind(this)))
     }
 
     public async retrieve(options: ContextRetrieverOptions): Promise<AutocompleteContextSnippet[]> {
@@ -177,9 +182,9 @@ export class RecentEditsRetriever implements vscode.Disposable, ContextRetriever
     }
 
     private onDidChangeTextDocument(event: vscode.TextDocumentChangeEvent): void {
-        let trackedDocument = this.trackedDocuments.get(event.document.uri.toString())
+        const trackedDocument = this.trackedDocuments.get(event.document.uri.toString())
         if (!trackedDocument) {
-            trackedDocument = this.trackDocument(event.document)
+            return
         }
 
         const now = Date.now()
@@ -206,6 +211,12 @@ export class RecentEditsRetriever implements vscode.Disposable, ContextRetriever
     private onDidDeleteFiles(event: vscode.FileDeleteEvent): void {
         for (const uri of event.files) {
             this.trackedDocuments.delete(uri.toString())
+        }
+    }
+
+    private onDidOpenTextDocument(document: vscode.TextDocument): void {
+        if (!this.trackedDocuments.has(document.uri.toString())) {
+            this.trackDocument(document)
         }
     }
 
