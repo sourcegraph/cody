@@ -5,7 +5,7 @@ import { type FunctionComponent, useCallback, useEffect, useMemo, useRef, useSta
 import type { UserAccountInfo } from '../../../../../../Chat'
 import { ModelSelectField } from '../../../../../../components/modelSelectField/ModelSelectField'
 import { PromptSelectField } from '../../../../../../components/promptSelectField/PromptSelectField'
-import { Switch } from '../../../../../../components/shadcn/ui/switch'
+import { Button } from '../../../../../../components/shadcn/ui/button'
 import { Tooltip, TooltipContent, TooltipTrigger } from '../../../../../../components/shadcn/ui/tooltip'
 import { useActionSelect } from '../../../../../../prompts/PromptsTab'
 import { useConfig } from '../../../../../../utils/useConfig'
@@ -185,7 +185,6 @@ const DeepCodySwitchToolbarItem: FunctionComponent<{
     const prevChatAgentRef = useRef(chatAgent)
     const isUserInteractionRef = useRef(false)
 
-    // Only show tooltip if there was an actual change in chatAgent AND user interaction
     useEffect(() => {
         if (prevChatAgentRef.current !== chatAgent && isUserInteractionRef.current) {
             setShowStatus(true)
@@ -208,6 +207,7 @@ const DeepCodySwitchToolbarItem: FunctionComponent<{
     const handleToggleClick = () => {
         isUserInteractionRef.current = true // Set the interaction flag when user clicks
         onDeepCodyToggleClick?.()
+        setIsTooltipOpen(true) // Show tooltip on click
     }
 
     const tooltipContent = useMemo(
@@ -221,14 +221,9 @@ const DeepCodySwitchToolbarItem: FunctionComponent<{
     return (
         <Tooltip open={isTooltipOpen} onOpenChange={setIsTooltipOpen}>
             <TooltipTrigger asChild>
-                <div className="tw-flex tw-items-center tw-space-x-2 tw-opacity-60 focus-visible:tw-opacity-100 hover:tw-opacity-100 tw-mr-1">
-                    <Switch
-                        checked={isEnabled}
-                        onCheckedChange={handleToggleClick}
-                        className={className}
-                        thumbIcon="🧠"
-                    />
-                </div>
+                <Button variant="text" onClick={handleToggleClick} className="!tw-p-0 !tw-m-0">
+                    <span className={isEnabled ? '' : 'tw-grayscale'}>🧠</span>
+                </Button>
             </TooltipTrigger>
             <TooltipContent side="bottom">{tooltipContent}</TooltipContent>
         </Tooltip>
