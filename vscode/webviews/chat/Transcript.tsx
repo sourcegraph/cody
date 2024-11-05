@@ -9,7 +9,11 @@ import {
     inputTextWithoutContextChipsFromPromptEditorState,
     isAbortErrorOrSocketHangUp,
 } from '@sourcegraph/cody-shared'
-import { type PromptEditorRefAPI, useExtensionAPI } from '@sourcegraph/prompt-editor'
+import {
+    type PromptEditorRefAPI,
+    useDefaultContextForChat,
+    useExtensionAPI,
+} from '@sourcegraph/prompt-editor'
 import { clsx } from 'clsx'
 import debounce from 'lodash/debounce'
 import isEqual from 'lodash/isEqual'
@@ -370,6 +374,22 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
         [onEditSubmit, telemetryRecorder, humanMessage]
     )
 
+    const { corpusContext: corpusContextItems } = useDefaultContextForChat()
+    const resubmitWithRepoContext = useCallback(async () => {
+        const editorState = humanEditorRef.current?.getSerializedValue()
+        if (editorState) {
+            const editor = humanEditorRef.current
+            if (corpusContextItems.length === 0 || !editor) {
+                return
+            }
+            await editor.addMentions(corpusContextItems, 'before', ' ')
+            const newEditorState = humanEditorRef.current?.getSerializedValue()
+            if (newEditorState) {
+                onEditSubmit(newEditorState, 'chat')
+            }
+        }
+    }, [corpusContextItems, onEditSubmit])
+
     const reSubmitWithChatIntent = useCallback(() => reSubmitWithIntent('chat'), [reSubmitWithIntent])
     const reSubmitWithSearchIntent = useCallback(
         () => reSubmitWithIntent('search'),
@@ -387,6 +407,10 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
         editor.filterMentions(item => item.type !== 'repository')
         editor.addMentions(contextFiles, 'before', '\n')
     }, [humanMessage.contextFiles])
+
+    const mentionsContainRepository = humanEditorRef.current
+        ?.getSerializedValue()
+        .contextItems.some(item => item.type === 'repository')
 
     return (
         <>
@@ -447,6 +471,16 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                     )}
                 </InfoMessage>
             )}
+            {corpusContextItems.length > 0 &&
+                !mentionsContainRepository &&
+                assistantMessage &&
+                !assistantMessage.isLoading && (
+                    <div>
+                        <Button onClick={resubmitWithRepoContext} type="button">
+                            Resend with current repository context
+                        </Button>
+                    </div>
+                )}
             {((humanMessage.contextFiles && humanMessage.contextFiles.length > 0) ||
                 isContextLoading) && (
                 <ContextCell

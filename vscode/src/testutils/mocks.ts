@@ -920,7 +920,6 @@ export const DEFAULT_VSCODE_SETTINGS = {
         url: OLLAMA_DEFAULT_URL,
     },
     autocompleteFirstCompletionTimeout: 3500,
-    autocompleteExperimentalPreloadDebounceInterval: 0,
     experimentalGuardrailsTimeoutSeconds: undefined,
     overrideAuthToken: undefined,
     overrideServerEndpoint: undefined,

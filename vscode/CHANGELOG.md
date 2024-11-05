@@ -6,17 +6,27 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 ### Added
 
+- Autocomplete: Enabled completions preloading on cursor movement. [pull/6043](https://github.com/sourcegraph/cody/pull/6043)
+
 ### Fixed
 
 ### Changed
+
+- Chat: This patch updates the chat keyboard shortcuts to be as follows, thereby avoiding the tendency to "double-add" a code snippet when using the `alt+L` shortcut:
+  - `Alt+L`: between chat and editor (this is unchanged)
+  - `Shift+Alt+L` (previously alt+L): add selection as context:
+  - `Shift+Ctrl+L` (previously shift+alt+L): new chat
+
+## 1.40.1
+
+### Fixed
+- Auth: Fixed UI conditional rendering logic for non VS Code clients. [pull/6047](https://github.com/sourcegraph/cody/pull/6047)
 
 ## 1.40.0
 
 ### Added
 
 - Proxy: Support for `cody.net.proxy` settings that enable configuation a cody specific proxy server. This also supports `cody.net.proxy.path` to provide a UNIX domain socket directly. [pull/5883](https://github.com/sourcegraph/cody/pull/5883)
-
-### Changed
 
 ### Fixed
 

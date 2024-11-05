@@ -10,7 +10,7 @@ import {
 import {
     PromptEditor,
     type PromptEditorRefAPI,
-    useInitialContextForChat,
+    useDefaultContextForChat,
 } from '@sourcegraph/prompt-editor'
 import clsx from 'clsx'
 import {
@@ -356,8 +356,9 @@ export const HumanMessageEditor: FunctionComponent<{
 
     const currentChatModel = useMemo(() => models[0], [models[0]])
 
-    let initialContext = useInitialContextForChat()
+    const defaultContext = useDefaultContextForChat()
     useEffect(() => {
+        let { initialContext } = defaultContext
         if (!isSent && isFirstMessage) {
             const editor = editorRef.current
             if (editor) {
@@ -369,7 +370,7 @@ export const HumanMessageEditor: FunctionComponent<{
                 editor.setInitialContextMentions(initialContext)
             }
         }
-    }, [initialContext, isSent, isFirstMessage, currentChatModel])
+    }, [defaultContext, isSent, isFirstMessage, currentChatModel])
 
     const focusEditor = useCallback(() => editorRef.current?.setFocus(true), [])
 
