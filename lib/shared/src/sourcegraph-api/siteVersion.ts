@@ -41,21 +41,58 @@ export const siteVersion: Observable<SiteAndCodyAPIVersions | null | typeof pend
                     return Observable.of(null)
                 }
 
-                return promiseFactoryToObservable(signal => graphqlClient.getSiteVersion(signal)).pipe(
-                    map((siteVersion): SiteAndCodyAPIVersions | null | typeof pendingOperation => {
-                        if (isError(siteVersion)) {
-                            logError(
-                                'siteVersion',
-                                `Failed to get site version from ${authStatus.endpoint}: ${siteVersion}`
-                            )
-                            return null
+                return new Observable<SiteAndCodyAPIVersions>(observer => {
+                    // Fetch the site version with exponential backoff.
+                    const maxDelay = 1000 * 60 * 10 // 10 minutes
+                    let delay = 1
+                    let unsubscribed = false
+                    const abortController = new AbortController()
+                    const signal = abortController.signal
+
+                    const run = async () => {
+                        while (!unsubscribed) {
+                            try {
+                                signal?.throwIfAborted()
+                                const siteVersion = await graphqlClient.getSiteVersion(signal)
+                                if (isError(siteVersion)) {
+                                    logError(
+                                        'siteVersion',
+                                        `Failed to get site version from ${authStatus.endpoint}: ${siteVersion}`
+                                    )
+                                    await new Promise<void>(resolve => setTimeout(resolve, delay))
+                                    delay = Math.min(delay * 1.5, maxDelay)
+                                    continue
+                                }
+                                signal?.throwIfAborted()
+                                if (!unsubscribed) {
+                                    observer.next({
+                                        siteVersion,
+                                        codyAPIVersion: inferCodyApiVersion(
+                                            siteVersion,
+                                            isDotCom(authStatus)
+                                        ),
+                                    })
+                                    observer.complete()
+                                    break
+                                }
+                            } catch (error) {
+                                if (!unsubscribed) {
+                                    if (signal.aborted) {
+                                        observer.complete()
+                                    } else {
+                                        observer.error(error)
+                                    }
+                                }
+                            }
                         }
-                        return {
-                            siteVersion,
-                            codyAPIVersion: inferCodyApiVersion(siteVersion, isDotCom(authStatus)),
-                        }
-                    })
-                )
+                    }
+                    void run()
+
+                    return () => {
+                        unsubscribed = true
+                        abortController.abort()
+                    }
+                })
             }
         ),
         map(result => (isError(result) ? null : result)) // the operation catches its own errors, so errors will never get here
