@@ -575,7 +575,7 @@
         "title": "Copy Cody Extension Version"
       },
       {
-        "command": "cody.command.logCharacterCounters",
+        "command": "cody.debug.logCharacterCounters",
         "title": "[Internal] Log character logger counters",
         "category": "Cody Debug",
         "group": "Debug",

@@ -56,22 +56,23 @@ test('chat assistant response code buttons', async ({ page, nap, sidebar }, test
     const consoleLogMessage = await consoleLogPromise
     expect(await consoleLogMessage.args()[1].jsonValue()).toBe(codeToPaste)
 
-    await executeCommandInPalette(page, 'cody.command.logCharacterCounters')
+    await executeCommandInPalette(page, 'cody.debug.logCharacterCounters')
     // Wait for the logCharacterCounters command to update the log file.
-    await nap(600)
+    await nap(1000)
     const outputChannelWithPaste = await fs.readFile(getTmpLogFile(testInfo.title), 'utf-8')
 
     // We expect the pasted code to be categorized as cody_chat and
     // the relevant inserted characters counter to be incremented appropriately.
+    expect(outputChannelWithPaste).toContain('Current character counters:')
     expect(outputChannelWithPaste).toContain(`"cody_chat_inserted": ${codeToPaste.length}`)
     expect(outputChannelWithPaste).toContain('"cody_chat": 1')
 
     await actionsDropdown.click()
     await executeCommandInPalette(page, 'cody.command.insertCodeToCursor')
     await nap()
-    await executeCommandInPalette(page, 'cody.command.logCharacterCounters')
+    await executeCommandInPalette(page, 'cody.debug.logCharacterCounters')
     // Wait for the logCharacterCounters command to update the log file.
-    await nap(600)
+    await nap(1000)
 
     // Static value hardcoded for testing because I did not find a way to
     // reliably access the native OS-dropdown used for the insert code button.
@@ -81,6 +82,7 @@ test('chat assistant response code buttons', async ({ page, nap, sidebar }, test
 
     // We expect the inserted code to be categorized as cody_chat and
     // the relevant inserted characters counter to be incremented appropriately.
+    expect(outputChannelWithPaste).toContain('Current character counters:')
     expect(outputChannelWithInsert).toContain(
         `"cody_chat_inserted": ${codeToPaste.length + codeToInsert.length}`
     )
