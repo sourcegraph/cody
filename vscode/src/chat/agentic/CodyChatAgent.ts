@@ -4,7 +4,7 @@ import {
     type ContextItem,
     type Message,
     type PromptMixin,
-    PromptString,
+    type PromptString,
     newPromptMixin,
 } from '@sourcegraph/cody-shared'
 import { getCategorizedMentions } from '../../prompt-builder/utils'
@@ -45,7 +45,7 @@ export abstract class CodyChatAgent {
         message: Message[],
         signal?: AbortSignal,
         model?: string
-    ): Promise<PromptString> {
+    ): Promise<string> {
         const stream = await this.chatClient.chat(
             message,
             { model: model, maxTokensToSample: 4000 },
@@ -67,7 +67,7 @@ export abstract class CodyChatAgent {
             }
         }
 
-        return PromptString.unsafe_fromLLMResponse(accumulated)
+        return accumulated
     }
 
     protected getPrompter(items: ContextItem[]): DefaultPrompter {

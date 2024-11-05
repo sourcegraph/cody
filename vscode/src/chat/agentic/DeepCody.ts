@@ -74,7 +74,7 @@ export class DeepCodyAgent extends CodyChatAgent {
 
         try {
             const res = await this.processStream(promptData.prompt, chatAbortSignal, model)
-            if (res?.toString().includes('CONTEXT_SUFFICIENT')) {
+            if (!res || res?.includes('CONTEXT_SUFFICIENT')) {
                 // Process the response without generating any context items.
                 for (const tool of this.toolHandlers.values()) {
                     tool.processResponse?.()
