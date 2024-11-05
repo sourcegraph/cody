@@ -46,8 +46,8 @@ interface HumanMessageCellProps {
     editorRef?: React.RefObject<PromptEditorRefAPI | null>
 
     /** Deep Cody */
-    isDeepCodyEnabled?: boolean
-    toggleDeepCody: () => void
+    chatAgent?: string
+    onDeepCodyToggleClick?: () => void
 
     /** For use in storybooks only. */
     __storybook__focus?: boolean
@@ -97,8 +97,8 @@ const HumanMessageCellContent = memo<HumanMessageCellContent>(props => {
         __storybook__focus,
         onEditorFocusChange,
         intent,
-        isDeepCodyEnabled,
-        toggleDeepCody,
+        chatAgent,
+        onDeepCodyToggleClick,
     } = props
 
     return (
@@ -136,8 +136,8 @@ const HumanMessageCellContent = memo<HumanMessageCellContent>(props => {
                     __storybook__focus={__storybook__focus}
                     onEditorFocusChange={onEditorFocusChange}
                     initialIntent={intent}
-                    isDeepCodyEnabled={isDeepCodyEnabled}
-                    toggleDeepCody={toggleDeepCody}
+                    chatAgent={chatAgent}
+                    onDeepCodyToggleClick={onDeepCodyToggleClick}
                 />
             }
             className={className}

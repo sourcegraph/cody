@@ -4,6 +4,7 @@ import {
     PromptString,
     isDefined,
     logDebug,
+    modelsService,
     ps,
     telemetryRecorder,
 } from '@sourcegraph/cody-shared'
@@ -18,6 +19,10 @@ import { CODYAGENT_PROMPTS } from './prompts'
 export class DeepCodyAgent extends CodyChatAgent {
     public static readonly ID = 'deep-cody'
 
+    private models = {
+        review: this.chatBuilder.selectedModel,
+    }
+
     protected buildPrompt(): PromptString {
         const toolInstructions = this.tools.map(t => t.getInstruction())
         const toolExamples = this.tools.map(t => t.config.prompt.example)
@@ -28,18 +33,33 @@ export class DeepCodyAgent extends CodyChatAgent {
             .replace('{{CODY_TOOLS_EXAMPLES_PLACEHOLDER}}', join(toolExamples))
     }
 
+    /**
+     * Retrieves the context for the current chat, by iteratively reviewing the context and adding new items
+     * until the maximum number of loops is reached or the chat is aborted.
+     *
+     * @param span - The OpenTelemetry span for the current chat.
+     * @param chatAbortSignal - The abort signal for the current chat.
+     * @param maxLoops - The maximum number of loops to perform when retrieving the context.
+     * @returns The context items retrieved for the current chat.
+     */
     public async getContext(
         span: Span,
         chatAbortSignal: AbortSignal,
         maxLoops = 2
     ): Promise<ContextItem[]> {
+        const fastChatModel = modelsService.getModelByID(
+            'anthropic::2024-10-22::claude-3-5-haiku-latest'
+        )
+        this.models.review = fastChatModel?.id ?? this.chatBuilder.selectedModel
+
         const startTime = performance.now()
         const count = await this.reviewLoop(span, chatAbortSignal, maxLoops)
 
-        telemetryRecorder.recordEvent('cody.deep-cody.context', 'executed', {
+        telemetryRecorder.recordEvent('cody.deep-cody.context', 'reviewed', {
             privateMetadata: {
                 durationMs: performance.now() - startTime,
                 ...count,
+                model: this.models.review,
             },
             billingMetadata: {
                 product: 'cody',
@@ -71,9 +91,10 @@ export class DeepCodyAgent extends CodyChatAgent {
         return { context, loop }
     }
 
+    /**
+     * Performs a review of the current context and generates new context items based on the review outcome.
+     */
     private async review(span: Span, chatAbortSignal: AbortSignal): Promise<ContextItem[]> {
-        const fastChatModel = 'anthropic::2023-06-01::claude-3-5-haiku-latest'
-        const model = this.chatBuilder.selectedModel || fastChatModel
         const prompter = this.getPrompter(this.context)
         const promptData = await prompter.makePrompt(
             this.chatBuilder,
@@ -83,7 +104,8 @@ export class DeepCodyAgent extends CodyChatAgent {
         )
 
         try {
-            const res = await this.processStream(promptData.prompt, chatAbortSignal, model)
+            const res = await this.processStream(promptData.prompt, chatAbortSignal, this.models.review)
+            // If the response is empty or contains the CONTEXT_SUFFICIENT token, the context is sufficient.
             if (!res || res?.includes('CONTEXT_SUFFICIENT')) {
                 // Process the response without generating any context items.
                 for (const tool of this.toolHandlers.values()) {

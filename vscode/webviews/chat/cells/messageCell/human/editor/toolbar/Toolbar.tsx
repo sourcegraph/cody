@@ -38,8 +38,8 @@ export const Toolbar: FunctionComponent<{
     onSelectIntent?: (intent: ChatMessage['intent']) => void
 
     /** Deep Cody */
-    isDeepCodyEnabled?: boolean
-    toggleDeepCody: () => void
+    chatAgent?: string
+    onDeepCodyToggleClick?: () => void
 }> = ({
     userInfo,
     isEditorFocused,
@@ -53,8 +53,8 @@ export const Toolbar: FunctionComponent<{
     models,
     intent,
     onSelectIntent,
-    isDeepCodyEnabled,
-    toggleDeepCody,
+    chatAgent,
+    onDeepCodyToggleClick,
 }) => {
     /**
      * If the user clicks in a gap or on the toolbar outside of any of its buttons, report back to
@@ -102,10 +102,10 @@ export const Toolbar: FunctionComponent<{
                     className="tw-mr-1"
                 />
                 {/* Currently support Sonnet only */}
-                {models?.[0]?.id?.includes('sonnet') && (
+                {onDeepCodyToggleClick && models?.[0]?.id?.includes('sonnet') && (
                     <DeepCodySwitchToolbarItem
-                        isDeepCodyEnabled={isDeepCodyEnabled}
-                        toggleDeepCody={toggleDeepCody}
+                        chatAgent={chatAgent}
+                        onDeepCodyToggleClick={onDeepCodyToggleClick}
                     />
                 )}
             </div>
@@ -176,26 +176,17 @@ const ModelSelectFieldToolbarItem: FunctionComponent<{
 }
 
 const DeepCodySwitchToolbarItem: FunctionComponent<{
-    isDeepCodyEnabled?: boolean
-    toggleDeepCody: () => void
+    chatAgent?: string
+    onDeepCodyToggleClick?: () => void
     className?: string
-}> = ({ className, isDeepCodyEnabled, toggleDeepCody }) => {
-    if (isDeepCodyEnabled === undefined) {
-        return
-    }
-
-    const onChange = useCallback(() => {
-        toggleDeepCody()
-    }, [toggleDeepCody])
-
+}> = ({ className, chatAgent, onDeepCodyToggleClick }) => {
     return (
         <Tooltip>
             <TooltipTrigger asChild>
                 <div className="tw-flex tw-items-center tw-space-x-2 tw-opacity-60 focus-visible:tw-opacity-100 hover:tw-opacity-100 tw-mr-1">
                     <Switch
-                        title="Deep Cody"
-                        checked={isDeepCodyEnabled}
-                        onCheckedChange={onChange}
+                        checked={chatAgent === 'deep-cody'}
+                        onCheckedChange={onDeepCodyToggleClick}
                         className={className}
                     />
                     <div className="tw-text-sm">

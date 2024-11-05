@@ -29,8 +29,7 @@ In this environment you have access to this set of tools you can use to fetch co
 4. The user is working in the VS Code editor on ${getOSPromptString()}.
 
 [GOAL]
-Determine if you can answer the question with the given context, or if you need more information.
-Do not provide the actual answer or comments in this step. This is an auto-generated message.`
+Determine if you can answer the question with the given context, or if you need more information. The output will be processed by a bot to gather the necessary context for the user's question, so skip answering the question directly or comments.`
 
 export const CODYAGENT_PROMPTS = {
     review: REVIEW_PROMPT,

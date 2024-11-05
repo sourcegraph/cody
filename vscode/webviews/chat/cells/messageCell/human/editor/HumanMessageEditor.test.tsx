@@ -177,8 +177,8 @@ function renderWithMocks(props: Partial<ComponentProps<typeof HumanMessageEditor
         onSubmit,
         onStop,
         models: MOCK_MODELS,
-        isDeepCodyEnabled: undefined,
-        toggleDeepCody: vi.fn(),
+        chatAgent: undefined,
+        onDeepCodyToggleClick: undefined,
     }
 
     const { container } = render(<HumanMessageEditor {...DEFAULT_PROPS} {...props} />, {

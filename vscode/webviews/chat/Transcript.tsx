@@ -23,6 +23,7 @@ import {
     type MutableRefObject,
     memo,
     useCallback,
+    useEffect,
     useImperativeHandle,
     useMemo,
     useRef,
@@ -34,7 +35,7 @@ import type { ApiPostMessage } from '../Chat'
 import { Button } from '../components/shadcn/ui/button'
 import { getVSCodeAPI } from '../utils/VSCodeApi'
 import { useTelemetryRecorder } from '../utils/telemetry'
-import { useExperimentalDeepCody } from '../utils/useExperimentalDeepCody'
+import { useExperimentalDeepCodyAgent } from '../utils/useExperimentalDeepCodyAgent'
 import { useExperimentalOneBox } from '../utils/useExperimentalOneBox'
 import type { CodeBlockActionsProps } from './ChatMessageContent/ChatMessageContent'
 import { ContextCell } from './cells/contextCell/ContextCell'
@@ -119,13 +120,18 @@ export const Transcript: FC<TranscriptProps> = props => {
         []
     )
 
-    const [deepCodyToggleState, setDeepCodyToggleState] = useState<boolean>(true)
+    // Combine Deep Cody agent state management
+    const useDeepCodyAgent = useExperimentalDeepCodyAgent()
+    const [chatAgent, setChatAgent] = useState<string | undefined>(useDeepCodyAgent)
 
-    const experimentalDeepCodyEnabled = useExperimentalDeepCody()
-    const deepCodyEnabled = useMemo(() => experimentalDeepCodyEnabled, [experimentalDeepCodyEnabled])
-    const onToggleDeepCody = useCallback(() => {
-        setDeepCodyToggleState(!deepCodyToggleState)
-    }, [deepCodyToggleState])
+    const onDeepCodyToggleClick = useCallback(() => {
+        setChatAgent(prev => (prev === 'deep-cody' ? undefined : 'deep-cody'))
+    }, [])
+
+    // Update chatAgent when experimental flag changes
+    useEffect(() => {
+        setChatAgent(useDeepCodyAgent)
+    }, [useDeepCodyAgent])
 
     return (
         <div
@@ -157,8 +163,8 @@ export const Transcript: FC<TranscriptProps> = props => {
                     smartApplyEnabled={smartApplyEnabled}
                     editorRef={i === interactions.length - 1 ? lastHumanEditorRef : undefined}
                     onAddToFollowupChat={onAddToFollowupChat}
-                    deepCodyToggleState={deepCodyEnabled && deepCodyToggleState}
-                    onToggleDeepCody={onToggleDeepCody}
+                    chatAgent={chatAgent}
+                    onDeepCodyToggleClick={useDeepCodyAgent ? onDeepCodyToggleClick : undefined}
                 />
             ))}
         </div>
@@ -237,8 +243,8 @@ interface TranscriptInteractionProps
         filePath: string
         fileURL: string
     }) => void
-    deepCodyToggleState?: boolean
-    onToggleDeepCody: () => void
+    chatAgent?: string
+    onDeepCodyToggleClick?: () => void
 }
 
 const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
@@ -260,8 +266,8 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
         smartApplyEnabled,
         editorRef: parentEditorRef,
         onAddToFollowupChat,
-        deepCodyToggleState,
-        onToggleDeepCody,
+        chatAgent,
+        onDeepCodyToggleClick,
     } = props
 
     const [intentResults, setIntentResults] = useMutatedValue<
@@ -284,10 +290,10 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                 intent: intentFromSubmit || intentResults.current?.intent,
                 intentScores: intentFromSubmit ? undefined : intentResults.current?.allScores,
                 manuallySelectedIntent: !!intentFromSubmit,
-                agent: deepCodyToggleState ? 'deep-cody' : undefined,
+                agent: chatAgent,
             })
         },
-        [humanMessage.index, intentResults, deepCodyToggleState]
+        [humanMessage.index, intentResults, chatAgent]
     )
 
     const onFollowupSubmit = useCallback(
@@ -297,10 +303,10 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                 intent: intentFromSubmit || intentResults.current?.intent,
                 intentScores: intentFromSubmit ? undefined : intentResults.current?.allScores,
                 manuallySelectedIntent: !!intentFromSubmit,
-                agent: deepCodyToggleState ? 'deep-cody' : undefined,
+                agent: chatAgent,
             })
         },
-        [intentResults, deepCodyToggleState]
+        [intentResults, chatAgent]
     )
 
     const extensionAPI = useExtensionAPI()
@@ -430,8 +436,8 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                 editorRef={humanEditorRef}
                 className={!isFirstInteraction && isLastInteraction ? 'tw-mt-auto' : ''}
                 onEditorFocusChange={resetIntent}
-                isDeepCodyEnabled={deepCodyToggleState}
-                toggleDeepCody={onToggleDeepCody}
+                chatAgent={chatAgent}
+                onDeepCodyToggleClick={onDeepCodyToggleClick}
             />
 
             {experimentalOneBoxEnabled && humanMessage.intent && (
