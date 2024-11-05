@@ -104,7 +104,6 @@ export const Toolbar: FunctionComponent<{
                 {/* Currently support Sonnet only */}
                 {models?.[0]?.id?.includes('sonnet') && (
                     <DeepCodySwitchToolbarItem
-                        className="tw-mr-1"
                         isDeepCodyEnabled={isDeepCodyEnabled}
                         toggleDeepCody={toggleDeepCody}
                     />
@@ -192,7 +191,7 @@ const DeepCodySwitchToolbarItem: FunctionComponent<{
     return (
         <Tooltip>
             <TooltipTrigger asChild>
-                <div className="tw-flex tw-items-center tw-space-x-2">
+                <div className="tw-flex tw-items-center tw-space-x-2 tw-opacity-60 focus-visible:tw-opacity-100 hover:tw-opacity-100 tw-mr-1">
                     <Switch
                         title="Deep Cody"
                         checked={isDeepCodyEnabled}
