@@ -184,10 +184,6 @@ const DeepCodySwitchToolbarItem: FunctionComponent<{
         return
     }
 
-    const onChange = useCallback(() => {
-        toggleDeepCody()
-    }, [toggleDeepCody])
-
     return (
         <Tooltip>
             <TooltipTrigger asChild>
@@ -195,7 +191,7 @@ const DeepCodySwitchToolbarItem: FunctionComponent<{
                     <Switch
                         title="Deep Cody"
                         checked={isDeepCodyEnabled}
-                        onCheckedChange={onChange}
+                        onCheckedChange={toggleDeepCody}
                         className={className}
                     />
                     <div className="tw-text-sm">
