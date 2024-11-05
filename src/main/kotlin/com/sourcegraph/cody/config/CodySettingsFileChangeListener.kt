@@ -18,7 +18,7 @@ class CodySettingsFileChangeListener(private val project: Project) : FileDocumen
       // TODO: it seams that some of the settings changes (like enabling/disabling autocomplete)
       // requires agent restart to take effect.
       CodyAgentService.withAgentRestartIfNeeded(project) {
-        it.server.extensionConfiguration_didChange(
+        it.server.extensionConfiguration_change(
             ConfigUtil.getAgentConfiguration(project, document.text))
       }
     }
