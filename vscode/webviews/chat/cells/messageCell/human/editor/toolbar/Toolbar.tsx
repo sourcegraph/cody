@@ -1,8 +1,7 @@
 import type { Action, ChatMessage, Model } from '@sourcegraph/cody-shared'
 import { useExtensionAPI } from '@sourcegraph/prompt-editor'
 import clsx from 'clsx'
-import { FlaskConicalIcon } from 'lucide-react'
-import { type FunctionComponent, useCallback } from 'react'
+import { type FunctionComponent, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { UserAccountInfo } from '../../../../../../Chat'
 import { ModelSelectField } from '../../../../../../components/modelSelectField/ModelSelectField'
 import { PromptSelectField } from '../../../../../../components/promptSelectField/PromptSelectField'
@@ -180,28 +179,53 @@ const DeepCodySwitchToolbarItem: FunctionComponent<{
     onDeepCodyToggleClick?: () => void
     className?: string
 }> = ({ className, chatAgent, onDeepCodyToggleClick }) => {
+    const isEnabled = chatAgent === 'deep-cody'
+    const [showStatus, setShowStatus] = useState(false)
+    const [isTooltipOpen, setIsTooltipOpen] = useState(false)
+    const prevChatAgentRef = useRef(chatAgent)
+
+    // Only show tooltip if there was an actual change in chatAgent (not initial mount)
+    useEffect(() => {
+        if (prevChatAgentRef.current !== chatAgent) {
+            setShowStatus(true)
+            setIsTooltipOpen(true)
+
+            const timer = setTimeout(() => {
+                setShowStatus(false)
+                setIsTooltipOpen(false)
+            }, 5000)
+
+            prevChatAgentRef.current = chatAgent
+
+            return () => clearTimeout(timer)
+        }
+        prevChatAgentRef.current = chatAgent
+        return
+    }, [chatAgent])
+
+    const tooltipContent = useMemo(
+        () =>
+            showStatus
+                ? `Deep Cody is ${isEnabled ? 'enabled' : 'disabled'}!`
+                : '[Experimental] Deep Cody may respond slower to fetch additional context for improved output',
+        [showStatus, isEnabled]
+    )
+
     return (
-        <Tooltip>
+        <Tooltip open={isTooltipOpen} onOpenChange={setIsTooltipOpen}>
             <TooltipTrigger asChild>
                 <div className="tw-flex tw-items-center tw-space-x-2 tw-opacity-60 focus-visible:tw-opacity-100 hover:tw-opacity-100 tw-mr-1">
                     <Switch
-                        checked={chatAgent === 'deep-cody'}
+                        checked={isEnabled}
                         onCheckedChange={onDeepCodyToggleClick}
                         className={className}
+                        thumbIcon="🧠"
                     />
-                    <div className="tw-flex tw-items-center tw-gap-1 tw-text-sm">
-                        <FlaskConicalIcon
-                            className="tw-m-0 tw-h-6 tw-w-6 tw-inline-block"
-                            strokeWidth={1.5}
-                        />
-                        Deep Cody
-                    </div>
                 </div>
             </TooltipTrigger>
-            <TooltipContent side="bottom">
-                [Experimental] Deep Cody may respond slower to fetch additional context for improved
-                output
-            </TooltipContent>
+            <TooltipContent side="bottom">{tooltipContent}</TooltipContent>
         </Tooltip>
     )
 }
+
+DeepCodySwitchToolbarItem.displayName = 'DeepCodySwitchToolbarItem'
