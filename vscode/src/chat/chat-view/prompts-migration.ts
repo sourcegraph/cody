@@ -46,7 +46,7 @@ export function getPromptsMigrationInfo(): Observable<PromptsMigrationStatus> {
 
             // Don't run migration if you're already run this before (ignore any other new commands
             // that had been added after first migration run)
-            const hasBeenRunBefore = localStorage.get<boolean>(PROMPTS_MIGRATION_KEY) ?? {}
+            const hasBeenRunBefore = localStorage.get<boolean>(PROMPTS_MIGRATION_KEY) ?? false
 
             // Migrate only user-level commands (repository level commands will be migrated via
             // instance prompts migration wizard see https://github.com/sourcegraph/sourcegraph/pull/1449)
