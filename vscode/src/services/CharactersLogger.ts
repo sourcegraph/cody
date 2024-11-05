@@ -87,6 +87,18 @@ interface ChangeEventMetadata {
     charsDeleted: number
 }
 
+export interface CodeGenEventMetadata {
+    isSelectionStale: number
+    isDisjoint: number
+    isPartiallyOutsideOfVisibleRanges: number
+    isFullyOutsideOfVisibleRanges: number
+    windowNotFocused: number
+    noActiveTextEditor: number
+    outsideOfActiveEditor: number
+    charsInserted: number
+    charsDeleted: number
+}
+
 export class CharactersLogger implements vscode.Disposable {
     private disposables: vscode.Disposable[] = []
     private changeCounters: CharacterLoggerCounters = { ...DEFAULT_COUNTERS }
@@ -321,17 +333,9 @@ export class CharactersLogger implements vscode.Disposable {
         }
     }
 
-    public getChangeEventMetadataForCodyCodeGenEvents(event: Partial<vscode.TextDocumentChangeEvent>): {
-        isSelectionStale: number
-        isDisjoint: number
-        isPartiallyOutsideOfVisibleRanges: number
-        isFullyOutsideOfVisibleRanges: number
-        windowNotFocused: number
-        noActiveTextEditor: number
-        outsideOfActiveEditor: number
-        charsInserted: number
-        charsDeleted: number
-    } {
+    public getChangeEventMetadataForCodyCodeGenEvents(
+        event: Partial<vscode.TextDocumentChangeEvent>
+    ): CodeGenEventMetadata {
         const rawMetadata = omit(this.getChangeEventMetadata(event), [
             'changeSize',
             'isRedo',
