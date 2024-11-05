@@ -107,7 +107,7 @@ export const WorkflowSidebar: React.FC<WorkflowSidebarProps> = ({
                     <AccordionContent>
                         <div className="tw-flex tw-flex-col tw-gap-2">
                             <Button
-                                onClick={() => onNodeAdd('Input Text', NodeType.INPUT)}
+                                onClick={() => onNodeAdd('Text', NodeType.INPUT)}
                                 className="tw-w-full"
                                 variant="secondary"
                             >

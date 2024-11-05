@@ -1,13 +1,14 @@
 import { Handle, Position } from '@xyflow/react'
 import type React from 'react'
 import { v4 as uuidv4 } from 'uuid'
+import { Textarea } from '../../../components/shadcn/ui/textarea'
 
 // Core type definitions
 export enum NodeType {
     CLI = 'cli',
     LLM = 'llm',
     PREVIEW = 'preview',
-    INPUT = 'input',
+    INPUT = 'text-format',
 }
 
 // Shared node props interface
@@ -58,7 +59,7 @@ export const createNode = (
         label,
         command: type === NodeType.CLI ? '' : undefined,
         prompt: type === NodeType.LLM ? '' : undefined,
-        content: type === NodeType.PREVIEW ? '' : undefined,
+        content: type === NodeType.PREVIEW || type === NodeType.INPUT ? '' : undefined,
     },
     position,
 })
@@ -85,15 +86,48 @@ export const defaultWorkflow = {
     ],
 }
 
+const getBorderColor = (
+    type: NodeType,
+    {
+        error,
+        executing,
+        moving,
+        selected,
+    }: {
+        error?: boolean
+        executing?: boolean
+        moving?: boolean
+        selected?: boolean
+    }
+) => {
+    if (error) return 'var(--vscode-inputValidation-errorBorder)'
+    if (executing) return 'var(--vscode-charts-yellow)'
+    if (moving) return 'var(--vscode-focusBorder)'
+    if (selected) return 'var(--vscode-testing-iconPassed)'
+    // Node type specific colors
+    switch (type) {
+        case NodeType.PREVIEW:
+            return '#aa0000'
+        case NodeType.CLI:
+            return 'var(--vscode-textLink-foreground)'
+        case NodeType.LLM:
+            return 'var(--vscode-symbolIcon-functionForeground)'
+        case NodeType.INPUT:
+            return 'var(--vscode-input-foreground)'
+        default:
+            return 'var(--vscode-foreground)'
+    }
+}
+
 /**
- * A function that generates a style object for a node in the workflow based on its properties.
+ * Generates a style object for a node in the workflow based on its type and state.
  *
- * @param {NodeType} type - The type of the node.
- * @param {boolean} [moving] - Whether the node is currently being moved.
- * @param {boolean} [selected] - Whether the node is currently selected.
- * @param {boolean} [executing] - Whether the node is currently executing.
- * @param {boolean} [error] - Whether the node is in an error state.
- * @returns {Object} - A style object for the node.
+ * @param type - The type of the node.
+ * @param moving - Whether the node is currently being moved.
+ * @param selected - Whether the node is currently selected.
+ * @param executing - Whether the node is currently executing.
+ * @param error - Whether the node is in an error state.
+ * @returns A style object for the node.
  */
 const getNodeStyle = (
     type: NodeType,
@@ -108,19 +142,7 @@ const getNodeStyle = (
         ? 'var(--vscode-inputValidation-errorBackground)'
         : 'var(--vscode-dropdown-background)',
     color: 'var(--vscode-dropdown-foreground)',
-    border: `2px solid ${
-        error
-            ? 'var(--vscode-inputValidation-errorBorder)'
-            : executing
-              ? 'var(--vscode-charts-yellow)'
-              : moving
-                ? 'var(--vscode-focusBorder)'
-                : selected
-                  ? 'var(--vscode-testing-iconPassed)'
-                  : type === NodeType.CLI
-                    ? 'var(--vscode-textLink-foreground)'
-                    : 'var(--vscode-foreground)'
-    }`,
+    border: `2px solid ${getBorderColor(type, { error, executing, moving, selected })}`,
 })
 
 export const PreviewNode: React.FC<BaseNodeProps> = ({ data, selected }) => (
@@ -128,7 +150,7 @@ export const PreviewNode: React.FC<BaseNodeProps> = ({ data, selected }) => (
         <Handle type="target" position={Position.Top} />
         <div className="tw-flex tw-flex-col tw-gap-2">
             <span>{data.label}</span>
-            <textarea
+            <Textarea
                 className="tw-w-full tw-h-24 tw-p-2 tw-rounded nodrag tw-resize tw-border-2 tw-border-solid tw-border-[var(--xy-node-border-default)]"
                 style={{
                     color: 'var(--vscode-editor-foreground)',
@@ -147,17 +169,16 @@ export const PreviewNode: React.FC<BaseNodeProps> = ({ data, selected }) => (
 export const InputNode: React.FC<BaseNodeProps> = ({ data, selected }) => (
     <div style={getNodeStyle(NodeType.INPUT, data.moving, selected, data.executing, data.error)}>
         <Handle type="target" position={Position.Top} />
-        <div className="tw-flex tw-flex-col tw-gap-2 tw-text-left">
+        <div className="tw-flex tw-flex-col tw-gap-2">
             <span>{data.label}</span>
-            <textarea
+            <Textarea
                 className="tw-w-full tw-h-24 tw-p-2 tw-rounded nodrag tw-resize tw-border-2 tw-border-solid tw-border-[var(--xy-node-border-default)]"
                 style={{
                     color: 'var(--vscode-editor-foreground)',
                     backgroundColor: 'var(--vscode-input-background)',
-                    outline: 'none', // Add this line
+                    outline: 'none',
                 }}
                 value={data.content || ''}
-                readOnly
                 placeholder="Enter your input text here..."
             />
         </div>

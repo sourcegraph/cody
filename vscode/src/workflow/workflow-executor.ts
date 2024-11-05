@@ -277,7 +277,7 @@ export async function executeWorkflow(
                     result = await executePreviewNode(combinedInput)
                     break
                 }
-                case 'input': {
+                case 'text-format': {
                     const text =
                         node.data.content?.replace('${input}', sanitizeForPrompt(combinedInput)) || ''
                     result = await executeInputNode(text)

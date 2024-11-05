@@ -167,7 +167,7 @@ export const Flow: React.FC<{
             const { x, y, zoom } = getViewport()
             const position = { x: -x + 100 * zoom, y: -y + 100 * zoom }
             const newNode = createNode(nodeType, nodeLabel, position)
-            if (nodeType === NodeType.PREVIEW) {
+            if (nodeType === NodeType.PREVIEW || nodeType === NodeType.INPUT) {
                 newNode.data.content = ''
             }
             setNodes(nodes => [...nodes, newNode])
