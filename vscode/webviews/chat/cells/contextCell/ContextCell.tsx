@@ -3,7 +3,7 @@ import { pluralize } from '@sourcegraph/cody-shared'
 import type { RankedContext } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { clsx } from 'clsx'
 import { BrainIcon, MessagesSquareIcon } from 'lucide-react'
-import { type FunctionComponent, memo, useCallback, useState } from 'react'
+import { type FunctionComponent, memo, useCallback, useMemo, useState } from 'react'
 import { FileContextItem } from '../../../components/FileContextItem'
 import {
     Accordion,
@@ -43,7 +43,7 @@ export const ContextCell: FunctionComponent<{
     }) => void
     onManuallyEditContext: () => void
     editContextText: React.ReactNode
-    isDeepCodyEnabled?: boolean
+    chatAgent?: string
     /** For use in storybooks only. */
     __storybook__initialOpen?: boolean
 }> = memo(
@@ -61,7 +61,7 @@ export const ContextCell: FunctionComponent<{
         onAddToFollowupChat,
         onManuallyEditContext,
         editContextText,
-        isDeepCodyEnabled,
+        chatAgent,
     }) => {
         const [selectedAlternative, setSelectedAlternative] = useState<number | undefined>(undefined)
         const incrementSelectedAlternative = useCallback(
@@ -138,6 +138,8 @@ export const ContextCell: FunctionComponent<{
 
         const [showAllResults, setShowAllResults] = useState(false)
 
+        const isDeepCodyEnabled = useMemo(() => chatAgent === 'deep-cody', [chatAgent])
+
         return (
             <div>
                 {(contextItemsToDisplay === undefined || contextItemsToDisplay.length !== 0) && (
@@ -169,7 +171,9 @@ export const ContextCell: FunctionComponent<{
                                                 ? isDeepCodyEnabled
                                                     ? 'Thinking'
                                                     : 'Fetching context'
-                                                : 'Fetched context'}
+                                                : isDeepCodyEnabled
+                                                  ? 'Deep Cody Context'
+                                                  : 'Fetched context'}
                                             <span className="tw-opacity-60 tw-text-sm tw-ml-2">
                                                 &mdash;{' '}
                                                 {isContextLoading
@@ -304,7 +308,11 @@ export const ContextCell: FunctionComponent<{
                                                                     size={14}
                                                                     className="tw-ml-1"
                                                                 />
-                                                                <span>Public knowledge</span>
+                                                                <span>
+                                                                    {isDeepCodyEnabled
+                                                                        ? 'Reviewed by Deep Cody'
+                                                                        : 'Public knowledge'}
+                                                                </span>
                                                             </span>
                                                         </TooltipTrigger>
                                                         <TooltipContent side="bottom">

@@ -196,7 +196,7 @@ export interface WebviewSubmitMessage extends WebviewContextMessage {
     intent?: ChatMessage['intent'] | undefined | null
     intentScores?: { intent: string; score: number }[] | undefined | null
     manuallySelectedIntent?: boolean | undefined | null
-    isDeepCodyEnabled?: boolean | undefined | null
+    agent?: string | undefined | null
 }
 
 interface WebviewEditMessage extends WebviewContextMessage {
@@ -208,7 +208,7 @@ interface WebviewEditMessage extends WebviewContextMessage {
     intent?: ChatMessage['intent'] | undefined | null
     intentScores?: { intent: string; score: number }[] | undefined | null
     manuallySelectedIntent?: boolean | undefined | null
-    isDeepCodyEnabled?: boolean | undefined | null
+    agent?: string | undefined | null
 }
 
 interface WebviewContextMessage {

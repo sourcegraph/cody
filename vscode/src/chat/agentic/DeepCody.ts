@@ -1,5 +1,12 @@
 import type { Span } from '@opentelemetry/api'
-import { type ContextItem, PromptString, isDefined, logDebug, ps } from '@sourcegraph/cody-shared'
+import {
+    type ContextItem,
+    PromptString,
+    isDefined,
+    logDebug,
+    ps,
+    telemetryRecorder,
+} from '@sourcegraph/cody-shared'
 import { CodyChatAgent } from './CodyChatAgent'
 import { CODYAGENT_PROMPTS } from './prompts'
 
@@ -9,17 +16,6 @@ import { CODYAGENT_PROMPTS } from './prompts'
  * It is responsible for reviewing the retrieved context, and perform agentic context retrieval for the chat request.
  */
 export class DeepCodyAgent extends CodyChatAgent {
-    private static toggledOn = false
-
-    public static setToggler(value?: boolean): boolean {
-        DeepCodyAgent.toggledOn = value ?? !DeepCodyAgent.toggledOn
-        return DeepCodyAgent.toggledOn
-    }
-
-    public static get isToggledOn(): boolean {
-        return DeepCodyAgent.toggledOn
-    }
-
     protected buildPrompt(): PromptString {
         const toolInstructions = this.tools.map(t => t.getInstruction())
         const toolExamples = this.tools.map(t => t.config.prompt.example)
@@ -38,8 +34,15 @@ export class DeepCodyAgent extends CodyChatAgent {
         const startTime = performance.now()
         const count = await this.reviewLoop(span, chatAbortSignal, maxLoops)
 
-        logDebug('Deep Cody', `${count.context} agentic context added in ${count.loop} review loops`, {
-            verbose: { durationMs: performance.now() - startTime, ...count },
+        telemetryRecorder.recordEvent('cody.deep-cody.context', 'executed', {
+            privateMetadata: {
+                durationMs: performance.now() - startTime,
+                ...count,
+            },
+            billingMetadata: {
+                product: 'cody',
+                category: 'billable',
+            },
         })
 
         // Remove the TOOL context item that is only used during the review process.

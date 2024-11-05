@@ -282,7 +282,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 this.setWebviewToChat()
                 break
             case 'submit': {
-                DeepCodyAgent.setToggler(message.isDeepCodyEnabled || false)
                 await this.handleUserMessageSubmission({
                     requestID: uuid.v4(),
                     inputText: PromptString.unsafe_fromUserQuery(message.text),
@@ -293,11 +292,11 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     intent: message.intent,
                     intentScores: message.intentScores,
                     manuallySelectedIntent: message.manuallySelectedIntent,
+                    agent: message.agent ?? undefined,
                 })
                 break
             }
             case 'edit': {
-                DeepCodyAgent.setToggler(message.isDeepCodyEnabled || false)
                 await this.handleEdit({
                     requestID: uuid.v4(),
                     text: PromptString.unsafe_fromUserQuery(message.text),
@@ -307,6 +306,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     intent: message.intent,
                     intentScores: message.intentScores,
                     manuallySelectedIntent: message.manuallySelectedIntent,
+                    agent: message.agent ?? undefined,
                 })
                 break
             }
@@ -624,6 +624,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         intent: detectedIntent,
         intentScores: detectedIntentScores,
         manuallySelectedIntent,
+        agent,
     }: {
         requestID: string
         inputText: PromptString
@@ -635,6 +636,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         intent?: ChatMessage['intent'] | undefined | null
         intentScores?: { intent: string; score: number }[] | undefined | null
         manuallySelectedIntent?: boolean | undefined | null
+        agent?: string
     }): Promise<void> {
         return tracer.startActiveSpan('chat.submit', async (span): Promise<void> => {
             span.setAttribute('sampled', true)
@@ -649,6 +651,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 text: inputText,
                 editorState,
                 intent: detectedIntent,
+                agent,
             })
             this.postViewTranscript({ speaker: 'assistant' })
 
@@ -667,6 +670,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     intent: detectedIntent,
                     intentScores: detectedIntentScores,
                     manuallySelectedIntent,
+                    agent,
                 },
                 span
             )
@@ -685,6 +689,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             intent: detectedIntent,
             intentScores: detectedIntentScores,
             manuallySelectedIntent,
+            agent,
         }: Parameters<typeof this.handleUserMessageSubmission>[0],
         span: Span
     ): Promise<void> {
@@ -711,6 +716,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             repoIsPublic,
             traceId: span.spanContext().traceId,
             promptText: inputText,
+            agent,
         } as const
         const tokenCounterUtils = await getTokenCounterUtils()
 
@@ -820,7 +826,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             }
 
             // Experimental Feature: Deep Cody
-            const isDeepCodyEnabled = this.featureCodyExperimentalDeepCody && DeepCodyAgent.isToggledOn
+            const isDeepCodyEnabled = this.featureCodyExperimentalDeepCody && agent === 'deep-cody'
             if (isDeepCodyEnabled) {
                 const agenticContext = await new DeepCodyAgent(
                     this.chatBuilder,
@@ -1116,6 +1122,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         intent,
         intentScores,
         manuallySelectedIntent,
+        agent,
     }: {
         requestID: string
         text: PromptString
@@ -1125,6 +1132,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         intent?: ChatMessage['intent'] | undefined | null
         intentScores?: { intent: string; score: number }[] | undefined | null
         manuallySelectedIntent?: boolean | undefined | null
+        agent?: string
     }): Promise<void> {
         const abortSignal = this.startNewSubmitOrEditOperation()
 
@@ -1151,6 +1159,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 intent,
                 intentScores,
                 manuallySelectedIntent,
+                agent,
             })
         } catch {
             this.postError(new Error('Failed to edit prompt'), 'transcript')
@@ -1789,9 +1798,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                         userProductSubscription.pipe(
                             map(value => (value === pendingOperation ? null : value))
                         ),
-                    toogleDeepCody: () => {
-                        return promiseFactoryToObservable(async () => DeepCodyAgent.setToggler())
-                    },
                 }
             )
         )

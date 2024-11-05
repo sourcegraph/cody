@@ -119,17 +119,13 @@ export const Transcript: FC<TranscriptProps> = props => {
         []
     )
 
-    const experimentalDeepCodyEnabled = useExperimentalDeepCody()
-    const deepCodyEnabled = useMemo(() => experimentalDeepCodyEnabled, [experimentalDeepCodyEnabled])
-
     const [deepCodyToggleState, setDeepCodyToggleState] = useState<boolean>(true)
 
-    const extensionAPI = useExtensionAPI()
+    const experimentalDeepCodyEnabled = useExperimentalDeepCody()
+    const deepCodyEnabled = useMemo(() => experimentalDeepCodyEnabled, [experimentalDeepCodyEnabled])
     const onToggleDeepCody = useCallback(() => {
-        extensionAPI.toogleDeepCody().subscribe(value => {
-            setDeepCodyToggleState(value)
-        })
-    }, [extensionAPI.toogleDeepCody])
+        setDeepCodyToggleState(!deepCodyToggleState)
+    }, [deepCodyToggleState])
 
     return (
         <div
@@ -288,7 +284,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                 intent: intentFromSubmit || intentResults.current?.intent,
                 intentScores: intentFromSubmit ? undefined : intentResults.current?.allScores,
                 manuallySelectedIntent: !!intentFromSubmit,
-                isDeepCodyEnabled: deepCodyToggleState,
+                agent: deepCodyToggleState ? 'deep-cody' : undefined,
             })
         },
         [humanMessage.index, intentResults, deepCodyToggleState]
@@ -301,7 +297,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                 intent: intentFromSubmit || intentResults.current?.intent,
                 intentScores: intentFromSubmit ? undefined : intentResults.current?.allScores,
                 manuallySelectedIntent: !!intentFromSubmit,
-                isDeepCodyEnabled: deepCodyToggleState,
+                agent: deepCodyToggleState ? 'deep-cody' : undefined,
             })
         },
         [intentResults, deepCodyToggleState]
@@ -512,7 +508,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                             </>
                         )
                     }
-                    isDeepCodyEnabled={deepCodyToggleState}
+                    chatAgent={humanMessage.agent}
                 />
             )}
             {(!experimentalOneBoxEnabled || humanMessage.intent !== 'search') &&
@@ -569,14 +565,14 @@ export function editHumanMessage({
     intent,
     intentScores,
     manuallySelectedIntent,
-    isDeepCodyEnabled,
+    agent,
 }: {
     messageIndexInTranscript: number
     editorValue: SerializedPromptEditorValue
     intent?: ChatMessage['intent']
     intentScores?: { intent: string; score: number }[]
     manuallySelectedIntent?: boolean
-    isDeepCodyEnabled?: boolean
+    agent?: string
 }): void {
     getVSCodeAPI().postMessage({
         command: 'edit',
@@ -587,7 +583,7 @@ export function editHumanMessage({
         intent,
         intentScores,
         manuallySelectedIntent,
-        isDeepCodyEnabled,
+        agent,
     })
     focusLastHumanMessageEditor()
 }
@@ -597,13 +593,13 @@ function submitHumanMessage({
     intent,
     intentScores,
     manuallySelectedIntent,
-    isDeepCodyEnabled,
+    agent,
 }: {
     editorValue: SerializedPromptEditorValue
     intent?: ChatMessage['intent']
     intentScores?: { intent: string; score: number }[]
     manuallySelectedIntent?: boolean
-    isDeepCodyEnabled?: boolean
+    agent?: string
 }): void {
     getVSCodeAPI().postMessage({
         command: 'submit',
@@ -613,7 +609,7 @@ function submitHumanMessage({
         intent,
         intentScores,
         manuallySelectedIntent,
-        isDeepCodyEnabled,
+        agent,
     })
     focusLastHumanMessageEditor()
 }
