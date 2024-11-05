@@ -63,9 +63,13 @@ test('chat assistant response code buttons', async ({ page, nap, sidebar }, test
 
     // We expect the pasted code to be categorized as cody_chat and
     // the relevant inserted characters counter to be incremented appropriately.
-    expect(outputChannelWithPaste).toContain('Current character counters:')
-    expect(outputChannelWithPaste).toContain(`"cody_chat_inserted": ${codeToPaste.length}`)
-    expect(outputChannelWithPaste).toContain('"cody_chat": 1')
+    const idx = outputChannelWithPaste.lastIndexOf('Current character counters:')
+    const outputChannelWithPasteAfter = outputChannelWithPaste.slice(idx)
+    console.log('outputChannelWithPasteAfter ', outputChannelWithPasteAfter)
+
+    expect(idx).toBeGreaterThan(0)
+    expect(outputChannelWithPasteAfter).toContain(`"cody_chat_inserted": ${codeToPaste.length}`)
+    expect(outputChannelWithPasteAfter).toContain('"cody_chat": 1')
 
     await actionsDropdown.click()
     await executeCommandInPalette(page, 'cody.command.insertCodeToCursor')
@@ -79,14 +83,17 @@ test('chat assistant response code buttons', async ({ page, nap, sidebar }, test
     // Currently defined in: vscode/src/chat/chat-view/ChatsController.ts
     const codeToInsert = 'cody.command.insertCodeToCursor:cody_testing'
     const outputChannelWithInsert = await fs.readFile(getTmpLogFile(testInfo.title), 'utf-8')
+    const idx2 = outputChannelWithInsert.lastIndexOf('Current character counters:')
+    const outputChannelWithInsertAfter = outputChannelWithInsert.slice(idx2)
+    console.log('outputChannelWithInsertAfter ', outputChannelWithInsertAfter)
 
     // We expect the inserted code to be categorized as cody_chat and
     // the relevant inserted characters counter to be incremented appropriately.
-    expect(outputChannelWithPaste).toContain('Current character counters:')
-    expect(outputChannelWithInsert).toContain(
+    expect(idx2).toBeGreaterThan(0)
+    expect(outputChannelWithInsertAfter).toContain(
         `"cody_chat_inserted": ${codeToPaste.length + codeToInsert.length}`
     )
-    expect(outputChannelWithInsert).toContain('"cody_chat": 2')
+    expect(outputChannelWithInsertAfter).toContain('"cody_chat": 2')
 
     const copyClickedEvent = mockServer.loggedV2Events.find(
         event => event.testId === 'cody.copyButton:clicked'
