@@ -517,10 +517,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.DeepCody)
     )
 
-    private setDeepCodyToggler(): boolean {
-        return DeepCodyAgent.setToggler()
-    }
-
     private async getConfigForWebview(): Promise<ConfigurationSubsetForWebview & LocalEnv> {
         const { configuration, auth } = await currentResolvedConfig()
         const sidebarViewOnly = this.extensionClient.capabilities?.webviewNativeConfig?.view === 'single'
@@ -1794,7 +1790,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                             map(value => (value === pendingOperation ? null : value))
                         ),
                     toogleDeepCody: () => {
-                        return promiseFactoryToObservable(async () => this.setDeepCodyToggler())
+                        return promiseFactoryToObservable(async () => DeepCodyAgent.setToggler())
                     },
                 }
             )
