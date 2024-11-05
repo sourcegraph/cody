@@ -816,9 +816,8 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     this.chatBuilder,
                     this.chatClient,
                     await this.toolProvider.getTools(),
-                    span,
                     corpusContext
-                ).getContext(signal)
+                ).getContext(span, signal)
                 corpusContext.push(...agenticContext)
             }
 

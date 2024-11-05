@@ -105,7 +105,6 @@ describe('DeepCody', () => {
             mockChatBuilder,
             mockChatClient,
             mockCodyTools,
-            mockSpan,
             mockCurrentContext
         )
 
@@ -146,14 +145,13 @@ describe('DeepCody', () => {
             mockChatBuilder,
             mockChatClient,
             mockCodyTools,
-            mockSpan,
             mockCurrentContext
         )
 
-        const result = await agent.getContext({ aborted: false } as AbortSignal)
+        const result = await agent.getContext(mockSpan, { aborted: false } as AbortSignal)
 
         expect(mockChatClient.chat).toHaveBeenCalled()
-        expect(mockCodyTools).toHaveLength(4)
+        expect(mockCodyTools).toHaveLength(5)
         expect(mockContextRetriever.retrieveContext).toHaveBeenCalled()
         expect(result).toHaveLength(2)
         expect(result[0].content).toBe('const example = "test";')
