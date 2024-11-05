@@ -11,10 +11,11 @@ class TestTool extends CodyTool {
 
 describe('CodyTool', () => {
     let factory: ToolFactory
+    let mockSpan: any
 
     beforeEach(() => {
         factory = new ToolFactory()
-
+        mockSpan = {}
         factory.registry.register({
             name: 'TestTool',
             tags: {
@@ -37,56 +38,56 @@ describe('CodyTool', () => {
     })
 
     it('should generate correct instruction', () => {
-        const testTool = factory.createTool('TestTool') as TestTool
-        const instruction = testTool.getInstruction()
+        const testTool = factory.createTool('TestTool')
+        const instruction = testTool?.getInstruction()
         expect(instruction).toEqual(
             ps`To test the CodyTool class: \`<TESTTOOL><test>TEST_CONTENT</test></TESTTOOL>\``
         )
     })
 
     it('should stream and parse content correctly', async () => {
-        const testTool = factory.createTool('TestTool') as TestTool
+        const testTool = factory.createTool('TestTool')
 
-        testTool.stream('<TESTTOOL><test>first content</test></TESTTOOL>')
-        testTool.stream('<TESTTOOL><test>second content</test></TESTTOOL>')
+        testTool?.stream('<TESTTOOL><test>first content</test></TESTTOOL>')
+        testTool?.stream('<TESTTOOL><test>second content</test></TESTTOOL>')
 
-        const result = await testTool.execute()
+        const result = await testTool?.execute(mockSpan)
 
         expect(result).toEqual(['first content', 'second content'])
     })
 
     it('should handle multiple streams before parsing', async () => {
-        const testTool = factory.createTool('TestTool') as TestTool
+        const testTool = factory.createTool('TestTool')
 
-        testTool.stream('<TESTTOOL><test>part')
-        testTool.stream(' one</test></TESTTOOL>')
-        testTool.stream('<TESTTOOL><test>part two</test></TESTTOOL>')
+        testTool?.stream('<TESTTOOL><test>part')
+        testTool?.stream(' one</test></TESTTOOL>')
+        testTool?.stream('<TESTTOOL><test>part two</test></TESTTOOL>')
 
-        const result = await testTool.execute()
+        const result = await testTool?.execute(mockSpan)
 
         expect(result).toEqual(['part one', 'part two'])
     })
 
     it('should reset after parsing', async () => {
-        const testTool = factory.createTool('TestTool') as TestTool
+        const testTool = factory.createTool('TestTool')
 
-        testTool.stream('<TESTTOOL><test>first content</test></TESTTOOL>')
-        await testTool.execute()
+        testTool?.stream('<TESTTOOL><test>first content</test></TESTTOOL>')
+        await testTool?.execute(mockSpan)
 
-        testTool.stream('<TESTTOOL><test>second content</test></TESTTOOL>')
-        const result = await testTool.execute()
+        testTool?.stream('<TESTTOOL><test>second content</test></TESTTOOL>')
+        const result = await testTool?.execute(mockSpan)
 
         expect(result).toEqual(['second content'])
     })
 
     it('should handle empty or invalid content', async () => {
-        const testTool = factory.createTool('TestTool') as TestTool
+        const testTool = factory.createTool('TestTool')
 
-        testTool.stream('<TESTTOOL></TESTTOOL>')
-        testTool.stream('<TESTTOOL><test></test></TESTTOOL>')
-        testTool.stream('<TESTTOOL><invalid>content</invalid></TESTTOOL>')
+        testTool?.stream('<TESTTOOL></TESTTOOL>')
+        testTool?.stream('<TESTTOOL><test></test></TESTTOOL>')
+        testTool?.stream('<TESTTOOL><invalid>content</invalid></TESTTOOL>')
 
-        const result = await testTool.execute()
+        const result = await testTool?.execute(mockSpan)
 
         expect(result).toEqual([])
     })
