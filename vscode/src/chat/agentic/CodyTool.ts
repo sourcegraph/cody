@@ -14,7 +14,6 @@ import {
 } from '@sourcegraph/cody-shared'
 import { URI } from 'vscode-uri'
 import { getContextFromRelativePath } from '../../commands/context/file-path'
-import { getContextFileFromCursor } from '../../commands/context/selection'
 import { getContextFileFromShell } from '../../commands/context/shell'
 import { type ContextRetriever, toStructuredMentions } from '../chat-view/ContextRetriever'
 import { getChatContextItemsForMention } from '../context/chatContext'
@@ -72,11 +71,19 @@ export abstract class CodyTool {
     public stream(text: string): void {
         this.unprocessedText += text
     }
+    /**
+     * Resets the raw text input stream.
+     */
     private reset(): void {
         this.unprocessedText = ''
     }
-
     /**
+     * Optional method to process tool input without executing context retrieval
+     */
+    public processResponse?(): void
+    /**
+     * Retrieves context items from the tool's source.
+     *
      * Abstract method to be implemented by subclasses for executing the tool.
      */
     public abstract execute(span: Span): Promise<ContextItem[]>
@@ -93,7 +100,7 @@ class CliTool extends CodyTool {
                 subTag: ps`cmd`,
             },
             prompt: {
-                instruction: ps`To see the output of shell commands. NEVER execute unsafe commands.`,
+                instruction: ps`To see the output of shell commands - NEVER execute unsafe commands`,
                 placeholder: ps`SHELL_COMMAND`,
                 example: ps`Details about GitHub issue#1234: \`<TOOLCLI><cmd>gh issue view 1234</cmd></TOOLCLI>\``,
             },
@@ -247,9 +254,9 @@ class MemoryTool extends CodyTool {
                 subTag: ps`store`,
             },
             prompt: {
-                instruction: ps`To persist information across conversations. Write whatever information about the user from the question, or whenever you are asked. Do not add comments or answers as they will overwrite existing memory.`,
+                instruction: ps`To persist information across conversations. Write whatever information about the user from the question, or whenever you are asked`,
                 placeholder: ps`SUMMARIZED_TEXT`,
-                example: ps`To add an item to memory: \`<TOOLMEMORY><store>item</store></TOOLMEMORY>\``,
+                example: ps`To add an item to memory: \`<TOOLMEMORY><store>item</store></TOOLMEMORY>\`\nTo see memory: \`<TOOLMEMORY><store>GET</store></TOOLMEMORY>\``,
             },
         })
     }
@@ -258,48 +265,25 @@ class MemoryTool extends CodyTool {
 
     public async execute(): Promise<ContextItem[]> {
         const storedMemory = this.memoryOnStart
-        const memories = this.parse()
-        for (const memory of memories) {
-            if (memory === 'FORGET') {
-                CodyChatMemory.unload()
-                return []
-            }
-            CodyChatMemory.load(memory)
-            logDebug('Cody Memory', 'added', { verbose: memory })
-        }
+        this.processResponse()
         // Reset the memory after first retrieval to avoid duplication during loop.
         this.memoryOnStart = undefined
         return storedMemory ? [storedMemory] : []
     }
-}
 
-/**
- * Tool for retrieving the current user file or selection.
- */
-class EditorTool extends CodyTool {
-    constructor() {
-        super({
-            tags: {
-                tag: ps`TOOLEDITOR`,
-                subTag: ps`file`,
-            },
-            prompt: {
-                instruction: ps`To retrieve the currently selected context from user's editor`,
-                placeholder: ps`SELECTION`,
-                example: ps`See the content of user's currently selected code: \`<TOOLEDITOR><file>SELECTION</file></TOOLEDITOR>\``,
-            },
-        })
-    }
-
-    public async execute(): Promise<ContextItem[]> {
-        const file = this.parse()
-        if (file.length === 0) return []
-        logDebug('CodyTool', 'requesting user editor selection')
-        const currentSelection = await getContextFileFromCursor()
-        if (currentSelection !== null) {
-            return [currentSelection]
+    public processResponse(): void {
+        const newMemories = this.parse()
+        for (const memory of newMemories) {
+            if (memory === 'FORGET') {
+                CodyChatMemory.unload()
+                return
+            }
+            if (memory === 'GET') {
+                return
+            }
+            CodyChatMemory.load(memory)
+            logDebug('Cody Memory', 'added', { verbose: memory })
         }
-        return []
     }
 }
 
@@ -309,7 +293,6 @@ const TOOL_CONFIGS = {
     SearchTool: { tool: SearchTool, useContextRetriever: true },
     CliTool: { tool: CliTool, useContextRetriever: false },
     FileTool: { tool: FileTool, useContextRetriever: false },
-    EditorTool: { tool: EditorTool, useContextRetriever: false },
 } as const
 
 export function getDefaultCodyTools(

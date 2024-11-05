@@ -67,13 +67,18 @@ export class DeepCodyAgent extends CodyChatAgent {
     }
 
     private async review(span: Span, chatAbortSignal: AbortSignal): Promise<ContextItem[]> {
-        const model = 'anthropic::2023-06-01::claude-3-haiku'
+        const fastChatModel = 'anthropic::2023-06-01::claude-3-5-haiku-latest'
+        const model = this.chatBuilder.selectedModel || fastChatModel
         const prompter = this.getPrompter(this.context)
         const promptData = await prompter.makePrompt(this.chatBuilder, 1, this.promptMixins, true)
 
         try {
             const res = await this.processStream(promptData.prompt, chatAbortSignal, model)
             if (res?.toString().includes('CONTEXT_SUFFICIENT')) {
+                // Process the response without generating any context items.
+                for (const tool of this.toolHandlers.values()) {
+                    tool.processResponse?.()
+                }
                 return []
             }
             const results = await Promise.all(

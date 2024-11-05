@@ -7,6 +7,7 @@ export class CodyChatMemory {
 
     public static load(memory: string): void {
         CodyChatMemory.Store.add(memory)
+        localStorage?.set(CodyChatMemory.STORAGE_KEY, Array.from(CodyChatMemory.Store))
     }
 
     public static retrieve(): ContextItem | undefined {
@@ -27,16 +28,12 @@ export class CodyChatMemory {
         return stored
     }
 
-    private readonly STORAGE_KEY = 'cody-chat-memory'
+    private static readonly STORAGE_KEY = 'cody-chat-memory'
 
     constructor() {
-        const stored = localStorage?.get<string[]>(this.STORAGE_KEY)
+        const stored = localStorage?.get<string[]>(CodyChatMemory.STORAGE_KEY)
         if (stored) {
             CodyChatMemory.Store = new Set(stored)
         }
-    }
-
-    public store(): void {
-        localStorage?.set(this.STORAGE_KEY, Array.from(CodyChatMemory.Store))
     }
 }
