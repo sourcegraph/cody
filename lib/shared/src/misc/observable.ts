@@ -1,4 +1,3 @@
-import { sign } from 'crypto'
 import { diffJson } from 'diff'
 import isEqual from 'lodash/isEqual'
 import {
@@ -697,6 +696,7 @@ export function distinctUntilChanged<T>(
     return (observable: ObservableLike<T>): Observable<T> => {
         return new Observable<T>(observer => {
             let lastInput: T | typeof NO_VALUES_YET = NO_VALUES_YET
+
             const scheduler = new AsyncSerialScheduler<T>(observer)
             const subscription = observable.subscribe({
                 complete() {

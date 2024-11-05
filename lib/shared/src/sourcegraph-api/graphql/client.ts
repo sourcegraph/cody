@@ -10,12 +10,13 @@ import semver from 'semver'
 import { dependentAbortController, onAbort } from '../../common/abortController'
 import { type PickResolvedConfiguration, resolvedConfig } from '../../configuration/resolver'
 import { logDebug, logError } from '../../logger'
-import { firstValueFrom } from '../../misc/observable'
+import { distinctUntilChanged, firstValueFrom, tap } from '../../misc/observable'
 import { addTraceparent, wrapInActiveSpan } from '../../tracing'
 import { isError } from '../../utils'
 import { addCodyClientIdentificationHeaders } from '../client-name-version'
 import { DOTCOM_URL, isDotCom } from '../environments'
 import { isAbortError } from '../errors'
+import { GraphQLResultCache } from './cache'
 import {
     CHANGE_PROMPT_VISIBILITY,
     CHAT_INTENT_QUERY,
@@ -634,10 +635,16 @@ type GraphQLAPIClientConfig = PickResolvedConfiguration<{
 
 const QUERY_TO_NAME_REGEXP = /^\s*(?:query|mutation)\s+(\w+)/m
 
+let tattoo = 0
+
 export class SourcegraphGraphQLAPIClient {
     private dotcomUrl = DOTCOM_URL
 
     private isAgentTesting = process.env.CODY_SHIM_TESTING === 'true'
+    private readonly siteVersionCache = new GraphQLResultCache<string>({
+        queryName: 'SiteProductVersion',
+        maxAgeMsec: 1000 * 60 * 10, // 10 minutes
+    })
 
     public static withGlobalConfig(): SourcegraphGraphQLAPIClient {
         return new SourcegraphGraphQLAPIClient(resolvedConfig)
@@ -652,17 +659,37 @@ export class SourcegraphGraphQLAPIClient {
         return new SourcegraphGraphQLAPIClient(Observable.of(config))
     }
 
-    private constructor(private readonly config: Observable<GraphQLAPIClientConfig>) {}
+    private readonly config: Observable<GraphQLAPIClientConfig>
+    private readonly id: number = tattoo++
+    private lastConfig = ''
+
+    private constructor(config: Observable<GraphQLAPIClientConfig>) {
+        this.config = config.pipe(
+            distinctUntilChanged(),
+            tap(config => {
+                const stringConfig = JSON.stringify(config)
+                console.log(
+                    `${this.id} ${
+                        stringConfig === this.lastConfig
+                    } invalidating site version with new version ${stringConfig}`
+                )
+                this.lastConfig = stringConfig
+                this.siteVersionCache.invalidate()
+            })
+        )
+    }
 
     public async getSiteVersion(signal?: AbortSignal): Promise<string | Error> {
-        return this.fetchSourcegraphAPI<APIResponse<SiteVersionResponse>>(
-            CURRENT_SITE_VERSION_QUERY,
-            {},
-            signal
-        ).then(response =>
-            extractDataOrError(
-                response,
-                data => data.site?.productVersion ?? new Error('site version not found')
+        return this.siteVersionCache.get(signal, signal =>
+            this.fetchSourcegraphAPI<APIResponse<SiteVersionResponse>>(
+                CURRENT_SITE_VERSION_QUERY,
+                {},
+                signal
+            ).then(response =>
+                extractDataOrError(
+                    response,
+                    data => data.site?.productVersion ?? new Error('site version not found')
+                )
             )
         )
     }
