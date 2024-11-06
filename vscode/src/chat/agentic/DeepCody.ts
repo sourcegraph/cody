@@ -17,8 +17,6 @@ import { CODYAGENT_PROMPTS } from './prompts'
  * It is responsible for reviewing the retrieved context, and perform agentic context retrieval for the chat request.
  */
 export class DeepCodyAgent extends CodyChatAgent {
-    public static readonly ModelRef = 'sourcegraph::2023-06-01::deep-cody'
-
     private models = {
         review: this.chatBuilder.selectedModel,
     }

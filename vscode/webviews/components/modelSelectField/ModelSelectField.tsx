@@ -308,6 +308,9 @@ function modelAvailability(
 }
 
 function getTooltip(model: Model, availability: string): string {
+    if (model.id.includes('deep-cody')) {
+        return 'Uses Claude 3.5 Sonnet (new) and other models to iterate on itself and ensure a complete, more contextual response is given'
+    }
     if (model.tags.includes(ModelTag.Waitlist)) {
         return 'Request access to this new model'
     }
@@ -354,10 +357,16 @@ const ModelTitleWithIcon: React.FC<{
 }> = ({ model, showIcon, modelAvailability }) => {
     const modelBadge = getBadgeText(model, modelAvailability)
     const isDisabled = modelAvailability !== 'available'
+    const isDeepCody = model.id.includes('deep-cody')
 
     return (
         <span className={clsx(styles.modelTitleWithIcon, { [styles.disabled]: isDisabled })}>
-            {showIcon && <ChatModelIcon model={model.provider} className={styles.modelIcon} />}
+            {showIcon && (
+                <ChatModelIcon
+                    model={isDeepCody ? model.id : model.provider}
+                    className={styles.modelIcon}
+                />
+            )}
             <span className={clsx('tw-flex-grow', styles.modelName)}>{model.title}</span>
             {modelBadge && (
                 <Badge
@@ -383,7 +392,7 @@ const ChatModelIcon: FunctionComponent<{ model: string; className?: string }> = 
 
 /** Common {@link ModelsService.uiGroup} values. */
 const ModelUIGroup: Record<string, string> = {
-    DeepCody: 'Mixed models',
+    DeepCody: 'Mixed models, extended processing',
     Power: 'More powerful models',
     Balanced: 'Balanced for power and speed',
     Speed: 'Faster models',

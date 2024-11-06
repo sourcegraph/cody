@@ -12,6 +12,9 @@ export function chatModelIconComponent(
     model: string
 ): FunctionComponent<{ size: number; className?: string }> {
     model = model.toLowerCase()
+    if (model.includes('deep-cody')) {
+        return CodyLogoBW
+    }
     if (model.startsWith('openai') || model.includes('gpt')) {
         return OpenAILogo
     }
