@@ -617,6 +617,10 @@ let persistenceTracker: PersistenceTracker<CompletionAnalyticsID> | null = null
 
 let completionsStartedSinceLastSuggestion = 0
 
+function getTimeNowInMilliseconds() {
+    return Math.floor(performance.now())
+}
+
 export function create(
     inputParams: Omit<CompletionBookkeepingEvent['params'], 'multilineMode' | 'type' | 'id'>
 ): CompletionLogID {
@@ -630,7 +634,7 @@ export function create(
     activeSuggestionRequests.set(id, {
         id,
         params,
-        startedAt: performance.now(),
+        startedAt: getTimeNowInMilliseconds(),
         networkRequestStartedAt: null,
         startLoggedAt: null,
         loadedAt: null,
@@ -649,7 +653,7 @@ export function create(
 export function start(id: CompletionLogID): void {
     const event = activeSuggestionRequests.get(id)
     if (event && !event.startLoggedAt) {
-        event.startLoggedAt = performance.now()
+        event.startLoggedAt = getTimeNowInMilliseconds()
         completionsStartedSinceLastSuggestion++
     }
 }
@@ -660,7 +664,7 @@ export function networkRequestStarted(
 ): void {
     const event = activeSuggestionRequests.get(id)
     if (event && !event.networkRequestStartedAt) {
-        event.networkRequestStartedAt = performance.now()
+        event.networkRequestStartedAt = getTimeNowInMilliseconds()
         event.params.contextSummary = contextSummary
     }
 }
@@ -705,7 +709,7 @@ export function loaded(params: LoadedParams): void {
     event.params.isFuzzyMatch = isFuzzyMatch
 
     if (!event.loadedAt) {
-        event.loadedAt = performance.now()
+        event.loadedAt = getTimeNowInMilliseconds()
     }
     if (event.items.length === 0) {
         event.items = completions.map(item => completionItemToItemInfo(item, isDotComUser))
@@ -845,7 +849,7 @@ export function prepareSuggestionEvent({
     }
 
     if (!event.suggestedAt) {
-        event.suggestedAt = performance.now()
+        event.suggestedAt = getTimeNowInMilliseconds()
 
         span?.setAttributes(getSharedParams(event) as any)
         span?.addEvent('suggested')
@@ -865,7 +869,7 @@ export function prepareSuggestionEvent({
                 event.read = true
                 statistics.logSuggested()
                 completionIdsMarkedAsSuggested.set(completionId, true)
-                event.suggestionAnalyticsLoggedAt = performance.now()
+                event.suggestionAnalyticsLoggedAt = getTimeNowInMilliseconds()
 
                 const authStatus = currentAuthStatusAuthed()
                 // 🚨 SECURITY: Track the diff in the document after suggestion is shown for DotCom users and public repos.
@@ -947,7 +951,7 @@ export function accepted({
         recentCompletions.delete(key)
     }
 
-    completionEvent.acceptedAt = performance.now()
+    completionEvent.acceptedAt = getTimeNowInMilliseconds()
 
     const rangeForCharacterMetadata = trackedRange || new vscode.Range(position, position)
     const { charsDeleted, charsInserted, ...charactersLoggerMetadata } =
@@ -1091,7 +1095,7 @@ export function getInlineContextItemToLog(
     return { ...inlineCompletionItemContext, ...result }
 }
 export function logSuggestionEvents(isDotComUser: boolean): void {
-    const now = performance.now()
+    const now = getTimeNowInMilliseconds()
     // biome-ignore lint/complexity/noForEach: LRUCache#forEach has different typing than #entries, so just keeping it for now
     activeSuggestionRequests.forEach(completionEvent => {
         const {
@@ -1284,7 +1288,7 @@ type AutocompletePipelineStage =
     | 'preGetInlineCompletions'
 
 export class AutocompleteStageRecorder {
-    private createdAt = performance.now()
+    private createdAt = getTimeNowInMilliseconds()
     private logId?: CompletionLogID
     private isPreloadRequest: boolean
 
@@ -1308,7 +1312,7 @@ export class AutocompleteStageRecorder {
         trace.getActiveSpan()?.addEvent(eventName)
 
         // Record event timing to later assign it to the analytics event.
-        this.stageTimings[eventName] = performance.now() - this.createdAt
+        this.stageTimings[eventName] = getTimeNowInMilliseconds() - this.createdAt
 
         if (this.logId) {
             const event = activeSuggestionRequests.get(this.logId)
