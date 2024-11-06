@@ -220,10 +220,14 @@ export function syncModels({
 
                                             // DEEP CODY - available to users with feature flag enabled only.
                                             // TODO(bee): remove once deepCody is enabled for all users.
-                                            if (deepCodyEnabled && serverModelsConfig) {
+                                            const sonnetModel = data.primaryModels.find(m =>
+                                                m.id.includes('sonnet')
+                                            )
+                                            if (deepCodyEnabled && sonnetModel) {
                                                 const DEEPCODY_MODEL =
                                                     getExperimentalClientModelByFeatureFlag(
-                                                        FeatureFlag.DeepCody
+                                                        FeatureFlag.DeepCody,
+                                                        sonnetModel.modelRef
                                                     )!
                                                 data.primaryModels.push(
                                                     ...maybeAdjustContextWindows([DEEPCODY_MODEL]).map(
@@ -299,12 +303,7 @@ export function syncModels({
             })
         )
 
-    return combineLatest(
-        localModels,
-        remoteModelsData,
-        userModelPreferences,
-        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.DeepCody)
-    ).pipe(
+    return combineLatest(localModels, remoteModelsData, userModelPreferences).pipe(
         map(
             ([localModels, remoteModelsData, userModelPreferences]):
                 | ModelsData
