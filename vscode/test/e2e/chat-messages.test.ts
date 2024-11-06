@@ -3,7 +3,7 @@ import { expect } from '@playwright/test'
 
 import * as mockServer from '../fixtures/mock-server'
 
-import { isMacOS, isWindows } from '@sourcegraph/cody-shared'
+import { isMacOS } from '@sourcegraph/cody-shared'
 import { chatMessageRows, createEmptyChatPanel, sidebarExplorer, sidebarSignin } from './common'
 import { executeCommandInPalette, getTmpLogFile, test } from './helpers'
 
