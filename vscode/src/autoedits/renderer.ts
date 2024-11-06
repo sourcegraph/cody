@@ -143,18 +143,7 @@ export class AutoEditsRendererManager implements vscode.Disposable {
             return
         }
         const currentSelectionRange = event.selections[0]
-        const proposedChangeRange = this.activeEdit.range
-
-        // If the user places the cursor beyond the buffer around the proposed selection range, dismiss the suggestion
-        const BUFFER_LINES = 4
-        const document = event.textEditor.document
-        const startLine = Math.max(proposedChangeRange.start.line - BUFFER_LINES, 0)
-        const endLine = Math.min(proposedChangeRange.end.line + BUFFER_LINES, document.lineCount - 1)
-        const expandedRange = new vscode.Range(
-            document.lineAt(startLine).range.start,
-            document.lineAt(endLine).range.end
-        )
-        if (!currentSelectionRange.intersection(expandedRange)) {
+        if (!currentSelectionRange.intersection(this.activeEdit.range)) {
             // No overlap with expanded range, dismiss the proposed change
             await this.dismissEdit()
         }
