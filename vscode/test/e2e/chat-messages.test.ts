@@ -3,7 +3,7 @@ import { expect } from '@playwright/test'
 
 import * as mockServer from '../fixtures/mock-server'
 
-import { isWindows } from '@sourcegraph/cody-shared'
+import { isMacOS, isWindows } from '@sourcegraph/cody-shared'
 import { chatMessageRows, createEmptyChatPanel, sidebarExplorer, sidebarSignin } from './common'
 import { executeCommandInPalette, getTmpLogFile, test } from './helpers'
 
@@ -49,7 +49,7 @@ test('chat assistant response code buttons', async ({ page, nap, sidebar }, test
     await copyButton.click()
     // Place the cursor on some text in the document
     await page.getByText('appleName').click()
-    await page.keyboard.press(isWindows() ? 'Control+V' : 'Meta+V')
+    await page.keyboard.press(isMacOS() ? 'Meta+V' : 'Control+V')
 
     const codeToPaste =
         'def fib(n):\n  if n < 0:\n    return n\n  else:\n    return fib(n-1) + fib(n-2)\n'
