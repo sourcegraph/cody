@@ -51,7 +51,7 @@
     "@vitejs/plugin-react": "^4.2.1",
     "esbuild": "^0.18.20",
     "fs-extra": "^11.2.0",
-    "happy-dom": "^14.3.10",
+    "happy-dom": "^15.0.0",
     "jsdom": "^22.1.0",
     "knip": "^5.27.4",
     "storybook": "^8.0.5",

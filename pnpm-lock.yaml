@@ -85,8 +85,8 @@ importers:
         specifier: ^11.2.0
         version: 11.2.0
       happy-dom:
-        specifier: ^14.3.10
-        version: 14.3.10
+        specifier: ^15.0.0
+        version: 15.0.0
       jsdom:
         specifier: ^22.1.0
         version: 22.1.0
@@ -113,7 +113,7 @@ importers:
         version: 5.4.2(@types/node@20.12.7)
       vitest:
         specifier: ^2.0.5
-        version: 2.0.5(@types/node@20.12.7)(happy-dom@14.3.10)(jsdom@22.1.0)
+        version: 2.0.5(@types/node@20.12.7)(happy-dom@15.0.0)(jsdom@22.1.0)
 
   agent:
     dependencies:
@@ -6353,7 +6353,7 @@ packages:
       dom-accessibility-api: 0.6.3
       lodash: 4.17.21
       redent: 3.0.0
-      vitest: 2.0.5(@types/node@20.12.7)(happy-dom@14.3.10)(jsdom@22.1.0)
+      vitest: 2.0.5(@types/node@20.12.7)(happy-dom@15.0.0)(jsdom@22.1.0)
     dev: true
 
   /@testing-library/react@14.2.2(react-dom@18.2.0)(react@18.2.0):
@@ -10165,9 +10165,9 @@ packages:
       uglify-js: 3.19.3
     dev: true
 
-  /happy-dom@14.3.10:
-    resolution: {integrity: sha512-Rh5li9vA9MF9Gkg85CbFABKTa3uoSAByILRNGb92u/vswDd561gBg2p1UW1ZauvDWWwRxPcbACK5zv3BR+gHnQ==}
-    engines: {node: '>=16.0.0'}
+  /happy-dom@15.0.0:
+    resolution: {integrity: sha512-DsvANUcxxY20iCo3Yllm7dqwzPVPduGfVFxa7mONwMBLczFeQgkN0LpDir1kIY322JMh+hrcPV3aGLyHCESDlA==}
+    engines: {node: '>=18.0.0'}
     dependencies:
       entities: 4.5.0
       webidl-conversions: 7.0.0
@@ -16363,7 +16363,7 @@ packages:
       fsevents: 2.3.3
     dev: true
 
-  /vitest@2.0.5(@types/node@20.12.7)(happy-dom@14.3.10)(jsdom@22.1.0):
+  /vitest@2.0.5(@types/node@20.12.7)(happy-dom@15.0.0)(jsdom@22.1.0):
     resolution: {integrity: sha512-8GUxONfauuIdeSl5f9GTgVEpg5BTOlplET4WEDaeY2QBiN8wSm68vxN/tb5z405OwppfoCavnwXafiaYBC/xOA==}
     engines: {node: ^18.0.0 || >=20.0.0}
     hasBin: true
@@ -16399,7 +16399,7 @@ packages:
       chai: 5.1.1
       debug: 4.3.5
       execa: 8.0.1
-      happy-dom: 14.3.10
+      happy-dom: 15.0.0
       jsdom: 22.1.0
       magic-string: 0.30.10
       pathe: 1.1.2
