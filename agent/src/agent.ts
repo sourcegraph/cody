@@ -308,7 +308,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
             this.notify('debug/message', {
                 channel: 'Document Sync Check',
                 message: panicMessage + '\n' + message,
-                level: 'error'
+                level: 'error',
             })
         },
         edit: (uri, callback, options) => {
