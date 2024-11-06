@@ -1,6 +1,6 @@
 import { type Model, ModelTag, isCodyProModel, isWaitlistModel } from '@sourcegraph/cody-shared'
 import { clsx } from 'clsx'
-import { BookOpenIcon, BuildingIcon, ExternalLinkIcon } from 'lucide-react'
+import { BookOpenIcon, BuildingIcon, ExternalLinkIcon, FlaskConicalIcon } from 'lucide-react'
 import { type FunctionComponent, type ReactNode, useCallback, useMemo } from 'react'
 import type { UserAccountInfo } from '../../Chat'
 import { getVSCodeAPI } from '../../utils/VSCodeApi'
@@ -357,16 +357,22 @@ const ModelTitleWithIcon: React.FC<{
 }> = ({ model, showIcon, modelAvailability }) => {
     const modelBadge = getBadgeText(model, modelAvailability)
     const isDisabled = modelAvailability !== 'available'
-    const isDeepCody = model.id.includes('deep-cody')
+
+    if (model.id.includes('deep-cody')) {
+        return (
+            <span className={clsx(styles.modelTitleWithIcon, { [styles.disabled]: isDisabled })}>
+                {showIcon && <FlaskConicalIcon size={16} className={styles.modelIcon} />}
+                <span className={clsx('tw-flex-grow', styles.modelName)}>{model.title}</span>
+                <Badge variant="secondary" className={styles.badge}>
+                    Experimental ⓘ
+                </Badge>
+            </span>
+        )
+    }
 
     return (
         <span className={clsx(styles.modelTitleWithIcon, { [styles.disabled]: isDisabled })}>
-            {showIcon && (
-                <ChatModelIcon
-                    model={isDeepCody ? model.id : model.provider}
-                    className={styles.modelIcon}
-                />
-            )}
+            {showIcon && <ChatModelIcon model={model.provider} className={styles.modelIcon} />}
             <span className={clsx('tw-flex-grow', styles.modelName)}>{model.title}</span>
             {modelBadge && (
                 <Badge

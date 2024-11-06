@@ -1,5 +1,6 @@
 import { authStatus } from '../auth/authStatus'
 import { firstValueFrom } from '../misc/observable'
+import { modelsService } from '../models/modelsService'
 import type { Message } from '../sourcegraph-api'
 import type { SourcegraphCompletionsClient } from '../sourcegraph-api/completions/client'
 import type {
@@ -25,12 +26,10 @@ export class ChatClient {
         abortSignal?: AbortSignal
     ): Promise<AsyncGenerator<CompletionGeneratorValue>> {
         // Replace internal models used for wrapper models with the actual model ID.
-        params.model = params.model
-            ?.replace(
-                'sourcegraph::2023-06-01::deep-cody',
-                'anthropic::2024-10-22::claude-3-5-sonnet-latest'
-            )
-            .replace('deep-cody', '')
+        if (params.model?.includes('deep-cody')) {
+            const sonnetModel = modelsService.getAllModelsWithSubstring('sonnet')[0]
+            params.model = sonnetModel.id
+        }
 
         const [versions, authStatus_] = await Promise.all([
             currentSiteVersion(),
