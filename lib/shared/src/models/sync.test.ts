@@ -4,7 +4,7 @@ import { mockAuthStatus } from '../auth/authStatus'
 import { AUTH_STATUS_FIXTURE_AUTHED, type AuthStatus } from '../auth/types'
 import { CLIENT_CAPABILITIES_FIXTURE, mockClientCapabilities } from '../configuration/clientCapabilities'
 import type { ResolvedConfiguration } from '../configuration/resolver'
-import { FeatureFlag, featureFlagProvider } from '../experimentation/FeatureFlagProvider'
+import { featureFlagProvider } from '../experimentation/FeatureFlagProvider'
 import {
     firstValueFrom,
     readValuesFrom,
@@ -16,7 +16,6 @@ import type { CodyClientConfig } from '../sourcegraph-api/clientConfig'
 import type { CodyLLMSiteConfiguration } from '../sourcegraph-api/graphql/client'
 import * as userProductSubscriptionModule from '../sourcegraph-api/userProductSubscription'
 import type { PartialDeep } from '../utils'
-import { getExperimentalClientModelByFeatureFlag } from './client'
 import {
     type Model,
     type ServerModel,
@@ -460,10 +459,10 @@ describe('syncModels', () => {
     )
 
     it('sets DeepCody as default chat model when feature flag is enabled', async () => {
-        const serverOpus: ServerModel = {
-            modelRef: 'anthropic::unknown::anthropic.claude-3-opus',
-            displayName: 'Opus',
-            modelName: 'anthropic.claude-3-opus',
+        const serverSonnet: ServerModel = {
+            modelRef: 'anthropic::unknown::sonnet',
+            displayName: 'Sonnet',
+            modelName: 'anthropic.claude-3-5-sonnet',
             capabilities: ['chat'],
             category: 'balanced' as ModelCategory,
             status: 'stable',
@@ -478,18 +477,16 @@ describe('syncModels', () => {
             schemaVersion: '0.0',
             revision: '-',
             providers: [],
-            models: [serverOpus],
+            models: [serverSonnet],
             defaultModels: {
-                chat: serverOpus.modelRef,
-                fastChat: serverOpus.modelRef,
-                codeCompletion: serverOpus.modelRef,
+                chat: serverSonnet.modelRef,
+                fastChat: serverSonnet.modelRef,
+                codeCompletion: serverSonnet.modelRef,
             },
         }
 
         const mockFetchServerSideModels = vi.fn(() => Promise.resolve(SERVER_MODELS))
         vi.mocked(featureFlagProvider).evaluatedFeatureFlag.mockReturnValue(Observable.of(true))
-
-        const DEEPCODY_MODEL = getExperimentalClientModelByFeatureFlag(FeatureFlag.DeepCody)!
 
         const result = await firstValueFrom(
             syncModels({
@@ -513,12 +510,13 @@ describe('syncModels', () => {
         vi.spyOn(modelsService, 'modelsChanges', 'get').mockReturnValue(Observable.of(result))
 
         // Check if DeepCody model is in the primary models
-        expect(result.primaryModels.some(model => model.id === DEEPCODY_MODEL.modelRef)).toBe(true)
+        expect(result.primaryModels.some(model => model.id.includes('deep-cody'))).toBe(true)
 
         // Check if DeepCody is set as the default chat model
-        expect(result.preferences.defaults.chat).toBe(DEEPCODY_MODEL.modelRef)
+        expect(result.preferences.defaults.chat?.includes('deep-cody')).toBe(true)
+        expect(result.preferences.defaults.edit?.includes('deep-cody')).toBe(false)
 
-        // user preference should not be affected and remains unchanged as this is handled in a later step.
+        // preference should not be affected and remains unchanged as this is handled in a later step.
         expect(result.preferences.selected.chat).toBe(undefined)
         expect(storage.data?.[AUTH_STATUS_FIXTURE_AUTHED.endpoint]!.selected.chat).toBe(undefined)
     })

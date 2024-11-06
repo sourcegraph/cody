@@ -218,6 +218,32 @@ export function syncModels({
                                                 })
                                             }
 
+                                            // DEEP CODY - available to users with feature flag enabled only.
+                                            // TODO(bee): remove once deepCody is enabled for all users.
+                                            if (deepCodyEnabled && serverModelsConfig) {
+                                                const DEEPCODY_MODEL =
+                                                    getExperimentalClientModelByFeatureFlag(
+                                                        FeatureFlag.DeepCody
+                                                    )!
+                                                data.primaryModels.push(
+                                                    ...maybeAdjustContextWindows([DEEPCODY_MODEL]).map(
+                                                        createModelFromServerModel
+                                                    )
+                                                )
+                                                // Update model preferences for chat to DEEP CODY once on first sync.
+                                                data.preferences!.defaults.edit =
+                                                    data.preferences!.defaults.chat
+                                                data.preferences!.defaults.chat = DEEPCODY_MODEL.modelRef
+                                                return userModelPreferences.pipe(
+                                                    take(1),
+                                                    tap(preferences => {
+                                                        preferences.selected[ModelUsage.Chat] =
+                                                            DEEPCODY_MODEL.modelRef
+                                                    }),
+                                                    map(() => data)
+                                                )
+                                            }
+
                                             return Observable.of(data)
                                         })
                                     )
@@ -280,44 +306,16 @@ export function syncModels({
         featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.DeepCody)
     ).pipe(
         map(
-            ([localModels, remoteModelsData, userModelPreferences, deepCodyEnabled]):
+            ([localModels, remoteModelsData, userModelPreferences]):
                 | ModelsData
                 | typeof pendingOperation =>
                 remoteModelsData === pendingOperation
                     ? pendingOperation
                     : {
                           localModels,
-                          primaryModels: (() => {
-                              if (isError(remoteModelsData)) {
-                                  return []
-                              }
-
-                              const models = [...remoteModelsData.primaryModels]
-
-                              const sonnetModel = remoteModelsData.primaryModels.find(m =>
-                                  m.id.includes('sonnet')
-                              )
-
-                              // DEEP CODY - available to users with feature flag enabled only.
-                              // TODO(bee): remove once Deep Cody is enabled for all users.
-                              if (deepCodyEnabled && sonnetModel) {
-                                  const DEEPCODY_MODEL = getExperimentalClientModelByFeatureFlag(
-                                      FeatureFlag.DeepCody,
-                                      sonnetModel.id
-                                  )!
-
-                                  models.push(
-                                      ...maybeAdjustContextWindows([DEEPCODY_MODEL]).map(
-                                          createModelFromServerModel
-                                      )
-                                  )
-
-                                  userModelPreferences.selected[ModelUsage.Chat] =
-                                      DEEPCODY_MODEL.modelRef
-                              }
-
-                              return normalizeModelList(models)
-                          })(),
+                          primaryModels: isError(remoteModelsData)
+                              ? []
+                              : normalizeModelList(remoteModelsData.primaryModels),
                           preferences: isError(remoteModelsData)
                               ? userModelPreferences
                               : resolveModelPreferences(
