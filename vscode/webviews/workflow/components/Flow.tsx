@@ -56,15 +56,26 @@ export const Flow: React.FC<{
 
     // 1. Node Operations
     // Handles all node-related state changes and updates
+    // Modify the onNodesChange callback
     const onNodesChange = useCallback(
         (changes: NodeChange[]) => {
             const dragChange = changes.find(
-                change =>
-                    change.type === 'position' &&
-                    'dragging' in change &&
-                    change.dragging &&
-                    'id' in change
-            ) as { id: string; type: 'position'; dragging: boolean } | undefined
+                change => change.type === 'position' && 'dragging' in change && change.dragging
+            ) as
+                | {
+                      id: string
+                      type: 'position'
+                      dragging: boolean
+                      position?: { x: number; y: number }
+                      event?: MouseEvent
+                  }
+                | undefined
+
+            // Only handle shift-drag cloning if we haven't already created a clone
+            if (dragChange?.event?.shiftKey && dragChange.dragging && !movingNodeId) {
+                // Remove this block since we're handling clone creation in onNodeDragStart
+                return
+            }
 
             if (dragChange) {
                 setMovingNodeId(dragChange.id)
@@ -84,6 +95,33 @@ export const Flow: React.FC<{
         },
         [selectedNode, nodes, movingNodeId]
     )
+
+    const onNodeDragStart = useCallback((event: React.MouseEvent, node: WorkflowNode) => {
+        if (event.shiftKey) {
+            // Create new node with offset position where the drag started
+            const newNode = createNode(node.type, node.data.label, {
+                x: node.position.x,
+                y: node.position.y,
+            })
+
+            // Copy over the specific data based on node type
+            if (node.type === NodeType.CLI) {
+                newNode.data.command = node.data.command
+            } else if (node.type === NodeType.LLM) {
+                newNode.data.prompt = node.data.prompt
+            } else if (node.type === NodeType.PREVIEW || node.type === NodeType.INPUT) {
+                newNode.data.content = node.data.content
+            }
+
+            // Add the new node and set it as the moving node
+            setNodes(current => [...current, newNode])
+            setMovingNodeId(newNode.id)
+
+            // Stop the original node from being dragged
+            event.stopPropagation()
+        }
+    }, [])
+
     const onNodeClick = useCallback((event: React.MouseEvent, node: WorkflowNode) => {
         // Stop event propagation to prevent triggering background click
         event.stopPropagation()
@@ -114,7 +152,7 @@ export const Flow: React.FC<{
     const handleAddNode = useCallback(
         (nodeLabel: string, nodeType: NodeType) => {
             const { x, y, zoom } = getViewport()
-            const position = { x: -x + 100 * zoom, y: -y + 100 * zoom }
+            const position = { x: -x / 2 + 100 * zoom, y: -y / 2 + 100 * zoom }
             const newNode = createNode(nodeType, nodeLabel, position)
             if (nodeType === NodeType.PREVIEW || nodeType === NodeType.INPUT) {
                 newNode.data.content = ''
@@ -258,6 +296,15 @@ export const Flow: React.FC<{
         })
     }, [vscodeAPI])
 
+    const onClear = useCallback(() => {
+        setNodes([])
+        setEdges([])
+        setNodeErrors(new Map())
+        setNodeResults(new Map())
+        setSelectedNode(null)
+        setExecutingNodeId(null)
+    }, [])
+
     useEffect(() => {
         const messageHandler = (event: MessageEvent<WorkflowFromExtension>) => {
             switch (event.data.type) {
@@ -368,6 +415,7 @@ export const Flow: React.FC<{
                     onSave={onSave}
                     onLoad={onLoad}
                     onExecute={onExecute}
+                    onClear={onClear}
                     isExecuting={isExecuting}
                 />
             </div>
@@ -390,6 +438,7 @@ export const Flow: React.FC<{
                         onEdgesChange={onEdgesChange}
                         onConnect={onConnect}
                         onNodeClick={onNodeClick}
+                        onNodeDragStart={onNodeDragStart}
                         nodeTypes={nodeTypes}
                         edgeTypes={edgeTypes}
                         fitView

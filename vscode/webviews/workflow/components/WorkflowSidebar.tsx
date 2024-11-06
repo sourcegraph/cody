@@ -16,6 +16,7 @@ interface WorkflowSidebarProps {
     onSave?: () => void
     onLoad?: () => void
     onExecute?: () => void
+    onClear?: () => void
     isExecuting?: boolean
 }
 
@@ -26,6 +27,7 @@ export const WorkflowSidebar: React.FC<WorkflowSidebarProps> = ({
     onSave,
     onLoad,
     onExecute,
+    onClear,
     isExecuting,
 }) => {
     const handleSave = async (): Promise<void> => {
@@ -55,6 +57,9 @@ export const WorkflowSidebar: React.FC<WorkflowSidebarProps> = ({
                     disabled={isExecuting}
                 >
                     {isExecuting ? 'Running...' : 'Execute'}
+                </Button>
+                <Button variant="secondary" className="tw-w-full" onClick={onClear}>
+                    Clear Workflow
                 </Button>
             </div>
 
@@ -116,6 +121,8 @@ export const WorkflowSidebar: React.FC<WorkflowSidebarProps> = ({
                         </div>
                     </AccordionContent>
                 </AccordionItem>
+            </Accordion>
+            <Accordion type="single" collapsible>
                 <div className="tw-my-4 tw-border-t tw-border-border" />
                 <AccordionItem value="property_editor">
                     <AccordionTrigger>Property Editor</AccordionTrigger>
