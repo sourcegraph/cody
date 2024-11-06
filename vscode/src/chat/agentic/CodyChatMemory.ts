@@ -13,7 +13,7 @@ export class CodyChatMemory {
             CodyChatMemory.Store = new Set(storeArray.slice(-5))
         }
         // TODO - persist to local file system
-        localStorage?.set(CodyChatMemory.STORAGE_KEY, Array.from(CodyChatMemory.Store))
+        localStorage?.setChatMemory(Array.from(CodyChatMemory.Store))
     }
 
     public static retrieve(): ContextItem | undefined {
@@ -34,10 +34,8 @@ export class CodyChatMemory {
         return stored
     }
 
-    private static readonly STORAGE_KEY = 'cody-chat-memory'
-
     constructor() {
-        const stored = localStorage?.get<string[]>(CodyChatMemory.STORAGE_KEY)
+        const stored = localStorage?.getChatMemory()
         if (stored) {
             CodyChatMemory.Store = new Set(stored)
         }

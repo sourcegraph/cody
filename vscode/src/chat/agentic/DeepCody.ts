@@ -17,8 +17,6 @@ import { CODYAGENT_PROMPTS } from './prompts'
  * It is responsible for reviewing the retrieved context, and perform agentic context retrieval for the chat request.
  */
 export class DeepCodyAgent extends CodyChatAgent {
-    public static readonly ID = 'deep-cody'
-
     private models = {
         review: this.chatBuilder.selectedModel,
     }
@@ -96,12 +94,7 @@ export class DeepCodyAgent extends CodyChatAgent {
      */
     private async review(span: Span, chatAbortSignal: AbortSignal): Promise<ContextItem[]> {
         const prompter = this.getPrompter(this.context)
-        const promptData = await prompter.makePrompt(
-            this.chatBuilder,
-            1,
-            this.promptMixins,
-            DeepCodyAgent.ID
-        )
+        const promptData = await prompter.makePrompt(this.chatBuilder, 1, this.promptMixins)
 
         try {
             const res = await this.processStream(promptData.prompt, chatAbortSignal, this.models.review)

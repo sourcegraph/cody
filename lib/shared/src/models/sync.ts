@@ -26,6 +26,7 @@ import type { CodyLLMSiteConfiguration } from '../sourcegraph-api/graphql/client
 import { RestClient } from '../sourcegraph-api/rest/client'
 import { CHAT_INPUT_TOKEN_BUDGET } from '../token/constants'
 import { isError } from '../utils'
+import { getExperimentalClientModelByFeatureFlag } from './client'
 import { type Model, type ServerModel, createModel, createModelFromServerModel } from './model'
 import type {
     DefaultsAndUserPreferencesForEndpoint,
@@ -194,9 +195,10 @@ export function syncModels({
                                     return combineLatest(
                                         featureFlagProvider.evaluatedFeatureFlag(
                                             FeatureFlag.CodyEarlyAccess
-                                        )
+                                        ),
+                                        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.DeepCody)
                                     ).pipe(
-                                        switchMap(([hasEarlyAccess]) => {
+                                        switchMap(([hasEarlyAccess, deepCodyEnabled]) => {
                                             // TODO(sqs): remove waitlist from localStorage when user has access
                                             const isOnWaitlist = config.clientState.waitlist_o1
                                             if (isDotComUser && (hasEarlyAccess || isOnWaitlist)) {
@@ -214,6 +216,35 @@ export function syncModels({
                                                     }
                                                     return model
                                                 })
+                                            }
+
+                                            // DEEP CODY - available to users with feature flag enabled only.
+                                            // TODO(bee): remove once deepCody is enabled for all users.
+                                            const sonnetModel = data.primaryModels.find(m =>
+                                                m.id.includes('sonnet')
+                                            )
+                                            if (deepCodyEnabled && sonnetModel) {
+                                                const DEEPCODY_MODEL =
+                                                    getExperimentalClientModelByFeatureFlag(
+                                                        FeatureFlag.DeepCody
+                                                    )!
+                                                data.primaryModels.push(
+                                                    ...maybeAdjustContextWindows([DEEPCODY_MODEL]).map(
+                                                        createModelFromServerModel
+                                                    )
+                                                )
+                                                // Update model preferences for chat to DEEP CODY once on first sync.
+                                                data.preferences!.defaults.edit =
+                                                    data.preferences!.defaults.chat
+                                                data.preferences!.defaults.chat = DEEPCODY_MODEL.modelRef
+                                                return userModelPreferences.pipe(
+                                                    take(1),
+                                                    tap(preferences => {
+                                                        preferences.selected[ModelUsage.Chat] =
+                                                            DEEPCODY_MODEL.modelRef
+                                                    }),
+                                                    map(() => data)
+                                                )
                                             }
 
                                             return Observable.of(data)

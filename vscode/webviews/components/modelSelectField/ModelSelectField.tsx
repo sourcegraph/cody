@@ -1,6 +1,6 @@
 import { type Model, ModelTag, isCodyProModel, isWaitlistModel } from '@sourcegraph/cody-shared'
 import { clsx } from 'clsx'
-import { BookOpenIcon, BuildingIcon, ExternalLinkIcon } from 'lucide-react'
+import { BookOpenIcon, BuildingIcon, ExternalLinkIcon, FlaskConicalIcon } from 'lucide-react'
 import { type FunctionComponent, type ReactNode, useCallback, useMemo } from 'react'
 import type { UserAccountInfo } from '../../Chat'
 import { getVSCodeAPI } from '../../utils/VSCodeApi'
@@ -55,6 +55,12 @@ export const ModelSelectField: React.FunctionComponent<{
 
     const onModelSelect = useCallback(
         (model: Model): void => {
+            // Log event when user switches to a different model from Deep Cody.
+            if (selectedModel.id.includes('deep-cody') && selectedModel.id !== model.id) {
+                // TODO (bee) remove after testing has been completed.
+                telemetryRecorder.recordEvent('cody.deepCody', 'switch')
+            }
+
             telemetryRecorder.recordEvent('cody.modelSelector', 'select', {
                 metadata: {
                     modelIsCodyProOnly: isCodyProModel(model) ? 1 : 0,
@@ -86,7 +92,13 @@ export const ModelSelectField: React.FunctionComponent<{
             }
             parentOnModelSelect(model)
         },
-        [telemetryRecorder.recordEvent, showCodyProBadge, parentOnModelSelect, isCodyProUser]
+        [
+            selectedModel,
+            telemetryRecorder.recordEvent,
+            showCodyProBadge,
+            parentOnModelSelect,
+            isCodyProUser,
+        ]
     )
 
     // Readonly if they are an enterprise user that does not support server-sent models
@@ -296,6 +308,9 @@ function modelAvailability(
 }
 
 function getTooltip(model: Model, availability: string): string {
+    if (model.id.includes('deep-cody')) {
+        return 'Uses Claude 3.5 Sonnet (New) with other models to fetch any extra context needed for better responses'
+    }
     if (model.tags.includes(ModelTag.Waitlist)) {
         return 'Request access to this new model'
     }
@@ -343,6 +358,18 @@ const ModelTitleWithIcon: React.FC<{
     const modelBadge = getBadgeText(model, modelAvailability)
     const isDisabled = modelAvailability !== 'available'
 
+    if (model.id.includes('deep-cody')) {
+        return (
+            <span className={clsx(styles.modelTitleWithIcon, { [styles.disabled]: isDisabled })}>
+                {showIcon && <FlaskConicalIcon size={16} className={styles.modelIcon} />}
+                <span className={clsx('tw-flex-grow', styles.modelName)}>{model.title}</span>
+                <Badge variant="secondary" className={styles.badge}>
+                    Experimental ⓘ
+                </Badge>
+            </span>
+        )
+    }
+
     return (
         <span className={clsx(styles.modelTitleWithIcon, { [styles.disabled]: isDisabled })}>
             {showIcon && <ChatModelIcon model={model.provider} className={styles.modelIcon} />}
@@ -371,6 +398,7 @@ const ChatModelIcon: FunctionComponent<{ model: string; className?: string }> = 
 
 /** Common {@link ModelsService.uiGroup} values. */
 const ModelUIGroup: Record<string, string> = {
+    DeepCody: 'Mixed models, extended processing',
     Power: 'More powerful models',
     Balanced: 'Balanced for power and speed',
     Speed: 'Faster models',
@@ -379,6 +407,7 @@ const ModelUIGroup: Record<string, string> = {
 }
 
 const getModelDropDownUIGroup = (model: Model): string => {
+    if (model.id.includes('deep-cody')) return ModelUIGroup.DeepCody
     if (model.tags.includes(ModelTag.Power)) return ModelUIGroup.Power
     if (model.tags.includes(ModelTag.Balanced)) return ModelUIGroup.Balanced
     if (model.tags.includes(ModelTag.Speed)) return ModelUIGroup.Speed

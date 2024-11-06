@@ -51,7 +51,6 @@ export const AssistantMessageCell: FunctionComponent<{
 
     postMessage?: ApiPostMessage
     guardrails?: Guardrails
-    chatAgent?: string
 }> = memo(
     ({
         message,
@@ -68,7 +67,6 @@ export const AssistantMessageCell: FunctionComponent<{
         guardrails,
         smartApply,
         smartApplyEnabled,
-        chatAgent,
     }) => {
         const displayMarkdown = useMemo(
             () => (message.text ? reformatBotMessageForChat(message.text).toString() : ''),
@@ -78,8 +76,6 @@ export const AssistantMessageCell: FunctionComponent<{
         const chatModel = useChatModelByID(message.model, models)
         const ModelIcon = chatModel ? chatModelIconComponent(chatModel.id) : null
         const isAborted = isAbortErrorOrSocketHangUp(message.error)
-
-        const isDeepCodyEnabled = chatAgent === 'deep-cody'
 
         const hasLongerResponseTime = chatModel?.tags?.includes(ModelTag.StreamDisabled)
 
@@ -91,7 +87,6 @@ export const AssistantMessageCell: FunctionComponent<{
                         {chatModel
                             ? chatModel.title ?? `Model ${chatModel.id} by ${chatModel.provider}`
                             : 'Model'}
-                        {isDeepCodyEnabled ? ' with Deep Cody' : ''}
                     </span>
                 }
                 content={
@@ -224,7 +219,6 @@ export function makeHumanMessageInfo(
                     messageIndexInTranscript: assistantMessage.index - 1,
                     editorValue: newEditorValue,
                     intent: humanMessage.intent,
-                    agent: humanMessage.agent,
                 })
             }
         },
@@ -248,8 +242,7 @@ function useChatModelByID(
         (model
             ? {
                   id: model,
-                  // Backwards compatibility for Deep Cody when it was a model.
-                  title: model?.includes('deep-cody') ? '🧠 Deep Cody' : model,
+                  title: model,
                   provider: 'unknown',
                   tags: [],
               }
