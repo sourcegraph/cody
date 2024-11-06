@@ -2,29 +2,30 @@ import { authStatus, firstValueFrom, isDefined, ps } from '@sourcegraph/cody-sha
 import { getOpenCtxProviders } from '../../context/openctx'
 import type { ContextRetriever } from '../chat-view/ContextRetriever'
 import {
+    CliTool,
     type CodyTool,
     type CodyToolConfig,
+    FileTool,
     OpenCtxTool,
-    getDefaultCodyTools,
-    registerDefaultTools,
+    SearchTool,
 } from './CodyTool'
 
 /**
  * CodyToolProvider is a singleton class responsible for managing and providing access to various Cody tools.
- * It handles both default tools and OpenContext-based tools (like web and Linear integrations).
  *
- * Key responsibilities:
- * - Maintains a registry of available tools through ToolFactory
- * - Initializes and manages default Cody tools
- * - Manages OpenContext tools for external integrations
- * - Provides a unified interface to access all available tools
+ * This class:
+ * - Implements the Singleton pattern to ensure a single instance is used throughout the application.
+ * - Initializes and stores different types of Cody tools (e.g., SearchTool, CliTool, FileTool, OpenCtxTool).
+ * - Provides methods to retrieve the available tools.
+ * - Handles the initialization of OpenCtx tools based on configuration and authentication status.
+ *
+ * The class uses a ContextRetriever to fetch context for certain tools and
+ * lazily initializes the tools when they are first requested.
  */
 export class CodyToolProvider {
-    private openCtxTools: CodyTool[] = []
-    private toolFactory = new ToolFactory()
+    private openCtxTools: CodyTool[] | null = null
 
     private constructor(private contextRetriever: Pick<ContextRetriever, 'retrieveContext'>) {
-        this.initializeToolRegistry()
         this.initializeOpenCtxTools()
     }
 
@@ -34,13 +35,18 @@ export class CodyToolProvider {
         return new CodyToolProvider(contextRetriever)
     }
 
-    private initializeToolRegistry(): void {
-        registerDefaultTools(this.toolFactory.registry)
-    }
-
     public async getTools(): Promise<CodyTool[]> {
-        const defaultTools = getDefaultCodyTools(this.contextRetriever, this.toolFactory)
-        return [...defaultTools, ...this.openCtxTools]
+        // Wait for OpenCtxTools to be initialized if they haven't been already
+        if (!this.openCtxTools) {
+            await this.initializeOpenCtxTools()
+        }
+
+        return [
+            new SearchTool(this.contextRetriever),
+            new CliTool(),
+            new FileTool(),
+            ...(this.openCtxTools || []),
+        ]
     }
 
     private async initializeOpenCtxTools(): Promise<void> {
@@ -73,54 +79,11 @@ export class CodyToolProvider {
             },
         }
 
-        const providers = await firstValueFrom(getOpenCtxProviders(authStatus, true))
-        return providers
+        return (await firstValueFrom(getOpenCtxProviders(authStatus, true)))
             .map(provider => {
                 const config = OPENCTX_CONFIG[provider.providerUri as keyof typeof OPENCTX_CONFIG]
-                if (config) {
-                    this.toolFactory.registry.register({
-                        name: provider.providerUri,
-                        ...config,
-                        createInstance: toolConfig =>
-                            new OpenCtxTool(provider, toolConfig as CodyToolConfig),
-                    })
-                    return this.toolFactory.createTool(provider.providerUri)
-                }
-                return null
+                return config ? new OpenCtxTool(provider, config as CodyToolConfig) : null
             })
             .filter(isDefined)
-    }
-}
-
-interface ToolConfiguration extends CodyToolConfig {
-    name: string
-    createInstance: (config: CodyToolConfig, ...args: any[]) => CodyTool
-}
-
-export class ToolRegistry {
-    private tools: Map<string, ToolConfiguration> = new Map()
-
-    register(toolConfig: ToolConfiguration): void {
-        this.tools.set(toolConfig.name, toolConfig)
-    }
-
-    get(name: string): ToolConfiguration | undefined {
-        return this.tools.get(name)
-    }
-
-    getAllTools(): ToolConfiguration[] {
-        return Array.from(this.tools.values())
-    }
-}
-
-export class ToolFactory {
-    public readonly registry = new ToolRegistry()
-
-    createTool(name: string, ...args: any[]): CodyTool | undefined {
-        const config = this.registry.get(name)
-        if (config) {
-            return config.createInstance(config, ...args)
-        }
-        return undefined
     }
 }

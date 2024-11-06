@@ -123,7 +123,6 @@ describe('ChatController', () => {
                     error: undefined,
                     editorState: null,
                     contextFiles: [],
-                    agent: undefined,
                 },
                 {
                     speaker: 'assistant',
@@ -133,7 +132,6 @@ describe('ChatController', () => {
                     editorState: undefined,
                     text: undefined,
                     contextFiles: undefined,
-                    agent: undefined,
                 },
             ],
         })
@@ -157,7 +155,6 @@ describe('ChatController', () => {
                     error: undefined,
                     editorState: null,
                     contextFiles: [],
-                    agent: undefined,
                 },
                 {
                     speaker: 'assistant',
@@ -167,7 +164,6 @@ describe('ChatController', () => {
                     editorState: undefined,
                     text: 'Test reply 1',
                     contextFiles: undefined,
-                    agent: undefined,
                 },
             ],
         })
@@ -206,7 +202,6 @@ describe('ChatController', () => {
                     error: undefined,
                     editorState: null,
                     contextFiles: [],
-                    agent: undefined,
                 },
                 {
                     speaker: 'assistant',
@@ -216,7 +211,6 @@ describe('ChatController', () => {
                     editorState: undefined,
                     text: 'Test reply 1',
                     contextFiles: undefined,
-                    agent: undefined,
                 },
                 {
                     speaker: 'human',
@@ -226,7 +220,6 @@ describe('ChatController', () => {
                     error: undefined,
                     editorState: null,
                     contextFiles: [],
-                    agent: undefined,
                 },
                 {
                     speaker: 'assistant',
@@ -236,7 +229,6 @@ describe('ChatController', () => {
                     editorState: undefined,
                     text: 'Test reply 2',
                     contextFiles: undefined,
-                    agent: undefined,
                 },
             ],
         })
@@ -274,7 +266,6 @@ describe('ChatController', () => {
                     error: undefined,
                     editorState: null,
                     contextFiles: [],
-                    agent: undefined,
                 },
                 {
                     speaker: 'assistant',
@@ -284,7 +275,6 @@ describe('ChatController', () => {
                     editorState: undefined,
                     text: 'Test reply 1',
                     contextFiles: undefined,
-                    agent: undefined,
                 },
                 {
                     speaker: 'human',
@@ -294,7 +284,6 @@ describe('ChatController', () => {
                     error: undefined,
                     editorState: null,
                     contextFiles: [],
-                    agent: undefined,
                 },
                 {
                     speaker: 'assistant',
@@ -304,7 +293,6 @@ describe('ChatController', () => {
                     editorState: undefined,
                     text: 'Test reply 3',
                     contextFiles: undefined,
-                    agent: undefined,
                 },
             ],
         })
@@ -332,7 +320,6 @@ describe('ChatController', () => {
             editorState: null,
             signal: new AbortController().signal,
             source: 'chat',
-            agent: undefined,
         })
         await vi.runOnlyPendingTimersAsync()
         expect(mockChatClient.chat).toBeCalledTimes(1)
@@ -352,7 +339,6 @@ describe('ChatController', () => {
                     editorState: null,
                     contextFiles: [],
                     intent: undefined,
-                    agent: undefined,
                 },
                 {
                     speaker: 'assistant',
@@ -362,7 +348,6 @@ describe('ChatController', () => {
                     editorState: undefined,
                     text: undefined,
                     contextFiles: undefined,
-                    agent: undefined,
                 },
             ],
         })
