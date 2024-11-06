@@ -767,9 +767,12 @@ interface ExecuteCommandParams {
     arguments?: any[] | undefined | null
 }
 
+export type DebugMessageLogLevel = 'trace' | 'debug' | 'info' | 'warn' | 'error'
+
 export interface DebugMessage {
     channel: string
     message: string
+    level?: DebugMessageLogLevel | undefined | null
 }
 
 export interface ProgressStartParams {
