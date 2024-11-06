@@ -226,8 +226,7 @@ export function syncModels({
                                             if (deepCodyEnabled && sonnetModel) {
                                                 const DEEPCODY_MODEL =
                                                     getExperimentalClientModelByFeatureFlag(
-                                                        FeatureFlag.DeepCody,
-                                                        sonnetModel.modelRef
+                                                        FeatureFlag.DeepCody
                                                     )!
                                                 data.primaryModels.push(
                                                     ...maybeAdjustContextWindows([DEEPCODY_MODEL]).map(
