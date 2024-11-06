@@ -39,6 +39,12 @@ test('uninstall extension', async ({ openVSCode }) => {
     })
     page = await app.firstWindow()
 
+    // Handle the "Extensions have changed on disk, need to reload" dialog
+    const reloadButton = page.getByRole('button', { name: 'Reload window' })
+    if (await reloadButton.isVisible({ timeout: 1500 })) {
+        await reloadButton.click()
+    }
+
     // This will fail if the credentials are saved because the login screen will still be
     // visible, thus it acts as an implicit test that credentials were cleared out
     await signin(page)

@@ -47,20 +47,12 @@ export enum FeatureFlag {
     CodyAutocompleteFIMModelExperimentVariant3 = 'cody-autocomplete-model-experiment-variant-3',
     CodyAutocompleteFIMModelExperimentVariant4 = 'cody-autocomplete-model-experiment-variant-4',
 
-    CodyAutocompletePreloadingExperimentBaseFeatureFlag = 'cody-autocomplete-preloading-experiment-flag',
-    CodyAutocompletePreloadingExperimentVariant1 = 'cody-autocomplete-preloading-experiment-variant-1',
-    CodyAutocompletePreloadingExperimentVariant2 = 'cody-autocomplete-preloading-experiment-variant-2',
-
     CodyAutocompleteContextExperimentBaseFeatureFlag = 'cody-autocomplete-context-experiment-flag',
     CodyAutocompleteContextExperimentVariant1 = 'cody-autocomplete-context-experiment-variant-1',
     CodyAutocompleteContextExperimentVariant2 = 'cody-autocomplete-context-experiment-variant-2',
     CodyAutocompleteContextExperimentVariant3 = 'cody-autocomplete-context-experiment-variant-3',
     CodyAutocompleteContextExperimentVariant4 = 'cody-autocomplete-context-experiment-variant-4',
     CodyAutocompleteContextExperimentControl = 'cody-autocomplete-context-experiment-control',
-
-    // When enabled, it will extend the number of languages considered for context (e.g. React files
-    // will be able to use CSS files as context).
-    CodyAutocompleteContextExtendLanguagePool = 'cody-autocomplete-context-extend-language-pool',
 
     // use-ssc-for-cody-subscription is a feature flag that enables the use of SSC as the source of truth for Cody subscription data.
     UseSscForCodySubscription = 'use-ssc-for-cody-subscription',
@@ -97,6 +89,11 @@ export enum FeatureFlag {
 
     /** Whether user has access to the experimental Cody Reflection / Deep Cody feature. */
     DeepCody = 'cody-deep-reflection',
+
+    /**
+     * Whether the current repo context chip is shown in the chat input by default
+     */
+    NoDefaultRepoChip = 'no-default-repo-chip',
 }
 
 const ONE_HOUR = 60 * 60 * 1000

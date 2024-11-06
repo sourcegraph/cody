@@ -108,7 +108,7 @@ describe('ChatController', () => {
             signal: new AbortController().signal,
             source: 'chat',
         })
-        expect(postMessageSpy.mock.calls.at(2)?.at(0)).toStrictEqual<
+        expect(postMessageSpy.mock.calls.at(3)?.at(0)).toStrictEqual<
             Extract<ExtensionMessage, { type: 'transcript' }>
         >({
             type: 'transcript',
@@ -123,6 +123,7 @@ describe('ChatController', () => {
                     error: undefined,
                     editorState: null,
                     contextFiles: [],
+                    agent: undefined,
                 },
                 {
                     speaker: 'assistant',
@@ -132,6 +133,7 @@ describe('ChatController', () => {
                     editorState: undefined,
                     text: undefined,
                     contextFiles: undefined,
+                    agent: undefined,
                 },
             ],
         })
@@ -140,7 +142,7 @@ describe('ChatController', () => {
         await vi.runOnlyPendingTimersAsync()
         expect(mockChatClient.chat).toBeCalledTimes(1)
         expect(addBotMessageSpy).toHaveBeenCalledWith('1', ps`Test reply 1`, 'my-model')
-        expect(postMessageSpy.mock.calls.at(4)?.at(0)).toStrictEqual<
+        expect(postMessageSpy.mock.calls.at(5)?.at(0)).toStrictEqual<
             Extract<ExtensionMessage, { type: 'transcript' }>
         >({
             type: 'transcript',
@@ -155,6 +157,7 @@ describe('ChatController', () => {
                     error: undefined,
                     editorState: null,
                     contextFiles: [],
+                    agent: undefined,
                 },
                 {
                     speaker: 'assistant',
@@ -164,6 +167,7 @@ describe('ChatController', () => {
                     editorState: undefined,
                     text: 'Test reply 1',
                     contextFiles: undefined,
+                    agent: undefined,
                 },
             ],
         })
@@ -187,7 +191,7 @@ describe('ChatController', () => {
         await vi.runOnlyPendingTimersAsync()
         expect(mockChatClient.chat).toBeCalledTimes(1)
         expect(addBotMessageSpy).toHaveBeenCalledWith('2', ps`Test reply 2`, 'my-model')
-        expect(postMessageSpy.mock.calls.at(3)?.at(0)).toStrictEqual<
+        expect(postMessageSpy.mock.calls.at(4)?.at(0)).toStrictEqual<
             Extract<ExtensionMessage, { type: 'transcript' }>
         >({
             type: 'transcript',
@@ -202,6 +206,7 @@ describe('ChatController', () => {
                     error: undefined,
                     editorState: null,
                     contextFiles: [],
+                    agent: undefined,
                 },
                 {
                     speaker: 'assistant',
@@ -211,6 +216,7 @@ describe('ChatController', () => {
                     editorState: undefined,
                     text: 'Test reply 1',
                     contextFiles: undefined,
+                    agent: undefined,
                 },
                 {
                     speaker: 'human',
@@ -220,6 +226,7 @@ describe('ChatController', () => {
                     error: undefined,
                     editorState: null,
                     contextFiles: [],
+                    agent: undefined,
                 },
                 {
                     speaker: 'assistant',
@@ -229,6 +236,7 @@ describe('ChatController', () => {
                     editorState: undefined,
                     text: 'Test reply 2',
                     contextFiles: undefined,
+                    agent: undefined,
                 },
             ],
         })
@@ -251,7 +259,7 @@ describe('ChatController', () => {
         await vi.runOnlyPendingTimersAsync()
         expect(mockChatClient.chat).toBeCalledTimes(1)
         expect(addBotMessageSpy).toHaveBeenCalledWith('3', ps`Test reply 3`, 'my-model')
-        expect(postMessageSpy.mock.calls.at(3)?.at(0)).toStrictEqual<
+        expect(postMessageSpy.mock.calls.at(4)?.at(0)).toStrictEqual<
             Extract<ExtensionMessage, { type: 'transcript' }>
         >({
             type: 'transcript',
@@ -266,6 +274,7 @@ describe('ChatController', () => {
                     error: undefined,
                     editorState: null,
                     contextFiles: [],
+                    agent: undefined,
                 },
                 {
                     speaker: 'assistant',
@@ -275,6 +284,7 @@ describe('ChatController', () => {
                     editorState: undefined,
                     text: 'Test reply 1',
                     contextFiles: undefined,
+                    agent: undefined,
                 },
                 {
                     speaker: 'human',
@@ -284,6 +294,7 @@ describe('ChatController', () => {
                     error: undefined,
                     editorState: null,
                     contextFiles: [],
+                    agent: undefined,
                 },
                 {
                     speaker: 'assistant',
@@ -293,6 +304,7 @@ describe('ChatController', () => {
                     editorState: undefined,
                     text: 'Test reply 3',
                     contextFiles: undefined,
+                    agent: undefined,
                 },
             ],
         })
@@ -320,11 +332,12 @@ describe('ChatController', () => {
             editorState: null,
             signal: new AbortController().signal,
             source: 'chat',
+            agent: undefined,
         })
         await vi.runOnlyPendingTimersAsync()
         expect(mockChatClient.chat).toBeCalledTimes(1)
         expect(addBotMessageSpy).toHaveBeenCalledWith('1', ps`Test partial reply`, 'my-model')
-        expect(postMessageSpy.mock.calls.at(4)?.at(0)).toStrictEqual<
+        expect(postMessageSpy.mock.calls.at(5)?.at(0)).toStrictEqual<
             Extract<ExtensionMessage, { type: 'transcript' }>
         >({
             type: 'transcript',
@@ -339,6 +352,7 @@ describe('ChatController', () => {
                     editorState: null,
                     contextFiles: [],
                     intent: undefined,
+                    agent: undefined,
                 },
                 {
                     speaker: 'assistant',
@@ -348,6 +362,7 @@ describe('ChatController', () => {
                     editorState: undefined,
                     text: undefined,
                     contextFiles: undefined,
+                    agent: undefined,
                 },
             ],
         })

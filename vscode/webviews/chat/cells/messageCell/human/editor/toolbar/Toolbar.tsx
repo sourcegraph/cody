@@ -1,10 +1,12 @@
 import type { Action, ChatMessage, Model } from '@sourcegraph/cody-shared'
 import { useExtensionAPI } from '@sourcegraph/prompt-editor'
 import clsx from 'clsx'
-import { type FunctionComponent, useCallback } from 'react'
+import { type FunctionComponent, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { UserAccountInfo } from '../../../../../../Chat'
 import { ModelSelectField } from '../../../../../../components/modelSelectField/ModelSelectField'
 import { PromptSelectField } from '../../../../../../components/promptSelectField/PromptSelectField'
+import { Button } from '../../../../../../components/shadcn/ui/button'
+import { Tooltip, TooltipContent, TooltipTrigger } from '../../../../../../components/shadcn/ui/tooltip'
 import { useActionSelect } from '../../../../../../prompts/PromptsTab'
 import { useConfig } from '../../../../../../utils/useConfig'
 import { AddContextButton } from './AddContextButton'
@@ -33,6 +35,10 @@ export const Toolbar: FunctionComponent<{
     className?: string
     intent?: ChatMessage['intent']
     onSelectIntent?: (intent: ChatMessage['intent']) => void
+
+    /** Deep Cody */
+    chatAgent?: string
+    onDeepCodyToggleClick?: () => void
 }> = ({
     userInfo,
     isEditorFocused,
@@ -46,6 +52,8 @@ export const Toolbar: FunctionComponent<{
     models,
     intent,
     onSelectIntent,
+    chatAgent,
+    onDeepCodyToggleClick,
 }) => {
     /**
      * If the user clicks in a gap or on the toolbar outside of any of its buttons, report back to
@@ -92,6 +100,13 @@ export const Toolbar: FunctionComponent<{
                     focusEditor={focusEditor}
                     className="tw-mr-1"
                 />
+                {/* Currently support Sonnet only */}
+                {onDeepCodyToggleClick && models?.[0]?.id?.includes('sonnet') && (
+                    <DeepCodySwitchToolbarItem
+                        chatAgent={chatAgent}
+                        onDeepCodyToggleClick={onDeepCodyToggleClick}
+                    />
+                )}
             </div>
             <div className="tw-flex-1 tw-flex tw-justify-end">
                 <SubmitButton
@@ -158,3 +173,61 @@ const ModelSelectFieldToolbarItem: FunctionComponent<{
         )
     )
 }
+
+const DeepCodySwitchToolbarItem: FunctionComponent<{
+    chatAgent?: string
+    onDeepCodyToggleClick?: () => void
+    className?: string
+}> = ({ className, chatAgent, onDeepCodyToggleClick }) => {
+    const isEnabled = chatAgent === 'deep-cody'
+    const [showStatus, setShowStatus] = useState(false)
+    const [isTooltipOpen, setIsTooltipOpen] = useState(false)
+    const prevChatAgentRef = useRef(chatAgent)
+    const isUserInteractionRef = useRef(false)
+
+    useEffect(() => {
+        if (prevChatAgentRef.current !== chatAgent && isUserInteractionRef.current) {
+            setShowStatus(true)
+            setIsTooltipOpen(true)
+
+            const timer = setTimeout(() => {
+                setShowStatus(false)
+                setIsTooltipOpen(false)
+                isUserInteractionRef.current = false // Reset the interaction flag
+            }, 5000)
+
+            prevChatAgentRef.current = chatAgent
+
+            return () => clearTimeout(timer)
+        }
+        prevChatAgentRef.current = chatAgent
+        return
+    }, [chatAgent])
+
+    const handleToggleClick = () => {
+        isUserInteractionRef.current = true // Set the interaction flag when user clicks
+        onDeepCodyToggleClick?.()
+        setIsTooltipOpen(true) // Show tooltip on click
+    }
+
+    const tooltipContent = useMemo(
+        () =>
+            showStatus
+                ? `Deep Cody is ${isEnabled ? 'enabled' : 'disabled'}!`
+                : '[Experimental] Deep Cody may respond slower to fetch additional context for improved output',
+        [showStatus, isEnabled]
+    )
+
+    return (
+        <Tooltip open={isTooltipOpen} onOpenChange={setIsTooltipOpen}>
+            <TooltipTrigger asChild>
+                <Button variant="text" onClick={handleToggleClick} className="!tw-p-0 !tw-m-0">
+                    <span className={isEnabled ? '' : 'tw-grayscale'}>🧠</span>
+                </Button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">{tooltipContent}</TooltipContent>
+        </Tooltip>
+    )
+}
+
+DeepCodySwitchToolbarItem.displayName = 'DeepCodySwitchToolbarItem'

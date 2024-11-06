@@ -12,7 +12,6 @@ import {
     isNetworkError,
     telemetryRecorder,
 } from '@sourcegraph/cody-shared'
-
 import type { KnownString, TelemetryEventParameters } from '@sourcegraph/telemetry'
 
 import { captureException, shouldErrorBeReported } from '../services/sentry/sentry'
@@ -26,6 +25,7 @@ import type {
 } from '../common/persistence-tracker/types'
 import type { GitIdentifiersForFile } from '../repository/git-metadata-for-editor'
 import { GitHubDotComRepoMetadata } from '../repository/githubRepoMetadata'
+import { type CodeGenEventMetadata, charactersLogger } from '../services/CharactersLogger'
 import { upstreamHealthProvider } from '../services/UpstreamHealthProvider'
 import {
     AUTOCOMPLETE_STAGE_COUNTER_INITIAL_STATE,
@@ -33,6 +33,7 @@ import {
     autocompleteStageCounterLogger,
 } from '../services/autocomplete-stage-counter-logger'
 import { type CompletionIntent, CompletionIntentTelemetryMetadataMapping } from '../tree-sitter/queries'
+
 import type { ContextSummary } from './context/context-mixer'
 import {
     InlineCompletionsResultSource,
@@ -209,7 +210,9 @@ interface SuggestedEventPayload extends SharedEventPayload {
 }
 
 /** Emitted when a completion was fully accepted by the user */
-interface AcceptedEventPayload extends SharedEventPayload {
+interface AcceptedEventPayload
+    extends SharedEventPayload,
+        Omit<CodeGenEventMetadata, 'charsInserted' | 'charsDeleted'> {
     /**
      * Information about which item of the suggested items list was being accepted.
      *
@@ -881,13 +884,21 @@ export function prepareSuggestionEvent({
     return null
 }
 
-export function accepted(
-    id: CompletionLogID,
-    document: vscode.TextDocument,
-    completion: InlineCompletionItemWithAnalytics,
-    trackedRange: vscode.Range | undefined,
+export function accepted({
+    id,
+    document,
+    completion,
+    trackedRange,
+    isDotComUser,
+    position,
+}: {
+    id: CompletionLogID
+    document: vscode.TextDocument
+    completion: InlineCompletionItemWithAnalytics
+    trackedRange: vscode.Range | undefined
     isDotComUser: boolean
-): void {
+    position: vscode.Position
+}): void {
     const completionEvent = activeSuggestionRequests.get(id)
     if (!completionEvent || completionEvent.acceptedAt) {
         // Log a debug event, this case should not happen in production
@@ -938,8 +949,24 @@ export function accepted(
 
     completionEvent.acceptedAt = performance.now()
 
+    const rangeForCharacterMetadata = trackedRange || new vscode.Range(position, position)
+    const { charsDeleted, charsInserted, ...charactersLoggerMetadata } =
+        charactersLogger.getChangeEventMetadataForCodyCodeGenEvents({
+            document,
+            contentChanges: [
+                {
+                    range: rangeForCharacterMetadata,
+                    rangeOffset: document.offsetAt(rangeForCharacterMetadata.start),
+                    rangeLength: 0,
+                    text: completion.insertText,
+                },
+            ],
+            reason: undefined,
+        })
+
     logSuggestionEvents(isDotComUser)
     logCompletionAcceptedEvent({
+        ...charactersLoggerMetadata,
         ...getSharedParams(completionEvent),
         acceptedItem: completionItemToItemInfo(completion, isDotComUser),
     })
@@ -948,6 +975,7 @@ export function accepted(
     if (trackedRange === undefined) {
         return
     }
+
     if (persistenceTracker === null) {
         persistenceTracker = new PersistenceTracker<CompletionAnalyticsID>(vscode.workspace)
     }

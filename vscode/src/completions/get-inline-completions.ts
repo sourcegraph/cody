@@ -309,7 +309,9 @@ async function doGetInlineCompletions(
     // Only log a completion as started if it's either served from cache _or_ the debounce interval
     // has passed to ensure we don't log too many start events where we end up not doing any work at
     // all.
-    CompletionAnalyticsLogger.flushActiveSuggestionRequests(isDotComUser)
+    if (triggerKind !== TriggerKind.Preload) {
+        CompletionAnalyticsLogger.flushActiveSuggestionRequests(isDotComUser)
+    }
     const multiline = Boolean(multilineTrigger)
     const logId = CompletionAnalyticsLogger.create({
         multiline,

@@ -43,7 +43,8 @@ export class DefaultPrompter {
     public async makePrompt(
         chat: ChatBuilder,
         codyApiVersion: number,
-        mixins: PromptMixin[] = []
+        mixins: PromptMixin[] = [],
+        agentID?: string
     ): Promise<PromptInfo> {
         return wrapInActiveSpan('chat.prompter', async () => {
             const contextWindow = await firstResultFromOperation(ChatBuilder.contextWindowForChat(chat))
@@ -71,12 +72,18 @@ export class DefaultPrompter {
             // It also allows adding the preamble only when there is context to display, without wasting tokens on the same preamble repeatedly.
             if (
                 !this.isCommand &&
+                !agentID &&
                 Boolean(this.explicitContext.length || historyItems.length || this.corpusContext.length)
             ) {
                 mixins.push(PromptMixin.getContextMixin())
             }
 
-            reverseTranscript[0] = PromptMixin.mixInto(reverseTranscript[0], chat.selectedModel, mixins)
+            reverseTranscript[0] = PromptMixin.mixInto(
+                reverseTranscript[0],
+                chat.selectedModel,
+                mixins,
+                agentID
+            )
 
             const messagesIgnored = promptBuilder.tryAddMessages(reverseTranscript)
             if (messagesIgnored) {

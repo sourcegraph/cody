@@ -6,9 +6,20 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 ### Added
 
-### Fixed
+- Autocomplete: Enabled completions preloading on cursor movement. [pull/6043](https://github.com/sourcegraph/cody/pull/6043)
+- Telemetry: Added `cody.debug.logCharacterCounters` for debugging. [pull/6057](https://github.com/sourcegraph/cody/pull/6057)
 
+### Fixed
+- Chat: This patch updates the chat keyboard shortcuts to be as follows, thereby avoiding the tendency to "double-add" a code snippet when using the `alt+L` shortcut:
+  - `Alt+L`: between chat and editor (this is unchanged)
+  - `Shift+Alt+L` (previously alt+L): add selection as context:
+  - `Shift+Ctrl+L` (previously shift+alt+L): new chat
 ### Changed
+
+## 1.40.2
+
+### Fixed
+- Agent: Fixed bugs in `workspace::getConfiguration` vscode shim [pull/6058](https://github.com/sourcegraph/cody/pull/6058)
 
 ## 1.40.1
 
@@ -20,8 +31,6 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 ### Added
 
 - Proxy: Support for `cody.net.proxy` settings that enable configuation a cody specific proxy server. This also supports `cody.net.proxy.path` to provide a UNIX domain socket directly. [pull/5883](https://github.com/sourcegraph/cody/pull/5883)
-
-### Changed
 
 ### Fixed
 

@@ -120,7 +120,7 @@ import { CodyToolProvider } from '../agentic/CodyToolProvider'
 import { DeepCodyAgent } from '../agentic/DeepCody'
 import { getMentionMenuData } from '../context/chatContext'
 import type { ChatIntentAPIClient } from '../context/chatIntentAPIClient'
-import { observeInitialContext } from '../initialContext'
+import { observeDefaultContext } from '../initialContext'
 import {
     CODY_BLOG_URL_o1_WAITLIST,
     type ConfigurationSubsetForWebview,
@@ -208,6 +208,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
     public dispose(): void {
         vscode.Disposable.from(...this.disposables).dispose()
         this.featureCodyExperimentalOneBox.subscription.unsubscribe()
+        this.featureCodyExperimentalDeepCody.subscription.unsubscribe()
         this.disposables = []
     }
 
@@ -291,6 +292,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     intent: message.intent,
                     intentScores: message.intentScores,
                     manuallySelectedIntent: message.manuallySelectedIntent,
+                    agent: message.agent ?? undefined,
                 })
                 break
             }
@@ -304,6 +306,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     intent: message.intent,
                     intentScores: message.intentScores,
                     manuallySelectedIntent: message.manuallySelectedIntent,
+                    agent: message.agent ?? undefined,
                 })
                 break
             }
@@ -510,6 +513,10 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyExperimentalOneBox)
     )
 
+    private featureCodyExperimentalDeepCody = storeLastValue(
+        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.DeepCody)
+    )
+
     private async getConfigForWebview(): Promise<ConfigurationSubsetForWebview & LocalEnv> {
         const { configuration, auth } = await currentResolvedConfig()
         const sidebarViewOnly = this.extensionClient.capabilities?.webviewNativeConfig?.view === 'single'
@@ -617,6 +624,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         intent: detectedIntent,
         intentScores: detectedIntentScores,
         manuallySelectedIntent,
+        agent,
     }: {
         requestID: string
         inputText: PromptString
@@ -628,6 +636,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         intent?: ChatMessage['intent'] | undefined | null
         intentScores?: { intent: string; score: number }[] | undefined | null
         manuallySelectedIntent?: boolean | undefined | null
+        agent?: string
     }): Promise<void> {
         return tracer.startActiveSpan('chat.submit', async (span): Promise<void> => {
             span.setAttribute('sampled', true)
@@ -642,7 +651,10 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 text: inputText,
                 editorState,
                 intent: detectedIntent,
+                agent,
             })
+            this.postViewTranscript({ speaker: 'assistant' })
+
             await this.saveSession()
             signal.throwIfAborted()
 
@@ -658,6 +670,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     intent: detectedIntent,
                     intentScores: detectedIntentScores,
                     manuallySelectedIntent,
+                    agent,
                 },
                 span
             )
@@ -676,6 +689,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             intent: detectedIntent,
             intentScores: detectedIntentScores,
             manuallySelectedIntent,
+            agent,
         }: Parameters<typeof this.handleUserMessageSubmission>[0],
         span: Span
     ): Promise<void> {
@@ -702,6 +716,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             repoIsPublic,
             traceId: span.spanContext().traceId,
             promptText: inputText,
+            agent,
         } as const
         const tokenCounterUtils = await getTokenCounterUtils()
 
@@ -811,14 +826,14 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             }
 
             // Experimental Feature: Deep Cody
-            if (model === DeepCodyAgent.ModelRef) {
+            const isDeepCodyEnabled = this.featureCodyExperimentalDeepCody && agent === DeepCodyAgent.ID
+            if (isDeepCodyEnabled) {
                 const agenticContext = await new DeepCodyAgent(
                     this.chatBuilder,
                     this.chatClient,
                     await this.toolProvider.getTools(),
-                    span,
                     corpusContext
-                ).getContext(signal)
+                ).getContext(span, signal)
                 corpusContext.push(...agenticContext)
             }
 
@@ -840,7 +855,8 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     signal,
                     requestID,
                     versions.codyAPIVersion,
-                    contextAlternatives
+                    contextAlternatives,
+                    agent
                 )
 
                 telemetryEvents['cody.chat-question/executed'].record(
@@ -1048,7 +1064,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         const [priorityContext, retrievedContext, openCtxContext] = await Promise.all([
             priorityContextPromise,
             retrievedContextPromise.catch(e => {
-                this.postError(new Error(`Error retrieving context, no search context was used: ${e}`))
+                this.postError(new Error(`Failed to retrieve search context: ${e}`))
                 return []
             }),
             openCtxContextPromise,
@@ -1106,6 +1122,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         intent,
         intentScores,
         manuallySelectedIntent,
+        agent,
     }: {
         requestID: string
         text: PromptString
@@ -1115,6 +1132,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         intent?: ChatMessage['intent'] | undefined | null
         intentScores?: { intent: string; score: number }[] | undefined | null
         manuallySelectedIntent?: boolean | undefined | null
+        agent?: string
     }): Promise<void> {
         const abortSignal = this.startNewSubmitOrEditOperation()
 
@@ -1141,6 +1159,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 intent,
                 intentScores,
                 manuallySelectedIntent,
+                agent,
             })
         } catch {
             this.postError(new Error('Failed to edit prompt'), 'transcript')
@@ -1329,9 +1348,15 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         abortSignal: AbortSignal,
         requestID: string,
         codyApiVersion: number,
-        contextAlternatives?: RankedContext[]
+        contextAlternatives?: RankedContext[],
+        agentID?: string
     ): Promise<PromptInfo> {
-        const { prompt, context } = await prompter.makePrompt(this.chatBuilder, codyApiVersion)
+        const { prompt, context } = await prompter.makePrompt(
+            this.chatBuilder,
+            codyApiVersion,
+            [],
+            agentID
+        )
         abortSignal.throwIfAborted()
 
         // Update UI based on prompt construction. Includes the excluded context items to display in the UI
@@ -1691,7 +1716,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         )
 
         // Listen for API calls from the webview.
-        const initialContext = observeInitialContext({
+        const defaultContext = observeDefaultContext({
             chatBuilder: this.chatBuilder.changes,
         }).pipe(shareReplay())
 
@@ -1755,7 +1780,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                             await modelsService.setSelectedModel(ModelUsage.Chat, model)
                         })
                     },
-                    initialContext: () => initialContext.pipe(skipPendingOperation()),
+                    defaultContext: () => defaultContext.pipe(skipPendingOperation()),
                     detectIntent: text =>
                         promiseFactoryToObservable<
                             | {

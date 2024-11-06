@@ -12,7 +12,6 @@ import {
     type FileURI,
     type PromptString,
     type Result,
-    type SourcegraphCompletionsClient,
     assertFileURI,
     authStatus,
     cenv,
@@ -33,7 +32,6 @@ import { logDebug } from '../output-channel-logger'
 import path from 'node:path'
 import { getEditor } from '../editor/active-editor'
 import { getSymfPath } from './download-symf'
-import { rewriteKeywordQuery } from './rewrite-keyword-query'
 
 const execFile = promisify(_execFile)
 
@@ -73,10 +71,7 @@ export class SymfRunner implements vscode.Disposable {
 
     private disposables: vscode.Disposable[] = []
 
-    constructor(
-        private context: vscode.ExtensionContext,
-        private completionsClient: SourcegraphCompletionsClient
-    ) {
+    constructor(private context: vscode.ExtensionContext) {
         const indexRoot = vscode.Uri.joinPath(context.globalStorageUri, 'symf', 'indexroot').with(
             // On VS Code Desktop, this is a `vscode-userdata:` URI that actually just refers to
             // file system paths.
@@ -130,11 +125,8 @@ export class SymfRunner implements vscode.Disposable {
     }
 
     public getResults(userQuery: PromptString, scopeDirs: vscode.Uri[]): Promise<Promise<Result[]>[]> {
-        const expandedQuery = rewriteKeywordQuery(this.completionsClient, userQuery)
         return Promise.resolve(
-            scopeDirs
-                .filter(isFileURI)
-                .map(scopeDir => this.getResultsForScopeDir(userQuery, expandedQuery, scopeDir))
+            scopeDirs.filter(isFileURI).map(scopeDir => this.getResultsForScopeDir(userQuery, scopeDir))
         )
     }
 
@@ -177,11 +169,7 @@ export class SymfRunner implements vscode.Disposable {
      * @param keywordQuery is a promise, because query expansion might be an expensive
      * operation that is best done concurrently with querying and (re)building the index.
      */
-    private async getResultsForScopeDir(
-        userQuery: PromptString,
-        keywordQuery: Promise<string>,
-        scopeDir: FileURI
-    ): Promise<Result[]> {
+    private async getResultsForScopeDir(userQuery: PromptString, scopeDir: FileURI): Promise<Result[]> {
         const maxRetries = 10
 
         // Run in a loop in case the index is deleted before we can query it
@@ -200,7 +188,7 @@ export class SymfRunner implements vscode.Disposable {
                     indexNotFound = true
                     return ''
                 }
-                return this.unsafeRunQuery(userQuery, await keywordQuery, scopeDir)
+                return this.unsafeRunQuery(userQuery, scopeDir)
             })
             if (indexNotFound) {
                 continue
@@ -315,12 +303,9 @@ export class SymfRunner implements vscode.Disposable {
         return lock
     }
 
-    private async unsafeRunQuery(
-        userQuery: PromptString,
-        keywordQuery: string,
-        scopeDir: FileURI
-    ): Promise<string> {
+    private async unsafeRunQuery(userQuery: PromptString, scopeDir: FileURI): Promise<string> {
         const { indexDir } = this.getIndexDir(scopeDir)
+        const keywordQuery = userQuery.toString()
         const symfPath = await this.mustSymfPath()
         const symfArgs = [
             '--index-root',

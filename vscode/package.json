@@ -3,7 +3,7 @@
   "name": "cody-ai",
   "private": true,
   "displayName": "Cody: AI Coding Assistant with Autocomplete & Chat",
-  "version": "1.40.1",
+  "version": "1.40.2",
   "publisher": "sourcegraph",
   "license": "Apache-2.0",
   "icon": "resources/cody.png",
@@ -575,6 +575,13 @@
         "title": "Copy Cody Extension Version"
       },
       {
+        "command": "cody.debug.logCharacterCounters",
+        "title": "[Internal] Log character logger counters",
+        "category": "Cody Debug",
+        "group": "Debug",
+        "when": "cody.activated"
+      },
+      {
         "command": "cody.test.set-context-filters",
         "title": "[Internal] Set Context Filters Overwrite",
         "enablement": "cody.activated && cody.devOrTest"
@@ -608,12 +615,12 @@
       },
       {
         "command": "cody.chat.new",
-        "key": "shift+alt+/",
+        "key": "shift+ctrl+/",
         "when": "cody.activated"
       },
       {
         "command": "cody.chat.new",
-        "key": "shift+alt+l",
+        "key": "shift+ctrl+l",
         "when": "cody.activated"
       },
       {
@@ -650,12 +657,12 @@
       },
       {
         "command": "cody.mention.selection",
-        "key": "alt+l",
+        "key": "shift+alt+l",
         "when": "cody.activated && editorTextFocus && editorHasSelection"
       },
       {
         "command": "cody.mention.selection",
-        "key": "alt+/",
+        "key": "shift+alt+/",
         "when": "cody.activated && editorTextFocus && editorHasSelection"
       },
       {
@@ -1237,11 +1244,6 @@
             }
           }
         },
-        "cody.autocomplete.experimental.preloadDebounceInterval": {
-          "type": "number",
-          "default": 0,
-          "markdownDescription": "Changes the preload debounce interval for autocomplete requests triggered on cursor movement."
-        },
         "openctx.enable": {
           "type": "boolean",
           "markdownDescription": "Enable OpenCtx providers for Cody.",
@@ -1393,6 +1395,7 @@
     "@radix-ui/react-popover": "^1.0.7",
     "@radix-ui/react-progress": "^1.1.0",
     "@radix-ui/react-slot": "^1.0.2",
+    "@radix-ui/react-switch": "^1.1.1",
     "@radix-ui/react-tabs": "^1.1.0",
     "@radix-ui/react-tooltip": "^1.0.7",
     "@sentry/browser": "^7.107.0",

@@ -2,7 +2,7 @@ import { Observable } from 'observable-fns'
 import type { AuthStatus, ModelsData, ResolvedConfiguration, UserProductSubscription } from '../..'
 import type { SerializedPromptEditorState } from '../..'
 import type { ChatMessage, UserLocalHistory } from '../../chat/transcript/messages'
-import type { ContextItem } from '../../codebase-context/messages'
+import type { ContextItem, DefaultContext } from '../../codebase-context/messages'
 import type { CodyCommand } from '../../commands/types'
 import type { FeatureFlag } from '../../experimentation/FeatureFlagProvider'
 import type { ContextMentionProviderMetadata } from '../../mentions/api'
@@ -63,9 +63,9 @@ export interface WebviewToExtensionAPI {
     setChatModel(model: Model['id']): Observable<void>
 
     /**
-     * Observe the initial context that should be populated in the chat message input field.
+     * Observe the default context that should be populated in the chat message input field and suggestions.
      */
-    initialContext(): Observable<ContextItem[]>
+    defaultContext(): Observable<DefaultContext>
 
     detectIntent(
         text: string
@@ -104,7 +104,7 @@ export function createExtensionAPI(
     messageAPI: ReturnType<typeof createMessageAPIForWebview>,
 
     // As a workaround for Cody Web, support providing static initial context.
-    staticInitialContext?: ContextItem[]
+    staticDefaultContext?: DefaultContext
 ): WebviewToExtensionAPI {
     const hydratePromptMessage = proxyExtensionAPI(messageAPI, 'hydratePromptMessage')
 
@@ -116,11 +116,12 @@ export function createExtensionAPI(
         models: proxyExtensionAPI(messageAPI, 'models'),
         chatModels: proxyExtensionAPI(messageAPI, 'chatModels'),
         highlights: proxyExtensionAPI(messageAPI, 'highlights'),
-        hydratePromptMessage: promptText => hydratePromptMessage(promptText, staticInitialContext),
+        hydratePromptMessage: promptText =>
+            hydratePromptMessage(promptText, staticDefaultContext?.initialContext),
         setChatModel: proxyExtensionAPI(messageAPI, 'setChatModel'),
-        initialContext: staticInitialContext
-            ? () => Observable.of(staticInitialContext)
-            : proxyExtensionAPI(messageAPI, 'initialContext'),
+        defaultContext: staticDefaultContext
+            ? () => Observable.of(staticDefaultContext)
+            : proxyExtensionAPI(messageAPI, 'defaultContext'),
         detectIntent: proxyExtensionAPI(messageAPI, 'detectIntent'),
         promptsMigrationStatus: proxyExtensionAPI(messageAPI, 'promptsMigrationStatus'),
         startPromptsMigration: proxyExtensionAPI(messageAPI, 'startPromptsMigration'),

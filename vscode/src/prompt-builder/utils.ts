@@ -8,6 +8,7 @@ import {
     populateCodeContextTemplate,
     populateContextTemplateFromText,
     populateCurrentSelectedCodeContextTemplate,
+    populateMemoryContextTemplate,
     ps,
 } from '@sourcegraph/cody-shared'
 
@@ -50,6 +51,10 @@ export function renderContextItem(contextItem: ContextItem): ContextMessage | nu
             messageText = content
             break
         default:
+            if (source === ContextItemSource.Agentic && title?.toString() === 'Chat Memory') {
+                messageText = populateMemoryContextTemplate(content)
+                break
+            }
             // title is a required field for ContextItemOpenctx, only checking for type safety here.
             if (contextItem.type === 'openctx' && title) {
                 messageText = ps`Content for "{title}" from {displayPath}:\n"`

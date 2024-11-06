@@ -1,15 +1,16 @@
 import * as vscode from 'vscode'
 import type { URI } from 'vscode-uri'
 
-import { getContextRange } from '../../../doc-context-getters'
-import type { ContextRetriever, ContextRetrieverOptions } from '../../../types'
-import { type DocumentHistory, VSCodeDocumentHistory } from './history'
-
 import { isDefined } from '@sourcegraph/cody-shared'
+
+import { getContextRange } from '../../../doc-context-getters'
 import { lastNLines } from '../../../text-processing'
+import type { ContextRetriever, ContextRetrieverOptions } from '../../../types'
 import { RetrieverIdentifier, type ShouldUseContextParams, shouldBeUsedAsContext } from '../../utils'
 import { type CachedRerieverOptions, CachedRetriever } from '../cached-retriever'
+
 import { type JaccardMatch, bestJaccardMatches } from './bestJaccardMatch'
+import { type DocumentHistory, VSCodeDocumentHistory } from './history'
 
 /**
  * The size of the Jaccard distance match window in number of lines. It determines how many
@@ -125,7 +126,6 @@ export class JaccardSimilarityRetriever extends CachedRetriever implements Conte
         const files: FileContents[] = []
 
         const curLang = currentDocument.languageId
-        const { enableExtendedLanguagePool } = this.history
 
         function addDocument(document: vscode.TextDocument): void {
             // Only add files and VSCode user settings.
@@ -133,7 +133,6 @@ export class JaccardSimilarityRetriever extends CachedRetriever implements Conte
                 return
             }
             const params: ShouldUseContextParams = {
-                enableExtendedLanguagePool,
                 baseLanguageId: curLang,
                 languageId: document.languageId,
             }

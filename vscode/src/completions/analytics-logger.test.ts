@@ -80,7 +80,14 @@ describe('analytics-logger', () => {
             document,
             position,
         })
-        CompletionAnalyticsLogger.accepted(id, document, item, range(0, 0, 0, 0), false)
+        CompletionAnalyticsLogger.accepted({
+            id,
+            document,
+            completion: item,
+            trackedRange: range(0, 0, 0, 0),
+            isDotComUser: false,
+            position,
+        })
 
         expect(recordSpy).toHaveBeenCalledWith('cody.completion', 'suggested', {
             version: 0,
@@ -139,7 +146,14 @@ describe('analytics-logger', () => {
             document,
             position,
         })
-        CompletionAnalyticsLogger.accepted(id2, document, item, range(0, 0, 0, 0), false)
+        CompletionAnalyticsLogger.accepted({
+            id: id2,
+            document,
+            completion: item,
+            trackedRange: range(0, 0, 0, 0),
+            isDotComUser: false,
+            position,
+        })
 
         const loggerItem2 = CompletionAnalyticsLogger.getCompletionEvent(id2)
         expect(loggerItem2?.params.id).toBe(completionId)

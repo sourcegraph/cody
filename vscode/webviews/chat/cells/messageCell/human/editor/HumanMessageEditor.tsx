@@ -10,7 +10,7 @@ import {
 import {
     PromptEditor,
     type PromptEditorRefAPI,
-    useInitialContextForChat,
+    useDefaultContextForChat,
 } from '@sourcegraph/prompt-editor'
 import clsx from 'clsx'
 import {
@@ -68,6 +68,10 @@ export const HumanMessageEditor: FunctionComponent<{
     __storybook__focus?: boolean
 
     initialIntent?: ChatMessage['intent']
+
+    chatAgent?: string
+
+    onDeepCodyToggleClick?: () => void
 }> = ({
     models,
     userInfo,
@@ -88,6 +92,8 @@ export const HumanMessageEditor: FunctionComponent<{
     __storybook__focus,
     onEditorFocusChange: parentOnEditorFocusChange,
     initialIntent,
+    chatAgent,
+    onDeepCodyToggleClick,
 }) => {
     const telemetryRecorder = useTelemetryRecorder()
 
@@ -351,8 +357,9 @@ export const HumanMessageEditor: FunctionComponent<{
 
     const currentChatModel = useMemo(() => models[0], [models[0]])
 
-    let initialContext = useInitialContextForChat()
+    const defaultContext = useDefaultContextForChat()
     useEffect(() => {
+        let { initialContext } = defaultContext
         if (!isSent && isFirstMessage) {
             const editor = editorRef.current
             if (editor) {
@@ -364,7 +371,7 @@ export const HumanMessageEditor: FunctionComponent<{
                 editor.setInitialContextMentions(initialContext)
             }
         }
-    }, [initialContext, isSent, isFirstMessage, currentChatModel])
+    }, [defaultContext, isSent, isFirstMessage, currentChatModel])
 
     const focusEditor = useCallback(() => editorRef.current?.setFocus(true), [])
 
@@ -425,6 +432,8 @@ export const HumanMessageEditor: FunctionComponent<{
                     className={styles.toolbar}
                     intent={submitIntent}
                     onSelectIntent={setSubmitIntent}
+                    chatAgent={chatAgent}
+                    onDeepCodyToggleClick={onDeepCodyToggleClick}
                 />
             )}
         </div>

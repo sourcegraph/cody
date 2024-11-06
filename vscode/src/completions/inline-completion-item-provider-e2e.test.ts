@@ -1,3 +1,7 @@
+import { Observable } from 'observable-fns'
+import { type MockInstance, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
+import type * as vscode from 'vscode'
+
 import {
     CLIENT_CAPABILITIES_FIXTURE,
     type ClientConfiguration,
@@ -9,16 +13,18 @@ import {
     nextTick,
     telemetryRecorder,
 } from '@sourcegraph/cody-shared'
-import { Observable } from 'observable-fns'
-import { type MockInstance, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
-import type * as vscode from 'vscode'
+
 import { mockLocalStorage } from '../services/LocalStorageProvider'
 import { DEFAULT_VSCODE_SETTINGS, vsCodeMocks } from '../testutils/mocks'
+
 import * as CompletionAnalyticsLogger from './analytics-logger'
 import { getCurrentDocContext } from './get-current-doc-context'
 import { TriggerKind } from './get-inline-completions'
 import { initCompletionProviderConfig, params } from './get-inline-completions-tests/helpers'
-import { InlineCompletionItemProvider } from './inline-completion-item-provider'
+import {
+    InlineCompletionItemProvider,
+    PRELOAD_DEBOUNCE_INTERVAL,
+} from './inline-completion-item-provider'
 import { createProvider } from './providers/anthropic'
 import type { FetchCompletionResult } from './providers/shared/fetch-and-process-completions'
 import {
@@ -296,8 +302,8 @@ describe.skip('InlineCompletionItemProvider E2E', () => {
 
             const [result1, result2] = await Promise.all([
                 resolve1("log('hello')", { duration: 100, delay: 0 }),
-                resolve2("'hello')", { duration: 150, delay: 0 }),
-                vi.advanceTimersByTimeAsync(150), // Enough for both to be shown
+                resolve2("'hello')", { duration: PRELOAD_DEBOUNCE_INTERVAL, delay: 0 }),
+                vi.advanceTimersByTimeAsync(PRELOAD_DEBOUNCE_INTERVAL), // Enough for both to be shown
             ])
 
             // Result 1 is marked as stale
@@ -403,7 +409,6 @@ describe.skip('InlineCompletionItemProvider E2E', () => {
 
 describe('InlineCompletionItemProvider preloading', () => {
     const autocompleteConfig = {
-        autocompleteExperimentalPreloadDebounceInterval: 150,
         autocompleteAdvancedProvider: 'fireworks',
     } satisfies Partial<ClientConfiguration>
 
@@ -443,9 +448,7 @@ describe('InlineCompletionItemProvider preloading', () => {
         await vi.advanceTimersByTimeAsync(50)
         expect(provideCompletionSpy).not.toBeCalled()
 
-        await vi.advanceTimersByTimeAsync(
-            autocompleteConfig.autocompleteExperimentalPreloadDebounceInterval - 50
-        )
+        await vi.advanceTimersByTimeAsync(PRELOAD_DEBOUNCE_INTERVAL - 50)
 
         expect(provideCompletionSpy).toBeCalledWith(
             document,
@@ -471,9 +474,7 @@ describe('InlineCompletionItemProvider preloading', () => {
             selections: [new vsCodeMocks.Selection(position, position)],
         })
 
-        await vi.advanceTimersByTimeAsync(
-            autocompleteConfig.autocompleteExperimentalPreloadDebounceInterval
-        )
+        await vi.advanceTimersByTimeAsync(PRELOAD_DEBOUNCE_INTERVAL)
         expect(provideCompletionSpy).not.toHaveBeenCalled()
     })
 
@@ -493,9 +494,7 @@ describe('InlineCompletionItemProvider preloading', () => {
             selections: [new vsCodeMocks.Selection(position, position)],
         })
 
-        await vi.advanceTimersByTimeAsync(
-            autocompleteConfig.autocompleteExperimentalPreloadDebounceInterval
-        )
+        await vi.advanceTimersByTimeAsync(PRELOAD_DEBOUNCE_INTERVAL)
         expect(provideCompletionSpy).toBeCalledWith(
             document,
             position.with({ line: position.line + 1, character: 0 }),
@@ -519,9 +518,7 @@ describe('InlineCompletionItemProvider preloading', () => {
             selections: [new vsCodeMocks.Selection(position, position)],
         })
 
-        await vi.advanceTimersByTimeAsync(
-            autocompleteConfig.autocompleteExperimentalPreloadDebounceInterval
-        )
+        await vi.advanceTimersByTimeAsync(PRELOAD_DEBOUNCE_INTERVAL)
         expect(provideCompletionSpy).not.toHaveBeenCalled()
     })
 })
