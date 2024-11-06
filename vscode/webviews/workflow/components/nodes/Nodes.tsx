@@ -2,6 +2,7 @@ import { Handle, Position } from '@xyflow/react'
 import type React from 'react'
 import { v4 as uuidv4 } from 'uuid'
 import { Textarea } from '../../../components/shadcn/ui/textarea'
+import type { Edge } from '../CustomOrderedEdge'
 
 // Core type definitions
 export enum NodeType {
@@ -64,6 +65,18 @@ export const createNode = (
     position,
 })
 
+/* Creates a connection between two nodes.
+ *
+ * @param {WorkflowNode} sourceNode The node to connect from.
+ * @param {Node} targetNode - The node to connect to.
+ * @returns id: string,: string, target string }} - The edge.
+ */
+export const createEdge = (sourceNode: WorkflowNode, targetNode: WorkflowNode): Edge => ({
+    id: `${sourceNode}-${targetNode.id}`,
+    source: sourceNode.id,
+    target: targetNode.id,
+})
+
 /**
  * Defines the default workflow in the application, including three nodes:
  * - A Git Diff CLI node at position (0, 0)
@@ -74,17 +87,18 @@ export const createNode = (
  * - An edge from the Git Diff node to the Cody Generate Commit Message node
  * - An edge from the Cody Generate Commit Message node to the Git Commit node
  */
-export const defaultWorkflow = {
-    nodes: [
+export const defaultWorkflow = (() => {
+    const nodes = [
         createNode(NodeType.CLI, 'Git Diff', { x: 0, y: 0 }),
         createNode(NodeType.LLM, 'Cody Generate Commit Message', { x: 0, y: 100 }),
         createNode(NodeType.CLI, 'Git Commit', { x: 0, y: 200 }),
-    ],
-    edges: [
-        { id: 'xy-edge__1-2', source: '1', target: '2' },
-        { id: 'xy-edge__2-3', source: '2', target: '3' },
-    ],
-}
+    ]
+
+    return {
+        nodes,
+        edges: [createEdge(nodes[0], nodes[1]), createEdge(nodes[1], nodes[2])],
+    }
+})()
 
 const getBorderColor = (
     type: NodeType,

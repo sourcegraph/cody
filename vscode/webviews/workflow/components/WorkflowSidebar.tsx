@@ -36,7 +36,7 @@ export const WorkflowSidebar: React.FC<WorkflowSidebarProps> = ({
     }
 
     return (
-        <div className="tw-w-64 tw-border-r tw-border-border tw-h-full tw-bg-sidebar-background tw-p-4">
+        <div className="tw-w-full tw-border-r tw-border-border tw-h-full tw-bg-sidebar-background tw-p-4">
             <div className="tw-flex tw-flex-col tw-gap-2 tw-mb-4">
                 <Button variant="secondary" className="tw-w-full" onClick={onLoad}>
                     Open Workflow
