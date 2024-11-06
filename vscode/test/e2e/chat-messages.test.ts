@@ -58,42 +58,33 @@ test('chat assistant response code buttons', async ({ page, nap, sidebar }, test
 
     await executeCommandInPalette(page, 'cody.debug.logCharacterCounters')
     // Wait for the logCharacterCounters command to update the log file.
-    await nap(1000)
-    const outputChannelWithPaste = await fs.readFile(getTmpLogFile(testInfo.title), 'utf-8')
+    await nap()
+    const charCountersAfterPaste = await getLastCharactersCountOutput(testInfo.title)
 
     // We expect the pasted code to be categorized as cody_chat and
     // the relevant inserted characters counter to be incremented appropriately.
-    const idx = outputChannelWithPaste.lastIndexOf('Current character counters:')
-    const outputChannelWithPasteAfter = outputChannelWithPaste.slice(idx)
-    console.log('outputChannelWithPasteAfter ', outputChannelWithPasteAfter)
-
-    expect(idx).toBeGreaterThan(0)
-    expect(outputChannelWithPasteAfter).toContain(`"cody_chat_inserted": ${codeToPaste.length}`)
-    expect(outputChannelWithPasteAfter).toContain('"cody_chat": 1')
+    expect(charCountersAfterPaste).toContain(`"cody_chat_inserted": ${codeToPaste.length}`)
+    expect(charCountersAfterPaste).toContain('"cody_chat": 1')
 
     await actionsDropdown.click()
     await executeCommandInPalette(page, 'cody.command.insertCodeToCursor')
     await nap()
     await executeCommandInPalette(page, 'cody.debug.logCharacterCounters')
     // Wait for the logCharacterCounters command to update the log file.
-    await nap(1000)
+    await nap()
 
     // Static value hardcoded for testing because I did not find a way to
     // reliably access the native OS-dropdown used for the insert code button.
     // Currently defined in: vscode/src/chat/chat-view/ChatsController.ts
     const codeToInsert = 'cody.command.insertCodeToCursor:cody_testing'
-    const outputChannelWithInsert = await fs.readFile(getTmpLogFile(testInfo.title), 'utf-8')
-    const idx2 = outputChannelWithInsert.lastIndexOf('Current character counters:')
-    const outputChannelWithInsertAfter = outputChannelWithInsert.slice(idx2)
-    console.log('outputChannelWithInsertAfter ', outputChannelWithInsertAfter)
+    const charCountersAfterInsert = await getLastCharactersCountOutput(testInfo.title)
 
     // We expect the inserted code to be categorized as cody_chat and
     // the relevant inserted characters counter to be incremented appropriately.
-    expect(idx2).toBeGreaterThan(0)
-    expect(outputChannelWithInsertAfter).toContain(
+    expect(charCountersAfterInsert).toContain(
         `"cody_chat_inserted": ${codeToPaste.length + codeToInsert.length}`
     )
-    expect(outputChannelWithInsertAfter).toContain('"cody_chat": 2')
+    expect(charCountersAfterInsert).toContain('"cody_chat": 2')
 
     const copyClickedEvent = mockServer.loggedV2Events.find(
         event => event.testId === 'cody.copyButton:clicked'
@@ -108,3 +99,12 @@ test('chat assistant response code buttons', async ({ page, nap, sidebar }, test
     // We expect events being logged for the copy and insert button clicks.
     expect(JSON.stringify(chatEventsParameters, null, 2)).toMatchSnapshot()
 })
+
+async function getLastCharactersCountOutput(testTitle: string) {
+    const outputChannel = await fs.readFile(getTmpLogFile(testTitle), 'utf-8')
+    const charsCounterIndex = outputChannel.lastIndexOf('Current character counters:')
+
+    expect(charsCounterIndex).toBeGreaterThan(0)
+
+    return outputChannel.slice(charsCounterIndex)
+}
