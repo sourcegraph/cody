@@ -1,13 +1,13 @@
 import { type AutoEditsTokenLimit, PromptString, ps } from '@sourcegraph/cody-shared'
 import { Uri } from 'vscode'
-import type * as vscode from 'vscode'
+import * as vscode from 'vscode'
 import type {
     AutocompleteContextSnippet,
     DocumentContext,
 } from '../../../lib/shared/src/completions/types'
 import { RetrieverIdentifier } from '../completions/context/utils'
 import { autoeditsLogger } from './logger'
-import { mapLinesToOriginalLineNo, splitLinesKeepEnds, zip } from './utils'
+import { mapLinesToOriginalLineNo, splitLinesKeepEnds } from './utils'
 const LINT_ERRORS_TAG_OPEN = ps`<lint_errors>`
 const LINT_ERRORS_TAG_CLOSE = ps`</lint_errors>`
 const EXTRACTED_CODE_SNIPPETS_TAG_OPEN = ps`<extracted_code_snippets>`
@@ -202,109 +202,71 @@ ${AREA_FOR_CODE_MARKER_CLOSE}
 }
 
 export function getCurrentFileContext(options: CurrentFilePromptOptions): CurrentFileContext {
-    const contextLines = splitLinesKeepEnds(options.docContext.prefix + options.docContext.suffix)
-    const indexLastPrefixLine = splitLinesKeepEnds(options.docContext.prefix).length - 1
-    const prefixLineNumber = Math.max(
-        0,
-        options.position.character === 0 ? options.position.line - 1 : options.position.line
-    )
+    // Calculate line numbers for different sections
+    const { position, document, docContext } = options
+    const contextLines = splitLinesKeepEnds(docContext.prefix + docContext.suffix)
+    const prefixLines = splitLinesKeepEnds(docContext.prefix)
+    const indexLastPrefixLine = prefixLines.length - 1
+    const prefixLineNumber = position.character === 0 ? position.line - 1 : position.line
     const lineNumberMapping = mapLinesToOriginalLineNo(
         contextLines,
         indexLastPrefixLine,
-        prefixLineNumber
+        Math.max(0, prefixLineNumber)
     )
 
-    const minAvailableLineNumber = lineNumberMapping[0]
-    const maxAvailableLineNumber = lineNumberMapping[lineNumberMapping.length - 1]
-
-    const codeToRewriteStartLine = Math.max(
-        minAvailableLineNumber,
-        options.position.line - options.codeToRewritePrefixLines
+    // Determine line number boundaries
+    const minLine = lineNumberMapping[0]
+    const maxLine = lineNumberMapping[lineNumberMapping.length - 1]
+    const codeToRewriteStart = Math.max(minLine, position.line - options.codeToRewritePrefixLines)
+    const codeToRewriteEnd = Math.min(maxLine, position.line + options.codeToRewriteSuffixLines)
+    const areaStart = Math.max(
+        minLine,
+        position.line - options.maxPrefixLinesInArea - options.codeToRewritePrefixLines
     )
-    const codeToRewriteEndLine = Math.min(
-        maxAvailableLineNumber,
-        options.position.line + options.codeToRewriteSuffixLines
-    )
-    const areaStartLine = Math.max(
-        minAvailableLineNumber,
-        options.position.line - options.maxPrefixLinesInArea - options.codeToRewritePrefixLines
-    )
-    const areaEndLine = Math.min(
-        maxAvailableLineNumber,
-        options.position.line + options.maxSuffixLinesInArea + options.codeToRewriteSuffixLines
+    const areaEnd = Math.min(
+        maxLine,
+        position.line + options.maxSuffixLinesInArea + options.codeToRewriteSuffixLines
     )
 
-    const codeToRewriteLines: string[] = []
-    const codeToRewritePrefixLines: string[] = []
-    const codeToRewriteSuffixLines: string[] = []
-    const prefixInAreaLines: string[] = []
-    const suffixInAreaLines: string[] = []
-    const prefixBeforeAreaLines: string[] = []
-    const suffixAfterAreaLines: string[] = []
+    // Helper function to create range
+    const createRange = (startLine: number, startChar: number, endLine: number, endChar: number) =>
+        new vscode.Range(startLine, startChar, endLine, endChar)
 
-    for (const [lineNumber, line] of zip(lineNumberMapping, contextLines)) {
-        if (lineNumber >= codeToRewriteStartLine && lineNumber <= codeToRewriteEndLine) {
-            codeToRewriteLines.push(line)
-            // Add code To Rewrite Prefix and suffix
-            if (lineNumber < options.position.line) {
-                codeToRewritePrefixLines.push(line)
-            } else if (lineNumber > options.position.line) {
-                codeToRewriteSuffixLines.push(line)
-            } else {
-                const charUpToCursor = options.position.character
-                codeToRewritePrefixLines.push(line.slice(0, charUpToCursor))
-                codeToRewriteSuffixLines.push(line.slice(charUpToCursor))
-            }
-        } else if (lineNumber >= areaStartLine && lineNumber < codeToRewriteStartLine) {
-            prefixInAreaLines.push(line)
-        } else if (lineNumber > codeToRewriteEndLine && lineNumber <= areaEndLine) {
-            suffixInAreaLines.push(line)
-        } else if (lineNumber < areaStartLine) {
-            prefixBeforeAreaLines.push(line)
-        } else if (lineNumber > areaEndLine) {
-            suffixAfterAreaLines.push(line)
-        }
+    // Helper function to get line end character
+    const getLineEndChar = (line: number) => document.lineAt(line).rangeIncludingLineBreak.end.character
+
+    // Create ranges for different sections
+    const ranges = {
+        codeToRewrite: createRange(
+            codeToRewriteStart,
+            0,
+            codeToRewriteEnd,
+            getLineEndChar(codeToRewriteEnd)
+        ),
+        codeToRewritePrefix: createRange(codeToRewriteStart, 0, position.line, position.character),
+        codeToRewriteSuffix: createRange(
+            position.line,
+            position.character,
+            codeToRewriteEnd,
+            getLineEndChar(codeToRewriteEnd)
+        ),
+        prefixInArea: createRange(areaStart, 0, codeToRewriteStart, 0),
+        suffixInArea: createRange(codeToRewriteEnd + 1, 0, areaEnd, getLineEndChar(areaEnd)),
+        prefixBeforeArea: createRange(minLine, 0, areaStart, 0),
+        suffixAfterArea: createRange(areaEnd + 1, 0, maxLine, getLineEndChar(maxLine)),
     }
 
-    const codeToRewrite = PromptString.fromAutoEditsCurrentFileContent(
-        codeToRewriteLines.join(''),
-        options.document.uri
-    )
-    const codeToRewritePrefix = PromptString.fromAutoEditsCurrentFileContent(
-        codeToRewritePrefixLines.join(''),
-        options.document.uri
-    )
-    const codeToRewriteSuffix = PromptString.fromAutoEditsCurrentFileContent(
-        codeToRewriteSuffixLines.join(''),
-        options.document.uri
-    )
-    const prefixInArea = PromptString.fromAutoEditsCurrentFileContent(
-        prefixInAreaLines.join(''),
-        options.document.uri
-    )
-    const suffixInArea = PromptString.fromAutoEditsCurrentFileContent(
-        suffixInAreaLines.join(''),
-        options.document.uri
-    )
-    const prefixBeforeArea = PromptString.fromAutoEditsCurrentFileContent(
-        prefixBeforeAreaLines.join(''),
-        options.document.uri
-    )
-    const suffixAfterArea = PromptString.fromAutoEditsCurrentFileContent(
-        suffixAfterAreaLines.join(''),
-        options.document.uri
-    )
-
+    // Convert ranges to PromptStrings
     return {
-        codeToRewrite,
-        codeToRewritePrefix,
-        codeToRewriteSuffix,
-        prefixInArea,
-        suffixInArea,
-        prefixBeforeArea,
-        suffixAfterArea,
-        codeToRewriteStartLine,
-        codeToRewriteEndLine,
+        codeToRewrite: PromptString.fromDocumentText(document, ranges.codeToRewrite),
+        codeToRewritePrefix: PromptString.fromDocumentText(document, ranges.codeToRewritePrefix),
+        codeToRewriteSuffix: PromptString.fromDocumentText(document, ranges.codeToRewriteSuffix),
+        prefixInArea: PromptString.fromDocumentText(document, ranges.prefixInArea),
+        suffixInArea: PromptString.fromDocumentText(document, ranges.suffixInArea),
+        prefixBeforeArea: PromptString.fromDocumentText(document, ranges.prefixBeforeArea),
+        suffixAfterArea: PromptString.fromDocumentText(document, ranges.suffixAfterArea),
+        codeToRewriteStartLine: codeToRewriteStart,
+        codeToRewriteEndLine: codeToRewriteEnd,
     }
 }
 
