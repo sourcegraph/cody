@@ -109,6 +109,7 @@ import { openCodyIssueReporter } from './services/utils/issue-reporter'
 import { SupercompletionProvider } from './supercompletions/supercompletion-provider'
 import { parseAllVisibleDocuments, updateParseTreeOnEdit } from './tree-sitter/parse-tree-cache'
 import { version } from './version'
+import { registerWorkflowCommands } from './workflow/workflow'
 
 /**
  * Start the extension, watching all relevant configuration and secrets for changes.
@@ -288,6 +289,7 @@ const register = async (
     registerOtherCommands(disposables)
     if (clientCapabilities().isVSCode) {
         registerVSCodeOnlyFeatures(chatClient, disposables)
+        registerWorkflowCommands(context, chatClient)
     }
     if (isExtensionModeDevOrTest) {
         await registerTestCommands(context, disposables)

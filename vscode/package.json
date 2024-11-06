@@ -595,6 +595,11 @@
         "command": "cody.command.insertCodeToNewFile",
         "title": "Save Code to New File...",
         "enablement": "cody.activated"
+      },
+      {
+        "command": "cody.openWorkflowEditor",
+        "title": "Open Workflow Editor",
+        "category": "Cody"
       }
     ],
     "keybindings": [
@@ -1386,6 +1391,7 @@
     "@radix-ui/react-collapsible": "^1.1.0",
     "@radix-ui/react-dialog": "^1.0.5",
     "@radix-ui/react-form": "^0.1.0",
+    "@radix-ui/react-label": "^2.1.0",
     "@radix-ui/react-popover": "^1.0.7",
     "@radix-ui/react-progress": "^1.1.0",
     "@radix-ui/react-slot": "^1.0.2",
@@ -1404,6 +1410,7 @@
     "@types/react-dom": "18.2.25",
     "@vscode/codicons": "^0.0.35",
     "@vscode/webview-ui-toolkit": "^1.2.2",
+    "@xyflow/react": "^12.3.4",
     "agent-base": "^7.1.1",
     "async-mutex": "^0.4.0",
     "axios": "^1.3.6",

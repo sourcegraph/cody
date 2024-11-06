@@ -27,6 +27,7 @@ export default defineProjectWithDefaults(__dirname, {
             input: {
                 index: resolve(__dirname, 'index.html'),
                 minion: resolve(__dirname, 'minion.html'),
+                workflow: resolve(__dirname, 'workflow.html'),
             },
             output: {
                 entryFileNames: '[name].js',
