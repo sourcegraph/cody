@@ -74,6 +74,9 @@ export const getAssetsDir = (testName: string): string =>
 export const testAssetsTmpDir = (testName: string, label: string): string =>
     path.join(getAssetsDir(testName), `temp-${label}`)
 
+export const getTmpLogFile = (testTitle: string): string =>
+    path.join(testAssetsTmpDir(testTitle, 'log'), 'logger.log')
+
 export interface OpenVSCodeOptions {
     // A list of extensions to install or uninstall before starting VSCode. These can
     // be extensions that are already published to the VSCode Marketplace, or they can
@@ -174,7 +177,7 @@ export const test = base
                 dotcomUrlOverride = { CODY_OVERRIDE_DOTCOM_URL: dotcomUrl }
             }
 
-            const tmpLogFile = path.join(testAssetsTmpDir(testInfo.title, 'log'), 'logger.log')
+            const tmpLogFile = getTmpLogFile(testInfo.title)
             await mkdir(path.dirname(tmpLogFile), { recursive: true })
             await writeFile(tmpLogFile, '')
             console.error('Cody output channel:', tmpLogFile)
