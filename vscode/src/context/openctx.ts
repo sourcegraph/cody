@@ -219,21 +219,21 @@ function getMergeConfigurationFunction(
         const providers: OpenCtxClientConfiguration['providers'] = {}
         // 1. Viewer settings (lowest priority)
         if (viewerSettingsProviders) {
-            Object.entries(viewerSettingsProviders).forEach(([k, v]) => {
+            for (const [k, v] of Object.entries(viewerSettingsProviders)) {
                 providers[k] = v
-            })
+            }
         }
         // 2. Configuration providers (middle priority)
         if (configuration.providers) {
-            Object.entries(configuration.providers).forEach(([k, v]) => {
+            for (const [k, v] of Object.entries(configuration.providers)) {
                 providers[k] = v
-            })
+            }
         }
         // 3. Local settings (highest priority)
         if (localSettingsProviders) {
-            Object.entries(localSettingsProviders).forEach(([k, v]) => {
+            for (const [k, v] of Object.entries(localSettingsProviders)) {
                 providers[k] = v
-            })
+            }
         }
 
         return {
