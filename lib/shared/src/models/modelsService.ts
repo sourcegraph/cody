@@ -541,6 +541,11 @@ export class ModelsService {
         return this.models.find(m => m.id === modelID)
     }
 
+    public getAllModelsWithSubstring(modelSubstring: string): Model[] {
+        // TODO(sqs)#observe: remove synchronous access here, return an Observable<Model|undefined> instead
+        return this.models.filter(m => m.id.includes(modelSubstring))
+    }
+
     public getModelByIDSubstringOrError(modelSubstring: string): Model {
         // TODO(sqs)#observe: remove synchronous access here, return an Observable<Model|Error> instead
         const models = this.models.filter(m => m.id.includes(modelSubstring))

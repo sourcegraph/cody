@@ -25,10 +25,12 @@ export class ChatClient {
         abortSignal?: AbortSignal
     ): Promise<AsyncGenerator<CompletionGeneratorValue>> {
         // Replace internal models used for wrapper models with the actual model ID.
-        params.model = params.model?.replace(
-            'sourcegraph::2023-06-01::deep-cody',
-            'anthropic::2024-10-22::claude-3-5-sonnet-latest'
-        )
+        params.model = params.model
+            ?.replace(
+                'sourcegraph::2023-06-01::deep-cody',
+                'anthropic::2024-10-22::claude-3-5-sonnet-latest'
+            )
+            .replace('deep-cody', '')
 
         const [versions, authStatus_] = await Promise.all([
             currentSiteVersion(),

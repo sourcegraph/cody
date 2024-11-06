@@ -3,7 +3,7 @@ import { pluralize } from '@sourcegraph/cody-shared'
 import type { RankedContext } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { clsx } from 'clsx'
 import { BrainIcon, MessagesSquareIcon } from 'lucide-react'
-import { type FunctionComponent, memo, useCallback, useState } from 'react'
+import { type FunctionComponent, memo, useCallback, useMemo, useState } from 'react'
 import { FileContextItem } from '../../../components/FileContextItem'
 import {
     Accordion,
@@ -43,7 +43,6 @@ export const ContextCell: FunctionComponent<{
     }) => void
     onManuallyEditContext: () => void
     editContextText: React.ReactNode
-
     /** For use in storybooks only. */
     __storybook__initialOpen?: boolean
 }> = memo(
@@ -137,6 +136,8 @@ export const ContextCell: FunctionComponent<{
 
         const [showAllResults, setShowAllResults] = useState(false)
 
+        const isDeepCodyEnabled = useMemo(() => model?.includes('deep-cody'), [model])
+
         return (
             <div>
                 {(contextItemsToDisplay === undefined || contextItemsToDisplay.length !== 0) && (
@@ -164,13 +165,16 @@ export const ContextCell: FunctionComponent<{
                                             height={NON_HUMAN_CELL_AVATAR_SIZE}
                                         />
                                         <span className="tw-flex tw-items-baseline">
-                                            {isContextLoading ? 'Fetching context' : 'Fetched context'}
+                                            {isContextLoading
+                                                ? isDeepCodyEnabled
+                                                    ? 'Thinking'
+                                                    : 'Fetching context'
+                                                : 'Fetched context'}
                                             <span className="tw-opacity-60 tw-text-sm tw-ml-2">
                                                 &mdash;{' '}
                                                 {isContextLoading
-                                                    ? // TODO: Removes hardcoded model.
-                                                      model?.includes('deep-cody')
-                                                        ? 'Thinking...'
+                                                    ? isDeepCodyEnabled
+                                                        ? 'Retrieving context…'
                                                         : 'Retrieving codebase files…'
                                                     : itemCountLabel}
                                             </span>
@@ -300,7 +304,11 @@ export const ContextCell: FunctionComponent<{
                                                                     size={14}
                                                                     className="tw-ml-1"
                                                                 />
-                                                                <span>Public knowledge</span>
+                                                                <span>
+                                                                    {isDeepCodyEnabled
+                                                                        ? 'Reviewed by Deep Cody'
+                                                                        : 'Public knowledge'}
+                                                                </span>
                                                             </span>
                                                         </TooltipTrigger>
                                                         <TooltipContent side="bottom">
