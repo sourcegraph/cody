@@ -1,7 +1,7 @@
-import { type ComponentProps, useCallback, useEffect, useMemo, useState } from 'react'
+import { type ComponentProps, useCallback, useEffect, useMemo, useState, createContext } from 'react'
 
 import styles from './App.module.css'
-
+import { WebviewOpenTelemetryService } from './utils/telemetryService'
 import {
     type ChatMessage,
     type DefaultContext,
@@ -23,7 +23,12 @@ import { updateDisplayPathEnvInfoForWebview } from './utils/displayPathEnvInfo'
 import { TelemetryRecorderContext, createWebviewTelemetryRecorder } from './utils/telemetry'
 import { type Config, ConfigProvider } from './utils/useConfig'
 
+export const TelemetryServiceContext = createContext<WebviewOpenTelemetryService>(new WebviewOpenTelemetryService())
+
 export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vscodeAPI }) => {
+    // Add this near the top with other state declarations
+    const [telemetryService] = useState(() => new WebviewOpenTelemetryService())
+
     const [config, setConfig] = useState<Config | null>(null)
     // NOTE: View state will be set by the extension host during initialization.
     const [view, setView] = useState<View>()
@@ -34,6 +39,23 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     const [errorMessages, setErrorMessages] = useState<string[]>([])
 
     const dispatchClientAction = useClientActionDispatcher()
+
+    // Add this effect to configure telemetry based on config changes
+    useEffect(() => {
+        if (config) {
+            telemetryService.configure({
+                isTracingEnabled: config.configFeatures?.attribution ?? false,
+                debugVerbose: false // You can make this configurable if needed
+            })
+        }
+    }, [config, telemetryService])
+
+    // Add cleanup
+    useEffect(() => {
+        return () => {
+            telemetryService.dispose()
+        }
+    }, [telemetryService])
 
     const guardrails = useMemo(() => {
         return new GuardrailsPost((snippet: string) => {
@@ -206,6 +228,17 @@ export function getAppWrappers({
     config,
     staticDefaultContext,
 }: GetAppWrappersOptions): Wrapper[] {
+    // Initialize telemetry service
+    const telemetryService = new WebviewOpenTelemetryService()
+    
+    // Configure telemetry based on config
+    if (config) {
+        telemetryService.configure({
+            isTracingEnabled: config.configFeatures?.attribution ?? false,
+            debugVerbose: false
+        })
+    }
+
     return [
         {
             provider: TelemetryRecorderContext.Provider,
@@ -219,5 +252,10 @@ export function getAppWrappers({
             component: ConfigProvider,
             props: { value: config },
         } satisfies Wrapper<any, ComponentProps<typeof ConfigProvider>>,
+        // Add telemetry service wrapper
+        {
+            provider: TelemetryServiceContext.Provider,
+            value: telemetryService,
+        } satisfies Wrapper<WebviewOpenTelemetryService>,
     ]
 }

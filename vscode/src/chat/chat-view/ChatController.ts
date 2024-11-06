@@ -1916,7 +1916,14 @@ export function manipulateWebviewHTML(html: string, options: TransformHTMLOption
             .replaceAll('/*injectedStyle*/', options.injectStyle ?? '')
     } else {
         // Update URIs for content security policy to only allow specific scripts to be run
-        html = html.replaceAll("'self'", options.cspSource).replaceAll('{cspSource}', options.cspSource)
+        html = html
+            .replaceAll("'self'", options.cspSource)
+            .replaceAll('{cspSource}', options.cspSource)
+            // Add unsafe-inline to style-src
+            .replace(
+                /style-src ['"]self['"] https:\/\/\*\.vscode-cdn\.net/,
+                "style-src 'self' 'unsafe-inline' https://*.vscode-cdn.net"
+            )
     }
 
     return html

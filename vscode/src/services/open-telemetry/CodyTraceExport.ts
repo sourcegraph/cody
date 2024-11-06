@@ -2,7 +2,7 @@ import type { ExportResult } from '@opentelemetry/core'
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http'
 import type { ReadableSpan } from '@opentelemetry/sdk-trace-base'
 
-const MAX_TRACE_RETAIN_MS = 60 * 1000
+const MAX_TRACE_RETAIN_MS = 60 * 1
 
 export class CodyTraceExporter extends OTLPTraceExporter {
     private isTracingEnabled = false
@@ -15,9 +15,12 @@ export class CodyTraceExporter extends OTLPTraceExporter {
     }: { traceUrl: string; accessToken: string | null; isTracingEnabled: boolean }) {
         super({
             url: traceUrl,
-            httpAgentOptions: { rejectUnauthorized: false },
+            httpAgentOptions: {
+                rejectUnauthorized: false,
+            },
             headers: {
                 ...(accessToken ? { Authorization: `token ${accessToken}` } : {}),
+                'Content-Security-Policy': "style-src 'self' 'unsafe-inline' https://*.vscode-cdn.net; connect-src 'self' https://*.vscode-cdn.net https://sourcegraph.test:3443",
             },
         })
         this.isTracingEnabled = isTracingEnabled

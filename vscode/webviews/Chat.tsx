@@ -21,6 +21,7 @@ import { ScrollDown } from './components/ScrollDown'
 import type { View } from './tabs'
 import { useTelemetryRecorder } from './utils/telemetry'
 import { useUserAccountInfo } from './utils/useConfig'
+import { trace, SpanStatusCode } from '@opentelemetry/api'
 
 interface ChatboxProps {
     chatEnabled: boolean
@@ -60,29 +61,48 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
 
     const feedbackButtonsOnSubmit = useCallback(
         (text: string) => {
-            enum FeedbackType {
-                thumbsUp = 1,
-                thumbsDown = 0,
-            }
-            telemetryRecorder.recordEvent('cody.feedback', 'submit', {
-                metadata: {
-                    feedbackType: text === 'thumbsUp' ? FeedbackType.thumbsUp : FeedbackType.thumbsDown,
-                    recordsPrivateMetadataTranscript: userInfo.isDotComUser ? 1 : 0,
-                },
-                privateMetadata: {
-                    FeedbackText: text,
+            const tracer = trace.getTracer('cody-webview')
+            
+            return tracer.startActiveSpan('feedback-submit', async (span) => {
+                try {
+                    enum FeedbackType {
+                        thumbsUp = 1,
+                        thumbsDown = 0,
+                    }
 
-                    // 🚨 SECURITY: chat transcripts are to be included only for DotCom users AND for V2 telemetry
-                    // V2 telemetry exports privateMetadata only for DotCom users
-                    // the condition below is an aditional safegaurd measure
-                    responseText: userInfo.isDotComUser
-                        ? truncateTextStart(transcriptRef.current.toString(), CHAT_INPUT_TOKEN_BUDGET)
-                        : '',
-                },
-                billingMetadata: {
-                    product: 'cody',
-                    category: 'billable',
-                },
+                    span.setAttributes({
+                        'feedback.type': text === 'thumbsUp' ? 'positive' : 'negative',
+                        'user.isDotComUser': userInfo.isDotComUser,
+                    })
+
+                    telemetryRecorder.recordEvent('cody.feedback', 'submit', {
+                        metadata: {
+                            feedbackType: text === 'thumbsUp' ? FeedbackType.thumbsUp : FeedbackType.thumbsDown,
+                            recordsPrivateMetadataTranscript: userInfo.isDotComUser ? 1 : 0,
+                        },
+                        privateMetadata: {
+                            FeedbackText: text,
+                            responseText: userInfo.isDotComUser
+                                ? truncateTextStart(transcriptRef.current.toString(), CHAT_INPUT_TOKEN_BUDGET)
+                                : '',
+                        },
+                        billingMetadata: {
+                            product: 'cody',
+                            category: 'billable',
+                        },
+                    })
+
+                    span.setStatus({ code: SpanStatusCode.OK })
+                } catch (error) {
+                    span.setStatus({
+                        code: SpanStatusCode.ERROR,
+                        message: error instanceof Error ? error.message : 'Unknown error'
+                    })
+                    span.recordException(error as Error)
+                    throw error
+                } finally {
+                    span.end()
+                }
             })
         },
         [userInfo, telemetryRecorder]
@@ -90,14 +110,37 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
 
     const copyButtonOnSubmit = useCallback(
         (text: string, eventType: 'Button' | 'Keydown' = 'Button') => {
-            const op = 'copy'
-            // remove the additional /n added by the text area at the end of the text
-            const code = eventType === 'Button' ? text.replace(/\n$/, '') : text
-            // Log the event type and text to telemetry in chat view
-            vscodeAPI.postMessage({
-                command: op,
-                eventType,
-                text: code,
+            const tracer = trace.getTracer('cody-webview')
+            
+            return tracer.startActiveSpan('copy-text', async (span) => {
+                try {
+                    const op = 'copy'
+                    span.setAttributes({
+                        'copy.eventType': eventType,
+                        'copy.textLength': text.length,
+                    })
+
+                    // remove the additional /n added by the text area at the end of the text
+                    const code = eventType === 'Button' ? text.replace(/\n$/, '') : text
+                    
+                    // Log the event type and text to telemetry in chat view
+                    vscodeAPI.postMessage({
+                        command: op,
+                        eventType,
+                        text: code,
+                    })
+
+                    span.setStatus({ code: SpanStatusCode.OK })
+                } catch (error) {
+                    span.setStatus({
+                        code: SpanStatusCode.ERROR,
+                        message: error instanceof Error ? error.message : 'Unknown error'
+                    })
+                    span.recordException(error as Error)
+                    throw error
+                } finally {
+                    span.end()
+                }
             })
         },
         [vscodeAPI]
@@ -158,6 +201,14 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     const postMessage = useCallback<ApiPostMessage>(msg => vscodeAPI.postMessage(msg), [vscodeAPI])
 
     useEffect(() => {
+        const tracer = trace.getTracer('cody-webview')
+    
+        const span = tracer.startSpan('component-lifecycle', {
+            attributes: {
+                'component.name': 'Chat',
+                'component.event': 'mount'
+            }
+        })
         function handleKeyDown(event: KeyboardEvent) {
             // Esc to abort the message in progress.
             if (event.key === 'Escape' && messageInProgress) {
@@ -175,6 +226,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
         window.addEventListener('keydown', handleKeyDown)
         return () => {
             window.removeEventListener('keydown', handleKeyDown)
+            span.end()
         }
     }, [vscodeAPI, messageInProgress])
 
