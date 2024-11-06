@@ -55,7 +55,7 @@
     },
     {
       "key": "charsDeleted",
-      "value": 90
+      "value": 44
     },
     {
       "key": "tier",

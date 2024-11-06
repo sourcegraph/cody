@@ -110,3 +110,7 @@ export function populateCodeGenerationContextTemplate(
         .replaceAll('{filePath}', PromptString.fromDisplayPath(fileUri))
         .replaceAll('{outputTag}', tag)
 }
+
+export function populateMemoryContextTemplate(memory: PromptString): PromptString {
+    return ps`#MEMORY\n${memory}`
+}

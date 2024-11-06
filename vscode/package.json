@@ -3,7 +3,7 @@
   "name": "cody-ai",
   "private": true,
   "displayName": "Cody: AI Coding Assistant with Autocomplete & Chat",
-  "version": "1.40.1",
+  "version": "1.40.2",
   "publisher": "sourcegraph",
   "license": "Apache-2.0",
   "icon": "resources/cody.png",
@@ -573,6 +573,13 @@
         "group": "Debug",
         "icon": "$(copy)",
         "title": "Copy Cody Extension Version"
+      },
+      {
+        "command": "cody.debug.logCharacterCounters",
+        "title": "[Internal] Log character logger counters",
+        "category": "Cody Debug",
+        "group": "Debug",
+        "when": "cody.activated"
       },
       {
         "command": "cody.test.set-context-filters",
@@ -1382,6 +1389,7 @@
     "@radix-ui/react-popover": "^1.0.7",
     "@radix-ui/react-progress": "^1.1.0",
     "@radix-ui/react-slot": "^1.0.2",
+    "@radix-ui/react-switch": "^1.1.1",
     "@radix-ui/react-tabs": "^1.1.0",
     "@radix-ui/react-tooltip": "^1.0.7",
     "@sentry/browser": "^7.107.0",

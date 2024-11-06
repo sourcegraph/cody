@@ -54,10 +54,6 @@ export enum FeatureFlag {
     CodyAutocompleteContextExperimentVariant4 = 'cody-autocomplete-context-experiment-variant-4',
     CodyAutocompleteContextExperimentControl = 'cody-autocomplete-context-experiment-control',
 
-    // When enabled, it will extend the number of languages considered for context (e.g. React files
-    // will be able to use CSS files as context).
-    CodyAutocompleteContextExtendLanguagePool = 'cody-autocomplete-context-extend-language-pool',
-
     // use-ssc-for-cody-subscription is a feature flag that enables the use of SSC as the source of truth for Cody subscription data.
     UseSscForCodySubscription = 'use-ssc-for-cody-subscription',
 

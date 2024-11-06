@@ -176,7 +176,7 @@ export class FixupTask {
                         // We should consider doing that for initial ranges too.
                         range: document.validateRange(edit.range),
                         rangeOffset: document.offsetAt(edit.range.start),
-                        rangeLength: edit.text.length,
+                        rangeLength: 0,
                         text: edit.text,
                     })
                     break

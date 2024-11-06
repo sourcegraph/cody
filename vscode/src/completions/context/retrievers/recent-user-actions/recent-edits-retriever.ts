@@ -102,7 +102,6 @@ export class RecentEditsRetriever implements vscode.Disposable, ContextRetriever
         for (const diff of allDiffs) {
             const currentDocumentLanguageId = document.languageId
             const params: ShouldUseContextParams = {
-                enableExtendedLanguagePool: false,
                 baseLanguageId: currentDocumentLanguageId,
                 languageId: diff.languageId,
             }

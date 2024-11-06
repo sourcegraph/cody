@@ -678,13 +678,14 @@ export class InlineCompletionItemProvider
 
         this.lastAcceptedCompletionItem = completion
 
-        CompletionAnalyticsLogger.accepted(
-            completion.logId,
-            completion.requestParams.document,
-            completion.analyticsItem,
-            completion.trackedRange,
-            this.isDotComUser
-        )
+        CompletionAnalyticsLogger.accepted({
+            id: completion.logId,
+            document: completion.requestParams.document,
+            completion: completion.analyticsItem,
+            trackedRange: completion.trackedRange,
+            isDotComUser: this.isDotComUser,
+            position: completion.requestParams.position,
+        })
     }
 
     /**

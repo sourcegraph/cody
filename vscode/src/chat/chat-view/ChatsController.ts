@@ -225,7 +225,15 @@ export class ChatsController implements vscode.Disposable {
             ),
             vscode.commands.registerCommand(
                 'cody.command.insertCodeToCursor',
-                (args: { text: string }) => handleCodeFromInsertAtCursor(args.text)
+                (args: { text: string }) => {
+                    const text =
+                        // Used in E2E tests where OS-native buttons dropdown is inaccessible.
+                        process.env.CODY_TESTING === 'true'
+                            ? 'cody.command.insertCodeToCursor:cody_testing'
+                            : args.text
+
+                    return handleCodeFromInsertAtCursor(text)
+                }
             ),
             vscode.commands.registerCommand(
                 'cody.command.insertCodeToNewFile',

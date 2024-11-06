@@ -36,6 +36,9 @@ export interface ChatMessage extends Message {
 
     /* The detected intent of the message */
     intent?: 'search' | 'chat' | 'edit' | 'insert' | undefined | null
+
+    /* The chat agent enabled for the message, if any. E.g. deep-cody */
+    agent?: string
 }
 
 // An unsafe version of the {@link ChatMessage} that has the PromptString
@@ -51,6 +54,7 @@ export interface SerializedChatMessage {
     text?: string // Changed from PromptString
     model?: string
     intent?: ChatMessage['intent']
+    agent?: string
 }
 
 export interface ChatError {

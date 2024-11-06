@@ -23,9 +23,11 @@ import {
     type MutableRefObject,
     memo,
     useCallback,
+    useEffect,
     useImperativeHandle,
     useMemo,
     useRef,
+    useState,
 } from 'react'
 import { URI } from 'vscode-uri'
 import type { UserAccountInfo } from '../Chat'
@@ -33,6 +35,7 @@ import type { ApiPostMessage } from '../Chat'
 import { Button } from '../components/shadcn/ui/button'
 import { getVSCodeAPI } from '../utils/VSCodeApi'
 import { useTelemetryRecorder } from '../utils/telemetry'
+import { useExperimentalDeepCodyAgent } from '../utils/useExperimentalDeepCodyAgent'
 import { useExperimentalOneBox } from '../utils/useExperimentalOneBox'
 import type { CodeBlockActionsProps } from './ChatMessageContent/ChatMessageContent'
 import { ContextCell } from './cells/contextCell/ContextCell'
@@ -117,6 +120,19 @@ export const Transcript: FC<TranscriptProps> = props => {
         []
     )
 
+    // Combine Deep Cody agent state management
+    const useDeepCodyAgent = useExperimentalDeepCodyAgent()
+    const [chatAgent, setChatAgent] = useState<string | undefined>(useDeepCodyAgent)
+
+    const onDeepCodyToggleClick = useCallback(() => {
+        setChatAgent(prev => (prev === 'deep-cody' ? undefined : 'deep-cody'))
+    }, [])
+
+    // Update chatAgent when experimental flag changes
+    useEffect(() => {
+        setChatAgent(useDeepCodyAgent)
+    }, [useDeepCodyAgent])
+
     return (
         <div
             className={clsx('tw-px-8 tw-pt-8 tw-pb-6 tw-flex tw-flex-col tw-gap-8', {
@@ -147,6 +163,8 @@ export const Transcript: FC<TranscriptProps> = props => {
                     smartApplyEnabled={smartApplyEnabled}
                     editorRef={i === interactions.length - 1 ? lastHumanEditorRef : undefined}
                     onAddToFollowupChat={onAddToFollowupChat}
+                    chatAgent={chatAgent}
+                    onDeepCodyToggleClick={useDeepCodyAgent ? onDeepCodyToggleClick : undefined}
                 />
             ))}
         </div>
@@ -225,6 +243,8 @@ interface TranscriptInteractionProps
         filePath: string
         fileURL: string
     }) => void
+    chatAgent?: string
+    onDeepCodyToggleClick?: () => void
 }
 
 const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
@@ -246,6 +266,8 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
         smartApplyEnabled,
         editorRef: parentEditorRef,
         onAddToFollowupChat,
+        chatAgent,
+        onDeepCodyToggleClick,
     } = props
 
     const [intentResults, setIntentResults] = useMutatedValue<
@@ -268,9 +290,10 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                 intent: intentFromSubmit || intentResults.current?.intent,
                 intentScores: intentFromSubmit ? undefined : intentResults.current?.allScores,
                 manuallySelectedIntent: !!intentFromSubmit,
+                agent: chatAgent,
             })
         },
-        [humanMessage.index, intentResults]
+        [humanMessage.index, intentResults, chatAgent]
     )
 
     const onFollowupSubmit = useCallback(
@@ -280,9 +303,10 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                 intent: intentFromSubmit || intentResults.current?.intent,
                 intentScores: intentFromSubmit ? undefined : intentResults.current?.allScores,
                 manuallySelectedIntent: !!intentFromSubmit,
+                agent: chatAgent,
             })
         },
-        [intentResults]
+        [intentResults, chatAgent]
     )
 
     const extensionAPI = useExtensionAPI()
@@ -412,6 +436,8 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                 editorRef={humanEditorRef}
                 className={!isFirstInteraction && isLastInteraction ? 'tw-mt-auto' : ''}
                 onEditorFocusChange={resetIntent}
+                chatAgent={chatAgent}
+                onDeepCodyToggleClick={onDeepCodyToggleClick}
             />
 
             {experimentalOneBoxEnabled && humanMessage.intent && (
@@ -452,7 +478,8 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
             {corpusContextItems.length > 0 &&
                 !mentionsContainRepository &&
                 assistantMessage &&
-                !assistantMessage.isLoading && (
+                !assistantMessage.isLoading &&
+                humanMessage.agent !== 'deep-cody' && (
                     <div>
                         <Button onClick={resubmitWithRepoContext} type="button">
                             Resend with current repository context
@@ -488,6 +515,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                             </>
                         )
                     }
+                    chatAgent={humanMessage.agent}
                 />
             )}
             {(!experimentalOneBoxEnabled || humanMessage.intent !== 'search') &&
@@ -513,6 +541,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                         }
                         smartApply={smartApply}
                         smartApplyEnabled={smartApplyEnabled}
+                        chatAgent={humanMessage.agent}
                     />
                 )}
         </>
@@ -544,12 +573,14 @@ export function editHumanMessage({
     intent,
     intentScores,
     manuallySelectedIntent,
+    agent,
 }: {
     messageIndexInTranscript: number
     editorValue: SerializedPromptEditorValue
     intent?: ChatMessage['intent']
     intentScores?: { intent: string; score: number }[]
     manuallySelectedIntent?: boolean
+    agent?: string
 }): void {
     getVSCodeAPI().postMessage({
         command: 'edit',
@@ -560,6 +591,7 @@ export function editHumanMessage({
         intent,
         intentScores,
         manuallySelectedIntent,
+        agent,
     })
     focusLastHumanMessageEditor()
 }
@@ -569,11 +601,13 @@ function submitHumanMessage({
     intent,
     intentScores,
     manuallySelectedIntent,
+    agent,
 }: {
     editorValue: SerializedPromptEditorValue
     intent?: ChatMessage['intent']
     intentScores?: { intent: string; score: number }[]
     manuallySelectedIntent?: boolean
+    agent?: string
 }): void {
     getVSCodeAPI().postMessage({
         command: 'submit',
@@ -583,6 +617,7 @@ function submitHumanMessage({
         intent,
         intentScores,
         manuallySelectedIntent,
+        agent,
     })
     focusLastHumanMessageEditor()
 }
