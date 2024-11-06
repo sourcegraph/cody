@@ -356,8 +356,11 @@ export const Flow: React.FC<{
     }, [isResizing, handleMouseMove, handleMouseUp])
 
     return (
-        <div className="tw-flex tw-h-screen">
-            <div style={{ width: sidebarWidth + 'px', flexShrink: 0 }}>
+        <div className="tw-flex tw-h-screen tw-border-2 tw-border-solid tw-border-[var(--vscode-panel-border)]">
+            <div
+                style={{ width: sidebarWidth + 'px', flexShrink: 0 }}
+                className="tw-border-r tw-border-solid tw-border-[var(--vscode-panel-border)] tw-bg-[var(--vscode-sideBar-background)]"
+            >
                 <WorkflowSidebar
                     onNodeAdd={handleAddNode}
                     selectedNode={selectedNode}
@@ -369,17 +372,17 @@ export const Flow: React.FC<{
                 />
             </div>
             <div
-                className="tw-w-3 hover:tw-w-3 tw-bg-border hover:[background-color:var(--vscode-list-activeSelectionBackground)] tw-cursor-ew-resize tw-select-none tw-transition-colors tw-transition-width"
+                className="tw-w-2 hover:tw-w-2 tw-bg-[var(--vscode-panel-border)] hover:tw-bg-[var(--vscode-textLink-activeForeground)] tw-cursor-ew-resize tw-select-none tw-transition-colors tw-transition-width tw-shadow-sm"
                 onMouseDown={handleMouseDown}
             />
             <div
-                className="tw-flex-1"
+                className="tw-flex-1 tw-bg-[var(--vscode-editor-background)] tw-shadow-inner"
                 onClick={handleBackgroundClick}
                 onKeyDown={handleBackgroundKeyDown}
                 role="button"
                 tabIndex={0}
             >
-                <div className="tw-w-full tw-h-full">
+                <div className="tw-w-full tw-h-full tw-border-l tw-border-solid tw-border-[var(--vscode-panel-border)]">
                     <ReactFlow
                         nodes={nodesWithState}
                         edges={edgesWithOrder}

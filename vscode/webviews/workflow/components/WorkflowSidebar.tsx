@@ -116,21 +116,26 @@ export const WorkflowSidebar: React.FC<WorkflowSidebarProps> = ({
                         </div>
                     </AccordionContent>
                 </AccordionItem>
+                <div className="tw-my-4 tw-border-t tw-border-border" />
+                <AccordionItem value="property_editor">
+                    <AccordionTrigger>Property Editor</AccordionTrigger>
+                    <AccordionContent>
+                        <div className="tw-p-2">
+                            {selectedNode ? (
+                                <PropertyEditor
+                                    node={selectedNode}
+                                    onUpdate={onNodeUpdate || (() => {})}
+                                />
+                            ) : (
+                                <p className="tw-text-sm tw-text-muted-foreground tw-mt-2">
+                                    Select a node to edit its properties
+                                </p>
+                            )}
+                        </div>
+                        <div className="tw-my-4 tw-border-t tw-border-border" />
+                    </AccordionContent>
+                </AccordionItem>
             </Accordion>
-
-            <div className="tw-my-4 tw-border-t tw-border-border" />
-
-            <div className="tw-p-2">
-                <h3 className="tw-text-sm tw-font-medium">Property Editor</h3>
-                {selectedNode ? (
-                    <PropertyEditor node={selectedNode} onUpdate={onNodeUpdate || (() => {})} />
-                ) : (
-                    <p className="tw-text-sm tw-text-muted-foreground tw-mt-2">
-                        Select a node to edit its properties
-                    </p>
-                )}
-            </div>
-            <div className="tw-my-4 tw-border-t tw-border-border" />
         </div>
     )
 }
