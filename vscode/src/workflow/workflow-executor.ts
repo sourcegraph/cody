@@ -181,28 +181,43 @@ async function executeInputNode(input: string): Promise<string> {
 }
 
 /**
- * Combines the output from parent nodes of the given node, applying appropriate sanitization based on the node type.
+ * Replaces indexed placeholders in a template string with the corresponding values from the parentOutputs array.
  *
- * @param nodeId - The ID of the node for which to combine the parent outputs.
- * @param edges - The connections between the workflow nodes.
- * @param context - The execution context, containing the node outputs.
- * @param nodeType - The type of the node (e.g. 'cli', 'llm').
- * @returns The combined output from the parent nodes, with appropriate sanitization applied.
+ * @param template - The template string containing indexed placeholders.
+ * @param parentOutputs - The array of parent output values to substitute into the template.
+ * @returns The template string with the indexed placeholders replaced.
+ */
+function replaceIndexedInputs(template: string, parentOutputs: string[]): string {
+    return template.replace(/\${(\d+)}/g, (_match, index) => {
+        const adjustedIndex = Number.parseInt(index, 10) - 1
+        return adjustedIndex >= 0 && adjustedIndex < parentOutputs.length
+            ? parentOutputs[adjustedIndex]
+            : ''
+    })
+}
+
+/**
+ * Combines the outputs from parent nodes in a workflow, with optional sanitization for different node types.
+ *
+ * @param nodeId - The ID of the current node.
+ * @param edges - The edges (connections) in the workflow.
+ * @param context - The execution context, including the stored node outputs.
+ * @param nodeType - The type of the current node (e.g. 'cli' or 'llm').
+ * @returns An array of the combined parent outputs, with optional sanitization.
  */
 function combineParentOutputsByConnectionOrder(
     nodeId: string,
     edges: Edge[],
     context: ExecutionContext,
     nodeType: string
-): string {
+): string[] {
     const parentEdges = edges.filter(edge => edge.target === nodeId)
-    const inputs = parentEdges
+    return parentEdges
         .map(edge => {
             const output = context.nodeOutputs.get(edge.source)
             if (output === undefined) {
                 return ''
             }
-            // Apply appropriate sanitization based on target node type
             if (nodeType === 'cli') {
                 return sanitizeForShell(output)
             }
@@ -212,9 +227,6 @@ function combineParentOutputsByConnectionOrder(
             return output
         })
         .filter(output => output !== undefined)
-        .join('')
-
-    return inputs
 }
 
 /**
@@ -244,13 +256,6 @@ export async function executeWorkflow(
 
     for (const node of sortedNodes) {
         try {
-            const combinedInput = combineParentOutputsByConnectionOrder(
-                node.id,
-                edges,
-                context,
-                node.type
-            )
-
             webview.postMessage({
                 type: 'node_execution_status',
                 data: { nodeId: node.id, status: 'running' },
@@ -259,14 +264,26 @@ export async function executeWorkflow(
             let result: string
             switch (node.type) {
                 case 'cli': {
-                    const command =
-                        node.data.command?.replace('${input}', sanitizeForShell(combinedInput)) || ''
+                    const inputs = combineParentOutputsByConnectionOrder(
+                        node.id,
+                        edges,
+                        context,
+                        node.type
+                    )
+                    const command = node.data.command
+                        ? replaceIndexedInputs(node.data.command, inputs)
+                        : ''
                     result = await executeCLINode({ ...node, data: { ...node.data, command } })
                     break
                 }
                 case 'llm': {
-                    const prompt =
-                        node.data.prompt?.replace('${input}', sanitizeForPrompt(combinedInput)) || ''
+                    const inputs = combineParentOutputsByConnectionOrder(
+                        node.id,
+                        edges,
+                        context,
+                        node.type
+                    )
+                    const prompt = node.data.prompt ? replaceIndexedInputs(node.data.prompt, inputs) : ''
                     result = await executeLLMNode(
                         { ...node, data: { ...node.data, prompt } },
                         chatClient
@@ -274,12 +291,24 @@ export async function executeWorkflow(
                     break
                 }
                 case 'preview': {
-                    result = await executePreviewNode(combinedInput)
+                    const inputs = combineParentOutputsByConnectionOrder(
+                        node.id,
+                        edges,
+                        context,
+                        node.type
+                    )
+                    result = await executePreviewNode(inputs.join('\n'))
                     break
                 }
+
                 case 'text-format': {
-                    const text =
-                        node.data.content?.replace('${input}', sanitizeForPrompt(combinedInput)) || ''
+                    const inputs = combineParentOutputsByConnectionOrder(
+                        node.id,
+                        edges,
+                        context,
+                        node.type
+                    )
+                    const text = node.data.content ? replaceIndexedInputs(node.data.content, inputs) : ''
                     result = await executeInputNode(text)
                     break
                 }

@@ -35,7 +35,7 @@ export const PropertyEditor: React.FC<PropertyEditorProps> = ({ node, onUpdate }
                         onChange={(e: { target: { value: any } }) =>
                             onUpdate(node.id, { command: e.target.value })
                         }
-                        placeholder="Enter CLI command..."
+                        placeholder="Enter CLI command... (use ${1}, ${2} and so on for positional inputs)"
                     />
                 </div>
             )}
@@ -49,7 +49,7 @@ export const PropertyEditor: React.FC<PropertyEditorProps> = ({ node, onUpdate }
                         onChange={(e: { target: { value: any } }) =>
                             onUpdate(node.id, { prompt: e.target.value })
                         }
-                        placeholder="Enter LLM prompt..."
+                        placeholder="Enter LLM prompt... (use ${1}, ${2} and so on for positional inputs)"
                     />
                 </div>
             )}
@@ -63,7 +63,7 @@ export const PropertyEditor: React.FC<PropertyEditorProps> = ({ node, onUpdate }
                         onChange={(e: { target: { value: any } }) =>
                             onUpdate(node.id, { content: e.target.value })
                         }
-                        placeholder="Enter input text..."
+                        placeholder="Enter input text... (use ${1}, ${2} and so on for positional inputs)"
                     />
                 </div>
             )}
