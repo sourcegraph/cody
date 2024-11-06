@@ -43,7 +43,7 @@ export class FireworksAdapter implements AutoeditsModelAdapter {
 
     postProcessResponse(codeToReplace: CodeToReplaceData, response: string): string {
         // TODO(hitesh): The finetuned model is messing up the indentation of the first line. [Issue](https://linear.app/sourcegraph/issue/CODY-4266/fix-the-indentation-issue-with-the-fine-tuned-models)
-        // Correct it manully for now, by checking the first line of the code to rewrite and adding the same indentation to the first line of the completion
+        // Correct it manually for now, by checking the first line of the code to rewrite and adding the same indentation to the first line of the completion
         const fixedIndentationResponse = utils.fixFirstLineIndentation(
             codeToReplace.codeToRewrite,
             response

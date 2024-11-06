@@ -1,3 +1,4 @@
+import { range } from 'lodash'
 import { lines } from '../completions/text-processing'
 
 export function fixFirstLineIndentation(source: string, target: string): string {
@@ -44,17 +45,7 @@ export function mapLinesToOriginalLineNo(
     index: number,
     mappedValue: number
 ): number[] {
-    const result: number[] = []
-    for (let i = 0; i < originalList.length; i++) {
-        if (i < index) {
-            result.push(mappedValue - (index - i))
-        } else if (i > index) {
-            result.push(mappedValue + (i - index))
-        } else {
-            result.push(mappedValue)
-        }
-    }
-    return result
+    return range(mappedValue - index, mappedValue - index + originalList.length)
 }
 
 export function extractInlineCompletionFromRewrittenCode(
@@ -68,12 +59,6 @@ export function extractInlineCompletionFromRewrittenCode(
     const completionNumLines = lines(completion).length
     const completionWithSameLineSuffix = lines(predictionWithoutPrefix).slice(0, completionNumLines)
     return completionWithSameLineSuffix.join('\n')
-}
-
-// Helper function to zip two arrays together
-export function zip<T, U>(arr1: T[], arr2: U[]): [T, U][] {
-    const length = Math.min(arr1.length, arr2.length)
-    return Array.from({ length }, (_, i) => [arr1[i], arr2[i]])
 }
 
 export function trimExtraNewLineCharsFromSuggestion(
@@ -148,20 +133,21 @@ export function adjustPredictionIfInlineCompletionPossible(
     const prediction = prefix + completion + suffix
     return prediction
 }
+
 export function countNewLineCharsEnd(text: string): number {
-    const match = text.match(/\n+$/)
+    const match = text.match(/(?:\r\n|\n)+$/)
     return match ? match[0].length : 0
 }
 
 export function countNewLineCharsStart(text: string): number {
-    const match = text.match(/^\n+/)
+    const match = text.match(/^(?:\r\n|\n)+/)
     return match ? match[0].length : 0
 }
 
 export function isAllNewLineChars(text: string): boolean {
-    return /^[\n\r]*$/.test(text)
+    return /^[\r\n]*$/.test(text)
 }
 
 export function trimNewLineCharsFromString(text: string): string {
-    return text.replace(/^\n+|\n+$/g, '')
+    return text.replace(/^(?:\r\n|\n)+|(?:\r\n|\n)+$/g, '')
 }

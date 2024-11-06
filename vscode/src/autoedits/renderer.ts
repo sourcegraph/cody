@@ -130,7 +130,7 @@ export class AutoEditsRendererManager implements vscode.Disposable {
     private async onDidChangeTextDocument(event: vscode.TextDocumentChangeEvent): Promise<void> {
         // Only dismiss if we have an active suggestion and the changed document matches
         // else, we will falsely discard the suggestion on unrelated changes such as changes in output panel.
-        if (!this.activeEdit || event.document.uri.toString() !== this.activeEdit.uri) {
+        if (event.document.uri.toString() !== this.activeEdit?.uri) {
             return
         }
         await this.dismissEdit()
@@ -139,7 +139,7 @@ export class AutoEditsRendererManager implements vscode.Disposable {
     private async onDidChangeTextEditorSelection(
         event: vscode.TextEditorSelectionChangeEvent
     ): Promise<void> {
-        if (!this.activeEdit || event.textEditor.document.uri.toString() !== this.activeEdit.uri) {
+        if (event.textEditor.document.uri.toString() !== this.activeEdit?.uri) {
             return
         }
         const currentSelectionRange = event.selections[0]

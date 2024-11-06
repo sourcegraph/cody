@@ -245,6 +245,26 @@ describe('trimNewLineCharsFromString', () => {
         const expected = ''
         expect(utils.trimNewLineCharsFromString(input)).toBe(expected)
     })
+
+    it('handles Windows line endings (CRLF)', () => {
+        expect(utils.trimNewLineCharsFromString('\r\ntext\r\n')).toBe('text')
+        expect(utils.trimNewLineCharsFromString('\r\n\r\ntext\r\n\r\n')).toBe('text')
+    })
+
+    it('handles Unix line endings (LF)', () => {
+        expect(utils.trimNewLineCharsFromString('\ntext\n')).toBe('text')
+        expect(utils.trimNewLineCharsFromString('\n\ntext\n\n')).toBe('text')
+    })
+
+    it('handles mixed line endings', () => {
+        expect(utils.trimNewLineCharsFromString('\n\r\ntext\r\n\n')).toBe('text')
+        expect(utils.trimNewLineCharsFromString('\r\n\ntext\n\r\n')).toBe('text')
+    })
+
+    it('preserves internal line endings', () => {
+        expect(utils.trimNewLineCharsFromString('\r\ntext\nmore\r\ntext\r\n')).toBe('text\nmore\r\ntext')
+        expect(utils.trimNewLineCharsFromString('\ntext\r\nmore\ntext\n')).toBe('text\r\nmore\ntext')
+    })
 })
 
 describe('isAllNewLineChars', () => {
@@ -568,5 +588,49 @@ describe('adjustPredictionIfInlineCompletionPossible', () => {
             suffix
         )
         expect(result).toBe(originalPrediction)
+    })
+})
+
+describe('countNewLineCharsEnd', () => {
+    it('handles Unix line endings (LF)', () => {
+        expect(utils.countNewLineCharsEnd('text\n')).toBe(1)
+        expect(utils.countNewLineCharsEnd('text\n\n')).toBe(2)
+    })
+
+    it('handles Windows line endings (CRLF)', () => {
+        expect(utils.countNewLineCharsEnd('text\r\n')).toBe(2)
+        expect(utils.countNewLineCharsEnd('text\r\n\r\n')).toBe(4)
+    })
+
+    it('handles mixed line endings', () => {
+        expect(utils.countNewLineCharsEnd('text\n\r\n')).toBe(3)
+        expect(utils.countNewLineCharsEnd('text\r\n\n')).toBe(3)
+    })
+
+    it('handles no line endings', () => {
+        expect(utils.countNewLineCharsEnd('text')).toBe(0)
+        expect(utils.countNewLineCharsEnd('')).toBe(0)
+    })
+})
+
+describe('countNewLineCharsStart', () => {
+    it('handles Unix line endings (LF)', () => {
+        expect(utils.countNewLineCharsStart('\ntext')).toBe(1)
+        expect(utils.countNewLineCharsStart('\n\ntext')).toBe(2)
+    })
+
+    it('handles Windows line endings (CRLF)', () => {
+        expect(utils.countNewLineCharsStart('\r\ntext')).toBe(2)
+        expect(utils.countNewLineCharsStart('\r\n\r\ntext')).toBe(4)
+    })
+
+    it('handles mixed line endings', () => {
+        expect(utils.countNewLineCharsStart('\n\r\ntext')).toBe(3)
+        expect(utils.countNewLineCharsStart('\r\n\ntext')).toBe(3)
+    })
+
+    it('handles no line endings', () => {
+        expect(utils.countNewLineCharsStart('text')).toBe(0)
+        expect(utils.countNewLineCharsStart('')).toBe(0)
     })
 })
