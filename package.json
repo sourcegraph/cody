@@ -72,6 +72,7 @@
     "@opentelemetry/sdk-trace-node": "1.27.0",
     "@opentelemetry/sdk-trace-web": "1.27.0",
     "@sourcegraph/telemetry": "^0.18.0",
+    "lexical": "0.17.0",
     "observable-fns": "^0.6.1",
     "react": "18.2.0",
     "react-dom": "18.2.0",

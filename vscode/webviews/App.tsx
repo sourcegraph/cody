@@ -231,14 +231,10 @@ export function getAppWrappers({
     // Initialize telemetry service
     const telemetryService = new WebviewOpenTelemetryService()
     
-    // Configure telemetry based on config
-    if (config) {
         telemetryService.configure({
-            isTracingEnabled: config.configFeatures?.attribution ?? false,
+            isTracingEnabled:true,
             debugVerbose: false
         })
-    }
-
     return [
         {
             provider: TelemetryRecorderContext.Provider,

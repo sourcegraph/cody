@@ -44,6 +44,7 @@ import { HumanMessageCell } from './cells/messageCell/human/HumanMessageCell'
 import { CodyIcon } from './components/CodyIcon'
 import { InfoMessage } from './components/InfoMessage'
 
+import { trace, SpanStatusCode } from '@opentelemetry/api'
 interface TranscriptProps {
     chatEnabled: boolean
     transcript: ChatMessage[]
@@ -574,15 +575,39 @@ function submitHumanMessage({
     intent?: ChatMessage['intent']
     intentScores?: { intent: string; score: number }[]
     manuallySelectedIntent?: boolean
-}): void {
-    getVSCodeAPI().postMessage({
-        command: 'submit',
-        text: editorValue.text,
-        editorState: editorValue.editorState,
-        contextItems: editorValue.contextItems.map(deserializeContextItem),
-        intent,
-        intentScores,
-        manuallySelectedIntent,
+}): Promise<void> {
+    debugger
+    const tracer = trace.getTracer('cody-webview')
+    return tracer.startActiveSpan('submit-human-message', async (span) => {
+        try {
+            span.setAttributes({
+                'submit.text.length': editorValue.text.length,
+                'submit.intent': intent ?? undefined,
+                'submit.manuallySelectedIntent': manuallySelectedIntent,
+                'submit.contextItems.length': editorValue.contextItems.length,
+            })
+
+            getVSCodeAPI().postMessage({
+                command: 'submit',
+                text: editorValue.text,
+                editorState: editorValue.editorState,
+                contextItems: editorValue.contextItems.map(deserializeContextItem),
+                intent,
+                intentScores,
+                manuallySelectedIntent,
+            })
+
+            span.setStatus({ code: SpanStatusCode.OK })
+        } catch (error) {
+            span.setStatus({
+                code: SpanStatusCode.ERROR,
+                message: error instanceof Error ? error.message : 'Unknown error'
+            })
+            span.recordException(error as Error)
+            throw error
+        } finally {
+            span.end()
+            focusLastHumanMessageEditor()
+        }
     })
-    focusLastHumanMessageEditor()
 }

@@ -111,7 +111,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     const copyButtonOnSubmit = useCallback(
         (text: string, eventType: 'Button' | 'Keydown' = 'Button') => {
             const tracer = trace.getTracer('cody-webview')
-            
+            debugger
             return tracer.startActiveSpan('copy-text', async (span) => {
                 try {
                     const op = 'copy'
