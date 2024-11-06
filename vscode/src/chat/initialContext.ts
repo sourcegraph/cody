@@ -31,7 +31,7 @@ import * as vscode from 'vscode'
 import { URI } from 'vscode-uri'
 import { getSelectionOrFileContext } from '../commands/context/selection'
 import { createRepositoryMention } from '../context/openctx/common/get-repository-mentions'
-import { type RemoteRepo, remoteReposForAllWorkspaceFolders } from '../repository/remoteRepos'
+import { remoteReposForAllWorkspaceFolders } from '../repository/remoteRepos'
 import { ChatBuilder } from './chat-view/ChatBuilder'
 import {
     activeEditorContextForOpenCtxMentions,
@@ -49,14 +49,19 @@ export function observeDefaultContext({
     return combineLatest(
         getCurrentFileOrSelection({ chatBuilder }).pipe(distinctUntilChanged()),
         getCorpusContextItemsForEditorState().pipe(distinctUntilChanged()),
+        getCurrentRepositoryContextItem().pipe(distinctUntilChanged()),
         getOpenCtxContextItems().pipe(distinctUntilChanged()),
         featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.NoDefaultRepoChip)
     ).pipe(
         debounceTime(50),
         map(
-            ([currentFileOrSelectionContext, corpusContext, openctxContext, noDefaultRepoChip]):
-                | DefaultContext
-                | typeof pendingOperation => {
+            ([
+                currentFileOrSelectionContext,
+                corpusContext,
+                currentRepositoryContext,
+                openctxContext,
+                noDefaultRepoChip,
+            ]): DefaultContext | typeof pendingOperation => {
                 if (corpusContext === pendingOperation) {
                     return pendingOperation
                 }
@@ -77,6 +82,7 @@ export function observeDefaultContext({
                         ...(currentFileOrSelectionContext === pendingOperation
                             ? []
                             : currentFileOrSelectionContext),
+                        ...currentRepositoryContext,
                         ...corpusContext,
                     ],
                     corpusContext: [],
@@ -196,8 +202,7 @@ export function getCorpusContextItemsForEditorState(): Observable<
             // TODO(sqs): Make this consistent between self-serve (no remote search) and enterprise (has
             // remote search). There should be a single internal thing in Cody that lets you monitor the
             // user's current codebase.
-            const remoteRepos = (remoteReposForAllWorkspaceFolders as RemoteRepo[]) || []
-            if (authStatus.allowRemoteContext && remoteRepos.length > 0) {
+            if (authStatus.allowRemoteContext) {
                 if (remoteReposForAllWorkspaceFolders === pendingOperation) {
                     return pendingOperation
                 }
@@ -250,6 +255,25 @@ export function getCorpusContextItemsForEditorState(): Observable<
             return items
         })
     )
+}
+export function getCurrentRepositoryContextItem(): Observable<ContextItem[]> {
+    const items: ContextItem[] = []
+    const workspaceFolder = vscode.workspace.workspaceFolders?.at(0)
+    if (workspaceFolder) {
+        items.push({
+            type: 'tree',
+            uri: workspaceFolder.uri,
+            title: 'Current Repository',
+            name: workspaceFolder.name,
+            description: workspaceFolder.name,
+            isWorkspaceRoot: true,
+            content: null,
+            source: ContextItemSource.Initial,
+            icon: 'folder',
+        } satisfies ContextItemTree)
+    }
+
+    return Observable.of(items)
 }
 
 function getOpenCtxContextItems(): Observable<ContextItem[] | typeof pendingOperation> {
