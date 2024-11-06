@@ -309,7 +309,7 @@ function modelAvailability(
 
 function getTooltip(model: Model, availability: string): string {
     if (model.id.includes('deep-cody')) {
-        return 'Uses Claude 3.5 Sonnet (new) and other models to iterate on itself and ensure a complete, more contextual response is given'
+        return 'Uses Claude 3.5 Sonnet (New) with other models to fetch any extra context needed for better responses'
     }
     if (model.tags.includes(ModelTag.Waitlist)) {
         return 'Request access to this new model'
