@@ -1919,10 +1919,14 @@ export function manipulateWebviewHTML(html: string, options: TransformHTMLOption
         html = html
             .replaceAll("'self'", options.cspSource)
             .replaceAll('{cspSource}', options.cspSource)
-            // Add unsafe-inline to style-src
+            // Add unsafe-inline to style-src and sourcegraph.test to connect-src
             .replace(
                 /style-src ['"]self['"] https:\/\/\*\.vscode-cdn\.net/,
                 "style-src 'self' 'unsafe-inline' https://*.vscode-cdn.net"
+            )
+            .replace(
+                /connect-src ['"]self['"] https:\/\/\*\.vscode-cdn\.net/,
+                "connect-src 'self' https://*.vscode-cdn.net https://sourcegraph.test:3443 http://localhost:4318/v1/traces"
             )
     }
 

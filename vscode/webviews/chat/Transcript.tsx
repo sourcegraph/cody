@@ -576,7 +576,7 @@ function submitHumanMessage({
     intentScores?: { intent: string; score: number }[]
     manuallySelectedIntent?: boolean
 }): Promise<void> {
-    debugger
+    
     const tracer = trace.getTracer('cody-webview')
     return tracer.startActiveSpan('submit-human-message', async (span) => {
         try {

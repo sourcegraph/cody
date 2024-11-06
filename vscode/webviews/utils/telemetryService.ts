@@ -31,7 +31,7 @@ export class WebviewOpenTelemetryService {
             return;
         }
 
-        const traceUrl = 'https://sourcegraph.test:3443/-/debug/otlp/v1/traces'
+        const traceUrl = 'http://localhost:4318/v1/traces'
         const accessToken = 'sgp_local_4bc2547d6ef645a2d34b50597159ccd6b599f548'
 
         const { isTracingEnabled = true, debugVerbose = false } = options || {}
@@ -54,10 +54,23 @@ export class WebviewOpenTelemetryService {
             this.unloadInstrumentations = registerInstrumentations({
                 instrumentations: [
                     new XMLHttpRequestInstrumentation({
-                        propagateTraceHeaderCorsUrls: [/.+/],
+                        propagateTraceHeaderCorsUrls: [
+                            'http://localhost:4318'
+                        ],
+                        clearTimingResources: true,
+                        ignoreUrls: [],
+                        applyCustomAttributesOnSpan: (span) => {
+                            span.setAttribute('Access-Control-Allow-Origin', '*')
+                            span.setAttribute('Access-Control-Allow-Methods', 'POST, OPTIONS')
+                            span.setAttribute('Access-Control-Allow-Headers', 'Content-Type, Authorization')
+                            span.setAttribute('Access-Control-Max-Age', '86400')
+                        },
                     }),
                     new FetchInstrumentation({
-                        propagateTraceHeaderCorsUrls: [/.+/],
+                        propagateTraceHeaderCorsUrls: [
+                            'http://localhost:4318'
+                        ],
+                        clearTimingResources: true,
                     }),
                 ],
             })

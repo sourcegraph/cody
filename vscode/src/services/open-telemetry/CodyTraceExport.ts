@@ -20,7 +20,7 @@ export class CodyTraceExporter extends OTLPTraceExporter {
             },
             headers: {
                 ...(accessToken ? { Authorization: `token ${accessToken}` } : {}),
-                'Content-Security-Policy': "style-src 'self' 'unsafe-inline' https://*.vscode-cdn.net; connect-src 'self' https://*.vscode-cdn.net https://sourcegraph.test:3443",
+                'Content-Type': 'application/json',
             },
         })
         this.isTracingEnabled = isTracingEnabled
