@@ -1,5 +1,5 @@
 import { CodyIDE } from '@sourcegraph/cody-shared'
-import { SG_CHANGELOG_URL } from './chat/protocol'
+import { SG_CHANGELOG_URL, VSCODE_CHANGELOG_URL } from './chat/protocol'
 
 type ReleaseType = 'stable' | 'insiders'
 
@@ -57,6 +57,11 @@ const IDE_BLOG_TOPICS = {
  */
 export function getReleaseNotesURLByIDE(version: string, IDE: CodyIDE): string {
     const blogTopic = IDE in IDE_BLOG_TOPICS && IDE_BLOG_TOPICS[IDE as keyof typeof IDE_BLOG_TOPICS]
+
+    if (IDE === CodyIDE.VSCode && blogTopic) {
+        return new URL(VSCODE_CHANGELOG_URL).href
+    }
+
     if (IDE in IDE_BLOG_TOPICS && blogTopic) {
         const blogURL = new URL(SG_CHANGELOG_URL)
         blogURL.searchParams.set('topics', blogTopic)
