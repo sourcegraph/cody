@@ -111,19 +111,26 @@ export class AgentWorkspaceConfiguration implements vscode.WorkspaceConfiguratio
             },
         }
 
+        function mergeWithBaseConfig(config: any) {
+            for (const [key, value] of Object.entries(config)) {
+                if (typeof value === 'object') {
+                    const existing = _.get(baseConfig, key) ?? {}
+                    const merged = _.merge(existing, value)
+                    _.set(baseConfig, key, merged)
+                } else {
+                    _.set(baseConfig, key, value)
+                }
+            }
+        }
+
         const customConfiguration = config?.customConfiguration
         if (customConfiguration) {
-            for (const [key, value] of Object.entries(customConfiguration)) {
-                _.set(baseConfig, key, value)
-            }
+            mergeWithBaseConfig(customConfiguration)
         }
 
         const fromCustomConfigurationJson = config?.customConfigurationJson
         if (fromCustomConfigurationJson) {
-            const configJson = JSON.parse(fromCustomConfigurationJson)
-            for (const [key, value] of Object.entries(configJson)) {
-                _.set(baseConfig, key, value)
-            }
+            mergeWithBaseConfig(JSON.parse(fromCustomConfigurationJson))
         }
 
         const fromBaseConfig = _.get(baseConfig, section)
