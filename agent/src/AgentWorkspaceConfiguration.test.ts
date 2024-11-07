@@ -23,6 +23,7 @@ describe('AgentWorkspaceConfiguration', () => {
           "cody.debug": {
             "verbose": true
           },
+          "cody.advanced.hasNativeWebview": false,
           "cody.autocomplete.advanced.provider": "anthropic",
           "cody.experimental": {
             "tracing": true
@@ -54,6 +55,9 @@ describe('AgentWorkspaceConfiguration', () => {
         verboseDebug: true,
         codebase: 'test-repo',
         customConfigurationJson: customConfigJson,
+        customConfiguration: {
+            'cody.debug.additional': true,
+        },
     }
 
     beforeEach(() => {
@@ -70,7 +74,7 @@ describe('AgentWorkspaceConfiguration', () => {
             expect(config.get('cody.customHeaders')).toEqual({ 'X-Test': 'test' })
             expect(config.get('cody.telemetry.level')).toBe('agent')
             // clientName undefined because custom JSON specified telemetry with level alone.
-            expect(config.get('cody.telemetry.clientName')).toBeUndefined()
+            expect(config.get('cody.telemetry.clientName')).toBe('test-client')
             expect(config.get('cody.autocomplete.enabled')).toBe(true)
             expect(config.get('cody.autocomplete.advanced.provider')).toBe('anthropic')
             expect(config.get('cody.autocomplete.advanced.model')).toBe('claude-2')
@@ -108,7 +112,7 @@ describe('AgentWorkspaceConfiguration', () => {
                         },
                         running: true,
                     },
-                    hasNativeWebview: true,
+                    hasNativeWebview: false,
                 },
                 autocomplete: {
                     advanced: {
@@ -123,12 +127,14 @@ describe('AgentWorkspaceConfiguration', () => {
                 },
                 debug: {
                     verbose: true,
+                    additional: true,
                 },
                 experimental: {
                     tracing: true,
                 },
                 serverEndpoint: 'https://sourcegraph.test',
                 telemetry: {
+                    clientName: 'test-client',
                     level: 'agent',
                 },
             })
@@ -167,7 +173,7 @@ describe('AgentWorkspaceConfiguration', () => {
 
         it('handles agent capabilities correctly', () => {
             expect(config.get('cody.advanced.agent.capabilities.storage')).toBe(true)
-            expect(config.get('cody.advanced.hasNativeWebview')).toBe(true)
+            expect(config.get('cody.advanced.hasNativeWebview')).toBe(false)
         })
 
         it('returns default value for unknown sections', () => {
@@ -236,7 +242,11 @@ describe('AgentWorkspaceConfiguration', () => {
 
         it('updates nested configuration object', async () => {
             await config.update('cody.debug', { verbose: false, newSetting: true })
-            expect(config.get('cody.debug')).toEqual({ verbose: false, newSetting: true })
+            expect(config.get('cody.debug')).toEqual({
+                verbose: false,
+                newSetting: true,
+                additional: true,
+            })
             expect(config.get('cody.debug.newSetting')).toEqual(true)
         })
 
