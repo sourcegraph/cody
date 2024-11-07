@@ -50,6 +50,13 @@ export interface CodyWebChatProps {
     initialContext?: InitialContext
     customHeaders?: Record<string, string>
     className?: string
+
+    /**
+     * Whenever an external (imperative) Cody Chat API instance is ready,
+     * for example it gives you ability to run prompt, Note that this handler
+     * should be memoized and not change between components re-render, otherwise
+     * it will be stuck in infinite update loop
+     */
     onExternalApiReady?: (api: CodyExternalApi) => void
 }
 /**

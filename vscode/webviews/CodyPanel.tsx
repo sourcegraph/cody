@@ -173,6 +173,7 @@ const ErrorBanner: React.FunctionComponent<{ errors: string[]; setErrors: (error
 export interface ExternalPrompt {
     text: string
     autoSubmit: boolean
+    mode?: ChatMessage['intent']
 }
 
 export interface CodyExternalApi {
@@ -193,8 +194,8 @@ function useExternalAPI(): CodyExternalApi {
                 dispatchClientAction(
                     {
                         editorState: promptEditorState,
-                        setLastHumanInputIntent: 'chat',
                         submitHumanInput: prompt.autoSubmit,
+                        setLastHumanInputIntent: prompt.mode ?? 'chat',
                     },
                     // Buffer because PromptEditor is not guaranteed to be mounted after the `setView`
                     // call above, and it needs to be mounted to receive the action.
