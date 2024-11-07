@@ -222,34 +222,32 @@ export function getCurrentFileContext(options: CurrentFilePromptOptions): Curren
         maxLine
     )
 
-    // Helper function to create range
-    const createRange = (startLine: number, startChar: number, endLine: number, endChar: number) =>
-        new vscode.Range(startLine, startChar, endLine, endChar)
-
-    // Helper function to get line end character
-    const getLineEndChar = (line: number) => document.lineAt(line).rangeIncludingLineBreak.end.character
+    // Helper function to create position from line number
+    const positionAtLineStart = (line: number) => new vscode.Position(line, 0)
+    const positionAtLineEnd = (line: number) => document.lineAt(line).rangeIncludingLineBreak.end
 
     // Create ranges for different sections
     const ranges = {
-        codeToRewrite: createRange(
-            codeToRewriteStart,
-            0,
-            codeToRewriteEnd,
-            getLineEndChar(codeToRewriteEnd)
+        codeToRewrite: new vscode.Range(
+            positionAtLineStart(codeToRewriteStart),
+            positionAtLineEnd(codeToRewriteEnd)
         ),
-        codeToRewritePrefix: createRange(codeToRewriteStart, 0, position.line, position.character),
-        codeToRewriteSuffix: createRange(
-            position.line,
-            position.character,
-            codeToRewriteEnd,
-            getLineEndChar(codeToRewriteEnd)
+        codeToRewritePrefix: new vscode.Range(
+            positionAtLineStart(codeToRewriteStart),
+            new vscode.Position(position.line, position.character)
         ),
-        prefixInArea: createRange(areaStart, 0, codeToRewriteStart, 0),
-        suffixInArea: createRange(codeToRewriteEnd + 1, 0, areaEnd, getLineEndChar(areaEnd)),
-        prefixBeforeArea: createRange(minLine, 0, areaStart, 0),
-        suffixAfterArea: createRange(areaEnd + 1, 0, maxLine, getLineEndChar(maxLine)),
+        codeToRewriteSuffix: new vscode.Range(
+            new vscode.Position(position.line, position.character),
+            positionAtLineEnd(codeToRewriteEnd)
+        ),
+        prefixInArea: new vscode.Range(
+            positionAtLineStart(areaStart),
+            positionAtLineStart(codeToRewriteStart)
+        ),
+        suffixInArea: new vscode.Range(positionAtLineEnd(codeToRewriteEnd), positionAtLineEnd(areaEnd)),
+        prefixBeforeArea: new vscode.Range(positionAtLineStart(minLine), positionAtLineStart(areaStart)),
+        suffixAfterArea: new vscode.Range(positionAtLineEnd(areaEnd), positionAtLineEnd(maxLine)),
     }
-
     // Convert ranges to PromptStrings
     return {
         codeToRewrite: PromptString.fromDocumentText(document, ranges.codeToRewrite),
