@@ -20,29 +20,28 @@ class CodyConsole(project: Project) {
   var content: Content? = null
 
   fun addMessage(message: DebugMessage) {
-    if (ConfigUtil.isCodyDebugEnabled()) {
-      runInEdt {
-        val messageText = "${message.channel}: ${message.message}\n"
-        if (message.message.contains("ERROR") || message.message.contains("PANIC")) {
-          toolWindow?.show()
-          content?.let { toolWindow?.contentManager?.setSelectedContent(it) }
-          consoleView.print(messageText, ConsoleViewContentType.ERROR_OUTPUT)
-          logger.error(messageText)
-        } else {
-          consoleView.print(messageText, ConsoleViewContentType.NORMAL_OUTPUT)
-          logger.info(messageText)
-        }
+    runInEdt {
+      val messageText = "${message.channel}: ${message.message}\n"
+      if (message.level == "error" || message.level == "warn") {
+        content?.let { toolWindow?.contentManager?.setSelectedContent(it) }
+        consoleView.print(messageText, ConsoleViewContentType.ERROR_OUTPUT)
+        logger.warn(messageText)
+      } else if (ConfigUtil.isCodyDebugEnabled()) {
+        consoleView.print(messageText, ConsoleViewContentType.NORMAL_OUTPUT)
+        logger.info(messageText)
+      }
+
+      if (ConfigUtil.isCodyDebugEnabled()) {
+        toolWindow?.show()
       }
     }
   }
 
   init {
-    if (ConfigUtil.isCodyDebugEnabled()) {
-      runInEdt {
-        val factory = toolWindow?.contentManager?.factory
-        content = factory?.createContent(consoleView.component, "Cody Console", true)
-        content?.let { toolWindow?.contentManager?.addContent(it) }
-      }
+    runInEdt {
+      val factory = toolWindow?.contentManager?.factory
+      content = factory?.createContent(consoleView.component, "Cody Console", true)
+      content?.let { toolWindow?.contentManager?.addContent(it) }
     }
   }
 
