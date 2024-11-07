@@ -18,7 +18,7 @@ import type { VSCodeWrapper } from 'cody-ai/webviews/utils/VSCodeApi'
 
 import { ChatMentionContext, type ChatMentionsSettings } from '@sourcegraph/prompt-editor'
 import { getAppWrappers } from 'cody-ai/webviews/App'
-import { CodyPanel } from 'cody-ai/webviews/CodyPanel'
+import { type CodyExternalApi, CodyPanel } from 'cody-ai/webviews/CodyPanel'
 import { useClientActionDispatcher } from 'cody-ai/webviews/client/clientState'
 import type { View } from 'cody-ai/webviews/tabs'
 import { ComposedWrappers, type Wrapper } from 'cody-ai/webviews/utils/composeWrappers'
@@ -50,6 +50,7 @@ export interface CodyWebChatProps {
     initialContext?: InitialContext
     customHeaders?: Record<string, string>
     className?: string
+    onExternalApiReady?: (api: CodyExternalApi) => void
 }
 /**
  * The root component node for Cody Web Chat, implements Cody Agent client
@@ -66,6 +67,7 @@ export const CodyWebChat: FunctionComponent<CodyWebChatProps> = ({
     telemetryClientName,
     customHeaders,
     className,
+    onExternalApiReady,
 }) => {
     const { client, vscodeAPI } = useCodyWebAgent({
         serverEndpoint,
@@ -91,6 +93,7 @@ export const CodyWebChat: FunctionComponent<CodyWebChatProps> = ({
                     vscodeAPI={vscodeAPI}
                     initialContext={initialContext}
                     className={styles.container}
+                    onExternalApiReady={onExternalApiReady}
                 />
             </div>
         </AppWrapper>
@@ -101,10 +104,11 @@ interface CodyWebPanelProps {
     vscodeAPI: VSCodeWrapper
     initialContext: InitialContext | undefined
     className?: string
+    onExternalApiReady?: (api: CodyExternalApi) => void
 }
 
 const CodyWebPanel: FC<CodyWebPanelProps> = props => {
-    const { vscodeAPI, initialContext: initialContextData, className } = props
+    const { vscodeAPI, initialContext: initialContextData, className, onExternalApiReady } = props
 
     const dispatchClientAction = useClientActionDispatcher()
     const [errorMessages, setErrorMessages] = useState<string[]>([])
@@ -257,6 +261,7 @@ const CodyWebPanel: FC<CodyWebPanelProps> = props => {
                             messageInProgress={messageInProgress}
                             transcript={transcript}
                             vscodeAPI={vscodeAPI}
+                            onExternalApiReady={onExternalApiReady}
                         />
                     </ComposedWrappers>
                 </ChatMentionContext.Provider>

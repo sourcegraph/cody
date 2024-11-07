@@ -1,3 +1,5 @@
+export type { CodyExternalApi } from '../../vscode/webviews/CodyPanel'
+
 export interface Repository {
     id: string
     name: string
