@@ -4,7 +4,6 @@ import {
     PromptString,
     isDefined,
     logDebug,
-    modelsService,
     ps,
     telemetryRecorder,
 } from '@sourcegraph/cody-shared'
@@ -45,10 +44,7 @@ export class DeepCodyAgent extends CodyChatAgent {
         chatAbortSignal: AbortSignal,
         maxLoops = 2
     ): Promise<ContextItem[]> {
-        const fastChatModel = modelsService.getModelByID(
-            'anthropic::2024-10-22::claude-3-5-haiku-latest'
-        )
-        this.models.review = fastChatModel?.id ?? this.chatBuilder.selectedModel
+        this.models.review = this.chatBuilder.selectedModel
 
         const startTime = performance.now()
         const count = await this.reviewLoop(span, chatAbortSignal, maxLoops)
