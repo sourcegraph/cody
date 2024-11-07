@@ -276,7 +276,7 @@ export function contextItemFromString(item: string): EvalContextItem {
     }
 }
 
-export function contextItemToString(item: EvalContextItem, example?: Example): string {
+export function contextItemToString(item: EvalContextItem): string {
     // Check format by examining the first essential context item to identify whether its old or new format
     if (item.format == 'url') {
         return `https://sourcegraph.sourcegraph.com/github.com/${item.repoName}/-/blob/${item.path}?L${item.startLine}-${item.endLine}`
