@@ -238,6 +238,9 @@ export interface ConfigurationSubsetForWebview
  */
 export const CODY_DOC_URL = new URL('https://sourcegraph.com/docs/cody')
 export const SG_CHANGELOG_URL = new URL('https://sourcegraph.com/changelog')
+export const VSCODE_CHANGELOG_URL = new URL(
+    'https://github.com/sourcegraph/cody/blob/main/vscode/CHANGELOG.md'
+)
 
 // Community and support
 export const DISCORD_URL = new URL('https://discord.gg/s2qDtYGnAE')
