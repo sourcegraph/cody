@@ -64,9 +64,7 @@ export class DeepCodyAgent extends CodyChatAgent {
                 category: 'billable',
             },
         })
-
-        // Remove the TOOL context item that is only used during the review process.
-        return this.context.filter(c => c.title !== 'TOOL')
+        return this.context
     }
 
     private async reviewLoop(
@@ -81,7 +79,9 @@ export class DeepCodyAgent extends CodyChatAgent {
             const newContext = await this.review(span, chatAbortSignal)
             if (!newContext.length) break
 
-            this.context.push(...newContext)
+            // Remove the TOOL context item that is only used during the review process.
+            this.context.push(...newContext.filter(c => c.title !== 'TOOLCONTEXT'))
+
             context += newContext.length
             loop++
         }
