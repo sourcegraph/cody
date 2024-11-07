@@ -30,6 +30,7 @@ export interface EvalContextItem {
     startLine: number
     endLine: number
     content?: string
+    format?: 'url' | 'old'
 }
 
 interface RepoRev {
@@ -235,7 +236,7 @@ function exampleToCsvRecord(example: ExampleOutput): any {
         langs_optional: example.langs?.join('\n'),
         source_optional: example.source,
 
-        actualContext: example.actualContext.map(item => contextItemToString(item, example)).join('\n'),
+        actualContext: example.actualContext.map(item => contextItemToString(item)).join('\n'),
 
         stat_eRecall5: example.stats.essentialRecall5,
         stat_eRecall10: example.stats.essentialRecall10,
