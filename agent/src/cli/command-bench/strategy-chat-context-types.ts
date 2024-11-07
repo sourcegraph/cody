@@ -227,7 +227,7 @@ function exampleToCsvRecord(example: ExampleOutput): any {
         query: example.query,
         essentialFacts: example.essentialFacts.join('\n'),
         essentialContext: example.essentialContext
-            .map(c => `${c.repoName}:${c.path}:${c.startLine}-${c.endLine}`)
+            .map(contextItemToString)
             .join('\n'),
         helpfulContext_optional: example.helpfulContext
             .map(c => `${c.repoName}:${c.path}:${c.startLine}-${c.endLine}`)
@@ -235,7 +235,7 @@ function exampleToCsvRecord(example: ExampleOutput): any {
         langs_optional: example.langs?.join('\n'),
         source_optional: example.source,
 
-        actualContext: example.actualContext.map(contextItemToString).join('\n'),
+        actualContext: example.actualContext.map(item => contextItemToString(item, example)).join('\n'),
 
         stat_eRecall5: example.stats.essentialRecall5,
         stat_eRecall10: example.stats.essentialRecall10,
@@ -244,6 +244,24 @@ function exampleToCsvRecord(example: ExampleOutput): any {
 }
 
 export function contextItemFromString(item: string): EvalContextItem {
+    // Handle new clickable link format which is "https://sourcegraph.sourcegraph.com/github.com/sourcegraph-testing/pinned-cody/-/blob/README.md?L42-43"
+    if (item.startsWith('https://')) {
+        const url = new URL(item)
+        const pathParts = url.pathname.split('/-/blob/')
+        const repoName = pathParts[0].replace('/github.com/', '')
+        const path = pathParts[1]
+        const lineRange = url.search.replace('?L', '').split('-')
+        
+        return {
+            repoName,
+            path,
+            startLine: Number.parseInt(lineRange[0]),
+            endLine: Number.parseInt(lineRange[1]),
+            format: 'url'
+        }
+    }
+    
+    // Handle old format which is  "github.com/sourcegraph-testing/pinned-cody:README.md:42-43"
     const [repoName, path, lineRange] = item.split(':')
     if (!repoName || !path || !lineRange) {
         throw new Error(`Invalid context item: ${item}`)
@@ -254,9 +272,14 @@ export function contextItemFromString(item: string): EvalContextItem {
         path,
         startLine: Number.parseInt(startLine),
         endLine: Number.parseInt(endLine),
+        format: 'old'
     }
 }
 
-export function contextItemToString(item: EvalContextItem): string {
+export function contextItemToString(item: EvalContextItem, example?: Example): string {
+    // Check format by examining the first essential context item to identify whether its old or new format
+    if (item.format == 'url') {
+        return `https://sourcegraph.sourcegraph.com/github.com/${item.repoName}/-/blob/${item.path}?L${item.startLine}-${item.endLine}`
+    }
     return `${item.repoName}:${item.path}:${item.startLine}-${item.endLine}`
 }

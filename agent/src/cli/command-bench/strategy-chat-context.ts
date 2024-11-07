@@ -130,12 +130,15 @@ async function runContextCommand(
             throw new Error(`contextSearch failed for [${repoNames.join(',')}]: null results`)
         }
         const results = resultsResp ?? []
+         // Determine the format from the first essentialContext item to have same format in actualContext
+        const isUrlFormat = essentialContext.length > 0 && essentialContext[0].format === 'url'
         const actualContext: EvalContextItem[] = results.map(result => ({
-            repoName: result.repoName,
+            repoName: result.repoName.replace(/^github\.com\//, ''),
             path: result.path,
             startLine: result.startLine,
             endLine: result.endLine,
             content: result.content,
+            format: isUrlFormat ? 'url' : 'old'
         }))
 
         exampleOutputs.push({
