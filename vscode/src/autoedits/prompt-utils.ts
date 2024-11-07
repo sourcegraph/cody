@@ -57,8 +57,7 @@ export interface CodeToReplaceData {
     suffixInArea: string
     codeToRewritePrefix: string
     codeToRewriteSuffix: string
-    startLine: number
-    endLine: number
+    range: vscode.Range
 }
 
 export interface CurrentFilePromptResponse {
@@ -75,8 +74,7 @@ interface CurrentFileContext {
     suffixInArea: PromptString
     prefixBeforeArea: PromptString
     suffixAfterArea: PromptString
-    codeToRewriteStartLine: number
-    codeToRewriteEndLine: number
+    range: vscode.Range
 }
 
 // Helper function to get prompt in some format
@@ -168,8 +166,7 @@ export function getCurrentFilePromptComponents(
     const currentFileContext = getCurrentFileContext(options)
     const codeToReplace = {
         codeToRewrite: currentFileContext.codeToRewrite.toString(),
-        startLine: currentFileContext.codeToRewriteStartLine,
-        endLine: currentFileContext.codeToRewriteEndLine,
+        range: currentFileContext.range,
         codeToRewritePrefix: currentFileContext.codeToRewritePrefix.toString(),
         codeToRewriteSuffix: currentFileContext.codeToRewriteSuffix.toString(),
         prefixBeforeArea: currentFileContext.prefixBeforeArea.toString(),
@@ -262,8 +259,7 @@ export function getCurrentFileContext(options: CurrentFilePromptOptions): Curren
         suffixInArea: PromptString.fromDocumentText(document, ranges.suffixInArea),
         prefixBeforeArea: PromptString.fromDocumentText(document, ranges.prefixBeforeArea),
         suffixAfterArea: PromptString.fromDocumentText(document, ranges.suffixAfterArea),
-        codeToRewriteStartLine: codeToRewriteStart,
-        codeToRewriteEndLine: codeToRewriteEnd,
+        range: ranges.codeToRewrite,
     }
 }
 

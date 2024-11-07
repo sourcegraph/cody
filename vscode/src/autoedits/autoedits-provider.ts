@@ -195,15 +195,11 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
         codeToReplaceData: CodeToReplaceData,
         prediction: string
     ): Promise<void> {
-        const range = new vscode.Range(
-            new vscode.Position(codeToReplaceData.startLine, 0),
-            document.lineAt(codeToReplaceData.endLine).rangeIncludingLineBreak.end
-        )
         const currentFileText = document.getText()
         const predictedFileText =
-            currentFileText.slice(0, document.offsetAt(range.start)) +
+            currentFileText.slice(0, document.offsetAt(codeToReplaceData.range.start)) +
             prediction +
-            currentFileText.slice(document.offsetAt(range.end))
+            currentFileText.slice(document.offsetAt(codeToReplaceData.range.end))
         if (this.shouldNotShowEdit(currentFileText, predictedFileText, codeToReplaceData)) {
             autoeditsLogger.logDebug(
                 'Autoedits',
@@ -213,7 +209,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
         }
         await this.rendererManager.showEdit({
             document,
-            range,
+            range: codeToReplaceData.range,
             prediction,
             currentFileText,
             predictedFileText,

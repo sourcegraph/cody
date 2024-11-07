@@ -34,8 +34,8 @@ describe('getCurrentFileContext', () => {
         expect(result.suffixInArea.toString()).toBe('line6')
         expect(result.prefixBeforeArea.toString()).toBe('')
         expect(result.suffixAfterArea.toString()).toBe('')
-        expect(result.codeToRewriteStartLine).toBe(1)
-        expect(result.codeToRewriteEndLine).toBe(3)
+        expect(result.range.start.line).toBe(1)
+        expect(result.range.end.line).toBe(3)
     })
 
     it('handles cursor at start of line', () => {
@@ -64,8 +64,8 @@ describe('getCurrentFileContext', () => {
         expect(result.codeToRewriteSuffix.toString()).toBe('line3\nline4\n')
         expect(result.prefixInArea.toString()).toBe('line1\n')
         expect(result.suffixInArea.toString()).toBe('line5')
-        expect(result.codeToRewriteStartLine).toBe(1)
-        expect(result.codeToRewriteEndLine).toBe(3)
+        expect(result.range.start.line).toBe(1)
+        expect(result.range.end.line).toBe(3)
     })
 
     it('handles single line content', () => {
@@ -95,8 +95,8 @@ describe('getCurrentFileContext', () => {
         expect(result.codeToRewriteSuffix.toString()).toBe('bar')
         expect(result.prefixInArea.toString()).toBe('')
         expect(result.suffixInArea.toString()).toBe('')
-        expect(result.codeToRewriteStartLine).toBe(0)
-        expect(result.codeToRewriteEndLine).toBe(0)
+        expect(result.range.start.line).toBe(0)
+        expect(result.range.end.line).toBe(0)
     })
 
     it('handles cursor at start of file', () => {
@@ -126,8 +126,8 @@ describe('getCurrentFileContext', () => {
         expect(result.codeToRewriteSuffix.toString()).toBe('line1\nline2\n')
         expect(result.prefixInArea.toString()).toBe('')
         expect(result.suffixInArea.toString()).toBe('line3')
-        expect(result.codeToRewriteStartLine).toBe(0)
-        expect(result.codeToRewriteEndLine).toBe(1)
+        expect(result.range.start.line).toBe(0)
+        expect(result.range.end.line).toBe(1)
     })
 
     it('handles cursor at end of file', () => {
@@ -157,8 +157,8 @@ describe('getCurrentFileContext', () => {
         expect(result.codeToRewriteSuffix.toString()).toBe('')
         expect(result.prefixInArea.toString()).toBe('line1\n')
         expect(result.suffixInArea.toString()).toBe('')
-        expect(result.codeToRewriteStartLine).toBe(1)
-        expect(result.codeToRewriteEndLine).toBe(2)
+        expect(result.range.start.line).toBe(1)
+        expect(result.range.end.line).toBe(2)
     })
 
     it('handles large codeToRewritePrefixLines', () => {
@@ -190,8 +190,8 @@ describe('getCurrentFileContext', () => {
         expect(result.codeToRewriteSuffix.toString()).toBe('line6\nline7')
         expect(result.prefixInArea.toString()).toBe('line2\n')
         expect(result.suffixInArea.toString()).toBe('')
-        expect(result.codeToRewriteStartLine).toBe(2)
-        expect(result.codeToRewriteEndLine).toBe(6)
+        expect(result.range.start.line).toBe(2)
+        expect(result.range.end.line).toBe(6)
     })
 
     it('handles very large file exceeding max lengths with large range', () => {
@@ -227,8 +227,8 @@ describe('getCurrentFileContext', () => {
         expect(result.codeToRewrite.toString()).toContain('prefix-line\ncursorline\nsuffix-line\n')
         expect(result.codeToRewritePrefix.toString()).toContain('prefix-line\ncursor')
         expect(result.codeToRewriteSuffix.toString()).toContain('line\nsuffix-line\n')
-        expect(result.codeToRewriteStartLine).toBe(9)
-        expect(result.codeToRewriteEndLine).toBe(11)
+        expect(result.range.start.line).toBe(9)
+        expect(result.range.end.line).toBe(11)
     })
 
     it('handles very large file exceeding max lengths', () => {
@@ -264,8 +264,8 @@ describe('getCurrentFileContext', () => {
         expect(result.codeToRewrite.toString()).toContain('prefix-line\ncursorline\nsuffix-line')
         expect(result.codeToRewritePrefix.toString()).toContain('prefix-line\ncursor')
         expect(result.codeToRewriteSuffix.toString()).toContain('line\nsuffix-line')
-        expect(result.codeToRewriteStartLine).toBe(9)
-        expect(result.codeToRewriteEndLine).toBe(11)
+        expect(result.range.start.line).toBe(9)
+        expect(result.range.end.line).toBe(11)
     })
 
     it('handles file shorter than requested ranges', () => {
@@ -297,7 +297,7 @@ describe('getCurrentFileContext', () => {
         expect(result.suffixInArea.toString()).toBe('')
         expect(result.prefixBeforeArea.toString()).toBe('')
         expect(result.suffixAfterArea.toString()).toBe('')
-        expect(result.codeToRewriteStartLine).toBe(0)
-        expect(result.codeToRewriteEndLine).toBe(2)
+        expect(result.range.start.line).toBe(0)
+        expect(result.range.end.line).toBe(2)
     })
 })
