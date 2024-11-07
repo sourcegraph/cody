@@ -80,7 +80,7 @@ export class DeepCodyAgent extends CodyChatAgent {
             if (!newContext.length) break
 
             // Remove the TOOL context item that is only used during the review process.
-            this.context.push(...newContext.filter(c => c.title !== 'TOOL'))
+            this.context.push(...newContext.filter(c => c.title !== 'TOOLCONTEXT'))
 
             context += newContext.length
             loop++
