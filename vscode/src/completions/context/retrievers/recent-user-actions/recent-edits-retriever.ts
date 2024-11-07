@@ -38,20 +38,14 @@ export class RecentEditsRetriever implements vscode.Disposable, ContextRetriever
         options: RecentEditsRetrieverOptions,
         readonly workspace: Pick<
             typeof vscode.workspace,
-            'onDidChangeTextDocument' | 'onDidRenameFiles' | 'onDidDeleteFiles' | 'onDidOpenTextDocument'
+            'onDidChangeTextDocument' | 'onDidRenameFiles' | 'onDidDeleteFiles'
         > = vscode.workspace
     ) {
         this.maxAgeMs = options.maxAgeMs
         this.addLineNumbersForDiff = options.addLineNumbersForDiff ?? false
-
-        for (const document of vscode.workspace.textDocuments) {
-            this.trackDocument(document)
-        }
-        // Set up event listeners for changes
         this.disposables.push(workspace.onDidChangeTextDocument(this.onDidChangeTextDocument.bind(this)))
         this.disposables.push(workspace.onDidRenameFiles(this.onDidRenameFiles.bind(this)))
         this.disposables.push(workspace.onDidDeleteFiles(this.onDidDeleteFiles.bind(this)))
-        this.disposables.push(workspace.onDidOpenTextDocument(this.onDidOpenTextDocument.bind(this)))
     }
 
     public async retrieve(options: ContextRetrieverOptions): Promise<AutocompleteContextSnippet[]> {
@@ -82,7 +76,7 @@ export class RecentEditsRetriever implements vscode.Disposable, ContextRetriever
         const diffPromises = Array.from(this.trackedDocuments.entries()).map(
             async ([uri, trackedDocument]) => {
                 const diff = await this.getDiff(vscode.Uri.parse(uri))
-                if (diff && trackedDocument.changes.length > 0) {
+                if (diff) {
                     return {
                         diff,
                         uri: trackedDocument.uri,
@@ -183,9 +177,9 @@ export class RecentEditsRetriever implements vscode.Disposable, ContextRetriever
     }
 
     private onDidChangeTextDocument(event: vscode.TextDocumentChangeEvent): void {
-        const trackedDocument = this.trackedDocuments.get(event.document.uri.toString())
+        let trackedDocument = this.trackedDocuments.get(event.document.uri.toString())
         if (!trackedDocument) {
-            return
+            trackedDocument = this.trackDocument(event.document)
         }
 
         const now = Date.now()
@@ -222,10 +216,7 @@ export class RecentEditsRetriever implements vscode.Disposable, ContextRetriever
         }
     }
 
-    private trackDocument(document: vscode.TextDocument): void {
-        if (document.uri.scheme !== 'file') {
-            return
-        }
+    private trackDocument(document: vscode.TextDocument): TrackedDocument {
         const trackedDocument: TrackedDocument = {
             content: document.getText(),
             languageId: document.languageId,
@@ -233,6 +224,7 @@ export class RecentEditsRetriever implements vscode.Disposable, ContextRetriever
             changes: [],
         }
         this.trackedDocuments.set(document.uri.toString(), trackedDocument)
+        return trackedDocument
     }
 
     private reconcileOutdatedChanges(): void {
@@ -248,12 +240,6 @@ export class RecentEditsRetriever implements vscode.Disposable, ContextRetriever
                 outdatedChanges.map(c => c.change)
             )
             trackedDocument.changes = trackedDocument.changes.slice(firstNonOutdatedChangeIndex)
-        }
-    }
-
-    private onDidOpenTextDocument(document: vscode.TextDocument): void {
-        if (!this.trackedDocuments.has(document.uri.toString())) {
-            this.trackDocument(document)
         }
     }
 }

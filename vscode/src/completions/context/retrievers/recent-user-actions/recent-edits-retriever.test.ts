@@ -15,7 +15,6 @@ describe('RecentEditsRetriever', () => {
     let onDidChangeTextDocument: (event: vscode.TextDocumentChangeEvent) => void
     let onDidRenameFiles: (event: vscode.FileRenameEvent) => void
     let onDidDeleteFiles: (event: vscode.FileDeleteEvent) => void
-    let onDidOpenTextDocument: (event: vscode.TextDocument) => void
 
     beforeEach(() => {
         vi.useFakeTimers()
@@ -37,10 +36,6 @@ describe('RecentEditsRetriever', () => {
                 },
                 onDidDeleteFiles(listener) {
                     onDidDeleteFiles = listener
-                    return { dispose: () => {} }
-                },
-                onDidOpenTextDocument(listener) {
-                    onDidOpenTextDocument = listener
                     return { dispose: () => {} }
                 },
             }
@@ -105,8 +100,6 @@ describe('RecentEditsRetriever', () => {
         `)
 
         it('tracks document changes and creates a git diff', async () => {
-            onDidOpenTextDocument(testDocument)
-
             replaceFooLogWithNumber(testDocument)
 
             deleteBarLog(testDocument)
@@ -132,8 +125,6 @@ describe('RecentEditsRetriever', () => {
 
         it('no-ops for blocked files due to the context filter', async () => {
             vi.spyOn(contextFiltersProvider, 'isUriIgnored').mockResolvedValueOnce('repo:foo')
-            onDidOpenTextDocument(testDocument)
-
             replaceFooLogWithNumber(testDocument)
 
             deleteBarLog(testDocument)
@@ -144,8 +135,6 @@ describe('RecentEditsRetriever', () => {
         })
 
         it('does not yield changes that are older than the configured timeout', async () => {
-            onDidOpenTextDocument(testDocument)
-
             replaceFooLogWithNumber(testDocument)
 
             vi.advanceTimersByTime(3 * 60 * 1000)
@@ -170,8 +159,6 @@ describe('RecentEditsRetriever', () => {
         })
 
         it('handles renames', async () => {
-            onDidOpenTextDocument(testDocument)
-
             replaceFooLogWithNumber(testDocument)
 
             vi.advanceTimersByTime(3 * 60 * 1000)
@@ -207,7 +194,6 @@ describe('RecentEditsRetriever', () => {
         })
 
         it('handles deletions', async () => {
-            onDidOpenTextDocument(testDocument)
             replaceFooLogWithNumber(testDocument)
             onDidDeleteFiles({ files: [testDocument.uri] })
             expect(await retriever.getDiff(testDocument.uri)).toBe(null)
