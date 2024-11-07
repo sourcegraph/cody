@@ -33,8 +33,7 @@ export class PromptMixin {
     public static mixInto(
         humanMessage: ChatMessage,
         modelID: ChatModel | undefined,
-        newMixins: PromptMixin[] = [],
-        agentID?: string
+        newMixins: PromptMixin[] = []
     ): ChatMessage {
         const mixins = [...PromptMixin.mixins]
 
@@ -45,7 +44,7 @@ export class PromptMixin {
         }
 
         // Handle Deep Cody specific prompts
-        const isDeepCodyEnabled = agentID === 'deep-cody'
+        const isDeepCodyEnabled = modelID?.includes('deep-cody')
         if (isDeepCodyEnabled && !newMixins.length) {
             mixins.push(new PromptMixin(DEEP_CODY))
         }

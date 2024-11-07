@@ -43,7 +43,6 @@ export const ContextCell: FunctionComponent<{
     }) => void
     onManuallyEditContext: () => void
     editContextText: React.ReactNode
-    chatAgent?: string
     /** For use in storybooks only. */
     __storybook__initialOpen?: boolean
 }> = memo(
@@ -61,7 +60,6 @@ export const ContextCell: FunctionComponent<{
         onAddToFollowupChat,
         onManuallyEditContext,
         editContextText,
-        chatAgent,
     }) => {
         const [selectedAlternative, setSelectedAlternative] = useState<number | undefined>(undefined)
         const incrementSelectedAlternative = useCallback(
@@ -138,7 +136,7 @@ export const ContextCell: FunctionComponent<{
 
         const [showAllResults, setShowAllResults] = useState(false)
 
-        const isDeepCodyEnabled = useMemo(() => chatAgent === 'deep-cody', [chatAgent])
+        const isDeepCodyEnabled = useMemo(() => model?.includes('deep-cody'), [model])
 
         return (
             <div>

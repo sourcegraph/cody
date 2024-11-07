@@ -205,8 +205,26 @@ describe('AgentWorkspaceConfiguration', () => {
     })
 
     describe('inspect', () => {
-        it('returns undefined for any section', () => {
-            expect(config.inspect('cody.serverEndpoint')).toBeUndefined()
+        it('returns correct values for existing section', () => {
+            expect(config.inspect('cody.serverEndpoint')).toStrictEqual({
+                defaultValue: undefined,
+                globalValue: 'https://sourcegraph.test',
+                key: 'cody.serverEndpoint',
+                workspaceValue: 'https://sourcegraph.test',
+            })
+        })
+
+        it('returns correct default values for pre-defined properties', () => {
+            expect(config.inspect('cody.commandCodeLenses')).toStrictEqual({
+                defaultValue: false,
+                globalValue: false,
+                key: 'cody.commandCodeLenses',
+                workspaceValue: false,
+            })
+        })
+
+        it('returns undefined for not defined properties', () => {
+            expect(config.inspect('some.undefined.value')).toStrictEqual(undefined)
         })
     })
 

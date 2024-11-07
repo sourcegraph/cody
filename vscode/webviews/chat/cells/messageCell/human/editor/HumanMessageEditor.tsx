@@ -68,10 +68,6 @@ export const HumanMessageEditor: FunctionComponent<{
     __storybook__focus?: boolean
 
     initialIntent?: ChatMessage['intent']
-
-    chatAgent?: string
-
-    onDeepCodyToggleClick?: () => void
 }> = ({
     models,
     userInfo,
@@ -92,8 +88,6 @@ export const HumanMessageEditor: FunctionComponent<{
     __storybook__focus,
     onEditorFocusChange: parentOnEditorFocusChange,
     initialIntent,
-    chatAgent,
-    onDeepCodyToggleClick,
 }) => {
     const telemetryRecorder = useTelemetryRecorder()
 
@@ -432,8 +426,6 @@ export const HumanMessageEditor: FunctionComponent<{
                     className={styles.toolbar}
                     intent={submitIntent}
                     onSelectIntent={setSubmitIntent}
-                    chatAgent={chatAgent}
-                    onDeepCodyToggleClick={onDeepCodyToggleClick}
                 />
             )}
         </div>

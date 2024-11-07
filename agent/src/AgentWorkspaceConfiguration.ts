@@ -165,7 +165,16 @@ export class AgentWorkspaceConfiguration implements vscode.WorkspaceConfiguratio
               languageIds?: string[] | undefined
           }
         | undefined {
-        return undefined
+        const value = this.get(section)
+        if (value === undefined) {
+            return undefined
+        }
+        return {
+            key: section,
+            defaultValue: defaultConfigurationValue(section),
+            globalValue: value,
+            workspaceValue: value,
+        }
     }
 
     public async update(
