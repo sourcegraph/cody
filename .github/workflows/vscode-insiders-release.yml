@@ -22,7 +22,7 @@ jobs:
       - run: xvfb-run -a pnpm -C vscode run test:e2e
         env:
           NO_LOG_TESTING_TELEMETRY_CALLS: true
-      - run: CODY_RELEASE_TYPE=insiders pnpm -C vscode run release
+      - run: CODY_RELEASE_DRY_RUN=true CODY_RELEASE_TYPE=insiders pnpm -C vscode run release
         id: create_release
         if: github.repository == 'sourcegraph/cody'
         env:
