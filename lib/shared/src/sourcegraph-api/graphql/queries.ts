@@ -308,7 +308,7 @@ query GetCodyContext($repos: [ID!]!, $query: String!, $codeResultsCount: Int!, $
     }
 }`
 
-export const CONTEXT_SEARCH_QUERY_ALTERNATIVES = `
+export const CONTEXT_SEARCH_EVAL_DEBUG_QUERY = `
 query GetCodyContextAlternatives($repos: [ID!]!, $query: String!, $codeResultsCount: Int!, $textResultsCount: Int!, $filePatterns: [String!]) {
 	getCodyContextAlternatives(repos: $repos, query: $query, codeResultsCount: $codeResultsCount, textResultsCount: $textResultsCount, filePatterns: $filePatterns) {
       contextLists {

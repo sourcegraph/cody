@@ -20,8 +20,8 @@ import {
     CHANGE_PROMPT_VISIBILITY,
     CHAT_INTENT_QUERY,
     CONTEXT_FILTERS_QUERY,
+    CONTEXT_SEARCH_EVAL_DEBUG_QUERY,
     CONTEXT_SEARCH_QUERY,
-    CONTEXT_SEARCH_QUERY_ALTERNATIVES,
     CONTEXT_SEARCH_QUERY_WITH_RANGES,
     CREATE_PROMPT_MUTATION,
     CURRENT_SITE_CODY_CONFIG_FEATURES,
@@ -379,7 +379,7 @@ interface ContextSearchResponse {
     }[]
 }
 
-interface ContextSearchResponseAlternative {
+interface ContextSearchEvalDebugResponse {
     getCodyContextAlternatives: {
         contextLists: {
             name: string
@@ -437,11 +437,10 @@ export interface ContextSearchResult {
     ranges: Range[]
 }
 
-export interface ContextSearchResultAlternative {
+export interface ContextSearchEvalDebugResult {
     name: string
     contextList: ContextSearchResult[]
 }
-;[]
 
 /**
  * A prompt that can be shared and reused. See Prompt in the Sourcegraph GraphQL API.
@@ -1108,7 +1107,7 @@ export class SourcegraphGraphQLAPIClient {
         )
     }
 
-    public async contextSearchAlternatives({
+    public async contextSearchEvalDebug({
         repoIDs,
         query,
         signal,
@@ -1122,12 +1121,12 @@ export class SourcegraphGraphQLAPIClient {
         filePatterns?: string[]
         codeResultsCount: number
         textResultsCount: number
-    }): Promise<ContextSearchResultAlternative[] | null | Error> {
+    }): Promise<ContextSearchEvalDebugResult[] | null | Error> {
         const config = await firstValueFrom(this.config!)
         signal?.throwIfAborted()
 
-        return this.fetchSourcegraphAPI<APIResponse<ContextSearchResponseAlternative>>(
-            CONTEXT_SEARCH_QUERY_ALTERNATIVES,
+        return this.fetchSourcegraphAPI<APIResponse<ContextSearchEvalDebugResponse>>(
+            CONTEXT_SEARCH_EVAL_DEBUG_QUERY,
             {
                 repos: repoIDs,
                 query,

@@ -83,7 +83,7 @@ export async function evaluateChatContextStrategy(
             username: userInfo?.username ?? '[none]',
             userId: userInfo?.id ?? '[none]',
             evaluatedFeatureFlags,
-        }
+        },
     })
 }
 
@@ -118,7 +118,7 @@ async function runContextCommand(
             )
         }
 
-        const resultsResp = await graphqlClient.contextSearchAlternatives({
+        const resultsResp = await graphqlClient.contextSearchEvalDebug({
             repoIDs,
             query,
             filePatterns: [],
@@ -136,14 +136,16 @@ async function runContextCommand(
         const results = resultsResp ?? []
         const actualContext: EvalContextItem[] = []
         for (const contextList of results) {
-            actualContext.push(...contextList.contextList.map(result => ({
-                repoName: result.repoName,
-                path: result.path,
-                startLine: result.startLine,
-                endLine: result.endLine,
-                content: result.content,
-                retriever: contextList.name,
-            })))
+            actualContext.push(
+                ...contextList.contextList.map(result => ({
+                    repoName: result.repoName,
+                    path: result.path,
+                    startLine: result.startLine,
+                    endLine: result.endLine,
+                    content: result.content,
+                    retriever: contextList.name,
+                }))
+            )
         }
         exampleOutputs.push({
             ...example,
