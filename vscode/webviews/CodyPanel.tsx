@@ -136,7 +136,11 @@ export const CodyPanel: FunctionComponent<CodyPanelProps> = ({
                         />
                     )}
                     {view === View.Prompts && (
-                        <PromptsTab setView={setView} isPromptsV2Enabled={isPromptsV2Enabled} />
+                        <PromptsTab
+                            IDE={clientCapabilities.agentIDE}
+                            setView={setView}
+                            isPromptsV2Enabled={isPromptsV2Enabled}
+                        />
                     )}
                     {view === View.Account && <AccountTab setView={setView} />}
                     {view === View.Settings && <SettingsTab />}

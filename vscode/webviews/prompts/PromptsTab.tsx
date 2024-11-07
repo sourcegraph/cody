@@ -5,21 +5,22 @@ import { PromptList } from '../components/promptList/PromptList'
 import { View } from '../tabs/types'
 import { getVSCodeAPI } from '../utils/VSCodeApi'
 
-import { firstValueFrom } from '@sourcegraph/cody-shared'
+import { CodyIDE, firstValueFrom } from '@sourcegraph/cody-shared'
 import type { PromptMode } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
 import { useExtensionAPI } from '@sourcegraph/prompt-editor'
 import { PromptMigrationWidget } from '../components/promptsMigration/PromptsMigration'
 import styles from './PromptsTab.module.css'
 
 export const PromptsTab: React.FC<{
+    IDE: CodyIDE
     setView: (view: View) => void
     isPromptsV2Enabled?: boolean
-}> = ({ setView, isPromptsV2Enabled }) => {
+}> = ({ IDE, setView, isPromptsV2Enabled }) => {
     const runAction = useActionSelect()
 
     return (
         <div className="tw-overflow-auto tw-h-full tw-flex tw-flex-col tw-gap-6">
-            {isPromptsV2Enabled && (
+            {isPromptsV2Enabled && IDE !== CodyIDE.Web && (
                 <PromptMigrationWidget dismissible={false} className={styles.promptMigrationWidget} />
             )}
             <PromptList
