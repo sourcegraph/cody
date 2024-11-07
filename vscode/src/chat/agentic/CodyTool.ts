@@ -183,7 +183,9 @@ class SearchTool extends CodyTool {
         const context = await this.contextRetriever.retrieveContext(
             toStructuredMentions([repo]),
             PromptString.unsafe_fromLLMResponse(query),
-            span
+            span,
+            undefined,
+            true
         )
         // Store the search query to avoid running the same query again.
         this.performedSearch.add(query)
@@ -193,7 +195,7 @@ class SearchTool extends CodyTool {
             content: 'Queries performed: ' + Array.from(this.performedSearch).join(', '),
             uri: URI.file('search-history'),
             source: ContextItemSource.Agentic,
-            title: 'TOOL',
+            title: 'TOOLCONTEXT',
         } satisfies ContextItem
         context.push(searchQueryItem)
         return context.slice(-maxSearchItems)

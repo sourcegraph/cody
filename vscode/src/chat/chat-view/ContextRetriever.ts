@@ -169,22 +169,32 @@ export class ContextRetriever implements vscode.Disposable {
         mentions: StructuredMentions,
         inputTextWithoutContextChips: PromptString,
         span: Span,
-        signal?: AbortSignal
+        signal?: AbortSignal,
+        skipQueryRewrite = false
     ): Promise<ContextItem[]> {
         const roots = await codebaseRootsFromMentions(mentions, signal)
-        return await this._retrieveContext(roots, inputTextWithoutContextChips, span, signal)
+        return await this._retrieveContext(
+            roots,
+            inputTextWithoutContextChips,
+            span,
+            signal,
+            skipQueryRewrite
+        )
     }
 
     private async _retrieveContext(
         roots: Root[],
         query: PromptString,
         span: Span,
-        signal?: AbortSignal
+        signal?: AbortSignal,
+        skipQueryRewrite = false
     ): Promise<ContextItem[]> {
         if (roots.length === 0) {
             return []
         }
-        const rewritten = await rewriteKeywordQuery(this.llms, query, signal)
+        const rewritten = skipQueryRewrite
+            ? query.toString()
+            : await rewriteKeywordQuery(this.llms, query, signal)
         const rewrittenQuery = {
             ...query,
             rewritten,
