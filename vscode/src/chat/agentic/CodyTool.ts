@@ -193,7 +193,7 @@ class SearchTool extends CodyTool {
             content: 'Queries performed: ' + Array.from(this.performedSearch).join(', '),
             uri: URI.file('search-history'),
             source: ContextItemSource.Agentic,
-            title: 'TOOL',
+            title: 'TOOLCONTEXT',
         } satisfies ContextItem
         context.push(searchQueryItem)
         return context.slice(-maxSearchItems)
