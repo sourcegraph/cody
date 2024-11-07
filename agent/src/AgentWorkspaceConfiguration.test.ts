@@ -56,7 +56,7 @@ describe('AgentWorkspaceConfiguration', () => {
         codebase: 'test-repo',
         customConfigurationJson: customConfigJson,
         customConfiguration: {
-            'cody.debug.additional': true
+            'cody.debug.additional': true,
         },
     }
 
@@ -127,7 +127,7 @@ describe('AgentWorkspaceConfiguration', () => {
                 },
                 debug: {
                     verbose: true,
-                    additional: true
+                    additional: true,
                 },
                 experimental: {
                     tracing: true,
@@ -224,7 +224,11 @@ describe('AgentWorkspaceConfiguration', () => {
 
         it('updates nested configuration object', async () => {
             await config.update('cody.debug', { verbose: false, newSetting: true })
-            expect(config.get('cody.debug')).toEqual({ verbose: false, newSetting: true, additional: true, })
+            expect(config.get('cody.debug')).toEqual({
+                verbose: false,
+                newSetting: true,
+                additional: true,
+            })
             expect(config.get('cody.debug.newSetting')).toEqual(true)
         })
 
