@@ -194,7 +194,7 @@ describe('getCurrentFileContext', () => {
         expect(result.codeToRewriteEndLine).toBe(6)
     })
 
-    it('handles very large file exceeding max lengths', () => {
+    it('handles very large file exceeding max lengths with large range', () => {
         // Create a large file content
         const longPrefix = Array(10).fill('prefix-line').join('\n')
         const longSuffix = Array(10).fill('suffix-line').join('\n')

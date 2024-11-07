@@ -7,7 +7,7 @@ import type {
 } from '../../../lib/shared/src/completions/types'
 import { RetrieverIdentifier } from '../completions/context/utils'
 import { autoeditsLogger } from './logger'
-import { mapLinesToOriginalLineNo, splitLinesKeepEnds } from './utils'
+import { clip, splitLinesKeepEnds } from './utils'
 const LINT_ERRORS_TAG_OPEN = ps`<lint_errors>`
 const LINT_ERRORS_TAG_CLOSE = ps`</lint_errors>`
 const EXTRACTED_CODE_SNIPPETS_TAG_OPEN = ps`<extracted_code_snippets>`
@@ -204,28 +204,25 @@ ${AREA_FOR_CODE_MARKER_CLOSE}
 export function getCurrentFileContext(options: CurrentFilePromptOptions): CurrentFileContext {
     // Calculate line numbers for different sections
     const { position, document, docContext } = options
-    const contextLines = splitLinesKeepEnds(docContext.prefix + docContext.suffix)
-    const prefixLines = splitLinesKeepEnds(docContext.prefix)
-    const indexLastPrefixLine = prefixLines.length - 1
-    const prefixLineNumber = position.character === 0 ? position.line - 1 : position.line
-    const lineNumberMapping = mapLinesToOriginalLineNo(
-        contextLines,
-        indexLastPrefixLine,
-        Math.max(0, prefixLineNumber)
-    )
 
-    // Determine line number boundaries
-    const minLine = lineNumberMapping[0]
-    const maxLine = lineNumberMapping[lineNumberMapping.length - 1]
-    const codeToRewriteStart = Math.max(minLine, position.line - options.codeToRewritePrefixLines)
-    const codeToRewriteEnd = Math.min(maxLine, position.line + options.codeToRewriteSuffixLines)
-    const areaStart = Math.max(
+    const numContextLines = splitLinesKeepEnds(docContext.prefix + docContext.suffix).length
+    const numPrefixLines = splitLinesKeepEnds(docContext.prefix).length
+    const adjustment = position.character !== 0 ? 1 : 0
+
+    const minLine = clip(position.line - numPrefixLines + adjustment, 0, document.lineCount - 1)
+    const maxLine = clip(minLine + numContextLines - 1, 0, document.lineCount - 1)
+
+    const codeToRewriteStart = clip(position.line - options.codeToRewritePrefixLines, minLine, maxLine)
+    const codeToRewriteEnd = clip(position.line + options.codeToRewriteSuffixLines, minLine, maxLine)
+    const areaStart = clip(
+        position.line - options.maxPrefixLinesInArea - options.codeToRewritePrefixLines,
         minLine,
-        position.line - options.maxPrefixLinesInArea - options.codeToRewritePrefixLines
+        maxLine
     )
-    const areaEnd = Math.min(
-        maxLine,
-        position.line + options.maxSuffixLinesInArea + options.codeToRewriteSuffixLines
+    const areaEnd = clip(
+        position.line + options.maxSuffixLinesInArea + options.codeToRewriteSuffixLines,
+        minLine,
+        maxLine
     )
 
     // Helper function to create range

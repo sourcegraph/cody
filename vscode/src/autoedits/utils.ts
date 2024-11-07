@@ -1,4 +1,3 @@
-import { range } from 'lodash'
 import { lines } from '../completions/text-processing'
 
 export function fixFirstLineIndentation(source: string, target: string): string {
@@ -24,28 +23,6 @@ export function splitLinesKeepEnds(s: string): string[] {
         lines.pop()
     }
     return lines
-}
-
-/**
- * Maps each line in the original list to a new line number based on the given index and mapped value.
- *
- * This function iterates through the original list of lines and calculates a new line number for each line.
- * The calculation is based on the given index and mapped value. For lines before the given index, the new line number
- * is the mapped value minus the difference between the index and the current line number. For lines after the given index,
- * the new line number is the mapped value plus the difference between the current line number and the index. For the line
- * at the given index, the new line number is the mapped value.
- *
- * @param originalList - The original list of lines.
- * @param index - The index to base the mapping on.
- * @param mappedValue - The value to map the lines to.
- * @returns An array of new line numbers corresponding to each line in the original list.
- */
-export function mapLinesToOriginalLineNo(
-    originalList: string[],
-    index: number,
-    mappedValue: number
-): number[] {
-    return range(mappedValue - index, mappedValue - index + originalList.length)
 }
 
 export function extractInlineCompletionFromRewrittenCode(
@@ -134,20 +111,39 @@ export function adjustPredictionIfInlineCompletionPossible(
     return prediction
 }
 
+/**
+ * Counts the number of newline characters at the end of a string
+ */
 export function countNewLineCharsEnd(text: string): number {
     const match = text.match(/(?:\r\n|\n)+$/)
     return match ? match[0].length : 0
 }
 
+/**
+ * Counts the number of newline characters at the start of a string
+ */
 export function countNewLineCharsStart(text: string): number {
     const match = text.match(/^(?:\r\n|\n)+/)
     return match ? match[0].length : 0
 }
 
+/**
+ * Checks if a string consists only of newline characters
+ */
 export function isAllNewLineChars(text: string): boolean {
     return /^[\r\n]*$/.test(text)
 }
 
+/**
+ * Removes all newline characters from both the start and end of a string
+ */
 export function trimNewLineCharsFromString(text: string): string {
     return text.replace(/^(?:\r\n|\n)+|(?:\r\n|\n)+$/g, '')
+}
+
+/**
+ * Clips a number to a range, ensuring it is within the specified bounds.
+ */
+export function clip(line: number, min: number, max: number) {
+    return Math.max(Math.min(line, max), min)
 }
