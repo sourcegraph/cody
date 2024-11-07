@@ -1,0 +1,60 @@
+{
+  "copyClickedEvent": {
+    "version": 0,
+    "metadata": [
+      {
+        "key": "source",
+        "value": 1
+      },
+      {
+        "key": "lineCount",
+        "value": 5
+      },
+      {
+        "key": "charCount",
+        "value": 75
+      },
+      {
+        "key": "tier",
+        "value": 2
+      }
+    ],
+    "privateMetadata": {
+      "source": "chat",
+      "op": "copy"
+    },
+    "billingMetadata": {
+      "product": "cody",
+      "category": "core"
+    }
+  },
+  "insertClickedEvent": {
+    "version": 0,
+    "metadata": [
+      {
+        "key": "source",
+        "value": 1
+      },
+      {
+        "key": "lineCount",
+        "value": 1
+      },
+      {
+        "key": "charCount",
+        "value": 44
+      },
+      {
+        "key": "tier",
+        "value": 2
+      }
+    ],
+    "privateMetadata": {
+      "source": "chat",
+      "op": "insert"
+    },
+    "billingMetadata": {
+      "product": "cody",
+      "category": "core"
+    }
+  }
+}

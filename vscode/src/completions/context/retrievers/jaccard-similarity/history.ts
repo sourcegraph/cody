@@ -1,5 +1,5 @@
-import { FeatureFlag, featureFlagProvider, subscriptionDisposable } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
+
 import { type ShouldUseContextParams, shouldBeUsedAsContext } from '../../utils'
 
 interface HistoryItem {
@@ -18,7 +18,6 @@ export class VSCodeDocumentHistory implements DocumentHistory, vscode.Disposable
     private history: HistoryItem[]
 
     private subscriptions: vscode.Disposable[] = []
-    public enableExtendedLanguagePool = false
 
     constructor(
         register: () => vscode.Disposable | null = () =>
@@ -38,16 +37,6 @@ export class VSCodeDocumentHistory implements DocumentHistory, vscode.Disposable
                 this.subscriptions.push(disposable)
             }
         }
-
-        this.subscriptions.push(
-            subscriptionDisposable(
-                featureFlagProvider
-                    .evaluatedFeatureFlag(FeatureFlag.CodyAutocompleteContextExtendLanguagePool)
-                    .subscribe(resolvedFlag => {
-                        this.enableExtendedLanguagePool = Boolean(resolvedFlag)
-                    })
-            )
-        )
     }
 
     public dispose(): void {
@@ -85,7 +74,6 @@ export class VSCodeDocumentHistory implements DocumentHistory, vscode.Disposable
                 continue
             }
             const params: ShouldUseContextParams = {
-                enableExtendedLanguagePool: this.enableExtendedLanguagePool,
                 baseLanguageId: baseLanguageId,
                 languageId: item.document.languageId,
             }

@@ -1,7 +1,7 @@
 import { Tiktoken } from 'js-tiktoken/lite'
 import type { TokenBudget, TokenUsage } from '.'
 import type { ChatContextTokenUsage, TokenUsageType } from '.'
-import type { ModelContextWindow } from '..'
+import { EXTENDED_USER_CONTEXT_TOKEN_BUDGET, type ModelContextWindow } from '..'
 import type { Message, PromptString } from '..'
 import { CORPUS_CONTEXT_ALLOCATION } from './constants'
 
@@ -67,11 +67,14 @@ export async function getTokenCounterUtils(): Promise<TokenCounterUtils> {
                     },
 
                     countTokens(text: string): number {
-                        return tokenCounterUtils.encode(text).length
+                        const wordCount = text.trim().split(/\s+/).length
+                        return wordCount > EXTENDED_USER_CONTEXT_TOKEN_BUDGET
+                            ? wordCount
+                            : this.encode(text).length
                     },
 
                     countPromptString(text: PromptString): number {
-                        return tokenCounterUtils.encode(text.toString()).length
+                        return this.countTokens(text.toString())
                     },
 
                     getMessagesTokenCount(messages: Message[]): number {

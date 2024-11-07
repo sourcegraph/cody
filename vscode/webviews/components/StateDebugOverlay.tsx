@@ -5,7 +5,7 @@ import type {
     ModelsData,
     ResolvedConfiguration,
 } from '@sourcegraph/cody-shared'
-import { useExtensionAPI, useInitialContextForChat, useObservable } from '@sourcegraph/prompt-editor'
+import { useDefaultContextForChat, useExtensionAPI, useObservable } from '@sourcegraph/prompt-editor'
 import clsx from 'clsx'
 import React, { type FunctionComponent, useMemo } from 'react'
 import { getVSCodeAPI } from '../utils/VSCodeApi'
@@ -35,7 +35,7 @@ const StateDebugOverlayInner: FunctionComponent<{ resolvedConfig: ResolvedConfig
     const authStatus = useAuthStatus()
     const modelsData = useModelsData()
     const transcript = useTranscript()
-    const initialContext = useInitialContextForChat()
+    const { initialContext } = useDefaultContextForChat()
 
     type TabID =
         | 'resolvedConfig'

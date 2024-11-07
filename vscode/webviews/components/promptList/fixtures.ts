@@ -66,8 +66,9 @@ export function makePromptsAPIWithData(data: {
     prompts: Prompt[]
     commands?: CodyCommand[]
 }): WebviewToExtensionAPI['prompts'] {
-    return query =>
+    return input =>
         promiseFactoryToObservable<PromptsResult>(async () => {
+            const { query } = input
             const { arePromptsSupported = true, prompts, commands = [] } = data
             await new Promise<void>(resolve => setTimeout(resolve, 500))
 

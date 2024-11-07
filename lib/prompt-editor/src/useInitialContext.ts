@@ -1,4 +1,4 @@
-import type { ContextItem } from '@sourcegraph/cody-shared'
+import type { DefaultContext } from '@sourcegraph/cody-shared/src/codebase-context/messages'
 import { useMemo } from 'react'
 import { useExtensionAPI } from './useExtensionAPI'
 import { useObservable } from './useObservable'
@@ -6,9 +6,12 @@ import { useObservable } from './useObservable'
 /**
  * Get the initial context with which to populate the chat message input field.
  */
-export function useInitialContextForChat(): ContextItem[] {
-    const initialContext = useExtensionAPI().initialContext
-    return useObservable(useMemo(() => initialContext(), [initialContext])).value ?? EMPTY
+export function useDefaultContextForChat(): DefaultContext {
+    const defaultContext = useExtensionAPI().defaultContext
+    return useObservable(useMemo(() => defaultContext(), [defaultContext])).value ?? EMPTY
 }
 
-const EMPTY: ContextItem[] = []
+const EMPTY: DefaultContext = {
+    initialContext: [],
+    corpusContext: [],
+}

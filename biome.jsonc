@@ -98,6 +98,16 @@
             }
         },
         {
+            "include": ["vscode/src/fetch.node.ts"],
+            "linter": {
+                "rules": {
+                    "complexity": {
+                        "useArrowFunction": "off" // we do a whole bunch of patching with arguments keyword (which doesn't work with arrow functions)
+                    }
+                }
+            }
+        },
+        {
             "include": ["vscode/e2e/utils/**/*.ts"],
             "linter": {
                 "rules": {

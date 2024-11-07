@@ -1,6 +1,6 @@
 import {
     type BrowserOrNodeResponse,
-    addCustomUserAgent,
+    addCodyClientIdentificationHeaders,
     addTraceparent,
     currentResolvedConfig,
     distinctUntilChanged,
@@ -92,7 +92,7 @@ class UpstreamHealthProvider implements vscode.Disposable {
             const sharedHeaders = new Headers(configuration.customHeaders as HeadersInit | undefined)
             sharedHeaders.set('Content-Type', 'application/json; charset=utf-8')
             addTraceparent(sharedHeaders)
-            addCustomUserAgent(sharedHeaders)
+            addCodyClientIdentificationHeaders(sharedHeaders)
 
             const upstreamHeaders = new Headers(sharedHeaders)
             if (auth.accessToken) {

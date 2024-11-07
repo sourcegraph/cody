@@ -4,6 +4,7 @@ import {
     type ChatClient,
     ClientConfigSingleton,
     type ConfigurationInput,
+    DOTCOM_URL,
     type DefaultCodyCommands,
     FeatureFlag,
     type Guardrails,
@@ -25,7 +26,7 @@ import {
     isDotCom,
     modelsService,
     resolvedConfig,
-    setClientCapabilitiesFromConfiguration,
+    setClientCapabilities,
     setClientNameVersion,
     setEditorWindowIsFocused,
     setLogger,
@@ -36,11 +37,14 @@ import {
     take,
     telemetryRecorder,
 } from '@sourcegraph/cody-shared'
+import _ from 'lodash'
 import { isEqual } from 'lodash'
 import { filter, map } from 'observable-fns'
+import { isReinstalling } from '../uninstall/reinstall'
 import type { CommandResult } from './CommandResult'
 import { showAccountMenu } from './auth/account-menu'
 import { showSignInMenu, showSignOutMenu, tokenCallbackHandler } from './auth/auth'
+import { AutoeditsProvider } from './autoedits/autoedits-provider'
 import type { MessageProviderOptions } from './chat/MessageProvider'
 import { ChatsController, CodyChatEditorViewType } from './chat/chat-view/ChatsController'
 import { ContextRetriever } from './chat/chat-view/ContextRetriever'
@@ -86,16 +90,16 @@ import { showSetupNotification } from './notifications/setup-notification'
 import { logDebug, logError } from './output-channel-logger'
 import { initVSCodeGitApi } from './repository/git-extension-api'
 import { authProvider } from './services/AuthProvider'
-import { CharactersLogger } from './services/CharactersLogger'
+import { charactersLogger } from './services/CharactersLogger'
 import { CodyTerminal } from './services/CodyTerminal'
 import { showFeedbackSupportQuickPick } from './services/FeedbackOptions'
 import { displayHistoryQuickPick } from './services/HistoryChat'
 import { localStorage } from './services/LocalStorageProvider'
+import { NetworkDiagnostics } from './services/NetworkDiagnostics'
 import { VSCodeSecretStorage, secretStorage } from './services/SecretStorageProvider'
 import { registerSidebarCommands } from './services/SidebarCommands'
 import { CodyStatusBar } from './services/StatusBar'
 import { createOrUpdateTelemetryRecorderProvider } from './services/telemetry-v2'
-import { onTextDocumentChange } from './services/utils/codeblock-action-tracker'
 import {
     enableVerboseDebugMode,
     exportOutputLog,
@@ -113,6 +117,9 @@ export async function start(
     context: vscode.ExtensionContext,
     platform: PlatformContext
 ): Promise<vscode.Disposable> {
+    const disposables: vscode.Disposable[] = []
+
+    //TODO: Add override flag
     const isExtensionModeDevOrTest =
         context.extensionMode === vscode.ExtensionMode.Development ||
         context.extensionMode === vscode.ExtensionMode.Test
@@ -128,15 +135,21 @@ export async function start(
 
     setLogger({ logDebug, logError })
 
-    const disposables: vscode.Disposable[] = []
+    setClientCapabilities({
+        configuration: getConfiguration(),
+        agentCapabilities: platform.extensionClient.capabilities,
+    })
 
-    setClientCapabilitiesFromConfiguration(getConfiguration())
+    let hasReinstallCleanupRun = false
 
     setResolvedConfigurationObservable(
         combineLatest(
             fromVSCodeEvent(vscode.workspace.onDidChangeConfiguration).pipe(
                 filter(
-                    event => event.affectsConfiguration('cody') || event.affectsConfiguration('openctx')
+                    event =>
+                        event.affectsConfiguration('cody') ||
+                        event.affectsConfiguration('openctx') ||
+                        event.affectsConfiguration('http')
                 ),
                 startWith(undefined),
                 map(() => getConfiguration()),
@@ -154,10 +167,35 @@ export async function start(
                         clientConfiguration,
                         clientSecrets,
                         clientState,
+                        reinstall: {
+                            isReinstalling,
+                            onReinstall: async () => {
+                                // short circuit so that we only run this cleanup once, not every time the config updates
+                                if (hasReinstallCleanupRun) return
+                                logDebug('start', 'Reinstalling Cody')
+                                // VSCode does not provide a way to simply clear all secrets
+                                // associated with the extension (https://github.com/microsoft/vscode/issues/123817)
+                                // So we have to build a list of all endpoints we'd expect to have been populated
+                                // and clear them individually.
+                                const history = await localStorage.deleteEndpointHistory()
+                                const additionalEndpointsToClear = [
+                                    clientConfiguration.overrideServerEndpoint,
+                                    clientState.lastUsedEndpoint,
+                                    DOTCOM_URL.toString(),
+                                ].filter(_.isString)
+                                await Promise.all(
+                                    history
+                                        .concat(additionalEndpointsToClear)
+                                        .map(clientSecrets.deleteToken.bind(clientSecrets))
+                                )
+                                hasReinstallCleanupRun = true
+                            },
+                        },
                     }) satisfies ConfigurationInput
             )
         )
     )
+
     setEditorWindowIsFocused(() => vscode.window.state.focused)
 
     if (process.env.LOG_GLOBAL_STATE_EMISSIONS) {
@@ -176,10 +214,12 @@ const register = async (
     isExtensionModeDevOrTest: boolean
 ): Promise<vscode.Disposable> => {
     const disposables: vscode.Disposable[] = []
-    setClientNameVersion(
-        platform.extensionClient.httpClientNameForLegacyReasons ?? platform.extensionClient.clientName,
-        platform.extensionClient.clientVersion
-    )
+    setClientNameVersion({
+        newClientName: platform.extensionClient.clientName,
+        newClientCompletionsStreamQueryParameterName:
+            platform.extensionClient.httpClientNameForLegacyReasons,
+        newClientVersion: platform.extensionClient.clientVersion,
+    })
 
     // Initialize `displayPath` first because it might be used to display paths in error messages
     // from the subsequent initialization.
@@ -192,7 +232,6 @@ const register = async (
     disposables.push(await initVSCodeGitApi())
 
     registerParserListeners(disposables)
-    registerChatListeners(disposables)
 
     // Initialize external services
     const {
@@ -222,11 +261,21 @@ const register = async (
     )
     disposables.push(chatsController)
 
-    const statusBar = CodyStatusBar.init(disposables)
     disposables.push(
         subscriptionDisposable(
             exposeOpenCtxClient(context, platform.createOpenCtxController).subscribe({})
         )
+    )
+
+    const statusBar = CodyStatusBar.init()
+    disposables.push(statusBar)
+
+    disposables.push(
+        NetworkDiagnostics.init({
+            statusBar,
+            agent: platform.networkAgent ?? null,
+            authProvider,
+        })
     )
 
     registerAutocomplete(platform, statusBar, disposables)
@@ -245,7 +294,7 @@ const register = async (
     }
     registerDebugCommands(context, disposables)
     registerUpgradeHandlers(disposables)
-    disposables.push(new CharactersLogger())
+    disposables.push(charactersLogger)
 
     // INC-267 do NOT await on this promise. This promise triggers
     // `vscode.window.showInformationMessage()`, which only resolves after the
@@ -287,20 +336,6 @@ function registerParserListeners(disposables: vscode.Disposable[]) {
     void parseAllVisibleDocuments()
     disposables.push(vscode.window.onDidChangeVisibleTextEditors(parseAllVisibleDocuments))
     disposables.push(vscode.workspace.onDidChangeTextDocument(updateParseTreeOnEdit))
-}
-
-function registerChatListeners(disposables: vscode.Disposable[]) {
-    // Enable tracking for pasting chat responses into editor text
-    disposables.push(
-        vscode.workspace.onDidChangeTextDocument(async e => {
-            const changedText = e.contentChanges[0]?.text
-            // Skip if the document is not a file or if the copied text is from insert
-            if (!changedText || e.document.uri.scheme !== 'file') {
-                return
-            }
-            await onTextDocumentChange(changedText)
-        })
-    )
 }
 
 async function registerOtherCommands(disposables: vscode.Disposable[]) {
@@ -413,6 +448,14 @@ async function registerCodyCommands(
         enableFeature(
             ({ configuration }) => configuration.experimentalSupercompletions,
             () => new SupercompletionProvider({ statusBar, chat: chatClient })
+        )
+    )
+
+    // Initialize autoedit provider if experimental feature is enabled
+    disposables.push(
+        enableFeature(
+            ({ configuration }) => configuration.experimentalAutoedits !== undefined,
+            () => new AutoeditsProvider()
         )
     )
 

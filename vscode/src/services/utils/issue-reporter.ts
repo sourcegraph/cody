@@ -7,7 +7,7 @@ export function openCodyIssueReporter() {
     void vscode.commands.executeCommand('workbench.action.openIssueReporter', {
         extensionId: `${packageJson.publisher}.${packageJson.name}`,
         issueBody,
-        issueTitle: 'bug: ',
+        issueTitle: '',
     })
 }
 

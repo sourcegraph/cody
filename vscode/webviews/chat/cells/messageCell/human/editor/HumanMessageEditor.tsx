@@ -10,7 +10,7 @@ import {
 import {
     PromptEditor,
     type PromptEditorRefAPI,
-    useInitialContextForChat,
+    useDefaultContextForChat,
 } from '@sourcegraph/prompt-editor'
 import clsx from 'clsx'
 import {
@@ -26,6 +26,7 @@ import {
 import type { UserAccountInfo } from '../../../../../Chat'
 import { type ClientActionListener, useClientActionListener } from '../../../../../client/clientState'
 import { useTelemetryRecorder } from '../../../../../utils/telemetry'
+import { useExperimentalOneBox } from '../../../../../utils/useExperimentalOneBox'
 import styles from './HumanMessageEditor.module.css'
 import type { SubmitButtonState } from './toolbar/SubmitButton'
 import { Toolbar } from './toolbar/Toolbar'
@@ -65,6 +66,8 @@ export const HumanMessageEditor: FunctionComponent<{
 
     /** For use in storybooks only. */
     __storybook__focus?: boolean
+
+    initialIntent?: ChatMessage['intent']
 }> = ({
     models,
     userInfo,
@@ -84,6 +87,7 @@ export const HumanMessageEditor: FunctionComponent<{
     editorRef: parentEditorRef,
     __storybook__focus,
     onEditorFocusChange: parentOnEditorFocusChange,
+    initialIntent,
 }) => {
     const telemetryRecorder = useTelemetryRecorder()
 
@@ -110,13 +114,30 @@ export const HumanMessageEditor: FunctionComponent<{
           ? 'emptyEditorValue'
           : 'submittable'
 
+    const experimentalOneBoxEnabled = useExperimentalOneBox()
+    const [submitIntent, setSubmitIntent] = useState<ChatMessage['intent'] | undefined>(
+        initialIntent || (experimentalOneBoxEnabled ? undefined : 'chat')
+    )
+
+    useEffect(() => {
+        // reset the input box intent when the editor is cleared
+        if (isEmptyEditorValue) {
+            setSubmitIntent(undefined)
+        }
+    }, [isEmptyEditorValue])
+
+    useEffect(() => {
+        // set the input box intent when the message is changed or a new chat is created
+        setSubmitIntent(initialIntent)
+    }, [initialIntent])
+
     const onSubmitClick = useCallback(
-        (intent?: ChatMessage['intent']) => {
-            if (submitState === 'emptyEditorValue') {
+        (intent?: ChatMessage['intent'], forceSubmit?: boolean): void => {
+            if (!forceSubmit && submitState === 'emptyEditorValue') {
                 return
             }
 
-            if (submitState === 'waitingResponseComplete') {
+            if (!forceSubmit && submitState === 'waitingResponseComplete') {
                 onStop()
                 return
             }
@@ -156,19 +177,21 @@ export const HumanMessageEditor: FunctionComponent<{
 
             // Submit search intent query when CMD + Options + Enter is pressed.
             if ((event.metaKey || event.ctrlKey) && event.altKey) {
+                setSubmitIntent('search')
                 onSubmitClick('search')
                 return
             }
 
             // Submit chat intent query when CMD + Enter is pressed.
             if (event.metaKey || event.ctrlKey) {
+                setSubmitIntent('chat')
                 onSubmitClick('chat')
                 return
             }
 
-            onSubmitClick()
+            onSubmitClick(submitIntent)
         },
-        [isEmptyEditorValue, onSubmitClick]
+        [isEmptyEditorValue, onSubmitClick, submitIntent]
     )
 
     const [isEditorFocused, setIsEditorFocused] = useState(false)
@@ -235,7 +258,7 @@ export const HumanMessageEditor: FunctionComponent<{
         if (editorRef.current.getSerializedValue().text.trim().endsWith('@')) {
             editorRef.current.setFocus(true, { moveCursorToEnd: true })
         } else {
-            editorRef.current.appendText('@', true)
+            editorRef.current.appendText('@')
         }
 
         const value = editorRef.current.getSerializedValue()
@@ -256,49 +279,81 @@ export const HumanMessageEditor: FunctionComponent<{
     // Set up the message listener so the extension can control the input field.
     useClientActionListener(
         useCallback<ClientActionListener>(
-            ({ addContextItemsToLastHumanInput, appendTextToLastPromptEditor }) => {
-                if (addContextItemsToLastHumanInput) {
-                    // Add new context to chat from the "Cody Add Selection to Cody Chat"
-                    // command, etc. Only add to the last human input field.
-                    if (isSent) {
-                        return
-                    }
-                    if (
-                        !addContextItemsToLastHumanInput ||
-                        addContextItemsToLastHumanInput.length === 0
-                    ) {
-                        return
-                    }
+            ({
+                editorState,
+                addContextItemsToLastHumanInput,
+                appendTextToLastPromptEditor,
+                submitHumanInput,
+                setLastHumanInputIntent,
+            }) => {
+                // Add new context to chat from the "Cody Add Selection to Cody Chat"
+                // command, etc. Only add to the last human input field.
+                if (isSent) {
+                    return
+                }
+
+                const updates: Promise<unknown>[] = []
+
+                if (addContextItemsToLastHumanInput && addContextItemsToLastHumanInput.length > 0) {
                     const editor = editorRef.current
                     if (editor) {
-                        editor.addMentions(addContextItemsToLastHumanInput)
-                        editor.setFocus(true)
+                        updates.push(editor.addMentions(addContextItemsToLastHumanInput, 'after'))
+                        updates.push(editor.setFocus(true))
                     }
                 }
 
                 if (appendTextToLastPromptEditor) {
-                    // Append text to the last human input field.
-                    if (isSent) {
-                        return
-                    }
-
                     // Schedule append text task to the next tick to avoid collisions with
                     // initial text set (add initial mentions first then append text from prompt)
-                    requestAnimationFrame(() => {
-                        if (editorRef.current) {
-                            editorRef.current.appendText(appendTextToLastPromptEditor)
-                        }
-                    })
+                    updates.push(
+                        new Promise<void>((resolve): void => {
+                            requestAnimationFrame(() => {
+                                if (editorRef.current) {
+                                    editorRef.current
+                                        .appendText(appendTextToLastPromptEditor)
+                                        .then(resolve)
+                                } else {
+                                    resolve()
+                                }
+                            })
+                        })
+                    )
+                }
+
+                if (editorState) {
+                    updates.push(
+                        new Promise<void>(resolve => {
+                            requestAnimationFrame(async () => {
+                                if (editorRef.current) {
+                                    await Promise.all([
+                                        editorRef.current.setEditorState(editorState),
+                                        editorRef.current.setFocus(true),
+                                    ])
+                                }
+                                resolve()
+                            })
+                        })
+                    )
+                }
+                if (setLastHumanInputIntent) {
+                    setSubmitIntent(setLastHumanInputIntent)
+                }
+
+                if (submitHumanInput) {
+                    Promise.all(updates).then(() =>
+                        onSubmitClick(setLastHumanInputIntent || submitIntent, true)
+                    )
                 }
             },
-            [isSent]
+            [isSent, onSubmitClick, submitIntent]
         )
     )
 
     const currentChatModel = useMemo(() => models[0], [models[0]])
 
-    let initialContext = useInitialContextForChat()
+    const defaultContext = useDefaultContextForChat()
     useEffect(() => {
+        let { initialContext } = defaultContext
         if (!isSent && isFirstMessage) {
             const editor = editorRef.current
             if (editor) {
@@ -310,7 +365,7 @@ export const HumanMessageEditor: FunctionComponent<{
                 editor.setInitialContextMentions(initialContext)
             }
         }
-    }, [initialContext, isSent, isFirstMessage, currentChatModel])
+    }, [defaultContext, isSent, isFirstMessage, currentChatModel])
 
     const focusEditor = useCallback(() => editorRef.current?.setFocus(true), [])
 
@@ -369,6 +424,8 @@ export const HumanMessageEditor: FunctionComponent<{
                     focusEditor={focusEditor}
                     hidden={!focused && isSent}
                     className={styles.toolbar}
+                    intent={submitIntent}
+                    onSelectIntent={setSubmitIntent}
                 />
             )}
         </div>

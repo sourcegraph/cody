@@ -29,21 +29,33 @@ export const AuthPage: React.FunctionComponent<React.PropsWithoutRef<LoginProps>
     const otherSignInClick = (): void => {
         vscodeAPI.postMessage({ command: 'auth', authKind: 'signin' })
     }
-    const isNonVSCodeIDE = codyIDE !== CodyIDE.Web && codyIDE !== CodyIDE.VSCode
-    const isCodyWebUI = (uiKindIsWeb || codyIDE === CodyIDE.Web) && !isNonVSCodeIDE
     return (
         <div className="tw-flex tw-flex-col tw-items-center tw-gap-8 tw-h-full tw-py-10 tw-px-8">
-            <h1 className="tw-w-full tw-max-w-md">
-                <img src={onboardingSplashImage} alt="Hi, I'm Cody" className="tw-my-4 tw-w-full" />
-            </h1>
+            <div className="tw-w-full tw-max-w-md tw-flex tw-justify-center">
+                <img src={onboardingSplashImage} alt="Hi, I'm Cody" className="tw-my-4" />
+            </div>
+            <section className="tw-bg-sidebar-background tw-text-sidebar-foreground tw-border tw-border-border tw-rounded-lg tw-p-6 tw-w-full tw-max-w-md">
+                <h2 className="tw-font-semibold tw-text-lg tw-mb-4">Cody Enterprise</h2>
+                {codyIDE === CodyIDE.VSCode ? (
+                    <div className="tw-flex tw-flex-col tw-gap-6 tw-w-full">
+                        <Button onClick={otherSignInClick}>Sign In to Your Enterprise Instance</Button>
+                    </div>
+                ) : (
+                    // All non-VSCode clients use the sign-in form
+                    <ClientSignInForm authStatus={authStatus} vscodeAPI={vscodeAPI} />
+                )}
+                <p className="tw-mt-4 tw-mb-0 tw-text-muted-foreground">
+                    Learn more about <a href="https://sourcegraph.com/cloud">Sourcegraph Enterprise</a>.
+                </p>
+            </section>
             <section className="tw-bg-sidebar-background tw-text-sidebar-foreground tw-border tw-border-border tw-rounded-lg tw-p-6 tw-w-full tw-max-w-md">
                 <h2 className="tw-font-semibold tw-text-lg tw-mb-4">Cody Free or Cody Pro</h2>
                 <div className="tw-flex tw-flex-col tw-gap-6 tw-w-full">
-                    {isCodyWebUI ? (
+                    {uiKindIsWeb ? (
                         <WebLogin
                             telemetryRecorder={telemetryRecorder}
                             vscodeAPI={vscodeAPI}
-                            isCodyWeb={isCodyWebUI}
+                            isCodyWeb={uiKindIsWeb}
                         />
                     ) : (
                         <>
@@ -87,19 +99,6 @@ export const AuthPage: React.FunctionComponent<React.PropsWithoutRef<LoginProps>
                         </>
                     )}
                 </div>
-            </section>
-            <section className="tw-bg-sidebar-background tw-text-sidebar-foreground tw-border tw-border-border tw-rounded-lg tw-p-6 tw-w-full tw-max-w-md">
-                <h2 className="tw-font-semibold tw-text-lg tw-mb-4">Cody Enterprise</h2>
-                {isCodyWebUI || codyIDE === CodyIDE.VSCode ? (
-                    <div className="tw-flex tw-flex-col tw-gap-6 tw-w-full">
-                        <Button onClick={otherSignInClick}>Sign In to Your Enterprise Instance</Button>
-                    </div>
-                ) : (
-                    <ClientSignInForm authStatus={authStatus} vscodeAPI={vscodeAPI} />
-                )}
-                <p className="tw-mt-4 tw-mb-0 tw-text-muted-foreground">
-                    Learn more about <a href="https://sourcegraph.com/cloud">Sourcegraph Enterprise</a>.
-                </p>
             </section>
             <footer className="tw-text-sm tw-text-muted-foreground">
                 Cody is proudly built by Sourcegraph. By signing in to Cody, you agree to our{' '}

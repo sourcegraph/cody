@@ -63,7 +63,7 @@
     "vitest": "^2.0.5"
   },
   "dependencies": {
-    "@openctx/client": "^0.0.29",
+    "@openctx/client": "^0.0.30",
     "@sourcegraph/telemetry": "^0.18.0",
     "observable-fns": "^0.6.1",
     "react": "18.2.0",

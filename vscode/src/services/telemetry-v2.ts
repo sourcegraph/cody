@@ -44,7 +44,7 @@ export function createOrUpdateTelemetryRecorderProvider(
     isExtensionModeDevOrTest: boolean
 ): Disposable {
     return subscriptionDisposable(
-        resolvedConfig.subscribe(({ configuration, auth, clientState }) => {
+        resolvedConfig.subscribe(({ configuration, auth, clientState, isReinstall }) => {
             // Add timestamp processor for realistic data in output for dev or no-op scenarios
             const defaultNoOpProvider = new NoOpTelemetryRecorderProvider([
                 new TimestampTelemetryProcessor(),
@@ -86,16 +86,20 @@ export function createOrUpdateTelemetryRecorderProvider(
              */
             const newAnonymousUser = localStorage.checkIfCreatedAnonymousUserID()
             if (initialize && !clientCapabilities().isCodyWeb) {
-                if (newAnonymousUser) {
+                if (newAnonymousUser || isReinstall) {
                     /**
                      * New user
                      */
-                    telemetryRecorder.recordEvent('cody.extension', 'installed', {
-                        billingMetadata: {
-                            product: 'cody',
-                            category: 'billable',
-                        },
-                    })
+                    telemetryRecorder.recordEvent(
+                        'cody.extension',
+                        isReinstall ? 'reinstalled' : 'installed',
+                        {
+                            billingMetadata: {
+                                product: 'cody',
+                                category: 'billable',
+                            },
+                        }
+                    )
                 } else if (
                     !configuration.isRunningInsideAgent ||
                     configuration.agentHasPersistentStorage
@@ -115,7 +119,9 @@ export function createOrUpdateTelemetryRecorderProvider(
  * that collects the keys of an object where the corresponding value is of a
  * given type as a type.
  */
-type KeysWithNumericValues<T> = keyof { [P in keyof T as T[P] extends number ? P : never]: P }
+type KeysWithNumericOrBooleanValues<T> = keyof {
+    [P in keyof T as T[P] extends number | boolean ? P : never]: P
+}
 
 /**
  * splitSafeMetadata is a helper for legacy telemetry helpers that accept typed
@@ -136,7 +142,7 @@ type KeysWithNumericValues<T> = keyof { [P in keyof T as T[P] extends number ? P
 export function splitSafeMetadata<Properties extends { [key: string]: any }>(
     properties: Properties
 ): {
-    metadata: { [key in KeysWithNumericValues<Properties>]: number }
+    metadata: { [key in KeysWithNumericOrBooleanValues<Properties>]: number }
     privateMetadata: { [key in keyof Properties]?: any }
 } {
     const safe: { [key in keyof Properties]?: number } = {}
@@ -175,7 +181,7 @@ export function splitSafeMetadata<Properties extends { [key: string]: any }>(
         // We know we've constructed an object with only numeric values, so
         // we cast it into the desired type where all the keys with number values
         // are present. Unit tests ensures this property holds.
-        metadata: safe as { [key in KeysWithNumericValues<Properties>]: number },
+        metadata: safe as { [key in KeysWithNumericOrBooleanValues<Properties>]: number },
         privateMetadata: unsafe,
     }
 }

@@ -8,7 +8,7 @@ export {
     type ChatMentionsSettings,
 } from './plugins/atMentions/useChatContextItems'
 export { type PromptEditorConfig, PromptEditorConfigProvider } from './config'
-export { useInitialContextForChat } from './useInitialContext'
+export { useDefaultContextForChat } from './useInitialContext'
 export {
     type SerializedPromptEditorState,
     type SerializedPromptEditorValue,

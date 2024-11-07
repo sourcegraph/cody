@@ -1,3 +1,4 @@
+import _ from 'lodash'
 import type * as vscode from 'vscode'
 
 import { type ClientConfiguration, CodyIDE } from '@sourcegraph/cody-shared'
@@ -11,7 +12,7 @@ export class AgentWorkspaceConfiguration implements vscode.WorkspaceConfiguratio
         private prefix: string[],
         private clientInfo: () => ClientInfo | undefined,
         private extensionConfig: () => ExtensionConfiguration | undefined,
-        private dictionary: Record<string, any> = {}
+        private dictionary: any = {}
     ) {}
 
     public withPrefix(prefix: string): AgentWorkspaceConfiguration {
@@ -21,6 +22,10 @@ export class AgentWorkspaceConfiguration implements vscode.WorkspaceConfiguratio
             this.extensionConfig,
             this.dictionary
         )
+    }
+
+    private put(key: string, value: any): void {
+        _.set(this.dictionary, key, value)
     }
 
     private actualSection(section: string): string {
@@ -46,6 +51,8 @@ export class AgentWorkspaceConfiguration implements vscode.WorkspaceConfiguratio
                 return CodyIDE.VisualStudio
             case 'eclipse':
                 return CodyIDE.Eclipse
+            case 'standalone-web':
+                return CodyIDE.StandaloneWeb
             default:
                 return undefined
         }
@@ -54,77 +61,94 @@ export class AgentWorkspaceConfiguration implements vscode.WorkspaceConfiguratio
     public get(userSection: string, defaultValue?: unknown): any {
         const section = this.actualSection(userSection)
 
-        const fromDictionary = this.dictionary?.[section]
-        if (fromDictionary !== undefined) {
-            return fromDictionary
-        }
-        const extensionConfig = this.extensionConfig()
-
-        const fromCustomConfiguration = extensionConfig?.customConfiguration?.[section]
-        if (fromCustomConfiguration !== undefined) {
-            return fromCustomConfiguration
-        }
-        switch (section) {
-            case 'cody.serverEndpoint':
-                return extensionConfig?.serverEndpoint
-            case 'cody.customHeaders':
-                return extensionConfig?.customHeaders
-            case 'cody.telemetry.level':
+        const config = this.extensionConfig()
+        const capabilities = this.clientInfo()?.capabilities
+        const baseConfig = {
+            editor: {
+                insertSpaces: true,
+            },
+            cody: {
+                advanced: {
+                    agent: {
+                        capabilities: {
+                            storage:
+                                capabilities?.globalState === 'server-managed' ||
+                                capabilities?.globalState === 'client-managed',
+                        },
+                        extension: {
+                            version: this.clientInfo()?.version,
+                        },
+                        ide: {
+                            name: AgentWorkspaceConfiguration.clientNameToIDE(
+                                this.clientInfo()?.name ?? ''
+                            ),
+                            version: this.clientInfo()?.ideVersion,
+                        },
+                        running: true,
+                    },
+                    hasNativeWebview: capabilities?.webview === 'native',
+                },
+                autocomplete: {
+                    advanced: {
+                        model: config?.autocompleteAdvancedModel ?? null,
+                        provider: config?.autocompleteAdvancedProvider ?? null,
+                    },
+                    enabled: true,
+                },
+                codebase: config?.codebase,
+                customHeaders: config?.customHeaders,
+                debug: { verbose: config?.verboseDebug ?? false },
+                experimental: { tracing: config?.verboseDebug ?? false },
+                serverEndpoint: config?.serverEndpoint,
                 // Use the dedicated `telemetry/recordEvent` to send telemetry from
                 // agent clients.  The reason we disable telemetry via config is
                 // that we don't want to submit vscode-specific events when
                 // running inside the agent.
-                return 'agent'
-            case 'cody.telemetry.clientName':
-                return extensionConfig?.telemetryClientName
-            case 'cody.autocomplete.enabled':
-                return true
-            case 'cody.autocomplete.advanced.provider':
-                return extensionConfig?.autocompleteAdvancedProvider ?? null
-            case 'cody.autocomplete.advanced.model':
-                return extensionConfig?.autocompleteAdvancedModel ?? null
-            case 'cody.advanced.agent.running':
-                return true
-            case 'cody.debug.verbose':
-                return extensionConfig?.verboseDebug ?? false
-            case 'cody.experimental.tracing':
-                return extensionConfig?.verboseDebug ?? false
-            case 'cody.codebase':
-                return extensionConfig?.codebase
-            case 'cody.advanced.agent.ide':
-                return AgentWorkspaceConfiguration.clientNameToIDE(this.clientInfo()?.name ?? '')
-            case 'cody.advanced.agent.ide.version':
-                return this.clientInfo()?.ideVersion
-            case 'cody.advanced.agent.extension.version':
-                return this.clientInfo()?.version
-            case 'cody.advanced.agent.capabilities.storage':
-                switch (this.clientInfo()?.capabilities?.globalState) {
-                    case 'server-managed':
-                    case 'client-managed':
-                        return true
-                    default:
-                        return false
-                }
-            case 'cody.advanced.hasNativeWebview':
-                return this.clientInfo()?.capabilities?.webview === 'native' ?? false
-            case 'editor.insertSpaces':
-                return true // TODO: override from IDE clients
-            default:
-                // VS Code picks up default value in package.json, and only uses
-                // the `defaultValue` parameter if package.json provides no
-                // default.
-                return defaultConfigurationValue(section) ?? defaultValue
+                telemetry: {
+                    clientName: config?.telemetryClientName,
+                    level: 'agent',
+                },
+            },
         }
+
+        const customConfiguration = config?.customConfiguration
+        if (customConfiguration) {
+            for (const [key, value] of Object.entries(customConfiguration)) {
+                _.set(baseConfig, key, value)
+            }
+        }
+
+        const fromCustomConfigurationJson = config?.customConfigurationJson
+        if (fromCustomConfigurationJson) {
+            const configJson = JSON.parse(fromCustomConfigurationJson)
+            for (const [key, value] of Object.entries(configJson)) {
+                _.set(baseConfig, key, value)
+            }
+        }
+
+        const fromBaseConfig = _.get(baseConfig, section)
+        const fromDict = _.get(this.dictionary, section)
+        if (
+            typeof fromBaseConfig === 'object' &&
+            typeof fromDict === 'object' &&
+            !Array.isArray(fromBaseConfig) &&
+            !Array.isArray(fromDict)
+        ) {
+            return structuredClone(_.extend(fromBaseConfig, fromDict))
+        }
+        if (fromDict !== undefined) {
+            return structuredClone(fromDict)
+        }
+        if (fromBaseConfig !== undefined) {
+            return fromBaseConfig
+        }
+
+        return defaultConfigurationValue(section) ?? defaultValue
     }
 
     public has(section: string): boolean {
-        const actual = this.actualSection(section)
-        for (const key in this.dictionary) {
-            if (key.startsWith(actual)) {
-                return true
-            }
-        }
-        return false
+        const NotFound = {}
+        return this.get(section, NotFound) !== NotFound
     }
 
     public inspect<T>(section: string):
@@ -141,7 +165,16 @@ export class AgentWorkspaceConfiguration implements vscode.WorkspaceConfiguratio
               languageIds?: string[] | undefined
           }
         | undefined {
-        return undefined
+        const value = this.get(section)
+        if (value === undefined) {
+            return undefined
+        }
+        return {
+            key: section,
+            defaultValue: defaultConfigurationValue(section),
+            globalValue: value,
+            workspaceValue: value,
+        }
     }
 
     public async update(
@@ -150,7 +183,7 @@ export class AgentWorkspaceConfiguration implements vscode.WorkspaceConfiguratio
         _configurationTarget?: boolean | vscode.ConfigurationTarget | null | undefined,
         _overrideInLanguage?: boolean | undefined
     ): Promise<void> {
-        this.dictionary[this.actualSection(section)] = value
+        this.put(section, value)
         return Promise.resolve()
     }
 }

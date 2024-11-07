@@ -197,7 +197,7 @@ export const activeEditorContextForOpenCtxMentions: Observable<
             return repoNameResolver.getRepoNamesContainingUri(uri).pipe(
                 map(repoNames =>
                     repoNames === pendingOperation
-                        ? pendingOperation
+                        ? { uri: uri.toString(), codebase: undefined }
                         : {
                               uri: uri.toString(),
                               codebase: repoNames.at(0),

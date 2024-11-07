@@ -5,6 +5,14 @@ query CurrentUser {
     }
 }`
 
+export const CURRENT_USER_ROLE_QUERY = `
+query CurrentUserRole {
+    currentUser {
+        id
+        siteAdmin
+    }
+}`
+
 export const CURRENT_USER_CODY_PRO_ENABLED_QUERY = `
 query CurrentUserCodyProEnabled {
     currentUser {
@@ -309,7 +317,8 @@ query ContextFilters {
     }
 }`
 
-export const PROMPTS_QUERY = `
+// Legacy prompts query supported up to Sourcegraph 5.8.0. Newer versions include the `includeViewerDrafts` argument.
+export const LEGACY_PROMPTS_QUERY_5_8 = `
 query ViewerPrompts($query: String!) {
     prompts(query: $query, first: 100, includeDrafts: false, viewerIsAffiliated: true, orderBy: PROMPT_UPDATED_AT) {
         nodes {
@@ -337,6 +346,42 @@ query ViewerPrompts($query: String!) {
             hasNextPage
             endCursor
         }
+    }
+}`
+
+export enum PromptsOrderBy {
+    PROMPT_NAME_WITH_OWNER = 'PROMPT_NAME_WITH_OWNER',
+    PROMPT_UPDATED_AT = 'PROMPT_UPDATED_AT',
+    PROMPT_RECOMMENDED = 'PROMPT_RECOMMENDED',
+}
+
+export const PROMPTS_QUERY = `
+query ViewerPrompts($query: String!, $first: Int!, $recommendedOnly: Boolean!, $orderByMultiple: [PromptsOrderBy!]) {
+    prompts(query: $query, first: $first, includeDrafts: false, recommendedOnly: $recommendedOnly, includeViewerDrafts: true, viewerIsAffiliated: true, orderByMultiple: $orderByMultiple) {
+        nodes {
+            id
+            name
+            nameWithOwner
+            recommended
+            owner {
+                namespaceName
+            }
+            description
+            draft
+            autoSubmit
+            mode
+            definition {
+                text
+            }
+            url
+            createdBy {
+                id
+                username
+                displayName
+                avatarURL
+            }
+        }
+        totalCount
     }
 }`
 
@@ -399,6 +444,22 @@ mutation RecordTelemetryEvents($events: [TelemetryEventInput!]!) {
 			alwaysNil
 		}
 	}
+}
+`
+
+export const CREATE_PROMPT_MUTATION = `
+mutation CreatePrompt($input: PromptInput!) {
+    createPrompt(input: $input) {
+        id
+    }
+}
+`
+
+export const CHANGE_PROMPT_VISIBILITY = `
+mutation ChangePromptVisibility($id: ID!, $newVisibility: PromptVisibility!) {
+    changePromptVisibility(id: $id, newVisibility: $newVisibility) {
+        id
+    }
 }
 `
 

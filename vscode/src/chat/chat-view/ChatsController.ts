@@ -49,7 +49,7 @@ interface Options extends MessageProviderOptions {
 
 export class ChatsController implements vscode.Disposable {
     // Chat view in the panel (typically in the sidebar)
-    private panel: ChatController
+    private readonly panel: ChatController
 
     // Chat views in editor panels
     private editors: ChatController[] = []
@@ -65,9 +65,7 @@ export class ChatsController implements vscode.Disposable {
     constructor(
         private options: Options,
         private chatClient: ChatClient,
-
         private readonly contextRetriever: ContextRetriever,
-
         private readonly guardrails: Guardrails,
         private readonly chatIntentAPIClient: ChatIntentAPIClient | null,
         private readonly extensionClient: ExtensionClient
@@ -136,25 +134,41 @@ export class ChatsController implements vscode.Disposable {
             vscode.commands.registerCommand('cody.chat.signIn', () =>
                 vscode.commands.executeCommand('cody.chat.focus')
             ),
-
-            vscode.commands.registerCommand('cody.chat.newPanel', async () => {
+            vscode.commands.registerCommand('cody.chat.newPanel', async args => {
                 localStorage.setLastUsedChatModality('sidebar')
                 const isVisible = this.panel.isVisible()
                 await this.panel.clearAndRestartSession()
+
+                try {
+                    const { contextItems } = JSON.parse(args) || {}
+                    if (contextItems?.length) {
+                        await this.panel.addContextItemsToLastHumanInput(contextItems)
+                    }
+                } catch {}
+
                 if (!isVisible) {
                     await vscode.commands.executeCommand('cody.chat.focus')
                 }
             }),
-            vscode.commands.registerCommand('cody.chat.newEditorPanel', () => {
+            vscode.commands.registerCommand('cody.chat.newEditorPanel', async args => {
                 localStorage.setLastUsedChatModality('editor')
-                return this.getOrCreateEditorChatController()
+                const panel = await this.getOrCreateEditorChatController()
+
+                try {
+                    const { contextItems } = JSON.parse(args) || {}
+                    if (contextItems?.length) {
+                        await panel.addContextItemsToLastHumanInput(contextItems)
+                    }
+                } catch {}
+
+                return panel
             }),
-            vscode.commands.registerCommand('cody.chat.new', async () => {
+            vscode.commands.registerCommand('cody.chat.new', async args => {
                 switch (getNewChatLocation()) {
                     case 'editor':
-                        return vscode.commands.executeCommand('cody.chat.newEditorPanel')
+                        return vscode.commands.executeCommand('cody.chat.newEditorPanel', args)
                     case 'sidebar':
-                        return vscode.commands.executeCommand('cody.chat.newPanel')
+                        return vscode.commands.executeCommand('cody.chat.newPanel', args)
                 }
             }),
 
@@ -192,6 +206,9 @@ export class ChatsController implements vscode.Disposable {
             vscode.commands.registerCommand(CODY_PASSTHROUGH_VSCODE_OPEN_COMMAND_ID, (...args) =>
                 this.passthroughVsCodeOpen(...args)
             ),
+            vscode.commands.registerCommand('cody.show.lastUsedActions', async () => {
+                this.panel.clientBroadcast.next({ type: 'open-recently-prompts' })
+            }),
 
             // Mention selection/file commands
             vscode.commands.registerCommand('cody.mention.selection', uri =>
@@ -208,7 +225,15 @@ export class ChatsController implements vscode.Disposable {
             ),
             vscode.commands.registerCommand(
                 'cody.command.insertCodeToCursor',
-                (args: { text: string }) => handleCodeFromInsertAtCursor(args.text)
+                (args: { text: string }) => {
+                    const text =
+                        // Used in E2E tests where OS-native buttons dropdown is inaccessible.
+                        process.env.CODY_TESTING === 'true'
+                            ? 'cody.command.insertCodeToCursor:cody_testing'
+                            : args.text
+
+                    return handleCodeFromInsertAtCursor(text)
+                }
             ),
             vscode.commands.registerCommand(
                 'cody.command.insertCodeToNewFile',

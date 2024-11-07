@@ -1,10 +1,8 @@
-import * as vscode from 'vscode'
-
 import {
     type ContextItem,
     type Message,
     PromptMixin,
-    PromptString,
+    currentResolvedConfig,
     firstResultFromOperation,
     getSimplePreamble,
     isDefined,
@@ -50,11 +48,9 @@ export class DefaultPrompter {
         return wrapInActiveSpan('chat.prompter', async () => {
             const contextWindow = await firstResultFromOperation(ChatBuilder.contextWindowForChat(chat))
             const promptBuilder = await PromptBuilder.create(contextWindow)
-            const preInstruction: PromptString | undefined = PromptString.fromConfig(
-                vscode.workspace.getConfiguration('cody.chat'),
-                'preInstruction',
-                undefined
-            )
+            const preInstruction = (await currentResolvedConfig()).configuration.chatPreInstruction
+
+            const isDeepCodyEnabled = chat.selectedModel?.includes('deep-cody')
 
             // Add preamble messages
             const chatModel = await firstResultFromOperation(ChatBuilder.resolvedModelForChat(chat))
@@ -77,6 +73,7 @@ export class DefaultPrompter {
             // It also allows adding the preamble only when there is context to display, without wasting tokens on the same preamble repeatedly.
             if (
                 !this.isCommand &&
+                !isDeepCodyEnabled &&
                 Boolean(this.explicitContext.length || historyItems.length || this.corpusContext.length)
             ) {
                 mixins.push(PromptMixin.getContextMixin())

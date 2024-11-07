@@ -1,4 +1,8 @@
-import { AUTH_STATUS_FIXTURE_AUTHED, type ClientCapabilities } from '@sourcegraph/cody-shared'
+import {
+    AUTH_STATUS_FIXTURE_AUTHED,
+    type ClientCapabilitiesWithLegacyFields,
+    CodyIDE,
+} from '@sourcegraph/cody-shared'
 import { fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, test, vi } from 'vitest'
 import { AppWrapperForTest } from '../../AppWrapperForTest'
@@ -29,10 +33,10 @@ describe('WelcomeMessage', () => {
         vi.spyOn(useConfigModule, 'useConfig').mockReturnValue({
             clientCapabilities: {
                 isVSCode: true,
-            } satisfies Partial<ClientCapabilities> as ClientCapabilities,
+            } satisfies Partial<ClientCapabilitiesWithLegacyFields> as ClientCapabilitiesWithLegacyFields,
             authStatus: AUTH_STATUS_FIXTURE_AUTHED,
         } satisfies Partial<useConfigModule.Config> as useConfigModule.Config)
-        render(<WelcomeMessage setView={() => {}} />, {
+        render(<WelcomeMessage IDE={CodyIDE.VSCode} setView={() => {}} />, {
             wrapper: AppWrapperForTest,
         })
         openCollapsiblePanels()
@@ -45,10 +49,10 @@ describe('WelcomeMessage', () => {
         vi.spyOn(useConfigModule, 'useConfig').mockReturnValue({
             clientCapabilities: {
                 isVSCode: false,
-            } satisfies Partial<ClientCapabilities> as ClientCapabilities,
+            } satisfies Partial<ClientCapabilitiesWithLegacyFields> as ClientCapabilitiesWithLegacyFields,
             authStatus: AUTH_STATUS_FIXTURE_AUTHED,
         } satisfies Partial<useConfigModule.Config> as useConfigModule.Config)
-        render(<WelcomeMessage setView={() => {}} />, {
+        render(<WelcomeMessage IDE={CodyIDE.VSCode} setView={() => {}} />, {
             wrapper: AppWrapperForTest,
         })
         openCollapsiblePanels()

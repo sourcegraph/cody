@@ -12,7 +12,6 @@ import {
     isNetworkError,
     telemetryRecorder,
 } from '@sourcegraph/cody-shared'
-
 import type { KnownString, TelemetryEventParameters } from '@sourcegraph/telemetry'
 
 import { captureException, shouldErrorBeReported } from '../services/sentry/sentry'
@@ -26,6 +25,7 @@ import type {
 } from '../common/persistence-tracker/types'
 import type { GitIdentifiersForFile } from '../repository/git-metadata-for-editor'
 import { GitHubDotComRepoMetadata } from '../repository/githubRepoMetadata'
+import { type CodeGenEventMetadata, charactersLogger } from '../services/CharactersLogger'
 import { upstreamHealthProvider } from '../services/UpstreamHealthProvider'
 import {
     AUTOCOMPLETE_STAGE_COUNTER_INITIAL_STATE,
@@ -33,6 +33,7 @@ import {
     autocompleteStageCounterLogger,
 } from '../services/autocomplete-stage-counter-logger'
 import { type CompletionIntent, CompletionIntentTelemetryMetadataMapping } from '../tree-sitter/queries'
+
 import type { ContextSummary } from './context/context-mixer'
 import {
     InlineCompletionsResultSource,
@@ -167,9 +168,6 @@ interface SharedEventPayload extends InteractionIDPayload {
      */
     isFuzzyMatch?: boolean
 
-    /** Eventual artificial delay that was used to throttle unwanted completions. */
-    artificialDelay?: number
-
     /**
      * Mapping the completion intent to a higher level abstractions of syntax nodes (e.g. function
      * declaration body)
@@ -212,7 +210,9 @@ interface SuggestedEventPayload extends SharedEventPayload {
 }
 
 /** Emitted when a completion was fully accepted by the user */
-interface AcceptedEventPayload extends SharedEventPayload {
+interface AcceptedEventPayload
+    extends SharedEventPayload,
+        Omit<CodeGenEventMetadata, 'charsInserted' | 'charsDeleted'> {
     /**
      * Information about which item of the suggested items list was being accepted.
      *
@@ -617,6 +617,10 @@ let persistenceTracker: PersistenceTracker<CompletionAnalyticsID> | null = null
 
 let completionsStartedSinceLastSuggestion = 0
 
+function getTimeNowInMilliseconds() {
+    return Math.floor(performance.now())
+}
+
 export function create(
     inputParams: Omit<CompletionBookkeepingEvent['params'], 'multilineMode' | 'type' | 'id'>
 ): CompletionLogID {
@@ -630,7 +634,7 @@ export function create(
     activeSuggestionRequests.set(id, {
         id,
         params,
-        startedAt: performance.now(),
+        startedAt: getTimeNowInMilliseconds(),
         networkRequestStartedAt: null,
         startLoggedAt: null,
         loadedAt: null,
@@ -649,7 +653,7 @@ export function create(
 export function start(id: CompletionLogID): void {
     const event = activeSuggestionRequests.get(id)
     if (event && !event.startLoggedAt) {
-        event.startLoggedAt = performance.now()
+        event.startLoggedAt = getTimeNowInMilliseconds()
         completionsStartedSinceLastSuggestion++
     }
 }
@@ -660,7 +664,7 @@ export function networkRequestStarted(
 ): void {
     const event = activeSuggestionRequests.get(id)
     if (event && !event.networkRequestStartedAt) {
-        event.networkRequestStartedAt = performance.now()
+        event.networkRequestStartedAt = getTimeNowInMilliseconds()
         event.params.contextSummary = contextSummary
     }
 }
@@ -705,7 +709,7 @@ export function loaded(params: LoadedParams): void {
     event.params.isFuzzyMatch = isFuzzyMatch
 
     if (!event.loadedAt) {
-        event.loadedAt = performance.now()
+        event.loadedAt = getTimeNowInMilliseconds()
     }
     if (event.items.length === 0) {
         event.items = completions.map(item => completionItemToItemInfo(item, isDotComUser))
@@ -845,7 +849,7 @@ export function prepareSuggestionEvent({
     }
 
     if (!event.suggestedAt) {
-        event.suggestedAt = performance.now()
+        event.suggestedAt = getTimeNowInMilliseconds()
 
         span?.setAttributes(getSharedParams(event) as any)
         span?.addEvent('suggested')
@@ -865,7 +869,7 @@ export function prepareSuggestionEvent({
                 event.read = true
                 statistics.logSuggested()
                 completionIdsMarkedAsSuggested.set(completionId, true)
-                event.suggestionAnalyticsLoggedAt = performance.now()
+                event.suggestionAnalyticsLoggedAt = getTimeNowInMilliseconds()
 
                 const authStatus = currentAuthStatusAuthed()
                 // 🚨 SECURITY: Track the diff in the document after suggestion is shown for DotCom users and public repos.
@@ -884,13 +888,21 @@ export function prepareSuggestionEvent({
     return null
 }
 
-export function accepted(
-    id: CompletionLogID,
-    document: vscode.TextDocument,
-    completion: InlineCompletionItemWithAnalytics,
-    trackedRange: vscode.Range | undefined,
+export function accepted({
+    id,
+    document,
+    completion,
+    trackedRange,
+    isDotComUser,
+    position,
+}: {
+    id: CompletionLogID
+    document: vscode.TextDocument
+    completion: InlineCompletionItemWithAnalytics
+    trackedRange: vscode.Range | undefined
     isDotComUser: boolean
-): void {
+    position: vscode.Position
+}): void {
     const completionEvent = activeSuggestionRequests.get(id)
     if (!completionEvent || completionEvent.acceptedAt) {
         // Log a debug event, this case should not happen in production
@@ -939,10 +951,26 @@ export function accepted(
         recentCompletions.delete(key)
     }
 
-    completionEvent.acceptedAt = performance.now()
+    completionEvent.acceptedAt = getTimeNowInMilliseconds()
+
+    const rangeForCharacterMetadata = trackedRange || new vscode.Range(position, position)
+    const { charsDeleted, charsInserted, ...charactersLoggerMetadata } =
+        charactersLogger.getChangeEventMetadataForCodyCodeGenEvents({
+            document,
+            contentChanges: [
+                {
+                    range: rangeForCharacterMetadata,
+                    rangeOffset: document.offsetAt(rangeForCharacterMetadata.start),
+                    rangeLength: 0,
+                    text: completion.insertText,
+                },
+            ],
+            reason: undefined,
+        })
 
     logSuggestionEvents(isDotComUser)
     logCompletionAcceptedEvent({
+        ...charactersLoggerMetadata,
         ...getSharedParams(completionEvent),
         acceptedItem: completionItemToItemInfo(completion, isDotComUser),
     })
@@ -951,6 +979,7 @@ export function accepted(
     if (trackedRange === undefined) {
         return
     }
+
     if (persistenceTracker === null) {
         persistenceTracker = new PersistenceTracker<CompletionAnalyticsID>(vscode.workspace)
     }
@@ -1066,7 +1095,7 @@ export function getInlineContextItemToLog(
     return { ...inlineCompletionItemContext, ...result }
 }
 export function logSuggestionEvents(isDotComUser: boolean): void {
-    const now = performance.now()
+    const now = getTimeNowInMilliseconds()
     // biome-ignore lint/complexity/noForEach: LRUCache#forEach has different typing than #entries, so just keeping it for now
     activeSuggestionRequests.forEach(completionEvent => {
         const {
@@ -1259,7 +1288,7 @@ type AutocompletePipelineStage =
     | 'preGetInlineCompletions'
 
 export class AutocompleteStageRecorder {
-    private createdAt = performance.now()
+    private createdAt = getTimeNowInMilliseconds()
     private logId?: CompletionLogID
     private isPreloadRequest: boolean
 
@@ -1283,7 +1312,7 @@ export class AutocompleteStageRecorder {
         trace.getActiveSpan()?.addEvent(eventName)
 
         // Record event timing to later assign it to the analytics event.
-        this.stageTimings[eventName] = performance.now() - this.createdAt
+        this.stageTimings[eventName] = getTimeNowInMilliseconds() - this.createdAt
 
         if (this.logId) {
             const event = activeSuggestionRequests.get(this.logId)

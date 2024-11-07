@@ -136,6 +136,8 @@ interface CodyAgentServer {
   fun ignore_test(params: Ignore_TestParams): CompletableFuture<Ignore_TestResult>
   @JsonRequest("testing/ignore/overridePolicy")
   fun testing_ignore_overridePolicy(params: ContextFilters?): CompletableFuture<Null?>
+  @JsonRequest("extension/reset")
+  fun extension_reset(params: Null?): CompletableFuture<Null?>
 
   // =============
   // Notifications
@@ -178,4 +180,6 @@ interface CodyAgentServer {
   fun webview_didDisposeNative(params: Webview_DidDisposeNativeParams)
   @JsonNotification("secrets/didChange")
   fun secrets_didChange(params: Secrets_DidChangeParams)
+  @JsonNotification("window/didChangeFocus")
+  fun window_didChangeFocus(params: Window_DidChangeFocusParams)
 }

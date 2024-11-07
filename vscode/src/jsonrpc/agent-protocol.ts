@@ -3,9 +3,9 @@ import type * as vscode from 'vscode'
 import type {
     BillingCategory,
     BillingProduct,
+    ClientCapabilities,
     CodyCommand,
     ContextFilters,
-    ContextMentionProviderID,
     CurrentUserCodySubscription,
     Model,
     ModelAvailabilityStatus,
@@ -284,6 +284,10 @@ export type ClientRequests = {
     // which match the specified regular expressions. Pass `undefined` to remove
     // the override.
     'testing/ignore/overridePolicy': [ContextFilters | null, null]
+
+    // Called after the extension has been uninstalled by a user action.
+    // Attempts to wipe out any state that the extension has stored.
+    'extension/reset': [null, null]
 }
 
 // ================
@@ -382,6 +386,8 @@ export type ClientNotifications = {
     'webview/didDisposeNative': [{ handle: string }]
 
     'secrets/didChange': [{ key: string }]
+
+    'window/didChangeFocus': [{ focused: boolean }]
 }
 
 // ================
@@ -556,74 +562,6 @@ export interface ClientInfo {
     legacyNameForServerIdentification?: string | undefined | null
 }
 
-// The capability should match the name of the JSON-RPC methods.
-export interface ClientCapabilities {
-    authentication?: 'enabled' | 'none' | undefined | null
-    completions?: 'none' | undefined | null
-    //  When 'streaming', handles 'chat/updateMessageInProgress' streaming notifications.
-    chat?: 'none' | 'streaming' | undefined | null
-    // TODO: allow clients to implement the necessary parts of the git extension.
-    // https://github.com/sourcegraph/cody/issues/4165
-    git?: 'none' | 'enabled' | undefined | null
-    // If 'enabled', the client must implement the progress/start,
-    // progress/report, and progress/end notification endpoints.
-    progressBars?: 'none' | 'enabled' | undefined | null
-    edit?: 'none' | 'enabled' | undefined | null
-    editWorkspace?: 'none' | 'enabled' | undefined | null
-    untitledDocuments?: 'none' | 'enabled' | undefined | null
-    showDocument?: 'none' | 'enabled' | undefined | null
-    codeLenses?: 'none' | 'enabled' | undefined | null
-    showWindowMessage?: 'notification' | 'request' | undefined | null
-    ignore?: 'none' | 'enabled' | undefined | null
-    codeActions?: 'none' | 'enabled' | undefined | null
-    disabledMentionsProviders?: ContextMentionProviderID[] | undefined | null
-    // When 'object-encoded' (default), the server uses the `webview/postMessage` method
-    // to send structured JSON objects.  When 'string-encoded', the server uses the
-    // `webview/postMessageStringEncoded` method to send a JSON-encoded string. This is
-    // convenient for clients that forward the string directly to an underlying
-    // webview container.
-    webviewMessages?: 'object-encoded' | 'string-encoded' | undefined | null
-    // How to deal with vscode.ExtensionContext.globalState.
-    // - Stateless: the state does not persist between agent processes. This means the client is
-    // responsible for features like managing chat history.
-    // - Server managed: the server reads and writes the state without informing the client.
-    // The client can optionally customize the file path of the JSON config via `ClientInfo.globalStatePath: string`
-    // - Client managed: not implemented yet. When implemented, clients will be able to implement a
-    // JSON-RPC request to handle the saving of the client state. This is needed to safely share state
-    // between concurrent agent processes (assuming there is one IDE client process managing multiple agent processes).
-    globalState?: 'stateless' | 'server-managed' | 'client-managed' | undefined | null
-
-    // Secrets controls how the agent should handle storing secrets.
-    // - Stateless: the secrets are not persisted between agent processes.
-    // - Client managed: the client must implement the 'secrets/get',
-    // 'secrets/store', and 'secrets/delete' requests.
-    secrets?: 'stateless' | 'client-managed' | undefined | null
-    // Whether the client supports the VSCode WebView API. If 'agentic', uses
-    // AgentWebViewPanel which just delegates bidirectional postMessage over
-    // the Agent protocol. If 'native', implements a larger subset of the VSCode
-    // WebView API and expects the client to run web content in the webview,
-    // which effectively means both sidebar and custom editor chat views are supported.
-    // Defaults to 'agentic'.
-    webview?: 'agentic' | 'native' | undefined | null
-    // If webview === 'native', describes how the client has configured webview resources.
-    webviewNativeConfig?: WebviewNativeConfig | undefined | null
-}
-
-export interface WebviewNativeConfig {
-    // Set the view to 'single' when client only support single chat view, e.g. sidebar chat.
-    view: 'multiple' | 'single'
-    // cspSource is passed to the extension as the Webview cspSource property.
-    cspSource: string
-    // webviewBundleServingPrefix is prepended to resource paths under 'dist' in
-    // asWebviewUri (note, multiple prefixes are not yet implemented.)
-    webviewBundleServingPrefix?: string | undefined | null
-    // when true, resource paths are not relativized, and the client must
-    // handle serving the resources relative to the webview.
-    skipResourceRelativization?: boolean | undefined | null
-    injectScript?: string | undefined | null
-    injectStyle?: string | undefined | null
-}
-
 export interface ServerInfo {
     name: string
     authenticated?: boolean | undefined | null
@@ -657,7 +595,19 @@ export interface ExtensionConfiguration {
      */
     eventProperties?: EventProperties | undefined | null
 
+    /**
+     * @deprecated use 'customConfigurationJson' instead, it supports nested objects
+     */
     customConfiguration?: Record<string, any> | undefined | null
+
+    /**
+     * Custom configuration is parsed using the same rules as VSCode's WorkspaceConfiguration:
+     * https://code.visualstudio.com/api/references/vscode-api#WorkspaceConfiguration.get
+     * That means it supports dotted names - keys can be nested and are merged based on the prefix.
+     * Configuration objects from a nested settings can be obtained using dotted names.
+     * For the examples look at the `AgentWorkspaceConfiguration.test.ts`
+     */
+    customConfigurationJson?: string | undefined | null
 
     baseGlobalState?: Record<string, any> | undefined | null
 }
@@ -817,9 +767,12 @@ interface ExecuteCommandParams {
     arguments?: any[] | undefined | null
 }
 
+export type DebugMessageLogLevel = 'trace' | 'debug' | 'info' | 'warn' | 'error'
+
 export interface DebugMessage {
     channel: string
     message: string
+    level?: DebugMessageLogLevel | undefined | null
 }
 
 export interface ProgressStartParams {

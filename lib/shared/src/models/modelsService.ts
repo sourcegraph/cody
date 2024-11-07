@@ -43,7 +43,12 @@ export interface ModelRef {
     modelId: ModelId
 }
 
-export type ModelCategory = ModelTag.Power | ModelTag.Balanced | ModelTag.Speed | 'accuracy' | 'other'
+export type ModelCategory =
+    | ModelTag.Power
+    | ModelTag.Balanced
+    | ModelTag.Speed
+    | 'accuracy'
+    | ModelTag.Other
 export type ModelStatus =
     | ModelTag.Experimental
     | ModelTag.EarlyAccess
@@ -534,6 +539,11 @@ export class ModelsService {
     public getModelByID(modelID: string): Model | undefined {
         // TODO(sqs)#observe: remove synchronous access here, return an Observable<Model|undefined> instead
         return this.models.find(m => m.id === modelID)
+    }
+
+    public getAllModelsWithSubstring(modelSubstring: string): Model[] {
+        // TODO(sqs)#observe: remove synchronous access here, return an Observable<Model|undefined> instead
+        return this.models.filter(m => m.id.includes(modelSubstring))
     }
 
     public getModelByIDSubstringOrError(modelSubstring: string): Model {

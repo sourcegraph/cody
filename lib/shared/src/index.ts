@@ -98,6 +98,7 @@ export {
     type ContextItemSymbol,
     type ContextFileType,
     type ContextMessage,
+    type DefaultContext,
     type SymbolKind,
     type ContextItemTree,
     type ContextItemRepository,
@@ -107,6 +108,7 @@ export {
     LARGE_FILE_WARNING_LABEL,
     NO_SYMBOL_MATCHES_HELP_LABEL,
 } from './codebase-context/messages'
+export * from './codyPaths'
 export type {
     CodyCommand,
     CodyCommandContext,
@@ -216,8 +218,10 @@ export {
 export type { Message } from './sourcegraph-api'
 export {
     addClientInfoParams,
-    getClientInfoParams,
+    getClientInfoQueryParams as getClientInfoParams,
+    getClientIdentificationHeaders,
     setClientNameVersion,
+    addCodyClientIdentificationHeaders,
 } from './sourcegraph-api/client-name-version'
 export { SourcegraphBrowserCompletionsClient } from './sourcegraph-api/completions/browserClient'
 export { SourcegraphCompletionsClient } from './sourcegraph-api/completions/client'
@@ -250,12 +254,10 @@ export {
 } from './sourcegraph-api/graphql'
 export { ClientConfigSingleton, type CodyClientConfig } from './sourcegraph-api/clientConfig'
 export {
-    addCustomUserAgent,
-    customUserAgent,
     isNodeResponse,
-    setUserAgent,
     INCLUDE_EVERYTHING_CONTEXT_FILTERS,
     EXCLUDE_EVERYTHING_CONTEXT_FILTERS,
+    PromptMode,
     type BrowserOrNodeResponse,
     type LogEventMode,
     type ContextFilters,
@@ -380,5 +382,10 @@ export {
     cachedUserProductSubscription,
     userProductSubscription,
 } from './sourcegraph-api/userProductSubscription'
-export { siteVersion, currentSiteVersion } from './sourcegraph-api/siteVersion'
+export {
+    siteVersion,
+    currentSiteVersion,
+    isValidVersion,
+    checkVersion,
+} from './sourcegraph-api/siteVersion'
 export { configOverwrites } from './models/configOverwrites'

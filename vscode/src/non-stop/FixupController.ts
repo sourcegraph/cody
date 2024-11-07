@@ -33,6 +33,7 @@ import { isStreamedIntent } from '../edit/utils/edit-intent'
 import { getOverridenModelForIntent } from '../edit/utils/edit-models'
 import type { ExtensionClient } from '../extension-client'
 import { isRunningInsideAgent } from '../jsonrpc/isRunningInsideAgent'
+import { charactersLogger } from '../services/CharactersLogger'
 import { FixupDocumentEditObserver } from './FixupDocumentEditObserver'
 import type { FixupFile } from './FixupFile'
 import { FixupFileObserver } from './FixupFileObserver'
@@ -588,6 +589,12 @@ export class FixupController
     }
 
     private logTaskCompletion(task: FixupTask, document: vscode.TextDocument, editOk: boolean): void {
+        const charactersLoggerMetadata = charactersLogger.getChangeEventMetadataForCodyCodeGenEvents({
+            document,
+            contentChanges: task.getContentChanges(),
+            reason: undefined,
+        })
+
         const legacyMetadata = {
             intent: EditIntentTelemetryMetadataMapping[task.intent] || task.intent,
             mode: EditModeTelemetryMetadataMapping[task.mode] || task.mode,
@@ -596,6 +603,7 @@ export class FixupController
             model: task.model,
             ...this.countEditInsertions(task),
             ...task.telemetryMetadata,
+            ...charactersLoggerMetadata,
         }
         const { metadata, privateMetadata } = splitSafeMetadata(legacyMetadata)
         if (!editOk) {

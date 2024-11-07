@@ -1,163 +1,121 @@
+import type { Span } from '@opentelemetry/api'
 import {
-    BotResponseMultiplexer,
-    type ChatClient,
     type ContextItem,
-    type PromptMixin,
     PromptString,
+    isDefined,
     logDebug,
-    newPromptMixin,
+    modelsService,
     ps,
+    telemetryRecorder,
 } from '@sourcegraph/cody-shared'
-import { getOSPromptString } from '../../os'
-import { getCategorizedMentions } from '../../prompt-builder/utils'
-import type { ChatBuilder } from '../chat-view/ChatBuilder'
-import { DefaultPrompter } from '../chat-view/prompt'
-import type { CodyTool } from './CodyTool'
-
-type AgenticContext = {
-    explicit: ContextItem[]
-    implicit: ContextItem[]
-}
+import { CodyChatAgent } from './CodyChatAgent'
+import { CODYAGENT_PROMPTS } from './prompts'
 
 /**
  * A DeepCodyAgent is created for each chat submitted by the user.
+ *
  * It is responsible for reviewing the retrieved context, and perform agentic context retrieval for the chat request.
  */
-export class DeepCodyAgent {
-    public static readonly ModelRef = 'sourcegraph::2023-06-01::deep-cody'
-
-    private readonly promptMixins: PromptMixin[] = []
-    private readonly multiplexer = new BotResponseMultiplexer()
-    private context: AgenticContext = { explicit: [], implicit: [] }
-
-    constructor(
-        private readonly chatBuilder: ChatBuilder,
-        private readonly chatClient: Pick<ChatClient, 'chat'>,
-        private readonly tools: CodyTool[],
-        mentions: ContextItem[] = []
-    ) {
-        this.sort(mentions)
-        this.promptMixins.push(newPromptMixin(this.buildPrompt()))
-        this.initializeMultiplexer()
+export class DeepCodyAgent extends CodyChatAgent {
+    private models = {
+        review: this.chatBuilder.selectedModel,
     }
 
-    private initializeMultiplexer(): void {
-        for (const tool of this.tools) {
-            this.multiplexer.sub(tool.tag.toString(), {
-                onResponse: async (c: string) => {
-                    tool.stream(c)
-                },
-                onTurnComplete: async () => tool.stream(''),
-            })
-        }
+    protected buildPrompt(): PromptString {
+        const toolInstructions = this.tools.map(t => t.getInstruction())
+        const toolExamples = this.tools.map(t => t.config.prompt.example)
+        const join = (prompts: PromptString[]) => PromptString.join(prompts, ps`\n- `)
+
+        return CODYAGENT_PROMPTS.review
+            .replace('{{CODY_TOOLS_PLACEHOLDER}}', join(toolInstructions))
+            .replace('{{CODY_TOOLS_EXAMPLES_PLACEHOLDER}}', join(toolExamples))
     }
 
     /**
-     * Start the context retrieval process for the loop count.
-     * @param userAbortSignal - An AbortSignal to cancel the operation.
-     * @param loop - The number of times to review the context.
-     * @param maxItem - The maximum number of codebase context items to retrieve.
-     * @returns The context items for the specified model.
+     * Retrieves the context for the current chat, by iteratively reviewing the context and adding new items
+     * until the maximum number of loops is reached or the chat is aborted.
+     *
+     * @param span - The OpenTelemetry span for the current chat.
+     * @param chatAbortSignal - The abort signal for the current chat.
+     * @param maxLoops - The maximum number of loops to perform when retrieving the context.
+     * @returns The context items retrieved for the current chat.
      */
     public async getContext(
+        span: Span,
         chatAbortSignal: AbortSignal,
-        // TODO (bee) investigate on the right numbers for these params.
-        // Currently limiting to these numbers to avoid long processing time during reviewing step.
-        loop = 2,
-        // Keep the last n amount of the search items to override old items with new ones.
-        maxSearchItems = 30
+        maxLoops = 2
     ): Promise<ContextItem[]> {
-        const start = performance.now()
-        const count = { context: 0, loop: 0 }
+        const fastChatModel = modelsService.getModelByID(
+            'anthropic::2024-10-22::claude-3-5-haiku-latest'
+        )
+        this.models.review = fastChatModel?.id ?? this.chatBuilder.selectedModel
 
-        for (let i = 0; i < loop && !chatAbortSignal.aborted; i++) {
-            const newContext = await this.review(chatAbortSignal)
-            this.sort(newContext)
-            count.context += newContext.length
-            count.loop++
-            if (!newContext.length || count.context) {
-                break
-            }
-        }
+        const startTime = performance.now()
+        const count = await this.reviewLoop(span, chatAbortSignal, maxLoops)
 
-        const duration = performance.now() - start
-        logDebug('DeepCody', 'Aagentic context retrieval completed', { verbose: { count, duration } })
-        return [...this.context.implicit.slice(-maxSearchItems), ...this.context.explicit]
+        telemetryRecorder.recordEvent('cody.deep-cody.context', 'reviewed', {
+            privateMetadata: {
+                durationMs: performance.now() - startTime,
+                ...count,
+                model: this.models.review,
+            },
+            billingMetadata: {
+                product: 'cody',
+                category: 'billable',
+            },
+        })
+        return this.context
     }
 
-    private async review(chatAbortSignal: AbortSignal): Promise<ContextItem[]> {
-        if (chatAbortSignal.aborted) return []
+    private async reviewLoop(
+        span: Span,
+        chatAbortSignal: AbortSignal,
+        maxLoops: number
+    ): Promise<{ context: number; loop: number }> {
+        let context = 0
+        let loop = 0
 
-        const prompter = new DefaultPrompter(this.context.explicit, this.context.implicit)
+        for (let i = 0; i < maxLoops && !chatAbortSignal.aborted; i++) {
+            const newContext = await this.review(span, chatAbortSignal)
+            if (!newContext.length) break
+
+            // Remove the TOOL context item that is only used during the review process.
+            this.context.push(...newContext.filter(c => c.title !== 'TOOLCONTEXT'))
+
+            context += newContext.length
+            loop++
+        }
+
+        return { context, loop }
+    }
+
+    /**
+     * Performs a review of the current context and generates new context items based on the review outcome.
+     */
+    private async review(span: Span, chatAbortSignal: AbortSignal): Promise<ContextItem[]> {
+        const prompter = this.getPrompter(this.context)
         const promptData = await prompter.makePrompt(this.chatBuilder, 1, this.promptMixins)
 
-        if (promptData.context.ignored.length) {
-            // TODO: Decide if Cody needs more context.
-        }
-
-        const agentAbortController = new AbortController()
-
         try {
-            const stream = await this.chatClient.chat(
-                promptData.prompt,
-                { model: DeepCodyAgent.ModelRef, maxTokensToSample: 2000 },
-                agentAbortController.signal
-            )
-
-            let streamedText = ''
-            for await (const message of stream) {
-                if (message.type === 'change') {
-                    const text = message.text.slice(streamedText.length)
-                    streamedText += text
-                    await this.multiplexer.publish(text)
-                } else if (message.type === 'complete' || message.type === 'error') {
-                    if (message.type === 'error') throw new Error('Error while streaming')
-                    await this.multiplexer.notifyTurnComplete()
-                    break
+            const res = await this.processStream(promptData.prompt, chatAbortSignal, this.models.review)
+            // If the response is empty or contains the CONTEXT_SUFFICIENT token, the context is sufficient.
+            if (!res || res?.includes('CONTEXT_SUFFICIENT')) {
+                // Process the response without generating any context items.
+                for (const tool of this.toolHandlers.values()) {
+                    tool.processResponse?.()
                 }
+                return []
             }
+            const results = await Promise.all(
+                Array.from(this.toolHandlers.values()).map(tool => tool.execute(span))
+            )
+            return results.flat().filter(isDefined)
         } catch (error) {
             await this.multiplexer.notifyTurnComplete()
-            logDebug('DeepCody', `review failed: ${error}`, { verbose: { prompt, error } })
+            logDebug('Deep Cody', `context review failed: ${error}`, {
+                verbose: { prompt: promptData.prompt, error },
+            })
+            return []
         }
-
-        return (await Promise.all(this.tools.map(t => t.execute()))).flat()
-    }
-
-    private sort(items: ContextItem[]): void {
-        const sorted = getCategorizedMentions(items)
-        this.context.explicit.push(...sorted.explicitMentions)
-        this.context.implicit.push(...sorted.implicitMentions)
-    }
-
-    private buildPrompt(): PromptString {
-        const join = (prompts: PromptString[]) => PromptString.join(prompts, ps`\n- `)
-
-        return ps`Your task is to review the shared context and think step-by-step to determine if you can answer the "Question:" at the end.
-        [INSTRUCTIONS]
-        1. Analyze the shared context thoroughly.
-        2. Decide if you have enough information to answer the question.
-        3. Respond with ONLY ONE of the following:
-            a) The word "CONTEXT_SUFFICIENT" if you can answer the question with the current context.
-            b) One or more <TOOL*> tags to request additional information if needed.
-
-        [TOOLS]
-        ${join(this.tools.map(t => t.getInstruction()))}
-
-        [TOOL USAGE EXAMPLES]
-        ${join(this.tools.map(t => t.prompt.example))}
-        - To see the full content of a codebase file and context of how the Controller class is use: \`<TOOLFILE><name>path/to/file.ts</name></TOOLFILE><TOOLSEARCH><query>class Controller</query></TOOLSEARCH>\`
-
-        [RESPONSE FORMAT]
-        - If you can answer the question fully, respond with ONLY the word "CONTEXT_SUFFICIENT".
-        - If you need more information, use ONLY the appropriate <TOOL*> tag(s) in your response.
-
-        [NOTES]
-        1. Only use <TOOL*> tags when additional context is necessary to answer the question.
-        2. You may use multiple <TOOL*> tags in a single response if needed.
-        3. Never request sensitive information such as passwords or API keys.
-        4. The user is working with ${getOSPromptString()}.
-
-        [GOAL] Determine if you can answer the question with the given context or if you need more information. Do not provide the actual answer in this step.`
     }
 }

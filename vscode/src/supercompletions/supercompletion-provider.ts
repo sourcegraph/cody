@@ -5,7 +5,7 @@ import type { CodyStatusBar } from '../services/StatusBar'
 import { type Supercompletion, getSupercompletions } from './get-supercompletion'
 import { SupercompletionRenderer } from './renderer'
 
-const EDIT_HISTORY = 5 * 60 * 1000
+const EDIT_HISTORY_TIMEOUT = 5 * 60 * 1000
 const SUPERCOMPLETION_TIMEOUT = 2 * 1000
 
 export class SupercompletionProvider implements vscode.Disposable {
@@ -27,7 +27,12 @@ export class SupercompletionProvider implements vscode.Disposable {
         > = vscode.workspace
     ) {
         this.renderer = new SupercompletionRenderer()
-        this.recentEditsRetriever = new RecentEditsRetriever(EDIT_HISTORY, workspace)
+        this.recentEditsRetriever = new RecentEditsRetriever(
+            {
+                maxAgeMs: EDIT_HISTORY_TIMEOUT,
+            },
+            workspace
+        )
 
         this.disposables.push(
             workspace.onDidChangeTextDocument(this.onDidChangeTextDocument.bind(this)),

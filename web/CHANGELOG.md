@@ -1,3 +1,7 @@
+## 0.10.0
+- Prompts UI update (new prompts list, tab and recent prompts popover)
+- Improved performance by bypassing rpc messages hydration
+
 ## 0.9.0
 - Big refactoring change around authorization (see [#5221](https://github.com/sourcegraph/cody/pull/5221))
 

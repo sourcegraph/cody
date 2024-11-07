@@ -1,9 +1,20 @@
 import { Observable, type ObservableLike } from 'observable-fns'
 import { isError } from '../utils'
-import { catchError, filter, firstValueFrom, shareReplay, startWith, switchMap } from './observable'
+import {
+    type ShareReplayConfig,
+    catchError,
+    filter,
+    firstValueFrom,
+    shareReplay,
+    startWith,
+    switchMap,
+} from './observable'
 
 /** A sentinel value to indicate that the value has not yet been emitted. */
 export const pendingOperation = Symbol.for('@@pendingOperation')
+
+export type MaybePendingObservable<T> = Observable<T | typeof pendingOperation>
+export type MaybePendingObservableLike<T> = ObservableLike<T | typeof pendingOperation>
 
 /**
  * Run an operation with the outer observable as input. The result is replayed to all subscribers
@@ -15,13 +26,10 @@ export const pendingOperation = Symbol.for('@@pendingOperation')
  * operation completes with the new input.
  */
 export function switchMapReplayOperation<T, R>(
-    operation: (value: T) => Observable<R>
-): (
-    source: ObservableLike<T | typeof pendingOperation>
-) => Observable<R | typeof pendingOperation | Error> {
-    return (
-        source: ObservableLike<T | typeof pendingOperation>
-    ): Observable<R | typeof pendingOperation | Error> => {
+    operation: (value: T) => Observable<R>,
+    shareReplayConfig?: ShareReplayConfig
+): (source: MaybePendingObservableLike<T>) => MaybePendingObservable<R | Error> {
+    return (source: MaybePendingObservableLike<T>): MaybePendingObservable<R | Error> => {
         return Observable.from(source).pipe(
             switchMap(outerValue =>
                 outerValue === pendingOperation
@@ -33,7 +41,7 @@ export function switchMapReplayOperation<T, R>(
                           startWith(pendingOperation)
                       )
             ),
-            shareReplay()
+            shareReplay(shareReplayConfig)
         )
     }
 }
@@ -41,10 +49,8 @@ export function switchMapReplayOperation<T, R>(
 /**
  * An observable pipe operator to filter out {@link pendingOperation} values.
  */
-export function skipPendingOperation<T>(): (
-    source: ObservableLike<T | typeof pendingOperation>
-) => Observable<T> {
-    return (source: ObservableLike<T | typeof pendingOperation>) =>
+export function skipPendingOperation<T>(): (source: MaybePendingObservableLike<T>) => Observable<T> {
+    return (source: MaybePendingObservableLike<T>) =>
         Observable.from(source).pipe(filter((value): value is T => value !== pendingOperation))
 }
 

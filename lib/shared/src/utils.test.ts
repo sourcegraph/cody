@@ -77,6 +77,32 @@ describe('convertGitCloneURLToCodebaseName', () => {
         ).toEqual('gitlab.com/sourcegraph/sourcegraph')
     })
 
+    it('converts Gitlab SSH URL with Git and subgroups', () => {
+        expect(
+            convertGitCloneURLToCodebaseName('git@gitlab.com:sourcegraph/ui/sourcegraph-frontend.git')
+        ).toEqual('gitlab.com/sourcegraph/ui/sourcegraph-frontend')
+    })
+
+    it('converts Gitlab SSH URL with Git and multiple subgroups', () => {
+        expect(
+            convertGitCloneURLToCodebaseName(
+                'git@gitlab.com:sourcegraph/ui/cody-ui/sourcegraph-frontend.git'
+            )
+        ).toEqual('gitlab.com/sourcegraph/ui/cody-ui/sourcegraph-frontend')
+    })
+
+    it('converts custom hosts with a mono-repo', () => {
+        expect(
+            convertGitCloneURLToCodebaseName('some-user@my-custom-host.com.internal:mono-repo')
+        ).toEqual('my-custom-host.com.internal/mono-repo')
+    })
+
+    it('converts custom hosts with a port', () => {
+        expect(
+            convertGitCloneURLToCodebaseName('some-user@my-custom-host.com.internal:2022/owner/repo.git')
+        ).toEqual('my-custom-host.com.internal:2022/owner/repo')
+    })
+
     it('converts GitHub SSH URL with Git', () => {
         expect(convertGitCloneURLToCodebaseName('git@github.com:sourcegraph/sourcegraph.git')).toEqual(
             'github.com/sourcegraph/sourcegraph'

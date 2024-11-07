@@ -72,7 +72,6 @@ export class RecentViewPortRetriever implements vscode.Disposable, ContextRetrie
             .filter(viewport => viewport.uri.toString() !== currentFileUri)
             .filter(viewport => {
                 const params: ShouldUseContextParams = {
-                    enableExtendedLanguagePool: false,
                     baseLanguageId: currentLanguageId,
                     languageId: viewport.languageId,
                 }

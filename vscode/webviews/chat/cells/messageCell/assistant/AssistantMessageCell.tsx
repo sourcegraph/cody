@@ -8,7 +8,6 @@ import {
     contextItemsFromPromptEditorValue,
     filterContextItemsFromPromptEditorValue,
     isAbortErrorOrSocketHangUp,
-    ps,
     reformatBotMessageForChat,
     serializedPromptEditorStateFromChatMessage,
 } from '@sourcegraph/cody-shared'
@@ -70,8 +69,8 @@ export const AssistantMessageCell: FunctionComponent<{
         smartApplyEnabled,
     }) => {
         const displayMarkdown = useMemo(
-            () => reformatBotMessageForChat(message.text ?? ps``).toString(),
-            [message]
+            () => (message.text ? reformatBotMessageForChat(message.text).toString() : ''),
+            [message.text]
         )
 
         const chatModel = useChatModelByID(message.model, models)
@@ -228,7 +227,7 @@ export function makeHumanMessageInfo(
             if (humanEditorRef.current?.getSerializedValue().text.trim().endsWith('@')) {
                 humanEditorRef.current?.setFocus(true, { moveCursorToEnd: true })
             } else {
-                humanEditorRef.current?.appendText('@', true)
+                humanEditorRef.current?.appendText('@')
             }
         },
     }

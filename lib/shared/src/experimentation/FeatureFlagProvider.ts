@@ -29,30 +29,23 @@ export enum FeatureFlag {
     // This flag is used to track the overall eligibility to use the StarCoder model. The `-hybrid`
     // suffix is no longer relevant
     CodyAutocompleteStarCoderHybrid = 'cody-autocomplete-default-starcoder-hybrid',
-    // Enable the FineTuned model as the default model via Fireworks
-    CodyAutocompleteFIMFineTunedModelHybrid = 'cody-autocomplete-fim-fine-tuned-model-hybrid',
     // Enable the deepseek-v2 as the default model via Fireworks
     CodyAutocompleteDeepseekV2LiteBase = 'cody-autocomplete-deepseek-v2-lite-base',
 
     // Data collection variants used for completions and next edit completions
     CodyAutocompleteDataCollectionFlag = 'cody-autocomplete-logs-collection-flag',
 
-    // Enable various feature flags to experiment with FIM trained fine-tuned models via Fireworks
-    CodyAutocompleteFIMModelExperimentBaseFeatureFlag = 'cody-autocomplete-model-v1-experiment-flag',
-    CodyAutocompleteFIMModelExperimentControl = 'cody-autocomplete-model-v1-experiment-control',
-    CodyAutocompleteFIMModelExperimentCurrentBest = 'cody-autocomplete-model-v1-experiment-current-best',
-    CodyAutocompleteFIMModelExperimentVariant1 = 'cody-autocomplete-model-v1-experiment-variant-1',
-    CodyAutocompleteFIMModelExperimentVariant2 = 'cody-autocomplete-model-v1-experiment-variant-2',
-    CodyAutocompleteFIMModelExperimentVariant3 = 'cody-autocomplete-model-v1-experiment-variant-3',
-    CodyAutocompleteFIMModelExperimentVariant4 = 'cody-autocomplete-model-v1-experiment-variant-4',
-    CodyAutocompleteDisableLowPerfLangDelay = 'cody-autocomplete-disable-low-perf-lang-delay',
-    // Enables Claude 3 if the user is in our holdout group
-    CodyAutocompleteClaude3 = 'cody-autocomplete-claude-3',
+    // Enables fast-path HTTP client for PLG-users
+    CodyAutocompleteFastPath = 'cody-autocomplete-fast-path',
 
-    CodyAutocompletePreloadingExperimentBaseFeatureFlag = 'cody-autocomplete-preloading-experiment-flag',
-    CodyAutocompletePreloadingExperimentVariant1 = 'cody-autocomplete-preloading-experiment-variant-1',
-    CodyAutocompletePreloadingExperimentVariant2 = 'cody-autocomplete-preloading-experiment-variant-2',
-    CodyAutocompletePreloadingExperimentVariant3 = 'cody-autocomplete-preloading-experiment-variant-3',
+    // Enable various feature flags to experiment with FIM trained fine-tuned models via Fireworks
+    CodyAutocompleteFIMModelExperimentBaseFeatureFlag = 'cody-autocomplete-model-v2-experiment-flag',
+    CodyAutocompleteFIMModelExperimentControl = 'cody-autocomplete-model-experiment-control',
+    CodyAutocompleteFIMModelExperimentCurrentBest = 'cody-autocomplete-model-experiment-current-best',
+    CodyAutocompleteFIMModelExperimentVariant1 = 'cody-autocomplete-model-experiment-variant-1',
+    CodyAutocompleteFIMModelExperimentVariant2 = 'cody-autocomplete-model-experiment-variant-2',
+    CodyAutocompleteFIMModelExperimentVariant3 = 'cody-autocomplete-model-experiment-variant-3',
+    CodyAutocompleteFIMModelExperimentVariant4 = 'cody-autocomplete-model-experiment-variant-4',
 
     CodyAutocompleteContextExperimentBaseFeatureFlag = 'cody-autocomplete-context-experiment-flag',
     CodyAutocompleteContextExperimentVariant1 = 'cody-autocomplete-context-experiment-variant-1',
@@ -60,10 +53,6 @@ export enum FeatureFlag {
     CodyAutocompleteContextExperimentVariant3 = 'cody-autocomplete-context-experiment-variant-3',
     CodyAutocompleteContextExperimentVariant4 = 'cody-autocomplete-context-experiment-variant-4',
     CodyAutocompleteContextExperimentControl = 'cody-autocomplete-context-experiment-control',
-
-    // When enabled, it will extend the number of languages considered for context (e.g. React files
-    // will be able to use CSS files as context).
-    CodyAutocompleteContextExtendLanguagePool = 'cody-autocomplete-context-extend-language-pool',
 
     // use-ssc-for-cody-subscription is a feature flag that enables the use of SSC as the source of truth for Cody subscription data.
     UseSscForCodySubscription = 'use-ssc-for-cody-subscription',
@@ -92,8 +81,19 @@ export enum FeatureFlag {
      */
     CodyUnifiedPrompts = 'cody-unified-prompts',
 
+    /**
+     * For internal use only. New Prompts UI and logic is behind this feature flag
+     * will be removed as soon as commands will be deprecated.
+     */
+    CodyPromptsV2 = 'prompt-creation-v2',
+
     /** Whether user has access to the experimental Cody Reflection / Deep Cody feature. */
     DeepCody = 'cody-deep-reflection',
+
+    /**
+     * Whether the current repo context chip is shown in the chat input by default
+     */
+    NoDefaultRepoChip = 'no-default-repo-chip',
 }
 
 const ONE_HOUR = 60 * 60 * 1000

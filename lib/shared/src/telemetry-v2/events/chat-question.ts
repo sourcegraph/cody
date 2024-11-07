@@ -55,9 +55,12 @@ export const events = [
                         // See https://github.com/sourcegraph/sourcegraph/pull/59524
                         recordsPrivateMetadataTranscript: recordTranscript ? 1 : 0,
                         isPublicRepo: params.repoIsPublic ? 1 : 0,
+                        // TODO: Remove this field when the transition from commands to prompts is complete
+                        isCommand: params.command ? 1 : 0,
                     },
                     privateMetadata: {
                         chatModel: params.chatModel,
+                        // TODO: Remove this field when the transition from commands to prompts is complete
                         command: params.command,
                         requestID: params.requestID,
                         sessionID: params.sessionID,
@@ -139,6 +142,8 @@ export const events = [
                         detectedIntent: params.detectedIntent
                             ? map.intent(params.detectedIntent)
                             : undefined,
+                        // TODO: Remove this field when the transition from commands to prompts is complete
+                        isCommand: params.command ? 1 : 0,
                         ...metadata,
                         recordsPrivateMetadataTranscript: recordTranscript ? 1 : 0,
                     }),
@@ -153,6 +158,8 @@ export const events = [
                               )
                             : undefined,
                         detectedIntent: params.detectedIntent,
+                        // TODO: Remove this field when the transition from commands to prompts is complete
+                        command: params.command,
                         userSpecifiedIntent: params.userSpecifiedIntent,
                         traceId: spans.current.spanContext().traceId,
                         gitMetadata,
@@ -169,7 +176,7 @@ export const events = [
                     },
                     billingMetadata: {
                         product: 'cody',
-                        category: 'billable',
+                        category: 'core',
                     },
                 } as const
                 telemetryRecorder.recordEvent(feature, action, telemetryData)
@@ -180,6 +187,8 @@ export const events = [
                 auto: 1,
                 chat: 2,
                 search: 3,
+                edit: 4,
+                insert: 5,
             } satisfies Record<
                 typeof fallbackValue | 'auto' | Exclude<ChatMessage['intent'], null | undefined>,
                 number
@@ -206,6 +215,8 @@ function publicContextSummary(globalPrefix: string, context: ContextItem[]) {
         [ContextItemSource.Selection]: cloneDeep(defaultBySourceCount),
         [ContextItemSource.Terminal]: cloneDeep(defaultBySourceCount),
         [ContextItemSource.History]: cloneDeep(defaultBySourceCount),
+        [ContextItemSource.Priority]: cloneDeep(defaultBySourceCount),
+        [ContextItemSource.Agentic]: cloneDeep(defaultBySourceCount),
         other: cloneDeep(defaultBySourceCount),
     }
     const byType = {
@@ -213,6 +224,7 @@ function publicContextSummary(globalPrefix: string, context: ContextItem[]) {
         openctx: cloneDeep(defaultByTypeCount),
         repository: cloneDeep(defaultByTypeCount),
         symbol: cloneDeep(defaultByTypeCount),
+        mode: cloneDeep(defaultByTypeCount),
         tree: {
             ...cloneDeep(defaultByTypeCount),
             isWorkspaceRoot: undefined as number | undefined,
@@ -371,6 +383,8 @@ const defaultByTypeCount: ByTypeCount = {
         [ContextItemSource.Selection]: undefined,
         [ContextItemSource.Terminal]: undefined,
         [ContextItemSource.History]: undefined,
+        [ContextItemSource.Priority]: undefined,
+        [ContextItemSource.Agentic]: undefined,
         other: undefined,
     },
 }

@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'vitest'
 
-import { hydrateAfterPostMessage, isDehydratedUri } from './hydrateAfterPostMessage'
+import { ps } from '../prompt/prompt-string'
+import { forceHydration, hydrateAfterPostMessage, isDehydratedUri } from './hydrateAfterPostMessage'
 
 // Mock URI hydration function
 const mockHydrateUri = (value: unknown) => {
@@ -113,5 +114,13 @@ describe('hydrateAfterPostMessage', () => {
         const hydratedValue = hydrateAfterPostMessage(originalValue, mockHydrateUri)
         hydratedValue.foo.bar = 'baz'
         expect(originalValue.foo.bar).toEqual('baz')
+    })
+})
+
+describe('forceHydration', () => {
+    test('handles PromptString', async () => {
+        const ps1 = ps`foo`
+        expect(ps1.toJSON()).toBe('foo')
+        expect(forceHydration(ps1).toJSON()).toBe('foo')
     })
 })
