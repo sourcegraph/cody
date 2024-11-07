@@ -141,11 +141,13 @@ object ConfigUtil {
 
     return try {
       val text = customConfigContent ?: getSettingsFile(project).readText()
-      val config = ConfigFactory.parseString(text).resolve()
+      var config = ConfigFactory.parseString(text).resolve()
       additionalProperties.forEach { (key, value) ->
-        config.withValue(key, ConfigValueFactory.fromAnyRef(value))
+        config = config.withValue(key, ConfigValueFactory.fromAnyRef(value))
       }
-      config.root().render(ConfigRenderOptions.defaults().setOriginComments(false))
+      config
+          .root()
+          .render(ConfigRenderOptions.defaults().setComments(false).setOriginComments(false))
     } catch (e: Exception) {
       logger.info("No user defined settings file found. Proceeding with empty custom config")
       ""
