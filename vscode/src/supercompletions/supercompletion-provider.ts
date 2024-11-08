@@ -23,7 +23,7 @@ export class SupercompletionProvider implements vscode.Disposable {
         },
         readonly workspace: Pick<
             typeof vscode.workspace,
-            'onDidChangeTextDocument' | 'onDidRenameFiles' | 'onDidDeleteFiles'
+            'onDidChangeTextDocument' | 'onDidRenameFiles' | 'onDidDeleteFiles' | 'onDidOpenTextDocument'
         > = vscode.workspace
     ) {
         this.renderer = new SupercompletionRenderer()
