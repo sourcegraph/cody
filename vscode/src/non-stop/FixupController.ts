@@ -595,12 +595,18 @@ export class FixupController
             reason: undefined,
         })
 
+        const originalCodeCounts = countCode(task.original)
+
         const legacyMetadata = {
             intent: EditIntentTelemetryMetadataMapping[task.intent] || task.intent,
             mode: EditModeTelemetryMetadataMapping[task.mode] || task.mode,
             source:
                 EventSourceTelemetryMetadataMapping[task.source || DEFAULT_EVENT_SOURCE] || task.source,
+            originalCharCount: originalCodeCounts.charCount,
+            originalLineCount: originalCodeCounts.lineCount,
+            languageId: document.languageId,
             model: task.model,
+            latency: performance.now() - task.createdAt,
             ...this.countEditInsertions(task),
             ...task.telemetryMetadata,
             ...charactersLoggerMetadata,
