@@ -64,6 +64,11 @@
   },
   "dependencies": {
     "@openctx/client": "^0.0.30",
+    "@opentelemetry/context-zone": "^1.27.0",
+    "@opentelemetry/instrumentation-fetch": "^0.54.2",
+    "@opentelemetry/instrumentation-xml-http-request": "^0.54.2",
+    "@opentelemetry/otlp-exporter-base": "^0.54.2",
+    "@opentelemetry/sdk-trace-web": "^1.27.0",
     "@sourcegraph/telemetry": "^0.18.0",
     "observable-fns": "^0.6.1",
     "react": "18.2.0",
@@ -88,6 +93,9 @@
         }
       }
     },
-    "neverBuiltDependencies": ["deasync", "playwright"]
+    "neverBuiltDependencies": [
+      "deasync",
+      "playwright"
+    ]
   }
 }

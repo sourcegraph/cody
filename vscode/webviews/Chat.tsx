@@ -1,5 +1,5 @@
 import type React from 'react'
-import { useCallback, useEffect, useMemo, useRef } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import type {
     AuthenticatedAuthStatus,
@@ -21,7 +21,7 @@ import { ScrollDown } from './components/ScrollDown'
 import type { View } from './tabs'
 import { useTelemetryRecorder } from './utils/telemetry'
 import { useUserAccountInfo } from './utils/useConfig'
-
+import { trace, SpanStatusCode, Context } from '@opentelemetry/api'
 interface ChatboxProps {
     chatEnabled: boolean
     messageInProgress: ChatMessage | null
@@ -60,29 +60,51 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
 
     const feedbackButtonsOnSubmit = useCallback(
         (text: string) => {
-            enum FeedbackType {
-                thumbsUp = 1,
-                thumbsDown = 0,
-            }
-            telemetryRecorder.recordEvent('cody.feedback', 'submit', {
-                metadata: {
-                    feedbackType: text === 'thumbsUp' ? FeedbackType.thumbsUp : FeedbackType.thumbsDown,
-                    recordsPrivateMetadataTranscript: userInfo.isDotComUser ? 1 : 0,
-                },
-                privateMetadata: {
-                    FeedbackText: text,
+            const tracer = trace.getTracer('cody-webview')
+            return tracer.startActiveSpan('submit-feedback', async span => {
+                try {
+                    enum FeedbackType {
+                        thumbsUp = 1,
+                        thumbsDown = 0,
+                    }
 
-                    // 🚨 SECURITY: chat transcripts are to be included only for DotCom users AND for V2 telemetry
-                    // V2 telemetry exports privateMetadata only for DotCom users
-                    // the condition below is an aditional safegaurd measure
-                    responseText: userInfo.isDotComUser
-                        ? truncateTextStart(transcriptRef.current.toString(), CHAT_INPUT_TOKEN_BUDGET)
-                        : '',
-                },
-                billingMetadata: {
-                    product: 'cody',
-                    category: 'billable',
-                },
+                    span.setAttributes({
+                        'feedback.type': text === 'thumbsUp' ? FeedbackType.thumbsUp : FeedbackType.thumbsDown,
+                        'feedback.isDotComUser': userInfo.isDotComUser,
+                    })
+
+                    telemetryRecorder.recordEvent('cody.feedback', 'submit', {
+                        metadata: {
+                            feedbackType: text === 'thumbsUp' ? FeedbackType.thumbsUp : FeedbackType.thumbsDown,
+                            recordsPrivateMetadataTranscript: userInfo.isDotComUser ? 1 : 0,
+                        },
+                        privateMetadata: {
+                            FeedbackText: text,
+
+                            // 🚨 SECURITY: chat transcripts are to be included only for DotCom users AND for V2 telemetry
+                            // V2 telemetry exports privateMetadata only for DotCom users
+                            // the condition below is an aditional safegaurd measure
+                            responseText: userInfo.isDotComUser
+                                ? truncateTextStart(transcriptRef.current.toString(), CHAT_INPUT_TOKEN_BUDGET)
+                                : '',
+                        },
+                        billingMetadata: {
+                            product: 'cody',
+                            category: 'billable',
+                        },
+                    })
+
+                    span.setStatus({ code: SpanStatusCode.OK })
+                } catch (error) {
+                    span.setStatus({
+                        code: SpanStatusCode.ERROR,
+                        message: error instanceof Error ? error.message : 'Unknown error'
+                    })
+                    span.recordException(error as Error)
+                    throw error
+                } finally {
+                    span.end()
+                }
             })
         },
         [userInfo, telemetryRecorder]
@@ -90,14 +112,34 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
 
     const copyButtonOnSubmit = useCallback(
         (text: string, eventType: 'Button' | 'Keydown' = 'Button') => {
-            const op = 'copy'
-            // remove the additional /n added by the text area at the end of the text
-            const code = eventType === 'Button' ? text.replace(/\n$/, '') : text
-            // Log the event type and text to telemetry in chat view
-            vscodeAPI.postMessage({
-                command: op,
-                eventType,
-                text: code,
+            const tracer = trace.getTracer('cody-webview')
+            return tracer.startActiveSpan('copy-code', async span => {
+                try {
+                    const op = 'copy'
+                    const code = eventType === 'Button' ? text.replace(/\n$/, '') : text
+                    
+                    span.setAttributes({
+                        'copy.eventType': eventType,
+                        'copy.textLength': code.length,
+                    })
+
+                    vscodeAPI.postMessage({
+                        command: op,
+                        eventType,
+                        text: code,
+                    })
+
+                    span.setStatus({ code: SpanStatusCode.OK })
+                } catch (error) {
+                    span.setStatus({
+                        code: SpanStatusCode.ERROR,
+                        message: error instanceof Error ? error.message : 'Unknown error'
+                    })
+                    span.recordException(error as Error)
+                    throw error
+                } finally {
+                    span.end()
+                }
             })
         },
         [vscodeAPI]
@@ -106,12 +148,33 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     const insertButtonOnSubmit = useMemo(() => {
         if (showIDESnippetActions) {
             return (text: string, newFile = false) => {
-                const op = newFile ? 'newFile' : 'insert'
-                // Log the event type and text to telemetry in chat view
-                vscodeAPI.postMessage({
-                    command: op,
-                    // remove the additional /n added by the text area at the end of the text
-                    text: text.replace(/\n$/, ''),
+                const tracer = trace.getTracer('cody-webview')
+                return tracer.startActiveSpan('insert-code', async span => {
+                    try {
+                        const op = newFile ? 'newFile' : 'insert'
+                        
+                        span.setAttributes({
+                            'insert.operation': op,
+                            'insert.textLength': text.length,
+                            'insert.newFile': newFile,
+                        })
+
+                        vscodeAPI.postMessage({
+                            command: op,
+                            text: text.replace(/\n$/, ''),
+                        })
+
+                        span.setStatus({ code: SpanStatusCode.OK })
+                    } catch (error) {
+                        span.setStatus({
+                            code: SpanStatusCode.ERROR,
+                            message: error instanceof Error ? error.message : 'Unknown error'
+                        })
+                        span.recordException(error as Error)
+                        throw error
+                    } finally {
+                        span.end()
+                    }
                 })
             }
         }
@@ -209,6 +272,10 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
 
         focusLastHumanMessageEditor()
     }, [transcript])
+    const [activeChatContext, setActiveChatContext] = useState<Context>()
+    const setActiveChatContextCallback = useCallback((context: Context | undefined) => {
+        setActiveChatContext(context)
+    }, [])
 
     return (
         <>
@@ -218,6 +285,8 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                 </div>
             )}
             <Transcript
+                activeChatContext={activeChatContext}
+                setActiveChatContext={setActiveChatContextCallback}
                 transcript={transcript}
                 models={models}
                 messageInProgress={messageInProgress}

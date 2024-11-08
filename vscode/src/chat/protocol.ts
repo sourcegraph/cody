@@ -97,6 +97,10 @@ export type WebviewMessage =
           fileName?: string | undefined | null
       }
     | {
+          command: 'trace-exporter'
+          myspan: string
+      }
+    | {
           command: 'smartApplyAccept'
           id: FixupTaskID
       }

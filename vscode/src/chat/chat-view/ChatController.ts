@@ -18,6 +18,7 @@ import {
 } from '@sourcegraph/cody-shared'
 import * as uuid from 'uuid'
 import * as vscode from 'vscode'
+import fetch from 'node-fetch'
 
 import {
     type BillingCategory,
@@ -324,6 +325,9 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     message.instruction,
                     message.fileName
                 )
+                break
+            case 'trace-exporter':
+                await this.sendTraceData(message.myspan)
                 break
             case 'smartApplyAccept':
                 await vscode.commands.executeCommand('cody.fixup.codelens.accept', message.id)
@@ -1808,6 +1812,36 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
 
     public isVisible(): boolean {
         return this.webviewPanelOrView?.visible ?? false
+    }
+
+    private async sendTraceData(spanData: any): Promise<void> {
+        try {
+            const { auth } = await currentResolvedConfig()
+            if (!auth.accessToken) {
+                logError('ChatController', 'Cannot send trace data: not authenticated')
+                return
+            }
+
+            // Build trace URL the same way OpenTelemetryService does
+            const traceUrl = new URL('/-/debug/otlp/v1/traces', auth.serverEndpoint).toString()
+            
+            const response = await fetch(traceUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...(auth.accessToken ? { 'Authorization': `token ${auth.accessToken}` } : {})
+                },
+                body: spanData
+            })
+
+            if (!response.ok) {
+                throw new Error(`Failed to send trace data: ${response.statusText}`)
+            }
+
+            logDebug('ChatController', 'Trace data sent successfully')
+        } catch (error) {
+            logError('ChatController', `Error sending trace data: ${error}`)
+        }
     }
 }
 
