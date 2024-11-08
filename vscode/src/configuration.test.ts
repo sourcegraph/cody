@@ -109,6 +109,8 @@ describe('getConfiguration', () => {
                         return 1500
                     case 'cody.experimental.guardrailsTimeoutSeconds':
                         return undefined
+                    case 'cody.experimental.noxide.enabled':
+                        return true
                     case 'cody.advanced.agent.capabilities.storage':
                         return false
                     case 'cody.provider.limit.prompt':
@@ -165,6 +167,7 @@ describe('getConfiguration', () => {
             experimentalTracing: true,
             experimentalCommitMessage: true,
             experimentalNoodle: false,
+            experimentalNoxideEnabled: true,
             codeActions: true,
             commandHints: true,
             isRunningInsideAgent: false,
