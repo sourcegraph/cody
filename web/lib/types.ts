@@ -1,4 +1,14 @@
-export type { CodyExternalApi } from '../../vscode/webviews/CodyPanel'
+// Copy of external prompts interface from CodyPanel component since
+// type re-exports don't work with Cody Web bundle
+export interface ExternalPrompt {
+    text: string
+    autoSubmit: boolean
+    mode?: 'search' | 'chat' | 'edit' | 'insert'
+}
+
+export interface CodyExternalApi {
+    runPrompt: (action: ExternalPrompt) => Promise<void>
+}
 
 export interface Repository {
     id: string

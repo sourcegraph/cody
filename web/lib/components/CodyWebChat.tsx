@@ -18,14 +18,14 @@ import type { VSCodeWrapper } from 'cody-ai/webviews/utils/VSCodeApi'
 
 import { ChatMentionContext, type ChatMentionsSettings } from '@sourcegraph/prompt-editor'
 import { getAppWrappers } from 'cody-ai/webviews/App'
-import { type CodyExternalApi, CodyPanel } from 'cody-ai/webviews/CodyPanel'
+import { CodyPanel } from 'cody-ai/webviews/CodyPanel'
 import { useClientActionDispatcher } from 'cody-ai/webviews/client/clientState'
 import type { View } from 'cody-ai/webviews/tabs'
 import { ComposedWrappers, type Wrapper } from 'cody-ai/webviews/utils/composeWrappers'
 import { createWebviewTelemetryRecorder } from 'cody-ai/webviews/utils/telemetry'
 import type { Config } from 'cody-ai/webviews/utils/useConfig'
 
-import type { InitialContext } from '../types'
+import type { CodyExternalApi, InitialContext } from '../types'
 
 import { useCodyWebAgent } from './use-cody-agent'
 
