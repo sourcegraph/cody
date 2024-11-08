@@ -43,19 +43,19 @@ describe('getReleaseTypeByIDE', () => {
 describe('getReleaseNotesURLByIDE', () => {
     it('returns stable release blog post URL for VS Code stable builds', () => {
         expect(getReleaseNotesURLByIDE('1.24.0', CodyIDE.VSCode)).toEqual(
-            'https://github.com/sourcegraph/cody/blob/main/vscode/CHANGELOG.md'
+            'https://sourcegraph.com/changelog?topics=VS+Code'
         )
     })
 
     it('returns stable release blog post URL for VS Code patch release', () => {
         expect(getReleaseNotesURLByIDE('1.24.2', CodyIDE.VSCode)).toEqual(
-            'https://github.com/sourcegraph/cody/blob/main/vscode/CHANGELOG.md'
+            'https://sourcegraph.com/changelog?topics=VS+Code'
         )
     })
 
     it('returns stable release blog post URL for VS Code insiders builds', () => {
         expect(getReleaseNotesURLByIDE('1.25.1720624657', CodyIDE.VSCode)).toEqual(
-            'https://github.com/sourcegraph/cody/blob/main/vscode/CHANGELOG.md'
+            'https://sourcegraph.com/changelog?topics=VS+Code'
         )
     })
 
