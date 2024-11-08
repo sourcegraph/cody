@@ -8,8 +8,8 @@ import com.sourcegraph.cody.agent.CodyAgentService
 import com.sourcegraph.cody.agent.protocol.BillingCategory
 import com.sourcegraph.cody.agent.protocol.BillingMetadata
 import com.sourcegraph.cody.agent.protocol.BillingProduct
-import com.sourcegraph.cody.agent.protocol.CompletionItemParams
 import com.sourcegraph.cody.agent.protocol.ProtocolTextDocument
+import com.sourcegraph.cody.agent.protocol_generated.CompletionItemParams
 import com.sourcegraph.cody.autocomplete.CodyAutocompleteManager
 import com.sourcegraph.cody.autocomplete.action.AcceptCodyAutocompleteAction
 import com.sourcegraph.cody.chat.CodeEditorFactory
@@ -61,8 +61,8 @@ class CodyDocumentListener(val project: Project) : BulkAwareDocumentListener {
         // This notification must be sent after the above, see tracker comment for more
         // details.
         AcceptCodyAutocompleteAction.tracker.getAndSet(null)?.let { completionID ->
-          agent.server.completionAccepted(CompletionItemParams(completionID))
-          agent.server.autocompleteClearLastCandidate()
+          agent.server.autocomplete_completionAccepted(CompletionItemParams(completionID))
+          agent.server.autocomplete_clearLastCandidate(null)
         }
       }
       val changeOffset = event.offset + event.newLength

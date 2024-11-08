@@ -2,9 +2,6 @@
 
 package com.sourcegraph.cody.agent
 
-import com.sourcegraph.cody.agent.protocol.AutocompleteParams
-import com.sourcegraph.cody.agent.protocol.AutocompleteResult
-import com.sourcegraph.cody.agent.protocol.CompletionItemParams
 import com.sourcegraph.cody.agent.protocol.CurrentUserCodySubscription
 import com.sourcegraph.cody.agent.protocol.GetFeatureFlag
 import com.sourcegraph.cody.agent.protocol.IgnorePolicySpec
@@ -14,6 +11,8 @@ import com.sourcegraph.cody.agent.protocol.InlineEditParams
 import com.sourcegraph.cody.agent.protocol.NetworkRequest
 import com.sourcegraph.cody.agent.protocol.ProtocolTextDocument
 import com.sourcegraph.cody.agent.protocol.TelemetryEvent
+import com.sourcegraph.cody.agent.protocol_generated.AutocompleteParams
+import com.sourcegraph.cody.agent.protocol_generated.AutocompleteResult
 import com.sourcegraph.cody.agent.protocol_generated.Chat_ImportParams
 import com.sourcegraph.cody.agent.protocol_generated.Chat_ModelsParams
 import com.sourcegraph.cody.agent.protocol_generated.Chat_ModelsResult
@@ -52,6 +51,9 @@ interface _SubsetGeneratedCodyAgentServer {
   @JsonRequest("initialize") fun initialize(params: ClientInfo): CompletableFuture<ServerInfo>
 
   @JsonRequest("shutdown") fun shutdown(params: Null?): CompletableFuture<Null?>
+
+  @JsonRequest("autocomplete/execute")
+  fun autocomplete_execute(params: AutocompleteParams): CompletableFuture<AutocompleteResult>
 
   @JsonRequest("editTask/retry")
   fun editTask_retry(params: EditTask_RetryParams): CompletableFuture<EditTask>
@@ -97,6 +99,19 @@ interface _SubsetGeneratedCodyAgentServer {
 
   @JsonNotification("exit") fun exit(params: Null?)
 
+  @JsonNotification("autocomplete/clearLastCandidate")
+  fun autocomplete_clearLastCandidate(params: Null?)
+
+  @JsonNotification("autocomplete/completionSuggested")
+  fun autocomplete_completionSuggested(
+      params: com.sourcegraph.cody.agent.protocol_generated.CompletionItemParams
+  )
+
+  @JsonNotification("autocomplete/completionAccepted")
+  fun autocomplete_completionAccepted(
+      params: com.sourcegraph.cody.agent.protocol_generated.CompletionItemParams
+  )
+
   @JsonNotification("window/didChangeFocus")
   fun window_didChangeFocus(params: Window_DidChangeFocusParams)
 }
@@ -110,9 +125,6 @@ interface _SubsetGeneratedCodyAgentServer {
  * works similar to JavaScript Proxy.
  */
 interface _LegacyAgentServer {
-
-  @JsonRequest("autocomplete/execute")
-  fun autocompleteExecute(params: AutocompleteParams?): CompletableFuture<AutocompleteResult>
 
   @JsonRequest("telemetry/recordEvent")
   fun recordEvent(event: TelemetryEvent): CompletableFuture<Void?>
@@ -137,14 +149,6 @@ interface _LegacyAgentServer {
 
   @JsonNotification("textDocument/didClose")
   fun textDocumentDidClose(document: ProtocolTextDocument)
-
-  @JsonNotification("autocomplete/clearLastCandidate") fun autocompleteClearLastCandidate()
-
-  @JsonNotification("autocomplete/completionSuggested")
-  fun completionSuggested(logID: CompletionItemParams)
-
-  @JsonNotification("autocomplete/completionAccepted")
-  fun completionAccepted(logID: CompletionItemParams)
 
   @JsonRequest("editTask/accept")
   fun acceptEditTask(params: EditTask_AcceptParams): CompletableFuture<Void?>

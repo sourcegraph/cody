@@ -5,7 +5,7 @@ import com.intellij.openapi.application.WriteAction
 import com.intellij.openapi.editor.Caret
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.ScrollType
-import com.sourcegraph.cody.agent.protocol.AutocompleteItem
+import com.sourcegraph.cody.agent.protocol_generated.AutocompleteItem
 import com.sourcegraph.utils.CodyEditorUtil
 
 class AcceptAutocompleteActionHandler : AutocompleteActionHandler() {

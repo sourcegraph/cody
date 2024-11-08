@@ -16,8 +16,8 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.TextRange
 import com.intellij.util.concurrency.annotations.RequiresReadLock
 import com.sourcegraph.cody.agent.CodyAgentService
-import com.sourcegraph.cody.agent.protocol.AutocompleteResult
-import com.sourcegraph.cody.agent.protocol.CompletionItemParams
+import com.sourcegraph.cody.agent.protocol_generated.AutocompleteResult
+import com.sourcegraph.cody.agent.protocol_generated.CompletionItemParams
 import com.sourcegraph.cody.statusbar.CodyStatusService.Companion.resetApplication
 import com.sourcegraph.cody.vscode.CancellationToken
 import com.sourcegraph.cody.vscode.InlineCompletionTriggerKind
@@ -83,7 +83,7 @@ class CodyInlineCompletionProvider : InlineCompletionProvider {
                   } else {
 
                     CodyAgentService.withAgent(project) { agent ->
-                      agent.server.completionSuggested(CompletionItemParams(it.id))
+                      agent.server.autocomplete_completionSuggested(CompletionItemParams(it.id))
                     }
 
                     InlineCompletionGrayTextElement(completionText)

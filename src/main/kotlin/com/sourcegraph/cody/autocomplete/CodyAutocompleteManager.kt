@@ -23,10 +23,9 @@ import com.intellij.ui.GotItTooltip
 import com.intellij.util.concurrency.annotations.RequiresEdt
 import com.sourcegraph.cody.Icons
 import com.sourcegraph.cody.agent.CodyAgentService
-import com.sourcegraph.cody.agent.protocol.AutocompleteItem
-import com.sourcegraph.cody.agent.protocol.AutocompleteResult
-import com.sourcegraph.cody.agent.protocol.CompletionItemParams
-import com.sourcegraph.cody.autocomplete.Utils.triggerAutocompleteAsync
+import com.sourcegraph.cody.agent.protocol_generated.AutocompleteItem
+import com.sourcegraph.cody.agent.protocol_generated.AutocompleteResult
+import com.sourcegraph.cody.agent.protocol_generated.CompletionItemParams
 import com.sourcegraph.cody.autocomplete.render.AutocompleteRendererType
 import com.sourcegraph.cody.autocomplete.render.CodyAutocompleteBlockElementRenderer
 import com.sourcegraph.cody.autocomplete.render.CodyAutocompleteElementRenderer
@@ -169,7 +168,7 @@ class CodyAutocompleteManager {
       return
     }
 
-    triggerAutocompleteAsync(
+    Utils.triggerAutocompleteAsync(
         project,
         editor,
         offset,
@@ -253,7 +252,7 @@ class CodyAutocompleteManager {
 
     project?.let {
       CodyAgentService.withAgent(project) { agent ->
-        agent.server.completionSuggested(CompletionItemParams(defaultItem.id))
+        agent.server.autocomplete_completionSuggested(CompletionItemParams(defaultItem.id))
       }
     }
 

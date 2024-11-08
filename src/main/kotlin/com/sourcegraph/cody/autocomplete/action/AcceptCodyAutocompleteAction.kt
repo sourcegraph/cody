@@ -1,7 +1,6 @@
 package com.sourcegraph.cody.autocomplete.action
 
 import com.intellij.openapi.editor.actionSystem.EditorAction
-import com.sourcegraph.cody.agent.protocol.CompletionItemID
 import java.util.concurrent.atomic.AtomicReference
 
 /**
@@ -14,5 +13,5 @@ object AcceptCodyAutocompleteAction : EditorAction(AcceptAutocompleteActionHandl
   // The tracker is used to keep track of the completion item that was accepted so that we can send
   // the completion-accepted notification AFTER we emit the document-change event. This is order
   // is expected by agent for certain telemetry events (not great, I know...).
-  val tracker = AtomicReference<CompletionItemID>()
+  val tracker = AtomicReference<String>()
 }

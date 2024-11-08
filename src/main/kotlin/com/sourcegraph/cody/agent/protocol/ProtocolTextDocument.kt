@@ -13,10 +13,11 @@ import com.intellij.util.concurrency.annotations.RequiresEdt
 import com.sourcegraph.cody.agent.intellij_extensions.codyPosition
 import com.sourcegraph.cody.agent.intellij_extensions.codyRange
 import com.sourcegraph.cody.agent.protocol_extensions.Position
+import com.sourcegraph.cody.agent.protocol_generated.ProtocolTextDocumentContentChangeEvent
 import com.sourcegraph.cody.agent.protocol_generated.Range
 import java.awt.Point
 import java.nio.file.FileSystems
-import java.util.*
+import java.util.Locale
 import kotlin.math.max
 import kotlin.math.min
 

@@ -7,7 +7,7 @@ import com.intellij.openapi.editor.colors.impl.FontPreferencesImpl
 import com.intellij.openapi.editor.impl.ComplementaryFontsRegistry
 import com.intellij.openapi.editor.impl.FontInfo
 import com.intellij.openapi.editor.markup.TextAttributes
-import com.sourcegraph.cody.agent.protocol.AutocompleteItem
+import com.sourcegraph.cody.agent.protocol_generated.AutocompleteItem
 import com.sourcegraph.config.ConfigUtil.getCustomAutocompleteColor
 import com.sourcegraph.config.ConfigUtil.isCustomAutocompleteColorEnabled
 import java.awt.Font

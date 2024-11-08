@@ -6,17 +6,16 @@ import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.project.Project
 import com.sourcegraph.cody.agent.CodyAgentService
-import com.sourcegraph.cody.agent.protocol.AutocompleteParams
-import com.sourcegraph.cody.agent.protocol.AutocompleteResult
-import com.sourcegraph.cody.agent.protocol.AutocompleteTriggerKind
 import com.sourcegraph.cody.agent.protocol.ErrorCode
 import com.sourcegraph.cody.agent.protocol.ErrorCodeUtils.toErrorCode
 import com.sourcegraph.cody.agent.protocol.ProtocolTextDocument.Companion.uriFor
 import com.sourcegraph.cody.agent.protocol.RateLimitError.Companion.toRateLimitError
-import com.sourcegraph.cody.agent.protocol.SelectedCompletionInfo
 import com.sourcegraph.cody.agent.protocol_extensions.Position
+import com.sourcegraph.cody.agent.protocol_generated.AutocompleteParams
+import com.sourcegraph.cody.agent.protocol_generated.AutocompleteResult
 import com.sourcegraph.cody.agent.protocol_generated.Position
 import com.sourcegraph.cody.agent.protocol_generated.Range
+import com.sourcegraph.cody.agent.protocol_generated.SelectedCompletionInfo
 import com.sourcegraph.cody.ignore.ActionInIgnoredFileNotification
 import com.sourcegraph.cody.ignore.IgnoreOracle
 import com.sourcegraph.cody.ignore.IgnorePolicy
@@ -59,20 +58,23 @@ object Utils {
     val params =
         if (lookupString.isNullOrEmpty())
             AutocompleteParams(
-                uriFor(virtualFile),
-                Position(position.line, position.character),
-                if (triggerKind == InlineCompletionTriggerKind.INVOKE)
-                    AutocompleteTriggerKind.INVOKE.value
-                else AutocompleteTriggerKind.AUTOMATIC.value)
+                uri = uriFor(virtualFile),
+                position = Position(position.line, position.character),
+                triggerKind =
+                    if (triggerKind == InlineCompletionTriggerKind.INVOKE)
+                        AutocompleteParams.TriggerKindEnum.Invoke
+                    else AutocompleteParams.TriggerKindEnum.Automatic)
         else
             AutocompleteParams(
-                uriFor(virtualFile),
-                Position(position.line, position.character),
-                AutocompleteTriggerKind.AUTOMATIC.value,
-                SelectedCompletionInfo(
-                    lookupString,
-                    if (startPosition < 0) Range(position, position)
-                    else Range(Position(lineNumber, startPosition), position)))
+                uri = uriFor(virtualFile),
+                position = Position(position.line, position.character),
+                triggerKind = AutocompleteParams.TriggerKindEnum.Automatic,
+                selectedCompletionInfo =
+                    SelectedCompletionInfo(
+                        range =
+                            if (startPosition < 0) Range(position, position)
+                            else Range(Position(lineNumber, startPosition), position),
+                        text = lookupString))
     notifyApplication(project, CodyStatus.AutocompleteInProgress)
 
     val resultOuter = CompletableFuture<AutocompleteResult?>()
@@ -84,12 +86,11 @@ object Utils {
         resetApplication(project)
         resultOuter.cancel(true)
       } else {
-        val completions = agent.server.autocompleteExecute(params)
+        val completions = agent.server.autocomplete_execute(params)
 
         // Important: we have to `.cancel()` the original `CompletableFuture<T>` from lsp4j. As soon
         // as we use `thenAccept()` we get a new instance of `CompletableFuture<Void>` which does
-        // not
-        // correctly propagate the cancellation to the agent.
+        // not correctly propagate the cancellation to the agent.
         cancellationToken.onCancellationRequested { completions.cancel(true) }
 
         ApplicationManager.getApplication().executeOnPooledThread {
