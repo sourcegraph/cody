@@ -7,7 +7,7 @@
   "publisher": "sourcegraph",
   "license": "Apache-2.0",
   "icon": "resources/cody.png",
-  "description": "AI coding assistant that uses search and codebase context to help you write code faster. Cody brings autocomplete, chat, and commands to VS Code, so you can generate code, write unit tests, create docs, and explain complex code using AI. Choose from the latest LLMs, including GPT-4o and Claude 3.5 Sonnet.",
+  "description": "AI coding assistant that uses search & codebase context to help you write code faster. Cody brings you autocomplete, chat, and commands, so you can generate code, write unit tests, create docs, and explain complex code using AI. Choose from the best LLMs, including GPT-4o and Claude 3.5 Sonnet.",
   "scripts": {
     "build:root": "pnpm -C .. run -s build",
     "postinstall": "pnpm download-wasm && pnpm copy-win-ca-roots",
