@@ -43,6 +43,7 @@ export class RecentEditsRetriever implements vscode.Disposable, ContextRetriever
     ) {
         this.maxAgeMs = options.maxAgeMs
         this.addLineNumbersForDiff = options.addLineNumbersForDiff ?? false
+        // Track the already open documents when editor was opened
         for (const document of vscode.workspace.textDocuments) {
             this.trackDocument(document)
         }
