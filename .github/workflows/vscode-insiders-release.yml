@@ -1,16 +1,11 @@
 name: vscode-insiders-release
 
 on:
-  schedule:
-    - cron: '0 15 * * 1,3,5' # daily at 1500 UTC
-  push:
-    tags:
-      - vscode-v* # automatically create a new insider build with a release
   workflow_dispatch:
 
 jobs:
   release:
-    if: github.ref == 'refs/heads/main' && github.repository == 'sourcegraph/cody'
+    if: github.repository == 'sourcegraph/cody'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -28,10 +23,21 @@ jobs:
         env:
           NO_LOG_TESTING_TELEMETRY_CALLS: true
       - run: CODY_RELEASE_TYPE=insiders pnpm -C vscode run release
-        if: github.ref == 'refs/heads/main' && github.repository == 'sourcegraph/cody'
+        id: create_release
+        if: github.repository == 'sourcegraph/cody'
         env:
           VSCODE_MARKETPLACE_TOKEN: ${{ secrets.VSCODE_MARKETPLACE_TOKEN }}
           VSCODE_OPENVSX_TOKEN: ${{ secrets.VSCODE_OPENVSX_TOKEN }}
+      - name: Tag insiders release
+        uses: actions/github-script@v6
+        with:
+          script: |
+            github.rest.git.createRef({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              ref: "refs/tags/${{ steps.create_release.outputs.version_tag }}",
+              sha: context.sha
+            })
       - name: Slack Notification
         if: ${{ failure() }}
         uses: rtCamp/action-slack-notify@b24d75fe0e728a4bf9fc42ee217caa686d141ee8 # SECURITY: pin third-party action hashes
@@ -41,5 +47,5 @@ jobs:
           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
           SLACK_MESSAGE: Insiders build failed
           SLACK_COLOR: danger
-          SLACK_FOOTER: ''
+          SLACK_FOOTER: ""
           MSG_MINIMAL: actions url

@@ -1449,7 +1449,8 @@
     "uuid": "^9.0.0",
     "vscode-languageserver-textdocument": "^1.0.8",
     "vscode-uri": "^3.0.8",
-    "wink-nlp-utils": "^2.1.0"
+    "wink-nlp-utils": "^2.1.0",
+    "fast-myers-diff": "^3.2.0"
   },
   "devDependencies": {
     "7zip-min": "^1.4.5",
