@@ -158,11 +158,6 @@ class CodyAgentService(private val project: Project) : Disposable {
     }
 
     @JvmStatic
-    fun setAgentError(project: Project, e: Exception) {
-      setAgentError(project, ((e.cause as? CodyAgentException) ?: e).message ?: e.toString())
-    }
-
-    @JvmStatic
     fun setAgentError(project: Project, errorMsg: String?) {
       val oldErrorMsg = agentError.getAndSet(errorMsg)
       if (oldErrorMsg != errorMsg) project.let { CodyStatusService.resetApplication(it) }
@@ -172,12 +167,12 @@ class CodyAgentService(private val project: Project) : Disposable {
     private fun withAgent(
         project: Project,
         restartIfNeeded: Boolean,
-        callback: Consumer<CodyAgent>,
-        onFailure: Consumer<Exception> = Consumer {}
+        callback: Consumer<CodyAgent>
     ) {
       if (CodyApplicationSettings.instance.isCodyEnabled) {
         ApplicationManager.getApplication().executeOnPooledThread {
           try {
+            if (project.isDisposed) return@executeOnPooledThread
             val instance = getInstance(project)
             val isReadyButNotFunctional = instance.codyAgent.getNow(null)?.isConnected() == false
             val agent =
@@ -190,7 +185,6 @@ class CodyAgentService(private val project: Project) : Disposable {
             if (restartIfNeeded && e !is ProcessCanceledException) {
               getInstance(project).restartAgent(project)
             }
-            onFailure.accept(e)
             throw e
           }
         }
@@ -204,13 +198,6 @@ class CodyAgentService(private val project: Project) : Disposable {
     @JvmStatic
     fun withAgentRestartIfNeeded(project: Project, callback: Consumer<CodyAgent>) =
         withAgent(project, restartIfNeeded = true, callback = callback)
-
-    @JvmStatic
-    fun withAgentRestartIfNeeded(
-        project: Project,
-        callback: Consumer<CodyAgent>,
-        onFailure: Consumer<Exception>
-    ) = withAgent(project, restartIfNeeded = true, callback = callback, onFailure = onFailure)
 
     @JvmStatic
     fun isConnected(project: Project): Boolean {
