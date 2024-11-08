@@ -127,10 +127,10 @@ async function runContextCommand(
         })
 
         if (isError(resultsResp)) {
-            throw new Error(`contextSearch failed for [${repoNames.join(',')}]: ${resultsResp}`)
+            throw new Error(`contextSearch failed for repos [${repoNames.join(',')}] and query "${query}": ${resultsResp}`)
         }
         if (resultsResp === null) {
-            throw new Error(`contextSearch failed for [${repoNames.join(',')}]: null results`)
+            throw new Error(`contextSearch failed for repos [${repoNames.join(',')}] and query "${query}": null results`)
         }
 
         const results = resultsResp ?? []
