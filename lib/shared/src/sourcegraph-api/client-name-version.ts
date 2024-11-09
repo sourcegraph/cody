@@ -37,11 +37,18 @@ export function getClientIdentificationHeaders() {
             : typeof navigator !== 'undefined' && navigator.userAgent
               ? `Browser ${navigator.userAgent}`
               : 'Unknown environment'
-    return {
+    const headers: { [header: string]: string } = {
         'User-Agent': `${clientName}/${clientVersion} (${runtimeInfo})`,
-        'X-Sourcegraph-API-Client-Name': clientName,
-        'X-Sourcegraph-API-Client-Version': clientVersion,
     }
+
+    // Only set these headers in non-demo mode, because the demo mode is
+    // running in a local server and thus the backend will regard it as an
+    // untrusted cross-origin request.
+    if (!process.env.CODY_WEB_DEMO) {
+        headers['X-Sourcegraph-API-Client-Name'] = clientName
+        headers['X-Sourcegraph-API-Client-Version'] = clientVersion
+    }
+    return headers
 }
 
 export function addCodyClientIdentificationHeaders(headers: Headers): void {
