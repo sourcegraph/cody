@@ -250,7 +250,6 @@ export function contextItemFromString(item: string): EvalContextItem {
         const repoName = pathParts[0].replace('/github.com/', '')
         const path = pathParts[1]
         const lineRange = url.search.replace('?L', '').split('-')
-        
         return {
             repoName,
             path,
@@ -259,7 +258,6 @@ export function contextItemFromString(item: string): EvalContextItem {
             format: 'url',
         }
     }
-    
     // Handle old format which is  "github.com/sourcegraph-testing/pinned-cody:README.md:42-43"
     const [repoName, path, lineRange] = item.split(':')
     if (!repoName || !path || !lineRange) {
