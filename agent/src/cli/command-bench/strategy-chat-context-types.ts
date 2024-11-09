@@ -227,9 +227,7 @@ function exampleToCsvRecord(example: ExampleOutput): any {
         targetRepoRevs: repoRevsToString(example.targetRepoRevs),
         query: example.query,
         essentialFacts: example.essentialFacts.join('\n'),
-        essentialContext: example.essentialContext
-            .map(contextItemToString)
-            .join('\n'),
+        essentialContext: example.essentialContext.map(contextItemToString).join('\n'),
         helpfulContext_optional: example.helpfulContext
             .map(c => `${c.repoName}:${c.path}:${c.startLine}-${c.endLine}`)
             .join('\n'),
@@ -258,7 +256,7 @@ export function contextItemFromString(item: string): EvalContextItem {
             path,
             startLine: Number.parseInt(lineRange[0]),
             endLine: Number.parseInt(lineRange[1]),
-            format: 'url'
+            format: 'url',
         }
     }
     
@@ -273,7 +271,7 @@ export function contextItemFromString(item: string): EvalContextItem {
         path,
         startLine: Number.parseInt(startLine),
         endLine: Number.parseInt(endLine),
-        format: 'old'
+        format: 'old',
     }
 }
 
