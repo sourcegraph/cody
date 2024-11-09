@@ -39,10 +39,8 @@ export function getClientIdentificationHeaders() {
               : 'Unknown environment'
     return {
         'User-Agent': `${clientName}/${clientVersion} (${runtimeInfo})`,
-        // NOTE: due to CORS: we need to be careful with adding other HTTP headers
-        // to not break Cody Web. The backend should accept X-Requested-With, but
-        // I was unable to test it locally so this is commented out for now.
-        // 'X-Requested-With': `${clientName}/${clientVersion}`,
+        'X-Sourcegraph-API-Client-Name': clientName,
+        'X-Sourcegraph-API-Client-Version': clientVersion,
     }
 }
 
