@@ -624,6 +624,8 @@ export function mockEnterpriseRepoMapping(server: MockServer, repoName: string):
     server.onGraphQl('ResolveRepoName').replyJson({ data: { repository: { name: repoName } } })
 }
 
+const STABILIZED_NUMBER_VALUE_FOR_SNAPSHOT = 9999
+
 /**
  * Stabilizes metadata values in telemetry event parameters for consistent snapshot testing.
  * For specified keys, replaces numeric values with '9999' and other values with 'stabilized_value_for_snapshot'.
@@ -635,7 +637,10 @@ export function stabilizeMetadataValues(keys: string[], event?: TelemetryEventIn
 
     for (const param of event.parameters.metadata) {
         if (keys.includes(param.key)) {
-            param.value = typeof param.value === 'number' ? 9999 : 'stabilized_value_for_snapshot'
+            param.value =
+                typeof param.value === 'number'
+                    ? STABILIZED_NUMBER_VALUE_FOR_SNAPSHOT
+                    : 'stabilized_value_for_snapshot'
         }
     }
 }
