@@ -251,7 +251,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
         autoeditsLogger.logDebug(
             'Autoedits',
             '========================== Response:\n',
-            JSON.stringify(prediction, null, 2),
+            prediction.prediction,
             '\n',
             '========================== Time Taken For LLM (Msec): ',
             (Date.now() - start).toString(),
