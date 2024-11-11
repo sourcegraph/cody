@@ -144,7 +144,11 @@ export async function readExamplesFromCSV(filePath: string): Promise<Example[]> 
             }
             examples.push(example)
         } catch (error) {
-            throw new Error(`Error in line ${csvLine} (${JSON.stringify(record)}): ${isError(error) ? error.message : error}`)
+            throw new Error(
+                `Error in line ${csvLine} (${JSON.stringify(record)}): ${
+                    isError(error) ? error.message : error
+                }`
+            )
         }
     }
     return examples
