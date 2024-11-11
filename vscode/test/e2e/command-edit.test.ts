@@ -3,7 +3,12 @@ import { expect } from '@playwright/test'
 import * as mockServer from '../fixtures/mock-server'
 
 import { openFileInEditorTab, sidebarExplorer, sidebarSignin } from './common'
-import { type DotcomUrlOverride, type ExpectedV2Events, test as baseTest } from './helpers'
+import {
+    type DotcomUrlOverride,
+    type ExpectedV2Events,
+    test as baseTest,
+    stabilizeMetadataValues,
+} from './helpers'
 
 const test = baseTest.extend<DotcomUrlOverride>({ dotcomUrl: mockServer.SERVER_URL })
 
@@ -94,6 +99,7 @@ test.extend<ExpectedV2Events>({
     const fixupApplySuccessEvent = mockServer.loggedV2Events.find(
         event => event.testId === 'cody.fixup.apply:succeeded'
     )
+    stabilizeMetadataValues(['latency'], fixupApplySuccessEvent)
     expect(JSON.stringify(fixupApplySuccessEvent?.parameters, null, 2)).toMatchSnapshot()
 })
 

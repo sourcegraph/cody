@@ -51,6 +51,7 @@ export class FixupTask {
     public originalDiff: Edit[] | undefined
     /** The number of times we've submitted this to the LLM. */
     public spinCount = 0
+    public createdAt = performance.now()
 
     constructor(
         /**
