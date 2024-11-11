@@ -308,6 +308,33 @@ query GetCodyContext($repos: [ID!]!, $query: String!, $codeResultsCount: Int!, $
     }
 }`
 
+export const CONTEXT_SEARCH_EVAL_DEBUG_QUERY = `
+query GetCodyContextAlternatives($repos: [ID!]!, $query: String!, $codeResultsCount: Int!, $textResultsCount: Int!, $filePatterns: [String!]) {
+	getCodyContextAlternatives(repos: $repos, query: $query, codeResultsCount: $codeResultsCount, textResultsCount: $textResultsCount, filePatterns: $filePatterns) {
+      contextLists {
+          name
+          contextItems {
+            ... on FileChunkContext {
+              blob {
+                path
+                repository {
+                  id
+                  name
+                }
+                commit {
+                  oid
+                }
+                url
+              }
+              startLine
+              endLine
+              chunkContent
+            }
+          }
+        }
+    }
+}`
+
 export const CONTEXT_FILTERS_QUERY = `
 query ContextFilters {
     site {
