@@ -14,6 +14,8 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
   - `Alt+L`: between chat and editor (this is unchanged)
   - `Shift+Alt+L` (previously alt+L): add selection as context:
   - `Shift+Ctrl+L` (previously shift+alt+L): new chat
+- Markdown files were not bundled in the VSIX leading to onboarding views not displaying or showing an error.
+- Ensured that a correct http/https agent is loaded depending on endpoint protocol and that secureConnection correclty passes CA certs via [hpagent](https://github.com/delvedor/hpagent)
   
 ### Changed
 - Networking: In addition to Node and user configured manual CA certs, we now automatically attempt to load CA certs in your system's trust store. This is done using [rustls](https://github.com/rustls/rustls) via a new [napi-rs](https://napi.rs/) library `lib/noxide`. This behaviour is enabled by default but can be diasabled by setting the `experimental.noxide.enabled` to `false` in your settings. Any issues loading the library will be logged to the usual error output channels and we will fallback to the previous behaviour. This will replace the previous method of loading system CA certs using shell commands or bundled executables such as `win-ca.exe`.
