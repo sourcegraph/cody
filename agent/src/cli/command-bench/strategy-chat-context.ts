@@ -64,11 +64,7 @@ export async function evaluateChatContextStrategy(
     const outputCSVFile = path.join(options.snapshotDirectory, outputCSVFilename)
     const outputYAMLFile = path.join(options.snapshotDirectory, outputYAMLFilename)
 
-    const { examples, ignoredRecords } = await readExamplesFromCSV(inputFile)
-
-    if (ignoredRecords.length > 0) {
-        console.log(`⚠ ignoring ${ignoredRecords.length} malformed rows`)
-    }
+    const examples = await readExamplesFromCSV(inputFile)
 
     const outputs = await runContextCommand(clientOptions, examples)
     const codyClientVersion = process.env.CODY_COMMIT ?? version

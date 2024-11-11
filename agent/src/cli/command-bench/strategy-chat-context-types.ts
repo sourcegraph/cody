@@ -122,16 +122,7 @@ export interface ExampleOutput extends Example {
     actualContext: EvalContextItem[]
 }
 
-interface IgnoredRecord {
-    line: number
-    record: any
-    reason: string
-}
-
-export async function readExamplesFromCSV(filePath: string): Promise<{
-    examples: Example[]
-    ignoredRecords: IgnoredRecord[]
-}> {
+export async function readExamplesFromCSV(filePath: string): Promise<Example[]> {
     const fileContent = await fs.readFile(filePath, { encoding: 'utf-8' })
     const records = parse(fileContent, {
         columns: true,
@@ -139,7 +130,6 @@ export async function readExamplesFromCSV(filePath: string): Promise<{
     })
 
     const examples: Example[] = []
-    const ignoredRecords: IgnoredRecord[] = []
     for (let i = 0; i < records.length; i++) {
         const csvLine = i + 2 // index starts at 2, because 1-based indexing and header
         const record = records[i]
@@ -150,27 +140,18 @@ export async function readExamplesFromCSV(filePath: string): Promise<{
         try {
             const example = exampleFromCsvRecord(record)
             if (example.targetRepoRevs.length === 0) {
-                ignoredRecords.push({
-                    line: csvLine,
-                    record,
-                    reason: 'No target repo revs extracted',
-                })
-                continue
+                throw new Error('No target repo revs extracted')
             }
-
             examples.push(example)
         } catch (error) {
-            ignoredRecords.push({
-                line: csvLine,
-                record,
-                reason: isError(error) ? error.message : `Error: ${error}`,
-            })
+            throw new Error(
+                `Error in line ${csvLine} (${JSON.stringify(record)}): ${
+                    isError(error) ? error.message : error
+                }`
+            )
         }
     }
-    return {
-        examples,
-        ignoredRecords,
-    }
+    return examples
 }
 
 export async function writeYAMLMetadata(outputFile: string, evalOutput: EvalOutput): Promise<void> {
@@ -187,7 +168,6 @@ export async function writeExamplesToCSV(outputFile: string, examples: ExampleOu
             { id: 'type', title: 'type' },
             { id: 'targetRepoRevs', title: 'targetRepoRevs' },
             { id: 'query', title: 'query' },
-            { id: 'essentialFacts', title: 'essentialFacts' },
             { id: 'essentialContext', title: 'essentialContext' },
             { id: 'helpfulContext_optional', title: 'helpfulContext_optional' },
             { id: 'langs_optional', title: 'langs_optional' },
@@ -207,7 +187,6 @@ function exampleToCsvRecord(example: ExampleOutput): any {
         type: example.type,
         targetRepoRevs: repoRevsToString(example.targetRepoRevs),
         query: example.query,
-        essentialFacts: example.essentialFacts.join('\n'),
         essentialContext: example.essentialContext
             .map(c => `${c.repoName}:${c.path}:${c.startLine}-${c.endLine}`)
             .join('\n'),
