@@ -1,6 +1,5 @@
 /// <reference types="@types/bun" />
 import { beforeEach, describe, expect, it } from 'bun:test'
-// import { setTimeout } from 'node:timers/promises'
 import { type Noxide, load } from '..'
 
 describe('noxide config', () => {
