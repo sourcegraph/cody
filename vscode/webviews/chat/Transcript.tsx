@@ -17,7 +17,7 @@ import {
 import { clsx } from 'clsx'
 import debounce from 'lodash/debounce'
 import isEqual from 'lodash/isEqual'
-import { ArrowBigUp, AtSign, Search } from 'lucide-react'
+import { Search } from 'lucide-react'
 import {
     type FC,
     type MutableRefObject,
@@ -35,7 +35,11 @@ import { getVSCodeAPI } from '../utils/VSCodeApi'
 import { useTelemetryRecorder } from '../utils/telemetry'
 import { useExperimentalOneBox } from '../utils/useExperimentalOneBox'
 import type { CodeBlockActionsProps } from './ChatMessageContent/ChatMessageContent'
-import { ContextCell } from './cells/contextCell/ContextCell'
+import {
+    ContextCell,
+    EditContextButtonChat,
+    EditContextButtonSearch,
+} from './cells/contextCell/ContextCell'
 import {
     AssistantMessageCell,
     makeHumanMessageInfo,
@@ -459,8 +463,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                         </Button>
                     </div>
                 )}
-            {((humanMessage.contextFiles && humanMessage.contextFiles.length > 0) ||
-                isContextLoading) && (
+            {(humanMessage.contextFiles || assistantMessage || isContextLoading) && (
                 <ContextCell
                     key={`${humanMessage.index}-${humanMessage.intent}-context`}
                     contextItems={humanMessage.contextFiles}
@@ -474,19 +477,9 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                     onAddToFollowupChat={onAddToFollowupChat}
                     onManuallyEditContext={manuallyEditContext}
                     editContextText={
-                        humanMessage.intent === 'search' ? (
-                            <>
-                                <ArrowBigUp className="-tw-mr-6 tw-py-0" />
-                                <AtSign className="-tw-mr-2 tw-py-2" />
-                                <div>Edit results as mentions</div>
-                            </>
-                        ) : (
-                            <>
-                                <ArrowBigUp className="-tw-mr-6 tw-py-0" />
-                                <AtSign className="-tw-mr-2 tw-py-2" />
-                                <div>Copy and edit as mentions</div>
-                            </>
-                        )
+                        humanMessage.intent === 'search'
+                            ? EditContextButtonSearch
+                            : EditContextButtonChat
                     }
                 />
             )}

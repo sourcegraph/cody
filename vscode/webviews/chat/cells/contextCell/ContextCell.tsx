@@ -2,7 +2,7 @@ import type { ContextItem, Model } from '@sourcegraph/cody-shared'
 import { pluralize } from '@sourcegraph/cody-shared'
 import type { RankedContext } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { clsx } from 'clsx'
-import { BrainIcon, MessagesSquareIcon } from 'lucide-react'
+import { ArrowBigUp, AtSign, BrainIcon, MessagesSquareIcon } from 'lucide-react'
 import { type FunctionComponent, memo, useCallback, useMemo, useState } from 'react'
 import { FileContextItem } from '../../../components/FileContextItem'
 import {
@@ -392,4 +392,20 @@ const ExcludedContextWarning: React.FC<{ message: string }> = ({ message }) => (
             .
         </span>
     </div>
+)
+
+export const EditContextButtonSearch = (
+    <>
+        <ArrowBigUp className="-tw-mr-6 tw-py-0" />
+        <AtSign className="-tw-mr-2 tw-py-2" />
+        <div>Edit results as mentions</div>
+    </>
+)
+
+export const EditContextButtonChat = (
+    <>
+        <ArrowBigUp className="-tw-mr-6 tw-py-0" />
+        <AtSign className="-tw-mr-2 tw-py-2" />
+        <div>Copy and edit as mentions</div>
+    </>
 )

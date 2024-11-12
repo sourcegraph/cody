@@ -3,7 +3,7 @@ import type { Meta, StoryObj } from '@storybook/react'
 import { ContextItemSource } from '@sourcegraph/cody-shared'
 import { URI } from 'vscode-uri'
 import { VSCodeStandaloneComponent } from '../../../storybook/VSCodeStoryDecorator'
-import { ContextCell } from './ContextCell'
+import { ContextCell, EditContextButtonChat } from './ContextCell'
 
 const meta: Meta<typeof ContextCell> = {
     title: 'cody/ContextCell',
@@ -12,6 +12,7 @@ const meta: Meta<typeof ContextCell> = {
     args: {
         __storybook__initialOpen: true,
         isForFirstMessage: true,
+        editContextText: EditContextButtonChat,
     },
 }
 
@@ -141,6 +142,14 @@ export const ExcludedContext: Story = {
                 source: ContextItemSource.User,
             },
         ],
+        isForFirstMessage: true,
+        __storybook__initialOpen: true,
+    },
+}
+
+export const NoContext: Story = {
+    args: {
+        contextItems: undefined,
         isForFirstMessage: true,
         __storybook__initialOpen: true,
     },
