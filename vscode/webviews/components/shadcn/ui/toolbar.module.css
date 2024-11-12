@@ -38,6 +38,12 @@
     margin-left: calc(-1*var(--gap));
 }
 
+.button--small-icon {
+    > svg {
+        height: 1.25em;
+    }
+}
+
 .button--primary {
     color: var(--vscode-button-foreground);
     background-color: var(--vscode-button-background);
