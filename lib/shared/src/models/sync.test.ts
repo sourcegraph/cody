@@ -208,7 +208,7 @@ describe('server sent models', async () => {
         }).pipe(skipPendingOperation())
     )
     const storage = new TestLocalStorageForModelPreferences()
-    modelsService.storage = storage
+    modelsService.setStorage(storage)
     mockAuthStatus(AUTH_STATUS_FIXTURE_AUTHED)
     vi.spyOn(modelsService, 'modelsChanges', 'get').mockReturnValue(Observable.of(result))
 
@@ -504,7 +504,7 @@ describe('syncModels', () => {
         )
 
         const storage = new TestLocalStorageForModelPreferences()
-        modelsService.storage = storage
+        modelsService.setStorage(storage)
         mockAuthStatus(AUTH_STATUS_FIXTURE_AUTHED)
         expect(storage.data?.[AUTH_STATUS_FIXTURE_AUTHED.endpoint]!.selected.chat).toBe(undefined)
         vi.spyOn(modelsService, 'modelsChanges', 'get').mockReturnValue(Observable.of(result))
