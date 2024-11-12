@@ -5,6 +5,7 @@ import {
     dotcomTokenToGatewayToken,
     tokensToChars,
 } from '@sourcegraph/cody-shared'
+import { type DebouncedFunc, debounce } from 'lodash'
 import { Observable } from 'observable-fns'
 import * as vscode from 'vscode'
 import { ContextMixer } from '../completions/context/context-mixer'
@@ -27,7 +28,9 @@ import {
 } from './utils'
 
 const AUTOEDITS_CONTEXT_STRATEGY = 'auto-edits'
-const DEFAULT_DEBOUNCE_INTERVAL_MS = 150
+const INLINE_COMPLETETION_DEFAULT_DEBOUNCE_INTERVAL_MS = 150
+const ONSELECTION_CHANGE_DEFAULT_DEBOUNCE_INTERVAL_MS = 150
+const RESET_SUGGESTION_ON_CURSOR_CHANGE_AFTER_INTERVAL_MS = 60 * 1000
 
 export interface AutoEditsProviderOptions {
     document: vscode.TextDocument
@@ -56,8 +59,13 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
     private readonly disposables: vscode.Disposable[] = []
     private readonly contextMixer: ContextMixer
     private readonly rendererManager: AutoEditsRendererManager
-    private readonly debounceIntervalMs: number
+    private readonly inlineDebounceIntervalMs: number
+    private readonly onSelectionChangeDebounceIntervalMs: number
+    private readonly resetSuggestionOnCursorChangeAfterIntervalMs: number
     private readonly config: ProviderConfig
+    private readonly onSelectionChangeDebounced: DebouncedFunc<typeof this.autoeditOnSelectionChange>
+    // Keeps track of the last time the text was changed in the editor.
+    private lastTextChangeTimeStamp: number | undefined
 
     constructor() {
         this.contextMixer = new ContextMixer({
@@ -67,9 +75,35 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
             dataCollectionEnabled: false,
         })
         this.rendererManager = new AutoEditsRendererManager()
-        this.debounceIntervalMs = DEFAULT_DEBOUNCE_INTERVAL_MS
+        this.inlineDebounceIntervalMs = INLINE_COMPLETETION_DEFAULT_DEBOUNCE_INTERVAL_MS
+        this.onSelectionChangeDebounceIntervalMs = ONSELECTION_CHANGE_DEFAULT_DEBOUNCE_INTERVAL_MS
+        this.resetSuggestionOnCursorChangeAfterIntervalMs =
+            RESET_SUGGESTION_ON_CURSOR_CHANGE_AFTER_INTERVAL_MS
+        this.onSelectionChangeDebounced = debounce(
+            (event: vscode.TextEditorSelectionChangeEvent) => this.autoeditOnSelectionChange(event),
+            this.onSelectionChangeDebounceIntervalMs
+        )
         this.config = this.initializeConfig()
-        this.registerCommands()
+
+        this.disposables.push(
+            this.contextMixer,
+            this.rendererManager,
+            // Command is used to manually debug the autoedits provider
+            vscode.commands.registerCommand('cody.experimental.suggest', () => {
+                const editor = vscode.window.activeTextEditor
+                if (!editor) {
+                    return
+                }
+                this.provideInlineCompletionItems(editor.document, editor.selection.active, {
+                    triggerKind: vscode.InlineCompletionTriggerKind.Invoke,
+                    selectedCompletionInfo: undefined,
+                })
+            }),
+            vscode.window.onDidChangeTextEditorSelection(this.onSelectionChangeDebounced),
+            vscode.workspace.onDidChangeTextDocument(event => {
+                this.onDidChangeTextDocument(event)
+            })
+        )
     }
 
     private initializeConfig(): ProviderConfig {
@@ -100,22 +134,27 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
         }
     }
 
-    private registerCommands(): void {
-        this.disposables.push(
-            this.contextMixer,
-            this.rendererManager,
-            // Command is used to manually debug the autoedits provider
-            vscode.commands.registerCommand('cody.experimental.suggest', () => {
-                const editor = vscode.window.activeTextEditor
-                if (!editor) {
-                    return
-                }
-                this.provideInlineCompletionItems(editor.document, editor.selection.active, {
-                    triggerKind: vscode.InlineCompletionTriggerKind.Invoke,
-                    selectedCompletionInfo: undefined,
-                })
+    private async autoeditOnSelectionChange(
+        event: vscode.TextEditorSelectionChangeEvent
+    ): Promise<void> {
+        const lastSelection = event.selections.at(-1)
+        const { document } = event.textEditor
+        if (!lastSelection?.isEmpty || document.uri.scheme !== 'file') {
+            return
+        }
+        if (this.rendererManager.hasActiveEdit()) {
+            return
+        }
+        // Don't show suggestion on cursor movement if the text has not changed for a certain amount of time
+        if (
+            this.lastTextChangeTimeStamp &&
+            Date.now() - this.lastTextChangeTimeStamp < this.resetSuggestionOnCursorChangeAfterIntervalMs
+        ) {
+            this.provideInlineCompletionItems(document, lastSelection.active, {
+                triggerKind: vscode.InlineCompletionTriggerKind.Automatic,
+                selectedCompletionInfo: undefined,
             })
-        )
+        }
     }
 
     public async provideInlineCompletionItems(
@@ -127,7 +166,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
         const controller = new AbortController()
         token?.onCancellationRequested(() => controller.abort())
 
-        await new Promise(resolve => setTimeout(resolve, this.debounceIntervalMs))
+        await new Promise(resolve => setTimeout(resolve, this.inlineDebounceIntervalMs))
         return this.showAutoEdit(document, position, controller.signal)
     }
 
@@ -316,6 +355,13 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
             'Data Debug:\n',
             JSON.stringify(debugData, null, 2)
         )
+    }
+
+    private onDidChangeTextDocument(event: vscode.TextDocumentChangeEvent): void {
+        if (event.document.uri.scheme !== 'file') {
+            return
+        }
+        this.lastTextChangeTimeStamp = Date.now()
     }
 
     private getDefaultConfig(): Omit<AutoEditsModelConfig, 'apiKey'> {

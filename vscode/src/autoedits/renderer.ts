@@ -79,6 +79,10 @@ export class AutoEditsRendererManager implements vscode.Disposable {
         )
     }
 
+    public hasActiveEdit(): boolean {
+        return this.activeEdit !== null
+    }
+
     public async showEdit(options: AutoEditsManagerOptions): Promise<void> {
         await this.dismissEdit()
         const editor = vscode.window.activeTextEditor
