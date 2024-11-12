@@ -645,6 +645,7 @@ export class SourcegraphGraphQLAPIClient {
         queryName: 'SiteProductVersion',
         maxAgeMsec: 1000 * 60 * 10, // 10 minutes
     })
+    private readonly versionCacheInvalidator: Subscription<any>
 
     public static withGlobalConfig(): SourcegraphGraphQLAPIClient {
         return new SourcegraphGraphQLAPIClient(resolvedConfig)
@@ -661,8 +662,6 @@ export class SourcegraphGraphQLAPIClient {
 
     private readonly id: number = tattoo++
     private lastConfig = ''
-
-    private readonly versionCacheInvalidator: Subscription<any>
 
     private constructor(private readonly config: Observable<GraphQLAPIClientConfig>) {
         this.versionCacheInvalidator = config.pipe(distinctUntilChanged()).subscribe({

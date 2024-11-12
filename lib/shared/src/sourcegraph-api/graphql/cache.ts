@@ -132,7 +132,7 @@ export class GraphQLResultCache<V> {
         this.fetchTimeMsec = now
 
         // TODO: remove this
-        console.log('DPC debug actually fetching site version')
+        console.log(`${new Date().toString()} DPC debug actually fetching site version`)
 
         const thisFetch = fetcher(this.aborts.signal)
         this.lastResult = undefined
