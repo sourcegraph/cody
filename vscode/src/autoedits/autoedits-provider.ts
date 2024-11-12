@@ -24,8 +24,6 @@ import type { CodeToReplaceData } from './prompt-utils'
 import { AutoEditsRendererManager } from './renderer'
 
 const AUTOEDITS_CONTEXT_STRATEGY = 'auto-edits'
-const ONSELECTION_CHANGE_DEFAULT_DEBOUNCE_INTERVAL_MS = 150
-const RESET_SUGGESTION_ON_CURSOR_CHANGE_AFTER_INTERVAL_MS = 60 * 1000
 
 export interface AutoEditsProviderOptions {
     document: vscode.TextDocument
@@ -54,8 +52,8 @@ export class AutoeditsProvider implements vscode.Disposable {
     private readonly disposables: vscode.Disposable[] = []
     private readonly contextMixer: ContextMixer
     private readonly rendererManager: AutoEditsRendererManager
-    private readonly onSelectionChangeDebounceIntervalMs: number
-    private readonly resetSuggestionOnCursorChangeAfterIntervalMs: number
+    private readonly onSelectionChangeDebounceIntervalMs: number = 150
+    private readonly resetSuggestionOnCursorChangeAfterIntervalMs: number = 60 * 1000
     private readonly config: ProviderConfig
     private readonly onSelectionChangeDebounced: DebouncedFunc<typeof this.autoeditOnSelectionChange>
     // Keeps track of the last time the text was changed in the editor.
@@ -70,9 +68,6 @@ export class AutoeditsProvider implements vscode.Disposable {
             dataCollectionEnabled: false,
         })
         this.rendererManager = new AutoEditsRendererManager()
-        this.onSelectionChangeDebounceIntervalMs = ONSELECTION_CHANGE_DEFAULT_DEBOUNCE_INTERVAL_MS
-        this.resetSuggestionOnCursorChangeAfterIntervalMs =
-            RESET_SUGGESTION_ON_CURSOR_CHANGE_AFTER_INTERVAL_MS
         this.onSelectionChangeDebounced = debounce(
             (event: vscode.TextEditorSelectionChangeEvent) => this.autoeditOnSelectionChange(event),
             this.onSelectionChangeDebounceIntervalMs
