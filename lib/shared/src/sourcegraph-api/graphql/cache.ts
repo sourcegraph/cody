@@ -174,18 +174,16 @@ export class GraphQLResultCache<V> {
                     } else {
                         this.retryCount = 0
                     }
+                    this.aborts = new AbortIgnorer()
                 }
             } catch (error) {
                 if (this.lastFetch === thisFetch && error instanceof Error) {
                     this.lastResult = error
                     this.retryCount++
+                    this.aborts = new AbortIgnorer()
                 }
                 // We swallow the error here; this Promise chain is just to
                 // update the cache's state.
-            } finally {
-                if (this.lastFetch === thisFetch) {
-                    this.aborts = new AbortIgnorer()
-                }
             }
         })()
         this.lastResult = undefined

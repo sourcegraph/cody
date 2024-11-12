@@ -635,8 +635,6 @@ type GraphQLAPIClientConfig = PickResolvedConfiguration<{
 
 const QUERY_TO_NAME_REGEXP = /^\s*(?:query|mutation)\s+(\w+)/m
 
-let tattoo = 0
-
 export class SourcegraphGraphQLAPIClient {
     private dotcomUrl = DOTCOM_URL
 
@@ -662,23 +660,11 @@ export class SourcegraphGraphQLAPIClient {
         return new SourcegraphGraphQLAPIClient(Observable.of(config))
     }
 
-    private readonly id: number = tattoo++
-    private lastConfig = ''
-
     private constructor(private readonly config: Observable<GraphQLAPIClientConfig>) {
         this.versionCacheInvalidator = config.pipe(distinctUntilChanged()).subscribe({
             next: () => {
-                const stringConfig = JSON.stringify(config)
-                console.log(
-                    `DPC ${this.id} ${
-                        stringConfig === this.lastConfig
-                    } invalidating site version with new version ${stringConfig}`
-                )
-                this.lastConfig = stringConfig
                 this.siteVersionCache.invalidate()
             },
-            error: error => console.error(`DPC ${this.id} error invalidating site version`, error),
-            complete: () => console.log(`DPC ${this.id} completed invalidating site version`),
         })
     }
 
