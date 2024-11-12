@@ -272,7 +272,7 @@ export class AutoEditsRenderer implements vscode.Disposable {
         const removedLinesRanges = this.getNonModifiedLinesRanges(removedLines)
         this.editor.setDecorations(this.removedTextDecorationType, removedLinesRanges)
 
-        if (addedLines.length !== 0 || isOnlyAdditionsForModifiedLines === false) {
+        if (addedLines.length > 0 || !isOnlyAdditionsForModifiedLines) {
             this.renderDiffDecorations(
                 beforeLinesChunks,
                 afterLinesChunks,
