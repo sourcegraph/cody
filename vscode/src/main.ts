@@ -45,7 +45,6 @@ import type { CommandResult } from './CommandResult'
 import { showAccountMenu } from './auth/account-menu'
 import { showSignInMenu, showSignOutMenu, tokenCallbackHandler } from './auth/auth'
 import { AutoeditsProvider } from './autoedits/autoedits-provider'
-import { AutoeditTestingProvider } from './autoedits/renderer-testing'
 import { registerTestRenderCommand } from './autoedits/renderer-testing-2'
 import type { MessageProviderOptions } from './chat/MessageProvider'
 import { ChatsController, CodyChatEditorViewType } from './chat/chat-view/ChatsController'
@@ -460,7 +459,7 @@ async function registerCodyCommands(
     disposables.push(
         enableFeature(
             ({ configuration }) => configuration.experimentalAutoeditsRendererTesting !== false,
-            () => vscode.Disposable.from(new AutoeditTestingProvider(), registerTestRenderCommand())
+            () => registerTestRenderCommand()
         )
     )
     disposables.push(
