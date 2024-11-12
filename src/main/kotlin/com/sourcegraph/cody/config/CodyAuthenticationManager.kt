@@ -17,6 +17,7 @@ import com.intellij.openapi.project.ProjectManager
 import com.intellij.util.AuthData
 import com.intellij.util.concurrency.annotations.RequiresEdt
 import com.sourcegraph.cody.agent.CodyAgentService
+import com.sourcegraph.cody.agent.protocol_generated.ProtocolAuthenticatedAuthStatus
 import com.sourcegraph.cody.api.SourcegraphApiRequestExecutor
 import com.sourcegraph.cody.api.SourcegraphApiRequests
 import com.sourcegraph.cody.config.notification.AccountSettingChangeActionNotifier
@@ -212,8 +213,15 @@ class CodyAuthenticationManager :
       ProjectManager.getInstance().openProjects.forEach { project ->
         CodyAgentService.withAgentRestartIfNeeded(project) { agent ->
           if (!project.isDisposed) {
-            agent.server.extensionConfiguration_change(ConfigUtil.getAgentConfiguration(project))
-            publisher(project).afterAction(AccountSettingChangeContext(accessTokenChanged = true))
+            agent.server
+                .extensionConfiguration_change(ConfigUtil.getAgentConfiguration(project))
+                .thenApply { authStatus ->
+                  isTokenInvalid =
+                      CompletableFuture.completedFuture(
+                          authStatus !is ProtocolAuthenticatedAuthStatus)
+                  publisher(project)
+                      .afterAction(AccountSettingChangeContext(accessTokenChanged = true))
+                }
           }
         }
       }
@@ -236,15 +244,21 @@ class CodyAuthenticationManager :
     ProjectManager.getInstance().openProjects.forEach { project ->
       CodyAgentService.withAgentRestartIfNeeded(project) { agent ->
         if (!project.isDisposed) {
-          agent.server.extensionConfiguration_change(ConfigUtil.getAgentConfiguration(project))
-          if (serverUrlChanged || tierChanged || accountChanged) {
-            publisher(project)
-                .afterAction(
-                    AccountSettingChangeContext(
-                        serverUrlChanged = serverUrlChanged,
-                        accountTierChanged = tierChanged,
-                        accessTokenChanged = accountChanged))
-          }
+          agent.server
+              .extensionConfiguration_change(ConfigUtil.getAgentConfiguration(project))
+              .thenApply { authStatus ->
+                isTokenInvalid =
+                    CompletableFuture.completedFuture(
+                        authStatus !is ProtocolAuthenticatedAuthStatus)
+                if (serverUrlChanged || tierChanged || accountChanged) {
+                  publisher(project)
+                      .afterAction(
+                          AccountSettingChangeContext(
+                              serverUrlChanged = serverUrlChanged,
+                              accountTierChanged = tierChanged,
+                              accessTokenChanged = accountChanged))
+                }
+              }
         }
       }
     }

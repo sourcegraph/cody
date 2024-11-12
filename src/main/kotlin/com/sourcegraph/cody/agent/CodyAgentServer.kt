@@ -86,7 +86,7 @@ interface _SubsetGeneratedCodyAgentServer {
   @JsonRequest("extensionConfiguration/getSettingsSchema")
   fun extensionConfiguration_getSettingsSchema(params: Null?): CompletableFuture<String>
 
-  @JsonNotification("extensionConfiguration/change")
+  @JsonRequest("extensionConfiguration/change")
   fun extensionConfiguration_change(
       params: ExtensionConfiguration
   ): CompletableFuture<ProtocolAuthStatus?>
