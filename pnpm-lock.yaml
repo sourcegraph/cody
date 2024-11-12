@@ -570,6 +570,9 @@ importers:
       he:
         specifier: ^1.2.0
         version: 1.2.0
+      highlight.js:
+        specifier: 11.9.0
+        version: 11.9.0
       http-proxy-agent:
         specifier: ^7.0.2
         version: 7.0.2
@@ -588,9 +591,6 @@ importers:
       lodash:
         specifier: ^4.17.21
         version: 4.17.21
-      lowlight:
-        specifier: ^3.1.0
-        version: 3.1.0
       lru-cache:
         specifier: ^10.0.0
         version: 10.0.0
@@ -11541,14 +11541,6 @@ packages:
       '@types/hast': 2.3.10
       fault: 2.0.1
       highlight.js: 11.8.0
-    dev: false
-
-  /lowlight@3.1.0:
-    resolution: {integrity: sha512-CEbNVoSikAxwDMDPjXlqlFYiZLkDJHwyGu/MfOsJnF3d7f3tds5J3z8s/l9TMXhzfsJCCJEAsD78842mwmg0PQ==}
-    dependencies:
-      '@types/hast': 3.0.4
-      devlop: 1.1.0
-      highlight.js: 11.9.0
     dev: false
 
   /lru-cache@10.0.0:
