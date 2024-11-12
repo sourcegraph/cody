@@ -1,6 +1,6 @@
 import { Observable, unsubscribe } from 'observable-fns'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { combineLatest } from '../../misc/observable'
+import { observableOfTimedSequence, switchMap } from '../../misc/observable'
 import {
     type ExponentialBackoffRetryOptions,
     ExponentialBackoffTimer,
@@ -133,17 +133,15 @@ describe('exponentialBackoffRetry', () => {
         }
         const values: Array<{ iteration: number; retryCount: number }> = []
 
-        const subscription = Observable.of('constant')
-            .pipe(exponentialBackoffRetry(options))
-            .subscribe(({ iteration, retryCount }) => {
-                values.push({ iteration, retryCount })
-            })
+        const subscription = exponentialBackoffRetry(options).subscribe(({ iteration, retryCount }) => {
+            values.push({ iteration, retryCount })
+        })
 
         await vi.runAllTimersAsync()
         expect(values).toEqual([{ iteration: 0, retryCount: 0 }])
         unsubscribe(subscription)
     })
-    /*
+
     it('should emit values with exponential backoff delays', async () => {
         const options = {
             label: 'test',
@@ -222,41 +220,64 @@ describe('exponentialBackoffRetry', () => {
         unsubscribe(subscription)
     })
 
-    /*
-    it('should stop reset the retry count after success', async () => {
+    it('should be able to be combined with an input to a downstream map', async () => {
         const options = {
-            label: 'test',
             maxRetries: 3,
             initialDelayMsec: 1000,
             backoffFactor: 2,
         }
-        const values: Array<{ flavor: string; iteration: number; retryCount: number }> = []
+        const values: Array<{ flavor: string; noms: number }> = []
 
-        const tries = exponentialBackoffRetry(options)
-        const pies = Observable.of(['apple', 'cherry', 'pumpkin', 'key lime'])
-        const subscription = combineLatest(pies, tries).subscribe(
-            ([flavor, { retry, iteration, retryCount }]) => {
-                values.push({ flavor, iteration, retryCount })
-                if (
-                    iteration === 0 ||
-                    (iteration === 1 && retryCount === 2) ||
-                    iteration === 2 ||
-                    iteration === 3 ||
-                    (iteration === 4 && retryCount === 4)
-                ) {
-                    retry.success()
-                } else {
-                    retry.failure(new Error('test error'))
-                }
-            }
+        // We periodically get a flavor of pie we should try.
+        const pies = observableOfTimedSequence<string>(
+            'cherry',
+            3000,
+            'apple',
+            8000,
+            'pumpkin',
+            4000,
+            'pecan'
+        ).pipe(
+            // We will try the pies with an exponential backoff.
+            switchMap(flavor =>
+                exponentialBackoffRetry({ label: flavor, ...options }).map(retry => ({ flavor, retry }))
+            )
         )
+        // We like anything we have tried three times.
+        const likedPies: string[] = []
+        const subscription = new Observable<string>(observer => {
+            const tasteTest = pies.subscribe(({ flavor, retry: taste }) => {
+                values.push({ flavor, noms: taste.retryCount })
+                if (taste.retryCount === 3) {
+                    taste.retry.success()
+                    observer.next(flavor)
+                } else {
+                    taste.retry.failure(new Error('yuck'))
+                }
+            })
+            return () => {
+                tasteTest.unsubscribe()
+            }
+        }).subscribe(flavor => likedPies.push(flavor))
 
+        await vi.runAllTimersAsync()
         expect(values).toEqual([
-            { iteration: 0, retryCount: 0 },
-            { iteration: 0, retryCount: 1 },
-            { iteration: 0, retryCount: 2 },
+            { flavor: 'cherry', noms: 0 },
+            { flavor: 'cherry', noms: 1 },
+            { flavor: 'apple', noms: 0 },
+            { flavor: 'apple', noms: 1 },
+            { flavor: 'apple', noms: 2 },
+            { flavor: 'apple', noms: 3 },
+            { flavor: 'pumpkin', noms: 0 },
+            { flavor: 'pumpkin', noms: 1 },
+            { flavor: 'pumpkin', noms: 2 },
+            { flavor: 'pecan', noms: 0 },
+            { flavor: 'pecan', noms: 1 },
+            { flavor: 'pecan', noms: 2 },
+            { flavor: 'pecan', noms: 3 },
         ])
+        expect(likedPies).toEqual(['apple', 'pecan'])
+
         unsubscribe(subscription)
     })
-        */
 })
