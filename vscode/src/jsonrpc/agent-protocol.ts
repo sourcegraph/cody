@@ -245,7 +245,7 @@ export type ClientRequests = {
     // authentication status, which indicates whether the provided credentials are
     // valid or not. The agent can't support autocomplete or chat if the credentials
     // are invalid.
-    'extensionConfiguration/change': [ExtensionConfiguration, ProtocolAuthStatus | null]
+    'extensionConfiguration/change': [ExtensionConfiguration, ProtocolAuthStatus]
 
     // Returns the current authentication status without making changes to it.
     'extensionConfiguration/status': [null, ProtocolAuthStatus | null]

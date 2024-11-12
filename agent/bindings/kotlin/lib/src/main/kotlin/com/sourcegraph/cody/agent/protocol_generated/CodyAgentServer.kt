@@ -123,7 +123,7 @@ interface CodyAgentServer {
   @JsonRequest("testing/autocomplete/providerConfig")
   fun testing_autocomplete_providerConfig(params: Null?): CompletableFuture<Testing_Autocomplete_ProviderConfigResult>
   @JsonRequest("extensionConfiguration/change")
-  fun extensionConfiguration_change(params: ExtensionConfiguration): CompletableFuture<ProtocolAuthStatus?>
+  fun extensionConfiguration_change(params: ExtensionConfiguration): CompletableFuture<ProtocolAuthStatus>
   @JsonRequest("extensionConfiguration/status")
   fun extensionConfiguration_status(params: Null?): CompletableFuture<ProtocolAuthStatus?>
   @JsonRequest("extensionConfiguration/getSettingsSchema")
