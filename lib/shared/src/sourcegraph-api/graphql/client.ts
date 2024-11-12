@@ -5,12 +5,12 @@ import { fetch } from '../../fetch'
 import type { TelemetryEventInput } from '@sourcegraph/telemetry'
 
 import escapeRegExp from 'lodash/escapeRegExp'
-import { Observable } from 'observable-fns'
+import { Observable, type Subscription } from 'observable-fns'
 import semver from 'semver'
 import { dependentAbortController, onAbort } from '../../common/abortController'
 import { type PickResolvedConfiguration, resolvedConfig } from '../../configuration/resolver'
 import { logDebug, logError } from '../../logger'
-import { distinctUntilChanged, firstValueFrom, tap } from '../../misc/observable'
+import { distinctUntilChanged, firstValueFrom } from '../../misc/observable'
 import { addTraceparent, wrapInActiveSpan } from '../../tracing'
 import { isError } from '../../utils'
 import { addCodyClientIdentificationHeaders } from '../client-name-version'
@@ -659,24 +659,30 @@ export class SourcegraphGraphQLAPIClient {
         return new SourcegraphGraphQLAPIClient(Observable.of(config))
     }
 
-    private readonly config: Observable<GraphQLAPIClientConfig>
     private readonly id: number = tattoo++
     private lastConfig = ''
 
-    private constructor(config: Observable<GraphQLAPIClientConfig>) {
-        this.config = config.pipe(
-            distinctUntilChanged(),
-            tap(config => {
+    private readonly versionCacheInvalidator: Subscription<any>
+
+    private constructor(private readonly config: Observable<GraphQLAPIClientConfig>) {
+        this.versionCacheInvalidator = config.pipe(distinctUntilChanged()).subscribe({
+            next: () => {
                 const stringConfig = JSON.stringify(config)
                 console.log(
-                    `${this.id} ${
+                    `DPC ${this.id} ${
                         stringConfig === this.lastConfig
                     } invalidating site version with new version ${stringConfig}`
                 )
                 this.lastConfig = stringConfig
                 this.siteVersionCache.invalidate()
-            })
-        )
+            },
+            error: error => console.error(`DPC ${this.id} error invalidating site version`, error),
+            complete: () => console.log(`DPC ${this.id} completed invalidating site version`),
+        })
+    }
+
+    [Symbol.dispose]() {
+        this.versionCacheInvalidator.unsubscribe()
     }
 
     public async getSiteVersion(signal?: AbortSignal): Promise<string | Error> {
