@@ -2,6 +2,7 @@ package com.sourcegraph.config
 
 import com.google.gson.JsonObject
 import com.intellij.ide.plugins.PluginManagerCore
+import com.intellij.openapi.application.ApplicationInfo
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.extensions.PluginId
@@ -37,6 +38,29 @@ object ConfigUtil {
 
   private val featureFlags: Map<String, Boolean> by lazy {
     parseFeatureFlags(System.getenv(FEATURE_FLAGS_ENV_VAR))
+  }
+
+  fun getIntellijProductCode(): Long {
+    val build = ApplicationInfo.getInstance().build
+    val intellijProductCodeMap =
+        mapOf(
+            "IU" to 1L, // IntelliJ IDEA Ultimate
+            "IC" to 2L, // IntelliJ IDEA Community
+            "IE" to 3L, // IntelliJ IDEA Educational
+            "PS" to 4L, // PhpStorm
+            "WS" to 5L, // WebStorm
+            "PY" to 6L, // PyCharm Professional
+            "PC" to 7L, // PyCharm Community
+            "PE" to 8L, // PyCharm Educational
+            "RM" to 9L, // RubyMine
+            "OC" to 10L, // AppCode
+            "CL" to 11L, // CLion
+            "GO" to 12L, // GoLand
+            "DB" to 13L, // DataGrip
+            "RD" to 14L, // Rider
+            "AI" to 15L, // Android Studio
+        )
+    return intellijProductCodeMap[build.productCode] ?: 0L
   }
 
   @VisibleForTesting
@@ -137,7 +161,10 @@ object ConfigUtil {
     // Needed by Edit commands to trigger smart-selection; without it things break.
     // So it isn't optional in JetBrains clients, which do not offer language-neutral solutions
     // to this problem; instead we hardwire it to use the indentation-based provider.
-    val additionalProperties = mapOf("cody.experimental.foldingRanges" to "indentation-based")
+    val additionalProperties =
+        mapOf(
+            "cody.experimental.foldingRanges" to "indentation-based",
+            "cody.advanced.agent.ide.productCode" to getIntellijProductCode())
 
     return try {
       val text = customConfigContent ?: getSettingsFile(project).readText()
