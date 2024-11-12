@@ -1,7 +1,5 @@
-import { displayPath } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 import { ThemeColor } from 'vscode'
-import { createGitDiff } from '../../../lib/shared/src/editor/create-git-diff'
 import { GHOST_TEXT_COLOR } from '../commands/GhostHintDecorator'
 import { lines } from '../completions/text-processing'
 import {
@@ -11,7 +9,6 @@ import {
     getModifiedRangesForLine,
     splitLineIntoChunks,
 } from './diff-utils'
-import { autoeditsLogger } from './logger'
 
 /**
  * Represents a proposed text change in the editor.
@@ -75,7 +72,11 @@ export class AutoEditsRendererManager implements vscode.Disposable {
             vscode.workspace.onDidChangeTextDocument(event => this.onDidChangeTextDocument(event)),
             vscode.window.onDidChangeTextEditorSelection(event =>
                 this.onDidChangeTextEditorSelection(event)
-            )
+            ),
+            vscode.window.onDidChangeActiveTextEditor(editor =>
+                this.onDidChangeActiveTextEditor(editor)
+            ),
+            vscode.workspace.onDidCloseTextDocument(document => this.onDidCloseTextDocument(document))
         )
     }
 
@@ -95,12 +96,6 @@ export class AutoEditsRendererManager implements vscode.Disposable {
             prediction: options.prediction,
             renderer: new AutoEditsRenderer(editor),
         }
-        this.logDiff(
-            options.document.uri,
-            options.currentFileText,
-            options.prediction,
-            options.predictedFileText
-        )
         this.activeEdit.renderer.renderDecorations({
             document: options.document,
             currentFileText: options.currentFileText,
@@ -140,29 +135,28 @@ export class AutoEditsRendererManager implements vscode.Disposable {
         await this.dismissEdit()
     }
 
+    private async onDidChangeActiveTextEditor(editor: vscode.TextEditor | undefined): Promise<void> {
+        if (!editor || editor.document.uri.toString() !== this.activeEdit?.uri) {
+            await this.dismissEdit()
+        }
+    }
+
+    private async onDidCloseTextDocument(document: vscode.TextDocument): Promise<void> {
+        if (document.uri.toString() === this.activeEdit?.uri) {
+            await this.dismissEdit()
+        }
+    }
+
     private async onDidChangeTextEditorSelection(
         event: vscode.TextEditorSelectionChangeEvent
     ): Promise<void> {
         if (event.textEditor.document.uri.toString() !== this.activeEdit?.uri) {
             return
         }
-        const currentSelectionRange = event.selections[0]
-        if (!currentSelectionRange.intersection(this.activeEdit.range)) {
-            // No overlap with expanded range, dismiss the proposed change
+        const currentSelectionRange = event.selections.at(-1)
+        if (!currentSelectionRange?.intersection(this.activeEdit.range)) {
             await this.dismissEdit()
         }
-    }
-
-    private logDiff(
-        uri: vscode.Uri,
-        codeToRewrite: string,
-        predictedText: string,
-        prediction: string
-    ): void {
-        const predictedCodeXML = `<code>\n${predictedText}\n</code>`
-        autoeditsLogger.logDebug('AutoEdits', '(Predicted Code@ Cursor Position)\n', predictedCodeXML)
-        const diff = createGitDiff(displayPath(uri), codeToRewrite, prediction)
-        autoeditsLogger.logDebug('AutoEdits', '(Diff@ Cursor Position)\n', diff)
     }
 
     public dispose(): void {
