@@ -32,7 +32,7 @@ class CodyConsole(project: Project) {
       }
 
       if (ConfigUtil.isCodyDebugEnabled()) {
-        toolWindow?.show()
+        toolWindow?.contentManager?.getReady(this)?.doWhenDone { toolWindow.show() }
       }
     }
   }
