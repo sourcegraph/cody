@@ -72,18 +72,6 @@ describe('ExponentialBackoffTimer', () => {
         expect(() => timer.failure(error)).toThrow(error)
     })
 
-    it('should reset retry count on success', () => {
-        const timer = new TestTimer(defaultOptions)
-        const error = new Error('test error')
-
-        timer.failure(error)
-        vi.advanceTimersByTime(1000)
-        timer.success()
-        timer.failure(error)
-        vi.advanceTimersByTime(1000)
-        expect(timer.runCount).toBe(2)
-    })
-
     it('should clear pending retry on success', () => {
         const timer = new TestTimer(defaultOptions)
         const error = new Error('test error')
@@ -131,14 +119,14 @@ describe('exponentialBackoffRetry', () => {
             initialDelayMsec: 1000,
             backoffFactor: 2,
         }
-        const values: Array<{ iteration: number; retryCount: number }> = []
+        const values: Array<{ retryCount: number }> = []
 
-        const subscription = exponentialBackoffRetry(options).subscribe(({ iteration, retryCount }) => {
-            values.push({ iteration, retryCount })
+        const subscription = exponentialBackoffRetry(options).subscribe(({ retryCount }) => {
+            values.push({ retryCount })
         })
 
         await vi.runAllTimersAsync()
-        expect(values).toEqual([{ iteration: 0, retryCount: 0 }])
+        expect(values).toEqual([{ retryCount: 0 }])
         unsubscribe(subscription)
     })
 
@@ -149,43 +137,34 @@ describe('exponentialBackoffRetry', () => {
             initialDelayMsec: 1000,
             backoffFactor: 2,
         }
-        const values: Array<{ iteration: number; retryCount: number }> = []
+        const values: Array<{ retryCount: number }> = []
 
-        const subscription = exponentialBackoffRetry(options).subscribe(
-            ({ retry, iteration, retryCount }) => {
-                values.push({ iteration, retryCount })
-                const error = new Error('test error')
-                try {
-                    retry.failure(error)
-                    expect(retryCount).toBeLessThan(3)
-                } catch (thrownError) {
-                    expect(retryCount).toBe(3)
-                    expect(thrownError).toBe(error)
-                }
+        const subscription = exponentialBackoffRetry(options).subscribe(({ retry, retryCount }) => {
+            values.push({ retryCount })
+            const error = new Error('test error')
+            try {
+                retry.failure(error)
+                expect(retryCount).toBeLessThan(3)
+            } catch (thrownError) {
+                expect(retryCount).toBe(3)
+                expect(thrownError).toBe(error)
             }
-        )
+        })
 
         await vi.advanceTimersByTimeAsync(0)
-        expect(values).toEqual([{ iteration: 0, retryCount: 0 }])
+        expect(values).toEqual([{ retryCount: 0 }])
         await vi.advanceTimersByTimeAsync(1000)
-        expect(values).toEqual([
-            { iteration: 0, retryCount: 0 },
-            { iteration: 0, retryCount: 1 },
-        ])
+        expect(values).toEqual([{ retryCount: 0 }, { retryCount: 1 }])
         await vi.advanceTimersByTimeAsync(1999)
         expect(values.length).toBe(2)
         await vi.advanceTimersByTimeAsync(1)
-        expect(values).toEqual([
-            { iteration: 0, retryCount: 0 },
-            { iteration: 0, retryCount: 1 },
-            { iteration: 0, retryCount: 2 },
-        ])
+        expect(values).toEqual([{ retryCount: 0 }, { retryCount: 1 }, { retryCount: 2 }])
         await vi.advanceTimersByTimeAsync(4000)
         expect(values).toEqual([
-            { iteration: 0, retryCount: 0 },
-            { iteration: 0, retryCount: 1 },
-            { iteration: 0, retryCount: 2 },
-            { iteration: 0, retryCount: 3 },
+            { retryCount: 0 },
+            { retryCount: 1 },
+            { retryCount: 2 },
+            { retryCount: 3 },
         ])
         unsubscribe(subscription)
     })
@@ -197,26 +176,20 @@ describe('exponentialBackoffRetry', () => {
             initialDelayMsec: 1000,
             backoffFactor: 2,
         }
-        const values: Array<{ iteration: number; retryCount: number }> = []
+        const values: Array<{ retryCount: number }> = []
 
-        const subscription = exponentialBackoffRetry(options).subscribe(
-            ({ retry, iteration, retryCount }) => {
-                values.push({ iteration, retryCount })
-                if (retryCount === 2) {
-                    retry.success()
-                } else {
-                    expect(retryCount).toBeLessThan(2)
-                    retry.failure(new Error('test error'))
-                }
+        const subscription = exponentialBackoffRetry(options).subscribe(({ retry, retryCount }) => {
+            values.push({ retryCount })
+            if (retryCount === 2) {
+                retry.success()
+            } else {
+                expect(retryCount).toBeLessThan(2)
+                retry.failure(new Error('test error'))
             }
-        )
+        })
 
         await vi.runAllTimersAsync()
-        expect(values).toEqual([
-            { iteration: 0, retryCount: 0 },
-            { iteration: 0, retryCount: 1 },
-            { iteration: 0, retryCount: 2 },
-        ])
+        expect(values).toEqual([{ retryCount: 0 }, { retryCount: 1 }, { retryCount: 2 }])
         unsubscribe(subscription)
     })
 

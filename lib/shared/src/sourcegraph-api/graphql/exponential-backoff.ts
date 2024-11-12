@@ -4,23 +4,27 @@ import { logDebug } from '../../logger'
 /**
  * Creates an Observable that can be used to retry operations that may fail with
  * transient errors. The observable emits a value, after a delay, when it is
- * time to retry.
+ * time to retry. Use one exponentialBackoffRetry per operation you want to
+ * attempt.
  *
  * @param options configures the rate of exponential backoff.
- * @returns an Observable which emits an ExponentialBackoffTimer and an
- * attempt and retry counter.
+ * @returns an Observable which emits an ExponentialBackoffTimer and a retry
+ * counter.
  * @see ExponentialBackoffTimer
  */
 export function exponentialBackoffRetry(
     options: ExponentialBackoffRetryOptions
-): Observable<{ retry: ExponentialBackoffTimer; iteration: number; retryCount: number }> {
+): Observable<{ retry: ExponentialBackoffTimer; retryCount: number }> {
     return new Observable(observer => {
         const timer = new (class extends ExponentialBackoffTimer {
-            run(successCount: number, retryCount: number) {
-                observer.next({ retry: this, iteration: successCount, retryCount: retryCount })
+            run(retryCount: number) {
+                observer.next({ retry: this, retryCount: retryCount })
+            }
+            override success() {
+                observer.complete()
             }
         })(options)
-        observer.next({ retry: timer, iteration: 0, retryCount: 0 })
+        observer.next({ retry: timer, retryCount: 0 })
         return () => timer[Symbol.dispose]()
     })
 }
@@ -37,7 +41,6 @@ export abstract class ExponentialBackoffTimer {
     private readonly maxRetries: number
     private readonly initialDelayMsec: number
     private readonly backoffFactor: number
-    private successCount = 0
     private retryCount = 0
     private retryTimer: NodeJS.Timeout | undefined
 
@@ -55,15 +58,10 @@ export abstract class ExponentialBackoffTimer {
         }
     }
 
-    protected abstract run(successCount: number, retryCount: number): void
+    protected abstract run(retryCount: number): void
 
     success() {
-        this.successCount++
-        this.retryCount = 0
-        if (this.retryTimer) {
-            clearTimeout(this.retryTimer)
-            this.retryTimer = undefined
-        }
+        this[Symbol.dispose]()
     }
 
     failure(error: Error) {
@@ -80,7 +78,7 @@ export abstract class ExponentialBackoffTimer {
                 return
             }
             this.retryTimer = undefined
-            this.run(this.successCount, this.retryCount)
+            this.run(this.retryCount)
         }, delayMsec)
         this.retryTimer = retryTimer
         this.retryCount++
