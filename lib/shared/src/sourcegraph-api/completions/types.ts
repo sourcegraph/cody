@@ -37,6 +37,14 @@ export interface CompletionParameters {
     topP?: number
     model?: string
     stream?: boolean
+    // Configuration for a Predicted Output, which can greatly improve response
+    // times when large parts of the model response are known ahead of time.
+    // https://platform.openai.com/docs/guides/latency-optimization#use-predicted-outputs
+    // https://platform.openai.com/docs/api-reference/chat/create#chat-create-prediction
+    prediction?: {
+        type: 'content'
+        content: string
+    }
 }
 
 export interface SerializedCompletionParameters extends Omit<CompletionParameters, 'messages'> {
