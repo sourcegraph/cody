@@ -476,7 +476,7 @@ export class AutoEditsRenderer implements vscode.Disposable {
                         endRange
                     ),
                     renderOptions: {
-                        after: {
+                        before: {
                             contentText: rangeText,
                         },
                     },
