@@ -3,7 +3,15 @@ import { pluralize } from '@sourcegraph/cody-shared'
 import type { RankedContext } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { clsx } from 'clsx'
 import { ArrowBigUp, AtSign, BrainIcon, MessagesSquareIcon } from 'lucide-react'
-import { type FunctionComponent, memo, useCallback, useMemo, useState } from 'react'
+import {
+    type FunctionComponent,
+    createContext,
+    memo,
+    useCallback,
+    useContext,
+    useMemo,
+    useState,
+} from 'react'
 import { FileContextItem } from '../../../components/FileContextItem'
 import {
     Accordion,
@@ -22,6 +30,8 @@ import { LoadingDots } from '../../components/LoadingDots'
 import { Cell } from '../Cell'
 import { NON_HUMAN_CELL_AVATAR_SIZE } from '../messageCell/assistant/AssistantMessageCell'
 import styles from './ContextCell.module.css'
+
+export const __ContextCellStorybookContext = createContext<{ initialOpen: boolean } | null>(null)
 
 /**
  * A component displaying the context for a human message.
@@ -50,9 +60,6 @@ export const ContextCell: FunctionComponent<{
 
     onManuallyEditContext: () => void
     editContextNode: React.ReactNode
-
-    /** For use in storybooks only. */
-    __storybook__initialOpen?: boolean
 }> = memo(
     ({
         contextItems,
@@ -63,7 +70,6 @@ export const ContextCell: FunctionComponent<{
         isForFirstMessage,
         className,
         defaultOpen,
-        __storybook__initialOpen,
         reSubmitWithChatIntent,
         showSnippets = false,
         isContextLoading,
@@ -71,6 +77,8 @@ export const ContextCell: FunctionComponent<{
         onManuallyEditContext,
         editContextNode,
     }) => {
+        const __storybook__initialOpen = useContext(__ContextCellStorybookContext)?.initialOpen ?? false
+
         const [selectedAlternative, setSelectedAlternative] = useState<number | undefined>(undefined)
         const incrementSelectedAlternative = useCallback(
             (increment: number): void => {
@@ -204,16 +212,26 @@ export const ContextCell: FunctionComponent<{
                             ) : (
                                 <>
                                     <AccordionContent overflow={showSnippets}>
-                                        {contextItems && contextItems.length > 0 && (
-                                            <Button
-                                                size="sm"
-                                                variant="outline"
-                                                className={clsx('tw-pr-4', styles.contextItemEditButton)}
-                                                onClick={onEditContext}
-                                            >
-                                                {editContextNode}
-                                            </Button>
-                                        )}
+                                        <div>
+                                            {contextItems && contextItems.length > 0 && (
+                                                <Button
+                                                    size="sm"
+                                                    variant="outline"
+                                                    className={clsx(
+                                                        'tw-pr-4',
+                                                        styles.contextItemEditButton
+                                                    )}
+                                                    onClick={onEditContext}
+                                                >
+                                                    {editContextNode}
+                                                </Button>
+                                            )}
+                                            {resubmitWithRepoContext && (
+                                                <Button onClick={resubmitWithRepoContext} type="button">
+                                                    Resend with current repository context
+                                                </Button>
+                                            )}
+                                        </div>
                                         {internalDebugContext && contextAlternatives && (
                                             <div>
                                                 <button onClick={prevSelectedAlternative} type="button">
@@ -284,16 +302,6 @@ export const ContextCell: FunctionComponent<{
                                                     </Button>
                                                 </div>
                                             ) : null}
-                                            {resubmitWithRepoContext && (
-                                                <div>
-                                                    <Button
-                                                        onClick={resubmitWithRepoContext}
-                                                        type="button"
-                                                    >
-                                                        Resend with current repository context
-                                                    </Button>
-                                                </div>
-                                            )}
 
                                             {!isForFirstMessage && (
                                                 <span

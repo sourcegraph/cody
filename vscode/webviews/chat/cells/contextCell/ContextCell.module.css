@@ -21,3 +21,8 @@
     height: 20%;
     margin-right: 0.5rem;
 }
+
+.context-suggested-actions {
+    display: flex;
+    flex-wrap: wrap;
+}
