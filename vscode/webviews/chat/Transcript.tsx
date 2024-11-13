@@ -453,18 +453,16 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                     )}
                 </InfoMessage>
             )}
-            {corpusContextItems.length > 0 &&
-                !mentionsContainRepository &&
-                assistantMessage &&
-                !assistantMessage.isLoading && (
-                    <div>
-                        <Button onClick={resubmitWithRepoContext} type="button">
-                            Resend with current repository context
-                        </Button>
-                    </div>
-                )}
             {(humanMessage.contextFiles || assistantMessage || isContextLoading) && (
                 <ContextCell
+                    resubmitWithRepoContext={
+                        corpusContextItems.length > 0 &&
+                        !mentionsContainRepository &&
+                        assistantMessage &&
+                        !assistantMessage.isLoading
+                            ? resubmitWithRepoContext
+                            : undefined
+                    }
                     key={`${humanMessage.index}-${humanMessage.intent}-context`}
                     contextItems={humanMessage.contextFiles}
                     contextAlternatives={humanMessage.contextAlternatives}
@@ -476,7 +474,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                     isContextLoading={isContextLoading}
                     onAddToFollowupChat={onAddToFollowupChat}
                     onManuallyEditContext={manuallyEditContext}
-                    editContextText={
+                    editContextNode={
                         humanMessage.intent === 'search'
                             ? EditContextButtonSearch
                             : EditContextButtonChat

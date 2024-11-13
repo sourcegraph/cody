@@ -12,7 +12,7 @@ const meta: Meta<typeof ContextCell> = {
     args: {
         __storybook__initialOpen: true,
         isForFirstMessage: true,
-        editContextText: EditContextButtonChat,
+        editContextNode: EditContextButtonChat,
     },
 }
 
@@ -147,9 +147,18 @@ export const ExcludedContext: Story = {
     },
 }
 
-export const NoContext: Story = {
+export const NoContextRequested: Story = {
     args: {
         contextItems: undefined,
+        resubmitWithRepoContext: () => Promise.resolve(),
+        isForFirstMessage: true,
+        __storybook__initialOpen: true,
+    },
+}
+
+export const NoContextFound: Story = {
+    args: {
+        contextItems: [],
         isForFirstMessage: true,
         __storybook__initialOpen: true,
     },
