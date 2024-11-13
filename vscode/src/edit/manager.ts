@@ -122,7 +122,8 @@ export class EditManager implements vscode.Disposable {
         }
 
         // Set default edit configuration, if not provided
-        // It is possible that these values may be overriden later, e.g. if the user changes them in the edit input.
+        // It is possible that these values may be overridden later,
+        // e.g. if the user changes them in the edit input.
         const range = getEditLineSelection(document, proposedRange)
         const model =
             configuration.model || (await firstResultFromOperation(modelsService.getDefaultEditModel()))

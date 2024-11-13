@@ -2,6 +2,7 @@ import { Observable } from 'observable-fns'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { currentAuthStatus, mockAuthStatus } from '../auth/authStatus'
 import { AUTH_STATUS_FIXTURE_AUTHED, type AuthenticatedAuthStatus } from '../auth/types'
+import { FeatureFlag, featureFlagProvider } from '../experimentation/FeatureFlagProvider'
 import { firstValueFrom } from '../misc/observable'
 import { DOTCOM_URL } from '../sourcegraph-api/environments'
 import * as userProductSubscriptionModule from '../sourcegraph-api/userProductSubscription'
@@ -23,7 +24,8 @@ const EMPTY_MODELS_DATA: ModelsData = {
 describe('modelsService', () => {
     function modelsServiceWithModels(models: Model[]): ModelsService {
         const modelsService = new ModelsService()
-        modelsService.storage = new TestLocalStorageForModelPreferences()
+        storage = new TestLocalStorageForModelPreferences()
+        modelsService.setStorage(storage)
         // TODO(sqs)#observe: this only mocks tests that don't use modelsService.modelsChanges
         vi.spyOn(modelsService, 'models', 'get').mockReturnValue(models)
         return modelsService
@@ -52,6 +54,7 @@ describe('modelsService', () => {
 
     // Reset service
     let modelsService: ModelsService
+    let storage: TestLocalStorageForModelPreferences
     beforeEach(() => {
         modelsService = new ModelsService()
     })
@@ -157,7 +160,7 @@ describe('modelsService', () => {
 
         function modelsServiceWithModels(models: Model[]): ModelsService {
             const modelsService = new ModelsService()
-            modelsService.storage = new TestLocalStorageForModelPreferences()
+            modelsService.setStorage(new TestLocalStorageForModelPreferences())
             return modelsService
         }
 
@@ -181,8 +184,7 @@ describe('modelsService', () => {
                 Observable.of({
                     localModels: [],
                     primaryModels: [model2chat, model4edit],
-                    preferences:
-                        modelsService.storage?.getModelPreferences()[currentAuthStatus().endpoint]!,
+                    preferences: storage?.getModelPreferences()[currentAuthStatus().endpoint]!,
                 })
             )
             expect(await firstValueFrom(modelsService.getDefaultEditModel())).toBe(model4edit.id)
@@ -201,8 +203,7 @@ describe('modelsService', () => {
                 Observable.of({
                     ...EMPTY_MODELS_DATA,
                     primaryModels: [model1chat],
-                    preferences:
-                        modelsService.storage?.getModelPreferences()[currentAuthStatus().endpoint]!,
+                    preferences: storage?.getModelPreferences()[currentAuthStatus().endpoint]!,
                 })
             )
             vi.spyOn(modelsService, 'models', 'get').mockReturnValue([model1chat])
@@ -408,6 +409,85 @@ describe('modelsService', () => {
 
             expect(uncategorizedModel.tags).toHaveLength(0)
             expect(modelsService.models).toContain(uncategorizedModel)
+        })
+    })
+
+    describe('A/B test for default edit model', () => {
+        let modelsService: ModelsService
+        let storage: TestLocalStorageForModelPreferences
+        const gpt4oMiniModel = createModel({
+            id: 'gpt-4o-mini',
+            modelRef: 'openai::unknown::gpt-4o-mini',
+            usage: [ModelUsage.Edit],
+        })
+        const otherEditModel = createModel({
+            id: 'other-edit-model',
+            modelRef: 'other::unknown::other-edit-model',
+            usage: [ModelUsage.Edit],
+        })
+
+        beforeEach(() => {
+            mockAuthStatus(freeUserAuthStatus)
+            vi.spyOn(featureFlagProvider, 'evaluatedFeatureFlag').mockReturnValue(Observable.of(true))
+            vi.spyOn(userProductSubscriptionModule, 'userProductSubscription', 'get').mockReturnValue(
+                Observable.of(codyProSub)
+            )
+
+            storage = new TestLocalStorageForModelPreferences()
+        })
+
+        afterEach(() => {
+            vi.resetAllMocks()
+        })
+
+        it('sets gpt-4o-mini as default edit model for enrolled users in A/B test', async () => {
+            modelsService = new ModelsService(
+                Observable.of({
+                    primaryModels: [otherEditModel, gpt4oMiniModel],
+                    localModels: [],
+                    preferences: {
+                        defaults: { edit: otherEditModel.id },
+                        selected: { edit: otherEditModel.id },
+                    },
+                })
+            )
+            modelsService.setStorage(storage)
+
+            const defaultEditModelId = await firstValueFrom(modelsService.getDefaultEditModel())
+            expect(defaultEditModelId).toBe('gpt-4o-mini')
+
+            const prefsAfter = storage.getModelPreferences()
+            const selectedEditModel = prefsAfter[freeUserAuthStatus.endpoint]?.selected?.edit
+            expect(selectedEditModel).toBe('gpt-4o-mini')
+        })
+
+        it('does not overwrite user preferences if already enrolled', async () => {
+            storage.setModelPreferences({
+                [AUTH_STATUS_FIXTURE_AUTHED.endpoint]: {
+                    defaults: {},
+                    selected: { edit: 'other-edit-model' },
+                },
+            })
+            storage.getEnrollmentHistory(FeatureFlag.CodyEditDefaultToGpt4oMini)
+
+            modelsService = new ModelsService(
+                Observable.of({
+                    primaryModels: [otherEditModel, gpt4oMiniModel],
+                    localModels: [],
+                    preferences: {
+                        defaults: { edit: otherEditModel.id },
+                        selected: { edit: otherEditModel.id },
+                    },
+                })
+            )
+            modelsService.setStorage(storage)
+
+            const defaultEditModelId = await firstValueFrom(modelsService.getDefaultEditModel())
+            expect(defaultEditModelId).toBe('other-edit-model')
+
+            const prefsAfter = storage.getModelPreferences()
+            const selectedEditModel = prefsAfter[freeUserAuthStatus.endpoint]?.selected?.edit
+            expect(selectedEditModel).toBe('other-edit-model')
         })
     })
 })

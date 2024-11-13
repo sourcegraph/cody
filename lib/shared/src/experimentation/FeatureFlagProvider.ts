@@ -54,6 +54,9 @@ export enum FeatureFlag {
     CodyAutocompleteContextExperimentVariant4 = 'cody-autocomplete-context-experiment-variant-4',
     CodyAutocompleteContextExperimentControl = 'cody-autocomplete-context-experiment-control',
 
+    // Enables gpt-4o-mini as a default Edit model
+    CodyEditDefaultToGpt4oMini = 'cody-edit-default-to-gpt-4o-mini',
+
     // use-ssc-for-cody-subscription is a feature flag that enables the use of SSC as the source of truth for Cody subscription data.
     UseSscForCodySubscription = 'use-ssc-for-cody-subscription',
 

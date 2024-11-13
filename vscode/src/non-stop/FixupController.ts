@@ -30,7 +30,7 @@ import { PersistenceTracker } from '../common/persistence-tracker'
 import { lines } from '../completions/text-processing'
 import { type QuickPickInput, getInput } from '../edit/input/get-input'
 import { isStreamedIntent } from '../edit/utils/edit-intent'
-import { getOverridenModelForIntent } from '../edit/utils/edit-models'
+import { getOverriddenModelForIntent } from '../edit/utils/edit-models'
 import type { ExtensionClient } from '../extension-client'
 import { isRunningInsideAgent } from '../jsonrpc/isRunningInsideAgent'
 import { charactersLogger } from '../services/CharactersLogger'
@@ -499,7 +499,7 @@ export class FixupController
         taskId?: FixupTaskID
     ): Promise<FixupTask> {
         const authStatus = currentAuthStatus()
-        const overridenModel = getOverridenModelForIntent(intent, model, authStatus)
+        const overriddenModel = getOverriddenModelForIntent(intent, model, authStatus)
         const fixupFile = this.files.forUri(document.uri)
         const task = new FixupTask(
             fixupFile,
@@ -509,7 +509,7 @@ export class FixupController
             intent,
             selectionRange,
             mode,
-            overridenModel,
+            overriddenModel,
             source,
             destinationFile,
             insertionPoint,

@@ -325,7 +325,7 @@ async function initializeSingletons(
 ): Promise<void> {
     commandControllerInit(platform.createCommandsProvider?.(), platform.extensionClient.capabilities)
 
-    modelsService.storage = localStorage
+    modelsService.setStorage(localStorage)
 
     if (platform.otherInitialization) {
         disposables.push(platform.otherInitialization())
