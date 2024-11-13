@@ -24,11 +24,10 @@ fun properties(key: String) = project.findProperty(key)?.toString()
 val isForceAgentBuild = properties("forceAgentBuild") == "true"
 val isForceCodeSearchBuild = properties("forceCodeSearchBuild") == "true"
 
-// As https://www.jetbrains.com/updates/updates.xml adds a new "IntelliJ IDEA" YYYY.N version, add
-// it to this list.
-// Remove unsupported old versions from this list.
-// Update gradle.properties pluginSinceBuild, pluginUntilBuild to match the min, max versions in
-// this list.
+// As https://www.jetbrains.com/updates/updates.xml adds a new "IntelliJ IDEA" YYYY.N version,
+// add it to this list. Remove unsupported old versions from this list.
+// Update gradle.properties pluginSinceBuild, pluginUntilBuild
+// to match the min, max versions in this list.
 val versionsOfInterest = listOf("2023.2", "2023.3", "2024.1", "2024.2.4").sorted()
 val versionsToValidate =
     when (project.properties["validation"]?.toString()) {
@@ -135,16 +134,12 @@ dependencies {
   }
 
   implementation("com.typesafe:config:1.4.3")
-  implementation("org.commonmark:commonmark:0.22.0")
-  implementation("org.commonmark:commonmark-ext-gfm-tables:0.22.0")
   implementation("org.eclipse.lsp4j:org.eclipse.lsp4j.jsonrpc:0.23.1")
-  implementation("io.github.java-diff-utils:java-diff-utils:4.12")
-  testImplementation("net.java.dev.jna:jna:5.10.0")
-  testImplementation("org.awaitility:awaitility-kotlin:4.2.1")
-  testImplementation("org.mockito:mockito-core:5.12.0")
-  testImplementation("org.junit.jupiter:junit-jupiter:5.10.2")
-  testImplementation("org.jetbrains.kotlin:kotlin-test-junit:2.0.0")
-  testImplementation("org.mockito.kotlin:mockito-kotlin:5.3.1")
+  testImplementation("org.awaitility:awaitility-kotlin:4.2.2")
+  testImplementation("org.junit.jupiter:junit-jupiter:5.11.3")
+  testImplementation("org.jetbrains.kotlin:kotlin-test-junit:2.0.21")
+  testImplementation("org.mockito:mockito-core:5.14.2")
+  testImplementation("org.mockito.kotlin:mockito-kotlin:5.4.0")
 }
 
 spotless {
