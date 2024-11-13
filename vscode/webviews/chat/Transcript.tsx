@@ -456,10 +456,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
             {(humanMessage.contextFiles || assistantMessage || isContextLoading) && (
                 <ContextCell
                     resubmitWithRepoContext={
-                        corpusContextItems.length > 0 &&
-                        !mentionsContainRepository &&
-                        assistantMessage &&
-                        !assistantMessage.isLoading
+                        corpusContextItems.length > 0 && !mentionsContainRepository && assistantMessage
                             ? resubmitWithRepoContext
                             : undefined
                     }

@@ -2,7 +2,7 @@ import type { ContextItem, Model } from '@sourcegraph/cody-shared'
 import { pluralize } from '@sourcegraph/cody-shared'
 import type { RankedContext } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { clsx } from 'clsx'
-import { ArrowBigUp, AtSign, BrainIcon, MessagesSquareIcon } from 'lucide-react'
+import { BrainIcon, FilePenLine, MessagesSquareIcon } from 'lucide-react'
 import {
     type FunctionComponent,
     createContext,
@@ -212,7 +212,7 @@ export const ContextCell: FunctionComponent<{
                             ) : (
                                 <>
                                     <AccordionContent overflow={showSnippets}>
-                                        <div>
+                                        <div className={styles.contextSuggestedActions}>
                                             {contextItems && contextItems.length > 0 && (
                                                 <Button
                                                     size="sm"
@@ -227,7 +227,12 @@ export const ContextCell: FunctionComponent<{
                                                 </Button>
                                             )}
                                             {resubmitWithRepoContext && (
-                                                <Button onClick={resubmitWithRepoContext} type="button">
+                                                <Button
+                                                    size="sm"
+                                                    variant="outline"
+                                                    onClick={resubmitWithRepoContext}
+                                                    type="button"
+                                                >
                                                     Resend with current repository context
                                                 </Button>
                                             )}
@@ -418,16 +423,14 @@ const ExcludedContextWarning: React.FC<{ message: string }> = ({ message }) => (
 
 export const EditContextButtonSearch = (
     <>
-        <ArrowBigUp className="-tw-mr-6 tw-py-0" />
-        <AtSign className="-tw-mr-2 tw-py-2" />
-        <div>Edit results as mentions</div>
+        <FilePenLine size={'1em'} />
+        <div>Edit results</div>
     </>
 )
 
 export const EditContextButtonChat = (
     <>
-        <ArrowBigUp className="-tw-mr-6 tw-py-0" />
-        <AtSign className="-tw-mr-2 tw-py-2" />
-        <div>Copy and edit as mentions</div>
+        <FilePenLine size={'1em'} />
+        <div>Edit context</div>
     </>
 )
