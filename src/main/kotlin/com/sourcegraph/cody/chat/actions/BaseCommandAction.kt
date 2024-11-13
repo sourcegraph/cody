@@ -8,7 +8,7 @@ import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.project.Project
 import com.intellij.util.concurrency.AppExecutorUtil
 import com.sourcegraph.cody.agent.CodyAgentService
-import com.sourcegraph.cody.agent.protocol.ProtocolTextDocument
+import com.sourcegraph.cody.agent.protocol_extensions.ProtocolTextDocumentExt
 import com.sourcegraph.cody.agent.protocol_generated.ExecuteCommandParams
 import com.sourcegraph.cody.commands.CommandId
 import com.sourcegraph.cody.ignore.ActionInIgnoredFileNotification
@@ -31,7 +31,7 @@ abstract class BaseCommandAction : DumbAwareEDTAction() {
     CodyEditorUtil.getSelectedEditors(project).firstOrNull()?.let { editor ->
       val file = FileDocumentManager.getInstance().getFile(editor.document)
       val protocolFile =
-          file?.let { ProtocolTextDocument.fromVirtualEditorFile(editor, it) } ?: return
+          file?.let { ProtocolTextDocumentExt.fromVirtualEditorFile(editor, it) } ?: return
 
       ReadAction.nonBlocking(
               Callable { IgnoreOracle.getInstance(project).policyForUri(protocolFile.uri).get() })

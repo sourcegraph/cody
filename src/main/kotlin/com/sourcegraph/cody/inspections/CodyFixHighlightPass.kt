@@ -18,7 +18,7 @@ import com.intellij.psi.PsiFile
 import com.intellij.util.concurrency.annotations.RequiresEdt
 import com.sourcegraph.cody.agent.CodyAgentService
 import com.sourcegraph.cody.agent.intellij_extensions.codyRange
-import com.sourcegraph.cody.agent.protocol.ProtocolTextDocument.Companion.uriFor
+import com.sourcegraph.cody.agent.protocol_extensions.ProtocolTextDocumentExt
 import com.sourcegraph.cody.agent.protocol_generated.CodeActions_ProvideParams
 import com.sourcegraph.cody.agent.protocol_generated.Diagnostics_PublishParams
 import com.sourcegraph.cody.agent.protocol_generated.ProtocolDiagnostic
@@ -41,7 +41,7 @@ class CodyFixHighlightPass(val file: PsiFile, val editor: Editor) :
       // wait until after code-analysis is completed
       return
     }
-    val uri = uriFor(file.virtualFile)
+    val uri = ProtocolTextDocumentExt.uriFor(file.virtualFile)
 
     myRangeActions.clear()
 

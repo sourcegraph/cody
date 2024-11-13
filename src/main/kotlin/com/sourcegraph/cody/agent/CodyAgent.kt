@@ -9,6 +9,7 @@ import com.intellij.openapi.util.SystemInfoRt
 import com.intellij.util.net.HttpConfigurable
 import com.intellij.util.system.CpuArch
 import com.sourcegraph.cody.agent.protocol.*
+import com.sourcegraph.cody.agent.protocol_extensions.ProtocolTextDocumentExt
 import com.sourcegraph.cody.agent.protocol_generated.ClientCapabilities
 import com.sourcegraph.cody.agent.protocol_generated.ClientInfo
 import com.sourcegraph.cody.agent.protocol_generated.ProtocolTypeAdapters
@@ -115,7 +116,7 @@ private constructor(
                       version = ConfigUtil.getPluginVersion(),
                       ideVersion = ApplicationInfo.getInstance().build.toString(),
                       workspaceRootUri =
-                          ProtocolTextDocument.normalizeUriOrPath(
+                          ProtocolTextDocumentExt.normalizeUriOrPath(
                               ConfigUtil.getWorkspaceRootPath(project).toUri().toString()),
                       extensionConfiguration = ConfigUtil.getAgentConfiguration(project),
                       capabilities =

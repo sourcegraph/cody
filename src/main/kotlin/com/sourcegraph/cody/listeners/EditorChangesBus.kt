@@ -1,7 +1,7 @@
 package com.sourcegraph.cody.listeners
 
 import com.intellij.openapi.project.Project
-import com.sourcegraph.cody.agent.protocol.ProtocolTextDocument
+import com.sourcegraph.cody.agent.protocol_generated.ProtocolTextDocument
 
 typealias EditorChangesListener = (project: Project?, textDocument: ProtocolTextDocument) -> Unit
 

@@ -12,7 +12,7 @@ import com.intellij.util.containers.SLRUMap
 import com.sourcegraph.cody.agent.CodyAgent
 import com.sourcegraph.cody.agent.CodyAgentService
 import com.sourcegraph.cody.agent.protocol.IgnoreTestParams
-import com.sourcegraph.cody.agent.protocol.ProtocolTextDocument
+import com.sourcegraph.cody.agent.protocol_extensions.ProtocolTextDocumentExt
 import com.sourcegraph.cody.statusbar.CodyStatusService
 import com.sourcegraph.utils.CodyEditorUtil
 import java.util.concurrent.CompletableFuture
@@ -46,7 +46,7 @@ class IgnoreOracle(private val project: Project) {
     runInEdt {
       CodyEditorUtil.getSelectedEditors(project).forEach { editor ->
         if (willFocusUri == null) {
-          val uri = ProtocolTextDocument.fromEditor(editor)?.uri
+          val uri = ProtocolTextDocumentExt.fromEditor(editor)?.uri
           if (uri != null) {
             focusedFileDidChange(uri)
           }
