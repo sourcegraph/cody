@@ -6,6 +6,14 @@ This is a log of all notable changes to Cody for VS Code. [Unreleased] changes a
 
 ### Added
 
+### Fixed
+
+### Changed
+
+## 1.42.0
+
+### Added
+
 - Autocomplete: Enabled completions preloading on cursor movement. [pull/6043](https://github.com/sourcegraph/cody/pull/6043)
 - Telemetry: Added `cody.debug.logCharacterCounters` for debugging. [pull/6057](https://github.com/sourcegraph/cody/pull/6057)
 
