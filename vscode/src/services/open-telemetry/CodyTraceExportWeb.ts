@@ -116,8 +116,8 @@ export class CodyTraceExporterWeb extends OTLPTraceExporter {
             
             saveToLocalStorage(safeData)
             getVSCodeAPI().postMessage({
-                command: "trace-exporter",
-                myspan: safeData
+                command: "trace-export",
+                traceSpan: safeData
             })
         } catch (error) {
             console.error('[CodyTraceExporterWeb] Error exporting spans:', error)

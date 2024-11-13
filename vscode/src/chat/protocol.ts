@@ -97,8 +97,8 @@ export type WebviewMessage =
           fileName?: string | undefined | null
       }
     | {
-          command: 'trace-exporter'
-          myspan: string
+          command: 'trace-export'
+          traceSpan: string
       }
     | {
           command: 'smartApplyAccept'

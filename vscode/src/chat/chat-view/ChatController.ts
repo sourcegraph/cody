@@ -18,8 +18,6 @@ import {
 } from '@sourcegraph/cody-shared'
 import * as uuid from 'uuid'
 import * as vscode from 'vscode'
-import fetch from 'node-fetch'
-
 import {
     type BillingCategory,
     type BillingProduct,
@@ -140,6 +138,7 @@ import { getChatPanelTitle } from './chat-helpers'
 import { type HumanInput, getPriorityContext } from './context'
 import { DefaultPrompter, type PromptInfo } from './prompt'
 import { getPromptsMigrationInfo, startPromptsMigration } from './prompts-migration'
+import { TraceSender } from '../../services/open-telemetry/trace-sender'
 
 export interface ChatControllerOptions {
     extensionUri: vscode.Uri
@@ -326,8 +325,8 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     message.fileName
                 )
                 break
-            case 'trace-exporter':
-                await this.sendTraceData(message.myspan)
+            case 'trace-export':
+                await TraceSender.send(message.traceSpan)
                 break
             case 'smartApplyAccept':
                 await vscode.commands.executeCommand('cody.fixup.codelens.accept', message.id)
@@ -500,6 +499,10 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 break
             }
         }
+    }
+
+    private sendTraceData(spanData: any): void {
+        TraceSender.send(spanData)
     }
 
     private isSmartApplyEnabled(): boolean {
@@ -1814,35 +1817,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         return this.webviewPanelOrView?.visible ?? false
     }
 
-    private async sendTraceData(spanData: any): Promise<void> {
-        try {
-            const { auth } = await currentResolvedConfig()
-            if (!auth.accessToken) {
-                logError('ChatController', 'Cannot send trace data: not authenticated')
-                return
-            }
-
-            // Build trace URL the same way OpenTelemetryService does
-            const traceUrl = new URL('/-/debug/otlp/v1/traces', auth.serverEndpoint).toString()
-            
-            const response = await fetch(traceUrl, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    ...(auth.accessToken ? { 'Authorization': `token ${auth.accessToken}` } : {})
-                },
-                body: spanData
-            })
-
-            if (!response.ok) {
-                throw new Error(`Failed to send trace data: ${response.statusText}`)
-            }
-
-            logDebug('ChatController', 'Trace data sent successfully')
-        } catch (error) {
-            logError('ChatController', `Error sending trace data: ${error}`)
-        }
-    }
 }
 
 function newChatModelFromSerializedChatTranscript(
