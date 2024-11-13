@@ -1,0 +1,29 @@
+[package]
+edition = "2021"
+name = "noxide"
+version = "1.0.0"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+# Default enable napi4 feature, see https://nodejs.org/api/n-api.html#node-api-version-matrix
+napi = { version = "2", default-features = false, features = [
+    "napi4",
+    "tokio_rt",
+] }
+napi-derive = "2"
+tokio = { version = "1.40.0", features = ["full", "net"] }
+rustls-native-certs = "0.8.0"
+sysproxy = "0.3.0"
+log = "0.4.22"
+parking_lot = "0.12.3"
+bytes = "1.7.2"
+educe = "0.6.0"
+lazy_static = "1.5.0"
+system_proxy = "0.3.2"
+pem = "3.0.4"
+tracing = { version = "0.1.40", features = ["log-always"] }
+
+[build-dependencies]
+napi-build = "2"

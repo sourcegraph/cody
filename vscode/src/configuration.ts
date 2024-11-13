@@ -122,7 +122,7 @@ export function getConfiguration(
             false
         ),
         experimentalMinionAnthropicKey: getHiddenSetting('experimental.minion.anthropicKey', undefined),
-
+        experimentalNoxideEnabled: getHiddenSetting('experimental.noxide.enabled', true),
         experimentalGuardrailsTimeoutSeconds: getHiddenSetting('experimental.guardrailsTimeoutSeconds'),
 
         autocompleteExperimentalOllamaOptions: getHiddenSetting(

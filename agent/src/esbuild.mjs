@@ -35,7 +35,6 @@ async function verifyShim() {
             // during dev.
             '@sourcegraph/cody-shared': '@sourcegraph/cody-shared/src/index',
             '@sourcegraph/cody-shared/src': '@sourcegraph/cody-shared/src',
-
             lexical: path.resolve(process.cwd(), '../vscode/build/lexical-package-fix'),
         },
     }
@@ -66,6 +65,9 @@ async function buildAgent() {
             '@sourcegraph/cody-shared': '@sourcegraph/cody-shared/src/index',
             '@sourcegraph/cody-shared/src': '@sourcegraph/cody-shared/src',
         },
+        loader: {
+            '.node': 'copy',
+        },
     }
     await build(esbuildOptions)
 
@@ -73,9 +75,12 @@ async function buildAgent() {
     const distDir = path.join(process.cwd(), '..', 'vscode', 'dist')
     const files = await fs.readdir(distDir)
     for (const file of files) {
+        //TODO: Handle this based on the vscodeignore because it's very easy to
+        //miss that this should be updated
         const shouldCopyFile =
             file.indexOf('/webviews/') !== -1 ||
             file.endsWith('.wasm') ||
+            file.endsWith('.node') ||
             file.endsWith('win-ca-roots.exe')
         if (!shouldCopyFile) {
             continue
