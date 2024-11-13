@@ -5,10 +5,10 @@ import com.intellij.openapi.Disposable
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.project.Project
 import com.sourcegraph.cody.agent.CodyAgentService
-import com.sourcegraph.cody.agent.protocol.CurrentUserCodySubscription
 import com.sourcegraph.cody.agent.protocol.GetFeatureFlag
-import com.sourcegraph.cody.agent.protocol.Plan
-import com.sourcegraph.cody.agent.protocol.Status
+import com.sourcegraph.cody.agent.protocol_extensions.isPendingStatus
+import com.sourcegraph.cody.agent.protocol_extensions.isProPlan
+import com.sourcegraph.cody.agent.protocol_generated.CurrentUserCodySubscription
 import com.sourcegraph.cody.config.CodyAuthenticationManager
 import com.sourcegraph.config.ConfigUtil
 import java.util.concurrent.Executors
@@ -38,7 +38,7 @@ class EndOfTrialNotificationScheduler private constructor(val project: Project) 
           CodyAgentService.withAgentRestartIfNeeded(project) { agent ->
             val currentUserCodySubscription =
                 agent.server
-                    .getCurrentUserCodySubscription()
+                    .graphql_getCurrentUserCodySubscription(null)
                     .completeOnTimeout(null, 4, TimeUnit.SECONDS)
                     .exceptionally { e ->
                       logger.warn("Error while getting currentUserCodySubscription ", e)
@@ -53,13 +53,13 @@ class EndOfTrialNotificationScheduler private constructor(val project: Project) 
 
             val codyProTrialEnded =
                 agent.server
-                    .evaluateFeatureFlag(GetFeatureFlag.CodyProTrialEnded)
+                    .featureFlags_getFeatureFlag(GetFeatureFlag.CodyProTrialEnded)
                     .completeOnTimeout(false, 4, TimeUnit.SECONDS)
                     .get() == true
 
             val useSscForCodySubscription =
                 agent.server
-                    .evaluateFeatureFlag(GetFeatureFlag.UseSscForCodySubscription)
+                    .featureFlags_getFeatureFlag(GetFeatureFlag.UseSscForCodySubscription)
                     .orTimeout(4, TimeUnit.SECONDS)
                     .completeOnTimeout(false, 4, TimeUnit.SECONDS)
                     .get() == true
@@ -78,8 +78,8 @@ class EndOfTrialNotificationScheduler private constructor(val project: Project) 
       codyProTrialEnded: Boolean,
       useSscForCodySubscription: Boolean
   ) {
-    if (currentUserCodySubscription.plan == Plan.PRO &&
-        currentUserCodySubscription.status == Status.PENDING &&
+    if (currentUserCodySubscription.isProPlan() &&
+        currentUserCodySubscription.isPendingStatus() &&
         useSscForCodySubscription) {
       if (codyProTrialEnded) {
         if (PropertiesComponent.getInstance().getBoolean(TrialEndedNotification.ignore)) {

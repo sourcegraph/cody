@@ -1,8 +1,8 @@
 package com.sourcegraph.cody.agent.protocol
 
-data class GetFeatureFlag(val flagName: String) {
-  companion object {
-    val UseSscForCodySubscription = GetFeatureFlag("UseSscForCodySubscription")
-    val CodyProTrialEnded = GetFeatureFlag("CodyProTrialEnded")
-  }
+import com.sourcegraph.cody.agent.protocol_generated.FeatureFlags_GetFeatureFlagParams
+
+object GetFeatureFlag {
+  val UseSscForCodySubscription = FeatureFlags_GetFeatureFlagParams("UseSscForCodySubscription")
+  val CodyProTrialEnded = FeatureFlags_GetFeatureFlagParams("CodyProTrialEnded")
 }
