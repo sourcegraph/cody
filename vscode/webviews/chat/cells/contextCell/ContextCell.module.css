@@ -10,7 +10,8 @@
 }
 
 .context-item-edit-button {
-    display: flex;
+    /* display: flex; */
+    display: none;
     align-items: center;
 
     flex-wrap: nowrap;
