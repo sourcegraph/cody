@@ -219,18 +219,18 @@ export class AutoEditsRenderer implements vscode.Disposable {
     }
 
     public renderDecorations(options: AutoEditsRendererOptions): void {
-        const beforeLines = lines(options.currentFileText)
-        const afterLines = lines(options.predictedFileText)
-        const { modifiedLines, removedLines, addedLines } = getLineLevelDiff(beforeLines, afterLines)
-        const beforeLineChunks = beforeLines.map(line => splitLineIntoChunks(line))
-        const afterLineChunks = afterLines.map(line => splitLineIntoChunks(line))
+        const oldLines = lines(options.currentFileText)
+        const newLines = lines(options.predictedFileText)
+        const { modifiedLines, removedLines, addedLines } = getLineLevelDiff(oldLines, newLines)
+        const oldLinesChunks = oldLines.map(line => splitLineIntoChunks(line))
+        const newLinesChunks = newLines.map(line => splitLineIntoChunks(line))
 
         let isOnlyAdditionsForModifiedLines = true
         const modifiedRangesMapping = new Map<number, ModifiedRange[]>()
         for (const modifiedLine of modifiedLines) {
             const modifiedRanges = getModifiedRangesForLine(
-                beforeLineChunks[modifiedLine.beforeNumber],
-                afterLineChunks[modifiedLine.afterNumber]
+                oldLinesChunks[modifiedLine.beforeNumber],
+                newLinesChunks[modifiedLine.afterNumber]
             )
             modifiedRangesMapping.set(modifiedLine.beforeNumber, modifiedRanges)
             if (isOnlyAdditionsForModifiedLines) {
@@ -240,8 +240,8 @@ export class AutoEditsRenderer implements vscode.Disposable {
             }
         }
         this.addDecorations(
-            beforeLineChunks,
-            afterLineChunks,
+            oldLinesChunks,
+            newLinesChunks,
             removedLines,
             addedLines,
             modifiedLines,
@@ -258,8 +258,8 @@ export class AutoEditsRenderer implements vscode.Disposable {
      * 3. Added lines: Show Inline decoration with "green" marker indicating additions
      */
     private addDecorations(
-        beforeLinesChunks: string[][],
-        afterLinesChunks: string[][],
+        oldLinesChunks: string[][],
+        newLinesChunks: string[][],
         removedLines: number[],
         addedLines: number[],
         modifiedLines: ModifiedLine[],
@@ -272,16 +272,16 @@ export class AutoEditsRenderer implements vscode.Disposable {
 
         if (addedLines.length > 0 || !isOnlyAdditionsForModifiedLines) {
             this.renderDiffDecorations(
-                beforeLinesChunks,
-                afterLinesChunks,
+                oldLinesChunks,
+                newLinesChunks,
                 modifiedLines,
                 modifiedRangesMapping,
                 addedLines
             )
         } else {
             this.renderInlineGhostTextDecorations(
-                beforeLinesChunks,
-                afterLinesChunks,
+                oldLinesChunks,
+                newLinesChunks,
                 modifiedLines,
                 modifiedRangesMapping
             )
@@ -289,8 +289,8 @@ export class AutoEditsRenderer implements vscode.Disposable {
     }
 
     private renderDiffDecorations(
-        beforeLinesChunks: string[][],
-        afterLinesChunks: string[][],
+        oldLinesChunks: string[][],
+        newLinesChunks: string[][],
         modifiedLines: ModifiedLine[],
         modifiedRangesMapping: Map<number, ModifiedRange[]>,
         addedLines: number[]
@@ -315,11 +315,11 @@ export class AutoEditsRenderer implements vscode.Disposable {
                 // Removed from the original text
                 if (range.to1 > range.from1) {
                     const startRange = this.getIndexFromLineChunks(
-                        beforeLinesChunks[modifiedLine.beforeNumber],
+                        oldLinesChunks[modifiedLine.beforeNumber],
                         range.from1
                     )
                     const endRange = this.getIndexFromLineChunks(
-                        beforeLinesChunks[modifiedLine.beforeNumber],
+                        oldLinesChunks[modifiedLine.beforeNumber],
                         range.to1
                     )
                     removedRanges.push(
@@ -334,11 +334,11 @@ export class AutoEditsRenderer implements vscode.Disposable {
                 // Addition from the predicted text
                 if (range.to2 > range.from2) {
                     const startRange = this.getIndexFromLineChunks(
-                        afterLinesChunks[modifiedLine.afterNumber],
+                        newLinesChunks[modifiedLine.afterNumber],
                         range.from2
                     )
                     const endRange = this.getIndexFromLineChunks(
-                        afterLinesChunks[modifiedLine.afterNumber],
+                        newLinesChunks[modifiedLine.afterNumber],
                         range.to2
                     )
                     addedRanges.push([startRange, endRange])
@@ -352,7 +352,7 @@ export class AutoEditsRenderer implements vscode.Disposable {
                 addedLinesInfo.push({
                     ranges: addedRanges,
                     afterLine: modifiedLine.afterNumber,
-                    lineText: afterLinesChunks[modifiedLine.afterNumber].join(''),
+                    lineText: newLinesChunks[modifiedLine.afterNumber].join(''),
                 })
             }
         }
@@ -360,7 +360,7 @@ export class AutoEditsRenderer implements vscode.Disposable {
 
         // Handle fully added lines
         for (const addedLine of addedLines) {
-            const addedLineText = afterLinesChunks[addedLine].join('')
+            const addedLineText = newLinesChunks[addedLine].join('')
             addedLinesInfo.push({
                 ranges: [[0, addedLineText.length]],
                 afterLine: addedLine,
@@ -378,7 +378,7 @@ export class AutoEditsRenderer implements vscode.Disposable {
                 addedLinesInfo.push({
                     ranges: [],
                     afterLine: i,
-                    lineText: afterLinesChunks[i].join(''),
+                    lineText: newLinesChunks[i].join(''),
                 })
             }
         }
@@ -396,7 +396,7 @@ export class AutoEditsRenderer implements vscode.Disposable {
         }
 
         const replacerCol = Math.max(
-            ...beforeLinesChunks
+            ...oldLinesChunks
                 .slice(startLine, startLine + addedLinesInfo.length)
                 .map(line => line.join('').length)
         )
