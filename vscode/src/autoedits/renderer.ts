@@ -425,6 +425,7 @@ export class AutoEditsRenderer implements vscode.Disposable {
                                 '\u00A0'.repeat(3) +
                                 replaceLeadingChars(decoration.lineText, ' ', '\u00A0'),
                             margin: `0 0 0 ${replacerCol - line.range.end.character}ch`,
+                            textDecoration: 'none; position: absolute;',
                         },
                     },
                 })
@@ -435,6 +436,7 @@ export class AutoEditsRenderer implements vscode.Disposable {
                         before: {
                             contentText:
                                 '\u00A0' + replaceLeadingChars(decoration.lineText, ' ', '\u00A0'),
+                            textDecoration: 'none; position: absolute;',
                         },
                     },
                 })
@@ -478,6 +480,7 @@ export class AutoEditsRenderer implements vscode.Disposable {
                     renderOptions: {
                         before: {
                             contentText: rangeText,
+                            textDecoration: 'none; position: absolute;',
                         },
                     },
                 })
