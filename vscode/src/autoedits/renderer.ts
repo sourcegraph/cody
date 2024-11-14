@@ -244,9 +244,6 @@ export class AutoEditsRenderer implements vscode.Disposable {
                 isOnlyAdditionsForModifiedLines = modifiedRanges.every(
                     range => range.from1 === range.to1
                 )
-                if (!isOnlyAdditionsForModifiedLines) {
-                    break
-                }
             }
         }
         this.addDecorations(
