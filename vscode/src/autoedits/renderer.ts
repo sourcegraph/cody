@@ -409,6 +409,8 @@ export class AutoEditsRenderer implements vscode.Disposable {
         startLine: number,
         replacerCol: number
     ): void {
+        removeLeadingWhitespaceBlock(addedLinesInfo)
+
         const replacerDecorations: vscode.DecorationOptions[] = []
 
         for (let i = 0; i < addedLinesInfo.length; i++) {
@@ -520,4 +522,41 @@ function replaceLeadingChars(str: string, oldS: string, newS: string): string {
         }
     }
     return str
+}
+
+function removeLeadingWhitespaceBlock(addedLines: AddedLinesDecorationInfo[]) {
+    let leastCommonWhitespacePrefix: undefined | string = undefined
+    for (const addedLine of addedLines) {
+        const leadingWhitespaceMatch = addedLine.lineText.match(/^\s*/)
+        if (leadingWhitespaceMatch === null) {
+            leastCommonWhitespacePrefix = ''
+            break
+        }
+        const leadingWhitespace = leadingWhitespaceMatch[0]
+        if (leastCommonWhitespacePrefix === undefined) {
+            leastCommonWhitespacePrefix = leadingWhitespace
+            continue
+        }
+        // get common prefix of leastCommonWhitespacePrefix and leadingWhitespace
+        leastCommonWhitespacePrefix = getCommonPrefix(leastCommonWhitespacePrefix, leadingWhitespace)
+    }
+    if (!leastCommonWhitespacePrefix) {
+        return
+    }
+    for (const addedLine of addedLines) {
+        addedLine.lineText = addedLine.lineText.replace(leastCommonWhitespacePrefix, '')
+    }
+}
+
+function getCommonPrefix(s1: string, s2: string): string {
+    const minLength = Math.min(s1.length, s2.length)
+    let commonPrefix = ''
+    for (let i = 0; i < minLength; i++) {
+        if (s1[i] === s2[i]) {
+            commonPrefix += s1[i]
+        } else {
+            break
+        }
+    }
+    return commonPrefix
 }
