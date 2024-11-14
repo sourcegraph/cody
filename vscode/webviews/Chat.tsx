@@ -92,7 +92,10 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     const copyButtonOnSubmit = useCallback(
         (text: string, eventType: 'Button' | 'Keydown' = 'Button') => {
             const op = 'copy'
+            // remove the additional /n added by the text area at the end of the text
+
             const code = eventType === 'Button' ? text.replace(/\n$/, '') : text
+            // Log the event type and text to telemetry in chat view
 
             vscodeAPI.postMessage({
                 command: op,
@@ -107,9 +110,11 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
         if (showIDESnippetActions) {
             return (text: string, newFile = false) => {
                 const op = newFile ? 'newFile' : 'insert'
+                // Log the event type and text to telemetry in chat view
 
                 vscodeAPI.postMessage({
                     command: op,
+                    // remove the additional /n added by the text area at the end of the text
                     text: text.replace(/\n$/, ''),
                 })
             }
