@@ -2,7 +2,7 @@ import type { ExportResult } from '@opentelemetry/core'
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http'
 import type { ReadableSpan } from '@opentelemetry/sdk-trace-base'
 import { getVSCodeAPI } from '../../../webviews/utils/VSCodeApi'
-const MAX_TRACE_RETAIN_MS = 60 * 1000
+const MAX_TRACE_RETAIN_MS = 60 * 1000 * 5 // 5 minutes
 
 export class CodyTraceExporterWeb extends OTLPTraceExporter {
     private isTracingEnabled = false
