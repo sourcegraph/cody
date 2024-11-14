@@ -19,7 +19,7 @@ export default defineProjectWithDefaults(__dirname, {
         sourcemap: false,
         reportCompressedSize: false,
         rollupOptions: {
-            external: ['node:https'],
+            external: ['node:https', 'vscode'],
             watch: {
                 include: ['**'],
                 exclude: [__dirname + '/../node_modules', __dirname + '/../src'],
