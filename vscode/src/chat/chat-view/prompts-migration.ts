@@ -122,7 +122,7 @@ export async function startPromptsMigration(): Promise<void> {
     for (let index = 0; index < commandsToMigrate.length; index++) {
         try {
             const command = commandsToMigrate[index]
-            const commandKey = (command.key ?? command.slashCommand).replace(/\s+/g, '-')
+            const commandKey = getPromptNameFromCommandKey(command.key ?? command.slashCommand)
             const promptText = generatePromptTextFromCommand(command)
 
             // skip commands with no prompt text
@@ -201,4 +201,28 @@ function generatePromptTextFromCommand(command: CodyCommand): string {
     }
 
     return promptText
+}
+
+/**
+ * Generates proper prompt name according to prompt name validation constraints
+ * Commands key since it's just a JSON field can have any arbitrary sequence of
+ * symbols, prompt name has specific constraints.
+ *
+ * Try/catch expression need here in order to be fail-safe since some older browsers
+ * don't support negative lookahead regexp.
+ *
+ * Example Hello123.wo--rld test@@special will become Hello123-wo-rld-test-special
+ */
+function getPromptNameFromCommandKey(commandKey: string): string {
+    try {
+        return (
+            commandKey
+                // Replace all non supported symbols with single "-" symbol
+                .replaceAll(/(?![\dA-Za-z](?:[\dA-Za-z]|[.-](?=[\dA-Za-z]))*-?)[^-]/g, '-')
+                .replaceAll(/-{2,}/g, '-')
+        )
+    } catch {
+        // Fallback on simple whitespace replacements
+        return commandKey.replaceAll(/\s+/g, '-')
+    }
 }
