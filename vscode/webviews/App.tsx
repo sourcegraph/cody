@@ -1,7 +1,5 @@
-import { type ComponentProps, useCallback, useEffect, useMemo, useState, createContext } from 'react'
+import { type ComponentProps, createContext, useCallback, useEffect, useMemo, useState } from 'react'
 
-import styles from './App.module.css'
-import { WebviewOpenTelemetryService } from './utils/telemetryService'
 import {
     type ChatMessage,
     type DefaultContext,
@@ -10,9 +8,11 @@ import {
     type TelemetryRecorder,
 } from '@sourcegraph/cody-shared'
 import type { AuthMethod } from '../src/chat/protocol'
+import styles from './App.module.css'
 import { AuthPage } from './AuthPage'
 import { LoadingPage } from './LoadingPage'
 import { useClientActionDispatcher } from './client/clientState'
+import { WebviewOpenTelemetryService } from './utils/telemetryService'
 
 import { ExtensionAPIProviderFromVSCodeAPI } from '@sourcegraph/prompt-editor'
 import { CodyPanel } from './CodyPanel'
@@ -23,7 +23,9 @@ import { updateDisplayPathEnvInfoForWebview } from './utils/displayPathEnvInfo'
 import { TelemetryRecorderContext, createWebviewTelemetryRecorder } from './utils/telemetry'
 import { type Config, ConfigProvider } from './utils/useConfig'
 
-export const TelemetryServiceContext = createContext<WebviewOpenTelemetryService>(new WebviewOpenTelemetryService())
+export const TelemetryServiceContext = createContext<WebviewOpenTelemetryService>(
+    new WebviewOpenTelemetryService()
+)
 
 export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vscodeAPI }) => {
     // Add this near the top with other state declarations
@@ -230,11 +232,11 @@ export function getAppWrappers({
 }: GetAppWrappersOptions): Wrapper[] {
     // Initialize telemetry service
     const telemetryService = new WebviewOpenTelemetryService()
-    
-        telemetryService.configure({
-            isTracingEnabled:true,
-            debugVerbose: true
-        })
+
+    telemetryService.configure({
+        isTracingEnabled: true,
+        debugVerbose: true,
+    })
     return [
         {
             provider: TelemetryRecorderContext.Provider,

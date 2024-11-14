@@ -70,18 +70,19 @@ export class CodyTraceExporterWeb extends OTLPTraceExporter {
             }
 
             // Check if group has all required spans
-            const hasRenderSpan = Array.from(spanGroup).some(span => 
-                span.name === 'assistant-message-render'
+            const hasRenderSpan = Array.from(spanGroup).some(
+                span => span.name === 'assistant-message-render'
             )
-            const hasCompletedRender = Array.from(spanGroup).some(span =>
-                span.name === 'assistant-message-render' && 
-                span.attributes['render.state'] === 'completed'
+            const hasCompletedRender = Array.from(spanGroup).some(
+                span =>
+                    span.name === 'assistant-message-render' &&
+                    span.attributes['render.state'] === 'completed'
             )
 
             if (hasRenderSpan && hasCompletedRender) {
                 // Add all spans from complete groups
                 spansToExport.push(...spanGroup)
-                
+
                 // Remove these spans from queued spans if present
                 for (const span of spanGroup) {
                     this.queuedSpans.delete(span.spanContext().spanId)
@@ -107,17 +108,17 @@ export class CodyTraceExporterWeb extends OTLPTraceExporter {
         try {
             const exportData = this.convert(spans)
             const safeData = JSON.stringify(exportData, getCircularReplacer())
-            
+
             console.log('[CodyTraceExporterWeb] Exporting spans:', {
                 count: spans.length,
                 rootSpans: spans.filter(s => !s.parentSpanId).length,
-                renderSpans: spans.filter(s => s.name === 'assistant-message-render').length
+                renderSpans: spans.filter(s => s.name === 'assistant-message-render').length,
             })
-            
+
             saveToLocalStorage(safeData)
             getVSCodeAPI().postMessage({
-                command: "trace-export",
-                traceSpan: safeData
+                command: 'trace-export',
+                traceSpan: safeData,
             })
         } catch (error) {
             console.error('[CodyTraceExporterWeb] Error exporting spans:', error)
@@ -141,20 +142,19 @@ function isRootSampled(rootSpan: ReadableSpan): boolean {
 }
 
 function getCircularReplacer() {
-    const seen = new WeakSet();
+    const seen = new WeakSet()
     return (key: string, value: any) => {
-        if (typeof value === "object" && value !== null) {
+        if (typeof value === 'object' && value !== null) {
             if (seen.has(value)) {
-                return;
+                return
             }
-            seen.add(value);
+            seen.add(value)
         }
-        return value;
-    };
+        return value
+    }
 }
 
-function saveToLocalStorage(data: string, key: string = 'myData') {
-    localStorage.setItem(key, data);
-    console.log(`[CodyTraceExporterWeb] Data has been saved to localStorage with key: ${key}`);
+function saveToLocalStorage(data: string, key = 'myData') {
+    localStorage.setItem(key, data)
+    console.log(`[CodyTraceExporterWeb] Data has been saved to localStorage with key: ${key}`)
 }
-

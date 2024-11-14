@@ -45,7 +45,7 @@ import { HumanMessageCell } from './cells/messageCell/human/HumanMessageCell'
 import { CodyIcon } from './components/CodyIcon'
 import { InfoMessage } from './components/InfoMessage'
 
-import { trace, SpanStatusCode, Span, Context, context } from '@opentelemetry/api'
+import { type Context, type Span, SpanStatusCode, context, trace } from '@opentelemetry/api'
 interface TranscriptProps {
     activeChatContext?: Context
     setActiveChatContext: (context: Context | undefined) => void
@@ -266,10 +266,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
         | null
     >()
 
-    const {
-        activeChatContext,
-        setActiveChatContext,
-    } = props
+    const { activeChatContext, setActiveChatContext } = props
     const humanEditorRef = useRef<PromptEditorRefAPI | null>(null)
     useImperativeHandle(parentEditorRef, () => humanEditorRef.current)
 
@@ -305,7 +302,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
 
         return debounce(async (editorValue: SerializedPromptEditorValue) => {
             const tracer = trace.getTracer('cody-webview')
-            
+
             // End previous span if it exists
             if (currentSpan) {
                 currentSpan.end()
@@ -317,20 +314,22 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                 return
             }
 
-            if (!editorValue.contextItems.find(contextItem =>
-                ['repository', 'tree'].includes(contextItem.type)
-            )) {
+            if (
+                !editorValue.contextItems.find(contextItem =>
+                    ['repository', 'tree'].includes(contextItem.type)
+                )
+            ) {
                 return
             }
 
             // Capture the current active context
             const currentContext = context.active()
-            
-            return tracer.startActiveSpan('detect-intent', async (span) => {
+
+            return tracer.startActiveSpan('detect-intent', async span => {
                 currentSpan = span
                 try {
                     setIntentResults(undefined)
-                    
+
                     span.setAttributes({
                         'intent.detection.triggered': true,
                         'editor.text.length': editorValue.text.length,
@@ -340,7 +339,9 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                     context.with(currentContext, () => {
                         const subscription = extensionAPI
                             .detectIntent(
-                                inputTextWithoutContextChipsFromPromptEditorState(editorValue.editorState)
+                                inputTextWithoutContextChipsFromPromptEditorState(
+                                    editorValue.editorState
+                                )
                             )
                             .subscribe({
                                 next: value => {
@@ -355,12 +356,13 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                                 error: error => {
                                     span.setStatus({
                                         code: SpanStatusCode.ERROR,
-                                        message: error instanceof Error ? error.message : 'Unknown error',
+                                        message:
+                                            error instanceof Error ? error.message : 'Unknown error',
                                     })
                                     span.recordException(error as Error)
                                     span.end()
                                     currentSpan = undefined
-                                }
+                                },
                             })
 
                         // Clean up subscription if component unmounts
@@ -413,19 +415,19 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                     renderStartTime.current = Date.now()
                     renderSpan.current = tracer.startSpan('assistant-message-render', {
                         attributes: {
-                            'sampled': true,
+                            sampled: true,
                             'render.state': 'started',
                             'message.index': assistantMessage.index,
                             'render.start_time': renderStartTime.current,
-                            'parent.span.id': trace.getSpan(activeChatContext)?.spanContext().spanId
-                        }
+                            'parent.span.id': trace.getSpan(activeChatContext)?.spanContext().spanId,
+                        },
                     })
 
                     // Start the time-to-first-token span immediately when loading starts
                     timeToFirstTokenSpan.current = tracer.startSpan('time-to-first-token', {
                         attributes: {
-                            'message.index': assistantMessage.index
-                        }
+                            'message.index': assistantMessage.index,
+                        },
                     })
                 })
             } else if (!assistantMessage.isLoading && renderSpan.current) {
@@ -434,7 +436,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                     'render.state': 'completed',
                     'render.success': !assistantMessage.error,
                     'message.length': assistantMessage.text?.length ?? 0,
-                    'render.total_time': Date.now() - (renderStartTime.current ?? Date.now())
+                    'render.total_time': Date.now() - (renderStartTime.current ?? Date.now()),
                 })
                 renderSpan.current.end()
                 renderSpan.current = undefined
@@ -449,27 +451,32 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                     if (rootSpan) {
                         rootSpan.setAttributes({
                             'chat.completed': true,
-                            'chat.total_time': Date.now() - (renderStartTime.current ?? Date.now())
+                            'chat.total_time': Date.now() - (renderStartTime.current ?? Date.now()),
                         })
                         rootSpan.end()
                     }
                     setActiveChatContext(undefined)
                 }
-            } else if (assistantMessage.text && !hasRecordedFirstToken.current && timeToFirstTokenSpan.current && renderStartTime.current) {
+            } else if (
+                assistantMessage.text &&
+                !hasRecordedFirstToken.current &&
+                timeToFirstTokenSpan.current &&
+                renderStartTime.current
+            ) {
                 // End the time-to-first-token span when first token appears
                 const timeToFirstToken = Date.now() - renderStartTime.current
                 timeToFirstTokenSpan.current.setAttributes({
-                    'time.to.first.token': timeToFirstToken
+                    'time.to.first.token': timeToFirstToken,
                 })
                 timeToFirstTokenSpan.current.end()
                 timeToFirstTokenSpan.current = undefined
                 hasRecordedFirstToken.current = true
-                
+
                 // Also set on parent span for backwards compatibility
                 renderSpan.current?.setAttribute('time.to.first.token', timeToFirstToken)
             }
         }
-    }, [assistantMessage, activeChatContext, setActiveChatContext])
+    }, [assistantMessage, activeChatContext, setActiveChatContext, tracer])
 
     const humanMessageInfo = useMemo(() => {
         // See SRCH-942: it's critical to memoize this value to avoid repeated
@@ -724,7 +731,7 @@ export function editHumanMessage({
         } catch (error) {
             span.setStatus({
                 code: SpanStatusCode.ERROR,
-                message: error instanceof Error ? error.message : 'Unknown error'
+                message: error instanceof Error ? error.message : 'Unknown error',
             })
             span.recordException(error as Error)
             throw error
@@ -750,76 +757,80 @@ function submitHumanMessage({
 }): Promise<void> {
     const tracer = trace.getTracer('cody-webview')
 
-    return tracer.startActiveSpan('chat-interaction', { 
-        attributes: { 
-            'sampled': true,
-            'chat.interaction.id': crypto.randomUUID() // Add unique ID for linking
-        } 
-    }, async (rootSpan) => {
-        const chatInteractionContext = trace.setSpan(context.active(), rootSpan)
-        setActiveChatContext(chatInteractionContext)
-        
-        try {
-            await context.with(chatInteractionContext, async () => {
-                // Validate input
-                const validationSpan = tracer.startSpan('validate-input')
-                try {
-                    validationSpan.setAttributes({
-                        'input.length': editorValue.text.length,
-                        'input.hasContext': editorValue.contextItems.length > 0,
-                    })
-                    validationSpan.setStatus({ code: SpanStatusCode.OK })
-                } finally {
-                    validationSpan.end()
-                }
+    return tracer.startActiveSpan(
+        'chat-interaction',
+        {
+            attributes: {
+                sampled: true,
+                'chat.interaction.id': crypto.randomUUID(), // Add unique ID for linking
+            },
+        },
+        async rootSpan => {
+            const chatInteractionContext = trace.setSpan(context.active(), rootSpan)
+            setActiveChatContext(chatInteractionContext)
 
-                // Process context
-                const contextSpan = tracer.startSpan('process-context')
-                try {
-                    contextSpan.setAttributes({
-                        'context.items.count': editorValue.contextItems.length,
-                        'context.items.types': editorValue.contextItems.map(item => item.type),
-                    })
-                    // Processing logic...
-                    contextSpan.setStatus({ code: SpanStatusCode.OK })
-                } finally {
-                    contextSpan.end()
-                }
+            try {
+                await context.with(chatInteractionContext, async () => {
+                    // Validate input
+                    const validationSpan = tracer.startSpan('validate-input')
+                    try {
+                        validationSpan.setAttributes({
+                            'input.length': editorValue.text.length,
+                            'input.hasContext': editorValue.contextItems.length > 0,
+                        })
+                        validationSpan.setStatus({ code: SpanStatusCode.OK })
+                    } finally {
+                        validationSpan.end()
+                    }
 
-                // Submit message
-                const submitSpan = tracer.startSpan('submit-message')
-                try {
-                    submitSpan.setAttributes({
-                        'submit.text.length': editorValue.text.length,
-                        'submit.intent': intent ?? undefined,
-                        'submit.manuallySelectedIntent': manuallySelectedIntent,
-                        'submit.contextItems.length': editorValue.contextItems.length,
-                    })
+                    // Process context
+                    const contextSpan = tracer.startSpan('process-context')
+                    try {
+                        contextSpan.setAttributes({
+                            'context.items.count': editorValue.contextItems.length,
+                            'context.items.types': editorValue.contextItems.map(item => item.type),
+                        })
+                        // Processing logic...
+                        contextSpan.setStatus({ code: SpanStatusCode.OK })
+                    } finally {
+                        contextSpan.end()
+                    }
 
-                    getVSCodeAPI().postMessage({
-                        command: 'submit',
-                        text: editorValue.text,
-                        editorState: editorValue.editorState,
-                        contextItems: editorValue.contextItems.map(deserializeContextItem),
-                        intent,
-                        intentScores,
-                        manuallySelectedIntent,
-                    })
+                    // Submit message
+                    const submitSpan = tracer.startSpan('submit-message')
+                    try {
+                        submitSpan.setAttributes({
+                            'submit.text.length': editorValue.text.length,
+                            'submit.intent': intent ?? undefined,
+                            'submit.manuallySelectedIntent': manuallySelectedIntent,
+                            'submit.contextItems.length': editorValue.contextItems.length,
+                        })
 
-                    submitSpan.setStatus({ code: SpanStatusCode.OK })
-                } finally {
-                    submitSpan.end()
-                }
-            })
+                        getVSCodeAPI().postMessage({
+                            command: 'submit',
+                            text: editorValue.text,
+                            editorState: editorValue.editorState,
+                            contextItems: editorValue.contextItems.map(deserializeContextItem),
+                            intent,
+                            intentScores,
+                            manuallySelectedIntent,
+                        })
 
-            rootSpan.setStatus({ code: SpanStatusCode.OK })
-        } catch (error) {
-            rootSpan.setStatus({
-                code: SpanStatusCode.ERROR,
-                message: error instanceof Error ? error.message : 'Unknown error',
-            })
-            rootSpan.recordException(error as Error)
-            throw error
+                        submitSpan.setStatus({ code: SpanStatusCode.OK })
+                    } finally {
+                        submitSpan.end()
+                    }
+                })
+
+                rootSpan.setStatus({ code: SpanStatusCode.OK })
+            } catch (error) {
+                rootSpan.setStatus({
+                    code: SpanStatusCode.ERROR,
+                    message: error instanceof Error ? error.message : 'Unknown error',
+                })
+                rootSpan.recordException(error as Error)
+                throw error
+            }
         }
-    })
+    )
 }

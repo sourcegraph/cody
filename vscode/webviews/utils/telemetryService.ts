@@ -1,24 +1,22 @@
+import { DiagConsoleLogger, DiagLogLevel, diag } from '@opentelemetry/api'
+import { Resource } from '@opentelemetry/resources'
 import { BatchSpanProcessor } from '@opentelemetry/sdk-trace-base'
 import { WebTracerProvider } from '@opentelemetry/sdk-trace-web'
-import { Resource } from '@opentelemetry/resources'
 import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions'
-import { DiagConsoleLogger, DiagLogLevel, diag } from '@opentelemetry/api'
 import { CodyTraceExporterWeb } from '../../src/services/open-telemetry/CodyTraceExportWeb'
 
 export class WebviewOpenTelemetryService {
-    private static instance: WebviewOpenTelemetryService | null = null;
+    private static instance: WebviewOpenTelemetryService | null = null
     private tracerProvider?: WebTracerProvider
     private unloadInstrumentations?: () => void
     private isTracingEnabled = false
     private isInitialized = false
 
     constructor() {
-        if (WebviewOpenTelemetryService.instance) {
-            return WebviewOpenTelemetryService.instance;
+        if (!WebviewOpenTelemetryService.instance) {
+            WebviewOpenTelemetryService.instance = this
+            this.reset()
         }
-        WebviewOpenTelemetryService.instance = this;
-
-        this.reset();
     }
 
     public configure(options?: {
@@ -26,7 +24,7 @@ export class WebviewOpenTelemetryService {
         debugVerbose?: boolean
     }): void {
         if (this.isInitialized) {
-            return;
+            return
         }
 
         const { isTracingEnabled = true, debugVerbose = false } = options || {}
@@ -37,7 +35,6 @@ export class WebviewOpenTelemetryService {
         diag.setLogger(new DiagConsoleLogger(), logLevel)
 
         try {
-
             this.tracerProvider = new WebTracerProvider({
                 resource: new Resource({
                     [SemanticResourceAttributes.SERVICE_NAME]: 'cody-client',
@@ -58,7 +55,7 @@ export class WebviewOpenTelemetryService {
             this.tracerProvider.register()
 
             this.isInitialized = true
-            console.log("WebviewOpenTelemetryService initialized")
+            console.log('WebviewOpenTelemetryService initialized')
         } catch (error) {
             console.error('Failed to initialize OpenTelemetry:', error)
             this.reset()
@@ -81,8 +78,8 @@ export class WebviewOpenTelemetryService {
 
     public static getInstance(): WebviewOpenTelemetryService {
         if (!WebviewOpenTelemetryService.instance) {
-            WebviewOpenTelemetryService.instance = new WebviewOpenTelemetryService();
+            WebviewOpenTelemetryService.instance = new WebviewOpenTelemetryService()
         }
-        return WebviewOpenTelemetryService.instance;
+        return WebviewOpenTelemetryService.instance
     }
 }

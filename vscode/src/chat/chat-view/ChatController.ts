@@ -16,8 +16,6 @@ import {
     skip,
     skipPendingOperation,
 } from '@sourcegraph/cody-shared'
-import * as uuid from 'uuid'
-import * as vscode from 'vscode'
 import {
     type BillingCategory,
     type BillingProduct,
@@ -76,6 +74,8 @@ import {
     truncatePromptString,
     userProductSubscription,
 } from '@sourcegraph/cody-shared'
+import * as uuid from 'uuid'
+import * as vscode from 'vscode'
 
 import type { Span } from '@opentelemetry/api'
 import { captureException } from '@sentry/core'
@@ -105,6 +105,7 @@ import { publicRepoMetadataIfAllWorkspaceReposArePublic } from '../../repository
 import { authProvider } from '../../services/AuthProvider'
 import { AuthProviderSimplified } from '../../services/AuthProviderSimplified'
 import { localStorage } from '../../services/LocalStorageProvider'
+import { TraceSender } from '../../services/open-telemetry/trace-sender'
 import { recordExposedExperimentsToSpan } from '../../services/open-telemetry/utils'
 import {
     handleCodeFromInsertAtCursor,
@@ -138,7 +139,6 @@ import { getChatPanelTitle } from './chat-helpers'
 import { type HumanInput, getPriorityContext } from './context'
 import { DefaultPrompter, type PromptInfo } from './prompt'
 import { getPromptsMigrationInfo, startPromptsMigration } from './prompts-migration'
-import { TraceSender } from '../../services/open-telemetry/trace-sender'
 
 export interface ChatControllerOptions {
     extensionUri: vscode.Uri
@@ -326,7 +326,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 )
                 break
             case 'trace-export':
-                await TraceSender.send(message.traceSpan)
+                TraceSender.send(message.traceSpan)
                 break
             case 'smartApplyAccept':
                 await vscode.commands.executeCommand('cody.fixup.codelens.accept', message.id)
@@ -1816,7 +1816,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
     public isVisible(): boolean {
         return this.webviewPanelOrView?.visible ?? false
     }
-
 }
 
 function newChatModelFromSerializedChatTranscript(

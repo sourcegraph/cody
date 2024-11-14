@@ -12,6 +12,7 @@ import type {
 import { Transcript, focusLastHumanMessageEditor } from './chat/Transcript'
 import type { VSCodeWrapper } from './utils/VSCodeApi'
 
+import { type Context, SpanStatusCode, trace } from '@opentelemetry/api'
 import { truncateTextStart } from '@sourcegraph/cody-shared/src/prompt/truncation'
 import { CHAT_INPUT_TOKEN_BUDGET } from '@sourcegraph/cody-shared/src/token/constants'
 import styles from './Chat.module.css'
@@ -21,7 +22,6 @@ import { ScrollDown } from './components/ScrollDown'
 import type { View } from './tabs'
 import { useTelemetryRecorder } from './utils/telemetry'
 import { useUserAccountInfo } from './utils/useConfig'
-import { trace, SpanStatusCode, Context } from '@opentelemetry/api'
 interface ChatboxProps {
     chatEnabled: boolean
     messageInProgress: ChatMessage | null
@@ -69,13 +69,15 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                     }
 
                     span.setAttributes({
-                        'feedback.type': text === 'thumbsUp' ? FeedbackType.thumbsUp : FeedbackType.thumbsDown,
+                        'feedback.type':
+                            text === 'thumbsUp' ? FeedbackType.thumbsUp : FeedbackType.thumbsDown,
                         'feedback.isDotComUser': userInfo.isDotComUser,
                     })
 
                     telemetryRecorder.recordEvent('cody.feedback', 'submit', {
                         metadata: {
-                            feedbackType: text === 'thumbsUp' ? FeedbackType.thumbsUp : FeedbackType.thumbsDown,
+                            feedbackType:
+                                text === 'thumbsUp' ? FeedbackType.thumbsUp : FeedbackType.thumbsDown,
                             recordsPrivateMetadataTranscript: userInfo.isDotComUser ? 1 : 0,
                         },
                         privateMetadata: {
@@ -85,7 +87,10 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                             // V2 telemetry exports privateMetadata only for DotCom users
                             // the condition below is an aditional safegaurd measure
                             responseText: userInfo.isDotComUser
-                                ? truncateTextStart(transcriptRef.current.toString(), CHAT_INPUT_TOKEN_BUDGET)
+                                ? truncateTextStart(
+                                      transcriptRef.current.toString(),
+                                      CHAT_INPUT_TOKEN_BUDGET
+                                  )
                                 : '',
                         },
                         billingMetadata: {
@@ -98,7 +103,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                 } catch (error) {
                     span.setStatus({
                         code: SpanStatusCode.ERROR,
-                        message: error instanceof Error ? error.message : 'Unknown error'
+                        message: error instanceof Error ? error.message : 'Unknown error',
                     })
                     span.recordException(error as Error)
                     throw error
@@ -117,7 +122,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                 try {
                     const op = 'copy'
                     const code = eventType === 'Button' ? text.replace(/\n$/, '') : text
-                    
+
                     span.setAttributes({
                         'copy.eventType': eventType,
                         'copy.textLength': code.length,
@@ -133,7 +138,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                 } catch (error) {
                     span.setStatus({
                         code: SpanStatusCode.ERROR,
-                        message: error instanceof Error ? error.message : 'Unknown error'
+                        message: error instanceof Error ? error.message : 'Unknown error',
                     })
                     span.recordException(error as Error)
                     throw error
@@ -152,7 +157,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                 return tracer.startActiveSpan('insert-code', async span => {
                     try {
                         const op = newFile ? 'newFile' : 'insert'
-                        
+
                         span.setAttributes({
                             'insert.operation': op,
                             'insert.textLength': text.length,
@@ -168,7 +173,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                     } catch (error) {
                         span.setStatus({
                             code: SpanStatusCode.ERROR,
-                            message: error instanceof Error ? error.message : 'Unknown error'
+                            message: error instanceof Error ? error.message : 'Unknown error',
                         })
                         span.recordException(error as Error)
                         throw error
