@@ -7,6 +7,7 @@ import type {
 import { autoeditsLogger } from '../logger'
 import type { AutoeditsModelAdapter, ChatPrompt, PromptResponseData } from '../prompt-provider'
 import { getModelResponse } from '../prompt-provider'
+import type { AutoeditModelOptions } from '../prompt-provider'
 import { type CodeToReplaceData, SYSTEM_PROMPT, getBaseUserPrompt } from '../prompt-utils'
 
 export class FireworksAdapter implements AutoeditsModelAdapter {
@@ -44,25 +45,21 @@ export class FireworksAdapter implements AutoeditsModelAdapter {
         return response
     }
 
-    async getModelResponse(
-        url: string,
-        model: string,
-        apiKey: string,
-        prompt: ChatPrompt
-    ): Promise<string> {
+    async getModelResponse(option: AutoeditModelOptions): Promise<string> {
         try {
             const response = await getModelResponse(
-                url,
+                option.url,
                 JSON.stringify({
-                    model: model,
-                    messages: prompt,
+                    model: option.model,
+                    messages: option.prompt,
                     temperature: 0.2,
                     max_tokens: 256,
                     response_format: {
                         type: 'text',
                     },
+                    speculation: option.codeToRewrite,
                 }),
-                apiKey
+                option.apiKey
             )
             return response.choices[0].message.content
         } catch (error) {
