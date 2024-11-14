@@ -26,7 +26,7 @@ test('chat assistant response code buttons', async ({ page, nap, sidebar }, test
     await chatInput.press('Enter')
 
     const messageRows = chatMessageRows(chatPanel)
-    const assistantRow = messageRows.nth(1)
+    const assistantRow = messageRows.nth(2)
     await expect(assistantRow).toContainText('Hello! Here is a code snippet:')
     await expect(assistantRow).toContainText('def fib(n):')
 
