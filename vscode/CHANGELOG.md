@@ -80,6 +80,22 @@ Hey Cody users! For those who want to track detailed technical changes, we will 
 
 - Context Filters: fixed repo name resolution cache. [pull/5978](https://github.com/sourcegraph/cody/pull/5978)
 
+### Uncategorized
+
+- Fix support for merging multiple nested objects [pull/6029](https://github.com/sourcegraph/cody/pull/6029)
+- Change tip text to reflect new key command [pull/6030](https://github.com/sourcegraph/cody/pull/6030)
+- add code llama model for the a/b test [pull/6022](https://github.com/sourcegraph/cody/pull/6022)
+- Add new custom configuration field which supports dotted names [pull/6027](https://github.com/sourcegraph/cody/pull/6027)
+- Add shortcut for recently used prompts [pull/6016](https://github.com/sourcegraph/cody/pull/6016)
+- Use simplified token counting method in case of the big files [pull/6014](https://github.com/sourcegraph/cody/pull/6014)
+- fix: Change chat input placeholder text [pull/6011](https://github.com/sourcegraph/cody/pull/6011)
+- Reduce padding of container around search input. [pull/5778](https://github.com/sourcegraph/cody/pull/5778)
+- VS Code: add characters logger stats to `fixup.apply:succeeded` events [pull/6009](https://github.com/sourcegraph/cody/pull/6009)
+- Don't select first prompt by default [pull/6015](https://github.com/sourcegraph/cody/pull/6015)
+- fix(chat): Hide insert and new file buttons if there is no `edit` capability [pull/6018](https://github.com/sourcegraph/cody/pull/6018)
+- bump openctx to incorporate HTTP provider invocation [pull/6010](https://github.com/sourcegraph/cody/pull/6010)
+- Promisify PromptEditorRefAPI [pull/6006](https://github.com/sourcegraph/cody/pull/6006)
+
 ## 1.38.3
 
 ### Fixed
