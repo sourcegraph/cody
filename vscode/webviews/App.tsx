@@ -28,7 +28,6 @@ import {
 import { type Config, ConfigProvider } from './utils/useConfig'
 
 export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vscodeAPI }) => {
-    // Add this near the top with other state declarations
     const [config, setConfig] = useState<Config | null>(null)
     // NOTE: View state will be set by the extension host during initialization.
     const [view, setView] = useState<View>()
@@ -235,7 +234,6 @@ export function getAppWrappers({
             component: ConfigProvider,
             props: { value: config },
         } satisfies Wrapper<any, ComponentProps<typeof ConfigProvider>>,
-        // Add telemetry service wrapper
         {
             provider: WebviewTelemetryServiceContext.Provider,
             value: webviewTelemetryService,
