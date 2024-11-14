@@ -501,10 +501,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         }
     }
 
-    private sendTraceData(spanData: any): void {
-        TraceSender.send(spanData)
-    }
-
     private isSmartApplyEnabled(): boolean {
         return this.extensionClient.capabilities?.edit !== 'none'
     }

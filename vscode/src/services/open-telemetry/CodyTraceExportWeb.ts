@@ -105,7 +105,6 @@ export class CodyTraceExporterWeb extends OTLPTraceExporter {
         }
 
         if (spansToExport.length > 0) {
-            this.send(spansToExport)
             super.export(spansToExport, resultCallback)
         }
     }
@@ -113,19 +112,36 @@ export class CodyTraceExporterWeb extends OTLPTraceExporter {
     send(spans: ReadableSpan[]): void {
         try {
             const exportData = this.convert(spans)
-            const safeData = JSON.stringify(exportData)
+            
+            // Log debug info separately
+            logDebug(
+                '[CodyTraceExporterWeb] Exporting spans',
+                JSON.stringify({
+                    count: spans.length,
+                    rootSpans: spans.filter(s => !s.parentSpanId).length,
+                    renderSpans: spans.filter(s => s.name === 'assistant-message-render').length,
+                })
+            )
 
-            // TODO: replace this before merging with logdebug
-            console.log('[CodyTraceExporterWeb] Exporting spans:', {
-                count: spans.length,
-                rootSpans: spans.filter(s => !s.parentSpanId).length,
-                renderSpans: spans.filter(s => s.name === 'assistant-message-render').length,
-            })
+            // Validate and clean the export data before sending
+            const messageData = {
+                resourceSpans: (exportData.resourceSpans ?? []).map(span => ({
+                    ...span,
+                    resource: {
+                        ...span?.resource,
+                        attributes: span?.resource?.attributes?.map(attr => ({
+                            key: attr.key,
+                            value: attr.value
+                        })) ?? []
+                    }
+                })),
+                timestamp: Date.now()
+            }
 
-            saveToLocalStorage(safeData)
+            // Send the validated and cleaned data
             getVSCodeAPI().postMessage({
                 command: 'trace-export',
-                traceSpan: safeData,
+                traceSpan: JSON.stringify(messageData, getCircularReplacer())
             })
         } catch (error) {
             console.error('[CodyTraceExporterWeb] Error exporting spans:', error)
