@@ -419,7 +419,7 @@ export class AutoEditsRenderer implements vscode.Disposable {
         startLine: number,
         replacerCol: number
     ): void {
-        removeLeadingWhitespaceBlock(addedLinesInfo)
+        blockify(addedLinesInfo)
 
         const replacerDecorations: vscode.DecorationOptions[] = []
 
@@ -435,7 +435,7 @@ export class AutoEditsRenderer implements vscode.Disposable {
                         before: {
                             contentText:
                                 '\u00A0'.repeat(3) +
-                                replaceLeadingChars(decoration.lineText, ' ', '\u00A0'),
+                                replaceLeadingTrailingChars(decoration.lineText, ' ', '\u00A0'),
                             margin: `0 0 0 ${replacerCol - line.range.end.character}ch`,
                         },
                     },
@@ -446,7 +446,8 @@ export class AutoEditsRenderer implements vscode.Disposable {
                     renderOptions: {
                         before: {
                             contentText:
-                                '\u00A0' + replaceLeadingChars(decoration.lineText, ' ', '\u00A0'),
+                                '\u00A0' +
+                                replaceLeadingTrailingChars(decoration.lineText, ' ', '\u00A0'),
                         },
                     },
                 })
@@ -525,20 +526,41 @@ export class AutoEditsRenderer implements vscode.Disposable {
 }
 
 /**
- * Replaces leading occurrences of a character with another string
+ * Replaces leading and trailing occurrences of a character with another string
  * @param str The input string to process
  * @param oldS The character to replace
  * @param newS The character/string to replace with
- * @returns The string with leading characters replaced
+ * @returns The string with leading and trailing characters replaced
  */
-function replaceLeadingChars(str: string, oldS: string, newS: string): string {
+function replaceLeadingTrailingChars(str: string, oldS: string, newS: string): string {
     for (let i = 0; i < str.length; i++) {
         if (str[i] !== oldS) {
-            // a string that is `newS` repeated i times
-            return newS.repeat(i) + str.substring(i)
+            str = newS.repeat(i) + str.substring(i)
+            break
+        }
+    }
+    for (let i = str.length - 1; i >= 0; i--) {
+        if (str[i] !== oldS) {
+            str = str.substring(0, i) + newS.repeat(str.length - i)
+            break
         }
     }
     return str
+}
+
+function blockify(addedLines: AddedLinesDecorationInfo[]) {
+    removeLeadingWhitespaceBlock(addedLines)
+    padTrailingWhitespaceBlock(addedLines)
+}
+
+function padTrailingWhitespaceBlock(addedLines: AddedLinesDecorationInfo[]) {
+    let maxLineWidth = 0
+    for (const addedLine of addedLines) {
+        maxLineWidth = Math.max(maxLineWidth, addedLine.lineText.length)
+    }
+    for (const addedLine of addedLines) {
+        addedLine.lineText = addedLine.lineText.padEnd(maxLineWidth, ' ')
+    }
 }
 
 function removeLeadingWhitespaceBlock(addedLines: AddedLinesDecorationInfo[]) {
