@@ -12,7 +12,7 @@ import type {
 import { Transcript, focusLastHumanMessageEditor } from './chat/Transcript'
 import type { VSCodeWrapper } from './utils/VSCodeApi'
 
-import { type Context, SpanStatusCode, trace } from '@opentelemetry/api'
+import type { Context } from '@opentelemetry/api'
 import { truncateTextStart } from '@sourcegraph/cody-shared/src/prompt/truncation'
 import { CHAT_INPUT_TOKEN_BUDGET } from '@sourcegraph/cody-shared/src/token/constants'
 import styles from './Chat.module.css'
@@ -60,56 +60,30 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
 
     const feedbackButtonsOnSubmit = useCallback(
         (text: string) => {
-            const tracer = trace.getTracer('cody-webview')
-            return tracer.startActiveSpan('submit-feedback', async span => {
-                try {
-                    enum FeedbackType {
-                        thumbsUp = 1,
-                        thumbsDown = 0,
-                    }
+            enum FeedbackType {
+                thumbsUp = 1,
+                thumbsDown = 0,
+            }
 
-                    span.setAttributes({
-                        'feedback.type':
-                            text === 'thumbsUp' ? FeedbackType.thumbsUp : FeedbackType.thumbsDown,
-                        'feedback.isDotComUser': userInfo.isDotComUser,
-                    })
+            telemetryRecorder.recordEvent('cody.feedback', 'submit', {
+                metadata: {
+                    feedbackType: text === 'thumbsUp' ? FeedbackType.thumbsUp : FeedbackType.thumbsDown,
+                    recordsPrivateMetadataTranscript: userInfo.isDotComUser ? 1 : 0,
+                },
+                privateMetadata: {
+                    FeedbackText: text,
 
-                    telemetryRecorder.recordEvent('cody.feedback', 'submit', {
-                        metadata: {
-                            feedbackType:
-                                text === 'thumbsUp' ? FeedbackType.thumbsUp : FeedbackType.thumbsDown,
-                            recordsPrivateMetadataTranscript: userInfo.isDotComUser ? 1 : 0,
-                        },
-                        privateMetadata: {
-                            FeedbackText: text,
-
-                            // 🚨 SECURITY: chat transcripts are to be included only for DotCom users AND for V2 telemetry
-                            // V2 telemetry exports privateMetadata only for DotCom users
-                            // the condition below is an aditional safegaurd measure
-                            responseText: userInfo.isDotComUser
-                                ? truncateTextStart(
-                                      transcriptRef.current.toString(),
-                                      CHAT_INPUT_TOKEN_BUDGET
-                                  )
-                                : '',
-                        },
-                        billingMetadata: {
-                            product: 'cody',
-                            category: 'billable',
-                        },
-                    })
-
-                    span.setStatus({ code: SpanStatusCode.OK })
-                } catch (error) {
-                    span.setStatus({
-                        code: SpanStatusCode.ERROR,
-                        message: error instanceof Error ? error.message : 'Unknown error',
-                    })
-                    span.recordException(error as Error)
-                    throw error
-                } finally {
-                    span.end()
-                }
+                    // 🚨 SECURITY: chat transcripts are to be included only for DotCom users AND for V2 telemetry
+                    // V2 telemetry exports privateMetadata only for DotCom users
+                    // the condition below is an aditional safegaurd measure
+                    responseText: userInfo.isDotComUser
+                        ? truncateTextStart(transcriptRef.current.toString(), CHAT_INPUT_TOKEN_BUDGET)
+                        : '',
+                },
+                billingMetadata: {
+                    product: 'cody',
+                    category: 'billable',
+                },
             })
         },
         [userInfo, telemetryRecorder]
@@ -117,34 +91,13 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
 
     const copyButtonOnSubmit = useCallback(
         (text: string, eventType: 'Button' | 'Keydown' = 'Button') => {
-            const tracer = trace.getTracer('cody-webview')
-            return tracer.startActiveSpan('copy-code', async span => {
-                try {
-                    const op = 'copy'
-                    const code = eventType === 'Button' ? text.replace(/\n$/, '') : text
+            const op = 'copy'
+            const code = eventType === 'Button' ? text.replace(/\n$/, '') : text
 
-                    span.setAttributes({
-                        'copy.eventType': eventType,
-                        'copy.textLength': code.length,
-                    })
-
-                    vscodeAPI.postMessage({
-                        command: op,
-                        eventType,
-                        text: code,
-                    })
-
-                    span.setStatus({ code: SpanStatusCode.OK })
-                } catch (error) {
-                    span.setStatus({
-                        code: SpanStatusCode.ERROR,
-                        message: error instanceof Error ? error.message : 'Unknown error',
-                    })
-                    span.recordException(error as Error)
-                    throw error
-                } finally {
-                    span.end()
-                }
+            vscodeAPI.postMessage({
+                command: op,
+                eventType,
+                text: code,
             })
         },
         [vscodeAPI]
@@ -153,33 +106,11 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     const insertButtonOnSubmit = useMemo(() => {
         if (showIDESnippetActions) {
             return (text: string, newFile = false) => {
-                const tracer = trace.getTracer('cody-webview')
-                return tracer.startActiveSpan('insert-code', async span => {
-                    try {
-                        const op = newFile ? 'newFile' : 'insert'
+                const op = newFile ? 'newFile' : 'insert'
 
-                        span.setAttributes({
-                            'insert.operation': op,
-                            'insert.textLength': text.length,
-                            'insert.newFile': newFile,
-                        })
-
-                        vscodeAPI.postMessage({
-                            command: op,
-                            text: text.replace(/\n$/, ''),
-                        })
-
-                        span.setStatus({ code: SpanStatusCode.OK })
-                    } catch (error) {
-                        span.setStatus({
-                            code: SpanStatusCode.ERROR,
-                            message: error instanceof Error ? error.message : 'Unknown error',
-                        })
-                        span.recordException(error as Error)
-                        throw error
-                    } finally {
-                        span.end()
-                    }
+                vscodeAPI.postMessage({
+                    command: op,
+                    text: text.replace(/\n$/, ''),
                 })
             }
         }

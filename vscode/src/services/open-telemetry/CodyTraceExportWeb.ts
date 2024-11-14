@@ -88,7 +88,10 @@ export class CodyTraceExporterWeb extends OTLPTraceExporter {
                 // Remove these spans from queued spans if present
                 for (const span of spanGroup) {
                     this.queuedSpans.delete(span.spanContext().spanId)
-                    logDebug('[CodyTraceExporterWeb] Removed span from queue:', span.spanContext().spanId)
+                    logDebug(
+                        '[CodyTraceExporterWeb] Removed span from queue:',
+                        span.spanContext().spanId
+                    )
                 }
             } else if (hasRenderSpan) {
                 // Queue incomplete groups
@@ -132,23 +135,23 @@ export class CodyTraceExporterWeb extends OTLPTraceExporter {
 
 function getRootSpan(spanMap: Map<string, ReadableSpan>, span: ReadableSpan): ReadableSpan | null {
     // Start with the input span
-    let currentSpan = span;
+    let currentSpan = span
 
     while (true) {
         // If we find a span without a parent, it's the root
         if (!currentSpan.parentSpanId) {
-            return currentSpan;
+            return currentSpan
         }
 
-        const parentSpan = spanMap.get(currentSpan.parentSpanId);
-        
+        const parentSpan = spanMap.get(currentSpan.parentSpanId)
+
         // Return null if parent ID exists but parent span not found.
         // These spans are expected to be completed later.
         if (!parentSpan) {
-            return null;
+            return null
         }
 
-        currentSpan = parentSpan;
+        currentSpan = parentSpan
     }
 }
 
