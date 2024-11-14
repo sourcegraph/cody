@@ -12,9 +12,9 @@ import com.intellij.openapi.keymap.KeymapManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import com.sourcegraph.cody.agent.CodyAgentService
+import com.sourcegraph.cody.agent.protocol_generated.Ignore_TestResult
 import com.sourcegraph.cody.config.CodyAuthenticationManager
 import com.sourcegraph.cody.ignore.IgnoreOracle
-import com.sourcegraph.cody.ignore.IgnorePolicy
 import com.sourcegraph.config.ConfigUtil
 import com.sourcegraph.utils.CodyEditorUtil
 import java.awt.Font
@@ -38,7 +38,8 @@ class CodySelectionInlayManager(val project: Project) {
         !ConfigUtil.isCodyUIHintsEnabled() ||
         !CodyEditorUtil.isEditorValidForAutocomplete(editor) ||
         CodyAuthenticationManager.getInstance().hasNoActiveAccount() ||
-        IgnoreOracle.getInstance(project).policyForEditor(editor) != IgnorePolicy.USE) {
+        IgnoreOracle.getInstance(project).policyForEditor(editor) !=
+            Ignore_TestResult.PolicyEnum.Use) {
       return
     }
 

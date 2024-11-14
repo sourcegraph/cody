@@ -16,7 +16,7 @@ import com.intellij.ui.dsl.builder.panel
 import com.intellij.ui.dsl.builder.rows
 import com.intellij.ui.dsl.builder.selected
 import com.sourcegraph.cody.agent.CodyAgentService
-import com.sourcegraph.cody.agent.protocol.IgnorePolicySpec
+import com.sourcegraph.cody.agent.protocol_generated.ContextFilters
 import javax.swing.JComponent
 
 data object IgnoreOverrideModel {
@@ -50,7 +50,7 @@ class IgnoreOverrideDialog(val project: Project) : DialogWrapper(project) {
             .bindText(IgnoreOverrideModel::policy)
             .validationOnInput { textArea ->
               try {
-                Gson().fromJson(textArea.text, IgnorePolicySpec::class.java)
+                Gson().fromJson(textArea.text, ContextFilters::class.java)
                 null
               } catch (e: JsonSyntaxException) {
                 ValidationInfo("JSON error: ${e.message}", textArea)
@@ -64,9 +64,9 @@ class IgnoreOverrideDialog(val project: Project) : DialogWrapper(project) {
   override fun doOKAction() {
     super.doOKAction()
     CodyAgentService.withAgent(project) { agent ->
-      agent.server.testingIgnoreOverridePolicy(
+      agent.server.testing_ignore_overridePolicy(
           if (IgnoreOverrideModel.enabled) {
-            Gson().fromJson(IgnoreOverrideModel.policy, IgnorePolicySpec::class.java)
+            Gson().fromJson(IgnoreOverrideModel.policy, ContextFilters::class.java)
           } else {
             null
           })

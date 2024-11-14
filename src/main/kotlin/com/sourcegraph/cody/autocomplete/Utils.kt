@@ -13,12 +13,12 @@ import com.sourcegraph.cody.agent.protocol_extensions.Position
 import com.sourcegraph.cody.agent.protocol_extensions.ProtocolTextDocumentExt
 import com.sourcegraph.cody.agent.protocol_generated.AutocompleteParams
 import com.sourcegraph.cody.agent.protocol_generated.AutocompleteResult
+import com.sourcegraph.cody.agent.protocol_generated.Ignore_TestResult
 import com.sourcegraph.cody.agent.protocol_generated.Position
 import com.sourcegraph.cody.agent.protocol_generated.Range
 import com.sourcegraph.cody.agent.protocol_generated.SelectedCompletionInfo
 import com.sourcegraph.cody.ignore.ActionInIgnoredFileNotification
 import com.sourcegraph.cody.ignore.IgnoreOracle
-import com.sourcegraph.cody.ignore.IgnorePolicy
 import com.sourcegraph.cody.statusbar.CodyStatus
 import com.sourcegraph.cody.statusbar.CodyStatusService.Companion.notifyApplication
 import com.sourcegraph.cody.statusbar.CodyStatusService.Companion.resetApplication
@@ -81,7 +81,7 @@ object Utils {
     CodyAgentService.withAgent(project) { agent ->
       if (triggerKind == InlineCompletionTriggerKind.INVOKE &&
           IgnoreOracle.getInstance(project).policyForUri(virtualFile.url, agent).get() !=
-              IgnorePolicy.USE) {
+              Ignore_TestResult.PolicyEnum.Use) {
         ActionInIgnoredFileNotification.maybeNotify(project)
         resetApplication(project)
         resultOuter.cancel(true)

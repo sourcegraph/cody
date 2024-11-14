@@ -10,10 +10,10 @@ import com.intellij.util.concurrency.AppExecutorUtil
 import com.sourcegraph.cody.agent.CodyAgentService
 import com.sourcegraph.cody.agent.protocol_extensions.ProtocolTextDocumentExt
 import com.sourcegraph.cody.agent.protocol_generated.ExecuteCommandParams
+import com.sourcegraph.cody.agent.protocol_generated.Ignore_TestResult
 import com.sourcegraph.cody.commands.CommandId
 import com.sourcegraph.cody.ignore.ActionInIgnoredFileNotification
 import com.sourcegraph.cody.ignore.IgnoreOracle
-import com.sourcegraph.cody.ignore.IgnorePolicy
 import com.sourcegraph.common.ui.DumbAwareEDTAction
 import com.sourcegraph.utils.CodyEditorUtil
 import java.util.concurrent.Callable
@@ -38,7 +38,7 @@ abstract class BaseCommandAction : DumbAwareEDTAction() {
           .expireWith(project)
           .finishOnUiThread(ModalityState.nonModal()) {
             when (it) {
-              IgnorePolicy.USE -> {
+              Ignore_TestResult.PolicyEnum.Use -> {
                 CodyAgentService.withAgent(project) { agent ->
                   agent.server.command_execute(
                       ExecuteCommandParams(
