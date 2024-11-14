@@ -173,7 +173,8 @@ export class AutoEditsRenderer implements vscode.Disposable {
     private readonly modifiedTextDecorationType: vscode.TextEditorDecorationType
     private readonly suggesterType: vscode.TextEditorDecorationType
     private readonly hideRemainderDecorationType: vscode.TextEditorDecorationType
-    private readonly replacerDecorationType: vscode.TextEditorDecorationType
+    private readonly addedLinesDecorationType: vscode.TextEditorDecorationType
+    private readonly insertMarkerDecorationType: vscode.TextEditorDecorationType
     private readonly editor: vscode.TextEditor
 
     constructor(editor: vscode.TextEditor) {
@@ -193,13 +194,17 @@ export class AutoEditsRenderer implements vscode.Disposable {
         this.hideRemainderDecorationType = vscode.window.createTextEditorDecorationType({
             opacity: '0',
         })
-        this.replacerDecorationType = vscode.window.createTextEditorDecorationType({
-            backgroundColor: 'red',
+        this.addedLinesDecorationType = vscode.window.createTextEditorDecorationType({
+            backgroundColor: 'red', // SENTINEL (should not actually appear)
             before: {
                 backgroundColor: 'rgb(100, 255, 100, 0.1)',
                 color: GHOST_TEXT_COLOR,
                 height: '100%',
             },
+        })
+        this.insertMarkerDecorationType = vscode.window.createTextEditorDecorationType({
+            border: '1px dashed rgb(100, 255, 100, 0.5)',
+            borderWidth: '1px 1px 0 0',
         })
 
         // Track all decoration types for disposal
@@ -208,7 +213,8 @@ export class AutoEditsRenderer implements vscode.Disposable {
             this.modifiedTextDecorationType,
             this.suggesterType,
             this.hideRemainderDecorationType,
-            this.replacerDecorationType,
+            this.addedLinesDecorationType,
+            this.insertMarkerDecorationType,
         ]
     }
 
@@ -225,6 +231,7 @@ export class AutoEditsRenderer implements vscode.Disposable {
         const oldLinesChunks = oldLines.map(line => splitLineIntoChunks(line))
         const newLinesChunks = newLines.map(line => splitLineIntoChunks(line))
 
+        // TODO(beyang): factor out and test
         let isOnlyAdditionsForModifiedLines = true
         const modifiedRangesMapping = new Map<number, ModifiedRange[]>()
         for (const modifiedLine of modifiedLines) {
@@ -237,6 +244,9 @@ export class AutoEditsRenderer implements vscode.Disposable {
                 isOnlyAdditionsForModifiedLines = modifiedRanges.every(
                     range => range.from1 === range.to1
                 )
+                if (!isOnlyAdditionsForModifiedLines) {
+                    break
+                }
             }
         }
         this.addDecorations(
@@ -418,7 +428,7 @@ export class AutoEditsRenderer implements vscode.Disposable {
             const line = this.editor.document.lineAt(j)
             const decoration = addedLinesInfo[i]
 
-            if (line.range.end.character <= replacerCol) {
+            if (replacerCol >= line.range.end.character) {
                 replacerDecorations.push({
                     range: new vscode.Range(j, line.range.end.character, j, line.range.end.character),
                     renderOptions: {
@@ -442,7 +452,14 @@ export class AutoEditsRenderer implements vscode.Disposable {
                 })
             }
         }
-        this.editor.setDecorations(this.replacerDecorationType, replacerDecorations)
+
+        const startLineLength = this.editor.document.lineAt(startLine).range.end.character
+        this.editor.setDecorations(this.insertMarkerDecorationType, [
+            {
+                range: new vscode.Range(startLine, 0, startLine, startLineLength),
+            },
+        ])
+        this.editor.setDecorations(this.addedLinesDecorationType, replacerDecorations)
     }
 
     private renderInlineGhostTextDecorations(
