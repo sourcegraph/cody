@@ -530,18 +530,27 @@ export class AutoEditsRenderer implements vscode.Disposable {
  * @returns The string with leading and trailing characters replaced
  */
 function replaceLeadingTrailingChars(str: string, oldS: string, newS: string): string {
+    let prefixLen = str.length
     for (let i = 0; i < str.length; i++) {
         if (str[i] !== oldS) {
-            str = newS.repeat(i) + str.substring(i)
+            // str = newS.repeat(i) + str.substring(i)
+            prefixLen = i
             break
         }
     }
-    for (let i = str.length - 1; i >= 0; i--) {
-        if (str[i] !== oldS) {
-            str = str.substring(0, i) + newS.repeat(str.length - i)
+    str = newS.repeat(prefixLen) + str.substring(prefixLen)
+
+    let suffixLen = str.length
+    for (let i = 0; i < str.length; i++) {
+        const j = str.length - 1 - i
+        if (str[j] !== oldS) {
+            // str = str.substring(0, j + 1) + newS.repeat(i)
+            suffixLen = i
             break
         }
     }
+    str = str.substring(0, str.length - suffixLen) + newS.repeat(suffixLen)
+
     return str
 }
 
