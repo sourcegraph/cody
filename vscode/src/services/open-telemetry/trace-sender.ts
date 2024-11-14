@@ -5,11 +5,13 @@ import { logDebug, logError } from '../../output-channel-logger'
 /**
  * Sends trace data to the server without blocking
  */
-export function send(spanData: any): void {
-    // Don't await - let it run in background, but do handle errors
-    void doSendTraceData(spanData).catch(error => {
-        logError('TraceSender', `Error sending trace data: ${error}`)
-    })
+export const TraceSender = {
+    send(spanData: any): void {
+        // Don't await - let it run in background, but do handle errors
+        void doSendTraceData(spanData).catch(error => {
+            logError('TraceSender', `Error sending trace data: ${error}`)
+        })
+    },
 }
 
 async function doSendTraceData(spanData: any): Promise<void> {

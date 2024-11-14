@@ -23,12 +23,11 @@ export class WebviewOpenTelemetryService {
         isTracingEnabled?: boolean
         debugVerbose?: boolean
     }): void {
-        if (this.isInitialized) {
+        if (this.isInitialized || WebviewOpenTelemetryService.instance !== this) {
             return
         }
 
         const { isTracingEnabled = true, debugVerbose = false } = options || {}
-
         this.isTracingEnabled = isTracingEnabled
 
         const logLevel = debugVerbose ? DiagLogLevel.INFO : DiagLogLevel.ERROR
@@ -53,7 +52,6 @@ export class WebviewOpenTelemetryService {
             }
 
             this.tracerProvider.register()
-
             this.isInitialized = true
             console.log('WebviewOpenTelemetryService initialized')
         } catch (error) {

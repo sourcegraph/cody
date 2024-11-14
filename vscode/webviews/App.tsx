@@ -1,4 +1,4 @@
-import { type ComponentProps, createContext, useCallback, useEffect, useMemo, useState } from 'react'
+import { type ComponentProps, useCallback, useEffect, useMemo, useState } from 'react'
 
 import {
     type ChatMessage,
@@ -20,17 +20,15 @@ import { View } from './tabs'
 import type { VSCodeWrapper } from './utils/VSCodeApi'
 import { ComposedWrappers, type Wrapper } from './utils/composeWrappers'
 import { updateDisplayPathEnvInfoForWebview } from './utils/displayPathEnvInfo'
-import { TelemetryRecorderContext, createWebviewTelemetryRecorder } from './utils/telemetry'
+import {
+    TelemetryRecorderContext,
+    WebviewTelemetryServiceContext,
+    createWebviewTelemetryRecorder,
+} from './utils/telemetry'
 import { type Config, ConfigProvider } from './utils/useConfig'
-
-export const TelemetryServiceContext = createContext<WebviewOpenTelemetryService>(
-    new WebviewOpenTelemetryService()
-)
 
 export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vscodeAPI }) => {
     // Add this near the top with other state declarations
-    const [telemetryService] = useState(() => new WebviewOpenTelemetryService())
-
     const [config, setConfig] = useState<Config | null>(null)
     // NOTE: View state will be set by the extension host during initialization.
     const [view, setView] = useState<View>()
@@ -41,23 +39,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     const [errorMessages, setErrorMessages] = useState<string[]>([])
 
     const dispatchClientAction = useClientActionDispatcher()
-
-    // Add this effect to configure telemetry based on config changes
-    // useEffect(() => {
-    //     if (config) {
-    //         telemetryService.configure({
-    //             isTracingEnabled: true,
-    //             debugVerbose: true // You can make this configurable if needed
-    //         })
-    //     }
-    // }, [config, telemetryService])
-
-    // // Add cleanup
-    // useEffect(() => {
-    //     return () => {
-    //         telemetryService.dispose()
-    //     }
-    // }, [telemetryService])
 
     const guardrails = useMemo(() => {
         return new GuardrailsPost((snippet: string) => {
@@ -176,9 +157,18 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     // V2 telemetry recorder
     const telemetryRecorder = useMemo(() => createWebviewTelemetryRecorder(vscodeAPI), [vscodeAPI])
 
+    const webviewTelemetryService = useMemo(() => {
+        const service = WebviewOpenTelemetryService.getInstance()
+        service.configure({
+            isTracingEnabled: true,
+            debugVerbose: true,
+        })
+        return service
+    }, [])
+
     const wrappers = useMemo<Wrapper[]>(
-        () => getAppWrappers({ vscodeAPI, telemetryRecorder, config }),
-        [vscodeAPI, telemetryRecorder, config]
+        () => getAppWrappers({ vscodeAPI, telemetryRecorder, config, webviewTelemetryService }),
+        [vscodeAPI, telemetryRecorder, config, webviewTelemetryService]
     )
 
     // Wait for all the data to be loaded before rendering Chat View
@@ -222,6 +212,7 @@ interface GetAppWrappersOptions {
     telemetryRecorder: TelemetryRecorder
     config: Config | null
     staticDefaultContext?: DefaultContext
+    webviewTelemetryService: WebviewOpenTelemetryService
 }
 
 export function getAppWrappers({
@@ -229,14 +220,8 @@ export function getAppWrappers({
     telemetryRecorder,
     config,
     staticDefaultContext,
+    webviewTelemetryService,
 }: GetAppWrappersOptions): Wrapper[] {
-    // Initialize telemetry service
-    const telemetryService = new WebviewOpenTelemetryService()
-
-    telemetryService.configure({
-        isTracingEnabled: true,
-        debugVerbose: true,
-    })
     return [
         {
             provider: TelemetryRecorderContext.Provider,
@@ -252,8 +237,8 @@ export function getAppWrappers({
         } satisfies Wrapper<any, ComponentProps<typeof ConfigProvider>>,
         // Add telemetry service wrapper
         {
-            provider: TelemetryServiceContext.Provider,
-            value: telemetryService,
+            provider: WebviewTelemetryServiceContext.Provider,
+            value: webviewTelemetryService,
         } satisfies Wrapper<WebviewOpenTelemetryService>,
     ]
 }
