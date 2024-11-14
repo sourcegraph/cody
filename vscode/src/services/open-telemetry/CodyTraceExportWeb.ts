@@ -112,7 +112,7 @@ export class CodyTraceExporterWeb extends OTLPTraceExporter {
     send(spans: ReadableSpan[]): void {
         try {
             const exportData = this.convert(spans)
-            
+
             // Log debug info separately
             logDebug(
                 '[CodyTraceExporterWeb] Exporting spans',
@@ -129,19 +129,20 @@ export class CodyTraceExporterWeb extends OTLPTraceExporter {
                     ...span,
                     resource: {
                         ...span?.resource,
-                        attributes: span?.resource?.attributes?.map(attr => ({
-                            key: attr.key,
-                            value: attr.value
-                        })) ?? []
-                    }
+                        attributes:
+                            span?.resource?.attributes?.map(attr => ({
+                                key: attr.key,
+                                value: attr.value,
+                            })) ?? [],
+                    },
                 })),
-                timestamp: Date.now()
+                timestamp: Date.now(),
             }
 
             // Send the validated and cleaned data
             getVSCodeAPI().postMessage({
                 command: 'trace-export',
-                traceSpan: JSON.stringify(messageData, getCircularReplacer())
+                traceSpan: JSON.stringify(messageData, getCircularReplacer()),
             })
         } catch (error) {
             console.error('[CodyTraceExporterWeb] Error exporting spans:', error)
