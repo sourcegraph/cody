@@ -17,6 +17,7 @@ export interface AutoeditModelOptions {
     apiKey: string
     prompt: ChatPrompt
     codeToRewrite: string
+    userId: string | null
 }
 
 export interface PromptResponseData {

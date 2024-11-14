@@ -206,6 +206,7 @@ export class AutoeditsProvider implements vscode.Disposable {
             apiKey,
             prompt,
             codeToRewrite: codeToReplace.codeToRewrite,
+            userId: (await currentResolvedConfig()).clientState.anonymousUserID,
         })
         const postProcessedResponse = this.config.provider.postProcessResponse(codeToReplace, response)
 

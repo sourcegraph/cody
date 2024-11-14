@@ -58,6 +58,7 @@ export class FireworksAdapter implements AutoeditsModelAdapter {
                         type: 'text',
                     },
                     speculation: option.codeToRewrite,
+                    user: option.userId,
                 }),
                 option.apiKey
             )

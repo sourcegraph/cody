@@ -57,6 +57,7 @@ export class CodyGatewayAdapter implements AutoeditsModelAdapter {
                     type: 'text',
                 },
                 speculation: option.codeToRewrite,
+                user: option.userId,
             }
             const response = await getModelResponse(
                 option.url,
