@@ -48,7 +48,7 @@ class IgnoreOverrideDialog(val project: Project) : DialogWrapper(project) {
             .columns(40)
             .rows(15)
             .bindText(IgnoreOverrideModel::policy)
-            .validationInfo { textArea ->
+            .validationOnInput { textArea ->
               try {
                 Gson().fromJson(textArea.text, IgnorePolicySpec::class.java)
                 null
@@ -62,6 +62,7 @@ class IgnoreOverrideDialog(val project: Project) : DialogWrapper(project) {
   }
 
   override fun doOKAction() {
+    super.doOKAction()
     CodyAgentService.withAgent(project) { agent ->
       agent.server.testingIgnoreOverridePolicy(
           if (IgnoreOverrideModel.enabled) {
@@ -70,7 +71,6 @@ class IgnoreOverrideDialog(val project: Project) : DialogWrapper(project) {
             null
           })
     }
-    super.doOKAction()
   }
 }
 

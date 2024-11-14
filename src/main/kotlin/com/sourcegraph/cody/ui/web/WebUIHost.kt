@@ -11,10 +11,10 @@ import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.options.ShowSettingsUtil
 import com.intellij.openapi.project.Project
 import com.sourcegraph.cody.agent.CodyAgentService
-import com.sourcegraph.cody.agent.WebviewDidDisposeParams
-import com.sourcegraph.cody.agent.WebviewReceiveMessageStringEncodedParams
 import com.sourcegraph.cody.agent.protocol.WebviewOptions
 import com.sourcegraph.cody.agent.protocol_generated.ExecuteCommandParams
+import com.sourcegraph.cody.agent.protocol_generated.Webview_DidDisposeNativeParams
+import com.sourcegraph.cody.agent.protocol_generated.Webview_ReceiveMessageStringEncodedParams
 import com.sourcegraph.cody.config.CodyAuthenticationManager
 import com.sourcegraph.cody.config.ui.AccountConfigurable
 import com.sourcegraph.cody.config.ui.CodyConfigurable
@@ -98,8 +98,8 @@ internal class WebUIHostImpl(
       }
     } else {
       CodyAgentService.withAgent(project) {
-        it.server.webviewReceiveMessageStringEncoded(
-            WebviewReceiveMessageStringEncodedParams(handle, stringEncodedJsonMessage))
+        it.server.webview_receiveMessageStringEncoded(
+            Webview_ReceiveMessageStringEncodedParams(handle, stringEncodedJsonMessage))
       }
     }
   }
@@ -144,7 +144,7 @@ internal class WebUIHostImpl(
   override fun dispose() {
     // TODO: Consider cleaning up the view.
     CodyAgentService.withAgent(project) {
-      it.server.webviewDidDisposeNative(WebviewDidDisposeParams(handle))
+      it.server.webview_didDisposeNative(Webview_DidDisposeNativeParams(handle))
     }
   }
 }

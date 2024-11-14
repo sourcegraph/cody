@@ -8,7 +8,7 @@ import com.sourcegraph.common.ui.DumbAwareEDTAction
 
 class NewChatAction : DumbAwareEDTAction() {
   override fun actionPerformed(event: AnActionEvent) {
-    CodyAgentService.withAgent(event.project ?: return) { agent -> agent.server.chatNew() }
+    CodyAgentService.withAgent(event.project ?: return) { agent -> agent.server.chat_web_new(null) }
   }
 
   override fun update(event: AnActionEvent) {

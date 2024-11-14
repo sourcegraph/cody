@@ -135,6 +135,7 @@ dependencies {
 
   implementation("com.typesafe:config:1.4.3")
   implementation("org.eclipse.lsp4j:org.eclipse.lsp4j.jsonrpc:0.23.1")
+  testImplementation("net.java.dev.jna:jna:5.10.0") // it is needed for integration tests
   testImplementation("org.awaitility:awaitility-kotlin:4.2.2")
   testImplementation("org.junit.jupiter:junit-jupiter:5.11.3")
   testImplementation("org.jetbrains.kotlin:kotlin-test-junit:2.0.21")

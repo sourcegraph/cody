@@ -5,7 +5,6 @@ package com.sourcegraph.cody.agent
 import com.sourcegraph.cody.agent.protocol.IgnorePolicySpec
 import com.sourcegraph.cody.agent.protocol.IgnoreTestParams
 import com.sourcegraph.cody.agent.protocol.IgnoreTestResponse
-import com.sourcegraph.cody.agent.protocol.InlineEditParams
 import com.sourcegraph.cody.agent.protocol.NetworkRequest
 import com.sourcegraph.cody.agent.protocol.TelemetryEvent
 import com.sourcegraph.cody.agent.protocol_generated.AutocompleteParams
@@ -13,6 +12,7 @@ import com.sourcegraph.cody.agent.protocol_generated.AutocompleteResult
 import com.sourcegraph.cody.agent.protocol_generated.Chat_ImportParams
 import com.sourcegraph.cody.agent.protocol_generated.Chat_ModelsParams
 import com.sourcegraph.cody.agent.protocol_generated.Chat_ModelsResult
+import com.sourcegraph.cody.agent.protocol_generated.Chat_Web_NewResult
 import com.sourcegraph.cody.agent.protocol_generated.ClientInfo
 import com.sourcegraph.cody.agent.protocol_generated.CodeActions_ProvideParams
 import com.sourcegraph.cody.agent.protocol_generated.CodeActions_ProvideResult
@@ -21,6 +21,7 @@ import com.sourcegraph.cody.agent.protocol_generated.Commands_CustomParams
 import com.sourcegraph.cody.agent.protocol_generated.CurrentUserCodySubscription
 import com.sourcegraph.cody.agent.protocol_generated.CustomCommandResult
 import com.sourcegraph.cody.agent.protocol_generated.Diagnostics_PublishParams
+import com.sourcegraph.cody.agent.protocol_generated.EditCommands_CodeParams
 import com.sourcegraph.cody.agent.protocol_generated.EditTask
 import com.sourcegraph.cody.agent.protocol_generated.EditTask_AcceptParams
 import com.sourcegraph.cody.agent.protocol_generated.EditTask_CancelParams
@@ -35,6 +36,9 @@ import com.sourcegraph.cody.agent.protocol_generated.ProtocolAuthStatus
 import com.sourcegraph.cody.agent.protocol_generated.ProtocolTextDocument
 import com.sourcegraph.cody.agent.protocol_generated.ServerInfo
 import com.sourcegraph.cody.agent.protocol_generated.TextDocument_DidFocusParams
+import com.sourcegraph.cody.agent.protocol_generated.Webview_DidDisposeNativeParams
+import com.sourcegraph.cody.agent.protocol_generated.Webview_ReceiveMessageStringEncodedParams
+import com.sourcegraph.cody.agent.protocol_generated.Webview_ResolveWebviewViewParams
 import com.sourcegraph.cody.agent.protocol_generated.Window_DidChangeFocusParams
 import java.util.concurrent.CompletableFuture
 import org.eclipse.lsp4j.jsonrpc.services.JsonNotification
@@ -102,6 +106,29 @@ interface _SubsetGeneratedCodyAgentServer {
       params: Null?
   ): CompletableFuture<CurrentUserCodySubscription?>
 
+  @JsonRequest("editTask/accept")
+  fun editTask_accept(params: EditTask_AcceptParams): CompletableFuture<Null?>
+
+  @JsonRequest("editTask/undo")
+  fun editTask_undo(params: EditTask_UndoParams): CompletableFuture<Null?>
+
+  @JsonRequest("editTask/cancel")
+  fun editTask_cancel(params: EditTask_CancelParams): CompletableFuture<Null?>
+
+  @JsonRequest("editCommands/code")
+  fun editCommands_code(params: EditCommands_CodeParams): CompletableFuture<EditTask>
+
+  @JsonRequest("webview/resolveWebviewView")
+  fun webview_resolveWebviewView(params: Webview_ResolveWebviewViewParams): CompletableFuture<Null?>
+
+  @JsonRequest("webview/receiveMessageStringEncoded")
+  fun webview_receiveMessageStringEncoded(
+      params: Webview_ReceiveMessageStringEncodedParams
+  ): CompletableFuture<Null?>
+
+  @JsonRequest("chat/web/new")
+  fun chat_web_new(params: Null?): CompletableFuture<Chat_Web_NewResult>
+
   //  // =============
   //  // Notifications
   //  // =============
@@ -135,6 +162,9 @@ interface _SubsetGeneratedCodyAgentServer {
 
   @JsonNotification("window/didChangeFocus")
   fun window_didChangeFocus(params: Window_DidChangeFocusParams)
+
+  @JsonNotification("webview/didDisposeNative")
+  fun webview_didDisposeNative(params: Webview_DidDisposeNativeParams)
 }
 
 // TODO: Requests waiting to be migrated & tested for compatibility. Avoid placing new protocol
@@ -149,31 +179,6 @@ interface _LegacyAgentServer {
 
   @JsonRequest("telemetry/recordEvent")
   fun recordEvent(event: TelemetryEvent): CompletableFuture<Void?>
-
-  @JsonRequest("editTask/accept")
-  fun acceptEditTask(params: EditTask_AcceptParams): CompletableFuture<Void?>
-
-  @JsonRequest("editTask/undo")
-  fun undoEditTask(params: EditTask_UndoParams): CompletableFuture<Void?>
-
-  @JsonRequest("editTask/cancel")
-  fun cancelEditTask(params: EditTask_CancelParams): CompletableFuture<Void?>
-
-  @JsonRequest("editCommands/code")
-  fun commandsEdit(params: InlineEditParams): CompletableFuture<EditTask>
-
-  @JsonRequest("chat/web/new") fun chatNew(): CompletableFuture<Any>
-
-  @JsonRequest("webview/receiveMessageStringEncoded")
-  fun webviewReceiveMessageStringEncoded(
-      params: WebviewReceiveMessageStringEncodedParams
-  ): CompletableFuture<Void?>
-
-  @JsonNotification("webview/didDisposeNative")
-  fun webviewDidDisposeNative(webviewDidDisposeParams: WebviewDidDisposeParams)
-
-  @JsonRequest("webview/resolveWebviewView")
-  fun webviewResolveWebviewView(params: WebviewResolveWebviewViewParams): CompletableFuture<Any>
 
   @JsonRequest("ignore/test")
   fun ignoreTest(params: IgnoreTestParams): CompletableFuture<IgnoreTestResponse>

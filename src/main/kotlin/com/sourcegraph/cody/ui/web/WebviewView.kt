@@ -5,7 +5,7 @@ import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.project.Project
 import com.sourcegraph.cody.CodyToolWindowContent
 import com.sourcegraph.cody.agent.CodyAgentService
-import com.sourcegraph.cody.agent.WebviewResolveWebviewViewParams
+import com.sourcegraph.cody.agent.protocol_generated.Webview_ResolveWebviewViewParams
 
 /// A view that can host a browser component.
 private interface WebviewHost {
@@ -113,8 +113,8 @@ internal class WebviewViewManager(private val project: Project) {
 
     CodyAgentService.withAgent(project) {
       // TODO: https://code.visualstudio.com/api/references/vscode-api#WebviewViewProvider
-      it.server.webviewResolveWebviewView(
-          WebviewResolveWebviewViewParams(viewId = provider.id, webviewHandle = handle))
+      it.server.webview_resolveWebviewView(
+          Webview_ResolveWebviewViewParams(viewId = provider.id, webviewHandle = handle))
     }
   }
 }

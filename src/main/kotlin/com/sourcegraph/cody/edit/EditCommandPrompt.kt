@@ -26,8 +26,8 @@ import com.intellij.util.concurrency.annotations.RequiresEdt
 import com.intellij.util.messages.MessageBusConnection
 import com.intellij.util.ui.JBUI
 import com.sourcegraph.cody.agent.CodyAgentService
-import com.sourcegraph.cody.agent.protocol.InlineEditParams
 import com.sourcegraph.cody.agent.protocol.ModelUsage
+import com.sourcegraph.cody.agent.protocol_generated.EditCommands_CodeParams
 import com.sourcegraph.cody.agent.protocol_generated.EditTask
 import com.sourcegraph.cody.agent.protocol_generated.EditTask_RetryParams
 import com.sourcegraph.cody.agent.protocol_generated.ModelAvailabilityStatus
@@ -416,7 +416,13 @@ class EditCommandPrompt(
                       previousEdit.selectionRange)
               agent.server.editTask_retry(params).get()
             } else {
-              agent.server.commandsEdit(InlineEditParams(text, currentModel, "edit")).get()
+              agent.server
+                  .editCommands_code(
+                      EditCommands_CodeParams(
+                          instruction = text,
+                          model = currentModel,
+                          mode = EditCommands_CodeParams.ModeEnum.Edit))
+                  .get()
             }
         EditCodeAction.completedEditTasks[result.id] = result
       }
