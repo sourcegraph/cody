@@ -2,10 +2,11 @@ import type { ExportResult } from '@opentelemetry/core'
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http'
 import type { ReadableSpan } from '@opentelemetry/sdk-trace-base'
 import { getVSCodeAPI } from '../../../webviews/utils/VSCodeApi'
+import { logDebug } from '../../output-channel-logger'
 const MAX_TRACE_RETAIN_MS = 60 * 1000 * 5 // 5 minutes
 
 export class CodyTraceExporterWeb extends OTLPTraceExporter {
-    private isTracingEnabled = false
+    private isTracingEnabled: boolean
     private queuedSpans: Map<string, { span: ReadableSpan; enqueuedAt: number }> = new Map()
 
     constructor({ isTracingEnabled }: { isTracingEnabled: boolean }) {
@@ -30,6 +31,7 @@ export class CodyTraceExporterWeb extends OTLPTraceExporter {
         for (const [spanId, { enqueuedAt }] of this.queuedSpans.entries()) {
             if (now - enqueuedAt > MAX_TRACE_RETAIN_MS) {
                 this.queuedSpans.delete(spanId)
+                logDebug('[CodyTraceExporterWeb] Removed expired span from queue:', spanId)
             }
         }
 
@@ -86,6 +88,7 @@ export class CodyTraceExporterWeb extends OTLPTraceExporter {
                 // Remove these spans from queued spans if present
                 for (const span of spanGroup) {
                     this.queuedSpans.delete(span.spanContext().spanId)
+                    logDebug('[CodyTraceExporterWeb] Removed span from queue:', span.spanContext().spanId)
                 }
             } else if (hasRenderSpan) {
                 // Queue incomplete groups
@@ -107,8 +110,9 @@ export class CodyTraceExporterWeb extends OTLPTraceExporter {
     send(spans: ReadableSpan[]): void {
         try {
             const exportData = this.convert(spans)
-            const safeData = JSON.stringify(exportData, getCircularReplacer())
+            const safeData = JSON.stringify(exportData)
 
+            // TODO: replace this before merging with logdebug
             console.log('[CodyTraceExporterWeb] Exporting spans:', {
                 count: spans.length,
                 rootSpans: spans.filter(s => !s.parentSpanId).length,
@@ -127,14 +131,25 @@ export class CodyTraceExporterWeb extends OTLPTraceExporter {
 }
 
 function getRootSpan(spanMap: Map<string, ReadableSpan>, span: ReadableSpan): ReadableSpan | null {
-    if (!span.parentSpanId) {
-        return span
+    // Start with the input span
+    let currentSpan = span;
+
+    while (true) {
+        // If we find a span without a parent, it's the root
+        if (!currentSpan.parentSpanId) {
+            return currentSpan;
+        }
+
+        const parentSpan = spanMap.get(currentSpan.parentSpanId);
+        
+        // Return null if parent ID exists but parent span not found.
+        // These spans are expected to be completed later.
+        if (!parentSpan) {
+            return null;
+        }
+
+        currentSpan = parentSpan;
     }
-    const parentSpan = spanMap.get(span.parentSpanId)
-    if (!parentSpan) {
-        return null
-    }
-    return getRootSpan(spanMap, parentSpan)
 }
 
 function isRootSampled(rootSpan: ReadableSpan): boolean {
