@@ -432,7 +432,7 @@ export class AutoEditsRenderer implements vscode.Disposable {
                         before: {
                             contentText:
                                 '\u00A0'.repeat(3) +
-                                replaceLeadingTrailingChars(decoration.lineText, ' ', '\u00A0'),
+                                _replaceLeadingTrailingChars(decoration.lineText, ' ', '\u00A0'),
                             margin: `0 0 0 ${replacerCol - line.range.end.character}ch`,
                         },
                     },
@@ -444,7 +444,7 @@ export class AutoEditsRenderer implements vscode.Disposable {
                         before: {
                             contentText:
                                 '\u00A0' +
-                                replaceLeadingTrailingChars(decoration.lineText, ' ', '\u00A0'),
+                                _replaceLeadingTrailingChars(decoration.lineText, ' ', '\u00A0'),
                         },
                     },
                 })
@@ -529,7 +529,7 @@ export class AutoEditsRenderer implements vscode.Disposable {
  * @param newS The character/string to replace with
  * @returns The string with leading and trailing characters replaced
  */
-function replaceLeadingTrailingChars(str: string, oldS: string, newS: string): string {
+export function _replaceLeadingTrailingChars(str: string, oldS: string, newS: string): string {
     let prefixLen = str.length
     for (let i = 0; i < str.length; i++) {
         if (str[i] !== oldS) {
