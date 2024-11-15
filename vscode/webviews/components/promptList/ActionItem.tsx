@@ -26,6 +26,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '../../components/shadcn
 import { commandRowValue } from './utils'
 
 import styles from './ActionItem.module.css'
+import { useConfig } from '../../utils/useConfig';
 
 interface ActionItemProps {
     action: Action
@@ -35,10 +36,16 @@ interface ActionItemProps {
 
 export const ActionItem: FC<ActionItemProps> = props => {
     const { action, className, onSelect } = props
+    const { clientCapabilities } = useConfig()
+    const isEditEnabled = clientCapabilities.edit !== 'none'
+    const isActionEditLike = action.actionType === 'prompt'
+        ? action.mode !== 'CHAT'
+        : action.mode !== 'ask'
 
     return (
         <CommandItem
             value={commandRowValue(action)}
+            disabled={!isEditEnabled && isActionEditLike}
             className={clsx(className, styles.item)}
             onSelect={onSelect}
         >
