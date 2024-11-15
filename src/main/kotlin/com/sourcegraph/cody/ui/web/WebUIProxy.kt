@@ -5,13 +5,16 @@ import com.google.gson.JsonParser
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.ide.CopyPasteManager
+import com.intellij.openapi.project.ProjectManager
 import com.intellij.ui.jcef.JBCefBrowserBase
 import com.intellij.ui.jcef.JBCefBrowserBuilder
 import com.intellij.ui.jcef.JBCefJSQuery
 import com.sourcegraph.cody.agent.CodyAgent
+import com.sourcegraph.cody.agent.CodyAgentService
 import com.sourcegraph.cody.agent.protocol.WebviewOptions
 import com.sourcegraph.cody.config.CodyApplicationSettings
 import com.sourcegraph.cody.sidebar.WebTheme
+import com.sourcegraph.cody.telemetry.TelemetryV2
 import com.sourcegraph.common.BrowserOpener
 import java.awt.Component
 import java.awt.datatransfer.StringSelection
@@ -325,6 +328,8 @@ private class ExtensionRequestHandler(
     private val proxy: WebUIProxy,
     private val apiScript: String
 ) : CefRequestHandler {
+  private val logger = Logger.getInstance(ExtensionRequestHandler::class.java)
+
   override fun onBeforeBrowse(
       browser: CefBrowser?,
       frame: CefFrame?,
@@ -393,7 +398,15 @@ private class ExtensionRequestHandler(
       sslInfo: CefSSLInfo?,
       callback: CefCallback?
   ): Boolean {
-    // TODO: Add Telemetry here.
+    proxy.openDevTools()
+    logger.warn(
+        """Certificate error occurred while loading URL: $request_url
+        Error code: ${cert_error?.name}
+        SSL Info: $sslInfo"""
+            .trimIndent())
+    ProjectManager.getInstance().openProjects.forEach { project ->
+      TelemetryV2.sendTelemetryEvent(project, "cody.webview.request", "certError")
+    }
     return false
   }
 
@@ -401,9 +414,11 @@ private class ExtensionRequestHandler(
       browser: CefBrowser?,
       status: CefRequestHandler.TerminationStatus?
   ) {
-    // TODO: Add Telemetry here.
-    // TODO: Logging.
-    // TODO: Trigger a reload.
+    logger.warn("Browser render process terminated: ${status?.name}")
+    ProjectManager.getInstance().openProjects.forEach { project ->
+      TelemetryV2.sendTelemetryEvent(project, "cody.webview.request", "renderProcessTerminated")
+      CodyAgentService.getInstance(project).restartAgent(project)
+    }
   }
 }
 
