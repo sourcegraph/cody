@@ -7,6 +7,7 @@ import type {
 import { autoeditsLogger } from '../logger'
 import type { AutoeditsModelAdapter, ChatPrompt, PromptResponseData } from '../prompt-provider'
 import { getModelResponse } from '../prompt-provider'
+import type { AutoeditModelOptions } from '../prompt-provider'
 import { type CodeToReplaceData, SYSTEM_PROMPT, getBaseUserPrompt } from '../prompt-utils'
 
 export class CodyGatewayAdapter implements AutoeditsModelAdapter {
@@ -41,27 +42,29 @@ export class CodyGatewayAdapter implements AutoeditsModelAdapter {
         return response
     }
 
-    async getModelResponse(
-        url: string,
-        model: string,
-        apiKey: string,
-        prompt: ChatPrompt
-    ): Promise<string> {
+    async getModelResponse(option: AutoeditModelOptions): Promise<string> {
         try {
             const headers = {
                 'X-Sourcegraph-Feature': 'chat_completions',
             }
             const body = {
                 stream: false,
-                model: model,
-                messages: prompt,
+                model: option.model,
+                messages: option.prompt,
                 temperature: 0.2,
                 max_tokens: 256,
                 response_format: {
                     type: 'text',
                 },
+                speculation: option.codeToRewrite,
+                user: option.userId,
             }
-            const response = await getModelResponse(url, JSON.stringify(body), apiKey, headers)
+            const response = await getModelResponse(
+                option.url,
+                JSON.stringify(body),
+                option.apiKey,
+                headers
+            )
             return response.choices[0].message.content
         } catch (error) {
             autoeditsLogger.logDebug('AutoEdits', 'Error calling Cody Gateway:', error)

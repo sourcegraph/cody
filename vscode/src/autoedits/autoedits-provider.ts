@@ -200,12 +200,14 @@ export class AutoeditsProvider implements vscode.Disposable {
             this.config.tokenLimit
         )
         const apiKey = await this.getApiKey()
-        const response = await this.config.provider.getModelResponse(
-            this.config.url,
-            this.config.model,
+        const response = await this.config.provider.getModelResponse({
+            url: this.config.url,
+            model: this.config.model,
             apiKey,
-            prompt
-        )
+            prompt,
+            codeToRewrite: codeToReplace.codeToRewrite,
+            userId: (await currentResolvedConfig()).clientState.anonymousUserID,
+        })
         const postProcessedResponse = this.config.provider.postProcessResponse(codeToReplace, response)
 
         if (options.abortSignal?.aborted || !postProcessedResponse) {
