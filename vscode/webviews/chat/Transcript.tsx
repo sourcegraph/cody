@@ -441,11 +441,11 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                 if (activeChatContext) {
                     const rootSpan = trace.getSpan(activeChatContext)
                     if (rootSpan) {
-                        rootSpan.setAttributes({
-                            'chat.completed': true,
-                            'chat.total_time': Date.now() - (renderStartTime.current ?? Date.now()),
-                        })
-                        rootSpan.end()
+                        // rootSpan.setAttributes({
+                        //     'chat.completed': true,
+                        //     'chat.total_time': Date.now() - (renderStartTime.current ?? Date.now()),
+                        // })
+                        // rootSpan.end()
                     }
                     setActiveChatContext(undefined)
                 }
