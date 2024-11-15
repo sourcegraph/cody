@@ -1,0 +1,124 @@
+.suggestions {
+    border: 1px solid #EFF2F5;
+    border-radius: 0.25rem;
+    box-shadow: 0px 20px 25px -5px var(--color-shadow-10, rgba(15, 17, 26, 0.10)), 0px 8px 10px -6px var(--color-shadow-10, rgba(15, 17, 26, 0.10));
+    max-height: 300px;
+    overflow: auto;
+    position: absolute;
+    margin-top: 0.5rem;
+    width: 400px;
+
+    &.loading {
+        li {
+            pointer-events: none;
+            opacity: 50%;
+        }
+    }
+
+    li {
+        padding: 0.5rem 0.25rem;
+        cursor: pointer;
+    }
+}
+
+.mention {
+    --mention-color-opacity: 70%;
+
+    color: color-mix(in lch, var(--vscode-inputOption-activeForeground) calc(1.2*var(--mention-color-opacity)), transparent);
+    background-color: color-mix(in lch, var(--vscode-inputOption-activeBackground) var(--mention-color-opacity), transparent);
+    border-radius: 2px;
+    white-space: normal;
+    padding: 0 3px;
+    display: inline-flex;
+    align-items: baseline;
+    outline-offset: -1px;
+    cursor: pointer;
+
+    &--focused {
+        --mention-color-opacity: 100%;
+        outline: solid 1px var(--vscode-inputOption-activeBorder);
+    }
+
+    ::selection {
+        background-color: transparent;
+    }
+
+    svg {
+        display: inline-flex;
+        align-self: center;
+        height: 14px;
+        width: 14px;
+        margin-right: 2px;
+        opacity: 0.8;
+        transform: translateY(-1px);
+    }
+}
+
+.active {
+    position: relative;
+}
+
+.active::after {
+    content: "";
+    display: block;
+    position: absolute;
+    inset: -2px -6px -2px -4px;
+    border-radius: 4px;
+    background-color: rgba(0, 0, 0, 0.035);
+    border: 1px solid rgba(0, 0, 0, 0.02);
+}
+
+/* TODO dark */
+.active::after {
+    background-color: rgba(255, 255, 255, 0.035);
+    border: 1px solid rgba(255, 255, 255, 0.035);
+}
+
+:root {
+    --prompt-editor-padding-y: 8px;
+    --prompt-editor-padding-x: 8px;
+}
+
+.editor {
+    font: inherit;
+    width: 100%;
+    overflow: auto;
+    scrollbar-width: thin;
+
+    /* Don't allow the input box to become larger than the webview to avoid submit buttons going off the screen */
+    max-height: 60vh;
+
+    > * {
+        outline: none;
+    }
+}
+.editor :global(.ProseMirror)[data-placeholder]::before {
+  position: absolute;
+  content: attr(data-placeholder);
+  pointer-events: none;
+}
+
+.editor:not(.seamless) {
+    background-color: var(--vscode-input-background);
+    color: var(--vscode-input-foreground);
+    box-sizing: border-box;
+    border: 1px solid transparent;
+    border-radius: 2px;
+    padding: var(--prompt-editor-padding-y) var(--prompt-editor-padding-x);
+}
+
+.editor:not(.seamless):focus,
+.editor:not(.seamless):focus-visible,
+.editor:not(.seamless):focus-within {
+    outline: 1px solid var(--vscode-focusBorder);
+    outline-offset: -1px;
+}
+
+.editor:not(.seamless) {
+    border-color: var(--vscode-input-border, transparent);
+}
+
+.disabled {
+    color: var(--vscode-input-foreground);
+    opacity: 0.5;
+}
