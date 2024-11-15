@@ -2,6 +2,7 @@ export { PromptEditor, type PromptEditorRefAPI } from './PromptEditor'
 export { ContextItemMentionNode, MENTION_CLASS_NAME } from './nodes/ContextItemMentionNode'
 export { MentionMenu } from './mentions/mentionMenu/MentionMenu'
 export { BaseEditor } from './BaseEditor'
+export { BaseEditor as BaseEditorCM } from './cm/BaseEditor'
 export { type MentionMenuParams } from './mentions/mentionMenu/useMentionMenuData'
 export {
     ChatMentionContext,
