@@ -3,7 +3,7 @@ import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http'
 import type { ReadableSpan } from '@opentelemetry/sdk-trace-base'
 import { getVSCodeAPI } from '../../../webviews/utils/VSCodeApi'
 import { logDebug } from '../../../webviews/utils/logger'
-const MAX_TRACE_RETAIN_MS = 60 * 1000 * 50 // 50 minutes
+const MAX_TRACE_RETAIN_MS = 60 * 1000 * 5 // 5 minutes
 
 export class CodyTraceExporterWeb extends OTLPTraceExporter {
     private isTracingEnabled: boolean
@@ -189,9 +189,4 @@ function getCircularReplacer() {
         }
         return value
     }
-}
-
-function saveToLocalStorage(data: string, key = 'myData') {
-    localStorage.setItem(key, data)
-    console.log(`[CodyTraceExporterWeb] Data has been saved to localStorage with key: ${key}`)
 }
