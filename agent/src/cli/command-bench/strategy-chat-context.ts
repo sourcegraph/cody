@@ -129,9 +129,7 @@ async function runContextCommand(
                 )}] and query "${query}": ${resultsResp}`
             )
         }
-        if (resultsResp 
-            
-            null) {
+        if (resultsResp === null) {
             throw new Error(
                 `contextSearch failed for repos [${repoNames.join(
                     ','
