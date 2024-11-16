@@ -98,7 +98,6 @@ export class CodyTraceExporterWeb extends OTLPTraceExporter {
                 }
             } else {
                 // Queue incomplete groups
-                debugger
                 for (const span of spanGroup) {
                     const spanId = span.spanContext().spanId
                     if (!this.queuedSpans.has(spanId)) {

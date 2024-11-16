@@ -47,7 +47,7 @@ import { HumanMessageCell } from './cells/messageCell/human/HumanMessageCell'
 import { CodyIcon } from './components/CodyIcon'
 import { InfoMessage } from './components/InfoMessage'
 
-import { type Context, type Span, SpanStatusCode, context, trace } from '@opentelemetry/api'
+import { type Context, type Span, context, trace } from '@opentelemetry/api'
 interface TranscriptProps {
     activeChatContext?: Context
     setActiveChatContext: (context: Context | undefined) => void
@@ -316,11 +316,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
             setIntentResults(undefined)
 
             const subscription = extensionAPI
-                .detectIntent(
-                    inputTextWithoutContextChipsFromPromptEditorState(
-                        editorValue.editorState
-                    )
-                )
+                .detectIntent(inputTextWithoutContextChipsFromPromptEditorState(editorValue.editorState))
                 .subscribe({
                     next: value => {
                         setIntentResults(value)
