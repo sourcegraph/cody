@@ -45,6 +45,7 @@ import type { CommandResult } from './CommandResult'
 import { showAccountMenu } from './auth/account-menu'
 import { showSignInMenu, showSignOutMenu, tokenCallbackHandler } from './auth/auth'
 import { AutoeditsProvider } from './autoedits/autoedits-provider'
+import { registerTestRenderCommand } from './autoedits/renderer-testing'
 import type { MessageProviderOptions } from './chat/MessageProvider'
 import { ChatsController, CodyChatEditorViewType } from './chat/chat-view/ChatsController'
 import { ContextRetriever } from './chat/chat-view/ContextRetriever'
@@ -324,7 +325,7 @@ async function initializeSingletons(
 ): Promise<void> {
     commandControllerInit(platform.createCommandsProvider?.(), platform.extensionClient.capabilities)
 
-    modelsService.storage = localStorage
+    modelsService.setStorage(localStorage)
 
     if (platform.otherInitialization) {
         disposables.push(platform.otherInitialization())
@@ -452,14 +453,15 @@ async function registerCodyCommands(
     )
 
     // Initialize autoedit provider if experimental feature is enabled
+    registerAutoEdits(disposables)
+
+    // Initialize autoedit tester
     disposables.push(
         enableFeature(
-            ({ configuration }) => configuration.experimentalAutoedits !== undefined,
-            () => new AutoeditsProvider()
+            ({ configuration }) => configuration.experimentalAutoeditsRendererTesting !== false,
+            () => registerTestRenderCommand()
         )
     )
-
-    // Experimental Command: Auto Edit
     disposables.push(
         vscode.commands.registerCommand('cody.command.auto-edit', a => executeAutoEditCommand(a))
     )
@@ -698,6 +700,23 @@ async function tryRegisterTutorial(
         const { registerInteractiveTutorial } = await import('./tutorial')
         registerInteractiveTutorial(context).then(disposable => disposables.push(...disposable))
     }
+}
+
+function registerAutoEdits(disposables: vscode.Disposable[]): void {
+    disposables.push(
+        enableFeature(
+            ({ configuration }) => {
+                return (
+                    configuration.experimentalAutoeditsEnabled === true &&
+                    configuration.autocomplete === false
+                )
+            },
+            () => {
+                const provider = new AutoeditsProvider()
+                return provider
+            }
+        )
+    )
 }
 
 /**

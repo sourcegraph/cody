@@ -1,9 +1,11 @@
 import { type Observable, map } from 'observable-fns'
+
 import { authStatus, currentAuthStatus } from '../auth/authStatus'
 import { mockAuthStatus } from '../auth/authStatus'
 import { type AuthStatus, isCodyProUser, isEnterpriseUser } from '../auth/types'
 import { AUTH_STATUS_FIXTURE_AUTHED_DOTCOM } from '../auth/types'
 import { type PickResolvedConfiguration, resolvedConfig } from '../configuration/resolver'
+import { FeatureFlag, featureFlagProvider } from '../experimentation/FeatureFlagProvider'
 import { logDebug } from '../logger'
 import {
     type StoredLastValue,
@@ -14,17 +16,14 @@ import {
     storeLastValue,
     tap,
 } from '../misc/observable'
-import {
-    firstResultFromOperation,
-    pendingOperation,
-    skipPendingOperation,
-} from '../misc/observableOperation'
+import { firstResultFromOperation, pendingOperation } from '../misc/observableOperation'
 import { ClientConfigSingleton } from '../sourcegraph-api/clientConfig'
 import {
     type UserProductSubscription,
     userProductSubscription,
 } from '../sourcegraph-api/userProductSubscription'
 import { CHAT_INPUT_TOKEN_BUDGET, CHAT_OUTPUT_TOKEN_BUDGET } from '../token/constants'
+
 import { configOverwrites } from './configOverwrites'
 import { type Model, type ServerModel, modelTier } from './model'
 import { syncModels } from './sync'
@@ -223,6 +222,7 @@ const EMPTY_MODELS_DATA: ModelsData = {
 }
 
 export interface LocalStorageForModelPreferences {
+    getEnrollmentHistory(featureName: string): boolean
     getModelPreferences(): DefaultsAndUserPreferencesByEndpoint
     setModelPreferences(preferences: DefaultsAndUserPreferencesByEndpoint): Promise<void>
 }
@@ -244,10 +244,10 @@ export interface ModelAvailabilityStatus {
  *      from this type.)
  */
 export class ModelsService {
-    public storage: LocalStorageForModelPreferences | undefined
+    private storage: LocalStorageForModelPreferences | undefined
 
     private storedValue: StoredLastValue<ModelsData>
-    private syncPreferencesSubscription: Unsubscribable
+    private syncPreferencesSubscription?: Unsubscribable
 
     constructor(testing__mockModelsChanges?: ModelsService['modelsChanges']) {
         if (testing__mockModelsChanges) {
@@ -256,19 +256,48 @@ export class ModelsService {
         this.storedValue = storeLastValue(
             this.modelsChanges.pipe(map(data => (data === pendingOperation ? EMPTY_MODELS_DATA : data)))
         )
+    }
 
-        this.syncPreferencesSubscription = this.modelsChanges
+    public setStorage(storage: LocalStorageForModelPreferences): void {
+        this.storage = storage
+
+        this.syncPreferencesSubscription = combineLatest(
+            this.modelsChanges,
+            featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyEditDefaultToGpt4oMini)
+        )
             .pipe(
-                skipPendingOperation(),
-                tap(data => {
-                    if (this.storage) {
-                        const allSitePrefs = this.storage.getModelPreferences()
-                        const updated: DefaultsAndUserPreferencesByEndpoint = {
-                            ...allSitePrefs,
-                            [currentAuthStatus().endpoint]: data.preferences,
-                        }
-                        this.storage?.setModelPreferences(updated)
+                tap(([data, shouldEditDefaultToGpt4oMini]) => {
+                    if (data === pendingOperation) {
+                        return
                     }
+
+                    // Ensures we only change user preferences once
+                    // when they join the A/B test.
+                    const isEnrolled = this.storage?.getEnrollmentHistory(
+                        FeatureFlag.CodyEditDefaultToGpt4oMini
+                    )
+
+                    // Ensures that we have the gpt-4o-mini model
+                    // we want to default to in this A/B test.
+                    const gpt4oMini = data.primaryModels.find(
+                        model => model?.modelRef?.modelId === 'gpt-4o-mini'
+                    )
+
+                    const allSitePrefs = this.storage?.getModelPreferences()
+                    const currentAccountPrefs = { ...data.preferences }
+
+                    if (!isEnrolled && shouldEditDefaultToGpt4oMini && gpt4oMini) {
+                        // For users enrolled in the A/B test, we'll default
+                        // to the gpt-4-mini model when using the Edit command.
+                        // They still can switch back to other models if they want.
+                        currentAccountPrefs.selected.edit = gpt4oMini.id
+                    }
+
+                    const updated: DefaultsAndUserPreferencesByEndpoint = {
+                        ...allSitePrefs,
+                        [currentAuthStatus().endpoint]: currentAccountPrefs,
+                    }
+                    this.storage?.setModelPreferences(updated)
                 })
             )
             .subscribe({})
@@ -276,7 +305,7 @@ export class ModelsService {
 
     public dispose(): void {
         this.storedValue.subscription.unsubscribe()
-        this.syncPreferencesSubscription.unsubscribe()
+        this.syncPreferencesSubscription?.unsubscribe()
     }
 
     /**
@@ -313,13 +342,13 @@ export class ModelsService {
 
     private getModelsByType(usage: ModelUsage): Observable<Model[] | typeof pendingOperation> {
         return this.modelsChanges.pipe(
-            map(models =>
-                models === pendingOperation
+            map(models => {
+                return models === pendingOperation
                     ? pendingOperation
                     : [...models.primaryModels, ...models.localModels].filter(model =>
                           model.usage.includes(usage)
                       )
-            ),
+            }),
             distinctUntilChanged()
         )
     }
@@ -575,6 +604,7 @@ interface MockModelsServiceResult {
 }
 
 export class TestLocalStorageForModelPreferences implements LocalStorageForModelPreferences {
+    private isEnrolled = false
     constructor(public data: DefaultsAndUserPreferencesByEndpoint | null = null) {}
 
     getModelPreferences(): DefaultsAndUserPreferencesByEndpoint {
@@ -583,6 +613,14 @@ export class TestLocalStorageForModelPreferences implements LocalStorageForModel
 
     async setModelPreferences(preferences: DefaultsAndUserPreferencesByEndpoint): Promise<void> {
         this.data = preferences
+    }
+
+    getEnrollmentHistory(_featureName: string): boolean {
+        if (!this.isEnrolled) {
+            this.isEnrolled = true
+            return false
+        }
+        return true
     }
 }
 
@@ -595,7 +633,7 @@ export function mockModelsService({
     modelsService?: ModelsService
     storage?: TestLocalStorageForModelPreferences
 }): MockModelsServiceResult {
-    modelsService.storage = storage
+    modelsService.setStorage(storage)
     mockAuthStatus(authStatus)
     return { storage, modelsService }
 }

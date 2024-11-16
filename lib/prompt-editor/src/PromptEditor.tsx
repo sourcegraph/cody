@@ -117,7 +117,7 @@ export const PromptEditor: FunctionComponent<Props> = ({
                                     // Ensure element is focused in case the editor is empty. Copied
                                     // from LexicalAutoFocusPlugin.
                                     const doFocus = () =>
-                                        editor.getRootElement()?.focus({ preventScroll: true })
+                                        editor.getRootElement()?.focus({ preventScroll: false })
                                     doFocus()
 
                                     // HACK(sqs): Needed in VS Code webviews to actually get it to focus

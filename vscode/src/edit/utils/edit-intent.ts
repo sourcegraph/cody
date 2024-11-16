@@ -20,7 +20,7 @@ export function getEditIntent(
     proposedIntent?: EditIntent
 ): EditIntent {
     if (proposedIntent !== undefined && proposedIntent !== 'add') {
-        // Return provided intent that should not be overriden
+        // Return provided intent that should not be overridden
         return proposedIntent
     }
 

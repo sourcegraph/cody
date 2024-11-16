@@ -1,3 +1,6 @@
+## 0.11.0
+- Support an external API for Cody Panel functionality (now you can trigger running prompts outside of Cody Web component)
+
 ## 0.10.0
 - Prompts UI update (new prompts list, tab and recent prompts popover)
 - Improved performance by bypassing rpc messages hydration

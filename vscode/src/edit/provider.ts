@@ -134,6 +134,16 @@ export class EditProvider {
                 stopSequences,
                 maxTokensToSample: contextWindow.output,
             } as CompletionParameters
+
+            if (model.includes('gpt-4o')) {
+                // Use Predicted Output for gpt-4o models.
+                // https://platform.openai.com/docs/guides/predicted-outputs
+                params.prediction = {
+                    type: 'content',
+                    content: this.config.task.original,
+                }
+            }
+
             // Set stream param only when the model is disabled for streaming.
             if (modelsService.isStreamDisabled(model)) {
                 params.stream = false

@@ -112,9 +112,17 @@ export function getConfiguration(
         experimentalTracing: getHiddenSetting('experimental.tracing', false),
 
         experimentalSupercompletions: getHiddenSetting('experimental.supercompletions', false),
-        experimentalAutoedits: getHiddenSetting('experimental.autoedit', undefined),
+        experimentalAutoeditsEnabled: getHiddenSetting('experimental.autoedits.enabled', false),
+        experimentalAutoeditsConfigOverride: getHiddenSetting(
+            'experimental.autoedits.config.override',
+            undefined
+        ),
+        experimentalAutoeditsRendererTesting: getHiddenSetting(
+            'experimental.autoedits-renderer-testing',
+            false
+        ),
         experimentalMinionAnthropicKey: getHiddenSetting('experimental.minion.anthropicKey', undefined),
-
+        experimentalNoxideEnabled: getHiddenSetting('experimental.noxide.enabled', true),
         experimentalGuardrailsTimeoutSeconds: getHiddenSetting('experimental.guardrailsTimeoutSeconds'),
 
         autocompleteExperimentalOllamaOptions: getHiddenSetting(
