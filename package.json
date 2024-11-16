@@ -64,6 +64,7 @@
   },
   "dependencies": {
     "@openctx/client": "^0.0.30",
+    "@opentelemetry/sdk-trace-web": "^1.18.1",
     "@sourcegraph/telemetry": "^0.18.0",
     "observable-fns": "^0.6.1",
     "react": "18.2.0",
@@ -78,6 +79,7 @@
   },
   "pnpm": {
     "overrides": {
+      "tslib": "2.1.0",
       "@lexical/react": "https://storage.googleapis.com/sourcegraph-assets/npm/lexical-react-sourcegraph-fork-31065486.tgz"
     },
     "packageExtensions": {
