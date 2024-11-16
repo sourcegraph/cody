@@ -91,7 +91,7 @@ async function runContextCommand(
     const exampleOutputs: ExampleOutput[] = []
 
     for (const example of examples) {
-        const { targetRepoRevs, query: origQuery } = example
+        const { targetRepoRevs, query: origQuery, essentialContext } = example
         const repoNames = targetRepoRevs.map(repoRev => repoRev.repoName)
         const repoIDNames = await graphqlClient.getRepoIds(repoNames, repoNames.length + 10)
         if (isError(repoIDNames)) {
