@@ -407,7 +407,6 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                 timeToFirstTokenSpan.current = undefined
                 renderStartTime.current = undefined
                 hasRecordedFirstToken.current = false
-                debugger
 
                 // Only end the chat context if this is truly the last message
                 if (activeChatContext) {
