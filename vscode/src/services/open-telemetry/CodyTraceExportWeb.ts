@@ -3,7 +3,7 @@ import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http'
 import type { ReadableSpan } from '@opentelemetry/sdk-trace-base'
 import { getVSCodeAPI } from '../../../webviews/utils/VSCodeApi'
 import { logDebug } from '../../../webviews/utils/logger'
-const MAX_TRACE_RETAIN_MS = 60 * 1000 * 5 // 5 minutes
+const MAX_TRACE_RETAIN_MS = 60 * 1000 * 50 // 50 minutes
 
 export class CodyTraceExporterWeb extends OTLPTraceExporter {
     private isTracingEnabled: boolean
@@ -35,12 +35,15 @@ export class CodyTraceExporterWeb extends OTLPTraceExporter {
             }
         }
 
+        // Include queued spans for re-evaluation
+        const allSpans = [...spans, ...Array.from(this.queuedSpans.values()).map(q => q.span)]
+
         // Build span hierarchy map
         const spanMap = new Map<string, ReadableSpan>()
         const spansByRoot = new Map<string, Set<ReadableSpan>>()
 
         // First, map all spans by their ID
-        for (const span of [...spans, ...Array.from(this.queuedSpans.values()).map(q => q.span)]) {
+        for (const span of allSpans) {
             spanMap.set(span.spanContext().spanId, span)
         }
 
@@ -93,8 +96,9 @@ export class CodyTraceExporterWeb extends OTLPTraceExporter {
                         span.spanContext().spanId
                     )
                 }
-            } else if (hasRenderSpan) {
+            } else {
                 // Queue incomplete groups
+                debugger
                 for (const span of spanGroup) {
                     const spanId = span.spanContext().spanId
                     if (!this.queuedSpans.has(spanId)) {
@@ -103,7 +107,6 @@ export class CodyTraceExporterWeb extends OTLPTraceExporter {
                 }
             }
         }
-
         if (spansToExport.length > 0) {
             super.export(spansToExport, resultCallback)
         }

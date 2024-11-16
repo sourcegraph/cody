@@ -27,6 +27,7 @@ import {
     useImperativeHandle,
     useMemo,
     useRef,
+    useState,
 } from 'react'
 import { URI } from 'vscode-uri'
 import type { UserAccountInfo } from '../Chat'
@@ -300,10 +301,6 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
     const experimentalOneBoxEnabled = useExperimentalOneBox()
     const onChange = useMemo(() => {
         return debounce(async (editorValue: SerializedPromptEditorValue) => {
-            // End previous span if it exists
-            spanManager.endSpan('detect-intent')
-
-            // Only start a new span if we need to
             if (!experimentalOneBoxEnabled) {
                 return
             }
@@ -316,59 +313,25 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                 return
             }
 
-            // Capture the current active context
-            const currentContext = context.active()
+            setIntentResults(undefined)
 
-            return spanManager.startActiveSpan('detect-intent', async span => {
-                try {
-                    setIntentResults(undefined)
+            const subscription = extensionAPI
+                .detectIntent(
+                    inputTextWithoutContextChipsFromPromptEditorState(
+                        editorValue.editorState
+                    )
+                )
+                .subscribe({
+                    next: value => {
+                        setIntentResults(value)
+                    },
+                    error: error => {
+                        console.error('Error detecting intent:', error)
+                    },
+                })
 
-                    span.setAttributes({
-                        'intent.detection.triggered': true,
-                        'editor.text.length': editorValue.text.length,
-                    })
-
-                    // Use context.with to propagate the context into the subscription
-                    context.with(currentContext, () => {
-                        const subscription = extensionAPI
-                            .detectIntent(
-                                inputTextWithoutContextChipsFromPromptEditorState(
-                                    editorValue.editorState
-                                )
-                            )
-                            .subscribe({
-                                next: value => {
-                                    setIntentResults(value)
-                                    span.setAttributes({
-                                        'intent.detected': value?.intent ?? undefined,
-                                    })
-                                    span.setStatus({ code: SpanStatusCode.OK })
-                                    spanManager.endSpan('detect-intent')
-                                },
-                                error: error => {
-                                    span.setStatus({
-                                        code: SpanStatusCode.ERROR,
-                                        message:
-                                            error instanceof Error ? error.message : 'Unknown error',
-                                    })
-                                    span.recordException(error as Error)
-                                    spanManager.endSpan('detect-intent')
-                                },
-                            })
-
-                        // Clean up subscription if component unmounts
-                        return () => subscription.unsubscribe()
-                    })
-                } catch (error) {
-                    span.setStatus({
-                        code: SpanStatusCode.ERROR,
-                        message: error instanceof Error ? error.message : 'Unknown error',
-                    })
-                    span.recordException(error as Error)
-                    spanManager.endSpan('detect-intent')
-                    throw error
-                }
-            })
+            // Clean up subscription if component unmounts
+            return () => subscription.unsubscribe()
         }, 300)
     }, [experimentalOneBoxEnabled, extensionAPI, setIntentResults])
 
@@ -397,6 +360,14 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
     const renderStartTime = useRef<number>()
     const hasRecordedFirstToken = useRef(false)
 
+    // State to track loading status
+    const [isLoading, setIsLoading] = useState(assistantMessage?.isLoading)
+
+    useEffect(() => {
+        // Update loading state when assistantMessage changes
+        setIsLoading(assistantMessage?.isLoading)
+    }, [assistantMessage])
+
     useEffect(() => {
         if (assistantMessage) {
             if (assistantMessage.isLoading && !renderSpan.current && activeChatContext) {
@@ -422,12 +393,12 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                         context: activeChatContext,
                     })
                 })
-            } else if (!assistantMessage.isLoading && renderSpan.current) {
+            } else if (!isLoading && renderSpan.current) {
                 // Complete the render span
                 renderSpan.current.setAttributes({
                     'render.state': 'completed',
-                    'render.success': !assistantMessage.error,
-                    'message.length': assistantMessage.text?.length ?? 0,
+                    'render.success': !assistantMessage?.error,
+                    'message.length': assistantMessage?.text?.length ?? 0,
                     'render.total_time': Date.now() - (renderStartTime.current ?? Date.now()),
                 })
                 renderSpan.current.end()
@@ -436,6 +407,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                 timeToFirstTokenSpan.current = undefined
                 renderStartTime.current = undefined
                 hasRecordedFirstToken.current = false
+                debugger
 
                 // Only end the chat context if this is truly the last message
                 if (activeChatContext) {
@@ -468,7 +440,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                 renderSpan.current?.setAttribute('time.to.first.token', timeToFirstToken)
             }
         }
-    }, [assistantMessage, activeChatContext, setActiveChatContext, spanManager])
+    }, [assistantMessage, activeChatContext, setActiveChatContext, spanManager, isLoading])
 
     const humanMessageInfo = useMemo(() => {
         // See SRCH-942: it's critical to memoize this value to avoid repeated
