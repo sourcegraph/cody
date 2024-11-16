@@ -107,8 +107,9 @@ export class ContextRetrieverDataCollection implements vscode.Disposable {
                 })
             case RetrieverIdentifier.DiagnosticsRetriever:
                 return new DiagnosticsRetriever({
-                    contextLines: 3,
-                    useXMLForPromptRendering: true,
+                    contextLines: 0,
+                    useXMLForPromptRendering: false,
+                    useCaretToIndicateErrorLocation: false,
                 })
             case RetrieverIdentifier.RecentViewPortRetriever:
                 return new RecentViewPortRetriever({

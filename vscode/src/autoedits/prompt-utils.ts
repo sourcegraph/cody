@@ -1,4 +1,4 @@
-import { type AutoEditsTokenLimit, PromptString, ps } from '@sourcegraph/cody-shared'
+import { type AutoEditsTokenLimit, PromptString, ps, tokensToChars } from '@sourcegraph/cody-shared'
 import { Uri } from 'vscode'
 import * as vscode from 'vscode'
 import type {
@@ -426,20 +426,23 @@ export function getContextItemMappingWithTokenLimit(
     return contextItemMapping
 }
 
-function getContextItemsInTokenBudget(
+export function getContextItemsInTokenBudget(
     contextItems: AutocompleteContextSnippet[],
     tokenBudget: number
 ): AutocompleteContextSnippet[] {
-    const CHARS_PER_TOKEN = 4
+    const autocompleteItemsWithBudget: AutocompleteContextSnippet[] = []
     let currentCharsCount = 0
-    const charsBudget = tokenBudget * CHARS_PER_TOKEN
+    const charsBudget = tokensToChars(tokenBudget)
+
     for (let i = 0; i < contextItems.length; i++) {
-        currentCharsCount += contextItems[i].content.length
-        if (currentCharsCount > charsBudget) {
-            return contextItems.slice(0, i)
+        const item = contextItems[i]
+        if (currentCharsCount + item.content.length > charsBudget) {
+            continue
         }
+        currentCharsCount += item.content.length
+        autocompleteItemsWithBudget.push(item)
     }
-    return contextItems
+    return autocompleteItemsWithBudget
 }
 
 function getContextItemsForIdentifier(
