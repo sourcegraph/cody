@@ -30,11 +30,9 @@ export class ContextRetrieverDataCollection implements vscode.Disposable {
     private gitMetadataInstance = GitHubDotComRepoMetadata.getInstance()
 
     private readonly retrieverConfigs: RetrieverConfig[] = [
-        { identifier: RetrieverIdentifier.RecentCopyRetriever, maxSnippets: 1 },
         { identifier: RetrieverIdentifier.RecentEditsRetriever, maxSnippets: 15 },
         { identifier: RetrieverIdentifier.DiagnosticsRetriever, maxSnippets: 15 },
         { identifier: RetrieverIdentifier.RecentViewPortRetriever, maxSnippets: 10 },
-        { identifier: RetrieverIdentifier.JaccardSimilarityRetriever, maxSnippets: 15 },
     ]
 
     constructor() {

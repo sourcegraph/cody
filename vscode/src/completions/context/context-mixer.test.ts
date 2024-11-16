@@ -10,6 +10,7 @@ import type * as vscode from 'vscode'
 import { getCurrentDocContext } from '../get-current-doc-context'
 import { documentAndPosition } from '../test-helpers'
 import type { ContextRetriever } from '../types'
+import { ContextRankingStrategy } from './completions-context-ranker'
 import { ContextMixer } from './context-mixer'
 import type { ContextStrategyFactory } from './context-strategy'
 import { RetrieverIdentifier } from './utils'
@@ -68,6 +69,7 @@ describe('ContextMixer', () => {
         it('returns empty result if no retrievers', async () => {
             const mixer = new ContextMixer({
                 strategyFactory: createMockStrategy([]),
+                contextRankingStrategy: ContextRankingStrategy.Default,
             })
             const { context, logSummary } = await mixer.getContext(defaultOptions)
 
@@ -104,6 +106,7 @@ describe('ContextMixer', () => {
                         },
                     ],
                 ]),
+                contextRankingStrategy: ContextRankingStrategy.Default,
             })
             const { context, logSummary } = await mixer.getContext(defaultOptions)
             expect(normalize(context)).toEqual([
@@ -186,6 +189,7 @@ describe('ContextMixer', () => {
                         },
                     ],
                 ]),
+                contextRankingStrategy: ContextRankingStrategy.Default,
             })
             const { context, logSummary } = await mixer.getContext(defaultOptions)
 
@@ -312,6 +316,7 @@ describe('ContextMixer', () => {
                             },
                         ],
                     ]),
+                    contextRankingStrategy: ContextRankingStrategy.Default,
                 })
                 const { context } = await mixer.getContext(defaultOptions)
                 const contextFiles = normalize(context)
@@ -337,6 +342,7 @@ describe('ContextMixer', () => {
             mixer = new ContextMixer({
                 strategyFactory: createMockStrategy(primaryRetrievers),
                 dataCollectionEnabled: true,
+                contextRankingStrategy: ContextRankingStrategy.Default,
             })
             getDataCollectionRetrieversSpy = vi.spyOn(mixer as any, 'getDataCollectionRetrievers')
             getDataCollectionRetrieversSpy.mockReturnValue(createMockedRetrievers(loggingRetrievers))

@@ -129,11 +129,6 @@ export class DefaultContextStrategyFactory implements ContextStrategyFactory {
                                     maxTrackedViewPorts: 50,
                                     maxRetrievedViewPorts: 10,
                                 }),
-                                new RecentCopyRetriever({
-                                    maxAgeMs: 60 * 1000,
-                                    maxSelections: 100,
-                                }),
-                                new JaccardSimilarityRetriever(),
                             ]
                             break
                         case 'jaccard-similarity':

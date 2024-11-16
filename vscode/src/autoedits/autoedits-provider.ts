@@ -8,6 +8,7 @@ import {
 import { type DebouncedFunc, debounce } from 'lodash'
 import { Observable } from 'observable-fns'
 import * as vscode from 'vscode'
+import { ContextRankingStrategy } from '../completions/context/completions-context-ranker'
 import { ContextMixer } from '../completions/context/context-mixer'
 import { DefaultContextStrategyFactory } from '../completions/context/context-strategy'
 import { RetrieverIdentifier } from '../completions/context/utils'
@@ -65,6 +66,7 @@ export class AutoeditsProvider implements vscode.Disposable {
             strategyFactory: new DefaultContextStrategyFactory(
                 Observable.of(AUTOEDITS_CONTEXT_STRATEGY)
             ),
+            contextRankingStrategy: ContextRankingStrategy.NoRanker,
             dataCollectionEnabled: false,
         })
         this.rendererManager = new AutoEditsRendererManager()
