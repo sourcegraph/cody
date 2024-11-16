@@ -408,11 +408,11 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                 if (activeChatContext) {
                     const rootSpan = trace.getSpan(activeChatContext)
                     if (rootSpan) {
-                        // rootSpan.setAttributes({
-                        //     'chat.completed': true,
-                        //     'chat.total_time': Date.now() - (renderStartTime.current ?? Date.now()),
-                        // })
-                        // rootSpan.end()
+                        rootSpan.setAttributes({
+                            'chat.completed': true,
+                            'chat.total_time': Date.now() - (renderStartTime.current ?? Date.now()),
+                        })
+                        rootSpan.end()
                     }
                     setActiveChatContext(undefined)
                 }
@@ -691,16 +691,21 @@ function submitHumanMessage({
     setActiveChatContext: (context: Context | undefined) => void
 }): Promise<void> {
     const spanManager = new SpanManager('cody-webview')
-    return spanManager.startActiveSpan(
-        'chat-interaction',
-        {
-            attributes: {
-                sampled: true,
-            },
+    const span = spanManager.startSpan('chat-interaction', {
+        attributes: {
+            sampled: true,
         },
-        async () => {
-            setActiveChatContext(spanManager.getActiveContext())
+    })
 
+    if (!span) {
+        throw new Error('Failed to start span for chat interaction')
+    }
+
+    const spanContext = trace.setSpan(context.active(), span)
+    setActiveChatContext(spanContext)
+
+    return context.with(spanContext, async () => {
+        try {
             getVSCodeAPI().postMessage({
                 command: 'submit',
                 text: editorValue.text,
@@ -711,6 +716,8 @@ function submitHumanMessage({
                 manuallySelectedIntent,
             })
             focusLastHumanMessageEditor()
+        } finally {
+            spanManager.endSpan('chat-interaction')
         }
-    )
+    })
 }
