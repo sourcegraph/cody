@@ -31,7 +31,7 @@ export interface EvalContextItem {
     startLine: number
     endLine: number
     content?: string
-    format: isUrlFormat ? 'url' as 'url' : 'old' as 'old'
+    format?: 'url' | 'old'
     retriever?: string
 }
 
