@@ -185,6 +185,9 @@ export class DiagnosticsRetriever implements vscode.Disposable, ContextRetriever
                 document.lineAt(contextEndLine).range.end.character
             )
         )
+        if (this.contextLines === 0) {
+            return `${prevLines}\n${diagnosticText}`
+        }
         return `${prevLines}\n${diagnosticText}\n${nextLines}`
     }
 
