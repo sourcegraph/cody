@@ -66,7 +66,7 @@ export class AutoeditsProvider implements vscode.Disposable {
             strategyFactory: new DefaultContextStrategyFactory(
                 Observable.of(AUTOEDITS_CONTEXT_STRATEGY)
             ),
-            contextRankingStrategy: ContextRankingStrategy.NoRanker,
+            contextRankingStrategy: ContextRankingStrategy.TimeBased,
             dataCollectionEnabled: false,
         })
         this.rendererManager = new AutoEditsRendererManager()

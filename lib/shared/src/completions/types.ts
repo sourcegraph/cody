@@ -7,7 +7,13 @@ export interface AutocompleteFileContextSnippet {
     startLine: number
     endLine: number
     content: string
+    /**
+     * This field is relevant for user action context sources such as `recent-edit`, `recent-copy` and `recent-viewport`.
+     * It indicates the time in milliseconds since the action was performed (eg: time Since the last edit).
+     */
+    timeSinceActionMs?: number
 }
+
 export interface AutocompleteSymbolContextSnippet extends AutocompleteFileContextSnippet {
     symbol: string
 }

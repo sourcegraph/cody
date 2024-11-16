@@ -10,6 +10,11 @@ export enum ContextRankingStrategy {
      * Strategy that does not apply any ranking to context snippets
      */
     NoRanker = 'no-ranker',
+    /**
+     * Strategy that applies ranking to context snippets based on the time since the action was performed.
+     * If the timestamp is not available, the context item is pushed to the end.
+     */
+    TimeBased = 'time-based',
 }
 
 export interface RetrievedContextResults {
@@ -34,9 +39,24 @@ export class DefaultCompletionsContextRanker implements CompletionsContextRanker
         switch (this.contextRankingStrategy) {
             case ContextRankingStrategy.NoRanker:
                 return this.getContextSnippetsAsPerNoRankerStrategy(results)
+            case ContextRankingStrategy.TimeBased:
+                return this.getContextSnippetsAsPerTimeBasedStrategy(results)
             default:
                 return this.getContextSnippetsAsPerDefaultStrategy(results)
         }
+    }
+
+    private getContextSnippetsAsPerTimeBasedStrategy(
+        results: RetrievedContextResults[]
+    ): Set<AutocompleteContextSnippet> {
+        const snippets = results
+            .flatMap(r => [...r.snippets])
+            .sort((a, b) => {
+                const aTime = a.timeSinceActionMs ?? Number.POSITIVE_INFINITY
+                const bTime = b.timeSinceActionMs ?? Number.POSITIVE_INFINITY
+                return aTime - bTime
+            })
+        return new Set(snippets)
     }
 
     private getContextSnippetsAsPerNoRankerStrategy(
