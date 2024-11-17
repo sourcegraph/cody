@@ -73,6 +73,7 @@ interface InlineCompletionItemRetrievedContext {
     filePath: string
     startLine: number
     endLine: number
+    timeSinceActionMs?: number
 }
 
 interface InlineContextItemsParams extends GitIdentifiersForFile {
@@ -767,13 +768,16 @@ function getInlineContextItemContext(
         suffix: docContext.completeSuffix.slice(0, MAX_PREFIX_SUFFIX_SIZE_BYTES),
         triggerLine: position.line,
         triggerCharacter: position.character,
-        context: inlineContextParams.context.map(({ identifier, content, startLine, endLine, uri }) => ({
-            identifier,
-            content,
-            startLine,
-            endLine,
-            filePath: displayPathWithoutWorkspaceFolderPrefix(uri),
-        })),
+        context: inlineContextParams.context.map(
+            ({ identifier, content, startLine, endLine, uri, timeSinceActionMs }) => ({
+                identifier,
+                content,
+                startLine,
+                endLine,
+                filePath: displayPathWithoutWorkspaceFolderPrefix(uri),
+                timeSinceActionMs,
+            })
+        ),
     }
 }
 
