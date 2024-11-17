@@ -52,8 +52,8 @@ export class DefaultCompletionsContextRanker implements CompletionsContextRanker
         const snippets = results
             .flatMap(r => [...r.snippets])
             .sort((a, b) => {
-                const aTime = a.timeSinceActionMs ?? Number.POSITIVE_INFINITY
-                const bTime = b.timeSinceActionMs ?? Number.POSITIVE_INFINITY
+                const aTime = a.metadata?.timeSinceActionMs ?? Number.POSITIVE_INFINITY
+                const bTime = b.metadata?.timeSinceActionMs ?? Number.POSITIVE_INFINITY
                 return aTime - bTime
             })
         return new Set(snippets)

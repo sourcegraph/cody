@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type * as vscode from 'vscode'
 import { range } from '../../../../testutils/textDocument'
 import { document } from '../../../test-helpers'
+import { RecentEditsRetrieverDiffStrategyIdentifier } from './recent-edits-diff-helpers/recent-edits-diff-strategy'
 import { RecentEditsRetriever } from './recent-edits-retriever'
 
 const FIVE_MINUTES = 5 * 60 * 1000
@@ -24,7 +25,7 @@ describe('RecentEditsRetriever', () => {
         retriever = new RecentEditsRetriever(
             {
                 maxAgeMs: FIVE_MINUTES,
-                addLineNumbersForDiff: false,
+                diffStrategyIdentifier: RecentEditsRetrieverDiffStrategyIdentifier.UnifiedDiff,
             },
             {
                 onDidChangeTextDocument(listener) {
@@ -113,8 +114,12 @@ describe('RecentEditsRetriever', () => {
 
             addNumberLog(testDocument)
 
-            const diff = await retriever.getDiff(testDocument.uri)
-            expect(diff!.toString().split('\n').slice(2).join('\n')).toMatchInlineSnapshot(`
+            const diffHunks = await retriever.getDiff(testDocument.uri)
+            expect(diffHunks).not.toBeNull()
+            expect(diffHunks?.length).toBe(1)
+            expect(
+                diffHunks?.[0].diff?.toString().split('\n').slice(2).join('\n')
+            ).toMatchInlineSnapshot(`
               "@@ -1,7 +1,7 @@
                function foo() {
               -    console.log('foo')
@@ -155,8 +160,12 @@ describe('RecentEditsRetriever', () => {
             vi.advanceTimersByTime(3 * 60 * 1000)
             addNumberLog(testDocument)
 
-            const diff = await retriever.getDiff(testDocument.uri)
-            expect(diff!.toString().split('\n').slice(2).join('\n')).toMatchInlineSnapshot(`
+            const diffHunks = await retriever.getDiff(testDocument.uri)
+            expect(diffHunks).not.toBeNull()
+            expect(diffHunks?.length).toBe(1)
+            expect(
+                diffHunks?.[0].diff?.toString().split('\n').slice(2).join('\n')
+            ).toMatchInlineSnapshot(`
               "@@ -2,6 +2,6 @@
                    console.log(1337)
                }
@@ -192,8 +201,12 @@ describe('RecentEditsRetriever', () => {
             vi.advanceTimersByTime(3 * 60 * 1000)
             addNumberLog(renamedDoc)
 
-            const diff = await retriever.getDiff(newUri)
-            expect(diff!.toString().split('\n').slice(2).join('\n')).toMatchInlineSnapshot(`
+            const diffHunks = await retriever.getDiff(newUri)
+            expect(diffHunks).not.toBeNull()
+            expect(diffHunks?.length).toBe(1)
+            expect(
+                diffHunks?.[0].diff?.toString().split('\n').slice(2).join('\n')
+            ).toMatchInlineSnapshot(`
               "@@ -2,6 +2,6 @@
                    console.log(1337)
                }

@@ -1,6 +1,18 @@
 import type * as vscode from 'vscode'
 import type { URI } from 'vscode-uri'
 
+interface AutocompleteContextSnippetMetadata {
+    /**
+     * This field is relevant for user action context sources such as `recent-edit`, `recent-copy` and `recent-viewport`.
+     * It indicates the time in milliseconds since the action was performed (eg: time Since the last edit).
+     */
+    timeSinceActionMs?: number
+    /**
+     * The diffing strategy used by the `recent-edits-retriever` to generate the diff.
+     */
+    recentEditsRetrieverDiffStrategy?: string
+}
+
 export interface AutocompleteFileContextSnippet {
     identifier: string
     uri: URI
@@ -8,10 +20,11 @@ export interface AutocompleteFileContextSnippet {
     endLine: number
     content: string
     /**
-     * This field is relevant for user action context sources such as `recent-edit`, `recent-copy` and `recent-viewport`.
-     * It indicates the time in milliseconds since the action was performed (eg: time Since the last edit).
+     * Metadata populated by the context retriever.
+     * The metadata can be specific to the context retriever and may not apply to other context retrievers.
+     * The metadata can be used by other components such as `auto-edits` to determine if the snippet is still relevant or logging for offline analysis.
      */
-    timeSinceActionMs?: number
+    metadata?: AutocompleteContextSnippetMetadata
 }
 
 export interface AutocompleteSymbolContextSnippet extends AutocompleteFileContextSnippet {

@@ -59,7 +59,9 @@ export class RecentViewPortRetriever implements vscode.Disposable, ContextRetrie
                 startLine: viewPort.visibleRange.start.line,
                 endLine: viewPort.visibleRange.end.line,
                 identifier: this.identifier,
-                timeSinceActionMs: Date.now() - viewPort.lastAccessTimestamp,
+                metadata: {
+                    timeSinceActionMs: Date.now() - viewPort.lastAccessTimestamp,
+                },
             }
         })
         return Promise.all(snippetPromises)

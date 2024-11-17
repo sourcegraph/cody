@@ -769,13 +769,13 @@ function getInlineContextItemContext(
         triggerLine: position.line,
         triggerCharacter: position.character,
         context: inlineContextParams.context.map(
-            ({ identifier, content, startLine, endLine, uri, timeSinceActionMs }) => ({
+            ({ identifier, content, startLine, endLine, uri, metadata }) => ({
                 identifier,
                 content,
                 startLine,
                 endLine,
                 filePath: displayPathWithoutWorkspaceFolderPrefix(uri),
-                timeSinceActionMs,
+                metadata,
             })
         ),
     }

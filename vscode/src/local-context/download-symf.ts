@@ -19,6 +19,7 @@ export const _config = {
 
 /**
  * Get the path to `symf` binary. If possible it will be downloaded.
+ *
  */
 export async function getSymfPath(context: vscode.ExtensionContext): Promise<string | null> {
     // If user-specified symf path is set, use that

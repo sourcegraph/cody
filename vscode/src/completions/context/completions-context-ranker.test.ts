@@ -12,7 +12,9 @@ describe('DefaultCompletionsContextRanker', () => {
             startLine: 1,
             endLine: 1,
             content: 'Snippet',
-            timeSinceActionMs: time,
+            metadata: {
+                timeSinceActionMs: time,
+            },
         })
 
         it('should sort snippets based on timeSinceActionMs in ascending order', () => {
