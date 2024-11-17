@@ -77,6 +77,11 @@ interface CurrentFileContext {
     range: vscode.Range
 }
 
+export interface RecentEditPromptComponents {
+    longTermDiffComponent: PromptString
+    shortTermDiffComponent: PromptString
+}
+
 // Helper function to get prompt in some format
 export function getBaseUserPrompt(
     docContext: DocumentContext,
@@ -107,10 +112,8 @@ export function getBaseUserPrompt(
         getRecentlyViewedSnippetsPrompt
     )
 
-    const recentEditsPrompt = getPromptForTheContextSource(
-        contextItemMapping.get(RetrieverIdentifier.RecentEditsRetriever) || [],
-        RECENT_EDITS_INSTRUCTION,
-        getRecentEditsPrompt
+    const recentEditsPromptComponents = getRecentEditsPrompt(
+        contextItemMapping.get(RetrieverIdentifier.RecentEditsRetriever) || []
     )
 
     const lintErrorsPrompt = getPromptForTheContextSource(
@@ -134,10 +137,12 @@ export function getBaseUserPrompt(
 ${jaccardSimilarityPrompt}
 ${recentViewsPrompt}
 ${CURRENT_FILE_INSTRUCTION}${fileWithMarkerPrompt}
-${recentEditsPrompt}
+${RECENT_EDITS_INSTRUCTION}
+${recentEditsPromptComponents.longTermDiffComponent}
 ${lintErrorsPrompt}
 ${recentCopyPrompt}
 ${areaPrompt}
+${recentEditsPromptComponents.shortTermDiffComponent}
 ${FINAL_USER_PROMPT}
 `
     autoeditsLogger.logDebug('AutoEdits', 'Prompt\n', finalPrompt)
@@ -323,24 +328,42 @@ ${RECENT_COPY_TAG_CLOSE}
 `
 }
 
-export function getRecentEditsPrompt(contextItems: AutocompleteContextSnippet[]): PromptString {
+export function getRecentEditsPrompt(
+    contextItems: AutocompleteContextSnippet[]
+): RecentEditPromptComponents {
     const recentEdits = getContextItemsForIdentifier(
         contextItems,
         RetrieverIdentifier.RecentEditsRetriever
     )
     recentEdits.reverse()
-    if (recentEdits.length === 0) {
-        return ps``
-    }
     const recentEditsPrompts = recentEdits.map(item =>
-        getContextPromptWithPath(
+        getContextPromptForDiffWithPath(
             PromptString.fromDisplayPath(item.uri),
             PromptString.fromAutocompleteContextSnippet(item).content
         )
     )
-    const recentEditsPrompt = PromptString.join(recentEditsPrompts, ps`\n`)
-    return ps`${RECENT_EDITS_TAG_OPEN}
-${recentEditsPrompt}
+
+    let shortTermDiffComponent: PromptString = ps``
+    let longTermDiffComponent: PromptString = ps``
+    if (recentEditsPrompts.length > 0) {
+        shortTermDiffComponent = getRecentEditPrompt([recentEditsPrompts.at(-1)!])
+    }
+    if (recentEditsPrompts.length > 1) {
+        longTermDiffComponent = getRecentEditPrompt(recentEditsPrompts.slice(0, -1))
+    }
+    return {
+        shortTermDiffComponent,
+        longTermDiffComponent,
+    }
+}
+
+function getRecentEditPrompt(prompts: PromptString[]): PromptString {
+    if (prompts.length === 0) {
+        return ps``
+    }
+    return ps`
+${RECENT_EDITS_TAG_OPEN}
+${PromptString.join(prompts, ps`\n`)}
 ${RECENT_EDITS_TAG_CLOSE}
 `
 }
@@ -454,4 +477,8 @@ function getContextItemsForIdentifier(
 
 function getContextPromptWithPath(filePath: PromptString, content: PromptString): PromptString {
     return ps`(\`${filePath}\`)\n\n${content}\n`
+}
+
+function getContextPromptForDiffWithPath(filePath: PromptString, content: PromptString): PromptString {
+    return ps`${filePath}\n${content}`
 }

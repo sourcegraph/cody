@@ -1,11 +1,38 @@
 import type { PromptString } from '@sourcegraph/cody-shared'
 import type * as vscode from 'vscode'
+import { AutoeditWithShortTermDiffStrategy } from './auotedit-short-term-diff'
 import { UnifiedDiffStrategy } from './unified-diff'
-import { UnifiedDiffStrategyWithLineNumbers } from './unified-diff-with-lines'
 
+/**
+ * Identifiers for the different diff strategies.
+ */
 export enum RecentEditsRetrieverDiffStrategyIdentifier {
+    /**
+     * Unified diff strategy that shows changes in a single patch.
+     */
     UnifiedDiff = 'unified-diff',
-    UnifiedDiffWithLineNumbers = 'unified-diff-with-line-numbers',
+    /**
+     * Diff Strategy to use a seperate short term diff used by `auto-edits`.
+     */
+    AutoeditWithShortTermDiff = 'autoedit-with-short-term-diff',
+}
+
+/**
+ * Creates a new instance of a diff strategy based on the provided identifier.
+ * @param identifier The identifier of the diff strategy to create.
+ * @returns A new instance of the diff strategy.
+ */
+export function createDiffStrategy(
+    identifier: RecentEditsRetrieverDiffStrategyIdentifier
+): RecentEditsRetrieverDiffStrategy {
+    switch (identifier) {
+        case RecentEditsRetrieverDiffStrategyIdentifier.UnifiedDiff:
+            return new UnifiedDiffStrategy()
+        case RecentEditsRetrieverDiffStrategyIdentifier.AutoeditWithShortTermDiff:
+            return new AutoeditWithShortTermDiffStrategy()
+        default:
+            throw new Error(`Unknown diff strategy identifier: ${identifier}`)
+    }
 }
 
 export interface RecentEditsRetrieverDiffStrategy {
@@ -26,17 +53,4 @@ export interface DiffCalculationInput {
 export interface DiffHunk {
     latestEditTimestamp: number
     diff: PromptString
-}
-
-export function createDiffStrategy(
-    identifier: RecentEditsRetrieverDiffStrategyIdentifier
-): RecentEditsRetrieverDiffStrategy {
-    switch (identifier) {
-        case RecentEditsRetrieverDiffStrategyIdentifier.UnifiedDiff:
-            return new UnifiedDiffStrategy()
-        case RecentEditsRetrieverDiffStrategyIdentifier.UnifiedDiffWithLineNumbers:
-            return new UnifiedDiffStrategyWithLineNumbers()
-        default:
-            throw new Error(`Unknown diff strategy identifier: ${identifier}`)
-    }
 }
