@@ -484,8 +484,7 @@ describe('DiagnosticsRetriever', () => {
             const message = snippets[0].content
             expect(message).toMatchInlineSnapshot(`
                 "let y = foo('5');
-                Err | Argument of type 'string' is not assignable to parameter of type 'number'.
-                "
+                Err | Argument of type 'string' is not assignable to parameter of type 'number'."
             `)
         })
     })
