@@ -1,25 +1,23 @@
 import { Decoration, DecorationSet, EditorView } from "prosemirror-view"
-import { history, undo, redo} from "prosemirror-history"
-import { EditorState, Plugin } from "prosemirror-state"
+import { history, undo, redo } from "prosemirror-history"
+import { EditorState, Plugin, TextSelection } from "prosemirror-state"
 import { Node, Schema } from "prosemirror-model"
 import { baseKeymap } from "prosemirror-commands"
 import { InputRule, inputRules } from "prosemirror-inputrules"
 import { keymap } from "prosemirror-keymap"
-import { MutableRefObject, useCallback, useContext, useEffect, useRef, useState } from "react"
-import { ActorRefFrom, assign, emit, fromCallback, setup} from 'xstate'
+import { MouseEventHandler, useCallback, useContext, useEffect, useRef, useState } from "react"
+import { ActorRefFrom, assign, setup, enqueueActions, fromPromise } from 'xstate'
 import { useActorRef, useSelector } from '@xstate/react'
 import styles from './BaseEditor.module.css'
 import { useDefaultContextForChat } from "../useInitialContext"
-import { ContextItem, ContextMentionProviderMetadata, displayPathBasename, EMPTY, FILE_CONTEXT_MENTION_PROVIDER, MentionMenuData, MentionQuery, NO_SYMBOL_MATCHES_HELP_LABEL, REMOTE_REPOSITORY_PROVIDER_URI, SYMBOL_CONTEXT_MENTION_PROVIDER } from "@sourcegraph/cody-shared"
+import { ContextItem, ContextMentionProviderMetadata, displayPathBasename, FILE_CONTEXT_MENTION_PROVIDER, MentionMenuData, MentionQuery, NO_SYMBOL_MATCHES_HELP_LABEL, REMOTE_REPOSITORY_PROVIDER_URI, SYMBOL_CONTEXT_MENTION_PROVIDER } from "@sourcegraph/cody-shared"
 import { useExtensionAPI } from "../useExtensionAPI"
-import { Observable } from "observable-fns"
 import clsx from "clsx"
 import { iconForProvider } from "../mentions/mentionMenu/MentionMenuItem"
 import { AtSignIcon } from "lucide-react"
-import {createRoot, Root} from 'react-dom/client'
-import { ChatMentionContext, ChatMentionsSettings } from "../plugins/atMentions/useChatContextItems"
-
-type MentionMenuQuery = (query: MentionQuery) => Observable<MentionMenuData>
+import { createRoot, Root } from 'react-dom/client'
+import { ChatMentionContext } from "../plugins/atMentions/useChatContextItems"
+import "prosemirror-view/style/prosemirror.css"
 
 const schema = new Schema({
     nodes: {
@@ -28,13 +26,14 @@ const schema = new Schema({
         },
         mention: {
             group: 'inline',
+            content: 'text*',
             attrs: {
-                item:  { }
+                item: {}
             },
             atom: true,
             inline: true,
             toDOM(node) {
-                return ['span', {'data-context-item': JSON.stringify(node.attrs.item)}]
+                return ['span', { 'data-context-item': JSON.stringify(node.attrs.item), class: styles.mention }, 0]
             },
             parseDOM: [
                 {
@@ -50,13 +49,10 @@ const schema = new Schema({
                     },
                 },
             ],
-            leafText(node) {
-                return (node.attrs.item as ContextItem).uri.toString()
-            },
         },
         paragraph: {
             content: 'inline*',
-            toDOM(node) {
+            toDOM() {
                 return ['p', 0]
             },
         },
@@ -67,51 +63,57 @@ const schema = new Schema({
 })
 
 interface SuggestionsMachineContext {
-    filter: string,
+    filter?: string,
     selectedIndex: number,
+    selectedProvider?: ContextMentionProviderMetadata
     filteredItems: Item[]
-    mentionMenuDataRef: MutableRefObject<MentionMenuQuery>
-    mentionSettingsRef: MutableRefObject<ChatMentionsSettings>
+    fetchMenuData: (args: {query: string, providerID: string|null}) => Promise<Item[]>
 }
 
-type Item = ContextItem|{type: 'provider', provider: ContextMentionProviderMetadata}
+type Item = ContextItem | { type: 'provider', provider: ContextMentionProviderMetadata }
 
+/**
+ * This state machine is responsible for managing the suggestions menu. It
+ * takes care of triggering data loading, suggestion selection, etc
+ */
 const suggestionsMachine = setup({
     types: {
         events: {} as
-            | {type: 'open'}
-            | {type: 'close'}
-            | {type: 'arrow-down'}
-            | {type: 'arrow-up'}
-            | {type: 'enter'}
-            | {type: 'select', index: number}
-            | {type: 'update-filter', filter: string}
-            | {type: 'set-items', items: Item[]}
+            | { type: 'open' }
+            | { type: 'close' }
+            | { type: 'arrow-down' }
+            | { type: 'arrow-up' }
+            | { type: 'enter' }
+            | { type: 'select', index: number }
+            | { type: 'filter.update', filter: string }
+            | { type: 'provider.set', provider: ContextMentionProviderMetadata, filter: string }
         ,
         context: {} as SuggestionsMachineContext,
-        input: {} as Pick<SuggestionsMachineContext, 'mentionMenuDataRef'|'mentionSettingsRef'>,
+        input: {} as Pick<SuggestionsMachineContext, 'fetchMenuData'>,
         emitted: {} as
-            | {type: 'select'}
+            | { type: 'select' }
         ,
     },
     actors: {
-        menuDataLoader: fromCallback<{type: ''}, SuggestionsMachineContext>(({input, sendBack}) => {
-            const sub = input.mentionMenuDataRef.current({
-                text: input.filter,
-                provider: null,
-                contextRemoteRepositoriesNames: input.mentionSettingsRef.current.remoteRepositoriesNames,
-
-            }).subscribe(next => {
-                sendBack({type: 'set-items', items: [...next.providers, ...next.items ?? []]})
+        menuDataLoader: fromPromise<Item[], SuggestionsMachineContext>(({ input }) => {
+            return input.fetchMenuData({
+                query: input.filter ?? '',
+                providerID: input.selectedProvider?.id ?? null,
             })
-            return () => sub.unsubscribe()
         })
+    },
+    actions: {
+        select: enqueueActions(({context, enqueue}) => {
+            const selectedItem = context.filteredItems[context.selectedIndex]
+            if (selectedItem) {
+                enqueue.emit({ type: 'select' })
+            }
+        }),
     },
 }).createMachine({
     initial: 'closed',
-    context: ({input}) => {
+    context: ({ input }) => {
         return {
-            filter: '',
             selectedIndex: 0,
             filteredItems: [],
             ...input,
@@ -125,6 +127,14 @@ const suggestionsMachine = setup({
         },
         open: {
             initial: 'idle',
+            entry: [
+                assign({
+                    filter: undefined,
+                    selectedIndex: 0,
+                    selectedProvider: undefined,
+                    filteredItems: [],
+                })
+            ],
             states: {
                 idle: {},
                 debounce: {
@@ -132,22 +142,20 @@ const suggestionsMachine = setup({
                         300: 'loading',
                     },
                     always: {
-                        guard: ({context}) => context.filter.length === 0,
+                        guard: ({ context }) => !context.filter || context.filter.length === 0,
                         target: 'loading',
                     },
                 },
                 loading: {
                     invoke: {
                         src: 'menuDataLoader',
-                        input: ({context}) => context,
-                    },
-                    on: {
-                        'set-items': {
+                        input: ({ context }) => context,
+                        onDone: {
                             target: 'idle',
                             actions: [
-                                assign(({event}) => {
+                                assign(({ event }) => {
                                     return {
-                                        filteredItems: event.items,
+                                        filteredItems: event.output,
                                         selectedIndex: 0,
                                     }
                                 })
@@ -158,27 +166,33 @@ const suggestionsMachine = setup({
             },
             on: {
                 close: 'closed',
-                "update-filter": {
+                "filter.update": {
+                    guard: ({event, context}) => event.filter !== context.filter,
+                    actions: assign({filter: ({event}) => event.filter}),
                     target: '.debounce',
-                    actions: assign(({event, context}) => {
-                        return {
-                            filter: event.filter,
-                        }
-                    })
+                },
+                'provider.set': {
+                    actions: assign({
+                        selectedProvider: ({event}) => event.provider,
+                        filter: ({event}) => event.filter,
+                        filteredItems: [],
+                        selectedIndex: 0,
+                    }),
+                    target: ".loading",
                 },
                 "arrow-down": {
-                    actions: assign({selectedIndex: ({context}) => (context.selectedIndex + 1) % context.filteredItems.length})
+                    actions: assign({ selectedIndex: ({ context }) => (context.selectedIndex + 1) % context.filteredItems.length })
                 },
                 "arrow-up": {
-                    actions: assign({selectedIndex: ({context}) => context.selectedIndex === 0 ? context.filteredItems.length - 1 : context.selectedIndex - 1})
+                    actions: assign({ selectedIndex: ({ context }) => context.selectedIndex === 0 ? context.filteredItems.length - 1 : context.selectedIndex - 1 })
                 },
                 'enter': {
-                    actions: emit({type: 'select'})
+                    actions: 'select',
                 },
                 'select': {
                     actions: [
-                        assign({selectedIndex: ({event}) => event.index}),
-                        emit({type: 'select'})
+                        assign({ selectedIndex: ({ event }) => event.index }),
+                        'select',
                     ],
                 },
             }
@@ -186,20 +200,25 @@ const suggestionsMachine = setup({
     },
 })
 
-interface SuggestionPluginState {
+interface SuggestionsPluginState {
     open: boolean
     start: number
     decoration: DecorationSet
 }
 
-const emptyState: SuggestionPluginState = {
+interface SuggestionsPluginConfig {
+    actor: ActorRefFrom<typeof suggestionsMachine>
+    updatePosition: (position: {top: number, bottom: number, left: number, right: number}) => void,
+}
+
+const emptyState: SuggestionsPluginState = {
     open: false,
     start: 0,
     decoration: DecorationSet.empty
 }
 
-function createSuggestionsPlugin(actor: ActorRefFrom<typeof suggestionsMachine>): Plugin[] {
-    const plugin = new Plugin<SuggestionPluginState>({
+function createSuggestionsPlugin({actor, updatePosition }: SuggestionsPluginConfig): Plugin[] {
+    const plugin = new Plugin<SuggestionsPluginState>({
         state: {
             init(config, instance) {
                 return emptyState
@@ -207,27 +226,33 @@ function createSuggestionsPlugin(actor: ActorRefFrom<typeof suggestionsMachine>)
             apply(tr, value, oldState, newState) {
                 let nextValue = value
                 const meta = tr.getMeta(plugin)
-                if (meta) {
+                if (meta?.type === 'open') {
                     return {
                         open: true,
                         start: meta.position,
-                        decoration: DecorationSet.create(newState.doc, [Decoration.inline(meta.position, meta.position + 1, {class: styles.active}, {inclusiveEnd: true})]),
+                        decoration: DecorationSet.create(newState.doc, [
+                            Decoration.inline(
+                                meta.position,
+                                meta.position + 1,
+                                { class: styles.active },
+                                // This is necessary so that mapping changes will 'grow' the decoration, which
+                                // also acts as markers for the filter text
+                                { inclusiveEnd: true }
+                            )
+                        ]),
                     }
+                } else if (meta?.type === 'close') {
+                    return emptyState
                 }
+
                 if (nextValue.open && nextValue.decoration) {
-                    const node = tr.doc.nodeAt(nextValue.start)
-
-                    if (!node) {
-                        return emptyState
-                    }
-
-                    // Check whether we have non-spaced text from trigger
                     const decorationSet = nextValue.decoration.map(tr.mapping, tr.doc)
                     if (decorationSet !== nextValue.decoration) {
                         const decoration = decorationSet.find()[0]
+                        // Check whether the change has removed the decoration or introduced a space.
+                        // If yes to either we close the menu
                         if (!decoration || /[\s\0]/.test(tr.doc.textBetween(decoration.from, decoration.to))) {
                             return emptyState
-
                         }
                         nextValue = {
                             ...nextValue,
@@ -244,19 +269,38 @@ function createSuggestionsPlugin(actor: ActorRefFrom<typeof suggestionsMachine>)
             },
         },
         view(view) {
-            const sub = actor.on('select', event => {
+            const sub = actor.on('*', event => {
                 const state = plugin.getState(view.state)
                 const decoration = state?.decoration.find()[0]
                 if (decoration) {
-                    const snapshot = actor.getSnapshot()
-                    const newNode = schema.node('mention', {item: snapshot.context.filteredItems[snapshot.context.selectedIndex]})
-                    let trx = view.state.tr.delete(decoration.from, decoration.to).insert(
-                        decoration.from,
-                        newNode
-                    )
-                    trx = trx.insertText(' ')
-                    view.dispatch(trx.scrollIntoView())
-                    view.focus()
+                    switch (event.type) {
+                        case 'select': {
+                            const snapshot = actor.getSnapshot()
+                            const item = snapshot.context.filteredItems[snapshot.context.selectedIndex]
+                            if (item.type ===  'provider') {
+                                actor.send({type: 'provider.set', provider: item.provider, filter: ''})
+                                view.dispatch(
+                                    view.state.tr.delete(decoration.from + 1, decoration.to)
+                                )
+                            } else {
+                                const newNode = schema.node('mention', { item }, schema.text(getItemTitle(item)))
+                                const tr = view.state.tr.replaceWith(decoration.from, decoration.to, newNode)
+                                const end = decoration.from + newNode.nodeSize
+
+                                // Append a space after the node if necessary
+                                if (!/\s/.test(tr.doc.textBetween(end, end + 1))) {
+                                    tr.insertText(' ', end)
+                                }
+                                view.dispatch(tr
+                                    // Move selection after the space after the node
+                                    // (automatically closes menu)
+                                    .setSelection(TextSelection.create(tr.doc, end+1))
+                                    .scrollIntoView()
+                                )
+                            }
+                            break;
+                        }
+                    }
                 }
             })
             return {
@@ -264,15 +308,20 @@ function createSuggestionsPlugin(actor: ActorRefFrom<typeof suggestionsMachine>)
                     const next = plugin.getState(view.state)
                     const prev = plugin.getState(prevState)
                     if (next?.open && !prev?.open) {
-                        actor.send({type: 'open'})
+                        actor.send({ type: 'open' })
                     } else if (next && !next.open) {
-                        actor.send({type: 'close'})
+                        actor.send({ type: 'close' })
                     }
                     if (next?.open && next.decoration && next.decoration !== prev?.decoration) {
                         const decoration = next.decoration.find()[0]
                         if (decoration) {
-                            actor.send({type: 'update-filter', filter: view.state.doc.textBetween(decoration.from + 1, decoration.to)})
+                            actor.send({
+                                type: 'filter.update',
+                                // +1 to remove leading '@' character
+                                filter: view.state.doc.textBetween(decoration.from + 1, decoration.to)
+                            })
                         }
+                        updatePosition(view.coordsAtPos(decoration.from))
                     }
                 },
                 destroy() {
@@ -285,54 +334,64 @@ function createSuggestionsPlugin(actor: ActorRefFrom<typeof suggestionsMachine>)
                 if (actor.getSnapshot().matches('open')) {
                     switch (event.key) {
                         case 'ArrowDown': {
-                            actor.send({type: 'arrow-down'})
+                            actor.send({ type: 'arrow-down' })
                             return true
                         }
                         case 'ArrowUp': {
-                            actor.send({type: 'arrow-up'})
+                            actor.send({ type: 'arrow-up' })
                             return true
                         }
                         case 'Enter':
-                            actor.send({type: 'enter'})
+                            actor.send({ type: 'enter' })
+                            return true;
+                        case 'Escape':
+                            view.dispatch(view.state.tr.setMeta(plugin, {type: 'close'}))
                             return true;
                     }
                 }
+                return false
             },
-            decorations(state): DecorationSet|undefined {
+            decorations(state): DecorationSet | undefined {
                 return plugin.getState(state)?.decoration
             },
         },
     })
 
-    return [plugin, inputRules({
-        rules: [
-            new InputRule(
-                /(^|\s)@(?=\s|$)$/,
-                (state, match, start, end) => {
-                    return state.tr.insertText(match[0], start, end).setMeta(plugin, {position: start + (match[0][1] ? 1 : 0)})
-                },
-            )
+    return [
+        plugin,
+        inputRules({
+            rules: [
+                new InputRule(
+                    // Trigger on @, at beginning or after space
+                    /(^|\s)@(?=\s|$)$/,
+                    (state, match, start, end) => {
+                        return state.tr
+                            .insertText(match[0], start, end)
+                            .setMeta(plugin, {type: 'open',  position: start + (match[0][1] ? 1 : 0) })
+                    },
+                )
 
-        ]
-    })]
+            ]
+        })
+    ]
 }
 
 function placeholder(text: string) {
-  const update = (view: EditorView) => {
-    if (view.state.doc.textContent) {
-      view.dom.removeAttribute('data-placeholder');
-    } else {
-      view.dom.setAttribute('data-placeholder', text);
-    }
-  };
+    const update = (view: EditorView) => {
+        if (view.state.doc.textContent) {
+            view.dom.removeAttribute('data-placeholder');
+        } else {
+            view.dom.setAttribute('data-placeholder', text);
+        }
+    };
 
-  return new Plugin({
-    view(view) {
-      update(view);
+    return new Plugin({
+        view(view) {
+            update(view);
 
-      return { update };
-    }
-  });
+            return { update };
+        }
+    });
 }
 
 interface BaseEditorProps {
@@ -343,50 +402,54 @@ interface BaseEditorProps {
 
 export const BaseEditor: React.FC = (props: BaseEditorProps) => {
     // TODO: Handle initial context
-    const mentionMenuDataRef = useRef<(query: MentionQuery) => Observable<MentionMenuData>>(() => EMPTY)
-    // TODO: What is resolution mode?
-    const mentionSettingsRef = useRef<ChatMentionsSettings>({resolutionMode: 'local'})
-
-    const [menuPosition, setMenuPosition] = useState({left: 0, top: 0})
+    const mentionMenuDataRef = useRef<SuggestionsMachineContext['fetchMenuData']>(() => Promise.resolve([]))
+    const [menuPosition, setMenuPosition] = useState({ left: 0, bottom: 0 })
+    // TODO: Move this out of component
     const mentionMenuData = useExtensionAPI().mentionMenuData
+    // TODO: Move this out of component
     const mentionSettings = useContext(ChatMentionContext)
-    const actor = useActorRef(suggestionsMachine, {input: {mentionMenuDataRef}})
-    const view = useRef<EditorView|null>(null)
 
-    useEffect(() => {
-        mentionMenuDataRef.current = mentionMenuData
-    }, [mentionMenuData])
-    useEffect(() => {
-        mentionSettingsRef.current = mentionSettings
-    }, [mentionSettings])
 
-    const open = useSelector(actor, state => state.matches('open'))
+    const actor = useActorRef(suggestionsMachine, { input: {
+        fetchMenuData(args) {
+            return mentionMenuDataRef.current(args)
+        },
+    } })
+    const view = useRef<EditorView | null>(null)
+
+    // Update data fetch function as necessary
+    useEffect(() => {
+        mentionMenuDataRef.current = ({query, providerID: provider}) => new Promise((resolve, reject) => {
+            let result: MentionMenuData
+            return mentionMenuData({text: query, provider}).subscribe(
+                next => {
+                    result = next
+                },
+                error => reject(error),
+                () => {
+                    resolve([
+                        ...result.providers.map(provider => ({type: 'provider' as const, provider})),
+                        ...result.items ?? [],
+                    ])
+                }
+            )
+        })
+    }, [mentionMenuData, mentionSettings])
+
+    const isSuggestionsMenuOpen = useSelector(actor, state => state.matches('open'))
 
     const createView = useCallback((node: HTMLDivElement) => {
         if (node) {
-            const [plugin, input] = createSuggestionsPlugin(actor)
             const editor = new EditorView(node, {
                 state: EditorState.create({
                     schema,
                     plugins: [
                         history(),
-                        keymap({'Mod-z': undo, 'Mod-y': redo}),
-                        plugin,
-                        input,
+                        keymap({ 'Mod-z': undo, 'Mod-y': redo }),
+                        // TODO: Align menu with right edge of input if necessary
+                        // (maybe use floating-ui to also resize it to available space
+                        ...createSuggestionsPlugin({actor, updatePosition: setMenuPosition}),
                         keymap(baseKeymap),
-                        new Plugin({
-                            view(view) {
-                                return {
-                                    update(view, prevState) {
-                                        const state = plugin.getState(view.state)
-                                        if (state) {
-                                            setMenuPosition(view.coordsAtPos(state.start))
-                                        }
-                                    },
-                                }
-                            },
-
-                        }),
                         placeholder(props.placeholder ?? '')
                     ],
                 }),
@@ -408,44 +471,68 @@ export const BaseEditor: React.FC = (props: BaseEditorProps) => {
     }, [props.placeholder, props.onEnterKey, actor])
 
     return <>
-        <div ref={createView} className={styles.editor}/>
-        {(open && <Suggestions actor={actor} style={{top: menuPosition.bottom, left: menuPosition.left}}/>)}
-    </>
+        <div ref={createView} className={styles.editor} />
+        {isSuggestionsMenuOpen &&
+            <Suggestions
+                actor={actor}
+                style={{ top: menuPosition.bottom, left: menuPosition.left }}
+            />
+        }
+        </>
 }
 
-const Suggestions: React.FC<{actor: ActorRefFrom<typeof suggestionsMachine>, style: Record<string, number>}> = props => {
+const Suggestions: React.FC<{ actor: ActorRefFrom<typeof suggestionsMachine>, style: Record<string, number> }> = props => {
     const defaultContext = useDefaultContextForChat()
-    const container = useRef<HTMLUListElement|null>(null)
+    const container = useRef<HTMLDivElement | null>(null)
     const items = useSelector(props.actor, state => state.context.filteredItems)
     const selectedIndex = useSelector(props.actor, state => state.context.selectedIndex)
+    const selectedProvider = useSelector(props.actor, state => state.context.selectedProvider ?? null)
     const filter = useSelector(props.actor, state => state.context.filter)
-    const loading = useSelector(props.actor, state => state.matches({open: 'loading'}))
+    const loading = useSelector(props.actor, state => state.matches({ open: 'loading' }))
 
     useEffect(() => {
-        container.current?.querySelector('[aria-selected="true"]')?.scrollIntoView({block: 'nearest'})
+        container.current?.querySelector('[aria-selected="true"]')?.scrollIntoView({ block: 'nearest' })
     }, [container, selectedIndex])
 
     useEffect(() => {
         defaultContext.initialContext
-
     }, [defaultContext])
 
-    const handleClick = useCallback(event => {
-        const listNode = event.target.closest('li') as HTMLLIElement | null
+    // Prevent input loosing focus
+    const handleMouseDown: MouseEventHandler = useCallback(event => {
+            event.preventDefault()
+    }, [])
+
+    const handleClick: MouseEventHandler = useCallback(event => {
+        const listNode = event.target?.closest('li') as HTMLLIElement | null
         if (listNode?.parentNode) {
-            props.actor.send({type: 'select', index: [].indexOf.call(listNode.parentNode.children, listNode)})
+            const options = listNode.parentNode.querySelectorAll('[role="option"]')
+            props.actor.send({ type: 'select', index: [].indexOf.call(options, listNode) })
         }
-    })
-    return <ul ref={container} className={clsx(styles.suggestions, menuClass, {[styles.loading]: loading})} onClick={handleClick} style={props.style}>
+    }, [])
+
+    return <div
+        ref={container}
+        className={clsx(styles.suggestions, menuClass, { [styles.loading]: loading })}
+        onMouseDown={handleMouseDown}
+        onClick={handleClick}
+        style={props.style}>
+        <ul>
+            {selectedProvider &&
+                <li className={headerClass} aria-disabled="true">{selectedProvider.title}</li>
+            }
         {items.map((item, index) =>
-            <li className={itemClass} aria-selected={index === selectedIndex}>
+            <li role="option" className={itemClass} aria-selected={index === selectedIndex}>
                 {getItemTitle(item)}
-            </li>
+                </li>
         )}
-        {loading && items.length === 0 && <li aria-disabled="true">Loading...</li>}
-        {!loading && items.length === 0 && <li aria-disabled="true">{getEmptyLabel(null, {text: filter, provider: null})}</li>}
-    </ul>
+            {loading && items.length === 0 && <li aria-disabled="true">Loading...</li>}
+            {!loading && items.length === 0 && <li aria-disabled="true">{getEmptyLabel(selectedProvider, { text: filter ?? '', provider: selectedProvider?.id ?? null })}</li>}
+        </ul>
+    </div>
 }
+
+const headerClass = '!tw-p-0 !tw-border-b-0 [&_[cmdk-group-heading]]:!tw-p-3 [&_[cmdk-group-heading]]:!tw-text-md [&_[cmdk-group-heading]]:!tw-leading-[1.2] [&_[cmdk-group-heading]]:!tw-h-[30px]'
 
 const menuClass = ('tw-overflow-hidden tw-rounded-md tw-bg-popover tw-text-popover-foreground')
 
@@ -462,17 +549,6 @@ function getItemTitle(item: Item): string {
         default:
             return item.title ?? displayPathBasename(item.uri)
 
-    }
-}
-
-function getItemIcon(item: Item): string|undefined {
-    switch (item.type) {
-        case 'provider':
-            return ''
-        case 'symbol':
-            return item.icon ?? item.kind === 'class' ? 'symbol-structure' : 'symbol-method'
-        default:
-            return item.icon
     }
 }
 
@@ -525,7 +601,7 @@ class MentionView {
 
 function iconForContextItem(item: ContextItem): React.ComponentType {
     let providerURI = 'unknown'
-    switch(item.type){
+    switch (item.type) {
         case 'file':
             providerURI = FILE_CONTEXT_MENTION_PROVIDER.id
             break;
