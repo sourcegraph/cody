@@ -22,9 +22,6 @@ const meta: Meta<typeof BaseEditorCM> = {
 export default meta
 
 export const Interactive: StoryObj<typeof meta> = {
-    args: {
-        placeholder: 'Placeholder text',
-    },
     render: props => {
         const [editorState, setEditorState] = useState<EditorState | null>(null)
         return (
