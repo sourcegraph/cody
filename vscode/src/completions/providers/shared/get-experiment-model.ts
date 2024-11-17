@@ -10,7 +10,7 @@ import {
 
 import { Observable, map } from 'observable-fns'
 import * as vscode from 'vscode'
-import { CODE_LLAMA_7B, DEEPSEEK_CODER_V2_LITE_BASE } from '../fireworks'
+import { DEEPSEEK_CODER_V2_LITE_BASE } from '../fireworks'
 
 interface ProviderConfigFromFeatureFlags {
     provider: string
@@ -75,10 +75,7 @@ function resolveFIMModelExperimentFromFeatureFlags(): ReturnType<typeof getDotCo
         featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyAutocompleteFIMModelExperimentControl),
         featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyAutocompleteFIMModelExperimentVariant1)
     ).pipe(
-        map(([fimModelControl, fimModelVariant1]) => {
-            if (fimModelVariant1) {
-                return { provider: 'fireworks', model: CODE_LLAMA_7B }
-            }
+        map(([fimModelControl]) => {
             if (fimModelControl) {
                 // Current production model
                 return { provider: 'fireworks', model: DEEPSEEK_CODER_V2_LITE_BASE }
