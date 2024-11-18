@@ -45,8 +45,7 @@ export function getClientIdentificationHeaders() {
     // running in a local server and thus the backend will regard it as an
     // untrusted cross-origin request.
     if (!process.env.CODY_WEB_DEMO) {
-        headers['X-Sourcegraph-API-Client-Name'] = clientName
-        headers['X-Sourcegraph-API-Client-Version'] = clientVersion
+        headers['X-Requested-With'] = `${clientName} ${clientVersion}`
     }
     return headers
 }
