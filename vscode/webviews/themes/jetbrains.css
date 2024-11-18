@@ -580,15 +580,13 @@ html[data-ide='JetBrains'] {
     /* Mimic rules injected by VSCode */
     --vscode-font-family: var(--font-family);
     --vscode-font-weight: var(--font-weight);
-    --vscode-font-size: var(--type-ramp-base-font-size);
+    --vscode-font-size: var(--jetbrains-font-size);
+
     --vscode-editor-font-family: var(--font-family);
     --vscode-editor-font-weight: var(--font-weight);
     --vscode-editor-font-size: var(--type-ramp-minus1-font-size);
 
     --vscode-widget-shadow: rgba(0, 0, 0, 0.36);
-
-    /* todo: get this from the vscode implementation instead of hardcoded on this theme file*/
-    --vscode-font-size: 13px;
     scrollbar-color: var(--vscode-scrollbarSlider-background) var(--vscode-editor-background);
 }
 
