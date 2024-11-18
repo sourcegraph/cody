@@ -3,11 +3,11 @@
   "name": "cody-ai",
   "private": true,
   "displayName": "Cody: AI Coding Assistant with Autocomplete & Chat",
-  "version": "1.40.2",
+  "version": "1.42.0",
   "publisher": "sourcegraph",
   "license": "Apache-2.0",
   "icon": "resources/cody.png",
-  "description": "AI coding assistant that uses search and codebase context to help you write code faster. Cody brings autocomplete, chat, and commands to VS Code, so you can generate code, write unit tests, create docs, and explain complex code using AI. Choose from the latest LLMs, including GPT-4o and Claude 3.5 Sonnet.",
+  "description": "AI coding assistant that uses search & codebase context to help you write code faster. Cody brings you autocomplete, chat, and commands, so you can generate code, write unit tests, create docs, and explain complex code using AI. Choose from the best LLMs, including GPT-4o and Claude 3.5 Sonnet.",
   "scripts": {
     "build:root": "pnpm -C .. run -s build",
     "postinstall": "pnpm download-wasm && pnpm copy-win-ca-roots",
@@ -31,7 +31,7 @@
     "watch:build:dev:web": "concurrently \"pnpm run -s _build:esbuild:web --watch\" \"pnpm run -s _build:webviews --mode development --watch\"",
     "watch:build:dev:desktop": "concurrently \"pnpm run -s _build:esbuild:desktop --watch\" \"pnpm run -s _build:webviews --mode development --watch\"",
     "_build:esbuild:desktop": "pnpm download-wasm && pnpm run -s _build:esbuild:uninstall && pnpm run -s _build:esbuild:node",
-    "_build:esbuild:node": "esbuild ./src/extension.node.ts --bundle --outfile=dist/extension.node.js --external:vscode --external:typescript --alias:@sourcegraph/cody-shared=@sourcegraph/cody-shared/src/index --alias:@sourcegraph/cody-shared/src=@sourcegraph/cody-shared/src --alias:lexical=./build/lexical-package-fix --format=cjs --platform=node --sourcemap",
+    "_build:esbuild:node": "esbuild ./src/extension.node.ts --bundle --outfile=dist/extension.node.js --loader:.node=copy --external:vscode --external:typescript --alias:@sourcegraph/cody-shared=@sourcegraph/cody-shared/src/index --alias:@sourcegraph/cody-shared/src=@sourcegraph/cody-shared/src --alias:lexical=./build/lexical-package-fix --format=cjs --platform=node --sourcemap",
     "_build:esbuild:web": "esbuild ./src/extension.web.ts --platform=browser --bundle --outfile=dist/extension.web.js --alias:@sourcegraph/cody-shared=@sourcegraph/cody-shared/src/index --alias:@sourcegraph/cody-shared/src=@sourcegraph/cody-shared/src --alias:path=path-browserify --external:typescript --alias:node:path=path-browserify --alias:node:os=os-browserify --alias:os=os-browserify --external:vscode  --external:node:child_process  --external:node:util --external:node:fs --external:node:fs/promises --external:node:process --define:process='{\"env\":{}}' --define:window=self --format=cjs --sourcemap",
     "_build:esbuild:uninstall": "node ./uninstall/esbuild.mjs",
     "_build:webviews": "vite -c webviews/vite.config.mts build",
@@ -117,7 +117,8 @@
     }
   ],
   "engines": {
-    "vscode": "^1.79.0"
+    "vscode": "^1.79.0",
+    "node": ">=20.0.0"
   },
   "main": "./dist/extension.node.js",
   "browser": "./dist/extension.web.js",
@@ -756,6 +757,11 @@
         "command": "cody.experimental.suggest",
         "key": "ctrl+shift+enter",
         "when": "cody.activated"
+      },
+      {
+        "command": "cody.supersuggest.testExample",
+        "key": "ctrl+alt+enter",
+        "when": "cody.activated"
       }
     ],
     "submenus": [
@@ -1108,6 +1114,11 @@
           "type": "string",
           "default": ""
         },
+        "cody.experimental.noxide.enabled": {
+          "order": 99,
+          "type": "boolean",
+          "default": true
+        },
         "cody.debug.verbose": {
           "order": 99,
           "type": "boolean",
@@ -1394,6 +1405,7 @@
     "@sentry/browser": "^7.107.0",
     "@sentry/core": "^7.107.0",
     "@sentry/node": "^7.107.0",
+    "@sourcegraph/cody-noxide": "workspace:*",
     "@sourcegraph/cody-shared": "workspace:*",
     "@sourcegraph/prompt-editor": "workspace:*",
     "@sourcegraph/tree-sitter-wasms": "^0.1.9",
@@ -1417,13 +1429,14 @@
     "glob": "^7.2.3",
     "graceful-fs": "^4.2.11",
     "he": "^1.2.0",
+    "highlight.js": "11.8.0",
+    "hpagent": "^1.2.0",
     "http-proxy-agent": "^7.0.2",
     "https-proxy-agent": "^7.0.5",
     "ini": "^4.1.2",
     "js-levenshtein": "^1.1.6",
     "lexical": "^0.17.0",
     "lodash": "^4.17.21",
-    "lowlight": "^3.1.0",
     "lru-cache": "^10.0.0",
     "lucide-react": "^0.378.0",
     "mac-ca": "^2.0.3",
@@ -1454,7 +1467,10 @@
   },
   "devDependencies": {
     "7zip-min": "^1.4.5",
+    "@chialab/esbuild-plugin-html": "^0.18.2",
+    "@commander-js/extra-typings": "^12.1.0",
     "@google-cloud/pubsub": "^3.7.3",
+    "@jgoz/esbuild-plugin-typecheck": "^4.0.1",
     "@npmcli/promise-spawn": "^7.0.2",
     "@playwright/test": "1.47.2",
     "@pollyjs/adapter-node-http": "^6.0.6",
@@ -1490,14 +1506,25 @@
     "ajv": "^8.14.0",
     "ajv-formats": "^3.0.1",
     "buildkite-test-collector": "^1.7.2",
+    "chokidar": "^3.6.0",
+    "commander": "^11.1.0",
     "concurrently": "^8.2.0",
     "dedent": "^0.7.0",
     "dotenv": "^16.4.5",
+    "esbuild": "^0.18.20",
+    "esbuild-node-externals": "^1.14.0",
+    "esbuild-plugin-copy": "^2.1.1",
+    "esbuild-plugin-svgr": "^2.1.0",
+    "esbuild-plugin-tsc": "^0.4.0",
+    "esbuild-plugin-wasm": "^1.1.0",
+    "esbuild-style-plugin": "^1.6.3",
+    "esbuild-visualizer": "^0.6.0",
     "express": "^4.18.2",
     "fast-json-stable-stringify": "^2.1.0",
     "franc-min": "^6.2.0",
     "fs-extra": "^11.2.0",
     "fuzzysort": "^2.0.4",
+    "htmlnano": "^2.1.1",
     "http-proxy-middleware": "^3.0.0",
     "immer": "^10.1.1",
     "keytar": "^7.9.0",
@@ -1513,6 +1540,7 @@
     "postcss": "^8.4.38",
     "postcss-nested": "^6.0.1",
     "react-head": "^3.4.2",
+    "rollup-plugin-visualizer": "^5.12.0",
     "symlink-dir": "^6.0.2",
     "type-fest": "^4.26.1",
     "typescript-language-server": "^4.3.3",

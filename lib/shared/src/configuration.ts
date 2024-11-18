@@ -85,6 +85,7 @@ interface RawClientConfiguration {
     experimentalCommitMessage: boolean
     experimentalNoodle: boolean
     experimentalMinionAnthropicKey: string | undefined
+    experimentalNoxideEnabled: boolean
     experimentalGuardrailsTimeoutSeconds: number | undefined
 
     //#region Unstable

@@ -37,7 +37,7 @@ const EXTENSION_TO_LANGUAGE: { [key: string]: string } = {
     java: ProgrammingLanguage.Java,
     c: 'C',
     cpp: 'C++',
-    cs: 'C#',
+    cs: 'Csharp',
     css: 'CSS',
     html: 'HTML',
     json: 'JSON',

@@ -7,8 +7,8 @@ import type {
 import { autoeditsLogger } from '../logger'
 import type { AutoeditsModelAdapter, ChatPrompt, PromptResponseData } from '../prompt-provider'
 import { getModelResponse } from '../prompt-provider'
+import type { AutoeditModelOptions } from '../prompt-provider'
 import { type CodeToReplaceData, SYSTEM_PROMPT, getBaseUserPrompt } from '../prompt-utils'
-import * as utils from '../utils'
 
 export class CodyGatewayAdapter implements AutoeditsModelAdapter {
     getPrompt(
@@ -39,36 +39,32 @@ export class CodyGatewayAdapter implements AutoeditsModelAdapter {
     }
 
     postProcessResponse(codeToReplace: CodeToReplaceData, response: string): string {
-        // TODO(hitesh): The finetuned model is messing up the indentation of the first line. [Issue](https://linear.app/sourcegraph/issue/CODY-4266/fix-the-indentation-issue-with-the-fine-tuned-models)
-        // Correct it manually for now, by checking the first line of the code to rewrite and adding the same indentation to the first line of the completion
-        const fixedIndentationResponse = utils.fixFirstLineIndentation(
-            codeToReplace.codeToRewrite,
-            response
-        )
-        return fixedIndentationResponse
+        return response
     }
 
-    async getModelResponse(
-        url: string,
-        model: string,
-        apiKey: string,
-        prompt: ChatPrompt
-    ): Promise<string> {
+    async getModelResponse(option: AutoeditModelOptions): Promise<string> {
         try {
             const headers = {
                 'X-Sourcegraph-Feature': 'chat_completions',
             }
             const body = {
                 stream: false,
-                model: model,
-                messages: prompt,
+                model: option.model,
+                messages: option.prompt,
                 temperature: 0.2,
                 max_tokens: 256,
                 response_format: {
                     type: 'text',
                 },
+                speculation: option.codeToRewrite,
+                user: option.userId,
             }
-            const response = await getModelResponse(url, JSON.stringify(body), apiKey, headers)
+            const response = await getModelResponse(
+                option.url,
+                JSON.stringify(body),
+                option.apiKey,
+                headers
+            )
             return response.choices[0].message.content
         } catch (error) {
             autoeditsLogger.logDebug('AutoEdits', 'Error calling Cody Gateway:', error)

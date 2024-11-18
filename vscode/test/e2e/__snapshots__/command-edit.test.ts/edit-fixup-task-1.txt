@@ -14,6 +14,18 @@
       "value": 2
     },
     {
+      "key": "originalCharCount",
+      "value": 63
+    },
+    {
+      "key": "originalLineCount",
+      "value": 5
+    },
+    {
+      "key": "latency",
+      "value": 9999
+    },
+    {
       "key": "lineCount",
       "value": 4
     },
@@ -63,6 +75,7 @@
     }
   ],
   "privateMetadata": {
+    "languageId": "typescript",
     "model": "anthropic::2023-06-01::claude-3.5-sonnet"
   },
   "billingMetadata": {

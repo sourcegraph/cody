@@ -45,7 +45,7 @@ import type { CommandResult } from './CommandResult'
 import { showAccountMenu } from './auth/account-menu'
 import { showSignInMenu, showSignOutMenu, tokenCallbackHandler } from './auth/auth'
 import { AutoeditsProvider } from './autoedits/autoedits-provider'
-import { AutoeditTestingProvider } from './autoedits/renderer-testing'
+import { registerTestRenderCommand } from './autoedits/renderer-testing'
 import type { MessageProviderOptions } from './chat/MessageProvider'
 import { ChatsController, CodyChatEditorViewType } from './chat/chat-view/ChatsController'
 import { ContextRetriever } from './chat/chat-view/ContextRetriever'
@@ -325,7 +325,7 @@ async function initializeSingletons(
 ): Promise<void> {
     commandControllerInit(platform.createCommandsProvider?.(), platform.extensionClient.capabilities)
 
-    modelsService.storage = localStorage
+    modelsService.setStorage(localStorage)
 
     if (platform.otherInitialization) {
         disposables.push(platform.otherInitialization())
@@ -454,11 +454,12 @@ async function registerCodyCommands(
 
     // Initialize autoedit provider if experimental feature is enabled
     registerAutoEdits(disposables)
+
     // Initialize autoedit tester
     disposables.push(
         enableFeature(
             ({ configuration }) => configuration.experimentalAutoeditsRendererTesting !== false,
-            () => new AutoeditTestingProvider()
+            () => registerTestRenderCommand()
         )
     )
     disposables.push(
@@ -712,11 +713,7 @@ function registerAutoEdits(disposables: vscode.Disposable[]): void {
             },
             () => {
                 const provider = new AutoeditsProvider()
-                const completionRegistration = vscode.languages.registerInlineCompletionItemProvider(
-                    [{ scheme: 'file', language: '*' }, { notebookType: '*' }],
-                    provider
-                )
-                return vscode.Disposable.from(provider, completionRegistration)
+                return provider
             }
         )
     )

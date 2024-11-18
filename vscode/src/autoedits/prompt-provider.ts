@@ -11,6 +11,15 @@ export type ChatPrompt = {
     content: PromptString
 }[]
 
+export interface AutoeditModelOptions {
+    url: string
+    model: string
+    apiKey: string
+    prompt: ChatPrompt
+    codeToRewrite: string
+    userId: string | null
+}
+
 export interface PromptResponseData {
     codeToReplace: utils.CodeToReplaceData
     promptResponse: ChatPrompt
@@ -24,7 +33,7 @@ export interface AutoeditsModelAdapter {
         context: AutocompleteContextSnippet[],
         tokenBudget: AutoEditsTokenLimit
     ): PromptResponseData
-    getModelResponse(url: string, model: string, apiKey: string, prompt: ChatPrompt): Promise<string>
+    getModelResponse(args: AutoeditModelOptions): Promise<string>
     postProcessResponse(codeToReplace: utils.CodeToReplaceData, completion: string | null): string
 }
 
