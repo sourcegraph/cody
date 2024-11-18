@@ -97,8 +97,7 @@ export class EditProvider {
                 onTurnComplete: async () => {
                     typewriter.close()
                     typewriter.stop()
-                    void this.handleResponse(text, false)
-                    return Promise.resolve()
+                    return this.handleResponse(text, false)
                 },
             })
             if (this.config.task.intent === 'test') {
@@ -167,7 +166,7 @@ export class EditProvider {
                         break
                     }
                     case 'complete': {
-                        void multiplexer.notifyTurnComplete()
+                        await multiplexer.notifyTurnComplete()
                         break
                     }
                     case 'error': {
