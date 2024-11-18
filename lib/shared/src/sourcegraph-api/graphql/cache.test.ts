@@ -1,10 +1,10 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 import { AbortError } from '../errors'
-import { AbortIgnorer, AbortWhenAllEnrolledAbort, GraphQLResultCache } from './cache'
+import { AbortAggregator, GraphQLResultCache } from './cache'
 
-describe('AbortWhenAllEnrolledAbort', () => {
+describe('AbortAggregator', () => {
     test('aborts when all enrolled signals are aborted', () => {
-        const aggregator = new AbortWhenAllEnrolledAbort()
+        const aggregator = new AbortAggregator()
         const controller1 = new AbortController()
         const controller2 = new AbortController()
 
@@ -19,19 +19,6 @@ describe('AbortWhenAllEnrolledAbort', () => {
         // Aborting all signals should abort the fetch
         controller2.abort()
         expect(aggregator.signal.aborted).toBe(true)
-    })
-})
-
-describe('AbortIgnorer', () => {
-    test('ignores abort signals', async () => {
-        const ignorer = new AbortIgnorer()
-
-        const controller = new AbortController()
-        ignorer.enrol(controller.signal)
-        controller.abort()
-
-        // Fetch should complete despite abort
-        expect(ignorer.signal.aborted).toBe(false)
     })
 })
 

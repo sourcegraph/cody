@@ -2,34 +2,19 @@ import type { Observable, Subscription } from 'observable-fns'
 import { wrapInActiveSpan } from '../../tracing'
 
 /**
- * A strategy for handling multiple abort signals related to one operation.
- */
-abstract class AbortAggregator {
-    protected readonly controller: AbortController = new AbortController()
-    public readonly signal: AbortSignal = this.controller.signal
-
-    /**
-     * Adds `signal` to the aggregated abort.
-     */
-    abstract enrol(signal: AbortSignal): void
-
-    /**
-     * Aborts the aggregated abort.
-     */
-    abort(): void {
-        this.controller.abort()
-    }
-}
-
-/**
  * Aggregates multiple abort signals into a single abort signal. The aggregate
  * signal is aborted when the last enrolled signal is aborted.
  *
  * Visible for testing.
  */
-export class AbortWhenAllEnrolledAbort extends AbortAggregator {
+export class AbortAggregator {
+    private readonly controller: AbortController = new AbortController()
+    public readonly signal: AbortSignal = this.controller.signal
     private readonly waiting: Set<AbortSignal> = new Set()
 
+    /**
+     * Adds `signal` to the aggregated abort.
+     */
     enrol(signal: AbortSignal) {
         if (this.waiting.has(signal) || signal.aborted) {
             return
@@ -44,16 +29,12 @@ export class AbortWhenAllEnrolledAbort extends AbortAggregator {
         }
         signal.addEventListener('abort', handler)
     }
-}
 
-/**
- * Ignores enrolled abort signals.
- *
- * Visible for testing.
- */
-export class AbortIgnorer extends AbortAggregator {
-    enrol(signal: AbortSignal) {
-        // Do nothing.
+    /**
+     * Aborts the aggregated abort.
+     */
+    abort(): void {
+        this.controller.abort()
     }
 }
 
@@ -153,7 +134,7 @@ export class GraphQLResultCache<V> {
     private lastFetch: Promise<V | Error> | undefined
 
     // Controls aborting the shared fetch if all of the callers have aborted it.
-    private aborts: AbortAggregator = new AbortIgnorer()
+    private aborts: AbortAggregator | undefined = undefined
 
     // The cached result. We don't want to cache errors, so we need to inspect
     // the result when it is available.
@@ -178,8 +159,8 @@ export class GraphQLResultCache<V> {
         this.lastFetch = undefined
         this.lastResult = undefined
         this.fetchTimeMsec = 0
-        this.aborts.abort()
-        this.aborts = new AbortIgnorer()
+        this.aborts?.abort()
+        this.aborts = undefined
     }
 
     private get maxAgeMsec(): number {
@@ -205,7 +186,7 @@ export class GraphQLResultCache<V> {
             if (signal) {
                 // If the cache is still fetching, we don't want to abort until
                 // this request also aborts.
-                this.aborts.enrol(signal)
+                this.aborts?.enrol(signal)
             }
             // Note, we always return lastFetch here. That way we preserve
             // whether an Error result was returned, or thrown, even though we
@@ -219,7 +200,7 @@ export class GraphQLResultCache<V> {
 
         // We do not abort the existing fetch to avoid starving clients if the
         // fetches take longer than the cache expiration.
-        this.aborts = new AbortWhenAllEnrolledAbort()
+        this.aborts = new AbortAggregator()
         if (signal) {
             this.aborts.enrol(signal)
         }
@@ -237,13 +218,13 @@ export class GraphQLResultCache<V> {
                     } else {
                         this.retryCount = 0
                     }
-                    this.aborts = new AbortIgnorer()
+                    this.aborts = undefined
                 }
             } catch (error) {
                 if (this.lastFetch === thisFetch && error instanceof Error) {
                     this.lastResult = error
                     this.retryCount++
-                    this.aborts = new AbortIgnorer()
+                    this.aborts = undefined
                 }
                 // We swallow the error here; this Promise chain is just to
                 // update the cache's state.
