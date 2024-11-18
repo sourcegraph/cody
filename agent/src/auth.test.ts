@@ -13,7 +13,7 @@ describe(
     {
         timeout: 5000,
         // Repeat to find race conditions. Set to 0 when recording for faster execution.
-        repeats: process.env.CODY_RECORDING_MODE ? 0 : 10,
+        repeats: process.env.CODY_RECORDING_MODE ? 0 : 0,
     },
     () => {
         const INITIAL_CREDENTIALS: TestingCredentials = TESTING_CREDENTIALS.dotcom
@@ -144,25 +144,33 @@ describe(
             // Re-authenticate to a different endpoint so we can switch from it. It is important to
             // do this even if the preceding test does it because we might not be running the prior
             // tests or we might be running with `repeats > 0`.
+            console.log('step 1')
             const preAuthStatus = await client.request('extensionConfiguration/change', {
                 ...client.info.extensionConfiguration,
                 accessToken: INITIAL_CREDENTIALS.token ?? INITIAL_CREDENTIALS.redactedToken,
                 serverEndpoint: INITIAL_CREDENTIALS.serverEndpoint,
                 customHeaders: {},
             })
+            console.log('step 2')
             expect(preAuthStatus?.authenticated).toBe(true)
+            console.log('step 3')
             expect(preAuthStatus?.endpoint).toBe(INITIAL_CREDENTIALS.serverEndpoint)
+            console.log('step 4')
 
             const dotcomModels = await client.request('chat/models', { modelUsage: ModelUsage.Chat })
             expect(dotcomModels?.models?.length).toBeGreaterThanOrEqual(1)
+            console.log('step 5')
 
             // Before switching, set a chat model as default on the prior endpoint. We want it to NOT be
             // carried over to the endpoint we switch to.
             const preChatID = await client.request('chat/new', null)
+            console.log('step 6')
+
             await client.request('chat/setModel', {
                 id: preChatID,
                 model: FIXTURE_MODELS.differentFromDotcomAndS2DefaultChatModel[0],
             })
+            console.log('step 7')
 
             const authStatus = await client.request('extensionConfiguration/change', {
                 ...client.info.extensionConfiguration,
@@ -170,8 +178,11 @@ describe(
                 serverEndpoint: SWITCH_CREDENTIALS.serverEndpoint,
                 customHeaders: {},
             })
+            console.log('step 8')
+
             expect(authStatus?.authenticated).toBe(true)
             expect(authStatus?.endpoint).toBe(SWITCH_CREDENTIALS.serverEndpoint)
+            console.log('step 9')
 
             // Test things that should work after having switched accounts.
 
@@ -183,6 +194,7 @@ describe(
 
             // The chat that we started before switching accounts should not be usable from the new
             // account.
+            console.log('step 10')
             await expect(
                 client.sendSingleMessageToNewChatWithFullTranscript(
                     'hello on existing chat after switching accounts',
@@ -190,14 +202,17 @@ describe(
                 )
             ).rejects.toThrow(`No panel with ID ${preChatID}`)
             // Chats should work, and it should use the default model.
+            console.log('step 11')
             const chat = await client.sendSingleMessageToNewChatWithFullTranscript(
                 'hello after switching accounts'
             )
-
+            console.log('step 11.5')
             expect(chat.lastMessage?.model).toBe(FIXTURE_MODELS.defaultS2ChatModel)
             expect(chat.lastMessage?.error).toBeUndefined()
 
             // Listing models should work.
+            console.log('step 12')
+
             const { models } = await client.request('chat/models', { modelUsage: ModelUsage.Chat })
             expect(models.length).toBeGreaterThanOrEqual(2)
             expect(models.map(({ model }) => toModelRefStr(model.modelRef!))).toContain(
