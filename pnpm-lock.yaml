@@ -13,6 +13,11 @@ overrides:
 
 packageExtensionsChecksum: bc809394d179d8460f9d473fc54e379a
 
+patchedDependencies:
+  highlight.js@11.8.0:
+    hash: bzyroljkef3byfhzbomid6liny
+    path: patches/highlight.js@11.8.0.patch
+
 importers:
 
   .:
@@ -588,7 +593,7 @@ importers:
         version: 1.2.0
       highlight.js:
         specifier: 11.8.0
-        version: 11.8.0
+        version: 11.8.0(patch_hash=bzyroljkef3byfhzbomid6liny)
       hpagent:
         specifier: ^1.2.0
         version: 1.2.0
@@ -10561,10 +10566,11 @@ packages:
     engines: {node: '>=10.0.0'}
     dev: true
 
-  /highlight.js@11.8.0:
+  /highlight.js@11.8.0(patch_hash=bzyroljkef3byfhzbomid6liny):
     resolution: {integrity: sha512-MedQhoqVdr0U6SSnWPzfiadUcDHfN/Wzq25AkXiQv9oiOO/sG0S7XkvpFIqWBl9Yq1UYyYOOVORs5UW2XlPyzg==}
     engines: {node: '>=12.0.0'}
     dev: false
+    patched: true
 
   /hosted-git-info@2.8.9:
     resolution: {integrity: sha512-mxIDAb9Lsm6DoOJ7xH+5+X4y1LU/4Hi50L9C5sIswK3JzULS4bwk1FvjdBgvYR4bzT4tuUQiC15FE2f5HbLvYw==}
@@ -11902,7 +11908,7 @@ packages:
     dependencies:
       '@types/hast': 2.3.10
       fault: 2.0.1
-      highlight.js: 11.8.0
+      highlight.js: 11.8.0(patch_hash=bzyroljkef3byfhzbomid6liny)
     dev: false
 
   /lru-cache@10.0.0:

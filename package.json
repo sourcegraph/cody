@@ -88,6 +88,9 @@
         }
       }
     },
-    "neverBuiltDependencies": ["deasync", "playwright"]
+    "neverBuiltDependencies": ["deasync", "playwright"],
+    "patchedDependencies": {
+      "highlight.js@11.8.0": "patches/highlight.js@11.8.0.patch"
+    }
   }
 }

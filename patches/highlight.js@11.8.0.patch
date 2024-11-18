@@ -1,0 +1,39 @@
+diff --git a/lib/core.js b/lib/core.js
+index 25fa54ab011a7bfc80791748a8df0d769e6f628a..1fc53527940fa7ca88f2be274ba67e0ccc353e66 100644
+--- a/lib/core.js
++++ b/lib/core.js
+@@ -2373,8 +2373,17 @@ const HLJS = function(hljs) {
+    * auto-highlights all pre>code elements on the page
+    */
+   function highlightAll() {
++    function boot() {
++      // if a highlight was requested before DOM was loaded, do now
++      highlightAll();
++    }
++
+     // if we are called too early in the loading process
+     if (document.readyState === "loading") {
++      // make sure the event listener is only added once
++      if (!wantsHighlight) {
++        window.addEventListener('DOMContentLoaded', boot, false);
++      }
+       wantsHighlight = true;
+       return;
+     }
+@@ -2383,16 +2392,6 @@ const HLJS = function(hljs) {
+     blocks.forEach(highlightElement);
+   }
+ 
+-  function boot() {
+-    // if a highlight was requested before DOM was loaded, do now
+-    if (wantsHighlight) highlightAll();
+-  }
+-
+-  // make sure we are in the browser environment
+-  if (typeof window !== 'undefined' && window.addEventListener) {
+-    window.addEventListener('DOMContentLoaded', boot, false);
+-  }
+-
+   /**
+    * Register a language grammar module
+    *
