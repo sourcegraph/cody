@@ -1,6 +1,7 @@
 package com.sourcegraph.cody.ui.web
 
 import com.google.gson.JsonParser
+import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
@@ -31,7 +32,7 @@ internal data class WebUIProxyCreationGate(
 // - Pushes theme updates into Webviews.
 // - Routes postMessage from host to Webviews.
 @Service(Service.Level.PROJECT)
-class WebUIService(private val project: Project) {
+class WebUIService(private val project: Project) : Disposable {
   companion object {
     @JvmStatic fun getInstance(project: Project): WebUIService = project.service<WebUIService>()
   }
@@ -78,8 +79,8 @@ class WebUIService(private val project: Project) {
         }
       }
 
-  private var themeController =
-      WebThemeController().apply { setThemeChangeListener { updateTheme(it) } }
+  private val themeController =
+      WebThemeController(this).apply { setThemeChangeListener { updateTheme(it) } }
 
   private fun updateTheme(theme: WebTheme) {
     synchronized(proxies) {
@@ -164,4 +165,6 @@ class WebUIService(private val project: Project) {
   internal fun setTitle(handle: String, title: String) {
     withProxy(handle) { it.title = title }
   }
+
+  override fun dispose() {}
 }
