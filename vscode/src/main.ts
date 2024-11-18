@@ -1,6 +1,7 @@
 import * as vscode from 'vscode'
 
 import {
+    type AuthStatus,
     type ChatClient,
     ClientConfigSingleton,
     type ConfigurationInput,
@@ -40,6 +41,7 @@ import {
 import _ from 'lodash'
 import { isEqual } from 'lodash'
 import { filter, map } from 'observable-fns'
+import { isS2 } from '../../lib/shared/src/sourcegraph-api/environments'
 import { isReinstalling } from '../uninstall/reinstall'
 import type { CommandResult } from './CommandResult'
 import { showAccountMenu } from './auth/account-menu'
@@ -705,11 +707,15 @@ async function tryRegisterTutorial(
 function registerAutoEdits(disposables: vscode.Disposable[]): void {
     disposables.push(
         subscriptionDisposable(
-            featureFlagProvider
-                .evaluatedFeatureFlag(FeatureFlag.CodyAutoeditExperimentEnabledFeatureFlag)
+            combineLatest(
+                authStatus,
+                featureFlagProvider.evaluatedFeatureFlag(
+                    FeatureFlag.CodyAutoeditExperimentEnabledFeatureFlag
+                )
+            )
                 .pipe(
-                    createDisposables(autoeditEnabled => {
-                        if (shouldEnableExperimentalAutoedits(autoeditEnabled)) {
+                    map(([authStatus, autoeditEnabled]) => {
+                        if (shouldEnableExperimentalAutoedits(autoeditEnabled, authStatus)) {
                             const provider = new AutoeditsProvider()
                             return provider
                         }
@@ -721,8 +727,12 @@ function registerAutoEdits(disposables: vscode.Disposable[]): void {
     )
 }
 
-function shouldEnableExperimentalAutoedits(autoeditExperimentFlag: boolean): boolean {
-    if (autoeditExperimentFlag) {
+function shouldEnableExperimentalAutoedits(
+    autoeditExperimentFlag: boolean,
+    authStatus: AuthStatus
+): boolean {
+    // Additional check to ensure that the user is on S2, so that we don't enable the experimental autoedits for PLG users.
+    if (autoeditExperimentFlag && isS2(authStatus)) {
         return true
     }
     return false
@@ -767,7 +777,7 @@ function registerAutocomplete(
                     }),
                     switchMap(([config, authStatus, autoeditEnabled]) => {
                         // If the auto-edit experiment is enabled, we don't need to load the completion provider
-                        if (shouldEnableExperimentalAutoedits(autoeditEnabled)) {
+                        if (shouldEnableExperimentalAutoedits(autoeditEnabled, authStatus)) {
                             finishLoading()
                             return NEVER
                         }
