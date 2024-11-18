@@ -52,6 +52,7 @@ async function buildAgent() {
         bundle: true,
         outfile: path.join('dist', 'index.js'),
         platform: 'node',
+        target: 'es2022',
         sourcemap: true,
         logLevel: 'error',
         external: ['typescript'],
