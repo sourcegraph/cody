@@ -5,7 +5,7 @@ import { fetch } from '../../fetch'
 import type { TelemetryEventInput } from '@sourcegraph/telemetry'
 
 import escapeRegExp from 'lodash/escapeRegExp'
-import { Observable, type Subscription } from 'observable-fns'
+import { Observable } from 'observable-fns'
 import semver from 'semver'
 import { dependentAbortController, onAbort } from '../../common/abortController'
 import { type PickResolvedConfiguration, resolvedConfig } from '../../configuration/resolver'
@@ -16,7 +16,7 @@ import { isError } from '../../utils'
 import { addCodyClientIdentificationHeaders } from '../client-name-version'
 import { DOTCOM_URL, isDotCom } from '../environments'
 import { isAbortError } from '../errors'
-import { GraphQLResultCache } from './cache'
+import { type GraphQLResultCache, ObservableInvalidatedGraphQLResultCacheFactory } from './cache'
 import {
     CHANGE_PROMPT_VISIBILITY,
     CHAT_INTENT_QUERY,
@@ -639,13 +639,8 @@ export class SourcegraphGraphQLAPIClient {
     private dotcomUrl = DOTCOM_URL
 
     private isAgentTesting = process.env.CODY_SHIM_TESTING === 'true'
-    private readonly siteVersionCache = new GraphQLResultCache<string>({
-        queryName: 'SiteProductVersion',
-        maxAgeMsec: 1000 * 60 * 10, // 10 minutes,
-        initialRetryDelayMsec: 10, // Don't cache errors for long
-        backoffFactor: 1.5, // Back off exponentially
-    })
-    private readonly versionCacheInvalidator: Subscription<any>
+    private readonly resultCacheFactory: ObservableInvalidatedGraphQLResultCacheFactory
+    private readonly siteVersionCache: GraphQLResultCache<string>
 
     public static withGlobalConfig(): SourcegraphGraphQLAPIClient {
         return new SourcegraphGraphQLAPIClient(resolvedConfig)
@@ -661,15 +656,19 @@ export class SourcegraphGraphQLAPIClient {
     }
 
     private constructor(private readonly config: Observable<GraphQLAPIClientConfig>) {
-        this.versionCacheInvalidator = config.pipe(distinctUntilChanged()).subscribe({
-            next: () => {
-                this.siteVersionCache.invalidate()
-            },
-        })
+        this.resultCacheFactory = new ObservableInvalidatedGraphQLResultCacheFactory(
+            this.config.pipe(distinctUntilChanged()),
+            {
+                maxAgeMsec: 1000 * 60 * 10, // 10 minutes,
+                initialRetryDelayMsec: 10, // Don't cache errors for long
+                backoffFactor: 1.5, // Back off exponentially
+            }
+        )
+        this.siteVersionCache = this.resultCacheFactory.create<string>('SiteProductVersion')
     }
 
     [Symbol.dispose]() {
-        this.versionCacheInvalidator.unsubscribe()
+        this.resultCacheFactory[Symbol.dispose]()
     }
 
     public async getSiteVersion(signal?: AbortSignal): Promise<string | Error> {

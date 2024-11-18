@@ -1,3 +1,4 @@
+import type { Observable, Subscription } from 'observable-fns'
 import { wrapInActiveSpan } from '../../tracing'
 
 /**
@@ -57,6 +58,74 @@ export class AbortIgnorer extends AbortAggregator {
 }
 
 /**
+ * Options for GraphQL result caching and failure retry.
+ */
+type GraphQLResultCacheConfig = {
+    /** How long we'll reuse a result from the first time we started fetching it. */
+    maxAgeMsec: number
+
+    /**
+     * How long to wait, in msec, before retrying a failed fetch. If this is
+     * zero, there is no exponential backoff.
+     */
+    initialRetryDelayMsec: number
+
+    /** How quickly to grow the delay between retries. The delay is capped at `maxAgeMsec`. */
+    backoffFactor: number
+}
+
+/**
+ * A factory for GraphQLResultCache instances. All of the instances created by
+ * this factory will be invalidated when a specified observable emits.
+ *
+ * Any emissions invalidate the caches, so consider using `distinctUntilChanged`
+ * if the value of the observable is relevant to the cached values.
+ *
+ * The factory keeps its caches alive until the Observable completes. Dispose
+ * the factory to clean up the subscription.
+ */
+export class ObservableInvalidatedGraphQLResultCacheFactory {
+    private readonly options: GraphQLResultCacheConfig
+    private readonly subscription: Subscription<any>
+    private caches: GraphQLResultCache<any>[] = []
+
+    /**
+     * Creates a new factory.
+     * @param observable the observable that will invalidate the cache.
+     * @param options default options for the caches created by this factory.
+     */
+    constructor(observable: Observable<any>, options: GraphQLResultCacheConfig) {
+        this.options = Object.assign({}, options)
+        this.subscription = observable.subscribe({
+            next: () => {
+                for (const cache of this.caches) {
+                    cache.invalidate()
+                }
+            },
+            complete: () => {
+                this.caches = []
+            },
+            error: () => {
+                this.caches = []
+            },
+        })
+    }
+
+    [Symbol.dispose](): void {
+        this.subscription.unsubscribe()
+        this.caches = []
+    }
+
+    create<V>(queryName: string, options?: Partial<GraphQLResultCacheConfig>): GraphQLResultCache<V> {
+        const cache = new GraphQLResultCache<V>({ queryName, ...this.options, ...options })
+        if (!this.subscription.closed) {
+            this.caches.push(cache)
+        }
+        return cache
+    }
+}
+
+/**
  * Caches a GraphQL result of type V. The cache will expire after maxAgeMsec,
  * or can be manually invalidated with invalidate(). Concurrent reads during
  * fetch will be de-duped to a single result. Invalidating the cache while there
@@ -69,18 +138,12 @@ export class GraphQLResultCache<V> {
     // Name of the query we're caching to annotate cache hits in spans.
     private readonly queryName: string
 
-    // How long we'll reuse a result from the first time we started fetching it.
     private readonly successMaxAgeMsec: number
+    private readonly initialRetryDelayMsec: number
+    private readonly backoffFactor: number
 
     // The number of consecutive times we have got an error.
     private retryCount = 0
-
-    // How long to wait, in msec, before retrying a failed fetch.
-    private readonly initialRetryDelayMsec: number
-
-    // How quickly to grow the delay between retries. This is capped at
-    // `successMaxAgeMsec`.
-    private readonly backoffFactor: number
 
     // When we started the last fetch.
     private fetchTimeMsec = 0
@@ -101,7 +164,7 @@ export class GraphQLResultCache<V> {
         maxAgeMsec,
         initialRetryDelayMsec,
         backoffFactor,
-    }: { queryName: string; maxAgeMsec: number; initialRetryDelayMsec: number; backoffFactor: number }) {
+    }: { queryName: string } & GraphQLResultCacheConfig) {
         this.queryName = queryName
         this.successMaxAgeMsec = maxAgeMsec
         this.initialRetryDelayMsec = initialRetryDelayMsec
