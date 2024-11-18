@@ -73,7 +73,6 @@ interface InlineCompletionItemRetrievedContext {
     filePath: string
     startLine: number
     endLine: number
-    timeSinceActionMs?: number
 }
 
 interface InlineContextItemsParams extends GitIdentifiersForFile {
