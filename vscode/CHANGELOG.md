@@ -10,6 +10,10 @@ This is a log of all notable changes to Cody for VS Code.
 
 ### Changed
 
+- Chat: Update keyboard shortcuts:
+  - Removed `Shift+Ctrl+L` (previously created a new chat) due to conflict with Windows default shortcut
+  - Updated `Shift+Alt+L` to create a new chat when the focus is not in the editor. When the focus is in the editor, the behavior remains unchanged (the current selection is added to the chat context).
+
 ## 1.42.0
 Hey Cody users! For those who want to track detailed technical changes, we will be updating this changelog to provide more comprehensive updates on new features, improvements, and fixes. For major releases and announcements, check out our [public changelog](https://sourcegraph.com/changelog).
 

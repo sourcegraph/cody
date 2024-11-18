@@ -610,16 +610,6 @@
         "when": "!cody.activated"
       },
       {
-        "command": "cody.chat.new",
-        "key": "shift+ctrl+/",
-        "when": "cody.activated"
-      },
-      {
-        "command": "cody.chat.new",
-        "key": "shift+ctrl+l",
-        "when": "cody.activated"
-      },
-      {
         "command": "cody.chat.toggle",
         "key": "alt+l",
         "when": "cody.activated && editorTextFocus",
@@ -660,6 +650,16 @@
         "command": "cody.mention.selection",
         "key": "shift+alt+/",
         "when": "cody.activated && editorTextFocus && editorHasSelection"
+      },
+      {
+        "command": "cody.chat.new",
+        "key": "shift+alt+l",
+        "when": "cody.activated && !editorTextFocus"
+      },
+      {
+        "command": "cody.chat.new",
+        "key": "shift+alt+/",
+        "when": "cody.activated && !editorTextFocus"
       },
       {
         "command": "cody.tutorial.chat",
