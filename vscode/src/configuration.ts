@@ -112,6 +112,7 @@ export function getConfiguration(
         experimentalTracing: getHiddenSetting('experimental.tracing', false),
 
         experimentalSupercompletions: getHiddenSetting('experimental.supercompletions', false),
+        experimentalAutoeditsEnabled: getHiddenSetting('experimental.autoedits.enabled', undefined),
         experimentalAutoeditsConfigOverride: getHiddenSetting(
             'experimental.autoedits.config.override',
             undefined

@@ -81,6 +81,7 @@ interface RawClientConfiguration {
     experimentalSupercompletions: boolean
     experimentalAutoeditsRendererTesting: boolean
     experimentalAutoeditsConfigOverride: AutoEditsModelConfig | undefined
+    experimentalAutoeditsEnabled: boolean | undefined
     experimentalCommitMessage: boolean
     experimentalNoodle: boolean
     experimentalMinionAnthropicKey: string | undefined

@@ -708,14 +708,15 @@ function registerAutoEdits(disposables: vscode.Disposable[]): void {
     disposables.push(
         subscriptionDisposable(
             combineLatest(
+                resolvedConfig,
                 authStatus,
                 featureFlagProvider.evaluatedFeatureFlag(
                     FeatureFlag.CodyAutoeditExperimentEnabledFeatureFlag
                 )
             )
                 .pipe(
-                    map(([authStatus, autoeditEnabled]) => {
-                        if (shouldEnableExperimentalAutoedits(autoeditEnabled, authStatus)) {
+                    map(([config, authStatus, autoeditEnabled]) => {
+                        if (shouldEnableExperimentalAutoedits(config, autoeditEnabled, authStatus)) {
                             const provider = new AutoeditsProvider()
                             return provider
                         }
@@ -728,14 +729,15 @@ function registerAutoEdits(disposables: vscode.Disposable[]): void {
 }
 
 function shouldEnableExperimentalAutoedits(
+    config: ResolvedConfiguration,
     autoeditExperimentFlag: boolean,
     authStatus: AuthStatus
 ): boolean {
-    // Additional check to ensure that the user is on S2, so that we don't enable the experimental autoedits for PLG users.
-    if (autoeditExperimentFlag && isS2(authStatus)) {
-        return true
+    // If the config is explicitly set in the vscode settings, use the setting instead of the feature flag.
+    if (config.configuration.experimentalAutoeditsEnabled !== undefined) {
+        return config.configuration.experimentalAutoeditsEnabled
     }
-    return false
+    return autoeditExperimentFlag && isS2(authStatus)
 }
 
 /**
@@ -777,7 +779,7 @@ function registerAutocomplete(
                     }),
                     switchMap(([config, authStatus, autoeditEnabled]) => {
                         // If the auto-edit experiment is enabled, we don't need to load the completion provider
-                        if (shouldEnableExperimentalAutoedits(autoeditEnabled, authStatus)) {
+                        if (shouldEnableExperimentalAutoedits(config, autoeditEnabled, authStatus)) {
                             finishLoading()
                             return NEVER
                         }
