@@ -160,7 +160,6 @@ describe('getConfiguration', () => {
             },
             commandCodeLenses: true,
             experimentalSupercompletions: false,
-            experimentalAutoeditsEnabled: false,
             experimentalAutoeditsConfigOverride: undefined,
             experimentalAutoeditsRendererTesting: false,
             experimentalMinionAnthropicKey: undefined,

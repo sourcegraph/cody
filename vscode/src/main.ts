@@ -704,19 +704,28 @@ async function tryRegisterTutorial(
 
 function registerAutoEdits(disposables: vscode.Disposable[]): void {
     disposables.push(
-        enableFeature(
-            ({ configuration }) => {
-                return (
-                    configuration.experimentalAutoeditsEnabled === true &&
-                    configuration.autocomplete === false
+        subscriptionDisposable(
+            featureFlagProvider
+                .evaluatedFeatureFlag(FeatureFlag.CodyAutoeditExperimentEnabledFeatureFlag)
+                .pipe(
+                    createDisposables(autoeditEnabled => {
+                        if (autoeditEnabled) {
+                            const provider = new AutoeditsProvider()
+                            return provider
+                        }
+                        return []
+                    })
                 )
-            },
-            () => {
-                const provider = new AutoeditsProvider()
-                return provider
-            }
+                .subscribe({})
         )
     )
+}
+
+function shouldEnableExperimentalAutoedits(autoeditExperimentFlag: boolean): boolean {
+    if (autoeditExperimentFlag) {
+        return true
+    }
+    return false
 }
 
 /**
@@ -736,16 +745,32 @@ function registerAutocomplete(
         statusBarLoader?.()
         statusBarLoader = undefined
     }
+
     disposables.push(
         subscriptionDisposable(
-            combineLatest(resolvedConfig, authStatus)
+            combineLatest(
+                resolvedConfig,
+                authStatus,
+                featureFlagProvider.evaluatedFeatureFlag(
+                    FeatureFlag.CodyAutoeditExperimentEnabledFeatureFlag
+                )
+            )
                 .pipe(
                     //TODO(@rnauta -> @sqs): It feels yuk to handle the invalidation outside of
                     //where the state is picked. It's also very tedious
                     distinctUntilChanged((a, b) => {
-                        return isEqual(a[0].configuration, b[0].configuration) && isEqual(a[1], b[1])
+                        return (
+                            isEqual(a[0].configuration, b[0].configuration) &&
+                            isEqual(a[1], b[1]) &&
+                            isEqual(a[2], b[2])
+                        )
                     }),
-                    switchMap(([config, authStatus]) => {
+                    switchMap(([config, authStatus, autoeditEnabled]) => {
+                        // If the auto-edit experiment is enabled, we don't need to load the completion provider
+                        if (shouldEnableExperimentalAutoedits(autoeditEnabled)) {
+                            finishLoading()
+                            return NEVER
+                        }
                         if (!authStatus.pendingValidation && !statusBarLoader) {
                             statusBarLoader = statusBar.addLoader({
                                 title: 'Completion Provider is starting',
