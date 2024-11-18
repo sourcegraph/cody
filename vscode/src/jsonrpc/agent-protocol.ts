@@ -1,8 +1,6 @@
 import type * as vscode from 'vscode'
 
 import type {
-    BillingCategory,
-    BillingProduct,
     ClientCapabilities,
     CodyCommand,
     ContextFilters,
@@ -13,12 +11,7 @@ import type {
     SerializedChatTranscript,
     event,
 } from '@sourcegraph/cody-shared'
-import type {
-    KnownKeys,
-    KnownString,
-    TelemetryEventMarketingTrackingInput,
-    TelemetryEventParameters,
-} from '@sourcegraph/telemetry'
+import type { TelemetryEventMarketingTrackingInput } from '@sourcegraph/telemetry'
 
 import type { ExtensionMessage, WebviewMessage } from '../chat/protocol'
 import type { CompletionBookkeepingEvent, CompletionItemID } from '../completions/analytics-logger'
@@ -615,9 +608,6 @@ export interface ExtensionConfiguration {
 /**
  * TelemetryEvent is a JSON RPC format of the arguments to a typical
  * TelemetryEventRecorder implementation from '@sourcegraph/telemetry'.
- * This type is intended for use in the Agent RPC handler only - clients sending
- * events to the Agent should use 'newTelemetryEvent()' to create event objects,
- * which uses the same type constraints as '(TelemetryEventRecorder).recordEvent()'.
  * @param feature must be camelCase and '.'-delimited, e.g. 'myFeature.subFeature'.
  * Features should NOT include the client platform, e.g. 'vscode' - information
  * about the client is automatically attached to all events. Note that Cody
@@ -630,30 +620,14 @@ export interface ExtensionConfiguration {
 interface TelemetryEvent {
     feature: string
     action: string
-    parameters?:
-        | TelemetryEventParameters<{ [key: string]: number }, BillingProduct, BillingCategory>
-        | undefined
-        | null
-}
-
-/**
- * newTelemetryEvent is a constructor for TelemetryEvent that shares the same
- * type constraints as '(TelemetryEventRecorder).recordEvent()'.
- */
-export function newTelemetryEvent<
-    Feature extends string,
-    Action extends string,
-    MetadataKey extends string,
->(
-    feature: KnownString<Feature>,
-    action: KnownString<Action>,
-    parameters?: TelemetryEventParameters<
-        KnownKeys<MetadataKey, { [key in MetadataKey]: number }>,
-        BillingProduct,
-        BillingCategory
-    >
-): TelemetryEvent {
-    return { feature, action, parameters }
+    parameters: {
+        metadata?: Record<string, number>
+        privateMetadata?: Record<string, any>
+        billingMetadata?: {
+            product: string
+            category: string
+        }
+    }
 }
 
 /**
