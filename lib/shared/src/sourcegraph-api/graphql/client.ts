@@ -635,7 +635,7 @@ type GraphQLAPIClientConfig = PickResolvedConfiguration<{
 
 const QUERY_TO_NAME_REGEXP = /^\s*(?:query|mutation)\s+(\w+)/m
 
-export class SourcegraphGraphQLAPIClient {
+export class SourcegraphGraphQLAPIClient implements Disposable {
     private dotcomUrl = DOTCOM_URL
 
     private isAgentTesting = process.env.CODY_SHIM_TESTING === 'true'

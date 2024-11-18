@@ -84,7 +84,7 @@ type GraphQLResultCacheConfig = {
  * The factory keeps its caches alive until the Observable completes. Dispose
  * the factory to clean up the subscription.
  */
-export class ObservableInvalidatedGraphQLResultCacheFactory {
+export class ObservableInvalidatedGraphQLResultCacheFactory implements Disposable {
     private readonly options: GraphQLResultCacheConfig
     private readonly subscription: Subscription<any>
     private caches: GraphQLResultCache<any>[] = []
