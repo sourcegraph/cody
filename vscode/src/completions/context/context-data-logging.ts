@@ -106,7 +106,7 @@ export class ContextRetrieverDataCollection implements vscode.Disposable {
                 return new RecentEditsRetriever({
                     maxAgeMs: 10 * 60 * 1000,
                     diffStrategyIdentifier:
-                        RecentEditsRetrieverDiffStrategyIdentifier.AutoeditWithShortTermDiff,
+                        RecentEditsRetrieverDiffStrategyIdentifier.UnifiedDiffWithLineNumbers,
                 })
             case RetrieverIdentifier.DiagnosticsRetriever:
                 return new DiagnosticsRetriever({

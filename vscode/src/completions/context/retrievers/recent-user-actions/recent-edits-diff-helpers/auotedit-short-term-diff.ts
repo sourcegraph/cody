@@ -1,6 +1,3 @@
-import { PromptString } from '@sourcegraph/cody-shared'
-import { displayPath } from '@sourcegraph/cody-shared/src/editor/displayPath'
-import { structuredPatch } from 'diff'
 import type * as vscode from 'vscode'
 import type {
     DiffCalculationInput,
@@ -8,7 +5,7 @@ import type {
     RecentEditsRetrieverDiffStrategy,
     TextDocumentChange,
 } from './recent-edits-diff-strategy'
-import { applyTextDocumentChanges } from './utils'
+import { applyTextDocumentChanges, computeDiffWithLineNumbers } from './utils'
 
 /**
  * Generates a single unified diff patch that combines all changes
@@ -46,7 +43,7 @@ export class AutoeditWithShortTermDiffStrategy implements RecentEditsRetrieverDi
             oldContent,
             changes.map(c => c.change)
         )
-        const gitDiff = this.computeDiffWithLineNumbers(uri, oldContent, newContent, numContextLines)
+        const gitDiff = computeDiffWithLineNumbers(uri, oldContent, newContent, numContextLines)
         return [
             {
                 diff: gitDiff,
@@ -64,53 +61,5 @@ export class AutoeditWithShortTermDiffStrategy implements RecentEditsRetrieverDi
         const shortTermChanges = changes.slice(0, index)
         const longTermChanges = changes.slice(index)
         return [shortTermChanges, longTermChanges]
-    }
-
-    private computeDiffWithLineNumbers(
-        uri: vscode.Uri,
-        originalContent: string,
-        modifiedContent: string,
-        numContextLines: number
-    ): PromptString {
-        const hunkDiffs = []
-        const filename = displayPath(uri)
-        const patch = structuredPatch(
-            `a/${filename}`,
-            `b/${filename}`,
-            originalContent,
-            modifiedContent,
-            '',
-            '',
-            { context: numContextLines }
-        )
-        for (const hunk of patch.hunks) {
-            const diffString = this.getDiffStringForHunkWithLineNumbers(hunk)
-            hunkDiffs.push(diffString)
-        }
-        const gitDiff = PromptString.fromStructuredGitDiff(uri, hunkDiffs.join('\nthen\n'))
-        return gitDiff
-    }
-
-    private getDiffStringForHunkWithLineNumbers(hunk: Diff.Hunk): string {
-        const lines = []
-        let oldLineNumber = hunk.oldStart
-        let newLineNumber = hunk.newStart
-        for (const line of hunk.lines) {
-            if (line.length === 0) {
-                continue
-            }
-            if (line[0] === '-') {
-                lines.push(`${oldLineNumber}${line[0]}| ${line.slice(1)}`)
-                oldLineNumber++
-            } else if (line[0] === '+') {
-                lines.push(`${newLineNumber}${line[0]}| ${line.slice(1)}`)
-                newLineNumber++
-            } else if (line[0] === ' ') {
-                lines.push(`${newLineNumber}${line[0]}| ${line.slice(1)}`)
-                oldLineNumber++
-                newLineNumber++
-            }
-        }
-        return lines.join('\n')
     }
 }

@@ -12,6 +12,10 @@ export enum RecentEditsRetrieverDiffStrategyIdentifier {
      */
     UnifiedDiff = 'unified-diff',
     /**
+     * Unified diff strategy that shows changes in a single patch.
+     */
+    UnifiedDiffWithLineNumbers = 'unified-diff-with-line-numbers',
+    /**
      * Diff Strategy to use a seperate short term diff used by `auto-edits`.
      */
     AutoeditWithShortTermDiff = 'autoedit-with-short-term-diff',
@@ -27,7 +31,9 @@ export function createDiffStrategy(
 ): RecentEditsRetrieverDiffStrategy {
     switch (identifier) {
         case RecentEditsRetrieverDiffStrategyIdentifier.UnifiedDiff:
-            return new UnifiedDiffStrategy()
+            return new UnifiedDiffStrategy({ addLineNumbers: false })
+        case RecentEditsRetrieverDiffStrategyIdentifier.UnifiedDiffWithLineNumbers:
+            return new UnifiedDiffStrategy({ addLineNumbers: true })
         case RecentEditsRetrieverDiffStrategyIdentifier.AutoeditWithShortTermDiff:
             return new AutoeditWithShortTermDiffStrategy()
         default:
