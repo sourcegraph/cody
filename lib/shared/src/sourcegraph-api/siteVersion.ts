@@ -20,6 +20,9 @@ export interface SiteAndCodyAPIVersions {
 
 /**
  * Observe the site version and Cody API version of the currently authenticated endpoint.
+ *
+ * TODO: `siteVersion` updates at most once per authStatus change. This means it can cache transient
+ * errors, like network errors, indefinitely. Fix it to retry after transient failures.
  */
 export const siteVersion: Observable<SiteAndCodyAPIVersions | null | typeof pendingOperation> =
     authStatus.pipe(
@@ -36,7 +39,6 @@ export const siteVersion: Observable<SiteAndCodyAPIVersions | null | typeof pend
                 if (!authStatus.authenticated) {
                     return Observable.of(null)
                 }
-                console.log(`siteVersion: ${authStatus.endpoint}`)
                 return promiseFactoryToObservable(signal => graphqlClient.getSiteVersion(signal)).pipe(
                     map((siteVersion): SiteAndCodyAPIVersions | null | typeof pendingOperation => {
                         if (isError(siteVersion)) {
@@ -56,8 +58,6 @@ export const siteVersion: Observable<SiteAndCodyAPIVersions | null | typeof pend
         ),
         map(result => (isError(result) ? null : result)) // the operation catches its own errors, so errors will never get here
     )
-
-// const siteVersionStorage = storeLastValue(siteVersion)
 
 const authStatusAuthed: Observable<AuthStatus> = authStatus.filter(
     authStatus => authStatus.authenticated

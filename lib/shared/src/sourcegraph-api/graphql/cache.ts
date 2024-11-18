@@ -175,7 +175,6 @@ export class GraphQLResultCache<V> {
      * Invalidates the cache. If there is an in-progress fetch, it is aborted.
      */
     invalidate(): void {
-        console.log(`invalidating, lastFetch=${this.lastFetch}`)
         this.lastFetch = undefined
         this.lastResult = undefined
         this.fetchTimeMsec = 0
@@ -203,7 +202,6 @@ export class GraphQLResultCache<V> {
             // The result, if any, is fresh
             this.fetchTimeMsec + this.maxAgeMsec > now
         ) {
-            console.log(`cache hit/join`)
             if (signal) {
                 // If the cache is still fetching, we don't want to abort until
                 // this request also aborts.
@@ -218,7 +216,6 @@ export class GraphQLResultCache<V> {
             )
         }
         // We missed the cache, so start a new fetch.
-        console.log(`cache miss`)
 
         // We do not abort the existing fetch to avoid starving clients if the
         // fetches take longer than the cache expiration.
@@ -232,25 +229,18 @@ export class GraphQLResultCache<V> {
         const thisFetch = fetcher(this.aborts.signal)
         void (async () => {
             try {
-                console.log(`starting to wait for version`)
                 const result = await thisFetch
-                console.log(`finished waiting for version: ${result}`)
                 if (this.lastFetch === thisFetch) {
-                    console.log(`caching this result: ${result}`)
                     this.lastResult = result
                     if (this.lastResult instanceof Error) {
-                        console.log(`this result is an error: ${result}`)
                         this.retryCount++
                     } else {
-                        console.log(`this result is not an error: ${result}`)
                         this.retryCount = 0
                     }
                     this.aborts = new AbortIgnorer()
                 }
             } catch (error) {
-                console.log(`error fetching version`, error)
                 if (this.lastFetch === thisFetch && error instanceof Error) {
-                    console.log(`caching this error and incrementing retry count`)
                     this.lastResult = error
                     this.retryCount++
                     this.aborts = new AbortIgnorer()
