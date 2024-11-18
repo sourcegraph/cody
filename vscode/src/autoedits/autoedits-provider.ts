@@ -23,8 +23,13 @@ import { autoeditsLogger } from './logger'
 import type { AutoeditsModelAdapter } from './prompt-provider'
 import type { CodeToReplaceData } from './prompt-utils'
 import { AutoEditsRendererManager } from './renderer'
+import {
+    adjustPredictionIfInlineCompletionPossible,
+    extractInlineCompletionFromRewrittenCode,
+} from './utils'
 
 const AUTOEDITS_CONTEXT_STRATEGY = 'auto-edits'
+const INLINE_COMPLETETION_DEFAULT_DEBOUNCE_INTERVAL_MS = 150
 const ONSELECTION_CHANGE_DEFAULT_DEBOUNCE_INTERVAL_MS = 150
 const RESET_SUGGESTION_ON_CURSOR_CHANGE_AFTER_INTERVAL_MS = 60 * 1000
 
@@ -51,7 +56,7 @@ interface ProviderConfig {
 /**
  * Provides inline completions and auto-edits functionality.
  */
-export class AutoeditsProvider implements vscode.Disposable {
+export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, vscode.Disposable {
     private readonly disposables: vscode.Disposable[] = []
     private readonly contextMixer: ContextMixer
     private readonly rendererManager: AutoEditsRendererManager
@@ -59,7 +64,6 @@ export class AutoeditsProvider implements vscode.Disposable {
     private readonly onSelectionChangeDebounced: DebouncedFunc<typeof this.autoeditOnSelectionChange>
     // Keeps track of the last time the text was changed in the editor.
     private lastTextChangeTimeStamp: number | undefined
-    private currentController: AbortController | null = null
 
     constructor() {
         this.contextMixer = new ContextMixer({
@@ -85,7 +89,10 @@ export class AutoeditsProvider implements vscode.Disposable {
                 if (!editor) {
                     return
                 }
-                this.triggerAutoedits(editor.document, editor.selection.active)
+                this.provideInlineCompletionItems(editor.document, editor.selection.active, {
+                    triggerKind: vscode.InlineCompletionTriggerKind.Invoke,
+                    selectedCompletionInfo: undefined,
+                })
             }),
             vscode.window.onDidChangeTextEditorSelection(this.onSelectionChangeDebounced),
             vscode.workspace.onDidChangeTextDocument(event => {
@@ -139,32 +146,35 @@ export class AutoeditsProvider implements vscode.Disposable {
             Date.now() - this.lastTextChangeTimeStamp <
                 RESET_SUGGESTION_ON_CURSOR_CHANGE_AFTER_INTERVAL_MS
         ) {
-            this.triggerAutoedits(document, lastSelection.active)
+            this.provideInlineCompletionItems(document, lastSelection.active, {
+                triggerKind: vscode.InlineCompletionTriggerKind.Automatic,
+                selectedCompletionInfo: undefined,
+            })
         }
     }
 
-    private async triggerAutoedits(
+    public async provideInlineCompletionItems(
         document: vscode.TextDocument,
-        position: vscode.Position
-    ): Promise<void> {
-        if (this.currentController) {
-            this.currentController.abort()
-        }
+        position: vscode.Position,
+        context: vscode.InlineCompletionContext,
+        token?: vscode.CancellationToken
+    ): Promise<vscode.InlineCompletionItem[] | vscode.InlineCompletionList | null> {
         const controller = new AbortController()
-        this.currentController = controller
-        await this.showAutoEdit(document, position, controller.signal)
-        if (this.currentController === controller) {
-            this.currentController = null
-        }
+        token?.onCancellationRequested(() => controller.abort())
+
+        await new Promise(resolve =>
+            setTimeout(resolve, INLINE_COMPLETETION_DEFAULT_DEBOUNCE_INTERVAL_MS)
+        )
+        return this.showAutoEdit(document, position, controller.signal)
     }
 
     private async showAutoEdit(
         document: vscode.TextDocument,
         position: vscode.Position,
         abortSignal: AbortSignal
-    ): Promise<void> {
+    ): Promise<vscode.InlineCompletionItem[] | vscode.InlineCompletionList | null> {
         if (abortSignal.aborted) {
-            return
+            return null
         }
         const autoeditResponse = await this.inferEdit({
             document,
@@ -172,10 +182,39 @@ export class AutoeditsProvider implements vscode.Disposable {
             abortSignal,
         })
         if (abortSignal.aborted || !autoeditResponse) {
-            return
+            return null
         }
         const { prediction, codeToReplaceData } = autoeditResponse
+        const inlineCompletionItems = this.tryMakeInlineCompletionResponse(prediction, codeToReplaceData)
+        if (inlineCompletionItems) {
+            return inlineCompletionItems
+        }
         await this.showEditAsDecorations(document, codeToReplaceData, prediction)
+        return null
+    }
+
+    private tryMakeInlineCompletionResponse(
+        originalPrediction: string,
+        codeToReplace: CodeToReplaceData
+    ): vscode.InlineCompletionItem[] | null {
+        const prediction = adjustPredictionIfInlineCompletionPossible(
+            originalPrediction,
+            codeToReplace.codeToRewritePrefix,
+            codeToReplace.codeToRewriteSuffix
+        )
+        const isPrefixMatch = prediction.startsWith(codeToReplace.codeToRewritePrefix)
+        const isSuffixMatch = prediction.endsWith(codeToReplace.codeToRewriteSuffix)
+        if (isPrefixMatch && isSuffixMatch) {
+            const autocompleteResponse = extractInlineCompletionFromRewrittenCode(
+                prediction,
+                codeToReplace.codeToRewritePrefix,
+                codeToReplace.codeToRewriteSuffix
+            )
+            autoeditsLogger.logDebug('Autocomplete Inline Respone: ', autocompleteResponse)
+            const inlineCompletionItems = new vscode.InlineCompletionItem(autocompleteResponse)
+            return [inlineCompletionItems]
+        }
+        return null
     }
 
     private async inferEdit(options: AutoEditsProviderOptions): Promise<AutoeditsPrediction | null> {
@@ -332,10 +371,6 @@ export class AutoeditsProvider implements vscode.Disposable {
 
     public dispose(): void {
         this.onSelectionChangeDebounced.cancel()
-        if (this.currentController) {
-            this.currentController.abort()
-            this.currentController = null
-        }
         for (const disposable of this.disposables) {
             disposable.dispose()
         }
