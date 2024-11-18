@@ -621,12 +621,15 @@ interface TelemetryEvent {
     feature: string
     action: string
     parameters: {
-        metadata?: Record<string, number>
-        privateMetadata?: Record<string, any>
-        billingMetadata?: {
-            product: string
-            category: string
-        }
+        metadata?: Record<string, number> | undefined | null
+        privateMetadata?: Record<string, any> | undefined | null
+        billingMetadata?:
+            | {
+                  product: string
+                  category: string
+              }
+            | undefined
+            | null
     }
 }
 
