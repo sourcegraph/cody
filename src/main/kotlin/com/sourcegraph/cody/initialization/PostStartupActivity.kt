@@ -47,8 +47,11 @@ class PostStartupActivity : ProjectActivity {
 
     CodyStatusService.resetApplication(project)
 
-    val multicaster = EditorFactory.getInstance().eventMulticaster as EditorEventMulticasterEx
     val disposable = CodyAgentService.getInstance(project)
+
+    // WARNING: All listeners should check if an event they are receiving is matching project
+    // they were created for. Otherwise, we risk propagating events to the wrong agent instance.
+    val multicaster = EditorFactory.getInstance().eventMulticaster as EditorEventMulticasterEx
     multicaster.addFocusChangeListener(CodyFocusChangeListener(project), disposable)
     multicaster.addCaretListener(CodyCaretListener(project), disposable)
     multicaster.addSelectionListener(CodySelectionListener(project), disposable)

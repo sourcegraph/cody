@@ -46,6 +46,10 @@ class CodyDocumentListener(val project: Project) : BulkAwareDocumentListener {
   private fun handleDocumentEvent(event: DocumentEvent) {
     val editor = CodyEditorUtil.getEditorForDocument(event.document) ?: return
 
+    if (editor.project != project) {
+      return
+    }
+
     logCodeCopyPastedFromChat(event)
     CodyAutocompleteManager.instance.clearAutocompleteSuggestions(editor)
 

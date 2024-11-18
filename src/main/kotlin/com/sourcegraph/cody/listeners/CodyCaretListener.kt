@@ -15,7 +15,9 @@ import com.sourcegraph.utils.CodyEditorUtil
 
 class CodyCaretListener(val project: Project) : CaretListener {
   override fun caretPositionChanged(e: CaretEvent) {
-    if (!ConfigUtil.isCodyEnabled() || e.editor.editorKind != EditorKind.MAIN_EDITOR) {
+    if (!ConfigUtil.isCodyEnabled() ||
+        e.editor.editorKind != EditorKind.MAIN_EDITOR ||
+        e.editor.project != project) {
       return
     }
 

@@ -12,6 +12,10 @@ import com.sourcegraph.cody.ignore.IgnoreOracle
 class CodyFocusChangeListener(val project: Project) : FocusChangeListener {
 
   override fun focusGained(editor: Editor) {
+    if (editor.project != project) {
+      return
+    }
+
     ProtocolTextDocumentExt.fromEditor(editor)?.let { textDocument ->
       EditorChangesBus.documentChanged(project, textDocument)
       CodyAgentService.withAgent(project) { agent: CodyAgent ->
