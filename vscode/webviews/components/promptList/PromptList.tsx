@@ -24,7 +24,7 @@ import styles from './PromptList.module.css'
 interface PromptListProps {
     showSearch: boolean
     showFirstNItems?: number
-    telemetryLocation: 'PromptSelectField' | 'PromptsTab'
+    telemetryLocation: 'PromptSelectField' | 'PromptsTab' | 'WelcomeAreaPrompts'
     showOnlyPromptInsertableCommands?: boolean
     showCommandOrigins?: boolean
     showPromptLibraryUnsupportedMessage?: boolean

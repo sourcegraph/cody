@@ -1,3 +1,8 @@
+## 0.13.0
+- Fix openctx mention by mocking Cody Web workspace root
+- Disable non-runnable prompts in Cody Web
+- Fix prompt editor placeholder 
+
 ## 0.11.0
 - Support an external API for Cody Panel functionality (now you can trigger running prompts outside of Cody Web component)
 
