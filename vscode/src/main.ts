@@ -709,7 +709,7 @@ function registerAutoEdits(disposables: vscode.Disposable[]): void {
                 .evaluatedFeatureFlag(FeatureFlag.CodyAutoeditExperimentEnabledFeatureFlag)
                 .pipe(
                     createDisposables(autoeditEnabled => {
-                        if (autoeditEnabled) {
+                        if (shouldEnableExperimentalAutoedits(autoeditEnabled)) {
                             const provider = new AutoeditsProvider()
                             return provider
                         }
