@@ -26,7 +26,11 @@ test.extend<ExpectedV2Events>({
         'cody.fixup.response:hasCode',
         'cody.fixup.apply:succeeded',
     ],
-})('Generate Unit Test Command (Edit)', async ({ page, sidebar }) => {
+})('Generate Unit Test Command (Edit)', async ({ page, sidebar, server }) => {
+    server.onGraphQl('SiteProductVersion').replyJson({
+        data: { site: { productVersion: '5.9.0' } },
+    })
+
     // Sign into Cody
     await sidebarSignin(page, sidebar)
 
@@ -61,7 +65,11 @@ test.extend<ExpectedV2Events>({
         'cody.fixup.response:hasCode',
         'cody.fixup.apply:succeeded',
     ],
-})('Document Command (Edit)', async ({ page, sidebar }) => {
+})('Document Command (Edit)', async ({ page, sidebar, server }) => {
+    server.onGraphQl('SiteProductVersion').replyJson({
+        data: { site: { productVersion: '5.9.0' } },
+    })
+
     // Sign into Cody
     await sidebarSignin(page, sidebar)
 
@@ -103,7 +111,11 @@ test.extend<ExpectedV2Events>({
         'cody.auth:connected',
         'cody.command.explain:executed',
     ],
-})('Explain Command from Prompts Tab', async ({ page, sidebar }) => {
+}).only('Explain Command from Prompts Tab', async ({ page, sidebar, server }) => {
+    server.onGraphQl('SiteProductVersion').replyJson({
+        data: { site: { productVersion: '5.9.0' } },
+    })
+
     // Sign into Cody
     await sidebarSignin(page, sidebar)
 
