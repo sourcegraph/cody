@@ -315,11 +315,11 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
     ): boolean {
         const currentFileLines = lines(currentFileText)
         const predictedFileLines = lines(predictedFileText)
-        const { addedLines } = getLineLevelDiff(currentFileLines, predictedFileLines)
+        let { addedLines } = getLineLevelDiff(currentFileLines, predictedFileLines)
         if (addedLines.length === 0) {
             return false
         }
-        addedLines.sort()
+        addedLines = addedLines.sort((a, b) => a - b)
         const minAddedLineIndex = addedLines[0]
         const maxAddedLineIndex = addedLines[addedLines.length - 1]
         const allAddedLines = predictedFileLines.slice(minAddedLineIndex, maxAddedLineIndex + 1)
