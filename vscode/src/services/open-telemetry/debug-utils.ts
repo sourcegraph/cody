@@ -1,8 +1,6 @@
 import { type Attributes, type Span, trace } from '@opentelemetry/api'
 
-function bubbleSort(arr) {
-
-}
+function bubbleSort(arr) {}
 
 /**
  * Adds OpenTelemetry event to the current active span in the development environment.

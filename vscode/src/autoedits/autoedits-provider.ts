@@ -207,7 +207,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
             codeToReplace.codeToRewriteSuffix
         )
         const codeToRewriteAfterCurrentLine = codeToReplace.codeToRewriteSuffix.slice(
-            docContext.currentLineSuffix.length
+            docContext.currentLineSuffix.length + 1 // Additional char for newline
         )
         const isPrefixMatch = prediction.startsWith(codeToReplace.codeToRewritePrefix)
         const isSuffixMatch = prediction.endsWith(codeToRewriteAfterCurrentLine)
