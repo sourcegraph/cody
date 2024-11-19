@@ -892,7 +892,7 @@ export const DEFAULT_VSCODE_SETTINGS = {
     },
     commandCodeLenses: false,
     experimentalSupercompletions: false,
-    experimentalAutoeditsEnabled: false,
+    experimentalAutoeditsEnabled: undefined,
     experimentalAutoeditsRendererTesting: false,
     experimentalAutoeditsConfigOverride: undefined,
     experimentalMinionAnthropicKey: undefined,

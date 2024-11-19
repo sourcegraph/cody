@@ -54,6 +54,8 @@ export enum FeatureFlag {
     CodyAutocompleteContextExperimentVariant4 = 'cody-autocomplete-context-experiment-variant-4',
     CodyAutocompleteContextExperimentControl = 'cody-autocomplete-context-experiment-control',
 
+    CodyAutoeditExperimentEnabledFeatureFlag = 'cody-autoedit-experiment-enabled-flag',
+
     // Enables gpt-4o-mini as a default Edit model
     CodyEditDefaultToGpt4oMini = 'cody-edit-default-to-gpt-4o-mini',
 

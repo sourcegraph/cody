@@ -96,7 +96,7 @@ describe('getConfiguration', () => {
                     case 'cody.experimental.supercompletions':
                         return false
                     case 'cody.experimental.autoedits.enabled':
-                        return false
+                        return undefined
                     case 'cody.experimental.autoedits-renderer-testing':
                         return false
                     case 'cody.experimental.autoedits.config.override':
@@ -160,7 +160,7 @@ describe('getConfiguration', () => {
             },
             commandCodeLenses: true,
             experimentalSupercompletions: false,
-            experimentalAutoeditsEnabled: false,
+            experimentalAutoeditsEnabled: undefined,
             experimentalAutoeditsConfigOverride: undefined,
             experimentalAutoeditsRendererTesting: false,
             experimentalMinionAnthropicKey: undefined,
