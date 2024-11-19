@@ -5,10 +5,9 @@ import com.intellij.openapi.editor.event.BulkAwareDocumentListener
 import com.intellij.openapi.editor.event.DocumentEvent
 import com.intellij.openapi.project.Project
 import com.sourcegraph.cody.agent.CodyAgentService
-import com.sourcegraph.cody.agent.protocol.BillingCategory
-import com.sourcegraph.cody.agent.protocol.BillingMetadata
-import com.sourcegraph.cody.agent.protocol.BillingProduct
+import com.sourcegraph.cody.agent.protocol_extensions.BillingMetadata
 import com.sourcegraph.cody.agent.protocol_extensions.ProtocolTextDocumentExt
+import com.sourcegraph.cody.agent.protocol_generated.BillingMetadataParams
 import com.sourcegraph.cody.agent.protocol_generated.CompletionItemParams
 import com.sourcegraph.cody.autocomplete.CodyAutocompleteManager
 import com.sourcegraph.cody.autocomplete.action.AcceptCodyAutocompleteAction
@@ -19,6 +18,7 @@ import com.sourcegraph.utils.CodyEditorUtil
 
 class CodyDocumentListener(val project: Project) : BulkAwareDocumentListener {
 
+  // todo: it does not work after the migration to webview. see: linear.app/sourcegraph/issue/QA-78
   private fun logCodeCopyPastedFromChat(event: DocumentEvent) {
     val pastedCode = event.newFragment.toString()
     if (pastedCode.isNotBlank() && CodeEditorFactory.lastCopiedText == pastedCode) {
@@ -28,7 +28,8 @@ class CodyDocumentListener(val project: Project) : BulkAwareDocumentListener {
           feature = "keyDown",
           action = "paste",
           pastedCode,
-          billingMetadata = BillingMetadata(BillingProduct.CODY, BillingCategory.CORE))
+          billingMetadata =
+              BillingMetadataParams(BillingMetadata.Product.CODY, BillingMetadata.Category.CORE))
     }
   }
 

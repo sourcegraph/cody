@@ -3,9 +3,9 @@ package com.sourcegraph.cody.telemetry
 import com.intellij.openapi.application.ApplicationInfo
 import com.intellij.openapi.project.Project
 import com.sourcegraph.cody.agent.CodyAgentService
-import com.sourcegraph.cody.agent.protocol.BillingMetadata
-import com.sourcegraph.cody.agent.protocol.TelemetryEvent
-import com.sourcegraph.cody.agent.protocol.TelemetryEventParameters
+import com.sourcegraph.cody.agent.protocol_generated.BillingMetadataParams
+import com.sourcegraph.cody.agent.protocol_generated.ParametersParams
+import com.sourcegraph.cody.agent.protocol_generated.TelemetryEvent
 import com.sourcegraph.config.ConfigUtil
 
 class TelemetryV2 {
@@ -14,18 +14,18 @@ class TelemetryV2 {
         project: Project,
         feature: String,
         action: String,
-        parameters: TelemetryEventParameters? = null
+        parameters: ParametersParams? = null
     ) {
       val versionParameters =
           mapOf(
               "ideProductCode" to ConfigUtil.getIntellijProductCode(),
               "ideBaselineVersion" to ApplicationInfo.getInstance().build.baselineVersion.toLong())
-      val baseParameters = parameters ?: TelemetryEventParameters()
+      val baseParameters = parameters ?: ParametersParams()
       val newParameters =
           baseParameters.copy(metadata = baseParameters.metadata?.plus(versionParameters))
 
       CodyAgentService.withAgent(project) { agent ->
-        agent.server.recordEvent(
+        agent.server.telemetry_recordEvent(
             TelemetryEvent(feature = "cody.$feature", action = action, parameters = newParameters))
       }
     }
@@ -35,7 +35,7 @@ class TelemetryV2 {
         feature: String,
         action: String,
         code: String,
-        billingMetadata: BillingMetadata? = null
+        billingMetadata: BillingMetadataParams
     ) {
       val op =
           if (action.startsWith("copy")) "copy"
@@ -51,7 +51,7 @@ class TelemetryV2 {
           feature = feature,
           action = action,
           parameters =
-              TelemetryEventParameters(
+              ParametersParams(
                   metadata = metadata,
                   privateMetadata = privateMetadata,
                   billingMetadata = billingMetadata))

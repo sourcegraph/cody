@@ -3,7 +3,6 @@
 package com.sourcegraph.cody.agent
 
 import com.sourcegraph.cody.agent.protocol.NetworkRequest
-import com.sourcegraph.cody.agent.protocol.TelemetryEvent
 import com.sourcegraph.cody.agent.protocol_generated.AutocompleteParams
 import com.sourcegraph.cody.agent.protocol_generated.AutocompleteResult
 import com.sourcegraph.cody.agent.protocol_generated.Chat_ImportParams
@@ -135,6 +134,11 @@ interface _SubsetGeneratedCodyAgentServer {
   @JsonRequest("testing/ignore/overridePolicy")
   fun testing_ignore_overridePolicy(params: ContextFilters?): CompletableFuture<Null?>
 
+  @JsonRequest("telemetry/recordEvent")
+  fun telemetry_recordEvent(
+      params: com.sourcegraph.cody.agent.protocol_generated.TelemetryEvent
+  ): CompletableFuture<Null?>
+
   //  // =============
   //  // Notifications
   //  // =============
@@ -182,10 +186,6 @@ interface _SubsetGeneratedCodyAgentServer {
  * works similar to JavaScript Proxy.
  */
 interface _LegacyAgentServer {
-
-  @JsonRequest("telemetry/recordEvent")
-  fun recordEvent(event: TelemetryEvent): CompletableFuture<Void?>
-
   @JsonRequest("testing/requestErrors")
   fun testingRequestErrors(): CompletableFuture<List<NetworkRequest>>
 }

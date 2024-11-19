@@ -5,10 +5,9 @@ import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.PlatformCoreDataKeys
 import com.intellij.openapi.project.Project
 import com.intellij.util.ui.JBUI
-import com.sourcegraph.cody.agent.protocol.BillingCategory
-import com.sourcegraph.cody.agent.protocol.BillingMetadata
-import com.sourcegraph.cody.agent.protocol.BillingProduct
-import com.sourcegraph.cody.agent.protocol.TelemetryEventParameters
+import com.sourcegraph.cody.agent.protocol_extensions.BillingMetadata
+import com.sourcegraph.cody.agent.protocol_generated.BillingMetadataParams
+import com.sourcegraph.cody.agent.protocol_generated.ParametersParams
 import com.sourcegraph.cody.api.SourcegraphApiRequestExecutor
 import com.sourcegraph.cody.auth.SsoAuthMethod
 import com.sourcegraph.cody.telemetry.TelemetryV2
@@ -28,8 +27,10 @@ class LogInToSourcegraphAction : BaseAddAccountWithTokenAction() {
           it,
           "auth.login",
           "clicked",
-          TelemetryEventParameters(
-              billingMetadata = BillingMetadata(BillingProduct.CODY, BillingCategory.BILLABLE)))
+          ParametersParams(
+              billingMetadata =
+                  BillingMetadataParams(
+                      BillingMetadata.Product.CODY, BillingMetadata.Category.BILLABLE)))
     }
 
     val accountsHost = getCodyAccountsHost(e) ?: return
@@ -61,8 +62,10 @@ class AddCodyEnterpriseAccountAction : BaseAddAccountWithTokenAction() {
           it,
           "auth.login",
           "clicked",
-          TelemetryEventParameters(
-              billingMetadata = BillingMetadata(BillingProduct.CODY, BillingCategory.BILLABLE)))
+          ParametersParams(
+              billingMetadata =
+                  BillingMetadataParams(
+                      BillingMetadata.Product.CODY, BillingMetadata.Category.BILLABLE)))
     }
 
     val accountsHost = getCodyAccountsHost(e) ?: return
@@ -90,12 +93,6 @@ abstract class BaseAddAccountWithTokenAction : DumbAwareEDTAction() {
       (e.getData(CodyAccountsHost.DATA_KEY)
           ?: DataManager.getInstance().loadFromDataContext(e.dataContext, CodyAccountsHost.KEY))
 }
-
-fun signInWithSourcegraphDialog(project: Project?, parent: Component?): BaseLoginDialog =
-    SourcegraphTokenLoginDialog(project, parent, SsoAuthMethod.DEFAULT).apply {
-      title = "Sign in with Sourcegraph"
-      setLoginButtonText("Sign in")
-    }
 
 internal class SourcegraphTokenLoginDialog(
     project: Project?,
