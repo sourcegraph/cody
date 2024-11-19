@@ -111,7 +111,7 @@ test.extend<ExpectedV2Events>({
         'cody.auth:connected',
         'cody.command.explain:executed',
     ],
-}).only('Explain Command from Prompts Tab', async ({ page, sidebar, server }) => {
+})('Explain Command from Prompts Tab', async ({ page, sidebar, server }) => {
     server.onGraphQl('SiteProductVersion').replyJson({
         data: { site: { productVersion: '5.9.0' } },
     })
