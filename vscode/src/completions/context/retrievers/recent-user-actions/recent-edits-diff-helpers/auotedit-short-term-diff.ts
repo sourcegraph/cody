@@ -18,19 +18,19 @@ export class AutoeditWithShortTermDiffStrategy implements RecentEditsRetrieverDi
 
     public getDiffHunks(input: DiffCalculationInput): DiffHunk[] {
         const [shortTermChanges, longTermChanges] = this.divideChangesIntoWindows(input.changes)
-        const shortTermHunks = this.getDiffHunksForChanges(
+        const [shortTermHunks, shortTermNewContent] = this.getDiffHunksForChanges(
             input.uri,
             input.oldContent,
             shortTermChanges,
             this.shortTermContextLines
         )
-        const longTermHunks = this.getDiffHunksForChanges(
+        const [longTermHunks, _] = this.getDiffHunksForChanges(
             input.uri,
-            input.oldContent,
+            shortTermNewContent,
             longTermChanges,
             this.longTermContextLines
         )
-        return [...shortTermHunks, ...longTermHunks]
+        return [shortTermHunks, longTermHunks]
     }
 
     private getDiffHunksForChanges(
@@ -38,18 +38,17 @@ export class AutoeditWithShortTermDiffStrategy implements RecentEditsRetrieverDi
         oldContent: string,
         changes: TextDocumentChange[],
         numContextLines: number
-    ): DiffHunk[] {
+    ): [DiffHunk, string] {
         const newContent = applyTextDocumentChanges(
             oldContent,
             changes.map(c => c.change)
         )
         const gitDiff = computeDiffWithLineNumbers(uri, oldContent, newContent, numContextLines)
-        return [
-            {
-                diff: gitDiff,
-                latestEditTimestamp: Math.max(...changes.map(c => c.timestamp)),
-            },
-        ]
+        const diffHunk = {
+            diff: gitDiff,
+            latestEditTimestamp: Math.max(...changes.map(c => c.timestamp)),
+        }
+        return [diffHunk, newContent]
     }
 
     private divideChangesIntoWindows(
