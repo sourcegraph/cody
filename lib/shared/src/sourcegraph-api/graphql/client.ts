@@ -17,6 +17,7 @@ import { addCodyClientIdentificationHeaders } from '../client-name-version'
 import { DOTCOM_URL, isDotCom } from '../environments'
 import { isAbortError } from '../errors'
 import {
+    BUILTIN_PROMPTS_QUERY,
     CHANGE_PROMPT_VISIBILITY,
     CHAT_INTENT_QUERY,
     CONTEXT_FILTERS_QUERY,
@@ -62,7 +63,6 @@ import {
     REPOS_SUGGESTIONS_QUERY,
     REPO_NAME_QUERY,
     SEARCH_ATTRIBUTION_QUERY,
-    STANDARD_PROMPTS_QUERY,
     VIEWER_SETTINGS_QUERY,
 } from './queries'
 import { buildGraphQLUrl } from './url'
@@ -451,7 +451,7 @@ export interface Prompt {
     name: string
     nameWithOwner: string
     recommended: boolean
-    owner: {
+    owner?: {
         namespaceName: string
     }
     description?: string
@@ -462,7 +462,7 @@ export interface Prompt {
         text: string
     }
     url: string
-    createdBy: {
+    createdBy?: {
         id: string
         username: string
         displayName: string
@@ -1265,7 +1265,7 @@ export class SourcegraphGraphQLAPIClient {
         return result
     }
 
-    public async queryStandardPrompts({
+    public async queryBuiltinPrompts({
         query,
         first,
         signal,
@@ -1275,12 +1275,10 @@ export class SourcegraphGraphQLAPIClient {
         signal?: AbortSignal
     }): Promise<Prompt[]> {
         const response = await this.fetchSourcegraphAPI<APIResponse<{ prompts: { nodes: Prompt[] } }>>(
-            STANDARD_PROMPTS_QUERY,
+            BUILTIN_PROMPTS_QUERY,
             {
                 query,
                 first: first ?? 100,
-                recommendedOnly: false,
-                builtinOnly: true,
                 orderByMultiple: [PromptsOrderBy.PROMPT_UPDATED_AT],
             },
             signal

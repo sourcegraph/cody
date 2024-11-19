@@ -412,8 +412,8 @@ query ViewerPrompts($query: String!, $first: Int!, $recommendedOnly: Boolean!, $
     }
 }`
 
-export const STANDARD_PROMPTS_QUERY = `
-query ViewerStandardPrompts($query: String!, $first: Int!, $orderByMultiple: [PromptsOrderBy!]) {
+export const BUILTIN_PROMPTS_QUERY = `
+query ViewerBuiltinPrompts($query: String!, $first: Int!, $orderByMultiple: [PromptsOrderBy!]) {
     prompts(query: $query, first: $first, includeDrafts: false, recommendedOnly: false, builtinOnly: true, includeViewerDrafts: true, viewerIsAffiliated: true, orderByMultiple: $orderByMultiple) {
         nodes {
             id

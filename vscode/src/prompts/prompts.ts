@@ -91,7 +91,7 @@ export async function mergedPromptsAndLegacyCommands(
     const matchingCommands = await getLocalCommands({
         query: queryLower,
         isUnifiedPromptsEnabled,
-        remoteStandardPrompts: isNewPromptsSgVersion,
+        remoteBuiltinPrompts: isNewPromptsSgVersion,
     })
 
     const actions =
@@ -139,15 +139,15 @@ async function fetchCustomPrompts(
 interface LocalCommandsInput {
     query: string
     isUnifiedPromptsEnabled: boolean
-    remoteStandardPrompts: boolean
+    remoteBuiltinPrompts: boolean
 }
 
 async function getLocalCommands(input: LocalCommandsInput): Promise<Action[]> {
-    const { query, isUnifiedPromptsEnabled, remoteStandardPrompts } = input
+    const { query, isUnifiedPromptsEnabled, remoteBuiltinPrompts } = input
 
     // Fetch standards (built-in) prompts from prompts library API
-    if (remoteStandardPrompts) {
-        const remoteStandardPrompts = await graphqlClient.queryStandardPrompts({ query })
+    if (remoteBuiltinPrompts) {
+        const remoteStandardPrompts = await graphqlClient.queryBuiltinPrompts({ query })
         return remoteStandardPrompts.map(prompt => ({ ...prompt, actionType: 'prompt' }))
     }
 
