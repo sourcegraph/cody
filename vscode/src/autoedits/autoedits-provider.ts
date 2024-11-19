@@ -15,12 +15,10 @@ import { DefaultContextStrategyFactory } from '../completions/context/context-st
 import { RetrieverIdentifier } from '../completions/context/utils'
 import { getCurrentDocContext } from '../completions/get-current-doc-context'
 import { completionMatchesSuffix } from '../completions/is-completion-visible'
-import { lines } from '../completions/text-processing'
 import { getConfiguration } from '../configuration'
 import { CodyGatewayAdapter } from './adapters/cody-gateway'
 import { FireworksAdapter } from './adapters/fireworks'
 import { OpenAIAdapter } from './adapters/openai'
-import { getLineLevelDiff } from './diff-utils'
 import { autoeditsLogger } from './logger'
 import type { AutoeditsModelAdapter } from './prompt-provider'
 import type { CodeToReplaceData } from './prompt-utils'
@@ -29,6 +27,7 @@ import {
     adjustPredictionIfInlineCompletionPossible,
     extractInlineCompletionFromRewrittenCode,
 } from './utils'
+import { isPredictedTextAlreadyInSuffix } from './utils'
 
 const AUTOEDITS_CONTEXT_STRATEGY = 'auto-edits'
 const INLINE_COMPLETETION_DEFAULT_DEBOUNCE_INTERVAL_MS = 150
@@ -297,7 +296,13 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
             currentFileText.slice(0, document.offsetAt(codeToReplaceData.range.start)) +
             prediction +
             currentFileText.slice(document.offsetAt(codeToReplaceData.range.end))
-        if (this.shouldNotShowEdit(currentFileText, predictedFileText, codeToReplaceData)) {
+        if (
+            isPredictedTextAlreadyInSuffix({
+                codeToRewrite: codeToReplaceData.codeToRewrite,
+                prediction,
+                suffix: codeToReplaceData.suffixInArea + codeToReplaceData.suffixAfterArea,
+            })
+        ) {
             autoeditsLogger.logDebug(
                 'Autoedits',
                 'Skipping autoedit - predicted text already exists in suffix'
@@ -311,30 +316,6 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
             currentFileText,
             predictedFileText,
         })
-    }
-
-    private shouldNotShowEdit(
-        currentFileText: string,
-        predictedFileText: string,
-        codeToReplaceData: CodeToReplaceData
-    ): boolean {
-        const currentFileLines = lines(currentFileText)
-        const predictedFileLines = lines(predictedFileText)
-        let { addedLines } = getLineLevelDiff(currentFileLines, predictedFileLines)
-        if (addedLines.length === 0) {
-            return false
-        }
-        addedLines = addedLines.sort((a, b) => a - b)
-        const minAddedLineIndex = addedLines[0]
-        const maxAddedLineIndex = addedLines[addedLines.length - 1]
-        const allAddedLines = predictedFileLines.slice(minAddedLineIndex, maxAddedLineIndex + 1)
-        const allAddedLinesText = allAddedLines.join('\n')
-
-        const immediateSuffix = codeToReplaceData.suffixInArea + codeToReplaceData.suffixAfterArea
-        if (immediateSuffix.startsWith(allAddedLinesText)) {
-            return true
-        }
-        return false
     }
 
     private onDidChangeTextDocument(event: vscode.TextDocumentChangeEvent): void {
