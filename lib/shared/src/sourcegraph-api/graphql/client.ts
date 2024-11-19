@@ -62,6 +62,7 @@ import {
     REPOS_SUGGESTIONS_QUERY,
     REPO_NAME_QUERY,
     SEARCH_ATTRIBUTION_QUERY,
+    STANDARD_PROMPTS_QUERY,
     VIEWER_SETTINGS_QUERY,
 } from './queries'
 import { buildGraphQLUrl } from './url'
@@ -1254,6 +1255,33 @@ export class SourcegraphGraphQLAPIClient {
                 first: first ?? 100,
                 recommendedOnly: recommendedOnly,
                 orderByMultiple: [PromptsOrderBy.PROMPT_RECOMMENDED, PromptsOrderBy.PROMPT_UPDATED_AT],
+            },
+            signal
+        )
+        const result = extractDataOrError(response, data => data.prompts.nodes)
+        if (result instanceof Error) {
+            throw result
+        }
+        return result
+    }
+
+    public async queryStandardPrompts({
+        query,
+        first,
+        signal,
+    }: {
+        query: string
+        first?: number
+        signal?: AbortSignal
+    }): Promise<Prompt[]> {
+        const response = await this.fetchSourcegraphAPI<APIResponse<{ prompts: { nodes: Prompt[] } }>>(
+            STANDARD_PROMPTS_QUERY,
+            {
+                query,
+                first: first ?? 100,
+                recommendedOnly: false,
+                builtinOnly: true,
+                orderByMultiple: [PromptsOrderBy.PROMPT_UPDATED_AT],
             },
             signal
         )

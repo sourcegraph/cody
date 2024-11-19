@@ -412,6 +412,36 @@ query ViewerPrompts($query: String!, $first: Int!, $recommendedOnly: Boolean!, $
     }
 }`
 
+export const STANDARD_PROMPTS_QUERY = `
+query ViewerStandardPrompts($query: String!, $first: Int!, $orderByMultiple: [PromptsOrderBy!]) {
+    prompts(query: $query, first: $first, includeDrafts: false, recommendedOnly: false, builtinOnly: true, includeViewerDrafts: true, viewerIsAffiliated: true, orderByMultiple: $orderByMultiple) {
+        nodes {
+            id
+            name
+            nameWithOwner
+            recommended
+            owner {
+                namespaceName
+            }
+            description
+            draft
+            autoSubmit
+            mode
+            definition {
+                text
+            }
+            url
+            createdBy {
+                id
+                username
+                displayName
+                avatarURL
+            }
+        }
+        totalCount
+    }
+}`
+
 export const REPO_NAME_QUERY = `
 query ResolveRepoName($cloneURL: String!) {
     repository(cloneURL: $cloneURL) {
