@@ -57,6 +57,7 @@ export interface CodeToReplaceData {
     suffixInArea: string
     codeToRewritePrefix: string
     codeToRewriteSuffix: string
+    codeToRewriteFromCurrentLine: string
     range: vscode.Range
 }
 
@@ -70,6 +71,7 @@ interface CurrentFileContext {
     codeToRewrite: PromptString
     codeToRewritePrefix: PromptString
     codeToRewriteSuffix: PromptString
+    codeToRewriteFromCurrentLine: PromptString
     prefixInArea: PromptString
     suffixInArea: PromptString
     prefixBeforeArea: PromptString
@@ -167,13 +169,14 @@ export function getCurrentFilePromptComponents(
     const codeToReplace = {
         codeToRewrite: currentFileContext.codeToRewrite.toString(),
         range: currentFileContext.range,
+        codeToRewriteFromCurrentLine: currentFileContext.codeToRewriteFromCurrentLine.toString(),
         codeToRewritePrefix: currentFileContext.codeToRewritePrefix.toString(),
         codeToRewriteSuffix: currentFileContext.codeToRewriteSuffix.toString(),
         prefixBeforeArea: currentFileContext.prefixBeforeArea.toString(),
         suffixAfterArea: currentFileContext.suffixAfterArea.toString(),
         prefixInArea: currentFileContext.prefixInArea.toString(),
         suffixInArea: currentFileContext.suffixInArea.toString(),
-    }
+    } satisfies CodeToReplaceData
 
     const fileWithMarker = ps`${currentFileContext.prefixBeforeArea}
 ${AREA_FOR_CODE_MARKER}
@@ -240,6 +243,10 @@ export function getCurrentFileContext(options: CurrentFilePromptOptions): Curren
             new vscode.Position(position.line, position.character),
             positionAtLineEnd(codeToRewriteEnd)
         ),
+        codeToRewriteFromCurrentLine: new vscode.Range(
+            document.lineAt(position.line).range.start,
+            positionAtLineEnd(codeToRewriteEnd)
+        ),
         prefixInArea: new vscode.Range(
             positionAtLineStart(areaStart),
             positionAtLineStart(codeToRewriteStart)
@@ -253,6 +260,10 @@ export function getCurrentFileContext(options: CurrentFilePromptOptions): Curren
         codeToRewrite: PromptString.fromDocumentText(document, ranges.codeToRewrite),
         codeToRewritePrefix: PromptString.fromDocumentText(document, ranges.codeToRewritePrefix),
         codeToRewriteSuffix: PromptString.fromDocumentText(document, ranges.codeToRewriteSuffix),
+        codeToRewriteFromCurrentLine: PromptString.fromDocumentText(
+            document,
+            ranges.codeToRewriteFromCurrentLine
+        ),
         prefixInArea: PromptString.fromDocumentText(document, ranges.prefixInArea),
         suffixInArea: PromptString.fromDocumentText(document, ranges.suffixInArea),
         prefixBeforeArea: PromptString.fromDocumentText(document, ranges.prefixBeforeArea),
