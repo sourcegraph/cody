@@ -106,6 +106,7 @@ import { publicRepoMetadataIfAllWorkspaceReposArePublic } from '../../repository
 import { authProvider } from '../../services/AuthProvider'
 import { AuthProviderSimplified } from '../../services/AuthProviderSimplified'
 import { localStorage } from '../../services/LocalStorageProvider'
+import { secretStorage } from '../../services/SecretStorageProvider'
 import { recordExposedExperimentsToSpan } from '../../services/open-telemetry/utils'
 import {
     handleCodeFromInsertAtCursor,
@@ -444,11 +445,21 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     }
                     break
                 }
-                if (message.authKind === 'signin' && message.endpoint && message.value) {
-                    await localStorage.saveEndpointAndToken({
-                        serverEndpoint: message.endpoint,
-                        accessToken: message.value,
-                    })
+                if (message.authKind === 'signin' && message.endpoint) {
+                    const serverEndpoint = message.endpoint
+                    const accessToken = message.value
+                        ? message.value
+                        : (await secretStorage.getToken(serverEndpoint)) ?? ''
+                    const tokenSource = message.value
+                        ? 'paste'
+                        : await secretStorage.getTokenSource(serverEndpoint)
+                    const validationResult = await authProvider.validateAndStoreCredentials(
+                        { serverEndpoint, accessToken, tokenSource },
+                        'always-store'
+                    )
+                    if (!validationResult.authStatus.authenticated) {
+                        await showSignInMenu()
+                    }
                     break
                 }
                 if (message.authKind === 'signout') {
@@ -516,9 +527,12 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         const isEditorViewType = this.webviewPanelOrView?.viewType === 'cody.editorPanel'
         const webviewType = isEditorViewType && !sidebarViewOnly ? 'editor' : 'sidebar'
         const uiKindIsWeb = (cenv.CODY_OVERRIDE_UI_KIND ?? vscode.env.uiKind) === vscode.UIKind.Web
+        const endpoints = localStorage.getEndpointHistory() ?? []
+
         return {
             uiKindIsWeb,
             serverEndpoint: auth.serverEndpoint,
+            endpointHistory: [...endpoints],
             experimentalNoodle: configuration.experimentalNoodle,
             smartApply: this.isSmartApplyEnabled(),
             hasEditCapability: this.hasEditCapability(),

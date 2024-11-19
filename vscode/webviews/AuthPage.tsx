@@ -124,6 +124,7 @@ interface LoginProps {
     uiKindIsWeb: boolean
     vscodeAPI: VSCodeWrapper
     codyIDE: CodyIDE
+    endpoints: string[]
 }
 
 const WebLogin: React.FunctionComponent<

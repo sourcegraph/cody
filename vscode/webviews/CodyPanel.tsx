@@ -5,6 +5,7 @@ import {
     CodyIDE,
     FeatureFlag,
     type Guardrails,
+    type UserProductSubscription,
     firstValueFrom,
 } from '@sourcegraph/cody-shared'
 import { useExtensionAPI, useObservable } from '@sourcegraph/prompt-editor'
@@ -30,6 +31,8 @@ interface CodyPanelProps {
         config: LocalEnv & ConfigurationSubsetForWebview
         clientCapabilities: ClientCapabilitiesWithLegacyFields
         authStatus: AuthStatus
+        isDotComUser: boolean
+        userProductSubscription?: UserProductSubscription | null | undefined
     }
     errorMessages: string[]
     attributionEnabled: boolean
@@ -51,7 +54,7 @@ interface CodyPanelProps {
 export const CodyPanel: FunctionComponent<CodyPanelProps> = ({
     view,
     setView,
-    configuration: { config, clientCapabilities, authStatus },
+    configuration: { config, clientCapabilities, authStatus, isDotComUser, userProductSubscription },
     errorMessages,
     setErrorMessages,
     attributionEnabled,
@@ -142,7 +145,15 @@ export const CodyPanel: FunctionComponent<CodyPanelProps> = ({
                             isPromptsV2Enabled={isPromptsV2Enabled}
                         />
                     )}
-                    {view === View.Account && <AccountTab setView={setView} />}
+                    {view === View.Account && (
+                        <AccountTab
+                            config={config}
+                            clientCapabilities={clientCapabilities}
+                            authStatus={authStatus}
+                            isDotComUser={isDotComUser}
+                            userProductSubscription={userProductSubscription}
+                        />
+                    )}
                     {view === View.Settings && <SettingsTab />}
                 </TabContainer>
                 <StateDebugOverlay />
