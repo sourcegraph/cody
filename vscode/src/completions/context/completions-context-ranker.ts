@@ -1,6 +1,22 @@
 import type { AutocompleteContextSnippet } from '@sourcegraph/cody-shared'
 import { fuseResults } from './reciprocal-rank-fusion'
 
+export enum ContextRankingStrategy {
+    /**
+     * Default strategy for ranking which uses RRF
+     */
+    Default = 'default',
+    /**
+     * Strategy that does not apply any ranking to context snippets
+     */
+    NoRanker = 'no-ranker',
+    /**
+     * Strategy that applies ranking to context snippets based on the time since the action was performed.
+     * If the timestamp is not available, the context item is pushed to the end.
+     */
+    TimeBased = 'time-based',
+}
+
 export interface RetrievedContextResults {
     identifier: string
     duration: number
@@ -17,18 +33,53 @@ interface PriorityBasedContextSnippets {
 }
 
 export class DefaultCompletionsContextRanker implements CompletionsContextRanker {
+    constructor(private readonly contextRankingStrategy: ContextRankingStrategy) {}
+
     public rankAndFuseContext(results: RetrievedContextResults[]): Set<AutocompleteContextSnippet> {
+        switch (this.contextRankingStrategy) {
+            case ContextRankingStrategy.NoRanker:
+                return this.getContextSnippetsAsPerNoRankerStrategy(results)
+            case ContextRankingStrategy.TimeBased:
+                return this.getContextSnippetsAsPerTimeBasedStrategy(results)
+            default:
+                return this.getContextSnippetsAsPerDefaultStrategy(results)
+        }
+    }
+
+    private getContextSnippetsAsPerTimeBasedStrategy(
+        results: RetrievedContextResults[]
+    ): Set<AutocompleteContextSnippet> {
+        const snippets = results
+            .flatMap(r => [...r.snippets])
+            .sort((a, b) => {
+                const aTime = a.metadata?.timeSinceActionMs ?? Number.POSITIVE_INFINITY
+                const bTime = b.metadata?.timeSinceActionMs ?? Number.POSITIVE_INFINITY
+                return aTime - bTime
+            })
+        return new Set(snippets)
+    }
+
+    private getContextSnippetsAsPerNoRankerStrategy(
+        results: RetrievedContextResults[]
+    ): Set<AutocompleteContextSnippet> {
+        const snippets = results.flatMap(r => [...r.snippets])
+        return new Set(snippets)
+    }
+
+    private getContextSnippetsAsPerDefaultStrategy(
+        results: RetrievedContextResults[]
+    ): Set<AutocompleteContextSnippet> {
         if (this.containsRecentEditsBasedContext(results)) {
             return this.getRecentEditsBasedContextFusion(results)
         }
         return this.getRRFBasedContextFusion(results)
     }
 
-    public containsRecentEditsBasedContext(results: RetrievedContextResults[]): boolean {
+    private containsRecentEditsBasedContext(results: RetrievedContextResults[]): boolean {
         return results.some(result => result.identifier.includes('recent-edits'))
     }
 
-    public getRecentEditsBasedContextFusion(
+    private getRecentEditsBasedContextFusion(
         results: RetrievedContextResults[]
     ): Set<AutocompleteContextSnippet> {
         // Maintains the recent-edit priority, while using RRF based fusion for rest of the context retrievers.
@@ -52,7 +103,7 @@ export class DefaultCompletionsContextRanker implements CompletionsContextRanker
      * @param retrieverPriority - An ordered array of strings representing priority retrievers. Rest of the retrievers are ranked using RRF.
      * @returns A seperate set of priority based and non-priority based context snippets.
      */
-    public splitPriorityBasedContextFusion(
+    private splitPriorityBasedContextFusion(
         results: RetrievedContextResults[],
         retrieverPriority: string[]
     ): PriorityBasedContextSnippets {
@@ -74,7 +125,7 @@ export class DefaultCompletionsContextRanker implements CompletionsContextRanker
         }
     }
 
-    public getRRFBasedContextFusion(
+    private getRRFBasedContextFusion(
         results: RetrievedContextResults[]
     ): Set<AutocompleteContextSnippet> {
         const fusedResults = fuseResults(
@@ -96,7 +147,7 @@ export class DefaultCompletionsContextRanker implements CompletionsContextRanker
         return fusedResults
     }
 
-    public getLinearContextFusion(results: RetrievedContextResults[]): Set<AutocompleteContextSnippet> {
+    private getLinearContextFusion(results: RetrievedContextResults[]): Set<AutocompleteContextSnippet> {
         const linearResults = []
         for (const result of results) {
             linearResults.push(...Array.from(result.snippets))

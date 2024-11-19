@@ -1,7 +1,9 @@
+import { testFileUri } from '@sourcegraph/cody-shared'
 import { describe, expect, it } from 'vitest'
+import type { AutocompleteContextSnippet } from '../../../lib/shared/src/completions/types'
 import { getCurrentDocContext } from '../completions/get-current-doc-context'
 import { documentAndPosition } from '../completions/test-helpers'
-import { getBaseUserPrompt, getCurrentFileContext } from './prompt-utils'
+import { getBaseUserPrompt, getContextItemsInTokenBudget, getCurrentFileContext } from './prompt-utils'
 
 describe('getCurrentFileContext', () => {
     it('correctly splits content into different areas based on cursor position', () => {
@@ -385,5 +387,64 @@ line 64
 Now, continue where I left off and finish my change by rewriting "code_to_rewrite":
 `
         expect(prompt.toString()).toEqual(expectedPrompt)
+    })
+})
+
+describe('getContextItemsInTokenBudget', () => {
+    const getContextItem = (content: string, identifier: string): AutocompleteContextSnippet => ({
+        content,
+        identifier,
+        uri: testFileUri('foo.ts'),
+        startLine: 0,
+        endLine: 0,
+    })
+
+    it('returns all items when total content length is under chars budget', () => {
+        const contextItems: AutocompleteContextSnippet[] = [
+            getContextItem('short content 1', 'test1'),
+            getContextItem('short content 2', 'test2'),
+        ]
+        const tokenBudget = 100
+        const result = getContextItemsInTokenBudget(contextItems, tokenBudget)
+        expect(result).toEqual(contextItems)
+    })
+
+    it('excludes items when total content length exceeds chars budget', () => {
+        const contextItems: AutocompleteContextSnippet[] = [
+            getContextItem('a'.repeat(50), 'test1'),
+            getContextItem('b'.repeat(60), 'test2'),
+            getContextItem('c'.repeat(70), 'test3'),
+        ]
+        const tokenBudget = 20 // Set a token budget that results in a chars budget less than total content length
+        const result = getContextItemsInTokenBudget(contextItems, tokenBudget)
+        expect(result.length).toBe(1)
+        expect(result[0].identifier).toBe('test1')
+    })
+
+    it('returns empty array when token budget is zero', () => {
+        const contextItems: AutocompleteContextSnippet[] = [getContextItem('content', 'test1')]
+        const tokenBudget = 0
+        const result = getContextItemsInTokenBudget(contextItems, tokenBudget)
+        expect(result).toEqual([])
+    })
+
+    it('returns empty array when contextItems is empty', () => {
+        const contextItems: AutocompleteContextSnippet[] = []
+        const tokenBudget = 100
+        const result = getContextItemsInTokenBudget(contextItems, tokenBudget)
+        expect(result).toEqual([])
+    })
+
+    it('skips items that individually exceed the chars budget', () => {
+        const contextItems: AutocompleteContextSnippet[] = [
+            getContextItem('short content', 'test1'),
+            getContextItem('very long content that exceeds the budget limit', 'test2'),
+            getContextItem('another short content', 'test3'),
+        ]
+        const tokenBudget = 10
+        const result = getContextItemsInTokenBudget(contextItems, tokenBudget)
+        expect(result.length).toBe(2)
+        expect(result[0].identifier).toBe('test1')
+        expect(result[1].identifier).toBe('test3')
     })
 })

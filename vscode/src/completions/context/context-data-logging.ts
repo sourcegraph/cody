@@ -13,6 +13,7 @@ import type { RetrievedContextResults } from './completions-context-ranker'
 import { JaccardSimilarityRetriever } from './retrievers/jaccard-similarity/jaccard-similarity-retriever'
 import { DiagnosticsRetriever } from './retrievers/recent-user-actions/diagnostics-retriever'
 import { RecentCopyRetriever } from './retrievers/recent-user-actions/recent-copy'
+import { RecentEditsRetrieverDiffStrategyIdentifier } from './retrievers/recent-user-actions/recent-edits-diff-helpers/recent-edits-diff-strategy'
 import { RecentEditsRetriever } from './retrievers/recent-user-actions/recent-edits-retriever'
 import { RecentViewPortRetriever } from './retrievers/recent-user-actions/recent-view-port'
 import { RetrieverIdentifier } from './utils'
@@ -30,11 +31,9 @@ export class ContextRetrieverDataCollection implements vscode.Disposable {
     private gitMetadataInstance = GitHubDotComRepoMetadata.getInstance()
 
     private readonly retrieverConfigs: RetrieverConfig[] = [
-        { identifier: RetrieverIdentifier.RecentCopyRetriever, maxSnippets: 1 },
         { identifier: RetrieverIdentifier.RecentEditsRetriever, maxSnippets: 15 },
         { identifier: RetrieverIdentifier.DiagnosticsRetriever, maxSnippets: 15 },
         { identifier: RetrieverIdentifier.RecentViewPortRetriever, maxSnippets: 10 },
-        { identifier: RetrieverIdentifier.JaccardSimilarityRetriever, maxSnippets: 15 },
     ]
 
     constructor() {
@@ -106,11 +105,14 @@ export class ContextRetrieverDataCollection implements vscode.Disposable {
             case RetrieverIdentifier.RecentEditsRetriever:
                 return new RecentEditsRetriever({
                     maxAgeMs: 10 * 60 * 1000,
+                    diffStrategyIdentifier:
+                        RecentEditsRetrieverDiffStrategyIdentifier.UnifiedDiffWithLineNumbers,
                 })
             case RetrieverIdentifier.DiagnosticsRetriever:
                 return new DiagnosticsRetriever({
-                    contextLines: 3,
-                    useXMLForPromptRendering: true,
+                    contextLines: 0,
+                    useXMLForPromptRendering: false,
+                    useCaretToIndicateErrorLocation: false,
                 })
             case RetrieverIdentifier.RecentViewPortRetriever:
                 return new RecentViewPortRetriever({

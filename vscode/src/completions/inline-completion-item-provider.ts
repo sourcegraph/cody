@@ -21,6 +21,7 @@ import { autocompleteStageCounterLogger } from '../services/autocomplete-stage-c
 import { recordExposedExperimentsToSpan } from '../services/open-telemetry/utils'
 import { isInTutorial } from '../tutorial/helpers'
 
+import { ContextRankingStrategy } from '../completions/context/completions-context-ranker'
 import type { CompletionBookkeepingEvent, CompletionItemID, CompletionLogID } from './analytics-logger'
 import * as CompletionAnalyticsLogger from './analytics-logger'
 import { completionProviderConfig } from './completion-provider-config'
@@ -200,6 +201,7 @@ export class InlineCompletionItemProvider
         this.contextMixer = new ContextMixer({
             strategyFactory,
             dataCollectionEnabled: true,
+            contextRankingStrategy: ContextRankingStrategy.Default,
         })
         this.disposables.push(this.contextMixer)
 
