@@ -173,7 +173,8 @@ export class AutoEditsRenderer implements vscode.Disposable {
     private readonly modifiedTextDecorationType: vscode.TextEditorDecorationType
     private readonly suggesterType: vscode.TextEditorDecorationType
     private readonly hideRemainderDecorationType: vscode.TextEditorDecorationType
-    private readonly replacerDecorationType: vscode.TextEditorDecorationType
+    private readonly addedLinesDecorationType: vscode.TextEditorDecorationType
+    private readonly insertMarkerDecorationType: vscode.TextEditorDecorationType
     private readonly editor: vscode.TextEditor
 
     constructor(editor: vscode.TextEditor) {
@@ -193,13 +194,17 @@ export class AutoEditsRenderer implements vscode.Disposable {
         this.hideRemainderDecorationType = vscode.window.createTextEditorDecorationType({
             opacity: '0',
         })
-        this.replacerDecorationType = vscode.window.createTextEditorDecorationType({
-            backgroundColor: 'red',
+        this.addedLinesDecorationType = vscode.window.createTextEditorDecorationType({
+            backgroundColor: 'red', // SENTINEL (should not actually appear)
             before: {
                 backgroundColor: 'rgb(100, 255, 100, 0.1)',
                 color: GHOST_TEXT_COLOR,
                 height: '100%',
             },
+        })
+        this.insertMarkerDecorationType = vscode.window.createTextEditorDecorationType({
+            border: '1px dashed rgb(100, 255, 100, 0.5)',
+            borderWidth: '1px 1px 0 0',
         })
 
         // Track all decoration types for disposal
@@ -208,7 +213,8 @@ export class AutoEditsRenderer implements vscode.Disposable {
             this.modifiedTextDecorationType,
             this.suggesterType,
             this.hideRemainderDecorationType,
-            this.replacerDecorationType,
+            this.addedLinesDecorationType,
+            this.insertMarkerDecorationType,
         ]
     }
 
@@ -219,18 +225,19 @@ export class AutoEditsRenderer implements vscode.Disposable {
     }
 
     public renderDecorations(options: AutoEditsRendererOptions): void {
-        const beforeLines = lines(options.currentFileText)
-        const afterLines = lines(options.predictedFileText)
-        const { modifiedLines, removedLines, addedLines } = getLineLevelDiff(beforeLines, afterLines)
-        const beforeLineChunks = beforeLines.map(line => splitLineIntoChunks(line))
-        const afterLineChunks = afterLines.map(line => splitLineIntoChunks(line))
+        const oldLines = lines(options.currentFileText)
+        const newLines = lines(options.predictedFileText)
+        const { modifiedLines, removedLines, addedLines } = getLineLevelDiff(oldLines, newLines)
+        const oldLinesChunks = oldLines.map(line => splitLineIntoChunks(line))
+        const newLinesChunks = newLines.map(line => splitLineIntoChunks(line))
 
+        // TODO(beyang): factor out and test
         let isOnlyAdditionsForModifiedLines = true
         const modifiedRangesMapping = new Map<number, ModifiedRange[]>()
         for (const modifiedLine of modifiedLines) {
             const modifiedRanges = getModifiedRangesForLine(
-                beforeLineChunks[modifiedLine.beforeNumber],
-                afterLineChunks[modifiedLine.afterNumber]
+                oldLinesChunks[modifiedLine.beforeNumber],
+                newLinesChunks[modifiedLine.afterNumber]
             )
             modifiedRangesMapping.set(modifiedLine.beforeNumber, modifiedRanges)
             if (isOnlyAdditionsForModifiedLines) {
@@ -240,8 +247,8 @@ export class AutoEditsRenderer implements vscode.Disposable {
             }
         }
         this.addDecorations(
-            beforeLineChunks,
-            afterLineChunks,
+            oldLinesChunks,
+            newLinesChunks,
             removedLines,
             addedLines,
             modifiedLines,
@@ -258,8 +265,8 @@ export class AutoEditsRenderer implements vscode.Disposable {
      * 3. Added lines: Show Inline decoration with "green" marker indicating additions
      */
     private addDecorations(
-        beforeLinesChunks: string[][],
-        afterLinesChunks: string[][],
+        oldLinesChunks: string[][],
+        newLinesChunks: string[][],
         removedLines: number[],
         addedLines: number[],
         modifiedLines: ModifiedLine[],
@@ -272,16 +279,16 @@ export class AutoEditsRenderer implements vscode.Disposable {
 
         if (addedLines.length > 0 || !isOnlyAdditionsForModifiedLines) {
             this.renderDiffDecorations(
-                beforeLinesChunks,
-                afterLinesChunks,
+                oldLinesChunks,
+                newLinesChunks,
                 modifiedLines,
                 modifiedRangesMapping,
                 addedLines
             )
         } else {
             this.renderInlineGhostTextDecorations(
-                beforeLinesChunks,
-                afterLinesChunks,
+                oldLinesChunks,
+                newLinesChunks,
                 modifiedLines,
                 modifiedRangesMapping
             )
@@ -289,8 +296,8 @@ export class AutoEditsRenderer implements vscode.Disposable {
     }
 
     private renderDiffDecorations(
-        beforeLinesChunks: string[][],
-        afterLinesChunks: string[][],
+        oldLinesChunks: string[][],
+        newLinesChunks: string[][],
         modifiedLines: ModifiedLine[],
         modifiedRangesMapping: Map<number, ModifiedRange[]>,
         addedLines: number[]
@@ -315,11 +322,11 @@ export class AutoEditsRenderer implements vscode.Disposable {
                 // Removed from the original text
                 if (range.to1 > range.from1) {
                     const startRange = this.getIndexFromLineChunks(
-                        beforeLinesChunks[modifiedLine.beforeNumber],
+                        oldLinesChunks[modifiedLine.beforeNumber],
                         range.from1
                     )
                     const endRange = this.getIndexFromLineChunks(
-                        beforeLinesChunks[modifiedLine.beforeNumber],
+                        oldLinesChunks[modifiedLine.beforeNumber],
                         range.to1
                     )
                     removedRanges.push(
@@ -334,11 +341,11 @@ export class AutoEditsRenderer implements vscode.Disposable {
                 // Addition from the predicted text
                 if (range.to2 > range.from2) {
                     const startRange = this.getIndexFromLineChunks(
-                        afterLinesChunks[modifiedLine.afterNumber],
+                        newLinesChunks[modifiedLine.afterNumber],
                         range.from2
                     )
                     const endRange = this.getIndexFromLineChunks(
-                        afterLinesChunks[modifiedLine.afterNumber],
+                        newLinesChunks[modifiedLine.afterNumber],
                         range.to2
                     )
                     addedRanges.push([startRange, endRange])
@@ -352,7 +359,7 @@ export class AutoEditsRenderer implements vscode.Disposable {
                 addedLinesInfo.push({
                     ranges: addedRanges,
                     afterLine: modifiedLine.afterNumber,
-                    lineText: afterLinesChunks[modifiedLine.afterNumber].join(''),
+                    lineText: newLinesChunks[modifiedLine.afterNumber].join(''),
                 })
             }
         }
@@ -360,7 +367,7 @@ export class AutoEditsRenderer implements vscode.Disposable {
 
         // Handle fully added lines
         for (const addedLine of addedLines) {
-            const addedLineText = afterLinesChunks[addedLine].join('')
+            const addedLineText = newLinesChunks[addedLine].join('')
             addedLinesInfo.push({
                 ranges: [[0, addedLineText.length]],
                 afterLine: addedLine,
@@ -378,7 +385,7 @@ export class AutoEditsRenderer implements vscode.Disposable {
                 addedLinesInfo.push({
                     ranges: [],
                     afterLine: i,
-                    lineText: afterLinesChunks[i].join(''),
+                    lineText: newLinesChunks[i].join(''),
                 })
             }
         }
@@ -396,7 +403,7 @@ export class AutoEditsRenderer implements vscode.Disposable {
         }
 
         const replacerCol = Math.max(
-            ...beforeLinesChunks
+            ...oldLinesChunks
                 .slice(startLine, startLine + addedLinesInfo.length)
                 .map(line => line.join('').length)
         )
@@ -409,6 +416,8 @@ export class AutoEditsRenderer implements vscode.Disposable {
         startLine: number,
         replacerCol: number
     ): void {
+        blockify(addedLinesInfo)
+
         const replacerDecorations: vscode.DecorationOptions[] = []
 
         for (let i = 0; i < addedLinesInfo.length; i++) {
@@ -416,14 +425,14 @@ export class AutoEditsRenderer implements vscode.Disposable {
             const line = this.editor.document.lineAt(j)
             const decoration = addedLinesInfo[i]
 
-            if (line.range.end.character <= replacerCol) {
+            if (replacerCol >= line.range.end.character) {
                 replacerDecorations.push({
                     range: new vscode.Range(j, line.range.end.character, j, line.range.end.character),
                     renderOptions: {
                         before: {
                             contentText:
                                 '\u00A0'.repeat(3) +
-                                replaceLeadingChars(decoration.lineText, ' ', '\u00A0'),
+                                _replaceLeadingTrailingChars(decoration.lineText, ' ', '\u00A0'),
                             margin: `0 0 0 ${replacerCol - line.range.end.character}ch`,
                         },
                     },
@@ -434,13 +443,21 @@ export class AutoEditsRenderer implements vscode.Disposable {
                     renderOptions: {
                         before: {
                             contentText:
-                                '\u00A0' + replaceLeadingChars(decoration.lineText, ' ', '\u00A0'),
+                                '\u00A0' +
+                                _replaceLeadingTrailingChars(decoration.lineText, ' ', '\u00A0'),
                         },
                     },
                 })
             }
         }
-        this.editor.setDecorations(this.replacerDecorationType, replacerDecorations)
+
+        const startLineLength = this.editor.document.lineAt(startLine).range.end.character
+        this.editor.setDecorations(this.insertMarkerDecorationType, [
+            {
+                range: new vscode.Range(startLine, 0, startLine, startLineLength),
+            },
+        ])
+        this.editor.setDecorations(this.addedLinesDecorationType, replacerDecorations)
     }
 
     private renderInlineGhostTextDecorations(
@@ -506,18 +523,85 @@ export class AutoEditsRenderer implements vscode.Disposable {
 }
 
 /**
- * Replaces leading occurrences of a character with another string
+ * Replaces leading and trailing occurrences of a character with another string
  * @param str The input string to process
  * @param oldS The character to replace
  * @param newS The character/string to replace with
- * @returns The string with leading characters replaced
+ * @returns The string with leading and trailing characters replaced
  */
-function replaceLeadingChars(str: string, oldS: string, newS: string): string {
+export function _replaceLeadingTrailingChars(str: string, oldS: string, newS: string): string {
+    let prefixLen = str.length
     for (let i = 0; i < str.length; i++) {
         if (str[i] !== oldS) {
-            // a string that is `newS` repeated i times
-            return newS.repeat(i) + str.substring(i)
+            // str = newS.repeat(i) + str.substring(i)
+            prefixLen = i
+            break
         }
     }
+    str = newS.repeat(prefixLen) + str.substring(prefixLen)
+
+    let suffixLen = str.length
+    for (let i = 0; i < str.length; i++) {
+        const j = str.length - 1 - i
+        if (str[j] !== oldS) {
+            // str = str.substring(0, j + 1) + newS.repeat(i)
+            suffixLen = i
+            break
+        }
+    }
+    str = str.substring(0, str.length - suffixLen) + newS.repeat(suffixLen)
+
     return str
+}
+
+function blockify(addedLines: AddedLinesDecorationInfo[]) {
+    removeLeadingWhitespaceBlock(addedLines)
+    padTrailingWhitespaceBlock(addedLines)
+}
+
+function padTrailingWhitespaceBlock(addedLines: AddedLinesDecorationInfo[]) {
+    let maxLineWidth = 0
+    for (const addedLine of addedLines) {
+        maxLineWidth = Math.max(maxLineWidth, addedLine.lineText.length)
+    }
+    for (const addedLine of addedLines) {
+        addedLine.lineText = addedLine.lineText.padEnd(maxLineWidth, ' ')
+    }
+}
+
+function removeLeadingWhitespaceBlock(addedLines: AddedLinesDecorationInfo[]) {
+    let leastCommonWhitespacePrefix: undefined | string = undefined
+    for (const addedLine of addedLines) {
+        const leadingWhitespaceMatch = addedLine.lineText.match(/^\s*/)
+        if (leadingWhitespaceMatch === null) {
+            leastCommonWhitespacePrefix = ''
+            break
+        }
+        const leadingWhitespace = leadingWhitespaceMatch[0]
+        if (leastCommonWhitespacePrefix === undefined) {
+            leastCommonWhitespacePrefix = leadingWhitespace
+            continue
+        }
+        // get common prefix of leastCommonWhitespacePrefix and leadingWhitespace
+        leastCommonWhitespacePrefix = getCommonPrefix(leastCommonWhitespacePrefix, leadingWhitespace)
+    }
+    if (!leastCommonWhitespacePrefix) {
+        return
+    }
+    for (const addedLine of addedLines) {
+        addedLine.lineText = addedLine.lineText.replace(leastCommonWhitespacePrefix, '')
+    }
+}
+
+function getCommonPrefix(s1: string, s2: string): string {
+    const minLength = Math.min(s1.length, s2.length)
+    let commonPrefix = ''
+    for (let i = 0; i < minLength; i++) {
+        if (s1[i] === s2[i]) {
+            commonPrefix += s1[i]
+        } else {
+            break
+        }
+    }
+    return commonPrefix
 }
