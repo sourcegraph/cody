@@ -83,17 +83,6 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
         this.disposables.push(
             this.contextMixer,
             this.rendererManager,
-            // Command is used to manually debug the autoedits provider
-            vscode.commands.registerCommand('cody.experimental.suggest', () => {
-                const editor = vscode.window.activeTextEditor
-                if (!editor) {
-                    return
-                }
-                this.provideInlineCompletionItems(editor.document, editor.selection.active, {
-                    triggerKind: vscode.InlineCompletionTriggerKind.Invoke,
-                    selectedCompletionInfo: undefined,
-                })
-            }),
             vscode.window.onDidChangeTextEditorSelection(this.onSelectionChangeDebounced),
             vscode.workspace.onDidChangeTextDocument(event => {
                 this.onDidChangeTextDocument(event)
@@ -137,20 +126,10 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
         if (!lastSelection?.isEmpty || document.uri.scheme !== 'file') {
             return
         }
-        if (this.rendererManager.hasActiveEdit()) {
-            return
-        }
         // Don't show suggestion on cursor movement if the text has not changed for a certain amount of time
-        if (
-            this.lastTextChangeTimeStamp &&
-            Date.now() - this.lastTextChangeTimeStamp <
-                RESET_SUGGESTION_ON_CURSOR_CHANGE_AFTER_INTERVAL_MS
-        ) {
-            this.provideInlineCompletionItems(document, lastSelection.active, {
-                triggerKind: vscode.InlineCompletionTriggerKind.Automatic,
-                selectedCompletionInfo: undefined,
-            })
-        }
+        await vscode.commands.executeCommand('cody.supersuggest.dismiss')
+        await vscode.commands.executeCommand('editor.action.inlineSuggest.hide')
+        await vscode.commands.executeCommand('editor.action.inlineSuggest.trigger')
     }
 
     public async provideInlineCompletionItems(
@@ -185,7 +164,12 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
             return null
         }
         const { prediction, codeToReplaceData } = autoeditResponse
-        const inlineCompletionItems = this.tryMakeInlineCompletionResponse(prediction, codeToReplaceData)
+        const inlineCompletionItems = this.tryMakeInlineCompletionResponse(
+            prediction,
+            codeToReplaceData,
+            document,
+            position
+        )
         if (inlineCompletionItems) {
             return inlineCompletionItems
         }
@@ -195,24 +179,46 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
 
     private tryMakeInlineCompletionResponse(
         originalPrediction: string,
-        codeToReplace: CodeToReplaceData
+        codeToReplace: CodeToReplaceData,
+        document: vscode.TextDocument,
+        position: vscode.Position
     ): vscode.InlineCompletionItem[] | null {
         const prediction = adjustPredictionIfInlineCompletionPossible(
             originalPrediction,
             codeToReplace.codeToRewritePrefix,
             codeToReplace.codeToRewriteSuffix
         )
+        const codeToRewriteAfterCurrentLine = codeToReplace.codeToRewriteFromCurrentLine
+            .split('\n')
+            .slice(1)
+            .join('\n')
+
         const isPrefixMatch = prediction.startsWith(codeToReplace.codeToRewritePrefix)
-        const isSuffixMatch = prediction.endsWith(codeToReplace.codeToRewriteSuffix)
+        const isSuffixMatch = prediction.endsWith(codeToRewriteAfterCurrentLine)
+        console.log({ isPrefixMatch, isSuffixMatch })
         if (isPrefixMatch && isSuffixMatch) {
-            const autocompleteResponse = extractInlineCompletionFromRewrittenCode(
+            let autocompleteResponse = extractInlineCompletionFromRewrittenCode(
                 prediction,
                 codeToReplace.codeToRewritePrefix,
                 codeToReplace.codeToRewriteSuffix
             )
-            autoeditsLogger.logDebug('Autocomplete Inline Respone: ', autocompleteResponse)
-            const inlineCompletionItems = new vscode.InlineCompletionItem(autocompleteResponse)
-            return [inlineCompletionItems]
+            const currentLine = codeToReplace.codeToRewritePrefix.split('\n').pop()!
+            const currentLinePrefix = currentLine.slice(0, position.character)
+            autocompleteResponse = currentLinePrefix + autocompleteResponse
+
+            const inlineCompletionItem = new vscode.InlineCompletionItem(
+                autocompleteResponse,
+                new vscode.Range(
+                    document.lineAt(position).range.start,
+                    document.lineAt(position).range.end
+                )
+            )
+            autoeditsLogger.logDebug('Autocomplete Inline Response: ', autocompleteResponse)
+            autoeditsLogger.logDebug(
+                'Autocomplete Inline Range: ',
+                JSON.stringify(inlineCompletionItem.range)
+            )
+            return [inlineCompletionItem]
         }
         return null
     }
