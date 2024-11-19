@@ -73,8 +73,6 @@ export function isPredictedTextAlreadyInSuffix(params: {
     const maxAddedLineIndex = addedLines[addedLines.length - 1]
     const allAddedLines = predictedFileLines.slice(minAddedLineIndex, maxAddedLineIndex + 1)
     const allAddedLinesText = allAddedLines.join('\n')
-    console.log(params.suffix)
-    console.log(allAddedLinesText)
     if (params.suffix.startsWith(allAddedLinesText)) {
         return true
     }
