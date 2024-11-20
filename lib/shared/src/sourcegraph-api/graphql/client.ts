@@ -1240,11 +1240,13 @@ export class SourcegraphGraphQLAPIClient {
         first,
         recommendedOnly,
         signal,
+        orderByMultiple,
     }: {
-        query: string
+        query?: string
         first: number | undefined
-        recommendedOnly: boolean
+        recommendedOnly?: boolean
         signal?: AbortSignal
+        orderByMultiple?: PromptsOrderBy[]
     }): Promise<Prompt[]> {
         const hasIncludeViewerDraftsArg = await this.isValidSiteVersion({ minimumVersion: '5.9.0' })
 
@@ -1254,7 +1256,10 @@ export class SourcegraphGraphQLAPIClient {
                 query,
                 first: first ?? 100,
                 recommendedOnly: recommendedOnly,
-                orderByMultiple: [PromptsOrderBy.PROMPT_RECOMMENDED, PromptsOrderBy.PROMPT_UPDATED_AT],
+                orderByMultiple: orderByMultiple || [
+                    PromptsOrderBy.PROMPT_RECOMMENDED,
+                    PromptsOrderBy.PROMPT_UPDATED_AT,
+                ],
             },
             signal
         )
