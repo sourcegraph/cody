@@ -634,3 +634,33 @@ describe('countNewLineCharsStart', () => {
         expect(utils.countNewLineCharsStart('')).toBe(0)
     })
 })
+
+describe('isPredictedTextAlreadyInSuffix', () => {
+    it('should return false when there are no added lines', () => {
+        const result = utils.isPredictedTextAlreadyInSuffix({
+            codeToRewrite: 'const x = 1;\nconst y = 2;',
+            prediction: 'const x = 1;\nconst y = 2;',
+            suffix: '',
+        })
+        expect(result).toBe(false)
+    })
+
+    it('should return false when predicted text is different from suffix', () => {
+        const result = utils.isPredictedTextAlreadyInSuffix({
+            codeToRewrite: 'function test() {\n    \n}',
+            prediction: 'function test() {\n    console.log("hello");\n}',
+            suffix: 'return true;\n}',
+        })
+        expect(result).toBe(false)
+    })
+
+    it('should handle multiline predictions correctly', () => {
+        const result = utils.isPredictedTextAlreadyInSuffix({
+            codeToRewrite: 'function test() {\n',
+            prediction:
+                'function test() {\n    const a = 1;\n    const b = 2;\n    console.log(a + b);\n}\n',
+            suffix: '    const a = 1;\n    const b = 2;\n    console.log(a + b);\n}\n',
+        })
+        expect(result).toBe(true)
+    })
+})

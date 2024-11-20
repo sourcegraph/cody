@@ -1,4 +1,5 @@
 import { lines } from '../completions/text-processing'
+import { getLineLevelDiff } from './diff-utils'
 
 export function fixFirstLineIndentation(source: string, target: string): string {
     // Check the first line indentation of source string and replaces in target string.
@@ -54,6 +55,28 @@ export function trimExtraNewLineCharsFromSuggestion(
 function getNumberOfNewLineCharsAtSuffix(text: string): number {
     const match = text.match(/\n+$/)
     return match ? match[0].length : 0
+}
+
+export function isPredictedTextAlreadyInSuffix(params: {
+    codeToRewrite: string
+    prediction: string
+    suffix: string
+}): boolean {
+    const currentFileLines = lines(params.codeToRewrite)
+    const predictedFileLines = lines(params.prediction)
+    let { addedLines } = getLineLevelDiff(currentFileLines, predictedFileLines)
+    if (addedLines.length === 0) {
+        return false
+    }
+    addedLines = addedLines.sort((a, b) => a - b)
+    const minAddedLineIndex = addedLines[0]
+    const maxAddedLineIndex = addedLines[addedLines.length - 1]
+    const allAddedLines = predictedFileLines.slice(minAddedLineIndex, maxAddedLineIndex + 1)
+    const allAddedLinesText = allAddedLines.join('\n')
+    if (params.suffix.startsWith(allAddedLinesText)) {
+        return true
+    }
+    return false
 }
 
 /**
