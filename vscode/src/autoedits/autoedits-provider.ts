@@ -1,6 +1,7 @@
 import {
     type AutoEditsModelConfig,
     type AutoEditsTokenLimit,
+    type DocumentContext,
     currentResolvedConfig,
     dotcomTokenToGatewayToken,
     tokensToChars,
@@ -36,6 +37,7 @@ const RESET_SUGGESTION_ON_CURSOR_CHANGE_AFTER_INTERVAL_MS = 60 * 1000
 export interface AutoEditsProviderOptions {
     document: vscode.TextDocument
     position: vscode.Position
+    docContext: DocumentContext
     abortSignal?: AbortSignal
 }
 
@@ -126,10 +128,17 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
         if (!lastSelection?.isEmpty || document.uri.scheme !== 'file') {
             return
         }
+        if (this.rendererManager.hasActiveEdit()) {
+            return
+        }
         // Don't show suggestion on cursor movement if the text has not changed for a certain amount of time
-        await vscode.commands.executeCommand('cody.supersuggest.dismiss')
-        await vscode.commands.executeCommand('editor.action.inlineSuggest.hide')
-        await vscode.commands.executeCommand('editor.action.inlineSuggest.trigger')
+        if (
+            this.lastTextChangeTimeStamp &&
+            Date.now() - this.lastTextChangeTimeStamp <
+                RESET_SUGGESTION_ON_CURSOR_CHANGE_AFTER_INTERVAL_MS
+        ) {
+            await vscode.commands.executeCommand('editor.action.inlineSuggest.trigger')
+        }
     }
 
     public async provideInlineCompletionItems(
@@ -155,9 +164,16 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
         if (abortSignal.aborted) {
             return null
         }
+        const docContext = getCurrentDocContext({
+            document,
+            position,
+            maxPrefixLength: tokensToChars(this.config.tokenLimit.prefixTokens),
+            maxSuffixLength: tokensToChars(this.config.tokenLimit.suffixTokens),
+        })
         const autoeditResponse = await this.inferEdit({
             document,
             position,
+            docContext,
             abortSignal,
         })
         if (abortSignal.aborted || !autoeditResponse) {
@@ -168,7 +184,8 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
             prediction,
             codeToReplaceData,
             document,
-            position
+            position,
+            docContext
         )
         if (inlineCompletionItems) {
             return inlineCompletionItems
@@ -181,31 +198,26 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
         originalPrediction: string,
         codeToReplace: CodeToReplaceData,
         document: vscode.TextDocument,
-        position: vscode.Position
+        position: vscode.Position,
+        docContext: DocumentContext
     ): vscode.InlineCompletionItem[] | null {
         const prediction = adjustPredictionIfInlineCompletionPossible(
             originalPrediction,
             codeToReplace.codeToRewritePrefix,
             codeToReplace.codeToRewriteSuffix
         )
-        const codeToRewriteAfterCurrentLine = codeToReplace.codeToRewriteFromCurrentLine
-            .split('\n')
-            .slice(1)
-            .join('\n')
-
+        const codeToRewriteAfterCurrentLine = codeToReplace.codeToRewriteSuffix.slice(
+            docContext.currentLineSuffix.length + 1 // Additional char for newline
+        )
         const isPrefixMatch = prediction.startsWith(codeToReplace.codeToRewritePrefix)
         const isSuffixMatch = prediction.endsWith(codeToRewriteAfterCurrentLine)
-        console.log({ isPrefixMatch, isSuffixMatch })
         if (isPrefixMatch && isSuffixMatch) {
-            let autocompleteResponse = extractInlineCompletionFromRewrittenCode(
+            const autocompleteInlineResponse = extractInlineCompletionFromRewrittenCode(
                 prediction,
                 codeToReplace.codeToRewritePrefix,
                 codeToReplace.codeToRewriteSuffix
             )
-            const currentLine = codeToReplace.codeToRewritePrefix.split('\n').pop()!
-            const currentLinePrefix = currentLine.slice(0, position.character)
-            autocompleteResponse = currentLinePrefix + autocompleteResponse
-
+            const autocompleteResponse = docContext.currentLinePrefix + autocompleteInlineResponse
             const inlineCompletionItem = new vscode.InlineCompletionItem(
                 autocompleteResponse,
                 new vscode.Range(
@@ -225,22 +237,15 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
 
     private async inferEdit(options: AutoEditsProviderOptions): Promise<AutoeditsPrediction | null> {
         const start = Date.now()
-
-        const docContext = getCurrentDocContext({
-            document: options.document,
-            position: options.position,
-            maxPrefixLength: tokensToChars(this.config.tokenLimit.prefixTokens),
-            maxSuffixLength: tokensToChars(this.config.tokenLimit.suffixTokens),
-        })
         const { context } = await this.contextMixer.getContext({
             document: options.document,
             position: options.position,
-            docContext,
+            docContext: options.docContext,
             maxChars: 32_000,
         })
 
         const { codeToReplace, promptResponse: prompt } = this.config.provider.getPrompt(
-            docContext,
+            options.docContext,
             options.document,
             options.position,
             context,
@@ -310,11 +315,11 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
     ): boolean {
         const currentFileLines = lines(currentFileText)
         const predictedFileLines = lines(predictedFileText)
-        const { addedLines } = getLineLevelDiff(currentFileLines, predictedFileLines)
+        let { addedLines } = getLineLevelDiff(currentFileLines, predictedFileLines)
         if (addedLines.length === 0) {
             return false
         }
-        addedLines.sort()
+        addedLines = addedLines.sort((a, b) => a - b)
         const minAddedLineIndex = addedLines[0]
         const maxAddedLineIndex = addedLines[addedLines.length - 1]
         const allAddedLines = predictedFileLines.slice(minAddedLineIndex, maxAddedLineIndex + 1)
