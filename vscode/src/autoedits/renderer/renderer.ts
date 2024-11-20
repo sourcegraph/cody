@@ -1,57 +1,14 @@
 import * as vscode from 'vscode'
 import { ThemeColor } from 'vscode'
-import { GHOST_TEXT_COLOR } from '../commands/GhostHintDecorator'
-import { lines } from '../completions/text-processing'
+import { GHOST_TEXT_COLOR } from '../../commands/GhostHintDecorator'
+import { lines } from '../../completions/text-processing'
 import {
-    type ModifiedLine,
+    type PreservedLine,
     type ModifiedRange,
     getLineLevelDiff,
     getModifiedRangesForLine,
     splitLineIntoChunks,
 } from './diff-utils'
-
-/**
- * Represents a proposed text change in the editor.
- */
-interface ProposedChange {
-    // The URI of the document for which the change is proposed
-    uri: string
-
-    // The range in the document that will be modified
-    range: vscode.Range
-
-    // The text that will replace the content in the range if accepted
-    prediction: string
-
-    // The renderer responsible for decorating the proposed change
-    renderer: AutoEditsRenderer
-}
-
-/**
- * Options for rendering auto-edits in the editor.
- */
-export interface AutoEditsManagerOptions {
-    // The document where the auto-edit will be rendered
-    document: vscode.TextDocument
-
-    // The range in the document that will be modified with the predicted text
-    range: vscode.Range
-
-    // The predicted text that will replace the current text in the range
-    prediction: string
-
-    // The current text content of the file
-    currentFileText: string
-
-    // The predicted/suggested text that will replace the current text
-    predictedFileText: string
-}
-
-export interface AutoEditsRendererOptions {
-    document: vscode.TextDocument
-    currentFileText: string
-    predictedFileText: string
-}
 
 interface AddedLinesDecorationInfo {
     ranges: [number, number][]
@@ -59,112 +16,10 @@ interface AddedLinesDecorationInfo {
     lineText: string
 }
 
-export class AutoEditsRendererManager implements vscode.Disposable {
-    // Keeps track of the current active edit (there can only be one active edit at a time)
-    private activeEdit: ProposedChange | null = null
-
-    private disposables: vscode.Disposable[] = []
-
-    constructor() {
-        this.disposables.push(
-            vscode.commands.registerCommand('cody.supersuggest.accept', () => this.acceptEdit()),
-            vscode.commands.registerCommand('cody.supersuggest.dismiss', () => this.dismissEdit()),
-            vscode.workspace.onDidChangeTextDocument(event => this.onDidChangeTextDocument(event)),
-            vscode.window.onDidChangeTextEditorSelection(event =>
-                this.onDidChangeTextEditorSelection(event)
-            ),
-            vscode.window.onDidChangeActiveTextEditor(editor =>
-                this.onDidChangeActiveTextEditor(editor)
-            ),
-            vscode.workspace.onDidCloseTextDocument(document => this.onDidCloseTextDocument(document))
-        )
-    }
-
-    public hasActiveEdit(): boolean {
-        return this.activeEdit !== null
-    }
-
-    public async showEdit(options: AutoEditsManagerOptions): Promise<void> {
-        await this.dismissEdit()
-        const editor = vscode.window.activeTextEditor
-        if (!editor || options.document !== editor.document) {
-            return
-        }
-        this.activeEdit = {
-            uri: options.document.uri.toString(),
-            range: options.range,
-            prediction: options.prediction,
-            renderer: new AutoEditsRenderer(editor),
-        }
-        this.activeEdit.renderer.renderDecorations({
-            document: options.document,
-            currentFileText: options.currentFileText,
-            predictedFileText: options.predictedFileText,
-        })
-        await vscode.commands.executeCommand('setContext', 'cody.supersuggest.active', true)
-    }
-
-    private async dismissEdit(): Promise<void> {
-        const renderer = this.activeEdit?.renderer
-        if (renderer) {
-            renderer.clearDecorations()
-            renderer.dispose()
-        }
-        this.activeEdit = null
-        await vscode.commands.executeCommand('setContext', 'cody.supersuggest.active', false)
-    }
-
-    private async acceptEdit(): Promise<void> {
-        const editor = vscode.window.activeTextEditor
-        if (!this.activeEdit || !editor || editor.document.uri.toString() !== this.activeEdit.uri) {
-            await this.dismissEdit()
-            return
-        }
-        await editor.edit(editBuilder => {
-            editBuilder.replace(this.activeEdit!.range, this.activeEdit!.prediction)
-        })
-        await this.dismissEdit()
-    }
-
-    private async onDidChangeTextDocument(event: vscode.TextDocumentChangeEvent): Promise<void> {
-        // Only dismiss if we have an active suggestion and the changed document matches
-        // else, we will falsely discard the suggestion on unrelated changes such as changes in output panel.
-        if (event.document.uri.toString() !== this.activeEdit?.uri) {
-            return
-        }
-        await this.dismissEdit()
-    }
-
-    private async onDidChangeActiveTextEditor(editor: vscode.TextEditor | undefined): Promise<void> {
-        if (!editor || editor.document.uri.toString() !== this.activeEdit?.uri) {
-            await this.dismissEdit()
-        }
-    }
-
-    private async onDidCloseTextDocument(document: vscode.TextDocument): Promise<void> {
-        if (document.uri.toString() === this.activeEdit?.uri) {
-            await this.dismissEdit()
-        }
-    }
-
-    private async onDidChangeTextEditorSelection(
-        event: vscode.TextEditorSelectionChangeEvent
-    ): Promise<void> {
-        if (event.textEditor.document.uri.toString() !== this.activeEdit?.uri) {
-            return
-        }
-        const currentSelectionRange = event.selections.at(-1)
-        if (!currentSelectionRange?.intersection(this.activeEdit.range)) {
-            await this.dismissEdit()
-        }
-    }
-
-    public dispose(): void {
-        this.dismissEdit()
-        for (const disposable of this.disposables) {
-            disposable.dispose()
-        }
-    }
+export interface AutoEditsRendererOptions {
+    document: vscode.TextDocument
+    currentFileText: string
+    predictedFileText: string
 }
 
 export class AutoEditsRenderer implements vscode.Disposable {
@@ -224,6 +79,8 @@ export class AutoEditsRenderer implements vscode.Disposable {
         }
     }
 
+
+
     public renderDecorations(options: AutoEditsRendererOptions): void {
         const oldLines = lines(options.currentFileText)
         const newLines = lines(options.predictedFileText)
@@ -236,10 +93,10 @@ export class AutoEditsRenderer implements vscode.Disposable {
         const modifiedRangesMapping = new Map<number, ModifiedRange[]>()
         for (const modifiedLine of modifiedLines) {
             const modifiedRanges = getModifiedRangesForLine(
-                oldLinesChunks[modifiedLine.beforeNumber],
-                newLinesChunks[modifiedLine.afterNumber]
+                oldLinesChunks[modifiedLine.oldNumber],
+                newLinesChunks[modifiedLine.newNumber]
             )
-            modifiedRangesMapping.set(modifiedLine.beforeNumber, modifiedRanges)
+            modifiedRangesMapping.set(modifiedLine.oldNumber, modifiedRanges)
             if (isOnlyAdditionsForModifiedLines) {
                 isOnlyAdditionsForModifiedLines = modifiedRanges.every(
                     range => range.from1 === range.to1
@@ -269,7 +126,7 @@ export class AutoEditsRenderer implements vscode.Disposable {
         newLinesChunks: string[][],
         removedLines: number[],
         addedLines: number[],
-        modifiedLines: ModifiedLine[],
+        modifiedLines: PreservedLine[],
         modifiedRangesMapping: Map<number, ModifiedRange[]>,
         isOnlyAdditionsForModifiedLines: boolean
     ): void {
@@ -298,7 +155,7 @@ export class AutoEditsRenderer implements vscode.Disposable {
     private renderDiffDecorations(
         oldLinesChunks: string[][],
         newLinesChunks: string[][],
-        modifiedLines: ModifiedLine[],
+        modifiedLines: PreservedLine[],
         modifiedRangesMapping: Map<number, ModifiedRange[]>,
         addedLines: number[]
     ): void {
@@ -313,7 +170,7 @@ export class AutoEditsRenderer implements vscode.Disposable {
 
         // Handle modified lines - collect removed ranges and added decorations
         for (const modifiedLine of modifiedLines) {
-            const modifiedRanges = modifiedRangesMapping.get(modifiedLine.beforeNumber)
+            const modifiedRanges = modifiedRangesMapping.get(modifiedLine.oldNumber)
             if (!modifiedRanges) {
                 continue
             }
@@ -322,18 +179,18 @@ export class AutoEditsRenderer implements vscode.Disposable {
                 // Removed from the original text
                 if (range.to1 > range.from1) {
                     const startRange = this.getIndexFromLineChunks(
-                        oldLinesChunks[modifiedLine.beforeNumber],
+                        oldLinesChunks[modifiedLine.oldNumber],
                         range.from1
                     )
                     const endRange = this.getIndexFromLineChunks(
-                        oldLinesChunks[modifiedLine.beforeNumber],
+                        oldLinesChunks[modifiedLine.oldNumber],
                         range.to1
                     )
                     removedRanges.push(
                         new vscode.Range(
-                            modifiedLine.beforeNumber,
+                            modifiedLine.oldNumber,
                             startRange,
-                            modifiedLine.beforeNumber,
+                            modifiedLine.oldNumber,
                             endRange
                         )
                     )
@@ -341,11 +198,11 @@ export class AutoEditsRenderer implements vscode.Disposable {
                 // Addition from the predicted text
                 if (range.to2 > range.from2) {
                     const startRange = this.getIndexFromLineChunks(
-                        newLinesChunks[modifiedLine.afterNumber],
+                        newLinesChunks[modifiedLine.newNumber],
                         range.from2
                     )
                     const endRange = this.getIndexFromLineChunks(
-                        newLinesChunks[modifiedLine.afterNumber],
+                        newLinesChunks[modifiedLine.newNumber],
                         range.to2
                     )
                     addedRanges.push([startRange, endRange])
@@ -353,13 +210,13 @@ export class AutoEditsRenderer implements vscode.Disposable {
             }
             if (addedRanges.length > 0) {
                 firstModifiedLineMatch = {
-                    beforeLine: modifiedLine.beforeNumber,
-                    afterLine: modifiedLine.afterNumber,
+                    beforeLine: modifiedLine.oldNumber,
+                    afterLine: modifiedLine.newNumber,
                 }
                 addedLinesInfo.push({
                     ranges: addedRanges,
-                    afterLine: modifiedLine.afterNumber,
-                    lineText: newLinesChunks[modifiedLine.afterNumber].join(''),
+                    afterLine: modifiedLine.newNumber,
+                    lineText: newLinesChunks[modifiedLine.newNumber].join(''),
                 })
             }
         }
@@ -488,33 +345,33 @@ export class AutoEditsRenderer implements vscode.Disposable {
     private renderInlineGhostTextDecorations(
         beforeLinesChunks: string[][],
         afterLinesChunks: string[][],
-        modifiedLines: ModifiedLine[],
+        modifiedLines: PreservedLine[],
         modifiedRangesMapping: Map<number, ModifiedRange[]>
     ): void {
         const inlineModifiedRanges: vscode.DecorationOptions[] = []
         for (const modifiedLine of modifiedLines) {
-            const modifiedRanges = modifiedRangesMapping.get(modifiedLine.beforeNumber)
+            const modifiedRanges = modifiedRangesMapping.get(modifiedLine.oldNumber)
             if (!modifiedRanges) {
                 continue
             }
             for (const range of modifiedRanges) {
-                const rangeText = afterLinesChunks[modifiedLine.afterNumber]
+                const rangeText = afterLinesChunks[modifiedLine.newNumber]
                     .slice(range.from2, range.to2)
                     .join('')
                 const startRange = this.getIndexFromLineChunks(
-                    beforeLinesChunks[modifiedLine.beforeNumber],
+                    beforeLinesChunks[modifiedLine.oldNumber],
                     range.from1
                 )
                 const endRange = this.getIndexFromLineChunks(
-                    beforeLinesChunks[modifiedLine.beforeNumber],
+                    beforeLinesChunks[modifiedLine.oldNumber],
                     range.to1
                 )
 
                 inlineModifiedRanges.push({
                     range: new vscode.Range(
-                        modifiedLine.beforeNumber,
+                        modifiedLine.oldNumber,
                         startRange,
-                        modifiedLine.beforeNumber,
+                        modifiedLine.oldNumber,
                         endRange
                     ),
                     renderOptions: {

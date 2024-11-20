@@ -22,7 +22,7 @@ import { OpenAIAdapter } from './adapters/openai'
 import { autoeditsLogger } from './logger'
 import type { AutoeditsModelAdapter } from './prompt-provider'
 import type { CodeToReplaceData } from './prompt-utils'
-import { AutoEditsRendererManager } from './renderer'
+import { AutoEditsRendererManager } from './renderer/manager'
 import {
     adjustPredictionIfInlineCompletionPossible,
     extractInlineCompletionFromRewrittenCode,
