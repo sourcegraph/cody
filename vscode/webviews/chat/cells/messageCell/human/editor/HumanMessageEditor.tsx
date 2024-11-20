@@ -5,12 +5,15 @@ import {
     ModelTag,
     type SerializedPromptEditorState,
     type SerializedPromptEditorValue,
+    firstValueFrom,
+    skipPendingOperation,
     textContentFromSerializedLexicalNode,
 } from '@sourcegraph/cody-shared'
 import {
     PromptEditor,
     type PromptEditorRefAPI,
     useDefaultContextForChat,
+    useExtensionAPI,
 } from '@sourcegraph/prompt-editor'
 import clsx from 'clsx'
 import {
@@ -25,6 +28,7 @@ import {
 } from 'react'
 import type { UserAccountInfo } from '../../../../../Chat'
 import { type ClientActionListener, useClientActionListener } from '../../../../../client/clientState'
+import { promptModeToIntent } from '../../../../../prompts/PromptsTab'
 import { useTelemetryRecorder } from '../../../../../utils/telemetry'
 import { useExperimentalOneBox } from '../../../../../utils/useExperimentalOneBox'
 import styles from './HumanMessageEditor.module.css'
@@ -276,6 +280,8 @@ export const HumanMessageEditor: FunctionComponent<{
         })
     }, [telemetryRecorder.recordEvent, isFirstMessage, isSent])
 
+    const extensionAPI = useExtensionAPI()
+
     // Set up the message listener so the extension can control the input field.
     useClientActionListener(
         useCallback<ClientActionListener>(
@@ -285,6 +291,7 @@ export const HumanMessageEditor: FunctionComponent<{
                 appendTextToLastPromptEditor,
                 submitHumanInput,
                 setLastHumanInputIntent,
+                setPromptAsInput,
             }) => {
                 // Add new context to chat from the "Cody Add Selection to Cody Chat"
                 // command, etc. Only add to the last human input field.
@@ -339,13 +346,51 @@ export const HumanMessageEditor: FunctionComponent<{
                     setSubmitIntent(setLastHumanInputIntent)
                 }
 
-                if (submitHumanInput) {
+                let promptIntent = undefined
+
+                if (setPromptAsInput) {
+                    // set the intent
+                    promptIntent = promptModeToIntent(setPromptAsInput.mode)
+
+                    updates.push(
+                        // biome-ignore lint/suspicious/noAsyncPromiseExecutor: <explanation>
+                        new Promise<void>(async resolve => {
+                            // get initial context
+                            const { initialContext } = await firstValueFrom(
+                                extensionAPI.defaultContext().pipe(skipPendingOperation())
+                            )
+                            // hydrate raw prompt text
+                            const promptEditorState = await firstValueFrom(
+                                extensionAPI.hydratePromptMessage(setPromptAsInput.text, initialContext)
+                            )
+
+                            // update editor state
+                            requestAnimationFrame(async () => {
+                                if (editorRef.current) {
+                                    await Promise.all([
+                                        editorRef.current.setEditorState(promptEditorState),
+                                        editorRef.current.setFocus(true),
+                                    ])
+                                }
+                                resolve()
+                            })
+                        })
+                    )
+                }
+
+                if (submitHumanInput || setPromptAsInput?.autoSubmit) {
                     Promise.all(updates).then(() =>
-                        onSubmitClick(setLastHumanInputIntent || submitIntent, true)
+                        onSubmitClick(promptIntent || setLastHumanInputIntent || submitIntent, true)
                     )
                 }
             },
-            [isSent, onSubmitClick, submitIntent]
+            [
+                isSent,
+                onSubmitClick,
+                submitIntent,
+                extensionAPI.hydratePromptMessage,
+                extensionAPI.defaultContext,
+            ]
         )
     )
 

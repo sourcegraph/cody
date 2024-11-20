@@ -314,13 +314,14 @@ export const getInput = async (
         const editInput = createQuickPick({
             title: activeTitle,
             placeHolder: 'Enter edit instructions (type @ to include code, ⏎ to submit)',
-            getItems: () =>
-                getEditInputItems(
+            getItems: () => {
+                return getEditInputItems(
                     editInput.input.value,
                     activeRangeItem,
                     activeModelItem,
                     showModelSelector
-                ),
+                )
+            },
             onDidHide: () => editor.setDecorations(PREVIEW_RANGE_DECORATION, []),
             ...(source === 'menu'
                 ? {
