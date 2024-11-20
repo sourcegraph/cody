@@ -1,5 +1,9 @@
 import * as vscode from 'vscode'
-import {AutoEditsRenderer} from './renderer';
+import {
+    type AutoeditsDecorator,
+    type DecorationStrategyIdentifier,
+    createAutoeditsDecorator,
+} from './decorators/base'
 import { getDecorationInformation } from './diff-utils'
 
 /**
@@ -16,7 +20,7 @@ interface ProposedChange {
     prediction: string
 
     // The renderer responsible for decorating the proposed change
-    renderer: AutoEditsRenderer
+    decorator: AutoeditsDecorator
 }
 
 /**
@@ -42,10 +46,11 @@ export interface AutoEditsManagerOptions {
 export class AutoEditsRendererManager implements vscode.Disposable {
     // Keeps track of the current active edit (there can only be one active edit at a time)
     private activeEdit: ProposedChange | null = null
-
+    private readonly decoratorStrategyIdentifier: DecorationStrategyIdentifier
     private disposables: vscode.Disposable[] = []
 
-    constructor() {
+    constructor(decoratorStrategyIdentifier: DecorationStrategyIdentifier) {
+        this.decoratorStrategyIdentifier = decoratorStrategyIdentifier
         this.disposables.push(
             vscode.commands.registerCommand('cody.supersuggest.accept', () => this.acceptEdit()),
             vscode.commands.registerCommand('cody.supersuggest.dismiss', () => this.dismissEdit()),
@@ -74,18 +79,21 @@ export class AutoEditsRendererManager implements vscode.Disposable {
             uri: options.document.uri.toString(),
             range: options.range,
             prediction: options.prediction,
-            renderer: new AutoEditsRenderer(editor),
+            decorator: createAutoeditsDecorator(this.decoratorStrategyIdentifier, editor),
         }
-        const decorationInformation = getDecorationInformation(options.currentFileText, options.predictedFileText)
-        this.activeEdit.renderer.renderDecorations(decorationInformation)
+        const decorationInformation = getDecorationInformation(
+            options.currentFileText,
+            options.predictedFileText
+        )
+        this.activeEdit.decorator.setDecorations(decorationInformation)
         await vscode.commands.executeCommand('setContext', 'cody.supersuggest.active', true)
     }
 
     private async dismissEdit(): Promise<void> {
-        const renderer = this.activeEdit?.renderer
-        if (renderer) {
-            renderer.clearDecorations()
-            renderer.dispose()
+        const decorator = this.activeEdit?.decorator
+        if (decorator) {
+            decorator.clearDecorations()
+            decorator.dispose()
         }
         this.activeEdit = null
         await vscode.commands.executeCommand('setContext', 'cody.supersuggest.active', false)

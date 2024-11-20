@@ -1,17 +1,38 @@
-import {ModifiedRange} from '../diff-utils';
+import type * as vscode from 'vscode'
+import type { ModifiedRange } from '../diff-utils'
+import { DefaultDecorator } from './default-decorator'
+
+export enum DecorationStrategyIdentifier {
+    DefaultDecorator = 'default-decorator',
+}
+
+export function createAutoeditsDecorator(
+    identifier: DecorationStrategyIdentifier,
+    editor: vscode.TextEditor
+): AutoeditsDecorator {
+    switch (identifier) {
+        case DecorationStrategyIdentifier.DefaultDecorator:
+            return new DefaultDecorator(editor)
+    }
+}
+
+export interface AutoeditsDecorator extends vscode.Disposable {
+    setDecorations(decorationInformation: DecorationInformation): void
+    clearDecorations(): void
+}
 
 /**
  * Represents the different types of line decorations that can be applied.
  */
 export enum DecorationLineType {
     /** Line has been modified from its original state */
-    Modified,
+    Modified = 0,
     /** New line has been added */
-    Added,
+    Added = 1,
     /** Line has been removed */
-    Removed,
+    Removed = 2,
     /** Line remains unchanged */
-    Unchanged,
+    Unchanged = 3,
 }
 
 export interface DecorationLineInformation {

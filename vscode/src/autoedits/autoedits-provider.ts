@@ -22,6 +22,7 @@ import { OpenAIAdapter } from './adapters/openai'
 import { autoeditsLogger } from './logger'
 import type { AutoeditsModelAdapter } from './prompt-provider'
 import type { CodeToReplaceData } from './prompt-utils'
+import { DecorationStrategyIdentifier } from './renderer/decorators/base'
 import { AutoEditsRendererManager } from './renderer/manager'
 import {
     adjustPredictionIfInlineCompletionPossible,
@@ -75,7 +76,9 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
             contextRankingStrategy: ContextRankingStrategy.TimeBased,
             dataCollectionEnabled: false,
         })
-        this.rendererManager = new AutoEditsRendererManager()
+        this.rendererManager = new AutoEditsRendererManager(
+            DecorationStrategyIdentifier.DefaultDecorator
+        )
         this.onSelectionChangeDebounced = debounce(
             (event: vscode.TextEditorSelectionChangeEvent) => this.autoeditOnSelectionChange(event),
             ONSELECTION_CHANGE_DEFAULT_DEBOUNCE_INTERVAL_MS

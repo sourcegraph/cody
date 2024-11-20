@@ -1,7 +1,11 @@
 import { diff } from 'fast-myers-diff'
 import { range, zip } from 'lodash'
-import {lines} from '../../completions/text-processing';
-import {DecorationLineType, DecorationLineInformation, DecorationInformation} from './decorators/base';
+import { lines } from '../../completions/text-processing'
+import {
+    type DecorationInformation,
+    type DecorationLineInformation,
+    DecorationLineType,
+} from './decorators/base'
 
 /**
  * Represents a line that was preserved (either modified or unchanged) between two versions of text,
@@ -44,11 +48,16 @@ interface LineLevelDiff {
     unchangedLines: PreservedLine[]
 }
 
-
-export function getDecorationInformation(currentFileText: string, predictedFileText: string): DecorationInformation {
+export function getDecorationInformation(
+    currentFileText: string,
+    predictedFileText: string
+): DecorationInformation {
     const oldLines = lines(currentFileText)
     const newLines = lines(predictedFileText)
-    const { modifiedLines, removedLines, addedLines, unchangedLines } = getLineLevelDiff(oldLines, newLines)
+    const { modifiedLines, removedLines, addedLines, unchangedLines } = getLineLevelDiff(
+        oldLines,
+        newLines
+    )
     const oldLinesChunks = oldLines.map(line => splitLineIntoChunks(line))
     const newLinesChunks = newLines.map(line => splitLineIntoChunks(line))
 
@@ -83,11 +92,13 @@ export function getDecorationInformation(currentFileText: string, predictedFileT
         })
     }
     for (const unchangedLine of unchangedLines) {
-        decorationLineInformation.push(getDecorationInformationForUnchangedLine(
-            unchangedLine.oldNumber,
-            unchangedLine.newNumber,
-            oldLines[unchangedLine.oldNumber]
-        ))
+        decorationLineInformation.push(
+            getDecorationInformationForUnchangedLine(
+                unchangedLine.oldNumber,
+                unchangedLine.newNumber,
+                oldLines[unchangedLine.oldNumber]
+            )
+        )
     }
     return {
         lines: decorationLineInformation,
@@ -139,10 +150,7 @@ function getDecorationInformationForRemovedLine(
     }
 }
 
-export function getLineLevelDiff(
-    oldLines: string[],
-    newLines: string[]
-): LineLevelDiff {
+export function getLineLevelDiff(oldLines: string[], newLines: string[]): LineLevelDiff {
     const modifiedLines: PreservedLine[] = []
     const addedLines: number[] = []
     const removedLines: number[] = []
@@ -173,7 +181,7 @@ export function getLineLevelDiff(
         if (from2 > lastChangedNewLine + 1) {
             unchangedLinesNewLineNumbers.push(...range(lastChangedNewLine + 1, from2))
         }
-        lastChangedOldLine = to1 -1
+        lastChangedOldLine = to1 - 1
         lastChangedNewLine = to2 - 1
     }
     if (lastChangedOldLine + 1 < oldLines.length) {
@@ -183,7 +191,10 @@ export function getLineLevelDiff(
         unchangedLinesNewLineNumbers.push(...range(lastChangedNewLine + 1, newLines.length))
     }
     const unchangedLines: PreservedLine[] = []
-    for (const [oldLineNumber, newLineNumber] of zip(unchangedLinesOldLineNumbers, unchangedLinesNewLineNumbers)) {
+    for (const [oldLineNumber, newLineNumber] of zip(
+        unchangedLinesOldLineNumbers,
+        unchangedLinesNewLineNumbers
+    )) {
         if (oldLineNumber !== undefined && newLineNumber !== undefined) {
             unchangedLines.push({ oldNumber: oldLineNumber, newNumber: newLineNumber })
         }

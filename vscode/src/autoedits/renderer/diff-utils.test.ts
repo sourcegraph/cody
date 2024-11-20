@@ -13,7 +13,7 @@ describe('getLineLevelDiff', () => {
         expect(result.removedLines).toEqual([])
         expect(result.unchangedLines).toEqual([
             { oldNumber: 0, newNumber: 0 },
-            { oldNumber: 2, newNumber: 2 }
+            { oldNumber: 2, newNumber: 2 },
         ])
     })
 
@@ -28,7 +28,7 @@ describe('getLineLevelDiff', () => {
         expect(result.removedLines).toEqual([])
         expect(result.unchangedLines).toEqual([
             { oldNumber: 0, newNumber: 0 },
-            { oldNumber: 1, newNumber: 1 }
+            { oldNumber: 1, newNumber: 1 },
         ])
     })
 
@@ -43,7 +43,7 @@ describe('getLineLevelDiff', () => {
         expect(result.removedLines).toEqual([1])
         expect(result.unchangedLines).toEqual([
             { oldNumber: 0, newNumber: 0 },
-            { oldNumber: 2, newNumber: 1 }
+            { oldNumber: 2, newNumber: 1 },
         ])
     })
 
@@ -55,13 +55,13 @@ describe('getLineLevelDiff', () => {
 
         expect(result.modifiedLines).toEqual([
             { oldNumber: 1, newNumber: 1 },
-            { oldNumber: 2, newNumber: 2 }
+            { oldNumber: 2, newNumber: 2 },
         ])
         expect(result.addedLines).toEqual([])
         expect(result.removedLines).toEqual([])
         expect(result.unchangedLines).toEqual([
             { oldNumber: 0, newNumber: 0 },
-            { oldNumber: 3, newNumber: 3 }
+            { oldNumber: 3, newNumber: 3 },
         ])
     })
 
@@ -84,7 +84,7 @@ describe('getLineLevelDiff', () => {
         expect(result.modifiedLines).toEqual([
             { oldNumber: 1, newNumber: 1 },
             { oldNumber: 4, newNumber: 3 },
-            { oldNumber: 5, newNumber: 4 }
+            { oldNumber: 5, newNumber: 4 },
         ])
 
         // Added lines are tracked by their line number in the new text
@@ -97,7 +97,7 @@ describe('getLineLevelDiff', () => {
         expect(result.unchangedLines).toEqual([
             { oldNumber: 0, newNumber: 0 },
             { oldNumber: 3, newNumber: 2 },
-            { oldNumber: 6, newNumber: 6 }
+            { oldNumber: 6, newNumber: 6 },
         ])
     })
 
@@ -110,7 +110,7 @@ describe('getLineLevelDiff', () => {
         expect(result.modifiedLines).toEqual([
             { oldNumber: 0, newNumber: 0 },
             { oldNumber: 1, newNumber: 1 },
-            { oldNumber: 2, newNumber: 2 }
+            { oldNumber: 2, newNumber: 2 },
         ])
         expect(result.addedLines).toEqual([])
         expect(result.removedLines).toEqual([])
@@ -145,7 +145,7 @@ describe('getLineLevelDiff', () => {
         expect(result.modifiedLines).toEqual([
             { oldNumber: 0, newNumber: 0 },
             { oldNumber: 1, newNumber: 1 },
-            { oldNumber: 2, newNumber: 2 }
+            { oldNumber: 2, newNumber: 2 },
         ])
         expect(result.addedLines).toEqual([])
         expect(result.removedLines).toEqual([])

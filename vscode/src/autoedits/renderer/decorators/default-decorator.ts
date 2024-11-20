@@ -1,7 +1,13 @@
 import * as vscode from 'vscode'
 import { ThemeColor } from 'vscode'
-import { GHOST_TEXT_COLOR } from '../../commands/GhostHintDecorator'
-import {DecorationLineInformation, DecorationLineType, DecorationInformation} from './decorators/base';
+import { GHOST_TEXT_COLOR } from '../../../commands/GhostHintDecorator'
+import {
+    type AutoeditsDecorator,
+    type DecorationInformation,
+    type DecorationLineInformation,
+    DecorationLineType,
+} from './base'
+import { isOnlyAddingTextForModifiedLines, splitLineDecorationIntoLineTypes } from './common'
 
 interface AddedLinesDecorationInfo {
     ranges: [number, number][]
@@ -9,7 +15,7 @@ interface AddedLinesDecorationInfo {
     lineText: string
 }
 
-export class AutoEditsRenderer implements vscode.Disposable {
+export class DefaultDecorator implements AutoeditsDecorator {
     private readonly decorationTypes: vscode.TextEditorDecorationType[]
     private readonly removedTextDecorationType: vscode.TextEditorDecorationType
     private readonly modifiedTextDecorationType: vscode.TextEditorDecorationType
@@ -21,7 +27,6 @@ export class AutoEditsRenderer implements vscode.Disposable {
 
     constructor(editor: vscode.TextEditor) {
         this.editor = editor
-
         // Initialize decoration types
         this.removedTextDecorationType = vscode.window.createTextEditorDecorationType({
             backgroundColor: new ThemeColor('diffEditor.removedTextBackground'),
@@ -66,50 +71,6 @@ export class AutoEditsRenderer implements vscode.Disposable {
         }
     }
 
-    public isOnlyAddingTextForModifiedLines(decorationInformation: DecorationLineInformation[]): boolean {
-        for (const line of decorationInformation) {
-            if (line.lineType !== DecorationLineType.Modified) {
-                continue
-            }
-            if (line.modifiedRanges.some(range => range.from1 !== range.to1)) {
-                return false
-            }
-        }
-        return true
-    }
-    public splitLineDecorationIntoLineTypes(decorationInformation: DecorationLineInformation[]): {
-        modifiedLines: DecorationLineInformation[]
-        removedLines: DecorationLineInformation[]
-        addedLines: DecorationLineInformation[]
-        unchangedLines: DecorationLineInformation[]
-    } {
-        const result = {
-            modifiedLines: [] as DecorationLineInformation[],
-            removedLines: [] as DecorationLineInformation[],
-            addedLines: [] as DecorationLineInformation[],
-            unchangedLines: [] as DecorationLineInformation[]
-        }
-
-        for (const line of decorationInformation) {
-            switch (line.lineType) {
-                case DecorationLineType.Modified:
-                    result.modifiedLines.push(line)
-                    break
-                case DecorationLineType.Removed:
-                    result.removedLines.push(line)
-                    break
-                case DecorationLineType.Added:
-                    result.addedLines.push(line)
-                    break
-                case DecorationLineType.Unchanged:
-                    result.unchangedLines.push(line)
-                    break
-            }
-        }
-
-        return result
-    }
-
     /**
      * Renders decorations using an inline diff strategy to show changes between two versions of text
      * Split the decorations into three parts:
@@ -117,9 +78,11 @@ export class AutoEditsRenderer implements vscode.Disposable {
      * 2. Removed lines: Show Inline decoration with "red" marker indicating deletions
      * 3. Added lines: Show Inline decoration with "green" marker indicating additions
      */
-    public renderDecorations(decorationInformation: DecorationInformation): void {
-        const { modifiedLines, removedLines, addedLines } = this.splitLineDecorationIntoLineTypes(decorationInformation.lines)
-        const isOnlyAdditionsForModifiedLines = this.isOnlyAddingTextForModifiedLines(modifiedLines)
+    public setDecorations(decorationInformation: DecorationInformation): void {
+        const { modifiedLines, removedLines, addedLines } = splitLineDecorationIntoLineTypes(
+            decorationInformation.lines
+        )
+        const isOnlyAdditionsForModifiedLines = isOnlyAddingTextForModifiedLines(modifiedLines)
         const removedLinesRanges = this.getNonModifiedLinesRanges(
             removedLines
                 .filter(line => line.oldLineNumber !== null)
@@ -146,19 +109,18 @@ export class AutoEditsRenderer implements vscode.Disposable {
 
         // Handle modified lines - collect removed ranges and added decorations
         for (const line of decorationInformation.lines) {
-            if (line.lineType !== DecorationLineType.Modified || line.oldLineNumber === null || line.newLineNumber === null) {
+            if (
+                line.lineType !== DecorationLineType.Modified ||
+                line.oldLineNumber === null ||
+                line.newLineNumber === null
+            ) {
                 continue
             }
             const addedRanges: [number, number][] = []
             for (const range of line.modifiedRanges) {
                 if (range.to1 > range.from1) {
                     removedRanges.push(
-                        new vscode.Range(
-                            line.oldLineNumber,
-                            range.from1,
-                            line.oldLineNumber,
-                            range.to1
-                        )
+                        new vscode.Range(line.oldLineNumber, range.from1, line.oldLineNumber, range.to1)
                     )
                 }
                 if (range.to2 > range.from2) {

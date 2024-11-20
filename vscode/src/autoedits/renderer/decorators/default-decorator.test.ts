@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { _replaceLeadingTrailingChars } from './renderer'
+import { _replaceLeadingTrailingChars } from './default-decorator'
 
 describe('replaceLeadingTrailingChars', () => {
     it('replaces leading and trailing spaces with tabs', () => {
