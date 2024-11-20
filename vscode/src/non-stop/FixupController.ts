@@ -1072,7 +1072,7 @@ export class FixupController
             case 'complete':
                 task.inProgressReplacement = undefined
                 task.replacement = text
-                await this.setTaskState(task, CodyTaskState.Applying)
+                this.setTaskState(task, CodyTaskState.Applying)
                 break
         }
         return Promise.resolve()
@@ -1189,7 +1189,7 @@ export class FixupController
         } satisfies SmartApplyResult)
     }
 
-    private async setTaskState(task: FixupTask, state: CodyTaskState): Promise<void> {
+    private setTaskState(task: FixupTask, state: CodyTaskState): void {
         const oldState = task.state
         if (oldState === state) {
             // Not a transition--nothing to do.
@@ -1216,7 +1216,7 @@ export class FixupController
         this.controlApplicator.didUpdateTask(task)
 
         if (task.state === CodyTaskState.Applying) {
-            await this.apply(task.id)
+            this.apply(task.id)
         }
 
         if (task.state === CodyTaskState.Applied) {

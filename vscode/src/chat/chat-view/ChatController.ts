@@ -97,9 +97,7 @@ import { getContextFileFromCursor } from '../../commands/context/selection'
 import { resolveContextItems } from '../../editor/utils/editor-context'
 import type { VSCodeEditor } from '../../editor/vscode-editor'
 import type { ExtensionClient } from '../../extension-client'
-import { isRunningInsideAgent } from '../../jsonrpc/isRunningInsideAgent'
 import { migrateAndNotifyForOutdatedModels } from '../../models/modelMigrator'
-import { computeDiff } from '../../non-stop/line-diff'
 import { logDebug } from '../../output-channel-logger'
 import { getCategorizedMentions } from '../../prompt-builder/utils'
 import { hydratePromptText } from '../../prompts/prompt-hydration'
@@ -968,13 +966,17 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
 
         let responseMessage = `Here is the response for the ${task.intent} instruction:\n`
 
-        const diff =
-            task.diff ??
-            computeDiff(task.replacement || '', task.original, task.selectionRange, {
-                decorateDeletions: !isRunningInsideAgent(),
-            })
+        if (!task.diff && task.replacement) {
+            task.diff = [
+                {
+                    type: 'insertion',
+                    text: task.replacement,
+                    range: task.originalRange,
+                },
+            ]
+        }
 
-        diff?.map(diff => {
+        task.diff?.map(diff => {
             responseMessage += '\n```diff\n'
             if (diff.type === 'deletion') {
                 responseMessage += task.document

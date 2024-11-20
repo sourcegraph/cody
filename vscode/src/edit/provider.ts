@@ -259,7 +259,7 @@ export class EditProvider {
         if (isStreamedIntent(this.config.task.intent)) {
             this.queueInsertion(response, isMessageInProgress)
         } else {
-            await this.handleFixupEdit(response, isMessageInProgress)
+            this.handleFixupEdit(response, isMessageInProgress)
         }
     }
 
