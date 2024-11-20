@@ -718,7 +718,14 @@ function registerAutoEdits(disposables: vscode.Disposable[]): void {
                     map(([config, authStatus, autoeditEnabled]) => {
                         if (shouldEnableExperimentalAutoedits(config, autoeditEnabled, authStatus)) {
                             const provider = new AutoeditsProvider()
-                            return provider
+
+                            const completionRegistration =
+                                vscode.languages.registerInlineCompletionItemProvider(
+                                    [{ scheme: 'file', language: '*' }, { notebookType: '*' }],
+                                    provider
+                                )
+
+                            return vscode.Disposable.from(provider, completionRegistration)
                         }
                         return []
                     })

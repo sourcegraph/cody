@@ -173,7 +173,7 @@ export function getCurrentFilePromptComponents(
         suffixAfterArea: currentFileContext.suffixAfterArea.toString(),
         prefixInArea: currentFileContext.prefixInArea.toString(),
         suffixInArea: currentFileContext.suffixInArea.toString(),
-    }
+    } satisfies CodeToReplaceData
 
     const fileWithMarker = ps`${currentFileContext.prefixBeforeArea}
 ${AREA_FOR_CODE_MARKER}
