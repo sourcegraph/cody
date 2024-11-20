@@ -678,7 +678,7 @@
       },
       {
         "command": "cody.command.execute-prompt",
-        "key": "alt+p",
+        "key": "shift+alt+p",
         "when": "cody.activated"
       },
       {
