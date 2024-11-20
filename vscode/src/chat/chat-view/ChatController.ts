@@ -951,7 +951,9 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             configuration: {
                 instruction,
                 mode,
-                intent: mode === 'edit' ? 'edit' : 'add',
+                // Only document code uses non-edit (insert mode), set doc intent for Document code prompt
+                // to specialize cody command runner for document code case.
+                intent: mode === 'edit' ? 'edit' : 'doc',
             },
         })
 
