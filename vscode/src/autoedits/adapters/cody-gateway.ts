@@ -45,7 +45,7 @@ export class CodyGatewayAdapter implements AutoeditsModelAdapter {
     async getModelResponse(option: AutoeditModelOptions): Promise<string> {
         try {
             const headers = {
-                'X-Sourcegraph-Feature': 'chat_completions',
+                'X-Sourcegraph-Feature': 'code_completions',
             }
             const body = {
                 stream: false,
