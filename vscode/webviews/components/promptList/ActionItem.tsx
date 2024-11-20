@@ -72,11 +72,19 @@ const ActionPrompt: FC<ActionPromptProps> = props => {
 
     return (
         <div className={styles.prompt}>
-            <UserAvatar
-                size={22}
-                user={{ ...prompt.createdBy, endpoint: '' }}
-                className={styles.promptAvatar}
-            />
+            {prompt.createdBy && (
+                <UserAvatar
+                    size={22}
+                    user={{ ...prompt.createdBy, endpoint: '' }}
+                    className={styles.promptAvatar}
+                />
+            )}
+
+            {!prompt.createdBy && (
+                <div className={styles.promptAvatar}>
+                    <PencilRuler size={16} strokeWidth={1.5} className={styles.promptIcon} />
+                </div>
+            )}
 
             <div className={styles.promptContent}>
                 <div className={styles.promptTitle}>
