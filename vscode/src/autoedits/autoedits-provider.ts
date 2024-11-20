@@ -14,6 +14,7 @@ import { ContextMixer } from '../completions/context/context-mixer'
 import { DefaultContextStrategyFactory } from '../completions/context/context-strategy'
 import { RetrieverIdentifier } from '../completions/context/utils'
 import { getCurrentDocContext } from '../completions/get-current-doc-context'
+import { completionMatchesSuffix } from '../completions/is-completion-visible'
 import { lines } from '../completions/text-processing'
 import { getConfiguration } from '../configuration'
 import { CodyGatewayAdapter } from './adapters/cody-gateway'
@@ -210,7 +211,15 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
             docContext.currentLineSuffix.length + 1 // Additional char for newline
         )
         const isPrefixMatch = prediction.startsWith(codeToReplace.codeToRewritePrefix)
-        const isSuffixMatch = prediction.endsWith(codeToRewriteAfterCurrentLine)
+        const isSuffixMatch =
+            // The current line suffix should not require any char removals to render the completion.
+            completionMatchesSuffix(
+                { insertText: codeToReplace.codeToRewriteSuffix },
+                docContext.currentLineSuffix
+            ) &&
+            // The new lines suggested after the current line must be equal to the prediction.
+            prediction.endsWith(codeToRewriteAfterCurrentLine)
+
         if (isPrefixMatch && isSuffixMatch) {
             const autocompleteInlineResponse = extractInlineCompletionFromRewrittenCode(
                 prediction,
@@ -226,10 +235,6 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 )
             )
             autoeditsLogger.logDebug('Autocomplete Inline Response: ', autocompleteResponse)
-            autoeditsLogger.logDebug(
-                'Autocomplete Inline Range: ',
-                JSON.stringify(inlineCompletionItem.range)
-            )
             return [inlineCompletionItem]
         }
         return null
