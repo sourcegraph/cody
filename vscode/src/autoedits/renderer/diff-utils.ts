@@ -1,7 +1,7 @@
 import { diff } from 'fast-myers-diff'
 import { range, zip } from 'lodash'
 import {lines} from '../../completions/text-processing';
-import {DecorationLineType, DecorationLineInformation} from './decorators/base';
+import {DecorationLineType, DecorationLineInformation, DecorationInformation} from './decorators/base';
 
 /**
  * Represents a line that was preserved (either modified or unchanged) between two versions of text,
@@ -45,7 +45,7 @@ interface LineLevelDiff {
 }
 
 
-export function getDecorationInformation(currentFileText: string, predictedFileText: string): DecorationLineInformation[] {
+export function getDecorationInformation(currentFileText: string, predictedFileText: string): DecorationInformation {
     const oldLines = lines(currentFileText)
     const newLines = lines(predictedFileText)
     const { modifiedLines, removedLines, addedLines, unchangedLines } = getLineLevelDiff(oldLines, newLines)
@@ -67,10 +67,10 @@ export function getDecorationInformation(currentFileText: string, predictedFileT
         // Modified ranges are based on the chunks of the original text, which could be char level or word level
         // Adjust the ranges to get the modified ranges in terms of the original text
         const adjustedModifiedRanges = modifiedRanges.map(range => ({
-            from1: getIndexFromLineChunks(oldLinesChunks[modifiedLine.oldNumber], range.from1),
-            to1: getIndexFromLineChunks(oldLinesChunks[modifiedLine.oldNumber], range.to1),
-            from2: getIndexFromLineChunks(newLinesChunks[modifiedLine.newNumber], range.from2),
-            to2: getIndexFromLineChunks(newLinesChunks[modifiedLine.newNumber], range.to2),
+            from1: getCharacterOffsetFromChunks(oldLinesChunks[modifiedLine.oldNumber], range.from1),
+            to1: getCharacterOffsetFromChunks(oldLinesChunks[modifiedLine.oldNumber], range.to1),
+            from2: getCharacterOffsetFromChunks(newLinesChunks[modifiedLine.newNumber], range.from2),
+            to2: getCharacterOffsetFromChunks(newLinesChunks[modifiedLine.newNumber], range.to2),
         }))
 
         decorationLineInformation.push({
@@ -89,7 +89,11 @@ export function getDecorationInformation(currentFileText: string, predictedFileT
             oldLines[unchangedLine.oldNumber]
         ))
     }
-    return decorationLineInformation
+    return {
+        lines: decorationLineInformation,
+        oldLines,
+        newLines,
+    }
 }
 
 function getDecorationInformationForUnchangedLine(
@@ -221,7 +225,6 @@ export function splitLineIntoChunks(line: string): string[] {
     return line.split(/(?=[^a-zA-Z0-9])|(?<=[^a-zA-Z0-9])/)
 }
 
-function getIndexFromLineChunks(parts: string[], index: number): number {
-    return parts.slice(0, index).reduce((acc: number, str: string) => acc + str.length, 0)
+function getCharacterOffsetFromChunks(parts: string[], chunkIndex: number): number {
+    return parts.slice(0, chunkIndex).reduce((acc: number, str: string) => acc + str.length, 0)
 }
-

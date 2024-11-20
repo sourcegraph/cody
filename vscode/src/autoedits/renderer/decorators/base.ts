@@ -27,3 +27,9 @@ export interface DecorationLineInformation {
     // The ranges of text that were modified in the line.
     modifiedRanges: ModifiedRange[]
 }
+
+export interface DecorationInformation {
+    lines: DecorationLineInformation[]
+    oldLines: string[]
+    newLines: string[]
+}

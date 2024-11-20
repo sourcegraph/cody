@@ -1,5 +1,6 @@
 import * as vscode from 'vscode'
 import {AutoEditsRenderer} from './renderer';
+import { getDecorationInformation } from './diff-utils'
 
 /**
  * Represents a proposed text change in the editor.
@@ -75,11 +76,8 @@ export class AutoEditsRendererManager implements vscode.Disposable {
             prediction: options.prediction,
             renderer: new AutoEditsRenderer(editor),
         }
-        this.activeEdit.renderer.renderDecorations({
-            document: options.document,
-            currentFileText: options.currentFileText,
-            predictedFileText: options.predictedFileText,
-        })
+        const decorationInformation = getDecorationInformation(options.currentFileText, options.predictedFileText)
+        this.activeEdit.renderer.renderDecorations(decorationInformation)
         await vscode.commands.executeCommand('setContext', 'cody.supersuggest.active', true)
     }
 
