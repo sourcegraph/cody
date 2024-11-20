@@ -319,7 +319,9 @@ function lexicalEditorStateFromPromptString(
             const [displayPath, maybeRange] = word.slice(1).split(':', 2)
             const range = maybeRange ? parseRangeString(maybeRange) : undefined
             const uri = refsByDisplayPath.get(displayPath)
-            const originalContextItem = opts?.additionalContextItemsMap?.get(word.slice(1))
+            const originalContextItem = opts?.additionalContextItemsMap?.get(
+                cleanTrailingSymbols(word.slice(1))
+            )
 
             // Save previous last text or mention node before adding new mention
             if ((originalContextItem || uri) && lastTextNode) {
@@ -329,6 +331,7 @@ function lexicalEditorStateFromPromptString(
 
             if (originalContextItem) {
                 const contextItem = serializeContextItem(originalContextItem)
+                contextItem.range = range
 
                 children.push({
                     contextItem,
@@ -505,4 +508,8 @@ function textNode(text: string): SerializedTextNode {
         version: 1,
         text,
     }
+}
+
+function cleanTrailingSymbols(str: string): string {
+    return str.replace(/[.,;:]+$/, '')
 }

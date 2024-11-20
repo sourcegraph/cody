@@ -1,4 +1,5 @@
 import {
+    type Action,
     type CommandAction,
     FeatureFlag,
     type PromptAction,
@@ -9,6 +10,7 @@ import {
     graphqlClient,
     isAbortError,
     isErrorLike,
+    isValidVersion,
 } from '@sourcegraph/cody-shared'
 import { FIXTURE_COMMANDS } from '../../webviews/components/promptList/fixtures'
 import { getCodyCommandList } from '../commands/CommandsController'
@@ -75,30 +77,22 @@ export async function mergedPromptsAndLegacyCommands(
 ): Promise<PromptsResult> {
     const { query, recommendedOnly, first } = input
     const queryLower = query.toLowerCase()
-    const [customPrompts, isUnifiedPromptsEnabled] = await Promise.all([
+    const [customPrompts, isUnifiedPromptsEnabled, isNewPromptsSgVersion] = await Promise.all([
         fetchCustomPrompts(queryLower, first, recommendedOnly, signal),
+
+        // Unified prompts flag provides prompts-like commands API
         featureFlagProvider.evaluateFeatureFlagEphemerally(FeatureFlag.CodyUnifiedPrompts),
+
+        // 5.10.0 Contains new prompts library API which provides unified prompts
+        // and standard (built-in) prompts
+        isValidVersion({ minimumVersion: '5.10.0' }),
     ])
 
-    const codyCommands = getCodyCommandList()
-    const allCommands: CommandAction[] = !clientCapabilities().isCodyWeb
-        ? // Ignore commands since with unified prompts vital commands will be replaced by out-of-box
-          // prompts, see main.ts register cody commands for unified prompts
-          isUnifiedPromptsEnabled
-            ? STANDARD_PROMPTS_LIKE_COMMAND
-            : [...codyCommands, ...(USE_CUSTOM_COMMANDS_FIXTURE ? FIXTURE_COMMANDS : [])].map(c => ({
-                  ...c,
-                  actionType: 'command',
-              }))
-        : // Ignore any commands for Cody Web since no commands are supported
-          []
-
-    const matchingCommands = allCommands.filter(
-        c =>
-            matchesQuery(queryLower, c.key) ||
-            matchesQuery(queryLower, c.description ?? '') ||
-            matchesQuery(queryLower, c.prompt)
-    )
+    const matchingCommands = await getLocalCommands({
+        query: queryLower,
+        isUnifiedPromptsEnabled,
+        remoteBuiltinPrompts: isNewPromptsSgVersion,
+    })
 
     const actions =
         customPrompts === 'unsupported' ? matchingCommands : [...customPrompts, ...matchingCommands]
@@ -140,4 +134,41 @@ async function fetchCustomPrompts(
 
         return []
     }
+}
+
+interface LocalCommandsInput {
+    query: string
+    isUnifiedPromptsEnabled: boolean
+    remoteBuiltinPrompts: boolean
+}
+
+async function getLocalCommands(input: LocalCommandsInput): Promise<Action[]> {
+    const { query, isUnifiedPromptsEnabled, remoteBuiltinPrompts } = input
+
+    // Fetch standards (built-in) prompts from prompts library API
+    if (remoteBuiltinPrompts) {
+        const remoteStandardPrompts = await graphqlClient.queryBuiltinPrompts({ query })
+        return remoteStandardPrompts.map(prompt => ({ ...prompt, actionType: 'prompt' }))
+    }
+
+    // Fallback on local commands (prompts-like or not is controlled by CodyUnifiedPrompts feature flag)
+    const codyCommands = getCodyCommandList()
+    const allCommands: CommandAction[] = !clientCapabilities().isCodyWeb
+        ? // Ignore commands since with unified prompts vital commands will be replaced by out-of-box
+          // prompts, see main.ts register cody commands for unified prompts
+          isUnifiedPromptsEnabled
+            ? STANDARD_PROMPTS_LIKE_COMMAND
+            : [...codyCommands, ...(USE_CUSTOM_COMMANDS_FIXTURE ? FIXTURE_COMMANDS : [])].map(c => ({
+                  ...c,
+                  actionType: 'command',
+              }))
+        : // Ignore any commands for Cody Web since no commands are supported
+          []
+
+    return allCommands.filter(
+        c =>
+            matchesQuery(query, c.key) ||
+            matchesQuery(query, c.description ?? '') ||
+            matchesQuery(query, c.prompt)
+    )
 }
