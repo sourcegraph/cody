@@ -331,6 +331,7 @@ function lexicalEditorStateFromPromptString(
 
             if (originalContextItem) {
                 const contextItem = serializeContextItem(originalContextItem)
+                contextItem.range = range
 
                 children.push({
                     contextItem,
