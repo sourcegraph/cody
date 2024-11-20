@@ -69,10 +69,11 @@ export const AccountTab: React.FC<AccountTabProps> = ({
         )
     }
 
+    let accountSwitcher = <div />
     if (clientCapabilities.accountSwitchingInWebview === 'enabled') {
         const endpoints: string[] = config.endpointHistory ?? []
         const switchableEndpoints = endpoints.filter(e => e !== endpoint)
-        actions.push(<AccountSwitcher endpoints={switchableEndpoints} />)
+        accountSwitcher = <AccountSwitcher endpoints={switchableEndpoints} />
     }
 
     if (isDotComUser) {
@@ -118,6 +119,7 @@ export const AccountTab: React.FC<AccountTabProps> = ({
                             <p className="tw-text-lg tw-font-semibold">{displayName ?? username}</p>
                             <p className="tw-text-sm tw-text-muted-foreground">{primaryEmail}</p>
                         </div>
+                        {accountSwitcher}
                     </div>
                 </div>
                 <div className="tw-grid tw-grid-cols-5 tw-gap-4">
