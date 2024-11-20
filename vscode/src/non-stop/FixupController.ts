@@ -841,7 +841,7 @@ export class FixupController
         this.decorator.didApplyTask(task)
 
         // TODO: See if we can discard a FixupFile now.
-        this.setTaskState(task, CodyTaskState.Applied)
+        await this.setTaskState(task, CodyTaskState.Applied)
         this.logTaskCompletion(task, document, editOk)
 
         // Inform the user about the change if it happened in the background
@@ -1072,7 +1072,7 @@ export class FixupController
             case 'complete':
                 task.inProgressReplacement = undefined
                 task.replacement = text
-                this.setTaskState(task, CodyTaskState.Applying)
+                await this.setTaskState(task, CodyTaskState.Applying)
                 break
         }
         return Promise.resolve()
@@ -1189,7 +1189,7 @@ export class FixupController
         } satisfies SmartApplyResult)
     }
 
-    private setTaskState(task: FixupTask, state: CodyTaskState): void {
+    private async setTaskState(task: FixupTask, state: CodyTaskState): Promise<void> {
         const oldState = task.state
         if (oldState === state) {
             // Not a transition--nothing to do.
@@ -1216,7 +1216,7 @@ export class FixupController
         this.controlApplicator.didUpdateTask(task)
 
         if (task.state === CodyTaskState.Applying) {
-            void this.apply(task.id)
+            await this.apply(task.id)
         }
 
         if (task.state === CodyTaskState.Applied) {
