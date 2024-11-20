@@ -429,12 +429,26 @@ export class AutoEditsRenderer implements vscode.Disposable {
                 replacerDecorations.push({
                     range: new vscode.Range(j, line.range.end.character, j, line.range.end.character),
                     renderOptions: {
+                        // Show the suggested code but keep it positioned absolute to ensure
+                        // the cursor does not jump there.
                         before: {
                             contentText:
                                 '\u00A0'.repeat(3) +
                                 _replaceLeadingTrailingChars(decoration.lineText, ' ', '\u00A0'),
                             margin: `0 0 0 ${replacerCol - line.range.end.character}ch`,
                             textDecoration: 'none; position: absolute;',
+                        },
+                        // Create an empty HTML element with the width required to show the suggested code.
+                        // Required to make the viewport scrollable to view the suggestion if it's outside.
+                        after: {
+                            contentText:
+                                '\u00A0'.repeat(3) +
+                                _replaceLeadingTrailingChars(
+                                    decoration.lineText.replace(/\S/g, '\u00A0'),
+                                    ' ',
+                                    '\u00A0'
+                                ),
+                            margin: `0 0 0 ${replacerCol - line.range.end.character}ch`,
                         },
                     },
                 })
@@ -447,6 +461,15 @@ export class AutoEditsRenderer implements vscode.Disposable {
                                 '\u00A0' +
                                 _replaceLeadingTrailingChars(decoration.lineText, ' ', '\u00A0'),
                             textDecoration: 'none; position: absolute;',
+                        },
+                        after: {
+                            contentText:
+                                '\u00A0'.repeat(3) +
+                                _replaceLeadingTrailingChars(
+                                    decoration.lineText.replace(/\S/g, '\u00A0'),
+                                    ' ',
+                                    '\u00A0'
+                                ),
                         },
                     },
                 })
