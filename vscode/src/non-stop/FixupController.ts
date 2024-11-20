@@ -841,7 +841,7 @@ export class FixupController
         this.decorator.didApplyTask(task)
 
         // TODO: See if we can discard a FixupFile now.
-        await this.setTaskState(task, CodyTaskState.Applied)
+        this.setTaskState(task, CodyTaskState.Applied)
         this.logTaskCompletion(task, document, editOk)
 
         // Inform the user about the change if it happened in the background
@@ -1216,7 +1216,7 @@ export class FixupController
         this.controlApplicator.didUpdateTask(task)
 
         if (task.state === CodyTaskState.Applying) {
-            this.apply(task.id)
+            void this.apply(task.id)
         }
 
         if (task.state === CodyTaskState.Applied) {
