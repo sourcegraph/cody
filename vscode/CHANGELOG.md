@@ -10,6 +10,10 @@ This is a log of all notable changes to Cody for VS Code.
 
 ### Changed
 
+- Chat: Update keyboard shortcuts:
+  - Removed `Shift+Ctrl+L` (previously created a new chat) due to conflict with Windows default shortcut
+  - Updated `Shift+Alt+L` to create a new chat when the focus is not in the editor. When the focus is in the editor, the behavior remains unchanged (the current selection is added to the chat context).
+
 ## 1.44.0
 
 ### Added
@@ -18,9 +22,34 @@ This is a log of all notable changes to Cody for VS Code.
 
 ### Changed
 
-- Chat: Update keyboard shortcuts:
-  - Removed `Shift+Ctrl+L` (previously created a new chat) due to conflict with Windows default shortcut
-  - Updated `Shift+Alt+L` to create a new chat when the focus is not in the editor. When the focus is in the editor, the behavior remains unchanged (the current selection is added to the chat context).
+### Uncategorized
+
+- Network: CA Cert loading fixes [pull/6101](https://github.com/sourcegraph/cody/pull/6101)
+- feat(rel): add backport workflow [pull/6119](https://github.com/sourcegraph/cody/pull/6119)
+- Cody Chat: fixed missing syntax highlighting of CSharp files and load only one copy of highlight.js in the WebView build [pull/6118](https://github.com/sourcegraph/cody/pull/6118)
+- fix rendering issue on the same line for ghost text [pull/6120](https://github.com/sourcegraph/cody/pull/6120)
+- chat input: '@' -> '@ Context' toolbar button [pull/6114](https://github.com/sourcegraph/cody/pull/6114)
+- feat(edit): enable predicted outputs for gpt-4o models [pull/6116](https://github.com/sourcegraph/cody/pull/6116)
+- Edit: prep for the gpt-4o-mini edit a/b test [pull/6110](https://github.com/sourcegraph/cody/pull/6110)
+- Trigger autoedit on the cursor movements [pull/6112](https://github.com/sourcegraph/cody/pull/6112)
+- Remove old test renderer [pull/6113](https://github.com/sourcegraph/cody/pull/6113)
+- Add a command for testing auto-edit examples [pull/6108](https://github.com/sourcegraph/cody/pull/6108)
+- Chat: brought back syntax highlighting for most common languages [pull/5953](https://github.com/sourcegraph/cody/pull/5953)
+- Chat: brought back syntax highlighting for most common languages [pull/5874](https://github.com/sourcegraph/cody/pull/5874)
+- Add a command for testing auto-edit examples [pull/6108](https://github.com/sourcegraph/cody/pull/6108)
+- Fail hard on errors in input context bench CSV, remove unused column [pull/6107](https://github.com/sourcegraph/cody/pull/6107)
+- Add more detailed results to context benchmark [pull/5992](https://github.com/sourcegraph/cody/pull/5992)
+- Edit: collect more analytics data [pull/6095](https://github.com/sourcegraph/cody/pull/6095)
+- fix indentation issue [pull/6103](https://github.com/sourcegraph/cody/pull/6103)
+- Cody Web: Add support running prompts from consumer [pull/6081](https://github.com/sourcegraph/cody/pull/6081)
+- fix recent edits context source [pull/6071](https://github.com/sourcegraph/cody/pull/6071)
+- Hitesh/autoedits improvements [pull/5956](https://github.com/sourcegraph/cody/pull/5956)
+- Agent: disable the flaky edit test [pull/6093](https://github.com/sourcegraph/cody/pull/6093)
+- VS Code: point releases to `./vscode/changelog.md` [pull/6080](https://github.com/sourcegraph/cody/pull/6080)
+- Fix issue with merging configs [pull/6084](https://github.com/sourcegraph/cody/pull/6084)
+- Deep Cody: skip query rewrite for search tool [pull/6082](https://github.com/sourcegraph/cody/pull/6082)
+- chore/build: VSCode Insiders builds are manually triggered and automatically tagged [pull/6083](https://github.com/sourcegraph/cody/pull/6083)
+- Deep Cody: remove TOOL context item after review [pull/6079](https://github.com/sourcegraph/cody/pull/6079)
 
 ## 1.42.0
 Hey Cody users! For those who want to track detailed technical changes, we will be updating this changelog to provide more comprehensive updates on new features, improvements, and fixes. For major releases and announcements, check out our [public changelog](https://sourcegraph.com/changelog).
