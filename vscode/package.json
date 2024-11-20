@@ -677,6 +677,11 @@
         "when": "cody.activated && !editorReadonly && config.cody.internal.unstable"
       },
       {
+        "command": "cody.command.execute-prompt",
+        "key": "alt+p",
+        "when": "cody.activated"
+      },
+      {
         "command": "cody.tutorial.edit",
         "key": "alt+k",
         "when": "cody.activated && !editorReadonly && cody.tutorialActive"
@@ -803,10 +808,6 @@
         {
           "command": "cody.command.abort-commit",
           "when": "cody.activated && cody.isGeneratingCommit"
-        },
-        {
-          "command": "cody.menu.custom-commands",
-          "when": "cody.activated"
         },
         {
           "command": "cody.chat.signIn",
