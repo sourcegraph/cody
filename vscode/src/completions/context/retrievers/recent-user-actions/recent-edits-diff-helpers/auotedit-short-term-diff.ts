@@ -11,7 +11,7 @@ import {
     computeDiffWithLineNumbers,
     groupChangesForSimilarLinesTogether,
 } from './utils'
-import { type GroupedTextDocumentChange, combineDiffHunksFromSimilarFile } from './utils'
+import {GroupedTextDocumentChange, combineDiffHunksFromSimilarFile, combineNonOverlappingLinesSchemaTogether} from './utils';
 
 /**
  * Generates a single unified diff patch that combines all changes
@@ -23,7 +23,8 @@ export class AutoeditWithShortTermDiffStrategy implements RecentEditsRetrieverDi
     private shortTermContextLines = 0
 
     public getDiffHunks(input: DiffCalculationInput): DiffHunk[] {
-        const changes = groupChangesForSimilarLinesTogether(input.changes)
+        const rawChanges = groupChangesForSimilarLinesTogether(input.changes)
+        const changes = combineNonOverlappingLinesSchemaTogether(rawChanges)
         this.logGroupedChanges(input.uri, input.oldContent, changes)
         const allDiffHunks: DiffHunk[] = []
 

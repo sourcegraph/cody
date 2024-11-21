@@ -6,7 +6,43 @@ import type { DiffHunk, TextDocumentChange } from './base'
 
 export interface GroupedTextDocumentChange {
     changes: TextDocumentChange[]
+    changeStartLine: number
+    changeEndLine: number
 }
+
+export function combineNonOverlappingLinesSchemaTogether(groupedChanges: GroupedTextDocumentChange[]): GroupedTextDocumentChange[] {
+    const combinedChanges: GroupedTextDocumentChange[] = []
+    if (groupedChanges.length === 0) {
+        return combinedChanges
+    }
+    let currentActiveChanges: GroupedTextDocumentChange[] = [groupedChanges[0]]
+    for (let i = 1; i < groupedChanges.length; i++) {
+        const groupedChange = groupedChanges[i]
+        if (shouldCombineGroupedChanges(currentActiveChanges[currentActiveChanges.length - 1], groupedChange)) {
+            currentActiveChanges.push(groupedChange)
+        } else {
+            combinedChanges.push(flatCombinedGroupedChanges(currentActiveChanges))
+            currentActiveChanges = [groupedChange]
+        }
+    }
+    if (currentActiveChanges.length > 0) {
+        combinedChanges.push(flatCombinedGroupedChanges(currentActiveChanges))
+    }
+    return combinedChanges
+}
+
+function flatCombinedGroupedChanges(changes: GroupedTextDocumentChange[]): GroupedTextDocumentChange {
+    return {
+        changes: changes.flatMap(change => change.changes),
+        changeStartLine: Math.min(...changes.map(change => change.changeStartLine)),
+        changeEndLine: Math.max(...changes.map(change => change.changeEndLine))
+    }
+}
+
+function shouldCombineGroupedChanges(a: GroupedTextDocumentChange, b: GroupedTextDocumentChange): boolean {
+    return !(a.changeStartLine <= b.changeEndLine && a.changeEndLine >= b.changeStartLine)
+}
+
 
 export function groupChangesForSimilarLinesTogether(
     changes: TextDocumentChange[]
@@ -15,25 +51,51 @@ export function groupChangesForSimilarLinesTogether(
         return []
     }
     const groupedChanges: GroupedTextDocumentChange[] = []
-    let currentGroup: GroupedTextDocumentChange = {
-        changes: [changes[0]],
-    }
+    let currentGroup: TextDocumentChange[] = [changes[0]]
     for (let i = 1; i < changes.length; i++) {
         const change = changes[i]
-        const lastChange = currentGroup.changes[currentGroup.changes.length - 1]
+        const lastChange = currentGroup[currentGroup.length - 1]
         if (shouldCombineChanges(lastChange, change)) {
-            currentGroup.changes.push(change)
+            currentGroup.push(change)
         } else {
-            groupedChanges.push(currentGroup)
-            currentGroup = {
-                changes: [change],
-            }
+            const range = getRangeValues(currentGroup)
+            groupedChanges.push({
+                changes: currentGroup,
+                changeStartLine: range[0],
+                changeEndLine: range[1],
+            })
+            currentGroup = [change]
         }
     }
-    if (currentGroup.changes.length > 0) {
-        groupedChanges.push(currentGroup)
+    if (currentGroup.length > 0) {
+        const range = getRangeValues(currentGroup)
+        groupedChanges.push({
+            changes: currentGroup,
+            changeStartLine: range[0],
+            changeEndLine: range[1],
+        })
     }
     return groupedChanges
+}
+
+
+function getRangeValues(documentChanges: TextDocumentChange[]): [number, number] {
+    let minRange = getMinRange(documentChanges[0].replacedRange, documentChanges[0].insertedRange)
+    let maxRange = getMaxRange(documentChanges[0].replacedRange, documentChanges[0].insertedRange)
+    for (let i = 1; i < documentChanges.length; i++) {
+        const change = documentChanges[i]
+        minRange = getMinRange(getMinRange(change.replacedRange, change.insertedRange), minRange)
+        maxRange = getMaxRange(getMaxRange(change.replacedRange, change.insertedRange), maxRange)
+    }
+    return [minRange.start.line, maxRange.end.line]
+}
+
+function getMinRange(a: vscode.Range, b: vscode.Range): vscode.Range {
+    return a.start.isBeforeOrEqual(b.start) ? a : b
+}
+
+function getMaxRange(a: vscode.Range, b: vscode.Range): vscode.Range {
+    return a.end.isBeforeOrEqual(b.end) ? b : a
 }
 
 function shouldCombineChanges(lastChange: TextDocumentChange, change: TextDocumentChange): boolean {
@@ -96,13 +158,11 @@ export function combineDiffHunksFromSimilarFile(hunks: DiffHunk[]): DiffHunk[] {
 
 function combineMultipleHunks(hunks: DiffHunk[]): DiffHunk {
     const lastestTime = Math.max(...hunks.map(h => h.latestEditTimestamp))
-    const leastTime = Math.min(...hunks.map(h => h.leastEditTimestamp))
     const diffs = PromptString.join(
         hunks.map(h => h.diff),
         ps`\nthen\n`
     )
     return {
-        leastEditTimestamp: leastTime,
         uri: hunks[0].uri,
         latestEditTimestamp: lastestTime,
         diff: diffs,

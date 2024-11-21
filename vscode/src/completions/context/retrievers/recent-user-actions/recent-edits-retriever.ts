@@ -98,8 +98,11 @@ export class RecentEditsRetriever implements vscode.Disposable, ContextRetriever
         const diffs: DiffAcrossDocuments[] = []
         const diffPromises = Array.from(this.trackedDocuments.entries()).map(
             async ([uri, trackedDocument]) => {
+                if (trackedDocument.changes.length===0) {
+                    return null
+                }
                 const diffHunks = await this.getDiff(vscode.Uri.parse(uri))
-                if (diffHunks && trackedDocument.changes.length > 0) {
+                if (diffHunks) {
                     return diffHunks.map(diffHunk => ({
                         diff: diffHunk.diff,
                         uri: trackedDocument.uri,

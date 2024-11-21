@@ -66,5 +66,4 @@ export interface DiffHunk {
     uri: vscode.Uri
     latestEditTimestamp: number
     diff: PromptString
-    leastEditTimestamp: number
 }
