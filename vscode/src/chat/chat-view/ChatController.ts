@@ -85,7 +85,7 @@ import type { TelemetryEventParameters } from '@sourcegraph/telemetry'
 import { Subject, map } from 'observable-fns'
 import type { URI } from 'vscode-uri'
 import { View } from '../../../webviews/tabs/types'
-import { redirectToEndpointLogin, showSignInMenu, showSignOutMenu } from '../../auth/auth'
+import { redirectToEndpointLogin, showSignInMenu, showSignOutMenu, signOut } from '../../auth/auth'
 import {
     closeAuthProgressIndicator,
     startAuthProgressIndicator,
@@ -449,21 +449,30 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     const serverEndpoint = message.endpoint
                     const accessToken = message.value
                         ? message.value
-                        : (await secretStorage.getToken(serverEndpoint)) ?? ''
-                    const tokenSource = message.value
-                        ? 'paste'
-                        : await secretStorage.getTokenSource(serverEndpoint)
-                    const validationResult = await authProvider.validateAndStoreCredentials(
-                        { serverEndpoint, accessToken, tokenSource },
-                        'always-store'
-                    )
-                    if (!validationResult.authStatus.authenticated) {
-                        await showSignInMenu()
+                        : await secretStorage.getToken(serverEndpoint)
+                    if (accessToken) {
+                        const tokenSource = message.value
+                            ? 'paste'
+                            : await secretStorage.getTokenSource(serverEndpoint)
+                        const validationResult = await authProvider.validateAndStoreCredentials(
+                            { serverEndpoint, accessToken, tokenSource },
+                            'always-store'
+                        )
+                        if (validationResult.authStatus.authenticated) {
+                            break
+                        }
+                    } else {
+                        redirectToEndpointLogin(message.endpoint)
                     }
                     break
                 }
                 if (message.authKind === 'signout') {
-                    await showSignOutMenu()
+                    const serverEndpoint = message.endpoint
+                    if (serverEndpoint) {
+                        await signOut(serverEndpoint)
+                    } else {
+                        await showSignOutMenu()
+                    }
                     break
                 }
                 if (message.authKind === 'switch') {

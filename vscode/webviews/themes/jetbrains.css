@@ -664,6 +664,11 @@ html[data-ide='JetBrains'] .tw-bg-muted-transparent:hover {
     background-color: var(--jetbrains-ActionButton-hoverBackground);
 }
 
+html[data-ide='JetBrains'] .tw-border-input-border {
+    border-style: solid;
+    border-width: thin;
+}
+
 /* Custom rule for cmdk heading:
  * VSCode uses input background for headings.
  * JetBrains needs different styling to distinguish headings because input background are the same as pane background. */

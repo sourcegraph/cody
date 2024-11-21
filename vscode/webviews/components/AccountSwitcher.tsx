@@ -1,17 +1,28 @@
-import { ChevronDown, ChevronRight } from 'lucide-react'
+import { ChevronDown, ChevronRight, ChevronsUpDown, CircleMinus, Plus } from 'lucide-react'
 import type * as React from 'react'
 import { type KeyboardEventHandler, useCallback, useState } from 'react'
+import { isSourcegraphToken } from '../../src/chat/protocol'
+import { Form, FormControl, FormField, FormLabel, FormMessage } from '../components/shadcn/ui/form'
 import { getVSCodeAPI } from '../utils/VSCodeApi'
 import { Button } from './shadcn/ui/button'
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from './shadcn/ui/collapsible'
 import { Popover, PopoverContent, PopoverTrigger } from './shadcn/ui/popover'
 
 export const AccountSwitcher: React.FC<{ endpoints: string[] }> = ({ endpoints }) => {
+    type PopoverState = 'switching' | 'removing' | 'adding'
+    const [getPopoverState, setPopoverState] = useState<PopoverState>('switching')
     const [isOpen, setIsOpen] = useState(false)
+
+    const [endpointToRemove, setEndpointToRemove] = useState<string | null>(null)
+    const [addFormData, setAddFormData] = useState({
+        endpoint: 'https://',
+        accessToken: '',
+    })
 
     const onKeyDownInPopoverContent = useCallback<KeyboardEventHandler<HTMLDivElement>>(
         event => {
             if (event.key === 'Escape' && isOpen) {
-                setIsOpen(false)
+                onOpenChange(false)
             }
         },
         [isOpen]
@@ -19,6 +30,167 @@ export const AccountSwitcher: React.FC<{ endpoints: string[] }> = ({ endpoints }
 
     const onOpenChange = (open: boolean): void => {
         setIsOpen(open)
+        if (!open) {
+            setEndpointToRemove(null)
+            setPopoverState('switching')
+            setAddFormData(() => ({
+                endpoint: 'https://',
+                accessToken: '',
+            }))
+        }
+    }
+
+    const popoverEndpointsList = endpoints.map(endpoint => (
+        <span key={`${endpoint}-panel`} className="tw-flex tw-justify-between tw-items-center">
+            <Button
+                key={`${endpoint}-switch`}
+                variant="ghost"
+                onClick={() => {
+                    getVSCodeAPI().postMessage({
+                        command: 'auth',
+                        authKind: 'signin',
+                        endpoint: endpoint,
+                    })
+                    onOpenChange(false)
+                }}
+            >
+                {endpoint}
+            </Button>
+            <Button
+                key={`${endpoint}-remove`}
+                variant="ghost"
+                onClick={() => {
+                    setEndpointToRemove(endpoint)
+                    setPopoverState('removing')
+                }}
+            >
+                <CircleMinus size={16} />
+            </Button>
+        </span>
+    ))
+
+    const popoverSwitchAccountPanel = (
+        <div>
+            {popoverEndpointsList}
+            <div className="tw-w-full tw-border-t tw-border-border" />
+            <Button
+                key={'add-account'}
+                variant="ghost"
+                onClick={() => {
+                    setPopoverState('adding')
+                }}
+            >
+                <Plus size={16} />
+                Add another account
+            </Button>
+        </div>
+    )
+
+    const popoverRemoveAccountPanel = (
+        <div className="tw-flex tw-flex-col tw-gap-4 tw-p-4">
+            <b>Remove Account?</b>
+            <span>Are you sure you want to remove that account?</span>
+            <Button
+                variant="secondary"
+                className="tw-w-full tw-bg-popover tw-bg-red-500"
+                onClick={() => {
+                    getVSCodeAPI().postMessage({
+                        command: 'auth',
+                        authKind: 'signout',
+                        endpoint: endpointToRemove,
+                    })
+                    onOpenChange(false)
+                }}
+            >
+                Remove
+            </Button>
+        </div>
+    )
+
+    const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+        const { name, value } = e.target
+        setAddFormData(prev => ({ ...prev, [name]: value }))
+    }, [])
+
+    function addAndSwitchAccount() {
+        getVSCodeAPI().postMessage({
+            command: 'auth',
+            authKind: 'signin',
+            endpoint: addFormData.endpoint,
+            value: addFormData.accessToken,
+        })
+        onOpenChange(false)
+    }
+    const popoverAddAccountPanel = (
+        <div>
+            <b>Account Details</b>
+            <Form onSubmit={addAndSwitchAccount}>
+                <FormField name="endpoint">
+                    <FormLabel title="Instance URL" />
+                    <FormControl
+                        type="url"
+                        name="endpoint"
+                        placeholder="https://example.sourcegraphcloud.com"
+                        value={addFormData.endpoint}
+                        required
+                        onChange={handleInputChange}
+                    />
+                    <FormMessage match="typeMismatch">Invalid URL.</FormMessage>
+                    <FormMessage match="valueMissing">URL is required.</FormMessage>
+                </FormField>
+
+                <Collapsible className="tw-w-full tw-justify-start">
+                    <CollapsibleTrigger asChild className="tw-text-xs">
+                        <Button variant="ghost" size="xs" className="tw-w-full tw-justify-start">
+                            Access Token (Optional) <ChevronsUpDown size={16} />
+                        </Button>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent>
+                        <FormField
+                            name="accessToken"
+                            // TODO: It would be nice to have some server side token validation and feedback there
+                            // serverInvalid={authStatus && !authStatus.authenticated && authStatus.showNetworkError}
+                        >
+                            <FormControl
+                                type="password"
+                                name="accessToken"
+                                placeholder="sgp_xxx_xxx"
+                                value={addFormData.accessToken}
+                                onChange={handleInputChange}
+                                autoComplete="current-password"
+                                required
+                            />
+                            <FormMessage match={() => !isSourcegraphToken(addFormData.accessToken)}>
+                                Invalid access token.
+                            </FormMessage>
+                            <FormMessage match="valueMissing">Access token is required.</FormMessage>
+                        </FormField>
+                    </CollapsibleContent>
+                </Collapsible>
+
+                <Button
+                    key={'add-account-confirmation-button'}
+                    variant="ghost"
+                    className="tw-w-full tw-bg-blue-500"
+                    onClick={addAndSwitchAccount}
+                >
+                    Add and Switch
+                </Button>
+            </Form>
+        </div>
+    )
+
+    function getPopoverContent() {
+        switch (getPopoverState) {
+            case 'adding':
+                return popoverAddAccountPanel
+            case 'removing':
+                return popoverRemoveAccountPanel
+            case 'switching':
+                return popoverSwitchAccountPanel
+            default:
+                return null
+        }
     }
 
     return (
@@ -39,22 +211,7 @@ export const AccountSwitcher: React.FC<{ endpoints: string[] }> = ({ endpoints }
                 align="center"
                 onKeyDown={onKeyDownInPopoverContent}
             >
-                {endpoints.map(endpoint => (
-                    <Button
-                        key={endpoint}
-                        variant="ghost"
-                        onClick={() => {
-                            getVSCodeAPI().postMessage({
-                                command: 'auth',
-                                authKind: 'signin',
-                                endpoint: endpoint,
-                            })
-                            setIsOpen(false)
-                        }}
-                    >
-                        {endpoint}
-                    </Button>
-                ))}
+                <div className="tw-w-[350px]">{getPopoverContent()}</div>
             </PopoverContent>
         </Popover>
     )
