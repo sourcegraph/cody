@@ -65,7 +65,7 @@ export class DefaultDecorator implements AutoeditsDecorator {
         ]
     }
 
-    public clearDecorations(): void {
+    private clearDecorations(): void {
         for (const decorationType of this.decorationTypes) {
             this.editor.setDecorations(decorationType, [])
         }

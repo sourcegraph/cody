@@ -1,9 +1,5 @@
 import * as vscode from 'vscode'
-import {
-    type AutoeditsDecorator,
-    type DecorationStrategyIdentifier,
-    createAutoeditsDecorator,
-} from './decorators/base'
+import type { AutoeditsDecorator } from './decorators/base'
 import { getDecorationInformation } from './diff-utils'
 
 /**
@@ -46,11 +42,9 @@ export interface AutoEditsManagerOptions {
 export class AutoEditsRendererManager implements vscode.Disposable {
     // Keeps track of the current active edit (there can only be one active edit at a time)
     private activeEdit: ProposedChange | null = null
-    private readonly decoratorStrategyIdentifier: DecorationStrategyIdentifier
     private disposables: vscode.Disposable[] = []
 
-    constructor(decoratorStrategyIdentifier: DecorationStrategyIdentifier) {
-        this.decoratorStrategyIdentifier = decoratorStrategyIdentifier
+    constructor(private createDecorator: (editor: vscode.TextEditor) => AutoeditsDecorator) {
         this.disposables.push(
             vscode.commands.registerCommand('cody.supersuggest.accept', () => this.acceptEdit()),
             vscode.commands.registerCommand('cody.supersuggest.dismiss', () => this.dismissEdit()),
@@ -79,7 +73,7 @@ export class AutoEditsRendererManager implements vscode.Disposable {
             uri: options.document.uri.toString(),
             range: options.range,
             prediction: options.prediction,
-            decorator: createAutoeditsDecorator(this.decoratorStrategyIdentifier, editor),
+            decorator: this.createDecorator(editor),
         }
         const decorationInformation = getDecorationInformation(
             options.currentFileText,
@@ -92,7 +86,6 @@ export class AutoEditsRendererManager implements vscode.Disposable {
     private async dismissEdit(): Promise<void> {
         const decorator = this.activeEdit?.decorator
         if (decorator) {
-            decorator.clearDecorations()
             decorator.dispose()
         }
         this.activeEdit = null

@@ -1,24 +1,38 @@
 import type * as vscode from 'vscode'
 import type { ModifiedRange } from '../diff-utils'
-import { DefaultDecorator } from './default-decorator'
 
-export enum DecorationStrategyIdentifier {
-    DefaultDecorator = 'default-decorator',
-}
-
-export function createAutoeditsDecorator(
-    identifier: DecorationStrategyIdentifier,
-    editor: vscode.TextEditor
-): AutoeditsDecorator {
-    switch (identifier) {
-        case DecorationStrategyIdentifier.DefaultDecorator:
-            return new DefaultDecorator(editor)
-    }
-}
-
+/**
+ * Represents a decorator that manages VS Code editor decorations for auto-edit suggestions.
+ *
+ * This interface defines the contract for displaying and managing decorative elements
+ * that visualize proposed text changes in the editor.
+ *
+ * Lifecycle:
+ * - Single instance should be created per decoration session and disposed of when the decorations
+ *   are no longer needed.
+ * - Always call dispose() when the decorator is no longer needed to clean up resources.
+ * - Dispose should always clear the decorations.
+ *
+ * Usage Pattern:
+ * ```typescript
+ * const decorator = createAutoeditsDecorator(...);
+ * try {
+ *   decorator.setDecorations(decorationInfo);
+ *   ...
+ * } finally {
+ *   decorator.clearDecorations();
+ *   decorator.dispose();
+ * }
+ * ```
+ */
 export interface AutoeditsDecorator extends vscode.Disposable {
+    /**
+     * Applies decorations to the editor based on the provided decoration information.
+     *
+     * @param decorationInformation Contains the line-by-line information about text changes
+     *        and how they should be decorated in the editor.
+     */
     setDecorations(decorationInformation: DecorationInformation): void
-    clearDecorations(): void
 }
 
 /**

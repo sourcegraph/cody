@@ -22,7 +22,7 @@ import { OpenAIAdapter } from './adapters/openai'
 import { autoeditsLogger } from './logger'
 import type { AutoeditsModelAdapter } from './prompt-provider'
 import type { CodeToReplaceData } from './prompt-utils'
-import { DecorationStrategyIdentifier } from './renderer/decorators/base'
+import { DefaultDecorator } from './renderer/decorators/default-decorator'
 import { AutoEditsRendererManager } from './renderer/manager'
 import {
     adjustPredictionIfInlineCompletionPossible,
@@ -77,7 +77,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
             dataCollectionEnabled: false,
         })
         this.rendererManager = new AutoEditsRendererManager(
-            DecorationStrategyIdentifier.DefaultDecorator
+            (editor: vscode.TextEditor) => new DefaultDecorator(editor)
         )
         this.onSelectionChangeDebounced = debounce(
             (event: vscode.TextEditorSelectionChangeEvent) => this.autoeditOnSelectionChange(event),
