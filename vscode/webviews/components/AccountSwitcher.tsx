@@ -2,13 +2,17 @@ import { ChevronDown, ChevronRight, ChevronsUpDown, CircleMinus, Plus } from 'lu
 import type * as React from 'react'
 import { type KeyboardEventHandler, useCallback, useState } from 'react'
 import { isSourcegraphToken } from '../../src/chat/protocol'
+import { Badge } from '../components/shadcn/ui/badge'
 import { Form, FormControl, FormField, FormLabel, FormMessage } from '../components/shadcn/ui/form'
 import { getVSCodeAPI } from '../utils/VSCodeApi'
 import { Button } from './shadcn/ui/button'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from './shadcn/ui/collapsible'
 import { Popover, PopoverContent, PopoverTrigger } from './shadcn/ui/popover'
 
-export const AccountSwitcher: React.FC<{ endpoints: string[] }> = ({ endpoints }) => {
+export const AccountSwitcher: React.FC<{ activeEndpoint: string; endpoints: string[] }> = ({
+    activeEndpoint,
+    endpoints,
+}) => {
     type PopoverState = 'switching' | 'removing' | 'adding'
     const [getPopoverState, setPopoverState] = useState<PopoverState>('switching')
     const [isOpen, setIsOpen] = useState(false)
@@ -46,11 +50,13 @@ export const AccountSwitcher: React.FC<{ endpoints: string[] }> = ({ endpoints }
                 key={`${endpoint}-switch`}
                 variant="ghost"
                 onClick={() => {
-                    getVSCodeAPI().postMessage({
-                        command: 'auth',
-                        authKind: 'signin',
-                        endpoint: endpoint,
-                    })
+                    if (endpoint !== activeEndpoint) {
+                        getVSCodeAPI().postMessage({
+                            command: 'auth',
+                            authKind: 'signin',
+                            endpoint: endpoint,
+                        })
+                    }
                     onOpenChange(false)
                 }}
             >
@@ -71,6 +77,13 @@ export const AccountSwitcher: React.FC<{ endpoints: string[] }> = ({ endpoints }
 
     const popoverSwitchAccountPanel = (
         <div>
+            <div className="tw-flex tw-items-center tw-gap-4 tw-mb-4">
+                <Badge variant="outline" className="tw-text-xxs tw-mt-0.5">
+                    Active
+                </Badge>
+                {activeEndpoint}
+            </div>
+            <div className="tw-w-full tw-border-t tw-border-border" />
             {popoverEndpointsList}
             <div className="tw-w-full tw-border-t tw-border-border" />
             <Button
