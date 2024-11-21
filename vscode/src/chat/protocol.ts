@@ -7,6 +7,7 @@ import type {
     CodyIDE,
     ContextItem,
     ContextItemSource,
+    PromptMode,
     RangeData,
     RequestMessage,
     ResponseMessage,
@@ -172,6 +173,10 @@ export type ExtensionMessage =
           setLastHumanInputIntent?: ChatMessage['intent'] | null | undefined
           smartApplyResult?: SmartApplyResult | undefined | null
           submitHumanInput?: boolean | undefined | null
+          setPromptAsInput?:
+              | { text: string; mode?: PromptMode | undefined | null; autoSubmit: boolean }
+              | undefined
+              | null
       }
     | ({ type: 'attribution' } & ExtensionAttributionMessage)
     | { type: 'rpc/response'; message: ResponseMessage }

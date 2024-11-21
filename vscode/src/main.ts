@@ -91,6 +91,7 @@ import { PoorMansBash } from './minion/environment'
 import { CodyProExpirationNotifications } from './notifications/cody-pro-expiration'
 import { showSetupNotification } from './notifications/setup-notification'
 import { logDebug, logError } from './output-channel-logger'
+import { PromptsManager } from './prompts/manager'
 import { initVSCodeGitApi } from './repository/git-extension-api'
 import { authProvider } from './services/AuthProvider'
 import { charactersLogger } from './services/CharactersLogger'
@@ -889,7 +890,8 @@ function registerChat(
         ghostHintDecorator,
         extensionClient: platform.extensionClient,
     })
-    disposables.push(ghostHintDecorator, editorManager, new CodeActionProvider())
+    const promptsManager = new PromptsManager({ chatsController })
+    disposables.push(ghostHintDecorator, editorManager, new CodeActionProvider(), promptsManager)
 
     // Register a serializer for reviving the chat panel on reload
     if (vscode.window.registerWebviewPanelSerializer) {
