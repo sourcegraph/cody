@@ -37,13 +37,17 @@ export function getClientIdentificationHeaders() {
             : typeof navigator !== 'undefined' && navigator.userAgent
               ? `Browser ${navigator.userAgent}`
               : 'Unknown environment'
-    return {
+    const headers: { [header: string]: string } = {
         'User-Agent': `${clientName}/${clientVersion} (${runtimeInfo})`,
-        // NOTE: due to CORS: we need to be careful with adding other HTTP headers
-        // to not break Cody Web. The backend should accept X-Requested-With, but
-        // I was unable to test it locally so this is commented out for now.
-        // 'X-Requested-With': `${clientName}/${clientVersion}`,
     }
+
+    // Only set these headers in non-demo mode, because the demo mode is
+    // running in a local server and thus the backend will regard it as an
+    // untrusted cross-origin request.
+    if (!process.env.CODY_WEB_DEMO) {
+        headers['X-Requested-With'] = `${clientName} ${clientVersion}`
+    }
+    return headers
 }
 
 export function addCodyClientIdentificationHeaders(headers: Headers): void {
