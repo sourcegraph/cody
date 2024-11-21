@@ -11,7 +11,7 @@ import {
     computeDiffWithLineNumbers,
     groupChangesForSimilarLinesTogether,
 } from './utils'
-import type { GroupedTextDocumentChange } from './utils'
+import { type GroupedTextDocumentChange, combineDiffHunksFromSimilarFile } from './utils'
 
 /**
  * Generates a single unified diff patch that combines all changes
@@ -38,7 +38,7 @@ export class AutoeditWithShortTermDiffStrategy implements RecentEditsRetrieverDi
             oldContent = newContent
             allDiffHunks.push(diffHunk)
         }
-        return allDiffHunks
+        return combineDiffHunksFromSimilarFile(allDiffHunks)
 
         // const [shortTermChanges, longTermChanges] = this.divideChangesIntoWindows(input.changes)
         // const [shortTermHunks, shortTermNewContent] = this.getDiffHunksForChanges(
@@ -86,6 +86,7 @@ export class AutoeditWithShortTermDiffStrategy implements RecentEditsRetrieverDi
         const gitDiff = computeDiffWithLineNumbers(uri, oldContent, newContent, numContextLines)
         const diffHunk = {
             uri,
+            leastEditTimestamp: Math.min(...changes.map(c => c.timestamp)),
             latestEditTimestamp: Math.max(...changes.map(c => c.timestamp)),
             diff: gitDiff,
         }

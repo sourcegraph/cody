@@ -73,9 +73,13 @@ export function computeDiffWithLineNumbers(
 }
 
 export function combineDiffHunksFromSimilarFile(hunks: DiffHunk[]): DiffHunk[] {
+    if (hunks.length === 0) {
+        return []
+    }
     const combinedHunks: DiffHunk[] = []
     let currentHunkList: DiffHunk[] = [hunks[0]]
-    for (const hunk of hunks) {
+    for (let i = 1; i < hunks.length; i++) {
+        const hunk = hunks[i]
         const lastHunk = currentHunkList[currentHunkList.length - 1]
         if (shouldCombineHunks(hunk, lastHunk)) {
             currentHunkList.push(hunk)
@@ -92,11 +96,13 @@ export function combineDiffHunksFromSimilarFile(hunks: DiffHunk[]): DiffHunk[] {
 
 function combineMultipleHunks(hunks: DiffHunk[]): DiffHunk {
     const lastestTime = Math.max(...hunks.map(h => h.latestEditTimestamp))
+    const leastTime = Math.min(...hunks.map(h => h.leastEditTimestamp))
     const diffs = PromptString.join(
         hunks.map(h => h.diff),
         ps`\nthen\n`
     )
     return {
+        leastEditTimestamp: leastTime,
         uri: hunks[0].uri,
         latestEditTimestamp: lastestTime,
         diff: diffs,
