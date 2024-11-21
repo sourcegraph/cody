@@ -102,7 +102,7 @@ export const AccountSwitcher: React.FC<{ activeEndpoint: string; endpoints: stri
     const popoverRemoveAccountPanel = (
         <div className="tw-flex tw-flex-col tw-gap-4 tw-p-4">
             <b>Remove Account?</b>
-            <span>Are you sure you want to remove that account?</span>
+            <div className="tw-text-muted-foreground">{endpointToRemove}</div>
             <Button
                 variant="secondary"
                 className="tw-w-full tw-bg-popover tw-bg-red-500"
@@ -143,7 +143,6 @@ export const AccountSwitcher: React.FC<{ activeEndpoint: string; endpoints: stri
                     <FormControl
                         type="url"
                         name="endpoint"
-                        placeholder="https://example.sourcegraphcloud.com"
                         value={addFormData.endpoint}
                         required
                         onChange={handleInputChange}

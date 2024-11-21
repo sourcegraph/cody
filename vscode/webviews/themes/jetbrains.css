@@ -264,7 +264,7 @@ html[data-ide='JetBrains'] {
     --vscode-input-background: var(--jetbrains-TextField-background);
     --vscode-input-border: var(--jetbrains-TextArea-inactiveForeground);
     --vscode-input-foreground: var(--jetbrains-TextField-foreground);
-    --vscode-input-placeholderForeground: var(--jetbrains-TextField-foreground);
+    --vscode-input-placeholderForeground: var(--jetbrains-TextArea-caretForeground);
     --vscode-inputOption-activeBackground: var(--jetbrains-ToolWindow-HeaderTab-underlineColor);
     --vscode-inputOption-activeBorder: var(--jetbrains-TextField-borderColor);
     --vscode-inputOption-activeForeground: var(--jetbrains-UIDesigner-Label-foreground);
