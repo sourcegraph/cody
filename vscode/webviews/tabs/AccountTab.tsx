@@ -73,7 +73,7 @@ export const AccountTab: React.FC<AccountTabProps> = ({
     if (clientCapabilities.accountSwitchingInWebview === 'enabled') {
         const endpoints: string[] = config.endpointHistory ?? []
         const switchableEndpoints = endpoints.filter(e => e !== endpoint)
-        accountSwitcher = <AccountSwitcher endpoints={switchableEndpoints} />
+        accountSwitcher = <AccountSwitcher activeEndpoint={endpoint} endpoints={switchableEndpoints} />
     }
 
     if (isDotComUser) {
