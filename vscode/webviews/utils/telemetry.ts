@@ -4,6 +4,7 @@ import { createContext, useContext } from 'react'
 import type { WebviewRecordEventParameters } from '../../src/chat/protocol'
 import type { ApiPostMessage } from '../Chat'
 import type { VSCodeWrapper } from './VSCodeApi'
+import { WebviewOpenTelemetryService } from './webviewOpenTelemetryService'
 
 /**
  * Create a new {@link TelemetryRecorder} for use in the VS Code webviews for V2 telemetry.
@@ -27,6 +28,9 @@ export function createWebviewTelemetryRecorder(
         },
     }
 }
+export const WebviewTelemetryServiceContext = createContext<WebviewOpenTelemetryService>(
+    new WebviewOpenTelemetryService()
+)
 
 export const TelemetryRecorderContext = createContext<TelemetryRecorder | null>(null)
 
