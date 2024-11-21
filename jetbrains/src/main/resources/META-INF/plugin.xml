@@ -1,0 +1,457 @@
+<idea-plugin require-restart="true">
+    <resource-bundle>CodyBundle</resource-bundle>
+
+    <id>com.sourcegraph.jetbrains</id>
+    <name>Cody: AI Coding Assistant with Autocomplete &amp; Chat</name>
+    <vendor email="hi@sourcegraph.com" url="https://sourcegraph.com">
+        Sourcegraph
+    </vendor>
+    <change-notes>
+        <![CDATA[Update notes are available on <a href="https://github.com/sourcegraph/jetbrains/releases">GitHub</a>.]]></change-notes>
+
+    <depends>com.intellij.modules.json</depends>
+    <depends>com.intellij.modules.platform</depends>
+    <depends optional="true" config-file="plugin-git.xml">Git4Idea</depends>
+    <depends optional="true" config-file="plugin-perforce.xml">
+        PerforceDirectPlugin
+    </depends>
+
+    <extensions defaultExtensionNs="com.intellij">
+        <highlightingPassFactory implementation="com.sourcegraph.cody.inspections.CodyFixHighlightPassFactory"
+                                 order="last"/>
+        <projectService
+                serviceImplementation="com.sourcegraph.config.CodyProjectService"/>
+        <applicationService
+                serviceImplementation="com.sourcegraph.cody.config.CodyApplicationSettings"/>
+        <applicationService
+                serviceImplementation="com.sourcegraph.config.CodyApplicationService"/>
+        <httpRequestHandler
+                implementation="com.sourcegraph.cody.auth.AuthCallbackHandler"/>
+
+        <projectConfigurable
+                parentId="tools"
+                instance="com.sourcegraph.cody.config.ui.AccountConfigurable"
+                id="com.sourcegraph.cody.config.ui.AccountConfigurable"
+                displayName="Sourcegraph &amp; Cody"
+                nonDefaultProject="false"
+        />
+        <projectConfigurable
+                parentId="com.sourcegraph.cody.config.ui.AccountConfigurable"
+                instance="com.sourcegraph.cody.config.ui.CodyConfigurable"
+                id="com.sourcegraph.cody.config.ui.CodyConfigurable"
+                displayName="Cody"
+                nonDefaultProject="false"
+        />
+        <projectConfigurable
+                parentId="com.sourcegraph.cody.config.ui.AccountConfigurable"
+                instance="com.sourcegraph.cody.config.ui.CodeSearchConfigurable"
+                id="com.sourcegraph.cody.config.ui.CodeSearchConfigurable"
+                displayName="Code Search"
+                nonDefaultProject="false"
+        />
+
+        <applicationService
+                serviceImplementation="com.sourcegraph.cody.config.CodyPersistentAccounts"/>
+
+        <actionPromoter implementation="com.sourcegraph.cody.edit.CodyActionPromoter"/>
+
+        <notificationGroup id="cody.auth" displayType="BALLOON"/>
+        <notificationGroup id="Sourcegraph errors" displayType="BALLOON"/>
+        <notificationGroup id="Sourcegraph: URL sharing" displayType="BALLOON"/>
+        <notificationGroup id="Sourcegraph Cody + Code Search plugin updates"
+                           displayType="STICKY_BALLOON"/>
+        <notificationGroup id="Sourcegraph Cody" displayType="TOOL_WINDOW"
+                           toolWindowId="Cody"/>
+        <projectService id="sourcegraph.findService"
+                        serviceImplementation="com.sourcegraph.find.FindService"/>
+        <postStartupActivity
+                implementation="com.sourcegraph.cody.initialization.PostStartupActivity"/>
+
+        <!-- Cody -->
+        <toolWindow
+                id="Cody"
+                icon="/icons/codyLogoMonochromatic.svg"
+                anchor="right"
+                secondary="false"
+                factoryClass="com.sourcegraph.cody.CodyToolWindowFactory"/>
+
+        <errorHandler
+                implementation="com.sourcegraph.cody.error.CodyErrorSubmitter"/>
+
+        <!-- status bar widgets -->
+        <statusBarWidgetFactory order="first" id="cody.internalsStatusBarWidget"
+                                implementation="com.sourcegraph.cody.internals.InternalsStatusBarWidgetFactory"/>
+        <statusBarWidgetFactory order="first" id="cody.statusBarWidget"
+                                implementation="com.sourcegraph.cody.statusbar.CodyWidgetFactory"/>
+        <actionPromoter order="last"
+                        implementation="com.sourcegraph.cody.autocomplete.action.CodyActionPromoter"/>
+
+        <!-- File type, editor for WebUI-based panels. -->
+        <fileEditorProvider implementation="com.sourcegraph.cody.ui.web.WebPanelProvider"/>
+        <fileType
+                name="SourcegraphWebPanel"
+                implementationClass="com.sourcegraph.cody.ui.web.WebPanelFileType"
+                fieldName="INSTANCE"/>
+        <editorTabTitleProvider implementation="com.sourcegraph.cody.ui.web.WebPanelTabTitleProvider"/>
+
+        <keymapExtension implementation="com.sourcegraph.cody.config.CodyKeymapExtension"/>
+
+        <inline.completion.provider id="Cody" implementation="com.sourcegraph.cody.autocomplete.CodyInlineCompletionProvider"/>
+        <!-- Web UI Sidebar Views
+             For each sourcegraph/cody/vscode/package.json "views" entry with type "webview",
+             add a toolWindow with factoryClass="com.sourcegraph.cody.sidebar.WebUIToolWindowFactory"
+             (or a subtype.) For now, VSCode view "when" conditions need to be manually ported to
+             ToolWindow.isAvailable updates.
+         -->
+
+        <codeInsight.codeVisionProvider
+                id="EditWorkingCodeVisionProvider"
+                implementation="com.sourcegraph.cody.edit.lenses.providers.EditWorkingCodeVisionProvider"/>
+        <codeInsight.codeVisionProvider
+                id="EditCancelCodeVisionProvider"
+                implementation="com.sourcegraph.cody.edit.lenses.providers.EditCancelCodeVisionProvider"/>
+        <codeInsight.codeVisionProvider
+                id="EditAcceptCodeVisionProvider"
+                implementation="com.sourcegraph.cody.edit.lenses.providers.EditAcceptCodeVisionProvider"/>
+        <codeInsight.codeVisionProvider
+                id="EditDiffCodeVisionProvider"
+                implementation="com.sourcegraph.cody.edit.lenses.providers.EditDiffCodeVisionProvider"/>
+        <codeInsight.codeVisionProvider
+                id="EditUndoCodeVisionProvider"
+                implementation="com.sourcegraph.cody.edit.lenses.providers.EditUndoCodeVisionProvider"/>
+        <codeInsight.codeVisionProvider
+                id="EditRetryCodeVisionProvider"
+                implementation="com.sourcegraph.cody.edit.lenses.providers.EditRetryCodeVisionProvider"/>
+
+        <config.codeVisionGroupSettingProvider implementation="com.sourcegraph.cody.edit.lenses.EditCodeVisionGroupSettingProvider"/>
+    </extensions>
+
+    <applicationListeners>
+        <listener class="com.sourcegraph.cody.listeners.CodyFileEditorListener"
+                  topic="com.intellij.openapi.fileEditor.FileEditorManagerListener"/>
+    </applicationListeners>
+
+    <!--
+        N.B. You have to declare all the Mac keystrokes with ctrl or alt separately,
+        even if their definition is identical to $default, because otherwise it will
+        result in the actual keybindings switching to command/meta and/or shift.
+    -->
+    <actions>
+        <group id="Cody.AllActions">
+
+            <group id="Cody.Autocomplete" popup="true" searchable="false" text="Autocomplete"
+                   description="Cody autocomplete actions">
+                <action id="cody.triggerAutocomplete"
+                        class="com.sourcegraph.cody.autocomplete.action.TriggerAutocompleteAction"
+                        text="Autocomplete"
+                        description="Shows autocomplete suggestions">
+                    <keyboard-shortcut first-keystroke="ctrl alt P" keymap="$default"/>
+                    <keyboard-shortcut first-keystroke="ctrl alt P" keymap="Mac OS X 10.5+"/>
+                    <override-text place="GoToAction" text="Cody: Autocomplete"/>
+                </action>
+                <action id="cody.acceptAutocompleteAction"
+                        class="com.sourcegraph.cody.autocomplete.action.AcceptCodyAutocompleteAction"
+                        text="Accept Autocomplete Suggestion"
+                        description="Accepts the autocomplete suggestion">
+                    <keyboard-shortcut first-keystroke="TAB" keymap="$default"/>
+                    <override-text place="GoToAction" text="Cody: Accept Autocomplete Suggestion"/>
+                </action>
+                <action id="cody.cycleForwardAutocompleteAction"
+                        class="com.sourcegraph.cody.autocomplete.action.CycleForwardAutocompleteAction"
+                        text="Cycle Forward Autocomplete Suggestion"
+                        description="Cycles forward through autocomplete suggestions">
+                    <keyboard-shortcut first-keystroke="alt OPEN_BRACKET" keymap="$default"/>
+                    <keyboard-shortcut first-keystroke="alt OPEN_BRACKET" keymap="Mac OS X 10.5+"/>
+                    <override-text place="GoToAction" text="Cody: Cycle Forward Autocomplete Suggestion"/>
+                </action>
+                <action id="cody.cycleBackAutocompleteAction"
+                        class="com.sourcegraph.cody.autocomplete.action.CycleBackwardAutocompleteAction"
+                        text="Cycle Backwards Autocomplete Suggestion"
+                        description="Cycles backwards through autocomplete suggestions">
+                    <keyboard-shortcut first-keystroke="alt CLOSE_BRACKET" keymap="$default"/>
+                    <keyboard-shortcut first-keystroke="alt CLOSE_BRACKET" keymap="Mac OS X 10.5+"/>
+                    <override-text place="GoToAction" text="Cody: Cycle Backwards Autocomplete Suggestion"/>
+                </action>
+                <action id="cody.disposeInlays"
+                        class="com.sourcegraph.cody.autocomplete.action.DisposeInlaysAction"
+                        text="Hide Completions"
+                        description="Hides the autocomplete popup">
+                    <keyboard-shortcut first-keystroke="ESCAPE" keymap="$default"/>
+                    <override-text place="GoToAction" text="Cody: Hide Completions"/>
+                </action>
+            </group>
+
+            <group id="Cody.Chat" popup="true" searchable="false" text="Chat" description="Cody chat actions">
+                <action id="cody.newChat" icon="/icons/chat/newChat.svg"
+                        class="com.sourcegraph.cody.chat.actions.NewChatAction"
+                        text="New Chat"
+                        description="New chat">
+                    <keyboard-shortcut first-keystroke="ctrl alt 0" keymap="$default"/>
+                    <keyboard-shortcut first-keystroke="ctrl alt 0" keymap="Mac OS X 10.5+"/>
+                    <override-text place="GoToAction" text="Cody: New Chat"/>
+                </action>
+
+                <action id="cody.exportChats" icon="/icons/chat/download.svg"
+                        class="com.sourcegraph.cody.chat.actions.ExportChatsAction"
+                        text="Export All Chats As JSON"
+                        description="Export all chats as JSON">
+                    <override-text place="GoToAction" text="Cody: Export All Chats As JSON"/>
+                </action>
+
+                <action id="cody.openChat"
+                        class="com.sourcegraph.cody.chat.OpenChatAction"
+                        text="Open Chat"
+                        description="Opens a chat">
+                    <keyboard-shortcut first-keystroke="ctrl alt 9" keymap="$default"/>
+                    <keyboard-shortcut first-keystroke="ctrl alt 9" keymap="Mac OS X 10.5+"/>
+                    <override-text place="GoToAction" text="Cody: Open Chat"/>
+                </action>
+
+                <action id="cody.command.Explain"
+                        icon="/icons/chat/chat_command.svg"
+                        class="com.sourcegraph.cody.chat.actions.ExplainCommand"
+                        text="Explain Code"
+                        description="Explains the selected code">
+                    <keyboard-shortcut first-keystroke="ctrl alt 1" keymap="$default"/>
+                    <keyboard-shortcut first-keystroke="ctrl alt 1" keymap="Mac OS X 10.5+"/>
+                    <override-text place="GoToAction" text="Cody: Explain Code"/>
+                </action>
+
+                <action id="cody.command.Smell"
+                        icon="/icons/chat/chat_command.svg"
+                        class="com.sourcegraph.cody.chat.actions.SmellCommand"
+                        text="Find Code Smells"
+                        description="Finds code smells in the selected code">
+                    <keyboard-shortcut first-keystroke="ctrl alt 2" keymap="$default"/>
+                    <keyboard-shortcut first-keystroke="ctrl alt 2" keymap="Mac OS X 10.5+"/>
+                    <override-text place="GoToAction" text="Cody: Find Code Smells"/>
+                </action>
+            </group>
+
+            <group id="Cody.EditCode" popup="true" searchable="false" text="Edit Code"
+                   description="Cody inline edit actions">
+                <action id="cody.testCodeAction"
+                        icon="/icons/edit/generate_test.svg"
+                        class="com.sourcegraph.cody.edit.actions.TestCodeAction"
+                        text="Generate Unit Tests"
+                        description="Generates unit tests for the selected code">
+                    <keyboard-shortcut first-keystroke="alt G" keymap="$default"/>
+                    <keyboard-shortcut first-keystroke="ctrl alt G" keymap="Mac OS X 10.5+"/>
+                    <override-text place="GoToAction" text="Cody: Generate Unit Tests"/>
+                </action>
+
+                <action id="cody.documentCodeAction"
+                        icon="/icons/edit/document_code.svg"
+                        class="com.sourcegraph.cody.edit.actions.DocumentCodeAction"
+                        text="Document Code"
+                        description="Documents the selected code">
+                    <keyboard-shortcut first-keystroke="alt H" keymap="$default"/>
+                    <keyboard-shortcut first-keystroke="ctrl alt H" keymap="Mac OS X 10.5+"/>
+                    <override-text place="GoToAction" text="Cody: Document Code"/>
+                </action>
+
+                <action id="cody.editCodeAction"
+                        icon="/icons/edit/edit_code.svg"
+                        class="com.sourcegraph.cody.edit.actions.EditCodeAction"
+                        description="Opens the Edit Code dialog"
+                        text="Edit Code...">
+                    <keyboard-shortcut first-keystroke="alt K" keymap="$default"/>
+                    <keyboard-shortcut first-keystroke="ctrl alt ENTER" keymap="Mac OS X 10.5+"/>
+                    <override-text place="GoToAction" text="Cody: Edit Code..."/>
+                </action>
+
+                <!-- Lens widget actions -->
+                <action id="cody.fixup.codelens.accept"
+                        class="com.sourcegraph.cody.edit.lenses.actions.EditAcceptAction"
+                        text="Accept Edit"
+                        description="Accept the fixup">
+                    <keyboard-shortcut first-keystroke="alt A" keymap="$default"/>
+                    <keyboard-shortcut first-keystroke="ctrl alt A" keymap="Mac OS X 10.5+"/>
+                    <override-text place="GoToAction" text="Cody: Accept Edit"/>
+                </action>
+
+                <action id="cody.fixup.codelens.cancel"
+                        class="com.sourcegraph.cody.edit.lenses.actions.EditCancelAction"
+                        text="Cancel Edit"
+                        description="Cancel the fixup">
+                    <override-text place="GoToAction" text="Cody: Cancel Edit"/>
+                    <keyboard-shortcut first-keystroke="alt Z" keymap="$default"/>
+                    <keyboard-shortcut first-keystroke="ctrl alt Z" keymap="Mac OS X 10.5+"/>
+                </action>
+
+                <action id="cody.fixup.codelens.retry"
+                        class="com.sourcegraph.cody.edit.lenses.actions.EditRetryAction"
+                        text="Retry Edit"
+                        description="Retry the fixup">
+                    <keyboard-shortcut first-keystroke="alt R" keymap="$default"/>
+                    <keyboard-shortcut first-keystroke="ctrl alt T" keymap="Mac OS X 10.5+"/>
+                    <override-text place="GoToAction" text="Cody: Retry Edit"/>
+                </action>
+
+                <action id="cody.fixup.codelens.undo"
+                        class="com.sourcegraph.cody.edit.lenses.actions.EditUndoAction"
+                        text="Undo Edit"
+                        description="Undo the fixup">
+                    <override-text place="GoToAction" text="Cody: Undo Edit"/>
+                    <keyboard-shortcut first-keystroke="alt X" keymap="$default"/>
+                    <keyboard-shortcut first-keystroke="ctrl alt X"
+                                       keymap="Mac OS X 10.5+"/>
+                </action>
+
+                <action id="cody.fixup.codelens.diff"
+                        class="com.sourcegraph.cody.edit.lenses.actions.EditShowDiffAction"
+                        text="Show Diff"
+                        description="Show a diff view of the fixup">
+                    <keyboard-shortcut first-keystroke="alt D" keymap="$default"/>
+                    <keyboard-shortcut first-keystroke="ctrl alt K" keymap="Mac OS X 10.5+"/>
+                    <override-text place="GoToAction" text="Cody: Show Diff"/>
+                </action>
+
+                <action id="cody.inlineEditEditCode"
+                        text="Edit Code"
+                        class="com.sourcegraph.cody.edit.InlineEditPromptEditCodeAction">
+                    <keyboard-shortcut first-keystroke="alt K" keymap="$default"/>
+                    <keyboard-shortcut first-keystroke="meta ENTER" keymap="Mac OS X 10.5+"/>
+                    <override-text place="GoToAction" text="Cody: Edit Code"/>
+                </action>
+            </group>
+
+            <group id="Cody.Accounts.AddAccount"
+                   text="Cody Accounts"
+                   description="Cody account actions">
+                <action id="Cody.Accounts.LogInToSourcegraphAction"
+                        class="com.sourcegraph.cody.config.LogInToSourcegraphAction"
+                        text="Log In to Sourcegraph"
+                        description="Logs in to Sourcegraph">
+                    <override-text place="GoToAction" text="Cody: Log In to Sourcegraph"/>
+                </action>
+                <action id="Cody.Accounts.AddCodyEnterpriseAccount"
+                        class="com.sourcegraph.cody.config.AddCodyEnterpriseAccountAction"
+                        text="Log In to Sourcegraph Enterprise"
+                        description="Logs in to Sourcegraph Enterprise">
+                    <override-text place="GoToAction" text="Cody: Log In to Sourcegraph Enterprise"/>
+                </action>
+            </group>
+
+            <group id="SourcegraphEditor" popup="true" searchable="false" text="Sourcegraph"
+                   description="Sourcegraph actions">
+
+                <add-to-group anchor="last" group-id="EditorPopupMenu"/>
+                <override-text place="GoToAction" text="Cody: Sourcegraph"/>
+
+                <action id="sourcegraph.openFile"
+                        class="com.sourcegraph.website.OpenFileAction"
+                        icon="/icons/sourcegraphLogo.svg"
+                        text="Open Selection in Sourcegraph Web"
+                        description="Open selection in Sourcegraph Web">
+                    <override-text place="GoToAction" text="Cody: Open Selection in Sourcegraph Web"/>
+                </action>
+                <action id="sourcegraph.searchSelection"
+                        class="com.sourcegraph.website.SearchSelectionAction"
+                        icon="/icons/sourcegraphLogo.svg"
+                        text="Search Selection on Sourcegraph Web"
+                        description="Search selection on Sourcegraph web">
+                    <override-text place="GoToAction" text="Cody: Search Selection on Sourcegraph Web"/>
+                </action>
+                <action id="sourcegraph.searchRepository"
+                        class="com.sourcegraph.website.SearchRepositoryAction"
+                        icon="/icons/sourcegraphLogo.svg"
+                        text="Search Selection in Repository on Sourcegraph Web"
+                        description="Search selection in repository on Sourcegraph web">
+                    <override-text place="GoToAction" text="Cody: Search Selection in Repository on Sourcegraph Web"/>
+                </action>
+                <action id="sourcegraph.copy"
+                        class="com.sourcegraph.website.CopyAction"
+                        icon="/icons/sourcegraphLogo.svg"
+                        text="Copy Sourcegraph File Link"
+                        description="Copy Sourcegraph file link">
+                    <override-text place="GoToAction" text="Cody: Copy Sourcegraph File Link"/>
+                </action>
+                <action id="com.sourcegraph.website.OpenRevisionAction"
+                        class="com.sourcegraph.website.OpenRevisionAction"
+                        icon="/icons/sourcegraphLogo.svg"
+                        text="Open Revision Diff in Sourcegraph Web"
+                        description="Opens a revision">
+                    <add-to-group group-id="VcsHistoryActionsGroup" anchor="last"/>
+                    <add-to-group group-id="Vcs.Log.ContextMenu" anchor="last"/>
+                    <add-to-group group-id="VcsHistoryActionsGroup.Toolbar"
+                                  anchor="last"/>
+                    <add-to-group group-id="VcsSelectionHistoryDialog.Popup"
+                                  anchor="last"/>
+                    <override-text place="GoToAction" text="Cody: Open Revision Diff in Sourcegraph Web"/>
+                </action>
+                <action id="sourcegraph.openFindPopup"
+                        class="com.sourcegraph.find.OpenFindAction"
+                        icon="/icons/sourcegraphLogo.svg"
+                        text="Find with Sourcegraph..."
+                        description="Search all your repos on Sourcegraph">
+                    <keyboard-shortcut first-keystroke="alt s" keymap="$default"/>
+                    <keyboard-shortcut first-keystroke="alt s" keymap="Mac OS X 10.5+"/>
+                    <add-to-group group-id="FindMenuGroup" anchor="after" relative-to-action="ReplaceInPath"/>
+                    <override-text place="GoToAction" text="Cody: Find with Sourcegraph..."/>
+                </action>
+            </group>
+
+            <group id="Cody.Other" text="Other" description="Other Cody actions">
+                <action id="cody.editCodySettings"
+                        class="com.sourcegraph.cody.config.actions.OpenCodySettingsEditorAction"
+                        text="Open Cody Settings Editor"/>
+                <action id="cody.restartAgent"
+                        class="com.sourcegraph.cody.agent.action.CodyAgentRestartAction"
+                        text="Restart Cody"
+                        description="Restarts Cody">
+                    <override-text place="GoToAction" text="Cody: Restart Cody"/>
+                </action>
+                <action id="sourcegraph.login"
+                        class="com.sourcegraph.config.OpenPluginSettingsAction"
+                        icon="/icons/sourcegraphLogo.svg"
+                        text="Log in to Sourcegraph"
+                        description="Log in to Sourcegraph">
+                    <override-text place="GoToAction" text="Cody: Log in to Sourcegraph"/>
+                </action>
+                <action id="cody.openLogAction"
+                        class="com.sourcegraph.cody.statusbar.OpenLogAction"
+                        text="Open Log"
+                        description="Opens Cody log">
+                    <keyboard-shortcut first-keystroke="ctrl shift L" keymap="$default"/>
+                    <keyboard-shortcut first-keystroke="ctrl shift L" keymap="Mac OS X 10.5+"/>
+                    <override-text place="GoToAction" text="Cody: Open Log"/>
+                </action>
+                <action id="cody.enableOffScreenRenderingAction"
+                        class="com.sourcegraph.cody.config.actions.EnableOffScreenRenderingAction"
+                        text="Enable OffScreen Rendering"
+                        description="Enable offScreen rendering in webview">
+                    <override-text place="GoToAction" text="Cody: Enable OffScreen Rendering"/>
+                </action>
+            </group>
+        </group>
+
+        <group id="CodyStatusBarActions" popup="true" searchable="false"
+               class="com.sourcegraph.cody.statusbar.CodyStatusBarActionGroup"
+               text="Cody"
+               description="Cody status bar actions">
+        </group>
+
+        <group id="CodyEditorActions" popup="true"
+               icon="/icons/codyLogoSm.svg" searchable="true"
+               class="com.sourcegraph.cody.CodyActionGroup"
+               text="Cody"
+               description="Cody actions">
+            <add-to-group anchor="last" group-id="EditorPopupMenu"/>
+
+            <reference ref="cody.editCodeAction"/>
+            <reference ref="cody.documentCodeAction"/>
+            <reference ref="cody.testCodeAction"/>
+            <separator/>
+            <reference ref="cody.command.Explain"/>
+            <reference ref="cody.command.Smell"/>
+        </group>
+    </actions>
+
+    <projectListeners>
+        <listener topic="com.intellij.codeInsight.lookup.LookupManagerListener"
+                  class="com.sourcegraph.cody.editor.CodyLookupListener"/>
+        <listener topic="com.intellij.openapi.command.CommandListener"
+                  class="com.sourcegraph.cody.editor.CodyCommandListener"/>
+    </projectListeners>
+</idea-plugin>
