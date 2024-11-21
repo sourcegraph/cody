@@ -1,6 +1,6 @@
 import type { ChatClient } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
-import { RecentEditsRetrieverDiffStrategyIdentifier } from '../completions/context/retrievers/recent-user-actions/recent-edits-diff-helpers/recent-edits-diff-strategy'
+import { RecentEditsRetrieverDiffStrategyIdentifier } from '../completions/context/retrievers/recent-user-actions/recent-edits-diff-helpers/base'
 import { RecentEditsRetriever } from '../completions/context/retrievers/recent-user-actions/recent-edits-retriever'
 import type { CodyStatusBar } from '../services/StatusBar'
 import { type Supercompletion, getSupercompletions } from './get-supercompletion'

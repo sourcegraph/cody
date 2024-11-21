@@ -233,7 +233,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                     document.lineAt(position).range.end
                 )
             )
-            autoeditsLogger.logDebug('Autocomplete Inline Response: ', autocompleteResponse)
+            // autoeditsLogger.logDebug('Autocomplete Inline Response: ', autocompleteResponse)
             return [inlineCompletionItem]
         }
         return null
@@ -303,10 +303,10 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
                 suffix: codeToReplaceData.suffixInArea + codeToReplaceData.suffixAfterArea,
             })
         ) {
-            autoeditsLogger.logDebug(
-                'Autoedits',
-                'Skipping autoedit - predicted text already exists in suffix'
-            )
+            // autoeditsLogger.logDebug(
+            //     'Autoedits',
+            //     'Skipping autoedit - predicted text already exists in suffix'
+            // )
             return
         }
         await this.rendererManager.showEdit({

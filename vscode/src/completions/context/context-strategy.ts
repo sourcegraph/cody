@@ -11,7 +11,7 @@ import { JaccardSimilarityRetriever } from './retrievers/jaccard-similarity/jacc
 import { LspLightRetriever } from './retrievers/lsp-light/lsp-light-retriever'
 import { DiagnosticsRetriever } from './retrievers/recent-user-actions/diagnostics-retriever'
 import { RecentCopyRetriever } from './retrievers/recent-user-actions/recent-copy'
-import { RecentEditsRetrieverDiffStrategyIdentifier } from './retrievers/recent-user-actions/recent-edits-diff-helpers/recent-edits-diff-strategy'
+import { RecentEditsRetrieverDiffStrategyIdentifier } from './retrievers/recent-user-actions/recent-edits-diff-helpers/base'
 import { RecentEditsRetriever } from './retrievers/recent-user-actions/recent-edits-retriever'
 import { RecentViewPortRetriever } from './retrievers/recent-user-actions/recent-view-port'
 import { loadTscRetriever } from './retrievers/tsc/load-tsc-retriever'
@@ -128,7 +128,7 @@ export class DefaultContextStrategyFactory implements ContextStrategyFactory {
                                 new RecentEditsRetriever({
                                     maxAgeMs: 10 * 60 * 1000,
                                     diffStrategyIdentifier:
-                                        RecentEditsRetrieverDiffStrategyIdentifier.UnifiedDiffWithLineNumbers,
+                                        RecentEditsRetrieverDiffStrategyIdentifier.AutoeditWithShortTermDiff,
                                 }),
                                 new DiagnosticsRetriever({
                                     contextLines: 0,

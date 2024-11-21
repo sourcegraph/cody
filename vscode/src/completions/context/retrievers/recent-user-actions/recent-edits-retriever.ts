@@ -1,3 +1,4 @@
+import path from 'node:path'
 import { type PromptString, contextFiltersProvider } from '@sourcegraph/cody-shared'
 import type { AutocompleteContextSnippet } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
@@ -9,8 +10,11 @@ import {
     type RecentEditsRetrieverDiffStrategyIdentifier,
     type TextDocumentChange,
     createDiffStrategy,
-} from './recent-edits-diff-helpers/recent-edits-diff-strategy'
-import { applyTextDocumentChanges } from './recent-edits-diff-helpers/utils'
+} from './recent-edits-diff-helpers/base'
+import {
+    applyTextDocumentChanges,
+    getNewContentAfterApplyingRange,
+} from './recent-edits-diff-helpers/utils'
 
 interface TrackedDocument {
     content: string
@@ -159,14 +163,41 @@ export class RecentEditsRetriever implements vscode.Disposable, ContextRetriever
         }
 
         const now = Date.now()
+        const oldCursorPosition = event.contentChanges[0].range.end
         for (const change of event.contentChanges) {
+            const oldContent =
+                trackedDocument.changes.length > 0
+                    ? trackedDocument.changes[trackedDocument.changes.length - 1].newContent
+                    : trackedDocument.content
+            const newCursorPosition = calculateNewCursorPositions(change, oldCursorPosition)
+            const newContent = getNewContentAfterApplyingRange(oldContent, change)
+            const insertedRange = calculateInsertedRangeInDocumentBasedOnChange(
+                oldContent,
+                newContent,
+                change
+            )
+
             trackedDocument.changes.push({
                 timestamp: now,
+                oldCursorPosition,
+                newCursorPosition,
+                oldContent,
+                newContent,
+                replacedRange: change.range,
+                insertedRange,
                 change,
             })
         }
-
         this.reconcileOutdatedChanges()
+        this.logTextDocument(trackedDocument)
+    }
+
+    private logTextDocument(trackedDocument: TrackedDocument): void {
+        const fileName = trackedDocument.uri.fsPath.split('/').pop()?.split('.')[0] || 'document'
+        const logPath = trackedDocument.uri.fsPath.replace(/[^/\\]+$/, `${fileName}.json`)
+        const finalLogPath = path.join('/Users/hiteshsagtani/Desktop/diff-logs', path.basename(logPath))
+        const fs = require('fs')
+        fs.writeFileSync(finalLogPath, JSON.stringify(trackedDocument, null, 2))
     }
 
     private onDidOpenTextDocument(document: vscode.TextDocument): void {
@@ -226,4 +257,59 @@ export class RecentEditsRetriever implements vscode.Disposable, ContextRetriever
             disposable.dispose()
         }
     }
+}
+
+export function calculateInsertedRangeInDocumentBasedOnChange(
+    oldContent: string,
+    newContent: string,
+    change: vscode.TextDocumentContentChangeEvent
+): vscode.Range {
+    // Function calculates the updated range for the new document based on the change.
+    const startOffset = change.rangeOffset
+    const endOffset = startOffset + change.text.length
+
+    const startPosition = getPositionAt(newContent, startOffset)
+    const endPosition = getPositionAt(newContent, endOffset)
+
+    return new vscode.Range(startPosition, endPosition)
+}
+
+// Helper function to convert an offset to a Position (line and character)
+function getPositionAt(content: string, offset: number): vscode.Position {
+    let line = 0
+    let character = 0
+    let i = 0
+
+    while (i < offset) {
+        if (content[i] === '\n') {
+            line++
+            character = 0
+        } else {
+            character++
+        }
+        i++
+    }
+
+    return new vscode.Position(line, character)
+}
+
+export function calculateNewCursorPositions(
+    change: vscode.TextDocumentContentChangeEvent,
+    oldCursorPosition: vscode.Position
+): vscode.Position {
+    // Starting position of the change
+    const start = change.range.start
+
+    // Inserted text and its lines
+    const insertedText = change.text
+    const insertedLines = insertedText.split('\n')
+    let newCursorPosition: vscode.Position
+    if (insertedLines.length === 1) {
+        newCursorPosition = new vscode.Position(start.line, start.character + insertedText.length)
+    } else {
+        const newLineCount = insertedLines.length - 1
+        const lastLineLength = insertedLines[insertedLines.length - 1].length
+        newCursorPosition = new vscode.Position(start.line + newLineCount, lastLineLength)
+    }
+    return newCursorPosition
 }

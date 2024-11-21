@@ -1,9 +1,5 @@
 import { PromptString } from '@sourcegraph/cody-shared'
-import type {
-    DiffCalculationInput,
-    DiffHunk,
-    RecentEditsRetrieverDiffStrategy,
-} from './recent-edits-diff-strategy'
+import type { DiffCalculationInput, DiffHunk, RecentEditsRetrieverDiffStrategy } from './base'
 import { applyTextDocumentChanges, computeDiffWithLineNumbers } from './utils'
 
 interface UnifiedDiffStrategyOptions {
@@ -30,6 +26,7 @@ export class UnifiedDiffStrategy implements RecentEditsRetrieverDiffStrategy {
         const diff = this.getDiffForUnifiedStrategy(input, newContent)
         return [
             {
+                uri: input.uri,
                 diff,
                 latestEditTimestamp: Math.max(...input.changes.map(c => c.timestamp)),
             },

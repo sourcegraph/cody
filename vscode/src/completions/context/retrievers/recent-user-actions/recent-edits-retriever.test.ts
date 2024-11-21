@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type * as vscode from 'vscode'
 import { range } from '../../../../testutils/textDocument'
 import { document } from '../../../test-helpers'
-import { RecentEditsRetrieverDiffStrategyIdentifier } from './recent-edits-diff-helpers/recent-edits-diff-strategy'
+import { RecentEditsRetrieverDiffStrategyIdentifier } from './recent-edits-diff-helpers/base'
 import { RecentEditsRetriever } from './recent-edits-retriever'
 
 const FIVE_MINUTES = 5 * 60 * 1000

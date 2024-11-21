@@ -1,11 +1,17 @@
+import path from 'node:path'
 import type * as vscode from 'vscode'
 import type {
     DiffCalculationInput,
     DiffHunk,
     RecentEditsRetrieverDiffStrategy,
     TextDocumentChange,
-} from './recent-edits-diff-strategy'
-import { applyTextDocumentChanges, computeDiffWithLineNumbers } from './utils'
+} from './base'
+import {
+    applyTextDocumentChanges,
+    computeDiffWithLineNumbers,
+    groupChangesForSimilarLinesTogether,
+} from './utils'
+import type { GroupedTextDocumentChange } from './utils'
 
 /**
  * Generates a single unified diff patch that combines all changes
@@ -17,20 +23,54 @@ export class AutoeditWithShortTermDiffStrategy implements RecentEditsRetrieverDi
     private shortTermContextLines = 0
 
     public getDiffHunks(input: DiffCalculationInput): DiffHunk[] {
-        const [shortTermChanges, longTermChanges] = this.divideChangesIntoWindows(input.changes)
-        const [shortTermHunks, shortTermNewContent] = this.getDiffHunksForChanges(
-            input.uri,
-            input.oldContent,
-            shortTermChanges,
-            this.shortTermContextLines
-        )
-        const [longTermHunks, _] = this.getDiffHunksForChanges(
-            input.uri,
-            shortTermNewContent,
-            longTermChanges,
-            this.longTermContextLines
-        )
-        return [shortTermHunks, longTermHunks]
+        const changes = groupChangesForSimilarLinesTogether(input.changes)
+        this.logGroupedChanges(input.uri, input.oldContent, changes)
+        const allDiffHunks: DiffHunk[] = []
+
+        let oldContent = input.oldContent
+        for (const changeList of changes) {
+            const [diffHunk, newContent] = this.getDiffHunksForChanges(
+                input.uri,
+                oldContent,
+                changeList.changes,
+                this.shortTermContextLines
+            )
+            oldContent = newContent
+            allDiffHunks.push(diffHunk)
+        }
+        return allDiffHunks
+
+        // const [shortTermChanges, longTermChanges] = this.divideChangesIntoWindows(input.changes)
+        // const [shortTermHunks, shortTermNewContent] = this.getDiffHunksForChanges(
+        //     input.uri,
+        //     input.oldContent,
+        //     shortTermChanges,
+        //     this.shortTermContextLines
+        // )
+        // const [longTermHunks, _] = this.getDiffHunksForChanges(
+        //     input.uri,
+        //     shortTermNewContent,
+        //     longTermChanges,
+        //     this.longTermContextLines
+        // )
+        // return [shortTermHunks, longTermHunks]
+    }
+
+    private logGroupedChanges(
+        uri: vscode.Uri,
+        oldContent: string,
+        changes: GroupedTextDocumentChange[]
+    ) {
+        const fileName = uri.fsPath.split('/').pop()?.split('.')[0] || 'document'
+        const logPath = uri.fsPath.replace(/[^/\\]+$/, `${fileName}_grouped.json`)
+        const finalLogPath = path.join('/Users/hiteshsagtani/Desktop/diff-logs', path.basename(logPath))
+        const fs = require('fs')
+        const logData = {
+            uri: uri.toString(),
+            oldContent: oldContent,
+            changes: changes.map(c => c.changes),
+        }
+        fs.writeFileSync(finalLogPath, JSON.stringify(logData, null, 2))
     }
 
     private getDiffHunksForChanges(
@@ -45,8 +85,9 @@ export class AutoeditWithShortTermDiffStrategy implements RecentEditsRetrieverDi
         )
         const gitDiff = computeDiffWithLineNumbers(uri, oldContent, newContent, numContextLines)
         const diffHunk = {
-            diff: gitDiff,
+            uri,
             latestEditTimestamp: Math.max(...changes.map(c => c.timestamp)),
+            diff: gitDiff,
         }
         return [diffHunk, newContent]
     }
