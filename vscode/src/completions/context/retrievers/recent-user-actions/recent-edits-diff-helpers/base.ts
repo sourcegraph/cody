@@ -47,13 +47,9 @@ export interface RecentEditsRetrieverDiffStrategy {
 
 export interface TextDocumentChange {
     timestamp: number
-    oldCursorPosition: vscode.Position
-    newCursorPosition: vscode.Position
-    oldContent: string
-    newContent: string
-    replacedRange: vscode.Range
-    insertedRange: vscode.Range
     change: vscode.TextDocumentContentChangeEvent
+    // The range in the document where the text was inserted.
+    insertedRange: vscode.Range
 }
 
 export interface DiffCalculationInput {

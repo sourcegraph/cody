@@ -1,112 +1,147 @@
-import { PromptString, ps } from '@sourcegraph/cody-shared'
+import { PromptString } from '@sourcegraph/cody-shared'
 import { displayPath } from '@sourcegraph/cody-shared/src/editor/displayPath'
 import { structuredPatch } from 'diff'
 import type * as vscode from 'vscode'
-import type { DiffHunk, TextDocumentChange } from './base'
+import type { TextDocumentChange } from './base'
 
-export interface GroupedTextDocumentChange {
+/**
+ * Represents a group of text document changes with their line range information.
+ * The grouped changes are consecutive changes made in the document that should be treated as a single entity when computing diffs.
+ *
+ * @example
+ * When typing "hello world" in a document, each character typed generates a separate change event.
+ * These changes are grouped together as a single entity in this interface.
+ */
+export interface TextDocumentChangeGroup {
+    /** Array of individual text document changes in this group */
     changes: TextDocumentChange[]
+
+    /**
+     * The starting line number of the changes in this group
+     */
     changeStartLine: number
+
+    /**
+     * The ending line number of the changes in this group
+     */
     changeEndLine: number
 }
 
-export function combineNonOverlappingLinesSchemaTogether(groupedChanges: GroupedTextDocumentChange[]): GroupedTextDocumentChange[] {
-    const combinedChanges: GroupedTextDocumentChange[] = []
-    if (groupedChanges.length === 0) {
-        return combinedChanges
-    }
-    let currentActiveChanges: GroupedTextDocumentChange[] = [groupedChanges[0]]
-    for (let i = 1; i < groupedChanges.length; i++) {
-        const groupedChange = groupedChanges[i]
-        if (shouldCombineGroupedChanges(currentActiveChanges[currentActiveChanges.length - 1], groupedChange)) {
-            currentActiveChanges.push(groupedChange)
-        } else {
-            combinedChanges.push(flatCombinedGroupedChanges(currentActiveChanges))
-            currentActiveChanges = [groupedChange]
-        }
-    }
-    if (currentActiveChanges.length > 0) {
-        combinedChanges.push(flatCombinedGroupedChanges(currentActiveChanges))
-    }
-    return combinedChanges
-}
-
-function flatCombinedGroupedChanges(changes: GroupedTextDocumentChange[]): GroupedTextDocumentChange {
-    return {
-        changes: changes.flatMap(change => change.changes),
-        changeStartLine: Math.min(...changes.map(change => change.changeStartLine)),
-        changeEndLine: Math.max(...changes.map(change => change.changeEndLine))
-    }
-}
-
-function shouldCombineGroupedChanges(a: GroupedTextDocumentChange, b: GroupedTextDocumentChange): boolean {
-    return !(a.changeStartLine <= b.changeEndLine && a.changeEndLine >= b.changeStartLine)
-}
-
-
+/**
+ * Groups consecutive text document changes together based on line overlap.
+ * This function helps create more meaningful diffs by combining related changes that occur on overlapping lines.
+ *
+ * For example, when a user types multiple characters or performs multiple edits in the same area of text,
+ * these changes are grouped together as a single logical change instead of being treated as separate changes.
+ *
+ * @param changes - Array of individual text document changes to be grouped
+ * @returns Array of TextDocumentChangeGroup objects, each containing related changes and their combined line range
+ *
+ * The predicate used for grouping checks if:
+ * - The original ranges of two changes overlap (for modifications/deletions)
+ * - The inserted range of the first change overlaps with the original range of the second change
+ * This ensures that changes affecting the same or adjacent lines are grouped together.
+ */
 export function groupChangesForSimilarLinesTogether(
     changes: TextDocumentChange[]
-): GroupedTextDocumentChange[] {
+): TextDocumentChangeGroup[] {
     if (changes.length === 0) {
         return []
     }
-    const groupedChanges: GroupedTextDocumentChange[] = []
-    let currentGroup: TextDocumentChange[] = [changes[0]]
-    for (let i = 1; i < changes.length; i++) {
-        const change = changes[i]
-        const lastChange = currentGroup[currentGroup.length - 1]
-        if (shouldCombineChanges(lastChange, change)) {
-            currentGroup.push(change)
-        } else {
-            const range = getRangeValues(currentGroup)
-            groupedChanges.push({
-                changes: currentGroup,
-                changeStartLine: range[0],
-                changeEndLine: range[1],
-            })
-            currentGroup = [change]
+    const groupedChanges = groupConsecutiveItemsByPredicate(
+        changes,
+        (lastChange: TextDocumentChange, change: TextDocumentChange) => {
+            return (
+                doesLinesOverlapForRanges(lastChange.change.range, change.change.range) ||
+                doesLinesOverlapForRanges(lastChange.insertedRange, change.change.range)
+            )
         }
-    }
-    if (currentGroup.length > 0) {
-        const range = getRangeValues(currentGroup)
-        groupedChanges.push({
+    )
+    return groupedChanges.map(currentGroup => {
+        const range = getMinMaxRangeLines(currentGroup)
+        return {
             changes: currentGroup,
             changeStartLine: range[0],
             changeEndLine: range[1],
-        })
+        }
+    })
+}
+
+/**
+ * Combines consecutive text document change groups that have non-overlapping line ranges.
+ * The function can generally be called after `groupChangesForSimilarLinesTogether` to further consolidate changes.
+ *
+ * This function takes an array of `TextDocumentChangeGroup` objects and merges consecutive groups
+ * where their line ranges do not overlap. By combining these non-overlapping groups, it creates
+ * larger groups of changes that can be processed together, even if they affect different parts
+ * of the document, as long as they occurred consecutively.
+ *
+ * @param groupedChanges - Array of `TextDocumentChangeGroup` objects to be combined.
+ * @returns Array of `TextDocumentChangeGroup` objects where consecutive non-overlapping groups have been merged.
+ *
+ * The predicate used for grouping checks if:
+ * - The line ranges of two groups do not overlap.
+ *   - Specifically, it checks that `a.changeStartLine` to `a.changeEndLine` does not overlap with `b.changeStartLine` to `b.changeEndLine`.
+ * This ensures that consecutive groups with non-overlapping line ranges are combined together.
+ */
+export function combineNonOverlappingLinesSchemaTogether(
+    groupedChanges: TextDocumentChangeGroup[]
+): TextDocumentChangeGroup[] {
+    if (groupedChanges.length === 0) {
+        return []
     }
-    return groupedChanges
-}
-
-
-function getRangeValues(documentChanges: TextDocumentChange[]): [number, number] {
-    let minRange = getMinRange(documentChanges[0].replacedRange, documentChanges[0].insertedRange)
-    let maxRange = getMaxRange(documentChanges[0].replacedRange, documentChanges[0].insertedRange)
-    for (let i = 1; i < documentChanges.length; i++) {
-        const change = documentChanges[i]
-        minRange = getMinRange(getMinRange(change.replacedRange, change.insertedRange), minRange)
-        maxRange = getMaxRange(getMaxRange(change.replacedRange, change.insertedRange), maxRange)
-    }
-    return [minRange.start.line, maxRange.end.line]
-}
-
-function getMinRange(a: vscode.Range, b: vscode.Range): vscode.Range {
-    return a.start.isBeforeOrEqual(b.start) ? a : b
-}
-
-function getMaxRange(a: vscode.Range, b: vscode.Range): vscode.Range {
-    return a.end.isBeforeOrEqual(b.end) ? b : a
-}
-
-function shouldCombineChanges(lastChange: TextDocumentChange, change: TextDocumentChange): boolean {
-    return (
-        doesLinesOverlap(lastChange.replacedRange, change.change.range) ||
-        doesLinesOverlap(lastChange.insertedRange, change.change.range)
+    const combinedGroups = groupConsecutiveItemsByPredicate(
+        groupedChanges,
+        (a: TextDocumentChangeGroup, b: TextDocumentChangeGroup) => {
+            return !doLineSpansOverlap(
+                a.changeStartLine,
+                a.changeEndLine,
+                b.changeStartLine,
+                b.changeEndLine
+            )
+        }
     )
+    return combinedGroups.map(changes => ({
+        changes: changes.flatMap(change => change.changes),
+        changeStartLine: Math.min(...changes.map(change => change.changeStartLine)),
+        changeEndLine: Math.max(...changes.map(change => change.changeEndLine)),
+    }))
 }
 
-function doesLinesOverlap(a: vscode.Range, b: vscode.Range): boolean {
-    return a.start.line <= b.end.line && a.end.line >= b.start.line
+function getMinMaxRangeLines(documentChanges: TextDocumentChange[]): [number, number] {
+    let minLine = Number.POSITIVE_INFINITY
+    let maxLine = Number.NEGATIVE_INFINITY
+    for (const change of documentChanges) {
+        const ranges = [change.change.range, change.insertedRange]
+        for (const range of ranges) {
+            minLine = Math.min(minLine, range.start.line)
+            maxLine = Math.max(maxLine, range.end.line)
+        }
+    }
+    return [minLine, maxLine]
+}
+
+/**
+ * Utility function to combine consecutive items in an array based on a predicate.
+ */
+export function groupConsecutiveItemsByPredicate<T>(
+    items: T[],
+    shouldGroup: (a: T, b: T) => boolean
+): T[][] {
+    return items.reduce<T[][]>((groups, item) => {
+        if (groups.length === 0) {
+            groups.push([item])
+        } else {
+            const lastGroup = groups[groups.length - 1]
+            const lastItem = lastGroup[lastGroup.length - 1]
+            if (shouldGroup(lastItem, item)) {
+                lastGroup.push(item)
+            } else {
+                groups.push([item])
+            }
+        }
+        return groups
+    }, [])
 }
 
 export function computeDiffWithLineNumbers(
@@ -132,45 +167,6 @@ export function computeDiffWithLineNumbers(
     }
     const gitDiff = PromptString.fromStructuredGitDiff(uri, hunkDiffs.join('\nthen\n'))
     return gitDiff
-}
-
-export function combineDiffHunksFromSimilarFile(hunks: DiffHunk[]): DiffHunk[] {
-    if (hunks.length === 0) {
-        return []
-    }
-    const combinedHunks: DiffHunk[] = []
-    let currentHunkList: DiffHunk[] = [hunks[0]]
-    for (let i = 1; i < hunks.length; i++) {
-        const hunk = hunks[i]
-        const lastHunk = currentHunkList[currentHunkList.length - 1]
-        if (shouldCombineHunks(hunk, lastHunk)) {
-            currentHunkList.push(hunk)
-        } else {
-            combinedHunks.push(combineMultipleHunks(currentHunkList))
-            currentHunkList = [hunk]
-        }
-    }
-    if (currentHunkList.length > 0) {
-        combinedHunks.push(combineMultipleHunks(currentHunkList))
-    }
-    return combinedHunks
-}
-
-function combineMultipleHunks(hunks: DiffHunk[]): DiffHunk {
-    const lastestTime = Math.max(...hunks.map(h => h.latestEditTimestamp))
-    const diffs = PromptString.join(
-        hunks.map(h => h.diff),
-        ps`\nthen\n`
-    )
-    return {
-        uri: hunks[0].uri,
-        latestEditTimestamp: lastestTime,
-        diff: diffs,
-    }
-}
-
-function shouldCombineHunks(hunk1: DiffHunk, hunk2: DiffHunk): boolean {
-    return hunk1.uri.toString() === hunk2.uri.toString()
 }
 
 export function getDiffStringForHunkWithLineNumbers(hunk: Diff.Hunk): string {
@@ -209,13 +205,15 @@ export function applyTextDocumentChanges(
     return content
 }
 
-export function getNewContentAfterApplyingRange(
-    oldContent: string,
-    change: vscode.TextDocumentContentChangeEvent
-): string {
-    return (
-        oldContent.slice(0, change.rangeOffset) +
-        change.text +
-        oldContent.slice(change.rangeOffset + change.rangeLength)
-    )
+export function doesLinesOverlapForRanges(a: vscode.Range, b: vscode.Range): boolean {
+    return doLineSpansOverlap(a.start.line, a.end.line, b.start.line, b.end.line)
+}
+
+function doLineSpansOverlap(
+    firstStart: number,
+    firstEnd: number,
+    secondStart: number,
+    secondEnd: number
+): boolean {
+    return firstStart <= secondEnd && firstEnd >= secondStart
 }

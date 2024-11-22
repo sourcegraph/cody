@@ -11,15 +11,13 @@ import {
     computeDiffWithLineNumbers,
     groupChangesForSimilarLinesTogether,
 } from './utils'
-import {GroupedTextDocumentChange, combineDiffHunksFromSimilarFile, combineNonOverlappingLinesSchemaTogether} from './utils';
+import { type TextDocumentChangeGroup, combineNonOverlappingLinesSchemaTogether } from './utils'
 
 /**
  * Generates a single unified diff patch that combines all changes
  * made to a document into one consolidated view.
  */
 export class AutoeditWithShortTermDiffStrategy implements RecentEditsRetrieverDiffStrategy {
-    private shortTermDiffWindowMs = 5 * 1000 // 5 seconds
-    private longTermContextLines = 3
     private shortTermContextLines = 0
 
     public getDiffHunks(input: DiffCalculationInput): DiffHunk[] {
@@ -39,29 +37,10 @@ export class AutoeditWithShortTermDiffStrategy implements RecentEditsRetrieverDi
             oldContent = newContent
             allDiffHunks.push(diffHunk)
         }
-        return combineDiffHunksFromSimilarFile(allDiffHunks)
-
-        // const [shortTermChanges, longTermChanges] = this.divideChangesIntoWindows(input.changes)
-        // const [shortTermHunks, shortTermNewContent] = this.getDiffHunksForChanges(
-        //     input.uri,
-        //     input.oldContent,
-        //     shortTermChanges,
-        //     this.shortTermContextLines
-        // )
-        // const [longTermHunks, _] = this.getDiffHunksForChanges(
-        //     input.uri,
-        //     shortTermNewContent,
-        //     longTermChanges,
-        //     this.longTermContextLines
-        // )
-        // return [shortTermHunks, longTermHunks]
+        return allDiffHunks
     }
 
-    private logGroupedChanges(
-        uri: vscode.Uri,
-        oldContent: string,
-        changes: GroupedTextDocumentChange[]
-    ) {
+    private logGroupedChanges(uri: vscode.Uri, oldContent: string, changes: TextDocumentChangeGroup[]) {
         const fileName = uri.fsPath.split('/').pop()?.split('.')[0] || 'document'
         const logPath = uri.fsPath.replace(/[^/\\]+$/, `${fileName}_grouped.json`)
         const finalLogPath = path.join('/Users/hiteshsagtani/Desktop/diff-logs', path.basename(logPath))
@@ -92,16 +71,5 @@ export class AutoeditWithShortTermDiffStrategy implements RecentEditsRetrieverDi
             diff: gitDiff,
         }
         return [diffHunk, newContent]
-    }
-
-    private divideChangesIntoWindows(
-        changes: TextDocumentChange[]
-    ): [TextDocumentChange[], TextDocumentChange[]] {
-        // Divide the changes into 2 different windows, where the second window is the short term changes under 5 seconds
-        const now = Date.now()
-        const index = changes.findIndex(c => now - c.timestamp < this.shortTermDiffWindowMs)
-        const shortTermChanges = changes.slice(0, index)
-        const longTermChanges = changes.slice(index)
-        return [shortTermChanges, longTermChanges]
     }
 }
