@@ -457,6 +457,7 @@ export interface Prompt {
     description?: string
     draft: boolean
     autoSubmit?: boolean
+    builtin?: boolean
     mode?: PromptMode
     definition: {
         text: string
