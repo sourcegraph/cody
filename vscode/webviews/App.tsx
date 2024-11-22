@@ -1,7 +1,5 @@
 import { type ComponentProps, useCallback, useEffect, useMemo, useState } from 'react'
 
-import styles from './App.module.css'
-
 import {
     type ChatMessage,
     type DefaultContext,
@@ -10,9 +8,11 @@ import {
     type TelemetryRecorder,
 } from '@sourcegraph/cody-shared'
 import type { AuthMethod } from '../src/chat/protocol'
+import styles from './App.module.css'
 import { AuthPage } from './AuthPage'
 import { LoadingPage } from './LoadingPage'
 import { useClientActionDispatcher } from './client/clientState'
+import { WebviewOpenTelemetryService } from './utils/webviewOpenTelemetryService'
 
 import { ExtensionAPIProviderFromVSCodeAPI } from '@sourcegraph/prompt-editor'
 import { CodyPanel } from './CodyPanel'
@@ -20,7 +20,11 @@ import { View } from './tabs'
 import type { VSCodeWrapper } from './utils/VSCodeApi'
 import { ComposedWrappers, type Wrapper } from './utils/composeWrappers'
 import { updateDisplayPathEnvInfoForWebview } from './utils/displayPathEnvInfo'
-import { TelemetryRecorderContext, createWebviewTelemetryRecorder } from './utils/telemetry'
+import {
+    TelemetryRecorderContext,
+    WebviewTelemetryServiceContext,
+    createWebviewTelemetryRecorder,
+} from './utils/telemetry'
 import { type Config, ConfigProvider } from './utils/useConfig'
 
 export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vscodeAPI }) => {
@@ -152,9 +156,24 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     // V2 telemetry recorder
     const telemetryRecorder = useMemo(() => createWebviewTelemetryRecorder(vscodeAPI), [vscodeAPI])
 
+    const webviewTelemetryService = useMemo(() => {
+        const service = WebviewOpenTelemetryService.getInstance()
+        return service
+    }, [])
+    useEffect(() => {
+        if (config) {
+            webviewTelemetryService.configure({
+                isTracingEnabled: true,
+                debugVerbose: true,
+                agentIDE: config.clientCapabilities.agentIDE,
+                extensionAgentVersion: config.clientCapabilities.agentExtensionVersion,
+            })
+        }
+    }, [config, webviewTelemetryService])
+
     const wrappers = useMemo<Wrapper[]>(
-        () => getAppWrappers({ vscodeAPI, telemetryRecorder, config }),
-        [vscodeAPI, telemetryRecorder, config]
+        () => getAppWrappers({ vscodeAPI, telemetryRecorder, config, webviewTelemetryService }),
+        [vscodeAPI, telemetryRecorder, config, webviewTelemetryService]
     )
 
     // Wait for all the data to be loaded before rendering Chat View
@@ -198,6 +217,7 @@ interface GetAppWrappersOptions {
     telemetryRecorder: TelemetryRecorder
     config: Config | null
     staticDefaultContext?: DefaultContext
+    webviewTelemetryService: WebviewOpenTelemetryService
 }
 
 export function getAppWrappers({
@@ -205,6 +225,7 @@ export function getAppWrappers({
     telemetryRecorder,
     config,
     staticDefaultContext,
+    webviewTelemetryService,
 }: GetAppWrappersOptions): Wrapper[] {
     return [
         {
@@ -219,5 +240,9 @@ export function getAppWrappers({
             component: ConfigProvider,
             props: { value: config },
         } satisfies Wrapper<any, ComponentProps<typeof ConfigProvider>>,
+        {
+            provider: WebviewTelemetryServiceContext.Provider,
+            value: webviewTelemetryService,
+        } satisfies Wrapper<WebviewOpenTelemetryService>,
     ]
 }

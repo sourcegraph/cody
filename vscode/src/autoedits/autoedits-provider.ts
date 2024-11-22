@@ -215,10 +215,7 @@ export class AutoeditsProvider implements vscode.InlineCompletionItemProvider, v
         const isPrefixMatch = prediction.startsWith(codeToReplace.codeToRewritePrefix)
         const isSuffixMatch =
             // The current line suffix should not require any char removals to render the completion.
-            completionMatchesSuffix(
-                { insertText: codeToReplace.codeToRewriteSuffix },
-                docContext.currentLineSuffix
-            ) &&
+            completionMatchesSuffix({ insertText: prediction }, docContext.currentLineSuffix) &&
             // The new lines suggested after the current line must be equal to the prediction.
             prediction.endsWith(codeToRewriteAfterCurrentLine)
 

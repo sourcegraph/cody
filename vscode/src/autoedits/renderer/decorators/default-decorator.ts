@@ -154,7 +154,6 @@ export class DefaultDecorator implements AutoEditsDecorator {
         if (addedLinesInfo.length === 0) {
             return
         }
-
         let startLine = this.editor.selection.active.line
         if (firstModifiedLineMatch) {
             startLine =

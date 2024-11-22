@@ -16,9 +16,6 @@ import {
     skip,
     skipPendingOperation,
 } from '@sourcegraph/cody-shared'
-import * as uuid from 'uuid'
-import * as vscode from 'vscode'
-
 import {
     type BillingCategory,
     type BillingProduct,
@@ -77,6 +74,8 @@ import {
     truncatePromptString,
     userProductSubscription,
 } from '@sourcegraph/cody-shared'
+import * as uuid from 'uuid'
+import * as vscode from 'vscode'
 
 import type { Span } from '@opentelemetry/api'
 import { captureException } from '@sentry/core'
@@ -106,6 +105,7 @@ import { publicRepoMetadataIfAllWorkspaceReposArePublic } from '../../repository
 import { authProvider } from '../../services/AuthProvider'
 import { AuthProviderSimplified } from '../../services/AuthProviderSimplified'
 import { localStorage } from '../../services/LocalStorageProvider'
+import { TraceSender } from '../../services/open-telemetry/trace-sender'
 import { recordExposedExperimentsToSpan } from '../../services/open-telemetry/utils'
 import {
     handleCodeFromInsertAtCursor,
@@ -324,6 +324,9 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     message.instruction,
                     message.fileName
                 )
+                break
+            case 'trace-export':
+                TraceSender.send(message.traceSpanEncodedJson)
                 break
             case 'smartApplyAccept':
                 await vscode.commands.executeCommand('cody.fixup.codelens.accept', message.id)
@@ -951,7 +954,9 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             configuration: {
                 instruction,
                 mode,
-                intent: mode === 'edit' ? 'edit' : 'add',
+                // Only document code uses non-edit (insert mode), set doc intent for Document code prompt
+                // to specialize cody command runner for document code case.
+                intent: mode === 'edit' ? 'edit' : 'doc',
             },
         })
 
@@ -963,6 +968,17 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         const task = result.task
 
         let responseMessage = `Here is the response for the ${task.intent} instruction:\n`
+
+        if (!task.diff && task.replacement) {
+            task.diff = [
+                {
+                    type: 'insertion',
+                    text: task.replacement,
+                    range: task.originalRange,
+                },
+            ]
+        }
+
         task.diff?.map(diff => {
             responseMessage += '\n```diff\n'
             if (diff.type === 'deletion') {

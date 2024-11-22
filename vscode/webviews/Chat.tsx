@@ -1,5 +1,5 @@
 import type React from 'react'
-import { useCallback, useEffect, useMemo, useRef } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import type {
     AuthenticatedAuthStatus,
@@ -12,6 +12,7 @@ import type {
 import { Transcript, focusLastHumanMessageEditor } from './chat/Transcript'
 import type { VSCodeWrapper } from './utils/VSCodeApi'
 
+import type { Context } from '@opentelemetry/api'
 import { truncateTextStart } from '@sourcegraph/cody-shared/src/prompt/truncation'
 import { CHAT_INPUT_TOKEN_BUDGET } from '@sourcegraph/cody-shared/src/token/constants'
 import styles from './Chat.module.css'
@@ -21,7 +22,6 @@ import { ScrollDown } from './components/ScrollDown'
 import type { View } from './tabs'
 import { useTelemetryRecorder } from './utils/telemetry'
 import { useUserAccountInfo } from './utils/useConfig'
-
 interface ChatboxProps {
     chatEnabled: boolean
     messageInProgress: ChatMessage | null
@@ -64,6 +64,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                 thumbsUp = 1,
                 thumbsDown = 0,
             }
+
             telemetryRecorder.recordEvent('cody.feedback', 'submit', {
                 metadata: {
                     feedbackType: text === 'thumbsUp' ? FeedbackType.thumbsUp : FeedbackType.thumbsDown,
@@ -92,8 +93,10 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
         (text: string, eventType: 'Button' | 'Keydown' = 'Button') => {
             const op = 'copy'
             // remove the additional /n added by the text area at the end of the text
+
             const code = eventType === 'Button' ? text.replace(/\n$/, '') : text
             // Log the event type and text to telemetry in chat view
+
             vscodeAPI.postMessage({
                 command: op,
                 eventType,
@@ -108,6 +111,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             return (text: string, newFile = false) => {
                 const op = newFile ? 'newFile' : 'insert'
                 // Log the event type and text to telemetry in chat view
+
                 vscodeAPI.postMessage({
                     command: op,
                     // remove the additional /n added by the text area at the end of the text
@@ -209,6 +213,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
 
         focusLastHumanMessageEditor()
     }, [transcript])
+    const [activeChatContext, setActiveChatContext] = useState<Context>()
 
     return (
         <>
@@ -218,6 +223,8 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                 </div>
             )}
             <Transcript
+                activeChatContext={activeChatContext}
+                setActiveChatContext={setActiveChatContext}
                 transcript={transcript}
                 models={models}
                 messageInProgress={messageInProgress}

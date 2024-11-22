@@ -32,6 +32,7 @@ import { useCodyWebAgent } from './use-cody-agent'
 // Include global Cody Web styles to the styles bundle
 import '../global-styles/styles.css'
 import type { DefaultContext } from '@sourcegraph/cody-shared/src/codebase-context/messages'
+import { WebviewOpenTelemetryService } from 'cody-ai/webviews/utils/webviewOpenTelemetryService'
 import styles from './CodyWebChat.module.css'
 import { ChatSkeleton } from './skeleton/ChatSkeleton'
 
@@ -228,6 +229,8 @@ const CodyWebPanel: FC<CodyWebPanelProps> = props => {
         return { initialContext, corpusContext }
     }, [initialContextData])
 
+    const webviewTelemetryService = WebviewOpenTelemetryService.getInstance()
+
     const wrappers = useMemo<Wrapper[]>(
         () =>
             getAppWrappers({
@@ -235,8 +238,9 @@ const CodyWebPanel: FC<CodyWebPanelProps> = props => {
                 telemetryRecorder,
                 config,
                 staticDefaultContext,
+                webviewTelemetryService,
             }),
-        [vscodeAPI, telemetryRecorder, config, staticDefaultContext]
+        [vscodeAPI, telemetryRecorder, config, staticDefaultContext, webviewTelemetryService]
     )
 
     const CONTEXT_MENTIONS_SETTINGS = useMemo<ChatMentionsSettings>(() => {

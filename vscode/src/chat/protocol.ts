@@ -7,6 +7,7 @@ import type {
     CodyIDE,
     ContextItem,
     ContextItemSource,
+    PromptMode,
     RangeData,
     RequestMessage,
     ResponseMessage,
@@ -97,6 +98,11 @@ export type WebviewMessage =
           fileName?: string | undefined | null
       }
     | {
+          command: 'trace-export'
+          // The traceSpan is a JSON-encoded string representing the trace data.
+          traceSpanEncodedJson: string
+      }
+    | {
           command: 'smartApplyAccept'
           id: FixupTaskID
       }
@@ -172,6 +178,10 @@ export type ExtensionMessage =
           setLastHumanInputIntent?: ChatMessage['intent'] | null | undefined
           smartApplyResult?: SmartApplyResult | undefined | null
           submitHumanInput?: boolean | undefined | null
+          setPromptAsInput?:
+              | { text: string; mode?: PromptMode | undefined | null; autoSubmit: boolean }
+              | undefined
+              | null
       }
     | ({ type: 'attribution' } & ExtensionAttributionMessage)
     | { type: 'rpc/response'; message: ResponseMessage }

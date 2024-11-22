@@ -24,5 +24,5 @@ jobs:
       - uses: sourcegraph/backport@v2
         with:
           github_token: ${{ secrets.BACKPORT_GITHUB_TOKEN }}
-          label_pattern: '^backport (?<base>v\d+\.\d+\.x)$'
+          label_pattern: '^backport (?<base>vscode-v\d+\.\d+\.x)$'
           team_reviews: ''
