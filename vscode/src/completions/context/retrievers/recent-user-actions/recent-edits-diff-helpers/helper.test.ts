@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import { parseTextAndGenerateChangeEvents } from './helper';
+import { parseTextAndGenerateChangeEvents, getPositionAt } from './helper';
 import {applyTextDocumentChanges} from './utils';
+import dedent from 'dedent'
 
 describe('parseTextAndGenerateChangeEvents', () => {
 
@@ -75,4 +76,133 @@ describe('parseTextAndGenerateChangeEvents', () => {
         expect(originalText).to.equal('Unmatched markers <I>insert text without closing.');
         expect(changeEvents).to.have.lengthOf(0);
     });
+
+
+    it('should handle complex multi-line text with mixed markers', () => {
+        const text = dedent`
+            First line<I> inserted text</I>
+            Second line<D> to be deleted</D>
+            <R>Third line old<RM>Third line new</R><I>
+            Fourth line addition
+            Fifth line addition</I>
+            <D>Sixth line to delete
+            </D>End of text.
+            `
+        const expectedOriginalString = dedent`
+            First line
+            Second line to be deleted
+            Third line old
+            Sixth line to delete
+            End of text.
+            `
+        const expectedChanges = [
+            dedent`
+            First line inserted text
+            Second line to be deleted
+            Third line old
+            Sixth line to delete
+            End of text.
+            `,
+            dedent`
+            First line inserted text
+            Second line
+            Third line old
+            Sixth line to delete
+            End of text.
+            `,
+            dedent`
+            First line inserted text
+            Second line
+            Third line new
+            Sixth line to delete
+            End of text.
+            `,
+            dedent`
+            First line inserted text
+            Second line
+            Third line new
+            Fourth line addition
+            Fifth line addition
+            Sixth line to delete
+            End of text.
+            `,
+            dedent`
+            First line inserted text
+            Second line
+            Third line new
+            Fourth line addition
+            Fifth line addition
+            End of text.
+            `,
+        ];
+        testChanges({ text, expectedOriginalString, expectedChanges });
+    });
+
 });
+
+
+describe('getPositionAt', () => {
+    it('should return position at offset 0', () => {
+        const content = 'Hello, world!'
+        const offset = 0
+        const position = getPositionAt(content, offset)
+        expect(position.line).to.equal(0)
+        expect(position.character).to.equal(0)
+    })
+
+    it('should return correct position in single-line content', () => {
+        const content = 'Hello, world!'
+        const offset = 7
+        const position = getPositionAt(content, offset)
+        expect(position.line).to.equal(0)
+        expect(position.character).to.equal(7)
+    })
+
+    it('should return correct position at the end of content', () => {
+        const content = 'Hello, world!'
+        const offset = content.length
+        const position = getPositionAt(content, offset)
+        expect(position.line).to.equal(0)
+        expect(position.character).to.equal(content.length)
+    })
+
+    it('should return correct position in multi-line content', () => {
+        const content = 'Line 1\nLine 2\nLine 3'
+        const offset = content.indexOf('Line 2')
+        const position = getPositionAt(content, offset)
+        expect(position.line).to.equal(1)
+        expect(position.character).to.equal(0)
+    })
+
+    it('should handle offsets at line breaks', () => {
+        const content = 'Line 1\nLine 2\nLine 3'
+        const offset = content.indexOf('\n') + 1 // Position after the first line break
+        const position = getPositionAt(content, offset)
+        expect(position.line).to.equal(1)
+        expect(position.character).to.equal(0)
+    })
+
+    it('should return correct position for offsets within lines', () => {
+        const content = 'Line 1\nLine 2\nLine 3'
+        const offset = content.indexOf('2')
+        const position = getPositionAt(content, offset)
+        expect(position.line).to.equal(1)
+        expect(position.character).to.equal(5)
+    })
+
+    it('should handle empty content', () => {
+        const content = ''
+        const offset = 0
+        const position = getPositionAt(content, offset)
+        expect(position.line).to.equal(0)
+        expect(position.character).to.equal(0)
+    })
+
+    it('should handle content with carriage returns correctly', () => {
+        const content = 'Line 1\r\nLine 2\r\nLine 3'
+        const offset = content.indexOf('Line 3')
+        const position = getPositionAt(content, offset)
+        expect(position.line).to.equal(2)
+        expect(position.character).to.equal(0)
+    })
+})

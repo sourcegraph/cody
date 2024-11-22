@@ -1,7 +1,41 @@
 import * as vscode from 'vscode';
 import {getPositionAfterTextInsertion} from '../../../../text-processing/utils';
+import {applyTextDocumentChanges, TextDocumentChangeGroup} from './utils';
+import {createGitDiff} from '../../../../../../../lib/shared/src/editor/create-git-diff';
+import {TextDocumentChange} from './base';
+
+export function getTextDocumentChangesForText(text: string): {originalText: string, changes: TextDocumentChange[]} {
+    const {originalText, changeEvents} = parseTextAndGenerateChangeEvents(text);
+    const documentChanges: TextDocumentChange[] = []
+    for(const change of changeEvents) {
+        const insertedRange = new vscode.Range(
+            change.range.start,
+            getPositionAfterTextInsertion(change.range.start, change.text)
+        )
+        documentChanges.push({
+            timestamp: Date.now(),
+            change: change,
+            insertedRange
+        })
+    }
+    return {originalText, changes: documentChanges}
+}
+
+export function getDiffsForContentChanges(oldContent: string, groupedChanges: TextDocumentChangeGroup[]): string[] {
+    const diffList: string[] = [];
+    let currentContent = oldContent;
+    for (const changeGroup of groupedChanges) {
+        const newContent = applyTextDocumentChanges(currentContent, changeGroup.changes.map(change => change.change));
+        const diff = createGitDiff('test.ts', currentContent, newContent)
+        diffList.push(diff)
+        currentContent = newContent;
+    }
+    return diffList;
+}
+
 
 /**
+ * The function is used by the test classes to simulate the text changes in a document text.
  * Parses the input text containing markers and generates the corresponding
  * TextDocumentContentChangeEvent events. It also returns the original text
  * after processing the markers.
@@ -44,37 +78,25 @@ export function parseTextAndGenerateChangeEvents(
             });
             currentText += insertText;
         } else if (deleteText !== undefined) {
-            const deleteStartPosition = getPositionAt(currentText, currentText.length);
-            const deleteEndPosition = getPositionAfterTextInsertion(deleteStartPosition, deleteText);
-            const deleteRange = new vscode.Range(
-                deleteStartPosition,
-                deleteEndPosition
-            );
+            const deleteEndPosition = getPositionAfterTextInsertion(position, deleteText);
             changeEvents.push({
-                range: deleteRange,
+                range: new vscode.Range(position, deleteEndPosition),
                 rangeOffset: currentText.length,
                 rangeLength: deleteText.length,
                 text: '',
             });
             originalText += deleteText;
         } else if (replaceText1 !== undefined && replaceText2 !== undefined) {
-            const replaceStartPosition = getPositionAt(currentText, currentText.length);
-            const replaceEndPosition = getPositionAfterTextInsertion(replaceStartPosition, replaceText1);
-            const replaceRange = new vscode.Range(
-                replaceStartPosition,
-                replaceEndPosition
-            );
+            const replaceEndPosition = getPositionAfterTextInsertion(position, replaceText1);
             changeEvents.push({
-                range: replaceRange,
+                range: new vscode.Range(position, replaceEndPosition),
                 rangeOffset: currentText.length,
                 rangeLength: replaceText1.length,
                 text: replaceText2,
             });
-
             currentText += replaceText2;
             originalText += replaceText1;
         }
-
         currentOffset = matchIndex + fullMatch.length;
     }
     const remainingText = text.substring(currentOffset);
@@ -90,9 +112,21 @@ export function parseTextAndGenerateChangeEvents(
  * @param offset The offset in the text.
  * @returns The Position corresponding to the offset.
  */
-function getPositionAt(text: string, offset: number): vscode.Position {
-    const lines = text.substring(0, offset).split(/\r\n|\r|\n/);
-    const line = lines.length - 1;
-    const character = lines[line].length;
-    return new vscode.Position(line, character);
+// Helper function to convert an offset to a Position (line and character)
+export function getPositionAt(content: string, offset: number): vscode.Position {
+    let line = 0
+    let character = 0
+    let i = 0
+    while (i < offset) {
+        if (content[i] === '\n') {
+            line++
+            character = 0
+        } else {
+            character++
+        }
+        i++
+    }
+
+    return new vscode.Position(line, character)
 }
+
