@@ -1,6 +1,7 @@
 import { diff } from 'fast-myers-diff'
 import * as vscode from 'vscode'
 
+import { getNewLineChar } from '../../completions/text-processing'
 import type { DecorationInfo, DecorationLineInfo, LineChange, ModifiedLineInfo } from './decorators/base'
 
 /**
@@ -11,8 +12,9 @@ import type { DecorationInfo, DecorationLineInfo, LineChange, ModifiedLineInfo }
  * @returns Decoration information representing the differences.
  */
 export function getDecorationInfo(originalText: string, modifiedText: string): DecorationInfo {
-    const originalLines = originalText.split('\n')
-    const modifiedLines = modifiedText.split('\n')
+    const newLineChar = getNewLineChar(originalText)
+    const originalLines = originalText.split(newLineChar)
+    const modifiedLines = modifiedText.split(newLineChar)
 
     const lineInfos = computeDiffOperations(originalLines, modifiedLines)
 
