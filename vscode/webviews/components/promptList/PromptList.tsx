@@ -21,6 +21,13 @@ import type { PromptsInput } from '@sourcegraph/cody-shared'
 import { useLocalStorage } from '../../components/hooks'
 import styles from './PromptList.module.css'
 
+const BUILT_IN_PROMPTS_CODE: Record<string, number> = {
+    'document-code': 1,
+    'explain-code': 2,
+    'find-code-smells': 3,
+    'generate-unit-tests': 4,
+}
+
 interface PromptListProps {
     showSearch: boolean
     showFirstNItems?: number
@@ -91,6 +98,7 @@ export const PromptList: FC<PromptListProps> = props => {
             }
 
             const isPrompt = action.actionType === 'prompt'
+            const isBuiltinPrompt = isPrompt && action.builtin
             const isPromptAutoSubmit = action.actionType === 'prompt' && action.autoSubmit
             const isCommand = action.actionType === 'command'
             const isBuiltInCommand = isCommand && action.type === 'default'
@@ -99,6 +107,8 @@ export const PromptList: FC<PromptListProps> = props => {
                 metadata: {
                     isPrompt: isPrompt ? 1 : 0,
                     isPromptAutoSubmit: isPromptAutoSubmit ? 1 : 0,
+                    isPromptBuiltin: isBuiltinPrompt ? 1 : 0,
+                    builtinPromptId: isBuiltinPrompt ? BUILT_IN_PROMPTS_CODE[action.name] ?? 0 : 0,
                     isCommand: isCommand ? 1 : 0,
                     isCommandBuiltin: isBuiltInCommand ? 1 : 0,
                     isCommandCustom: !isBuiltInCommand ? 1 : 0,
