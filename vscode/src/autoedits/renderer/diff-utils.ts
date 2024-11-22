@@ -12,9 +12,8 @@ import type { DecorationInfo, DecorationLineInfo, LineChange, ModifiedLineInfo }
  * @returns Decoration information representing the differences.
  */
 export function getDecorationInfo(originalText: string, modifiedText: string): DecorationInfo {
-    const newLineChar = getNewLineChar(originalText)
-    const originalLines = originalText.split(newLineChar)
-    const modifiedLines = modifiedText.split(newLineChar)
+    const originalLines = originalText.split(getNewLineChar(originalText))
+    const modifiedLines = modifiedText.split(getNewLineChar(modifiedText))
 
     const lineInfos = computeDiffOperations(originalLines, modifiedLines)
 
