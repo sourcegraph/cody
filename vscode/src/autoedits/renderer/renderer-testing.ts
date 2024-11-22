@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
-import { AutoEditsRenderer } from './renderer'
-
+import { DefaultDecorator } from './decorators/default-decorator'
+import { getDecorationInformation } from './diff-utils'
 export function registerTestRenderCommand(): vscode.Disposable {
     return vscode.commands.registerCommand('cody.supersuggest.testExample', () => {
         const editor = vscode.window.activeTextEditor
@@ -54,7 +54,7 @@ export function registerTestRenderCommand(): vscode.Disposable {
         const replaceStartLine = editor.document.positionAt(replaceStartOffset).line
         const replaceEndLine = editor.document.positionAt(replaceEndOffset).line
 
-        const renderer = new AutoEditsRenderer(editor)
+        const decorator = new DefaultDecorator(editor)
         const currentFileText = document.getText()
         // splice replacerText into currentFileText at replaceStartLine and replacenEndLine
         const lines = currentFileText.split('\n')
@@ -63,15 +63,11 @@ export function registerTestRenderCommand(): vscode.Disposable {
             replacerText,
             ...lines.slice(replaceEndLine + 1),
         ].join('\n')
-
-        renderer.renderDecorations({
-            document,
-            currentFileText,
-            predictedFileText,
-        })
+        const decorationInformation = getDecorationInformation(currentFileText, predictedFileText)
+        decorator.setDecorations(decorationInformation)
 
         const listener = vscode.window.onDidChangeTextEditorSelection(e => {
-            renderer.clearDecorations()
+            decorator.dispose()
             listener.dispose()
         })
     })

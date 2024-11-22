@@ -1,5 +1,5 @@
 import { lines } from '../completions/text-processing'
-import { getLineLevelDiff } from './diff-utils'
+import { getLineLevelDiff } from './renderer/diff-utils'
 
 export function fixFirstLineIndentation(source: string, target: string): string {
     // Check the first line indentation of source string and replaces in target string.
