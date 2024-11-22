@@ -142,6 +142,7 @@ import { getChatPanelTitle } from './chat-helpers'
 import { type HumanInput, getPriorityContext } from './context'
 import { DefaultPrompter, type PromptInfo } from './prompt'
 import { getPromptsMigrationInfo, startPromptsMigration } from './prompts-migration'
+const { context, propagation, ROOT_CONTEXT } = require('@opentelemetry/api')
 
 export interface ChatControllerOptions {
     extensionUri: vscode.Uri
@@ -294,6 +295,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     intent: message.intent,
                     intentScores: message.intentScores,
                     manuallySelectedIntent: message.manuallySelectedIntent,
+                    traceparent: message.traceparent,
                 })
                 break
             }
@@ -325,7 +327,8 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     message.code,
                     currentAuthStatus(),
                     message.instruction,
-                    message.fileName
+                    message.fileName,
+                    message.traceparent
                 )
                 break
             case 'trace-export':
@@ -643,6 +646,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         intent: detectedIntent,
         intentScores: detectedIntentScores,
         manuallySelectedIntent,
+        traceparent,
     }: {
         requestID: string
         inputText: PromptString
@@ -654,46 +658,64 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         intent?: ChatMessage['intent'] | undefined | null
         intentScores?: { intent: string; score: number }[] | undefined | null
         manuallySelectedIntent?: boolean | undefined | null
+        traceparent?: string | undefined | null
     }): Promise<void> {
-        return tracer.startActiveSpan('chat.handleUserMessage', async (span): Promise<void> => {
-            outputChannelLogger.logDebug(
-                'ChatController',
-                'handleUserMessageSubmission',
-                `traceId: ${span.spanContext().traceId}`
-            )
-            span.setAttribute('sampled', true)
+        const carrier = {
+            traceparent: traceparent,
+        } as Record<string, any>
+        const getter = {
+            get(carrier: Record<string, any>, key: string) {
+                return carrier[key]
+            },
+            keys(carrier: Record<string, any>) {
+                return Object.keys(carrier)
+            },
+        }
 
-            if (inputText.toString().match(/^\/reset$/)) {
-                span.addEvent('clearAndRestartSession')
-                span.end()
-                return this.clearAndRestartSession()
-            }
+        const extractedContext = propagation.extract(ROOT_CONTEXT, carrier, getter)
 
-            this.chatBuilder.addHumanMessage({
-                text: inputText,
-                editorState,
-                intent: detectedIntent,
-            })
-            this.postViewTranscript({ speaker: 'assistant' })
+        return context.with(extractedContext, () => {
+            return tracer.startActiveSpan('chat.handleUserMessage', async (span): Promise<void> => {
+                span.setAttribute('sampled', true)
+                span.setAttribute('continued', true)
+                outputChannelLogger.logDebug(
+                    'ChatController',
+                    'handleUserMessageSubmission',
+                    `traceId: ${span.spanContext().traceId}`
+                )
 
-            void this.saveSession()
-            signal.throwIfAborted()
+                if (inputText.toString().match(/^\/reset$/)) {
+                    span.addEvent('clearAndRestartSession')
+                    span.end()
+                    return this.clearAndRestartSession()
+                }
 
-            return this.sendChat(
-                {
-                    requestID,
-                    inputText,
-                    mentions,
+                this.chatBuilder.addHumanMessage({
+                    text: inputText,
                     editorState,
-                    signal,
-                    source,
-                    command,
                     intent: detectedIntent,
-                    intentScores: detectedIntentScores,
-                    manuallySelectedIntent,
-                },
-                span
-            )
+                })
+                this.postViewTranscript({ speaker: 'assistant' })
+
+                await this.saveSession()
+                signal.throwIfAborted()
+
+                return this.sendChat(
+                    {
+                        requestID,
+                        inputText,
+                        mentions,
+                        editorState,
+                        signal,
+                        source,
+                        command,
+                        intent: detectedIntent,
+                        intentScores: detectedIntentScores,
+                        manuallySelectedIntent,
+                    },
+                    span
+                )
+            })
         })
     }
 

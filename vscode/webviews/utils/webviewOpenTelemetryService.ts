@@ -49,7 +49,7 @@ export class WebviewOpenTelemetryService {
         try {
             this.tracerProvider = new WebTracerProvider({
                 resource: new Resource({
-                    [SemanticResourceAttributes.SERVICE_NAME]: 'cody-webview',
+                    [SemanticResourceAttributes.SERVICE_NAME]: 'cody-client',
                     [SemanticResourceAttributes.SERVICE_VERSION]: '1.0.0',
                 }),
             })

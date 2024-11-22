@@ -79,9 +79,9 @@ export class SpanManager {
         })
     }
 
-    startSpan(name: string, options?: SpanManagerOptions): Span | undefined {
+    startSpan(name: string, options?: SpanManagerOptions): Span {
         if (this.spans.has(name)) {
-            return this.spans.get(name)
+            return this.spans.get(name)!
         }
 
         // Use provided context or fall back to active context

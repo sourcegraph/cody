@@ -20,7 +20,8 @@ import WelcomeFooter from './chat/components/WelcomeFooter'
 import { WelcomeMessage } from './chat/components/WelcomeMessage'
 import { ScrollDown } from './components/ScrollDown'
 import type { View } from './tabs'
-import { useTelemetryRecorder } from './utils/telemetry'
+import { SpanManager } from './utils/spanManager'
+import { getTraceparentFromSpanContext, useTelemetryRecorder } from './utils/telemetry'
 import { useUserAccountInfo } from './utils/useConfig'
 interface ChatboxProps {
     chatEnabled: boolean
@@ -135,6 +136,17 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                 instruction?: PromptString,
                 fileName?: string
             ): void => {
+                const spanManager = new SpanManager('cody-webview')
+                const span = spanManager.startSpan('smartApplySubmit', {
+                    attributes: {
+                        sampled: true,
+                    },
+                })
+                span.setAttributes({
+                    'smartApply.id': id,
+                })
+                const traceparent = getTraceparentFromSpanContext(span.spanContext())
+
                 vscodeAPI.postMessage({
                     command: 'smartApplySubmit',
                     id,
@@ -142,7 +154,9 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
                     // remove the additional /n added by the text area at the end of the text
                     code: text.replace(/\n$/, ''),
                     fileName,
+                    traceparent,
                 })
+                span.end()
             },
             onAccept: (id: string) => {
                 vscodeAPI.postMessage({

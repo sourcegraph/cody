@@ -49,7 +49,17 @@ export class CodyTraceExporter extends OTLPTraceExporter {
         const spansToExport: ReadableSpan[] = []
         for (const span of spans) {
             const rootSpan = getRootSpan(spanMap, span)
+            if (span.name === 'edit.smart-apply' || span.name === 'command.edit.start') {
+                console.log('span', span)
+            }
             if (rootSpan === null) {
+                // the child of the root is sampled but root is not and the span is  continued
+                const rootChildSpan = getRootChildSpan(spanMap, span)
+                if (rootChildSpan && isSampled(rootChildSpan) && isContinued(rootChildSpan)) {
+                    spansToExport.push(span)
+                    continue
+                }
+
                 const spanId = span.spanContext().spanId
                 if (!this.queuedSpans.has(spanId)) {
                     // No root span was found yet, so let's queue this span for a
@@ -67,6 +77,24 @@ export class CodyTraceExporter extends OTLPTraceExporter {
 
         super.export(spansToExport, resultCallback)
     }
+}
+function isContinued(span: ReadableSpan): boolean {
+    return span.attributes.continued === true
+}
+// keeps jumping up the chain to return the child of root span for every span and null if its root
+function getRootChildSpan(spanMap: Map<string, ReadableSpan>, span: ReadableSpan): ReadableSpan | null {
+    if (span.parentSpanId) {
+        const parentSpan = spanMap.get(span.parentSpanId)
+        if (!parentSpan) {
+            return span
+        }
+        return getRootChildSpan(spanMap, parentSpan)
+    }
+    return null
+}
+
+function isSampled(span: ReadableSpan): boolean {
+    return span.attributes.sampled === true
 }
 
 function getRootSpan(spanMap: Map<string, ReadableSpan>, span: ReadableSpan): ReadableSpan | null {
