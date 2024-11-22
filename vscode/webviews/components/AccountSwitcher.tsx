@@ -1,9 +1,9 @@
 import { ChevronDown, ChevronRight, ChevronsUpDown, CircleMinus, Plus } from 'lucide-react'
 import type * as React from 'react'
-import { type KeyboardEventHandler, useCallback, useState } from 'react'
+import {KeyboardEvent, useCallback, useState} from 'react'
 import { isSourcegraphToken } from '../../src/chat/protocol'
 import { Badge } from '../components/shadcn/ui/badge'
-import { Form, FormControl, FormField, FormLabel, FormMessage } from '../components/shadcn/ui/form'
+import { Form, FormControl, FormField, FormLabel, FormMessage, FormSubmit } from '../components/shadcn/ui/form'
 import { getVSCodeAPI } from '../utils/VSCodeApi'
 import { Button } from './shadcn/ui/button'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from './shadcn/ui/collapsible'
@@ -13,8 +13,8 @@ export const AccountSwitcher: React.FC<{ activeEndpoint: string; endpoints: stri
     activeEndpoint,
     endpoints,
 }) => {
-    type PopoverState = 'switching' | 'removing' | 'adding'
-    const [getPopoverState, setPopoverState] = useState<PopoverState>('switching')
+    type PopoverView = 'switch' | 'remove' | 'add'
+    const [getPopoverView, serPopoverView] = useState<PopoverView>('switch')
     const [isOpen, setIsOpen] = useState(false)
 
     const [endpointToRemove, setEndpointToRemove] = useState<string | null>(null)
@@ -23,20 +23,19 @@ export const AccountSwitcher: React.FC<{ activeEndpoint: string; endpoints: stri
         accessToken: '',
     })
 
-    const onKeyDownInPopoverContent = useCallback<KeyboardEventHandler<HTMLDivElement>>(
-        event => {
-            if (event.key === 'Escape' && isOpen) {
-                onOpenChange(false)
-            }
-        },
-        [isOpen]
-    )
+
+    const onKeyDownInPopoverContent = (event: KeyboardEvent<HTMLDivElement>): void => {
+        if (event.key === 'Escape' && isOpen) {
+            onOpenChange(false)
+        }
+    }
+
 
     const onOpenChange = (open: boolean): void => {
         setIsOpen(open)
         if (!open) {
             setEndpointToRemove(null)
-            setPopoverState('switching')
+            serPopoverView('switch')
             setAddFormData(() => ({
                 endpoint: 'https://',
                 accessToken: '',
@@ -67,7 +66,7 @@ export const AccountSwitcher: React.FC<{ activeEndpoint: string; endpoints: stri
                 variant="ghost"
                 onClick={() => {
                     setEndpointToRemove(endpoint)
-                    setPopoverState('removing')
+                    serPopoverView('remove')
                 }}
             >
                 <CircleMinus size={16} />
@@ -90,7 +89,7 @@ export const AccountSwitcher: React.FC<{ activeEndpoint: string; endpoints: stri
                 key={'add-account'}
                 variant="ghost"
                 onClick={() => {
-                    setPopoverState('adding')
+                    serPopoverView('add')
                 }}
             >
                 <Plus size={16} />
@@ -134,6 +133,7 @@ export const AccountSwitcher: React.FC<{ activeEndpoint: string; endpoints: stri
         })
         onOpenChange(false)
     }
+
     const popoverAddAccountPanel = (
         <div>
             <b>Account Details</b>
@@ -162,6 +162,7 @@ export const AccountSwitcher: React.FC<{ activeEndpoint: string; endpoints: stri
                             name="accessToken"
                             // TODO: It would be nice to have some server side token validation and feedback there
                             // serverInvalid={authStatus && !authStatus.authenticated && authStatus.showNetworkError}
+                            className="tw-my-2"
                         >
                             <FormControl
                                 type="password"
@@ -179,26 +180,28 @@ export const AccountSwitcher: React.FC<{ activeEndpoint: string; endpoints: stri
                         </FormField>
                     </CollapsibleContent>
                 </Collapsible>
-
-                <Button
-                    key={'add-account-confirmation-button'}
-                    variant="ghost"
-                    className="tw-w-full tw-bg-blue-500"
-                    onClick={addAndSwitchAccount}
-                >
-                    Add and Switch
-                </Button>
+                <FormSubmit asChild>
+                    <Button
+                        key={"add-account-confirmation-button"}
+                        type="submit"
+                        variant="ghost"
+                        className="tw-w-full tw-bg-blue-500"
+                        onClick={addAndSwitchAccount}
+                    >
+                        Add and Switch
+                    </Button>
+                </FormSubmit>
             </Form>
         </div>
     )
 
     function getPopoverContent() {
-        switch (getPopoverState) {
-            case 'adding':
+        switch (getPopoverView) {
+            case 'add':
                 return popoverAddAccountPanel
-            case 'removing':
+            case 'remove':
                 return popoverRemoveAccountPanel
-            case 'switching':
+            case 'switch':
                 return popoverSwitchAccountPanel
             default:
                 return null
