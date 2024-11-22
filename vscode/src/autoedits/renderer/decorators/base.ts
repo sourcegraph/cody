@@ -19,7 +19,6 @@ import type * as vscode from 'vscode'
  *   decorator.setDecorations(decorationInfo);
  *   ...
  * } finally {
- *   decorator.clearDecorations();
  *   decorator.dispose();
  * }
  * ```
@@ -42,13 +41,15 @@ export type DecorationLineInfo = AddedLineInfo | RemovedLineInfo | ModifiedLineI
 export interface AddedLineInfo {
     type: 'added'
     text: string
-    lineNumber: number // `lineNumber` in the modified text
+    /** `lineNumber` in the modified text */
+    lineNumber: number
 }
 
 export interface RemovedLineInfo {
     type: 'removed'
     text: string
-    lineNumber: number // `lineNumber` in the original text
+    /** `lineNumber` in the original text */
+    lineNumber: number
 }
 
 export interface ModifiedLineInfo {
@@ -56,17 +57,20 @@ export interface ModifiedLineInfo {
     oldText: string
     newText: string
     changes: LineChange[]
-    lineNumber: number // `lineNumber` in the modified text
+    /** `lineNumber` in the modified text */
+    lineNumber: number
 }
 
 export interface UnchangedLineInfo {
     type: 'unchanged'
     text: string
-    lineNumber: number // `lineNumber` in the modified text
+    /** `lineNumber` in the modified text */
+    lineNumber: number
 }
 
 export type LineChange = {
     type: 'insert' | 'delete'
+    /** `range` in the modified text relative to the document start */
     range: vscode.Range
     text: string
 }
