@@ -1,13 +1,83 @@
 import { PromptString } from '@sourcegraph/cody-shared'
-import { describe, expect, it } from 'vitest'
-import type * as vscode from 'vscode'
-import {
-    applyTextDocumentChanges,
-    computeDiffWithLineNumbers,
-    doesLinesOverlapForRanges,
-    groupConsecutiveItemsByPredicate,
-} from './utils'
+import { describe, expect, it, should } from 'vitest'
+import * as vscode from 'vscode'
+import {applyTextDocumentChanges, computeDiffWithLineNumbers, doesLinesOverlapForRanges, groupConsecutiveItemsByPredicate, groupChangesForSimilarLinesTogether, TextDocumentChangeGroup} from './utils';
 import dedent from 'dedent'
+import {documentAndPosition} from '../../../../test-helpers';
+import {TextDocumentChange} from './base';
+import {getPositionAfterTextInsertion} from '../../../../text-processing/utils';
+import {createGitDiff} from '../../../../../../../lib/shared/src/editor/create-git-diff';
+
+
+/**
+ * Generates a sequence of text document change events for inserting text at a specific position.
+ * @param document The VS Code text document to insert text into
+ * @param position The position in the document where text should be inserted
+ * @param textToAdd Array of text strings to insert sequentially
+ * @returns Array of TextDocumentChange objects representing the insertion changes
+ */
+function generateChangeEventsForInsertionAtPosition(
+    document: vscode.TextDocument,
+    position: vscode.Position,
+    textToAdd: string[],
+): TextDocumentChange[] {
+    const changeEvents: TextDocumentChange[] = [];
+    let currentPosition = position;
+    let currentOffset = document.offsetAt(position);
+    for (let i = 0; i < textToAdd.length; i++) {
+        const text = textToAdd[i];
+        const change = {
+            range: new vscode.Range(currentPosition, currentPosition),
+            rangeLength: 0,
+            text: text,
+            rangeOffset: currentOffset
+        };
+        // Update current position to be after the inserted text
+        currentPosition = getPositionAfterTextInsertion(currentPosition, text);
+        currentOffset += text.length;
+        changeEvents.push({
+            timestamp: Date.now(),
+            change: change,
+            insertedRange: new vscode.Range(currentPosition, currentPosition),
+        });
+    }
+    return changeEvents;
+};
+
+function getDiffsForContentChanges(oldContent: string, groupedChanges: TextDocumentChangeGroup[]): string[] {
+    const diffList: string[] = [];
+    let currentContent = oldContent;
+    for (const changeGroup of groupedChanges) {
+        const newContent = applyTextDocumentChanges(currentContent, changeGroup.changes.map(change => change.change));
+        const diff = createGitDiff('test.ts', currentContent, newContent)
+        diffList.push(diff)
+        currentContent = newContent;
+    }
+    return diffList;
+}
+
+
+describe('documentChangeEventGroupings', () => {
+    it('should group changes for similar lines together on addition', () => {
+        const { document, position } = documentAndPosition('console.█\n')
+        const textToAdd = 'log("Hello, world!");\nconsole.log("done")'
+        const changeEvents = generateChangeEventsForInsertionAtPosition(document, position, textToAdd.split(''));
+        const result = groupChangesForSimilarLinesTogether(changeEvents);
+        expect(result.length).toBe(1)
+        expect(result[0].changes.length).toBe(textToAdd.split('').length)
+        const diffs = getDiffsForContentChanges(document.getText(), result);
+        expect(diffs.length).toBe(1)
+        expect(diffs[0].split('\n').slice(3).join('\n')).toMatchInlineSnapshot(`
+            "-console.
+            +console.log("Hello, world!");
+            +console.log("done")
+            "
+        `)
+    })
+
+
+
+})
 
 describe('applyTextDocumentChanges', () => {
     const createChange = (
