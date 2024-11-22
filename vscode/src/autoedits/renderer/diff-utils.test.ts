@@ -1,154 +1,484 @@
 import { describe, expect, it } from 'vitest'
-import { getLineLevelDiff } from './diff-utils'
+import { getDecorationInfo } from './diff-utils'
 
-describe('getLineLevelDiff', () => {
+import type { AddedLineInfo, DecorationInfo, ModifiedLineInfo } from './decorators/base'
+
+describe('getDecorationInfo', () => {
     it('should identify modified lines', () => {
-        const currentLines = ['line1', 'line2', 'line3']
-        const predictedLines = ['line1', 'modified2', 'line3']
+        const originalText = 'line1\nline2\nline3'
+        const modifiedText = 'line1\nmodified2\nline3'
 
-        const result = getLineLevelDiff(currentLines, predictedLines)
+        const decorationInfo = getDecorationInfo(originalText, modifiedText)
 
-        expect(result.modifiedLines).toEqual([{ oldNumber: 1, newNumber: 1 }])
-        expect(result.addedLines).toEqual([])
-        expect(result.removedLines).toEqual([])
-        expect(result.unchangedLines).toEqual([
-            { oldNumber: 0, newNumber: 0 },
-            { oldNumber: 2, newNumber: 2 },
-        ])
+        const expected: DecorationInfo = {
+            addedLines: [],
+            removedLines: [],
+            modifiedLines: [
+                {
+                    type: 'modified',
+                    lineNumber: 1, // Line number in the modified text
+                    oldText: 'line2',
+                    newText: 'modified2',
+                    changes: [
+                        {
+                            type: 'delete',
+                            range: expect.anything(),
+                            text: 'line2',
+                        },
+                        {
+                            type: 'insert',
+                            range: expect.anything(),
+                            text: 'modified2',
+                        },
+                    ],
+                },
+            ],
+            unchangedLines: [
+                { type: 'unchanged', lineNumber: 0, text: 'line1' },
+                { type: 'unchanged', lineNumber: 2, text: 'line3' },
+            ],
+        }
+
+        expect(decorationInfo).toEqual(expected)
     })
 
     it('should identify added lines', () => {
-        const currentLines = ['line1', 'line2']
-        const predictedLines = ['line1', 'line2', 'line3']
+        const originalText = 'line1\nline2'
+        const modifiedText = 'line1\nline2\nline3'
 
-        const result = getLineLevelDiff(currentLines, predictedLines)
+        const decorationInfo = getDecorationInfo(originalText, modifiedText)
 
-        expect(result.modifiedLines).toEqual([])
-        expect(result.addedLines).toEqual([2])
-        expect(result.removedLines).toEqual([])
-        expect(result.unchangedLines).toEqual([
-            { oldNumber: 0, newNumber: 0 },
-            { oldNumber: 1, newNumber: 1 },
-        ])
+        const expected: DecorationInfo = {
+            addedLines: [{ type: 'added', lineNumber: 2, text: 'line3' }],
+            removedLines: [],
+            modifiedLines: [],
+            unchangedLines: [
+                { type: 'unchanged', lineNumber: 0, text: 'line1' },
+                { type: 'unchanged', lineNumber: 1, text: 'line2' },
+            ],
+        }
+
+        expect(decorationInfo).toEqual(expected)
     })
 
     it('should identify removed lines', () => {
-        const currentLines = ['line1', 'line2', 'line3']
-        const predictedLines = ['line1', 'line3']
+        const originalText = 'line1\nline2\nline3'
+        const modifiedText = 'line1\nline3'
 
-        const result = getLineLevelDiff(currentLines, predictedLines)
+        const decorationInfo = getDecorationInfo(originalText, modifiedText)
 
-        expect(result.modifiedLines).toEqual([])
-        expect(result.addedLines).toEqual([])
-        expect(result.removedLines).toEqual([1])
-        expect(result.unchangedLines).toEqual([
-            { oldNumber: 0, newNumber: 0 },
-            { oldNumber: 2, newNumber: 1 },
-        ])
+        const expected: DecorationInfo = {
+            addedLines: [],
+            removedLines: [{ type: 'removed', lineNumber: 1, text: 'line2' }],
+            modifiedLines: [],
+            unchangedLines: [
+                { type: 'unchanged', lineNumber: 0, text: 'line1' },
+                { type: 'unchanged', lineNumber: 1, text: 'line3' },
+            ],
+        }
+
+        expect(decorationInfo).toEqual(expected)
     })
 
-    it('should handle changes with modified lines', () => {
-        const currentLines = ['line1', 'line2', 'line3', 'line4']
-        const predictedLines = ['line1', 'modified2', 'newline', 'line4']
+    it('should handle changes with multiple modified lines', () => {
+        const originalText = 'line1\nline2\nline3\nline4'
+        const modifiedText = 'line1\nmodified2\nnewline\nline4'
 
-        const result = getLineLevelDiff(currentLines, predictedLines)
+        const decorationInfo = getDecorationInfo(originalText, modifiedText)
 
-        expect(result.modifiedLines).toEqual([
-            { oldNumber: 1, newNumber: 1 },
-            { oldNumber: 2, newNumber: 2 },
-        ])
-        expect(result.addedLines).toEqual([])
-        expect(result.removedLines).toEqual([])
-        expect(result.unchangedLines).toEqual([
-            { oldNumber: 0, newNumber: 0 },
-            { oldNumber: 3, newNumber: 3 },
-        ])
+        const expected: DecorationInfo = {
+            addedLines: [],
+            removedLines: [],
+            modifiedLines: [
+                {
+                    type: 'modified',
+                    lineNumber: 1,
+                    oldText: 'line2',
+                    newText: 'modified2',
+                    changes: [
+                        {
+                            type: 'delete',
+                            range: expect.anything(),
+                            text: 'line2',
+                        },
+                        {
+                            type: 'insert',
+                            range: expect.anything(),
+                            text: 'modified2',
+                        },
+                    ],
+                },
+                {
+                    type: 'modified',
+                    lineNumber: 2,
+                    oldText: 'line3',
+                    newText: 'newline',
+                    changes: [
+                        {
+                            type: 'delete',
+                            range: expect.anything(),
+                            text: 'line3',
+                        },
+                        {
+                            type: 'insert',
+                            range: expect.anything(),
+                            text: 'newline',
+                        },
+                    ],
+                },
+            ],
+            unchangedLines: [
+                { type: 'unchanged', lineNumber: 0, text: 'line1' },
+                { type: 'unchanged', lineNumber: 3, text: 'line4' },
+            ],
+        }
+
+        expect(decorationInfo).toEqual(expected)
     })
 
-    it('should handle empty input arrays', () => {
-        const result = getLineLevelDiff([], [])
+    it('should handle empty input', () => {
+        const originalText = ''
+        const modifiedText = ''
 
-        expect(result.modifiedLines).toEqual([])
-        expect(result.addedLines).toEqual([])
-        expect(result.removedLines).toEqual([])
-        expect(result.unchangedLines).toEqual([])
+        const decorationInfo = getDecorationInfo(originalText, modifiedText)
+
+        const expected: DecorationInfo = {
+            addedLines: [],
+            removedLines: [],
+            modifiedLines: [],
+            unchangedLines: [
+                {
+                    lineNumber: 0,
+                    text: '',
+                    type: 'unchanged',
+                },
+            ],
+        }
+
+        expect(decorationInfo).toEqual(expected)
     })
 
-    it('should handle multiple modifications, additions and removals', () => {
-        const currentLines = ['keep1', 'remove1', 'modify1', 'keep2', 'remove2', 'modify2', 'keep3']
-        const predictedLines = ['keep1', 'modified1', 'keep2', 'add1', 'modified2', 'add2', 'keep3']
+    it('should handle multiple modifications, additions, and removals', () => {
+        const originalText = 'keep1\nremove1\nremoveLine1\nkeep2\nremove2\nmodify2\nkeep3'
+        const modifiedText = 'keep1\nmodified1\nkeep2\nadd1\nmodified2\nadd2\nkeep3'
 
-        const result = getLineLevelDiff(currentLines, predictedLines)
+        const decorationInfo = getDecorationInfo(originalText, modifiedText)
 
-        // Modified lines track both old and new line numbers
-        expect(result.modifiedLines).toEqual([
-            { oldNumber: 1, newNumber: 1 },
-            { oldNumber: 4, newNumber: 3 },
-            { oldNumber: 5, newNumber: 4 },
-        ])
+        const expected: DecorationInfo = {
+            addedLines: [{ type: 'added', lineNumber: 5, text: 'add2' } as AddedLineInfo],
+            removedLines: [
+                {
+                    lineNumber: 2,
+                    text: 'removeLine1',
+                    type: 'removed',
+                },
+            ],
+            modifiedLines: [
+                {
+                    type: 'modified',
+                    lineNumber: 1,
+                    oldText: 'remove1',
+                    newText: 'modified1',
+                    changes: [
+                        {
+                            type: 'delete',
+                            range: expect.anything(),
+                            text: 'remove1',
+                        },
+                        {
+                            type: 'insert',
+                            range: expect.anything(),
+                            text: 'modified1',
+                        },
+                    ],
+                },
+                {
+                    type: 'modified',
+                    lineNumber: 3,
+                    oldText: 'remove2',
+                    newText: 'add1',
+                    changes: [
+                        {
+                            type: 'delete',
+                            range: expect.anything(),
+                            text: 'remove2',
+                        },
+                        {
+                            type: 'insert',
+                            range: expect.anything(),
+                            text: 'add1',
+                        },
+                    ],
+                },
+                {
+                    type: 'modified',
+                    lineNumber: 4,
+                    oldText: 'modify2',
+                    newText: 'modified2',
+                    changes: [
+                        {
+                            type: 'delete',
+                            range: expect.anything(),
+                            text: 'modify2',
+                        },
+                        {
+                            type: 'insert',
+                            range: expect.anything(),
+                            text: 'modified2',
+                        },
+                    ],
+                },
+            ],
+            unchangedLines: [
+                { type: 'unchanged', lineNumber: 0, text: 'keep1' },
+                { type: 'unchanged', lineNumber: 2, text: 'keep2' },
+                { type: 'unchanged', lineNumber: 6, text: 'keep3' },
+            ],
+        }
 
-        // Added lines are tracked by their line number in the new text
-        expect(result.addedLines).toEqual([5])
-
-        // Removed lines are tracked by their line number in the original text
-        expect(result.removedLines).toEqual([2])
-
-        // Unchanged lines track both old and new line numbers
-        expect(result.unchangedLines).toEqual([
-            { oldNumber: 0, newNumber: 0 },
-            { oldNumber: 3, newNumber: 2 },
-            { oldNumber: 6, newNumber: 6 },
-        ])
+        expect(decorationInfo).toEqual(expected)
     })
 
     it('should handle completely different content', () => {
-        const currentLines = ['line1', 'line2', 'line3']
-        const predictedLines = ['different1', 'different2', 'different3']
+        const originalText = 'line1\nline2\nline3'
+        const modifiedText = 'different1\ndifferent2\ndifferent3'
 
-        const result = getLineLevelDiff(currentLines, predictedLines)
+        const decorationInfo = getDecorationInfo(originalText, modifiedText)
 
-        expect(result.modifiedLines).toEqual([
-            { oldNumber: 0, newNumber: 0 },
-            { oldNumber: 1, newNumber: 1 },
-            { oldNumber: 2, newNumber: 2 },
-        ])
-        expect(result.addedLines).toEqual([])
-        expect(result.removedLines).toEqual([])
-        expect(result.unchangedLines).toEqual([])
+        const expected: DecorationInfo = {
+            addedLines: [],
+            removedLines: [],
+            modifiedLines: [
+                {
+                    type: 'modified',
+                    lineNumber: 0,
+                    oldText: 'line1',
+                    newText: 'different1',
+                    changes: [
+                        {
+                            type: 'delete',
+                            range: expect.anything(),
+                            text: 'line1',
+                        },
+                        {
+                            type: 'insert',
+                            range: expect.anything(),
+                            text: 'different1',
+                        },
+                    ],
+                },
+                {
+                    type: 'modified',
+                    lineNumber: 1,
+                    oldText: 'line2',
+                    newText: 'different2',
+                    changes: [
+                        {
+                            type: 'delete',
+                            range: expect.anything(),
+                            text: 'line2',
+                        },
+                        {
+                            type: 'insert',
+                            range: expect.anything(),
+                            text: 'different2',
+                        },
+                    ],
+                },
+                {
+                    type: 'modified',
+                    lineNumber: 2,
+                    oldText: 'line3',
+                    newText: 'different3',
+                    changes: [
+                        {
+                            type: 'delete',
+                            range: expect.anything(),
+                            text: 'line3',
+                        },
+                        {
+                            type: 'insert',
+                            range: expect.anything(),
+                            text: 'different3',
+                        },
+                    ],
+                },
+            ],
+            unchangedLines: [],
+        }
+
+        expect(decorationInfo).toEqual(expected)
     })
 
-    it('should handle one empty array', () => {
-        const currentLines = ['line1', 'line2', 'line3']
-        const emptyLines: string[] = []
+    it('should handle one empty input (original text empty)', () => {
+        const originalText = ''
+        const modifiedText = 'line1\nline2\nline3'
 
-        const result = getLineLevelDiff(currentLines, emptyLines)
+        const decorationInfo = getDecorationInfo(originalText, modifiedText)
 
-        expect(result.modifiedLines).toEqual([])
-        expect(result.addedLines).toEqual([])
-        expect(result.removedLines).toEqual([0, 1, 2])
-        expect(result.unchangedLines).toEqual([])
+        const expected: DecorationInfo = {
+            addedLines: [
+                { type: 'added', lineNumber: 1, text: 'line2' } as AddedLineInfo,
+                { type: 'added', lineNumber: 2, text: 'line3' } as AddedLineInfo,
+            ],
+            modifiedLines: [
+                {
+                    type: 'modified',
+                    lineNumber: 0,
+                    oldText: '',
+                    newText: 'line1',
+                    changes: [
+                        {
+                            type: 'insert',
+                            range: expect.anything(),
+                            text: 'line1',
+                        },
+                    ],
+                },
+            ],
+            removedLines: [],
+            unchangedLines: [],
+        }
 
-        const result2 = getLineLevelDiff(emptyLines, currentLines)
+        expect(decorationInfo).toEqual(expected)
+    })
 
-        expect(result2.modifiedLines).toEqual([])
-        expect(result2.addedLines).toEqual([0, 1, 2])
-        expect(result2.removedLines).toEqual([])
-        expect(result2.unchangedLines).toEqual([])
+    it('should handle one empty input (modified text empty)', () => {
+        const originalText = 'line1\nline2\nline3'
+        const modifiedText = ''
+
+        const decorationInfo = getDecorationInfo(originalText, modifiedText)
+
+        const expected: DecorationInfo = {
+            addedLines: [],
+            removedLines: [
+                { type: 'removed', lineNumber: 1, text: 'line2' },
+                { type: 'removed', lineNumber: 2, text: 'line3' },
+            ],
+            modifiedLines: [
+                {
+                    type: 'modified',
+                    lineNumber: 0,
+                    oldText: 'line1',
+                    newText: '',
+                    changes: [
+                        {
+                            type: 'delete',
+                            range: expect.anything(),
+                            text: 'line1',
+                        },
+                    ],
+                },
+            ],
+            unchangedLines: [],
+        }
+
+        expect(decorationInfo).toEqual(expected)
     })
 
     it('should handle arrays with only whitespace differences', () => {
-        const currentLines = ['  line1', 'line2  ', ' line3 ']
-        const predictedLines = ['line1', 'line2', 'line3']
+        const originalText = '  line1\nline2  \n line3 '
+        const modifiedText = 'line1\nline2\nline3'
 
-        const result = getLineLevelDiff(currentLines, predictedLines)
+        const decorationInfo = getDecorationInfo(originalText, modifiedText)
 
-        expect(result.modifiedLines).toEqual([
-            { oldNumber: 0, newNumber: 0 },
-            { oldNumber: 1, newNumber: 1 },
-            { oldNumber: 2, newNumber: 2 },
-        ])
-        expect(result.addedLines).toEqual([])
-        expect(result.removedLines).toEqual([])
-        expect(result.unchangedLines).toEqual([])
+        const expected: DecorationInfo = {
+            addedLines: [],
+            removedLines: [],
+            modifiedLines: [
+                {
+                    type: 'modified',
+                    lineNumber: 0,
+                    oldText: '  line1',
+                    newText: 'line1',
+                    changes: [
+                        {
+                            type: 'delete',
+                            range: expect.anything(),
+                            text: '  ',
+                        },
+                    ],
+                },
+                {
+                    type: 'modified',
+                    lineNumber: 1,
+                    oldText: 'line2  ',
+                    newText: 'line2',
+                    changes: [
+                        {
+                            type: 'delete',
+                            range: expect.anything(),
+                            text: '  ',
+                        },
+                    ],
+                },
+                {
+                    type: 'modified',
+                    lineNumber: 2,
+                    oldText: ' line3 ',
+                    newText: 'line3',
+                    changes: [
+                        {
+                            type: 'delete',
+                            range: expect.anything(),
+                            text: ' ',
+                        },
+                        {
+                            type: 'delete',
+                            range: expect.anything(),
+                            text: ' ',
+                        },
+                    ],
+                },
+            ],
+            unchangedLines: [],
+        }
+
+        expect(decorationInfo).toEqual(expected)
+    })
+
+    it('should merge adjacent insertions and deletions into separate changes', () => {
+        const originalText = 'const value = 123'
+        const modifiedText = 'const span = trace.getActiveTrace()'
+
+        const decorationInfo = getDecorationInfo(originalText, modifiedText)
+
+        const expected: DecorationInfo = {
+            addedLines: [],
+            removedLines: [],
+            modifiedLines: [
+                {
+                    type: 'modified',
+                    lineNumber: 0,
+                    oldText: 'const value = 123',
+                    newText: 'const span = trace.getActiveTrace()',
+                    changes: [
+                        {
+                            type: 'delete',
+                            range: expect.anything(),
+                            text: 'value',
+                        },
+                        {
+                            type: 'insert',
+                            range: expect.anything(),
+                            text: 'span',
+                        },
+                        {
+                            type: 'delete',
+                            range: expect.anything(),
+                            text: '123',
+                        },
+                        {
+                            type: 'insert',
+                            range: expect.anything(),
+                            text: 'trace.getActiveTrace()',
+                        },
+                    ],
+                } as ModifiedLineInfo,
+            ],
+            unchangedLines: [],
+        }
+
+        expect(decorationInfo).toEqual(expected)
     })
 })

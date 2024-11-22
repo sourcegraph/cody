@@ -1,241 +1,263 @@
 import { diff } from 'fast-myers-diff'
-import { range, zip } from 'lodash'
-import { lines } from '../../completions/text-processing'
-import {
-    type DecorationInformation,
-    type DecorationLineInformation,
-    DecorationLineType,
-} from './decorators/base'
+import * as vscode from 'vscode'
+
+import { getNewLineChar } from '../../completions/text-processing'
+import type { DecorationInfo, DecorationLineInfo, LineChange, ModifiedLineInfo } from './decorators/base'
 
 /**
- * Represents a line that was preserved (either modified or unchanged) between two versions of text,
- * tracking both its line number in the before and after states
+ * Generates decoration information by computing the differences between two texts.
+ *
+ * @param originalText The original text content.
+ * @param modifiedText The modified text content.
+ * @returns Decoration information representing the differences.
  */
-export interface PreservedLine {
-    /** The line number in the original text */
-    oldNumber: number
-    /** The line number in the modified text */
-    newNumber: number
-}
+export function getDecorationInfo(originalText: string, modifiedText: string): DecorationInfo {
+    const newLineChar = getNewLineChar(originalText)
+    const originalLines = originalText.split(newLineChar)
+    const modifiedLines = modifiedText.split(newLineChar)
 
-/**
- * Represents the ranges of text that were modified between two versions
- * Replace the text between from1 and to1 in the original text with the text between from2 and to2 in the modified text
- */
-export interface ModifiedRange {
-    /** The start position in the original text */
-    from1: number
-    /** The end position in the original text */
-    to1: number
-    /** The start position in the modified text */
-    from2: number
-    /** The end position in the modified text */
-    to2: number
-}
+    const lineInfos = computeDiffOperations(originalLines, modifiedLines)
 
-/**
- * Represents the differences between two texts at a line level,
- * tracking modified, added and removed lines
- */
-interface LineLevelDiff {
-    /** Lines that were modified between versions */
-    modifiedLines: PreservedLine[]
-    /** Line numbers that were added in the new version */
-    addedLines: number[]
-    /** Line numbers that were removed from the original version */
-    removedLines: number[]
-    /** Line numbers that were unchanged between the original and modified versions */
-    unchangedLines: PreservedLine[]
-}
-
-export function getDecorationInformation(
-    currentFileText: string,
-    predictedFileText: string
-): DecorationInformation {
-    const oldLines = lines(currentFileText)
-    const newLines = lines(predictedFileText)
-    const { modifiedLines, removedLines, addedLines, unchangedLines } = getLineLevelDiff(
-        oldLines,
-        newLines
-    )
-    const oldLinesChunks = oldLines.map(line => splitLineIntoChunks(line))
-    const newLinesChunks = newLines.map(line => splitLineIntoChunks(line))
-
-    const decorationLineInformation: DecorationLineInformation[] = []
-    for (const line of removedLines) {
-        decorationLineInformation.push(getDecorationInformationForRemovedLine(line, oldLines[line]))
+    const decorationInfo: DecorationInfo = {
+        modifiedLines: [],
+        removedLines: [],
+        addedLines: [],
+        unchangedLines: [],
     }
-    for (const line of addedLines) {
-        decorationLineInformation.push(getDecorationInformationForAddedLine(line, newLines[line]))
-    }
-    for (const modifiedLine of modifiedLines) {
-        const modifiedRanges = getModifiedRangesForLine(
-            oldLinesChunks[modifiedLine.oldNumber],
-            newLinesChunks[modifiedLine.newNumber]
-        )
-        // Modified ranges are based on the chunks of the original text, which could be char level or word level
-        // Adjust the ranges to get the modified ranges in terms of the original text
-        const adjustedModifiedRanges = modifiedRanges.map(range => ({
-            from1: getCharacterOffsetFromChunks(oldLinesChunks[modifiedLine.oldNumber], range.from1),
-            to1: getCharacterOffsetFromChunks(oldLinesChunks[modifiedLine.oldNumber], range.to1),
-            from2: getCharacterOffsetFromChunks(newLinesChunks[modifiedLine.newNumber], range.from2),
-            to2: getCharacterOffsetFromChunks(newLinesChunks[modifiedLine.newNumber], range.to2),
-        }))
 
-        decorationLineInformation.push({
-            lineType: DecorationLineType.Modified,
-            oldLineNumber: modifiedLine.oldNumber,
-            newLineNumber: modifiedLine.newNumber,
-            oldText: oldLines[modifiedLine.oldNumber],
-            newText: newLines[modifiedLine.newNumber],
-            modifiedRanges: adjustedModifiedRanges,
+    for (const lineInfo of lineInfos) {
+        switch (lineInfo.type) {
+            case 'unchanged':
+                decorationInfo.unchangedLines.push(lineInfo)
+                break
+            case 'added':
+                decorationInfo.addedLines.push(lineInfo)
+                break
+            case 'removed':
+                decorationInfo.removedLines.push(lineInfo)
+                break
+            case 'modified':
+                decorationInfo.modifiedLines.push(lineInfo as ModifiedLineInfo)
+                break
+        }
+    }
+
+    return decorationInfo
+}
+
+/**
+ * Computes the diff operations between two arrays of lines.
+ */
+function computeDiffOperations(originalLines: string[], modifiedLines: string[]): DecorationLineInfo[] {
+    // Compute the list of diff chunks between the original and modified lines.
+    // Each diff chunk is a tuple representing the range of changes:
+    // [originalStart, originalEnd, modifiedStart, modifiedEnd]
+    const diffs = diff(originalLines, modifiedLines)
+
+    // Initialize an array to collect information about each line and its change type.
+    const lineInfos: DecorationLineInfo[] = []
+
+    // Initialize indices to keep track of the current position in the original and modified lines.
+    let originalIndex = 0 // Current index in originalLines
+    let modifiedIndex = 0 // Current index in modifiedLines
+
+    // Iterate over each diff chunk to process changes.
+    for (const [originalStart, originalEnd, modifiedStart, modifiedEnd] of diffs) {
+        // Process any unchanged lines before the current diff chunk begins.
+        // These are lines that are identical in both files up to the point of the change.
+        while (originalIndex < originalStart && modifiedIndex < modifiedStart) {
+            lineInfos.push({
+                type: 'unchanged',
+                lineNumber: modifiedIndex,
+                text: modifiedLines[modifiedIndex],
+            })
+            originalIndex++
+            modifiedIndex++
+        }
+
+        // Calculate the number of deletions and insertions in the current diff chunk.
+        const numDeletions = originalEnd - originalStart // Number of lines deleted from originalLines
+        const numInsertions = modifiedEnd - modifiedStart // Number of lines added to modifiedLines
+
+        // The minimum between deletions and insertions represents replacements (modified lines).
+        // These are lines where content has changed but positions remain the same.
+        const numReplacements = Math.min(numDeletions, numInsertions)
+
+        // Process replacements: lines that have been modified.
+        for (let i = 0; i < numReplacements; i++) {
+            const modifiedLineInfo = createModifiedLineInfo({
+                modifiedLineNumber: modifiedStart + i,
+                originalText: originalLines[originalStart + i],
+                modifiedText: modifiedLines[modifiedStart + i],
+            })
+            lineInfos.push(modifiedLineInfo)
+        }
+
+        // Process deletions: lines that were removed from the original text.
+        for (let i = numReplacements; i < numDeletions; i++) {
+            lineInfos.push({
+                type: 'removed',
+                lineNumber: originalStart + i, // Line number in the originalLines
+                text: originalLines[originalStart + i],
+            })
+        }
+
+        // Process insertions: lines that were added to the modified text.
+        for (let i = numReplacements; i < numInsertions; i++) {
+            lineInfos.push({
+                type: 'added',
+                lineNumber: modifiedStart + i, // Line number in the modifiedLines
+                text: modifiedLines[modifiedStart + i],
+            })
+        }
+
+        // Update the indices to the end of the current diff chunk.
+        originalIndex = originalEnd
+        modifiedIndex = modifiedEnd
+    }
+
+    // Process any remaining unchanged lines after the last diff chunk.
+    while (originalIndex < originalLines.length && modifiedIndex < modifiedLines.length) {
+        lineInfos.push({
+            type: 'unchanged',
+            lineNumber: modifiedIndex,
+            text: modifiedLines[modifiedIndex],
         })
+        originalIndex++
+        modifiedIndex++
     }
-    for (const unchangedLine of unchangedLines) {
-        decorationLineInformation.push(
-            getDecorationInformationForUnchangedLine(
-                unchangedLine.oldNumber,
-                unchangedLine.newNumber,
-                oldLines[unchangedLine.oldNumber]
-            )
-        )
-    }
-    return {
-        lines: decorationLineInformation,
-        oldLines,
-        newLines,
-    }
-}
 
-function getDecorationInformationForUnchangedLine(
-    oldLineNumber: number,
-    newLineNumber: number,
-    text: string
-): DecorationLineInformation {
-    return {
-        lineType: DecorationLineType.Unchanged,
-        oldLineNumber,
-        newLineNumber,
-        oldText: text,
-        newText: text,
-        modifiedRanges: [],
-    }
-}
-
-function getDecorationInformationForAddedLine(
-    newLineNumber: number,
-    text: string
-): DecorationLineInformation {
-    return {
-        lineType: DecorationLineType.Added,
-        oldLineNumber: null,
-        newLineNumber,
-        oldText: '',
-        newText: text,
-        modifiedRanges: [{ from1: 0, to1: 0, from2: 0, to2: text.length }],
-    }
-}
-
-function getDecorationInformationForRemovedLine(
-    oldLineNumber: number,
-    text: string
-): DecorationLineInformation {
-    return {
-        lineType: DecorationLineType.Removed,
-        oldLineNumber,
-        newLineNumber: null,
-        oldText: text,
-        newText: '',
-        modifiedRanges: [{ from1: 0, to1: text.length, from2: 0, to2: 0 }],
-    }
-}
-
-export function getLineLevelDiff(oldLines: string[], newLines: string[]): LineLevelDiff {
-    const modifiedLines: PreservedLine[] = []
-    const addedLines: number[] = []
-    const removedLines: number[] = []
-
-    const unchangedLinesOldLineNumbers: number[] = []
-    const unchangedLinesNewLineNumbers: number[] = []
-    let lastChangedOldLine = -1 // Dummy value to indicate the last changed old line
-    let lastChangedNewLine = -1 // Dummy value to indicate the last changed new line
-
-    for (const [from1, to1, from2, to2] of diff(oldLines, newLines)) {
-        // Deleted or modify the lines from from1 to to1
-        // Added or modify the lines from from2 to to2
-        // Greedily match the lines min (to1 - from1, to2 - from2) as the modified lines and add the rest to removed or added
-        // todo (hitesh): Improve the logic to handle the cases when fully removed or added lines can be at the start
-        const minLength = Math.min(to1 - from1, to2 - from2)
-        for (let i = 0; i < minLength; i++) {
-            modifiedLines.push({ oldNumber: from1 + i, newNumber: from2 + i })
-        }
-        if (to1 - from1 > minLength) {
-            removedLines.push(...range(from1 + minLength, to1))
-        }
-        if (to2 - from2 > minLength) {
-            addedLines.push(...range(from2 + minLength, to2))
-        }
-        if (from1 > lastChangedOldLine + 1) {
-            unchangedLinesOldLineNumbers.push(...range(lastChangedOldLine + 1, from1))
-        }
-        if (from2 > lastChangedNewLine + 1) {
-            unchangedLinesNewLineNumbers.push(...range(lastChangedNewLine + 1, from2))
-        }
-        lastChangedOldLine = to1 - 1
-        lastChangedNewLine = to2 - 1
-    }
-    if (lastChangedOldLine + 1 < oldLines.length) {
-        unchangedLinesOldLineNumbers.push(...range(lastChangedOldLine + 1, oldLines.length))
-    }
-    if (lastChangedNewLine + 1 < newLines.length) {
-        unchangedLinesNewLineNumbers.push(...range(lastChangedNewLine + 1, newLines.length))
-    }
-    const unchangedLines: PreservedLine[] = []
-    for (const [oldLineNumber, newLineNumber] of zip(
-        unchangedLinesOldLineNumbers,
-        unchangedLinesNewLineNumbers
-    )) {
-        if (oldLineNumber !== undefined && newLineNumber !== undefined) {
-            unchangedLines.push({ oldNumber: oldLineNumber, newNumber: newLineNumber })
-        }
-    }
-    return {
-        modifiedLines,
-        addedLines,
-        removedLines,
-        unchangedLines,
-    }
-}
-
-export function getModifiedRangesForLine(before: string[], after: string[]): ModifiedRange[] {
-    const modifiedRanges: ModifiedRange[] = []
-    for (const [from1, to1, from2, to2] of diff(before, after)) {
-        modifiedRanges.push({ from1, to1, from2, to2 })
-    }
-    return modifiedRanges
+    return lineInfos
 }
 
 /**
- * Checks if the changes between current and predicted text only consist of added lines
+ * Creates a ModifiedLineInfo object by computing insertions and deletions within a line.
  */
-export function isPureAddedLines(currentFileText: string, predictedFileText: string): boolean {
-    const currentLines = currentFileText.split('\n')
-    const predictedLines = predictedFileText.split('\n')
-    for (const [from1, to1, from2, to2] of diff(currentLines, predictedLines)) {
-        if (to2 - to1 > from2 - from1) {
-            return true
+function createModifiedLineInfo({
+    modifiedLineNumber,
+    originalText,
+    modifiedText,
+}: {
+    modifiedLineNumber: number
+    originalText: string
+    modifiedText: string
+}): ModifiedLineInfo {
+    const oldChunks = splitLineIntoChunks(originalText)
+    const newChunks = splitLineIntoChunks(modifiedText)
+    const lineChanges = computeLineChanges({ oldChunks, newChunks, lineNumber: modifiedLineNumber })
+
+    return {
+        type: 'modified',
+        lineNumber: modifiedLineNumber,
+        oldText: originalText,
+        newText: modifiedText,
+        changes: lineChanges,
+    }
+}
+
+/**
+ * Computes insertions and deletions within a line.
+ */
+function computeLineChanges({
+    oldChunks,
+    newChunks,
+    lineNumber,
+}: { oldChunks: string[]; newChunks: string[]; lineNumber: number }): LineChange[] {
+    const changes: LineChange[] = []
+    const chunkDiffs = diff(oldChunks, newChunks)
+
+    let oldIndex = 0
+    let newIndex = 0
+    let oldOffset = 0
+    let newOffset = 0
+
+    for (const [oldStart, oldEnd, newStart, newEnd] of chunkDiffs) {
+        // Process unchanged chunks before this diff
+        while (oldIndex < oldStart && newIndex < newStart) {
+            oldOffset += oldChunks[oldIndex].length
+            newOffset += newChunks[newIndex].length
+            oldIndex++
+            newIndex++
+        }
+
+        // Process deletions from oldChunks
+        let deletionText = ''
+        const deletionStartOffset = oldOffset
+        for (let i = oldStart; i < oldEnd; i++) {
+            deletionText += oldChunks[i]
+            oldOffset += oldChunks[i].length
+            oldIndex++
+        }
+        if (deletionText) {
+            const deleteRange = new vscode.Range(lineNumber, deletionStartOffset, lineNumber, oldOffset)
+            // Merge adjacent deletions
+            const lastChange = changes[changes.length - 1]
+            if (
+                lastChange &&
+                lastChange.type === 'delete' &&
+                lastChange.range.end.isEqual(deleteRange.start)
+            ) {
+                lastChange.text += deletionText
+                lastChange.range = new vscode.Range(lastChange.range.start, deleteRange.end)
+            } else {
+                changes.push({
+                    type: 'delete',
+                    range: deleteRange,
+                    text: deletionText,
+                })
+            }
+        }
+
+        // Process insertions from newChunks
+        let insertionText = ''
+        const insertionStartOffset = newOffset
+        for (let i = newStart; i < newEnd; i++) {
+            insertionText += newChunks[i]
+            newOffset += newChunks[i].length
+            newIndex++
+        }
+        if (insertionText) {
+            const insertRange = new vscode.Range(
+                lineNumber,
+                insertionStartOffset,
+                lineNumber,
+                insertionStartOffset + insertionText.length
+            )
+            // Merge adjacent insertions
+            const lastChange = changes[changes.length - 1]
+            if (
+                lastChange &&
+                lastChange.type === 'insert' &&
+                lastChange.range.end.isEqual(insertRange.start)
+            ) {
+                lastChange.text += insertionText
+                lastChange.range = new vscode.Range(lastChange.range.start, insertRange.end)
+            } else {
+                changes.push({
+                    type: 'insert',
+                    range: insertRange,
+                    text: insertionText,
+                })
+            }
         }
     }
-    return false
+
+    // Process any remaining unchanged chunks after the last diff
+    while (oldIndex < oldChunks.length && newIndex < newChunks.length) {
+        oldOffset += oldChunks[oldIndex].length
+        newOffset += newChunks[newIndex].length
+        oldIndex++
+        newIndex++
+    }
+
+    return changes
 }
 
+/**
+ * Splits a line into chunks for fine-grained diffing.
+ * Uses word boundaries, spaces and non-alphanumeric characters for splitting.
+ */
 export function splitLineIntoChunks(line: string): string[] {
-    // Strategy 1: Split line into chars
-    // return line.split('')
-    // Strategy 2: Split line into words seperated by punctuations, white space etc.
-    return line.split(/(?=[^a-zA-Z0-9])|(?<=[^a-zA-Z0-9])/)
-}
-
-function getCharacterOffsetFromChunks(parts: string[], chunkIndex: number): number {
-    return parts.slice(0, chunkIndex).reduce((acc: number, str: string) => acc + str.length, 0)
+    // Split line into words, consecutive spaces and punctuation marks
+    return line.match(/(\w+|\s+|\W)/g) || []
 }

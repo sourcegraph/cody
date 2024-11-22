@@ -1,6 +1,9 @@
 import * as vscode from 'vscode'
+
+import { getNewLineChar } from '../../completions/text-processing'
 import { DefaultDecorator } from './decorators/default-decorator'
-import { getDecorationInformation } from './diff-utils'
+import { getDecorationInfo } from './diff-utils'
+
 export function registerTestRenderCommand(): vscode.Disposable {
     return vscode.commands.registerCommand('cody.supersuggest.testExample', () => {
         const editor = vscode.window.activeTextEditor
@@ -57,13 +60,14 @@ export function registerTestRenderCommand(): vscode.Disposable {
         const decorator = new DefaultDecorator(editor)
         const currentFileText = document.getText()
         // splice replacerText into currentFileText at replaceStartLine and replacenEndLine
-        const lines = currentFileText.split('\n')
+        const newLineChar = getNewLineChar(currentFileText)
+        const lines = currentFileText.split(newLineChar)
         const predictedFileText = [
             ...lines.slice(0, replaceStartLine),
             replacerText,
             ...lines.slice(replaceEndLine + 1),
-        ].join('\n')
-        const decorationInformation = getDecorationInformation(currentFileText, predictedFileText)
+        ].join(newLineChar)
+        const decorationInformation = getDecorationInfo(currentFileText, predictedFileText)
         decorator.setDecorations(decorationInformation)
 
         const listener = vscode.window.onDidChangeTextEditorSelection(e => {

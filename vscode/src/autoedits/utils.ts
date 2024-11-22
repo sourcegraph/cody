@@ -1,5 +1,6 @@
-import { lines } from '../completions/text-processing'
-import { getLineLevelDiff } from './renderer/diff-utils'
+import { getNewLineChar, lines } from '../completions/text-processing'
+
+import { getDecorationInfo } from './renderer/diff-utils'
 
 export function fixFirstLineIndentation(source: string, target: string): string {
     // Check the first line indentation of source string and replaces in target string.
@@ -8,7 +9,7 @@ export function fixFirstLineIndentation(source: string, target: string): string 
     const firstLineMatch = codeToRewriteLines[0].match(/^(\s*)/)
     const firstLineIndentation = firstLineMatch ? firstLineMatch[1] : ''
     completionLines[0] = firstLineIndentation + completionLines[0].trimStart()
-    const completion = completionLines.join('\n')
+    const completion = completionLines.join(getNewLineChar(source))
     return completion
 }
 
@@ -36,7 +37,7 @@ export function extractInlineCompletionFromRewrittenCode(
     const completion = predictionWithoutPrefix.slice(0, endIndex)
     const completionNumLines = lines(completion).length
     const completionWithSameLineSuffix = lines(predictionWithoutPrefix).slice(0, completionNumLines)
-    return completionWithSameLineSuffix.join('\n')
+    return completionWithSameLineSuffix.join(getNewLineChar(codeToRewritePrefix + codeToRewriteSuffix))
 }
 
 export function trimExtraNewLineCharsFromSuggestion(
@@ -57,26 +58,27 @@ function getNumberOfNewLineCharsAtSuffix(text: string): number {
     return match ? match[0].length : 0
 }
 
-export function isPredictedTextAlreadyInSuffix(params: {
+export function isPredictedTextAlreadyInSuffix({
+    codeToRewrite,
+    prediction,
+    suffix,
+}: {
     codeToRewrite: string
     prediction: string
     suffix: string
 }): boolean {
-    const currentFileLines = lines(params.codeToRewrite)
-    const predictedFileLines = lines(params.prediction)
-    let { addedLines } = getLineLevelDiff(currentFileLines, predictedFileLines)
+    const { addedLines } = getDecorationInfo(codeToRewrite, prediction)
+
     if (addedLines.length === 0) {
         return false
     }
-    addedLines = addedLines.sort((a, b) => a - b)
-    const minAddedLineIndex = addedLines[0]
-    const maxAddedLineIndex = addedLines[addedLines.length - 1]
-    const allAddedLines = predictedFileLines.slice(minAddedLineIndex, maxAddedLineIndex + 1)
-    const allAddedLinesText = allAddedLines.join('\n')
-    if (params.suffix.startsWith(allAddedLinesText)) {
-        return true
-    }
-    return false
+
+    const allAddedLinesText = addedLines
+        .sort((a, b) => a.lineNumber - b.lineNumber)
+        .map(line => line.text)
+        .join(getNewLineChar(codeToRewrite))
+
+    return suffix.startsWith(allAddedLinesText)
 }
 
 /**

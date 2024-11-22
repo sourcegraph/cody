@@ -1,13 +1,7 @@
 import * as vscode from 'vscode'
 import { ThemeColor } from 'vscode'
 import { GHOST_TEXT_COLOR } from '../../../commands/GhostHintDecorator'
-import {
-    type AutoeditsDecorator,
-    type DecorationInformation,
-    type DecorationLineInformation,
-    DecorationLineType,
-} from './base'
-import { isOnlyAddingTextForModifiedLines, splitLineDecorationIntoLineTypes } from './common'
+import type { AutoEditsDecorator, DecorationInfo, ModifiedLineInfo } from './base'
 
 interface AddedLinesDecorationInfo {
     ranges: [number, number][]
@@ -15,7 +9,7 @@ interface AddedLinesDecorationInfo {
     lineText: string
 }
 
-export class DefaultDecorator implements AutoeditsDecorator {
+export class DefaultDecorator implements AutoEditsDecorator {
     private readonly decorationTypes: vscode.TextEditorDecorationType[]
     private readonly removedTextDecorationType: vscode.TextEditorDecorationType
     private readonly modifiedTextDecorationType: vscode.TextEditorDecorationType
@@ -44,13 +38,13 @@ export class DefaultDecorator implements AutoeditsDecorator {
         this.addedLinesDecorationType = vscode.window.createTextEditorDecorationType({
             backgroundColor: 'red', // SENTINEL (should not actually appear)
             before: {
-                backgroundColor: 'rgb(100, 255, 100, 0.1)',
+                backgroundColor: 'rgba(100, 255, 100, 0.1)',
                 color: GHOST_TEXT_COLOR,
                 height: '100%',
             },
         })
         this.insertMarkerDecorationType = vscode.window.createTextEditorDecorationType({
-            border: '1px dashed rgb(100, 255, 100, 0.5)',
+            border: '1px dashed rgba(100, 255, 100, 0.5)',
             borderWidth: '1px 1px 0 0',
         })
 
@@ -72,32 +66,28 @@ export class DefaultDecorator implements AutoeditsDecorator {
     }
 
     /**
-     * Renders decorations using an inline diff strategy to show changes between two versions of text
-     * Split the decorations into three parts:
+     * Renders decorations using an inline diff strategy to show changes between two versions of text.
+     * It splits the decorations into three parts:
      * 1. Modified lines: Either show inline ghost text or a combination of ("red" decorations + "green" decorations)
-     * 2. Removed lines: Show Inline decoration with "red" marker indicating deletions
-     * 3. Added lines: Show Inline decoration with "green" marker indicating additions
+     * 2. Removed lines: Show inline decoration with "red" marker indicating deletions
+     * 3. Added lines: Show inline decoration with "green" marker indicating additions
      */
-    public setDecorations(decorationInformation: DecorationInformation): void {
-        const { modifiedLines, removedLines, addedLines } = splitLineDecorationIntoLineTypes(
-            decorationInformation.lines
-        )
-        const isOnlyAdditionsForModifiedLines = isOnlyAddingTextForModifiedLines(modifiedLines)
-        const removedLinesRanges = this.getNonModifiedLinesRanges(
-            removedLines
-                .filter(line => line.oldLineNumber !== null)
-                .map(line => line.oldLineNumber as number)
-        )
+    public setDecorations(decorationInfo: DecorationInfo): void {
+        const { modifiedLines, removedLines, addedLines } = decorationInfo
+
+        const removedLinesRanges = removedLines.map(line => this.createFullLineRange(line.lineNumber))
         this.editor.setDecorations(this.removedTextDecorationType, removedLinesRanges)
 
-        if (addedLines.length > 0 || !isOnlyAdditionsForModifiedLines) {
-            this.renderDiffDecorations(decorationInformation)
+        if (addedLines.length > 0 || !isOnlyAddingTextForModifiedLines(modifiedLines)) {
+            this.renderDiffDecorations(decorationInfo)
         } else {
             this.renderInlineGhostTextDecorations(modifiedLines)
         }
     }
 
-    private renderDiffDecorations(decorationInformation: DecorationInformation): void {
+    private renderDiffDecorations(decorationInfo: DecorationInfo): void {
+        const { modifiedLines, addedLines, unchangedLines } = decorationInfo
+
         // Display the removed range decorations
         const removedRanges: vscode.Range[] = []
         const addedLinesInfo: AddedLinesDecorationInfo[] = []
@@ -108,48 +98,39 @@ export class DefaultDecorator implements AutoeditsDecorator {
         } | null = null
 
         // Handle modified lines - collect removed ranges and added decorations
-        for (const line of decorationInformation.lines) {
-            if (
-                line.lineType !== DecorationLineType.Modified ||
-                line.oldLineNumber === null ||
-                line.newLineNumber === null
-            ) {
-                continue
-            }
+        for (const modifiedLine of modifiedLines) {
+            const changes = modifiedLine.changes
+
             const addedRanges: [number, number][] = []
-            for (const range of line.modifiedRanges) {
-                if (range.to1 > range.from1) {
-                    removedRanges.push(
-                        new vscode.Range(line.oldLineNumber, range.from1, line.oldLineNumber, range.to1)
-                    )
-                }
-                if (range.to2 > range.from2) {
-                    addedRanges.push([range.from2, range.to2])
+            for (const change of changes) {
+                if (change.type === 'delete') {
+                    removedRanges.push(change.range)
+                } else if (change.type === 'insert') {
+                    addedRanges.push([change.range.start.character, change.range.end.character])
                 }
             }
             if (addedRanges.length > 0) {
-                firstModifiedLineMatch = {
-                    beforeLine: line.oldLineNumber,
-                    afterLine: line.newLineNumber,
+                if (!firstModifiedLineMatch) {
+                    firstModifiedLineMatch = {
+                        beforeLine: modifiedLine.lineNumber,
+                        afterLine: modifiedLine.lineNumber,
+                    }
                 }
                 addedLinesInfo.push({
                     ranges: addedRanges,
-                    afterLine: line.newLineNumber,
-                    lineText: line.newText,
+                    afterLine: modifiedLine.lineNumber,
+                    lineText: modifiedLine.newText,
                 })
             }
         }
         this.editor.setDecorations(this.modifiedTextDecorationType, removedRanges)
 
         // Handle fully added lines
-        for (const line of decorationInformation.lines) {
-            if (line.lineType !== DecorationLineType.Added || line.newLineNumber === null) {
-                continue
-            }
+        for (const addedLine of addedLines) {
             addedLinesInfo.push({
-                ranges: line.modifiedRanges.map(range => [range.from2, range.to2]),
-                afterLine: line.newLineNumber,
-                lineText: line.newText,
+                ranges: [],
+                afterLine: addedLine.lineNumber,
+                lineText: addedLine.text,
             })
         }
 
@@ -157,17 +138,15 @@ export class DefaultDecorator implements AutoeditsDecorator {
         const lineNumbers = addedLinesInfo.map(d => d.afterLine)
         const min = Math.min(...lineNumbers)
         const max = Math.max(...lineNumbers)
-        for (const line of decorationInformation.lines) {
-            if (line.lineType !== DecorationLineType.Unchanged || line.newLineNumber === null) {
-                continue
-            }
-            if (line.newLineNumber < min || line.newLineNumber > max) {
+        for (const unchangedLine of unchangedLines) {
+            const lineNumber = unchangedLine.lineNumber
+            if (lineNumber < min || lineNumber > max) {
                 continue
             }
             addedLinesInfo.push({
                 ranges: [],
-                afterLine: line.newLineNumber,
-                lineText: line.newText,
+                afterLine: lineNumber,
+                lineText: unchangedLine.text,
             })
         }
         // Sort addedLinesInfo by line number in ascending order
@@ -182,12 +161,9 @@ export class DefaultDecorator implements AutoeditsDecorator {
                 (firstModifiedLineMatch.afterLine - addedLinesInfo[0].afterLine)
         }
 
-        const replacerCol = Math.max(
-            ...decorationInformation.oldLines
-                .slice(startLine, startLine + addedLinesInfo.length)
-                .map(line => line.length)
-        )
         // todo (hitesh): handle case when too many lines to fit in the editor
+        const oldLines = addedLinesInfo.map(info => this.editor.document.lineAt(info.afterLine))
+        const replacerCol = Math.max(...oldLines.map(line => line.range.end.character))
         this.renderAddedLinesDecorations(addedLinesInfo, startLine, replacerCol)
     }
 
@@ -263,37 +239,27 @@ export class DefaultDecorator implements AutoeditsDecorator {
         this.editor.setDecorations(this.addedLinesDecorationType, replacerDecorations)
     }
 
-    private renderInlineGhostTextDecorations(decorationInformation: DecorationLineInformation[]): void {
-        const inlineModifiedRanges: vscode.DecorationOptions[] = []
-        for (const line of decorationInformation) {
-            if (line.lineType !== DecorationLineType.Modified || line.oldLineNumber === null) {
-                continue
-            }
-            const modifiedRanges = line.modifiedRanges
-            for (const range of modifiedRanges) {
-                inlineModifiedRanges.push({
-                    range: new vscode.Range(
-                        line.oldLineNumber,
-                        range.from1,
-                        line.oldLineNumber,
-                        range.to1
-                    ),
+    private renderInlineGhostTextDecorations(decorationLines: ModifiedLineInfo[]): void {
+        const inlineModifiedRanges: vscode.DecorationOptions[] = decorationLines
+            .flatMap(line => line.changes)
+            .filter(change => change.type === 'insert')
+            .map(change => {
+                return {
+                    range: change.range,
                     renderOptions: {
                         before: {
-                            contentText: line.newText.slice(range.from2, range.to2),
+                            contentText: change.text,
                         },
                     },
-                })
-            }
-        }
+                }
+            })
+
         this.editor.setDecorations(this.suggesterType, inlineModifiedRanges)
     }
 
-    private getNonModifiedLinesRanges(lineNumbers: number[]): vscode.Range[] {
-        // Get the ranges of the lines that are not modified, i.e. fully removed or added lines
-        return lineNumbers.map(
-            line => new vscode.Range(line, 0, line, this.editor.document.lineAt(line).text.length)
-        )
+    private createFullLineRange(lineNumber: number): vscode.Range {
+        const lineTextLength = this.editor.document.lineAt(lineNumber).text.length
+        return new vscode.Range(lineNumber, 0, lineNumber, lineTextLength)
     }
 
     public dispose(): void {
@@ -386,4 +352,16 @@ function getCommonPrefix(s1: string, s2: string): string {
         }
     }
     return commonPrefix
+}
+
+/**
+ * Checks if the only changes for modified lines are additions of text.
+ */
+export function isOnlyAddingTextForModifiedLines(modifiedLines: ModifiedLineInfo[]): boolean {
+    for (const modifiedLine of modifiedLines) {
+        if (modifiedLine.changes.some(change => change.type === 'delete')) {
+            return false
+        }
+    }
+    return true
 }

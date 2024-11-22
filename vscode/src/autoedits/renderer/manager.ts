@@ -1,6 +1,7 @@
 import * as vscode from 'vscode'
-import type { AutoeditsDecorator } from './decorators/base'
-import { getDecorationInformation } from './diff-utils'
+
+import type { AutoEditsDecorator } from './decorators/base'
+import { getDecorationInfo } from './diff-utils'
 
 /**
  * Represents a proposed text change in the editor.
@@ -16,7 +17,7 @@ interface ProposedChange {
     prediction: string
 
     // The renderer responsible for decorating the proposed change
-    decorator: AutoeditsDecorator
+    decorator: AutoEditsDecorator
 }
 
 /**
@@ -44,7 +45,7 @@ export class AutoEditsRendererManager implements vscode.Disposable {
     private activeEdit: ProposedChange | null = null
     private disposables: vscode.Disposable[] = []
 
-    constructor(private createDecorator: (editor: vscode.TextEditor) => AutoeditsDecorator) {
+    constructor(private createDecorator: (editor: vscode.TextEditor) => AutoEditsDecorator) {
         this.disposables.push(
             vscode.commands.registerCommand('cody.supersuggest.accept', () => this.acceptEdit()),
             vscode.commands.registerCommand('cody.supersuggest.dismiss', () => this.dismissEdit()),
@@ -63,22 +64,25 @@ export class AutoEditsRendererManager implements vscode.Disposable {
         return this.activeEdit !== null
     }
 
-    public async showEdit(options: AutoEditsManagerOptions): Promise<void> {
+    public async showEdit({
+        document,
+        range,
+        prediction,
+        currentFileText,
+        predictedFileText,
+    }: AutoEditsManagerOptions): Promise<void> {
         await this.dismissEdit()
         const editor = vscode.window.activeTextEditor
-        if (!editor || options.document !== editor.document) {
+        if (!editor || document !== editor.document) {
             return
         }
         this.activeEdit = {
-            uri: options.document.uri.toString(),
-            range: options.range,
-            prediction: options.prediction,
+            uri: document.uri.toString(),
+            range: range,
+            prediction: prediction,
             decorator: this.createDecorator(editor),
         }
-        const decorationInformation = getDecorationInformation(
-            options.currentFileText,
-            options.predictedFileText
-        )
+        const decorationInformation = getDecorationInfo(currentFileText, predictedFileText)
         this.activeEdit.decorator.setDecorations(decorationInformation)
         await vscode.commands.executeCommand('setContext', 'cody.supersuggest.active', true)
     }
