@@ -108,7 +108,7 @@ export const PromptList: FC<PromptListProps> = props => {
                     isPrompt: isPrompt ? 1 : 0,
                     isPromptAutoSubmit: isPromptAutoSubmit ? 1 : 0,
                     isPromptBuiltin: isBuiltinPrompt ? 1 : 0,
-                    builtinPromptType: isBuiltinPrompt ? BUILT_IN_PROMPTS_CODE[action.name] : 0,
+                    builtinPromptId: isBuiltinPrompt ? BUILT_IN_PROMPTS_CODE[action.name] ?? 0 : 0,
                     isCommand: isCommand ? 1 : 0,
                     isCommandBuiltin: isBuiltInCommand ? 1 : 0,
                     isCommandCustom: !isBuiltInCommand ? 1 : 0,
