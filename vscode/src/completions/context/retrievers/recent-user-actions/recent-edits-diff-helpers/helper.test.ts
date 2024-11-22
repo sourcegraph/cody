@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { parseTextAndGenerateChangeEvents, getPositionAt } from './helper';
 import {applyTextDocumentChanges} from './utils';
+import { processContinousChangesForText } from './helper';
 import dedent from 'dedent'
 
 describe('parseTextAndGenerateChangeEvents', () => {
@@ -138,6 +139,94 @@ describe('parseTextAndGenerateChangeEvents', () => {
         testChanges({ text, expectedOriginalString, expectedChanges });
     });
 
+    it('should handle continuous insert markers correctly', () => {
+        const text = 'Hello <IC>World</IC>!'
+        const expectedOriginalString = 'Hello !'
+        const expectedChanges = [
+            'Hello W!',
+            'Hello Wo!',
+            'Hello Wor!',
+            'Hello Worl!',
+            'Hello World!',
+        ]
+        testChanges({ text, expectedOriginalString, expectedChanges })
+    })
+
+    it('should handle continuous delete markers correctly', () => {
+        const text = 'Delete<DC> this</DC> text.'
+        const expectedOriginalString = 'Delete this text.'
+        const expectedChanges = [
+            'Deletethis text.',
+            'Deletehis text.',
+            'Deleteis text.',
+            'Deletes text.',
+            'Delete text.',
+        ]
+        testChanges({ text, expectedOriginalString, expectedChanges })
+    })
+
+    it('should handle multiple continuous markers correctly', () => {
+        const text = '<IC>Hi</IC>, this is a <DC>sample</DC> text.'
+        const expectedOriginalString = ', this is a sample text.'
+        const expectedChanges = [
+            'H, this is a sample text.',
+            'Hi, this is a sample text.',
+            'Hi, this is a ample text.',
+            'Hi, this is a mple text.',
+            'Hi, this is a ple text.',
+            'Hi, this is a le text.',
+            'Hi, this is a e text.',
+            'Hi, this is a  text.',
+        ]
+        testChanges({ text, expectedOriginalString, expectedChanges })
+    })
+
+});
+
+
+
+describe('processContinousChangesForText', () => {
+
+    it('should convert <IC> tags into individual <I> tags for each character', () => {
+        const input = 'Hello <IC>World</IC>!';
+        const expectedOutput = 'Hello <I>W</I><I>o</I><I>r</I><I>l</I><I>d</I>!';
+        expect(processContinousChangesForText(input)).toBe(expectedOutput);
+    });
+
+    it('should convert <DC> tags into individual <D> tags for each character', () => {
+        const input = 'Delete <DC>this</DC> text.';
+        const expectedOutput = 'Delete <D>t</D><D>h</D><D>i</D><D>s</D> text.';
+        expect(processContinousChangesForText(input)).toBe(expectedOutput);
+    });
+
+    it('should handle multiple <IC> and <DC> tags in the input', () => {
+        const input = '<IC>Hello</IC> and <DC>Goodbye</DC>!';
+        const expectedOutput = '<I>H</I><I>e</I><I>l</I><I>l</I><I>o</I> and <D>G</D><D>o</D><D>o</D><D>d</D><D>b</D><D>y</D><D>e</D>!';
+        expect(processContinousChangesForText(input)).toBe(expectedOutput);
+    });
+
+    it('should return the same text if there are no <IC> or <DC> tags', () => {
+        const input = 'No changes here.';
+        expect(processContinousChangesForText(input)).toBe(input);
+    });
+
+    it('should handle empty <IC> and <DC> tags gracefully', () => {
+        const input = 'Empty <IC></IC> and <DC></DC> tags.';
+        const expectedOutput = 'Empty  and  tags.';
+        expect(processContinousChangesForText(input)).toBe(expectedOutput);
+    });
+
+    it('should handle special characters within <IC> and <DC> tags', () => {
+        const input = 'Special <IC>chars: !@#</IC> and <DC>123</DC>.';
+        const expectedOutput = 'Special <I>c</I><I>h</I><I>a</I><I>r</I><I>s</I><I>:</I><I> </I><I>!</I><I>@</I><I>#</I> and <D>1</D><D>2</D><D>3</D>.';
+        expect(processContinousChangesForText(input)).toBe(expectedOutput);
+    });
+
+    it('should handle consecutive <IC> and <DC> tags without text in between', () => {
+        const input = '<IC>ABC</IC><DC>123</DC>';
+        const expectedOutput = '<I>A</I><I>B</I><I>C</I><D>1</D><D>2</D><D>3</D>';
+        expect(processContinousChangesForText(input)).toBe(expectedOutput);
+    });
 });
 
 

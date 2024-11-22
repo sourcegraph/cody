@@ -44,6 +44,8 @@ export function getDiffsForContentChanges(oldContent: string, groupedChanges: Te
  * - `<I>text</I>`: Insert `text` at the position of `<I>`.
  * - `<D>text</D>`: Delete `text` starting from the position of `<D>`.
  * - `<R>text1<RM>text2</R>`: Replace `text1` with `text2` starting from the position of `<R>`.
+ * - `<IC>text</IC>`: Creates a seperate insert change for each character in `text`.
+ * - `<DC>text</DC>`: Creates a seperate delete change for each character in `text`.
  *
  * @param text The input text containing markers.
  * @returns An object containing the original text and the array of change events.
@@ -51,6 +53,8 @@ export function getDiffsForContentChanges(oldContent: string, groupedChanges: Te
 export function parseTextAndGenerateChangeEvents(
     text: string
 ): { originalText: string; changeEvents: vscode.TextDocumentContentChangeEvent[] } {
+    text = processContinousChangesForText(text);
+
     const changeEvents: vscode.TextDocumentContentChangeEvent[] = [];
     let originalText = '';
     let currentText = '';
@@ -103,6 +107,27 @@ export function parseTextAndGenerateChangeEvents(
     originalText += remainingText;
     currentText += remainingText;
     return { originalText, changeEvents };
+}
+
+/**
+ * Processes continuous changes in text by converting continuous insertion and deletion markers
+ * into individual character markers.
+ *
+ * @param text The input text containing <IC> and <DC> markers
+ * @returns The processed text with individual <I> and <D> markers for each character
+ */
+export function processContinousChangesForText(text: string): string {
+    // Replace <IC>...</IC> with individual <I>...</I> markers for each character
+    text = text.replace(/<IC>(.*?)<\/IC>/gs, (_, content) => {
+        return content.split('').map((char: string) => `<I>${char}</I>`).join('');
+    });
+
+    // Replace <DC>...</DC> with individual <D>...</D> markers for each character
+    text = text.replace(/<DC>(.*?)<\/DC>/gs, (_, content) => {
+        return content.split('').map((char: string) => `<D>${char}</D>`).join('');
+    });
+
+    return text;
 }
 
 /**
