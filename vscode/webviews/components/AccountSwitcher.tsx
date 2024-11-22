@@ -1,17 +1,31 @@
 import { ChevronDown, ChevronRight, ChevronsUpDown, CircleMinus, Plus } from 'lucide-react'
 import type * as React from 'react'
-import {KeyboardEvent, useCallback, useState} from 'react'
+import { type KeyboardEvent, useCallback, useState } from 'react'
 import { isSourcegraphToken } from '../../src/chat/protocol'
 import { Badge } from '../components/shadcn/ui/badge'
-import { Form, FormControl, FormField, FormLabel, FormMessage, FormSubmit } from '../components/shadcn/ui/form'
+import {
+    Form,
+    FormControl,
+    FormField,
+    FormLabel,
+    FormMessage,
+    FormSubmit,
+} from '../components/shadcn/ui/form'
 import { getVSCodeAPI } from '../utils/VSCodeApi'
 import { Button } from './shadcn/ui/button'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from './shadcn/ui/collapsible'
 import { Popover, PopoverContent, PopoverTrigger } from './shadcn/ui/popover'
 
-export const AccountSwitcher: React.FC<{ activeEndpoint: string; endpoints: string[] }> = ({
+interface AccountSwitcherProps {
+    activeEndpoint: string
+    endpoints: string[]
+    setLoading: (loading: boolean) => void
+}
+
+export const AccountSwitcher: React.FC<AccountSwitcherProps> = ({
     activeEndpoint,
     endpoints,
+    setLoading,
 }) => {
     type PopoverView = 'switch' | 'remove' | 'add'
     const [getPopoverView, serPopoverView] = useState<PopoverView>('switch')
@@ -23,13 +37,11 @@ export const AccountSwitcher: React.FC<{ activeEndpoint: string; endpoints: stri
         accessToken: '',
     })
 
-
     const onKeyDownInPopoverContent = (event: KeyboardEvent<HTMLDivElement>): void => {
         if (event.key === 'Escape' && isOpen) {
             onOpenChange(false)
         }
     }
-
 
     const onOpenChange = (open: boolean): void => {
         setIsOpen(open)
@@ -57,6 +69,7 @@ export const AccountSwitcher: React.FC<{ activeEndpoint: string; endpoints: stri
                         })
                     }
                     onOpenChange(false)
+                    setLoading(true)
                 }}
             >
                 {endpoint}
@@ -182,7 +195,7 @@ export const AccountSwitcher: React.FC<{ activeEndpoint: string; endpoints: stri
                 </Collapsible>
                 <FormSubmit asChild>
                     <Button
-                        key={"add-account-confirmation-button"}
+                        key={'add-account-confirmation-button'}
                         type="submit"
                         variant="ghost"
                         className="tw-w-full tw-bg-blue-500"

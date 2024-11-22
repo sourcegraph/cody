@@ -5,7 +5,7 @@ import {
     type UserProductSubscription,
     isCodyProUser,
 } from '@sourcegraph/cody-shared'
-import { useCallback } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { URI } from 'vscode-uri'
 import {
     ACCOUNT_UPGRADE_URL,
@@ -40,12 +40,16 @@ export const AccountTab: React.FC<AccountTabProps> = ({
     }
 
     if (!authStatus.authenticated || userProductSubscription === undefined) {
-        return <div>Authenticating...</div>
+        return null
     }
+
+    const [isLoading, setIsLoading] = useState(true)
+    useEffect(() => {
+        setIsLoading(!authStatus.authenticated)
+    }, [authStatus])
 
     const { displayName, username, primaryEmail, endpoint } = authStatus as AuthenticatedAuthStatus
     const isProUser = isCodyProUser(authStatus, userProductSubscription)
-    const actions: JSX.Element[] = []
 
     function createButton(text: string, onClick: () => void) {
         return (
@@ -61,50 +65,41 @@ export const AccountTab: React.FC<AccountTabProps> = ({
         )
     }
 
-    if (isDotComUser && !isProUser) {
-        actions.push(
-            createButton('Upgrade', () =>
-                getVSCodeAPI().postMessage({ command: 'links', value: ACCOUNT_UPGRADE_URL.toString() })
-            )
-        )
-    }
-
-    let accountSwitcher = <div />
-    if (clientCapabilities.accountSwitchingInWebview === 'enabled') {
-        const endpoints: string[] = config.endpointHistory ?? []
-        const switchableEndpoints = endpoints.filter(e => e !== endpoint)
-        accountSwitcher = <AccountSwitcher activeEndpoint={endpoint} endpoints={switchableEndpoints} />
-    }
-
-    if (isDotComUser) {
-        actions.push(
-            createButton(
-                'Manage Account',
-                useCallback(() => {
-                    if (username) {
-                        const uri = URI.parse(ACCOUNT_USAGE_URL.toString()).with({
-                            query: `cody_client_user=${encodeURIComponent(username)}`,
-                        })
-                        getVSCodeAPI().postMessage({ command: 'links', value: uri.toString() })
-                    }
-                }, [username])
-            )
-        )
-    }
-
-    actions.push(
-        createButton('Settings', () =>
-            getVSCodeAPI().postMessage({ command: 'command', id: 'cody.status-bar.interacted' })
-        )
+    const endpoints: string[] = config.endpointHistory ?? []
+    const switchableEndpoints = endpoints.filter(e => e !== endpoint)
+    const accountSwitcher = (
+        <AccountSwitcher
+            activeEndpoint={endpoint}
+            endpoints={switchableEndpoints}
+            setLoading={setIsLoading}
+        />
     )
 
-    actions.push(
-        createButton('Sign Out', () => {
-            getVSCodeAPI().postMessage({ command: 'auth', authKind: 'signout' })
-        })
+    const upgradeButton = createButton('Upgrade', () =>
+        getVSCodeAPI().postMessage({ command: 'links', value: ACCOUNT_UPGRADE_URL.toString() })
     )
 
-    return (
+    const manageAccountButton = createButton(
+        'Manage Account',
+        useCallback(() => {
+            if (username) {
+                const uri = URI.parse(ACCOUNT_USAGE_URL.toString()).with({
+                    query: `cody_client_user=${encodeURIComponent(username)}`,
+                })
+                getVSCodeAPI().postMessage({ command: 'links', value: uri.toString() })
+            }
+        }, [username])
+    )
+
+    const settingButton = createButton('Settings', () =>
+        getVSCodeAPI().postMessage({ command: 'command', id: 'cody.status-bar.interacted' })
+    )
+
+    const signOutButton = createButton('Sign Out', () =>
+        getVSCodeAPI().postMessage({ command: 'auth', authKind: 'signout' })
+    )
+
+    const accountPanelView = (
         <div className="tw-overflow-auto tw-flex-1 tw-flex tw-flex-col tw-items-start tw-w-full tw-px-8 tw-py-6 tw-gap-6">
             <h2>Account</h2>
             <div className="tw-w-full tw-px-8 tw-py-4 tw-flex tw-flex-col tw-gap-4 tw-bg-popover tw-border tw-border-border tw-rounded-lg">
@@ -119,9 +114,10 @@ export const AccountTab: React.FC<AccountTabProps> = ({
                             <p className="tw-text-lg tw-font-semibold">{displayName ?? username}</p>
                             <p className="tw-text-sm tw-text-muted-foreground">{primaryEmail}</p>
                         </div>
-                        {accountSwitcher}
+                        {clientCapabilities.accountSwitchingInWebview === 'enabled' && accountSwitcher}
                     </div>
                 </div>
+                {isLoading && <div>LOADING...</div>}
                 <div className="tw-grid tw-grid-cols-5 tw-gap-4">
                     <div>Plan:</div>
                     <div className="tw-text-muted-foreground tw-col-span-4">
@@ -135,7 +131,21 @@ export const AccountTab: React.FC<AccountTabProps> = ({
                     </div>
                 </div>
             </div>
-            <div className="tw-w-full">{actions}</div>
+            <div className="tw-w-full">
+                {isDotComUser && !isProUser && upgradeButton}
+                {isDotComUser && manageAccountButton}
+                {settingButton}
+                {signOutButton}
+            </div>
         </div>
     )
+
+    const loadingView = (
+        <div className="tw-flex tw-flex-col tw-items-center tw-justify-center tw-h-full tw-w-full tw-gap-2">
+            <div className="tw-h-[30px] tw-w-[30px] tw-animate-spin tw-rounded-full tw-border-[1px] tw-border-solid tw-border-current tw-border-e-transparent high-contrast-dark:tw-border-button-border high-contrast-dark:tw-border-e-transparent" />
+            <div className="tw-text-muted-foreground">Switching Account...</div>
+        </div>
+    )
+
+    return isLoading ? loadingView : accountPanelView
 }
