@@ -148,7 +148,7 @@ async function getLocalCommands(input: LocalCommandsInput): Promise<Action[]> {
     // Fetch standards (built-in) prompts from prompts library API
     if (remoteBuiltinPrompts) {
         const remoteStandardPrompts = await graphqlClient.queryBuiltinPrompts({ query })
-        return remoteStandardPrompts.map(prompt => ({ ...prompt, actionType: 'prompt' }))
+        return remoteStandardPrompts.map(prompt => ({ ...prompt, actionType: 'prompt', builtin: true }))
     }
 
     // Fallback on local commands (prompts-like or not is controlled by CodyUnifiedPrompts feature flag)

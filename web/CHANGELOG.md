@@ -1,3 +1,6 @@
+## 0.14.0
+- Add prompts analytics over built-in prompts
+
 ## 0.13.0
 - Fix openctx mention by mocking Cody Web workspace root
 - Disable non-runnable prompts in Cody Web
