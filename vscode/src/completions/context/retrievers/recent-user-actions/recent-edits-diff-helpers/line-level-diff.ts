@@ -1,7 +1,9 @@
+import type * as vscode from 'vscode'
 import type { DiffCalculationInput, DiffHunk, RecentEditsRetrieverDiffStrategy } from './base'
 import { groupNonOverlappingChangeGroups, groupOverlappingDocumentChanges } from './utils'
 import {
     type TextDocumentChangeGroup,
+    divideGroupedChangesIntoShortTermAndLongTerm,
     getDiffHunkFromUnifiedPatch,
     getUnifiedDiffHunkFromTextDocumentChange,
 } from './utils'
@@ -20,23 +22,37 @@ export class LineLevelDiffStrategy implements RecentEditsRetrieverDiffStrategy {
 
     public getDiffHunks(input: DiffCalculationInput): DiffHunk[] {
         const groupedChanges = this.getLineLevelChanges(input)
+        const diffHunks = this.getDiffHunksForGroupedChanges({
+            uri: input.uri,
+            oldContent: input.oldContent,
+            groupedChanges,
+            contextLines: this.contextLines,
+            addLineNumbersForDiff: true,
+        }).filter(diffHunk => diffHunk.diff.toString() !== '')
+        diffHunks.reverse()
+        return diffHunks
+    }
+
+    private getDiffHunksForGroupedChanges(params: {
+        uri: vscode.Uri
+        oldContent: string
+        groupedChanges: TextDocumentChangeGroup[]
+        contextLines: number
+        addLineNumbersForDiff: boolean
+    }): DiffHunk[] {
+        let currentContent = params.oldContent
         const diffHunks: DiffHunk[] = []
-        let oldContent = input.oldContent
-        for (const groupedChange of groupedChanges) {
+        for (const groupedChange of params.groupedChanges) {
             const patch = getUnifiedDiffHunkFromTextDocumentChange({
-                uri: input.uri,
-                oldContent: oldContent,
+                uri: params.uri,
+                oldContent: currentContent,
                 changes: groupedChange.changes,
-                addLineNumbersForDiff: true,
-                contextLines: this.contextLines,
+                addLineNumbersForDiff: params.addLineNumbersForDiff,
+                contextLines: params.contextLines,
             })
-            if (patch) {
-                const hunk = getDiffHunkFromUnifiedPatch(patch)
-                if (hunk) {
-                    diffHunks.push(hunk)
-                }
-                oldContent = patch.newContent
-            }
+            const hunk = getDiffHunkFromUnifiedPatch(patch)
+            diffHunks.push(hunk)
+            currentContent = patch.newContent
         }
         return diffHunks
     }
@@ -46,7 +62,9 @@ export class LineLevelDiffStrategy implements RecentEditsRetrieverDiffStrategy {
         if (!this.shouldGroupNonOverlappingLines) {
             return changes
         }
-        return groupNonOverlappingChangeGroups(changes)
+        let { shortTermChanges, longTermChanges } = divideGroupedChangesIntoShortTermAndLongTerm(changes)
+        longTermChanges = groupNonOverlappingChangeGroups(longTermChanges)
+        return [...longTermChanges, ...shortTermChanges]
     }
 
     public getDiffStrategyName(): string {

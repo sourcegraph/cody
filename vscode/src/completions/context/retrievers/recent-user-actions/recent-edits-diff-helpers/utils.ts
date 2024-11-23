@@ -46,7 +46,7 @@ export function groupOverlappingDocumentChanges(
             replacementRange: change.change.range,
             originalChange: change,
         })),
-        mergePredicate: (a, b) => doLineSpansOverlap(a.start.line, a.end.line, b.start.line, b.end.line),
+        mergePredicate: (a, b) => doLineOverlapForRanges(a, b),
         getChanges: item => [item.originalChange],
     })
 }
@@ -68,8 +68,7 @@ export function groupNonOverlappingChangeGroups(
 ): TextDocumentChangeGroup[] {
     return mergeDocumentChanges({
         items: groupedChanges,
-        mergePredicate: (a, b) =>
-            !doLineSpansOverlap(a.start.line, a.end.line, b.start.line, b.end.line),
+        mergePredicate: (a, b) => !doLineOverlapForRanges(a, b),
         getChanges: group => group.changes,
     })
 }
@@ -196,10 +195,7 @@ export function getUnifiedDiffHunkFromTextDocumentChange(params: {
     changes: TextDocumentChange[]
     addLineNumbersForDiff: boolean
     contextLines: number
-}): UnifiedPatchResponse | undefined {
-    if (params.changes.length === 0) {
-        return undefined
-    }
+}): UnifiedPatchResponse {
     const newContent = applyTextDocumentChanges(
         params.oldContent,
         params.changes.map(c => c.change)
@@ -216,16 +212,28 @@ export function getUnifiedDiffHunkFromTextDocumentChange(params: {
     }
 }
 
-export function getDiffHunkFromUnifiedPatch(
-    unifiedPatch: UnifiedPatchResponse | undefined
-): DiffHunk | undefined {
-    return unifiedPatch
-        ? {
-              uri: unifiedPatch.uri,
-              latestEditTimestamp: unifiedPatch.latestEditTimestamp,
-              diff: unifiedPatch.diff,
-          }
-        : undefined
+export function divideGroupedChangesIntoShortTermAndLongTerm(changes: TextDocumentChangeGroup[]): {
+    shortTermChanges: TextDocumentChangeGroup[]
+    longTermChanges: TextDocumentChangeGroup[]
+} {
+    if (changes.length <= 1) {
+        return {
+            shortTermChanges: changes,
+            longTermChanges: [],
+        }
+    }
+    return {
+        shortTermChanges: changes.slice(-1),
+        longTermChanges: changes.slice(0, -1),
+    }
+}
+
+export function getDiffHunkFromUnifiedPatch(unifiedPatch: UnifiedPatchResponse): DiffHunk {
+    return {
+        uri: unifiedPatch.uri,
+        latestEditTimestamp: unifiedPatch.latestEditTimestamp,
+        diff: unifiedPatch.diff,
+    }
 }
 
 export function applyTextDocumentChanges(
@@ -241,11 +249,6 @@ export function applyTextDocumentChanges(
     return content
 }
 
-function doLineSpansOverlap(
-    firstStart: number,
-    firstEnd: number,
-    secondStart: number,
-    secondEnd: number
-): boolean {
-    return firstStart <= secondEnd && firstEnd >= secondStart
+function doLineOverlapForRanges(a: vscode.Range, b: vscode.Range): boolean {
+    return a.start.line <= b.end.line && a.end.line >= b.start.line
 }

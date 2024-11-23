@@ -1,12 +1,7 @@
-import type {
-    DiffCalculationInput,
-    DiffHunk,
-    RecentEditsRetrieverDiffStrategy,
-    TextDocumentChange,
-} from './base'
+import type { DiffCalculationInput, DiffHunk, RecentEditsRetrieverDiffStrategy } from './base'
 import { groupOverlappingDocumentChanges } from './utils'
 import {
-    type TextDocumentChangeGroup,
+    divideGroupedChangesIntoShortTermAndLongTerm,
     getDiffHunkFromUnifiedPatch,
     getUnifiedDiffHunkFromTextDocumentChange,
 } from './utils'
@@ -22,50 +17,27 @@ export class TwoStageUnifiedDiffStrategy implements RecentEditsRetrieverDiffStra
     public getDiffHunks(input: DiffCalculationInput): DiffHunk[] {
         const rawChanges = groupOverlappingDocumentChanges(input.changes)
         const { shortTermChanges, longTermChanges } =
-            this.divideChangesIntoShortTermAndLongTerm(rawChanges)
+            divideGroupedChangesIntoShortTermAndLongTerm(rawChanges)
 
         const longTermPatch = getUnifiedDiffHunkFromTextDocumentChange({
             uri: input.uri,
             oldContent: input.oldContent,
-            changes: longTermChanges,
+            changes: longTermChanges.flatMap(c => c.changes),
             addLineNumbersForDiff: true,
             contextLines: this.longTermContextLines,
         })
         const shortTermPatch = getUnifiedDiffHunkFromTextDocumentChange({
             uri: input.uri,
-            oldContent: longTermPatch?.newContent || input.oldContent,
-            changes: shortTermChanges,
+            oldContent: longTermPatch.newContent,
+            changes: shortTermChanges.flatMap(c => c.changes),
             addLineNumbersForDiff: true,
             contextLines: this.shortTermContextLines,
         })
-        return [
+        const diffs = [
             getDiffHunkFromUnifiedPatch(shortTermPatch),
             getDiffHunkFromUnifiedPatch(longTermPatch),
-        ].filter((hunk): hunk is DiffHunk => hunk !== undefined)
-    }
-
-    private divideChangesIntoShortTermAndLongTerm(changes: TextDocumentChangeGroup[]): {
-        shortTermChanges: TextDocumentChange[]
-        longTermChanges: TextDocumentChange[]
-    } {
-        if (changes.length <= 1) {
-            return {
-                shortTermChanges: this.convertTextDocumentChangeGroupToTextDocumentChange(changes),
-                longTermChanges: [],
-            }
-        }
-        return {
-            shortTermChanges: this.convertTextDocumentChangeGroupToTextDocumentChange(changes.slice(-1)),
-            longTermChanges: this.convertTextDocumentChangeGroupToTextDocumentChange(
-                changes.slice(0, -1)
-            ),
-        }
-    }
-
-    private convertTextDocumentChangeGroupToTextDocumentChange(
-        changeGroup: TextDocumentChangeGroup[]
-    ): TextDocumentChange[] {
-        return changeGroup.flatMap(group => group.changes)
+        ].filter(diff => diff.diff.length > 0)
+        return diffs
     }
 
     public getDiffStrategyName(): string {

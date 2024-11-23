@@ -26,14 +26,19 @@ describe('LineLevelDiffStrategy', () => {
                 oldContent: originalText,
                 changes,
             })
-            expect(diffs.length).toBe(1)
-            expect(processComputedDiff(diffs[0].diff.toString())).toMatchInlineSnapshot(`
-              "1-| let x = 5;
-              1+| const x = 5;
-              2 | console.log('break');
-              3-| let y = 10;
-              3+| const y = 10;"
+            expect(diffs.length).toBe(2)
+            expect(processComputedDiff(diffs[1].diff.toString())).toMatchInlineSnapshot(`
+                "1-| let x = 5;
+                1+| const x = 5;
+                2 | console.log('break');
+                3 | let y = 10;"
             `)
+            expect(processComputedDiff(diffs[0].diff.toString())).toMatchInlineSnapshot(`
+                "1 | const x = 5;
+                2 | console.log('break');
+                3-| let y = 10;
+                3+| const y = 10;"
+              `)
         })
 
         it('handles single line change', () => {
@@ -74,13 +79,13 @@ describe('LineLevelDiffStrategy', () => {
                 changes,
             })
             expect(diffs.length).toBe(2)
-            expect(processComputedDiff(diffs[0].diff.toString())).toMatchInlineSnapshot(`
+            expect(processComputedDiff(diffs[1].diff.toString())).toMatchInlineSnapshot(`
               "1-| let x = 5;
               1+| const x = 5;
               2 | console.log('break');
               3 | let y = 10;"
             `)
-            expect(processComputedDiff(diffs[1].diff.toString())).toMatchInlineSnapshot(`
+            expect(processComputedDiff(diffs[0].diff.toString())).toMatchInlineSnapshot(`
               "1 | const x = 5;
               2 | console.log('break');
               3-| let y = 10;
