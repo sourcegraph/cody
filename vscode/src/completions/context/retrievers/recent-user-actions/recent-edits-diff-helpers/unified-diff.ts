@@ -1,6 +1,5 @@
-import { PromptString } from '@sourcegraph/cody-shared'
 import type { DiffCalculationInput, DiffHunk, RecentEditsRetrieverDiffStrategy } from './base'
-import { applyTextDocumentChanges, computeDiffWithLineNumbers } from './utils'
+import { getUnifiedDiffHunkFromTextDocumentChange } from './utils'
 
 interface UnifiedDiffStrategyOptions {
     addLineNumbers: boolean
@@ -19,29 +18,13 @@ export class UnifiedDiffStrategy implements RecentEditsRetrieverDiffStrategy {
     }
 
     public getDiffHunks(input: DiffCalculationInput): DiffHunk[] {
-        const newContent = applyTextDocumentChanges(
-            input.oldContent,
-            input.changes.map(c => c.change)
-        )
-        const diff = this.getDiffForUnifiedStrategy(input, newContent)
-        return [
-            {
-                uri: input.uri,
-                diff,
-                latestEditTimestamp: Math.max(...input.changes.map(c => c.timestamp)),
-            },
-        ]
-    }
-
-    private getDiffForUnifiedStrategy(input: DiffCalculationInput, newContent: string): PromptString {
-        if (this.addLineNumbers) {
-            return computeDiffWithLineNumbers(
-                input.uri,
-                input.oldContent,
-                newContent,
-                this.numContextLines
-            )
-        }
-        return PromptString.fromGitDiff(input.uri, input.oldContent, newContent)
+        const diffHunk = getUnifiedDiffHunkFromTextDocumentChange({
+            uri: input.uri,
+            oldContent: input.oldContent,
+            changes: input.changes,
+            addLineNumbersForDiff: this.addLineNumbers,
+            contextLines: this.numContextLines,
+        })
+        return diffHunk ? [diffHunk] : []
     }
 }

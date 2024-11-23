@@ -384,6 +384,7 @@ line 64
 
 </area_around_code_to_rewrite>
 
+
 Now, continue where I left off and finish my change by rewriting "code_to_rewrite":
 `
         expect(prompt.toString()).toEqual(expectedPrompt)

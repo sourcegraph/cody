@@ -2,7 +2,7 @@ import { PromptString } from '@sourcegraph/cody-shared'
 import { displayPath } from '@sourcegraph/cody-shared/src/editor/displayPath'
 import { structuredPatch } from 'diff'
 import * as vscode from 'vscode'
-import type { TextDocumentChange } from './base'
+import type { DiffHunk, TextDocumentChange, UnifiedPatchResponse } from './base'
 
 /**
  * Represents a group of text document changes with their range information.
@@ -188,6 +188,44 @@ export function getDiffStringForHunkWithLineNumbers(hunk: Diff.Hunk): string {
         }
     }
     return lines.join('\n')
+}
+
+export function getUnifiedDiffHunkFromTextDocumentChange(params: {
+    uri: vscode.Uri
+    oldContent: string
+    changes: TextDocumentChange[]
+    addLineNumbersForDiff: boolean
+    contextLines: number
+}): UnifiedPatchResponse | undefined {
+    if (params.changes.length === 0) {
+        return undefined
+    }
+    const newContent = applyTextDocumentChanges(
+        params.oldContent,
+        params.changes.map(c => c.change)
+    )
+    const diff = params.addLineNumbersForDiff
+        ? computeDiffWithLineNumbers(params.uri, params.oldContent, newContent, params.contextLines)
+        : PromptString.fromGitDiff(params.uri, params.oldContent, newContent)
+
+    return {
+        uri: params.uri,
+        newContent,
+        diff,
+        latestEditTimestamp: Math.max(...params.changes.map(c => c.timestamp)),
+    }
+}
+
+export function getDiffHunkFromUnifiedPatch(
+    unifiedPatch: UnifiedPatchResponse | undefined
+): DiffHunk | undefined {
+    return unifiedPatch
+        ? {
+              uri: unifiedPatch.uri,
+              latestEditTimestamp: unifiedPatch.latestEditTimestamp,
+              diff: unifiedPatch.diff,
+          }
+        : undefined
 }
 
 export function applyTextDocumentChanges(

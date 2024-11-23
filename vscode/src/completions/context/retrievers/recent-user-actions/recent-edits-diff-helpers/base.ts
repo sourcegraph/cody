@@ -63,3 +63,10 @@ export interface DiffHunk {
     latestEditTimestamp: number
     diff: PromptString
 }
+
+export interface UnifiedPatchResponse {
+    uri: vscode.Uri
+    newContent: string
+    diff: PromptString
+    latestEditTimestamp: number
+}

@@ -77,6 +77,11 @@ interface CurrentFileContext {
     range: vscode.Range
 }
 
+interface RecentEditPromptComponents {
+    longTermDiff: PromptString
+    shortTermDiff: PromptString
+}
+
 // Helper function to get prompt in some format
 export function getBaseUserPrompt(
     docContext: DocumentContext,
@@ -107,10 +112,8 @@ export function getBaseUserPrompt(
         getRecentlyViewedSnippetsPrompt
     )
 
-    const recentEditsPrompt = getPromptForTheContextSource(
-        contextItemMapping.get(RetrieverIdentifier.RecentEditsRetriever) || [],
-        RECENT_EDITS_INSTRUCTION,
-        getRecentEditsPrompt
+    const recentEditsPromptComponents = getRecentEditsPromptComponents(
+        contextItemMapping.get(RetrieverIdentifier.RecentEditsRetriever) || []
     )
 
     const lintErrorsPrompt = getPromptForTheContextSource(
@@ -134,10 +137,11 @@ export function getBaseUserPrompt(
 ${jaccardSimilarityPrompt}
 ${recentViewsPrompt}
 ${CURRENT_FILE_INSTRUCTION}${fileWithMarkerPrompt}
-${recentEditsPrompt}
+${recentEditsPromptComponents.longTermDiff}
 ${lintErrorsPrompt}
 ${recentCopyPrompt}
 ${areaPrompt}
+${recentEditsPromptComponents.shortTermDiff}
 ${FINAL_USER_PROMPT}
 `
     autoeditsLogger.logDebug('AutoEdits', 'Prompt\n', finalPrompt)
@@ -323,24 +327,61 @@ ${RECENT_COPY_TAG_CLOSE}
 `
 }
 
-export function getRecentEditsPrompt(contextItems: AutocompleteContextSnippet[]): PromptString {
+export function getRecentEditsPromptComponents(
+    contextItems: AutocompleteContextSnippet[]
+): RecentEditPromptComponents {
     const recentEdits = getContextItemsForIdentifier(
         contextItems,
         RetrieverIdentifier.RecentEditsRetriever
     )
     recentEdits.reverse()
-    if (recentEdits.length === 0) {
+    let shortTermDiff: PromptString = ps``
+    let longTermDiff: PromptString = ps``
+    if (recentEdits.length > 0) {
+        shortTermDiff = getRecentEditPrompt([recentEdits.at(-1)!])
+    }
+    if (recentEdits.length > 1) {
+        const longTermDiffPrompt = getRecentEditPromptLongTermDiffComponent(recentEdits.slice(0, -1))
+        longTermDiff = ps`${RECENT_EDITS_INSTRUCTION}
+${longTermDiffPrompt}
+`
+    }
+    return {
+        shortTermDiff,
+        longTermDiff,
+    }
+}
+
+function getRecentEditPromptLongTermDiffComponent(context: AutocompleteContextSnippet[]): PromptString {
+    if (context.length === 0) {
         return ps``
     }
-    const recentEditsPrompts = recentEdits.map(item =>
-        getContextPromptWithPath(
+    const prompts = context.map(item =>
+        getContextPromptForDiffWithPath(
             PromptString.fromDisplayPath(item.uri),
             PromptString.fromAutocompleteContextSnippet(item).content
         )
     )
-    const recentEditsPrompt = PromptString.join(recentEditsPrompts, ps`\n`)
-    return ps`${RECENT_EDITS_TAG_OPEN}
-${recentEditsPrompt}
+    return ps`
+${RECENT_EDITS_TAG_OPEN}
+${PromptString.join(prompts, ps`\n`)}
+${RECENT_EDITS_TAG_CLOSE}
+`
+}
+
+function getRecentEditPrompt(contextItems: AutocompleteContextSnippet[]): PromptString {
+    if (contextItems.length === 0) {
+        return ps``
+    }
+    const prompts = contextItems.map(item =>
+        getContextPromptForDiffWithPath(
+            PromptString.fromDisplayPath(item.uri),
+            PromptString.fromAutocompleteContextSnippet(item).content
+        )
+    )
+    return ps`
+${RECENT_EDITS_TAG_OPEN}
+${PromptString.join(prompts, ps`\n`)}
 ${RECENT_EDITS_TAG_CLOSE}
 `
 }
@@ -454,4 +495,8 @@ function getContextItemsForIdentifier(
 
 function getContextPromptWithPath(filePath: PromptString, content: PromptString): PromptString {
     return ps`(\`${filePath}\`)\n\n${content}\n`
+}
+
+function getContextPromptForDiffWithPath(filePath: PromptString, content: PromptString): PromptString {
+    return ps`${filePath}\n${content}`
 }
