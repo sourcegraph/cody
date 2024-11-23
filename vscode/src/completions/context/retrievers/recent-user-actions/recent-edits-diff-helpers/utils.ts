@@ -52,8 +52,12 @@ export function groupChangesForSimilarLinesTogether(
         changes,
         (lastChange: TextDocumentChange, change: TextDocumentChange) => {
             return (
-                doesLinesOverlapForRanges(lastChange.change.range, change.change.range) ||
-                doesLinesOverlapForRanges(lastChange.insertedRange, change.change.range)
+                doLineSpansOverlap(
+                    lastChange.insertedRange.start.line,
+                    lastChange.insertedRange.end.line,
+                    change.change.range.start.line,
+                    change.change.range.end.line
+                )
             )
         }
     )
@@ -203,10 +207,6 @@ export function applyTextDocumentChanges(
             content.slice(change.rangeOffset + change.rangeLength)
     }
     return content
-}
-
-export function doesLinesOverlapForRanges(a: vscode.Range, b: vscode.Range): boolean {
-    return doLineSpansOverlap(a.start.line, a.end.line, b.start.line, b.end.line)
 }
 
 function doLineSpansOverlap(

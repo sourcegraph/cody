@@ -6,7 +6,6 @@ import { getDiffsForContentChanges, getTextDocumentChangesForText } from './help
 import {
     applyTextDocumentChanges,
     computeDiffWithLineNumbers,
-    doesLinesOverlapForRanges,
     groupChangesForSimilarLinesTogether,
     groupConsecutiveItemsByPredicate,
 } from './utils'
@@ -18,6 +17,71 @@ const processComputedDiff = (text: string) => {
 }
 
 describe('groupChangesForSimilarLinesTogether', () => {
+
+    it('handles multiple deletions across different lines', () => {
+        const text = dedent`
+            const a = 5;
+            <D>console.log('test');
+            </D>const data = 5;
+            <D>function test() {
+                return true;
+            }</D>
+        `
+        const { originalText, changes } = getTextDocumentChangesForText(text)
+        const result = groupChangesForSimilarLinesTogether(changes)
+        expect(result.length).toBe(2)
+        const diffs = getDiffsForContentChanges(originalText, result)
+        expect(processComputedDiff(diffs[0])).toMatchInlineSnapshot(`
+            " const a = 5;
+            -console.log('test');
+             const data = 5;
+             function test() {
+                 return true;
+             }
+            "
+        `)
+        expect(processComputedDiff(diffs[1])).toMatchInlineSnapshot(`
+            " const a = 5;
+             const data = 5;
+            -function test() {
+            -    return true;
+            -}
+            "
+        `)
+    })
+
+    it('handles interleaved insertions and deletions', () => {
+        const text = dedent`
+            <D>let</D><I>const</I> x = 5;
+            <D>var</D><I>let</I> y = 10;
+            console.log(<D>x +</D><I>x *</I> y);
+        `
+        const { originalText, changes } = getTextDocumentChangesForText(text)
+        const result = groupChangesForSimilarLinesTogether(changes)
+        expect(result.length).toBe(3)
+        const diffs = getDiffsForContentChanges(originalText, result)
+        expect(processComputedDiff(diffs[0])).toMatchInlineSnapshot(`
+          "-let x = 5;
+          +const x = 5;
+           var y = 10;
+           console.log(x + y);
+          "
+        `)
+    })
+
+    it('handles overlapping multi-line changes', () => {
+        const text = dedent`
+            function test() {
+                <IC>const x = 5;
+                if (true) {</IC>
+                    <IC>console.log(x);
+                }</IC>
+            }
+        `
+        const { changes } = getTextDocumentChangesForText(text)
+        const result = groupChangesForSimilarLinesTogether(changes)
+        expect(result.length).toBe(2)
+    })
 
     it('seperate line changes for non-continous changes on different lines', () => {
         const text = dedent`
@@ -141,38 +205,6 @@ describe('applyTextDocumentChanges', () => {
         const content = ''
         const changes = [createChange(0, 0, 'Hello')]
         expect(applyTextDocumentChanges(content, changes)).toBe('Hello')
-    })
-})
-
-describe('doesLinesOverlapForRanges', () => {
-    const createRange = (startLine: number, endLine: number): vscode.Range =>
-        ({
-            start: { line: startLine, character: 0 },
-            end: { line: endLine, character: 0 },
-        }) as vscode.Range
-
-    it('should detect overlapping ranges', () => {
-        const rangeA = createRange(1, 5)
-        const rangeB = createRange(3, 7)
-        expect(doesLinesOverlapForRanges(rangeA, rangeB)).toBe(true)
-    })
-
-    it('should detect adjacent non-overlapping ranges', () => {
-        const rangeA = createRange(1, 3)
-        const rangeB = createRange(4, 6)
-        expect(doesLinesOverlapForRanges(rangeA, rangeB)).toBe(false)
-    })
-
-    it('should detect contained ranges', () => {
-        const rangeA = createRange(1, 10)
-        const rangeB = createRange(3, 5)
-        expect(doesLinesOverlapForRanges(rangeA, rangeB)).toBe(true)
-    })
-
-    it('should detect ranges touching at endpoints', () => {
-        const rangeA = createRange(1, 3)
-        const rangeB = createRange(3, 5)
-        expect(doesLinesOverlapForRanges(rangeA, rangeB)).toBe(true)
     })
 })
 
