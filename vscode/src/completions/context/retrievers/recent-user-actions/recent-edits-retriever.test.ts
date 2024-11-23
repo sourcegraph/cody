@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type * as vscode from 'vscode'
 import { range } from '../../../../testutils/textDocument'
 import { document } from '../../../test-helpers'
+import { LineLevelDiffStrategy } from './recent-edits-diff-helpers/line-level-diff'
 import { UnifiedDiffStrategy } from './recent-edits-diff-helpers/unified-diff'
 import { RecentEditsRetriever } from './recent-edits-retriever'
 
@@ -25,7 +26,10 @@ describe('RecentEditsRetriever', () => {
         retriever = new RecentEditsRetriever(
             {
                 maxAgeMs: FIVE_MINUTES,
-                diffStrategyList: [new UnifiedDiffStrategy({ addLineNumbers: false })],
+                diffStrategyList: [
+                    new UnifiedDiffStrategy({ addLineNumbers: false }),
+                    new LineLevelDiffStrategy({ shouldGroupNonOverlappingLines: false }),
+                ],
             },
             {
                 onDidChangeTextDocument(listener) {
@@ -116,7 +120,7 @@ describe('RecentEditsRetriever', () => {
 
             const diffHunks = await retriever.getDiff(testDocument.uri)
             expect(diffHunks).not.toBeNull()
-            expect(diffHunks?.length).toBe(1)
+            expect(diffHunks?.length).toBe(3)
             expect(
                 diffHunks?.[0].diff?.toString().split('\n').slice(2).join('\n')
             ).toMatchInlineSnapshot(`
@@ -162,7 +166,7 @@ describe('RecentEditsRetriever', () => {
 
             const diffHunks = await retriever.getDiff(testDocument.uri)
             expect(diffHunks).not.toBeNull()
-            expect(diffHunks?.length).toBe(1)
+            expect(diffHunks?.length).toBe(2)
             expect(
                 diffHunks?.[0].diff?.toString().split('\n').slice(2).join('\n')
             ).toMatchInlineSnapshot(`
@@ -203,7 +207,7 @@ describe('RecentEditsRetriever', () => {
 
             const diffHunks = await retriever.getDiff(newUri)
             expect(diffHunks).not.toBeNull()
-            expect(diffHunks?.length).toBe(1)
+            expect(diffHunks?.length).toBe(2)
             expect(
                 diffHunks?.[0].diff?.toString().split('\n').slice(2).join('\n')
             ).toMatchInlineSnapshot(`
