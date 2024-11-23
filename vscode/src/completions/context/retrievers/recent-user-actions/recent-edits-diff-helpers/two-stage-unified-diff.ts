@@ -15,7 +15,7 @@ import {
  * Generates a single unified diff patch that combines all changes
  * made to a document into one consolidated view.
  */
-export class AutoeditWithShortTermDiffStrategy implements RecentEditsRetrieverDiffStrategy {
+export class TwoStageUnifiedDiffStrategy implements RecentEditsRetrieverDiffStrategy {
     private longTermContextLines = 3
     private shortTermContextLines = 0
 
@@ -66,5 +66,9 @@ export class AutoeditWithShortTermDiffStrategy implements RecentEditsRetrieverDi
         changeGroup: TextDocumentChangeGroup[]
     ): TextDocumentChange[] {
         return changeGroup.flatMap(group => group.changes)
+    }
+
+    public getDiffStrategyName(): string {
+        return 'two-stage-unified-diff-strategy'
     }
 }

@@ -27,4 +27,10 @@ export class UnifiedDiffStrategy implements RecentEditsRetrieverDiffStrategy {
         })
         return diffHunk ? [diffHunk] : []
     }
+
+    public getDiffStrategyName(): string {
+        return `unified-diff-strategy-${
+            this.addLineNumbers ? 'with-line-numbers' : 'without-line-numbers'
+        }`
+    }
 }

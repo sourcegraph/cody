@@ -13,14 +13,15 @@ import type { RetrievedContextResults } from './completions-context-ranker'
 import { JaccardSimilarityRetriever } from './retrievers/jaccard-similarity/jaccard-similarity-retriever'
 import { DiagnosticsRetriever } from './retrievers/recent-user-actions/diagnostics-retriever'
 import { RecentCopyRetriever } from './retrievers/recent-user-actions/recent-copy'
-import { RecentEditsRetrieverDiffStrategyIdentifier } from './retrievers/recent-user-actions/recent-edits-diff-helpers/base'
+import { LineLevelDiffStrategy } from './retrievers/recent-user-actions/recent-edits-diff-helpers/line-level-diff'
+import { TwoStageUnifiedDiffStrategy } from './retrievers/recent-user-actions/recent-edits-diff-helpers/two-stage-unified-diff'
 import { RecentEditsRetriever } from './retrievers/recent-user-actions/recent-edits-retriever'
 import { RecentViewPortRetriever } from './retrievers/recent-user-actions/recent-view-port'
 import { RetrieverIdentifier } from './utils'
 
 interface RetrieverConfig {
     identifier: RetrieverIdentifier
-    maxSnippets: number
+    maxSnippets?: number
 }
 
 export class ContextRetrieverDataCollection implements vscode.Disposable {
@@ -31,7 +32,7 @@ export class ContextRetrieverDataCollection implements vscode.Disposable {
     private gitMetadataInstance = GitHubDotComRepoMetadata.getInstance()
 
     private readonly retrieverConfigs: RetrieverConfig[] = [
-        { identifier: RetrieverIdentifier.RecentEditsRetriever, maxSnippets: 15 },
+        { identifier: RetrieverIdentifier.RecentEditsRetriever },
         { identifier: RetrieverIdentifier.DiagnosticsRetriever, maxSnippets: 15 },
         { identifier: RetrieverIdentifier.RecentViewPortRetriever, maxSnippets: 10 },
     ]
@@ -105,8 +106,11 @@ export class ContextRetrieverDataCollection implements vscode.Disposable {
             case RetrieverIdentifier.RecentEditsRetriever:
                 return new RecentEditsRetriever({
                     maxAgeMs: 10 * 60 * 1000,
-                    diffStrategyIdentifier:
-                        RecentEditsRetrieverDiffStrategyIdentifier.UnifiedDiffWithLineNumbers,
+                    diffStrategyList: [
+                        new TwoStageUnifiedDiffStrategy(),
+                        new LineLevelDiffStrategy({ shouldGroupNonOverlappingLines: true }),
+                        new LineLevelDiffStrategy({ shouldGroupNonOverlappingLines: false }),
+                    ],
                 })
             case RetrieverIdentifier.DiagnosticsRetriever:
                 return new DiagnosticsRetriever({
