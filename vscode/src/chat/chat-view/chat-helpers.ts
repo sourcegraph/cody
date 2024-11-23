@@ -13,11 +13,3 @@ export function getChatPanelTitle(lastHumanText?: string, truncateTitle = true):
     // truncate title that is too long
     return text.length > 25 ? `${text.slice(0, 25).trim()}...` : text
 }
-
-export function chatHelper(hello: string): string {
-    return hello
-}
-
-export function chatHelper2(message: string): string {
-    return message
-}

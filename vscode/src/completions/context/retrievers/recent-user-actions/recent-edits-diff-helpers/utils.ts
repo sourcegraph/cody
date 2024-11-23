@@ -19,96 +19,91 @@ export interface TextDocumentChangeGroup {
     /**
      * The union of the inserted ranges of all changes in this group
      */
-    insertRange: vscode.Range
+    insertedRange: vscode.Range
 
     /**
      * The union of the replace ranges of all changes in this group
      */
-    replaceRange: vscode.Range
+    replacementRange: vscode.Range
 }
 
 /**
  * Groups consecutive text document changes together based on line overlap.
  * This function helps create more meaningful diffs by combining related changes that occur on overlapping lines.
  *
- * For example, when a user types multiple characters or performs multiple edits in the same area of text,
+ * For example, when a user types multiple characters or performs multiple edits in the same lines of text,
  * these changes are grouped together as a single logical change instead of being treated as separate changes.
  *
- * @param changes - Array of individual text document changes to be grouped
+ * @param documentChanges - Array of individual text document changes to be grouped
  * @returns Array of TextDocumentChangeGroup objects, each containing related changes and their combined line range
- *
- * The predicate used for grouping checks if:
- * - The original ranges of two changes overlap (for modifications/deletions)
- * - The inserted range of the first change overlaps with the original range of the second change
- * This ensures that changes affecting the same or adjacent lines are grouped together.
  */
-export function groupChangesForSimilarLinesTogether(
-    changes: TextDocumentChange[]
+export function groupOverlappingDocumentChanges(
+    documentChanges: TextDocumentChange[]
 ): TextDocumentChangeGroup[] {
-    if (changes.length === 0) {
-        return []
-    }
-    const groupedChanges = groupConsecutiveItemsByPredicate(
-        changes,
-        (lastChange: TextDocumentChange, change: TextDocumentChange) => {
-            return (
-                doLineSpansOverlap(
-                    lastChange.insertedRange.start.line,
-                    lastChange.insertedRange.end.line,
-                    change.change.range.start.line,
-                    change.change.range.end.line
-                )
-            )
-        }
-    )
-    return groupedChanges.map(currentGroup => {
-        return {
-            changes: currentGroup,
-            insertRange: getRangeUnion(currentGroup.map(change => change.insertedRange)),
-            replaceRange: getRangeUnion(currentGroup.map(change => change.change.range)),
-        }
+    return mergeDocumentChanges({
+        items: documentChanges.map(change => ({
+            insertedRange: change.insertedRange,
+            replacementRange: change.change.range,
+            originalChange: change,
+        })),
+        mergePredicate: (a, b) => doLineSpansOverlap(a.start.line, a.end.line, b.start.line, b.end.line),
+        getChanges: item => [item.originalChange],
     })
 }
 
 /**
  * Combines consecutive text document change groups that have non-overlapping line ranges.
- * The function can generally be called after `groupChangesForSimilarLinesTogether` to further consolidate changes.
+ * The function can generally be called after `groupOverlappingDocumentChanges` to further consolidate changes.
  *
  * This function takes an array of `TextDocumentChangeGroup` objects and merges consecutive groups
  * where their line ranges do not overlap. By combining these non-overlapping groups, it creates
  * larger groups of changes that can be processed together, even if they affect different parts
- * of the document, as long as they occurred consecutively.
+ * of the document.
  *
  * @param groupedChanges - Array of `TextDocumentChangeGroup` objects to be combined.
  * @returns Array of `TextDocumentChangeGroup` objects where consecutive non-overlapping groups have been merged.
- *
- * The predicate used for grouping checks if:
- * - The line ranges of two groups do not overlap.
- *   - Specifically, it checks that `a.changeStartLine` to `a.changeEndLine` does not overlap with `b.changeStartLine` to `b.changeEndLine`.
- * This ensures that consecutive groups with non-overlapping line ranges are combined together.
  */
-export function combineNonOverlappingLinesSchemaTogether(
+export function groupNonOverlappingChangeGroups(
     groupedChanges: TextDocumentChangeGroup[]
 ): TextDocumentChangeGroup[] {
-    if (groupedChanges.length === 0) {
+    return mergeDocumentChanges({
+        items: groupedChanges,
+        mergePredicate: (a, b) =>
+            !doLineSpansOverlap(a.start.line, a.end.line, b.start.line, b.end.line),
+        getChanges: group => group.changes,
+    })
+}
+
+/**
+ * Merges document changes based on a predicate and extracts changes using a provided function.
+ *
+ * @param items - Array of objects containing insertedRange and replacementRange properties
+ * @param mergePredicate - Function that determines if two ranges should be merged
+ * @param getChanges - Function that extracts TextDocumentChange array from an item
+ * @returns Array of TextDocumentChangeGroup objects containing merged changes and their ranges
+ */
+function mergeDocumentChanges<
+    T extends { insertedRange: vscode.Range; replacementRange: vscode.Range },
+>(args: {
+    items: T[]
+    mergePredicate: (a: vscode.Range, b: vscode.Range) => boolean
+    getChanges: (item: T) => TextDocumentChange[]
+}): TextDocumentChangeGroup[] {
+    if (args.items.length === 0) {
         return []
     }
-    const combinedGroups = groupConsecutiveItemsByPredicate(
-        groupedChanges,
-        (lastChange: TextDocumentChangeGroup, change: TextDocumentChangeGroup) => {
-            return !doLineSpansOverlap(
-                lastChange.insertRange.start.line,
-                lastChange.insertRange.end.line,
-                change.replaceRange.start.line,
-                change.replaceRange.end.line
-            )
-        }
-    )
-    return combinedGroups.map(changes => ({
-        changes: changes.flatMap(change => change.changes),
-        insertRange: getRangeUnion(changes.map(change => change.insertRange)),
-        replaceRange: getRangeUnion(changes.map(change => change.replaceRange)),
-    }))
+
+    const mergedGroups = groupConsecutiveItemsByPredicate(args.items, (lastItem, currentItem) => {
+        return args.mergePredicate(lastItem.insertedRange, currentItem.replacementRange)
+    })
+
+    return mergedGroups
+        .filter(group => group.length > 0)
+        .map(group => ({
+            changes: group.flatMap(item => args.getChanges(item)),
+            insertedRange: getRangeUnion(group.map(item => item.insertedRange)),
+            replacementRange: getRangeUnion(group.map(item => item.replacementRange)),
+        }))
 }
 
 function getRangeUnion(ranges: vscode.Range[]): vscode.Range {

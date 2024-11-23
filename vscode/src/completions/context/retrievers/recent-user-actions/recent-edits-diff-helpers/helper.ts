@@ -68,11 +68,11 @@ export function parseTextAndGenerateChangeEvents(text: string): {
     let originalText = ''
     let currentText = ''
     let currentOffset = 0
-
     const regex = /<I>(.*?)<\/I>|<D>(.*?)<\/D>|<R>(.*?)<RM>(.*?)<\/R>/gs
     let match: RegExpExecArray | null
 
-    while ((match = regex.exec(text)) !== null) {
+    match = regex.exec(text)
+    while (match !== null) {
         const [fullMatch, insertText, deleteText, replaceText1, replaceText2] = match
         const matchIndex = match.index
 
@@ -111,6 +111,7 @@ export function parseTextAndGenerateChangeEvents(text: string): {
             originalText += replaceText1
         }
         currentOffset = matchIndex + fullMatch.length
+        match = regex.exec(text)
     }
     const remainingText = text.substring(currentOffset)
     originalText += remainingText

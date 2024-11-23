@@ -1,3 +1,4 @@
+import fs from 'node:fs'
 import path from 'node:path'
 import type * as vscode from 'vscode'
 import type {
@@ -9,9 +10,10 @@ import type {
 import {
     applyTextDocumentChanges,
     computeDiffWithLineNumbers,
-    groupChangesForSimilarLinesTogether,
+    groupNonOverlappingChangeGroups,
+    groupOverlappingDocumentChanges,
 } from './utils'
-import { type TextDocumentChangeGroup, combineNonOverlappingLinesSchemaTogether } from './utils'
+import type { TextDocumentChangeGroup } from './utils'
 
 /**
  * Generates a single unified diff patch that combines all changes
@@ -21,11 +23,10 @@ export class AutoeditWithShortTermDiffStrategy implements RecentEditsRetrieverDi
     private shortTermContextLines = 0
 
     public getDiffHunks(input: DiffCalculationInput): DiffHunk[] {
-        const rawChanges = groupChangesForSimilarLinesTogether(input.changes)
+        const rawChanges = groupOverlappingDocumentChanges(input.changes)
         const rawDiffHunks = this.getDiffHunksFromGroupedChanges(input, rawChanges)
-        const changes = combineNonOverlappingLinesSchemaTogether(rawChanges)
+        const changes = groupNonOverlappingChangeGroups(rawChanges)
         const combinedDiffHunks = this.getDiffHunksFromGroupedChanges(input, changes)
-
         this.logRawDataPoints(input.uri.toString(), input.oldContent, rawDiffHunks, combinedDiffHunks)
         return combinedDiffHunks
     }
@@ -49,12 +50,16 @@ export class AutoeditWithShortTermDiffStrategy implements RecentEditsRetrieverDi
         return allDiffHunks
     }
 
-    private logRawDataPoints(uri: string, oldContent: string, rawDiffHunks: DiffHunk[], combinedDiffHunks: DiffHunk[]) {
+    private logRawDataPoints(
+        uri: string,
+        oldContent: string,
+        rawDiffHunks: DiffHunk[],
+        combinedDiffHunks: DiffHunk[]
+    ) {
         const dirPath = '/Users/hiteshsagtani/Desktop/raw-diff-logs'
         const fileName = uri.split('/').pop()?.split('.')[0] || 'document'
         const logPath = uri.replace(/[^/\\]+$/, `${fileName}_raw.jsonl`)
         const finalLogPath = path.join(dirPath, path.basename(logPath))
-        const fs = require('fs')
 
         // Create directory if it doesn't exist
         if (!fs.existsSync(dirPath)) {
@@ -65,27 +70,10 @@ export class AutoeditWithShortTermDiffStrategy implements RecentEditsRetrieverDi
             uri: uri.toString(),
             oldContent,
             rawDiffHunks,
-            combinedDiffHunks
+            combinedDiffHunks,
         }
         // Append to file if it exists, create if it doesn't
-        fs.appendFileSync(
-            finalLogPath,
-            JSON.stringify(logData) + '\n',
-            { encoding: 'utf8' }
-        )
-    }
-
-    private logGroupedChanges(uri: vscode.Uri, oldContent: string, changes: TextDocumentChangeGroup[]) {
-        const fileName = uri.fsPath.split('/').pop()?.split('.')[0] || 'document'
-        const logPath = uri.fsPath.replace(/[^/\\]+$/, `${fileName}_grouped.json`)
-        const finalLogPath = path.join('/Users/hiteshsagtani/Desktop/diff-logs', path.basename(logPath))
-        const fs = require('fs')
-        const logData = {
-            uri: uri.toString(),
-            oldContent: oldContent,
-            changes: changes.map(c => c.changes),
-        }
-        fs.writeFileSync(finalLogPath, JSON.stringify(logData, null, 2))
+        fs.appendFileSync(finalLogPath, JSON.stringify(logData) + '\n', { encoding: 'utf8' })
     }
 
     private getDiffHunksForChanges(

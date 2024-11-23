@@ -1,4 +1,3 @@
-import path from 'node:path'
 import { type PromptString, contextFiltersProvider } from '@sourcegraph/cody-shared'
 import type { AutocompleteContextSnippet } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
@@ -176,15 +175,6 @@ export class RecentEditsRetriever implements vscode.Disposable, ContextRetriever
             })
         }
         this.reconcileOutdatedChanges()
-        this.logTextDocument(trackedDocument)
-    }
-
-    private logTextDocument(trackedDocument: TrackedDocument): void {
-        const fileName = trackedDocument.uri.fsPath.split('/').pop()?.split('.')[0] || 'document'
-        const logPath = trackedDocument.uri.fsPath.replace(/[^/\\]+$/, `${fileName}.json`)
-        const finalLogPath = path.join('/Users/hiteshsagtani/Desktop/diff-logs', path.basename(logPath))
-        const fs = require('fs')
-        fs.writeFileSync(finalLogPath, JSON.stringify(trackedDocument, null, 2))
     }
 
     private onDidOpenTextDocument(document: vscode.TextDocument): void {

@@ -3,7 +3,13 @@ import dedent from 'dedent'
 import { describe, expect, it } from 'vitest'
 import type * as vscode from 'vscode'
 import { getDiffsForContentChanges, getTextDocumentChangesForText } from './helper'
-import {applyTextDocumentChanges, computeDiffWithLineNumbers, groupChangesForSimilarLinesTogether, groupConsecutiveItemsByPredicate, combineNonOverlappingLinesSchemaTogether} from './utils';
+import {
+    applyTextDocumentChanges,
+    computeDiffWithLineNumbers,
+    groupConsecutiveItemsByPredicate,
+    groupNonOverlappingChangeGroups,
+    groupOverlappingDocumentChanges,
+} from './utils'
 
 const processComputedDiff = (text: string) => {
     const lines = text.split('\n')
@@ -12,7 +18,6 @@ const processComputedDiff = (text: string) => {
 }
 
 describe('groupChangesForLines', () => {
-
     it('handles multiple deletions across different lines', () => {
         const text = dedent`
             const a = 5;
@@ -23,7 +28,7 @@ describe('groupChangesForLines', () => {
             }</D>
         `
         const { originalText, changes } = getTextDocumentChangesForText(text)
-        const result = groupChangesForSimilarLinesTogether(changes)
+        const result = groupOverlappingDocumentChanges(changes)
         expect(result.length).toBe(2)
         const diffs = getDiffsForContentChanges(originalText, result)
         expect(processComputedDiff(diffs[0])).toMatchInlineSnapshot(`
@@ -43,7 +48,7 @@ describe('groupChangesForLines', () => {
             -}
             "
         `)
-        const combinedChanges = combineNonOverlappingLinesSchemaTogether(result)
+        const combinedChanges = groupNonOverlappingChangeGroups(result)
         expect(combinedChanges.length).toBe(1)
         const combinedDiffs = getDiffsForContentChanges(originalText, combinedChanges)
         expect(processComputedDiff(combinedDiffs[0])).toMatchInlineSnapshot(`
@@ -55,7 +60,6 @@ describe('groupChangesForLines', () => {
             -}
             "
         `)
-
     })
 
     it('handles interleaved insertions and deletions', () => {
@@ -65,7 +69,7 @@ describe('groupChangesForLines', () => {
             console.log(<D>x +</D><I>x *</I> y);
         `
         const { originalText, changes } = getTextDocumentChangesForText(text)
-        const result = groupChangesForSimilarLinesTogether(changes)
+        const result = groupOverlappingDocumentChanges(changes)
         expect(result.length).toBe(3)
         const diffs = getDiffsForContentChanges(originalText, result)
         expect(processComputedDiff(diffs[0])).toMatchInlineSnapshot(`
@@ -80,22 +84,22 @@ describe('groupChangesForLines', () => {
     it('handles overlapping multi-line changes', () => {
         const text = dedent`
             function test() {
-                <IC>const x = 5;
+            <IC>    const x = 5;
                 if (true) {</IC>
-                <IC>    console.log(x);
+            <IC>        console.log(x);
                 }</IC>
             }
         `
         const { originalText, changes } = getTextDocumentChangesForText(text)
-        const result = groupChangesForSimilarLinesTogether(changes)
+        const result = groupOverlappingDocumentChanges(changes)
         expect(result.length).toBe(2)
-        const combinedChanges = combineNonOverlappingLinesSchemaTogether(result)
+        const combinedChanges = groupNonOverlappingChangeGroups(result)
         expect(combinedChanges.length).toBe(1)
         const combinedDiffs = getDiffsForContentChanges(originalText, combinedChanges)
         expect(processComputedDiff(combinedDiffs[0])).toMatchInlineSnapshot(`
             " function test() {
-            -    
-            -    
+            -
+            -
             +    const x = 5;
             +    if (true) {
             +        console.log(x);
@@ -112,7 +116,7 @@ describe('groupChangesForLines', () => {
             const<IC> a = 5;</IC>
         `
         const { originalText, changes } = getTextDocumentChangesForText(text)
-        const result = groupChangesForSimilarLinesTogether(changes)
+        const result = groupOverlappingDocumentChanges(changes)
         expect(result.length).toBe(3)
         const diffs = getDiffsForContentChanges(originalText, result)
         expect(processComputedDiff(diffs[0])).toMatchInlineSnapshot(`
@@ -136,7 +140,7 @@ describe('groupChangesForLines', () => {
             +const a = 5;
             "
         `)
-        const combinedChanges = combineNonOverlappingLinesSchemaTogether(result)
+        const combinedChanges = groupNonOverlappingChangeGroups(result)
         expect(combinedChanges.length).toBe(1)
         const combinedDiffs = getDiffsForContentChanges(originalText, combinedChanges)
         expect(processComputedDiff(combinedDiffs[0])).toMatchInlineSnapshot(`
@@ -157,7 +161,7 @@ describe('groupChangesForLines', () => {
             const a = 5;</IC>
         `
         const { originalText, changes } = getTextDocumentChangesForText(text)
-        const result = groupChangesForSimilarLinesTogether(changes)
+        const result = groupOverlappingDocumentChanges(changes)
         expect(result.length).toBe(1)
         const diffs = getDiffsForContentChanges(originalText, result)
         expect(processComputedDiff(diffs[0])).toMatchInlineSnapshot(`
@@ -175,7 +179,7 @@ describe('groupChangesForLines', () => {
             console.log('done')</IC>
         `
         const { originalText, changes } = getTextDocumentChangesForText(text)
-        const result = groupChangesForSimilarLinesTogether(changes)
+        const result = groupOverlappingDocumentChanges(changes)
         expect(result.length).toBe(1)
         const diffs = getDiffsForContentChanges(originalText, result)
         expect(processComputedDiff(diffs[0])).toMatchInlineSnapshot(`

@@ -140,8 +140,7 @@ ${recentCopyPrompt}
 ${areaPrompt}
 ${FINAL_USER_PROMPT}
 `
-    // autoeditsLogger.logDebug('AutoEdits', 'Prompt\n', finalPrompt)
-    autoeditsLogger.logDebug('AutoEdits', 'Diff Values\n', recentEditsPrompt)
+    autoeditsLogger.logDebug('AutoEdits', 'Prompt\n', finalPrompt)
     return {
         codeToReplace: codeToReplace,
         prompt: finalPrompt,
@@ -334,7 +333,7 @@ export function getRecentEditsPrompt(contextItems: AutocompleteContextSnippet[])
         return ps``
     }
     const recentEditsPrompts = recentEdits.map(item =>
-        getContextPromptForDiffPrompt(
+        getContextPromptWithPath(
             PromptString.fromDisplayPath(item.uri),
             PromptString.fromAutocompleteContextSnippet(item).content
         )
@@ -455,8 +454,4 @@ function getContextItemsForIdentifier(
 
 function getContextPromptWithPath(filePath: PromptString, content: PromptString): PromptString {
     return ps`(\`${filePath}\`)\n\n${content}\n`
-}
-
-function getContextPromptForDiffPrompt(filePath: PromptString, content: PromptString): PromptString {
-    return ps`${filePath}\n${content}`
 }
