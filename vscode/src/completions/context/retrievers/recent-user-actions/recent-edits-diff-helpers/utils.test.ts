@@ -3,12 +3,7 @@ import dedent from 'dedent'
 import { describe, expect, it } from 'vitest'
 import type * as vscode from 'vscode'
 import { getDiffsForContentChanges, getTextDocumentChangesForText } from './helper'
-import {
-    applyTextDocumentChanges,
-    computeDiffWithLineNumbers,
-    groupChangesForSimilarLinesTogether,
-    groupConsecutiveItemsByPredicate,
-} from './utils'
+import {applyTextDocumentChanges, computeDiffWithLineNumbers, groupChangesForSimilarLinesTogether, groupConsecutiveItemsByPredicate, combineNonOverlappingLinesSchemaTogether} from './utils';
 
 const processComputedDiff = (text: string) => {
     const lines = text.split('\n')
@@ -16,7 +11,7 @@ const processComputedDiff = (text: string) => {
     return updatedText.split('\n').slice(3).join('\n')
 }
 
-describe('groupChangesForSimilarLinesTogether', () => {
+describe('groupChangesForLines', () => {
 
     it('handles multiple deletions across different lines', () => {
         const text = dedent`
@@ -48,6 +43,19 @@ describe('groupChangesForSimilarLinesTogether', () => {
             -}
             "
         `)
+        const combinedChanges = combineNonOverlappingLinesSchemaTogether(result)
+        expect(combinedChanges.length).toBe(1)
+        const combinedDiffs = getDiffsForContentChanges(originalText, combinedChanges)
+        expect(processComputedDiff(combinedDiffs[0])).toMatchInlineSnapshot(`
+            " const a = 5;
+            -console.log('test');
+             const data = 5;
+            -function test() {
+            -    return true;
+            -}
+            "
+        `)
+
     })
 
     it('handles interleaved insertions and deletions', () => {
@@ -74,13 +82,27 @@ describe('groupChangesForSimilarLinesTogether', () => {
             function test() {
                 <IC>const x = 5;
                 if (true) {</IC>
-                    <IC>console.log(x);
+                <IC>    console.log(x);
                 }</IC>
             }
         `
-        const { changes } = getTextDocumentChangesForText(text)
+        const { originalText, changes } = getTextDocumentChangesForText(text)
         const result = groupChangesForSimilarLinesTogether(changes)
         expect(result.length).toBe(2)
+        const combinedChanges = combineNonOverlappingLinesSchemaTogether(result)
+        expect(combinedChanges.length).toBe(1)
+        const combinedDiffs = getDiffsForContentChanges(originalText, combinedChanges)
+        expect(processComputedDiff(combinedDiffs[0])).toMatchInlineSnapshot(`
+            " function test() {
+            -    
+            -    
+            +    const x = 5;
+            +    if (true) {
+            +        console.log(x);
+            +    }
+             }
+            "
+        `)
     })
 
     it('seperate line changes for non-continous changes on different lines', () => {
@@ -111,6 +133,18 @@ describe('groupChangesForSimilarLinesTogether', () => {
             " console.log('Hello, world!');
              data = 'check'
             -const
+            +const a = 5;
+            "
+        `)
+        const combinedChanges = combineNonOverlappingLinesSchemaTogether(result)
+        expect(combinedChanges.length).toBe(1)
+        const combinedDiffs = getDiffsForContentChanges(originalText, combinedChanges)
+        expect(processComputedDiff(combinedDiffs[0])).toMatchInlineSnapshot(`
+            "-console.
+            -data =
+            -const
+            +console.log('Hello, world!');
+            +data = 'check'
             +const a = 5;
             "
         `)

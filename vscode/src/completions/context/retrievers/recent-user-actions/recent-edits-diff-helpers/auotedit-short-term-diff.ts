@@ -22,10 +22,19 @@ export class AutoeditWithShortTermDiffStrategy implements RecentEditsRetrieverDi
 
     public getDiffHunks(input: DiffCalculationInput): DiffHunk[] {
         const rawChanges = groupChangesForSimilarLinesTogether(input.changes)
+        const rawDiffHunks = this.getDiffHunksFromGroupedChanges(input, rawChanges)
         const changes = combineNonOverlappingLinesSchemaTogether(rawChanges)
-        this.logGroupedChanges(input.uri, input.oldContent, changes)
-        const allDiffHunks: DiffHunk[] = []
+        const combinedDiffHunks = this.getDiffHunksFromGroupedChanges(input, changes)
 
+        this.logRawDataPoints(input.uri.toString(), input.oldContent, rawDiffHunks, combinedDiffHunks)
+        return combinedDiffHunks
+    }
+
+    private getDiffHunksFromGroupedChanges(
+        input: DiffCalculationInput,
+        changes: TextDocumentChangeGroup[]
+    ): DiffHunk[] {
+        const allDiffHunks: DiffHunk[] = []
         let oldContent = input.oldContent
         for (const changeList of changes) {
             const [diffHunk, newContent] = this.getDiffHunksForChanges(
@@ -38,6 +47,32 @@ export class AutoeditWithShortTermDiffStrategy implements RecentEditsRetrieverDi
             allDiffHunks.push(diffHunk)
         }
         return allDiffHunks
+    }
+
+    private logRawDataPoints(uri: string, oldContent: string, rawDiffHunks: DiffHunk[], combinedDiffHunks: DiffHunk[]) {
+        const dirPath = '/Users/hiteshsagtani/Desktop/raw-diff-logs'
+        const fileName = uri.split('/').pop()?.split('.')[0] || 'document'
+        const logPath = uri.replace(/[^/\\]+$/, `${fileName}_raw.jsonl`)
+        const finalLogPath = path.join(dirPath, path.basename(logPath))
+        const fs = require('fs')
+
+        // Create directory if it doesn't exist
+        if (!fs.existsSync(dirPath)) {
+            fs.mkdirSync(dirPath, { recursive: true })
+        }
+
+        const logData = {
+            uri: uri.toString(),
+            oldContent,
+            rawDiffHunks,
+            combinedDiffHunks
+        }
+        // Append to file if it exists, create if it doesn't
+        fs.appendFileSync(
+            finalLogPath,
+            JSON.stringify(logData) + '\n',
+            { encoding: 'utf8' }
+        )
     }
 
     private logGroupedChanges(uri: vscode.Uri, oldContent: string, changes: TextDocumentChangeGroup[]) {

@@ -1,11 +1,11 @@
 import { PromptString } from '@sourcegraph/cody-shared'
 import { displayPath } from '@sourcegraph/cody-shared/src/editor/displayPath'
 import { structuredPatch } from 'diff'
-import type * as vscode from 'vscode'
+import * as vscode from 'vscode'
 import type { TextDocumentChange } from './base'
 
 /**
- * Represents a group of text document changes with their line range information.
+ * Represents a group of text document changes with their range information.
  * The grouped changes are consecutive changes made in the document that should be treated as a single entity when computing diffs.
  *
  * @example
@@ -17,14 +17,14 @@ export interface TextDocumentChangeGroup {
     changes: TextDocumentChange[]
 
     /**
-     * The starting line number of the changes in this group
+     * The union of the inserted ranges of all changes in this group
      */
-    changeStartLine: number
+    insertRange: vscode.Range
 
     /**
-     * The ending line number of the changes in this group
+     * The union of the replace ranges of all changes in this group
      */
-    changeEndLine: number
+    replaceRange: vscode.Range
 }
 
 /**
@@ -62,11 +62,10 @@ export function groupChangesForSimilarLinesTogether(
         }
     )
     return groupedChanges.map(currentGroup => {
-        const range = getMinMaxRangeLines(currentGroup)
         return {
             changes: currentGroup,
-            changeStartLine: range[0],
-            changeEndLine: range[1],
+            insertRange: getRangeUnion(currentGroup.map(change => change.insertedRange)),
+            replaceRange: getRangeUnion(currentGroup.map(change => change.change.range)),
         }
     })
 }
@@ -96,33 +95,33 @@ export function combineNonOverlappingLinesSchemaTogether(
     }
     const combinedGroups = groupConsecutiveItemsByPredicate(
         groupedChanges,
-        (a: TextDocumentChangeGroup, b: TextDocumentChangeGroup) => {
+        (lastChange: TextDocumentChangeGroup, change: TextDocumentChangeGroup) => {
             return !doLineSpansOverlap(
-                a.changeStartLine,
-                a.changeEndLine,
-                b.changeStartLine,
-                b.changeEndLine
+                lastChange.insertRange.start.line,
+                lastChange.insertRange.end.line,
+                change.replaceRange.start.line,
+                change.replaceRange.end.line
             )
         }
     )
     return combinedGroups.map(changes => ({
         changes: changes.flatMap(change => change.changes),
-        changeStartLine: Math.min(...changes.map(change => change.changeStartLine)),
-        changeEndLine: Math.max(...changes.map(change => change.changeEndLine)),
+        insertRange: getRangeUnion(changes.map(change => change.insertRange)),
+        replaceRange: getRangeUnion(changes.map(change => change.replaceRange)),
     }))
 }
 
-function getMinMaxRangeLines(documentChanges: TextDocumentChange[]): [number, number] {
-    let minLine = Number.POSITIVE_INFINITY
-    let maxLine = Number.NEGATIVE_INFINITY
-    for (const change of documentChanges) {
-        const ranges = [change.change.range, change.insertedRange]
-        for (const range of ranges) {
-            minLine = Math.min(minLine, range.start.line)
-            maxLine = Math.max(maxLine, range.end.line)
-        }
+function getRangeUnion(ranges: vscode.Range[]): vscode.Range {
+    if (ranges.length === 0) {
+        throw new Error('Cannot get union of empty ranges')
     }
-    return [minLine, maxLine]
+    let start = ranges[0].start
+    let end = ranges[0].end
+    for (const range of ranges) {
+        start = start.isBefore(range.start) ? start : range.start
+        end = end.isAfter(range.end) ? end : range.end
+    }
+    return new vscode.Range(start, end)
 }
 
 /**
