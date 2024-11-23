@@ -46,6 +46,9 @@ export interface CodyClientConfig {
     // Whether the new Sourcegraph backend LLM models API endpoint should be used to query which
     // models are available.
     modelsAPIEnabled: boolean
+
+    // Whether the user should sign in to an enterprise instance.
+    userShouldUseEnterprise: boolean
 }
 
 /**
@@ -165,12 +168,18 @@ export class ClientConfigSingleton {
                         if (isError(clientConfig)) {
                             throw clientConfig
                         }
+                        // TODO: delete this once backend API is implemented
+                        // For testing purpose, ensure userShouldUseEnterprise is always true
+                        clientConfig.userShouldUseEnterprise = true
                         return clientConfig
                     })
             })
             .then(clientConfig => {
                 signal?.throwIfAborted()
                 logDebug('ClientConfigSingleton', 'refreshed', JSON.stringify(clientConfig))
+                // TODO: delete this once backend API is implemented
+                // For testing purpose, ensure userShouldUseEnterprise is always true
+                clientConfig.userShouldUseEnterprise = true
                 return clientConfig
             })
             .catch(e => {
@@ -198,6 +207,7 @@ export class ClientConfigSingleton {
 
             // Things that did not exist before logically default to disabled.
             modelsAPIEnabled: false,
+            userShouldUseEnterprise: false,
         }
     }
 

@@ -370,6 +370,7 @@ export class MockServer {
                     attributionEnabled: attribution,
                     // When server-sent LLMs have been set, we enable the models api
                     modelsAPIEnabled: !!controller.availableLLMs,
+                    userShouldUseEnterprise: true,
                 }),
             );
         });
