@@ -1,29 +1,86 @@
 import { PromptString } from '@sourcegraph/cody-shared'
-import { describe, expect, it } from 'vitest'
-import * as vscode from 'vscode'
-import {applyTextDocumentChanges, computeDiffWithLineNumbers, doesLinesOverlapForRanges, groupConsecutiveItemsByPredicate, groupChangesForSimilarLinesTogether} from './utils';
 import dedent from 'dedent'
-import {getTextDocumentChangesForText, getDiffsForContentChanges} from './helper';
+import { describe, expect, it } from 'vitest'
+import type * as vscode from 'vscode'
+import { getDiffsForContentChanges, getTextDocumentChangesForText } from './helper'
+import {
+    applyTextDocumentChanges,
+    computeDiffWithLineNumbers,
+    doesLinesOverlapForRanges,
+    groupChangesForSimilarLinesTogether,
+    groupConsecutiveItemsByPredicate,
+} from './utils'
 
-
-const removeNewLineStringFromDiff = (text: string) => {
+const processComputedDiff = (text: string) => {
     const lines = text.split('\n')
-    return lines.filter(line => !line.includes('\\ No newline at end of file')).join('\n')
+    const updatedText = lines.filter(line => !line.includes('\\ No newline at end of file')).join('\n')
+    return updatedText.split('\n').slice(3).join('\n')
 }
 
-describe.only('documentChangeEventGroupings', () => {
+describe('groupChangesForSimilarLinesTogether', () => {
 
-    it('basic test case', () => {
+    it('seperate line changes for non-continous changes on different lines', () => {
         const text = dedent`
-            console.<I>log('Hello, world!');
-            console.log('done')</I>
+            console.<IC>log('Hello, world!');</IC>
+            data =<IC> 'check'</IC>
+            const<IC> a = 5;</IC>
         `
-        const {originalText, changes} = getTextDocumentChangesForText(text);
-        const result = groupChangesForSimilarLinesTogether(changes);
+        const { originalText, changes } = getTextDocumentChangesForText(text)
+        const result = groupChangesForSimilarLinesTogether(changes)
+        expect(result.length).toBe(3)
+        const diffs = getDiffsForContentChanges(originalText, result)
+        expect(processComputedDiff(diffs[0])).toMatchInlineSnapshot(`
+            "-console.
+            +console.log('Hello, world!');
+             data =
+             const
+            "
+        `)
+        expect(processComputedDiff(diffs[1])).toMatchInlineSnapshot(`
+            " console.log('Hello, world!');
+            -data =
+            +data = 'check'
+             const
+            "
+        `)
+        expect(processComputedDiff(diffs[2])).toMatchInlineSnapshot(`
+            " console.log('Hello, world!');
+             data = 'check'
+            -const
+            +const a = 5;
+            "
+        `)
+    })
+
+    it('same line changes with non-continous character typing', () => {
+        const text = dedent`
+            console.<IC>log('Hello, world!');
+            console.</IC>log<IC>('done')
+            const a = 5;</IC>
+        `
+        const { originalText, changes } = getTextDocumentChangesForText(text)
+        const result = groupChangesForSimilarLinesTogether(changes)
         expect(result.length).toBe(1)
-        const diffs = getDiffsForContentChanges(originalText, result);
-        expect(diffs.length).toBe(1)
-        expect(removeNewLineStringFromDiff(diffs[0]).split('\n').slice(3).join('\n')).toMatchInlineSnapshot(`
+        const diffs = getDiffsForContentChanges(originalText, result)
+        expect(processComputedDiff(diffs[0])).toMatchInlineSnapshot(`
+            "-console.log
+            +console.log('Hello, world!');
+            +console.log('done')
+            +const a = 5;
+            "
+        `)
+    })
+
+    it('continous character typing by the user', () => {
+        const text = dedent`
+            console.<IC>log('Hello, world!');
+            console.log('done')</IC>
+        `
+        const { originalText, changes } = getTextDocumentChangesForText(text)
+        const result = groupChangesForSimilarLinesTogether(changes)
+        expect(result.length).toBe(1)
+        const diffs = getDiffsForContentChanges(originalText, result)
+        expect(processComputedDiff(diffs[0])).toMatchInlineSnapshot(`
             "-console.
             +console.log('Hello, world!');
             +console.log('done')
@@ -191,10 +248,11 @@ describe('groupConsecutiveItemsByPredicate', () => {
 })
 
 describe('computeDiffWithLineNumbers', () => {
-    const createTestUri = () => ({
-        fsPath: '/path/to/file.ts',
-        toString: () => '/path/to/file.ts',
-    } as vscode.Uri)
+    const createTestUri = () =>
+        ({
+            fsPath: '/path/to/file.ts',
+            toString: () => '/path/to/file.ts',
+        }) as vscode.Uri
 
     const assertDiffResult = (result: any, expectedSnapshot: string) => {
         expect(result).toBeInstanceOf(PromptString)
@@ -289,7 +347,3 @@ describe('computeDiffWithLineNumbers', () => {
         )
     })
 })
-
-
-
-
