@@ -745,7 +745,7 @@ function shouldEnableExperimentalAutoedits(
     if (config.configuration.experimentalAutoeditsEnabled !== undefined) {
         return config.configuration.experimentalAutoeditsEnabled
     }
-    return autoeditExperimentFlag && isS2(authStatus)
+    return autoeditExperimentFlag && isS2(authStatus) && isRunningInsideAgent() === false
 }
 
 /**
