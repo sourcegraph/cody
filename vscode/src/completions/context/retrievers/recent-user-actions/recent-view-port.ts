@@ -48,11 +48,10 @@ export class RecentViewPortRetriever implements vscode.Disposable, ContextRetrie
 
     public async retrieve({ document }: ContextRetrieverOptions): Promise<AutocompleteContextSnippet[]> {
         const sortedViewPorts = this.getValidViewPorts(document)
-
+        const retrievalTriggerTime = Date.now()
         const snippetPromises = sortedViewPorts.map(async viewPort => {
             const document = await vscode.workspace.openTextDocument(viewPort.uri)
             const content = document.getText(viewPort.visibleRange)
-
             return {
                 uri: viewPort.uri,
                 content,
@@ -60,7 +59,7 @@ export class RecentViewPortRetriever implements vscode.Disposable, ContextRetrie
                 endLine: viewPort.visibleRange.end.line,
                 identifier: this.identifier,
                 metadata: {
-                    timeSinceActionMs: Date.now() - viewPort.lastAccessTimestamp,
+                    timeSinceActionMs: retrievalTriggerTime - viewPort.lastAccessTimestamp,
                 },
             }
         })

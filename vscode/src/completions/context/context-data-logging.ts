@@ -35,6 +35,7 @@ export class ContextRetrieverDataCollection implements vscode.Disposable {
         { identifier: RetrieverIdentifier.RecentEditsRetriever },
         { identifier: RetrieverIdentifier.DiagnosticsRetriever, maxSnippets: 15 },
         { identifier: RetrieverIdentifier.RecentViewPortRetriever, maxSnippets: 10 },
+        { identifier: RetrieverIdentifier.JaccardSimilarityRetriever, maxSnippets: 5 },
     ]
 
     constructor() {

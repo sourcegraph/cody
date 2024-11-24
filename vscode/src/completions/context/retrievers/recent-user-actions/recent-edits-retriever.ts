@@ -78,6 +78,7 @@ export class RecentEditsRetriever implements vscode.Disposable, ContextRetriever
         })
 
         const autocompleteContextSnippets = []
+        const retrievalTriggerTime = Date.now()
         for (const diff of diffs) {
             const content = diff.diff.toString()
             const autocompleteSnippet = {
@@ -85,7 +86,7 @@ export class RecentEditsRetriever implements vscode.Disposable, ContextRetriever
                 identifier: this.identifier,
                 content,
                 metadata: {
-                    timeSinceActionMs: Date.now() - diff.latestChangeTimestamp,
+                    timeSinceActionMs: retrievalTriggerTime - diff.latestChangeTimestamp,
                     recentEditsRetrieverDiffStrategy: diff.diffStrategyName,
                 },
             } satisfies Omit<AutocompleteContextSnippet, 'startLine' | 'endLine'>
