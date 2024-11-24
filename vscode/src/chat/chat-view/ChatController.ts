@@ -599,7 +599,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             chatID: this.chatBuilder.sessionID,
         })
 
-        await this.saveSession()
+        void this.saveSession()
         this.initDoer.signalInitialized()
     }
 
@@ -645,7 +645,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             })
             this.postViewTranscript({ speaker: 'assistant' })
 
-            await this.saveSession()
+            void this.saveSession()
             signal.throwIfAborted()
 
             return this.sendChat(
@@ -1099,7 +1099,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             this.submitOrEditOperation.abort()
             this.submitOrEditOperation = undefined
         }
-        this.saveSession()
+        void this.saveSession()
     }
 
     /**
@@ -1563,6 +1563,12 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         this.postViewTranscript()
     }
 
+    /**
+     * This method will serialize the chat state synchronously and then save the serialized state to
+     * local storage. Usually, it can safely be called without `await`ing.
+     * This method should only be awaited if the caller wants to wait for the saved data to be synced
+     * to local storage before proceeding.
+     */
     private async saveSession(): Promise<void> {
         const authStatus = currentAuthStatus()
         if (authStatus.authenticated) {
@@ -1587,7 +1593,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             new Date(Date.now()).toUTCString()
         )
         this.postViewTranscript()
-        await this.saveSession()
         // Move the new session to the editor
         await vscode.commands.executeCommand('cody.chat.moveToEditor')
         // Restore the old session in the current window
@@ -1598,7 +1603,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
 
     public async clearAndRestartSession(chatMessages?: ChatMessage[]): Promise<void> {
         this.cancelSubmitOrEditOperation()
-        await this.saveSession()
+        void this.saveSession()
 
         this.chatBuilder = new ChatBuilder(this.chatBuilder.selectedModel, undefined, chatMessages)
         this.postViewTranscript()
