@@ -1,5 +1,7 @@
 import findLast from 'lodash/findLast'
 
+import { logDebug } from '../../output-channel-logger'
+
 import {
     type ChatMessage,
     type ChatModel,
@@ -118,12 +120,14 @@ export class ChatBuilder {
     public setLastMessageIntent(intent: ChatMessage['intent']): void {
         const lastMessage = this.messages.at(-1)
         if (!lastMessage) {
+            logDebug('setLastMessageIntent', 'no last message')
             throw new Error('no last message')
         }
         if (lastMessage.speaker !== 'human') {
             throw new Error('Cannot set intent for bot message')
         }
 
+        logDebug('setLastMessageIntent', intent || '')
         lastMessage.intent = intent
 
         this.changeNotifications.next()
@@ -137,10 +141,6 @@ export class ChatBuilder {
         if (!lastMessage) {
             throw new Error('no last message')
         }
-        if (lastMessage.speaker !== 'human') {
-            throw new Error('Cannot set new context used for bot message')
-        }
-
         lastMessage.contextFiles = newContextUsed
         lastMessage.contextAlternatives = contextAlternatives?.map(({ items, strategy }) => {
             return {

@@ -861,11 +861,27 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 )
 
                 signal.throwIfAborted()
-                function fetchAdditionalContext(contextType: string, contextContent: string): void {
+                const fetchAdditionalContext = (contextType: string, contextContent: string): void => {
                     logDebug(
-                        'fetchAdditionalContext',
+                        'fetchAdditionalContext 3',
                         `Context Type: ${contextType}, Context Content: ${contextContent}`
                     )
+                    // this.sendChat(
+                    //     {
+                    //         requestID,
+                    //         inputText,
+                    //         mentions,
+                    //         editorState,
+                    //         signal,
+                    //         source,
+                    //         command,
+                    //         intent: detectedIntent,
+                    //         intentScores: detectedIntentScores,
+                    //         manuallySelectedIntent: true,
+                    //     },
+                    //     span
+                    // )
+                    logDebug('fetchAdditionalContext 5', 'chat sent!')
                 }
                 this.streamAssistantResponse(
                     requestID,
@@ -1408,7 +1424,13 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                         model,
                     })
                     logDebug('content', content)
-                    fetchAdditionalContext('search', 'content')
+                    const searchPattern = /^Deep Cody decided to search for: (.+)\.$/
+                    const match = content.match(searchPattern)
+
+                    if (match) {
+                        const searchTerm = match[1] // Extract the search term from the match
+                        fetchAdditionalContext('search', searchTerm)
+                    }
                 },
                 close: content => {
                     measureFirstToken()
@@ -1490,10 +1512,18 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                         // typewriter with "Deep Cody decided to fetch additional context."
                         logDebug('message.text', message.text)
                         if (message.text.startsWith('::')) {
-                            typewriter.update('Deep Cody decided to fetch additional context.')
-                            typewriter.stop()
+                            const lines = message.text.split('\n')
+                            const command = lines[0].trim()
+                            if (command === '::search' && lines.length > 1) {
+                                const searchTerm = lines[1].trim()
+                                typewriter.update(`Deep Cody decided to search for: ${searchTerm}.`)
+                                typewriter.stop()
+                            } else {
+                                typewriter.update('Deep Cody decided to fetch additional context.')
+                            }
                             break
                         }
+
                         typewriter.update(message.text)
                         break
                     }
