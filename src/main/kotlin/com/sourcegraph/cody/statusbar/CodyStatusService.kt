@@ -8,8 +8,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectManager
 import com.intellij.util.ui.UIUtil
 import com.sourcegraph.cody.agent.CodyAgentService
-import com.sourcegraph.cody.config.CodyAccountManager
-import com.sourcegraph.cody.config.CodyAuthenticationManager
+import com.sourcegraph.cody.auth.CodyAccount
 import com.sourcegraph.cody.ignore.IgnoreOracle
 import com.sourcegraph.common.UpgradeToCodyProNotification
 import com.sourcegraph.config.ConfigUtil
@@ -45,11 +44,7 @@ class CodyStatusService(val project: Project) : Disposable {
   private fun didStatusChange(project: Project): Boolean {
     synchronized(this) {
       val oldStatus = status
-      val service = ApplicationManager.getApplication().getService(CodyAccountManager::class.java)
-      val authManager = CodyAuthenticationManager.getInstance()
-      val isTokenInvalid = authManager.getIsTokenInvalid().getNow(null) == true
 
-      val token = CodyAuthenticationManager.getInstance().account?.let(service::findCredentials)
       // Note, the order of these clauses is important because earlier clauses take precedence over
       // later ones.
       // Fundamental issues are tested first.
@@ -60,13 +55,11 @@ class CodyStatusService(val project: Project) : Disposable {
             CodyStatus.AgentError
           } else if (!CodyAgentService.isConnected(project)) {
             CodyStatus.CodyAgentNotRunning
-          } else if (token == null) {
+          } else if (!CodyAccount.hasActiveAccount()) {
             CodyStatus.CodyNotSignedIn
           } else if (UpgradeToCodyProNotification.autocompleteRateLimitError.get() != null ||
               UpgradeToCodyProNotification.chatRateLimitError.get() != null) {
             CodyStatus.RateLimitError
-          } else if (isTokenInvalid) {
-            CodyStatus.CodyInvalidToken
           } else if (IgnoreOracle.getInstance(project).isEditingIgnoredFile) {
             CodyStatus.InIgnoredFile
           } else if (!ConfigUtil.isCodyAutocompleteEnabled()) {

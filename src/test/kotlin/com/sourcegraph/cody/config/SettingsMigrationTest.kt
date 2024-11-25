@@ -7,6 +7,8 @@ import com.sourcegraph.cody.agent.protocol_generated.ModelContextWindow
 import com.sourcegraph.cody.agent.protocol_generated.SerializedChatInteraction
 import com.sourcegraph.cody.agent.protocol_generated.SerializedChatMessage
 import com.sourcegraph.cody.agent.protocol_generated.SerializedChatTranscript
+import com.sourcegraph.cody.auth.SourcegraphServerPath
+import com.sourcegraph.cody.auth.deprecated.DeprecatedCodyAccount
 import com.sourcegraph.cody.config.migration.ChatHistoryMigration
 import com.sourcegraph.cody.config.migration.ChatTagsLlmMigration
 import com.sourcegraph.cody.config.migration.DeprecatedChatLlmMigration
@@ -180,8 +182,6 @@ class SettingsMigrationTest : BasePlatformTestCase() {
                   ChatState("chat4"))
         }
     val project = myFixture.project
-    project.registerServiceInstance(
-        CodyAuthenticationManager::class.java, CodyAuthenticationManager())
     project.registerServiceInstance(HistoryService::class.java, HistoryService(project))
     HistoryService.getInstance(project)
         .loadState(HistoryState().also { it.copyFrom(originalHistory) })
@@ -372,9 +372,11 @@ class SettingsMigrationTest : BasePlatformTestCase() {
 
   fun `test toChatInput`() {
     val account1 =
-        CodyAccount(name = "account1", server = SourcegraphServerPath("https://sourcegraph.com"))
+        DeprecatedCodyAccount(
+            name = "account1", server = SourcegraphServerPath("https://sourcegraph.com"))
     val account2 =
-        CodyAccount(name = "account2", server = SourcegraphServerPath("https://sourcegraph.com"))
+        DeprecatedCodyAccount(
+            name = "account2", server = SourcegraphServerPath("https://sourcegraph.com"))
 
     val chat1 =
         ChatState("chat1").apply {

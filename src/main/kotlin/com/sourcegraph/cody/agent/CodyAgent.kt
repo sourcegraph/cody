@@ -121,6 +121,7 @@ private constructor(
                       extensionConfiguration = ConfigUtil.getAgentConfiguration(project),
                       capabilities =
                           ClientCapabilities(
+                              authentication = ClientCapabilities.AuthenticationEnum.Enabled,
                               edit = ClientCapabilities.EditEnum.Enabled,
                               editWorkspace = ClientCapabilities.EditWorkspaceEnum.Enabled,
                               codeLenses = ClientCapabilities.CodeLensesEnum.Enabled,
@@ -130,6 +131,7 @@ private constructor(
                               untitledDocuments = ClientCapabilities.UntitledDocumentsEnum.Enabled,
                               codeActions = ClientCapabilities.CodeActionsEnum.Enabled,
                               globalState = ClientCapabilities.GlobalStateEnum.`Server-managed`,
+                              secrets = ClientCapabilities.SecretsEnum.`Client-managed`,
                               webview = ClientCapabilities.WebviewEnum.Native,
                               webviewNativeConfig =
                                   WebviewNativeConfig(
@@ -139,7 +141,9 @@ private constructor(
                                           "https://file+.sourcegraphstatic.com",
                                   ),
                               webviewMessages =
-                                  ClientCapabilities.WebviewMessagesEnum.`String-encoded`)))
+                                  ClientCapabilities.WebviewMessagesEnum.`String-encoded`,
+                              accountSwitchingInWebview =
+                                  ClientCapabilities.AccountSwitchingInWebviewEnum.Enabled)))
               .thenApply { info ->
                 logger.warn("Connected to Cody agent " + info.name)
                 server.initialized(null)

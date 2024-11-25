@@ -7,6 +7,7 @@ import com.intellij.util.IconUtil;
 import com.intellij.util.ui.JBDimension;
 import com.intellij.util.ui.JBUI;
 import com.sourcegraph.Icons;
+import com.sourcegraph.cody.config.actions.OpenCodySettingsEditorAction;
 import javax.swing.*;
 import org.jetbrains.annotations.NotNull;
 
@@ -16,7 +17,7 @@ public class GoToPluginSettingsButtonFactory {
   public static ActionButton createGoToPluginSettingsButton() {
     JBDimension actionButtonSize = JBUI.size(22, 22);
 
-    AnAction action = new OpenPluginSettingsAction();
+    AnAction action = new OpenCodySettingsEditorAction();
     Presentation presentation = new Presentation("Open Plugin Settings");
 
     ActionButton button =

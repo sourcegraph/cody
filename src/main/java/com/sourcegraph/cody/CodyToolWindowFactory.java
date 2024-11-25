@@ -11,7 +11,6 @@ import com.intellij.ui.content.ContentFactory;
 import com.sourcegraph.cody.config.actions.OpenCodySettingsEditorAction;
 import com.sourcegraph.cody.ui.web.WebUIService;
 import com.sourcegraph.config.ConfigUtil;
-import com.sourcegraph.config.OpenPluginSettingsAction;
 import org.jetbrains.annotations.NotNull;
 
 public class CodyToolWindowFactory implements ToolWindowFactory, DumbAware {
@@ -31,7 +30,6 @@ public class CodyToolWindowFactory implements ToolWindowFactory, DumbAware {
           content.setPreferredFocusableComponent(null);
           toolWindow.getContentManager().addContent(content);
           DefaultActionGroup customCodySettings = new DefaultActionGroup();
-          customCodySettings.add(new OpenPluginSettingsAction("Cody Settings..."));
           customCodySettings.add(new OpenCodySettingsEditorAction());
           customCodySettings.addSeparator();
 

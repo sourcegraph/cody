@@ -21,17 +21,19 @@ import com.intellij.openapi.wm.ToolWindowId
 import com.intellij.openapi.wm.ToolWindowManager
 import com.intellij.ui.GotItTooltip
 import com.intellij.util.concurrency.annotations.RequiresEdt
+import com.sourcegraph.cody.CodyToolWindowContent
 import com.sourcegraph.cody.Icons
 import com.sourcegraph.cody.agent.CodyAgentService
 import com.sourcegraph.cody.agent.protocol_generated.AutocompleteItem
 import com.sourcegraph.cody.agent.protocol_generated.AutocompleteResult
 import com.sourcegraph.cody.agent.protocol_generated.CompletionItemParams
+import com.sourcegraph.cody.auth.CodyAccount
+import com.sourcegraph.cody.autocomplete.Utils.triggerAutocompleteAsync
 import com.sourcegraph.cody.autocomplete.render.AutocompleteRendererType
 import com.sourcegraph.cody.autocomplete.render.CodyAutocompleteBlockElementRenderer
 import com.sourcegraph.cody.autocomplete.render.CodyAutocompleteElementRenderer
 import com.sourcegraph.cody.autocomplete.render.CodyAutocompleteSingleLineRenderer
 import com.sourcegraph.cody.autocomplete.render.InlayModelUtil.getAllInlaysForEditor
-import com.sourcegraph.cody.config.CodyAuthenticationManager
 import com.sourcegraph.cody.statusbar.CodyStatusService.Companion.resetApplication
 import com.sourcegraph.cody.vscode.CancellationToken
 import com.sourcegraph.cody.vscode.InlineCompletionTriggerKind
@@ -148,13 +150,14 @@ class CodyAutocompleteManager {
         isCommandExcluded(currentCommand)) {
       return
     }
-
-    val textDocument: TextDocument = IntelliJTextDocument(editor, project)
-
-    if (isTriggeredExplicitly && CodyAuthenticationManager.getInstance().hasNoActiveAccount()) {
-      HintManager.getInstance().showErrorHint(editor, "Cody: Sign in to use autocomplete")
+    if (CodyAccount.hasActiveAccount()) {
+      if (isTriggeredExplicitly) {
+        HintManager.getInstance().showErrorHint(editor, "Cody: Sign in to use autocomplete")
+        CodyToolWindowContent.show(project)
+      }
       return
     }
+
     cancelCurrentJob(project)
     val cancellationToken = CancellationToken()
     currentJob.set(cancellationToken)
@@ -168,7 +171,8 @@ class CodyAutocompleteManager {
       return
     }
 
-    Utils.triggerAutocompleteAsync(
+    val textDocument: TextDocument = IntelliJTextDocument(editor, project)
+    triggerAutocompleteAsync(
         project,
         editor,
         offset,

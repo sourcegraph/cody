@@ -8,7 +8,7 @@ import com.intellij.ui.SimpleTextAttributes;
 import com.intellij.ui.components.JBPanelWithEmptyText;
 import com.intellij.util.ui.JBUI;
 import com.intellij.util.ui.StatusText;
-import com.sourcegraph.cody.config.ui.AccountConfigurable;
+import com.sourcegraph.cody.config.ui.CodyConfigurable;
 import java.awt.*;
 import javax.swing.*;
 import org.apache.commons.lang.WordUtils;
@@ -69,9 +69,7 @@ public class BrowserAndLoadingPanel extends JLayeredPane {
       emptyText.appendLine(
           "Click here to configure your Sourcegraph Cody + Code Search settings.",
           new SimpleTextAttributes(STYLE_PLAIN, JBUI.CurrentTheme.Link.Foreground.ENABLED),
-          __ ->
-              ShowSettingsUtil.getInstance()
-                  .showSettingsDialog(project, AccountConfigurable.class));
+          __ -> ShowSettingsUtil.getInstance().showSettingsDialog(project, CodyConfigurable.class));
 
     } else if (errorMessage != null) {
       String wrappedText = WordUtils.wrap("Error: " + errorMessage, 100);

@@ -19,7 +19,8 @@ class EditCodeAction :
   override fun update(event: AnActionEvent) {
     super.update(event)
     event.presentation.isEnabledAndVisible =
-        event.project?.let { !EditCommandPrompt.isVisible(it) } ?: true
+        event.presentation.isEnabledAndVisible &&
+            (event.project?.let { !EditCommandPrompt.isVisible(it) } ?: true)
   }
 
   companion object {

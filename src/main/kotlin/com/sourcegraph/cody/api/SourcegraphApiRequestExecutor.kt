@@ -11,7 +11,7 @@ import com.intellij.util.concurrency.annotations.RequiresBackgroundThread
 import com.intellij.util.io.HttpRequests
 import com.intellij.util.io.HttpSecurityUtil
 import com.intellij.util.io.RequestBuilder
-import com.sourcegraph.cody.config.SourcegraphServerPath
+import com.sourcegraph.cody.auth.SourcegraphServerPath
 import java.io.IOException
 import java.io.InputStream
 import java.io.InputStreamReader

@@ -1,5 +1,6 @@
 package com.sourcegraph.cody.config
 
+import com.sourcegraph.cody.auth.SourcegraphServerPath
 import com.sourcegraph.config.ConfigUtil
 import junit.framework.TestCase
 

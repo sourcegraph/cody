@@ -6,8 +6,8 @@ import com.sourcegraph.cody.agent.protocol_generated.Chat_ImportParams
 import com.sourcegraph.cody.agent.protocol_generated.SerializedChatInteraction
 import com.sourcegraph.cody.agent.protocol_generated.SerializedChatMessage
 import com.sourcegraph.cody.agent.protocol_generated.SerializedChatTranscript
-import com.sourcegraph.cody.config.CodyAccount
-import com.sourcegraph.cody.config.CodyAuthenticationManager
+import com.sourcegraph.cody.auth.deprecated.DeprecatedCodyAccount
+import com.sourcegraph.cody.auth.deprecated.DeprecatedCodyAccountManager
 import com.sourcegraph.cody.history.HistoryService
 import com.sourcegraph.cody.history.state.ChatState
 import com.sourcegraph.cody.history.state.MessageState
@@ -18,7 +18,7 @@ object ChatHistoryMigration {
   fun migrate(project: Project) {
     CodyAgentService.withAgent(project) { agent ->
       val chats =
-          CodyAuthenticationManager.getInstance().getAccounts().associateWith { account ->
+          DeprecatedCodyAccountManager.getInstance().getAccounts().associateWith { account ->
             (HistoryService.getInstance(project).getChatHistoryFor(account.id) ?: listOf())
           }
       val history = toChatInput(chats)
@@ -28,7 +28,7 @@ object ChatHistoryMigration {
   }
 
   fun toChatInput(
-      chats: Map<CodyAccount, List<ChatState>>
+      chats: Map<DeprecatedCodyAccount, List<ChatState>>
   ): Map<String, Map<String, SerializedChatTranscript>> {
     return chats
         .map { (account, chats) ->

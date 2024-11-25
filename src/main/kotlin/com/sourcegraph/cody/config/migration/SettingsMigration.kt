@@ -14,12 +14,11 @@ import com.intellij.openapi.wm.ToolWindowManager
 import com.sourcegraph.cody.CodyToolWindowFactory
 import com.sourcegraph.cody.api.SourcegraphApiRequestExecutor
 import com.sourcegraph.cody.api.SourcegraphApiRequests
-import com.sourcegraph.cody.config.CodyAccount
-import com.sourcegraph.cody.config.CodyAccountDetails
+import com.sourcegraph.cody.auth.SourcegraphServerPath
+import com.sourcegraph.cody.auth.deprecated.DeprecatedCodyAccount
+import com.sourcegraph.cody.auth.deprecated.DeprecatedCodyAccountManager
 import com.sourcegraph.cody.config.CodyApplicationSettings
-import com.sourcegraph.cody.config.CodyAuthenticationManager
 import com.sourcegraph.cody.config.CodyProjectSettings
-import com.sourcegraph.cody.config.SourcegraphServerPath
 import com.sourcegraph.cody.history.HistoryService
 import com.sourcegraph.cody.history.state.AccountData
 import com.sourcegraph.cody.history.state.ChatState
@@ -61,16 +60,22 @@ class SettingsMigration : Activity {
     RunOnceUtil.runOnceForProject(project, "CodyAssignOrphanedChatsToActiveAccount") {
       migrateOrphanedChatsToActiveAccount(project)
     }
-
-    DeprecatedChatLlmMigration.migrate(project)
-    ChatTagsLlmMigration.migrate(project)
+    RunOnceUtil.runOnceForProject(project, "DeprecatedChatLlmMigration") {
+      DeprecatedChatLlmMigration.migrate(project)
+    }
+    RunOnceUtil.runOnceForProject(project, "ChatTagsLlmMigration") {
+      ChatTagsLlmMigration.migrate(project)
+    }
     RunOnceUtil.runOnceForProject(project, "CodyMigrateChatHistory-v2") {
       ChatHistoryMigration.migrate(project)
+    }
+    RunOnceUtil.runOnceForProject(project, "AccountsToCodyMigration") {
+      AccountsMigration.migrate()
     }
   }
 
   private fun migrateOrphanedChatsToActiveAccount(project: Project) {
-    val activeAccountId = CodyAuthenticationManager.getInstance().account?.id
+    val activeAccountId = DeprecatedCodyAccountManager.getInstance().account?.id
     HistoryService.getInstance(project)
         .state
         .chats
@@ -80,9 +85,9 @@ class SettingsMigration : Activity {
 
   private fun refreshAccountsIds(project: Project) {
     val customRequestHeaders = extractCustomRequestHeaders(project)
-    CodyAuthenticationManager.getInstance().getAccounts().forEach { codyAccount ->
+    DeprecatedCodyAccountManager.getInstance().getAccounts().forEach { codyAccount ->
       val server = SourcegraphServerPath.from(codyAccount.server.url, customRequestHeaders)
-      val token = CodyAuthenticationManager.getInstance().getTokenForAccount(codyAccount)
+      val token = DeprecatedCodyAccountManager.getInstance().getTokenForAccount(codyAccount)
       if (token != null) {
         loadUserDetails(
             SourcegraphApiRequestExecutor.Factory.instance,
@@ -90,7 +95,7 @@ class SettingsMigration : Activity {
             EmptyProgressIndicator(ModalityState.nonModal()),
             server) {
               codyAccount.id = it.id
-              CodyAuthenticationManager.getInstance().updateAccountToken(codyAccount, token)
+              DeprecatedCodyAccountManager.getInstance().addOrUpdateAccountToken(codyAccount, token)
             }
       }
     }
@@ -178,7 +183,6 @@ class SettingsMigration : Activity {
             EmptyProgressIndicator(ModalityState.nonModal()))
       } else {
         addAccountIfUnique(
-            project,
             dotcomAccessToken,
             server,
             requestExecutorFactory,
@@ -206,7 +210,6 @@ class SettingsMigration : Activity {
                   EmptyProgressIndicator(ModalityState.nonModal()))
             } else {
               addAccountIfUnique(
-                  project,
                   enterpriseAccessToken,
                   it,
                   requestExecutorFactory,
@@ -219,14 +222,13 @@ class SettingsMigration : Activity {
   }
 
   private fun addAccountIfUnique(
-      project: Project,
       accessToken: String,
       server: SourcegraphServerPath,
       requestExecutorFactory: SourcegraphApiRequestExecutor.Factory,
       progressIndicator: EmptyProgressIndicator,
   ) {
     loadUserDetails(requestExecutorFactory, accessToken, progressIndicator, server) {
-      addAccount(CodyAccount(it.name, it.displayName, server, it.id), accessToken)
+      addAccount(DeprecatedCodyAccount(it.name, it.displayName, server, it.id), accessToken)
     }
   }
 
@@ -237,10 +239,10 @@ class SettingsMigration : Activity {
       progressIndicator: EmptyProgressIndicator,
   ) {
     loadUserDetails(requestExecutorFactory, accessToken, progressIndicator, server) {
-      val codyAccount = CodyAccount(it.name, it.displayName, server, it.id)
+      val codyAccount = DeprecatedCodyAccount(it.name, it.displayName, server, it.id)
       addAccount(codyAccount, accessToken)
-      if (CodyAuthenticationManager.getInstance().hasNoActiveAccount())
-          CodyAuthenticationManager.getInstance().setActiveAccount(codyAccount)
+      if (!DeprecatedCodyAccountManager.getInstance().hasActiveAccount())
+          DeprecatedCodyAccountManager.getInstance().setActiveAccount(codyAccount)
     }
   }
 
@@ -249,7 +251,7 @@ class SettingsMigration : Activity {
       accessToken: String,
       progressIndicator: EmptyProgressIndicator,
       server: SourcegraphServerPath,
-      onSuccess: (CodyAccountDetails) -> Unit
+      onSuccess: (SourcegraphApiRequests.CurrentUser.CodyAccountDetails) -> Unit
   ): CompletableFuture<Unit> =
       service<ProgressManager>()
           .submitIOTask(progressIndicator) {
@@ -265,14 +267,14 @@ class SettingsMigration : Activity {
             }
           }
 
-  private fun addAccount(codyAccount: CodyAccount, token: String) {
+  private fun addAccount(codyAccount: DeprecatedCodyAccount, token: String) {
     if (isAccountUnique(codyAccount)) {
-      CodyAuthenticationManager.getInstance().updateAccountToken(codyAccount, token)
+      DeprecatedCodyAccountManager.getInstance().addOrUpdateAccountToken(codyAccount, token)
     }
   }
 
-  private fun isAccountUnique(codyAccount: CodyAccount): Boolean {
-    return CodyAuthenticationManager.getInstance()
+  private fun isAccountUnique(codyAccount: DeprecatedCodyAccount): Boolean {
+    return DeprecatedCodyAccountManager.getInstance()
         .isAccountUnique(codyAccount.name, codyAccount.server)
   }
 

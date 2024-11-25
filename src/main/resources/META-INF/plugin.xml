@@ -25,12 +25,10 @@
                 serviceImplementation="com.sourcegraph.cody.config.CodyApplicationSettings"/>
         <applicationService
                 serviceImplementation="com.sourcegraph.config.CodyApplicationService"/>
-        <httpRequestHandler
-                implementation="com.sourcegraph.cody.auth.AuthCallbackHandler"/>
 
         <projectConfigurable
                 parentId="tools"
-                instance="com.sourcegraph.cody.config.ui.AccountConfigurable"
+                instance="com.sourcegraph.cody.config.ui.SourcegraphConfigurable"
                 id="com.sourcegraph.cody.config.ui.AccountConfigurable"
                 displayName="Sourcegraph &amp; Cody"
                 nonDefaultProject="false"
@@ -51,7 +49,7 @@
         />
 
         <applicationService
-                serviceImplementation="com.sourcegraph.cody.config.CodyPersistentAccounts"/>
+                serviceImplementation="com.sourcegraph.cody.auth.deprecated.DeprecatedCodyPersistentAccounts"/>
 
         <actionPromoter implementation="com.sourcegraph.cody.edit.CodyActionPromoter"/>
 
@@ -192,9 +190,9 @@
                 </action>
 
                 <action id="cody.exportChats" icon="/icons/chat/download.svg"
-                        class="com.sourcegraph.cody.chat.actions.ExportChatsAction"
-                        text="Export All Chats As JSON"
-                        description="Export all chats as JSON">
+                    class="com.sourcegraph.cody.chat.actions.ExportChatsAction"
+                    text="Export All Chats As JSON"
+                    description="Export all chats as JSON">
                     <override-text place="GoToAction" text="Cody: Export All Chats As JSON"/>
                 </action>
 
@@ -316,23 +314,6 @@
                 </action>
             </group>
 
-            <group id="Cody.Accounts.AddAccount"
-                   text="Cody Accounts"
-                   description="Cody account actions">
-                <action id="Cody.Accounts.LogInToSourcegraphAction"
-                        class="com.sourcegraph.cody.config.LogInToSourcegraphAction"
-                        text="Log In to Sourcegraph"
-                        description="Logs in to Sourcegraph">
-                    <override-text place="GoToAction" text="Cody: Log In to Sourcegraph"/>
-                </action>
-                <action id="Cody.Accounts.AddCodyEnterpriseAccount"
-                        class="com.sourcegraph.cody.config.AddCodyEnterpriseAccountAction"
-                        text="Log In to Sourcegraph Enterprise"
-                        description="Logs in to Sourcegraph Enterprise">
-                    <override-text place="GoToAction" text="Cody: Log In to Sourcegraph Enterprise"/>
-                </action>
-            </group>
-
             <group id="SourcegraphEditor" popup="true" searchable="false" text="Sourcegraph"
                    description="Sourcegraph actions">
 
@@ -401,13 +382,6 @@
                         text="Restart Cody"
                         description="Restarts Cody">
                     <override-text place="GoToAction" text="Cody: Restart Cody"/>
-                </action>
-                <action id="sourcegraph.login"
-                        class="com.sourcegraph.config.OpenPluginSettingsAction"
-                        icon="/icons/sourcegraphLogo.svg"
-                        text="Log in to Sourcegraph"
-                        description="Log in to Sourcegraph">
-                    <override-text place="GoToAction" text="Cody: Log in to Sourcegraph"/>
                 </action>
                 <action id="cody.openLogAction"
                         class="com.sourcegraph.cody.statusbar.OpenLogAction"

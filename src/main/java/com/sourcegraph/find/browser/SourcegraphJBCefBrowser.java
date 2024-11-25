@@ -2,7 +2,6 @@ package com.sourcegraph.find.browser;
 
 import com.intellij.openapi.util.Disposer;
 import com.intellij.ui.jcef.JBCefBrowser;
-import com.sourcegraph.cody.config.notification.AccountSettingChangeListener;
 import com.sourcegraph.cody.config.notification.CodySettingChangeListener;
 import com.sourcegraph.config.ThemeUtil;
 import javax.swing.*;
@@ -23,11 +22,6 @@ public class SourcegraphJBCefBrowser extends JBCefBrowser {
     JSToJavaBridge jsToJavaBridge = new JSToJavaBridge(this, requestHandler, initJSCode);
     Disposer.register(this, jsToJavaBridge);
     javaToJSBridge = new JavaToJSBridge(this);
-
-    requestHandler
-        .getProject()
-        .getService(AccountSettingChangeListener.class)
-        .setJavaToJSBridge(javaToJSBridge);
 
     requestHandler
         .getProject()

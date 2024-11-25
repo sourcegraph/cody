@@ -27,7 +27,6 @@ class CodyStatusBarActionGroup : DefaultActionGroup() {
       addAll(listOfNotNull(deriveRateLimitErrorAction()))
       addSeparator()
       addAll(
-          CodyManageAccountsAction(),
           CodyOpenSettingsAction(),
       )
       addSeparator()

@@ -1,10 +1,9 @@
-package com.sourcegraph.cody.config
+package com.sourcegraph.cody.auth.deprecated
 
 import com.intellij.openapi.components.PersistentStateComponent
 import com.intellij.openapi.components.SettingsCategory
 import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
-import com.sourcegraph.cody.auth.AccountsRepository
 
 @State(
     name = "CodyAccounts",
@@ -14,19 +13,19 @@ import com.sourcegraph.cody.auth.AccountsRepository
         ],
     reportStatistic = false,
     category = SettingsCategory.TOOLS)
-class CodyPersistentAccounts :
-    AccountsRepository<CodyAccount>, PersistentStateComponent<Array<CodyAccount>> {
-  private var state = emptyArray<CodyAccount>()
+class DeprecatedCodyPersistentAccounts : PersistentStateComponent<Array<DeprecatedCodyAccount>> {
 
-  override var accounts: Set<CodyAccount>
+  private var state = emptyArray<DeprecatedCodyAccount>()
+
+  var accounts: Set<DeprecatedCodyAccount>
     get() = state.toSet()
     set(value) {
       state = value.toTypedArray()
     }
 
-  override fun getState(): Array<CodyAccount> = state
+  override fun getState(): Array<DeprecatedCodyAccount> = state
 
-  override fun loadState(state: Array<CodyAccount>) {
+  override fun loadState(state: Array<DeprecatedCodyAccount>) {
     this.state = state
   }
 }

@@ -1,6 +1,5 @@
 package com.sourcegraph.cody.config
 
-import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.wm.WindowManager
@@ -14,9 +13,6 @@ class CodyWindowAdapter(private val project: Project) : WindowAdapter() {
 
   override fun windowActivated(e: WindowEvent?) {
     super.windowActivated(e)
-    ApplicationManager.getApplication().executeOnPooledThread {
-      CodyAuthenticationManager.getInstance().getAuthenticationState()
-    }
     CodyAgentService.withAgent(project) { agent: CodyAgent ->
       agent.server.window_didChangeFocus(Window_DidChangeFocusParams(true))
     }
@@ -34,7 +30,7 @@ class CodyWindowAdapter(private val project: Project) : WindowAdapter() {
       val frame = WindowManager.getInstance().getFrame(project)
       val listener = CodyWindowAdapter(project)
       frame?.addWindowListener(listener)
-      Disposer.register(CodyAuthenticationManager.getInstance()) {
+      Disposer.register(CodyAgentService.getInstance(project)) {
         frame?.removeWindowListener(listener)
       }
     }
