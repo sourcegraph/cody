@@ -1,4 +1,5 @@
 import type * as vscode from 'vscode'
+import type { AutocompleteContextSnippetMetadataFields } from '../../../../../../../lib/shared/src/completions/types'
 import type { DiffCalculationInput, DiffHunk, RecentEditsRetrieverDiffStrategy } from './base'
 import { groupNonOverlappingChangeGroups, groupOverlappingDocumentChanges } from './utils'
 import {
@@ -66,15 +67,24 @@ export class LineLevelDiffStrategy implements RecentEditsRetrieverDiffStrategy {
             minEvents: this.options.minShortTermEvents,
             minTimeMs: this.options.minShortTermTimeMs,
         })
-        if (this.options.longTermDiffCombinationStrategy === 'lines-based') {
-            longTermChanges = groupNonOverlappingChangeGroups(longTermChanges)
-        } else if (this.options.longTermDiffCombinationStrategy === 'unified-diff') {
-            longTermChanges = [combineTextDocumentGroups(longTermChanges)]
+        switch (this.options.longTermDiffCombinationStrategy) {
+            case 'lines-based':
+                longTermChanges = groupNonOverlappingChangeGroups(longTermChanges)
+                break
+            case 'unified-diff':
+                longTermChanges = [combineTextDocumentGroups(longTermChanges)]
+                break
         }
         return [...longTermChanges, ...shortTermChanges]
     }
 
-    public getDiffStrategyName(): string {
-        return 'line-level-diff'
+    public getDiffStrategyMetadata(): AutocompleteContextSnippetMetadataFields {
+        return {
+            strategy: 'line-level',
+            contextLines: this.options.contextLines,
+            longTermDiffCombinationStrategy: this.options.longTermDiffCombinationStrategy as string,
+            minShortTermEvents: this.options.minShortTermEvents,
+            minShortTermTimeMs: this.options.minShortTermTimeMs,
+        }
     }
 }

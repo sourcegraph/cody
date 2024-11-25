@@ -1,6 +1,7 @@
 import { type PromptString, contextFiltersProvider } from '@sourcegraph/cody-shared'
 import type { AutocompleteContextSnippet } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
+import type { AutocompleteContextSnippetMetadataFields } from '../../../../../../lib/shared/src/completions/types'
 import { getPositionAfterTextInsertion } from '../../../text-processing/utils'
 import type { ContextRetriever, ContextRetrieverOptions } from '../../../types'
 import { RetrieverIdentifier, type ShouldUseContextParams, shouldBeUsedAsContext } from '../../utils'
@@ -19,7 +20,7 @@ interface TrackedDocument {
 }
 
 interface DiffHunkWithStrategy extends DiffHunk {
-    diffStrategyName: string
+    diffStrategyMetadata: AutocompleteContextSnippetMetadataFields
 }
 
 export interface RecentEditsRetrieverOptions {
@@ -32,7 +33,7 @@ interface DiffAcrossDocuments {
     uri: vscode.Uri
     languageId: string
     latestChangeTimestamp: number
-    diffStrategyName: string
+    diffStrategyMetadata: AutocompleteContextSnippetMetadataFields
 }
 
 export class RecentEditsRetriever implements vscode.Disposable, ContextRetriever {
@@ -71,9 +72,6 @@ export class RecentEditsRetriever implements vscode.Disposable, ContextRetriever
         const diffs = this.filterCandidateDiffs(rawDiffs, options.document)
         // Sort first by strategy name and then by timestamp
         diffs.sort((a, b) => {
-            if (a.diffStrategyName !== b.diffStrategyName) {
-                return a.diffStrategyName.localeCompare(b.diffStrategyName)
-            }
             return b.latestChangeTimestamp - a.latestChangeTimestamp
         })
 
@@ -87,7 +85,7 @@ export class RecentEditsRetriever implements vscode.Disposable, ContextRetriever
                 content,
                 metadata: {
                     timeSinceActionMs: retrievalTriggerTime - diff.latestChangeTimestamp,
-                    recentEditsRetrieverDiffStrategy: diff.diffStrategyName,
+                    retrieverMetadata: diff.diffStrategyMetadata,
                 },
             } satisfies Omit<AutocompleteContextSnippet, 'startLine' | 'endLine'>
             autocompleteContextSnippets.push(autocompleteSnippet)
@@ -112,7 +110,7 @@ export class RecentEditsRetriever implements vscode.Disposable, ContextRetriever
                         uri: trackedDocument.uri,
                         languageId: trackedDocument.languageId,
                         latestChangeTimestamp: diffHunk.latestEditTimestamp,
-                        diffStrategyName: diffHunk.diffStrategyName,
+                        diffStrategyMetadata: diffHunk.diffStrategyMetadata,
                     }))
                 }
                 return null
@@ -162,7 +160,7 @@ export class RecentEditsRetriever implements vscode.Disposable, ContextRetriever
             for (const hunk of hunks) {
                 diffHunks.push({
                     ...hunk,
-                    diffStrategyName: diffStrategy.getDiffStrategyName(),
+                    diffStrategyMetadata: diffStrategy.getDiffStrategyMetadata(),
                 })
             }
         }

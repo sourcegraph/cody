@@ -1,3 +1,4 @@
+import type { AutocompleteContextSnippetMetadataFields } from '@sourcegraph/cody-shared'
 import type { DiffCalculationInput, DiffHunk, RecentEditsRetrieverDiffStrategy } from './base'
 import { getUnifiedDiffHunkFromTextDocumentChange } from './utils'
 
@@ -28,9 +29,9 @@ export class UnifiedDiffStrategy implements RecentEditsRetrieverDiffStrategy {
         return diffHunk ? [diffHunk] : []
     }
 
-    public getDiffStrategyName(): string {
-        return `unified-diff-strategy-${
-            this.addLineNumbers ? 'with-line-numbers' : 'without-line-numbers'
-        }`
+    public getDiffStrategyMetadata(): AutocompleteContextSnippetMetadataFields {
+        return {
+            strategy: 'unified-diff',
+        }
     }
 }

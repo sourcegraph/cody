@@ -1,9 +1,10 @@
 import type { PromptString } from '@sourcegraph/cody-shared'
 import type * as vscode from 'vscode'
+import type { AutocompleteContextSnippetMetadataFields } from '../../../../../../../lib/shared/src/completions/types'
 
 export interface RecentEditsRetrieverDiffStrategy {
     getDiffHunks(input: DiffCalculationInput): DiffHunk[]
-    getDiffStrategyName(): string
+    getDiffStrategyMetadata(): AutocompleteContextSnippetMetadataFields
 }
 
 export interface TextDocumentChange {

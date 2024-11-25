@@ -19,12 +19,12 @@ export interface TextDocumentChangeGroup {
     /**
      * The union of the inserted ranges of all changes in this group
      */
-    insertedRange: vscode.Range
+    insertedRange?: vscode.Range
 
     /**
      * The union of the replace ranges of all changes in this group
      */
-    replacementRange: vscode.Range
+    replacementRange?: vscode.Range
 }
 
 /**
@@ -46,7 +46,7 @@ export function groupOverlappingDocumentChanges(
             replacementRange: change.change.range,
             originalChange: change,
         })),
-        mergePredicate: (a, b) => doLineOverlapForRanges(a, b),
+        mergePredicate: (a, b) => Boolean(a && b && doLineOverlapForRanges(a, b)),
         getChanges: item => [item.originalChange],
     })
 }
@@ -68,7 +68,7 @@ export function groupNonOverlappingChangeGroups(
 ): TextDocumentChangeGroup[] {
     return mergeDocumentChanges({
         items: groupedChanges,
-        mergePredicate: (a, b) => !doLineOverlapForRanges(a, b),
+        mergePredicate: (a, b) => Boolean(a && b && !doLineOverlapForRanges(a, b)),
         getChanges: group => group.changes,
     })
 }
@@ -82,10 +82,10 @@ export function groupNonOverlappingChangeGroups(
  * @returns Array of TextDocumentChangeGroup objects containing merged changes and their ranges
  */
 function mergeDocumentChanges<
-    T extends { insertedRange: vscode.Range; replacementRange: vscode.Range },
+    T extends { insertedRange?: vscode.Range; replacementRange?: vscode.Range },
 >(args: {
     items: T[]
-    mergePredicate: (a: vscode.Range, b: vscode.Range) => boolean
+    mergePredicate: (a?: vscode.Range, b?: vscode.Range) => boolean
     getChanges: (item: T) => TextDocumentChange[]
 }): TextDocumentChangeGroup[] {
     if (args.items.length === 0) {
@@ -105,13 +105,14 @@ function mergeDocumentChanges<
         }))
 }
 
-function getRangeUnion(ranges: vscode.Range[]): vscode.Range {
-    if (ranges.length === 0) {
-        throw new Error('Cannot get union of empty ranges')
+export function getRangeUnion(ranges: (vscode.Range | undefined)[]): vscode.Range | undefined {
+    const validRanges = ranges.filter((range): range is vscode.Range => range !== undefined)
+    if (validRanges.length === 0) {
+        return undefined
     }
-    let start = ranges[0].start
-    let end = ranges[0].end
-    for (const range of ranges) {
+    let start = validRanges[0].start
+    let end = validRanges[0].end
+    for (const range of validRanges) {
         start = start.isBefore(range.start) ? start : range.start
         end = end.isAfter(range.end) ? end : range.end
     }

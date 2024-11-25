@@ -1,3 +1,4 @@
+import type { AutocompleteContextSnippetMetadataFields } from '../../../../../../../lib/shared/src/completions/types'
 import type { DiffCalculationInput, DiffHunk, RecentEditsRetrieverDiffStrategy } from './base'
 import { groupOverlappingDocumentChanges } from './utils'
 import {
@@ -49,7 +50,13 @@ export class TwoStageUnifiedDiffStrategy implements RecentEditsRetrieverDiffStra
         return diffs
     }
 
-    public getDiffStrategyName(): string {
-        return 'two-stage-unified-diff-strategy'
+    public getDiffStrategyMetadata(): AutocompleteContextSnippetMetadataFields {
+        return {
+            strategy: 'two-stage-unified-diff',
+            longTermContextLines: this.options.longTermContextLines,
+            shortTermContextLines: this.options.shortTermContextLines,
+            minShortTermEvents: this.options.minShortTermEvents,
+            minShortTermTimeMs: this.options.minShortTermTimeMs,
+        }
     }
 }

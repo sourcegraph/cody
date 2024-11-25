@@ -8,6 +8,7 @@ import {
     applyTextDocumentChanges,
     computeDiffWithLineNumbers,
     divideGroupedChangesIntoShortTermAndLongTerm,
+    getRangeUnion,
     groupConsecutiveItemsByPredicate,
     groupNonOverlappingChangeGroups,
     groupOverlappingDocumentChanges,
@@ -573,5 +574,50 @@ describe('divideGroupedChangesIntoShortTermAndLongTerm', () => {
             minTimeMs: 5000,
             expectedShortTermCount: 2,
         })
+    })
+})
+
+describe('getRangeUnion', () => {
+    it('returns the union of multiple ranges', () => {
+        const ranges = [
+            new vscode.Range(1, 0, 2, 10),
+            new vscode.Range(0, 5, 3, 0),
+            new vscode.Range(2, 0, 4, 15),
+        ]
+
+        const result = getRangeUnion(ranges)
+        expect(result).toBeDefined()
+        expect(result?.start.line).toBe(0)
+        expect(result?.start.character).toBe(5)
+        expect(result?.end.line).toBe(4)
+        expect(result?.end.character).toBe(15)
+    })
+
+    it('handles single range correctly', () => {
+        const ranges = [new vscode.Range(1, 5, 2, 10)]
+
+        const result = getRangeUnion(ranges)
+        expect(result).toBeDefined()
+        expect(result?.start.line).toBe(1)
+        expect(result?.start.character).toBe(5)
+        expect(result?.end.line).toBe(2)
+        expect(result?.end.character).toBe(10)
+    })
+
+    it('handles empty array of ranges', () => {
+        const ranges: vscode.Range[] = []
+        const result = getRangeUnion(ranges)
+        expect(result).toBeUndefined()
+    })
+
+    it('handles overlapping ranges with same start and end', () => {
+        const ranges = [new vscode.Range(1, 1, 1, 1), new vscode.Range(1, 1, 1, 1)]
+
+        const result = getRangeUnion(ranges)
+        expect(result).toBeDefined()
+        expect(result?.start.line).toBe(1)
+        expect(result?.start.character).toBe(1)
+        expect(result?.end.line).toBe(1)
+        expect(result?.end.character).toBe(1)
     })
 })

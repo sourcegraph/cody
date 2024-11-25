@@ -1,6 +1,8 @@
 import type * as vscode from 'vscode'
 import type { URI } from 'vscode-uri'
 
+export type AutocompleteContextSnippetMetadataFields = Record<string, number | string>
+
 interface AutocompleteContextSnippetMetadata {
     /**
      * This field is relevant for user action context sources such as `recent-edit`, `recent-copy` and `recent-viewport`.
@@ -8,11 +10,11 @@ interface AutocompleteContextSnippetMetadata {
      */
     timeSinceActionMs?: number
     /**
-     * The diffing strategy used by the `recent-edits-retriever` to generate the diff.
+     * Additional metadata fields that can be used to store arbitrary key-value pairs.
+     * The values can be either numbers or strings.
      */
-    recentEditsRetrieverDiffStrategy?: string
+    retrieverMetadata?: AutocompleteContextSnippetMetadataFields
 }
-
 export interface AutocompleteFileContextSnippet {
     identifier: string
     uri: URI
