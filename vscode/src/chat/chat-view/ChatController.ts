@@ -863,25 +863,26 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 signal.throwIfAborted()
                 const fetchAdditionalContext = (contextType: string, contextContent: string): void => {
                     logDebug(
-                        'fetchAdditionalContext 3',
+                        'fetchAdditionalContext 7',
                         `Context Type: ${contextType}, Context Content: ${contextContent}`
                     )
-                    // this.sendChat(
-                    //     {
-                    //         requestID,
-                    //         inputText,
-                    //         mentions,
-                    //         editorState,
-                    //         signal,
-                    //         source,
-                    //         command,
-                    //         intent: detectedIntent,
-                    //         intentScores: detectedIntentScores,
-                    //         manuallySelectedIntent: true,
-                    //     },
-                    //     span
-                    // )
-                    logDebug('fetchAdditionalContext 5', 'chat sent!')
+                    const promptString = PromptString.unsafe_fromUserQuery('hello')
+                    this.sendChat(
+                        {
+                            requestID,
+                            inputText: promptString,
+                            mentions,
+                            editorState,
+                            signal,
+                            source,
+                            command,
+                            intent: detectedIntent,
+                            intentScores: detectedIntentScores,
+                            manuallySelectedIntent: true,
+                        },
+                        span
+                    )
+                    logDebug('fetchAdditionalContext 6', 'chat sent!')
                 }
                 this.streamAssistantResponse(
                     requestID,
