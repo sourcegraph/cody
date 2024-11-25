@@ -861,27 +861,48 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 )
 
                 signal.throwIfAborted()
-                const fetchAdditionalContext = (contextType: string, contextContent: string): void => {
+                const fetchAdditionalContext = async (
+                    contextType: string,
+                    contextContent: string
+                ): Promise<void> => {
                     logDebug(
                         'fetchAdditionalContext 7',
                         `Context Type: ${contextType}, Context Content: ${contextContent}`
                     )
                     const promptString = PromptString.unsafe_fromUserQuery('hello')
-                    this.sendChat(
-                        {
-                            requestID,
-                            inputText: promptString,
-                            mentions,
-                            editorState,
-                            signal,
-                            source,
-                            command,
-                            intent: detectedIntent,
-                            intentScores: detectedIntentScores,
-                            manuallySelectedIntent: true,
-                        },
-                        span
-                    )
+
+                    const humanMessage = this.chatBuilder.getLastSpeakerMessageIndex('human')
+                    if (humanMessage === undefined) {
+                        return
+                    }
+                    if (humanMessage === 0) {
+                        // await this.cancelSubmitOrEditOperation()
+                        // this.chatBuilder = new ChatBuilder(this.chatBuilder.selectedModel, undefined, [])
+                    } else {
+                        // await this.chatBuilder.removeMessagesFromIndex(humanMessage, 'human')
+                    }
+                    // await this.handleUserMessageSubmission({
+                    //     requestID,
+                    //     inputText,
+                    //     mentions,
+                    //     editorState,
+                    //     signal,
+                    //     source,
+                    //     intent,
+                    //     intentScores,
+                    //     manuallySelectedIntent,
+                    // })
+                    await this.cancelSubmitOrEditOperation()
+                    await this.handleEdit({
+                        requestID: uuid.v4(),
+                        text: inputText,
+                        index: humanMessage,
+                        contextFiles: mentions,
+                        editorState,
+                        intent: detectedIntent,
+                        intentScores: detectedIntentScores,
+                        manuallySelectedIntent,
+                    })
                     logDebug('fetchAdditionalContext 6', 'chat sent!')
                 }
                 this.streamAssistantResponse(
