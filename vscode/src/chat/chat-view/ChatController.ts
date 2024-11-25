@@ -875,23 +875,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     if (humanMessage === undefined) {
                         return
                     }
-                    if (humanMessage === 0) {
-                        // await this.cancelSubmitOrEditOperation()
-                        // this.chatBuilder = new ChatBuilder(this.chatBuilder.selectedModel, undefined, [])
-                    } else {
-                        // await this.chatBuilder.removeMessagesFromIndex(humanMessage, 'human')
-                    }
-                    // await this.handleUserMessageSubmission({
-                    //     requestID,
-                    //     inputText,
-                    //     mentions,
-                    //     editorState,
-                    //     signal,
-                    //     source,
-                    //     intent,
-                    //     intentScores,
-                    //     manuallySelectedIntent,
-                    // })
                     await this.cancelSubmitOrEditOperation()
                     await this.handleEdit({
                         requestID: uuid.v4(),
