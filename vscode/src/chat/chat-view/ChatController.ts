@@ -1424,7 +1424,8 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                         model,
                     })
                     logDebug('content', content)
-                    const searchPattern = /^Deep Cody decided to search for: (.+)\.$/
+                    const searchPattern =
+                        /^Deep Cody decided to fetch additional context. It decided to search for: (.+)\.$/
                     const match = content.match(searchPattern)
 
                     if (match) {
@@ -1514,10 +1515,12 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                         if (message.text.startsWith('::')) {
                             const lines = message.text.split('\n')
                             const command = lines[0].trim()
-                            if (command === '::search' && lines.length > 1) {
+                            if (command === '::search' && lines.length > 2) {
                                 const searchTerm = lines[1].trim()
-                                typewriter.update(`Deep Cody decided to search for: ${searchTerm}.`)
-                                typewriter.stop()
+                                typewriter.update(
+                                    'Deep Cody decided to fetch additional context. ' +
+                                        `It decided to search for: ${searchTerm}.`
+                                )
                             } else {
                                 typewriter.update('Deep Cody decided to fetch additional context.')
                             }
