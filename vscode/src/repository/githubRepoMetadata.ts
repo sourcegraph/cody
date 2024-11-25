@@ -24,31 +24,40 @@ interface GitHubDotComRepoMetaData {
     isPublic: boolean
 }
 
+const DEFAULT_MIN_LOCAL_STORAGE_UPDATE_TIME_MS = 1000 * 60 * 10 // 10 minutes
+
 export class GitHubDotComRepoMetadata {
     // This class is used to get the metadata from the gitApi.
     private static instance: GitHubDotComRepoMetadata | null = null
     // Store a copy of the latest local storage data for comparison with the current cache.
-    private latestLocalStorageData: RepoAccessibilityData[]
+    private latestLocalStorageData: RepoAccessibilityData[] = []
     // Last time when the local storage was updated.
     private lastLocalStorageUpdateTime: number | null = null
     // Since the local storage update can be expansive, we add a minimum time between updates.
-    private readonly minLocalStorageUpdateTimeMs = 1000 * 60 * 10 // 10 minutes
+    private readonly minLocalStorageUpdateTimeMs: number
 
     private cache = new Map<string /* repoName */, GitHubDotComRepoMetaData | undefined>()
 
-    private constructor() {
+    private constructor(minLocalStorageUpdateTimeMs: number) {
+        this.minLocalStorageUpdateTimeMs = minLocalStorageUpdateTimeMs
+        this.populateCacheFromLocalStorage()
+    }
+
+    public populateCacheFromLocalStorage(): void {
+        this.cache.clear()
         this.latestLocalStorageData = localStorage.getGitHubRepoAccessibility()
         for (const data of this.latestLocalStorageData) {
-            this.cache.set(data.repoName, {
-                repoName: data.repoName,
-                isPublic: data.isPublic,
-            })
+            this.cache.set(data.repoName, { repoName: data.repoName, isPublic: data.isPublic })
         }
     }
 
-    public static getInstance(): GitHubDotComRepoMetadata {
+    public static getInstance(
+        params = { minLocalStorageUpdateTimeMs: DEFAULT_MIN_LOCAL_STORAGE_UPDATE_TIME_MS }
+    ): GitHubDotComRepoMetadata {
         if (!GitHubDotComRepoMetadata.instance) {
-            GitHubDotComRepoMetadata.instance = new GitHubDotComRepoMetadata()
+            GitHubDotComRepoMetadata.instance = new GitHubDotComRepoMetadata(
+                params.minLocalStorageUpdateTimeMs
+            )
         }
         return GitHubDotComRepoMetadata.instance
     }
@@ -143,30 +152,31 @@ export class GitHubDotComRepoMetadata {
         return { owner, repoName: repoName }
     }
 
-    public updateCachedDataToLocalStorageIfNeeded(): boolean {
-        if (
-            this.lastLocalStorageUpdateTime !== null &&
-            Date.now() - this.lastLocalStorageUpdateTime < this.minLocalStorageUpdateTimeMs
-        ) {
-            return false
-        }
-        // Updates the updated cache values to local storage
+    public updateCachedDataToLocalStorageIfNeeded(): void {
         const repoAccessibilityData: RepoAccessibilityData[] = []
         for (const [repoName, repoMetadata] of this.cache) {
             if (repoMetadata) {
                 repoAccessibilityData.push({ repoName, isPublic: repoMetadata.isPublic })
             }
         }
-        if (this.didRepoAccessibilityDataChange(repoAccessibilityData)) {
+        if (this.shouldUpdateCachedDataToLocalStorage(repoAccessibilityData)) {
+            // Updates the updated cache values to local storage
             this.latestLocalStorageData = repoAccessibilityData
             this.lastLocalStorageUpdateTime = Date.now()
             localStorage.setGitHubRepoAccessibility(repoAccessibilityData)
-            return true
         }
-        return false
     }
 
-    public didRepoAccessibilityDataChange(repoAccessibilityData: RepoAccessibilityData[]): boolean {
+    public shouldUpdateCachedDataToLocalStorage(
+        repoAccessibilityData: RepoAccessibilityData[]
+    ): boolean {
+        if (
+            this.lastLocalStorageUpdateTime !== null &&
+            Date.now() - this.lastLocalStorageUpdateTime < this.minLocalStorageUpdateTimeMs
+        ) {
+            return false
+        }
+
         if (repoAccessibilityData.length !== this.latestLocalStorageData.length) {
             return true
         }
