@@ -861,32 +861,23 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 )
 
                 signal.throwIfAborted()
-                const fetchAdditionalContext = async (
-                    contextType: string,
-                    contextContent: string
-                ): Promise<void> => {
-                    logDebug(
-                        'fetchAdditionalContext 7',
-                        `Context Type: ${contextType}, Context Content: ${contextContent}`
-                    )
-                    const promptString = PromptString.unsafe_fromUserQuery('hello')
-
+                const fetchAdditionalContext = async (results: any[]): Promise<void> => {
+                    logDebug('fetchAdditionalContext', JSON.stringify(results))
                     const humanMessage = this.chatBuilder.getLastSpeakerMessageIndex('human')
                     if (humanMessage === undefined) {
                         return
                     }
                     await this.cancelSubmitOrEditOperation()
-                    await this.handleEdit({
-                        requestID: uuid.v4(),
-                        text: inputText,
-                        index: humanMessage,
-                        contextFiles: mentions,
-                        editorState,
-                        intent: detectedIntent,
-                        intentScores: detectedIntentScores,
-                        manuallySelectedIntent,
-                    })
-                    logDebug('fetchAdditionalContext 6', 'chat sent!')
+                    // await this.handleEdit({
+                    //     requestID: uuid.v4(),
+                    //     text: inputText,
+                    //     index: humanMessage,
+                    //     contextFiles: mentions,
+                    //     editorState,
+                    //     intent: detectedIntent,
+                    //     intentScores: detectedIntentScores,
+                    //     manuallySelectedIntent,
+                    // })
                 }
                 this.streamAssistantResponse(
                     requestID,
@@ -1399,7 +1390,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         span: Span,
         firstTokenSpan: Span,
         abortSignal: AbortSignal,
-        fetchAdditionalContext: (contextType: string, contextContent: string) => void
+        fetchAdditionalContext: (results: any[]) => void
     ): void {
         logDebug('ChatController', 'streamAssistantResponse', {
             verbose: { requestID, prompt },
@@ -1429,20 +1420,33 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                         model,
                     })
                     logDebug('content', content)
-                    const searchPattern =
-                        /^Deep Cody decided to fetch additional context. It decided to search for: (.+)\.$/
-                    const match = content.match(searchPattern)
-
-                    if (match) {
-                        const searchTerm = match[1] // Extract the search term from the match
-                        fetchAdditionalContext('search', searchTerm)
-                    }
                 },
                 close: content => {
                     measureFirstToken()
                     recordExposedExperimentsToSpan(span)
                     span.end()
                     this.addBotMessage(requestID, PromptString.unsafe_fromLLMResponse(content), model)
+
+                    logDebug('content', content)
+                    // First verify the initial phrase
+                    const initialPhrase = 'Deep Cody decided to fetch additional context'
+                    if (!content.startsWith(initialPhrase)) {
+                        return
+                    }
+
+                    // Then process the commands
+                    const commandPattern = /It decided to (\w+): (.+?)\./g
+                    let match: any
+                    const results = []
+                    while (true) {
+                        match = commandPattern.exec(content)
+                        if (match === null) break
+                        const command = match[1]
+                        const term = match[2]
+                        results.push({ command, term })
+                    }
+                    logDebug('before fetchAdditionalContext', JSON.stringify(results))
+                    fetchAdditionalContext(results)
                 },
                 error: (partialResponse, error) => {
                     this.postError(error, 'transcript')
@@ -1519,16 +1523,25 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                         logDebug('message.text', message.text)
                         if (message.text.startsWith('::')) {
                             const lines = message.text.split('\n')
-                            const command = lines[0].trim()
-                            if (command === '::search' && lines.length > 2) {
-                                const searchTerm = lines[1].trim()
-                                typewriter.update(
-                                    'Deep Cody decided to fetch additional context. ' +
-                                        `It decided to search for: ${searchTerm}.`
-                                )
-                            } else {
-                                typewriter.update('Deep Cody decided to fetch additional context.')
+                            const commands = []
+
+                            for (const line of lines) {
+                                const parts = line.trim().split('::').filter(Boolean)
+                                if (parts.length >= 2) {
+                                    const command = parts[0]
+                                    const term = parts.slice(1)
+                                    commands.push({ command, term })
+                                }
                             }
+                            let updateMessage = 'Deep Cody decided to fetch additional context.'
+                            for (const { command, term } of commands) {
+                                if (command === 'search') {
+                                    updateMessage += ` It decided to search: ${term}.`
+                                } else if (command === 'terminal') {
+                                    updateMessage += ` It decided to execute: ${term}.`
+                                }
+                            }
+                            typewriter.update(updateMessage)
                             break
                         }
 
