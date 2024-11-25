@@ -1075,6 +1075,8 @@ export const commands = _commands as typeof vscode.commands
 
 const _env: Partial<typeof vscode.env> = {
     uriScheme: 'file',
+    appName: clientInfo?.name,
+    shell: clientInfo?.capabilities?.shell ?? '',
     appRoot: process.cwd?.(),
     uiKind: UIKind.Desktop,
     language: process.env.language,

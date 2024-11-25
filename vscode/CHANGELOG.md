@@ -6,6 +6,8 @@ This is a log of all notable changes to Cody for VS Code.
 
 ### Added
 
+Agent: Add shell capability to enable agent shell process spawning.
+
 ### Fixed
 
 ### Changed
@@ -52,6 +54,7 @@ This is a log of all notable changes to Cody for VS Code.
 - Deep Cody: remove TOOL context item after review [pull/6079](https://github.com/sourcegraph/cody/pull/6079)
 
 ## 1.42.0
+
 Hey Cody users! For those who want to track detailed technical changes, we will be updating this changelog to provide more comprehensive updates on new features, improvements, and fixes. For major releases and announcements, check out our [public changelog](https://sourcegraph.com/changelog).
 
 ### Added
@@ -60,14 +63,16 @@ Hey Cody users! For those who want to track detailed technical changes, we will 
 - Telemetry: Added `cody.debug.logCharacterCounters` for debugging. [pull/6057](https://github.com/sourcegraph/cody/pull/6057)
 
 ### Fixed
+
 - Chat: This patch updates the chat keyboard shortcuts to be as follows, thereby avoiding the tendency to "double-add" a code snippet when using the `alt+L` shortcut:
   - `Alt+L`: between chat and editor (this is unchanged)
   - `Shift+Alt+L` (previously alt+L): add selection as context:
   - `Shift+Ctrl+L` (previously shift+alt+L): new chat
 - Markdown files were not bundled in the VSIX leading to onboarding views not displaying or showing an error.
 - Ensured that a correct http/https agent is loaded depending on endpoint protocol and that secureConnection correclty passes CA certs via [hpagent](https://github.com/delvedor/hpagent)
-  
+
 ### Changed
+
 - Networking: In addition to Node and user configured manual CA certs, we now automatically attempt to load CA certs in your system's trust store. This is done using [rustls](https://github.com/rustls/rustls) via a new [napi-rs](https://napi.rs/) library `lib/noxide`. This behaviour is enabled by default but can be diasabled by setting the `experimental.noxide.enabled` to `false` in your settings. Any issues loading the library will be logged to the usual error output channels and we will fallback to the previous behaviour. This will replace the previous method of loading system CA certs using shell commands or bundled executables such as `win-ca.exe`.
 
 ### Uncategorized
@@ -104,11 +109,13 @@ Hey Cody users! For those who want to track detailed technical changes, we will 
 ## 1.40.2
 
 ### Fixed
+
 - Agent: Fixed bugs in `workspace::getConfiguration` vscode shim [pull/6058](https://github.com/sourcegraph/cody/pull/6058)
 
 ## 1.40.1
 
 ### Fixed
+
 - Auth: Fixed UI conditional rendering logic for non VS Code clients. [pull/6047](https://github.com/sourcegraph/cody/pull/6047)
 
 ## 1.40.0
