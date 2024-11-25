@@ -1,4 +1,5 @@
 import { PromptString } from '@sourcegraph/cody-shared'
+import type { AutocompleteContextSnippetMetadataFields } from '../../../../../../../lib/shared/src/completions/types'
 import type {
     DiffCalculationInput,
     DiffHunk,
@@ -47,5 +48,11 @@ export class UnifiedDiffStrategy implements RecentEditsRetrieverDiffStrategy {
             )
         }
         return PromptString.fromGitDiff(input.uri, input.oldContent, newContent)
+    }
+
+    public getDiffStrategyMetadata(): AutocompleteContextSnippetMetadataFields {
+        return {
+            strategy: 'unified-diff',
+        }
     }
 }

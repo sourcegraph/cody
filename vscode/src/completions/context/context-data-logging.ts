@@ -13,7 +13,7 @@ import type { RetrievedContextResults } from './completions-context-ranker'
 import { JaccardSimilarityRetriever } from './retrievers/jaccard-similarity/jaccard-similarity-retriever'
 import { DiagnosticsRetriever } from './retrievers/recent-user-actions/diagnostics-retriever'
 import { RecentCopyRetriever } from './retrievers/recent-user-actions/recent-copy'
-import { RecentEditsRetrieverDiffStrategyIdentifier } from './retrievers/recent-user-actions/recent-edits-diff-helpers/recent-edits-diff-strategy'
+import { AutoeditWithShortTermDiffStrategy } from './retrievers/recent-user-actions/recent-edits-diff-helpers/auotedit-short-term-diff'
 import { RecentEditsRetriever } from './retrievers/recent-user-actions/recent-edits-retriever'
 import { RecentViewPortRetriever } from './retrievers/recent-user-actions/recent-view-port'
 import { RetrieverIdentifier } from './utils'
@@ -105,8 +105,7 @@ export class ContextRetrieverDataCollection implements vscode.Disposable {
             case RetrieverIdentifier.RecentEditsRetriever:
                 return new RecentEditsRetriever({
                     maxAgeMs: 10 * 60 * 1000,
-                    diffStrategyIdentifier:
-                        RecentEditsRetrieverDiffStrategyIdentifier.UnifiedDiffWithLineNumbers,
+                    diffStrategyList: [new AutoeditWithShortTermDiffStrategy()],
                 })
             case RetrieverIdentifier.DiagnosticsRetriever:
                 return new DiagnosticsRetriever({

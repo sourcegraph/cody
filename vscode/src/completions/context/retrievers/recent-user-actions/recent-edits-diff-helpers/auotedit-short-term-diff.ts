@@ -1,4 +1,5 @@
 import type * as vscode from 'vscode'
+import type { AutocompleteContextSnippetMetadataFields } from '../../../../../../../lib/shared/src/completions/types'
 import type {
     DiffCalculationInput,
     DiffHunk,
@@ -61,5 +62,14 @@ export class AutoeditWithShortTermDiffStrategy implements RecentEditsRetrieverDi
         const shortTermChanges = changes.slice(0, index)
         const longTermChanges = changes.slice(index)
         return [shortTermChanges, longTermChanges]
+    }
+
+    public getDiffStrategyMetadata(): AutocompleteContextSnippetMetadataFields {
+        return {
+            strategy: 'autoedits-short-term-diff',
+            longTermContextLines: this.longTermContextLines,
+            shortTermContextLines: this.shortTermContextLines,
+            shortTermDiffWindowMs: this.shortTermDiffWindowMs,
+        }
     }
 }
