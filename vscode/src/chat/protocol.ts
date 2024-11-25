@@ -7,6 +7,7 @@ import type {
     CodyIDE,
     ContextItem,
     ContextItemSource,
+    PromptMode,
     RangeData,
     RequestMessage,
     ResponseMessage,
@@ -169,8 +170,13 @@ export type ExtensionMessage =
           type: 'clientAction'
           addContextItemsToLastHumanInput?: ContextItem[] | null | undefined
           appendTextToLastPromptEditor?: string | null | undefined
+          setLastHumanInputIntent?: ChatMessage['intent'] | null | undefined
           smartApplyResult?: SmartApplyResult | undefined | null
           submitHumanInput?: boolean | undefined | null
+          setPromptAsInput?:
+              | { text: string; mode?: PromptMode | undefined | null; autoSubmit: boolean }
+              | undefined
+              | null
       }
     | ({ type: 'attribution' } & ExtensionAttributionMessage)
     | { type: 'rpc/response'; message: ResponseMessage }
@@ -225,6 +231,7 @@ export interface ConfigurationSubsetForWebview
     extends Pick<ClientConfiguration, 'experimentalNoodle' | 'internalDebugContext'>,
         Pick<AuthCredentials, 'serverEndpoint'> {
     smartApply: boolean
+    hasEditCapability: boolean
     // Type/location of the current webview.
     webviewType?: WebviewType | undefined | null
     // Whether support running multiple webviews (e.g. sidebar w/ multiple editor panels).
@@ -236,6 +243,9 @@ export interface ConfigurationSubsetForWebview
  */
 export const CODY_DOC_URL = new URL('https://sourcegraph.com/docs/cody')
 export const SG_CHANGELOG_URL = new URL('https://sourcegraph.com/changelog')
+export const VSCODE_CHANGELOG_URL = new URL(
+    'https://github.com/sourcegraph/cody/blob/main/vscode/CHANGELOG.md'
+)
 
 // Community and support
 export const DISCORD_URL = new URL('https://discord.gg/s2qDtYGnAE')

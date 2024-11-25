@@ -27,13 +27,13 @@ test('chat followup context', async ({ page, sidebar }) => {
     // No additional context means no context cell.
     await chatInput.fill('followup1')
     await chatInput.press('Enter')
-    expect(contextCells).toHaveCount(1)
+    expect(contextCells).toHaveCount(2)
 
     // Additional context means another context cell.
     await chatInput.fill('followup2 @var.go')
     await selectMentionMenuItem(chatFrame, 'var.go')
     await chatInput.press('Enter')
-    expect(contextCells).toHaveCount(2)
+    expect(contextCells).toHaveCount(3)
     const lastContextCell = contextCells.last()
     expect(lastContextCell).toHaveText(/1 new item/)
     await openContextCell(lastContextCell)

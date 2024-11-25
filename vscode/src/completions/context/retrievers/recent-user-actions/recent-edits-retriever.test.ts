@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type * as vscode from 'vscode'
 import { range } from '../../../../testutils/textDocument'
 import { document } from '../../../test-helpers'
+import { RecentEditsRetrieverDiffStrategyIdentifier } from './recent-edits-diff-helpers/recent-edits-diff-strategy'
 import { RecentEditsRetriever } from './recent-edits-retriever'
 
 const FIVE_MINUTES = 5 * 60 * 1000
@@ -15,6 +16,8 @@ describe('RecentEditsRetriever', () => {
     let onDidChangeTextDocument: (event: vscode.TextDocumentChangeEvent) => void
     let onDidRenameFiles: (event: vscode.FileRenameEvent) => void
     let onDidDeleteFiles: (event: vscode.FileDeleteEvent) => void
+    let onDidOpenTextDocument: (event: vscode.TextDocument) => void
+
     beforeEach(() => {
         vi.useFakeTimers()
         vi.spyOn(contextFiltersProvider, 'isUriIgnored').mockResolvedValue(false)
@@ -22,7 +25,7 @@ describe('RecentEditsRetriever', () => {
         retriever = new RecentEditsRetriever(
             {
                 maxAgeMs: FIVE_MINUTES,
-                addLineNumbersForDiff: false,
+                diffStrategyIdentifier: RecentEditsRetrieverDiffStrategyIdentifier.UnifiedDiff,
             },
             {
                 onDidChangeTextDocument(listener) {
@@ -35,6 +38,10 @@ describe('RecentEditsRetriever', () => {
                 },
                 onDidDeleteFiles(listener) {
                     onDidDeleteFiles = listener
+                    return { dispose: () => {} }
+                },
+                onDidOpenTextDocument(listener) {
+                    onDidOpenTextDocument = listener
                     return { dispose: () => {} }
                 },
             }
@@ -99,14 +106,20 @@ describe('RecentEditsRetriever', () => {
         `)
 
         it('tracks document changes and creates a git diff', async () => {
+            onDidOpenTextDocument(testDocument)
+
             replaceFooLogWithNumber(testDocument)
 
             deleteBarLog(testDocument)
 
             addNumberLog(testDocument)
 
-            const diff = await retriever.getDiff(testDocument.uri)
-            expect(diff!.toString().split('\n').slice(2).join('\n')).toMatchInlineSnapshot(`
+            const diffHunks = await retriever.getDiff(testDocument.uri)
+            expect(diffHunks).not.toBeNull()
+            expect(diffHunks?.length).toBe(1)
+            expect(
+                diffHunks?.[0].diff?.toString().split('\n').slice(2).join('\n')
+            ).toMatchInlineSnapshot(`
               "@@ -1,7 +1,7 @@
                function foo() {
               -    console.log('foo')
@@ -125,6 +138,8 @@ describe('RecentEditsRetriever', () => {
         it('no-ops for blocked files due to the context filter', async () => {
             vi.spyOn(contextFiltersProvider, 'isUriIgnored').mockResolvedValueOnce('repo:foo')
 
+            onDidOpenTextDocument(testDocument)
+
             replaceFooLogWithNumber(testDocument)
 
             deleteBarLog(testDocument)
@@ -135,6 +150,8 @@ describe('RecentEditsRetriever', () => {
         })
 
         it('does not yield changes that are older than the configured timeout', async () => {
+            onDidOpenTextDocument(testDocument)
+
             replaceFooLogWithNumber(testDocument)
 
             vi.advanceTimersByTime(3 * 60 * 1000)
@@ -143,8 +160,12 @@ describe('RecentEditsRetriever', () => {
             vi.advanceTimersByTime(3 * 60 * 1000)
             addNumberLog(testDocument)
 
-            const diff = await retriever.getDiff(testDocument.uri)
-            expect(diff!.toString().split('\n').slice(2).join('\n')).toMatchInlineSnapshot(`
+            const diffHunks = await retriever.getDiff(testDocument.uri)
+            expect(diffHunks).not.toBeNull()
+            expect(diffHunks?.length).toBe(1)
+            expect(
+                diffHunks?.[0].diff?.toString().split('\n').slice(2).join('\n')
+            ).toMatchInlineSnapshot(`
               "@@ -2,6 +2,6 @@
                    console.log(1337)
                }
@@ -159,6 +180,8 @@ describe('RecentEditsRetriever', () => {
         })
 
         it('handles renames', async () => {
+            onDidOpenTextDocument(testDocument)
+
             replaceFooLogWithNumber(testDocument)
 
             vi.advanceTimersByTime(3 * 60 * 1000)
@@ -178,8 +201,12 @@ describe('RecentEditsRetriever', () => {
             vi.advanceTimersByTime(3 * 60 * 1000)
             addNumberLog(renamedDoc)
 
-            const diff = await retriever.getDiff(newUri)
-            expect(diff!.toString().split('\n').slice(2).join('\n')).toMatchInlineSnapshot(`
+            const diffHunks = await retriever.getDiff(newUri)
+            expect(diffHunks).not.toBeNull()
+            expect(diffHunks?.length).toBe(1)
+            expect(
+                diffHunks?.[0].diff?.toString().split('\n').slice(2).join('\n')
+            ).toMatchInlineSnapshot(`
               "@@ -2,6 +2,6 @@
                    console.log(1337)
                }
@@ -194,8 +221,12 @@ describe('RecentEditsRetriever', () => {
         })
 
         it('handles deletions', async () => {
+            onDidOpenTextDocument(testDocument)
+
             replaceFooLogWithNumber(testDocument)
+
             onDidDeleteFiles({ files: [testDocument.uri] })
+
             expect(await retriever.getDiff(testDocument.uri)).toBe(null)
         })
     })

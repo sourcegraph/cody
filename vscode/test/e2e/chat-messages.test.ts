@@ -1,17 +1,32 @@
+import { promises as fs } from 'node:fs'
 import { expect } from '@playwright/test'
-import { chatMessageRows, createEmptyChatPanel, sidebarSignin } from './common'
-import { test } from './helpers'
 
-test.use({ permissions: ['clipboard-read', 'clipboard-write'] })
+import * as mockServer from '../fixtures/mock-server'
 
-test('chat assistant response code buttons', async ({ page, sidebar, context, contextOptions }) => {
+import { isMacOS } from '@sourcegraph/cody-shared'
+import { chatMessageRows, createEmptyChatPanel, sidebarExplorer, sidebarSignin } from './common'
+import { executeCommandInPalette, getTmpLogFile, test } from './helpers'
+
+test.use({
+    permissions: ['clipboard-read', 'clipboard-write'],
+    extraWorkspaceSettings: {
+        'cody.debug.verbose': true,
+    },
+})
+
+test('chat assistant response code buttons', async ({ page, nap, sidebar }, testInfo) => {
     await sidebarSignin(page, sidebar)
+
+    await sidebarExplorer(page).click()
+    await page.getByRole('treeitem', { name: 'type.ts' }).locator('a').dblclick()
+    await page.getByRole('tab', { name: 'type.ts' }).hover()
+
     const [chatPanel, chatInput] = await createEmptyChatPanel(page)
     await chatInput.fill('show me a code snippet')
     await chatInput.press('Enter')
 
     const messageRows = chatMessageRows(chatPanel)
-    const assistantRow = messageRows.nth(1)
+    const assistantRow = messageRows.nth(2)
     await expect(assistantRow).toContainText('Hello! Here is a code snippet:')
     await expect(assistantRow).toContainText('def fib(n):')
 
@@ -32,8 +47,64 @@ test('chat assistant response code buttons', async ({ page, sidebar, context, co
         timeout: 5000,
     })
     await copyButton.click()
-    const consoleLogMessage = await consoleLogPromise
-    expect(await consoleLogMessage.args()[1].jsonValue()).toBe(
+    // Place the cursor on some text in the document
+    await page.getByText('appleName').click()
+    await page.keyboard.press(isMacOS() ? 'Meta+V' : 'Control+V')
+
+    const codeToPaste =
         'def fib(n):\n  if n < 0:\n    return n\n  else:\n    return fib(n-1) + fib(n-2)\n'
+    const consoleLogMessage = await consoleLogPromise
+    expect(await consoleLogMessage.args()[1].jsonValue()).toBe(codeToPaste)
+
+    await executeCommandInPalette(page, 'cody.debug.logCharacterCounters')
+    // Wait for the logCharacterCounters command to update the log file.
+    await nap()
+    const charCountersAfterPaste = await getLastCharactersCountOutput(testInfo.title)
+
+    // We expect the pasted code to be categorized as cody_chat and
+    // the relevant inserted characters counter to be incremented appropriately.
+    expect(charCountersAfterPaste).toContain(`"cody_chat_inserted": ${codeToPaste.length}`)
+    expect(charCountersAfterPaste).toContain('"cody_chat": 1')
+
+    await actionsDropdown.click()
+    await executeCommandInPalette(page, 'cody.command.insertCodeToCursor')
+    await nap()
+    await executeCommandInPalette(page, 'cody.debug.logCharacterCounters')
+    // Wait for the logCharacterCounters command to update the log file.
+    await nap()
+
+    // Static value hardcoded for testing because I did not find a way to
+    // reliably access the native OS-dropdown used for the insert code button.
+    // Currently defined in: vscode/src/chat/chat-view/ChatsController.ts
+    const codeToInsert = 'cody.command.insertCodeToCursor:cody_testing'
+    const charCountersAfterInsert = await getLastCharactersCountOutput(testInfo.title)
+
+    // We expect the inserted code to be categorized as cody_chat and
+    // the relevant inserted characters counter to be incremented appropriately.
+    expect(charCountersAfterInsert).toContain(
+        `"cody_chat_inserted": ${codeToPaste.length + codeToInsert.length}`
     )
+    expect(charCountersAfterInsert).toContain('"cody_chat": 2')
+
+    const copyClickedEvent = mockServer.loggedV2Events.find(
+        event => event.testId === 'cody.copyButton:clicked'
+    )
+    const insertClickedEvent = mockServer.loggedV2Events.find(
+        event => event.testId === 'cody.insertButton:clicked'
+    )
+    const chatEventsParameters = {
+        copyClickedEvent: copyClickedEvent?.parameters,
+        insertClickedEvent: insertClickedEvent?.parameters,
+    }
+    // We expect events being logged for the copy and insert button clicks.
+    expect(JSON.stringify(chatEventsParameters, null, 2)).toMatchSnapshot()
 })
+
+async function getLastCharactersCountOutput(testTitle: string) {
+    const outputChannel = await fs.readFile(getTmpLogFile(testTitle), 'utf-8')
+    const charsCounterIndex = outputChannel.lastIndexOf('Current character counters:')
+
+    expect(charsCounterIndex).toBeGreaterThan(0)
+
+    return outputChannel.slice(charsCounterIndex)
+}

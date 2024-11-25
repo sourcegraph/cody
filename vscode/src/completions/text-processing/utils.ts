@@ -436,3 +436,8 @@ export function getSuffixAfterFirstNewline(suffix: PromptString): PromptString {
 export function removeLeadingEmptyLines(str: string): string {
     return str.replace(/^[\r\n]+/, '')
 }
+
+export function getNewLineChar(existingText: string) {
+    const match = existingText.match(/\r\n|\n/)
+    return match ? match[0] : '\n'
+}

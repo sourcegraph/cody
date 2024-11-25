@@ -32,8 +32,9 @@ export interface AutoEditsTokenLimit {
 }
 
 export interface AutoEditsModelConfig {
-    provider: string
+    provider: 'openai' | 'fireworks' | 'cody-gateway-fastpath-chat'
     model: string
+    url: string
     apiKey: string
     tokenLimit: AutoEditsTokenLimit
 }
@@ -43,7 +44,7 @@ export interface NetConfiguration {
     proxy?: {
         endpoint?: string | undefined | null
         cacert?: string | undefined | null
-        skipCertValidation?: boolean | null
+        skipCertValidation?: boolean | undefined | null
     }
     vscode?: string | undefined | null
 }
@@ -75,14 +76,16 @@ interface RawClientConfiguration {
     autocompleteExperimentalGraphContext: 'lsp-light' | 'tsc' | 'tsc-mixed' | null
     autocompleteExperimentalOllamaOptions: OllamaOptions
     autocompleteExperimentalFireworksOptions?: ExperimentalFireworksConfig
-    autocompleteExperimentalPreloadDebounceInterval?: number
 
     experimentalTracing: boolean
     experimentalSupercompletions: boolean
-    experimentalAutoedits: AutoEditsModelConfig | undefined
+    experimentalAutoeditsRendererTesting: boolean
+    experimentalAutoeditsConfigOverride: AutoEditsModelConfig | undefined
+    experimentalAutoeditsEnabled: boolean | undefined
     experimentalCommitMessage: boolean
     experimentalNoodle: boolean
     experimentalMinionAnthropicKey: string | undefined
+    experimentalNoxideEnabled: boolean
     experimentalGuardrailsTimeoutSeconds: number | undefined
 
     //#region Unstable

@@ -8,3 +8,23 @@
     padding-left: 0.1rem;
     text-wrap: nowrap;
 }
+
+.context-item-edit-button {
+    /* display: flex; */
+    display: none;
+    align-items: center;
+
+    flex-wrap: nowrap;
+
+}
+
+.context-item-edit-button-icon {
+    height: 20%;
+    margin-right: 0.5rem;
+}
+
+.context-suggested-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+}

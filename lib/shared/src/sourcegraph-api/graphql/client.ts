@@ -17,10 +17,14 @@ import { addCodyClientIdentificationHeaders } from '../client-name-version'
 import { DOTCOM_URL, isDotCom } from '../environments'
 import { isAbortError } from '../errors'
 import {
+    BUILTIN_PROMPTS_QUERY,
+    CHANGE_PROMPT_VISIBILITY,
     CHAT_INTENT_QUERY,
     CONTEXT_FILTERS_QUERY,
+    CONTEXT_SEARCH_EVAL_DEBUG_QUERY,
     CONTEXT_SEARCH_QUERY,
     CONTEXT_SEARCH_QUERY_WITH_RANGES,
+    CREATE_PROMPT_MUTATION,
     CURRENT_SITE_CODY_CONFIG_FEATURES,
     CURRENT_SITE_CODY_LLM_CONFIGURATION,
     CURRENT_SITE_CODY_LLM_CONFIGURATION_SMART_CONTEXT,
@@ -33,6 +37,7 @@ import {
     CURRENT_USER_CODY_SUBSCRIPTION_QUERY,
     CURRENT_USER_ID_QUERY,
     CURRENT_USER_INFO_QUERY,
+    CURRENT_USER_ROLE_QUERY,
     DELETE_ACCESS_TOKEN_MUTATION,
     EVALUATE_FEATURE_FLAG_QUERY,
     FILE_CONTENTS_QUERY,
@@ -50,6 +55,7 @@ import {
     LOG_EVENT_MUTATION_DEPRECATED,
     PACKAGE_LIST_QUERY,
     PROMPTS_QUERY,
+    PromptsOrderBy,
     RECORD_TELEMETRY_EVENTS_MUTATION,
     REPOSITORY_IDS_QUERY,
     REPOSITORY_ID_QUERY,
@@ -182,12 +188,17 @@ interface CurrentUserIdResponse {
     currentUser: { id: string } | null
 }
 
+interface CurrentUserRoleResponse {
+    currentUser: { id: string; siteAdmin: boolean } | null
+}
+
 interface CurrentUserInfoResponse {
     currentUser: {
         id: string
         hasVerifiedEmail: boolean
         displayName?: string
         username: string
+        siteAdmin: boolean
         avatarURL: string
         codyProEnabled: boolean
         primaryEmail?: { email: string } | null
@@ -369,6 +380,31 @@ interface ContextSearchResponse {
     }[]
 }
 
+interface ContextSearchEvalDebugResponse {
+    getCodyContextAlternatives: {
+        contextLists: {
+            name: string
+            contextItems: {
+                blob: {
+                    commit: {
+                        oid: string
+                    }
+                    path: string
+                    repository: {
+                        id: string
+                        name: string
+                    }
+                    url: string
+                }
+                startLine: number
+                endLine: number
+                chunkContent: string
+                matchedRanges: Range[]
+            }[]
+        }[]
+    }
+}
+
 interface Position {
     line: number
     character: number
@@ -402,6 +438,11 @@ export interface ContextSearchResult {
     ranges: Range[]
 }
 
+export interface ContextSearchEvalDebugResult {
+    name: string
+    contextList: ContextSearchResult[]
+}
+
 /**
  * A prompt that can be shared and reused. See Prompt in the Sourcegraph GraphQL API.
  */
@@ -409,22 +450,42 @@ export interface Prompt {
     id: string
     name: string
     nameWithOwner: string
-    owner: {
+    recommended: boolean
+    owner?: {
         namespaceName: string
     }
     description?: string
     draft: boolean
     autoSubmit?: boolean
+    builtin?: boolean
+    mode?: PromptMode
     definition: {
         text: string
     }
     url: string
-    createdBy: {
+    createdBy?: {
         id: string
         username: string
         displayName: string
         avatarURL: string
     }
+}
+
+export interface PromptInput {
+    owner: string
+    name: string
+    description: string
+    definitionText: string
+    draft: boolean
+    autoSubmit: boolean
+    mode: PromptMode
+    visibility?: 'PUBLIC' | 'SECRET'
+}
+
+export enum PromptMode {
+    CHAT = 'CHAT',
+    EDIT = 'EDIT',
+    INSERT = 'INSERT',
 }
 
 interface ContextFiltersResponse {
@@ -492,6 +553,7 @@ export interface CurrentUserInfo {
     hasVerifiedEmail: boolean
     username: string
     displayName?: string
+    siteAdmin: boolean
     avatarURL: string
     primaryEmail?: { email: string } | null
     organizations: {
@@ -744,6 +806,17 @@ export class SourcegraphGraphQLAPIClient {
             {}
         ).then(response =>
             extractDataOrError(response, data => (data.currentUser ? data.currentUser.id : null))
+        )
+    }
+
+    public async isCurrentUserSideAdmin(): Promise<
+        CurrentUserRoleResponse['currentUser'] | null | Error
+    > {
+        return this.fetchSourcegraphAPI<APIResponse<CurrentUserRoleResponse>>(
+            CURRENT_USER_ROLE_QUERY,
+            {}
+        ).then(response =>
+            extractDataOrError(response, data => (data.currentUser ? data.currentUser : null))
         )
     }
 
@@ -1036,6 +1109,57 @@ export class SourcegraphGraphQLAPIClient {
         )
     }
 
+    public async contextSearchEvalDebug({
+        repoIDs,
+        query,
+        signal,
+        filePatterns,
+        codeResultsCount,
+        textResultsCount,
+    }: {
+        repoIDs: string[]
+        query: string
+        signal?: AbortSignal
+        filePatterns?: string[]
+        codeResultsCount: number
+        textResultsCount: number
+    }): Promise<ContextSearchEvalDebugResult[] | null | Error> {
+        const config = await firstValueFrom(this.config!)
+        signal?.throwIfAborted()
+
+        return this.fetchSourcegraphAPI<APIResponse<ContextSearchEvalDebugResponse>>(
+            CONTEXT_SEARCH_EVAL_DEBUG_QUERY,
+            {
+                repos: repoIDs,
+                query,
+                codeResultsCount: codeResultsCount,
+                textResultsCount: textResultsCount,
+                ...filePatterns,
+            },
+            signal
+        ).then(response =>
+            extractDataOrError(response, data =>
+                (data.getCodyContextAlternatives.contextLists || []).map(contextList => ({
+                    name: contextList.name,
+                    contextList: contextList.contextItems.map(item => ({
+                        commit: item.blob.commit.oid,
+                        repoName: item.blob.repository.name,
+                        path: item.blob.path,
+                        uri: URI.parse(
+                            `${config.auth.serverEndpoint}${item.blob.repository.name}/-/blob/${
+                                item.blob.path
+                            }?L${item.startLine + 1}-${item.endLine}`
+                        ),
+                        startLine: item.startLine,
+                        endLine: item.endLine,
+                        content: item.chunkContent,
+                        ranges: item.matchedRanges ?? [],
+                    })),
+                }))
+            )
+        )
+    }
+
     public async contextFilters(): Promise<{
         filters: ContextFilters
         transient: boolean
@@ -1112,12 +1236,32 @@ export class SourcegraphGraphQLAPIClient {
         return result
     }
 
-    public async queryPrompts(query: string, signal?: AbortSignal): Promise<Prompt[]> {
+    public async queryPrompts({
+        query,
+        first,
+        recommendedOnly,
+        signal,
+        orderByMultiple,
+    }: {
+        query?: string
+        first: number | undefined
+        recommendedOnly?: boolean
+        signal?: AbortSignal
+        orderByMultiple?: PromptsOrderBy[]
+    }): Promise<Prompt[]> {
         const hasIncludeViewerDraftsArg = await this.isValidSiteVersion({ minimumVersion: '5.9.0' })
 
         const response = await this.fetchSourcegraphAPI<APIResponse<{ prompts: { nodes: Prompt[] } }>>(
             hasIncludeViewerDraftsArg ? PROMPTS_QUERY : LEGACY_PROMPTS_QUERY_5_8,
-            { query },
+            {
+                query,
+                first: first ?? 100,
+                recommendedOnly: recommendedOnly,
+                orderByMultiple: orderByMultiple || [
+                    PromptsOrderBy.PROMPT_RECOMMENDED,
+                    PromptsOrderBy.PROMPT_UPDATED_AT,
+                ],
+            },
             signal
         )
         const result = extractDataOrError(response, data => data.prompts.nodes)
@@ -1125,6 +1269,64 @@ export class SourcegraphGraphQLAPIClient {
             throw result
         }
         return result
+    }
+
+    public async queryBuiltinPrompts({
+        query,
+        first,
+        signal,
+    }: {
+        query: string
+        first?: number
+        signal?: AbortSignal
+    }): Promise<Prompt[]> {
+        const response = await this.fetchSourcegraphAPI<APIResponse<{ prompts: { nodes: Prompt[] } }>>(
+            BUILTIN_PROMPTS_QUERY,
+            {
+                query,
+                first: first ?? 100,
+                orderByMultiple: [PromptsOrderBy.PROMPT_UPDATED_AT],
+            },
+            signal
+        )
+        const result = extractDataOrError(response, data => data.prompts.nodes)
+        if (result instanceof Error) {
+            throw result
+        }
+        return result
+    }
+
+    public async createPrompt(input: PromptInput): Promise<{ id: string }> {
+        const response = await this.fetchSourcegraphAPI<APIResponse<{ createPrompt: { id: string } }>>(
+            CREATE_PROMPT_MUTATION,
+            { input }
+        )
+
+        const result = extractDataOrError(response, data => data.createPrompt)
+
+        if (result instanceof Error) {
+            throw result
+        }
+
+        return result
+    }
+
+    public async transferPromptOwnership(input: {
+        id: string
+        visibility: 'PUBLIC' | 'SECRET'
+    }): Promise<void> {
+        const response = await this.fetchSourcegraphAPI<APIResponse<unknown>>(CHANGE_PROMPT_VISIBILITY, {
+            id: input.id,
+            newVisibility: input.visibility,
+        })
+
+        const result = extractDataOrError(response, data => data)
+
+        if (result instanceof Error) {
+            throw result
+        }
+
+        return
     }
 
     /**

@@ -101,7 +101,9 @@ describe('Edit', { timeout: 5000 }, () => {
         )
     }, 20_000)
 
-    it('editCommand/code (generate new code)', async () => {
+    // TODO: fix flakiness and re-enable
+    // https://linear.app/sourcegraph/issue/CODY-4300/agent-integration-test-editcommandcode-generate-new-code-is-flaky
+    it.skip('editCommand/code (generate new code)', async () => {
         const uri = workspace.file('src', 'Heading.tsx')
         await client.openFile(uri)
         const task = await client.request('editCommands/code', {

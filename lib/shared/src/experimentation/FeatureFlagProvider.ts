@@ -39,18 +39,13 @@ export enum FeatureFlag {
     CodyAutocompleteFastPath = 'cody-autocomplete-fast-path',
 
     // Enable various feature flags to experiment with FIM trained fine-tuned models via Fireworks
-    CodyAutocompleteFIMModelExperimentBaseFeatureFlag = 'cody-autocomplete-model-v1-experiment-flag',
-    CodyAutocompleteFIMModelExperimentControl = 'cody-autocomplete-model-v1-experiment-control',
-    CodyAutocompleteFIMModelExperimentCurrentBest = 'cody-autocomplete-model-v1-experiment-current-best',
-    CodyAutocompleteFIMModelExperimentVariant1 = 'cody-autocomplete-model-v1-experiment-variant-1',
-    CodyAutocompleteFIMModelExperimentVariant2 = 'cody-autocomplete-model-v1-experiment-variant-2',
-    CodyAutocompleteFIMModelExperimentVariant3 = 'cody-autocomplete-model-v1-experiment-variant-3',
-    CodyAutocompleteFIMModelExperimentVariant4 = 'cody-autocomplete-model-v1-experiment-variant-4',
-    CodyAutocompleteDisableLowPerfLangDelay = 'cody-autocomplete-disable-low-perf-lang-delay',
-
-    CodyAutocompletePreloadingExperimentBaseFeatureFlag = 'cody-autocomplete-preloading-experiment-flag',
-    CodyAutocompletePreloadingExperimentVariant1 = 'cody-autocomplete-preloading-experiment-variant-1',
-    CodyAutocompletePreloadingExperimentVariant2 = 'cody-autocomplete-preloading-experiment-variant-2',
+    CodyAutocompleteFIMModelExperimentBaseFeatureFlag = 'cody-autocomplete-model-v2-experiment-flag',
+    CodyAutocompleteFIMModelExperimentControl = 'cody-autocomplete-model-experiment-control',
+    CodyAutocompleteFIMModelExperimentCurrentBest = 'cody-autocomplete-model-experiment-current-best',
+    CodyAutocompleteFIMModelExperimentVariant1 = 'cody-autocomplete-model-experiment-variant-1',
+    CodyAutocompleteFIMModelExperimentVariant2 = 'cody-autocomplete-model-experiment-variant-2',
+    CodyAutocompleteFIMModelExperimentVariant3 = 'cody-autocomplete-model-experiment-variant-3',
+    CodyAutocompleteFIMModelExperimentVariant4 = 'cody-autocomplete-model-experiment-variant-4',
 
     CodyAutocompleteContextExperimentBaseFeatureFlag = 'cody-autocomplete-context-experiment-flag',
     CodyAutocompleteContextExperimentVariant1 = 'cody-autocomplete-context-experiment-variant-1',
@@ -59,9 +54,10 @@ export enum FeatureFlag {
     CodyAutocompleteContextExperimentVariant4 = 'cody-autocomplete-context-experiment-variant-4',
     CodyAutocompleteContextExperimentControl = 'cody-autocomplete-context-experiment-control',
 
-    // When enabled, it will extend the number of languages considered for context (e.g. React files
-    // will be able to use CSS files as context).
-    CodyAutocompleteContextExtendLanguagePool = 'cody-autocomplete-context-extend-language-pool',
+    CodyAutoeditExperimentEnabledFeatureFlag = 'cody-autoedit-experiment-enabled-flag',
+
+    // Enables gpt-4o-mini as a default Edit model
+    CodyEditDefaultToGpt4oMini = 'cody-edit-default-to-gpt-4o-mini',
 
     // use-ssc-for-cody-subscription is a feature flag that enables the use of SSC as the source of truth for Cody subscription data.
     UseSscForCodySubscription = 'use-ssc-for-cody-subscription',
@@ -90,8 +86,19 @@ export enum FeatureFlag {
      */
     CodyUnifiedPrompts = 'cody-unified-prompts',
 
+    /**
+     * For internal use only. New Prompts UI and logic is behind this feature flag
+     * will be removed as soon as commands will be deprecated.
+     */
+    CodyPromptsV2 = 'prompt-creation-v2',
+
     /** Whether user has access to the experimental Cody Reflection / Deep Cody feature. */
     DeepCody = 'cody-deep-reflection',
+
+    /**
+     * Whether the current repo context chip is shown in the chat input by default
+     */
+    NoDefaultRepoChip = 'no-default-repo-chip',
 }
 
 const ONE_HOUR = 60 * 60 * 1000

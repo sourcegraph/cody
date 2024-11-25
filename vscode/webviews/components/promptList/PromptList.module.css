@@ -32,6 +32,7 @@
         .list--item {
             border-radius: 3px;
             border: 1px solid var(--vscode-dropdown-border, transparent);
+            padding: 0.25rem 0.5rem;
 
             &[aria-selected="true"] {
                 border-color: var(--vscode-list-activeSelectionBackground);

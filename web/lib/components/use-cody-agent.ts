@@ -62,7 +62,6 @@ export function useCodyWebAgent(input: UseCodyWebAgentInput): UseCodyWebAgentRes
             customHeaders,
             telemetryClientName,
             createAgentWorker,
-            workspaceRootUri: '',
             serverEndpoint: serverEndpoint,
             accessToken: accessToken ?? '',
         })

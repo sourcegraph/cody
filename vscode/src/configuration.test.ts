@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { assert, describe, expect, it } from 'vitest'
 import type * as vscode from 'vscode'
 
 import { type ClientConfiguration, OLLAMA_DEFAULT_URL, ps } from '@sourcegraph/cody-shared'
@@ -81,7 +81,7 @@ describe('getConfiguration', () => {
                         return false
                     case 'cody.advanced.hasNativeWebview':
                         return true
-                    case 'cody.advanced.agent.ide':
+                    case 'cody.advanced.agent.ide.name':
                         return undefined
                     case 'cody.advanced.agent.ide.version':
                         return undefined
@@ -95,7 +95,11 @@ describe('getConfiguration', () => {
                         return false
                     case 'cody.experimental.supercompletions':
                         return false
-                    case 'cody.experimental.autoedit':
+                    case 'cody.experimental.autoedits.enabled':
+                        return undefined
+                    case 'cody.experimental.autoedits-renderer-testing':
+                        return false
+                    case 'cody.experimental.autoedits.config.override':
                         return undefined
                     case 'cody.experimental.noodle':
                         return false
@@ -103,10 +107,10 @@ describe('getConfiguration', () => {
                         return undefined
                     case 'cody.autocomplete.advanced.timeout.firstCompletion':
                         return 1500
-                    case 'cody.autocomplete.experimental.preloadDebounceInterval':
-                        return 0
                     case 'cody.experimental.guardrailsTimeoutSeconds':
                         return undefined
+                    case 'cody.experimental.noxide.enabled':
+                        return true
                     case 'cody.advanced.agent.capabilities.storage':
                         return false
                     case 'cody.provider.limit.prompt':
@@ -128,7 +132,7 @@ describe('getConfiguration', () => {
                     case 'http':
                         return undefined
                     default:
-                        throw new Error(`unexpected key: ${key}`)
+                        assert(false, `unexpected key: ${key}`)
                 }
             },
         }
@@ -156,11 +160,14 @@ describe('getConfiguration', () => {
             },
             commandCodeLenses: true,
             experimentalSupercompletions: false,
-            experimentalAutoedits: undefined,
+            experimentalAutoeditsEnabled: undefined,
+            experimentalAutoeditsConfigOverride: undefined,
+            experimentalAutoeditsRendererTesting: false,
             experimentalMinionAnthropicKey: undefined,
             experimentalTracing: true,
             experimentalCommitMessage: true,
             experimentalNoodle: false,
+            experimentalNoxideEnabled: true,
             codeActions: true,
             commandHints: true,
             isRunningInsideAgent: false,
@@ -185,7 +192,6 @@ describe('getConfiguration', () => {
                 url: OLLAMA_DEFAULT_URL,
             },
             autocompleteFirstCompletionTimeout: 1500,
-            autocompleteExperimentalPreloadDebounceInterval: 0,
             providerLimitPrompt: 123,
             devModels: [{ model: 'm', provider: 'p' }],
             experimentalGuardrailsTimeoutSeconds: undefined,

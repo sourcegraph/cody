@@ -15,6 +15,7 @@ import {
     RAPID_CHANGE_TIMEOUT,
     SELECTION_TIMEOUT,
 } from './CharactersLogger'
+import * as codeBlockUtils from './utils/codeblock-action-tracker'
 
 const testDocument = document('foo')
 
@@ -23,7 +24,7 @@ describe('CharactersLogger', () => {
     let tracker: CharactersLogger
 
     let onDidChangeActiveTextEditor: (event: vscode.TextEditor | undefined) => void
-    let onDidChangeTextDocument: (event: vscode.TextDocumentChangeEvent) => void
+    let onDidChangeTextDocument: (event: vscode.TextDocumentChangeEvent) => Promise<void>
     let onDidCloseTextDocument: (document: vscode.TextDocument) => void
     let onDidChangeWindowState: (state: vscode.WindowState) => void
     let onDidChangeTextEditorSelection: (event: vscode.TextEditorSelectionChangeEvent) => void
@@ -117,13 +118,13 @@ describe('CharactersLogger', () => {
         return { ...DEFAULT_COUNTERS, ...expected }
     }
 
-    it('should handle insertions, deletions, rapid and stale changes, and changes outside of visible range', () => {
+    it('should handle insertions, deletions, rapid and stale changes, and changes outside of visible range', async () => {
         // Simulate user typing in the active text editor
         onDidChangeActiveTextEditor(mockActiveTextEditor)
         onDidChangeTextEditorSelection(mockTextEditorSelectionEvent)
 
         // Scenario 1: User types 'hello' (insertion)
-        onDidChangeTextDocument(
+        await onDidChangeTextDocument(
             createChange({ text: 'hello', range: range(0, 0, 0, 0), rangeLength: 0 })
         )
 
@@ -131,13 +132,15 @@ describe('CharactersLogger', () => {
         vi.advanceTimersByTime(RAPID_CHANGE_TIMEOUT - 5)
 
         // Scenario 2: User deletes 'he' (deletion)
-        onDidChangeTextDocument(createChange({ text: '', range: range(0, 0, 0, 2), rangeLength: 2 }))
+        await onDidChangeTextDocument(
+            createChange({ text: '', range: range(0, 0, 0, 2), rangeLength: 2 })
+        )
 
         // Now, advance time beyond SELECTION_TIMEOUT to make selection stale
         vi.advanceTimersByTime(SELECTION_TIMEOUT + 1000)
 
         // Scenario 3: User types 'there' (stale insertion)
-        onDidChangeTextDocument(
+        await onDidChangeTextDocument(
             createChange({ text: 'there', range: range(0, 3, 0, 3), rangeLength: 0 })
         )
         // Should be counted as an insertion, stale change
@@ -148,7 +151,7 @@ describe('CharactersLogger', () => {
         onDidChangeActiveTextEditor(mockActiveTextEditor)
 
         // User types 'hidden' at line 50 (outside visible range)
-        onDidChangeTextDocument(
+        await onDidChangeTextDocument(
             createChange({
                 text: 'hidden',
                 range: range(50, 0, 50, 0), // Line 50, start
@@ -174,22 +177,29 @@ describe('CharactersLogger', () => {
                 stale_xxs_change: 1,
                 stale_xxs_change_inserted: 5, // 'there'
 
-                outside_of_visible_ranges: 1,
-                outside_of_visible_ranges_inserted: 6, // 'hidden'
+                partially_outside_of_visible_ranges: 1,
+                partially_outside_of_visible_ranges_inserted: 6, // 'hidden'
             }),
         })
     })
 
-    it('should handle undo, redo, window not focused, no active editor, outside of active editor, and document closing', () => {
+    it('should handle undo, redo, window not focused, no active editor, outside of active editor, and document closing', async () => {
         onDidChangeActiveTextEditor(mockActiveTextEditor)
         onDidChangeTextEditorSelection(mockTextEditorSelectionEvent)
 
         const changeReasons = { Undo: 1, Redo: 2 } as const
 
-        onDidChangeTextDocument(createChange({ text: 'test', range: range(0, 0, 0, 0), rangeLength: 0 }))
+        const xxsChangeEvent = createChange({ text: 'test', range: range(0, 0, 0, 0), rangeLength: 0 })
+        await onDidChangeTextDocument(xxsChangeEvent)
+
+        const disjointChange = createChange({ text: 'test', range: range(2, 0, 0, 0), rangeLength: 0 })
+        await onDidChangeTextDocument({
+            ...xxsChangeEvent,
+            contentChanges: [xxsChangeEvent.contentChanges[0], disjointChange.contentChanges[0]],
+        })
 
         // Simulate undo
-        onDidChangeTextDocument(
+        await onDidChangeTextDocument(
             createChange({
                 text: '',
                 range: range(0, 4, 0, 0),
@@ -199,7 +209,7 @@ describe('CharactersLogger', () => {
         )
 
         // Simulate redo
-        onDidChangeTextDocument(
+        await onDidChangeTextDocument(
             createChange({
                 text: 'test',
                 range: range(0, 0, 0, 0),
@@ -208,11 +218,29 @@ describe('CharactersLogger', () => {
             })
         )
 
+        const codeFromChat = 'insert_from_chat'
+        vi.spyOn(codeBlockUtils, 'isCodeFromChatCodeBlockAction').mockResolvedValueOnce({
+            operation: 'insert',
+            code: codeFromChat,
+            lineCount: 1,
+            charCount: codeFromChat.length,
+            eventName: 'insert',
+            source: 'chat',
+        })
+
+        await onDidChangeTextDocument(
+            createChange({
+                text: codeFromChat,
+                range: range(0, 0, 0, 0),
+                rangeLength: 0,
+            })
+        )
+
         mockWindowState.focused = false
         onDidChangeWindowState(mockWindowState)
 
         // User types ' window not focused' when window not focused
-        onDidChangeTextDocument(
+        await onDidChangeTextDocument(
             createChange({ text: 'window not focused', range: range(0, 4, 0, 4), rangeLength: 0 })
         )
 
@@ -222,7 +250,7 @@ describe('CharactersLogger', () => {
 
         // Simulate no active editor
         onDidChangeActiveTextEditor(undefined)
-        onDidChangeTextDocument(
+        await onDidChangeTextDocument(
             createChange({ text: 'no active editor', range: range(0, 21, 0, 21), rangeLength: 0 })
         )
 
@@ -239,7 +267,7 @@ describe('CharactersLogger', () => {
         onDidChangeActiveTextEditor(anotherEditor)
 
         // User types in original document (not the active editor's document)
-        onDidChangeTextDocument(
+        await onDidChangeTextDocument(
             createChange({
                 text: 'outside active editor',
                 range: range(0, 21, 0, 21),
@@ -249,7 +277,7 @@ describe('CharactersLogger', () => {
         )
 
         onDidCloseTextDocument(testDocument)
-        onDidChangeTextDocument(
+        await onDidChangeTextDocument(
             createChange({
                 text: '!',
                 range: range(0, 50, 0, 50),
@@ -263,8 +291,14 @@ describe('CharactersLogger', () => {
         // Expected counters:
         expect(recordSpy).toHaveBeenCalledWith('cody.characters', 'flush', {
             metadata: expectedCharCounters({
+                cody_chat: 1,
+                cody_chat_inserted: 16, // 'insert_from_chat'
+
                 xxs_change: 1,
                 xxs_change_inserted: 4, // 'test'
+
+                disjoint_change: 1,
+                disjoint_change_inserted: 8, // 'test' + 'test'
 
                 undo: 1,
                 undo_deleted: 4, // 'test' deleted

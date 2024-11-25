@@ -10,6 +10,7 @@ interface InsertionEdit {
 interface DeletionEdit {
     type: 'deletion'
     range: vscode.Range
+    oldText: string
 }
 
 interface DecoratedReplacementEdit {
@@ -68,6 +69,7 @@ export function computeDiff(
                 applicableDiff.push({
                     type: 'deletion',
                     range: new vscode.Range(startLine, 0, startLine + count, 0),
+                    oldText: change.value,
                 })
             }
         } else if (change.added) {

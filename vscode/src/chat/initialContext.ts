@@ -3,6 +3,8 @@ import {
     type ContextItem,
     ContextItemSource,
     type ContextItemTree,
+    type DefaultContext,
+    FeatureFlag,
     REMOTE_REPOSITORY_PROVIDER_URI,
     abortableOperation,
     authStatus,
@@ -14,6 +16,7 @@ import {
     displayPathBasename,
     distinctUntilChanged,
     expandToLineRange,
+    featureFlagProvider,
     fromVSCodeEvent,
     isDotCom,
     isError,
@@ -38,31 +41,46 @@ import {
 /**
  * Observe the initial context that should be populated in the chat message input field.
  */
-export function observeInitialContext({
+export function observeDefaultContext({
     chatBuilder,
 }: {
     chatBuilder: Observable<ChatBuilder>
-}): Observable<ContextItem[] | typeof pendingOperation> {
+}): Observable<DefaultContext | typeof pendingOperation> {
     return combineLatest(
         getCurrentFileOrSelection({ chatBuilder }).pipe(distinctUntilChanged()),
         getCorpusContextItemsForEditorState().pipe(distinctUntilChanged()),
-        getOpenCtxContextItems().pipe(distinctUntilChanged())
+        getOpenCtxContextItems().pipe(distinctUntilChanged()),
+        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.NoDefaultRepoChip)
     ).pipe(
         debounceTime(50),
-        switchMap(
-            ([currentFileOrSelectionContext, corpusContext, openctxContext]): Observable<
-                ContextItem[] | typeof pendingOperation
-            > => {
+        map(
+            ([currentFileOrSelectionContext, corpusContext, openctxContext, noDefaultRepoChip]):
+                | DefaultContext
+                | typeof pendingOperation => {
                 if (corpusContext === pendingOperation) {
-                    return Observable.of(pendingOperation)
+                    return pendingOperation
                 }
-                return Observable.of([
-                    ...(openctxContext === pendingOperation ? [] : openctxContext),
-                    ...(currentFileOrSelectionContext === pendingOperation
-                        ? []
-                        : currentFileOrSelectionContext),
-                    ...corpusContext,
-                ])
+                if (noDefaultRepoChip) {
+                    return {
+                        initialContext: [
+                            ...(openctxContext === pendingOperation ? [] : openctxContext),
+                            ...(currentFileOrSelectionContext === pendingOperation
+                                ? []
+                                : currentFileOrSelectionContext),
+                        ],
+                        corpusContext,
+                    }
+                }
+                return {
+                    initialContext: [
+                        ...(openctxContext === pendingOperation ? [] : openctxContext),
+                        ...(currentFileOrSelectionContext === pendingOperation
+                            ? []
+                            : currentFileOrSelectionContext),
+                        ...corpusContext,
+                    ],
+                    corpusContext: [],
+                }
             }
         )
     )

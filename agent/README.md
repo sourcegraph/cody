@@ -121,6 +121,9 @@ recordings. For example, this can happen when we make changes to the prompt the
 agent test to not be able to replay the autocomplete requests from old
 recordings.
 
+Before you start, make sure you have Sourcegraph CLI installed. 
+See: [Installation in Quickstart for src](https://sourcegraph.com/docs/cli/quickstart#installation).
+
 To fix this problem, update the HTTP recordings with the following command:
 
 ```sh

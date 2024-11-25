@@ -60,13 +60,19 @@ export const HumanMessageCell: FC<HumanMessageCellProps> = ({ message, ...otherP
         [messageJSON]
     )
 
-    return <HumanMessageCellContent {...otherProps} initialEditorState={initialEditorState} />
+    return (
+        <HumanMessageCellContent
+            {...otherProps}
+            initialEditorState={initialEditorState}
+            intent={message.intent}
+        />
+    )
 }
 
-type HumanMessageCellContent = { initialEditorState: SerializedPromptEditorState } & Omit<
-    HumanMessageCellProps,
-    'message'
->
+type HumanMessageCellContent = {
+    initialEditorState: SerializedPromptEditorState
+    intent: ChatMessage['intent']
+} & Omit<HumanMessageCellProps, 'message'>
 const HumanMessageCellContent = memo<HumanMessageCellContent>(props => {
     const {
         models,
@@ -86,6 +92,7 @@ const HumanMessageCellContent = memo<HumanMessageCellContent>(props => {
         editorRef,
         __storybook__focus,
         onEditorFocusChange,
+        intent,
     } = props
 
     return (
@@ -104,7 +111,11 @@ const HumanMessageCellContent = memo<HumanMessageCellContent>(props => {
                     models={models}
                     userInfo={userInfo}
                     initialEditorState={initialEditorState}
-                    placeholder={isFirstMessage ? 'Ask...' : 'Ask a followup...'}
+                    placeholder={
+                        isFirstMessage
+                            ? 'Ask anything. Use @ to specify context...'
+                            : 'Ask a followup...'
+                    }
                     isFirstMessage={isFirstMessage}
                     isSent={isSent}
                     isPendingPriorResponse={isPendingPriorResponse}
@@ -118,6 +129,7 @@ const HumanMessageCellContent = memo<HumanMessageCellContent>(props => {
                     editorRef={editorRef}
                     __storybook__focus={__storybook__focus}
                     onEditorFocusChange={onEditorFocusChange}
+                    initialIntent={intent}
                 />
             }
             className={className}

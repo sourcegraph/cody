@@ -24,6 +24,7 @@ object Constants {
   const val `class` = "class"
   const val `client-managed` = "client-managed"
   const val `create-file` = "create-file"
+  const val debug = "debug"
   const val default = "default"
   const val delete = "delete"
   const val `delete-file` = "delete-file"
@@ -84,6 +85,7 @@ object Constants {
   const val symbol = "symbol"
   const val system = "system"
   const val terminal = "terminal"
+  const val trace = "trace"
   const val tree = "tree"
   const val `tree-sitter` = "tree-sitter"
   const val unauthenticated = "unauthenticated"
@@ -92,6 +94,7 @@ object Constants {
   const val user = "user"
   const val vision = "vision"
   const val waitlist = "waitlist"
+  const val warn = "warn"
   const val warning = "warning"
   const val workspace = "workspace"
 }

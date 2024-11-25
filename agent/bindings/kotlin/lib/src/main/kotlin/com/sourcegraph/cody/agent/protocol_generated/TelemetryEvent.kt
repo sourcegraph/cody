@@ -4,5 +4,6 @@ package com.sourcegraph.cody.agent.protocol_generated;
 data class TelemetryEvent(
   val feature: String,
   val action: String,
+  val parameters: ParametersParams,
 )
 

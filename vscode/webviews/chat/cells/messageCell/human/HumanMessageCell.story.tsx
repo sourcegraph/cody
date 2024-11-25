@@ -64,18 +64,21 @@ export const WithInitialContext: StoryObj<typeof meta> = {
             value={{
                 ...MOCK_API,
                 chatModels: () => Observable.of([]),
-                initialContext: () =>
-                    Observable.of([
-                        {
-                            type: 'repository',
-                            uri: URI.parse('https://example.com/foo/myrepo'),
-                            title: 'foo/myrepo',
-                            repoName: 'foo/myrepo',
-                            repoID: 'abcd',
-                            content: null,
-                        },
-                        { type: 'file', uri: URI.file('/foo.js') },
-                    ]),
+                defaultContext: () =>
+                    Observable.of({
+                        initialContext: [
+                            {
+                                type: 'repository',
+                                uri: URI.parse('https://example.com/foo/myrepo'),
+                                title: 'foo/myrepo',
+                                repoName: 'foo/myrepo',
+                                repoID: 'abcd',
+                                content: null,
+                            },
+                            { type: 'file', uri: URI.file('/foo.js') },
+                        ],
+                        corpusContext: [],
+                    }),
             }}
         >
             <HumanMessageCell {...props} />
@@ -93,18 +96,21 @@ export const WithInitialContextFileTooLarge: StoryObj<typeof meta> = {
             value={{
                 ...MOCK_API,
                 chatModels: () => Observable.of([]),
-                initialContext: () =>
-                    Observable.of([
-                        {
-                            type: 'repository',
-                            uri: URI.parse('https://example.com/foo/myrepo'),
-                            title: 'foo/myrepo',
-                            repoName: 'foo/myrepo',
-                            repoID: 'abcd',
-                            content: null,
-                        },
-                        { type: 'file', isTooLarge: true, uri: URI.file('/large_file.js') },
-                    ]),
+                defaultContext: () =>
+                    Observable.of({
+                        initialContext: [
+                            {
+                                type: 'repository',
+                                uri: URI.parse('https://example.com/foo/myrepo'),
+                                title: 'foo/myrepo',
+                                repoName: 'foo/myrepo',
+                                repoID: 'abcd',
+                                content: null,
+                            },
+                            { type: 'file', isTooLarge: true, uri: URI.file('/large_file.js') },
+                        ],
+                        corpusContext: [],
+                    }),
             }}
         >
             <HumanMessageCell {...props} />

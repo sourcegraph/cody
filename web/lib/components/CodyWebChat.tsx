@@ -25,12 +25,13 @@ import { ComposedWrappers, type Wrapper } from 'cody-ai/webviews/utils/composeWr
 import { createWebviewTelemetryRecorder } from 'cody-ai/webviews/utils/telemetry'
 import type { Config } from 'cody-ai/webviews/utils/useConfig'
 
-import type { InitialContext } from '../types'
+import type { CodyExternalApi, InitialContext } from '../types'
 
 import { useCodyWebAgent } from './use-cody-agent'
 
 // Include global Cody Web styles to the styles bundle
 import '../global-styles/styles.css'
+import type { DefaultContext } from '@sourcegraph/cody-shared/src/codebase-context/messages'
 import styles from './CodyWebChat.module.css'
 import { ChatSkeleton } from './skeleton/ChatSkeleton'
 
@@ -38,7 +39,7 @@ import { ChatSkeleton } from './skeleton/ChatSkeleton'
 // the cody agent properly (completely mock data)
 setDisplayPathEnvInfo({
     isWindows: false,
-    workspaceFolders: [URI.file('/tmp/foo')],
+    workspaceFolders: [],
 })
 
 export interface CodyWebChatProps {
@@ -49,6 +50,14 @@ export interface CodyWebChatProps {
     initialContext?: InitialContext
     customHeaders?: Record<string, string>
     className?: string
+
+    /**
+     * Whenever an external (imperative) Cody Chat API instance is ready,
+     * for example it gives you ability to run prompt, Note that this handler
+     * should be memoized and not change between components re-render, otherwise
+     * it will be stuck in infinite update loop
+     */
+    onExternalApiReady?: (api: CodyExternalApi) => void
 }
 /**
  * The root component node for Cody Web Chat, implements Cody Agent client
@@ -65,6 +74,7 @@ export const CodyWebChat: FunctionComponent<CodyWebChatProps> = ({
     telemetryClientName,
     customHeaders,
     className,
+    onExternalApiReady,
 }) => {
     const { client, vscodeAPI } = useCodyWebAgent({
         serverEndpoint,
@@ -90,6 +100,7 @@ export const CodyWebChat: FunctionComponent<CodyWebChatProps> = ({
                     vscodeAPI={vscodeAPI}
                     initialContext={initialContext}
                     className={styles.container}
+                    onExternalApiReady={onExternalApiReady}
                 />
             </div>
         </AppWrapper>
@@ -100,10 +111,11 @@ interface CodyWebPanelProps {
     vscodeAPI: VSCodeWrapper
     initialContext: InitialContext | undefined
     className?: string
+    onExternalApiReady?: (api: CodyExternalApi) => void
 }
 
 const CodyWebPanel: FC<CodyWebPanelProps> = props => {
-    const { vscodeAPI, initialContext: initialContextData, className } = props
+    const { vscodeAPI, initialContext: initialContextData, className, onExternalApiReady } = props
 
     const dispatchClientAction = useClientActionDispatcher()
     const [errorMessages, setErrorMessages] = useState<string[]>([])
@@ -150,14 +162,15 @@ const CodyWebPanel: FC<CodyWebPanelProps> = props => {
     // V2 telemetry recorder
     const telemetryRecorder = useMemo(() => createWebviewTelemetryRecorder(vscodeAPI), [vscodeAPI])
 
-    const initialContext = useMemo<ContextItem[]>(() => {
+    const staticDefaultContext = useMemo<DefaultContext>((): DefaultContext => {
         const { repository, fileURL, isDirectory } = initialContextData ?? {}
 
         if (!repository) {
-            return []
+            return { initialContext: [], corpusContext: [] }
         }
 
-        const mentions: ContextItem[] = [
+        const initialContext: ContextItem[] = []
+        const corpusContext: ContextItem[] = [
             {
                 type: 'repository',
                 id: repository.id,
@@ -169,14 +182,14 @@ const CodyWebPanel: FC<CodyWebPanelProps> = props => {
                 content: null,
                 source: ContextItemSource.Initial,
                 icon: 'folder',
-                title: 'Current Repository',
+                title: 'Current Repository', // web chat default initial context
             } as ContextItemRepository,
         ]
 
         if (fileURL) {
             // Repository directory file url in this case is directory path
             if (isDirectory) {
-                mentions.push({
+                initialContext.push({
                     type: 'openctx',
                     provider: 'openctx',
                     title: fileURL,
@@ -195,7 +208,7 @@ const CodyWebPanel: FC<CodyWebPanelProps> = props => {
                 } as ContextItemOpenCtx)
             } else {
                 // Common file mention with possible file range positions
-                mentions.push({
+                initialContext.push({
                     type: 'file',
                     isIgnored: false,
                     title: initialContextData?.fileRange ? 'Current Selection' : 'Current File',
@@ -212,12 +225,18 @@ const CodyWebPanel: FC<CodyWebPanelProps> = props => {
             }
         }
 
-        return mentions
+        return { initialContext, corpusContext }
     }, [initialContextData])
 
     const wrappers = useMemo<Wrapper[]>(
-        () => getAppWrappers(vscodeAPI, telemetryRecorder, config, initialContext),
-        [vscodeAPI, telemetryRecorder, config, initialContext]
+        () =>
+            getAppWrappers({
+                vscodeAPI,
+                telemetryRecorder,
+                config,
+                staticDefaultContext,
+            }),
+        [vscodeAPI, telemetryRecorder, config, staticDefaultContext]
     )
 
     const CONTEXT_MENTIONS_SETTINGS = useMemo<ChatMentionsSettings>(() => {
@@ -249,6 +268,7 @@ const CodyWebPanel: FC<CodyWebPanelProps> = props => {
                             messageInProgress={messageInProgress}
                             transcript={transcript}
                             vscodeAPI={vscodeAPI}
+                            onExternalApiReady={onExternalApiReady}
                         />
                     </ComposedWrappers>
                 </ChatMentionContext.Provider>

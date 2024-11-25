@@ -9,7 +9,11 @@ import {
     inputTextWithoutContextChipsFromPromptEditorState,
     isAbortErrorOrSocketHangUp,
 } from '@sourcegraph/cody-shared'
-import { type PromptEditorRefAPI, useExtensionAPI } from '@sourcegraph/prompt-editor'
+import {
+    type PromptEditorRefAPI,
+    useDefaultContextForChat,
+    useExtensionAPI,
+} from '@sourcegraph/prompt-editor'
 import { clsx } from 'clsx'
 import debounce from 'lodash/debounce'
 import isEqual from 'lodash/isEqual'
@@ -31,7 +35,11 @@ import { getVSCodeAPI } from '../utils/VSCodeApi'
 import { useTelemetryRecorder } from '../utils/telemetry'
 import { useExperimentalOneBox } from '../utils/useExperimentalOneBox'
 import type { CodeBlockActionsProps } from './ChatMessageContent/ChatMessageContent'
-import { ContextCell } from './cells/contextCell/ContextCell'
+import {
+    ContextCell,
+    EditContextButtonChat,
+    EditContextButtonSearch,
+} from './cells/contextCell/ContextCell'
 import {
     AssistantMessageCell,
     makeHumanMessageInfo,
@@ -115,7 +123,7 @@ export const Transcript: FC<TranscriptProps> = props => {
 
     return (
         <div
-            className={clsx('tw-px-6 tw-pt-8 tw-pb-12 tw-flex tw-flex-col tw-gap-8', {
+            className={clsx('tw-px-8 tw-pt-8 tw-pb-6 tw-flex tw-flex-col tw-gap-8', {
                 'tw-flex-grow': transcript.length > 0,
             })}
         >
@@ -350,6 +358,22 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
         [onEditSubmit, telemetryRecorder, humanMessage]
     )
 
+    const { corpusContext: corpusContextItems } = useDefaultContextForChat()
+    const resubmitWithRepoContext = useCallback(async () => {
+        const editorState = humanEditorRef.current?.getSerializedValue()
+        if (editorState) {
+            const editor = humanEditorRef.current
+            if (corpusContextItems.length === 0 || !editor) {
+                return
+            }
+            await editor.addMentions(corpusContextItems, 'before', ' ')
+            const newEditorState = humanEditorRef.current?.getSerializedValue()
+            if (newEditorState) {
+                onEditSubmit(newEditorState, 'chat')
+            }
+        }
+    }, [corpusContextItems, onEditSubmit])
+
     const reSubmitWithChatIntent = useCallback(() => reSubmitWithIntent('chat'), [reSubmitWithIntent])
     const reSubmitWithSearchIntent = useCallback(
         () => reSubmitWithIntent('search'),
@@ -357,6 +381,20 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
     )
 
     const resetIntent = useCallback(() => setIntentResults(undefined), [setIntentResults])
+
+    const manuallyEditContext = useCallback(() => {
+        const contextFiles = humanMessage.contextFiles
+        const editor = humanEditorRef.current
+        if (!contextFiles || !editor) {
+            return
+        }
+        editor.filterMentions(item => item.type !== 'repository')
+        editor.addMentions(contextFiles, 'before', '\n')
+    }, [humanMessage.contextFiles])
+
+    const mentionsContainRepository = humanEditorRef.current
+        ?.getSerializedValue()
+        .contextItems.some(item => item.type === 'repository')
 
     return (
         <>
@@ -385,7 +423,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                     {humanMessage.intent === 'search' ? (
                         <div className="tw-flex tw-justify-between tw-gap-4 tw-items-center">
                             <span>Intent detection selected a code search response.</span>
-                            <div>
+                            <div className="tw-shrink-0 tw-self-start">
                                 <Button
                                     size="sm"
                                     variant="outline"
@@ -400,7 +438,7 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                     ) : (
                         <div className="tw-flex tw-justify-between tw-gap-4 tw-items-center">
                             <span>Intent detection selected an LLM response.</span>
-                            <div>
+                            <div className="tw-shrink-0 tw-self-start">
                                 <Button
                                     size="sm"
                                     variant="outline"
@@ -415,9 +453,13 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                     )}
                 </InfoMessage>
             )}
-            {((humanMessage.contextFiles && humanMessage.contextFiles.length > 0) ||
-                isContextLoading) && (
+            {(humanMessage.contextFiles || assistantMessage || isContextLoading) && (
                 <ContextCell
+                    resubmitWithRepoContext={
+                        corpusContextItems.length > 0 && !mentionsContainRepository && assistantMessage
+                            ? resubmitWithRepoContext
+                            : undefined
+                    }
                     key={`${humanMessage.index}-${humanMessage.intent}-context`}
                     contextItems={humanMessage.contextFiles}
                     contextAlternatives={humanMessage.contextAlternatives}
@@ -428,6 +470,12 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                     reSubmitWithChatIntent={reSubmitWithChatIntent}
                     isContextLoading={isContextLoading}
                     onAddToFollowupChat={onAddToFollowupChat}
+                    onManuallyEditContext={manuallyEditContext}
+                    editContextNode={
+                        humanMessage.intent === 'search'
+                            ? EditContextButtonSearch
+                            : EditContextButtonChat
+                    }
                 />
             )}
             {(!experimentalOneBoxEnabled || humanMessage.intent !== 'search') &&

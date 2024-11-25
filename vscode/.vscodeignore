@@ -12,8 +12,10 @@
 !dist/*.js.map
 !dist/*.exe
 !dist/*.wasm
+!dist/*.node
 
 !resources/*
+!walkthroughs/*.md
 
 !package.json
 !LICENSE

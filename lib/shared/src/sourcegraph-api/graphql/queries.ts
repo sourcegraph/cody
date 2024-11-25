@@ -5,6 +5,14 @@ query CurrentUser {
     }
 }`
 
+export const CURRENT_USER_ROLE_QUERY = `
+query CurrentUserRole {
+    currentUser {
+        id
+        siteAdmin
+    }
+}`
+
 export const CURRENT_USER_CODY_PRO_ENABLED_QUERY = `
 query CurrentUserCodyProEnabled {
     currentUser {
@@ -300,6 +308,33 @@ query GetCodyContext($repos: [ID!]!, $query: String!, $codeResultsCount: Int!, $
     }
 }`
 
+export const CONTEXT_SEARCH_EVAL_DEBUG_QUERY = `
+query GetCodyContextAlternatives($repos: [ID!]!, $query: String!, $codeResultsCount: Int!, $textResultsCount: Int!, $filePatterns: [String!]) {
+	getCodyContextAlternatives(repos: $repos, query: $query, codeResultsCount: $codeResultsCount, textResultsCount: $textResultsCount, filePatterns: $filePatterns) {
+      contextLists {
+          name
+          contextItems {
+            ... on FileChunkContext {
+              blob {
+                path
+                repository {
+                  id
+                  name
+                }
+                commit {
+                  oid
+                }
+                url
+              }
+              startLine
+              endLine
+              chunkContent
+            }
+          }
+        }
+    }
+}`
+
 export const CONTEXT_FILTERS_QUERY = `
 query ContextFilters {
     site {
@@ -341,19 +376,27 @@ query ViewerPrompts($query: String!) {
     }
 }`
 
+export enum PromptsOrderBy {
+    PROMPT_NAME_WITH_OWNER = 'PROMPT_NAME_WITH_OWNER',
+    PROMPT_UPDATED_AT = 'PROMPT_UPDATED_AT',
+    PROMPT_RECOMMENDED = 'PROMPT_RECOMMENDED',
+}
+
 export const PROMPTS_QUERY = `
-query ViewerPrompts($query: String!) {
-    prompts(query: $query, first: 100, includeDrafts: false, includeViewerDrafts: true, viewerIsAffiliated: true, orderBy: PROMPT_UPDATED_AT) {
+query ViewerPrompts($query: String, $first: Int!, $recommendedOnly: Boolean!, $orderByMultiple: [PromptsOrderBy!]) {
+    prompts(query: $query, first: $first, includeDrafts: false, recommendedOnly: $recommendedOnly, includeViewerDrafts: true, viewerIsAffiliated: true, orderByMultiple: $orderByMultiple) {
         nodes {
             id
             name
             nameWithOwner
+            recommended
             owner {
                 namespaceName
             }
             description
             draft
             autoSubmit
+            mode
             definition {
                 text
             }
@@ -366,10 +409,36 @@ query ViewerPrompts($query: String!) {
             }
         }
         totalCount
-        pageInfo {
-            hasNextPage
-            endCursor
+    }
+}`
+
+export const BUILTIN_PROMPTS_QUERY = `
+query ViewerBuiltinPrompts($query: String!, $first: Int!, $orderByMultiple: [PromptsOrderBy!]) {
+    prompts(query: $query, first: $first, includeDrafts: false, recommendedOnly: false, builtinOnly: true, includeViewerDrafts: true, viewerIsAffiliated: true, orderByMultiple: $orderByMultiple) {
+        nodes {
+            id
+            name
+            nameWithOwner
+            recommended
+            owner {
+                namespaceName
+            }
+            description
+            draft
+            autoSubmit
+            mode
+            definition {
+                text
+            }
+            url
+            createdBy {
+                id
+                username
+                displayName
+                avatarURL
+            }
         }
+        totalCount
     }
 }`
 
@@ -432,6 +501,22 @@ mutation RecordTelemetryEvents($events: [TelemetryEventInput!]!) {
 			alwaysNil
 		}
 	}
+}
+`
+
+export const CREATE_PROMPT_MUTATION = `
+mutation CreatePrompt($input: PromptInput!) {
+    createPrompt(input: $input) {
+        id
+    }
+}
+`
+
+export const CHANGE_PROMPT_VISIBILITY = `
+mutation ChangePromptVisibility($id: ID!, $newVisibility: PromptVisibility!) {
+    changePromptVisibility(id: $id, newVisibility: $newVisibility) {
+        id
+    }
 }
 `
 

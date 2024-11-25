@@ -34,8 +34,8 @@ class LocalStorage implements LocalStorageForModelPreferences {
     protected readonly LAST_USED_CHAT_MODALITY = 'cody-last-used-chat-modality'
     public readonly ANONYMOUS_USER_ID_KEY = 'sourcegraphAnonymousUid'
     public readonly LAST_USED_ENDPOINT = 'SOURCEGRAPH_CODY_ENDPOINT'
-    public readonly LAST_USED_USERNAME = 'SOURCEGRAPH_CODY_USERNAME'
     private readonly MODEL_PREFERENCES_KEY = 'cody-model-preferences'
+    private readonly CODY_CHAT_MEMORY = 'cody-chat-memory'
     public readonly keys = {
         // LLM waitlist for the 09/12/2024 openAI o1 models
         waitlist_o1: 'CODY_WAITLIST_LLM_09122024',
@@ -308,6 +308,14 @@ class LocalStorage implements LocalStorageForModelPreferences {
 
     public async setModelPreferences(preferences: DefaultsAndUserPreferencesByEndpoint): Promise<void> {
         await this.set(this.MODEL_PREFERENCES_KEY, preferences)
+    }
+
+    public getChatMemory(): string[] | null {
+        return this.get<string[]>(this.CODY_CHAT_MEMORY) ?? null
+    }
+
+    public async setChatMemory(memories: string[]): Promise<void> {
+        await this.set(this.CODY_CHAT_MEMORY, memories)
     }
 
     public get<T>(key: string): T | null {

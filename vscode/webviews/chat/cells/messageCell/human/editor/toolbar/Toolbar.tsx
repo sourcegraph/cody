@@ -5,6 +5,7 @@ import { type FunctionComponent, useCallback } from 'react'
 import type { UserAccountInfo } from '../../../../../../Chat'
 import { ModelSelectField } from '../../../../../../components/modelSelectField/ModelSelectField'
 import { PromptSelectField } from '../../../../../../components/promptSelectField/PromptSelectField'
+import toolbarStyles from '../../../../../../components/shadcn/ui/toolbar.module.css'
 import { useActionSelect } from '../../../../../../prompts/PromptsTab'
 import { useConfig } from '../../../../../../utils/useConfig'
 import { AddContextButton } from './AddContextButton'
@@ -31,6 +32,8 @@ export const Toolbar: FunctionComponent<{
 
     hidden?: boolean
     className?: string
+    intent?: ChatMessage['intent']
+    onSelectIntent?: (intent: ChatMessage['intent']) => void
 }> = ({
     userInfo,
     isEditorFocused,
@@ -42,6 +45,8 @@ export const Toolbar: FunctionComponent<{
     hidden,
     className,
     models,
+    intent,
+    onSelectIntent,
 }) => {
     /**
      * If the user clicks in a gap or on the toolbar outside of any of its buttons, report back to
@@ -78,7 +83,7 @@ export const Toolbar: FunctionComponent<{
                 {onMentionClick && (
                     <AddContextButton
                         onClick={onMentionClick}
-                        className="tw-opacity-60 focus-visible:tw-opacity-100 hover:tw-opacity-100 tw-mr-2"
+                        className={`tw-opacity-60 focus-visible:tw-opacity-100 hover:tw-opacity-100 tw-mr-2 tw-gap-0.5 ${toolbarStyles.button} ${toolbarStyles.buttonSmallIcon}`}
                     />
                 )}
                 <PromptSelectFieldToolbarItem focusEditor={focusEditor} className="tw-ml-1 tw-mr-1" />
@@ -94,6 +99,8 @@ export const Toolbar: FunctionComponent<{
                     onClick={onSubmitClick}
                     isEditorFocused={isEditorFocused}
                     state={submitState}
+                    intent={intent}
+                    onSelectIntent={onSelectIntent}
                 />
             </div>
         </menu>

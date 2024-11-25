@@ -7,6 +7,7 @@ import { rimraf } from 'rimraf'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { URI } from 'vscode-uri'
 
+import { AgentWorkspaceConfiguration } from './AgentWorkspaceConfiguration'
 import { AgentWorkspaceDocuments } from './AgentWorkspaceDocuments'
 import * as vscode from './vscode-shim'
 import { setWorkspaceFolders, workspaceFolders } from './vscode-shim'
@@ -349,5 +350,86 @@ describe('vscode_shim.onDidChangeWorkspaceFolders', () => {
 
         const result = setWorkspaceFolders([])
         expect(result).toHaveLength(0)
+    })
+})
+
+describe('vscode.workspace.getConfiguration', () => {
+    let configuration: AgentWorkspaceConfiguration
+
+    const clientInfo = {
+        name: 'vscode',
+        version: '1.0.0',
+        ideVersion: '1.80.0',
+        workspaceRootUri: '/',
+    }
+
+    const customConfigJson = `
+        {
+          "cody.experimental.noodle": true,
+          "openctx": {
+            "providers": {
+              "https://gist.githubusercontent.com/someuser/provider.js": true
+            },
+            "enable": true
+          }
+        }
+    `
+
+    const extensionConfig = {
+        serverEndpoint: 'https://sourcegraph.test',
+        customHeaders: { 'X-Test': 'test' },
+        telemetryClientName: 'test-client',
+        autocompleteAdvancedProvider: 'anthropic',
+        autocompleteAdvancedModel: 'claude-2',
+        verboseDebug: true,
+        codebase: 'test-repo',
+        customConfigurationJson: customConfigJson,
+    }
+
+    beforeEach(() => {
+        configuration = new AgentWorkspaceConfiguration(
+            [],
+            () => clientInfo,
+            () => extensionConfig
+        )
+        vscode.setClientInfo(clientInfo)
+        vscode.setExtensionConfiguration(extensionConfig)
+    })
+
+    it('returns full configuration when section is undefined', () => {
+        const newConfig = vscode.workspace.getConfiguration()
+        expect(newConfig.get('openctx')).toMatchObject(configuration.get('openctx'))
+    })
+
+    it('returns scoped configuration for valid section', () => {
+        const newConfig = vscode.workspace.getConfiguration('openctx')
+        expect(newConfig).toBeDefined()
+        expect(newConfig.get('providers')).toMatchObject(configuration.get('openctx.providers'))
+    })
+
+    it('ignores scope parameter when section is undefined', () => {
+        const newConfig = vscode.workspace.getConfiguration(undefined, vscode.Uri.file('/test'))
+        expect(newConfig.get('openctx')).toMatchObject(configuration.get('openctx'))
+    })
+
+    it('falls back to global scope for language-scoped configuration', () => {
+        const newConfig = vscode.workspace.getConfiguration('[jsonc]')
+        expect(newConfig.get('openctx')).toMatchObject(configuration.get('openctx'))
+    })
+
+    it('handles nested section paths', () => {
+        const config = vscode.workspace.getConfiguration('openctx.providers')
+        expect(config).toBeDefined()
+        expect(config.get('https://gist.githubusercontent.com/someuser/provider.js')).toMatchObject(
+            configuration.get(
+                'openctx.providers.https://gist.githubusercontent.com/someuser/provider.js'
+            )
+        )
+    })
+
+    it('returns same configuration regardless of scope when section is defined', () => {
+        const configNoScope = vscode.workspace.getConfiguration('openctx')
+        const configWithScope = vscode.workspace.getConfiguration('openctx', vscode.Uri.file('/test'))
+        expect(configNoScope.get('providers')).toEqual(configWithScope.get('providers'))
     })
 })

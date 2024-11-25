@@ -1,13 +1,13 @@
-import { type AutoEditsTokenLimit, PromptString, logDebug, ps } from '@sourcegraph/cody-shared'
+import { type AutoEditsTokenLimit, PromptString, ps, tokensToChars } from '@sourcegraph/cody-shared'
 import { Uri } from 'vscode'
-import type * as vscode from 'vscode'
+import * as vscode from 'vscode'
 import type {
     AutocompleteContextSnippet,
     DocumentContext,
 } from '../../../lib/shared/src/completions/types'
 import { RetrieverIdentifier } from '../completions/context/utils'
-import * as utils from './prompt-utils'
-
+import { autoeditsLogger } from './logger'
+import { clip, splitLinesKeepEnds } from './utils'
 const LINT_ERRORS_TAG_OPEN = ps`<lint_errors>`
 const LINT_ERRORS_TAG_CLOSE = ps`</lint_errors>`
 const EXTRACTED_CODE_SNIPPETS_TAG_OPEN = ps`<extracted_code_snippets>`
@@ -42,6 +42,7 @@ const CURRENT_FILE_INSTRUCTION = ps`Here is the file that I am looking at `
 export interface CurrentFilePromptOptions {
     docContext: DocumentContext
     document: vscode.TextDocument
+    position: vscode.Position
     maxPrefixLinesInArea: number
     maxSuffixLinesInArea: number
     codeToRewritePrefixLines: number
@@ -49,9 +50,14 @@ export interface CurrentFilePromptOptions {
 }
 
 export interface CodeToReplaceData {
-    codeToRewrite: PromptString
-    startLine: number
-    endLine: number
+    codeToRewrite: string
+    prefixBeforeArea: string
+    suffixAfterArea: string
+    prefixInArea: string
+    suffixInArea: string
+    codeToRewritePrefix: string
+    codeToRewriteSuffix: string
+    range: vscode.Range
 }
 
 export interface CurrentFilePromptResponse {
@@ -60,72 +66,69 @@ export interface CurrentFilePromptResponse {
     codeToReplace: CodeToReplaceData
 }
 
-interface PrefixContext {
-    prefixBeforeArea: PromptString
-    prefixInArea: PromptString
+interface CurrentFileContext {
+    codeToRewrite: PromptString
     codeToRewritePrefix: PromptString
-    codeToRewriteStartLines: number
-    totalPrefixLines: number
-}
-
-interface SuffixContext {
-    suffixAfterArea: PromptString
-    suffixInArea: PromptString
     codeToRewriteSuffix: PromptString
-    codeToRewriteEndLines: number
-    totalSuffixLines: number
+    prefixInArea: PromptString
+    suffixInArea: PromptString
+    prefixBeforeArea: PromptString
+    suffixAfterArea: PromptString
+    range: vscode.Range
 }
 
 // Helper function to get prompt in some format
 export function getBaseUserPrompt(
     docContext: DocumentContext,
     document: vscode.TextDocument,
+    position: vscode.Position,
     context: AutocompleteContextSnippet[],
     tokenBudget: AutoEditsTokenLimit
 ): {
-    codeToReplace: utils.CodeToReplaceData
-    promptResponse: PromptString
+    codeToReplace: CodeToReplaceData
+    prompt: PromptString
 } {
-    const contextItemMapping = utils.getContextItemMappingWithTokenLimit(
+    const contextItemMapping = getContextItemMappingWithTokenLimit(
         context,
         tokenBudget.contextSpecificTokenLimit
     )
-    const { fileWithMarkerPrompt, areaPrompt, codeToReplace } = utils.getCurrentFilePromptComponents({
+    const { fileWithMarkerPrompt, areaPrompt, codeToReplace } = getCurrentFilePromptComponents({
         docContext,
         document,
+        position,
         maxPrefixLinesInArea: tokenBudget.maxPrefixLinesInArea,
         maxSuffixLinesInArea: tokenBudget.maxSuffixLinesInArea,
         codeToRewritePrefixLines: tokenBudget.codeToRewritePrefixLines,
         codeToRewriteSuffixLines: tokenBudget.codeToRewriteSuffixLines,
     })
-    const recentViewsPrompt = utils.getPromptForTheContextSource(
+    const recentViewsPrompt = getPromptForTheContextSource(
         contextItemMapping.get(RetrieverIdentifier.RecentViewPortRetriever) || [],
         RECENT_VIEWS_INSTRUCTION,
-        utils.getRecentlyViewedSnippetsPrompt
+        getRecentlyViewedSnippetsPrompt
     )
 
-    const recentEditsPrompt = utils.getPromptForTheContextSource(
+    const recentEditsPrompt = getPromptForTheContextSource(
         contextItemMapping.get(RetrieverIdentifier.RecentEditsRetriever) || [],
         RECENT_EDITS_INSTRUCTION,
-        utils.getRecentEditsPrompt
+        getRecentEditsPrompt
     )
 
-    const lintErrorsPrompt = utils.getPromptForTheContextSource(
+    const lintErrorsPrompt = getPromptForTheContextSource(
         contextItemMapping.get(RetrieverIdentifier.DiagnosticsRetriever) || [],
         LINT_ERRORS_INSTRUCTION,
-        utils.getLintErrorsPrompt
+        getLintErrorsPrompt
     )
 
-    const recentCopyPrompt = utils.getPromptForTheContextSource(
+    const recentCopyPrompt = getPromptForTheContextSource(
         contextItemMapping.get(RetrieverIdentifier.RecentCopyRetriever) || [],
         RECENT_COPY_INSTRUCTION,
-        utils.getRecentCopyPrompt
+        getRecentCopyPrompt
     )
 
-    const jaccardSimilarityPrompt = utils.getPromptForTheContextSource(
+    const jaccardSimilarityPrompt = getPromptForTheContextSource(
         contextItemMapping.get(RetrieverIdentifier.JaccardSimilarityRetriever) || [],
         JACCARD_SIMILARITY_INSTRUCTION,
-        utils.getJaccardSimilarityPrompt
+        getJaccardSimilarityPrompt
     )
     const finalPrompt = ps`${BASE_USER_PROMPT}
 ${jaccardSimilarityPrompt}
@@ -137,10 +140,10 @@ ${recentCopyPrompt}
 ${areaPrompt}
 ${FINAL_USER_PROMPT}
 `
-    logDebug('AutoEdits', 'Prompt\n', finalPrompt)
+    autoeditsLogger.logDebug('AutoEdits', 'Prompt\n', finalPrompt)
     return {
         codeToReplace: codeToReplace,
-        promptResponse: finalPrompt,
+        prompt: finalPrompt,
     }
 }
 
@@ -157,39 +160,24 @@ export function getPromptForTheContextSource(
 }
 
 //  Prompt components helper functions
-
 export function getCurrentFilePromptComponents(
     options: CurrentFilePromptOptions
 ): CurrentFilePromptResponse {
-    const { prefix, suffix } = PromptString.fromAutocompleteDocumentContext(
-        options.docContext,
-        options.document.uri
-    )
-    const completePrefixLines = options.docContext.completePrefix.split('\n').length
-    const prefixContext = getPrefixContext(
-        prefix,
-        options.maxPrefixLinesInArea,
-        options.codeToRewritePrefixLines
-    )
-    const suffixContext = getSuffixContext(
-        suffix,
-        options.maxSuffixLinesInArea,
-        options.codeToRewriteSuffixLines
-    )
-    const codeToRewrite = PromptString.join(
-        [prefixContext.codeToRewritePrefix, suffixContext.codeToRewriteSuffix],
-        ps``
-    )
-
+    const currentFileContext = getCurrentFileContext(options)
     const codeToReplace = {
-        codeToRewrite: codeToRewrite,
-        startLine: completePrefixLines - prefixContext.codeToRewriteStartLines,
-        endLine: completePrefixLines + suffixContext.codeToRewriteEndLines,
-    }
+        codeToRewrite: currentFileContext.codeToRewrite.toString(),
+        range: currentFileContext.range,
+        codeToRewritePrefix: currentFileContext.codeToRewritePrefix.toString(),
+        codeToRewriteSuffix: currentFileContext.codeToRewriteSuffix.toString(),
+        prefixBeforeArea: currentFileContext.prefixBeforeArea.toString(),
+        suffixAfterArea: currentFileContext.suffixAfterArea.toString(),
+        prefixInArea: currentFileContext.prefixInArea.toString(),
+        suffixInArea: currentFileContext.suffixInArea.toString(),
+    } satisfies CodeToReplaceData
 
-    const fileWithMarker = ps`${prefixContext.prefixBeforeArea}
+    const fileWithMarker = ps`${currentFileContext.prefixBeforeArea}
 ${AREA_FOR_CODE_MARKER}
-${suffixContext.suffixAfterArea}`
+${currentFileContext.suffixAfterArea}`
 
     const filePrompt = getContextPromptWithPath(
         PromptString.fromDisplayPath(options.document.uri),
@@ -198,15 +186,79 @@ ${fileWithMarker}
 ${FILE_TAG_CLOSE}
 `
     )
+
     const areaPrompt = ps`${AREA_FOR_CODE_MARKER_OPEN}
-${prefixContext.prefixInArea}
+${currentFileContext.prefixInArea}
 ${CODE_TO_REWRITE_TAG_OPEN}
-${codeToRewrite}
+${currentFileContext.codeToRewrite}
 ${CODE_TO_REWRITE_TAG_CLOSE}
-${suffixContext.suffixInArea}
+${currentFileContext.suffixInArea}
 ${AREA_FOR_CODE_MARKER_CLOSE}
 `
     return { fileWithMarkerPrompt: filePrompt, areaPrompt: areaPrompt, codeToReplace: codeToReplace }
+}
+
+export function getCurrentFileContext(options: CurrentFilePromptOptions): CurrentFileContext {
+    // Calculate line numbers for different sections
+    const { position, document, docContext } = options
+
+    const numContextLines = splitLinesKeepEnds(docContext.prefix + docContext.suffix).length
+    const numPrefixLines = splitLinesKeepEnds(docContext.prefix).length
+    const adjustment = position.character !== 0 ? 1 : 0
+
+    const minLine = clip(position.line - numPrefixLines + adjustment, 0, document.lineCount - 1)
+    const maxLine = clip(minLine + numContextLines - 1, 0, document.lineCount - 1)
+
+    const codeToRewriteStart = clip(position.line - options.codeToRewritePrefixLines, minLine, maxLine)
+    const codeToRewriteEnd = clip(position.line + options.codeToRewriteSuffixLines, minLine, maxLine)
+    const areaStart = clip(
+        position.line - options.maxPrefixLinesInArea - options.codeToRewritePrefixLines,
+        minLine,
+        maxLine
+    )
+    const areaEnd = clip(
+        position.line + options.maxSuffixLinesInArea + options.codeToRewriteSuffixLines,
+        minLine,
+        maxLine
+    )
+
+    // Helper function to create position from line number
+    const positionAtLineStart = (line: number) => new vscode.Position(line, 0)
+    const positionAtLineEnd = (line: number) => document.lineAt(line).rangeIncludingLineBreak.end
+
+    // Create ranges for different sections
+    const ranges = {
+        codeToRewrite: new vscode.Range(
+            positionAtLineStart(codeToRewriteStart),
+            positionAtLineEnd(codeToRewriteEnd)
+        ),
+        codeToRewritePrefix: new vscode.Range(
+            positionAtLineStart(codeToRewriteStart),
+            new vscode.Position(position.line, position.character)
+        ),
+        codeToRewriteSuffix: new vscode.Range(
+            new vscode.Position(position.line, position.character),
+            positionAtLineEnd(codeToRewriteEnd)
+        ),
+        prefixInArea: new vscode.Range(
+            positionAtLineStart(areaStart),
+            positionAtLineStart(codeToRewriteStart)
+        ),
+        suffixInArea: new vscode.Range(positionAtLineEnd(codeToRewriteEnd), positionAtLineEnd(areaEnd)),
+        prefixBeforeArea: new vscode.Range(positionAtLineStart(minLine), positionAtLineStart(areaStart)),
+        suffixAfterArea: new vscode.Range(positionAtLineEnd(areaEnd), positionAtLineEnd(maxLine)),
+    }
+    // Convert ranges to PromptStrings
+    return {
+        codeToRewrite: PromptString.fromDocumentText(document, ranges.codeToRewrite),
+        codeToRewritePrefix: PromptString.fromDocumentText(document, ranges.codeToRewritePrefix),
+        codeToRewriteSuffix: PromptString.fromDocumentText(document, ranges.codeToRewriteSuffix),
+        prefixInArea: PromptString.fromDocumentText(document, ranges.prefixInArea),
+        suffixInArea: PromptString.fromDocumentText(document, ranges.suffixInArea),
+        prefixBeforeArea: PromptString.fromDocumentText(document, ranges.prefixBeforeArea),
+        suffixAfterArea: PromptString.fromDocumentText(document, ranges.suffixAfterArea),
+        range: ranges.codeToRewrite,
+    }
 }
 
 export function getLintErrorsPrompt(contextItems: AutocompleteContextSnippet[]): PromptString {
@@ -346,79 +398,6 @@ ${EXTRACTED_CODE_SNIPPETS_TAG_CLOSE}
 `
 }
 
-function getPrefixContext(
-    prefix: PromptString,
-    prefixAreaLinesBudget: number,
-    codeToRewritePrefixLines: number
-): PrefixContext {
-    const prefixLines = prefix.split('\n')
-    const totalLines = prefixLines.length
-
-    // Ensure we don't exceed the total number of lines available
-    const actualPrefixLinesBudget = Math.min(
-        prefixAreaLinesBudget + codeToRewritePrefixLines,
-        totalLines
-    )
-    const actualCodeToRewritePrefixLines = Math.min(codeToRewritePrefixLines, actualPrefixLinesBudget)
-
-    // Calculate start indexes for each section
-    const codeToRewriteStart = totalLines - actualCodeToRewritePrefixLines
-    const prefixInAreaStart =
-        codeToRewriteStart - (actualPrefixLinesBudget - actualCodeToRewritePrefixLines)
-
-    // Split the prefix into three parts
-    const prefixBeforeArea = PromptString.join(prefixLines.slice(0, prefixInAreaStart), ps`\n`)
-    const prefixInArea = PromptString.join(
-        prefixLines.slice(prefixInAreaStart, codeToRewriteStart),
-        ps`\n`
-    )
-    const codeToRewritePrefix = PromptString.join(prefixLines.slice(codeToRewriteStart), ps`\n`)
-
-    return {
-        prefixBeforeArea: prefixBeforeArea,
-        prefixInArea: prefixInArea,
-        codeToRewritePrefix: codeToRewritePrefix,
-        codeToRewriteStartLines: totalLines - codeToRewriteStart,
-        totalPrefixLines: totalLines,
-    }
-}
-
-function getSuffixContext(
-    suffix: PromptString,
-    suffixAreaLinesBudget: number,
-    codeToRewriteSuffixLines: number
-): SuffixContext {
-    const suffixLines = suffix.split('\n')
-    const totalLines = suffixLines.length
-
-    // Ensure we don't exceed the total number of lines available
-    const actualSuffixAreaLinesBudget = Math.min(
-        suffixAreaLinesBudget + codeToRewriteSuffixLines,
-        totalLines
-    )
-    const actualCodeToRewriteSuffixLines = Math.min(
-        codeToRewriteSuffixLines,
-        actualSuffixAreaLinesBudget
-    )
-
-    // Calculate end indexes for each section
-    const codeToRewriteEnd = actualCodeToRewriteSuffixLines
-    const suffixInAreaEnd = actualSuffixAreaLinesBudget
-
-    // Split the suffix into three parts
-    const codeToRewriteSuffix = PromptString.join(suffixLines.slice(0, codeToRewriteEnd), ps`\n`)
-    const suffixInArea = PromptString.join(suffixLines.slice(codeToRewriteEnd, suffixInAreaEnd), ps`\n`)
-    const suffixAfterArea = PromptString.join(suffixLines.slice(suffixInAreaEnd), ps`\n`)
-
-    return {
-        codeToRewriteSuffix: codeToRewriteSuffix,
-        suffixInArea: suffixInArea,
-        suffixAfterArea: suffixAfterArea,
-        codeToRewriteEndLines: codeToRewriteEnd - 1,
-        totalSuffixLines: totalLines,
-    }
-}
-
 //  Helper functions
 export function getContextItemMappingWithTokenLimit(
     contextItems: AutocompleteContextSnippet[],
@@ -440,27 +419,30 @@ export function getContextItemMappingWithTokenLimit(
         if (tokenLimit !== undefined) {
             contextItemMapping.set(identifier, getContextItemsInTokenBudget(items, tokenLimit))
         } else {
-            logDebug('AutoEdits', `No token limit for ${identifier}`)
+            autoeditsLogger.logDebug('AutoEdits', `No token limit for ${identifier}`)
             contextItemMapping.set(identifier, [])
         }
     }
     return contextItemMapping
 }
 
-function getContextItemsInTokenBudget(
+export function getContextItemsInTokenBudget(
     contextItems: AutocompleteContextSnippet[],
     tokenBudget: number
 ): AutocompleteContextSnippet[] {
-    const CHARS_PER_TOKEN = 4
+    const autocompleteItemsWithBudget: AutocompleteContextSnippet[] = []
     let currentCharsCount = 0
-    const charsBudget = tokenBudget * CHARS_PER_TOKEN
+    const charsBudget = tokensToChars(tokenBudget)
+
     for (let i = 0; i < contextItems.length; i++) {
-        currentCharsCount += contextItems[i].content.length
-        if (currentCharsCount > charsBudget) {
-            return contextItems.slice(0, i)
+        const item = contextItems[i]
+        if (currentCharsCount + item.content.length > charsBudget) {
+            continue
         }
+        currentCharsCount += item.content.length
+        autocompleteItemsWithBudget.push(item)
     }
-    return contextItems
+    return autocompleteItemsWithBudget
 }
 
 function getContextItemsForIdentifier(

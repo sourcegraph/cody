@@ -112,9 +112,17 @@ export function getConfiguration(
         experimentalTracing: getHiddenSetting('experimental.tracing', false),
 
         experimentalSupercompletions: getHiddenSetting('experimental.supercompletions', false),
-        experimentalAutoedits: getHiddenSetting('experimental.autoedit', undefined),
+        experimentalAutoeditsEnabled: getHiddenSetting('experimental.autoedits.enabled', undefined),
+        experimentalAutoeditsConfigOverride: getHiddenSetting(
+            'experimental.autoedits.config.override',
+            undefined
+        ),
+        experimentalAutoeditsRendererTesting: getHiddenSetting(
+            'experimental.autoedits-renderer-testing',
+            false
+        ),
         experimentalMinionAnthropicKey: getHiddenSetting('experimental.minion.anthropicKey', undefined),
-
+        experimentalNoxideEnabled: getHiddenSetting('experimental.noxide.enabled', true),
         experimentalGuardrailsTimeoutSeconds: getHiddenSetting('experimental.guardrailsTimeoutSeconds'),
 
         autocompleteExperimentalOllamaOptions: getHiddenSetting(
@@ -128,10 +136,6 @@ export function getConfiguration(
             'autocomplete.experimental.fireworksOptions',
             undefined
         ),
-        autocompleteExperimentalPreloadDebounceInterval: getHiddenSetting(
-            'autocomplete.experimental.preloadDebounceInterval',
-            0
-        ),
 
         // Note: In spirit, we try to minimize agent-specific code paths in the VSC extension.
         // We currently use this flag for the agent to provide more helpful error messages
@@ -139,7 +143,7 @@ export function getConfiguration(
         // Rely on this flag sparingly.
         isRunningInsideAgent: getHiddenSetting('advanced.agent.running', false),
         hasNativeWebview: getHiddenSetting('advanced.hasNativeWebview', true),
-        agentIDE: getHiddenSetting<CodyIDE>('advanced.agent.ide'),
+        agentIDE: getHiddenSetting<CodyIDE>('advanced.agent.ide.name'),
         agentIDEVersion: getHiddenSetting('advanced.agent.ide.version'),
         agentExtensionVersion: getHiddenSetting('advanced.agent.extension.version'),
         agentHasPersistentStorage: getHiddenSetting('advanced.agent.capabilities.storage', false),

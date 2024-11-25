@@ -1,6 +1,7 @@
 import {
     AUTH_STATUS_FIXTURE_AUTHED,
     type ClientCapabilitiesWithLegacyFields,
+    CodyIDE,
 } from '@sourcegraph/cody-shared'
 import { fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, test, vi } from 'vitest'
@@ -35,7 +36,7 @@ describe('WelcomeMessage', () => {
             } satisfies Partial<ClientCapabilitiesWithLegacyFields> as ClientCapabilitiesWithLegacyFields,
             authStatus: AUTH_STATUS_FIXTURE_AUTHED,
         } satisfies Partial<useConfigModule.Config> as useConfigModule.Config)
-        render(<WelcomeMessage setView={() => {}} />, {
+        render(<WelcomeMessage IDE={CodyIDE.VSCode} setView={() => {}} />, {
             wrapper: AppWrapperForTest,
         })
         openCollapsiblePanels()
@@ -51,7 +52,7 @@ describe('WelcomeMessage', () => {
             } satisfies Partial<ClientCapabilitiesWithLegacyFields> as ClientCapabilitiesWithLegacyFields,
             authStatus: AUTH_STATUS_FIXTURE_AUTHED,
         } satisfies Partial<useConfigModule.Config> as useConfigModule.Config)
-        render(<WelcomeMessage setView={() => {}} />, {
+        render(<WelcomeMessage IDE={CodyIDE.VSCode} setView={() => {}} />, {
             wrapper: AppWrapperForTest,
         })
         openCollapsiblePanels()

@@ -9,7 +9,7 @@ import type { ContextMentionProviderID } from '../mentions/api'
  * {@link ClientCapabilitiesWithLegacyFields.agentIDE} that are inferred in an ad-hoc way from the
  * environment and aren't self-reported by the client.
  */
-export interface ClientCapabilitiesWithLegacyFields {
+export interface ClientCapabilitiesWithLegacyFields extends ClientCapabilities {
     /**
      * The `agentIDE` value, which is the editor that Cody is being used with. If not set, it
      * defaults to {@link CodyIDE.VSCode} to match the previous behavior.

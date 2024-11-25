@@ -1,14 +1,21 @@
 import omit from 'lodash/omit'
+import pick from 'lodash/pick'
+import { Response } from 'node-fetch'
 import * as uuid from 'uuid'
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 
+import {
+    AUTH_STATUS_FIXTURE_AUTHED,
+    AUTH_STATUS_FIXTURE_AUTHED_DOTCOM,
+    telemetryRecorder,
+} from '@sourcegraph/cody-shared'
+
+import type { CodeGenEventMetadata } from '../../services/CharactersLogger'
 import { resetParsersCache } from '../../tree-sitter/parser'
 import * as CompletionAnalyticsLogger from '../analytics-logger'
 import type { CompletionBookkeepingEvent } from '../analytics-logger'
 import { initTreeSitterParser } from '../test-helpers'
 
-import { AUTH_STATUS_FIXTURE_AUTHED, AUTH_STATUS_FIXTURE_AUTHED_DOTCOM } from '@sourcegraph/cody-shared'
-import { Response } from 'node-fetch'
 import { getInlineCompletions, params } from './helpers'
 
 describe('[getInlineCompletions] completion event', () => {
@@ -36,36 +43,44 @@ describe('[getInlineCompletions] completion event', () => {
             },
         })
 
-        await getInlineCompletions(
-            params(
-                code,
-                [
-                    {
-                        completionResponse: {
-                            completion,
-                            stopReason: 'unit-test',
-                        },
-                        metadata: {
-                            response,
-                        },
-                    },
-                ],
+        const generateParams = params(
+            code,
+            [
                 {
-                    configuration: {
-                        configuration: {
-                            autocompleteAdvancedProvider: 'fireworks',
-                        },
+                    completionResponse: {
+                        completion,
+                        stopReason: 'unit-test',
                     },
-                    authStatus: additionalParams.isDotComUser
-                        ? AUTH_STATUS_FIXTURE_AUTHED_DOTCOM
-                        : AUTH_STATUS_FIXTURE_AUTHED,
-                }
-            )
+                    metadata: {
+                        response,
+                    },
+                },
+            ],
+            {
+                configuration: {
+                    configuration: {
+                        autocompleteAdvancedProvider: 'fireworks',
+                    },
+                },
+                authStatus: additionalParams.isDotComUser
+                    ? AUTH_STATUS_FIXTURE_AUTHED_DOTCOM
+                    : AUTH_STATUS_FIXTURE_AUTHED,
+            }
         )
+        const completionResponse = await getInlineCompletions(generateParams)
 
         // Get `suggestionId` from `CompletionAnalyticsLogger.loaded` call.
         const suggestionId: CompletionAnalyticsLogger.CompletionLogID = spy.mock.calls[0][0].logId
         const completionEvent = CompletionAnalyticsLogger.getCompletionEvent(suggestionId)!
+
+        CompletionAnalyticsLogger.accepted({
+            id: suggestionId,
+            document: generateParams.document,
+            completion: completionResponse!.items[0],
+            trackedRange: undefined,
+            isDotComUser: true,
+            position: generateParams.position,
+        })
 
         return completionEvent
     }
@@ -133,7 +148,6 @@ describe('[getInlineCompletions] completion event', () => {
                 ],
                 "loggedPartialAcceptedLength": 0,
                 "params": {
-                  "artificialDelay": undefined,
                   "completionIntent": "function.body",
                   "contextSummary": {
                     "prefixChars": 16,
@@ -205,7 +219,6 @@ describe('[getInlineCompletions] completion event', () => {
                 ],
                 "loggedPartialAcceptedLength": 0,
                 "params": {
-                  "artificialDelay": undefined,
                   "completionIntent": "return_statement",
                   "contextSummary": {
                     "prefixChars": 25,
@@ -251,6 +264,44 @@ describe('[getInlineCompletions] completion event', () => {
         it('does not log `inlineCompletionItemContext` for enterprise users', async () => {
             const event = await getAnalyticsEvent('function foo() {\n  return█}', '"foo"')
             expect(event.params?.inlineCompletionItemContext).toBeUndefined()
+        })
+    })
+
+    describe('fills all the expected fields on `CompletionAnalyticsLogger.accepted` call', async () => {
+        it('add character logger metadata to `accepted` events', async () => {
+            const recordEventSpy = vi.spyOn(telemetryRecorder, 'recordEvent')
+
+            await getAnalyticsEvent('function foo() {\n  return█}', '"foo"')
+
+            const [feature, action, event] = recordEventSpy.mock.calls.find(
+                callArguments => callArguments[1] === 'accepted'
+            )! as [string, string, Record<string, unknown>]
+
+            expect(feature).toBe('cody.completion')
+            expect(action).toBe('accepted')
+            expect(event.metadata).toMatchObject({})
+
+            const characterLoggerMetadata = pick(event.metadata, [
+                'isDisjoint',
+                'isFullyOutsideOfVisibleRanges',
+                'isPartiallyOutsideOfVisibleRanges',
+                'isSelectionStale',
+                'noActiveTextEditor',
+                'outsideOfActiveEditor',
+                'windowNotFocused',
+            ] satisfies (keyof CodeGenEventMetadata)[])
+
+            expect(characterLoggerMetadata).toMatchInlineSnapshot(`
+              {
+                "isDisjoint": 0,
+                "isFullyOutsideOfVisibleRanges": 1,
+                "isPartiallyOutsideOfVisibleRanges": 1,
+                "isSelectionStale": 1,
+                "noActiveTextEditor": 0,
+                "outsideOfActiveEditor": 1,
+                "windowNotFocused": 1,
+              }
+            `)
         })
     })
 })

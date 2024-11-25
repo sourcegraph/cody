@@ -308,6 +308,7 @@ export class Agent extends MessageHandler implements ExtensionClient {
             this.notify('debug/message', {
                 channel: 'Document Sync Check',
                 message: panicMessage + '\n' + message,
+                level: 'error',
             })
         },
         edit: (uri, callback, options) => {
@@ -526,6 +527,11 @@ export class Agent extends MessageHandler implements ExtensionClient {
             this.pushPendingPromise(
                 vscode_shim.onDidChangeWorkspaceFolders.cody_fireAsync({ added, removed })
             )
+        })
+
+        this.registerNotification('window/didChangeFocus', state => {
+            this.pushPendingPromise(vscode_shim.onDidChangeWindowState.cody_fireAsync(state))
+            Object.assign(vscode_shim.window.state, state)
         })
 
         this.registerNotification('textDocument/didFocus', (document: ProtocolTextDocument) => {

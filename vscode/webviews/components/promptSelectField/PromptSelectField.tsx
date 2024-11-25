@@ -59,6 +59,7 @@ export const PromptSelectField: React.FunctionComponent<{
                         showOnlyPromptInsertableCommands={true}
                         showPromptLibraryUnsupportedMessage={true}
                         lastUsedSorting={true}
+                        recommendedOnly={false}
                         inputClassName="tw-bg-popover"
                     />
 

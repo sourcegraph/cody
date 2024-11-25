@@ -8,7 +8,6 @@ import {
     RateLimitError,
     authStatus,
     contextFiltersProvider,
-    createDisposables,
     featureFlagProvider,
     isDotCom,
     subscriptionDisposable,
@@ -22,9 +21,9 @@ import { autocompleteStageCounterLogger } from '../services/autocomplete-stage-c
 import { recordExposedExperimentsToSpan } from '../services/open-telemetry/utils'
 import { isInTutorial } from '../tutorial/helpers'
 
+import { ContextRankingStrategy } from '../completions/context/completions-context-ranker'
 import type { CompletionBookkeepingEvent, CompletionItemID, CompletionLogID } from './analytics-logger'
 import * as CompletionAnalyticsLogger from './analytics-logger'
-import { getArtificialDelay } from './artificial-delay'
 import { completionProviderConfig } from './completion-provider-config'
 import { ContextMixer } from './context/context-mixer'
 import { DefaultContextStrategyFactory } from './context/context-strategy'
@@ -75,6 +74,8 @@ interface CompletionRequest {
     position: vscode.Position
     context: vscode.InlineCompletionContext
 }
+
+export const PRELOAD_DEBOUNCE_INTERVAL = 150
 
 interface PreloadCompletionContext extends vscode.InlineCompletionContext {
     isPreload: true
@@ -129,8 +130,6 @@ export class InlineCompletionItemProvider
     public get config(): InlineCompletionItemProviderConfig {
         return InlineCompletionItemProviderConfigSingleton.configuration
     }
-    private disableLowPerfLangDelay = false
-
     constructor({
         completeSuggestWidgetSelection = true,
         triggerDelay = 0,
@@ -194,16 +193,6 @@ export class InlineCompletionItemProvider
 
         void completionProviderConfig.prefetch()
 
-        // Subscribe to changes in disableLowPerfLangDelay and update the value accordingly
-        this.disposables.push(
-            subscriptionDisposable(
-                completionProviderConfig.completionDisableLowPerfLangDelay.subscribe(
-                    disableLowPerfLangDelay => {
-                        this.disableLowPerfLangDelay = disableLowPerfLangDelay
-                    }
-                )
-            )
-        )
         const strategyFactory = new DefaultContextStrategyFactory(
             completionProviderConfig.contextStrategy
         )
@@ -212,6 +201,7 @@ export class InlineCompletionItemProvider
         this.contextMixer = new ContextMixer({
             strategyFactory,
             dataCollectionEnabled: true,
+            contextRankingStrategy: ContextRankingStrategy.Default,
         })
         this.disposables.push(this.contextMixer)
 
@@ -234,27 +224,13 @@ export class InlineCompletionItemProvider
             )
         )
 
-        this.disposables.push(
-            subscriptionDisposable(
-                completionProviderConfig.autocompletePreloadDebounceInterval
-                    .pipe(
-                        createDisposables(preloadDebounceInterval => {
-                            this.onSelectionChangeDebounced = undefined
-                            if (preloadDebounceInterval > 0) {
-                                this.onSelectionChangeDebounced = debounce(
-                                    this.preloadCompletionOnSelectionChange.bind(this),
-                                    preloadDebounceInterval
-                                )
+        this.onSelectionChangeDebounced = debounce(
+            this.preloadCompletionOnSelectionChange.bind(this),
+            PRELOAD_DEBOUNCE_INTERVAL
+        )
 
-                                return vscode.window.onDidChangeTextEditorSelection(
-                                    this.onSelectionChangeDebounced
-                                )
-                            }
-                            return undefined
-                        })
-                    )
-                    .subscribe({})
-            )
+        this.disposables.push(
+            vscode.window.onDidChangeTextEditorSelection(this.onSelectionChangeDebounced)
         )
 
         // Warm caches for the config feature configuration to avoid the first completion call
@@ -458,12 +434,6 @@ export class InlineCompletionItemProvider
                 return null
             }
 
-            const artificialDelay = getArtificialDelay({
-                languageId: document.languageId,
-                codyAutocompleteDisableLowPerfLangDelay: this.disableLowPerfLangDelay,
-                completionIntent,
-            })
-
             const debounceInterval = this.config.provider.mayUseOnDeviceInference ? 125 : 75
             stageRecorder.record('preGetInlineCompletions')
 
@@ -495,7 +465,6 @@ export class InlineCompletionItemProvider
                     handleDidPartiallyAcceptCompletionItem:
                         this.unstable_handleDidPartiallyAcceptCompletionItem.bind(this),
                     completeSuggestWidgetSelection: takeSuggestWidgetSelectionIntoAccount,
-                    artificialDelay,
                     firstCompletionTimeout: this.config.firstCompletionTimeout,
                     completionIntent,
                     lastAcceptedCompletionItem: this.lastAcceptedCompletionItem,
@@ -711,13 +680,14 @@ export class InlineCompletionItemProvider
 
         this.lastAcceptedCompletionItem = completion
 
-        CompletionAnalyticsLogger.accepted(
-            completion.logId,
-            completion.requestParams.document,
-            completion.analyticsItem,
-            completion.trackedRange,
-            this.isDotComUser
-        )
+        CompletionAnalyticsLogger.accepted({
+            id: completion.logId,
+            document: completion.requestParams.document,
+            completion: completion.analyticsItem,
+            trackedRange: completion.trackedRange,
+            isDotComUser: this.isDotComUser,
+            position: completion.requestParams.position,
+        })
     }
 
     /**
