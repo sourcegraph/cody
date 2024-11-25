@@ -1,4 +1,5 @@
 import {
+    type AuthStatus,
     type ChatModel,
     type ClientActionBroadcast,
     type CodyClientConfig,
@@ -241,10 +242,10 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
 
         this.disposables.push(
             subscriptionDisposable(
-                authStatus.subscribe(() => {
+                authStatus.subscribe(authStatus => {
                     // Run this async because this method may be called during initialization
                     // and awaiting on this.postMessage may result in a deadlock
-                    void this.sendConfig()
+                    void this.sendConfig(authStatus)
                 })
             ),
 
@@ -557,12 +558,10 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
 
     // When the webview sends the 'ready' message, respond by posting the view config
     private async handleReady(): Promise<void> {
-        await this.sendConfig()
+        await this.sendConfig(currentAuthStatus())
     }
 
-    private async sendConfig(): Promise<void> {
-        const authStatus = currentAuthStatus()
-
+    private async sendConfig(authStatus: AuthStatus): Promise<void> {
         // Don't emit config if we're verifying auth status to avoid UI auth flashes on the client
         if (authStatus.pendingValidation) {
             return
