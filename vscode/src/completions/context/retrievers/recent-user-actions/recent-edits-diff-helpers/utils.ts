@@ -212,19 +212,40 @@ export function getUnifiedDiffHunkFromTextDocumentChange(params: {
     }
 }
 
-export function divideGroupedChangesIntoShortTermAndLongTerm(changes: TextDocumentChangeGroup[]): {
+export function divideGroupedChangesIntoShortTermAndLongTerm(params: {
+    changes: TextDocumentChangeGroup[]
+    minEvents: number
+    minTimeMs: number
+}): {
     shortTermChanges: TextDocumentChangeGroup[]
     longTermChanges: TextDocumentChangeGroup[]
 } {
-    if (changes.length <= 1) {
-        return {
-            shortTermChanges: changes,
-            longTermChanges: [],
+    const currentTimeStamp = Date.now()
+
+    let longTermChangeIndex = params.changes.length - 1
+    while (longTermChangeIndex >= 0) {
+        const group = params.changes[longTermChangeIndex]
+        const timestamp = Math.min(...group.changes.map(c => c.timestamp))
+        const timeDiff = currentTimeStamp - timestamp
+        const eventCount = params.changes.length - longTermChangeIndex
+        if (eventCount > params.minEvents && timeDiff > params.minTimeMs) {
+            break
         }
+        longTermChangeIndex--
     }
+    const shortTermChanges = params.changes.slice(longTermChangeIndex + 1)
+    const longTermChanges = params.changes.slice(0, longTermChangeIndex + 1)
     return {
-        shortTermChanges: changes.slice(-1),
-        longTermChanges: changes.slice(0, -1),
+        shortTermChanges,
+        longTermChanges,
+    }
+}
+
+export function combineTextDocumentGroups(groups: TextDocumentChangeGroup[]): TextDocumentChangeGroup {
+    return {
+        changes: groups.flatMap(g => g.changes),
+        insertedRange: getRangeUnion(groups.map(g => g.insertedRange)),
+        replacementRange: getRangeUnion(groups.map(g => g.replacementRange)),
     }
 }
 

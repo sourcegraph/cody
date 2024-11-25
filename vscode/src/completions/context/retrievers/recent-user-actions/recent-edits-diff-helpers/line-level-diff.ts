@@ -3,22 +3,21 @@ import type { DiffCalculationInput, DiffHunk, RecentEditsRetrieverDiffStrategy }
 import { groupNonOverlappingChangeGroups, groupOverlappingDocumentChanges } from './utils'
 import {
     type TextDocumentChangeGroup,
+    combineTextDocumentGroups,
     divideGroupedChangesIntoShortTermAndLongTerm,
     getDiffHunkFromUnifiedPatch,
     getUnifiedDiffHunkFromTextDocumentChange,
 } from './utils'
 
-interface StrategyOptions {
-    shouldGroupNonOverlappingLines: boolean
+export interface LineLevelStrategyOptions {
+    contextLines: number
+    longTermDiffCombinationStrategy: 'unified-diff' | 'lines-based' | undefined
+    minShortTermEvents: number
+    minShortTermTimeMs: number
 }
 
 export class LineLevelDiffStrategy implements RecentEditsRetrieverDiffStrategy {
-    private contextLines = 3
-    private shouldGroupNonOverlappingLines: boolean
-
-    constructor(options: StrategyOptions) {
-        this.shouldGroupNonOverlappingLines = options.shouldGroupNonOverlappingLines
-    }
+    constructor(private readonly options: LineLevelStrategyOptions) {}
 
     public getDiffHunks(input: DiffCalculationInput): DiffHunk[] {
         const groupedChanges = this.getLineLevelChanges(input)
@@ -26,7 +25,7 @@ export class LineLevelDiffStrategy implements RecentEditsRetrieverDiffStrategy {
             uri: input.uri,
             oldContent: input.oldContent,
             groupedChanges,
-            contextLines: this.contextLines,
+            contextLines: this.options.contextLines,
             addLineNumbersForDiff: true,
         }).filter(diffHunk => diffHunk.diff.toString() !== '')
         diffHunks.reverse()
@@ -59,17 +58,23 @@ export class LineLevelDiffStrategy implements RecentEditsRetrieverDiffStrategy {
 
     private getLineLevelChanges(input: DiffCalculationInput): TextDocumentChangeGroup[] {
         const changes = groupOverlappingDocumentChanges(input.changes)
-        if (!this.shouldGroupNonOverlappingLines) {
+        if (this.options.longTermDiffCombinationStrategy === undefined) {
             return changes
         }
-        let { shortTermChanges, longTermChanges } = divideGroupedChangesIntoShortTermAndLongTerm(changes)
-        longTermChanges = groupNonOverlappingChangeGroups(longTermChanges)
+        let { shortTermChanges, longTermChanges } = divideGroupedChangesIntoShortTermAndLongTerm({
+            changes,
+            minEvents: this.options.minShortTermEvents,
+            minTimeMs: this.options.minShortTermTimeMs,
+        })
+        if (this.options.longTermDiffCombinationStrategy === 'lines-based') {
+            longTermChanges = groupNonOverlappingChangeGroups(longTermChanges)
+        } else if (this.options.longTermDiffCombinationStrategy === 'unified-diff') {
+            longTermChanges = [combineTextDocumentGroups(longTermChanges)]
+        }
         return [...longTermChanges, ...shortTermChanges]
     }
 
     public getDiffStrategyName(): string {
-        return `line-level-diff-${
-            this.shouldGroupNonOverlappingLines ? 'non-overlap-lines-true' : 'non-overlap-lines-false'
-        }`
+        return 'line-level-diff'
     }
 }

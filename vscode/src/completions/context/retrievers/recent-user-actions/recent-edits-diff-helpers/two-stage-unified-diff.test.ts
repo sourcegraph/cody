@@ -1,5 +1,5 @@
 import dedent from 'dedent'
-import { describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import * as vscode from 'vscode'
 import { getTextDocumentChangesForText } from './helper'
 import { TwoStageUnifiedDiffStrategy } from './two-stage-unified-diff'
@@ -10,8 +10,27 @@ const processComputedDiff = (text: string): string => {
     return updatedText
 }
 
-describe('AutoeditWithShortTermDiffStrategy', () => {
-    const strategy = new TwoStageUnifiedDiffStrategy()
+describe('TwoStageUnifiedDiffStrategy', () => {
+    const getTextDocumentChanges = (text: string) => {
+        const { originalText, changes } = getTextDocumentChangesForText(text)
+        // Advance the time to simulate Date.now() at a later time compared to when the changes were made
+        vi.advanceTimersByTime(1)
+        return {
+            originalText,
+            changes,
+        }
+    }
+
+    const strategy = new TwoStageUnifiedDiffStrategy({
+        longTermContextLines: 3,
+        shortTermContextLines: 0,
+        minShortTermEvents: 1,
+        minShortTermTimeMs: 0,
+    })
+
+    beforeEach(() => {
+        vi.useFakeTimers()
+    })
 
     it('handles multiple changes across different lines', () => {
         const text = dedent`
@@ -21,7 +40,7 @@ describe('AutoeditWithShortTermDiffStrategy', () => {
             <DC>let</DC><IC>const</IC> z = 5;
             console.log(<DC>x +</DC><IC>x *</IC> y);
         `
-        const { originalText, changes } = getTextDocumentChangesForText(text)
+        const { originalText, changes } = getTextDocumentChanges(text)
         const diffs = strategy.getDiffHunks({
             uri: vscode.Uri.parse('file://test.ts'),
             oldContent: originalText,
@@ -50,7 +69,7 @@ describe('AutoeditWithShortTermDiffStrategy', () => {
             let y = 10;
             console.log('break');
         `
-        const { originalText, changes } = getTextDocumentChangesForText(text)
+        const { originalText, changes } = getTextDocumentChanges(text)
         const diffs = strategy.getDiffHunks({
             uri: vscode.Uri.parse('file://test.ts'),
             oldContent: originalText,
@@ -65,7 +84,7 @@ describe('AutoeditWithShortTermDiffStrategy', () => {
             <DC>var</DC><IC>let</IC> y = 10;
             console.log('break');
         `
-        const { originalText, changes } = getTextDocumentChangesForText(text)
+        const { originalText, changes } = getTextDocumentChanges(text)
         const diffs = strategy.getDiffHunks({
             uri: vscode.Uri.parse('file://test.ts'),
             oldContent: originalText,
@@ -84,7 +103,7 @@ describe('AutoeditWithShortTermDiffStrategy', () => {
             let y = 10;
             console.log('break');<DC>\nfinal line removed</DC>
         `
-        const { originalText, changes } = getTextDocumentChangesForText(text)
+        const { originalText, changes } = getTextDocumentChanges(text)
         const diffs = strategy.getDiffHunks({
             uri: vscode.Uri.parse('file://test.ts'),
             oldContent: originalText,
@@ -110,7 +129,7 @@ describe('AutoeditWithShortTermDiffStrategy', () => {
             <DC>var</DC><IC>let</IC> y = <DC>10</DC><IC>20</IC>;
             console.log('break');
         `
-        const { originalText, changes } = getTextDocumentChangesForText(text)
+        const { originalText, changes } = getTextDocumentChanges(text)
         const diffs = strategy.getDiffHunks({
             uri: vscode.Uri.parse('file://test.ts'),
             oldContent: originalText,

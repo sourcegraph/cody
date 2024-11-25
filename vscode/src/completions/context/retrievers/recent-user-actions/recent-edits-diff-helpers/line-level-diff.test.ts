@@ -1,8 +1,8 @@
 import dedent from 'dedent'
-import { describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import * as vscode from 'vscode'
 import { getTextDocumentChangesForText } from './helper'
-import { LineLevelDiffStrategy } from './line-level-diff'
+import { LineLevelDiffStrategy, type LineLevelStrategyOptions } from './line-level-diff'
 
 const processComputedDiff = (text: string): string => {
     const lines = text.split('\n')
@@ -11,8 +11,29 @@ const processComputedDiff = (text: string): string => {
 }
 
 describe('LineLevelDiffStrategy', () => {
+    const getTextDocumentChanges = (text: string) => {
+        const { originalText, changes } = getTextDocumentChangesForText(text)
+        // Advance the time to simulate Date.now() at a later time compared to when the changes were made
+        vi.advanceTimersByTime(1)
+        return {
+            originalText,
+            changes,
+        }
+    }
+
+    const getStrategyOptions = (shouldGroupNonOverlappingLines: boolean): LineLevelStrategyOptions => ({
+        contextLines: 3,
+        longTermDiffCombinationStrategy: shouldGroupNonOverlappingLines ? 'lines-based' : undefined,
+        minShortTermEvents: 1,
+        minShortTermTimeMs: 0,
+    })
+
+    beforeEach(() => {
+        vi.useFakeTimers()
+    })
+
     describe('with non-overlapping lines grouping enabled', () => {
-        const strategy = new LineLevelDiffStrategy({ shouldGroupNonOverlappingLines: true })
+        const strategy = new LineLevelDiffStrategy(getStrategyOptions(true))
 
         it('handles multiple line changes with grouping', () => {
             const text = dedent`
@@ -20,7 +41,7 @@ describe('LineLevelDiffStrategy', () => {
                 console.log('break');
                 <DC>let</DC><IC>const</IC> y = 10;
             `
-            const { originalText, changes } = getTextDocumentChangesForText(text)
+            const { originalText, changes } = getTextDocumentChanges(text)
             const diffs = strategy.getDiffHunks({
                 uri: vscode.Uri.parse('file://test.ts'),
                 oldContent: originalText,
@@ -47,7 +68,7 @@ describe('LineLevelDiffStrategy', () => {
                 <DC>var</DC><IC>let</IC> y = 10;
                 console.log('test');
             `
-            const { originalText, changes } = getTextDocumentChangesForText(text)
+            const { originalText, changes } = getTextDocumentChanges(text)
             const diffs = strategy.getDiffHunks({
                 uri: vscode.Uri.parse('file://test.ts'),
                 oldContent: originalText,
@@ -64,7 +85,7 @@ describe('LineLevelDiffStrategy', () => {
     })
 
     describe('with non-overlapping lines grouping disabled', () => {
-        const strategy = new LineLevelDiffStrategy({ shouldGroupNonOverlappingLines: false })
+        const strategy = new LineLevelDiffStrategy(getStrategyOptions(false))
 
         it('handles multiple separate changes without grouping', () => {
             const text = dedent`
@@ -72,7 +93,7 @@ describe('LineLevelDiffStrategy', () => {
                 console.log('break');
                 <DC>let</DC><IC>const</IC> y = 10;
             `
-            const { originalText, changes } = getTextDocumentChangesForText(text)
+            const { originalText, changes } = getTextDocumentChanges(text)
             const diffs = strategy.getDiffHunks({
                 uri: vscode.Uri.parse('file://test.ts'),
                 oldContent: originalText,
@@ -92,17 +113,5 @@ describe('LineLevelDiffStrategy', () => {
               3+| const y = 10;"
             `)
         })
-    })
-
-    it('returns correct strategy name', () => {
-        const strategyWithGrouping = new LineLevelDiffStrategy({ shouldGroupNonOverlappingLines: true })
-        expect(strategyWithGrouping.getDiffStrategyName()).toBe('line-level-diff-non-overlap-lines-true')
-
-        const strategyWithoutGrouping = new LineLevelDiffStrategy({
-            shouldGroupNonOverlappingLines: false,
-        })
-        expect(strategyWithoutGrouping.getDiffStrategyName()).toBe(
-            'line-level-diff-non-overlap-lines-false'
-        )
     })
 })

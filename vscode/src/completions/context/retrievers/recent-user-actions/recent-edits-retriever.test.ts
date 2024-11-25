@@ -28,7 +28,12 @@ describe('RecentEditsRetriever', () => {
                 maxAgeMs: FIVE_MINUTES,
                 diffStrategyList: [
                     new UnifiedDiffStrategy({ addLineNumbers: false }),
-                    new LineLevelDiffStrategy({ shouldGroupNonOverlappingLines: false }),
+                    new LineLevelDiffStrategy({
+                        contextLines: 3,
+                        longTermDiffCombinationStrategy: undefined,
+                        minShortTermEvents: 1,
+                        minShortTermTimeMs: 0,
+                    }),
                 ],
             },
             {

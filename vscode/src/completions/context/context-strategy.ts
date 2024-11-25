@@ -132,7 +132,14 @@ export class DefaultContextStrategyFactory implements ContextStrategyFactory {
                             this.allLocalRetrievers = [
                                 new RecentEditsRetriever({
                                     maxAgeMs: 10 * 60 * 1000,
-                                    diffStrategyList: [new TwoStageUnifiedDiffStrategy()],
+                                    diffStrategyList: [
+                                        new TwoStageUnifiedDiffStrategy({
+                                            longTermContextLines: 3,
+                                            shortTermContextLines: 0,
+                                            minShortTermEvents: 1,
+                                            minShortTermTimeMs: 0,
+                                        }),
+                                    ],
                                 }),
                                 new DiagnosticsRetriever({
                                     contextLines: 0,

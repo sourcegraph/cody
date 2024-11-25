@@ -1,11 +1,13 @@
 import { PromptString } from '@sourcegraph/cody-shared'
 import dedent from 'dedent'
-import { describe, expect, it } from 'vitest'
-import type * as vscode from 'vscode'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import * as vscode from 'vscode'
 import { getDiffsForContentChanges, getTextDocumentChangesForText } from './helper'
 import {
+    type TextDocumentChangeGroup,
     applyTextDocumentChanges,
     computeDiffWithLineNumbers,
+    divideGroupedChangesIntoShortTermAndLongTerm,
     groupConsecutiveItemsByPredicate,
     groupNonOverlappingChangeGroups,
     groupOverlappingDocumentChanges,
@@ -415,5 +417,161 @@ describe('computeDiffWithLineNumbers', () => {
             "1+| new content"
             `
         )
+    })
+})
+
+describe('divideGroupedChangesIntoShortTermAndLongTerm', () => {
+    let changes: TextDocumentChangeGroup[]
+
+    beforeEach(() => {
+        vi.useFakeTimers()
+    })
+
+    const createTestChange = (timeAgo: number): TextDocumentChangeGroup => {
+        const dummyRange = new vscode.Range(0, 0, 0, 0)
+        return {
+            changes: [
+                {
+                    timestamp: Date.now() - timeAgo,
+                    change: {
+                        range: dummyRange,
+                        rangeOffset: 0,
+                        rangeLength: 0,
+                        text: '',
+                    },
+                    insertedRange: dummyRange,
+                },
+            ],
+            insertedRange: dummyRange,
+            replacementRange: dummyRange,
+        }
+    }
+
+    const createTestChanges = (timeAgos: number[]): TextDocumentChangeGroup[] =>
+        timeAgos.map(timeAgo => createTestChange(timeAgo))
+
+    const assertDivision = (params: {
+        timeAgos: number[]
+        minEvents: number
+        minTimeMs: number
+        expectedShortTermCount: number
+    }) => {
+        changes = createTestChanges(params.timeAgos)
+        const { shortTermChanges, longTermChanges } = divideGroupedChangesIntoShortTermAndLongTerm({
+            changes,
+            minEvents: params.minEvents,
+            minTimeMs: params.minTimeMs,
+        })
+        expect(shortTermChanges).toEqual(changes.slice(changes.length - params.expectedShortTermCount))
+        expect(longTermChanges).toEqual(changes.slice(0, changes.length - params.expectedShortTermCount))
+    }
+
+    it('should return all changes as shortTermChanges when conditions are not met', () => {
+        assertDivision({
+            timeAgos: [1000, 2000],
+            minEvents: 3,
+            minTimeMs: 5000,
+            expectedShortTermCount: 2,
+        })
+    })
+
+    it('should divide changes into shortTermChanges and longTermChanges correctly', () => {
+        assertDivision({
+            timeAgos: [20000, 15000, 5000, 1000],
+            minEvents: 2,
+            minTimeMs: 10000,
+            expectedShortTermCount: 2,
+        })
+    })
+
+    it('should return all changes as longTermChanges when conditions are met early', () => {
+        assertDivision({
+            timeAgos: [30000, 25000, 20000],
+            minEvents: 0,
+            minTimeMs: 5000,
+            expectedShortTermCount: 0,
+        })
+    })
+
+    it('should handle empty changes array', () => {
+        const { shortTermChanges, longTermChanges } = divideGroupedChangesIntoShortTermAndLongTerm({
+            changes: [],
+            minEvents: 2,
+            minTimeMs: 5000,
+        })
+        expect(shortTermChanges).toEqual([])
+        expect(longTermChanges).toEqual([])
+    })
+
+    it('should handle single change', () => {
+        assertDivision({
+            timeAgos: [1000],
+            minEvents: 2,
+            minTimeMs: 5000,
+            expectedShortTermCount: 1,
+        })
+    })
+
+    it('should handle changes with identical timestamps', () => {
+        assertDivision({
+            timeAgos: [1000, 1000, 1000],
+            minEvents: 2,
+            minTimeMs: 5000,
+            expectedShortTermCount: 3,
+        })
+    })
+
+    it('should handle changes with zero time difference', () => {
+        assertDivision({
+            timeAgos: [0, 0, 0],
+            minEvents: 0,
+            minTimeMs: 0,
+            expectedShortTermCount: 3,
+        })
+    })
+
+    it('should handle negative minEvents parameter', () => {
+        assertDivision({
+            timeAgos: [3000, 2000, 1000],
+            minEvents: -1,
+            minTimeMs: 5000,
+            expectedShortTermCount: 3,
+        })
+    })
+
+    it('should handle zero minTimeMs parameter', () => {
+        assertDivision({
+            timeAgos: [3000, 2000, 1000],
+            minEvents: 2,
+            minTimeMs: 0,
+            expectedShortTermCount: 2,
+        })
+    })
+
+    it('should handle one minEvents', () => {
+        assertDivision({
+            timeAgos: [3000, 2000, 1000],
+            minEvents: 1,
+            minTimeMs: 0,
+            expectedShortTermCount: 1,
+        })
+    })
+
+    it('should handle zero minEvents and minTimeMs parameters', () => {
+        assertDivision({
+            timeAgos: [3000, 2000, 1000],
+            minEvents: 0,
+            minTimeMs: 0,
+            expectedShortTermCount: 0,
+        })
+    })
+
+    it('should handle very large time differences', () => {
+        assertDivision({
+            timeAgos: [Number.MAX_SAFE_INTEGER, 2000, 1000],
+            minEvents: 1,
+            minTimeMs: 5000,
+            expectedShortTermCount: 2,
+        })
     })
 })

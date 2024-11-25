@@ -6,32 +6,41 @@ import {
     getUnifiedDiffHunkFromTextDocumentChange,
 } from './utils'
 
+interface StrategyOptions {
+    longTermContextLines: number
+    shortTermContextLines: number
+    minShortTermEvents: number
+    minShortTermTimeMs: number
+}
+
 /**
  * Generates a single unified diff patch that combines all changes
  * made to a document into one consolidated view.
  */
 export class TwoStageUnifiedDiffStrategy implements RecentEditsRetrieverDiffStrategy {
-    private longTermContextLines = 3
-    private shortTermContextLines = 0
+    constructor(private readonly options: StrategyOptions) {}
 
     public getDiffHunks(input: DiffCalculationInput): DiffHunk[] {
         const rawChanges = groupOverlappingDocumentChanges(input.changes)
-        const { shortTermChanges, longTermChanges } =
-            divideGroupedChangesIntoShortTermAndLongTerm(rawChanges)
+        const { shortTermChanges, longTermChanges } = divideGroupedChangesIntoShortTermAndLongTerm({
+            changes: rawChanges,
+            minEvents: this.options.minShortTermEvents,
+            minTimeMs: this.options.minShortTermTimeMs,
+        })
 
         const longTermPatch = getUnifiedDiffHunkFromTextDocumentChange({
             uri: input.uri,
             oldContent: input.oldContent,
             changes: longTermChanges.flatMap(c => c.changes),
             addLineNumbersForDiff: true,
-            contextLines: this.longTermContextLines,
+            contextLines: this.options.longTermContextLines,
         })
         const shortTermPatch = getUnifiedDiffHunkFromTextDocumentChange({
             uri: input.uri,
             oldContent: longTermPatch.newContent,
             changes: shortTermChanges.flatMap(c => c.changes),
             addLineNumbersForDiff: true,
-            contextLines: this.shortTermContextLines,
+            contextLines: this.options.shortTermContextLines,
         })
         const diffs = [
             getDiffHunkFromUnifiedPatch(shortTermPatch),
