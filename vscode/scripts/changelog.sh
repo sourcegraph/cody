@@ -2,6 +2,9 @@
 
 # kalan's poor man changelog generator, this will be replaced by the release team's changelog automation
 
+# you can find the commits at each release branch using:
+# git ls-remote https://github.com/sourcegraph/cody | grep "refs/heads/vscode-v1\.[0-9]\+\.x" | sort -r | head -n 5
+
 git log $1..$2 --pretty='%s' --boundary | sed -E 's/^(.*)\(#(.*)\)$/- \1 [pull\/\2](https:\/\/github.com\/sourcegraph\/cody\/pulls\/\2)/' > temp_changes.txt
 
 # Find first occurrence of ### Uncategorized and append the changes right after it
