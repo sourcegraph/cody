@@ -7,10 +7,14 @@ import type { DiffHunk, TextDocumentChange, UnifiedPatchResponse } from './recen
 /**
  * Represents a group of text document changes with their range information.
  * The grouped changes are consecutive changes made in the document that should be treated as a single entity when computing diffs.
+ * A group is contructed by combining the consecutive changes that have overlapping ranges.
+ * i.e. If line number of `insertedRange` of the first change overlaps with the line number of `deletedRange` of the second change,
+ * they are considered to be in the same group.
  *
  * @example
  * When typing "hello world" in a document, each character typed generates a separate change event.
  * These changes are grouped together as a single entity in this interface.
+ * Please check the test cases for more examples.
  */
 export interface TextDocumentChangeGroup {
     /** Array of individual text document changes in this group */
