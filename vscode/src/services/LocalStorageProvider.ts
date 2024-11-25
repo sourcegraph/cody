@@ -19,6 +19,7 @@ import {
 } from '@sourcegraph/cody-shared'
 import { type Observable, map } from 'observable-fns'
 import { isSourcegraphToken } from '../chat/protocol'
+import type { RepoAccessibilityData } from '../repository/githubRepoMetadata'
 import { EventEmitter } from '../testutils/mocks'
 import { secretStorage } from './SecretStorageProvider'
 
@@ -32,6 +33,7 @@ class LocalStorage implements LocalStorageForModelPreferences {
     protected readonly CODY_ENDPOINT_HISTORY = 'SOURCEGRAPH_CODY_ENDPOINT_HISTORY'
     protected readonly CODY_ENROLLMENT_HISTORY = 'SOURCEGRAPH_CODY_ENROLLMENTS'
     protected readonly LAST_USED_CHAT_MODALITY = 'cody-last-used-chat-modality'
+    protected readonly GIT_REPO_ACCESSIBILITY_KEY = 'cody-git-repo-accessibility'
     public readonly ANONYMOUS_USER_ID_KEY = 'sourcegraphAnonymousUid'
     public readonly LAST_USED_ENDPOINT = 'SOURCEGRAPH_CODY_ENDPOINT'
     private readonly MODEL_PREFERENCES_KEY = 'cody-model-preferences'
@@ -232,6 +234,36 @@ class LocalStorage implements LocalStorageForModelPreferences {
     public getMinionHistory(authStatus: AuthStatus): string | null {
         // TODO(beyang): SECURITY - use authStatus
         return this.get<string | null>(this.KEY_LOCAL_MINION_HISTORY)
+    }
+
+    public async setGitHubRepoAccessibility(data: RepoAccessibilityData[]): Promise<void> {
+        const repoVisibilityData = data.map(item => ({
+            repoName: item.repoName,
+            isPublic: item.isPublic,
+            timestamp: Date.now(),
+        }))
+        await this.set(this.GIT_REPO_ACCESSIBILITY_KEY, repoVisibilityData)
+    }
+
+    public getGitHubRepoAccessibility(): RepoAccessibilityData[] {
+        const accessibilityValues =
+            this.get<{ repoName: string; isPublic: boolean; timestamp: number }[] | null>(
+                this.GIT_REPO_ACCESSIBILITY_KEY
+            ) ?? []
+        const repoData: RepoAccessibilityData[] = []
+        for (const value of accessibilityValues) {
+            const currentTime = Date.now()
+            const timeDifference = currentTime - value.timestamp
+            // If the time difference is greater than 24 hours, skip this value
+            if (timeDifference > 24 * 60 * 60 * 1000) {
+                continue
+            }
+            repoData.push({
+                repoName: value.repoName,
+                isPublic: value.isPublic,
+            })
+        }
+        return repoData
     }
 
     public async removeChatHistory(authStatus: AuthenticatedAuthStatus): Promise<void> {

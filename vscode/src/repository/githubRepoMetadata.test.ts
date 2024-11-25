@@ -4,7 +4,8 @@ import {
     fromLateSetSource,
 } from '@sourcegraph/cody-shared'
 import { Observable } from 'observable-fns'
-import { describe, expect, it, vi } from 'vitest'
+import { beforeAll, describe, expect, it, vi } from 'vitest'
+import { mockLocalStorage } from '../services/LocalStorageProvider'
 import {
     GitHubDotComRepoMetadata,
     type RepoRevMetaData,
@@ -30,6 +31,10 @@ vi.mock('./remoteRepos', () => {
 })
 
 describe('publicRepoMetadataIfAllWorkspaceReposArePublic', () => {
+    beforeAll(() => {
+        mockLocalStorage()
+    })
+
     it('should return isPublic false when no folders have public repos', async () => {
         globalThis.mockRemoteReposForAllWorkspaceFolders.setSource(
             Observable.of<remoteRepoModule.RemoteRepo[]>([

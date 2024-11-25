@@ -10,7 +10,13 @@ import {
 } from '@sourcegraph/cody-shared'
 import { Observable, map } from 'observable-fns'
 import { logDebug } from '../output-channel-logger'
+import { localStorage } from '../services/LocalStorageProvider'
 import { remoteReposForAllWorkspaceFolders } from './remoteRepos'
+
+export interface RepoAccessibilityData {
+    repoName: string
+    isPublic: boolean
+}
 
 interface GitHubDotComRepoMetaData {
     // The full uniquely identifying name on github.com, e.g., "github.com/sourcegraph/cody"
@@ -21,9 +27,24 @@ interface GitHubDotComRepoMetaData {
 export class GitHubDotComRepoMetadata {
     // This class is used to get the metadata from the gitApi.
     private static instance: GitHubDotComRepoMetadata | null = null
+    // Store a copy of the latest local storage data for comparison with the current cache.
+    private latestLocalStorageData: RepoAccessibilityData[]
+    // Last time when the local storage was updated.
+    private lastLocalStorageUpdateTime: number | null = null
+    // Since the local storage update can be expansive, we add a minimum time between updates.
+    private readonly minLocalStorageUpdateTimeMs = 1000 * 60 * 10 // 10 minutes
+
     private cache = new Map<string /* repoName */, GitHubDotComRepoMetaData | undefined>()
 
-    private constructor() {}
+    private constructor() {
+        this.latestLocalStorageData = localStorage.getGitHubRepoAccessibility()
+        for (const data of this.latestLocalStorageData) {
+            this.cache.set(data.repoName, {
+                repoName: data.repoName,
+                isPublic: data.isPublic,
+            })
+        }
+    }
 
     public static getInstance(): GitHubDotComRepoMetadata {
         if (!GitHubDotComRepoMetadata.instance) {
@@ -51,6 +72,7 @@ export class GitHubDotComRepoMetadata {
         const repoMetaData = await this.ghMetadataFromGit(repoBaseName, signal)
         if (repoMetaData) {
             this.cache.set(repoMetaData.repoName, repoMetaData)
+            this.updateCachedDataToLocalStorageIfNeeded()
         }
         return repoMetaData
     }
@@ -119,6 +141,44 @@ export class GitHubDotComRepoMetadata {
         }
         const [, owner, repoName] = match
         return { owner, repoName: repoName }
+    }
+
+    public updateCachedDataToLocalStorageIfNeeded(): boolean {
+        if (
+            this.lastLocalStorageUpdateTime !== null &&
+            Date.now() - this.lastLocalStorageUpdateTime < this.minLocalStorageUpdateTimeMs
+        ) {
+            return false
+        }
+        // Updates the updated cache values to local storage
+        const repoAccessibilityData: RepoAccessibilityData[] = []
+        for (const [repoName, repoMetadata] of this.cache) {
+            if (repoMetadata) {
+                repoAccessibilityData.push({ repoName, isPublic: repoMetadata.isPublic })
+            }
+        }
+        if (this.didRepoAccessibilityDataChange(repoAccessibilityData)) {
+            this.latestLocalStorageData = repoAccessibilityData
+            this.lastLocalStorageUpdateTime = Date.now()
+            localStorage.setGitHubRepoAccessibility(repoAccessibilityData)
+            return true
+        }
+        return false
+    }
+
+    public didRepoAccessibilityDataChange(repoAccessibilityData: RepoAccessibilityData[]): boolean {
+        if (repoAccessibilityData.length !== this.latestLocalStorageData.length) {
+            return true
+        }
+        const latestRepoMap = new Map(
+            this.latestLocalStorageData.map(repo => [repo.repoName, repo.isPublic])
+        )
+        for (const { repoName, isPublic } of repoAccessibilityData) {
+            if (latestRepoMap.get(repoName) !== isPublic) {
+                return true
+            }
+        }
+        return false
     }
 }
 
