@@ -3,7 +3,7 @@ import { history, undo, redo } from "prosemirror-history"
 import { EditorState, Plugin, TextSelection } from "prosemirror-state"
 import { Node, Schema } from "prosemirror-model"
 import { baseKeymap } from "prosemirror-commands"
-import { InputRule, inputRules } from "prosemirror-inputrules"
+import { InputRule, inputRules, textblockTypeInputRule } from "prosemirror-inputrules"
 import { keymap } from "prosemirror-keymap"
 import { MouseEventHandler, useCallback, useContext, useEffect, useRef, useState } from "react"
 import { ActorRefFrom, assign, setup, enqueueActions, fromPromise } from 'xstate'
@@ -17,10 +17,32 @@ import { iconForProvider } from "../mentions/mentionMenu/MentionMenuItem"
 import { AtSignIcon } from "lucide-react"
 import { createRoot, Root } from 'react-dom/client'
 import { ChatMentionContext } from "../plugins/atMentions/useChatContextItems"
+import { CodeBlockView} from './CodeMirrorView'
 import "prosemirror-view/style/prosemirror.css"
 
 const schema = new Schema({
     nodes: {
+        doc: {
+            content: 'block+',
+        },
+        paragraph: {
+            content: 'inline*',
+            group: 'block',
+            parseDOM: [{tag: 'p'}],
+            toDOM() {
+                return ['p', 0]
+            },
+        },
+        code_block: {
+            content: 'text*',
+            marks: "",
+            group: 'block',
+            defining: true,
+            parseDOM: [{tag: 'code_block', preserveWhitespace: true}],
+            toDOM() {
+                return ['pre', ['code', 0]]
+            },
+        },
         text: {
             group: 'inline',
         },
@@ -49,15 +71,6 @@ const schema = new Schema({
                     },
                 },
             ],
-        },
-        paragraph: {
-            content: 'inline*',
-            toDOM() {
-                return ['p', 0]
-            },
-        },
-        doc: {
-            content: 'paragraph+',
         },
     },
 })
@@ -151,7 +164,6 @@ const suggestionsMachine = setup({
                         src: 'menuDataLoader',
                         input: ({ context }) => context,
                         onDone: {
-                            target: 'idle',
                             actions: [
                                 assign(({ event }) => {
                                     return {
@@ -160,6 +172,7 @@ const suggestionsMachine = setup({
                                     }
                                 })
                             ],
+                            target: 'idle',
                         },
                     },
                 },
@@ -401,6 +414,7 @@ interface BaseEditorProps {
 }
 
 export const BaseEditor: React.FC = (props: BaseEditorProps) => {
+    // TODO: Track token count/budget available
     // TODO: Handle initial context
     const mentionMenuDataRef = useRef<SuggestionsMachineContext['fetchMenuData']>(() => Promise.resolve([]))
     const [menuPosition, setMenuPosition] = useState({ left: 0, bottom: 0 })
@@ -450,12 +464,18 @@ export const BaseEditor: React.FC = (props: BaseEditorProps) => {
                         // (maybe use floating-ui to also resize it to available space
                         ...createSuggestionsPlugin({actor, updatePosition: setMenuPosition}),
                         keymap(baseKeymap),
-                        placeholder(props.placeholder ?? '')
+                        placeholder(props.placeholder ?? ''),
+                        inputRules({
+                            rules: [textblockTypeInputRule(/^```$/, schema.nodes.code_block)],
+                        })
                     ],
                 }),
                 nodeViews: {
                     mention(node) {
                         return new MentionView(node)
+                    },
+                    code_block(node, view, getPos) {
+                        return new CodeBlockView(node, view, getPos)
                     }
                 },
                 dispatchTransaction(tr) {
