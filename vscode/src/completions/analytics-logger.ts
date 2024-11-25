@@ -803,6 +803,7 @@ function suggestionDocumentDiffTracker(
     const documentText = document.getText(trackingRange)
 
     const persistenceTimeoutList = [
+        10 * 1000, // 10 seconds
         20 * 1000, // 20 seconds
         60 * 1000, // 60 seconds
         120 * 1000, // 120 seconds
