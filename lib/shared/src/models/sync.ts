@@ -220,7 +220,10 @@ export function syncModels({
 
                                             // DEEP CODY - available to users with feature flag enabled only.
                                             // TODO(bee): remove once deepCody is enabled for all users.
-                                            if (deepCodyEnabled && serverModelsConfig) {
+                                            const sonnetModel = data.primaryModels.find(m =>
+                                                m.id.includes('sonnet')
+                                            )
+                                            if (deepCodyEnabled && sonnetModel) {
                                                 const DEEPCODY_MODEL =
                                                     getExperimentalClientModelByFeatureFlag(
                                                         FeatureFlag.DeepCody

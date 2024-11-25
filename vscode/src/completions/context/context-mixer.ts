@@ -13,6 +13,7 @@ import {
     DefaultCompletionsContextRanker,
     type RetrievedContextResults,
 } from './completions-context-ranker'
+import type { ContextRankingStrategy } from './completions-context-ranker'
 import { ContextRetrieverDataCollection } from './context-data-logging'
 import type { ContextStrategy, ContextStrategyFactory } from './context-strategy'
 
@@ -68,6 +69,7 @@ export interface GetContextResult {
 
 export interface ContextMixerOptions {
     strategyFactory: ContextStrategyFactory
+    contextRankingStrategy: ContextRankingStrategy
     dataCollectionEnabled?: boolean
 }
 
@@ -84,9 +86,15 @@ export class ContextMixer implements vscode.Disposable {
     private disposables: vscode.Disposable[] = []
     private contextDataCollector: ContextRetrieverDataCollection | null = null
     private strategyFactory: ContextStrategyFactory
+    private contextRankingStrategy: ContextRankingStrategy
 
-    constructor({ strategyFactory, dataCollectionEnabled = false }: ContextMixerOptions) {
+    constructor({
+        strategyFactory,
+        contextRankingStrategy,
+        dataCollectionEnabled = false,
+    }: ContextMixerOptions) {
         this.strategyFactory = strategyFactory
+        this.contextRankingStrategy = contextRankingStrategy
         if (dataCollectionEnabled) {
             this.contextDataCollector = new ContextRetrieverDataCollection()
             this.disposables.push(this.contextDataCollector)
@@ -163,7 +171,7 @@ export class ContextMixer implements vscode.Disposable {
             }
         }
 
-        const contextRanker = new DefaultCompletionsContextRanker()
+        const contextRanker = new DefaultCompletionsContextRanker(this.contextRankingStrategy)
         const fusedResults = contextRanker.rankAndFuseContext(results)
 
         // The total chars size hint is inclusive of the prefix and suffix sizes, so we seed the

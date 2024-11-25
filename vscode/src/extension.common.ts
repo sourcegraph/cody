@@ -4,8 +4,8 @@ import type { CompletionLogger, SourcegraphCompletionsClient } from '@sourcegrap
 import type { startTokenReceiver } from './auth/token-receiver'
 import { onActivationDevelopmentHelpers } from './dev/helpers'
 import './editor/displayPathEnvInfo' // import for side effects
-
 import type { createController } from '@openctx/vscode-lib'
+import type { Noxide } from '@sourcegraph/cody-noxide'
 import type { CommandsProvider } from './commands/services/provider'
 import { ExtensionApi } from './extension-api'
 import type { ExtensionClient } from './extension-client'
@@ -23,6 +23,7 @@ type Constructor<T extends new (...args: any) => any> = T extends new (
 
 export interface PlatformContext {
     networkAgent?: DelegatingAgent
+    noxide?: Noxide
     createOpenCtxController?: typeof createController
     createStorage?: () => Promise<vscode.Memento>
     createCommandsProvider?: Constructor<typeof CommandsProvider>
@@ -36,19 +37,25 @@ export interface PlatformContext {
 }
 
 interface ActivationContext {
-    initializeNetworkAgent?: () => Promise<DelegatingAgent>
+    initializeNoxideLib?: () => Noxide | undefined
+    initializeNetworkAgent?: (ctx: { noxide?: Noxide | undefined }) => Promise<DelegatingAgent>
 }
 
 export async function activate(
     context: vscode.ExtensionContext,
-    { initializeNetworkAgent, ...platformContext }: PlatformContext & ActivationContext
+    {
+        initializeNetworkAgent,
+        initializeNoxideLib,
+        ...platformContext
+    }: PlatformContext & ActivationContext
 ): Promise<ExtensionApi> {
     //TODO: Properly handle extension mode overrides in a single way
+    platformContext.noxide = initializeNoxideLib?.() || undefined
     const api = new ExtensionApi(context.extensionMode)
     try {
         // Important! This needs to happen before we resolve the config
         // Otherwise some eager beavers might start making network requests
-        const networkAgent = await initializeNetworkAgent?.()
+        const networkAgent = await initializeNetworkAgent?.(platformContext)
         if (networkAgent) {
             context.subscriptions.push(networkAgent)
             platformContext.networkAgent = networkAgent

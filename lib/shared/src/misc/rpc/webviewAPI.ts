@@ -2,7 +2,7 @@ import { Observable } from 'observable-fns'
 import type { AuthStatus, ModelsData, ResolvedConfiguration, UserProductSubscription } from '../..'
 import type { SerializedPromptEditorState } from '../..'
 import type { ChatMessage, UserLocalHistory } from '../../chat/transcript/messages'
-import type { ContextItem } from '../../codebase-context/messages'
+import type { ContextItem, DefaultContext } from '../../codebase-context/messages'
 import type { CodyCommand } from '../../commands/types'
 import type { FeatureFlag } from '../../experimentation/FeatureFlagProvider'
 import type { ContextMentionProviderMetadata } from '../../mentions/api'
@@ -27,7 +27,13 @@ export interface WebviewToExtensionAPI {
      * includes matching builtin commands and custom commands (which are both deprecated in favor of
      * the Prompt Library).
      */
-    prompts(query: string): Observable<PromptsResult>
+    prompts(input: PromptsInput): Observable<PromptsResult>
+
+    /**
+     * Stream with actions from cody agent service, serves as transport for any client
+     * based actions/effects.
+     */
+    clientActionBroadcast(): Observable<ClientActionBroadcast>
 
     /** The commands to prompts library migration information. */
     promptsMigrationStatus(): Observable<PromptsMigrationStatus>
@@ -57,9 +63,9 @@ export interface WebviewToExtensionAPI {
     setChatModel(model: Model['id']): Observable<void>
 
     /**
-     * Observe the initial context that should be populated in the chat message input field.
+     * Observe the default context that should be populated in the chat message input field and suggestions.
      */
-    initialContext(): Observable<ContextItem[]>
+    defaultContext(): Observable<DefaultContext>
 
     detectIntent(
         text: string
@@ -98,7 +104,7 @@ export function createExtensionAPI(
     messageAPI: ReturnType<typeof createMessageAPIForWebview>,
 
     // As a workaround for Cody Web, support providing static initial context.
-    staticInitialContext?: ContextItem[]
+    staticDefaultContext?: DefaultContext
 ): WebviewToExtensionAPI {
     const hydratePromptMessage = proxyExtensionAPI(messageAPI, 'hydratePromptMessage')
 
@@ -106,14 +112,16 @@ export function createExtensionAPI(
         mentionMenuData: proxyExtensionAPI(messageAPI, 'mentionMenuData'),
         evaluatedFeatureFlag: proxyExtensionAPI(messageAPI, 'evaluatedFeatureFlag'),
         prompts: proxyExtensionAPI(messageAPI, 'prompts'),
+        clientActionBroadcast: proxyExtensionAPI(messageAPI, 'clientActionBroadcast'),
         models: proxyExtensionAPI(messageAPI, 'models'),
         chatModels: proxyExtensionAPI(messageAPI, 'chatModels'),
         highlights: proxyExtensionAPI(messageAPI, 'highlights'),
-        hydratePromptMessage: promptText => hydratePromptMessage(promptText, staticInitialContext),
+        hydratePromptMessage: promptText =>
+            hydratePromptMessage(promptText, staticDefaultContext?.initialContext),
         setChatModel: proxyExtensionAPI(messageAPI, 'setChatModel'),
-        initialContext: staticInitialContext
-            ? () => Observable.of(staticInitialContext)
-            : proxyExtensionAPI(messageAPI, 'initialContext'),
+        defaultContext: staticDefaultContext
+            ? () => Observable.of(staticDefaultContext)
+            : proxyExtensionAPI(messageAPI, 'defaultContext'),
         detectIntent: proxyExtensionAPI(messageAPI, 'detectIntent'),
         promptsMigrationStatus: proxyExtensionAPI(messageAPI, 'promptsMigrationStatus'),
         startPromptsMigration: proxyExtensionAPI(messageAPI, 'startPromptsMigration'),
@@ -142,6 +150,12 @@ export interface PromptAction extends Prompt {
 
 export interface CommandAction extends CodyCommand {
     actionType: 'command'
+}
+
+export interface PromptsInput {
+    query: string
+    first?: number
+    recommendedOnly: boolean
 }
 
 export type Action = PromptAction | CommandAction
@@ -199,4 +213,8 @@ interface PromptsMigrationSkipStatus {
 
 interface NoPromptsMigrationNeeded {
     type: 'no_migration_needed'
+}
+
+export interface ClientActionBroadcast {
+    type: 'open-recently-prompts'
 }

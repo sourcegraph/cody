@@ -1,6 +1,6 @@
 {
   "name": "@sourcegraph/cody-web",
-  "version": "0.10.0",
+  "version": "0.14.0",
   "description": "Cody standalone web app",
   "license": "Apache-2.0",
   "repository": {
@@ -19,7 +19,7 @@
     "build-ts": "tsc --build"
   },
   "devDependencies": {
-    "@openctx/vscode-lib": "^0.0.25",
+    "@openctx/vscode-lib": "^0.0.26",
     "@sourcegraph/cody": "workspace:*",
     "@sourcegraph/cody-shared": "workspace:*",
     "@sourcegraph/prompt-editor": "workspace:*",

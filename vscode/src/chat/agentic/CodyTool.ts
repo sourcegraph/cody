@@ -12,11 +12,14 @@ import {
     pendingOperation,
     ps,
 } from '@sourcegraph/cody-shared'
+import { URI } from 'vscode-uri'
 import { getContextFromRelativePath } from '../../commands/context/file-path'
 import { getContextFileFromShell } from '../../commands/context/shell'
 import { type ContextRetriever, toStructuredMentions } from '../chat-view/ContextRetriever'
 import { getChatContextItemsForMention } from '../context/chatContext'
 import { getCorpusContextItemsForEditorState } from '../initialContext'
+import { CodyChatMemory } from './CodyChatMemory'
+import type { ToolFactory, ToolRegistry } from './CodyToolProvider'
 
 /**
  * Configuration interface for CodyTool instances.
@@ -59,10 +62,6 @@ export abstract class CodyTool {
         return parsed
     }
     /**
-     * Abstract method to be implemented by subclasses for executing the tool.
-     */
-    public abstract execute(span: Span): Promise<ContextItem[]>
-    /**
      * The raw text input stream.
      */
     protected unprocessedText = ''
@@ -72,15 +71,28 @@ export abstract class CodyTool {
     public stream(text: string): void {
         this.unprocessedText += text
     }
+    /**
+     * Resets the raw text input stream.
+     */
     private reset(): void {
         this.unprocessedText = ''
     }
+    /**
+     * Optional method to process tool input without executing context retrieval
+     */
+    public processResponse?(): void
+    /**
+     * Retrieves context items from the tool's source.
+     *
+     * Abstract method to be implemented by subclasses for executing the tool.
+     */
+    public abstract execute(span: Span): Promise<ContextItem[]>
 }
 
 /**
  * Tool for executing CLI commands and retrieving their output.
  */
-export class CliTool extends CodyTool {
+class CliTool extends CodyTool {
     constructor() {
         super({
             tags: {
@@ -88,7 +100,7 @@ export class CliTool extends CodyTool {
                 subTag: ps`cmd`,
             },
             prompt: {
-                instruction: ps`To see the output of shell commands`,
+                instruction: ps`To see the output of shell commands - NEVER execute unsafe commands`,
                 placeholder: ps`SHELL_COMMAND`,
                 example: ps`Details about GitHub issue#1234: \`<TOOLCLI><cmd>gh issue view 1234</cmd></TOOLCLI>\``,
             },
@@ -106,7 +118,7 @@ export class CliTool extends CodyTool {
 /**
  * Tool for retrieving the full content of files in the codebase.
  */
-export class FileTool extends CodyTool {
+class FileTool extends CodyTool {
     constructor() {
         super({
             tags: {
@@ -134,7 +146,7 @@ export class FileTool extends CodyTool {
 /**
  * Tool for performing searches within the codebase.
  */
-export class SearchTool extends CodyTool {
+class SearchTool extends CodyTool {
     private performedSearch = new Set<string>()
 
     constructor(private contextRetriever: Pick<ContextRetriever, 'retrieveContext'>) {
@@ -146,7 +158,7 @@ export class SearchTool extends CodyTool {
             prompt: {
                 instruction: ps`To search for context in the codebase`,
                 placeholder: ps`SEARCH_QUERY`,
-                example: ps`Find usage of "node:fetch" in my codebase: \`<TOOLSEARCH><query>node:fetch</query></TOOLSEARCH>\``,
+                example: ps`Locate the "getController" function found in an error log: \`<TOOLSEARCH><query>getController</query></TOOLSEARCH>\``,
             },
         })
     }
@@ -171,11 +183,21 @@ export class SearchTool extends CodyTool {
         const context = await this.contextRetriever.retrieveContext(
             toStructuredMentions([repo]),
             PromptString.unsafe_fromLLMResponse(query),
-            span
+            span,
+            undefined,
+            true
         )
         // Store the search query to avoid running the same query again.
         this.performedSearch.add(query)
         const maxSearchItems = 30 // Keep the latest n items and remove the rest.
+        const searchQueryItem = {
+            type: 'file',
+            content: 'Queries performed: ' + Array.from(this.performedSearch).join(', '),
+            uri: URI.file('search-history'),
+            source: ContextItemSource.Agentic,
+            title: 'TOOLCONTEXT',
+        } satisfies ContextItem
+        context.push(searchQueryItem)
         return context.slice(-maxSearchItems)
     }
 }
@@ -211,10 +233,87 @@ export class OpenCtxTool extends CodyTool {
                 )
                 results.push(...items)
             }
-            logDebug('CodyTool', `OpenCtx returned ${results.length} items`, { verbose: results })
+            logDebug(
+                'CodyTool',
+                `${this.provider.provider.meta.name} returned ${results.length} items`,
+                { verbose: { results, provider: this.provider.provider } }
+            )
         } catch {
             logDebug('CodyTool', `OpenCtx item retrieval failed for ${queries}`)
         }
         return results
+    }
+}
+
+/**
+ * Tool for storing and retrieving temporary memory.
+ */
+class MemoryTool extends CodyTool {
+    constructor() {
+        super({
+            tags: {
+                tag: ps`TOOLMEMORY`,
+                subTag: ps`store`,
+            },
+            prompt: {
+                instruction: ps`To persist information across conversations. Write whatever information about the user from the question, or whenever you are asked`,
+                placeholder: ps`SUMMARIZED_TEXT`,
+                example: ps`To add an item to memory: \`<TOOLMEMORY><store>item</store></TOOLMEMORY>\`\nTo see memory: \`<TOOLMEMORY><store>GET</store></TOOLMEMORY>\``,
+            },
+        })
+    }
+
+    private memoryOnStart = CodyChatMemory.retrieve()
+
+    public async execute(): Promise<ContextItem[]> {
+        const storedMemory = this.memoryOnStart
+        this.processResponse()
+        // Reset the memory after first retrieval to avoid duplication during loop.
+        this.memoryOnStart = undefined
+        return storedMemory ? [storedMemory] : []
+    }
+
+    public processResponse(): void {
+        const newMemories = this.parse()
+        for (const memory of newMemories) {
+            if (memory === 'FORGET') {
+                CodyChatMemory.unload()
+                return
+            }
+            if (memory === 'GET') {
+                return
+            }
+            CodyChatMemory.load(memory)
+            logDebug('Cody Memory', 'added', { verbose: memory })
+        }
+    }
+}
+
+// Define tools configuration once to avoid repetition
+const TOOL_CONFIGS = {
+    MemoryTool: { tool: MemoryTool, useContextRetriever: false },
+    SearchTool: { tool: SearchTool, useContextRetriever: true },
+    CliTool: { tool: CliTool, useContextRetriever: false },
+    FileTool: { tool: FileTool, useContextRetriever: false },
+} as const
+
+export function getDefaultCodyTools(
+    contextRetriever: Pick<ContextRetriever, 'retrieveContext'>,
+    factory: ToolFactory
+): CodyTool[] {
+    return Object.entries(TOOL_CONFIGS)
+        .map(([name]) => factory.createTool(name, contextRetriever))
+        .filter(Boolean) as CodyTool[]
+}
+
+export function registerDefaultTools(registry: ToolRegistry): void {
+    for (const [name, { tool, useContextRetriever }] of Object.entries(TOOL_CONFIGS)) {
+        registry.register({
+            name,
+            ...tool.prototype.config,
+            createInstance: useContextRetriever
+                ? (_, contextRetriever) => new tool(contextRetriever)
+                : () => new tool(),
+        })
     }
 }

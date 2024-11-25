@@ -1,7 +1,7 @@
 import { type AuthStatus, type EditModel, isDotCom } from '@sourcegraph/cody-shared'
 import type { EditIntent } from '../types'
 
-export function getOverridenModelForIntent(
+export function getOverriddenModelForIntent(
     intent: EditIntent,
     currentModel: EditModel,
     authStatus: AuthStatus
@@ -21,7 +21,7 @@ export function getOverridenModelForIntent(
             // Issue: https://github.com/sourcegraph/cody/issues/3512
             return 'anthropic/claude-3-5-sonnet-20240620'
         case 'doc':
-            // Doc is a case where we can sacrifice LLM performnace for improved latency and get comparable results.
+            // Doc is a case where we can sacrifice LLM performance for improved latency and get comparable results.
             return 'anthropic/claude-3-haiku-20240307'
         case 'test':
         case 'add':

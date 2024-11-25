@@ -115,6 +115,9 @@ export class DiagnosticsRetriever implements vscode.Disposable, ContextRetriever
         const relatedInfoList = info.relatedInformation
             ? (await this.getRelatedInformationPrompt(info.relatedInformation)).filter(isDefined)
             : []
+        if (relatedInfoList.length === 0) {
+            return errorMessage
+        }
         const relatedInfoPrompt = relatedInfoList
             .map(info => `Err (Related Information) | ${info.message}, ${info.file}, ${info.text}`)
             .join('\n')
@@ -185,6 +188,9 @@ export class DiagnosticsRetriever implements vscode.Disposable, ContextRetriever
                 document.lineAt(contextEndLine).range.end.character
             )
         )
+        if (this.contextLines === 0) {
+            return `${prevLines}\n${diagnosticText}`
+        }
         return `${prevLines}\n${diagnosticText}\n${nextLines}`
     }
 

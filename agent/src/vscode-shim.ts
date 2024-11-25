@@ -53,7 +53,7 @@ import { AgentTabGroups } from './AgentTabGroups'
 import { AgentWorkspaceConfiguration } from './AgentWorkspaceConfiguration'
 import type { Agent } from './agent'
 import { matchesGlobPatterns } from './cli/command-bench/matchesGlobPatterns'
-import type { ClientInfo, ExtensionConfiguration } from './protocol-alias'
+import type { ClientInfo, DebugMessageLogLevel, ExtensionConfiguration } from './protocol-alias'
 
 // Not using CODY_TESTING because it changes the URL endpoint we send requests
 // to and we want to send requests to sourcegraph.com because we record the HTTP
@@ -152,17 +152,20 @@ const configuration = new AgentWorkspaceConfiguration(
     () => extensionConfiguration
 )
 
-export const onDidChangeWorkspaceFolders = new EventEmitter<vscode.WorkspaceFoldersChangeEvent>()
-export const onDidChangeTextEditorSelection = new EventEmitter<vscode.TextEditorSelectionChangeEvent>() // TODO: implement this
-export const onDidChangeVisibleTextEditors = new EventEmitter<readonly vscode.TextEditor[]>()
+// Sorted alphabetically
 export const onDidChangeActiveTextEditor = new EventEmitter<vscode.TextEditor | undefined>()
 export const onDidChangeConfiguration = new EventEmitter<vscode.ConfigurationChangeEvent>()
-export const onDidOpenTextDocument = new EventEmitter<vscode.TextDocument>()
 export const onDidChangeTextDocument = new EventEmitter<vscode.TextDocumentChangeEvent>()
+export const onDidChangeTextEditorSelection = new EventEmitter<vscode.TextEditorSelectionChangeEvent>()
+export const onDidChangeVisibleTextEditors = new EventEmitter<readonly vscode.TextEditor[]>()
+export const onDidChangeWindowState = new EventEmitter<vscode.WindowState>()
+export const onDidChangeWorkspaceFolders = new EventEmitter<vscode.WorkspaceFoldersChangeEvent>()
+
 export const onDidCloseTextDocument = new EventEmitter<vscode.TextDocument>()
-export const onDidSaveTextDocument = new EventEmitter<vscode.TextDocument>()
-export const onDidRenameFiles = new EventEmitter<vscode.FileRenameEvent>()
 export const onDidDeleteFiles = new EventEmitter<vscode.FileDeleteEvent>()
+export const onDidOpenTextDocument = new EventEmitter<vscode.TextDocument>()
+export const onDidRenameFiles = new EventEmitter<vscode.FileRenameEvent>()
+export const onDidSaveTextDocument = new EventEmitter<vscode.TextDocument>()
 
 export interface WorkspaceDocuments {
     workspaceRootUri?: vscode.Uri
@@ -391,16 +394,14 @@ const _workspace: typeof vscode.workspace = {
     // https://github.com/sourcegraph/cody/issues/4136
     createFileSystemWatcher: () => emptyFileWatcher,
     getConfiguration: (section, scope): vscode.WorkspaceConfiguration => {
-        if (section !== undefined) {
-            if (scope === undefined) {
-                return configuration.withPrefix(section)
-            }
-
+        if (section) {
             // Ignore language-scoped configuration sections like
             // '[jsonc].editor.insertSpaces', fallback to global scope instead.
             if (section.startsWith('[')) {
                 return configuration
             }
+
+            return configuration.withPrefix(section)
         }
         return configuration
     },
@@ -527,32 +528,44 @@ export namespace UriString {
 }
 
 function outputChannel(name: string): vscode.LogOutputChannel {
+    function notifyAgent(level: DebugMessageLogLevel, message: string, ...args: any[]): void {
+        if (agent) {
+            const formattedMessage = args.length
+                ? String(message).replace(/{(\d+)}/g, (match, num) => args[num]?.toString() ?? match)
+                : message
+            agent.notify('debug/message', { channel: name, message: formattedMessage, level })
+        }
+    }
     return {
         name,
         append: message => {
-            if (agent) {
-                agent.notify('debug/message', { channel: name, message })
-            }
+            notifyAgent('info', message)
         },
         appendLine: message => {
-            if (agent) {
-                agent.notify('debug/message', { channel: name, message })
-            }
+            notifyAgent('trace', message)
         },
         replace: message => {
-            if (agent) {
-                agent.notify('debug/message', { channel: name, message })
-            }
+            notifyAgent('trace', message)
         },
         clear: () => {},
         show: () => {},
         hide: () => {},
         dispose: () => {},
-        trace: () => {},
-        debug: () => {},
-        info: () => {},
-        warn: () => {},
-        error: () => {},
+        trace: (message: string, ...args: any[]) => {
+            notifyAgent('trace', message, args)
+        },
+        debug: (message: string, ...args: any[]) => {
+            notifyAgent('debug', message, args)
+        },
+        info: (message: string, ...args: any[]) => {
+            notifyAgent('info', message, args)
+        },
+        warn: (message: string, ...args: any[]) => {
+            notifyAgent('warn', message, args)
+        },
+        error: (message: string, ...args: any[]) => {
+            notifyAgent('error', message, args)
+        },
         logLevel: LogLevel.Trace,
         onDidChangeLogLevel: emptyEvent(),
     }
@@ -642,7 +655,7 @@ const _window: typeof vscode.window = {
     onDidChangeTextEditorOptions: emptyEvent(),
     onDidChangeTextEditorViewColumn: emptyEvent(),
     onDidChangeVisibleNotebookEditors: emptyEvent(),
-    onDidChangeWindowState: emptyEvent(),
+    onDidChangeWindowState: onDidChangeWindowState.event,
     onDidCloseTerminal: emptyEvent(),
     onDidOpenTerminal: emptyEvent(),
     registerUriHandler: (vsceHandler: vscode.UriHandler) => {
@@ -1063,7 +1076,7 @@ export const commands = _commands as typeof vscode.commands
 const _env: Partial<typeof vscode.env> = {
     uriScheme: 'file',
     appRoot: process.cwd?.(),
-    uiKind: UIKind.Web,
+    uiKind: UIKind.Desktop,
     language: process.env.language,
     clipboard: {
         readText: () => Promise.resolve(''),

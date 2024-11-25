@@ -1,17 +1,12 @@
-import type * as vscode from 'vscode'
-
 import {
     type AuthenticatedAuthStatus,
     type CodeCompletionsParams,
     type CompletionResponseGenerator,
-    FeatureFlag,
     currentAuthStatusAuthed,
     currentResolvedConfig,
     dotcomTokenToGatewayToken,
-    featureFlagProvider,
     isDotCom,
     isDotComAuthed,
-    subscriptionDisposable,
     tokensToChars,
 } from '@sourcegraph/cody-shared'
 
@@ -24,7 +19,6 @@ import {
     MAX_RESPONSE_TOKENS,
     Provider,
     type ProviderFactoryParams,
-    type ProviderOptions,
 } from './shared/provider'
 
 export const DEEPSEEK_CODER_V2_LITE_BASE = 'deepseek-coder-v2-lite-base'
@@ -34,6 +28,7 @@ export const DEEPSEEK_CODER_V2_LITE_BASE_WINDOW_8192 = 'deepseek-coder-v2-lite-b
 export const DEEPSEEK_CODER_V2_LITE_BASE_WINDOW_16384 = 'deepseek-coder-v2-lite-base-context-16384'
 
 export const CODE_QWEN_7B_V2P5 = 'code-qwen-7b-v2p5'
+export const CODE_LLAMA_7B = 'codellama-7b'
 
 // Model identifiers can be found in https://docs.fireworks.ai/explore/ and in our internal
 // conversations
@@ -50,6 +45,7 @@ const MODEL_MAP = {
     [DEEPSEEK_CODER_V2_LITE_BASE_WINDOW_8192]: 'accounts/fireworks/models/deepseek-coder-v2-lite-base',
     [DEEPSEEK_CODER_V2_LITE_BASE_WINDOW_16384]: 'accounts/fireworks/models/deepseek-coder-v2-lite-base',
     [CODE_QWEN_7B_V2P5]: 'accounts/fireworks/models/qwen-v2p5-7b',
+    [CODE_LLAMA_7B]: 'accounts/fireworks/models/code-llama-7b',
 } as const
 
 type FireworksModel =
@@ -72,6 +68,7 @@ function getMaxContextTokens(model: FireworksModel): number {
             // compare the results
             return 2048
         case DEEPSEEK_CODER_V2_LITE_BASE:
+        case CODE_LLAMA_7B:
         case CODE_QWEN_7B_V2P5: {
             return 2048
         }
@@ -87,22 +84,6 @@ function getMaxContextTokens(model: FireworksModel): number {
 }
 
 class FireworksProvider extends Provider {
-    private disposables: vscode.Disposable[] = []
-    private isFastPathEnabled = true
-
-    constructor(public readonly options: Readonly<ProviderOptions>) {
-        super(options)
-
-        this.disposables.push(
-            subscriptionDisposable(
-                featureFlagProvider
-                    .evaluatedFeatureFlag(FeatureFlag.CodyAutocompleteTracing)
-                    .subscribe(isFastPathEnabled => {
-                        this.isFastPathEnabled = Boolean(isFastPathEnabled)
-                    })
-            )
-        )
-    }
     public getRequestParams(options: GenerateCompletionsOptions): CodeCompletionsParams {
         const { multiline, docContext, document, triggerKind, snippets } = options
         const useMultilineModel = multiline || triggerKind !== TriggerKind.Automatic
@@ -159,7 +140,7 @@ class FireworksProvider extends Provider {
                     ? config.configuration.autocompleteExperimentalFireworksOptions?.token
                     : undefined
 
-            if ((fastPathAccessToken && this.isFastPathEnabled) || localFastPathAccessToken) {
+            if (fastPathAccessToken || localFastPathAccessToken) {
                 return createFastPathClient(requestParams, abortController, {
                     isLocalInstance,
                     fireworksConfig: localFastPathAccessToken
@@ -188,13 +169,6 @@ class FireworksProvider extends Provider {
         }
 
         return customHeaders
-    }
-
-    public dispose(): void {
-        for (const disposable of this.disposables) {
-            disposable.dispose()
-        }
-        this.disposables = []
     }
 }
 

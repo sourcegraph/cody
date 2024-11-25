@@ -1,0 +1,43 @@
+{
+  "name": "@sourcegraph/cody-noxide",
+  "version": "1.0.0",
+  "description": "",
+  "main": "node/index.ts",
+  "private": "true",
+  "napi": {
+    "name": "noxide",
+    "triples": {
+      "defaults": [
+        "x86_64-apple-darwin",
+        "x86_64-unknown-linux-gnu",
+        "x86_64-unknown-linux-musl",
+        "x86_64-pc-windows-msvc"
+      ],
+      "additional": [
+        "aarch64-apple-darwin",
+        "aarch64-unknown-linux-gnu",
+        "aarch64-uknown-linux-musl",
+        "aarch64-pc-windows-msvc"
+      ],
+      "npmClient": "pnpm"
+    }
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "devDependencies": {
+    "@napi-rs/cli": "2.18.4",
+    "@types/bun": "^1.1.13"
+  },
+  "scripts": {
+    "build": "napi build --platform --js=false --dts=types.ts node",
+    "dist": "bun run ./dist.ts",
+    "test": "bun test"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  }
+}

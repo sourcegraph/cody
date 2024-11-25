@@ -29,6 +29,7 @@ import type {
     CompletionResponseWithMetaData,
 } from '@sourcegraph/cody-shared/src/inferenceClient/misc'
 
+import { ContextRankingStrategy } from '../../completions/context/completions-context-ranker'
 import { DEFAULT_VSCODE_SETTINGS } from '../../testutils/mocks'
 import type { SupportedLanguage } from '../../tree-sitter/grammars'
 import { updateParseTreeCache } from '../../tree-sitter/parse-tree-cache'
@@ -213,6 +214,7 @@ export function params(
         requestManager: new RequestManager(),
         contextMixer: new ContextMixer({
             strategyFactory: new DefaultContextStrategyFactory(Observable.of('none')),
+            contextRankingStrategy: ContextRankingStrategy.Default,
         }),
         smartThrottleService: null,
         completionIntent: getCompletionIntent({

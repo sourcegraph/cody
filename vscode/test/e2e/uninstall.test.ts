@@ -5,6 +5,8 @@ import { expectAuthenticated, focusSidebar, sidebarSignin } from './common'
 import { expect, getCodySidebar, test } from './helpers'
 
 test('uninstall extension', async ({ openVSCode }) => {
+    // This test is quite heavy so it can timeout in CI unless we grant it a longer timeout
+    test.setTimeout(60 * 1000)
     // In order to trigger the uninstall event, we need to actually install the extension
     // into the local vscode instance
     const customExtensionVSIX = path.join(process.cwd(), 'dist', 'cody.e2e.vsix')
@@ -24,7 +26,9 @@ test('uninstall extension', async ({ openVSCode }) => {
         skipLocalInstall: true,
     })
     // Allow the uninstaller to finish
-    await expect(loggedV2Events).toContainEvents(['cody.extension:uninstalled'], { timeout: 5000 })
+    await expect(loggedV2Events).toContainEvents(['cody.extension:uninstalled'], {
+        timeout: 5000,
+    })
     await app.close()
 
     // we re-install the extension, and re-open VSCode. This will trigger the
@@ -35,10 +39,18 @@ test('uninstall extension', async ({ openVSCode }) => {
     })
     page = await app.firstWindow()
 
+    // Handle the "Extensions have changed on disk, need to reload" dialog
+    const reloadButton = page.getByRole('button', { name: 'Reload window' })
+    if (await reloadButton.isVisible({ timeout: 1500 })) {
+        await reloadButton.click()
+    }
+
     // This will fail if the credentials are saved because the login screen will still be
     // visible, thus it acts as an implicit test that credentials were cleared out
     await signin(page)
-    await expect(loggedV2Events).toContainEvents(['cody.extension:reinstalled'], { timeout: 5000 })
+    await expect(loggedV2Events).toContainEvents(['cody.extension:reinstalled'], {
+        timeout: 5000,
+    })
     await app.close()
 
     // Finally, re-open the VSCode and ensure that we are still logged in

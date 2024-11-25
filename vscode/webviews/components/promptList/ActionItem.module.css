@@ -19,6 +19,17 @@
             color: inherit;
         }
     }
+
+    &[data-disabled="true"]  {
+        /*
+         In order to override internal cmdk styles for disabled item.
+         We need to have events over element to have a tooltip over the
+         element on hover/focus.
+        */
+        pointer-events: auto !important;
+        background-color: transparent;
+        cursor: not-allowed;
+    }
 }
 
 .prompt {
@@ -50,6 +61,7 @@
         min-width: 0;
         display: flex;
         gap: 0.25rem;
+        align-items: center;
     }
 
     &--name {

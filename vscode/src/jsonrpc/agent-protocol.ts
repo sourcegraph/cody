@@ -1,8 +1,6 @@
 import type * as vscode from 'vscode'
 
 import type {
-    BillingCategory,
-    BillingProduct,
     ClientCapabilities,
     CodyCommand,
     ContextFilters,
@@ -13,12 +11,7 @@ import type {
     SerializedChatTranscript,
     event,
 } from '@sourcegraph/cody-shared'
-import type {
-    KnownKeys,
-    KnownString,
-    TelemetryEventMarketingTrackingInput,
-    TelemetryEventParameters,
-} from '@sourcegraph/telemetry'
+import type { TelemetryEventMarketingTrackingInput } from '@sourcegraph/telemetry'
 
 import type { ExtensionMessage, WebviewMessage } from '../chat/protocol'
 import type { CompletionBookkeepingEvent, CompletionItemID } from '../completions/analytics-logger'
@@ -386,6 +379,8 @@ export type ClientNotifications = {
     'webview/didDisposeNative': [{ handle: string }]
 
     'secrets/didChange': [{ key: string }]
+
+    'window/didChangeFocus': [{ focused: boolean }]
 }
 
 // ================
@@ -593,7 +588,19 @@ export interface ExtensionConfiguration {
      */
     eventProperties?: EventProperties | undefined | null
 
+    /**
+     * @deprecated use 'customConfigurationJson' instead, it supports nested objects
+     */
     customConfiguration?: Record<string, any> | undefined | null
+
+    /**
+     * Custom configuration is parsed using the same rules as VSCode's WorkspaceConfiguration:
+     * https://code.visualstudio.com/api/references/vscode-api#WorkspaceConfiguration.get
+     * That means it supports dotted names - keys can be nested and are merged based on the prefix.
+     * Configuration objects from a nested settings can be obtained using dotted names.
+     * For the examples look at the `AgentWorkspaceConfiguration.test.ts`
+     */
+    customConfigurationJson?: string | undefined | null
 
     baseGlobalState?: Record<string, any> | undefined | null
 }
@@ -601,9 +608,6 @@ export interface ExtensionConfiguration {
 /**
  * TelemetryEvent is a JSON RPC format of the arguments to a typical
  * TelemetryEventRecorder implementation from '@sourcegraph/telemetry'.
- * This type is intended for use in the Agent RPC handler only - clients sending
- * events to the Agent should use 'newTelemetryEvent()' to create event objects,
- * which uses the same type constraints as '(TelemetryEventRecorder).recordEvent()'.
  * @param feature must be camelCase and '.'-delimited, e.g. 'myFeature.subFeature'.
  * Features should NOT include the client platform, e.g. 'vscode' - information
  * about the client is automatically attached to all events. Note that Cody
@@ -616,30 +620,17 @@ export interface ExtensionConfiguration {
 interface TelemetryEvent {
     feature: string
     action: string
-    parameters?:
-        | TelemetryEventParameters<{ [key: string]: number }, BillingProduct, BillingCategory>
-        | undefined
-        | null
-}
-
-/**
- * newTelemetryEvent is a constructor for TelemetryEvent that shares the same
- * type constraints as '(TelemetryEventRecorder).recordEvent()'.
- */
-export function newTelemetryEvent<
-    Feature extends string,
-    Action extends string,
-    MetadataKey extends string,
->(
-    feature: KnownString<Feature>,
-    action: KnownString<Action>,
-    parameters?: TelemetryEventParameters<
-        KnownKeys<MetadataKey, { [key in MetadataKey]: number }>,
-        BillingProduct,
-        BillingCategory
-    >
-): TelemetryEvent {
-    return { feature, action, parameters }
+    parameters: {
+        metadata?: Record<string, number> | undefined | null
+        privateMetadata?: Record<string, any> | undefined | null
+        billingMetadata?:
+            | {
+                  product: string
+                  category: string
+              }
+            | undefined
+            | null
+    }
 }
 
 /**
@@ -753,9 +744,12 @@ interface ExecuteCommandParams {
     arguments?: any[] | undefined | null
 }
 
+export type DebugMessageLogLevel = 'trace' | 'debug' | 'info' | 'warn' | 'error'
+
 export interface DebugMessage {
     channel: string
     message: string
+    level?: DebugMessageLogLevel | undefined | null
 }
 
 export interface ProgressStartParams {

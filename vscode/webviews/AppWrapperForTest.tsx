@@ -85,6 +85,7 @@ export const AppWrapperForTest: FunctionComponent<{ children: ReactNode }> = ({ 
                         commands: FIXTURE_COMMANDS,
                     }),
                     highlights: () => Observable.of([]),
+                    clientActionBroadcast: () => Observable.of(),
                     models: () =>
                         Observable.of({
                             localModels: [],
@@ -93,7 +94,7 @@ export const AppWrapperForTest: FunctionComponent<{ children: ReactNode }> = ({ 
                         } satisfies ModelsData),
                     chatModels: () => Observable.of(getMockedDotComClientModels()),
                     setChatModel: () => EMPTY,
-                    initialContext: () => Observable.of([]),
+                    defaultContext: () => Observable.of({ corpusContext: [], initialContext: [] }),
                     hydratePromptMessage: text =>
                         Observable.of(serializedPromptEditorStateFromText(text)),
                     promptsMigrationStatus: () => Observable.of({ type: 'no_migration_needed' }),

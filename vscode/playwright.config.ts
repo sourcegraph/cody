@@ -15,4 +15,5 @@ export default defineConfig({
     reporter: isCI ? [['github'], ['buildkite-test-collector/playwright/reporter']] : [['list']],
     globalSetup: require.resolve('./test/e2e/utils/setup'),
     globalTeardown: require.resolve('./test/e2e/utils/teardown'),
+    snapshotPathTemplate: '{testDir}/__snapshots__/{testFilePath}/{arg}{ext}',
 })

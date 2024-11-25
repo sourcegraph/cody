@@ -5,12 +5,15 @@ import {
     ModelTag,
     type SerializedPromptEditorState,
     type SerializedPromptEditorValue,
+    firstValueFrom,
+    skipPendingOperation,
     textContentFromSerializedLexicalNode,
 } from '@sourcegraph/cody-shared'
 import {
     PromptEditor,
     type PromptEditorRefAPI,
-    useInitialContextForChat,
+    useDefaultContextForChat,
+    useExtensionAPI,
 } from '@sourcegraph/prompt-editor'
 import clsx from 'clsx'
 import {
@@ -25,6 +28,7 @@ import {
 } from 'react'
 import type { UserAccountInfo } from '../../../../../Chat'
 import { type ClientActionListener, useClientActionListener } from '../../../../../client/clientState'
+import { promptModeToIntent } from '../../../../../prompts/PromptsTab'
 import { useTelemetryRecorder } from '../../../../../utils/telemetry'
 import { useExperimentalOneBox } from '../../../../../utils/useExperimentalOneBox'
 import styles from './HumanMessageEditor.module.css'
@@ -119,13 +123,25 @@ export const HumanMessageEditor: FunctionComponent<{
         initialIntent || (experimentalOneBoxEnabled ? undefined : 'chat')
     )
 
+    useEffect(() => {
+        // reset the input box intent when the editor is cleared
+        if (isEmptyEditorValue) {
+            setSubmitIntent(undefined)
+        }
+    }, [isEmptyEditorValue])
+
+    useEffect(() => {
+        // set the input box intent when the message is changed or a new chat is created
+        setSubmitIntent(initialIntent)
+    }, [initialIntent])
+
     const onSubmitClick = useCallback(
-        (intent?: ChatMessage['intent']) => {
-            if (submitState === 'emptyEditorValue') {
+        (intent?: ChatMessage['intent'], forceSubmit?: boolean): void => {
+            if (!forceSubmit && submitState === 'emptyEditorValue') {
                 return
             }
 
-            if (submitState === 'waitingResponseComplete') {
+            if (!forceSubmit && submitState === 'waitingResponseComplete') {
                 onStop()
                 return
             }
@@ -264,6 +280,8 @@ export const HumanMessageEditor: FunctionComponent<{
         })
     }, [telemetryRecorder.recordEvent, isFirstMessage, isSent])
 
+    const extensionAPI = useExtensionAPI()
+
     // Set up the message listener so the extension can control the input field.
     useClientActionListener(
         useCallback<ClientActionListener>(
@@ -273,6 +291,7 @@ export const HumanMessageEditor: FunctionComponent<{
                 appendTextToLastPromptEditor,
                 submitHumanInput,
                 setLastHumanInputIntent,
+                setPromptAsInput,
             }) => {
                 // Add new context to chat from the "Cody Add Selection to Cody Chat"
                 // command, etc. Only add to the last human input field.
@@ -281,65 +300,105 @@ export const HumanMessageEditor: FunctionComponent<{
                 }
 
                 const updates: Promise<unknown>[] = []
-                const awaitUpdate = () => {
-                    let resolve: (value?: unknown) => void
-                    updates.push(
-                        new Promise(r => {
-                            resolve = r
-                        })
-                    )
-
-                    return () => {
-                        resolve?.()
-                    }
-                }
 
                 if (addContextItemsToLastHumanInput && addContextItemsToLastHumanInput.length > 0) {
                     const editor = editorRef.current
                     if (editor) {
-                        editor.addMentions(addContextItemsToLastHumanInput, awaitUpdate(), 'after')
-                        editor.setFocus(true)
+                        updates.push(editor.addMentions(addContextItemsToLastHumanInput, 'after'))
+                        updates.push(editor.setFocus(true))
                     }
                 }
 
                 if (appendTextToLastPromptEditor) {
                     // Schedule append text task to the next tick to avoid collisions with
                     // initial text set (add initial mentions first then append text from prompt)
-                    const onUpdate = awaitUpdate()
-                    requestAnimationFrame(() => {
-                        if (editorRef.current) {
-                            editorRef.current.appendText(appendTextToLastPromptEditor, onUpdate)
-                        }
-                    })
+                    updates.push(
+                        new Promise<void>((resolve): void => {
+                            requestAnimationFrame(() => {
+                                if (editorRef.current) {
+                                    editorRef.current
+                                        .appendText(appendTextToLastPromptEditor)
+                                        .then(resolve)
+                                } else {
+                                    resolve()
+                                }
+                            })
+                        })
+                    )
                 }
 
                 if (editorState) {
-                    const onUpdate = awaitUpdate()
-                    requestAnimationFrame(() => {
-                        if (editorRef.current) {
-                            editorRef.current.setEditorState(editorState, onUpdate)
-                            editorRef.current.setFocus(true)
-                        }
-                    })
+                    updates.push(
+                        new Promise<void>(resolve => {
+                            requestAnimationFrame(async () => {
+                                if (editorRef.current) {
+                                    await Promise.all([
+                                        editorRef.current.setEditorState(editorState),
+                                        editorRef.current.setFocus(true),
+                                    ])
+                                }
+                                resolve()
+                            })
+                        })
+                    )
                 }
                 if (setLastHumanInputIntent) {
                     setSubmitIntent(setLastHumanInputIntent)
                 }
 
-                if (submitHumanInput) {
+                let promptIntent = undefined
+
+                if (setPromptAsInput) {
+                    // set the intent
+                    promptIntent = promptModeToIntent(setPromptAsInput.mode)
+
+                    updates.push(
+                        // biome-ignore lint/suspicious/noAsyncPromiseExecutor: <explanation>
+                        new Promise<void>(async resolve => {
+                            // get initial context
+                            const { initialContext } = await firstValueFrom(
+                                extensionAPI.defaultContext().pipe(skipPendingOperation())
+                            )
+                            // hydrate raw prompt text
+                            const promptEditorState = await firstValueFrom(
+                                extensionAPI.hydratePromptMessage(setPromptAsInput.text, initialContext)
+                            )
+
+                            // update editor state
+                            requestAnimationFrame(async () => {
+                                if (editorRef.current) {
+                                    await Promise.all([
+                                        editorRef.current.setEditorState(promptEditorState),
+                                        editorRef.current.setFocus(true),
+                                    ])
+                                }
+                                resolve()
+                            })
+                        })
+                    )
+                }
+
+                if (submitHumanInput || setPromptAsInput?.autoSubmit) {
                     Promise.all(updates).then(() =>
-                        onSubmitClick(setLastHumanInputIntent || submitIntent)
+                        onSubmitClick(promptIntent || setLastHumanInputIntent || submitIntent, true)
                     )
                 }
             },
-            [isSent, onSubmitClick, submitIntent]
+            [
+                isSent,
+                onSubmitClick,
+                submitIntent,
+                extensionAPI.hydratePromptMessage,
+                extensionAPI.defaultContext,
+            ]
         )
     )
 
     const currentChatModel = useMemo(() => models[0], [models[0]])
 
-    let initialContext = useInitialContextForChat()
+    const defaultContext = useDefaultContextForChat()
     useEffect(() => {
+        let { initialContext } = defaultContext
         if (!isSent && isFirstMessage) {
             const editor = editorRef.current
             if (editor) {
@@ -351,7 +410,7 @@ export const HumanMessageEditor: FunctionComponent<{
                 editor.setInitialContextMentions(initialContext)
             }
         }
-    }, [initialContext, isSent, isFirstMessage, currentChatModel])
+    }, [defaultContext, isSent, isFirstMessage, currentChatModel])
 
     const focusEditor = useCallback(() => editorRef.current?.setFocus(true), [])
 

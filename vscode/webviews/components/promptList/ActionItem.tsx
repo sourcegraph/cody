@@ -8,12 +8,24 @@ import {
     type PromptAction,
 } from '@sourcegraph/cody-shared'
 
+import {
+    BookOpen,
+    BookUp2,
+    FileQuestion,
+    Hammer,
+    PencilLine,
+    PencilRuler,
+    TextSearch,
+} from 'lucide-react'
+
 import { UserAvatar } from '../../components/UserAvatar'
 import { Badge } from '../../components/shadcn/ui/badge'
 import { CommandItem } from '../../components/shadcn/ui/command'
+import { Tooltip, TooltipContent, TooltipTrigger } from '../../components/shadcn/ui/tooltip'
+
 import { commandRowValue } from './utils'
 
-import { BookOpen, FileQuestion, Hammer, PencilLine, PencilRuler, TextSearch } from 'lucide-react'
+import { useConfig } from '../../utils/useConfig'
 import styles from './ActionItem.module.css'
 
 interface ActionItemProps {
@@ -24,11 +36,22 @@ interface ActionItemProps {
 
 export const ActionItem: FC<ActionItemProps> = props => {
     const { action, className, onSelect } = props
+    const { clientCapabilities } = useConfig()
+    const isEditEnabled = clientCapabilities.edit !== 'none'
+    const isActionEditLike =
+        action.actionType === 'prompt' ? action.mode !== 'CHAT' : action.mode !== 'ask'
+    const isDisabled = !isEditEnabled && isActionEditLike
 
     return (
         <CommandItem
             value={commandRowValue(action)}
+            disabled={isDisabled}
             className={clsx(className, styles.item)}
+            tooltip={
+                isDisabled
+                    ? 'Edit-like action is not supported in current read-only environment'
+                    : undefined
+            }
             onSelect={onSelect}
         >
             {action.actionType === 'prompt' ? (
@@ -49,11 +72,19 @@ const ActionPrompt: FC<ActionPromptProps> = props => {
 
     return (
         <div className={styles.prompt}>
-            <UserAvatar
-                size={22}
-                user={{ ...prompt.createdBy, endpoint: '' }}
-                className={styles.promptAvatar}
-            />
+            {prompt.createdBy && (
+                <UserAvatar
+                    size={22}
+                    user={{ ...prompt.createdBy, endpoint: '' }}
+                    className={styles.promptAvatar}
+                />
+            )}
+
+            {!prompt.createdBy && (
+                <div className={styles.promptAvatar}>
+                    <PencilRuler size={16} strokeWidth={1.5} className={styles.promptIcon} />
+                </div>
+            )}
 
             <div className={styles.promptContent}>
                 <div className={styles.promptTitle}>
@@ -62,6 +93,14 @@ const ActionPrompt: FC<ActionPromptProps> = props => {
                         <Badge variant="secondary" className="tw-text-xxs tw-mt-0.5">
                             Draft
                         </Badge>
+                    )}
+                    {prompt.recommended && (
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <BookUp2 size={12} className={styles.promptIcon} />
+                            </TooltipTrigger>
+                            <TooltipContent>This prompt was promoted by your admin</TooltipContent>
+                        </Tooltip>
                     )}
                 </div>
 

@@ -9,11 +9,15 @@ import {
     inputTextWithoutContextChipsFromPromptEditorState,
     isAbortErrorOrSocketHangUp,
 } from '@sourcegraph/cody-shared'
-import { type PromptEditorRefAPI, useExtensionAPI } from '@sourcegraph/prompt-editor'
+import {
+    type PromptEditorRefAPI,
+    useDefaultContextForChat,
+    useExtensionAPI,
+} from '@sourcegraph/prompt-editor'
 import { clsx } from 'clsx'
 import debounce from 'lodash/debounce'
 import isEqual from 'lodash/isEqual'
-import { ArrowBigUp, AtSign, Search } from 'lucide-react'
+import { Search } from 'lucide-react'
 import {
     type FC,
     type MutableRefObject,
@@ -31,7 +35,11 @@ import { getVSCodeAPI } from '../utils/VSCodeApi'
 import { useTelemetryRecorder } from '../utils/telemetry'
 import { useExperimentalOneBox } from '../utils/useExperimentalOneBox'
 import type { CodeBlockActionsProps } from './ChatMessageContent/ChatMessageContent'
-import { ContextCell } from './cells/contextCell/ContextCell'
+import {
+    ContextCell,
+    EditContextButtonChat,
+    EditContextButtonSearch,
+} from './cells/contextCell/ContextCell'
 import {
     AssistantMessageCell,
     makeHumanMessageInfo,
@@ -115,7 +123,7 @@ export const Transcript: FC<TranscriptProps> = props => {
 
     return (
         <div
-            className={clsx('tw-px-6 tw-pt-8 tw-pb-12 tw-flex tw-flex-col tw-gap-8', {
+            className={clsx('tw-px-8 tw-pt-8 tw-pb-6 tw-flex tw-flex-col tw-gap-8', {
                 'tw-flex-grow': transcript.length > 0,
             })}
         >
@@ -350,6 +358,22 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
         [onEditSubmit, telemetryRecorder, humanMessage]
     )
 
+    const { corpusContext: corpusContextItems } = useDefaultContextForChat()
+    const resubmitWithRepoContext = useCallback(async () => {
+        const editorState = humanEditorRef.current?.getSerializedValue()
+        if (editorState) {
+            const editor = humanEditorRef.current
+            if (corpusContextItems.length === 0 || !editor) {
+                return
+            }
+            await editor.addMentions(corpusContextItems, 'before', ' ')
+            const newEditorState = humanEditorRef.current?.getSerializedValue()
+            if (newEditorState) {
+                onEditSubmit(newEditorState, 'chat')
+            }
+        }
+    }, [corpusContextItems, onEditSubmit])
+
     const reSubmitWithChatIntent = useCallback(() => reSubmitWithIntent('chat'), [reSubmitWithIntent])
     const reSubmitWithSearchIntent = useCallback(
         () => reSubmitWithIntent('search'),
@@ -365,8 +389,12 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
             return
         }
         editor.filterMentions(item => item.type !== 'repository')
-        editor.addMentions(contextFiles, undefined, 'before', '\n')
+        editor.addMentions(contextFiles, 'before', '\n')
     }, [humanMessage.contextFiles])
+
+    const mentionsContainRepository = humanEditorRef.current
+        ?.getSerializedValue()
+        .contextItems.some(item => item.type === 'repository')
 
     return (
         <>
@@ -425,9 +453,13 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                     )}
                 </InfoMessage>
             )}
-            {((humanMessage.contextFiles && humanMessage.contextFiles.length > 0) ||
-                isContextLoading) && (
+            {(humanMessage.contextFiles || assistantMessage || isContextLoading) && (
                 <ContextCell
+                    resubmitWithRepoContext={
+                        corpusContextItems.length > 0 && !mentionsContainRepository && assistantMessage
+                            ? resubmitWithRepoContext
+                            : undefined
+                    }
                     key={`${humanMessage.index}-${humanMessage.intent}-context`}
                     contextItems={humanMessage.contextFiles}
                     contextAlternatives={humanMessage.contextAlternatives}
@@ -439,20 +471,10 @@ const TranscriptInteraction: FC<TranscriptInteractionProps> = memo(props => {
                     isContextLoading={isContextLoading}
                     onAddToFollowupChat={onAddToFollowupChat}
                     onManuallyEditContext={manuallyEditContext}
-                    editContextText={
-                        humanMessage.intent === 'search' ? (
-                            <>
-                                <ArrowBigUp className="-tw-mr-6 tw-py-0" />
-                                <AtSign className="-tw-mr-2 tw-py-2" />
-                                <div>Edit results as mentions</div>
-                            </>
-                        ) : (
-                            <>
-                                <ArrowBigUp className="-tw-mr-6 tw-py-0" />
-                                <AtSign className="-tw-mr-2 tw-py-2" />
-                                <div>Copy and edit as mentions</div>
-                            </>
-                        )
+                    editContextNode={
+                        humanMessage.intent === 'search'
+                            ? EditContextButtonSearch
+                            : EditContextButtonChat
                     }
                 />
             )}

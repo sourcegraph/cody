@@ -1,18 +1,147 @@
 # Changelog
 
-This is a log of all notable changes to Cody for VS Code. [Unreleased] changes are included in the nightly pre-release builds.
+This is a log of all notable changes to Cody for VS Code.
 
 ## [Unreleased]
 
 ### Added
 
-- Proxy: Support for `cody.net.proxy` settings that enable configuation a cody specific proxy server. This also supports `cody.net.proxy.path` to provide a UNIX domain socket directly. [pull/5883](https://github.com/sourcegraph/cody/pull/5883)
+### Fixed
 
 ### Changed
+
+- Chat: Update keyboard shortcuts:
+  - Removed `Shift+Ctrl+L` (previously created a new chat) due to conflict with Windows default shortcut
+  - Updated `Shift+Alt+L` to create a new chat when the focus is not in the editor. When the focus is in the editor, the behavior remains unchanged (the current selection is added to the chat context).
+
+## 1.44.0
+
+### Added
+
+### Fixed
+
+### Changed
+
+### Uncategorized
+
+- Network: CA Cert loading fixes [pull/6101](https://github.com/sourcegraph/cody/pull/6101)
+- feat(rel): add backport workflow [pull/6119](https://github.com/sourcegraph/cody/pull/6119)
+- Cody Chat: fixed missing syntax highlighting of CSharp files and load only one copy of highlight.js in the WebView build [pull/6118](https://github.com/sourcegraph/cody/pull/6118)
+- fix rendering issue on the same line for ghost text [pull/6120](https://github.com/sourcegraph/cody/pull/6120)
+- chat input: '@' -> '@ Context' toolbar button [pull/6114](https://github.com/sourcegraph/cody/pull/6114)
+- feat(edit): enable predicted outputs for gpt-4o models [pull/6116](https://github.com/sourcegraph/cody/pull/6116)
+- Edit: prep for the gpt-4o-mini edit a/b test [pull/6110](https://github.com/sourcegraph/cody/pull/6110)
+- Trigger autoedit on the cursor movements [pull/6112](https://github.com/sourcegraph/cody/pull/6112)
+- Remove old test renderer [pull/6113](https://github.com/sourcegraph/cody/pull/6113)
+- Add a command for testing auto-edit examples [pull/6108](https://github.com/sourcegraph/cody/pull/6108)
+- Chat: brought back syntax highlighting for most common languages [pull/5953](https://github.com/sourcegraph/cody/pull/5953)
+- Chat: brought back syntax highlighting for most common languages [pull/5874](https://github.com/sourcegraph/cody/pull/5874)
+- Add a command for testing auto-edit examples [pull/6108](https://github.com/sourcegraph/cody/pull/6108)
+- Fail hard on errors in input context bench CSV, remove unused column [pull/6107](https://github.com/sourcegraph/cody/pull/6107)
+- Add more detailed results to context benchmark [pull/5992](https://github.com/sourcegraph/cody/pull/5992)
+- Edit: collect more analytics data [pull/6095](https://github.com/sourcegraph/cody/pull/6095)
+- fix indentation issue [pull/6103](https://github.com/sourcegraph/cody/pull/6103)
+- Cody Web: Add support running prompts from consumer [pull/6081](https://github.com/sourcegraph/cody/pull/6081)
+- fix recent edits context source [pull/6071](https://github.com/sourcegraph/cody/pull/6071)
+- Hitesh/autoedits improvements [pull/5956](https://github.com/sourcegraph/cody/pull/5956)
+- Agent: disable the flaky edit test [pull/6093](https://github.com/sourcegraph/cody/pull/6093)
+- VS Code: point releases to `./vscode/changelog.md` [pull/6080](https://github.com/sourcegraph/cody/pull/6080)
+- Fix issue with merging configs [pull/6084](https://github.com/sourcegraph/cody/pull/6084)
+- Deep Cody: skip query rewrite for search tool [pull/6082](https://github.com/sourcegraph/cody/pull/6082)
+- chore/build: VSCode Insiders builds are manually triggered and automatically tagged [pull/6083](https://github.com/sourcegraph/cody/pull/6083)
+- Deep Cody: remove TOOL context item after review [pull/6079](https://github.com/sourcegraph/cody/pull/6079)
+
+## 1.42.0
+Hey Cody users! For those who want to track detailed technical changes, we will be updating this changelog to provide more comprehensive updates on new features, improvements, and fixes. For major releases and announcements, check out our [public changelog](https://sourcegraph.com/changelog).
+
+### Added
+
+- Autocomplete: Enabled completions preloading on cursor movement. [pull/6043](https://github.com/sourcegraph/cody/pull/6043)
+- Telemetry: Added `cody.debug.logCharacterCounters` for debugging. [pull/6057](https://github.com/sourcegraph/cody/pull/6057)
+
+### Fixed
+- Chat: This patch updates the chat keyboard shortcuts to be as follows, thereby avoiding the tendency to "double-add" a code snippet when using the `alt+L` shortcut:
+  - `Alt+L`: between chat and editor (this is unchanged)
+  - `Shift+Alt+L` (previously alt+L): add selection as context:
+  - `Shift+Ctrl+L` (previously shift+alt+L): new chat
+- Markdown files were not bundled in the VSIX leading to onboarding views not displaying or showing an error.
+- Ensured that a correct http/https agent is loaded depending on endpoint protocol and that secureConnection correclty passes CA certs via [hpagent](https://github.com/delvedor/hpagent)
+  
+### Changed
+- Networking: In addition to Node and user configured manual CA certs, we now automatically attempt to load CA certs in your system's trust store. This is done using [rustls](https://github.com/rustls/rustls) via a new [napi-rs](https://napi.rs/) library `lib/noxide`. This behaviour is enabled by default but can be diasabled by setting the `experimental.noxide.enabled` to `false` in your settings. Any issues loading the library will be logged to the usual error output channels and we will fallback to the previous behaviour. This will replace the previous method of loading system CA certs using shell commands or bundled executables such as `win-ca.exe`.
+
+### Uncategorized
+
+- Fix issue with merging configs [pull/6084](https://github.com/sourcegraph/cody/pull/6084)
+- chore/build: VSCode Insiders builds are manually triggered and automatically tagged [pull/6083](https://github.com/sourcegraph/cody/pull/6083)
+- Add Deep Cody back to model list, revert button change [pull/6077](https://github.com/sourcegraph/cody/pull/6077)
+- Fix configuration inspect method [pull/6075](https://github.com/sourcegraph/cody/pull/6075)
+- Improve Cody logging agent protocol [pull/6069](https://github.com/sourcegraph/cody/pull/6069)
+- Ensure CompletionBookkeepingEvent timestamps are not floating point [pull/6073](https://github.com/sourcegraph/cody/pull/6073)
+- VS Code: Release v1.40.2 [pull/6062](https://github.com/sourcegraph/cody/pull/6062)
+- Autocomplete: remove the extended language pool option [pull/6072](https://github.com/sourcegraph/cody/pull/6072)
+- Deep Cody: Allow toggle in UI & implement CodyChatMemory [pull/6066](https://github.com/sourcegraph/cody/pull/6066)
+- Autocomplete: add characters logger metadata to `accepted` events [pull/6068](https://github.com/sourcegraph/cody/pull/6068)
+- fix: rewrite symf query only once [pull/6070](https://github.com/sourcegraph/cody/pull/6070)
+- Run prompts migration only over local user commands [pull/6056](https://github.com/sourcegraph/cody/pull/6056)
+- Context: make error message more concise [pull/6065](https://github.com/sourcegraph/cody/pull/6065)
+- prevent double-adding selected context [pull/6059](https://github.com/sourcegraph/cody/pull/6059)
+- Fix bugs in workspace::getConfiguration vscode shim [pull/6058](https://github.com/sourcegraph/cody/pull/6058)
+- Autocomplete: deflake hot-streak tests [pull/6040](https://github.com/sourcegraph/cody/pull/6040)
+- Remove repo chip from default context (feature flagged) [pull/6034](https://github.com/sourcegraph/cody/pull/6034)
+- update insider cron schedule to MWF @ 1500 UTC [pull/6052](https://github.com/sourcegraph/cody/pull/6052)
+- VS Code: Release v1.40.1 [pull/6051](https://github.com/sourcegraph/cody/pull/6051)
+- Auth: UI conditional rendering logic [pull/6047](https://github.com/sourcegraph/cody/pull/6047)
+- Change nested configuration object handling to match VSCode behavior. [pull/6041](https://github.com/sourcegraph/cody/pull/6041)
+- Update marketplace description [pull/6046](https://github.com/sourcegraph/cody/pull/6046)
+- Fix OpenCtx include initial context integeration. [pull/6045](https://github.com/sourcegraph/cody/pull/6045)
+- Network: Fallback to CODY_NODE_TLS_REJECT_UNAUTHORIZED for cert auth [pull/6037](https://github.com/sourcegraph/cody/pull/6037)
+- Autocomplete: cleanup the fast-path a/b test [pull/6039](https://github.com/sourcegraph/cody/pull/6039)
+- fix(ci): Increase test timeout for uninstall test [pull/6038](https://github.com/sourcegraph/cody/pull/6038)
+- Fix Prompts welcome screen initial state [pull/6036](https://github.com/sourcegraph/cody/pull/6036)
+- VS Code: add characters logger metadata to chat code-gen events [pull/6019](https://github.com/sourcegraph/cody/pull/6019)
+
+## 1.40.2
+
+### Fixed
+- Agent: Fixed bugs in `workspace::getConfiguration` vscode shim [pull/6058](https://github.com/sourcegraph/cody/pull/6058)
+
+## 1.40.1
+
+### Fixed
+- Auth: Fixed UI conditional rendering logic for non VS Code clients. [pull/6047](https://github.com/sourcegraph/cody/pull/6047)
+
+## 1.40.0
+
+### Added
+
+- Proxy: Support for `cody.net.proxy` settings that enable configuation a cody specific proxy server. This also supports `cody.net.proxy.path` to provide a UNIX domain socket directly. [pull/5883](https://github.com/sourcegraph/cody/pull/5883)
 
 ### Fixed
 
 - Context Filters: fixed repo name resolution cache. [pull/5978](https://github.com/sourcegraph/cody/pull/5978)
+
+### Uncategorized
+
+- Fix support for merging multiple nested objects [pull/6029](https://github.com/sourcegraph/cody/pull/6029)
+- Change tip text to reflect new key command [pull/6030](https://github.com/sourcegraph/cody/pull/6030)
+- add code llama model for the a/b test [pull/6022](https://github.com/sourcegraph/cody/pull/6022)
+- Add new custom configuration field which supports dotted names [pull/6027](https://github.com/sourcegraph/cody/pull/6027)
+- Add shortcut for recently used prompts [pull/6016](https://github.com/sourcegraph/cody/pull/6016)
+- Use simplified token counting method in case of the big files [pull/6014](https://github.com/sourcegraph/cody/pull/6014)
+- fix: Change chat input placeholder text [pull/6011](https://github.com/sourcegraph/cody/pull/6011)
+- Reduce padding of container around search input. [pull/5778](https://github.com/sourcegraph/cody/pull/5778)
+- VS Code: add characters logger stats to `fixup.apply:succeeded` events [pull/6009](https://github.com/sourcegraph/cody/pull/6009)
+- Don't select first prompt by default [pull/6015](https://github.com/sourcegraph/cody/pull/6015)
+- fix(chat): Hide insert and new file buttons if there is no `edit` capability [pull/6018](https://github.com/sourcegraph/cody/pull/6018)
+- bump openctx to incorporate HTTP provider invocation [pull/6010](https://github.com/sourcegraph/cody/pull/6010)
+- Promisify PromptEditorRefAPI [pull/6006](https://github.com/sourcegraph/cody/pull/6006)
+
+## 1.38.3
+
+### Fixed
+
+- Autocomplete: Fix the feature flag used for the fast-path A/B test. [pull/5998](https://github.com/sourcegraph/cody/pull/5998)
 
 ## 1.38.2
 

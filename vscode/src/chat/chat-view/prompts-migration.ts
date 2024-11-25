@@ -3,11 +3,8 @@ import {
     type CodyCommandMode,
     type PromptsMigrationStatus,
     checkVersion,
-    combineLatest,
     distinctUntilChanged,
-    firstResultFromOperation,
     graphqlClient,
-    isError,
     isErrorLike,
     isValidVersion,
     shareReplay,
@@ -26,10 +23,9 @@ import {
     PROMPT_CURRENT_SELECTION_PLACEHOLDER,
     PROMPT_EDITOR_OPEN_TABS_PLACEHOLDER,
 } from '../../prompts/prompt-hydration'
-import { remoteReposForAllWorkspaceFolders } from '../../repository/remoteRepos'
 import { localStorage } from '../../services/LocalStorageProvider'
 
-const PROMPTS_MIGRATION_KEY = 'CODY_PROMPTS_MIGRATION'
+const PROMPTS_MIGRATION_KEY = 'CODY_PROMPTS_COMMANDS_MIGRATION'
 const PROMPTS_MIGRATION_STATUS = new Subject<PromptsMigrationStatus>()
 const PROMPTS_MIGRATION_RESULT = PROMPTS_MIGRATION_STATUS.pipe(
     startWith({ type: 'initial_migration' } as PromptsMigrationStatus),
@@ -38,16 +34,9 @@ const PROMPTS_MIGRATION_RESULT = PROMPTS_MIGRATION_STATUS.pipe(
 )
 
 export function getPromptsMigrationInfo(): Observable<PromptsMigrationStatus> {
-    return combineLatest(
-        siteVersion.pipe(skipPendingOperation()),
-        remoteReposForAllWorkspaceFolders.pipe(skipPendingOperation())
-    ).pipe(
-        switchMap(([siteVersion, repositories]) => {
-            if (isError(repositories)) {
-                throw repositories
-            }
-
-            const repository = repositories[0]
+    return siteVersion.pipe(
+        skipPendingOperation(),
+        switchMap(siteVersion => {
             const isPromptSupportVersion =
                 siteVersion &&
                 checkVersion({
@@ -56,11 +45,14 @@ export function getPromptsMigrationInfo(): Observable<PromptsMigrationStatus> {
                 })
 
             // Don't run migration if you're already run this before (ignore any other new commands
-            // that had been added after first migration run
-            const migrationMap = localStorage.get<Record<string, boolean>>(PROMPTS_MIGRATION_KEY) ?? {}
-            const commands = getCodyCommandList().filter(command => command.type !== 'default')
+            // that had been added after first migration run)
+            const hasBeenRunBefore = localStorage.get<boolean>(PROMPTS_MIGRATION_KEY) ?? false
 
-            if (!isPromptSupportVersion || !repository || migrationMap[repoKey(repository?.id ?? '')]) {
+            // Migrate only user-level commands (repository level commands will be migrated via
+            // instance prompts migration wizard see https://github.com/sourcegraph/sourcegraph/pull/1449)
+            const commands = getCodyCommandList().filter(command => command.type === 'user')
+
+            if (!isPromptSupportVersion || hasBeenRunBefore) {
                 return Observable.of<PromptsMigrationStatus>({
                     type: 'migration_skip',
                 })
@@ -79,7 +71,7 @@ export function getPromptsMigrationInfo(): Observable<PromptsMigrationStatus> {
 
 export async function startPromptsMigration(): Promise<void> {
     // Custom commands list
-    const commands = getCodyCommandList().filter(command => command.type !== 'default')
+    const commands = getCodyCommandList().filter(command => command.type === 'user')
     const currentUser = await graphqlClient.isCurrentUserSideAdmin()
     const isValidInstance = await isValidVersion({ minimumVersion: '5.9.0' })
 
@@ -104,7 +96,11 @@ export async function startPromptsMigration(): Promise<void> {
         const commandKey = command.key ?? command.slashCommand
 
         try {
-            const prompts = await graphqlClient.queryPrompts(commandKey.replace(/\s+/g, '-'))
+            const prompts = await graphqlClient.queryPrompts({
+                query: commandKey.replace(/\s+/g, '-'),
+                first: undefined,
+                recommendedOnly: false,
+            })
 
             // If there is no prompts associated with the command include this
             // command to migration
@@ -126,7 +122,7 @@ export async function startPromptsMigration(): Promise<void> {
     for (let index = 0; index < commandsToMigrate.length; index++) {
         try {
             const command = commandsToMigrate[index]
-            const commandKey = (command.key ?? command.slashCommand).replace(/\s+/g, '-')
+            const commandKey = getPromptNameFromCommandKey(command.key ?? command.slashCommand)
             const promptText = generatePromptTextFromCommand(command)
 
             // skip commands with no prompt text
@@ -134,7 +130,7 @@ export async function startPromptsMigration(): Promise<void> {
                 continue
             }
 
-            const newPrompt = await graphqlClient.createPrompt({
+            await graphqlClient.createPrompt({
                 owner: currentUser.id,
                 name: commandKey,
                 description: `Migrated from command ${commandKey}`,
@@ -144,12 +140,6 @@ export async function startPromptsMigration(): Promise<void> {
                 mode: commandModeToPromptMode(command.mode),
                 visibility: 'SECRET',
             })
-
-            // Change prompt visibility to PUBLIC if it's admin performing migration
-            // TODO: [VK] Remove it and use visibility field in prompt creation (current API limitation)
-            if (currentUser.siteAdmin) {
-                await graphqlClient.transferPromptOwnership({ id: newPrompt.id, visibility: 'PUBLIC' })
-            }
 
             PROMPTS_MIGRATION_STATUS.next({
                 type: 'migrating',
@@ -166,15 +156,7 @@ export async function startPromptsMigration(): Promise<void> {
         }
     }
 
-    const repositories = (await firstResultFromOperation(remoteReposForAllWorkspaceFolders)) ?? []
-    const repository = repositories[0]
-
-    if (repository) {
-        const migrationMap = localStorage.get<Record<string, boolean>>(PROMPTS_MIGRATION_KEY) ?? {}
-        migrationMap[repoKey(repository.id)] = true
-        await localStorage.set(PROMPTS_MIGRATION_KEY, migrationMap)
-    }
-
+    await localStorage.set<boolean>(PROMPTS_MIGRATION_KEY, true)
     PROMPTS_MIGRATION_STATUS.next({ type: 'migration_success' })
 }
 
@@ -221,6 +203,26 @@ function generatePromptTextFromCommand(command: CodyCommand): string {
     return promptText
 }
 
-function repoKey(repositoryId: string) {
-    return `prefix12-${repositoryId}`
+/**
+ * Generates proper prompt name according to prompt name validation constraints
+ * Commands key since it's just a JSON field can have any arbitrary sequence of
+ * symbols, prompt name has specific constraints.
+ *
+ * Try/catch expression need here in order to be fail-safe since some older browsers
+ * don't support negative lookahead regexp.
+ *
+ * Example Hello123.wo--rld test@@special will become Hello123-wo-rld-test-special
+ */
+function getPromptNameFromCommandKey(commandKey: string): string {
+    try {
+        return (
+            commandKey
+                // Replace all non supported symbols with single "-" symbol
+                .replaceAll(/(?![\dA-Za-z](?:[\dA-Za-z]|[.-](?=[\dA-Za-z]))*-?)[^-]/g, '-')
+                .replaceAll(/-{2,}/g, '-')
+        )
+    } catch {
+        // Fallback on simple whitespace replacements
+        return commandKey.replaceAll(/\s+/g, '-')
+    }
 }

@@ -77,16 +77,23 @@ describe('RecentViewPortRetriever', () => {
             }
             return Promise.resolve(documentList[0])
         }) as any)
-        retriever = new RecentViewPortRetriever({
-            maxTrackedViewPorts: 2,
-            maxRetrievedViewPorts: 2,
-            window: {
-                onDidChangeTextEditorVisibleRanges: (_onDidChangeTextEditorVisibleRanges: any) => {
-                    onDidChangeTextEditorVisibleRanges = _onDidChangeTextEditorVisibleRanges
+
+        retriever = new RecentViewPortRetriever(
+            {
+                maxTrackedViewPorts: 2,
+                maxRetrievedViewPorts: 2,
+            },
+            {
+                onDidChangeTextEditorVisibleRanges(listener) {
+                    onDidChangeTextEditorVisibleRanges = listener
                     return { dispose: () => {} }
                 },
-            },
-        })
+                onDidChangeActiveTextEditor() {
+                    return { dispose: () => {} }
+                },
+                activeTextEditor: undefined,
+            }
+        )
     })
 
     afterEach(() => {

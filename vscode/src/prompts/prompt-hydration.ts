@@ -27,6 +27,7 @@ import { getCurrentRepositoryInfo } from './utils'
 
 export const PROMPT_CURRENT_FILE_PLACEHOLDER: string = 'cody://current-file'
 export const PROMPT_CURRENT_SELECTION_PLACEHOLDER: string = 'cody://selection'
+export const PROMPT_CURRENT_SELECTION_OLD_PLACEHOLDER: string = 'cody://current-selection'
 export const PROMPT_CURRENT_DIRECTORY_PLACEHOLDER: string = 'cody://current-dir'
 export const PROMPT_EDITOR_OPEN_TABS_PLACEHOLDER: string = 'cody://tabs'
 export const PROMPT_CURRENT_REPOSITORY_PLACEHOLDER: string = 'cody://repository'
@@ -46,6 +47,7 @@ type PromptHydrationModifier = (
 const PROMPT_HYDRATION_MODIFIERS: Record<string, PromptHydrationModifier> = {
     [PROMPT_CURRENT_FILE_PLACEHOLDER]: hydrateWithCurrentFile,
     [PROMPT_CURRENT_SELECTION_PLACEHOLDER]: hydrateWithCurrentSelection,
+    [PROMPT_CURRENT_SELECTION_OLD_PLACEHOLDER]: hydrateWithCurrentSelectionLegacy,
     [PROMPT_CURRENT_DIRECTORY_PLACEHOLDER]: hydrateWithCurrentDirectory,
     [PROMPT_EDITOR_OPEN_TABS_PLACEHOLDER]: hydrateWithOpenTabs,
     [PROMPT_CURRENT_REPOSITORY_PLACEHOLDER]: hydrateWithCurrentWorkspace,
@@ -62,7 +64,7 @@ export async function hydratePromptText(
     const promptText = PromptString.unsafe_fromUserQuery(promptRawText)
 
     // Match any general cody mentions in the prompt text with cody:// prefix
-    const promptTextMentionMatches = promptText.toString().match(/cody:\/\/\S+/gm) ?? []
+    const promptTextMentionMatches = promptText.toString().match(/cody:\/\/[^\s.,;:]+/gm) ?? []
 
     let hydratedPromptText = promptText
     const contextItemsMap = new Map<string, ContextItem>()
@@ -126,6 +128,29 @@ async function hydrateWithCurrentSelection(
     return [
         promptText.replaceAll(
             PROMPT_CURRENT_SELECTION_PLACEHOLDER,
+            selectedCodePromptWithExtraFiles(currentSelection, [])
+        ),
+        [currentSelection],
+    ]
+}
+
+async function hydrateWithCurrentSelectionLegacy(
+    promptText: PromptString,
+    initialContext: PromptHydrationInitialContext
+): Promise<[PromptString, ContextItem[]]> {
+    // Check if initial context already contains current file with selection (Cody Web case)
+    const initialContextFile = initialContext.find(item => item.type === 'file' && item.range)
+
+    const currentSelection = initialContextFile ?? (await getSelectionOrFileContext())[0]
+
+    // TODO (vk): Add support for error notification if prompt hydration fails
+    if (!currentSelection) {
+        return [promptText, []]
+    }
+
+    return [
+        promptText.replaceAll(
+            PROMPT_CURRENT_SELECTION_OLD_PLACEHOLDER,
             selectedCodePromptWithExtraFiles(currentSelection, [])
         ),
         [currentSelection],

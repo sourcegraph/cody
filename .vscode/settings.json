@@ -33,13 +33,14 @@
   "[css]": {
     "editor.defaultFormatter": "stylelint.vscode-stylelint"
   },
-  "[javascript]": {
-    "editor.defaultFormatter": "vscode.typescript-language-features"
+  "[rust]": {
+    "editor.defaultFormatter": "rust-lang.rust-analyzer"
   },
   "[typescript]": {
     "editor.defaultFormatter": "biomejs.biome"
   },
   "[typescriptreact]": {
     "editor.defaultFormatter": "biomejs.biome"
-  }
+  },
+  "rust-analyzer.procMacro.ignored": { "napi-derive": ["napi"] }
 }

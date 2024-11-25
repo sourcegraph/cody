@@ -225,7 +225,7 @@ export class MockServer {
             const events = req.body as TelemetryEventInput[];
             for (const event of events) {
                 void logTestingData(JSON.stringify(event));
-                loggedV2Events.push(`${event.feature}:${event.action}`);
+                loggedV2Events.push({...event, testId: `${event.feature}:${event.action}`});
             }
             res.status(200);
         });
@@ -639,7 +639,7 @@ export function sendTestInfo(testName: string, testID: string, testRunID: string
 }
 
 // Events recorded using the new event recorders
-export let loggedV2Events: string[] = [];
+export let loggedV2Events: (TelemetryEventInput & { testId: `${TelemetryEventInput['feature']}:${TelemetryEventInput['action']}` })[] = [];
 
 export function resetLoggedEvents(): void {
    loggedV2Events = [];

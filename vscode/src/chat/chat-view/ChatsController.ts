@@ -7,6 +7,7 @@ import {
     type ChatClient,
     DEFAULT_EVENT_SOURCE,
     type Guardrails,
+    type PromptMode,
     authStatus,
     currentAuthStatus,
     currentAuthStatusAuthed,
@@ -100,6 +101,26 @@ export class ChatsController implements vscode.Disposable {
             await this.getOrCreateEditorChatController(chatID, panel.title)
             panel.dispose()
         }
+    }
+
+    public async executePrompt({
+        text,
+        mode,
+        autoSubmit,
+    }: { text: string; mode: PromptMode; autoSubmit: boolean }): Promise<void> {
+        await vscode.commands.executeCommand('cody.chat.new')
+
+        const webviewPanelOrView =
+            this.panel.webviewPanelOrView || (await this.panel.createWebviewViewOrPanel())
+
+        setTimeout(
+            () =>
+                webviewPanelOrView.webview.postMessage({
+                    type: 'clientAction',
+                    setPromptAsInput: { text, mode, autoSubmit },
+                }),
+            1000
+        )
     }
 
     public registerViewsAndCommands() {
@@ -206,6 +227,9 @@ export class ChatsController implements vscode.Disposable {
             vscode.commands.registerCommand(CODY_PASSTHROUGH_VSCODE_OPEN_COMMAND_ID, (...args) =>
                 this.passthroughVsCodeOpen(...args)
             ),
+            vscode.commands.registerCommand('cody.show.lastUsedActions', async () => {
+                this.panel.clientBroadcast.next({ type: 'open-recently-prompts' })
+            }),
 
             // Mention selection/file commands
             vscode.commands.registerCommand('cody.mention.selection', uri =>
@@ -222,7 +246,15 @@ export class ChatsController implements vscode.Disposable {
             ),
             vscode.commands.registerCommand(
                 'cody.command.insertCodeToCursor',
-                (args: { text: string }) => handleCodeFromInsertAtCursor(args.text)
+                (args: { text: string }) => {
+                    const text =
+                        // Used in E2E tests where OS-native buttons dropdown is inaccessible.
+                        process.env.CODY_TESTING === 'true'
+                            ? 'cody.command.insertCodeToCursor:cody_testing'
+                            : args.text
+
+                    return handleCodeFromInsertAtCursor(text)
+                }
             ),
             vscode.commands.registerCommand(
                 'cody.command.insertCodeToNewFile',

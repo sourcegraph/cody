@@ -131,13 +131,17 @@ export const ChatMessageContent: React.FunctionComponent<ChatMessageContentProps
                         config,
                         codeBlockName,
                         copyButtonOnSubmit,
-                        insertButtonOnSubmit,
+                        config.config.hasEditCapability ? insertButtonOnSubmit : undefined,
                         smartApplyInterceptor,
                         smartApplyId,
                         smartApplyState
                     )
                 } else {
-                    buttons = createButtons(preText, copyButtonOnSubmit, insertButtonOnSubmit)
+                    buttons = createButtons(
+                        preText,
+                        copyButtonOnSubmit,
+                        config.config.hasEditCapability ? insertButtonOnSubmit : undefined
+                    )
                 }
 
                 const metadataContainer = document.createElement('div')

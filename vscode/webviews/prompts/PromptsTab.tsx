@@ -5,21 +5,21 @@ import { PromptList } from '../components/promptList/PromptList'
 import { View } from '../tabs/types'
 import { getVSCodeAPI } from '../utils/VSCodeApi'
 
-import { firstValueFrom } from '@sourcegraph/cody-shared'
+import { CodyIDE } from '@sourcegraph/cody-shared'
 import type { PromptMode } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
-import { useExtensionAPI } from '@sourcegraph/prompt-editor'
 import { PromptMigrationWidget } from '../components/promptsMigration/PromptsMigration'
 import styles from './PromptsTab.module.css'
 
 export const PromptsTab: React.FC<{
+    IDE: CodyIDE
     setView: (view: View) => void
-    isUnifiedPromptsEnabled?: boolean
-}> = ({ setView, isUnifiedPromptsEnabled }) => {
+    isPromptsV2Enabled?: boolean
+}> = ({ IDE, setView, isPromptsV2Enabled }) => {
     const runAction = useActionSelect()
 
     return (
         <div className="tw-overflow-auto tw-h-full tw-flex tw-flex-col tw-gap-6">
-            {isUnifiedPromptsEnabled && (
+            {isPromptsV2Enabled && IDE !== CodyIDE.Web && (
                 <PromptMigrationWidget dismissible={false} className={styles.promptMigrationWidget} />
             )}
             <PromptList
@@ -27,8 +27,9 @@ export const PromptsTab: React.FC<{
                 showCommandOrigins={true}
                 paddingLevels="big"
                 telemetryLocation="PromptsTab"
-                showPromptLibraryUnsupportedMessage={true}
+                recommendedOnly={false}
                 showOnlyPromptInsertableCommands={false}
+                showPromptLibraryUnsupportedMessage={true}
                 onSelect={item => runAction(item, setView)}
                 className={styles.promptsContainer}
                 inputClassName={styles.promptsInput}
@@ -37,7 +38,7 @@ export const PromptsTab: React.FC<{
     )
 }
 
-const promptModeToIntent = (mode?: PromptMode): ChatMessage['intent'] => {
+export const promptModeToIntent = (mode?: PromptMode | undefined | null): ChatMessage['intent'] => {
     switch (mode) {
         case 'CHAT':
             return 'chat'
@@ -52,7 +53,6 @@ const promptModeToIntent = (mode?: PromptMode): ChatMessage['intent'] => {
 
 export function useActionSelect() {
     const dispatchClientAction = useClientActionDispatcher()
-    const extensionAPI = useExtensionAPI()
     const [lastUsedActions = {}, persistValue] = useLocalStorage<Record<string, number>>(
         'last-used-actions-v2',
         {}
@@ -69,15 +69,14 @@ export function useActionSelect() {
         switch (action.actionType) {
             case 'prompt': {
                 setView(View.Chat)
-                const promptEditorState = await firstValueFrom(
-                    extensionAPI.hydratePromptMessage(action.definition.text)
-                )
 
                 dispatchClientAction(
                     {
-                        editorState: promptEditorState,
-                        setLastHumanInputIntent: promptModeToIntent(action.mode),
-                        submitHumanInput: action.autoSubmit,
+                        setPromptAsInput: {
+                            text: action.definition.text,
+                            mode: action.mode,
+                            autoSubmit: action.autoSubmit || false,
+                        },
                     },
                     // Buffer because PromptEditor is not guaranteed to be mounted after the `setView`
                     // call above, and it needs to be mounted to receive the action.
