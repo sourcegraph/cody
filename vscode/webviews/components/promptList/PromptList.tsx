@@ -117,6 +117,10 @@ export const PromptList: FC<PromptListProps> = props => {
                 privateMetadata: {
                     nameWithOwner: isPrompt ? action.nameWithOwner : undefined,
                 },
+                billingMetadata: {
+                    product: 'cody',
+                    category: 'billable',
+                },
             })
 
             const prompts = result.actions.filter(action => action.actionType === 'prompt')
@@ -136,6 +140,10 @@ export const PromptList: FC<PromptListProps> = props => {
                 privateMetadata: {
                     query: debouncedQuery,
                     usePromptsQueryErrorMessage: error?.message,
+                },
+                billingMetadata: {
+                    product: 'cody',
+                    category: 'billable',
                 },
             })
 
