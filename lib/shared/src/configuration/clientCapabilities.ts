@@ -89,6 +89,7 @@ export interface ClientCapabilities {
     ignore?: 'none' | 'enabled' | undefined | null
     codeActions?: 'none' | 'enabled' | undefined | null
     disabledMentionsProviders?: ContextMentionProviderID[] | undefined | null
+    accountSwitchingInWebview?: 'none' | 'enabled' | undefined | null
 
     /**
      * When 'object-encoded' (default), the server uses the `webview/postMessage` method to send

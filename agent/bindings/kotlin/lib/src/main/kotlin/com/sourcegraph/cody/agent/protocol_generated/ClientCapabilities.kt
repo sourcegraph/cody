@@ -18,6 +18,7 @@ data class ClientCapabilities(
   val ignore: IgnoreEnum? = null, // Oneof: none, enabled
   val codeActions: CodeActionsEnum? = null, // Oneof: none, enabled
   val disabledMentionsProviders: List<ContextMentionProviderID>? = null,
+  val accountSwitchingInWebview: AccountSwitchingInWebviewEnum? = null, // Oneof: none, enabled
   val webviewMessages: WebviewMessagesEnum? = null, // Oneof: object-encoded, string-encoded
   val globalState: GlobalStateEnum? = null, // Oneof: stateless, server-managed, client-managed
   val secrets: SecretsEnum? = null, // Oneof: stateless, client-managed
@@ -85,6 +86,11 @@ data class ClientCapabilities(
   }
 
   enum class CodeActionsEnum {
+    @SerializedName("none") None,
+    @SerializedName("enabled") Enabled,
+  }
+
+  enum class AccountSwitchingInWebviewEnum {
     @SerializedName("none") None,
     @SerializedName("enabled") Enabled,
   }
