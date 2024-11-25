@@ -56,7 +56,7 @@ export const AccountTab: React.FC<AccountTabProps> = ({
             <Button
                 key={text}
                 variant="secondary"
-                className="tw-w-full tw-bg-popover"
+                className="tw-w-full tw-bg-popover tw-border tw-border-border"
                 onClick={onClick}
                 title={text}
             >
@@ -117,7 +117,6 @@ export const AccountTab: React.FC<AccountTabProps> = ({
                         {clientCapabilities.accountSwitchingInWebview === 'enabled' && accountSwitcher}
                     </div>
                 </div>
-                {isLoading && <div>LOADING...</div>}
                 <div className="tw-grid tw-grid-cols-5 tw-gap-4">
                     <div>Plan:</div>
                     <div className="tw-text-muted-foreground tw-col-span-4">
@@ -131,12 +130,10 @@ export const AccountTab: React.FC<AccountTabProps> = ({
                     </div>
                 </div>
             </div>
-            <div className="tw-w-full">
-                {isDotComUser && !isProUser && upgradeButton}
-                {isDotComUser && manageAccountButton}
-                {settingButton}
-                {signOutButton}
-            </div>
+            {isDotComUser && !isProUser && upgradeButton}
+            {isDotComUser && manageAccountButton}
+            {settingButton}
+            {signOutButton}
         </div>
     )
 

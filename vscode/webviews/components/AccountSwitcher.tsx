@@ -224,7 +224,10 @@ export const AccountSwitcher: React.FC<AccountSwitcherProps> = ({
     return (
         <Popover open={isOpen} onOpenChange={onOpenChange}>
             <PopoverTrigger asChild onClick={() => setIsOpen(!isOpen)}>
-                <Button variant="secondary" className="tw-w-full tw-bg-popover">
+                <Button
+                    variant="secondary"
+                    className="tw-w-full tw-bg-popover tw-border tw-border-border"
+                >
                     <span className="tw-flex tw-justify-between tw-items-center">
                         Switch Account
                         <span className="tw-w-4">
