@@ -861,7 +861,21 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 )
 
                 signal.throwIfAborted()
-                this.streamAssistantResponse(requestID, prompt, model, span, firstTokenSpan, signal)
+                function fetchAdditionalContext(contextType: string, contextContent: string): void {
+                    logDebug(
+                        'fetchAdditionalContext',
+                        `Context Type: ${contextType}, Context Content: ${contextContent}`
+                    )
+                }
+                this.streamAssistantResponse(
+                    requestID,
+                    prompt,
+                    model,
+                    span,
+                    firstTokenSpan,
+                    signal,
+                    fetchAdditionalContext
+                )
             } catch (error) {
                 if (isAbortErrorOrSocketHangUp(error as Error)) {
                     return
@@ -1363,7 +1377,8 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         model: ChatModel,
         span: Span,
         firstTokenSpan: Span,
-        abortSignal: AbortSignal
+        abortSignal: AbortSignal,
+        fetchAdditionalContext: (contextType: string, contextContent: string) => void
     ): void {
         logDebug('ChatController', 'streamAssistantResponse', {
             verbose: { requestID, prompt },
@@ -1392,6 +1407,8 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                         text: PromptString.unsafe_fromLLMResponse(content),
                         model,
                     })
+                    logDebug('content', content)
+                    fetchAdditionalContext('search', 'content')
                 },
                 close: content => {
                     measureFirstToken()
@@ -1469,6 +1486,14 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
             for await (const message of stream) {
                 switch (message.type) {
                     case 'change': {
+                        // If message.text starts with ::, then update
+                        // typewriter with "Deep Cody decided to fetch additional context."
+                        logDebug('message.text', message.text)
+                        if (message.text.startsWith('::')) {
+                            typewriter.update('Deep Cody decided to fetch additional context.')
+                            typewriter.stop()
+                            break
+                        }
                         typewriter.update(message.text)
                         break
                     }
