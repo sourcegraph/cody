@@ -45,6 +45,7 @@ export class AutoeditWithShortTermDiffStrategy implements RecentEditsRetrieverDi
         )
         const gitDiff = computeDiffWithLineNumbers(uri, oldContent, newContent, numContextLines)
         const diffHunk = {
+            uri,
             diff: gitDiff,
             latestEditTimestamp: Math.max(...changes.map(c => c.timestamp)),
         }

@@ -30,6 +30,7 @@ export class UnifiedDiffStrategy implements RecentEditsRetrieverDiffStrategy {
         const diff = this.getDiffForUnifiedStrategy(input, newContent)
         return [
             {
+                uri: input.uri,
                 diff,
                 latestEditTimestamp: Math.max(...input.changes.map(c => c.timestamp)),
             },
