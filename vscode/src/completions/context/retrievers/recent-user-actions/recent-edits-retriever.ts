@@ -1,15 +1,14 @@
 import { type PromptString, contextFiltersProvider } from '@sourcegraph/cody-shared'
 import type { AutocompleteContextSnippet } from '@sourcegraph/cody-shared'
+import type { AutocompleteContextSnippetMetadataFields } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
 import { getPositionAfterTextInsertion } from '../../../text-processing/utils'
 import type { ContextRetriever, ContextRetrieverOptions } from '../../../types'
 import { RetrieverIdentifier, type ShouldUseContextParams, shouldBeUsedAsContext } from '../../utils'
-import {
-    type DiffHunk,
-    type RecentEditsRetrieverDiffStrategy,
-    type RecentEditsRetrieverDiffStrategyIdentifier,
-    type TextDocumentChange,
-    createDiffStrategy,
+import type {
+    DiffHunk,
+    RecentEditsRetrieverDiffStrategy,
+    TextDocumentChange,
 } from './recent-edits-diff-helpers/recent-edits-diff-strategy'
 import { applyTextDocumentChanges } from './recent-edits-diff-helpers/utils'
 
@@ -20,9 +19,13 @@ interface TrackedDocument {
     changes: TextDocumentChange[]
 }
 
+interface DiffHunkWithStrategy extends DiffHunk {
+    diffStrategyMetadata: AutocompleteContextSnippetMetadataFields
+}
+
 export interface RecentEditsRetrieverOptions {
     maxAgeMs: number
-    diffStrategyIdentifier: RecentEditsRetrieverDiffStrategyIdentifier
+    diffStrategyList: RecentEditsRetrieverDiffStrategy[]
 }
 
 interface DiffAcrossDocuments {
@@ -30,6 +33,7 @@ interface DiffAcrossDocuments {
     uri: vscode.Uri
     languageId: string
     latestChangeTimestamp: number
+    diffStrategyMetadata: AutocompleteContextSnippetMetadataFields
 }
 
 export class RecentEditsRetriever implements vscode.Disposable, ContextRetriever {
@@ -39,8 +43,7 @@ export class RecentEditsRetriever implements vscode.Disposable, ContextRetriever
     public identifier = RetrieverIdentifier.RecentEditsRetriever
     private disposables: vscode.Disposable[] = []
     private readonly maxAgeMs: number
-    private readonly diffStrategyIdentifier: RecentEditsRetrieverDiffStrategyIdentifier
-    private readonly diffStrategy: RecentEditsRetrieverDiffStrategy
+    private readonly diffStrategyList: RecentEditsRetrieverDiffStrategy[]
 
     constructor(
         options: RecentEditsRetrieverOptions,
@@ -50,8 +53,7 @@ export class RecentEditsRetriever implements vscode.Disposable, ContextRetriever
         > = vscode.workspace
     ) {
         this.maxAgeMs = options.maxAgeMs
-        this.diffStrategyIdentifier = options.diffStrategyIdentifier
-        this.diffStrategy = createDiffStrategy(this.diffStrategyIdentifier)
+        this.diffStrategyList = options.diffStrategyList
 
         // Track the already open documents when editor was opened
         for (const document of vscode.workspace.textDocuments) {
@@ -72,6 +74,7 @@ export class RecentEditsRetriever implements vscode.Disposable, ContextRetriever
         diffs.sort((a, b) => b.latestChangeTimestamp - a.latestChangeTimestamp)
 
         const autocompleteContextSnippets = []
+        const retrievalTriggerTime = Date.now()
         for (const diff of diffs) {
             const content = diff.diff.toString()
             const autocompleteSnippet = {
@@ -79,8 +82,8 @@ export class RecentEditsRetriever implements vscode.Disposable, ContextRetriever
                 identifier: this.identifier,
                 content,
                 metadata: {
-                    timeSinceActionMs: Date.now() - diff.latestChangeTimestamp,
-                    recentEditsRetrieverDiffStrategy: this.diffStrategyIdentifier,
+                    timeSinceActionMs: retrievalTriggerTime - diff.latestChangeTimestamp,
+                    retrieverMetadata: diff.diffStrategyMetadata,
                 },
             } satisfies Omit<AutocompleteContextSnippet, 'startLine' | 'endLine'>
             autocompleteContextSnippets.push(autocompleteSnippet)
@@ -95,13 +98,17 @@ export class RecentEditsRetriever implements vscode.Disposable, ContextRetriever
         const diffs: DiffAcrossDocuments[] = []
         const diffPromises = Array.from(this.trackedDocuments.entries()).map(
             async ([uri, trackedDocument]) => {
+                if (trackedDocument.changes.length === 0) {
+                    return null
+                }
                 const diffHunks = await this.getDiff(vscode.Uri.parse(uri))
-                if (diffHunks && trackedDocument.changes.length > 0) {
+                if (diffHunks) {
                     return diffHunks.map(diffHunk => ({
                         diff: diffHunk.diff,
                         uri: trackedDocument.uri,
                         languageId: trackedDocument.languageId,
                         latestChangeTimestamp: diffHunk.latestEditTimestamp,
+                        diffStrategyMetadata: diffHunk.diffStrategyMetadata,
                     }))
                 }
                 return null
@@ -132,7 +139,7 @@ export class RecentEditsRetriever implements vscode.Disposable, ContextRetriever
         return filterCandidateDiffs
     }
 
-    public async getDiff(uri: vscode.Uri): Promise<DiffHunk[] | null> {
+    public async getDiff(uri: vscode.Uri): Promise<DiffHunkWithStrategy[] | null> {
         if (await contextFiltersProvider.isUriIgnored(uri)) {
             return null
         }
@@ -141,11 +148,20 @@ export class RecentEditsRetriever implements vscode.Disposable, ContextRetriever
         if (!trackedDocument) {
             return null
         }
-        const diffHunks = this.diffStrategy.getDiffHunks({
-            uri: trackedDocument.uri,
-            oldContent: trackedDocument.content,
-            changes: trackedDocument.changes,
-        })
+        const diffHunks: DiffHunkWithStrategy[] = []
+        for (const diffStrategy of this.diffStrategyList) {
+            const hunks = diffStrategy.getDiffHunks({
+                uri: trackedDocument.uri,
+                oldContent: trackedDocument.content,
+                changes: trackedDocument.changes,
+            })
+            for (const hunk of hunks) {
+                diffHunks.push({
+                    ...hunk,
+                    diffStrategyMetadata: diffStrategy.getDiffStrategyMetadata(),
+                })
+            }
+        }
         return diffHunks
     }
 

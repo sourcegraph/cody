@@ -1,48 +1,34 @@
 import type { PromptString } from '@sourcegraph/cody-shared'
+import type { AutocompleteContextSnippetMetadataFields } from '@sourcegraph/cody-shared'
 import type * as vscode from 'vscode'
-import { AutoeditWithShortTermDiffStrategy } from './auotedit-short-term-diff'
-import { UnifiedDiffStrategy } from './unified-diff'
 
 /**
- * Identifiers for the different diff strategies.
+ * Defines a strategy for processing and transforming low-level document changes into meaningful diff hunks
+ * that can be used as context for LLM consumption.
+ *
+ * This interface serves as a contract for different diff calculation strategies that can:
+ * 1. Take raw VSCode document changes and convert them into more coherent, higher-level edits
+ * 2. Group related changes together (like consecutive character typing or related line edits)
+ *
+ * Common implementations include:
+ * - Unified diff strategy: Combines all changes into a single coherent diff.
+ * - Line-level diff strategy: Groups character-by-character changes into logical line-based units.
+ *   The logical unit is `TextDocumentChangeGroup` interface in `utils.ts`.
  */
-export enum RecentEditsRetrieverDiffStrategyIdentifier {
-    /**
-     * Unified diff strategy that shows changes in a single patch.
-     */
-    UnifiedDiff = 'unified-diff',
-    /**
-     * Unified diff strategy that shows changes in a single patch.
-     */
-    UnifiedDiffWithLineNumbers = 'unified-diff-with-line-numbers',
-    /**
-     * Diff Strategy to use a seperate short term diff used by `auto-edits`.
-     */
-    AutoeditWithShortTermDiff = 'autoedit-with-short-term-diff',
-}
-
-/**
- * Creates a new instance of a diff strategy based on the provided identifier.
- * @param identifier The identifier of the diff strategy to create.
- * @returns A new instance of the diff strategy.
- */
-export function createDiffStrategy(
-    identifier: RecentEditsRetrieverDiffStrategyIdentifier
-): RecentEditsRetrieverDiffStrategy {
-    switch (identifier) {
-        case RecentEditsRetrieverDiffStrategyIdentifier.UnifiedDiff:
-            return new UnifiedDiffStrategy({ addLineNumbers: false })
-        case RecentEditsRetrieverDiffStrategyIdentifier.UnifiedDiffWithLineNumbers:
-            return new UnifiedDiffStrategy({ addLineNumbers: true })
-        case RecentEditsRetrieverDiffStrategyIdentifier.AutoeditWithShortTermDiff:
-            return new AutoeditWithShortTermDiffStrategy()
-        default:
-            throw new Error(`Unknown diff strategy identifier: ${identifier}`)
-    }
-}
-
 export interface RecentEditsRetrieverDiffStrategy {
+    /**
+     * Processes raw document changes and generates meaningful diff hunks.
+     * @param input Contains the document URI, original content, and array of individual changes
+     * @returns Array of DiffHunk objects representing logical groups of changes
+     */
     getDiffHunks(input: DiffCalculationInput): DiffHunk[]
+
+    /**
+     * Provides metadata about the diff strategy for analysis and logging purposes.
+     * Used to track strategy performance and tune parameters offline.
+     * @returns Metadata fields about the strategy's behavior and configuration
+     */
+    getDiffStrategyMetadata(): AutocompleteContextSnippetMetadataFields
 }
 
 export interface TextDocumentChange {
