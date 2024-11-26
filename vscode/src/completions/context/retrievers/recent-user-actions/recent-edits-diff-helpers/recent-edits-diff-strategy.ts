@@ -1,6 +1,6 @@
 import type { PromptString } from '@sourcegraph/cody-shared'
+import type { AutocompleteContextSnippetMetadataFields } from '@sourcegraph/cody-shared'
 import type * as vscode from 'vscode'
-import type { AutocompleteContextSnippetMetadataFields } from '../../../../../../../lib/shared/src/completions/types'
 
 /**
  * Defines a strategy for processing and transforming low-level document changes into meaningful diff hunks

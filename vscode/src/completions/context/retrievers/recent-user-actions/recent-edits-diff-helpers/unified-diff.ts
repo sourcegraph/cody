@@ -1,5 +1,5 @@
 import { PromptString } from '@sourcegraph/cody-shared'
-import type { AutocompleteContextSnippetMetadataFields } from '../../../../../../../lib/shared/src/completions/types'
+import type { AutocompleteContextSnippetMetadataFields } from '@sourcegraph/cody-shared'
 import type {
     DiffCalculationInput,
     DiffHunk,

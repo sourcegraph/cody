@@ -1,7 +1,7 @@
 import { type PromptString, contextFiltersProvider } from '@sourcegraph/cody-shared'
 import type { AutocompleteContextSnippet } from '@sourcegraph/cody-shared'
+import type { AutocompleteContextSnippetMetadataFields } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
-import type { AutocompleteContextSnippetMetadataFields } from '../../../../../../lib/shared/src/completions/types'
 import { getPositionAfterTextInsertion } from '../../../text-processing/utils'
 import type { ContextRetriever, ContextRetrieverOptions } from '../../../types'
 import { RetrieverIdentifier, type ShouldUseContextParams, shouldBeUsedAsContext } from '../../utils'
@@ -83,7 +83,7 @@ export class RecentEditsRetriever implements vscode.Disposable, ContextRetriever
                 content,
                 metadata: {
                     timeSinceActionMs: retrievalTriggerTime - diff.latestChangeTimestamp,
-                    diffStrategyMetadata: diff.diffStrategyMetadata,
+                    strategyMetadata: diff.diffStrategyMetadata,
                 },
             } satisfies Omit<AutocompleteContextSnippet, 'startLine' | 'endLine'>
             autocompleteContextSnippets.push(autocompleteSnippet)

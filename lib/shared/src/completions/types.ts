@@ -13,7 +13,7 @@ interface AutocompleteContextSnippetMetadata {
      * Additional metadata fields that can be used to store arbitrary key-value pairs.
      * The values can be either numbers or strings.
      */
-    diffStrategyMetadata?: AutocompleteContextSnippetMetadataFields
+    strategyMetadata?: AutocompleteContextSnippetMetadataFields
 }
 
 export interface AutocompleteFileContextSnippet {

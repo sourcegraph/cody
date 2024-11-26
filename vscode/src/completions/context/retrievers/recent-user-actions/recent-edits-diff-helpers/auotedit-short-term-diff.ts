@@ -1,5 +1,5 @@
+import type { AutocompleteContextSnippetMetadataFields } from '@sourcegraph/cody-shared'
 import type * as vscode from 'vscode'
-import type { AutocompleteContextSnippetMetadataFields } from '../../../../../../../lib/shared/src/completions/types'
 import type {
     DiffCalculationInput,
     DiffHunk,
