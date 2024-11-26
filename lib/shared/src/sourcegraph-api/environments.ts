@@ -4,7 +4,7 @@ import type { AuthStatus } from '../auth/types'
 import { cenv } from '../configuration/environment'
 
 // the default ('https://sourcegraph.com') value.
-export const DOTCOM_URL = new URL(cenv.CODY_OVERRIDE_DOTCOM_URL || 'https://sourcegraph.com/')
+export const DOTCOM_URL = new URL(cenv.CODY_OVERRIDE_DOTCOM_URL || 'http://sourcegraph.com/')
 
 // 🚨 SECURITY: This is used as a check for logging chatTranscript for dotcom users only, be extremely careful if modifying this function
 export function isDotCom(authStatus: Pick<AuthStatus, 'endpoint'> | undefined): boolean
@@ -21,7 +21,7 @@ export function isDotCom(arg: Pick<AuthStatus, 'endpoint'> | undefined | string)
     }
 }
 
-export const S2_URL = new URL('https://sourcegraph.sourcegraph.com/')
+export const S2_URL = new URL('http://sourcegraph.sourcegraph.com/')
 
 // 🚨 SECURITY: This is used as a check for logging chatTranscript for S2 users only, be extremely careful if modifying this function
 export function isS2(authStatus: Pick<AuthStatus, 'endpoint'> | undefined): boolean

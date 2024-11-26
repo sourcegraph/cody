@@ -30,4 +30,4 @@ export SRC_DOTCOM_PRO_RATE_LIMIT_ACCESS_TOKEN="$(gcloud secrets versions access 
 export SRC_ACCESS_TOKEN_FREE_USER_WITH_RATE_LIMIT="$(gcloud secrets versions access latest --secret CODY_FREE_RATE_LIMITED_ACCESS_TOKEN --project cody-agent-tokens --quiet)"
 
 # Tests run against dotcom by default.
-export SRC_ENDPOINT=https://sourcegraph.com
+export SRC_ENDPOINT=http://sourcegraph.com
