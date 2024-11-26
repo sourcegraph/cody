@@ -178,6 +178,8 @@ object ConfigUtil {
 
   @JvmStatic fun isCodyDebugEnabled(): Boolean = CodyApplicationSettings.instance.isCodyDebugEnabled
 
+  @JvmStatic fun isDevMode(): Boolean = System.getProperty("cody-agent.is-dev-mode") == "true"
+
   @JvmStatic
   fun isCodyUIHintsEnabled(): Boolean = CodyApplicationSettings.instance.isCodyUIHintsEnabled
 

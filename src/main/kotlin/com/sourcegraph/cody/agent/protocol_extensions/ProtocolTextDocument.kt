@@ -15,6 +15,7 @@ import com.sourcegraph.cody.agent.protocol_generated.ProtocolTextDocument
 import com.sourcegraph.cody.agent.protocol_generated.ProtocolTextDocumentContentChangeEvent
 import com.sourcegraph.cody.agent.protocol_generated.Range
 import com.sourcegraph.cody.agent.protocol_generated.TestingParams
+import com.sourcegraph.config.ConfigUtil
 import java.awt.Point
 import java.nio.file.FileSystems
 import java.util.Locale
@@ -28,17 +29,18 @@ object ProtocolTextDocumentExt {
       selection: Range? = null,
       selectedText: String? = null
   ): TestingParams? {
-    if (!TestingParamsExt.doIncludeTestingParam) {
-      return null
+    if (ConfigUtil.isDevMode()) {
+      return TestingParams(
+          selectedText = selectedText,
+          sourceOfTruthDocument =
+              ProtocolTextDocument(
+                  uri = uri,
+                  content = content,
+                  selection = selection,
+              ))
     }
-    return TestingParams(
-        selectedText = selectedText,
-        sourceOfTruthDocument =
-            ProtocolTextDocument(
-                uri = uri,
-                content = content,
-                selection = selection,
-            ))
+
+    return null
   }
 
   @RequiresEdt

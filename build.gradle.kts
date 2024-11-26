@@ -476,8 +476,7 @@ tasks {
               "${layout.buildDirectory.asFile.get()}/sourcegraph/cody-agent-trace.json",
           "cody-agent.directory" to buildCodyDir.parent,
           "sourcegraph.verbose-logging" to "true",
-          "cody-agent.panic-when-out-of-sync" to
-              (System.getProperty("cody-agent.panic-when-out-of-sync") ?: "true"),
+          "cody-agent.is-dev-mode" to (System.getProperty("cody-agent.is-dev-mode") ?: "true"),
           "cody-agent.fullDocumentSyncEnabled" to
               (System.getProperty("cody-agent.fullDocumentSyncEnabled") ?: "false"),
           "cody.autocomplete.enableFormatting" to

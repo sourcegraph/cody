@@ -31,8 +31,12 @@ class CodyConsole(project: Project) {
         logger.info(messageText)
       }
 
-      if (ConfigUtil.isCodyDebugEnabled()) {
-        toolWindow?.contentManager?.getReady(this)?.doWhenDone { toolWindow.show() }
+      if (ConfigUtil.isCodyDebugEnabled() && ConfigUtil.isDevMode()) {
+        toolWindow?.contentManager?.getReady(this)?.doWhenDone {
+          if (!toolWindow.isVisible) {
+            toolWindow.show()
+          }
+        }
       }
     }
   }
