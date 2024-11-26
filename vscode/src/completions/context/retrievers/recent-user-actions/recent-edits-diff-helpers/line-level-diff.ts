@@ -1,5 +1,5 @@
+import type { AutocompleteContextSnippetMetadataFields } from '@sourcegraph/cody-shared'
 import type * as vscode from 'vscode'
-import type { AutocompleteContextSnippetMetadataFields } from '../../../../../../../lib/shared/src/completions/types'
 import type {
     DiffCalculationInput,
     DiffHunk,
@@ -21,6 +21,19 @@ export interface LineLevelStrategyOptions {
     minShortTermTimeMs: number
 }
 
+/**
+ * Strategy for computing diffs that maintains granular edit history while offering configurable handling of long-term changes.
+ *
+ * Key features:
+ * - Separates changes into short-term (recent) and long-term (older) groups based on time and event count thresholds
+ * - Provides two strategies for handling long-term changes:
+ *   - 'unified-diff': Combines all long-term changes into a single consolidated diff per file
+ *   - 'lines-based': Groups non-overlapping long-term changes while preserving their individual granularity
+ * - Preserves full edit history for short-term changes
+ * - Allows configurable context lines around each change
+ *
+ * @param options Configuration options including context lines, combination strategy, and thresholds
+ */
 export class LineLevelDiffStrategy implements RecentEditsRetrieverDiffStrategy {
     constructor(private readonly options: LineLevelStrategyOptions) {}
 

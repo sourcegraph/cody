@@ -32,6 +32,8 @@ export class ContextRetrieverDataCollection implements vscode.Disposable {
     private gitMetadataInstance = GitHubDotComRepoMetadata.getInstance()
 
     private readonly retrieverConfigs: RetrieverConfig[] = [
+        // Recent edits can be very granual at line level, so the individual changes can be very small but there can lots of changes.
+        // So, we avoid the limit for recent edits, but the size is handled by the token limits.
         { identifier: RetrieverIdentifier.RecentEditsRetriever },
         { identifier: RetrieverIdentifier.DiagnosticsRetriever, maxSnippets: 15 },
         { identifier: RetrieverIdentifier.RecentViewPortRetriever, maxSnippets: 10 },
