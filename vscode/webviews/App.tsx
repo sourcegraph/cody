@@ -172,6 +172,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                         vscodeAPI={vscodeAPI}
                         codyIDE={config.clientCapabilities.agentIDE}
                         endpoints={config.config.endpointHistory ?? []}
+                        authStatus={config.authStatus}
                     />
                 </div>
             ) : (
