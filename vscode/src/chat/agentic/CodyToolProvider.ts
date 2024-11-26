@@ -1,4 +1,12 @@
-import { authStatus, firstValueFrom, isDefined, ps } from '@sourcegraph/cody-shared'
+import {
+    FeatureFlag,
+    authStatus,
+    featureFlagProvider,
+    firstValueFrom,
+    isDefined,
+    ps,
+    storeLastValue,
+} from '@sourcegraph/cody-shared'
 import { getOpenCtxProviders } from '../../context/openctx'
 import type { ContextRetriever } from '../chat-view/ContextRetriever'
 import {
@@ -28,6 +36,10 @@ export class CodyToolProvider {
         this.initializeOpenCtxTools()
     }
 
+    private useShellContext = storeLastValue(
+        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.DeepCodyShellContext)
+    )
+
     public static instance(
         contextRetriever: Pick<ContextRetriever, 'retrieveContext'>
     ): CodyToolProvider {
@@ -39,7 +51,11 @@ export class CodyToolProvider {
     }
 
     public async getTools(): Promise<CodyTool[]> {
-        const defaultTools = getDefaultCodyTools(this.contextRetriever, this.toolFactory)
+        const defaultTools = getDefaultCodyTools(
+            !!this.useShellContext?.value.last,
+            this.contextRetriever,
+            this.toolFactory
+        )
         return [...defaultTools, ...this.openCtxTools]
     }
 

@@ -298,10 +298,12 @@ const TOOL_CONFIGS = {
 } as const
 
 export function getDefaultCodyTools(
+    useShellContext: boolean,
     contextRetriever: Pick<ContextRetriever, 'retrieveContext'>,
     factory: ToolFactory
 ): CodyTool[] {
     return Object.entries(TOOL_CONFIGS)
+        .filter(([name]) => name !== 'CliTool' || useShellContext)
         .map(([name]) => factory.createTool(name, contextRetriever))
         .filter(Boolean) as CodyTool[]
 }
