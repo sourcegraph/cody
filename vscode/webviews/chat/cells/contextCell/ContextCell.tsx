@@ -158,7 +158,7 @@ export const ContextCell: FunctionComponent<{
 
         // Text for top header text
         const headerText: { main: string; sub?: string } = {
-            main: isContextLoading ? (isDeepCodyEnabled ? 'Thinking' : 'Fetching context') : 'Context',
+            main: isContextLoading ? 'Fetching context' : 'Context',
             sub: isContextLoading
                 ? isDeepCodyEnabled
                     ? 'Retrieving context…'

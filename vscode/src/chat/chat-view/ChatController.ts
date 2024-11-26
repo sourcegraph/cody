@@ -531,6 +531,10 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.CodyExperimentalOneBox)
     )
 
+    private featureDeepCodyShellContext = storeLastValue(
+        featureFlagProvider.evaluatedFeatureFlag(FeatureFlag.DeepCodyShellContext)
+    )
+
     private async getConfigForWebview(): Promise<ConfigurationSubsetForWebview & LocalEnv> {
         const { configuration, auth } = await currentResolvedConfig()
         const sidebarViewOnly = this.extensionClient.capabilities?.webviewNativeConfig?.view === 'single'
@@ -839,7 +843,7 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 const agenticContext = await new DeepCodyAgent(
                     this.chatBuilder,
                     this.chatClient,
-                    await this.toolProvider.getTools(),
+                    await this.toolProvider.getTools(!!this.featureDeepCodyShellContext.value.last),
                     corpusContext
                 ).getContext(span, signal)
                 corpusContext.push(...agenticContext)
