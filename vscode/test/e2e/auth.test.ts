@@ -18,7 +18,7 @@ test.extend<ExpectedV2Events>({
         'cody.interactiveTutorial:attemptingStart',
         'cody.experiment.interactiveTutorial:enrolled',
     ],
-})('requires a valid auth token and allows logouts', async ({ page, sidebar, nap }) => {
+})('requires a valid auth token and allows logouts', async ({ page, sidebar }) => {
     await expect(page.getByText('Authentication failed.')).not.toBeVisible()
     await sidebar?.getByRole('button', { name: 'Sign In to Your Enterprise Instance' }).click()
     await page.getByRole('option', { name: 'Sign In with URL and Access Token' }).click()
