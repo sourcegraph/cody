@@ -177,9 +177,6 @@ export class ClientConfigSingleton {
             .then(clientConfig => {
                 signal?.throwIfAborted()
                 logDebug('ClientConfigSingleton', 'refreshed', JSON.stringify(clientConfig))
-                // TODO: delete this once backend API is implemented
-                // For testing purpose, ensure userShouldUseEnterprise is always true
-                clientConfig.userShouldUseEnterprise = true
                 return clientConfig
             })
             .catch(e => {
