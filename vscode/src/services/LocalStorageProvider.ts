@@ -246,24 +246,18 @@ class LocalStorage implements LocalStorageForModelPreferences {
     }
 
     public getGitHubRepoAccessibility(): RepoAccessibilityData[] {
-        const accessibilityValues =
-            this.get<{ repoName: string; isPublic: boolean; timestamp: number }[] | null>(
-                this.GIT_REPO_ACCESSIBILITY_KEY
-            ) ?? []
-        const repoData: RepoAccessibilityData[] = []
-        for (const value of accessibilityValues) {
-            const currentTime = Date.now()
-            const timeDifference = currentTime - value.timestamp
-            // If the time difference is greater than 24 hours, skip this value
-            if (timeDifference > 24 * 60 * 60 * 1000) {
-                continue
-            }
-            repoData.push({
-                repoName: value.repoName,
-                isPublic: value.isPublic,
-            })
+        type RepoAccessibilityValue = {
+            repoName: string
+            isPublic: boolean
+            timestamp: number
         }
-        return repoData
+
+        const ONE_DAY_IN_MS = 24 * 60 * 60 * 1000
+        const currentTime = Date.now()
+
+        return (this.get<RepoAccessibilityValue[]>(this.GIT_REPO_ACCESSIBILITY_KEY) ?? [])
+            .filter(({ timestamp }) => currentTime - timestamp <= ONE_DAY_IN_MS)
+            .map(({ repoName, isPublic }) => ({ repoName, isPublic }))
     }
 
     public async removeChatHistory(authStatus: AuthenticatedAuthStatus): Promise<void> {

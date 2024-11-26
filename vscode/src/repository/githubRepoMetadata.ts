@@ -30,7 +30,7 @@ export class GitHubDotComRepoMetadata {
     // This class is used to get the metadata from the gitApi.
     private static instance: GitHubDotComRepoMetadata | null = null
     // Store a copy of the latest local storage data for comparison with the current cache.
-    private latestLocalStorageData: RepoAccessibilityData[] = []
+    private lastLocalStorageData: RepoAccessibilityData[] = []
     // Last time when the local storage was updated.
     private lastLocalStorageUpdateTime: number | null = null
     // Since the local storage update can be expansive, we add a minimum time between updates.
@@ -45,9 +45,9 @@ export class GitHubDotComRepoMetadata {
 
     public populateCacheFromLocalStorage(): void {
         this.cache.clear()
-        this.latestLocalStorageData = localStorage.getGitHubRepoAccessibility()
-        for (const data of this.latestLocalStorageData) {
-            this.cache.set(data.repoName, { repoName: data.repoName, isPublic: data.isPublic })
+        this.lastLocalStorageData = localStorage.getGitHubRepoAccessibility()
+        for (const data of this.lastLocalStorageData) {
+            this.cache.set(data.repoName, data)
         }
     }
 
@@ -161,7 +161,7 @@ export class GitHubDotComRepoMetadata {
         }
         if (this.shouldUpdateCachedDataToLocalStorage(repoAccessibilityData)) {
             // Updates the updated cache values to local storage
-            this.latestLocalStorageData = repoAccessibilityData
+            this.lastLocalStorageData = repoAccessibilityData
             this.lastLocalStorageUpdateTime = Date.now()
             localStorage.setGitHubRepoAccessibility(repoAccessibilityData)
         }
@@ -177,11 +177,11 @@ export class GitHubDotComRepoMetadata {
             return false
         }
 
-        if (repoAccessibilityData.length !== this.latestLocalStorageData.length) {
+        if (repoAccessibilityData.length !== this.lastLocalStorageData.length) {
             return true
         }
         const latestRepoMap = new Map(
-            this.latestLocalStorageData.map(repo => [repo.repoName, repo.isPublic])
+            this.lastLocalStorageData.map(repo => [repo.repoName, repo.isPublic])
         )
         for (const { repoName, isPublic } of repoAccessibilityData) {
             if (latestRepoMap.get(repoName) !== isPublic) {
