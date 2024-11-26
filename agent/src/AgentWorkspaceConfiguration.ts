@@ -67,6 +67,9 @@ export class AgentWorkspaceConfiguration implements vscode.WorkspaceConfiguratio
             editor: {
                 insertSpaces: true,
             },
+            search: {
+                useIgnoreFiles: true,
+            },
             cody: {
                 advanced: {
                     agent: {
