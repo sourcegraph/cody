@@ -83,7 +83,7 @@ export class RecentEditsRetriever implements vscode.Disposable, ContextRetriever
                 content,
                 metadata: {
                     timeSinceActionMs: retrievalTriggerTime - diff.latestChangeTimestamp,
-                    strategyMetadata: diff.diffStrategyMetadata,
+                    retrieverMetadata: diff.diffStrategyMetadata,
                 },
             } satisfies Omit<AutocompleteContextSnippet, 'startLine' | 'endLine'>
             autocompleteContextSnippets.push(autocompleteSnippet)
