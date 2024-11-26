@@ -5,7 +5,7 @@ import { type AuthMethod, isSourcegraphToken } from '../src/chat/protocol'
 import signInLogoGitHub from './sign-in-logo-github.svg'
 import signInLogoGitLab from './sign-in-logo-gitlab.svg'
 import signInLogoGoogle from './sign-in-logo-google.svg'
-import { type VSCodeWrapper, getVSCodeAPI } from './utils/VSCodeApi'
+import type { VSCodeWrapper } from './utils/VSCodeApi'
 
 import { ArrowLeftIcon, ArrowRightIcon, ChevronsUpDownIcon, LogInIcon } from 'lucide-react'
 import { useCallback, useState } from 'react'
@@ -28,52 +28,60 @@ export const AuthPage: React.FunctionComponent<React.PropsWithoutRef<LoginProps>
     return (
         <div className="tw-flex tw-flex-col tw-w-full tw-h-full tw-p-10 tw-items-center">
             <div className="tw-w-full tw-max-w-md tw-flex-1 tw-px-6 tw-flex-col tw-items-center tw-gap-8">
-                <div className="tw-w-full tw-flex tw-justify-center tw-align-middle tw-my-8">
-                    <LogInIcon className="tw-border-2 tw-w-auto tw-h-auto tw-p-4 tw-border-muted-foreground tw-rounded-md" />
+                <div className="tw-w-full tw-flex tw-justify-start tw-mt-8 tw-mb-10">
+                    <LogInIcon className="tw-border tw-w-auto tw-h-auto tw-p-4 tw-border-muted-foreground tw-rounded-md" />
                     <div className="tw-ml-4">
                         <div className="tw-font-semibold tw-text-lg">Sign in to Sourcegraph</div>
                         <div className="tw-text-muted-foreground tw-text-sm">Let's get started</div>
                     </div>
                 </div>
                 {isEnterpriseSignin ? (
-                    <section className="tw-bg-sidebar-background tw-text-sidebar-foreground tw-rounded-lg tw-w-full tw-max-w-md">
-                        <Button
-                            onClick={() => setIsEnterpriseSignin(false)}
-                            className="tw-flex tw-justify-between tw-my-8"
-                            variant="ghost"
-                        >
-                            <ArrowLeftIcon size={16} />
-                            <span className="tw-ml-3">Back</span>
-                        </Button>
-                        <ClientSignInForm authStatus={authStatus} vscodeAPI={vscodeAPI} />
+                    <section className="tw-bg-sidebar-background tw-text-sidebar-foreground tw-w-full tw-max-w-md">
+                        <div className="tw-font-semibold tw-text-md tw-my-4 tw-text-muted-foreground">
+                            <Button
+                                onClick={() => setIsEnterpriseSignin(false)}
+                                className="tw-flex tw-justify-between"
+                                variant="ghost"
+                            >
+                                <ArrowLeftIcon className="tw-mr-3" size={16} />
+                                Back
+                            </Button>
+                            <ClientSignInForm
+                                authStatus={authStatus}
+                                vscodeAPI={vscodeAPI}
+                                className="tw-mt-8"
+                            />
+                        </div>
                     </section>
                 ) : (
                     <div>
-                        <section className="tw-bg-sidebar-background tw-text-sidebar-foreground tw-rounded-lg tw-w-full tw-max-w-md">
-                            <h2 className="tw-font-semibold tw-text-lg tw-my-4">
+                        <section className="tw-bg-sidebar-background tw-text-sidebar-foreground tw-w-full tw-max-w-md tw-mt-8">
+                            <div className="tw-font-semibold tw-text-md tw-my-4 tw-text-muted-foreground">
                                 Teams <span className="tw-font-normal">or</span> Enterprise
-                            </h2>
+                            </div>
                             <div className="tw-flex tw-flex-col tw-gap-6 tw-w-full">
                                 <Button
                                     onClick={() => setIsEnterpriseSignin(true)}
                                     className="tw-flex tw-justify-between"
+                                    variant="secondary"
                                 >
                                     <div className="tw-w-full tw-max-w-md tw-flex">
                                         <img
                                             src={signInLogoSourcegraph}
                                             alt="Sourcegraph logo"
-                                            className="tw-w-[16px]"
+                                            className="tw-w-[16px] tw-mr-3"
                                         />
-                                        <span className="tw-ml-3">Continue with a URL</span>
+                                        <span>Continue with </span>
+                                        <span className="tw-font-semibold">a URL</span>
                                     </div>
                                     <ArrowRightIcon size={16} />
                                 </Button>
                             </div>
                         </section>
-                        <section className="tw-bg-sidebar-background tw-text-sidebar-foreground tw-rounded-lg tw-w-full tw-max-w-md tw-mt-8">
-                            <h2 className="tw-font-semibold tw-text-lg tw-my-4">
+                        <section className="tw-bg-sidebar-background tw-text-sidebar-foreground tw-w-full tw-max-w-md tw-mt-8">
+                            <div className="tw-font-semibold tw-text-md tw-my-4 tw-text-muted-foreground">
                                 Free <span className="tw-font-normal">or</span> Pro
-                            </h2>
+                            </div>
                             <div className="tw-flex tw-flex-col tw-gap-6 tw-w-full">
                                 {uiKindIsWeb ? (
                                     <WebLogin
@@ -84,7 +92,7 @@ export const AuthPage: React.FunctionComponent<React.PropsWithoutRef<LoginProps>
                                 ) : (
                                     <div className="tw-flex tw-flex-col tw-gap-6 tw-w-full">
                                         <Button
-                                            variant="default"
+                                            variant="secondary"
                                             onClick={() => {
                                                 telemetryRecorder.recordEvent(
                                                     'cody.webview.auth',
@@ -97,13 +105,17 @@ export const AuthPage: React.FunctionComponent<React.PropsWithoutRef<LoginProps>
                                                 <img
                                                     src={signInLogoGitHub}
                                                     alt="GitHub logo"
-                                                    className="tw-w-[16px]"
+                                                    className="tw-w-[16px] tw-mr-3"
                                                 />
-                                                <span className="tw-ml-3">Continue with GitHub</span>
+                                                <span>
+                                                    Continue with{' '}
+                                                    <span className="tw-font-semibold">GitHub</span>
+                                                </span>
                                             </div>
                                             <ArrowRightIcon size={16} />
                                         </Button>
                                         <Button
+                                            variant="secondary"
                                             onClick={() => {
                                                 telemetryRecorder.recordEvent(
                                                     'cody.webview.auth',
@@ -116,13 +128,17 @@ export const AuthPage: React.FunctionComponent<React.PropsWithoutRef<LoginProps>
                                                 <img
                                                     src={signInLogoGitLab}
                                                     alt="GitLab logo"
-                                                    className="tw-w-[16px]"
+                                                    className="tw-w-[16px] tw-mr-3"
                                                 />
-                                                <span className="tw-ml-3">Continue with GitLab</span>
+                                                <span>
+                                                    Continue with{' '}
+                                                    <span className="tw-font-semibold">GitLab</span>
+                                                </span>
                                             </div>
                                             <ArrowRightIcon size={16} />
                                         </Button>
                                         <Button
+                                            variant="secondary"
                                             onClick={() => {
                                                 telemetryRecorder.recordEvent(
                                                     'cody.webview.auth',
@@ -135,9 +151,12 @@ export const AuthPage: React.FunctionComponent<React.PropsWithoutRef<LoginProps>
                                                 <img
                                                     src={signInLogoGoogle}
                                                     alt="Google logo"
-                                                    className="tw-w-[16px]"
+                                                    className="tw-w-[16px] tw-mr-3"
                                                 />
-                                                <span className="tw-ml-3">Continue with Google</span>
+                                                <span>
+                                                    Continue with{' '}
+                                                    <span className="tw-font-semibold">Google</span>
+                                                </span>
                                             </div>
                                             <ArrowRightIcon size={16} />
                                         </Button>
@@ -231,8 +250,9 @@ interface ClientSignInFormProps {
  * It validates the input and sends the authentication information to the VSCode extension
  * when the user clicks the "Sign In with Access Token" button.
  */
-const ClientSignInForm: React.FC<ClientSignInFormProps> = ({ className, authStatus }) => {
+const ClientSignInForm: React.FC<ClientSignInFormProps> = ({ className, authStatus, vscodeAPI }) => {
     const [showAccessTokenField, setShowAccessTokenField] = useState(false)
+
     const [formData, setFormData] = useState({
         endpoint: authStatus?.endpoint ?? '',
         accessToken: '',
@@ -243,30 +263,25 @@ const ClientSignInForm: React.FC<ClientSignInFormProps> = ({ className, authStat
         setFormData(prev => ({ ...prev, [name]: value }))
     }, [])
 
-    const onBrowserSignInClick = useCallback(() => {
-        getVSCodeAPI().postMessage({
-            command: 'auth',
-            authKind: 'callback',
-            endpoint: formData.endpoint,
-        })
-    }, [formData.endpoint])
-
-    const onAccessTokenSignInClick = useCallback(() => {
-        getVSCodeAPI().postMessage({
-            command: 'auth',
-            authKind: 'signin',
-            endpoint: formData.endpoint,
-            value: formData.accessToken,
-        })
-    }, [formData])
-
     const onSubmit = useCallback(() => {
-        if (formData.accessToken) {
-            onAccessTokenSignInClick()
-        } else {
-            onBrowserSignInClick()
+        if (!formData.endpoint) {
+            return
         }
-    }, [formData.accessToken, onAccessTokenSignInClick, onBrowserSignInClick])
+        if (showAccessTokenField && formData.accessToken) {
+            vscodeAPI?.postMessage({
+                command: 'auth',
+                authKind: 'signin',
+                endpoint: formData.endpoint,
+                value: formData.accessToken,
+            })
+        } else {
+            vscodeAPI?.postMessage({
+                command: 'auth',
+                authKind: 'callback',
+                endpoint: formData.endpoint,
+            })
+        }
+    }, [showAccessTokenField, formData, vscodeAPI])
 
     return (
         <Form className={className} onSubmit={onSubmit}>

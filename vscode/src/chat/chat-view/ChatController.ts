@@ -1,4 +1,5 @@
 import {
+    type AuthCredentials,
     type AuthStatus,
     type ChatModel,
     type ClientActionBroadcast,
@@ -448,19 +449,22 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                 }
                 if (message.authKind === 'signin' && message.endpoint) {
                     const serverEndpoint = message.endpoint
-                    const accessToken = message.value
-                        ? message.value
-                        : await secretStorage.getToken(serverEndpoint)
-                    if (accessToken) {
-                        const tokenSource = message.value
-                            ? 'paste'
-                            : await secretStorage.getTokenSource(serverEndpoint)
-                        const validationResult = await authProvider.validateAndStoreCredentials(
-                            { serverEndpoint, accessToken, tokenSource },
+                    const credentials: AuthCredentials = {
+                        serverEndpoint,
+                        accessToken: message.value ?? null,
+                        tokenSource: 'paste',
+                    }
+                    if (!message.value) {
+                        credentials.accessToken = (await secretStorage.getToken(serverEndpoint)) ?? null
+                        credentials.tokenSource = await secretStorage.getTokenSource(serverEndpoint)
+                    }
+                    if (credentials.accessToken) {
+                        const { authStatus } = await authProvider.validateAndStoreCredentials(
+                            credentials,
                             'always-store'
                         )
-                        if (validationResult.authStatus.authenticated) {
-                            break
+                        if (authStatus.authenticated) {
+                            await this.setWebviewToChat()
                         }
                     } else {
                         redirectToEndpointLogin(message.endpoint)
