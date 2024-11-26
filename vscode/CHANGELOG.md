@@ -10,9 +10,43 @@ This is a log of all notable changes to Cody for VS Code.
 
 ### Changed
 
+### Uncategorized
+
+## [1.46.0]
+
+### Added
+
+### Fixed
+
+### Changed
+
 - Chat: Update keyboard shortcuts:
   - Removed `Shift+Ctrl+L` (previously created a new chat) due to conflict with Windows default shortcut
   - Updated `Shift+Alt+L` to create a new chat when the focus is not in the editor. When the focus is in the editor, the behavior remains unchanged (the current selection is added to the chat context).
+
+### Uncategorized
+- [Backport vscode-v1.46.x] Add built-in prompts related fields to prompt select analytic event  [pull/6181](https://github.com/sourcegraph/cody/pulls/6181)
+- [Backport vscode-v1.46.x] Fetch standard prompts from remote prompts API  [pull/6166](https://github.com/sourcegraph/cody/pulls/6166)
+- [Backport vscode-v1.46.x] Prompts Picker  [pull/6168](https://github.com/sourcegraph/cody/pulls/6168)
+- [Backport vscode-v1.46.x] VS Code: Release v1.44.0  [pull/6169](https://github.com/sourcegraph/cody/pulls/6169)
+- feat(autoedit): fix cursor jumping issue  [pull/6156](https://github.com/sourcegraph/cody/pulls/6156)
+- only activate autoedits command when experimental setting is enabled  [pull/6157](https://github.com/sourcegraph/cody/pulls/6157)
+- Chat: ensure ScrollDown button only takes it's width  [pull/6143](https://github.com/sourcegraph/cody/pulls/6143)
+- autoedit: Add feature flag to enable/disable autoedit feature  [pull/6145](https://github.com/sourcegraph/cody/pulls/6145)
+- remove ctrl+shift+L shortcut and update shift+alt+L shortcut  [pull/6148](https://github.com/sourcegraph/cody/pulls/6148)
+- Fix various JetBrains styling issues  [pull/6153](https://github.com/sourcegraph/cody/pulls/6153)
+- Autoedits Context Improvements  [pull/6141](https://github.com/sourcegraph/cody/pulls/6141)
+- Better rendering for auto edits  [pull/6132](https://github.com/sourcegraph/cody/pulls/6132)
+- Chat: context cell improvements  [pull/6115](https://github.com/sourcegraph/cody/pulls/6115)
+- Fix inline-edit prompts chat building  [pull/6003](https://github.com/sourcegraph/cody/pulls/6003)
+- Cody Web: Polish cody web Prompts  [pull/6135](https://github.com/sourcegraph/cody/pulls/6135)
+- Simplify protocol's TelemetryEvent  [pull/6144](https://github.com/sourcegraph/cody/pulls/6144)
+- Use font size variable providd by JetBrains in webview  [pull/6134](https://github.com/sourcegraph/cody/pulls/6134)
+- Update backport.yml  [pull/6137](https://github.com/sourcegraph/cody/pulls/6137)
+- fix(release): Update backport action to override team_reviews  [pull/6136](https://github.com/sourcegraph/cody/pulls/6136)
+- autoedit: add speculative decoding  [pull/6130](https://github.com/sourcegraph/cody/pulls/6130)
+- Fix for VSCode Marketplace description getting cut-off  [pull/6098](https://github.com/sourcegraph/cody/pulls/6098)
+- Fix prompt name generation during prompts/commands migration  [pull/6126](https://github.com/sourcegraph/cody/pulls/6126)
 
 ## 1.44.0
 

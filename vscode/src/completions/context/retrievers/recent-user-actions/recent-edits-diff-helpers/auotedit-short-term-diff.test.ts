@@ -16,6 +16,7 @@ describe('AutoeditWithShortTermDiffStrategy', () => {
             rangeLength: oldText.length,
             rangeOffset: 0,
         },
+        insertedRange: range(0, 0, 0, 0),
     })
 
     it('should divide changes into short-term and long-term windows', () => {

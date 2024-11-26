@@ -1,6 +1,7 @@
 import { type PromptString, contextFiltersProvider } from '@sourcegraph/cody-shared'
 import type { AutocompleteContextSnippet } from '@sourcegraph/cody-shared'
 import * as vscode from 'vscode'
+import { getPositionAfterTextInsertion } from '../../../text-processing/utils'
 import type { ContextRetriever, ContextRetrieverOptions } from '../../../types'
 import { RetrieverIdentifier, type ShouldUseContextParams, shouldBeUsedAsContext } from '../../utils'
 import {
@@ -160,9 +161,14 @@ export class RecentEditsRetriever implements vscode.Disposable, ContextRetriever
 
         const now = Date.now()
         for (const change of event.contentChanges) {
+            const insertedRange = new vscode.Range(
+                change.range.start,
+                getPositionAfterTextInsertion(change.range.start, change.text)
+            )
             trackedDocument.changes.push({
                 timestamp: now,
                 change,
+                insertedRange,
             })
         }
 
