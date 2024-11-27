@@ -224,7 +224,6 @@ export class ClientConfigSingleton {
         config: GraphQLAPIClientConfig,
         signal?: AbortSignal
     ): Promise<CodyClientConfig | undefined> {
-        // Use existing fetchConfig logic but with temporary token config
         return graphqlClient
             .fetchHTTP<CodyClientConfig>(
                 'client-config',
@@ -238,9 +237,6 @@ export class ClientConfigSingleton {
                 if (isError(clientConfig)) {
                     throw clientConfig
                 }
-                // TODO: delete this once backend API is implemented
-                // For local testing purpose, ensure userShouldUseEnterprise is always true
-                clientConfig.userShouldUseEnterprise = true
                 return clientConfig
             })
     }

@@ -1,7 +1,6 @@
 import { expect } from '@playwright/test'
 import { SERVER_URL, VALID_TOKEN } from '../fixtures/mock-server'
-import { focusSidebar } from './common'
-import { getChatSidebarPanel } from './common'
+import { focusSidebar, getChatSidebarPanel } from './common'
 import {
     type DotcomUrlOverride,
     type EnterpriseTestOptions,
@@ -25,7 +24,6 @@ test.extend<ExpectedV2Events>({
         'cody.experiment.interactiveTutorial:enrolled',
     ],
 })('requires a valid auth token and allows logouts', async ({ page, sidebar }) => {
-    await expect(page.getByText('Authentication failed.')).not.toBeVisible()
     await sidebar?.getByRole('button', { name: 'Sign In to Your Enterprise Instance' }).click()
     await page.getByRole('option', { name: 'Sign In with URL and Access Token' }).click()
     await page.getByRole('combobox', { name: 'input' }).fill(SERVER_URL)

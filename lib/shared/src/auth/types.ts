@@ -48,7 +48,7 @@ export interface UnauthenticatedAuthStatus {
     showNetworkError?: boolean
     showInvalidAccessTokenError?: boolean
     pendingValidation: boolean
-    userShouldUseEnterpriseError?: boolean
+    userEnterprise?: string
 }
 
 export const AUTH_STATUS_FIXTURE_AUTHED: AuthenticatedAuthStatus = {

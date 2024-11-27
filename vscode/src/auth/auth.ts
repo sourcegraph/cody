@@ -294,11 +294,9 @@ export async function showAuthFailureMessage(
     authStatus: UnauthenticatedAuthStatus | undefined
 ): Promise<void> {
     const authority = vscode.Uri.parse(endpoint).authority
-    // TODO: Update enterprise value once we have the backend API implementation.
-    const enterprise = 'an enterprise'
-    if (authStatus?.userShouldUseEnterpriseError) {
+    if (authStatus?.userEnterprise) {
         await vscode.window.showErrorMessage(
-            `Based on your email address we think you may be an employee of ${enterprise}.
+            `Based on your email address we think you may be an employee of ${authStatus?.userEnterprise}.
             To get access to all your features please sign in through your organization\'s enterprise instance instead.
             If you need assistance please contact your Sourcegraph admin.`
         )
@@ -473,7 +471,7 @@ export async function validateCredentials(
             authenticated: false,
             endpoint: config.auth.serverEndpoint,
             pendingValidation: false,
-            userShouldUseEnterpriseError: true,
+            userEnterprise: getEnterpriseName(userInfo.primaryEmail?.email || ''),
         }
     }
 
@@ -484,4 +482,10 @@ export async function validateCredentials(
         authenticated: true,
         hasVerifiedEmail: false,
     })
+}
+
+function getEnterpriseName(email: string): string {
+    const domain = email.split('@')[1]
+    const name = domain.split('.')[0]
+    return name.charAt(0).toUpperCase() + name.slice(1)
 }
