@@ -59,7 +59,7 @@ export async function focusSidebar(page: Page): Promise<void> {
 export async function expectAuthenticated(page: Page) {
     await focusSidebar(page)
     // Expect the sign in button to be gone.
-    await expect(page.getByLabel('Sign In to Your Enterprise Instance')).not.toBeVisible()
+    await expect(page.getByLabel('Sign in to Sourcegraph')).not.toBeVisible()
 }
 
 // Selector for the Explorer button in the sidebar that would match on Mac and Linux
