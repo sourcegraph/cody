@@ -371,17 +371,21 @@ export async function showSignOutMenu(): Promise<void> {
  * Log user out of the selected endpoint (remove token from secret).
  */
 export async function signOut(endpoint: string): Promise<void> {
-    const token = await secretStorage.getToken(endpoint)
-    const tokenSource = await secretStorage.getTokenSource(endpoint)
     // Delete the access token from the Sourcegraph instance on signout if it was created
     // through automated redirect. We don't delete manually entered tokens as they may be
     // used for other purposes, such as the Cody CLI etc.
-    if (token && tokenSource === 'redirect') {
-        await graphqlClient.DeleteAccessToken(token)
-    }
-    await secretStorage.deleteToken(endpoint)
-    await localStorage.deleteEndpoint(endpoint)
-    authProvider.refresh()
+    // Do not block signout on token deletion, signout should be as fast as possible.
+    Promise.all([secretStorage.getToken(endpoint), secretStorage.getTokenSource(endpoint)]).then(
+        ([token, tokenSource]) => {
+            if (token && tokenSource === 'redirect') {
+                void graphqlClient.DeleteAccessToken(token)
+            }
+        }
+    )
+
+    await Promise.all([secretStorage.deleteToken(endpoint), localStorage.deleteEndpoint(endpoint)])
+
+    authProvider.signout()
 }
 
 /**

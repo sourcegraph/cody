@@ -95,9 +95,10 @@ export const AccountTab: React.FC<AccountTabProps> = ({
         getVSCodeAPI().postMessage({ command: 'command', id: 'cody.status-bar.interacted' })
     )
 
-    const signOutButton = createButton('Sign Out', () =>
+    const signOutButton = createButton('Sign Out', () => {
         getVSCodeAPI().postMessage({ command: 'auth', authKind: 'signout' })
-    )
+        setIsLoading(true)
+    })
 
     const accountPanelView = (
         <div className="tw-overflow-auto tw-flex-1 tw-flex tw-flex-col tw-items-start tw-w-full tw-px-8 tw-py-6 tw-gap-6">
