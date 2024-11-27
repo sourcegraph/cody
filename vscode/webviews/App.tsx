@@ -23,6 +23,7 @@ import { ComposedWrappers, type Wrapper } from './utils/composeWrappers'
 import { updateDisplayPathEnvInfoForWebview } from './utils/displayPathEnvInfo'
 import { TelemetryRecorderContext, createWebviewTelemetryRecorder } from './utils/telemetry'
 import { type Config, ConfigProvider } from './utils/useConfig'
+import { useSuppressKeys } from './components/hooks'
 
 export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vscodeAPI }) => {
     const [config, setConfig] = useState<Config | null>(null)
@@ -44,6 +45,8 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
             })
         })
     }, [vscodeAPI])
+
+    useSuppressKeys()
 
     useEffect(
         () =>
@@ -109,20 +112,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
             }),
         [view, vscodeAPI, guardrails, dispatchClientAction]
     )
-
-    useEffect(() => {
-        // On macOS, suppress the '¬' character emitted by default for alt+L
-        const handleKeyDown = (event: KeyboardEvent) => {
-            const suppressedKeys = ['¬', 'Ò', '¿', '÷']
-            if (event.altKey && suppressedKeys.includes(event.key)) {
-                event.preventDefault()
-            }
-        }
-        window.addEventListener('keydown', handleKeyDown)
-        return () => {
-            window.removeEventListener('keydown', handleKeyDown)
-        }
-    }, [])
 
     useEffect(() => {
         // Notify the extension host that we are ready to receive events
