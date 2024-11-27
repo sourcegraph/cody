@@ -4,6 +4,7 @@ import {
     type AuthCredentials,
     type AuthStatus,
     type ClientCapabilitiesWithLegacyFields,
+    DOTCOM_URL,
     NEVER,
     type ResolvedConfiguration,
     type Unsubscribable,
@@ -164,6 +165,15 @@ class AuthProvider implements vscode.Disposable {
     public refresh(): void {
         this.lastValidatedAndStoredCredentials.next(null)
         this.refreshRequests.next()
+    }
+
+    public signout(): void {
+        this.lastValidatedAndStoredCredentials.next(null)
+        this.status.next({
+            authenticated: false,
+            endpoint: DOTCOM_URL.toString(),
+            pendingValidation: false,
+        })
     }
 
     public async validateAndStoreCredentials(
