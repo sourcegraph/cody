@@ -150,7 +150,7 @@ class CodyAutocompleteManager {
         isCommandExcluded(currentCommand)) {
       return
     }
-    if (CodyAccount.hasActiveAccount()) {
+    if (!CodyAccount.hasActiveAccount()) {
       if (isTriggeredExplicitly) {
         HintManager.getInstance().showErrorHint(editor, "Cody: Sign in to use autocomplete")
         CodyToolWindowContent.show(project)
