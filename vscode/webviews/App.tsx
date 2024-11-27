@@ -17,6 +17,7 @@ import { useClientActionDispatcher } from './client/clientState'
 import { ExtensionAPIProviderFromVSCodeAPI } from '@sourcegraph/prompt-editor'
 import { CodyPanel } from './CodyPanel'
 import { ConnectivityStatusBanner } from './components/ConnectivityStatusBanner'
+import { useSuppressKeys } from './components/hooks'
 import { View } from './tabs'
 import type { VSCodeWrapper } from './utils/VSCodeApi'
 import { ComposedWrappers, type Wrapper } from './utils/composeWrappers'
@@ -44,6 +45,8 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
             })
         })
     }, [vscodeAPI])
+
+    useSuppressKeys()
 
     useEffect(
         () =>
@@ -109,20 +112,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
             }),
         [view, vscodeAPI, guardrails, dispatchClientAction]
     )
-
-    useEffect(() => {
-        // On macOS, suppress the '¬' character emitted by default for alt+L
-        const handleKeyDown = (event: KeyboardEvent) => {
-            const suppressedKeys = ['¬', 'Ò', '¿', '÷']
-            if (event.altKey && suppressedKeys.includes(event.key)) {
-                event.preventDefault()
-            }
-        }
-        window.addEventListener('keydown', handleKeyDown)
-        return () => {
-            window.removeEventListener('keydown', handleKeyDown)
-        }
-    }, [])
 
     useEffect(() => {
         // Notify the extension host that we are ready to receive events
