@@ -4,11 +4,10 @@ import {
     fromLateSetSource,
 } from '@sourcegraph/cody-shared'
 import { Observable } from 'observable-fns'
-import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
-import { localStorage, mockLocalStorage } from '../services/LocalStorageProvider'
+import { beforeAll, describe, expect, it, vi } from 'vitest'
+import { mockLocalStorage } from '../services/LocalStorageProvider'
 import {
     GitHubDotComRepoMetadata,
-    type RepoAccessibilityData,
     type RepoRevMetaData,
     publicRepoMetadataIfAllWorkspaceReposArePublic,
 } from './githubRepoMetadata'
@@ -29,115 +28,6 @@ vi.mock('./remoteRepos', () => {
             return globalThis.mockRemoteReposForAllWorkspaceFolders.observable
         },
     }
-})
-
-describe('GitHubDotComRepoMetadata', () => {
-    // Set up local storage backed by an object.
-    let localStorageData: { [key: string]: unknown } = {}
-    mockLocalStorage({
-        get: (key: string) => localStorageData[key],
-        update: (key: string, value: unknown) => {
-            localStorageData[key] = value
-        },
-    } as any)
-
-    const instance = GitHubDotComRepoMetadata.getInstance({ minLocalStorageUpdateTimeMs: 10 })
-
-    const assertRepoAccessibilityDataChange = async (
-        cachedData: RepoAccessibilityData[],
-        currentData: RepoAccessibilityData[],
-        expectedValue: boolean
-    ) => {
-        await localStorage.setGitHubRepoAccessibility(cachedData)
-        instance.populateCacheFromLocalStorage()
-        const isUpdated = instance.shouldUpdateCachedDataToLocalStorage(currentData)
-        expect(isUpdated).toEqual(expectedValue)
-    }
-
-    beforeEach(() => {
-        vi.useFakeTimers()
-        localStorageData = {}
-    })
-
-    it('should return true when the data has changed', async () => {
-        const previousData = [
-            { repoName: 'repo1', isPublic: false },
-            { repoName: 'repo2', isPublic: false },
-            { repoName: 'repo3', isPublic: true },
-        ]
-        const newData = [
-            { repoName: 'repo1', isPublic: true },
-            { repoName: 'repo2', isPublic: false },
-        ]
-        assertRepoAccessibilityDataChange(previousData, newData, true)
-    })
-
-    it('should return false when the data has not changed', async () => {
-        const data = [{ repoName: 'repo1', isPublic: true }]
-        assertRepoAccessibilityDataChange(data, data, false)
-    })
-
-    it('should return true when the new data has additional entries', async () => {
-        const previousData = [{ repoName: 'repo1', isPublic: true }]
-        const newData = [
-            { repoName: 'repo1', isPublic: true },
-            { repoName: 'repo2', isPublic: false },
-        ]
-        assertRepoAccessibilityDataChange(previousData, newData, true)
-    })
-
-    it('should return true when the new data has fewer entries', async () => {
-        const previousData = [
-            { repoName: 'repo1', isPublic: true },
-            { repoName: 'repo2', isPublic: false },
-        ]
-        const newData = [{ repoName: 'repo1', isPublic: true }]
-        assertRepoAccessibilityDataChange(previousData, newData, true)
-    })
-
-    it('should return true when the new data is empty and previous data is not', async () => {
-        const previousData = [{ repoName: 'repo1', isPublic: true }]
-        const newData: RepoRevMetaData[] = []
-        assertRepoAccessibilityDataChange(previousData, newData, true)
-    })
-
-    it('should return false when both new data and previous data are empty', async () => {
-        const previousData: RepoRevMetaData[] = []
-        const newData: RepoRevMetaData[] = []
-        assertRepoAccessibilityDataChange(previousData, newData, false)
-    })
-
-    it('should return true when previous data is undefined', async () => {
-        const newData = [{ repoName: 'repo1', isPublic: true }]
-        assertRepoAccessibilityDataChange([], newData, true)
-    })
-
-    it('should return true when new data is undefined and previous data is defined', async () => {
-        const previousData = [{ repoName: 'repo1', isPublic: true }]
-        assertRepoAccessibilityDataChange(previousData, [], true)
-    })
-
-    it('should return false when both new data and previous data are undefined', async () => {
-        assertRepoAccessibilityDataChange([], [], false)
-    })
-
-    it('should return false when repo order changes but data is the same', async () => {
-        const previousData = [
-            { repoName: 'repo1', isPublic: true },
-            { repoName: 'repo2', isPublic: false },
-        ]
-        const newData = [
-            { repoName: 'repo2', isPublic: false },
-            { repoName: 'repo1', isPublic: true },
-        ]
-        assertRepoAccessibilityDataChange(previousData, newData, false)
-    })
-
-    it('should return true when repo entries are the same but isPublic value changes', async () => {
-        const previousData = [{ repoName: 'repo1', isPublic: true }]
-        const newData = [{ repoName: 'repo1', isPublic: false }]
-        assertRepoAccessibilityDataChange(previousData, newData, true)
-    })
 })
 
 describe('publicRepoMetadataIfAllWorkspaceReposArePublic', () => {

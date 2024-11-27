@@ -19,7 +19,7 @@ import {
 } from '@sourcegraph/cody-shared'
 import { type Observable, map } from 'observable-fns'
 import { isSourcegraphToken } from '../chat/protocol'
-import type { RepoAccessibilityData } from '../repository/githubRepoMetadata'
+import type { GitHubDotComRepoMetaData } from '../repository/githubRepoMetadata'
 import { EventEmitter } from '../testutils/mocks'
 import { secretStorage } from './SecretStorageProvider'
 
@@ -33,7 +33,7 @@ class LocalStorage implements LocalStorageForModelPreferences {
     protected readonly CODY_ENDPOINT_HISTORY = 'SOURCEGRAPH_CODY_ENDPOINT_HISTORY'
     protected readonly CODY_ENROLLMENT_HISTORY = 'SOURCEGRAPH_CODY_ENROLLMENTS'
     protected readonly LAST_USED_CHAT_MODALITY = 'cody-last-used-chat-modality'
-    protected readonly GIT_REPO_ACCESSIBILITY_KEY = 'cody-git-repo-accessibility'
+    protected readonly GIT_REPO_ACCESSIBILITY_KEY = 'cody-github-repo-metadata'
     public readonly ANONYMOUS_USER_ID_KEY = 'sourcegraphAnonymousUid'
     public readonly LAST_USED_ENDPOINT = 'SOURCEGRAPH_CODY_ENDPOINT'
     private readonly MODEL_PREFERENCES_KEY = 'cody-model-preferences'
@@ -236,28 +236,17 @@ class LocalStorage implements LocalStorageForModelPreferences {
         return this.get<string | null>(this.KEY_LOCAL_MINION_HISTORY)
     }
 
-    public async setGitHubRepoAccessibility(data: RepoAccessibilityData[]): Promise<void> {
-        const repoVisibilityData = data.map(item => ({
-            repoName: item.repoName,
-            isPublic: item.isPublic,
-            timestamp: Date.now(),
-        }))
-        await this.set(this.GIT_REPO_ACCESSIBILITY_KEY, repoVisibilityData)
+    public async setGitHubRepoAccessibility(data: GitHubDotComRepoMetaData[]): Promise<void> {
+        await this.set(this.GIT_REPO_ACCESSIBILITY_KEY, data)
     }
 
-    public getGitHubRepoAccessibility(): RepoAccessibilityData[] {
-        type RepoAccessibilityValue = {
-            repoName: string
-            isPublic: boolean
-            timestamp: number
-        }
-
+    public getGitHubRepoAccessibility(): GitHubDotComRepoMetaData[] {
         const ONE_DAY_IN_MS = 24 * 60 * 60 * 1000
         const currentTime = Date.now()
 
-        return (this.get<RepoAccessibilityValue[]>(this.GIT_REPO_ACCESSIBILITY_KEY) ?? [])
-            .filter(({ timestamp }) => currentTime - timestamp <= ONE_DAY_IN_MS)
-            .map(({ repoName, isPublic }) => ({ repoName, isPublic }))
+        return (this.get<GitHubDotComRepoMetaData[]>(this.GIT_REPO_ACCESSIBILITY_KEY) ?? []).filter(
+            ({ timestamp }) => currentTime - timestamp <= ONE_DAY_IN_MS
+        )
     }
 
     public async removeChatHistory(authStatus: AuthenticatedAuthStatus): Promise<void> {

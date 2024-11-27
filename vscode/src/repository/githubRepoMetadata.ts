@@ -13,51 +13,30 @@ import { logDebug } from '../output-channel-logger'
 import { localStorage } from '../services/LocalStorageProvider'
 import { remoteReposForAllWorkspaceFolders } from './remoteRepos'
 
-export interface RepoAccessibilityData {
-    repoName: string
-    isPublic: boolean
-}
-
-interface GitHubDotComRepoMetaData {
+export interface GitHubDotComRepoMetaData {
     // The full uniquely identifying name on github.com, e.g., "github.com/sourcegraph/cody"
     repoName: string
     isPublic: boolean
+    // The timestamp when the metadata was fetched from the github API.
+    timestamp: number
 }
-
-const DEFAULT_MIN_LOCAL_STORAGE_UPDATE_TIME_MS = 1000 * 60 * 10 // 10 minutes
 
 export class GitHubDotComRepoMetadata {
     // This class is used to get the metadata from the gitApi.
     private static instance: GitHubDotComRepoMetadata | null = null
-    // Store a copy of the latest local storage data for comparison with the current cache.
-    private lastLocalStorageData: RepoAccessibilityData[] = []
-    // Last time when the local storage was updated.
-    private lastLocalStorageUpdateTime: number | null = null
-    // Since the local storage update can be expansive, we add a minimum time between updates.
-    private readonly minLocalStorageUpdateTimeMs: number
-
     private cache = new Map<string /* repoName */, GitHubDotComRepoMetaData | undefined>()
 
-    private constructor(minLocalStorageUpdateTimeMs: number) {
-        this.minLocalStorageUpdateTimeMs = minLocalStorageUpdateTimeMs
-        this.populateCacheFromLocalStorage()
-    }
-
-    public populateCacheFromLocalStorage(): void {
+    private constructor() {
         this.cache.clear()
-        this.lastLocalStorageData = localStorage.getGitHubRepoAccessibility()
-        for (const data of this.lastLocalStorageData) {
+        const localStorageData = localStorage.getGitHubRepoAccessibility()
+        for (const data of localStorageData) {
             this.cache.set(data.repoName, data)
         }
     }
 
-    public static getInstance(
-        params = { minLocalStorageUpdateTimeMs: DEFAULT_MIN_LOCAL_STORAGE_UPDATE_TIME_MS }
-    ): GitHubDotComRepoMetadata {
+    public static getInstance(): GitHubDotComRepoMetadata {
         if (!GitHubDotComRepoMetadata.instance) {
-            GitHubDotComRepoMetadata.instance = new GitHubDotComRepoMetadata(
-                params.minLocalStorageUpdateTimeMs
-            )
+            GitHubDotComRepoMetadata.instance = new GitHubDotComRepoMetadata()
         }
         return GitHubDotComRepoMetadata.instance
     }
@@ -80,8 +59,7 @@ export class GitHubDotComRepoMetadata {
         }
         const repoMetaData = await this.ghMetadataFromGit(repoBaseName, signal)
         if (repoMetaData) {
-            this.cache.set(repoMetaData.repoName, repoMetaData)
-            this.updateCachedDataToLocalStorageIfNeeded()
+            this.updateCachedDataToLocalStorageIfNeeded(repoMetaData)
         }
         return repoMetaData
     }
@@ -109,7 +87,7 @@ export class GitHubDotComRepoMetadata {
     ): Promise<GitHubDotComRepoMetaData | undefined> {
         const apiUrl = `https://api.github.com/repos/${owner}/${repoName}`
         const normalizedRepoName = this.getNormalizedRepoNameFromOwnerAndRepoName(owner, repoName)
-        const metadata = { repoName: normalizedRepoName, isPublic: false }
+        const metadata = { repoName: normalizedRepoName, isPublic: false, timestamp: Date.now() }
         try {
             const response = await fetch(apiUrl, { method: 'HEAD', signal })
             metadata.isPublic = response.ok
@@ -152,43 +130,13 @@ export class GitHubDotComRepoMetadata {
         return { owner, repoName: repoName }
     }
 
-    public updateCachedDataToLocalStorageIfNeeded(): void {
-        const repoAccessibilityData: RepoAccessibilityData[] = []
-        for (const [repoName, repoMetadata] of this.cache) {
-            if (repoMetadata) {
-                repoAccessibilityData.push({ repoName, isPublic: repoMetadata.isPublic })
-            }
+    private updateCachedDataToLocalStorageIfNeeded(repoMetaData: GitHubDotComRepoMetaData): void {
+        if (this.cache.get(repoMetaData.repoName)?.isPublic === repoMetaData.isPublic) {
+            return
         }
-        if (this.shouldUpdateCachedDataToLocalStorage(repoAccessibilityData)) {
-            // Updates the updated cache values to local storage
-            this.lastLocalStorageData = repoAccessibilityData
-            this.lastLocalStorageUpdateTime = Date.now()
-            localStorage.setGitHubRepoAccessibility(repoAccessibilityData)
-        }
-    }
-
-    public shouldUpdateCachedDataToLocalStorage(
-        repoAccessibilityData: RepoAccessibilityData[]
-    ): boolean {
-        if (
-            this.lastLocalStorageUpdateTime !== null &&
-            Date.now() - this.lastLocalStorageUpdateTime < this.minLocalStorageUpdateTimeMs
-        ) {
-            return false
-        }
-
-        if (repoAccessibilityData.length !== this.lastLocalStorageData.length) {
-            return true
-        }
-        const latestRepoMap = new Map(
-            this.lastLocalStorageData.map(repo => [repo.repoName, repo.isPublic])
-        )
-        for (const { repoName, isPublic } of repoAccessibilityData) {
-            if (latestRepoMap.get(repoName) !== isPublic) {
-                return true
-            }
-        }
-        return false
+        this.cache.set(repoMetaData.repoName, repoMetaData)
+        const repoAccessibilityData = Array.from(this.cache.values()).filter(isDefined)
+        localStorage.setGitHubRepoAccessibility(repoAccessibilityData)
     }
 }
 
