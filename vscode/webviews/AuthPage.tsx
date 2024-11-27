@@ -50,6 +50,7 @@ export const AuthPage: React.FunctionComponent<React.PropsWithoutRef<LoginProps>
                                 authStatus={authStatus}
                                 vscodeAPI={vscodeAPI}
                                 className="tw-mt-8"
+                                telemetryRecorder={telemetryRecorder}
                             />
                         </div>
                     </section>
@@ -61,7 +62,10 @@ export const AuthPage: React.FunctionComponent<React.PropsWithoutRef<LoginProps>
                             </div>
                             <div className="tw-flex tw-flex-col tw-gap-6 tw-w-full">
                                 <Button
-                                    onClick={() => setIsEnterpriseSignin(true)}
+                                    onClick={() => {
+                                        setIsEnterpriseSignin(true)
+                                        telemetryRecorder.recordEvent('cody.auth.login', 'clicked')
+                                    }}
                                     className="tw-flex tw-justify-between !tw-p-4"
                                     variant="secondary"
                                 >
@@ -243,6 +247,7 @@ const WebLogin: React.FunctionComponent<
 
 interface ClientSignInFormProps {
     vscodeAPI: VSCodeWrapper
+    telemetryRecorder: TelemetryRecorder
     authStatus?: AuthStatus
     className?: string
 }
@@ -250,7 +255,12 @@ interface ClientSignInFormProps {
 /**
  * The form allows users to input their Sourcegraph instance URL and access token manually.
  */
-const ClientSignInForm: React.FC<ClientSignInFormProps> = ({ className, authStatus, vscodeAPI }) => {
+const ClientSignInForm: React.FC<ClientSignInFormProps> = ({
+    className,
+    authStatus,
+    vscodeAPI,
+    telemetryRecorder,
+}) => {
     const [showAccessTokenField, setShowAccessTokenField] = useState(false)
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [showAuthError, setShowAuthError] = useState(false)
@@ -334,7 +344,10 @@ const ClientSignInForm: React.FC<ClientSignInFormProps> = ({ className, authStat
                 >
                     <FormLabel
                         className="tw-cursor-pointer tw-flex tw-w-full tw-justify-between tw-align-middle tw-opacity-70"
-                        onClick={() => setShowAccessTokenField(!showAccessTokenField)}
+                        onClick={() => {
+                            setShowAccessTokenField(!showAccessTokenField)
+                            telemetryRecorder.recordEvent('cody.auth.login.token', 'clicked')
+                        }}
                     >
                         <div title="Enter your access token manually">Access Token (Optional)</div>
                         <ChevronsUpDownIcon size={14} />

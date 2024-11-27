@@ -14,9 +14,8 @@ test.extend<ExpectedV2Events>({
     expectedV2Events: [
         'cody.extension:installed',
         'cody.auth.login:clicked',
-        'cody.auth.signin.menu:clicked',
         'cody.auth.login:firstEver',
-        'cody.auth.signin.token:clicked',
+        'cody.auth.login.token:clicked',
         'cody.auth:connected',
         'cody.menu.command.default:clicked',
         'cody.chat-question:submitted',
@@ -183,9 +182,8 @@ test.extend<DotcomUrlOverride>({ dotcomUrl: mockServer.SERVER_URL }).extend<Expe
     expectedV2Events: [
         'cody.extension:installed',
         'cody.auth.login:clicked',
-        'cody.auth.signin.menu:clicked',
         'cody.auth.login:firstEver',
-        'cody.auth.signin.token:clicked',
+        'cody.auth.login.token:clicked',
         'cody.auth:connected',
         'cody.chat-question:submitted',
         'cody.chat-question:executed',
@@ -233,9 +231,8 @@ test.extend<ExpectedV2Events>({
     expectedV2Events: [
         'cody.extension:installed',
         'cody.auth.login:clicked',
-        'cody.auth.signin.menu:clicked',
         'cody.auth.login:firstEver',
-        'cody.auth.signin.token:clicked',
+        'cody.auth.login.token:clicked',
         'cody.auth:connected',
         'cody.auth:connected',
         'cody.chat-question:submitted',

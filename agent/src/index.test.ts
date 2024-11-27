@@ -182,6 +182,7 @@ describe('Agent', () => {
             expect.arrayContaining([
                 'cody.auth:connected',
                 'cody.auth.login:firstEver',
+                'cody.auth.login.token:clicked',
                 'cody.interactiveTutorial:attemptingStart',
                 'cody.experiment.interactiveTutorial:enrolled',
             ])
