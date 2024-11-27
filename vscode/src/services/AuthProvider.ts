@@ -27,7 +27,6 @@ import {
 import isEqual from 'lodash/isEqual'
 import { Observable, Subject } from 'observable-fns'
 import { serializeConfigSnapshot } from '../../uninstall/serializeConfig'
-import { showAuthFailureMessage } from '../auth/auth'
 import { type ResolvedConfigurationCredentialsOnly, validateCredentials } from '../auth/auth'
 import { logError } from '../output-channel-logger'
 import { maybeStartInteractiveTutorial } from '../tutorial/helpers'
@@ -95,9 +94,6 @@ class AuthProvider implements vscode.Disposable {
                             const authStatus = await validateCredentials(config, signal)
                             signal?.throwIfAborted()
                             this.status.next(authStatus)
-                            if (!authStatus.authenticated) {
-                                await showAuthFailureMessage(config.auth.serverEndpoint, authStatus)
-                            }
                             await this.handleAuthTelemetry(authStatus, signal)
                         } catch (error) {
                             if (!isAbortError(error)) {

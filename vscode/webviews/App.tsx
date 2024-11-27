@@ -17,6 +17,7 @@ import { useClientActionDispatcher } from './client/clientState'
 import { ExtensionAPIProviderFromVSCodeAPI } from '@sourcegraph/prompt-editor'
 import { CodyPanel } from './CodyPanel'
 import { ConnectivityStatusBanner } from './components/ConnectivityStatusBanner'
+import { UserShouldUseEnterpriseBanner } from './components/UserShouldUseEnterpriseBanner'
 import { View } from './tabs'
 import type { VSCodeWrapper } from './utils/VSCodeApi'
 import { ComposedWrappers, type Wrapper } from './utils/composeWrappers'
@@ -169,6 +170,9 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                 <div className={styles.outerContainer}>
                     {!config.authStatus.authenticated && config.authStatus.showNetworkError && (
                         <ConnectivityStatusBanner />
+                    )}
+                    {!config.authStatus.authenticated && config.authStatus.userEnterprise && (
+                        <UserShouldUseEnterpriseBanner />
                     )}
                     <AuthPage
                         simplifiedLoginRedirect={loginRedirect}
