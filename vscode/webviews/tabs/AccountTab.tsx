@@ -34,11 +34,6 @@ export const AccountTab: React.FC<AccountTabProps> = ({
     isDotComUser,
     userProductSubscription,
 }) => {
-    // We open the native system pop-up for VS Code.
-    if (clientCapabilities.isVSCode) {
-        return null
-    }
-
     if (!authStatus.authenticated || userProductSubscription === undefined) {
         return null
     }
@@ -115,7 +110,7 @@ export const AccountTab: React.FC<AccountTabProps> = ({
                             <p className="tw-text-lg tw-font-semibold">{displayName ?? username}</p>
                             <p className="tw-text-sm tw-text-muted-foreground">{primaryEmail}</p>
                         </div>
-                        {clientCapabilities.accountSwitchingInWebview === 'enabled' && accountSwitcher}
+                        {accountSwitcher}
                     </div>
                 </div>
                 <div className="tw-grid tw-grid-cols-5 tw-gap-4">

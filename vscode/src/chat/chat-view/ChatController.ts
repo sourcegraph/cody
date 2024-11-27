@@ -10,6 +10,7 @@ import {
     distinctUntilChanged,
     firstResultFromOperation,
     forceHydration,
+    isAbortError,
     pendingOperation,
     ps,
     resolvedConfig,
@@ -56,7 +57,6 @@ import {
     graphqlClient,
     hydrateAfterPostMessage,
     inputTextWithoutContextChipsFromPromptEditorState,
-    isAbortError,
     isAbortErrorOrSocketHangUp,
     isContextWindowLimitError,
     isDefined,
@@ -447,23 +447,19 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     break
                 }
                 if (message.authKind === 'signin' && message.endpoint) {
-                    const serverEndpoint = message.endpoint
-                    const accessToken = message.value
-                        ? message.value
-                        : await secretStorage.getToken(serverEndpoint)
-                    if (accessToken) {
-                        const tokenSource = message.value
-                            ? 'paste'
-                            : await secretStorage.getTokenSource(serverEndpoint)
-                        const validationResult = await authProvider.validateAndStoreCredentials(
-                            { serverEndpoint, accessToken, tokenSource },
-                            'always-store'
-                        )
-                        if (validationResult.authStatus.authenticated) {
-                            break
+                    try {
+                        const { endpoint, value: token } = message
+                        const credentials = {
+                            serverEndpoint: endpoint,
+                            accessToken: token || (await secretStorage.getToken(endpoint)) || null,
+                            tokenSource: token ? 'paste' : await secretStorage.getTokenSource(endpoint),
                         }
-                    } else {
-                        redirectToEndpointLogin(message.endpoint)
+                        if (!credentials.accessToken) {
+                            return redirectToEndpointLogin(credentials.serverEndpoint)
+                        }
+                        await authProvider.validateAndStoreCredentials(credentials, 'always-store')
+                    } catch (error) {
+                        this.postError(new Error(`Authentication failed: ${error}`))
                     }
                     break
                 }
