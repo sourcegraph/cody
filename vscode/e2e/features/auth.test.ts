@@ -14,18 +14,21 @@ test.describe('Auth', () => {
 
         await vsc.runCommand('workbench.view.extension.cody')
         const [sidebar] = await uix.cody.WebView.all({ page }, { atLeast: 1 })
+        // Open the sign in form
+        await expect(sidebar.content.getByText('Sign in to Sourcegraph')).toBeVisible()
+        await sidebar.content.getByRole('button', { name: 'Sourcegraph logo Continue' }).click()
+        // Instance URL
+        await sidebar.content.getByText('Sourcegraph Instance URL').click()
+        await sidebar.content.getByPlaceholder('Example: https://instance.').click()
         await sidebar.content
-            .getByRole('button', { name: 'Sign In to Your Enterprise Instance' })
-            .click()
+            .getByPlaceholder('Example: https://instance.')
+            .fill(mitmProxy.sourcegraph.dotcom.endpoint)
+        // Access Token
+        await sidebar.content.getByText('Access Token (Optional)').click()
+        await sidebar.content.getByPlaceholder('Access token...').fill(MITM_AUTH_TOKEN_PLACEHOLDER)
 
-        await expect(vsc.QuickPick.locator).toBeVisible()
-        await vsc.QuickPick.items({ hasText: 'Sign in with URL and Access Token' }).click()
-        await vsc.QuickPick.input.fill(mitmProxy.sourcegraph.dotcom.endpoint)
-        await vsc.QuickPick.input.press('Enter')
-        await expect(vsc.QuickPick.input).toHaveAttribute('placeholder', 'Access Token')
-        await vsc.QuickPick.input.fill(MITM_AUTH_TOKEN_PLACEHOLDER)
+        await sidebar.content.getByPlaceholder('Access token...').press('Enter')
 
-        await vsc.QuickPick.input.press('Enter')
         await sidebar.content.getByTestId('tab-account').click()
         await expect(page.getByText('Signed in as SourcegraphBot')).toBeVisible()
         await expect(page.getByText('Plan: Cody Pro')).toBeVisible()
