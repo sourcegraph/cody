@@ -375,6 +375,7 @@ const ClientSignInForm: React.FC<ClientSignInFormProps> = memo(
                                 <FormControl
                                     type="password"
                                     name="accessToken"
+                                    placeholder="Access token..."
                                     className="tw-w-full tw-my-2 !tw-p-4"
                                     value={formState.formData.accessToken}
                                     onChange={handleInputChange}
