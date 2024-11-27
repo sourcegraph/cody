@@ -1,5 +1,4 @@
 import {
-    type AuthCredentials,
     type AuthStatus,
     type ChatModel,
     type ClientActionBroadcast,
@@ -448,23 +447,20 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
                     break
                 }
                 if (message.authKind === 'signin' && message.endpoint) {
-                    const serverEndpoint = message.endpoint
-                    const credentials: AuthCredentials = {
-                        serverEndpoint,
-                        accessToken: message.value ?? null,
-                        tokenSource: 'paste',
+                    try {
+                        const { endpoint, value: token } = message
+                        const credentials = {
+                            serverEndpoint: endpoint,
+                            accessToken: token || (await secretStorage.getToken(endpoint)) || null,
+                            tokenSource: token ? 'paste' : await secretStorage.getTokenSource(endpoint),
+                        }
+                        if (!credentials.accessToken) {
+                            return redirectToEndpointLogin(credentials.serverEndpoint)
+                        }
+                        await authProvider.validateAndStoreCredentials(credentials, 'always-store')
+                    } catch (error) {
+                        this.postError(new Error(`Authentication failed: ${error}`))
                     }
-                    if (!message.value) {
-                        credentials.accessToken = (await secretStorage.getToken(serverEndpoint)) ?? null
-                        credentials.tokenSource = await secretStorage.getTokenSource(serverEndpoint)
-                    }
-                    if (credentials.accessToken) {
-                        authProvider.setAuthPendingToEndpoint(serverEndpoint)
-                        authProvider.validateAndStoreCredentials(credentials, 'always-store')
-                        return
-                    }
-                    redirectToEndpointLogin(message.endpoint)
-
                     break
                 }
                 if (message.authKind === 'signout') {
