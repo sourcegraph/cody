@@ -146,7 +146,8 @@ describe('DeepCody', () => {
         const result = await agent.getContext(mockSpan, { aborted: false } as AbortSignal)
 
         expect(mockChatClient.chat).toHaveBeenCalled()
-        expect(mockCodyTools).toHaveLength(4)
+        expect(mockCodyTools).toHaveLength(3)
+        expect(mockCodyTools.some(tool => tool.config.tags.tag === ps`TOOLCLI`)).toBeFalsy()
         expect(mockContextRetriever.retrieveContext).toHaveBeenCalled()
         expect(result).toHaveLength(2)
         expect(result[0].content).toBe('const example = "test";')

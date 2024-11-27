@@ -1,3 +1,4 @@
+import type { AutocompleteContextSnippetMetadataFields } from '@sourcegraph/cody-shared'
 import type * as vscode from 'vscode'
 import type {
     DiffCalculationInput,
@@ -45,6 +46,7 @@ export class AutoeditWithShortTermDiffStrategy implements RecentEditsRetrieverDi
         )
         const gitDiff = computeDiffWithLineNumbers(uri, oldContent, newContent, numContextLines)
         const diffHunk = {
+            uri,
             diff: gitDiff,
             latestEditTimestamp: Math.max(...changes.map(c => c.timestamp)),
         }
@@ -60,5 +62,14 @@ export class AutoeditWithShortTermDiffStrategy implements RecentEditsRetrieverDi
         const shortTermChanges = changes.slice(0, index)
         const longTermChanges = changes.slice(index)
         return [shortTermChanges, longTermChanges]
+    }
+
+    public getDiffStrategyMetadata(): AutocompleteContextSnippetMetadataFields {
+        return {
+            strategy: 'autoedits-short-term-diff',
+            longTermContextLines: this.longTermContextLines,
+            shortTermContextLines: this.shortTermContextLines,
+            shortTermDiffWindowMs: this.shortTermDiffWindowMs,
+        }
     }
 }

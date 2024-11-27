@@ -11,7 +11,7 @@ import { JaccardSimilarityRetriever } from './retrievers/jaccard-similarity/jacc
 import { LspLightRetriever } from './retrievers/lsp-light/lsp-light-retriever'
 import { DiagnosticsRetriever } from './retrievers/recent-user-actions/diagnostics-retriever'
 import { RecentCopyRetriever } from './retrievers/recent-user-actions/recent-copy'
-import { RecentEditsRetrieverDiffStrategyIdentifier } from './retrievers/recent-user-actions/recent-edits-diff-helpers/recent-edits-diff-strategy'
+import { UnifiedDiffStrategy } from './retrievers/recent-user-actions/recent-edits-diff-helpers/unified-diff'
 import { RecentEditsRetriever } from './retrievers/recent-user-actions/recent-edits-retriever'
 import { RecentViewPortRetriever } from './retrievers/recent-user-actions/recent-view-port'
 import { loadTscRetriever } from './retrievers/tsc/load-tsc-retriever'
@@ -55,8 +55,9 @@ export class DefaultContextStrategyFactory implements ContextStrategyFactory {
                             this.allLocalRetrievers = [
                                 new RecentEditsRetriever({
                                     maxAgeMs: 60 * 1000,
-                                    diffStrategyIdentifier:
-                                        RecentEditsRetrieverDiffStrategyIdentifier.UnifiedDiff,
+                                    diffStrategyList: [
+                                        new UnifiedDiffStrategy({ addLineNumbers: false }),
+                                    ],
                                 }),
                             ]
                             break
@@ -64,8 +65,9 @@ export class DefaultContextStrategyFactory implements ContextStrategyFactory {
                             this.allLocalRetrievers = [
                                 new RecentEditsRetriever({
                                     maxAgeMs: 60 * 1000,
-                                    diffStrategyIdentifier:
-                                        RecentEditsRetrieverDiffStrategyIdentifier.UnifiedDiff,
+                                    diffStrategyList: [
+                                        new UnifiedDiffStrategy({ addLineNumbers: false }),
+                                    ],
                                 }),
                             ]
                             break
@@ -73,8 +75,9 @@ export class DefaultContextStrategyFactory implements ContextStrategyFactory {
                             this.allLocalRetrievers = [
                                 new RecentEditsRetriever({
                                     maxAgeMs: 60 * 5 * 1000,
-                                    diffStrategyIdentifier:
-                                        RecentEditsRetrieverDiffStrategyIdentifier.UnifiedDiff,
+                                    diffStrategyList: [
+                                        new UnifiedDiffStrategy({ addLineNumbers: false }),
+                                    ],
                                 }),
                             ]
                             break
@@ -82,8 +85,9 @@ export class DefaultContextStrategyFactory implements ContextStrategyFactory {
                             this.allLocalRetrievers = [
                                 new RecentEditsRetriever({
                                     maxAgeMs: 60 * 1000,
-                                    diffStrategyIdentifier:
-                                        RecentEditsRetrieverDiffStrategyIdentifier.UnifiedDiff,
+                                    diffStrategyList: [
+                                        new UnifiedDiffStrategy({ addLineNumbers: false }),
+                                    ],
                                 }),
                                 new JaccardSimilarityRetriever(),
                             ]
@@ -127,8 +131,9 @@ export class DefaultContextStrategyFactory implements ContextStrategyFactory {
                             this.allLocalRetrievers = [
                                 new RecentEditsRetriever({
                                     maxAgeMs: 10 * 60 * 1000,
-                                    diffStrategyIdentifier:
-                                        RecentEditsRetrieverDiffStrategyIdentifier.UnifiedDiffWithLineNumbers,
+                                    diffStrategyList: [
+                                        new UnifiedDiffStrategy({ addLineNumbers: true }),
+                                    ],
                                 }),
                                 new DiagnosticsRetriever({
                                     contextLines: 0,

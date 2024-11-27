@@ -13,15 +13,16 @@ export const sidebarSignin = async (
         throw new Error('Sidebar is null, likely because preAuthenticate is `true`')
     }
     await focusSidebar(page)
-    await sidebar.getByRole('button', { name: 'Sign In to Your Enterprise Instance' }).click()
-    await page.getByRole('option', { name: 'Sign In with URL and Access Token' }).click()
-    // Ensure the correct input box has showed up before we start filling in the forms.
-    await expect(page.getByText('Enter the URL of the')).toBeVisible()
-    await page.getByRole('combobox', { name: 'input' }).fill(SERVER_URL)
-    await page.getByRole('combobox', { name: 'input' }).press('Enter')
-    await expect(page.getByText('Paste your access token')).toBeVisible()
-    await page.getByRole('combobox', { name: 'input' }).fill(VALID_TOKEN)
-    await page.getByRole('combobox', { name: 'input' }).press('Enter')
+
+    await sidebar.getByRole('button', { name: 'Sourcegraph logo Continue' }).click()
+
+    await sidebar.getByText('Sourcegraph Instance URL').click()
+    await sidebar.getByPlaceholder('Example: https://instance.').click()
+    await sidebar.getByPlaceholder('Example: https://instance.').fill(SERVER_URL)
+
+    await sidebar.getByText('Access Token (Optional)').click()
+    await sidebar.getByPlaceholder('Access token...').fill(VALID_TOKEN)
+    await sidebar.getByPlaceholder('Access token...').press('Enter')
 
     // Turn off notification
     if (!enableNotifications) {
@@ -58,7 +59,7 @@ export async function focusSidebar(page: Page): Promise<void> {
 export async function expectAuthenticated(page: Page) {
     await focusSidebar(page)
     // Expect the sign in button to be gone.
-    await expect(page.getByLabel('Sign In to Your Enterprise Instance')).not.toBeVisible()
+    await expect(page.getByLabel('Sign in to Sourcegraph')).not.toBeVisible()
 }
 
 // Selector for the Explorer button in the sidebar that would match on Mac and Linux
