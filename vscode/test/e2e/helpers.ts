@@ -41,6 +41,10 @@ interface WorkspaceSettings {
     [key: string]: string | boolean | number
 }
 
+export type EnterpriseTestOptions = {
+    shouldUseEnterprise: boolean
+}
+
 // Playwright test extension: Extra VSCode settings to write to
 // .vscode/settings.json.
 export interface ExtraWorkspaceSettings {
@@ -109,6 +113,9 @@ export const test = base
     .extend<DotcomUrlOverride>({
         dotcomUrl: undefined,
     })
+    .extend<EnterpriseTestOptions>({
+        shouldUseEnterprise: [false, { option: true }],
+    })
     .extend<TestConfiguration>({
         preAuthenticate: false,
     })
@@ -144,9 +151,11 @@ export const test = base
     })
     .extend<{ server: MockServer }>({
         server: [
-            // biome-ignore lint/correctness/noEmptyPattern: Playwright ascribes meaning to the empty pattern: No dependencies.
-            async ({}, use) => {
+            async ({ shouldUseEnterprise }, use) => {
                 MockServer.run(async server => {
+                    if (shouldUseEnterprise !== undefined) {
+                        server.setUserShouldUseEnterprise(shouldUseEnterprise)
+                    }
                     await use(server)
                 })
             },

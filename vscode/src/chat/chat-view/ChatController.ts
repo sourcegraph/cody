@@ -85,7 +85,7 @@ import type { TelemetryEventParameters } from '@sourcegraph/telemetry'
 import { Subject, map } from 'observable-fns'
 import type { URI } from 'vscode-uri'
 import { View } from '../../../webviews/tabs/types'
-import { redirectToEndpointLogin, showSignInMenu, showSignOutMenu, signOut } from '../../auth/auth'
+import { redirectToEndpointLogin, showSignInMenu, showSignOutMenu } from '../../auth/auth'
 import {
     closeAuthProgressIndicator,
     startAuthProgressIndicator,
@@ -553,9 +553,6 @@ export class ChatController implements vscode.Disposable, vscode.WebviewViewProv
         let clientConfig: CodyClientConfig | undefined
         try {
             clientConfig = await ClientConfigSingleton.getInstance().getConfig(abortController.signal)
-            if (clientConfig?.userShouldUseEnterprise && isDotCom(authStatus.endpoint)) {
-                signOut(authStatus.endpoint)
-            }
             if (abortController.signal.aborted) {
                 return
             }

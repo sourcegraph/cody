@@ -628,7 +628,7 @@ interface HighlightLineRange {
     startLine: number
 }
 
-type GraphQLAPIClientConfig = PickResolvedConfiguration<{
+export type GraphQLAPIClientConfig = PickResolvedConfiguration<{
     auth: true
     configuration: 'telemetryLevel' | 'customHeaders'
     clientState: 'anonymousUserID'
@@ -1654,13 +1654,19 @@ export class SourcegraphGraphQLAPIClient {
         method: string,
         urlPath: string,
         body?: string,
-        signal?: AbortSignal
+        signal?: AbortSignal,
+        configOverride?: GraphQLAPIClientConfig
     ): Promise<T | Error> {
-        if (!this.config) {
-            throw new Error('SourcegraphGraphQLAPIClient config not set')
-        }
-        const config = await firstValueFrom(this.config)
-        signal?.throwIfAborted()
+        const config =
+            configOverride ??
+            (await (async () => {
+                if (!this.config) {
+                    throw new Error('SourcegraphGraphQLAPIClient config not set')
+                }
+                const resolvedConfig = await firstValueFrom(this.config)
+                signal?.throwIfAborted()
+                return resolvedConfig
+            })())
 
         const headers = new Headers(config.configuration?.customHeaders as HeadersInit | undefined)
         headers.set('Content-Type', 'application/json; charset=utf-8')
